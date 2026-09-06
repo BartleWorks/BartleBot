@@ -13,13 +13,13 @@ decisions and the slot that runs the refresh, neither of which needs a MainWindo
 """
 
 import inspect
-from types import SimpleNamespace
 
 import pytest
 from PyQt6.QtWidgets import QDialog
 
 from bartlebot.gui.settings import accounts_tab
 from bartlebot.settings_manager import SettingsManager
+from tests.conftest import main_window_stub
 
 ACCOUNTS = ["one@example.com", "two@example.com"]
 
@@ -170,13 +170,7 @@ def test_keeping_the_same_name_is_not_a_duplicate(editor):
 
 def _main_window_stub(saved: bool, monkeypatch):
     monkeypatch.setattr(accounts_tab, "edit_launch_profile", lambda *a, **k: saved)
-    calls: list[str] = []
-    return calls, SimpleNamespace(
-        live_game_area=(1200, 700),
-        _rebuild_launch_menu=lambda: calls.append("menu"),
-        refresh_minimum_size=lambda: calls.append("minimum"),
-        _game_view_panel=SimpleNamespace(refresh_launch_lists=lambda: calls.append("cards")),
-    )
+    return main_window_stub()
 
 
 def test_a_saved_profile_refreshes_the_menu_and_the_cards(monkeypatch):

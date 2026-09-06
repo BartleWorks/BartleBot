@@ -93,9 +93,23 @@ def test_the_edit_button_edits_without_launching(qapp):
     assert launched == []
 
 
-def test_the_edit_button_is_revealed_on_hover(qapp):
+def test_an_account_cards_pencil_edits_without_launching(qapp):
+    """Same rule on the other card type, which grew a pencil of its own in #194."""
+    card = AccountCard(ACCOUNT, ROSTER)
+    launched, edited = [], []
+    card.launch_account_requested.connect(lambda *a: launched.append(a))
+    card.edit_account_requested.connect(edited.append)
+
+    card._edit_btn.click()
+
+    assert edited == [ACCOUNT["username"]]
+    assert launched == []
+
+
+@pytest.mark.parametrize("factory", [lambda: AccountCard(ACCOUNT, ROSTER), lambda: ProfileCard(PROFILE, [ACCOUNT])])
+def test_the_edit_button_is_revealed_on_hover(qapp, factory):
     """Secondary to launching: a button visible on every card competes with the name."""
-    card = ProfileCard(PROFILE, [ACCOUNT])
+    card = factory()
     # isVisibleTo, not isVisible: the card is never shown in the test, and isVisible is
     # False for every child of an unshown parent — which would pass whatever we did.
     assert not card._edit_btn.isVisibleTo(card)
@@ -127,11 +141,12 @@ def test_an_account_with_no_known_characters_still_builds(qapp):
     assert card is not None
 
 
-def test_the_edit_button_keeps_its_space_while_hidden(qapp):
+@pytest.mark.parametrize("factory", [lambda: AccountCard(ACCOUNT, ROSTER), lambda: ProfileCard(PROFILE, [ACCOUNT])])
+def test_the_edit_button_keeps_its_space_while_hidden(qapp, factory):
     """Revealing it on hover must not resize the card: a card that grows under the
     pointer can move out from under it, hiding the button and shrinking back — the
     jitter that made the cards unusable to mouse over."""
-    card = ProfileCard(PROFILE, [ACCOUNT])
+    card = factory()
     card.resize(300, card.sizeHint().height())
     hidden = card.sizeHint()
 

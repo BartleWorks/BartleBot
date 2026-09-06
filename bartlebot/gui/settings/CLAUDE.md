@@ -31,6 +31,28 @@ Two rules about the settings dialog itself:
   a wrapper forwards `apply()` so the tab in the bar is still one `apply_all` can
   call.
 
+## Card actions
+
+Every write to an account or a launch profile goes through one of the module-level
+functions in `accounts_tab.py` — `add_`/`edit_`/`delete_account`, and
+`add_`/`edit_`/`duplicate_`/`delete_launch_profile`. **Never open `_AccountDialog` or
+`_ProfileDialog` yourself, and never write `sm.accounts` or `sm.launch_profiles` from a
+widget.** Two surfaces manage these today (the Game tab, and the launch screen's cards)
+and #192 makes them one; a second copy of the delete cascade is how they drift.
+
+Three things every one of them does, and a new one must:
+
+- **Return whether anything was written.** That is the caller's cue to refresh. It is
+  false for a cancelled dialog, a declined confirm, and a name that was refused.
+- **Call `SettingsManager.save()`.** `set` only writes memory. A card on the launch
+  screen has no Settings dialog behind it, so an action that skips this survives until
+  the process exits and no further — which is exactly how #195 shipped.
+- **Be called from a synchronous Qt slot.** Each runs `exec()`, and Python 3.13 forbids
+  re-entering Qt's event loop from inside a running asyncio task.
+
+Deleting an account cascades: the credential, the character roster, and the username in
+every profile that launched it. That is why it is a function and not a button handler.
+
 `SettingsDialog.apply_all` iterates the tab bar rather than naming four tabs.
 A hand-written list is one line to forget when a tab is added, and forgetting it
 discards everything the user typed into the new tab with no error anywhere;

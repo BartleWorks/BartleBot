@@ -12,8 +12,6 @@ and a route to the same editor the Game tab's Add button opens.
 
 from __future__ import annotations
 
-from types import SimpleNamespace
-
 import pytest
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QEnterEvent, QMouseEvent
@@ -31,6 +29,7 @@ from bartlebot.gui.game_embed.launch_cards import ADD_CARD_BORDER_WIDTH, Account
 from bartlebot.gui.settings import accounts_tab
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
+from tests.conftest import main_window_stub
 
 # A 4K screen at the default layout: everything fits, so a card is greyed only when a
 # test asks for it to be.
@@ -462,13 +461,7 @@ def test_a_cancelled_profile_changes_nothing(profile_editor):
 def _main_window_stub(monkeypatch, saved: bool):
     monkeypatch.setattr(accounts_tab, "add_account", lambda *a, **k: saved)
     monkeypatch.setattr(accounts_tab, "add_launch_profile", lambda *a, **k: saved)
-    calls: list[str] = []
-    return calls, SimpleNamespace(
-        live_game_area=(1200, 700),
-        _rebuild_launch_menu=lambda: calls.append("menu"),
-        refresh_minimum_size=lambda: calls.append("minimum"),
-        _game_view_panel=SimpleNamespace(refresh_launch_lists=lambda: calls.append("cards")),
-    )
+    return main_window_stub()
 
 
 @pytest.mark.parametrize("slot", ["_add_account", "_add_launch_profile"])

@@ -17,11 +17,24 @@ the buttons had; the alternative -- select, then press Launch -- would put a sec
 in front of the app's most common action to match a library screen whose primary verb is
 "open", not "run".
 
-Configuration is a hover-revealed button that opens the existing editor, which is what
+Configuration is a hover-revealed pencil that opens the existing editor, which is what
 Chrome's profile picker, Parallels' VM tiles and the Steam library all converge on for a
 tile whose primary action is "launch". Nothing on the card is a form control: a combo box
 on a surface that launches on click is a hole in the hit target, and one that would have
 to swallow its own clicks to be safe.
+
+THE REST OF THE VERBS
+
+Every other thing you can do to an account or a profile is on the right-click menu:
+Delete on both, and Duplicate on profiles (#194). Delete is deliberately not on the card
+face, where a trash icon would sit 22px from a body that starts a game client -- a
+mis-click there costs a stored credential and a character roster. The Game tab draws the
+same two things with the icons direct, because a body click there edits.
+
+None of the verbs are implemented here. Each is a signal carrying a name, and the module
+functions in settings/accounts_tab.py are what every surface calls -- so what a card does
+and how a card draws it stay separable, which is what lets the Game tab promote a
+different subset of the same list.
 
 WHAT THE PILLS MEAN
 
@@ -55,6 +68,7 @@ from bartlebot.credentials import CredentialStore
 from bartlebot.game_sizing import FitProblem
 from bartlebot.gui.account_accent import account_accent, account_color_key, account_color_keys
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.tag_pill import AccountPill, NeutralPill
@@ -300,6 +314,10 @@ class _LaunchCard(ThemedMixin, QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._hovered = False
+        # The hover-revealed pencil, once a subclass has built one. Held here because
+        # apply_theme_styles has to rebuild its icon on every pass and the hover handlers
+        # below are what show and hide it — see _make_edit_button.
+        self._edit_btn: QToolButton | None = None
         # Every plain label is held so apply_theme_styles can re-derive its colour.
         # The pills are not: NeutralPill owns its own.
         self._name_lbl: QLabel | None = None
@@ -403,6 +421,17 @@ class _LaunchCard(ThemedMixin, QWidget):
         for lbl, color in ((self._detail_lbl, THEME.text_muted), (self._quiet_lbl, THEME.text_subtle)):
             if lbl is not None:
                 lbl.setStyleSheet(f"color: {color}; font-size: 10px; background: transparent;")
+        self._restyle_edit_button()
+
+    def _restyle_edit_button(self) -> None:
+        """Re-render the pencil in the current theme.
+
+        svg_icon bakes THEME.icon_tint in at render time, so the icon has to be rebuilt on
+        every theme pass rather than set once in _build -- an icon set once goes stale on
+        a theme switch, with no stylesheet anywhere to grep for.
+        """
+        if self._edit_btn is not None:
+            self._edit_btn.setIcon(svg_icon("pencil", size=14))
 
     def _apply_unavailable_styles(self) -> None:
         """The greyed-out palette. The stripe goes too: it names an account, not a state."""
@@ -415,6 +444,77 @@ class _LaunchCard(ThemedMixin, QWidget):
         for lbl in (self._detail_lbl, self._quiet_lbl):
             if lbl is not None:
                 lbl.setStyleSheet(f"color: {THEME.text_disabled}; font-size: 10px; background: transparent;")
+        # Not tinted down with them: the pencil is the way out of the state the rest of
+        # the card is greyed to report, so it stays at full contrast.
+        self._restyle_edit_button()
+
+    def _make_edit_button(self, tooltip: str) -> QToolButton:
+        """The pencil in a card's header row: revealed on hover, opens this card's editor.
+
+        A real child widget rather than a hit-tested region of the card, so that it
+        consumes its own clicks. The whole card launches, and a painted-on icon would
+        launch the thing the user was trying to edit.
+
+        Revealed on hover because it is secondary to launching: a button drawn
+        permanently on every card competes with the name for attention, on the one screen
+        whose job is to let you pick a name. Hover-only is not the whole answer to
+        reaching it — that is what ``contextMenuEvent`` below is for, which is also the
+        route for anyone not using a mouse.
+
+        A pencil, not a gear. The gear meant "settings" when this opened the Settings
+        dialog; it opens one profile's editor now (#193), and an icon should promise what
+        happens.
+
+        The button's space is held while it is hidden, or revealing it on hover would
+        resize the card under the pointer -- which can move the card out from under it,
+        hiding the button again, resizing back: the whole card jitters as long as the
+        pointer sits near its edge.
+        """
+        button = QToolButton(self)
+        button.setFixedSize(_EDIT_BTN_SIZE, _EDIT_BTN_SIZE)
+        policy = button.sizePolicy()
+        policy.setRetainSizeWhenHidden(True)
+        button.setSizePolicy(policy)
+        button.setAutoRaise(True)
+        button.setCursor(Qt.CursorShape.PointingHandCursor)
+        button.setToolTip(tooltip)
+        button.setVisible(False)
+        self._edit_btn = button
+        return button
+
+    def _context_actions(self) -> list[tuple[str, str, Callable[[], None]]]:
+        """(label, icon name, what it does) for this card's right-click menu.
+
+        Subclasses fill it in; a card that returns nothing gets no menu. The label and the
+        icon are the rendering, and the callable is one of the module functions in
+        settings/accounts_tab.py — so promoting an entry to a button later is a change to
+        one ``_build`` and not to any of the verbs.
+
+        Pass "" as the icon name for an entry with no icon.
+        """
+        return []
+
+    def contextMenuEvent(self, event) -> None:
+        """Right-click: every verb this card has, including the ones not on its face.
+
+        This is where Delete lives on the launch screen, deliberately and only. The card
+        body starts a game client, and a trash icon 22px from it is a mis-click that
+        costs a stored credential and a character roster -- so the destructive verb is
+        the one that takes a deliberate second gesture. It is also the keyboard and
+        discoverability answer to a pencil that only appears on hover.
+
+        Offered on an unfittable card too, for the same reason the pencil is: editing the
+        profile -- lowering its resolution, dropping an account -- is exactly what the
+        greyed card is telling the user to do.
+        """
+        actions = self._context_actions()
+        if not actions:
+            return
+        menu = popup_menu(self)
+        for label, icon_name, handler in actions:
+            action = menu.addAction(svg_icon(icon_name, size=14), label) if icon_name else menu.addAction(label)
+            action.triggered.connect(handler)
+        menu.exec(event.globalPos())
 
     def _make_name_label(self, text: str) -> QLabel:
         label = QLabel(text, self)
@@ -454,11 +554,15 @@ class _LaunchCard(ThemedMixin, QWidget):
 
     def enterEvent(self, event) -> None:
         self._hovered = True
+        if self._edit_btn is not None:
+            self._edit_btn.setVisible(True)
         self.refresh_theme_styles()
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
         self._hovered = False
+        if self._edit_btn is not None:
+            self._edit_btn.setVisible(False)
         self.refresh_theme_styles()
         super().leaveEvent(event)
 
@@ -487,6 +591,8 @@ class AccountCard(_LaunchCard):
     """
 
     launch_account_requested = pyqtSignal(str, str)  # (username, display_name)
+    edit_account_requested = pyqtSignal(str)  # (username)
+    delete_account_requested = pyqtSignal(str)  # (username)
 
     def __init__(self, account: dict, roster: list[dict], accounts: list[dict] | None = None, parent=None) -> None:
         super().__init__(parent)
@@ -538,6 +644,9 @@ class AccountCard(_LaunchCard):
         if self._roster:
             header.addWidget(NeutralPill(str(len(self._roster))), 0, Qt.AlignmentFlag.AlignVCenter)
         header.addStretch()
+        edit_btn = self._make_edit_button(f"Edit the '{self._display_name}' account")
+        edit_btn.clicked.connect(lambda: self.edit_account_requested.emit(self._username))
+        header.addWidget(edit_btn, 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
         self._detail_lbl = QLabel(character_summary(self._roster), self)
@@ -556,6 +665,19 @@ class AccountCard(_LaunchCard):
         # Empty, and so hidden, until set_unavailable fills it. Built here rather than on
         # demand so the reason has somewhere to land without rebuilding the card.
         layout.addWidget(self._make_quiet_label())
+
+    def _context_actions(self) -> list[tuple[str, str, Callable[[], None]]]:
+        """Edit and Delete. No Duplicate: two accounts sharing a username is not a thing.
+
+        Delete is here and not on the card face -- see ``_LaunchCard.contextMenuEvent``.
+        It is the harshest verb on this screen: it takes a password out of the Credential
+        Manager and a character roster off disk, neither of which comes back by adding the
+        account again.
+        """
+        return [
+            ("Edit", "pencil", lambda: self.edit_account_requested.emit(self._username)),
+            ("Delete", "trash", lambda: self.delete_account_requested.emit(self._username)),
+        ]
 
     def resizeEvent(self, event) -> None:
         """Re-fit the character line: how many names fit is a function of the width.
@@ -595,16 +717,14 @@ class ProfileCard(_LaunchCard):
 
     launch_profile_requested = pyqtSignal(str)  # (profile_name)
     edit_profile_requested = pyqtSignal(str)  # (profile_name)
+    duplicate_profile_requested = pyqtSignal(str)  # (profile_name)
+    delete_profile_requested = pyqtSignal(str)  # (profile_name)
 
     def __init__(self, profile: dict, accounts: list[dict], parent=None) -> None:
         super().__init__(parent)
         self._profile = profile
         self._name = profile.get("name", "")
         self._accounts = accounts
-        # Declared before _build: the edit button is a real child widget so that it
-        # consumes its own clicks rather than the card launching underneath it, and
-        # apply_theme_styles can be reached before _build has made it.
-        self._edit_btn: QToolButton | None = None
         self._build()
         self.refresh_theme_styles()
         self.launch_requested.connect(lambda: self.launch_profile_requested.emit(self._name))
@@ -632,23 +752,9 @@ class ProfileCard(_LaunchCard):
             header.addWidget(NeutralPill(resolution), 0, Qt.AlignmentFlag.AlignVCenter)
         header.addStretch()
 
-        # Revealed on hover: it is secondary to launching, and a permanently visible
-        # button on every card competes with the name for attention.
-        self._edit_btn = QToolButton(self)
-        self._edit_btn.setFixedSize(_EDIT_BTN_SIZE, _EDIT_BTN_SIZE)
-        # The button's space is held while it is hidden, or revealing it on hover would
-        # resize the card under the pointer -- which can move the card out from under it,
-        # hiding the button again, resizing back: the whole card jitters as long as the
-        # pointer sits near its edge.
-        policy = self._edit_btn.sizePolicy()
-        policy.setRetainSizeWhenHidden(True)
-        self._edit_btn.setSizePolicy(policy)
-        self._edit_btn.setAutoRaise(True)
-        self._edit_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._edit_btn.setToolTip(f"Edit the '{self._name}' profile")
-        self._edit_btn.setVisible(False)
-        self._edit_btn.clicked.connect(lambda: self.edit_profile_requested.emit(self._name))
-        header.addWidget(self._edit_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+        edit_btn = self._make_edit_button(f"Edit the '{self._name}' profile")
+        edit_btn.clicked.connect(lambda: self.edit_profile_requested.emit(self._name))
+        header.addWidget(edit_btn, 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
         pills = QHBoxLayout()
@@ -664,23 +770,23 @@ class ProfileCard(_LaunchCard):
     def _available_quiet_text(self) -> str:
         return profile_summary(self._profile)
 
-    def apply_theme_styles(self) -> None:
-        super().apply_theme_styles()
-        # svg_icon bakes THEME.icon_tint in at render time, so the icon has to be rebuilt
-        # here rather than set once in _build — an icon set once goes stale on a theme
-        # switch with no stylesheet anywhere to grep for.
-        if self._edit_btn is not None:
-            self._edit_btn.setIcon(svg_icon("gear", size=14))
+    def _context_actions(self) -> list[tuple[str, str, Callable[[], None]]]:
+        """Edit, Duplicate, Delete. The middle one is the reason profiles have a menu.
 
-    def enterEvent(self, event) -> None:
-        # Still revealed on an unfittable card: editing it — lowering its resolution, or
-        # dropping an account — is exactly what the greyed row is telling them to do.
-        self._edit_btn.setVisible(True)
-        super().enterEvent(event)
+        Duplicate is how the second profile gets built -- this one plus an account, or
+        this one at a smaller resolution -- and it has no icon because it does not need
+        one: it sits between two entries that do, which is enough to read the menu by.
 
-    def leaveEvent(self, event) -> None:
-        self._edit_btn.setVisible(False)
-        super().leaveEvent(event)
+        No kebab button promoting it to the card face. With Delete already reachable here,
+        a kebab would hold Duplicate alone, on one of the two card types, which is a menu
+        that teaches nothing. If it turns out to be undiscoverable, promoting it is a
+        change to ``_build`` -- the verbs are already a list.
+        """
+        return [
+            ("Edit", "pencil", lambda: self.edit_profile_requested.emit(self._name)),
+            ("Duplicate", "", lambda: self.duplicate_profile_requested.emit(self._name)),
+            ("Delete", "trash", lambda: self.delete_profile_requested.emit(self._name)),
+        ]
 
 
 class AddCard(ThemedMixin, QWidget):

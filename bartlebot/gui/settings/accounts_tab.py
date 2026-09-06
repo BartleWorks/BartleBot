@@ -1,6 +1,30 @@
-"""Settings tab: Game (accounts, launch profiles, and game embed resolution)."""
+"""Settings tab: Game (accounts, launch profiles, and game embed resolution).
+
+Also the home of the *card actions* — the module-level ``add_``/``edit_``/``delete_``/
+``duplicate_`` functions below, which are what every surface that manages an account or
+a launch profile calls (#194). They live here because the editors they wrap do, not
+because the tab owns them: none of them needs an ``AccountsTab`` to exist, which is the
+whole point. The launch screen's cards reached the profile editor by building the entire
+Settings dialog underneath it until #193, and the Add cards (#195) and the Game tab's own
+buttons would each have grown a second copy of the delete cascade otherwise.
+
+Each returns whether anything was written, which is every caller's cue to refresh
+whatever it draws accounts or profiles with.
+
+Each also *saves*. That is not incidental: ``SettingsManager.set`` only writes memory,
+and the one ``save()`` these used to reach was ``SettingsDialog._on_accept``. A card on
+the launch screen has no Settings dialog behind it, so an account added there survived
+until the process exited and no further -- and the tab's own ``apply()`` has always
+claimed it "saves immediately on each action", which was true of the reorders alone.
+
+Every one of them runs ``exec()`` on a dialog or a message box, so every one must be
+called from a synchronous Qt slot: Python 3.13 forbids re-entering Qt's event loop from
+inside a running asyncio task. See the qasync section of CLAUDE.md.
+"""
 
 from __future__ import annotations
+
+from copy import deepcopy
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
@@ -26,6 +50,7 @@ from PyQt6.QtWidgets import (
 from bartlebot import character_roster
 from bartlebot.credentials import CredentialStore
 from bartlebot.gui import screen_fit
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 
@@ -108,7 +133,17 @@ class _ReorderableList(QListWidget):
 
 
 class _AccountDialog(QDialog):
-    """Small dialog for adding or editing an account."""
+    """Small dialog for adding or editing an account.
+
+    A *username* opens it in edit mode, which differs in two ways: the password may be
+    left blank to keep the stored one, and the username itself is read-only. The username
+    is this account's key everywhere — the Credential Manager entry, the character roster
+    file, and every launch profile's membership list — so it is not something an alias
+    field's neighbour can quietly change. It used to be editable and silently ignored,
+    which is the worse of the two: the user types a correction, presses OK, and the list
+    comes back unchanged with nothing saying why. The alias is the field for what the
+    account is *called*.
+    """
 
     def __init__(self, username: str = "", alias: str = "", parent=None) -> None:
         super().__init__(parent)
@@ -122,6 +157,8 @@ class _AccountDialog(QDialog):
         self._password_edit = QLineEdit()
         self._password_edit.setEchoMode(QLineEdit.EchoMode.Password)
         if username:
+            self._username_edit.setReadOnly(True)
+            self._username_edit.setToolTip("An account's username cannot be changed. Set an alias instead.")
             self._password_edit.setPlaceholderText("Leave blank to keep existing password")
 
         form.addRow("Username:", self._username_edit)
@@ -160,9 +197,6 @@ def add_account(parent: QWidget | None = None) -> bool:
     Returns whether an account was written, which is every caller's cue to redraw
     whatever it draws accounts with. False covers all four ways nothing was saved: the
     editor cancelled, an empty username, an empty password, and a duplicate.
-
-    Must be called from a synchronous Qt slot -- ``exec()`` re-enters Qt's event loop,
-    which Python 3.13 forbids from inside a running asyncio task. See CLAUDE.md.
     """
     dlg = _AccountDialog(parent=parent)
     if dlg.exec() != QDialog.DialogCode.Accepted:
@@ -181,6 +215,77 @@ def add_account(parent: QWidget | None = None) -> bool:
     CredentialStore.store(username, dlg.password)
     accounts.append({"username": username, "alias": dlg.alias or ""})
     SettingsManager.instance().accounts = accounts
+    SettingsManager.instance().save()
+    return True
+
+
+def edit_account(username: str, parent: QWidget | None = None) -> bool:
+    """Open the editor for the account *username*; store what it returns.
+
+    The password is optional here and only written when one was typed: the field is blank
+    on open, and an empty one means "keep the stored credential" rather than "clear it".
+    Reading a password back out of the Credential Manager to prefill the field is what
+    that alternative would cost.
+
+    Returns whether anything was written. False covers no such account and a cancelled
+    editor -- there is nothing else to refuse, since the username cannot change and an
+    alias may legitimately be blank.
+    """
+    account = next((a for a in SettingsManager.instance().accounts if a.get("username") == username), None)
+    if account is None:
+        return False
+    dlg = _AccountDialog(username=username, alias=account.get("alias") or "", parent=parent)
+    if dlg.exec() != QDialog.DialogCode.Accepted:
+        return False
+    if dlg.password:
+        CredentialStore.store(username, dlg.password)
+    accounts = SettingsManager.instance().accounts
+    for a in accounts:
+        if a.get("username") == username:
+            a["alias"] = dlg.alias
+            break
+    SettingsManager.instance().accounts = accounts
+    SettingsManager.instance().save()
+    return True
+
+
+def delete_account(username: str, parent: QWidget | None = None) -> bool:
+    """Confirm, then remove the account *username* and everything keyed to it.
+
+    Four things go, and the confirm names three of them because they are not recoverable
+    by adding the account back: the record, its password in the Credential Manager, and
+    its character roster. The fourth is the cascade -- the username is stripped from every
+    launch profile that launches it, because a profile naming an account that no longer
+    exists is a launch that fails at the login screen with nothing on the card saying why.
+
+    A roster is wizard names, which is exactly the data ``character_roster`` is careful
+    about; leaving one behind for an account the user has just removed is the case it
+    exists for.
+
+    Returns whether anything was written. False covers no such account and a declined
+    confirm.
+    """
+    account = next((a for a in SettingsManager.instance().accounts if a.get("username") == username), None)
+    if account is None:
+        return False
+    display = CredentialStore.display_name(username, account.get("alias") or None)
+    reply = QMessageBox.question(
+        parent,
+        "Delete account",
+        f"Remove '{display}', its stored password, and its known characters?",
+        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+    )
+    if reply != QMessageBox.StandardButton.Yes:
+        return False
+    CredentialStore.delete(username)
+    character_roster.forget(username)
+    sm = SettingsManager.instance()
+    sm.accounts = [a for a in sm.accounts if a.get("username") != username]
+    profiles = sm.launch_profiles
+    for p in profiles:
+        p["accounts"] = [u for u in p.get("accounts", []) if u != username]
+    sm.launch_profiles = profiles
+    sm.save()
     return True
 
 
@@ -417,6 +522,7 @@ def add_launch_profile(
         profile["resolution"] = list(dlg.resolution)
     profiles.append(profile)
     SettingsManager.instance().launch_profiles = profiles
+    SettingsManager.instance().save()
     return True
 
 
@@ -439,10 +545,6 @@ def edit_launch_profile(
 
     *live_game_area* is passed through so the editor's resolution picker judges a launch
     the same way the surface behind it does — see gui/screen_fit.budget_for.
-
-    Must be called from a synchronous Qt slot. ``exec()`` re-enters Qt's event loop,
-    which Python 3.13 forbids from inside a running asyncio task — see the qasync
-    section of CLAUDE.md.
     """
     profile = next((p for p in SettingsManager.instance().launch_profiles if p.get("name") == old_name), None)
     if profile is None:
@@ -476,6 +578,81 @@ def edit_launch_profile(
                 p.pop("resolution", None)
             break
     SettingsManager.instance().launch_profiles = profiles
+    SettingsManager.instance().save()
+    return True
+
+
+def _free_profile_name(base: str, taken: set[str]) -> str:
+    """The first of "Foo (copy)", "Foo (copy 2)", "Foo (copy 3)"... that *taken* lacks.
+
+    Counting from 2 on the second copy rather than 1 on the first, so duplicating once
+    reads "Farm Team (copy)" and not "Farm Team (copy 1)" -- the numberless form is the
+    common case and should be the one that looks unremarkable.
+
+    Split out and given the taken set rather than reading settings, because what makes a
+    name free is a question with an answer a test can ask directly.
+    """
+    candidate = f"{base} (copy)"
+    n = 2
+    while candidate in taken:
+        candidate = f"{base} (copy {n})"
+        n += 1
+    return candidate
+
+
+def duplicate_launch_profile(name: str) -> bool:
+    """Copy the profile *name* under a free name, directly after the original.
+
+    No dialog, and so no *parent*: there is nothing to ask. A duplicate is the cheap way
+    to build the profile that is this one plus an account, or this one at a smaller
+    resolution, and putting an editor in front of it would make it as expensive as
+    starting from Add.
+
+    Inserted after the original rather than appended, so the copy lands where the user is
+    looking. Appending puts it at the foot of a column they may have to scroll to find,
+    beside an Add card, which reads as something that was created somewhere else.
+
+    Deep-copied. A shallow one would share the ``accounts`` list with the original, so
+    the first edit to the copy's membership would silently rewrite the profile it came
+    from -- and both would then be written back by the same save.
+
+    Returns whether anything was written; False only if no profile has that name.
+    """
+    profiles = SettingsManager.instance().launch_profiles
+    index = next((i for i, p in enumerate(profiles) if p.get("name") == name), None)
+    if index is None:
+        return False
+    copy = deepcopy(profiles[index])
+    copy["name"] = _free_profile_name(name, {p.get("name", "") for p in profiles})
+    profiles.insert(index + 1, copy)
+    SettingsManager.instance().launch_profiles = profiles
+    SettingsManager.instance().save()
+    return True
+
+
+def delete_launch_profile(name: str, parent: QWidget | None = None) -> bool:
+    """Confirm, then remove the launch profile *name*.
+
+    The confirm is lighter than ``delete_account``'s on purpose, and says only what goes:
+    a profile is a list of accounts and a resolution, so deleting one destroys no
+    credential and no roster, and rebuilding it is a minute in the editor.
+
+    Returns whether anything was written. False covers no such profile and a declined
+    confirm.
+    """
+    profiles = SettingsManager.instance().launch_profiles
+    if not any(p.get("name") == name for p in profiles):
+        return False
+    reply = QMessageBox.question(
+        parent,
+        "Delete profile",
+        f"Remove launch profile '{name}'?",
+        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+    )
+    if reply != QMessageBox.StandardButton.Yes:
+        return False
+    SettingsManager.instance().launch_profiles = [p for p in profiles if p.get("name") != name]
+    SettingsManager.instance().save()
     return True
 
 
@@ -544,6 +721,8 @@ class AccountsTab(QWidget):
         self._edit_btn.clicked.connect(self._on_edit)
         self._delete_btn.clicked.connect(self._on_delete)
         self._list.currentRowChanged.connect(self._on_selection_changed)
+        self._list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._list.customContextMenuRequested.connect(self._on_account_context_menu)
 
         self._refresh()
 
@@ -572,6 +751,8 @@ class AccountsTab(QWidget):
         self._profile_edit_btn.clicked.connect(self._on_profile_edit)
         self._profile_delete_btn.clicked.connect(self._on_profile_delete)
         self._profile_list.currentRowChanged.connect(self._on_profile_selection_changed)
+        self._profile_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self._profile_list.customContextMenuRequested.connect(self._on_profile_context_menu)
 
         self._refresh_profiles()
 
@@ -634,58 +815,50 @@ class AccountsTab(QWidget):
         self._edit_btn.setEnabled(has_sel)
         self._delete_btn.setEnabled(has_sel)
 
+    def _selected_username(self) -> str:
+        """The account the buttons and the context menu act on, "" if none is selected."""
+        row = self._list.currentRow()
+        if row < 0:
+            return ""
+        return (self._list.item(row).data(Qt.ItemDataRole.UserRole) or {}).get("username", "")
+
     def _on_add(self) -> None:
         if add_account(self):
             self._refresh()
 
     def _on_edit(self) -> None:
-        row = self._list.currentRow()
-        if row < 0:
-            return
-        acct = self._list.item(row).data(Qt.ItemDataRole.UserRole)
-        username = acct.get("username", "")
-        alias = acct.get("alias", "")
-        dlg = _AccountDialog(username=username, alias=alias, parent=self)
-        if dlg.exec() != QDialog.DialogCode.Accepted:
-            return
-        new_password = dlg.password
-        if new_password:
-            CredentialStore.store(username, new_password)
-        accounts = SettingsManager.instance().accounts
-        for a in accounts:
-            if a["username"] == username:
-                a["alias"] = dlg.alias
-                break
-        SettingsManager.instance().accounts = accounts
-        self._refresh()
+        if (username := self._selected_username()) and edit_account(username, self):
+            self._refresh()
 
     def _on_delete(self) -> None:
-        row = self._list.currentRow()
-        if row < 0:
+        if (username := self._selected_username()) and delete_account(username, self):
+            # Both lists: deleting an account strips it from every profile that launched
+            # it, and the profile rows carry an account count.
+            self._refresh()
+            self._refresh_profiles()
+
+    def _on_account_context_menu(self, pos) -> None:
+        """Right-click on an account row: the same two verbs the buttons below carry.
+
+        Text only, where the launch screen's card menus carry a pencil and a trash. Those
+        icons are there because the card face has the pencil on it and the menu has to
+        read as the same verb; a list row has no icon of its own for a menu to echo, and
+        the entries here duplicate two buttons that are already just words. They come with
+        the icons when the rows become cards (#192).
+
+        The row under the cursor is selected first. Right-clicking one row while another
+        is selected would otherwise run the verb against the selection rather than the
+        row that was aimed at -- and for Delete that is an account and a roster gone on a
+        mis-aim.
+        """
+        item = self._list.itemAt(pos)
+        if item is None:
             return
-        acct = self._list.item(row).data(Qt.ItemDataRole.UserRole)
-        username = acct.get("username", "")
-        reply = QMessageBox.question(
-            self,
-            "Delete account",
-            f"Remove '{username}', its stored password, and its known characters?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if reply != QMessageBox.StandardButton.Yes:
-            return
-        CredentialStore.delete(username)
-        # A roster is wizard names. Leaving one behind for an account the user has just
-        # removed is exactly the data character_roster is careful about.
-        character_roster.forget(username)
-        accounts = [a for a in SettingsManager.instance().accounts if a["username"] != username]
-        SettingsManager.instance().accounts = accounts
-        # Remove the deleted account from all profiles
-        profiles = SettingsManager.instance().launch_profiles
-        for p in profiles:
-            p["accounts"] = [u for u in p.get("accounts", []) if u != username]
-        SettingsManager.instance().launch_profiles = profiles
-        self._refresh()
-        self._refresh_profiles()
+        self._list.setCurrentItem(item)
+        menu = popup_menu(self._list)
+        menu.addAction("Edit").triggered.connect(self._on_edit)
+        menu.addAction("Delete").triggered.connect(self._on_delete)
+        menu.exec(self._list.viewport().mapToGlobal(pos))
 
     # ------------------------------------------------------------------
     # Launch Profiles
@@ -708,35 +881,45 @@ class AccountsTab(QWidget):
         self._profile_edit_btn.setEnabled(has_sel)
         self._profile_delete_btn.setEnabled(has_sel)
 
+    def _selected_profile_name(self) -> str:
+        """The profile the buttons and the context menu act on, "" if none is selected."""
+        row = self._profile_list.currentRow()
+        if row < 0:
+            return ""
+        return (self._profile_list.item(row).data(Qt.ItemDataRole.UserRole) or {}).get("name", "")
+
     def _on_profile_add(self) -> None:
         if add_launch_profile(self, self._live_game_area):
             self._refresh_profiles()
 
     def _on_profile_edit(self) -> None:
-        row = self._profile_list.currentRow()
-        if row < 0:
-            return
-        name = self._profile_list.item(row).data(Qt.ItemDataRole.UserRole).get("name", "")
-        if edit_launch_profile(name, self, self._live_game_area):
+        if (name := self._selected_profile_name()) and edit_launch_profile(name, self, self._live_game_area):
+            self._refresh_profiles()
+
+    def _on_profile_duplicate(self) -> None:
+        if (name := self._selected_profile_name()) and duplicate_launch_profile(name):
             self._refresh_profiles()
 
     def _on_profile_delete(self) -> None:
-        row = self._profile_list.currentRow()
-        if row < 0:
+        if (name := self._selected_profile_name()) and delete_launch_profile(name, self):
+            self._refresh_profiles()
+
+    def _on_profile_context_menu(self, pos) -> None:
+        """Right-click on a profile row. Duplicate lives here and nowhere else.
+
+        It is the third verb on a card type that has three, and a fourth button under the
+        list makes the two that matter harder to find. See ``_on_account_context_menu``
+        for why the row under the cursor is selected first.
+        """
+        item = self._profile_list.itemAt(pos)
+        if item is None:
             return
-        profile = self._profile_list.item(row).data(Qt.ItemDataRole.UserRole)
-        name = profile.get("name", "")
-        reply = QMessageBox.question(
-            self,
-            "Delete profile",
-            f"Remove launch profile '{name}'?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-        if reply != QMessageBox.StandardButton.Yes:
-            return
-        profiles = [p for p in SettingsManager.instance().launch_profiles if p["name"] != name]
-        SettingsManager.instance().launch_profiles = profiles
-        self._refresh_profiles()
+        self._profile_list.setCurrentItem(item)
+        menu = popup_menu(self._profile_list)
+        menu.addAction("Edit").triggered.connect(self._on_profile_edit)
+        menu.addAction("Duplicate").triggered.connect(self._on_profile_duplicate)
+        menu.addAction("Delete").triggered.connect(self._on_profile_delete)
+        menu.exec(self._profile_list.viewport().mapToGlobal(pos))
 
     def apply(self) -> None:
         """No-op: AccountsTab saves immediately on each action."""

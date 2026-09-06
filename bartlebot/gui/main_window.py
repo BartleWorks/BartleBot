@@ -249,6 +249,10 @@ class MainWindow(QMainWindow):
         # tab's Add button does and nowhere near the Settings dialog around it (#195).
         self._game_view_panel.add_account_requested.connect(self._add_account)
         self._game_view_panel.add_profile_requested.connect(self._add_launch_profile)
+        self._game_view_panel.edit_account_requested.connect(self._edit_account)
+        self._game_view_panel.delete_account_requested.connect(self._delete_account)
+        self._game_view_panel.duplicate_profile_requested.connect(self._duplicate_launch_profile)
+        self._game_view_panel.delete_profile_requested.connect(self._delete_launch_profile)
 
         # Top row: left sidebar | game view | right sidebar
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -594,57 +598,95 @@ class MainWindow(QMainWindow):
         elif tab == "combat":
             self.left_sidebar.switch_to_combat()
 
+    # ------------------------------------------------------------------
+    # Card actions
+    # ------------------------------------------------------------------
+    # The verbs on the launch screen's account and profile cards (#194): the pencil, and
+    # the entries on each card's right-click menu. Every one of them is a settings write
+    # the app has to catch up with, and every one of them is the same catching up, which
+    # is what _after_card_action is.
+    #
+    # None of them do the work. The module functions in settings/accounts_tab.py are what
+    # both this screen and the Game tab call, so the two surfaces cannot drift on what a
+    # delete cascades to or on what a duplicate is named.
+    #
+    # All are called from synchronous Qt slots: each runs exec() on a dialog or a message
+    # box, which Python 3.13 forbids from inside a running asyncio task — see CLAUDE.md.
+
+    def _after_card_action(self, written: bool) -> None:
+        """Bring the app back in line with settings after a card action.
+
+        *written* gates only the two that read settings for something other than the
+        cards: the Launch menu's entries, and the window minimum, which is a function of
+        what the largest profile would launch.
+
+        The cards themselves are rebuilt either way. The action was modal, so the screen
+        behind it has been sitting on cards nothing has re-judged since it opened — and
+        hanging that half off a dialog's result is exactly the second-order bug in #193,
+        where cancelling the outer Settings dialog dropped the refresh for a profile the
+        inner editor had already written.
+        """
+        if written:
+            self._rebuild_launch_menu()
+            self.refresh_minimum_size()
+        self._game_view_panel.refresh_launch_lists()
+
     def _edit_launch_profile(self, name: str) -> None:
-        """Edit one launch profile, from the gear on its card.
+        """Edit one launch profile, from the pencil on its card or its context menu.
 
         The card asks to edit a profile, so that is the only dialog it gets. This used to
         open Settings on the Game tab with the editor on top, which left the whole
-        dialog standing behind the editor once it was dismissed — and worse, made the
-        refresh below conditional on *that* dialog being accepted, so cancelling it
-        dropped the refresh for a profile the editor had already saved (#193).
-
-        Called from a synchronous Qt slot: edit_launch_profile runs exec(), which Python
-        3.13 forbids from inside a running asyncio task — see CLAUDE.md.
+        dialog standing behind the editor once it was dismissed (#193).
         """
         from bartlebot.gui.settings.accounts_tab import edit_launch_profile
 
-        if edit_launch_profile(name, self, self.live_game_area):
-            self._rebuild_launch_menu()
-            self.refresh_minimum_size()
-        # Unconditional, as in _open_settings: the cards are rebuilt whether or not the
-        # profile changed, because the editor is modal and the screen behind it has been
-        # sitting on cards nothing has re-judged since it opened.
-        self._game_view_panel.refresh_launch_lists()
+        self._after_card_action(edit_launch_profile(name, self, self.live_game_area))
 
-    def _add_account(self) -> None:
-        """Add an account, from the Add card at the foot of the Accounts column.
+    def _duplicate_launch_profile(self, name: str) -> None:
+        """Copy one launch profile, from its context menu. The only action with no dialog."""
+        from bartlebot.gui.settings.accounts_tab import duplicate_launch_profile
 
-        Same shape as _edit_launch_profile, and refreshes for the same reason: the editor
-        is modal, so the launch screen behind it has been sitting on cards nothing has
-        re-judged since it opened.
+        self._after_card_action(duplicate_launch_profile(name))
 
-        Called from a synchronous Qt slot: add_account runs exec(), which Python 3.13
-        forbids from inside a running asyncio task — see CLAUDE.md.
-        """
-        from bartlebot.gui.settings.accounts_tab import add_account
+    def _delete_launch_profile(self, name: str) -> None:
+        """Delete one launch profile, from its context menu. Confirms first."""
+        from bartlebot.gui.settings.accounts_tab import delete_launch_profile
 
-        if add_account(self):
-            self._rebuild_launch_menu()
-            self.refresh_minimum_size()
-        self._game_view_panel.refresh_launch_lists()
+        self._after_card_action(delete_launch_profile(name, self))
 
     def _add_launch_profile(self) -> None:
         """Add a launch profile, from the Add card at the foot of the Profiles column.
 
-        See _add_account; the live game area goes through so the editor's resolution
-        picker judges a launch the same way the screen behind it does.
+        The live game area goes through so the editor's resolution picker judges a launch
+        the same way the screen behind it does.
         """
         from bartlebot.gui.settings.accounts_tab import add_launch_profile
 
-        if add_launch_profile(self, self.live_game_area):
-            self._rebuild_launch_menu()
-            self.refresh_minimum_size()
-        self._game_view_panel.refresh_launch_lists()
+        self._after_card_action(add_launch_profile(self, self.live_game_area))
+
+    def _add_account(self) -> None:
+        """Add an account, from the Add card at the foot of the Accounts column."""
+        from bartlebot.gui.settings.accounts_tab import add_account
+
+        self._after_card_action(add_account(self))
+
+    def _edit_account(self, username: str) -> None:
+        """Edit one account, from the pencil on its card or its context menu."""
+        from bartlebot.gui.settings.accounts_tab import edit_account
+
+        self._after_card_action(edit_account(username, self))
+
+    def _delete_account(self, username: str) -> None:
+        """Delete one account, from its context menu. Confirms first.
+
+        The heaviest of these: it takes the password out of the Credential Manager, the
+        character roster off disk, and the account out of every profile that launched it
+        — so the profile column is redrawn by the same refresh, with a pill fewer on each
+        card that carried this one.
+        """
+        from bartlebot.gui.settings.accounts_tab import delete_account
+
+        self._after_card_action(delete_account(username, self))
 
     def _open_settings(self, tab_name: str = "general") -> None:
         """Open Settings on the named tab.

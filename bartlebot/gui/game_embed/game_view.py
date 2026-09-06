@@ -181,7 +181,14 @@ class _GamePlaceholder(ThemedMixin, QWidget):
 
     launch_account_requested = pyqtSignal(str, str)
     launch_profile_requested = pyqtSignal(str)  # (profile_name)
+    # The card actions (#194). Forwarded rather than acted on: what an edit or a delete
+    # has to refresh afterwards -- the Launch menu, the window minimum, these cards --
+    # is the main window's business and not this widget's.
+    edit_account_requested = pyqtSignal(str)  # (username)
+    delete_account_requested = pyqtSignal(str)  # (username)
     edit_profile_requested = pyqtSignal(str)  # (profile_name)
+    duplicate_profile_requested = pyqtSignal(str)  # (profile_name)
+    delete_profile_requested = pyqtSignal(str)  # (profile_name)
     add_account_requested = pyqtSignal()
     add_profile_requested = pyqtSignal()
     manage_accounts_requested = pyqtSignal()
@@ -341,6 +348,8 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         for account in accounts:
             card = AccountCard(account, self._characters_for(account.get("username", "")), accounts)
             card.launch_account_requested.connect(self.launch_account_requested)
+            card.edit_account_requested.connect(self.edit_account_requested)
+            card.delete_account_requested.connect(self.delete_account_requested)
             account_cards.append(card)
         add_account_card = AddCard("Add account")
         add_account_card.add_requested.connect(self.add_account_requested)
@@ -351,6 +360,8 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             card = ProfileCard(profile, accounts)
             card.launch_profile_requested.connect(self.launch_profile_requested)
             card.edit_profile_requested.connect(self.edit_profile_requested)
+            card.duplicate_profile_requested.connect(self.duplicate_profile_requested)
+            card.delete_profile_requested.connect(self.delete_profile_requested)
             profile_cards.append(card)
         add_profile_card = AddCard("Add launch profile")
         add_profile_card.add_requested.connect(self.add_profile_requested)
@@ -505,7 +516,11 @@ class GameView(ThemedMixin, QWidget):
     embed_state_changed = pyqtSignal(bool)  # True = ≥1 client embedded
     launch_account_requested = pyqtSignal(str, str)
     launch_profile_requested = pyqtSignal(str)
+    edit_account_requested = pyqtSignal(str)
+    delete_account_requested = pyqtSignal(str)
     edit_profile_requested = pyqtSignal(str)
+    duplicate_profile_requested = pyqtSignal(str)
+    delete_profile_requested = pyqtSignal(str)
     add_account_requested = pyqtSignal()
     add_profile_requested = pyqtSignal()
     manage_accounts_requested = pyqtSignal()
@@ -543,7 +558,11 @@ class GameView(ThemedMixin, QWidget):
         self._placeholder = _GamePlaceholder(self)
         self._placeholder.launch_account_requested.connect(self.launch_account_requested)
         self._placeholder.launch_profile_requested.connect(self.launch_profile_requested)
+        self._placeholder.edit_account_requested.connect(self.edit_account_requested)
+        self._placeholder.delete_account_requested.connect(self.delete_account_requested)
         self._placeholder.edit_profile_requested.connect(self.edit_profile_requested)
+        self._placeholder.duplicate_profile_requested.connect(self.duplicate_profile_requested)
+        self._placeholder.delete_profile_requested.connect(self.delete_profile_requested)
         self._placeholder.add_account_requested.connect(self.add_account_requested)
         self._placeholder.add_profile_requested.connect(self.add_profile_requested)
         self._placeholder.manage_accounts_requested.connect(self.manage_accounts_requested)

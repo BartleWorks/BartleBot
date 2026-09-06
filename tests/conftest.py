@@ -481,3 +481,35 @@ def _free_widgets_this_test_created():
     QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
     # Held until here only so an id() cannot be recycled onto a new widget.
     del before
+
+
+def main_window_stub():
+    """A stand-in for MainWindow, for testing what a card action refreshes.
+
+    The eight card-action slots (#194) are one line each on top of
+    ``MainWindow._after_card_action``, and what is worth testing about them is which
+    refreshes run -- the second-order bug in #193, where cancelling a dialog dropped the
+    refresh for a profile already written to disk. Building a real MainWindow to ask that
+    costs a game view, a canvas and a client manager, so the slots are called unbound
+    against this instead.
+
+    ``_after_card_action`` is the *real* method, bound onto the stub: it is the thing
+    under test, and a reimplementation here would pass while the app did something else.
+    Everything it reaches for is a recorder.
+
+    Returns (calls, stub). The calls list is in order, so it also answers "did the cards
+    get redrawn before or after the menu".
+    """
+    from types import SimpleNamespace  # noqa: PLC0415
+
+    from bartlebot.gui.main_window import MainWindow  # noqa: PLC0415
+
+    calls: list[str] = []
+    stub = SimpleNamespace(
+        live_game_area=(1200, 700),
+        _rebuild_launch_menu=lambda: calls.append("menu"),
+        refresh_minimum_size=lambda: calls.append("minimum"),
+        _game_view_panel=SimpleNamespace(refresh_launch_lists=lambda: calls.append("cards")),
+    )
+    stub._after_card_action = MainWindow._after_card_action.__get__(stub)
+    return calls, stub

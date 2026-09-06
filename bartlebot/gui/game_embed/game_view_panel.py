@@ -46,7 +46,11 @@ class GameViewPanel(ThemedMixin, QWidget):
 
     launch_account_requested = pyqtSignal(str, str)  # forwarded from GameView
     launch_profile_requested = pyqtSignal(str)  # forwarded from GameView
+    edit_account_requested = pyqtSignal(str)  # forwarded from GameView
+    delete_account_requested = pyqtSignal(str)  # forwarded from GameView
     edit_profile_requested = pyqtSignal(str)  # forwarded from GameView
+    duplicate_profile_requested = pyqtSignal(str)  # forwarded from GameView
+    delete_profile_requested = pyqtSignal(str)  # forwarded from GameView
     add_account_requested = pyqtSignal()  # forwarded from GameView
     add_profile_requested = pyqtSignal()  # forwarded from GameView
     manage_accounts_requested = pyqtSignal()  # forwarded from GameView
@@ -62,7 +66,11 @@ class GameViewPanel(ThemedMixin, QWidget):
         # Forward placeholder signals
         self.game_view.launch_account_requested.connect(self.launch_account_requested)
         self.game_view.launch_profile_requested.connect(self.launch_profile_requested)
+        self.game_view.edit_account_requested.connect(self.edit_account_requested)
+        self.game_view.delete_account_requested.connect(self.delete_account_requested)
         self.game_view.edit_profile_requested.connect(self.edit_profile_requested)
+        self.game_view.duplicate_profile_requested.connect(self.duplicate_profile_requested)
+        self.game_view.delete_profile_requested.connect(self.delete_profile_requested)
         self.game_view.add_account_requested.connect(self.add_account_requested)
         self.game_view.add_profile_requested.connect(self.add_profile_requested)
         self.game_view.manage_accounts_requested.connect(self.manage_accounts_requested)
