@@ -12,6 +12,13 @@ both surfaces have it and neither can lose it on its own.
 Two halves, and the second is the one with teeth: the gesture has to *not* also be a
 click. A card body launches a game client, and until #192 it fired on press — on the
 first pixel of every drag.
+
+The gesture now starts on the card's grip and nowhere else, so that the cursor can say
+where dragging works without claiming a whole card whose primary verb is launch. That
+moved the teeth rather than pulling them: a press-and-sweep across a card body must still
+end in nothing at all — not a reorder, and not a launch on whichever card the pointer came
+to rest over. What the drag *looks like* while it happens is tested next door, in
+``test_card_drag_feedback.py``.
 """
 
 from __future__ import annotations
@@ -62,17 +69,29 @@ def _event(kind, card, offset: QPoint, buttons):
     )
 
 
-def _drag(qapp, column: CardColumn, card, dy: int) -> None:
-    """Press on *card*, move it *dy* pixels down its column, release.
+def _send(target, card, kind, dy: int, buttons) -> None:
+    """One mouse event at *dy* down *card*, delivered to *target*.
 
-    Sent through ``QApplication.sendEvent`` rather than called on the card, because the
-    reorder is a column-level event filter and calling the handler directly would step
-    over the thing under test.
+    The position is always measured against the **card** even when the event goes to the
+    grip: that is what the column reads, and it is what decides which slot the card now
+    covers. Delivering to the grip is the part under test — the drag is a column-level
+    event filter installed on the handle, so calling a handler directly would step over
+    the thing this file is about.
     """
-    QApplication.sendEvent(card, _event(QEvent.Type.MouseButtonPress, card, QPoint(0, 0), Qt.MouseButton.LeftButton))
-    QApplication.sendEvent(card, _event(QEvent.Type.MouseMove, card, QPoint(0, dy), Qt.MouseButton.LeftButton))
+    QApplication.sendEvent(target, _event(kind, card, QPoint(0, dy), buttons))
+
+
+def _drag(qapp, column: CardColumn, card, dy: int, *, target=None) -> None:
+    """Press on *card*'s grip, move it *dy* pixels down its column, release.
+
+    *target* overrides where the events land, which is how the body-drag guards below ask
+    for a gesture that is deliberately aimed at the wrong place.
+    """
+    target = card.grip if target is None else target
+    _send(target, card, QEvent.Type.MouseButtonPress, 0, Qt.MouseButton.LeftButton)
+    _send(target, card, QEvent.Type.MouseMove, dy, Qt.MouseButton.LeftButton)
     qapp.processEvents()
-    QApplication.sendEvent(card, _event(QEvent.Type.MouseButtonRelease, card, QPoint(0, dy), Qt.MouseButton.NoButton))
+    _send(target, card, QEvent.Type.MouseButtonRelease, dy, Qt.MouseButton.NoButton)
 
 
 def _row_height(column: CardColumn) -> int:
@@ -133,14 +152,42 @@ def test_a_drag_does_not_also_launch_what_it_moved(qapp):
     assert host
 
 
+def test_a_sweep_across_a_card_body_neither_reorders_nor_launches(qapp):
+    """The teeth, moved. The body is not a drag source, so it has to be inert either way.
+
+    This is what a user who has not found the grip yet will try first, and both ways of
+    getting it wrong are live: reordering from the body would make the grip a decoration
+    that lies about where dragging works, and launching would fire a game client because
+    the pointer happened to come to rest over a card after travelling a row.
+    """
+    host, column = _column(qapp)
+    launched: list[tuple] = []
+    seen: list[list] = []
+    column.reordered.connect(seen.append)
+    for card in column.cards:
+        card.launch_account_requested.connect(lambda u, d: launched.append((u, d)))
+
+    card = column.cards[0]
+    _drag(qapp, column, card, _row_height(column), target=card)
+
+    assert seen == [], "the body must not reorder — the grip is the only drag source"
+    assert launched == [], "and a sweep is still not a click"
+    assert column.cards[0] is card
+    assert host
+
+
 def test_a_click_that_never_moves_still_launches(qapp):
-    """The other half of the same rule: waiting for the release must not cost the click."""
+    """The other half of the same rule: waiting for the release must not cost the click.
+
+    Aimed at the body, which is where a launch comes from. The grip is not a button and a
+    click on it launches nothing — see ``test_card_drag_feedback.py``.
+    """
     host, column = _column(qapp)
     launched: list[tuple] = []
     card = column.cards[0]
     card.launch_account_requested.connect(lambda u, d: launched.append((u, d)))
 
-    _drag(qapp, column, card, 0)
+    _drag(qapp, column, card, 0, target=card)
 
     assert launched == [("one@example.com", "One")]
     assert host
@@ -154,8 +201,9 @@ def test_the_add_card_is_not_draggable(qapp):
     seen: list[list] = []
     column.reordered.connect(seen.append)
 
-    _drag(qapp, column, add_card, -_row_height(column) * 2)
+    _drag(qapp, column, add_card, -_row_height(column) * 2, target=add_card)
 
+    assert add_card.grip is None if hasattr(add_card, "grip") else True
     assert add_card not in column.cards
     assert seen == []
     assert host

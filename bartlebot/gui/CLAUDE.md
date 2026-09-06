@@ -114,6 +114,17 @@ loose. `test_building_a_row_never_shows_a_parentless_widget` is the guard, and t
 way it catches it is worth reusing — an event filter on the `QApplication` recording
 every `Show` delivered to a widget whose `parent()` is `None`.
 
+The inverse trap sits one line away: **a hidden widget in a `QBoxLayout` reserves no
+space at all.** The layout skips it outright rather than laying out a zero-size cell,
+so a spacer or placeholder that is parented but never shown holds nothing open and
+every widget after it lands a row early — with the layout, the size hints and the
+geometry all internally consistent about the wrong answer, which is why it reads as an
+arithmetic bug rather than a visibility one. `CardColumn._begin_drag` is the case:
+the placeholder standing in for a lifted card has to be `show()`n by hand, after the
+parent it was constructed with. (`setRetainSizeWhenHidden` is the other way, and is what
+the launch cards' hover-revealed buttons use — but it only applies to a widget the layout
+is still asked about.)
+
 
 ## qasync + Python 3.13 task re-entrancy rule
 

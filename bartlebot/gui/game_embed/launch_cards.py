@@ -23,9 +23,17 @@ tile whose primary action is "launch". Nothing on the card is a form control: a 
 on a surface that launches on click is a hole in the hit target, and one that would have
 to swallow its own clicks to be safe.
 
-On *release*, and only for a pointer that stayed put: the column these sit in reorders by
-drag (``CardColumn``), and a card that activated on press launched four game clients on
-the first pixel of every one.
+On *release*, and only for a pointer that stayed put. A card that activated on press
+launched four game clients on the first pixel of any wobble, and a press-and-sweep across
+the face of a card -- what someone who has not found the grip yet will try -- has to end
+in nothing rather than in a launch on whichever card the pointer came to rest over.
+
+Reordering is a separate gesture on a separate target: ``GripHandle``, the six dots at the
+head of every card. It is the *only* drag source, and that is what makes the cursor
+honest. The cursor is how a surface says "this drags", and it cannot say that over a whole
+card whose primary verb is launch -- so the announcement was given a place of its own to
+live, twelve pixels wide, where an open hand is the truth. ``CardColumn`` owns what a drag
+then does, order being a fact about the column rather than about any card.
 
 TWO SURFACES, ONE CARD
 
@@ -81,8 +89,17 @@ from collections.abc import Callable
 from typing import NamedTuple
 
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal
-from PyQt6.QtGui import QFontMetrics
-from PyQt6.QtWidgets import QApplication, QHBoxLayout, QLabel, QSizePolicy, QToolButton, QVBoxLayout, QWidget
+from PyQt6.QtGui import QColor, QFontMetrics
+from PyQt6.QtWidgets import (
+    QApplication,
+    QGraphicsDropShadowEffect,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from bartlebot import streamer_mode
 from bartlebot.credentials import CredentialStore
@@ -113,6 +130,19 @@ _SEP = " · "
 _MORE_GAP = "  "
 
 _EDIT_BTN_SIZE = 22
+
+# The grip is drawn smaller than an action icon and sits at the head of the card rather
+# than in the trailing cluster. Both say the same thing: it is not a verb. The buttons on
+# the right *do* something to the account or the profile; the grip is a place to take hold
+# of the card, which is why every list that has one -- Notion, Linear, Jira, this app's own
+# duel strategy editor -- puts it in front of the content instead of among the actions.
+_GRIP_SIZE = 12
+
+# How far the lifted card's shadow spreads, and how far it is offset down. Small numbers
+# deliberately: this is a card rising a few pixels off a column, not a modal over a page.
+_DRAG_SHADOW_BLUR = 16
+_DRAG_SHADOW_OFFSET = 3
+_DRAG_SHADOW_ALPHA = 90
 
 # Width of an account card's colour stripe. Wide enough to be a colour rather than a
 # line at a glance down the column, narrow enough that the card still reads as a card
@@ -318,6 +348,59 @@ def _tooltip_for(reason: FitProblem | str | None) -> str:
 # ---------------------------------------------------------------------------
 
 
+class GripHandle(ThemedMixin, QLabel):
+    """The six dots at the head of a card: the one place a press starts a reorder.
+
+    The whole card used to be the drag source, which worked and told nobody. Nothing on
+    the card said it could be dragged, and nothing could be made to say it: the cursor is
+    the usual announcement, and a card whose primary verb is *launch* cannot wear an open
+    hand over its whole face without advertising the wrong gesture. So the announcement
+    got somewhere to live. Over the grip the cursor opens, and everywhere else on the card
+    it stays the pointing hand that means "this launches".
+
+    That is also why the grip is now the *only* drag source rather than a hint at a card
+    that drags everywhere. A cursor that changes on one twelve-pixel square of a widget
+    that is draggable all over is a smaller lie than no cursor at all, but it is still a
+    lie, and the honest version costs the user nothing they can see. ``duel_strategy_editor``
+    reached the same place from the other direction -- there it was a text box that had to
+    keep its own mouse-down.
+
+    Presses are **accepted**, not passed on. A QLabel ignores them by default and Qt
+    re-sends what a child ignores to its parent, which would hand the press to the card --
+    and, more to the point, would send every subsequent mouse *move* to the card as well.
+    The moves are what ``CardColumn`` turns into a reorder, so a grip that does not keep
+    the press is a grip that never sees the drag.
+    """
+
+    def __init__(self, tooltip: str = "Drag to reorder", parent=None) -> None:
+        super().__init__(parent)
+        self.setFixedSize(_GRIP_SIZE, _GRIP_SIZE)
+        self.setCursor(Qt.CursorShape.OpenHandCursor)
+        self.setToolTip(tooltip)
+        # Held while hidden, for the same reason the action buttons are: revealing the
+        # grip on hover would otherwise shift the name right, which moves the card under
+        # the pointer that just revealed it.
+        policy = self.sizePolicy()
+        policy.setRetainSizeWhenHidden(True)
+        self.setSizePolicy(policy)
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        # svg_pixmap bakes the tint in at render time, so the dots are re-rendered on
+        # every theme pass rather than set once in __init__.
+        self.setPixmap(svg_pixmap("grip", _GRIP_SIZE, tint=THEME.text_subtle))
+
+    def set_held(self, held: bool) -> None:
+        """Close the hand while the card this grip belongs to is being dragged."""
+        self.setCursor(Qt.CursorShape.ClosedHandCursor if held else Qt.CursorShape.OpenHandCursor)
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+
 class _LaunchCard(ThemedMixin, QWidget):
     """Shared frame, hover behaviour and click-to-launch for both card types.
 
@@ -353,6 +436,13 @@ class _LaunchCard(ThemedMixin, QWidget):
         # handlers and the subclasses both reach for it by name.
         self._action_btns: list[tuple[QToolButton, str]] = []
         self._edit_btn: QToolButton | None = None
+        # The drag handle, and whether the column currently has this card off the layout
+        # and following the pointer. ``_dragging`` is a styling state exactly like
+        # ``_hovered`` -- one flag that picks which palette apply_theme_styles uses -- and
+        # it is set by CardColumn, which is the only thing that knows a drag is happening.
+        self._grip: GripHandle | None = None
+        self._dragging = False
+        self._shadow: QGraphicsDropShadowEffect | None = None
         # Where the left button went down, and whether it has travelled since. A card
         # activates on release and only if the pointer stayed put, so that the drag its
         # column turns a press-and-move into cannot also launch what it was reordering.
@@ -448,6 +538,12 @@ class _LaunchCard(ThemedMixin, QWidget):
         return "" if self._detail_lbl is None else self._detail_lbl.text()
 
     def apply_theme_styles(self) -> None:
+        if self._dragging:
+            # Ahead of the refusal branch: a card that cannot launch can still be
+            # reordered, and while it is in the air what the user needs to see is which
+            # card they are holding, not what it would refuse to do if they let go.
+            self._apply_dragging_styles()
+            return
         if self._unavailable is not None and self.refuses_when_unfit:
             # Fill and text both move, because either alone reads as enabled — the same
             # finding as the app-wide disabled palette (tests/test_disabled_affordance.py).
@@ -472,6 +568,92 @@ class _LaunchCard(ThemedMixin, QWidget):
             if lbl is not None:
                 lbl.setStyleSheet(f"color: {color}; font-size: 10px; background: transparent;")
         self._restyle_edit_button()
+
+    def _apply_dragging_styles(self) -> None:
+        """The held card: filled, outlined in the accent, and still wearing its stripe.
+
+        The border stays one pixel wide. Widening it to two is the obvious way to say
+        "picked up" and it moves every label in the card in by a pixel at the moment the
+        drag starts, which reads as the card twitching in the user's hand. The fill and
+        the shadow carry the state instead, and neither touches the content box.
+
+        The stripe survives because it names the account, not a state -- the same reason
+        the refusal palette drops it and this one does not. Losing it here would recolour
+        the one card whose colour is being matched against the pills beside it, at exactly
+        the moment the user is looking at where it lands.
+        """
+        stripe = (
+            ""
+            if self._stripe_key is None
+            else f" border-left: {STRIPE_WIDTH}px solid {account_accent(self._stripe_key)};"
+        )
+        self.setStyleSheet(
+            f"#LaunchCard {{ background: {THEME.node_fill_selected}; "
+            f"border: 1px solid {THEME.accent}; border-radius: 4px;{stripe} }}"
+        )
+        if self._name_lbl is not None:
+            self._name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
+        for lbl, color in ((self._detail_lbl, THEME.text_muted), (self._quiet_lbl, THEME.text_subtle)):
+            if lbl is not None:
+                lbl.setStyleSheet(f"color: {color}; font-size: 10px; background: transparent;")
+        self._restyle_edit_button()
+
+    @property
+    def is_dragging(self) -> bool:
+        """Whether the column currently has this card lifted out of the layout."""
+        return self._dragging
+
+    @property
+    def grip(self) -> GripHandle | None:
+        """This card's drag handle, or None if it was built without one.
+
+        Public because the column installs its event filter on it: the drag belongs to
+        ``CardColumn`` -- order is a fact about the column, not about any card -- and the
+        grip is the card's half of that arrangement.
+        """
+        return self._grip
+
+    def set_dragging(self, dragging: bool) -> None:
+        """Show or clear the picked-up state. Called by the column, both ways.
+
+        The shadow is a ``QGraphicsDropShadowEffect`` attached only for the duration of
+        the drag rather than kept and toggled. An effect on a widget forces Qt to render
+        that widget through an offscreen surface for as long as it is set, and these cards
+        redraw on every hover of a five-card column; paying for that permanently to get an
+        elevation that is visible for the two seconds of a drag is the wrong trade.
+
+        ``setGraphicsEffect(None)`` deletes the effect that was there, so the reference is
+        dropped in the same breath -- keeping it would leave a dangling one behind.
+        """
+        if dragging == self._dragging:
+            return
+        self._dragging = dragging
+        if dragging:
+            shadow = QGraphicsDropShadowEffect(self)
+            shadow.setBlurRadius(_DRAG_SHADOW_BLUR)
+            shadow.setOffset(0, _DRAG_SHADOW_OFFSET)
+            shadow.setColor(QColor(0, 0, 0, _DRAG_SHADOW_ALPHA))
+            self.setGraphicsEffect(shadow)
+            self._shadow = shadow
+        else:
+            self.setGraphicsEffect(None)
+            self._shadow = None
+        if self._grip is not None:
+            self._grip.set_held(dragging)
+        self.refresh_theme_styles()
+
+    def _make_grip(self, what: str) -> GripHandle:
+        """This card's drag handle, named after what a drag would reorder.
+
+        Revealed and hidden with the action buttons, and pinned open on the same surface
+        they are pinned open on. It is the same judgement: on the launch screen the card's
+        job is to be picked out by name and everything else defers to that, and in the
+        Game tab the card *is* the management surface, so the things you can do to it are
+        on its face.
+        """
+        self._grip = GripHandle(f"Drag to reorder {what}", self)
+        self._grip.setVisible(self._manage)
+        return self._grip
 
     def _restyle_edit_button(self) -> None:
         """Re-render every action icon in the current theme.
@@ -620,6 +802,8 @@ class _LaunchCard(ThemedMixin, QWidget):
             return
         for button, _icon in self._action_btns:
             button.setVisible(visible)
+        if self._grip is not None:
+            self._grip.setVisible(visible)
 
     def enterEvent(self, event) -> None:
         self._hovered = True
@@ -645,12 +829,14 @@ class _LaunchCard(ThemedMixin, QWidget):
     def mouseReleaseEvent(self, event) -> None:
         """Activate, if the pointer never left the card and never really moved.
 
-        On release rather than on press, and only for a pointer that stayed put, because
-        the card's own column turns a press-and-drag into a reorder (see
-        ``CardColumn.eventFilter``). Activating on press fired on the first pixel of every
-        drag — launching four game clients, or opening an editor, on top of the reorder
-        the user was actually performing. Qt's own buttons activate on release for the
-        same reason.
+        On release rather than on press, and only for a pointer that stayed put. Reorders
+        start on the grip now (``GripHandle``), so the body no longer competes with a
+        drag — but the stayed-put test earns its keep twice over regardless. It is what
+        makes a press-and-sweep across the card do *nothing* rather than launch on the
+        far side of it, which is the behaviour a user who has not found the grip yet will
+        try first; and activating on press would fire on the first pixel of any pointer
+        wobble, launching four game clients on a hand that had not decided yet. Qt's own
+        buttons activate on release for the same reason.
 
         The whole card is the hit target, so a refusing one has to swallow its own clicks:
         there is no QPushButton here whose disabled state would do it. A card in the Game
@@ -748,6 +934,7 @@ class AccountCard(_LaunchCard):
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(6)
+        header.addWidget(self._make_grip("accounts"), 0, Qt.AlignmentFlag.AlignVCenter)
         header.addWidget(self._make_name_label(self._display_name), 0)
         if self._roster:
             header.addWidget(NeutralPill(str(len(self._roster))), 0, Qt.AlignmentFlag.AlignVCenter)
@@ -862,6 +1049,7 @@ class ProfileCard(_LaunchCard):
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(6)
+        header.addWidget(self._make_grip("launch profiles"), 0, Qt.AlignmentFlag.AlignVCenter)
         header.addWidget(self._make_name_label(self._name), 0)
         if (resolution := resolution_label(self._profile)) is not None:
             header.addWidget(NeutralPill(resolution), 0, Qt.AlignmentFlag.AlignVCenter)
