@@ -20,7 +20,7 @@ import pytest
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
 
 from bartlebot.gui.game_embed.game_view import _GamePlaceholder
-from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
+from bartlebot.gui.game_embed.launch_cards import AccountCard, AddCard, ProfileCard
 
 ACCOUNT = {"username": "someone@example.com", "alias": "Main"}
 PROFILE = {"name": "Farm Team", "accounts": ["someone@example.com"], "resolution": [1280, 720]}
@@ -55,7 +55,9 @@ def _column(qapp, cards: list[QWidget], height: int, width: int = 300):
     the tree, and a caller that drops it takes every widget under it with it.
     """
     area = _GamePlaceholder._make_scroll_area()
-    _GamePlaceholder._rebuild_list(area, cards, empty_hint="(No accounts)")
+    # A real column, Add card and all: it is the last row of every one of them, so the
+    # invariant these tests hold has to hold with it in there.
+    _GamePlaceholder._rebuild_list(area, cards, AddCard("Add account"), "An account is one login.")
     host = QWidget()
     QVBoxLayout(host).addWidget(area)
     host.resize(width, height)
@@ -67,22 +69,30 @@ def _column(qapp, cards: list[QWidget], height: int, width: int = 300):
     return host, area
 
 
-def _drawn_height(area, cards: list[QWidget]) -> int:
-    """What the cards occupy on screen, spacing included -- not what they asked for."""
+def _drawn_height(area) -> int:
+    """What the column occupies on screen, spacing included -- not what it asked for.
+
+    Read off the layout rather than off the cards handed in, so the Add card and the
+    empty column's hint are counted too: they are part of what the viewport has to hold.
+    """
     layout = area.widget().layout()
-    return sum(card.height() for card in cards) + layout.spacing() * max(0, len(cards) - 1)
+    widgets = [layout.itemAt(i).widget() for i in range(layout.count())]
+    widgets = [w for w in widgets if w is not None]
+    return sum(w.height() for w in widgets) + layout.spacing() * max(0, len(widgets) - 1)
 
 
 @pytest.mark.parametrize("kind", ["account", "profile"])
+# Tall enough that three greyed cards and the Add card below them still fit -- this test
+# is about a column with room to spare, and each height has to actually be one.
 @pytest.mark.parametrize("count", [1, 2, 3])
-@pytest.mark.parametrize("column_height", [300, 500, 900])
+@pytest.mark.parametrize("column_height", [400, 500, 900])
 def test_a_column_with_room_to_spare_shows_no_scroll_bar(qapp, kind, count, column_height):
     """The bug itself: greyed cards that fit still raised a bar."""
     cards = _cards(kind, count, REASON)
     _host, area = _column(qapp, cards, column_height)
 
-    drawn = _drawn_height(area, cards)
-    assert drawn <= area.viewport().height(), "test needs a column the cards fit inside"
+    drawn = _drawn_height(area)
+    assert drawn <= area.viewport().height(), "test needs a column its rows fit inside"
     assert not area.verticalScrollBar().isVisible(), (
         f"{count} greyed {kind} cards draw {drawn}px in a {area.viewport().height()}px "
         f"viewport, yet the column asked for {area.widget().height()}px"
@@ -96,7 +106,7 @@ def test_a_column_that_overflows_still_scrolls(qapp, kind, reason):
     cards = _cards(kind, 20, reason)
     _host, area = _column(qapp, cards, 300)
 
-    drawn = _drawn_height(area, cards)
+    drawn = _drawn_height(area)
     assert drawn > area.viewport().height(), "test needs more cards than the column holds"
     bar = area.verticalScrollBar()
     assert bar.isVisible()
@@ -114,7 +124,7 @@ def test_the_bar_appears_exactly_when_the_cards_overflow(qapp, kind, reason, cou
     cards = _cards(kind, count, reason)
     _host, area = _column(qapp, cards, column_height)
 
-    overflows = _drawn_height(area, cards) > area.viewport().height()
+    overflows = _drawn_height(area) > area.viewport().height()
     assert area.verticalScrollBar().isVisible() is overflows
 
 
@@ -132,7 +142,7 @@ def test_a_narrow_column_wraps_the_refusal_without_inventing_scroll(qapp, width)
     cards = _cards("profile", 2, REASON)
     _host, area = _column(qapp, cards, 900, width=width)
 
-    drawn = _drawn_height(area, cards)
+    drawn = _drawn_height(area)
     assert drawn <= area.viewport().height()
     assert not area.verticalScrollBar().isVisible()
 

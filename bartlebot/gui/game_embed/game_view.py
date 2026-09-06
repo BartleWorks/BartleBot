@@ -25,7 +25,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.game_sizing import FitProblem, grid_for, required_game_area
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile, PendingTile
-from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
+from bartlebot.gui.game_embed.launch_cards import AccountCard, AddCard, ProfileCard
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
@@ -42,6 +42,14 @@ _OVERLAY_BTN_SIZE = 34
 _OVERLAY_BTN_MARGIN = 4
 
 _LOGO_SIZE = 160  # diameter of the circular logo widget
+
+# What an empty column says beneath its Add card. The Add card is the empty state -- it
+# replaced "(No accounts)" outright, and says more than that hint did -- but a first-run
+# user does not yet know what a launch profile *is*, so one line of what the thing is
+# stays, and only while the column is empty. Once there are cards, they are the
+# explanation.
+EMPTY_ACCOUNTS_HINT = "An account is one Wizard101 login. Add one and it launches from here in a click."
+EMPTY_PROFILES_HINT = "A launch profile starts several accounts at once, in the order you give them."
 
 
 def _size(pair: tuple[int, int]) -> str:
@@ -174,6 +182,8 @@ class _GamePlaceholder(ThemedMixin, QWidget):
     launch_account_requested = pyqtSignal(str, str)
     launch_profile_requested = pyqtSignal(str)  # (profile_name)
     edit_profile_requested = pyqtSignal(str)  # (profile_name)
+    add_account_requested = pyqtSignal()
+    add_profile_requested = pyqtSignal()
     manage_accounts_requested = pyqtSignal()
 
     def __init__(self, parent=None) -> None:
@@ -332,7 +342,9 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             card = AccountCard(account, self._characters_for(account.get("username", "")), accounts)
             card.launch_account_requested.connect(self.launch_account_requested)
             account_cards.append(card)
-        self._rebuild_list(self._accounts_area, account_cards, empty_hint="(No accounts)")
+        add_account_card = AddCard("Add account")
+        add_account_card.add_requested.connect(self.add_account_requested)
+        self._rebuild_list(self._accounts_area, account_cards, add_account_card, EMPTY_ACCOUNTS_HINT)
 
         profile_cards: list[QWidget] = []
         for profile in sm.launch_profiles:
@@ -340,10 +352,17 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             card.launch_profile_requested.connect(self.launch_profile_requested)
             card.edit_profile_requested.connect(self.edit_profile_requested)
             profile_cards.append(card)
-        self._rebuild_list(self._profiles_area, profile_cards, empty_hint="(No profiles)")
+        add_profile_card = AddCard("Add launch profile")
+        add_profile_card.add_requested.connect(self.add_profile_requested)
+        self._rebuild_list(self._profiles_area, profile_cards, add_profile_card, EMPTY_PROFILES_HINT)
 
         # Assigned only after _rebuild_list has deleteLater'd the previous cards, so
         # nothing here can be a reference to a widget that is on its way out.
+        #
+        # The Add cards are deliberately absent. refresh_fit walks this list and calls
+        # set_unavailable on every member; an Add card launches nothing and has no
+        # resolution to judge, so greying it out would say a screen too small for the game
+        # is also too small to type a username into.
         self._launch_cards = [*account_cards, *profile_cards]
         self.refresh_fit()
 
@@ -426,7 +445,23 @@ class _GamePlaceholder(ThemedMixin, QWidget):
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _rebuild_list(area: QScrollArea, cards: list[QWidget], empty_hint: str) -> None:
+    def _rebuild_list(
+        area: QScrollArea,
+        cards: list[QWidget],
+        add_card: QWidget | None = None,
+        empty_hint: str = "",
+    ) -> None:
+        """Fill a column with *cards*, then *add_card* as its last row.
+
+        The Add card is always last and is never one of *cards*: it is the column's
+        terminator rather than a member of the ordered list, so nothing is dropped after
+        it and the fit pass never sees it (#195).
+
+        *empty_hint* is drawn beneath it only while there are no cards at all, where it is
+        the one line saying what the thing being added is. It is not the old
+        "(No accounts)" — a lone Add card already says the column is empty, and says
+        what to do about it as well.
+        """
         container = area.widget()
         layout = container.layout()
 
@@ -436,25 +471,25 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             if item.widget():
                 item.widget().deleteLater()
 
-        if not cards:
+        # Expanding across, so a card fills the column; height-for-width down, so the
+        # column asks each card how tall it is *at the width it got*. Fixed vertically
+        # is what this used to be, and it pinned both the card's minimum and its
+        # maximum to a sizeHint that a wrapped refusal line computes at some unrelated
+        # width -- with setWidgetResizable the scroll area then could not be shorter
+        # than that sum, which is the scroll bar over empty space in #191.
+        for card in [*cards, *([add_card] if add_card is not None else [])]:
+            policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+            policy.setHeightForWidth(True)
+            card.setSizePolicy(policy)
+            layout.addWidget(card)
+
+        if not cards and empty_hint:
             # ThemedTextLabel because _rebuild_list is static and the hints it makes
             # are replaced on every refresh — there is nothing to hold a reference on.
             hint = ThemedTextLabel(empty_hint, css="font-size: 11px;")
             hint.setWordWrap(True)
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(hint)
-        else:
-            # Expanding across, so a card fills the column; height-for-width down, so the
-            # column asks each card how tall it is *at the width it got*. Fixed vertically
-            # is what this used to be, and it pinned both the card's minimum and its
-            # maximum to a sizeHint that a wrapped refusal line computes at some unrelated
-            # width -- with setWidgetResizable the scroll area then could not be shorter
-            # than that sum, which is the scroll bar over empty space in #191.
-            for card in cards:
-                policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-                policy.setHeightForWidth(True)
-                card.setSizePolicy(policy)
-                layout.addWidget(card)
 
         layout.addStretch()
 
@@ -471,6 +506,8 @@ class GameView(ThemedMixin, QWidget):
     launch_account_requested = pyqtSignal(str, str)
     launch_profile_requested = pyqtSignal(str)
     edit_profile_requested = pyqtSignal(str)
+    add_account_requested = pyqtSignal()
+    add_profile_requested = pyqtSignal()
     manage_accounts_requested = pyqtSignal()
     game_embed_settings_requested = pyqtSignal()
     # A failed launch's tile was clicked away. Carries the account, not the slot: a pending
@@ -507,6 +544,8 @@ class GameView(ThemedMixin, QWidget):
         self._placeholder.launch_account_requested.connect(self.launch_account_requested)
         self._placeholder.launch_profile_requested.connect(self.launch_profile_requested)
         self._placeholder.edit_profile_requested.connect(self.edit_profile_requested)
+        self._placeholder.add_account_requested.connect(self.add_account_requested)
+        self._placeholder.add_profile_requested.connect(self.add_profile_requested)
         self._placeholder.manage_accounts_requested.connect(self.manage_accounts_requested)
         self._placeholder.show()
 

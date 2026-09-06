@@ -149,6 +149,41 @@ class _AccountDialog(QDialog):
         return self._password_edit.text()
 
 
+def add_account(parent: QWidget | None = None) -> bool:
+    """Open an empty account editor; store the credential and the record if accepted.
+
+    A module function for the same reason as ``edit_launch_profile``: the Add affordance
+    is a card at the foot of the launch screen's Accounts column (#195) as well as a
+    button under the Game tab's list, and the card must not have to build a Settings
+    dialog to reach the one editor it wants.
+
+    Returns whether an account was written, which is every caller's cue to redraw
+    whatever it draws accounts with. False covers all four ways nothing was saved: the
+    editor cancelled, an empty username, an empty password, and a duplicate.
+
+    Must be called from a synchronous Qt slot -- ``exec()`` re-enters Qt's event loop,
+    which Python 3.13 forbids from inside a running asyncio task. See CLAUDE.md.
+    """
+    dlg = _AccountDialog(parent=parent)
+    if dlg.exec() != QDialog.DialogCode.Accepted:
+        return False
+    username = dlg.username
+    if not username:
+        QMessageBox.warning(parent, "Invalid", "Username cannot be empty.")
+        return False
+    if not dlg.password:
+        QMessageBox.warning(parent, "Invalid", "Password cannot be empty for a new account.")
+        return False
+    accounts = SettingsManager.instance().accounts
+    if any(a["username"] == username for a in accounts):
+        QMessageBox.warning(parent, "Duplicate", f"Account '{username}' already exists.")
+        return False
+    CredentialStore.store(username, dlg.password)
+    accounts.append({"username": username, "alias": dlg.alias or ""})
+    SettingsManager.instance().accounts = accounts
+    return True
+
+
 class _ProfileDialog(QDialog):
     """Dialog for adding or editing a launch profile.
 
@@ -351,6 +386,38 @@ class _ProfileDialog(QDialog):
     @property
     def resolution(self) -> tuple[int, int] | None:
         return self._res_combo.currentData()
+
+
+def add_launch_profile(
+    parent: QWidget | None = None,
+    live_game_area: tuple[int, int] | None = None,
+) -> bool:
+    """Open an empty profile editor; save the profile if accepted.
+
+    The counterpart to :func:`add_account`, and lifted out of ``AccountsTab`` for the
+    same reason -- see that function, and ``edit_launch_profile`` below for what
+    *live_game_area* is for.
+
+    Returns whether a profile was written. False covers the three ways nothing was:
+    the editor cancelled, an empty name, and a duplicate.
+    """
+    dlg = _ProfileDialog(parent=parent, live_game_area=live_game_area)
+    if dlg.exec() != QDialog.DialogCode.Accepted:
+        return False
+    name = dlg.name
+    if not name:
+        QMessageBox.warning(parent, "Invalid", "Profile name cannot be empty.")
+        return False
+    profiles = SettingsManager.instance().launch_profiles
+    if any(p["name"] == name for p in profiles):
+        QMessageBox.warning(parent, "Duplicate", f"Profile '{name}' already exists.")
+        return False
+    profile: dict = {"name": name, "accounts": dlg.selected_usernames}
+    if dlg.resolution is not None:
+        profile["resolution"] = list(dlg.resolution)
+    profiles.append(profile)
+    SettingsManager.instance().launch_profiles = profiles
+    return True
 
 
 def edit_launch_profile(
@@ -568,25 +635,8 @@ class AccountsTab(QWidget):
         self._delete_btn.setEnabled(has_sel)
 
     def _on_add(self) -> None:
-        dlg = _AccountDialog(parent=self)
-        if dlg.exec() != QDialog.DialogCode.Accepted:
-            return
-        username = dlg.username
-        if not username:
-            QMessageBox.warning(self, "Invalid", "Username cannot be empty.")
-            return
-        password = dlg.password
-        if not password:
-            QMessageBox.warning(self, "Invalid", "Password cannot be empty for a new account.")
-            return
-        accounts = SettingsManager.instance().accounts
-        if any(a["username"] == username for a in accounts):
-            QMessageBox.warning(self, "Duplicate", f"Account '{username}' already exists.")
-            return
-        CredentialStore.store(username, password)
-        accounts.append({"username": username, "alias": dlg.alias or ""})
-        SettingsManager.instance().accounts = accounts
-        self._refresh()
+        if add_account(self):
+            self._refresh()
 
     def _on_edit(self) -> None:
         row = self._list.currentRow()
@@ -659,23 +709,8 @@ class AccountsTab(QWidget):
         self._profile_delete_btn.setEnabled(has_sel)
 
     def _on_profile_add(self) -> None:
-        dlg = _ProfileDialog(parent=self, live_game_area=self._live_game_area)
-        if dlg.exec() != QDialog.DialogCode.Accepted:
-            return
-        name = dlg.name
-        if not name:
-            QMessageBox.warning(self, "Invalid", "Profile name cannot be empty.")
-            return
-        profiles = SettingsManager.instance().launch_profiles
-        if any(p["name"] == name for p in profiles):
-            QMessageBox.warning(self, "Duplicate", f"Profile '{name}' already exists.")
-            return
-        profile: dict = {"name": name, "accounts": dlg.selected_usernames}
-        if dlg.resolution is not None:
-            profile["resolution"] = list(dlg.resolution)
-        profiles.append(profile)
-        SettingsManager.instance().launch_profiles = profiles
-        self._refresh_profiles()
+        if add_launch_profile(self, self._live_game_area):
+            self._refresh_profiles()
 
     def _on_profile_edit(self) -> None:
         row = self._profile_list.currentRow()

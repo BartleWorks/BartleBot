@@ -245,6 +245,10 @@ class MainWindow(QMainWindow):
         # _open_settings, which built the whole Settings dialog to reach it and left it
         # standing behind — see _edit_launch_profile.
         self._game_view_panel.edit_profile_requested.connect(self._edit_launch_profile)
+        # The Add card at the foot of each column, which goes to the same editor the Game
+        # tab's Add button does and nowhere near the Settings dialog around it (#195).
+        self._game_view_panel.add_account_requested.connect(self._add_account)
+        self._game_view_panel.add_profile_requested.connect(self._add_launch_profile)
 
         # Top row: left sidebar | game view | right sidebar
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -610,6 +614,36 @@ class MainWindow(QMainWindow):
         # Unconditional, as in _open_settings: the cards are rebuilt whether or not the
         # profile changed, because the editor is modal and the screen behind it has been
         # sitting on cards nothing has re-judged since it opened.
+        self._game_view_panel.refresh_launch_lists()
+
+    def _add_account(self) -> None:
+        """Add an account, from the Add card at the foot of the Accounts column.
+
+        Same shape as _edit_launch_profile, and refreshes for the same reason: the editor
+        is modal, so the launch screen behind it has been sitting on cards nothing has
+        re-judged since it opened.
+
+        Called from a synchronous Qt slot: add_account runs exec(), which Python 3.13
+        forbids from inside a running asyncio task — see CLAUDE.md.
+        """
+        from bartlebot.gui.settings.accounts_tab import add_account
+
+        if add_account(self):
+            self._rebuild_launch_menu()
+            self.refresh_minimum_size()
+        self._game_view_panel.refresh_launch_lists()
+
+    def _add_launch_profile(self) -> None:
+        """Add a launch profile, from the Add card at the foot of the Profiles column.
+
+        See _add_account; the live game area goes through so the editor's resolution
+        picker judges a launch the same way the screen behind it does.
+        """
+        from bartlebot.gui.settings.accounts_tab import add_launch_profile
+
+        if add_launch_profile(self, self.live_game_area):
+            self._rebuild_launch_menu()
+            self.refresh_minimum_size()
         self._game_view_panel.refresh_launch_lists()
 
     def _open_settings(self, tab_name: str = "general") -> None:
