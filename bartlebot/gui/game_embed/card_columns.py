@@ -49,7 +49,9 @@ their own. The gesture is the same one; what was missing was every signal around
   time with nothing at all happening in between;
 - displaced cards **sliding** into their new slots rather than teleporting into them;
 - **auto-scroll** at the ends of the viewport, without which the reorderable part of a
-  long column is only whatever was on screen when the drag began.
+  long column is only whatever was on screen when the drag began;
+- a **settle** the rest of the gesture waits for, so that a drop is the one moment nothing
+  else is happening -- see ``_end_drag``.
 
 That is the arrangement Trello, Linear, the macOS Dock and the iOS home screen all
 converge on, and each piece is doing separate work: the grip answers *can I*, the lift
@@ -348,6 +350,10 @@ class CardColumn(QWidget):
         # Where the pointer was at the last move, so an auto-scroll tick -- which is not a
         # mouse event and carries no position of its own -- can re-place the card.
         self._last_global = QPoint()
+        # The card that has been let go and is still flying into its slot. The gesture is
+        # not over while this is set: the card is still out of the layout, the placeholder
+        # is still holding its hole, and the new order has not been reported yet.
+        self._settling: QWidget | None = None
         # Exactly balanced against restoreOverrideCursor; see _release_cursor.
         self._cursor_pushed = False
         self._autoscroll = QTimer(self)
@@ -430,6 +436,14 @@ class CardColumn(QWidget):
         # closed-hand cursor over an app that is no longer dragging anything.
         self._cancel_drag()
 
+        # Read before the rows go and put back after they return. Emptying the layout
+        # collapses the scroll range to nothing, and a scroll bar whose range collapses
+        # loses its value on the way: the column would come back scrolled to the top.
+        # That is invisible on a short column and, on a long one, is the whole content
+        # jumping under the pointer at the end of every drag that auto-scrolled to reach
+        # its slot -- the drag ends by showing the user somewhere they did not drop it.
+        scrolled_to = self._area.verticalScrollBar().value()
+
         layout = self._rows_layout()
         while layout.count() > 0:
             item = layout.takeAt(0)
@@ -467,6 +481,10 @@ class CardColumn(QWidget):
             layout.addWidget(hint)
 
         layout.addStretch()
+        # Activated first, so the bar has its range back before the value is handed to it
+        # -- setValue against a range that is still zero is silently clamped to zero.
+        layout.activate()
+        self._area.verticalScrollBar().setValue(scrolled_to)
 
     # ------------------------------------------------------------------
     # Internal
@@ -510,6 +528,13 @@ class CardColumn(QWidget):
             return super().eventFilter(obj, event)
         kind = event.type()
         if kind == event.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
+            if self._settling is not None:
+                # A previous drop is still in the air: its card is out of the layout and
+                # its placeholder still holds a slot, so a second drag started now would
+                # be measured against a column that is one row out. The window is the
+                # hundred milliseconds of the settle, and losing a press inside it costs
+                # the user one grab.
+                return super().eventFilter(obj, event)
             self._press_card = card
             self._press_pos = event.globalPosition().toPoint()
             # Measured against the card, not the grip: the card is what travels, so where
@@ -526,7 +551,6 @@ class CardColumn(QWidget):
         elif kind == event.Type.MouseButtonRelease and self._press_card is card:
             if self._dragging:
                 self._end_drag(card)
-                self._commit_order()
             else:
                 self._press_card = None
         return super().eventFilter(obj, event)
@@ -577,30 +601,70 @@ class CardColumn(QWidget):
         self._autoscroll.start()
 
     def _end_drag(self, card: QWidget) -> None:
-        """Put *card* back into the slot its placeholder is holding, and settle it there.
+        """Fly *card* from where it was let go into the slot its placeholder is holding.
 
-        Everything that could outlive the gesture is undone here rather than in the
-        caller -- the cursor, the timer, the animations, the lifted state -- because
-        ``_commit_order`` runs next and the rebuild it provokes destroys these cards
-        mid-sentence. A teardown that ran after it would be reaching into freed widgets.
+        The gesture is not over when the button comes up, and treating it as though it
+        were is what made a drop jitter. The card used to be handed straight back to the
+        layout and only *then* animated home from where it had been dropped -- so for the
+        length of that animation two things were setting its position: the slide, and a
+        layout that had just been told this widget was one of its rows again. Every
+        deferred layout pass in that window snapped the card to its slot and the slide
+        picked it up from there, which is the twitch. The order was reported in the same
+        breath, and the rebuild that answers it tore the cards down mid-flight -- so the
+        card also jumped whatever distance it had left, and the column it landed in was a
+        different set of widgets: the flash.
 
-        The settle is the one animation that is usually not seen: when the order changed,
-        the rebuild lands on top of it within the frame. It is there for the drag that put
-        everything back where it started, which reports nothing and rebuilds nothing, and
-        where a card snapping the last few pixels home would be the only ungraceful moment
-        in the gesture.
+        So nothing structural happens here. The card stays lifted, the placeholder keeps
+        holding its slot open, and the only thing moving is the card. What the drop is
+        *worth* -- the layout swap, the lifted state coming off, the new order going out
+        -- waits for ``_finish_drop`` at the far end of the flight, by which point the
+        column is already drawn exactly as the rebuild will redraw it, and the rebuild is
+        a replacement of identical rows rather than a visible event.
+
+        The cursor and the auto-scroll timer go now rather than there, because they are
+        the pointer's and the button is up: a hand that stays closed for another tenth of
+        a second after the user let go reads as a drag that has not finished.
         """
         self._autoscroll.stop()
         self._pop_cursor()
         self._dragging = False
         self._press_card = None
+        self._slots = {}
+        self._settling = card
+
+        # The other cards' slides are deliberately left running. Stopping them would
+        # freeze each one wherever it had got to -- there is no layout pass here now to
+        # tidy that up -- so a drop during a shift would leave the column visibly out of
+        # alignment for the length of the settle.
+        if self._placeholder is None:
+            self._finish_drop(card)
+            return
+        anim = self._animate(card, card.pos(), self._placeholder.pos(), CARD_SETTLE_MS)
+        if anim is None:
+            self._finish_drop(card)
+            return
+        anim.finished.connect(lambda: self._finish_drop(card))
+
+    def _finish_drop(self, card: QWidget) -> None:
+        """Land *card* in the layout, take the lifted state off it, and report the order.
+
+        Guarded on ``_settling`` because it is reached from a queued animation signal: a
+        rebuild or a close arriving mid-flight has already abandoned this drop, and its
+        cards may be on their way out. ``_cancel_drag`` clearing the flag is what makes
+        the connection that outlives it harmless.
+
+        The swap itself is invisible by construction. The card is already sitting exactly
+        where the placeholder is, so exchanging one for the other moves nothing on screen
+        -- which is the whole reason the flight has to finish before this runs.
+        """
+        if self._settling is not card:
+            return
+        self._settling = None
         for anim in self._anims.values():
             anim.stop()
         self._anims = {}
-        self._slots = {}
 
         layout = self._rows_layout()
-        dropped = card.pos()
         if self._placeholder is not None:
             index = layout.indexOf(self._placeholder)
             layout.removeWidget(self._placeholder)
@@ -610,7 +674,7 @@ class CardColumn(QWidget):
         layout.activate()
         if hasattr(card, "set_dragging"):
             card.set_dragging(False)
-        self._animate(card, dropped, card.pos(), CARD_SETTLE_MS)
+        self._commit_order()
 
     def _cancel_drag(self) -> None:
         """Abandon an in-flight drag without reporting it. A no-op when there is none.
@@ -618,11 +682,17 @@ class CardColumn(QWidget):
         The cards are about to be deleted, so nothing here tries to put one back: what
         must not be skipped is the cursor and the timer, which belong to the application
         and to this column and would both outlive the widgets they were started for.
+
+        A drop still in the air is abandoned rather than completed. Clearing ``_settling``
+        is what disarms the animation's ``finished`` connection, which is queued behind
+        this and would otherwise run ``_finish_drop`` against a card that has been deleted
+        -- and report an order for a column that no longer exists.
         """
         self._autoscroll.stop()
         self._pop_cursor()
         self._press_card = None
         self._dragging = False
+        self._settling = None
         for anim in self._anims.values():
             anim.stop()
         self._anims = {}
@@ -698,7 +768,7 @@ class CardColumn(QWidget):
         """Record where every other card has just been laid out."""
         self._slots = {card: card.pos() for card in self._cards if card is not dragged}
 
-    def _animate(self, card: QWidget, origin: QPoint, destination: QPoint, duration: int) -> None:
+    def _animate(self, card: QWidget, origin: QPoint, destination: QPoint, duration: int) -> QPropertyAnimation | None:
         """Slide *card* from *origin* to *destination* instead of letting it appear there.
 
         A displaced card used to teleport, which is legible when one card moves and
@@ -715,9 +785,12 @@ class CardColumn(QWidget):
         *origin* is read from where the card visibly is, which may be part-way through an
         earlier slide, so a card displaced twice in quick succession carries on from where
         it had got to rather than snapping back to restart.
+
+        Hands back the animation it started, or None when there was nothing to move: the
+        settle has to know whether a ``finished`` is coming before it waits for one.
         """
         if origin == destination:
-            return
+            return None
         if (running := self._anims.get(card)) is not None:
             running.stop()
         card.move(origin)
@@ -728,6 +801,7 @@ class CardColumn(QWidget):
         anim.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._anims[card] = anim
         anim.start()
+        return anim
 
     def _index_at(self, dragged: QWidget) -> int:
         """Which slot *dragged* now covers, counted past the cards its middle has cleared.

@@ -26,9 +26,10 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QMouseEvent
+from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget
 
-from bartlebot.gui.game_embed.card_columns import CardColumn
+from bartlebot.gui.game_embed.card_columns import CARD_SETTLE_MS, CardColumn
 from bartlebot.gui.game_embed.launch_cards import AccountCard
 from bartlebot.gui.settings.accounts_tab import reorder_accounts, reorder_launch_profiles
 from bartlebot.settings_manager import SettingsManager
@@ -85,16 +86,23 @@ def _send(target, card, kind, dy: int, buttons) -> None:
 
 
 def _drag(qapp, column: CardColumn, card, dy: int, *, target=None) -> None:
-    """Press on *card*'s grip, move it *dy* pixels down its column, release.
+    """Press on *card*'s grip, move it *dy* pixels down its column, release, and land it.
 
     *target* overrides where the events land, which is how the body-drag guards below ask
     for a gesture that is deliberately aimed at the wrong place.
+
+    The wait is not padding. A released card flies the last few pixels into its slot
+    before the column reports anything, so that the rebuild the report provokes cannot
+    land on top of a card that is still moving — see ``_end_drag``. Every assertion about
+    what a drag *wrote* is therefore an assertion about a gesture that has finished, and
+    a test that read the signal at release would be asserting the bug back.
     """
     target = card.grip if target is None else target
     _send(target, card, QEvent.Type.MouseButtonPress, 0, Qt.MouseButton.LeftButton)
     _send(target, card, QEvent.Type.MouseMove, dy, Qt.MouseButton.LeftButton)
     qapp.processEvents()
     _send(target, card, QEvent.Type.MouseButtonRelease, dy, Qt.MouseButton.NoButton)
+    QTest.qWait(CARD_SETTLE_MS * 2)
 
 
 def _row_height(column: CardColumn) -> int:

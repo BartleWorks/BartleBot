@@ -34,6 +34,7 @@ from PyQt6.QtWidgets import QApplication, QVBoxLayout, QWidget
 
 from bartlebot.gui.game_embed.card_columns import (
     AUTOSCROLL_MARGIN,
+    CARD_SETTLE_MS,
     CARD_SHIFT_MS,
     CardColumn,
     _DropPlaceholder,
@@ -98,6 +99,17 @@ def _move(card, dy: int) -> None:
 
 def _release(card, dy: int) -> None:
     QApplication.sendEvent(card.grip, _event(QEvent.Type.MouseButtonRelease, card, dy, Qt.MouseButton.NoButton))
+
+
+def _land(column: CardColumn) -> None:
+    """Wait out the settle: the flight home a released card makes before it is a row again.
+
+    The drop is deliberately not instantaneous — the card is still lifted, the placeholder
+    still holds its slot and nothing has been reported until it lands — so every assertion
+    about the *state after* a drop has to wait for one.
+    """
+    QTest.qWait(CARD_SETTLE_MS * 2)
+    assert column  # held: the settle drives widgets that die with it
 
 
 def _rows(column: CardColumn):
@@ -338,6 +350,7 @@ def test_a_lifted_card_says_it_is_being_held_and_stops_saying_so(qapp):
     assert card.grip.cursor().shape() == Qt.CursorShape.ClosedHandCursor
 
     _release(card, QApplication.startDragDistance() + 2)
+    _land(column)
     assert not card.is_dragging
     assert card.grip.cursor().shape() == Qt.CursorShape.OpenHandCursor
     assert host
@@ -356,6 +369,7 @@ def test_a_dropped_card_is_handed_back_to_the_layout(qapp):
     _press(card)
     _move(card, dy)
     _release(card, dy)
+    _land(column)
 
     assert _placeholder(column) is None, "the hole goes when the card comes back"
     assert _rows(column).indexOf(card) == 1, "and the card is in the layout at its new slot"
@@ -420,6 +434,69 @@ def test_a_drag_held_at_the_foot_of_a_full_column_scrolls_it(qapp):
     assert bar.value() > 0, "the column scrolls while the drag is held at its foot"
 
     _release(card, 0)
+    assert host
+
+
+# ---------------------------------------------------------------------------
+# Landing
+# ---------------------------------------------------------------------------
+
+
+def test_a_dropped_card_flies_home_before_anything_else_happens(qapp):
+    """The drop used to jitter, and this is the ordering that stops it.
+
+    Handing the card back to the layout at the moment of release put two things in charge
+    of its position at once — the settle animation and a layout that had just been told
+    this widget was one of its rows again — so every deferred layout pass snapped it into
+    its slot and the slide picked it up from there. Reporting the order in the same breath
+    made it worse: the rebuild that answers ``reordered`` tore the cards down mid-flight,
+    so the card jumped whatever distance was left and landed in a different set of widgets.
+
+    So the release changes nothing structural. The card is still lifted, the placeholder
+    is still holding its slot, and the order is still unreported until the flight is over.
+    """
+    host, column = _column(qapp)
+    seen: list[list] = []
+    column.reordered.connect(seen.append)
+    card = column.cards[0]
+    # Deliberately past the slot rather than exactly onto it: a card let go on top of its
+    # own destination has nothing to fly, and lands in the same breath.
+    dy = _row_height(column) + _row_height(column) // 2
+
+    _press(card)
+    _move(card, dy)
+    _release(card, dy)
+
+    assert _placeholder(column) is not None, "the slot is held open until the card is in it"
+    assert card.is_dragging, "and the card is still the one in the air"
+    assert seen == [], "nothing is reported while the card is still moving"
+
+    _land(column)
+
+    assert _placeholder(column) is None
+    assert not card.is_dragging
+    assert seen == [[1, 0, 2]]
+    assert host
+
+
+def test_a_rebuild_leaves_the_column_scrolled_where_the_user_left_it(qapp):
+    """A drop that auto-scrolled to reach its slot ends in a rebuild — which must not jump.
+
+    Emptying the layout collapses the scroll range, and a bar whose range collapses loses
+    its value on the way. Restoring it is the difference between a drag ending where the
+    user dropped the card and ending at the top of a column they had scrolled away from.
+    """
+    host, column = _column(qapp, count=6, height=260)
+    bar = column.scroll_area.verticalScrollBar()
+    assert bar.maximum() > 0, "the fixture must actually overflow, or this tests nothing"
+    bar.setValue(bar.maximum())
+    scrolled_to = bar.value()
+
+    column.set_cards([AccountCard(a, [], ACCOUNTS[:6]) for a in ACCOUNTS[:6]])
+    for _ in range(3):
+        qapp.processEvents()
+
+    assert bar.value() == scrolled_to
     assert host
 
 
