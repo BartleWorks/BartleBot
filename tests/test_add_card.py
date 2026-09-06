@@ -294,10 +294,11 @@ class _FakeAccountDialog:
     result_username = "new@example.com"
     result_alias = "New"
     result_password = "hunter2"
+    result_color = None
     seen: dict = {}
 
-    def __init__(self, username="", alias="", parent=None):
-        type(self).seen = {"username": username, "alias": alias, "parent": parent}
+    def __init__(self, username="", alias="", color=None, taken=None, parent=None):
+        type(self).seen = {"username": username, "alias": alias, "color": color, "taken": taken, "parent": parent}
 
     def exec(self):
         return QDialog.DialogCode.Accepted if type(self).accepted else QDialog.DialogCode.Rejected
@@ -313,6 +314,10 @@ class _FakeAccountDialog:
     @property
     def password(self):
         return type(self).result_password
+
+    @property
+    def color(self):
+        return type(self).result_color
 
 
 @pytest.fixture

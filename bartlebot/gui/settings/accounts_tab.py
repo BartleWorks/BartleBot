@@ -26,7 +26,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import QRectF, Qt, pyqtSignal
+from PyQt6.QtGui import QColor, QPainter
 from PyQt6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -50,7 +51,10 @@ from PyQt6.QtWidgets import (
 from bartlebot import character_roster
 from bartlebot.credentials import CredentialStore
 from bartlebot.gui import screen_fit
+from bartlebot.gui.account_accent import ACCOUNT_PALETTE_SIZE, account_accent, account_color_keys, pinned_color_key
 from bartlebot.gui.menu_utils import popup_menu
+from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 
@@ -132,6 +136,158 @@ class _ReorderableList(QListWidget):
         self.reordered.emit()
 
 
+def _slots_in_use(exclude: str = "") -> dict[int, list[str]]:
+    """Which palette slot each *other* account currently sits in, and who is in it.
+
+    Resolved through :func:`account_color_keys` rather than read off the records, because
+    a slot an account merely derived is just as taken on screen as one it pinned — and it
+    is the screen the picker is describing.
+
+    *exclude* drops the account being edited, whose own slot is shown as the selection
+    instead. Names come back through ``display_name``, so Streamer Mode censors them here
+    like everywhere else.
+    """
+    accounts = [a for a in SettingsManager.instance().accounts if a.get("username") != exclude]
+    keys = account_color_keys(accounts)
+    holders: dict[int, list[str]] = {}
+    for account in accounts:
+        username = account.get("username", "")
+        slot = keys.get(username)
+        if slot is not None:
+            holders.setdefault(slot, []).append(CredentialStore.display_name(username, account.get("alias") or None))
+    return holders
+
+
+class _Swatch(QToolButton):
+    """One palette colour, with a dot when another account already holds that slot.
+
+    The dot is *painted* rather than set as the button's text. A "•" glyph sits on the
+    text baseline and is drawn around its own x-height, neither of which is the middle of
+    a 22px circle — at this size the offset is a pixel or two and reads as a mistake.
+    Painting reads ``THEME`` at paint time, so this needs no theme-refresh plumbing of its
+    own; its owner styles the fill and the ring.
+    """
+
+    #: Diameter of the marker, in px. Big enough to see against eight hues, small enough
+    #: not to read as a second colour inside the swatch.
+    DOT_SIZE = 6
+
+    def __init__(self, taken: bool = False, parent=None) -> None:
+        super().__init__(parent)
+        self._taken = taken
+
+    @property
+    def taken(self) -> bool:
+        """Whether this slot is drawn as already held by another account."""
+        return self._taken
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        if not self._taken:
+            return
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(THEME.pill_text))
+        # QRectF, not the widget's QRect: an integer rect's center() floors to half a
+        # pixel above and left of true centre, which is the bug this replaced.
+        radius = self.DOT_SIZE / 2
+        painter.drawEllipse(QRectF(self.rect()).center(), radius, radius)
+
+
+class _AccountColorPicker(ThemedMixin, QWidget):
+    """Automatic, then one swatch per palette slot — the colour row in ``_AccountDialog``.
+
+    Two things about it are the point rather than the decoration (#196):
+
+    * **Automatic stays selectable, and is the default.** It clears the pin rather than
+      writing a value. Without it a user who picks once could never get a derived colour
+      back, and the de-duplication in ``account_color_keys`` — the thing that keeps a
+      fleet's colours distinct as it grows — would stop applying to that account forever.
+    * **A slot another account holds is marked, not disabled.** Independent choices
+      colliding is the bug ``account_accent`` was written to fix, so a picker that hid the
+      current assignment would invite the user to reproduce it by hand. Two accounts
+      sharing a colour is still their call to make.
+
+    The whole appearance is derived from the theme and the selection, so
+    :meth:`apply_theme_styles` paints both and :meth:`set_selected` just asks for a
+    repaint. That keeps the theme hook complete by construction rather than by care.
+    """
+
+    #: Side of a swatch, in px. Large enough to read the colour and the taken marker at
+    #: once, small enough that eight of them plus Automatic fit the dialog's 300px floor.
+    SWATCH_SIZE = 22
+
+    def __init__(self, selected: int | None = None, taken: dict[int, list[str]] | None = None, parent=None) -> None:
+        super().__init__(parent)
+        self._taken = dict(taken or {})
+        self._selected = selected if selected in range(1, ACCOUNT_PALETTE_SIZE + 1) else None
+
+        row = QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(4)
+
+        self._auto_btn = QToolButton()
+        self._auto_btn.setText("Automatic")
+        self._auto_btn.setCheckable(True)
+        self._auto_btn.setToolTip("Choose a colour from the username, kept distinct from the other accounts.")
+        self._auto_btn.clicked.connect(lambda _=False: self.set_selected(None))
+        row.addWidget(self._auto_btn)
+
+        self._swatches: dict[int, _Swatch] = {}
+        for key in range(1, ACCOUNT_PALETTE_SIZE + 1):
+            holders = self._taken.get(key) or []
+            btn = _Swatch(taken=bool(holders))
+            btn.setCheckable(True)
+            btn.setFixedSize(self.SWATCH_SIZE, self.SWATCH_SIZE)
+            btn.setToolTip("Already used by " + ", ".join(holders) if holders else "Not used by another account")
+            btn.clicked.connect(lambda _=False, k=key: self.set_selected(k))
+            self._swatches[key] = btn
+            row.addWidget(btn)
+        row.addStretch()
+
+        self.refresh_theme_styles()
+
+    @property
+    def selected(self) -> int | None:
+        """The pinned slot, or None for Automatic — which is what gets stored."""
+        return self._selected
+
+    @property
+    def swatches(self) -> dict[int, _Swatch]:
+        """The colour buttons, by palette slot. Read-only view for callers and tests."""
+        return dict(self._swatches)
+
+    @property
+    def automatic_button(self) -> QToolButton:
+        return self._auto_btn
+
+    def set_selected(self, key: int | None) -> None:
+        """Select *key*, or Automatic for None or anything outside the palette."""
+        self._selected = key if key in self._swatches else None
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        self._auto_btn.setChecked(self._selected is None)
+        # The selection ring is THEME.text rather than THEME.accent: the accent is a blue,
+        # and slot 1 is a blue, so an accent ring is the one selection a user cannot see.
+        border = THEME.text if self._selected is None else THEME.border
+        self._auto_btn.setStyleSheet(
+            f"QToolButton {{ background: {THEME.surface}; color: {THEME.text}; "
+            f"border: 2px solid {border}; border-radius: 4px; padding: 2px 8px; }}"
+            f"QToolButton:hover {{ border-color: {THEME.accent}; }}"
+        )
+        for key, btn in self._swatches.items():
+            btn.setChecked(key == self._selected)
+            edge = THEME.text if key == self._selected else THEME.border
+            radius = self.SWATCH_SIZE // 2
+            btn.setStyleSheet(
+                f"QToolButton {{ background: {account_accent(key)}; "
+                f"border: 2px solid {edge}; border-radius: {radius}px; }}"
+                f"QToolButton:hover {{ border-color: {THEME.accent}; }}"
+            )
+
+
 class _AccountDialog(QDialog):
     """Small dialog for adding or editing an account.
 
@@ -143,9 +299,19 @@ class _AccountDialog(QDialog):
     which is the worse of the two: the user types a correction, presses OK, and the list
     comes back unchanged with nothing saying why. The alias is the field for what the
     account is *called*.
+
+    The colour row is here for the same reason (#196): a pinned colour is a property of
+    the account record, and this is where a record is edited.
     """
 
-    def __init__(self, username: str = "", alias: str = "", parent=None) -> None:
+    def __init__(
+        self,
+        username: str = "",
+        alias: str = "",
+        color: int | None = None,
+        taken: dict[int, list[str]] | None = None,
+        parent=None,
+    ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Account")
         self.setMinimumWidth(300)
@@ -161,9 +327,19 @@ class _AccountDialog(QDialog):
             self._username_edit.setToolTip("An account's username cannot be changed. Set an alias instead.")
             self._password_edit.setPlaceholderText("Leave blank to keep existing password")
 
+        self._color_picker = _AccountColorPicker(selected=color, taken=taken)
+
         form.addRow("Username:", self._username_edit)
         form.addRow("Alias:", self._alias_edit)
         form.addRow("Password:", self._password_edit)
+        form.addRow("Colour:", self._color_picker)
+        hint = ThemedTextLabel(
+            "Shown on this account's card and on the profile pills that name it. "
+            "A dot marks a colour another account already uses.",
+            css="font-size: 11px;",
+        )
+        hint.setWordWrap(True)
+        form.addRow("", hint)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
@@ -185,6 +361,15 @@ class _AccountDialog(QDialog):
     def password(self) -> str:
         return self._password_edit.text()
 
+    @property
+    def color(self) -> int | None:
+        """The pinned palette slot, or None for Automatic — which stores no key at all."""
+        return self._color_picker.selected
+
+    @property
+    def color_picker(self) -> _AccountColorPicker:
+        return self._color_picker
+
 
 def add_account(parent: QWidget | None = None) -> bool:
     """Open an empty account editor; store the credential and the record if accepted.
@@ -198,7 +383,7 @@ def add_account(parent: QWidget | None = None) -> bool:
     whatever it draws accounts with. False covers all four ways nothing was saved: the
     editor cancelled, an empty username, an empty password, and a duplicate.
     """
-    dlg = _AccountDialog(parent=parent)
+    dlg = _AccountDialog(taken=_slots_in_use(), parent=parent)
     if dlg.exec() != QDialog.DialogCode.Accepted:
         return False
     username = dlg.username
@@ -213,7 +398,10 @@ def add_account(parent: QWidget | None = None) -> bool:
         QMessageBox.warning(parent, "Duplicate", f"Account '{username}' already exists.")
         return False
     CredentialStore.store(username, dlg.password)
-    accounts.append({"username": username, "alias": dlg.alias or ""})
+    record = {"username": username, "alias": dlg.alias or ""}
+    if dlg.color is not None:
+        record["color"] = dlg.color
+    accounts.append(record)
     SettingsManager.instance().accounts = accounts
     SettingsManager.instance().save()
     return True
@@ -230,11 +418,22 @@ def edit_account(username: str, parent: QWidget | None = None) -> bool:
     Returns whether anything was written. False covers no such account and a cancelled
     editor -- there is nothing else to refuse, since the username cannot change and an
     alias may legitimately be blank.
+
+    Automatic *removes* the ``color`` key rather than writing a sentinel, which is what
+    puts the account back under ``account_color_keys``' de-duplication (#196). A key left
+    behind holding None would read as "pins nothing usable" today, but it is a stored
+    value that has to keep meaning that.
     """
     account = next((a for a in SettingsManager.instance().accounts if a.get("username") == username), None)
     if account is None:
         return False
-    dlg = _AccountDialog(username=username, alias=account.get("alias") or "", parent=parent)
+    dlg = _AccountDialog(
+        username=username,
+        alias=account.get("alias") or "",
+        color=pinned_color_key(account),
+        taken=_slots_in_use(exclude=username),
+        parent=parent,
+    )
     if dlg.exec() != QDialog.DialogCode.Accepted:
         return False
     if dlg.password:
@@ -243,6 +442,10 @@ def edit_account(username: str, parent: QWidget | None = None) -> bool:
     for a in accounts:
         if a.get("username") == username:
             a["alias"] = dlg.alias
+            if dlg.color is None:
+                a.pop("color", None)
+            else:
+                a["color"] = dlg.color
             break
     SettingsManager.instance().accounts = accounts
     SettingsManager.instance().save()

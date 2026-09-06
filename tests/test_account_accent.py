@@ -111,6 +111,40 @@ def test_a_pin_outranks_a_derived_preference():
     assert keys["someone@example.com"] != wanted
 
 
+def test_pinning_a_colour_repaints_nothing_it_does_not_collide_with():
+    """The same guarantee as adding an account, now that a picker can trigger it (#196).
+    A user correcting one account's colour must not find the rest of the fleet rearranged
+    underneath them — only the account whose slot was actually taken may move."""
+    accounts = _accounts(5)
+    before = account_color_keys(accounts)
+    pinner = accounts[0]["username"]
+    free = next(s for s in range(1, ACCOUNT_PALETTE_SIZE + 1) if s not in before.values())
+
+    pinned = [dict(a) for a in accounts]
+    pinned[0]["color"] = free
+    after = account_color_keys(pinned)
+
+    assert after[pinner] == free
+    assert all(after[u] == before[u] for u in before if u != pinner)
+
+
+def test_pinning_onto_a_taken_slot_moves_only_the_account_that_held_it():
+    accounts = _accounts(5)
+    before = account_color_keys(accounts)
+    pinner = accounts[0]["username"]
+    victim = next(u for u in sorted(_uncontested(accounts)) if u != pinner)
+
+    pinned = [dict(a) for a in accounts]
+    pinned[0]["color"] = before[victim]
+    after = account_color_keys(pinned)
+
+    assert after[pinner] == before[victim]
+    assert after[victim] != before[victim]
+    settled = _uncontested(accounts) - {pinner, victim}
+    assert settled  # otherwise the assertion below is vacuous
+    assert all(after[u] == before[u] for u in settled)
+
+
 def test_two_accounts_may_pin_the_same_colour():
     """A pin is the user saying what they want. Nothing here overrules it — if two
     accounts are told to be blue, they are blue."""

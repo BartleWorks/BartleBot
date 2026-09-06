@@ -9,9 +9,10 @@ WHERE A COLOUR COMES FROM
 
 Three steps, in order:
 
-1. An account may **pin** one, as a ``color`` slot in its settings entry. Nothing
-   writes that today; it is honoured first so that a picker in the Accounts tab is a
-   UI change rather than a data migration.
+1. An account may **pin** one, as a ``color`` slot in its settings entry. The picker
+   in the account editor writes it (#196), and honouring it first is what made that a
+   UI change rather than a data migration. Picking *Automatic* removes the key rather
+   than writing a value, so the account drops back to steps 2 and 3.
 2. Otherwise a slot is **derived** from the username. The digest is ``blake2s``, not
    ``hash()``: Python salts string hashing per process, so ``hash()`` would repaint
    the whole launch screen on every restart.
