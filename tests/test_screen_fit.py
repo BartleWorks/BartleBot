@@ -309,9 +309,10 @@ def _accounts(*usernames):
     return [{"username": name} for name in usernames]
 
 
-def test_a_profile_card_carries_the_numbers_and_not_the_advice(qapp):
+def test_a_profile_card_carries_the_numbers_and_not_the_advice(qapp, screen):
     """The half that differs between profiles goes on the card; the half that does not, does not."""
-    problem = screen_fit.fit_details((800, 600), 2, None, (200, 100))
+    screen(_1080P)
+    problem = screen_fit.fit_details((800, 600), 2)
     card = ProfileCard(_profile(["a", "b"]), [])
     card.set_unavailable(problem)
 
