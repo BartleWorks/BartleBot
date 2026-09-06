@@ -24,6 +24,9 @@ it, or by the column being closed.
 
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QMouseEvent
 from PyQt6.QtTest import QTest
@@ -35,7 +38,7 @@ from bartlebot.gui.game_embed.card_columns import (
     CardColumn,
     _DropPlaceholder,
 )
-from bartlebot.gui.game_embed.launch_cards import AccountCard
+from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 
 ACCOUNTS = [
     {"username": "one@example.com", "alias": "One"},
@@ -70,8 +73,11 @@ def _event(kind, card, dy: int, buttons):
 
     Against the card even when it is delivered to the grip: the card is what travels, and
     where the pointer sits within it is what the column measures.
+
+    Inside the card's *frame*, which starts past the drag handle's gutter: the gutter is
+    not a hit target, so a body click aimed at the card's own origin would land on nothing.
     """
-    local = QPoint(5, 5 + dy)
+    local = getattr(card, "frame", card).geometry().topLeft() + QPoint(5, 5 + dy)
     return QMouseEvent(
         kind,
         local.toPointF(),
@@ -139,6 +145,118 @@ def test_the_open_hand_is_on_the_grip_and_nowhere_else_on_the_card(qapp):
 
     assert card.grip.cursor().shape() == Qt.CursorShape.OpenHandCursor
     assert card.cursor().shape() == Qt.CursorShape.PointingHandCursor
+    assert host
+
+
+def test_the_grip_is_a_full_height_target_outside_the_card_frame(qapp):
+    """Both halves of what moving it out of the header bought.
+
+    In the header it was a twelve-pixel square — the smallest target on the surface, at
+    the one place the pointer has to land precisely. Beside the frame it is free to be as
+    tall as the card, because it is no longer competing with the content for the row.
+    """
+    host, column = _column(qapp)
+    card = column.cards[0]
+
+    assert card.grip.geometry().right() < card.frame.x(), "the handle is outside the frame, not in it"
+    assert card.grip.height() == card.frame.height(), "and as tall as what it moves"
+    assert host
+
+
+def test_the_dots_run_the_height_of_what_they_grip(qapp):
+    """The handle is a column, not a mark sitting in the middle of a tall target.
+
+    A grip whose glyph is the size it was in the header, floating halfway down 54 pixels
+    of hit area, says the target is the glyph — which is the thing the enlargement was
+    for. Asserted against two cards of different heights because the column is stacked to
+    fit rather than drawn once: a profile card is taller than an account card, and its
+    handle has to be too.
+    """
+    accounts = ACCOUNTS[:3]
+    card = AccountCard(accounts[0], [], accounts)
+    tall = ProfileCard({"name": "Farm Team", "accounts": [a["username"] for a in accounts]}, accounts)
+    host, column = _column(qapp)
+    column.set_cards([card, tall])
+    for _ in range(3):
+        qapp.processEvents()
+
+    assert tall.height() > card.height(), "the fixture needs two heights, or this tests nothing"
+    for one in (card, tall):
+        drawn = one.grip.column_height
+        assert drawn > one.height() // 2, "the dots run the length of the target, not a mark in it"
+        assert drawn < one.height(), "and stop short of the card's own edges"
+    assert tall.grip.column_height > card.grip.column_height
+    assert host
+
+
+def test_the_grip_tile_stacks_without_a_seam():
+    """``grip.svg`` is one repeat of a column, and the arithmetic that makes it one.
+
+    The dots are stacked rather than stretched — a circle scaled to an 18x54 box is an
+    ellipse — so the padding above the first row and below the last are a *seam*, and they
+    have to add up to the gap between two rows inside the tile. Seated at the usual 6/12/18
+    of a 24-unit box they add up to twice it, and the handle draws as bands of six dots
+    with a visible break between them, which reads as three handles rather than one.
+    """
+    svg = (Path(__file__).resolve().parents[1] / "bartlebot/gui/icons/grip.svg").read_text()
+    box = float(re.search(r'viewBox="0 0 \S+ (\S+)"', svg).group(1))
+    rows = sorted({float(cy) for cy in re.findall(r'cy="(\S+?)"', svg)})
+
+    gaps = {round(b - a, 3) for a, b in zip(rows, rows[1:])}
+    assert len(gaps) == 1, f"the rows inside a tile are evenly spaced, got {sorted(gaps)}"
+    assert round(rows[0] + (box - rows[-1]), 3) == gaps.pop(), "the seam is one more gap, not two"
+
+
+def test_the_card_frame_does_not_move_when_the_grip_is_revealed(qapp):
+    """The reason the gutter is reserved whether the handle is drawn in it or not.
+
+    On the launch screen the grip appears on hover, and in the header that meant every
+    card had eighteen pixels punched out in front of its name for the whole time it was
+    *not* hovered, and its name jumping right the moment it was. The handle is out of the
+    content row now, and the space it holds is the same either way.
+    """
+    host, column = _column(qapp)
+    card = column.cards[0]
+    layout = _rows(column)
+
+    seen = []
+    for visible in (True, False):
+        card.grip.setVisible(visible)
+        layout.activate()
+        seen.append(card.frame.x())
+
+    assert seen[0] == seen[1], "the frame starts in the same place hovered or not"
+    assert host
+
+
+def test_a_click_in_the_gutter_beside_the_grip_does_not_launch(qapp):
+    """The gutter is the handle's, not the card's. Nothing is drawn in the rest of it.
+
+    The widget the column lays out is wider than the frame the user sees, so its bare
+    rectangle is no longer the hit target: a few pixels of blank column that silently
+    start a game client are the kind of target nobody aims at and everybody hits.
+    """
+    host, column = _column(qapp)
+    launched: list[tuple] = []
+    card = column.cards[0]
+    card.launch_account_requested.connect(lambda u, d: launched.append((u, d)))
+    # Between the handle and the frame, which is inside the widget and outside the card.
+    gap = QPoint((card.grip.geometry().right() + card.frame.x()) // 2, card.height() // 2)
+
+    for kind in (QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonRelease):
+        QApplication.sendEvent(
+            card,
+            QMouseEvent(
+                kind,
+                gap.toPointF(),
+                card.mapToGlobal(gap).toPointF(),
+                Qt.MouseButton.LeftButton,
+                Qt.MouseButton.LeftButton if kind == QEvent.Type.MouseButtonPress else Qt.MouseButton.NoButton,
+                Qt.KeyboardModifier.NoModifier,
+            ),
+        )
+
+    assert launched == []
     assert host
 
 

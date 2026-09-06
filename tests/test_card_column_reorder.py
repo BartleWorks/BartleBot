@@ -58,7 +58,10 @@ def _column(qapp, count: int = 3, height: int = 600):
 
 
 def _event(kind, card, offset: QPoint, buttons):
-    local = QPoint(5, 5) + offset
+    # Anchored inside the card's *frame*, which starts past the drag handle's gutter. The
+    # gutter is not a hit target — a blank strip that launched a game client would be a
+    # bad one — so a body click aimed at the card's own origin would land on nothing.
+    local = getattr(card, "frame", card).geometry().topLeft() + QPoint(5, 5) + offset
     return QMouseEvent(
         kind,
         local.toPointF(),

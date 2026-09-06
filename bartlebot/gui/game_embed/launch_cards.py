@@ -28,12 +28,22 @@ launched four game clients on the first pixel of any wobble, and a press-and-swe
 the face of a card -- what someone who has not found the grip yet will try -- has to end
 in nothing rather than in a launch on whichever card the pointer came to rest over.
 
-Reordering is a separate gesture on a separate target: ``GripHandle``, the six dots at the
-head of every card. It is the *only* drag source, and that is what makes the cursor
+Reordering is a separate gesture on a separate target: ``GripHandle``, the six dots in the
+gutter beside every card. It is the *only* drag source, and that is what makes the cursor
 honest. The cursor is how a surface says "this drags", and it cannot say that over a whole
 card whose primary verb is launch -- so the announcement was given a place of its own to
-live, twelve pixels wide, where an open hand is the truth. ``CardColumn`` owns what a drag
-then does, order being a fact about the column rather than about any card.
+live, where an open hand is the truth. ``CardColumn`` owns what a drag then does, order
+being a fact about the column rather than about any card.
+
+That place is *outside* the card's frame. Each card is a gutter and a frame: the handle in
+the first, everything else in the second, and only the second carrying the border, the
+fill and the stripe. Inside the header the handle was two mistakes at once -- a target
+smaller than anything else on the surface, and a member of the content row, so the space
+it reserved pushed the name in by eighteen pixels and left a visible hole in front of it
+on every card the pointer was not over. Beside the frame it is neither: the name starts at
+the card's own padding whether the dots are drawn or not, and the handle is free to be as
+tall as the thing it moves. The Add card carries the same indent (``GRIP_GUTTER``) so that
+the column's last frame lines up with the ones above it.
 
 TWO SURFACES, ONE CARD
 
@@ -89,9 +99,10 @@ from collections.abc import Callable
 from typing import NamedTuple
 
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QFontMetrics
+from PyQt6.QtGui import QColor, QFontMetrics, QPainter, QPixmap
 from PyQt6.QtWidgets import (
     QApplication,
+    QFrame,
     QGraphicsDropShadowEffect,
     QHBoxLayout,
     QLabel,
@@ -131,12 +142,45 @@ _MORE_GAP = "  "
 
 _EDIT_BTN_SIZE = 22
 
-# The grip is drawn smaller than an action icon and sits at the head of the card rather
-# than in the trailing cluster. Both say the same thing: it is not a verb. The buttons on
-# the right *do* something to the account or the profile; the grip is a place to take hold
-# of the card, which is why every list that has one -- Notion, Linear, Jira, this app's own
-# duel strategy editor -- puts it in front of the content instead of among the actions.
-_GRIP_SIZE = 12
+# The grip sits in a gutter *outside* the card's frame rather than at the head of its
+# content, and it is the height of the card rather than the size of an icon.
+#
+# Inside the header it was two things at once and bad at both. It was a twelve-pixel
+# square -- a target smaller than anything else on the surface, at the one place the
+# pointer has to land precisely -- and it was a member of the content row, so the space it
+# reserved pushed the account's name in by eighteen pixels. On the launch screen, where
+# the handle is only drawn on hover, that gap sat empty most of the time: every card had a
+# hole punched in front of its name and nothing in it.
+#
+# Out in the gutter both problems are the same fix. The handle is no longer in the row it
+# was displacing, so the name starts at the card's own padding whether the dots are drawn
+# or not, and it is free to be as tall as the card -- which turns a 12x12 target into an
+# 18-by-a-whole-card one without taking a pixel from the content. That is the arrangement
+# Notion and Linear use, and for this reason: a handle beside the thing it moves can be
+# the height of the thing it moves.
+#
+# The dots follow it up. Not by scaling the glyph -- six dots blown up to the height of a
+# card are a decoration, and at that size they are the loudest thing on a card whose whole
+# job is a name -- but by *repeating* it, so the mark stays the weight it always was and
+# runs the length of what it grips. ``grip.svg`` is one tile of that column rather than a
+# standalone six-dot glyph, seated so that the seam between two tiles is the same gap as
+# the rows inside one.
+#
+# ``_GRIP_DOTS`` is therefore the tile, not the mark: how tall one repeat is, and with it
+# how far apart the dots sit. It is a multiple of six because the tile's three rows sit at
+# a sixth, a half and five sixths of it -- at any other size they rasterise onto fractional
+# pixels, and a column of two-pixel dots half of which straddle a pixel boundary reads as a
+# column of unevenly spaced dots, which is the one thing the seam arithmetic exists to
+# avoid. ``_GRIP_INSET`` is what the column stops short of the card's own edges by, so the
+# handle reads as sitting beside the card rather than ruled against it.
+_GRIP_DOTS = 12
+_GRIP_INSET = 4
+_GRIP_WIDTH = 18
+_GRIP_GAP = 4
+# What a card that is not draggable has to indent by to line its frame up with the ones
+# that are. The Add card is the only such card, and a column whose last frame starts
+# twenty-two pixels to the left of every frame above it reads as a mistake.
+GRIP_GUTTER = _GRIP_WIDTH + _GRIP_GAP
 
 # How far the lifted card's shadow spreads, and how far it is offset down. Small numbers
 # deliberately: this is a card rising a few pixels off a column, not a modal over a page.
@@ -348,8 +392,8 @@ def _tooltip_for(reason: FitProblem | str | None) -> str:
 # ---------------------------------------------------------------------------
 
 
-class GripHandle(ThemedMixin, QLabel):
-    """The six dots at the head of a card: the one place a press starts a reorder.
+class GripHandle(ThemedMixin, QWidget):
+    """The column of dots beside a card: the one place a press starts a reorder.
 
     The whole card used to be the drag source, which worked and told nobody. Nothing on
     the card said it could be dragged, and nothing could be made to say it: the cursor is
@@ -365,30 +409,81 @@ class GripHandle(ThemedMixin, QLabel):
     reached the same place from the other direction -- there it was a text box that had to
     keep its own mouse-down.
 
-    Presses are **accepted**, not passed on. A QLabel ignores them by default and Qt
+    Presses are **accepted**, not passed on. A plain widget ignores them by default and Qt
     re-sends what a child ignores to its parent, which would hand the press to the card --
     and, more to the point, would send every subsequent mouse *move* to the card as well.
     The moves are what ``CardColumn`` turns into a reorder, so a grip that does not keep
     the press is a grip that never sees the drag.
+
+    Still a child of the card, for all that it is drawn outside its frame. Qt sends no
+    Leave to a widget when the pointer moves onto one of its own children, so a handle
+    that belongs to the card is one the pointer can travel to without the card deciding it
+    is no longer hovered -- and on the launch screen the hover is what draws the handle in
+    the first place. A sibling in a row above the card would have hidden itself the instant
+    the user reached for it.
     """
 
     def __init__(self, tooltip: str = "Drag to reorder", parent=None) -> None:
         super().__init__(parent)
-        self.setFixedSize(_GRIP_SIZE, _GRIP_SIZE)
+        self.setFixedWidth(_GRIP_WIDTH)
+        # The width is pinned and the height is left alone: a box layout gives an item the
+        # full cross height unless something stops it, so the handle grows to the card's
+        # own height and the target is the whole left edge. An *Expanding* vertical policy
+        # would do the same to the target and one thing more -- a layout inherits its
+        # items' expanding directions, so the card would report itself vertically
+        # expanding to the column and stretch to fill it, which is a 400px account card in
+        # a column with room to spare.
         self.setCursor(Qt.CursorShape.OpenHandCursor)
         self.setToolTip(tooltip)
-        # Held while hidden, for the same reason the action buttons are: revealing the
-        # grip on hover would otherwise shift the name right, which moves the card under
-        # the pointer that just revealed it.
+        # Held while hidden, so the gutter is the same width whether the handle is drawn
+        # in it or not. Without this the card's frame would slide left on every hover-out,
+        # which is the shift that moving the grip out of the header exists to stop.
         policy = self.sizePolicy()
         policy.setRetainSizeWhenHidden(True)
         self.setSizePolicy(policy)
+        # One repeat of the dot column, tinted for the current theme. The stack of them is
+        # laid down at paint time; this is only the mark being stacked.
+        self._tile = QPixmap()
         self.refresh_theme_styles()
 
     def apply_theme_styles(self) -> None:
         # svg_pixmap bakes the tint in at render time, so the dots are re-rendered on
         # every theme pass rather than set once in __init__.
-        self.setPixmap(svg_pixmap("grip", _GRIP_SIZE, tint=THEME.text_subtle))
+        self._tile = svg_pixmap("grip", _GRIP_DOTS, tint=THEME.text_subtle)
+        self.update()
+
+    @property
+    def column_height(self) -> int:
+        """How tall the stack of dots draws -- the card's height, less its inset, rounded
+        down to whole tiles.
+
+        Public because it is what "the handle matches the target" means, and the only way
+        to ask is to compute it: nothing is stored, since the answer changes with the
+        height and the height is the layout's to give.
+        """
+        return max(1, (self.height() - 2 * _GRIP_INSET) // _GRIP_DOTS) * _GRIP_DOTS
+
+    def paintEvent(self, event) -> None:
+        """Stack tiles of ``grip.svg`` down the middle of the handle.
+
+        Stacked rather than stretched, because the tile is a circle: a renderer told to
+        fill an 18x54 box from a 24x24 viewBox either draws ellipses or drops one small
+        glyph adrift in the middle of the target. Repeating it keeps the mark the size it
+        was drawn at and lets the *column* be the thing that matches the card.
+
+        Painted rather than composed into a pixmap and set once, because on the launch
+        screen this widget spends most of its life hidden -- and a layout does not resize
+        what it is not showing, so a cached pixmap would still be one tile tall on the
+        frame the user first hovers a card. Painting asks the current height every time
+        and has nothing to keep in sync.
+        """
+        rows = self.column_height // _GRIP_DOTS
+        painter = QPainter(self)
+        left = (self.width() - _GRIP_DOTS) // 2
+        top = (self.height() - rows * _GRIP_DOTS) // 2
+        for row in range(rows):
+            painter.drawPixmap(left, top + row * _GRIP_DOTS, self._tile)
+        painter.end()
 
     def set_held(self, held: bool) -> None:
         """Close the hand while the card this grip belongs to is being dragged."""
@@ -418,8 +513,14 @@ class _LaunchCard(ThemedMixin, QWidget):
 
     def __init__(self, parent=None, *, manage: bool = False) -> None:
         super().__init__(parent)
-        self.setObjectName("LaunchCard")
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        # The widget is the *row*: a gutter holding the drag handle, and beside it the
+        # frame everything else means by "the card". Only the frame is styled, and it
+        # keeps the ``LaunchCard`` object name, so every rule in this file still reads
+        # ``#LaunchCard`` and still lands on the thing with the border -- a stylesheet set
+        # on this widget cascades to it.
+        self._body = QFrame(self)
+        self._body.setObjectName("LaunchCard")
+        self._body.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._hovered = False
         # Which surface this card is on. One flag rather than three that would always have
@@ -604,6 +705,17 @@ class _LaunchCard(ThemedMixin, QWidget):
         return self._dragging
 
     @property
+    def frame(self) -> QFrame:
+        """The bordered part of the card -- everything except the drag handle's gutter.
+
+        Public because where it starts is the contract the gutter exists to hold: the
+        handle is outside this frame, so the content inside it stays where it is whether
+        the handle is drawn or not. Reading the widget is also how the fit and hover
+        palettes are checked, all of them being rules on ``#LaunchCard``.
+        """
+        return self._body
+
+    @property
     def grip(self) -> GripHandle | None:
         """This card's drag handle, or None if it was built without one.
 
@@ -641,6 +753,27 @@ class _LaunchCard(ThemedMixin, QWidget):
         if self._grip is not None:
             self._grip.set_held(dragging)
         self.refresh_theme_styles()
+
+    def _build_frame(self, what: str) -> QVBoxLayout:
+        """Lay out the handle and the card frame, and hand back the frame's own layout.
+
+        Every card is built into this rather than into itself, so that the grip is beside
+        the frame instead of inside the header. What a subclass then fills is the frame,
+        which is what the border, the fill, the stripe and every hover rule are drawn on --
+        the gutter to its left is transparent and holds only the handle.
+
+        *what* names the list a drag would reorder, for the handle's tooltip.
+        """
+        row = QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(_GRIP_GAP)
+        row.addWidget(self._make_grip(what), 0)
+        row.addWidget(self._body, 1)
+
+        inner = QVBoxLayout(self._body)
+        inner.setContentsMargins(10, 7, 10, 7)
+        inner.setSpacing(2)
+        return inner
 
     def _make_grip(self, what: str) -> GripHandle:
         """This card's drag handle, named after what a drag would reorder.
@@ -842,6 +975,11 @@ class _LaunchCard(ThemedMixin, QWidget):
         there is no QPushButton here whose disabled state would do it. A card in the Game
         tab does not refuse, because what its click does there is edit — which is exactly
         what an unfittable card wants the user to go and do.
+
+        The *frame* is the hit target rather than this widget's whole rectangle, which now
+        includes the drag handle's gutter. Nothing is drawn in the few pixels between the
+        handle and the frame, and a strip of blank column that silently launches a game
+        client is not a hit target anyone aimed at.
         """
         pressed = self._press_pos
         self._press_pos = None
@@ -850,7 +988,7 @@ class _LaunchCard(ThemedMixin, QWidget):
             event.button() == Qt.MouseButton.LeftButton
             and pressed is not None
             and not refuses
-            and self.rect().contains(event.position().toPoint())
+            and self.frame.geometry().contains(event.position().toPoint())
             and (event.globalPosition().toPoint() - pressed).manhattanLength() < QApplication.startDragDistance()
         ):
             self.activated.emit()
@@ -927,14 +1065,11 @@ class AccountCard(_LaunchCard):
         return ""
 
     def _build(self) -> None:
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 7, 10, 7)
-        layout.setSpacing(2)
+        layout = self._build_frame("accounts")
 
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(6)
-        header.addWidget(self._make_grip("accounts"), 0, Qt.AlignmentFlag.AlignVCenter)
         header.addWidget(self._make_name_label(self._display_name), 0)
         if self._roster:
             header.addWidget(NeutralPill(str(len(self._roster))), 0, Qt.AlignmentFlag.AlignVCenter)
@@ -1042,14 +1177,11 @@ class ProfileCard(_LaunchCard):
         return self._profile
 
     def _build(self) -> None:
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 7, 10, 7)
-        layout.setSpacing(2)
+        layout = self._build_frame("launch profiles")
 
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(6)
-        header.addWidget(self._make_grip("launch profiles"), 0, Qt.AlignmentFlag.AlignVCenter)
         header.addWidget(self._make_name_label(self._name), 0)
         if (resolution := resolution_label(self._profile)) is not None:
             header.addWidget(NeutralPill(resolution), 0, Qt.AlignmentFlag.AlignVCenter)
@@ -1123,8 +1255,14 @@ class AddCard(ThemedMixin, QWidget):
 
     def __init__(self, text: str, parent=None) -> None:
         super().__init__(parent)
-        self.setObjectName("AddCard")
-        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        # Framed like a launch card, and for the same reason: the dashed outline is drawn
+        # on an inner frame so that this card can carry the drag gutter's indent without
+        # its border reaching back across it. A terminator whose frame starts twenty-two
+        # pixels left of every frame above it does not read as the last card in the
+        # column, it reads as a misplaced one.
+        self._body = QFrame(self)
+        self._body.setObjectName("AddCard")
+        self._body.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self._hovered = False
         self._text = text
@@ -1137,7 +1275,12 @@ class AddCard(ThemedMixin, QWidget):
         return self._text
 
     def _build(self) -> None:
-        layout = QHBoxLayout(self)
+        row = QHBoxLayout(self)
+        row.setContentsMargins(GRIP_GUTTER, 0, 0, 0)
+        row.setSpacing(0)
+        row.addWidget(self._body)
+
+        layout = QHBoxLayout(self._body)
         layout.setContentsMargins(10, 8, 10, 8)
         layout.setSpacing(6)
         layout.addStretch()

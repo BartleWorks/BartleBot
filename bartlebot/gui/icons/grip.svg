@@ -1,8 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-  <circle cx="9"  cy="6"  r="1.7" fill="#404040"/>
-  <circle cx="15" cy="6"  r="1.7" fill="#404040"/>
-  <circle cx="9"  cy="12" r="1.7" fill="#404040"/>
-  <circle cx="15" cy="12" r="1.7" fill="#404040"/>
-  <circle cx="9"  cy="18" r="1.7" fill="#404040"/>
-  <circle cx="15" cy="18" r="1.7" fill="#404040"/>
+  <!-- One tile of a column of dots, not a standalone six-dot glyph. GripHandle stacks
+       this to the height of the card it drags, so the rows are seated to tile seamlessly:
+       the 4-unit pad above the first row and below the last add to the same 8 units that
+       separate the rows within a tile. At the old 6/12/18 the seam was a 12-unit gap and
+       the stack read as bands of six rather than one continuous handle.
+
+       Every centre and radius is a whole fraction of the box that lands on a whole pixel
+       at the size this is drawn at (_GRIP_DOTS, a multiple of 6): 4/12/20 and 8/16 of 24
+       become 2/6/10 and 4/8 of 12, with a 1px radius. Off the pixel grid a 2px dot
+       straddles a boundary and antialiases to a smear, and half a column doing that reads
+       as dots of two different weights. -->
+  <circle cx="8"  cy="4"  r="2" fill="#404040"/>
+  <circle cx="16" cy="4"  r="2" fill="#404040"/>
+  <circle cx="8"  cy="12" r="2" fill="#404040"/>
+  <circle cx="16" cy="12" r="2" fill="#404040"/>
+  <circle cx="8"  cy="20" r="2" fill="#404040"/>
+  <circle cx="16" cy="20" r="2" fill="#404040"/>
 </svg>
