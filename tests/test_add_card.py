@@ -19,12 +19,8 @@ from PyQt6.QtWidgets import QDialog
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui import screen_fit
-from bartlebot.gui.game_embed.game_view import (
-    EMPTY_ACCOUNTS_HINT,
-    EMPTY_PROFILES_HINT,
-    GameView,
-    _GamePlaceholder,
-)
+from bartlebot.gui.game_embed.card_columns import EMPTY_ACCOUNTS_HINT, EMPTY_PROFILES_HINT
+from bartlebot.gui.game_embed.game_view import GameView, _GamePlaceholder
 from bartlebot.gui.game_embed.launch_cards import ADD_CARD_BORDER_WIDTH, AccountCard, AddCard, ProfileCard
 from bartlebot.gui.settings import accounts_tab
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
@@ -82,7 +78,10 @@ def _columns(view: GameView) -> tuple[list, list]:
     goes with it -- ``isinstance`` still answers on the corpse, but ``text()`` raises.
     """
     placeholder = view.findChild(_GamePlaceholder)
-    return _rows(placeholder._accounts_area), _rows(placeholder._profiles_area)
+    return (
+        _rows(placeholder.accounts_column.scroll_area),
+        _rows(placeholder.profiles_column.scroll_area),
+    )
 
 
 def _click(widget) -> None:
@@ -195,9 +194,10 @@ def test_the_add_card_is_not_one_of_the_cards_the_fit_pass_walks(qapp, screen):
     view = GameView()
 
     placeholder = view.findChild(_GamePlaceholder)
-    # Reached through the placeholder's own attribute deliberately: this is the list
-    # refresh_fit iterates, and the assertion is about its membership.
-    assert not any(isinstance(card, AddCard) for card in placeholder._launch_cards)
+    # Read off the columns deliberately: ``CardColumn.cards`` is the list the fit pass
+    # iterates, and the assertion is about its membership.
+    for column in (placeholder.accounts_column, placeholder.profiles_column):
+        assert not any(isinstance(card, AddCard) for card in column.cards)
 
 
 # ---------------------------------------------------------------------------

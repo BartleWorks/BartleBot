@@ -253,6 +253,11 @@ class MainWindow(QMainWindow):
         self._game_view_panel.delete_account_requested.connect(self._delete_account)
         self._game_view_panel.duplicate_profile_requested.connect(self._duplicate_launch_profile)
         self._game_view_panel.delete_profile_requested.connect(self._delete_launch_profile)
+        # A column dragged into a new order (#192). Through the same _after_card_action as
+        # the rest, because order is not only what the column draws: the Launch menu lists
+        # both of these, in this order.
+        self._game_view_panel.reorder_accounts_requested.connect(self._reorder_accounts)
+        self._game_view_panel.reorder_profiles_requested.connect(self._reorder_launch_profiles)
 
         # Top row: left sidebar | game view | right sidebar
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -687,6 +692,18 @@ class MainWindow(QMainWindow):
         from bartlebot.gui.settings.accounts_tab import delete_account
 
         self._after_card_action(delete_account(username, self))
+
+    def _reorder_accounts(self, order: list) -> None:
+        """Persist a drag in the Accounts column. The only card action with no dialog behind it."""
+        from bartlebot.gui.settings.accounts_tab import reorder_accounts
+
+        self._after_card_action(reorder_accounts(list(order)))
+
+    def _reorder_launch_profiles(self, order: list) -> None:
+        """Persist a drag in the Launch Profiles column."""
+        from bartlebot.gui.settings.accounts_tab import reorder_launch_profiles
+
+        self._after_card_action(reorder_launch_profiles(list(order)))
 
     def _open_settings(self, tab_name: str = "general") -> None:
         """Open Settings on the named tab.

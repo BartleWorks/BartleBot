@@ -25,8 +25,9 @@ Two rules about the settings dialog itself:
   1080p screen and put OK and Cancel under the taskbar (#188). The height stays —
   it is what the descriptions cost — and the three form tabs are wrapped in
   `rows.ScrollableTab` instead. Wrap a new form tab too. Do **not** wrap a tab
-  that carries the layout's stretch, as the Game tab's two lists do: inside a
-  scroll area they collapse to a couple of visible rows. `_fit_to_screen` caps the
+  that carries the layout's stretch, as the Game tab's two card columns do:
+  inside a scroll area they collapse to a couple of visible rows, and a column
+  that scrolls inside a page that scrolls is two bars for one list. `_fit_to_screen` caps the
   dialog at `screen_fit.size_within_screen` on the way up as the last defence, and
   a wrapper forwards `apply()` so the tab in the bar is still one `apply_all` can
   call.
@@ -37,8 +38,11 @@ Every write to an account or a launch profile goes through one of the module-lev
 functions in `accounts_tab.py` — `add_`/`edit_`/`delete_account`, and
 `add_`/`edit_`/`duplicate_`/`delete_launch_profile`. **Never open `_AccountDialog` or
 `_ProfileDialog` yourself, and never write `sm.accounts` or `sm.launch_profiles` from a
-widget.** Two surfaces manage these today (the Game tab, and the launch screen's cards)
-and #192 makes them one; a second copy of the delete cascade is how they drift.
+widget.** Two surfaces manage these, and since #192 they draw the same cards out of
+the same `CardColumn`; a second copy of the delete cascade is how they drift.
+`reorder_accounts` and `reorder_launch_profiles` are the same rule for a drag —
+both refuse a permutation that no longer describes the stored list, because the
+column that emitted it was built before the drop.
 
 Three things every one of them does, and a new one must:
 

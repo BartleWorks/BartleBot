@@ -277,8 +277,8 @@ window has been shown and the game view still holds a default size. Dragging a s
 *wider* therefore costs nothing, which is correct: the window minimum pushes back at
 launch anyway.
 
-Re-judging is deliberately **not** a rebuild. `_GamePlaceholder.refresh_fit()` calls
-`set_unavailable` on the cards it already has, and that returns immediately when the
+Re-judging is deliberately **not** a rebuild. `card_columns.refresh_column_fit()` calls
+`set_unavailable` on the cards each column already has, and that returns immediately when the
 reason has not changed — so a drag costs a few integer comparisons per card per event and
 restyles only on the frame a verdict flips. Rebuilding the cards instead would
 `deleteLater` and recreate every widget several times a second for the length of a drag.
@@ -288,8 +288,11 @@ the launch screen is hidden for the whole life of an embedded client.
 
 The live area is **passed in**, never looked up: `MainWindow.live_game_area` feeds the
 Launch menu and the launch guards directly, `LauncherPopup` reads it from its parent, and
-`SettingsDialog(..., live_game_area=...)` carries it down to the Game tab's two resolution
-pickers — so the settings combos and the Launch menu cannot disagree. A settings tab
+`SettingsDialog(..., live_game_area=...)` carries it down to the Game tab's resolution
+picker *and* to the fit pass over its two card columns — so the settings combos and the
+Launch menu cannot disagree. The tab is handed that size rather than measuring itself:
+the dialog is not the game area, so measuring the tab would answer a question about the
+settings window. A settings tab
 reaching back up its parent chain to find the main window would be the coupling this
 avoids.
 
@@ -431,10 +434,10 @@ ways out belong to the surface, because they are properties of the layout rather
 any one profile. `fit_problem` still returns the whole sentence, which is what a tooltip
 and a disabled menu entry take — those are read one at a time and have nothing to repeat.
 
-On the Quick Launch screen each column carries a `_FitBanner` under its header, linking to
-the resolution setting so advice the user has to go hunting to follow is not half an
-answer. **The two columns are worded separately, and must stay that way** — they refuse
-different things:
+Each column carries a `_FitBanner` under its header (`gui/game_embed/card_columns.py`),
+linking to the resolution setting so advice the user has to go hunting to follow is not
+half an answer. **The two columns are worded separately, and must stay that way** — they
+refuse different things:
 
 | column | the banner says | the cards say |
 |---|---|---|
@@ -460,6 +463,13 @@ The surfaces that must stay consistent: `ProfileCard`/`AccountCard`
 (`gui/game_embed/launch_cards.py`), the Launch menu (`gui/main_window.py`),
 `LauncherPopup` (`gui/launcher_popup.py`), and both resolution combos
 (`gui/settings/accounts_tab.py`).
+
+The cards themselves are drawn on two surfaces, and only one of them refuses. The Quick
+Launch screen greys an unfittable card and swallows its clicks; the Game settings tab
+shows the same card at full contrast with the banner above it, because a click there
+edits and editing is what the refusal is asking for. That split is the card's `manage`
+flag, and `refuses_when_unfit` is what reads it — never condition on the fit result
+itself to decide whether to grey something (#192).
 
 ### Which client count the settings combos judge against
 

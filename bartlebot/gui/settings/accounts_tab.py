@@ -52,7 +52,13 @@ from bartlebot import character_roster
 from bartlebot.credentials import CredentialStore
 from bartlebot.gui import screen_fit
 from bartlebot.gui.account_accent import ACCOUNT_PALETTE_SIZE, account_accent, account_color_keys, pinned_color_key
-from bartlebot.gui.menu_utils import popup_menu
+from bartlebot.gui.game_embed.card_columns import (
+    EMPTY_ACCOUNTS_HINT,
+    EMPTY_PROFILES_HINT,
+    CardColumn,
+    refresh_column_fit,
+)
+from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
@@ -492,6 +498,47 @@ def delete_account(username: str, parent: QWidget | None = None) -> bool:
     return True
 
 
+def _reordered(items: list, order: list[int]) -> list | None:
+    """*items* rearranged into *order*, or None if *order* does not describe *items*.
+
+    Guarded rather than trusted, because the permutation crosses a signal from a column
+    that was built out of a list read some time earlier, and either surface — or a delete
+    the same gesture raced — can have rewritten it in between. Refusing a stale
+    permutation costs the user one drag; applying one silently reorders a list that is not
+    the one they dragged, and can drop an account off the end of it.
+    """
+    if sorted(order) != list(range(len(items))):
+        return None
+    return [items[index] for index in order]
+
+
+def reorder_accounts(order: list[int]) -> bool:
+    """Rearrange the stored accounts into *order*. Whether anything was written.
+
+    Order is a real setting and not a display preference: it is what the Accounts column
+    and the Launch menu list, and a launch profile's own account order decides which
+    window becomes Player 1.
+    """
+    sm = SettingsManager.instance()
+    accounts = _reordered(sm.accounts, order)
+    if accounts is None:
+        return False
+    sm.accounts = accounts
+    sm.save()
+    return True
+
+
+def reorder_launch_profiles(order: list[int]) -> bool:
+    """Rearrange the stored launch profiles into *order*. Whether anything was written."""
+    sm = SettingsManager.instance()
+    profiles = _reordered(sm.launch_profiles, order)
+    if profiles is None:
+        return False
+    sm.launch_profiles = profiles
+    sm.save()
+    return True
+
+
 class _ProfileDialog(QDialog):
     """Dialog for adding or editing a launch profile.
 
@@ -860,6 +907,25 @@ def delete_launch_profile(name: str, parent: QWidget | None = None) -> bool:
 
 
 class AccountsTab(QWidget):
+    """The Game tab: the default resolution, then the same two card columns as the launch screen.
+
+    It used to draw the identical two lists as ``QListWidget`` rows of formatted text — an
+    account was a display string, a profile was ``f"{name} ({n} accounts, WxH)"`` — so the
+    surface where accounts are *edited* said strictly less about them than the surface
+    where they are merely launched, and neither taught you to read the other (#192). They
+    are the same cards now, out of the same ``CardColumn``.
+
+    What differs is the verbs, and they differ because this is the editing surface: a body
+    click edits rather than launches, the pencil and trash sit on the card face rather
+    than behind hover, and a card that will not fit is noted rather than greyed out —
+    greying out the row the user came here to fix is hostile. All three ride on the cards'
+    ``manage`` flag; see ``launch_cards``.
+
+    So there are no Add / Edit / Delete button rows and no selection: selection existed
+    only to feed those buttons, the verbs are on the cards, and Add is the card at the
+    foot of each column.
+    """
+
     def __init__(self, parent=None, live_game_area: tuple[int, int] | None = None) -> None:
         super().__init__(parent)
         # Set before the resolution section is built: its own fit pass reads it.
@@ -886,11 +952,16 @@ class AccountsTab(QWidget):
         res_form.addRow("Default game resolution:", self._res_combo)
         layout.addLayout(res_form)
 
+        # What the user has to do, and nothing they do not. This used to open by telling
+        # them to set the resolution by hand in the game's own options, which has not been
+        # true since BartleBot started writing preferences.xml before every launch —
+        # instructions for work the app already does read as work still outstanding.
+        # Windowed mode is still theirs to set until #200 caches and forces IsFullscreen.
         hint = ThemedTextLabel(
-            "Set Wizard101 to Windowed mode in Options → Graphics, with this resolution. "
-            "At smaller sizes the game's own UI is scaled down to match while BartleBot runs, "
-            "and put back when it closes. Widescreen sizes keep a larger UI than 4:3 ones of "
-            "the same height.",
+            "Set Wizard101 to Windowed mode in Options → Graphics. BartleBot sets the "
+            "resolution itself at every launch, and at smaller sizes scales the game's own "
+            "UI down to match while it runs, putting it back when the client closes. "
+            "Widescreen sizes keep a larger UI than 4:3 ones of the same height.",
             css="font-size: 11px;",
         )
         hint.setWordWrap(True)
@@ -900,64 +971,29 @@ class AccountsTab(QWidget):
         self._refresh_resolution_fit()
 
         # ------------------------------------------------------------------
-        # Accounts section
+        # The two columns
         # ------------------------------------------------------------------
-        layout.addWidget(QLabel("Accounts (passwords stored in Windows Credential Manager):"))
+        layout.addWidget(QLabel("Passwords are stored in Windows Credential Manager:"))
 
-        self._list = _ReorderableList()
-        self._list.reordered.connect(self._on_accounts_reordered)
-        layout.addWidget(self._list, 1)
+        columns = QHBoxLayout()
+        columns.setSpacing(16)
+        layout.addLayout(columns, 1)
 
-        btn_row = QHBoxLayout()
-        self._add_btn = QPushButton("Add")
-        self._edit_btn = QPushButton("Edit")
-        self._delete_btn = QPushButton("Delete")
-        self._edit_btn.setEnabled(False)
-        self._delete_btn.setEnabled(False)
-        btn_row.addWidget(self._add_btn)
-        btn_row.addWidget(self._edit_btn)
-        btn_row.addWidget(self._delete_btn)
-        btn_row.addStretch()
-        layout.addLayout(btn_row)
+        # No "Change resolution" link on either banner: the combo it would point at is
+        # forty pixels above them.
+        self._accounts_col = CardColumn("Accounts", EMPTY_ACCOUNTS_HINT, "Add account", show_settings_link=False)
+        self._accounts_col.add_requested.connect(self._on_add)
+        self._accounts_col.reordered.connect(self._on_accounts_reordered)
+        columns.addWidget(self._accounts_col, 1)
 
-        self._add_btn.clicked.connect(self._on_add)
-        self._edit_btn.clicked.connect(self._on_edit)
-        self._delete_btn.clicked.connect(self._on_delete)
-        self._list.currentRowChanged.connect(self._on_selection_changed)
-        self._list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self._list.customContextMenuRequested.connect(self._on_account_context_menu)
+        self._profiles_col = CardColumn(
+            "Launch Profiles", EMPTY_PROFILES_HINT, "Add launch profile", show_settings_link=False
+        )
+        self._profiles_col.add_requested.connect(self._on_profile_add)
+        self._profiles_col.reordered.connect(self._on_profiles_reordered)
+        columns.addWidget(self._profiles_col, 1)
 
         self._refresh()
-
-        # ------------------------------------------------------------------
-        # Launch Profiles section
-        # ------------------------------------------------------------------
-        layout.addWidget(QLabel("Launch Profiles:"))
-
-        self._profile_list = _ReorderableList()
-        self._profile_list.reordered.connect(self._on_profiles_reordered)
-        layout.addWidget(self._profile_list, 1)
-
-        profile_btn_row = QHBoxLayout()
-        self._profile_add_btn = QPushButton("Add")
-        self._profile_edit_btn = QPushButton("Edit")
-        self._profile_delete_btn = QPushButton("Delete")
-        self._profile_edit_btn.setEnabled(False)
-        self._profile_delete_btn.setEnabled(False)
-        profile_btn_row.addWidget(self._profile_add_btn)
-        profile_btn_row.addWidget(self._profile_edit_btn)
-        profile_btn_row.addWidget(self._profile_delete_btn)
-        profile_btn_row.addStretch()
-        layout.addLayout(profile_btn_row)
-
-        self._profile_add_btn.clicked.connect(self._on_profile_add)
-        self._profile_edit_btn.clicked.connect(self._on_profile_edit)
-        self._profile_delete_btn.clicked.connect(self._on_profile_delete)
-        self._profile_list.currentRowChanged.connect(self._on_profile_selection_changed)
-        self._profile_list.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self._profile_list.customContextMenuRequested.connect(self._on_profile_context_menu)
-
-        self._refresh_profiles()
 
     # ------------------------------------------------------------------
     # Resolution
@@ -968,6 +1004,9 @@ class AccountsTab(QWidget):
         if resolution:
             SettingsManager.instance().game_resolution = resolution
             SettingsManager.instance().save()
+            # The account column's banner is a statement about this value, so it is stale
+            # the moment the combo moves — and it is the banner that sent the user here.
+            self._refresh_fit()
 
     def _refresh_resolution_fit(self) -> None:
         """Grey out the resolutions a *single* client could not fit at.
@@ -988,141 +1027,113 @@ class AccountsTab(QWidget):
         _mark_unfittable_resolutions(self._res_combo, 1, self, self._live_game_area)
 
     # ------------------------------------------------------------------
-    # Accounts
+    # The columns
     # ------------------------------------------------------------------
 
-    def _on_accounts_reordered(self) -> None:
-        accounts = [self._list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._list.count())]
-        SettingsManager.instance().accounts = accounts
-        SettingsManager.instance().save()
+    @property
+    def accounts_column(self) -> CardColumn:
+        """The Accounts column. Public because a test has to reach the cards in it."""
+        return self._accounts_col
 
-    def _on_profiles_reordered(self) -> None:
-        profiles = [
-            self._profile_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._profile_list.count())
-        ]
-        SettingsManager.instance().launch_profiles = profiles
-        SettingsManager.instance().save()
+    @property
+    def profiles_column(self) -> CardColumn:
+        """The Launch Profiles column."""
+        return self._profiles_col
 
     def _refresh(self) -> None:
-        self._list.clear()
-        for acct in SettingsManager.instance().accounts:
-            username = acct.get("username", "")
-            alias = acct.get("alias") or None
-            display = CredentialStore.display_name(username, alias)
-            item = QListWidgetItem(display)
-            item.setData(Qt.ItemDataRole.UserRole, acct)
-            self._list.addItem(item)
+        """Rebuild both columns from settings, and re-judge the resolution list with them.
 
-    def _on_selection_changed(self, row: int) -> None:
-        has_sel = row >= 0
-        self._edit_btn.setEnabled(has_sel)
-        self._delete_btn.setEnabled(has_sel)
+        Both, always. Every verb here reaches further than the column it was run from: a
+        deleted account leaves every profile that launched it, an edited alias is a pill on
+        each of those cards, and a reorder of either list changes what the Launch menu
+        offers. Rebuilding one column and not the other is how a card ends up naming an
+        account that no longer exists.
+        """
+        self._refresh_resolution_fit()
+        accounts = SettingsManager.instance().accounts
 
-    def _selected_username(self) -> str:
-        """The account the buttons and the context menu act on, "" if none is selected."""
-        row = self._list.currentRow()
-        if row < 0:
-            return ""
-        return (self._list.item(row).data(Qt.ItemDataRole.UserRole) or {}).get("username", "")
+        account_cards: list[QWidget] = []
+        for account in accounts:
+            card = AccountCard(account, self._characters_for(account.get("username", "")), accounts, manage=True)
+            card.edit_account_requested.connect(self._on_edit)
+            card.delete_account_requested.connect(self._on_delete)
+            account_cards.append(card)
+        self._accounts_col.set_cards(account_cards)
+
+        profile_cards: list[QWidget] = []
+        for profile in SettingsManager.instance().launch_profiles:
+            card = ProfileCard(profile, accounts, manage=True)
+            card.edit_profile_requested.connect(self._on_profile_edit)
+            card.duplicate_profile_requested.connect(self._on_profile_duplicate)
+            card.delete_profile_requested.connect(self._on_profile_delete)
+            profile_cards.append(card)
+        self._profiles_col.set_cards(profile_cards)
+
+        self._refresh_fit()
+
+    def _refresh_fit(self) -> None:
+        """Note, on each column, what would not fit — see ``refresh_column_fit``.
+
+        Handed the panel's size rather than this widget's: the dialog is not the game
+        area, and measuring the tab would answer a question about the settings window.
+        """
+        refresh_column_fit(self._accounts_col, self._profiles_col, self, self._live_game_area)
+
+    def _characters_for(self, username: str) -> list[dict]:
+        """The known characters for *username*.
+
+        Read straight off the per-account store, unlike the launch screen's injected
+        roster source: that widget is built by the main window, which holds the
+        ClientManager the rosters are cached on, and this dialog is not. The cache is
+        a cache of exactly this file, so the two columns say the same thing.
+        """
+        return character_roster.load(username) if username else []
+
+    def _on_accounts_reordered(self, order: list) -> None:
+        if reorder_accounts(list(order)):
+            # Both columns: an account's position moves the pills on every profile card
+            # that carries it into a different colour slot.
+            self._refresh()
+
+    def _on_profiles_reordered(self, order: list) -> None:
+        if reorder_launch_profiles(list(order)):
+            self._refresh()
+
+    # ------------------------------------------------------------------
+    # Accounts
+    # ------------------------------------------------------------------
 
     def _on_add(self) -> None:
         if add_account(self):
             self._refresh()
 
-    def _on_edit(self) -> None:
-        if (username := self._selected_username()) and edit_account(username, self):
+    def _on_edit(self, username: str) -> None:
+        if username and edit_account(username, self):
             self._refresh()
 
-    def _on_delete(self) -> None:
-        if (username := self._selected_username()) and delete_account(username, self):
-            # Both lists: deleting an account strips it from every profile that launched
-            # it, and the profile rows carry an account count.
+    def _on_delete(self, username: str) -> None:
+        if username and delete_account(username, self):
             self._refresh()
-            self._refresh_profiles()
-
-    def _on_account_context_menu(self, pos) -> None:
-        """Right-click on an account row: the same two verbs the buttons below carry.
-
-        Text only, where the launch screen's card menus carry a pencil and a trash. Those
-        icons are there because the card face has the pencil on it and the menu has to
-        read as the same verb; a list row has no icon of its own for a menu to echo, and
-        the entries here duplicate two buttons that are already just words. They come with
-        the icons when the rows become cards (#192).
-
-        The row under the cursor is selected first. Right-clicking one row while another
-        is selected would otherwise run the verb against the selection rather than the
-        row that was aimed at -- and for Delete that is an account and a roster gone on a
-        mis-aim.
-        """
-        item = self._list.itemAt(pos)
-        if item is None:
-            return
-        self._list.setCurrentItem(item)
-        menu = popup_menu(self._list)
-        menu.addAction("Edit").triggered.connect(self._on_edit)
-        menu.addAction("Delete").triggered.connect(self._on_delete)
-        menu.exec(self._list.viewport().mapToGlobal(pos))
 
     # ------------------------------------------------------------------
     # Launch Profiles
     # ------------------------------------------------------------------
 
-    def _refresh_profiles(self) -> None:
-        self._refresh_resolution_fit()
-        self._profile_list.clear()
-        for p in SettingsManager.instance().launch_profiles:
-            n = len(p.get("accounts", []))
-            count_str = f"{n} account{'s' if n != 1 else ''}"
-            res = p.get("resolution")
-            res_str = f", {res[0]}×{res[1]}" if res else ""
-            item = QListWidgetItem(f"{p['name']} ({count_str}{res_str})")
-            item.setData(Qt.ItemDataRole.UserRole, p)
-            self._profile_list.addItem(item)
-
-    def _on_profile_selection_changed(self, row: int) -> None:
-        has_sel = row >= 0
-        self._profile_edit_btn.setEnabled(has_sel)
-        self._profile_delete_btn.setEnabled(has_sel)
-
-    def _selected_profile_name(self) -> str:
-        """The profile the buttons and the context menu act on, "" if none is selected."""
-        row = self._profile_list.currentRow()
-        if row < 0:
-            return ""
-        return (self._profile_list.item(row).data(Qt.ItemDataRole.UserRole) or {}).get("name", "")
-
     def _on_profile_add(self) -> None:
         if add_launch_profile(self, self._live_game_area):
-            self._refresh_profiles()
+            self._refresh()
 
-    def _on_profile_edit(self) -> None:
-        if (name := self._selected_profile_name()) and edit_launch_profile(name, self, self._live_game_area):
-            self._refresh_profiles()
+    def _on_profile_edit(self, name: str) -> None:
+        if name and edit_launch_profile(name, self, self._live_game_area):
+            self._refresh()
 
-    def _on_profile_duplicate(self) -> None:
-        if (name := self._selected_profile_name()) and duplicate_launch_profile(name):
-            self._refresh_profiles()
+    def _on_profile_duplicate(self, name: str) -> None:
+        if name and duplicate_launch_profile(name):
+            self._refresh()
 
-    def _on_profile_delete(self) -> None:
-        if (name := self._selected_profile_name()) and delete_launch_profile(name, self):
-            self._refresh_profiles()
-
-    def _on_profile_context_menu(self, pos) -> None:
-        """Right-click on a profile row. Duplicate lives here and nowhere else.
-
-        It is the third verb on a card type that has three, and a fourth button under the
-        list makes the two that matter harder to find. See ``_on_account_context_menu``
-        for why the row under the cursor is selected first.
-        """
-        item = self._profile_list.itemAt(pos)
-        if item is None:
-            return
-        self._profile_list.setCurrentItem(item)
-        menu = popup_menu(self._profile_list)
-        menu.addAction("Edit").triggered.connect(self._on_profile_edit)
-        menu.addAction("Duplicate").triggered.connect(self._on_profile_duplicate)
-        menu.addAction("Delete").triggered.connect(self._on_profile_delete)
-        menu.exec(self._profile_list.viewport().mapToGlobal(pos))
+    def _on_profile_delete(self, name: str) -> None:
+        if name and delete_launch_profile(name, self):
+            self._refresh()
 
     def apply(self) -> None:
         """No-op: AccountsTab saves immediately on each action."""

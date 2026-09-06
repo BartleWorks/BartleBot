@@ -13,7 +13,10 @@ from PyQt6.QtWidgets import QWidget
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.account_accent import account_accent
+from bartlebot.gui.game_embed.card_columns import CardColumn
+from bartlebot.gui.game_embed.game_view import _GamePlaceholder
 from bartlebot.gui.game_embed.launch_cards import MAX_CHARACTER_ROWS, AccountCard, ProfileCard
+from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.widgets.tag_pill import AccountPill
 
 ACCOUNT = {"username": "someone@example.com", "alias": "Main"}
@@ -28,16 +31,39 @@ def theme():
     theme_mod.set_theme_instance(before)
 
 
-def _click(widget) -> None:
+def _press(widget, button=Qt.MouseButton.LeftButton, at=QPoint(5, 5)) -> None:
     widget.mousePressEvent(
         QMouseEvent(
             QEvent.Type.MouseButtonPress,
-            QPoint(5, 5).toPointF(),
-            Qt.MouseButton.LeftButton,
-            Qt.MouseButton.LeftButton,
+            at.toPointF(),
+            button,
+            button,
             Qt.KeyboardModifier.NoModifier,
         )
     )
+
+
+def _release(widget, button=Qt.MouseButton.LeftButton, at=QPoint(5, 5)) -> None:
+    widget.mouseReleaseEvent(
+        QMouseEvent(
+            QEvent.Type.MouseButtonRelease,
+            at.toPointF(),
+            button,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+    )
+
+
+def _click(widget, button=Qt.MouseButton.LeftButton) -> None:
+    """A full click: down and up in the same place.
+
+    Both halves, because a card activates on *release* and only for a pointer that never
+    moved -- the column it sits in turns a press-and-drag into a reorder, and a card that
+    fired on press launched what it was being dragged past.
+    """
+    _press(widget, button)
+    _release(widget, button)
 
 
 def test_clicking_an_account_card_launches_that_account(qapp):
@@ -66,15 +92,7 @@ def test_a_right_click_does_not_launch(qapp):
     seen = []
     card.launch_profile_requested.connect(seen.append)
 
-    card.mousePressEvent(
-        QMouseEvent(
-            QEvent.Type.MouseButtonPress,
-            QPoint(5, 5).toPointF(),
-            Qt.MouseButton.RightButton,
-            Qt.MouseButton.RightButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
-    )
+    _click(card, Qt.MouseButton.RightButton)
 
     assert seen == []
 
@@ -274,20 +292,36 @@ def _windows_shown_by(qapp, build):
     return watcher.shown
 
 
+def _column_with_cards():
+    column = CardColumn("Accounts", "hint", "Add account")
+    column.set_cards([AccountCard(ACCOUNT, ROSTER)])
+    return column
+
+
 @pytest.mark.parametrize(
     "build",
     [
         pytest.param(lambda: AccountCard(ACCOUNT, ROSTER), id="account"),
         pytest.param(lambda: ProfileCard(PROFILE, [ACCOUNT]), id="profile"),
+        pytest.param(lambda: CardColumn("Accounts", "hint", "Add account"), id="column"),
+        pytest.param(_column_with_cards, id="column-with-cards"),
+        pytest.param(lambda: _GamePlaceholder(), id="launch-screen"),
+        pytest.param(lambda: AccountsTab(), id="game-tab"),
     ],
 )
 def test_building_a_card_puts_no_window_on_the_screen(qapp, build):
-    """A card's children must be the card's children from birth.
+    """A widget's children must be its children from birth.
 
     A parentless QWidget *is* a top-level window, so ``setVisible(True)`` on one — which
     the quiet line does whenever it has text — shows a label-sized window for the frame
     between there and the layout reparenting it. The user sees a flash in the corner of
     the display every time the cards are rebuilt, and the profile editor rebuilds them on
     the way out.
+
+    Extended past the cards to the columns and both surfaces that host them, because the
+    same mistake landed one level up in #192: a ``_FitBanner`` hiding its "Change
+    resolution" link before the layout had adopted the button, flashing twice on every
+    app start. Anything that shows or hides a child in its constructor belongs on this
+    list.
     """
     assert _windows_shown_by(qapp, build) == []

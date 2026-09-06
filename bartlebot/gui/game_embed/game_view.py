@@ -15,17 +15,20 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLayout,
     QPushButton,
-    QScrollArea,
-    QSizePolicy,
     QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
-from bartlebot.game_sizing import FitProblem, grid_for, required_game_area
-from bartlebot.gui import screen_fit
+from bartlebot.game_sizing import grid_for, required_game_area
+from bartlebot.gui.game_embed.card_columns import (
+    EMPTY_ACCOUNTS_HINT,
+    EMPTY_PROFILES_HINT,
+    CardColumn,
+    refresh_column_fit,
+)
 from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile, PendingTile
-from bartlebot.gui.game_embed.launch_cards import AccountCard, AddCard, ProfileCard
+from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
@@ -43,147 +46,26 @@ _OVERLAY_BTN_MARGIN = 4
 
 _LOGO_SIZE = 160  # diameter of the circular logo widget
 
-# What an empty column says beneath its Add card. The Add card is the empty state -- it
-# replaced "(No accounts)" outright, and says more than that hint did -- but a first-run
-# user does not yet know what a launch profile *is*, so one line of what the thing is
-# stays, and only while the column is empty. Once there are cards, they are the
-# explanation.
-EMPTY_ACCOUNTS_HINT = "An account is one Wizard101 login. Add one and it launches from here in a click."
-EMPTY_PROFILES_HINT = "A launch profile starts several accounts at once, in the order you give them."
-
-
-def _size(pair: tuple[int, int]) -> str:
-    return f"{pair[0]}×{pair[1]}"
-
-
-def account_banner_text(problem: FitProblem | None) -> str:
-    """What the Accounts column says when a single client will not fit, or "".
-
-    Every card in that column asks the identical question -- one client, the *default*
-    resolution, this screen -- so this sentence is the whole refusal for all of them and
-    the cards carry none of it.
-
-    It names the default resolution specifically, because that is the setting to change:
-    an account card never launches at a pinned one. And it offers two ways out rather than
-    the three a profile gets. "Launch fewer clients" is advice that cannot be taken here
-    -- one account is one client -- and a remedy the user cannot act on reads as the app
-    not knowing what it is refusing.
-    """
-    if problem is None:
-        return ""
-    return (
-        f"Your default game resolution ({_size(problem.resolution)}) needs "
-        f"{_size(problem.need)}, but only {_size(problem.available)} is available. "
-        f"Either lower the default game resolution or increase the size of the game view panel."
-    )
-
-
-def profile_banner_text(problems: list[FitProblem], total: int) -> str:
-    """What the Launch Profiles column says about *problems* out of *total*, or "".
-
-    Sized against the *panel*, not a resolution, which is the one number every profile in
-    the column shares: profiles may each pin their own resolution, so naming one would
-    point at a setting that is not the problem for the cards beside it.
-
-    Whether some or all of them fail changes what the user needs to be told. All of them
-    is a fact about the panel and comes with the ways out. Some of them is a fact about
-    those profiles -- the column still works, and each greyed card carries its own numbers
-    saying what it wanted -- so the banner says which state the list is in and leaves the
-    per-profile detail on the per-profile cards.
-    """
-    if not problems:
-        return ""
-    where = f"in the game view panel at its current size ({_size(problems[0].available)})"
-    if len(problems) < total:
-        return f"Some launch profiles do not fit {where} and have been disabled."
-    if total == 1:
-        return f"This launch profile does not fit {where}."
-    return (
-        f"No launch profiles fit {where}. Lower the resolution they launch at, "
-        f"increase the size of the game view panel, or launch fewer clients."
-    )
-
-
-class _FitBanner(ThemedMixin, QWidget):
-    """One column's "these will not fit" notice, and the way out of it.
-
-    A fit refusal has a half that belongs to the entry -- how much room this profile
-    wanted -- and a half that belongs to the column, because the ways out are properties
-    of the layout rather than of any one profile. Saying the second half once here is what
-    stops the account column printing the identical wrapped paragraph under every account
-    name, which is what it did when each card carried the whole sentence.
-
-    The two columns word it differently and deliberately: they are refusing different
-    things, they point at different settings, and one of the three standard remedies does
-    not apply to a single account at all. ``account_banner_text`` and
-    ``profile_banner_text`` hold the wording, out here where they can be read and tested
-    without a QApplication.
-
-    The link goes to the same place as the screen's own "Game settings" -- the tab holding
-    the resolution -- because advice the user then has to go hunting to follow is half an
-    answer.
-    """
-
-    settings_requested = pyqtSignal()
-
-    def __init__(self, parent=None) -> None:
-        super().__init__(parent)
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 2)
-        layout.setSpacing(2)
-        # Height-for-width, for the same reason as a card's quiet line: a wrapping label
-        # whose layout does not know it wraps reports a sizeHint height measured at some
-        # other width, and the column inherits it.
-        self._text = ThemedTextLabel("", color="warning")
-        self._text.setWordWrap(True)
-        policy = QSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        policy.setHeightForWidth(True)
-        self._text.setSizePolicy(policy)
-        self._text.setMinimumWidth(1)
-        layout.addWidget(self._text)
-
-        self._link = QPushButton("Change resolution")
-        self._link.setFlat(True)
-        self._link.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._link.clicked.connect(self.settings_requested)
-        layout.addWidget(self._link, alignment=Qt.AlignmentFlag.AlignLeft)
-
-        self.setVisible(False)
-        self.refresh_theme_styles()
-
-    def apply_theme_styles(self) -> None:
-        self._link.setStyleSheet(
-            f"color: {THEME.accent}; text-decoration: underline; border: none; padding: 0px; text-align: left;"
-        )
-
-    @property
-    def text(self) -> str:
-        """What the banner currently says -- empty while it is hidden."""
-        return self._text.text()
-
-    def set_text(self, text: str) -> None:
-        """Show *text*, or hide the banner entirely when it is empty.
-
-        Hidden rather than blank: an empty wrapping label still holds a line of the
-        column's height, and that is scroll range over nothing once the cards below it
-        fill the viewport.
-        """
-        self._text.setText(text)
-        self.setVisible(bool(text))
-
 
 class _GamePlaceholder(ThemedMixin, QWidget):
     """Placeholder shown in GameView when no clients are embedded.
 
     Three-column layout:
-        [Accounts list] | [Logo + settings links] | [Launch Profiles list]
+        [Accounts column] | [Logo + settings link] | [Launch Profiles column]
+
+    The two outer columns are ``CardColumn``s -- the same widget the Game settings tab is
+    built from, so the surface that launches an account and the surface that edits one
+    draw it identically (#192). Everything a column does, the drag that reorders it
+    included, lives there; this class supplies the cards and decides what a click on one
+    means.
     """
 
     launch_account_requested = pyqtSignal(str, str)
     launch_profile_requested = pyqtSignal(str)  # (profile_name)
-    # The card actions (#194). Forwarded rather than acted on: what an edit or a delete
-    # has to refresh afterwards -- the Launch menu, the window minimum, these cards --
-    # is the main window's business and not this widget's.
+    # The card actions (#194) and the column reorders (#192). Forwarded rather than acted
+    # on: what an edit, a delete or a reorder has to refresh afterwards -- the Launch
+    # menu, the window minimum, these cards -- is the main window's business and not this
+    # widget's.
     edit_account_requested = pyqtSignal(str)  # (username)
     delete_account_requested = pyqtSignal(str)  # (username)
     edit_profile_requested = pyqtSignal(str)  # (profile_name)
@@ -191,16 +73,14 @@ class _GamePlaceholder(ThemedMixin, QWidget):
     delete_profile_requested = pyqtSignal(str)  # (profile_name)
     add_account_requested = pyqtSignal()
     add_profile_requested = pyqtSignal()
+    reorder_accounts_requested = pyqtSignal(list)  # (old indices, in their new order)
+    reorder_profiles_requested = pyqtSignal(list)  # (old indices, in their new order)
     manage_accounts_requested = pyqtSignal()
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         # Set before _build_ui: the constructor's own refresh() reads it.
         self._roster_source = None
-        # The live cards, held so a resize can re-judge them without rebuilding. Rebuilding
-        # on a splitter drag would destroy and recreate every widget several times a
-        # second; re-judging is a few integer comparisons that usually change nothing.
-        self._launch_cards: list = []
         self._build_ui()
         self.refresh_theme_styles()
         self.refresh()
@@ -229,27 +109,14 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         body.setSpacing(16)
         outer.addLayout(body, stretch=1)
 
-        # ── Left: Accounts ────────────────────────────────────────────
-        left = QVBoxLayout()
-        left.setSpacing(6)
-        accounts_hdr = ThemedTextLabel("Accounts")
-        accounts_hdr_font = accounts_hdr.font()
-        accounts_hdr_font.setBold(True)
-        accounts_hdr.setFont(accounts_hdr_font)
-        accounts_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        left.addWidget(accounts_hdr)
-        sep_l = QFrame()
-        sep_l.setFrameShape(QFrame.Shape.HLine)
-        sep_l.setFrameShadow(QFrame.Shadow.Sunken)
-        left.addWidget(sep_l)
-        self._accounts_banner = _FitBanner()
-        self._accounts_banner.settings_requested.connect(self.manage_accounts_requested)
-        left.addWidget(self._accounts_banner)
-        self._accounts_area = self._make_scroll_area()
-        left.addWidget(self._accounts_area, stretch=1)
-        body.addLayout(left, stretch=1)
+        # -- Left: Accounts --------------------------------------------
+        self._accounts_col = CardColumn("Accounts", EMPTY_ACCOUNTS_HINT, "Add account")
+        self._accounts_col.add_requested.connect(self.add_account_requested)
+        self._accounts_col.reordered.connect(self.reorder_accounts_requested)
+        self._accounts_col.settings_requested.connect(self.manage_accounts_requested)
+        body.addWidget(self._accounts_col, stretch=1)
 
-        # ── Center: Logo + links ──────────────────────────────────────
+        # -- Center: Logo + links --------------------------------------
         center = QVBoxLayout()
         center.setSpacing(8)
         center.setAlignment(Qt.AlignmentFlag.AlignHCenter)
@@ -275,46 +142,29 @@ class _GamePlaceholder(ThemedMixin, QWidget):
 
         body.addLayout(center, stretch=1)
 
-        # ── Right: Launch Profiles ────────────────────────────────────
-        right = QVBoxLayout()
-        right.setSpacing(6)
-        profiles_hdr = ThemedTextLabel("Launch Profiles")
-        profiles_hdr_font = profiles_hdr.font()
-        profiles_hdr_font.setBold(True)
-        profiles_hdr.setFont(profiles_hdr_font)
-        profiles_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        right.addWidget(profiles_hdr)
-        sep_r = QFrame()
-        sep_r.setFrameShape(QFrame.Shape.HLine)
-        sep_r.setFrameShadow(QFrame.Shadow.Sunken)
-        right.addWidget(sep_r)
-        self._profiles_banner = _FitBanner()
-        self._profiles_banner.settings_requested.connect(self.manage_accounts_requested)
-        right.addWidget(self._profiles_banner)
-        self._profiles_area = self._make_scroll_area()
-        right.addWidget(self._profiles_area, stretch=1)
-        body.addLayout(right, stretch=1)
-
-    @staticmethod
-    def _make_scroll_area() -> QScrollArea:
-        area = QScrollArea()
-        area.setWidgetResizable(True)
-        area.setFrameShape(QFrame.Shape.NoFrame)
-        area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
-        layout.addStretch()
-        area.setWidget(container)
-        return area
+        # -- Right: Launch Profiles ------------------------------------
+        self._profiles_col = CardColumn("Launch Profiles", EMPTY_PROFILES_HINT, "Add launch profile")
+        self._profiles_col.add_requested.connect(self.add_profile_requested)
+        self._profiles_col.reordered.connect(self.reorder_profiles_requested)
+        self._profiles_col.settings_requested.connect(self.manage_accounts_requested)
+        body.addWidget(self._profiles_col, stretch=1)
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
+    @property
+    def accounts_column(self) -> CardColumn:
+        """The Accounts column, for the fit pass and for anyone measuring what it drew."""
+        return self._accounts_col
+
+    @property
+    def profiles_column(self) -> CardColumn:
+        """The Launch Profiles column."""
+        return self._profiles_col
+
     def apply_theme_styles(self) -> None:
-        """The two pieces that are not labels — the rest own their own colour."""
+        """The two pieces that are not labels -- the rest own their own colour."""
         self._logo.setStyleSheet(f"QFrame {{ border: 2px solid {THEME.border}; border-radius: {_LOGO_SIZE // 2}px; }}")
         self._manage_btn.setStyleSheet(
             f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
@@ -335,7 +185,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         """Rebuild the account and profile cards from current settings.
 
         Each card is asked whether what it would launch fits this screen, and greyed out
-        with the reason if it does not — see bartlebot/gui/screen_fit.py for why an
+        with the reason if it does not -- see bartlebot/gui/screen_fit.py for why an
         unfittable launch is refused rather than warned about. The screen is only known
         once the widget is on one, so a card built before the window is shown is measured
         against the primary screen and re-measured on the way back in, which showEvent
@@ -351,9 +201,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             card.edit_account_requested.connect(self.edit_account_requested)
             card.delete_account_requested.connect(self.delete_account_requested)
             account_cards.append(card)
-        add_account_card = AddCard("Add account")
-        add_account_card.add_requested.connect(self.add_account_requested)
-        self._rebuild_list(self._accounts_area, account_cards, add_account_card, EMPTY_ACCOUNTS_HINT)
+        self._accounts_col.set_cards(account_cards)
 
         profile_cards: list[QWidget] = []
         for profile in sm.launch_profiles:
@@ -363,53 +211,13 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             card.duplicate_profile_requested.connect(self.duplicate_profile_requested)
             card.delete_profile_requested.connect(self.delete_profile_requested)
             profile_cards.append(card)
-        add_profile_card = AddCard("Add launch profile")
-        add_profile_card.add_requested.connect(self.add_profile_requested)
-        self._rebuild_list(self._profiles_area, profile_cards, add_profile_card, EMPTY_PROFILES_HINT)
+        self._profiles_col.set_cards(profile_cards)
 
-        # Assigned only after _rebuild_list has deleteLater'd the previous cards, so
-        # nothing here can be a reference to a widget that is on its way out.
-        #
-        # The Add cards are deliberately absent. refresh_fit walks this list and calls
-        # set_unavailable on every member; an Add card launches nothing and has no
-        # resolution to judge, so greying it out would say a screen too small for the game
-        # is also too small to type a username into.
-        self._launch_cards = [*account_cards, *profile_cards]
         self.refresh_fit()
 
     def refresh_fit(self) -> None:
-        """Re-judge every card against the game area as it is now.
-
-        Cheap by construction: ``set_unavailable`` returns immediately when the reason has
-        not changed, so a drag costs a few comparisons per card per event and restyles
-        only on the frame where a verdict actually flips.
-
-        Each column's banner is then given what its refusals have in common. The account
-        column's answer is one answer by construction — every card asks the same question
-        — so the whole sentence, numbers included, belongs there and not on each card. A
-        profile column's cards keep their own numbers; see _FitBanner.
-        """
-        live = self.game_area_size
-        resolution = SettingsManager.instance().game_resolution
-        # This screen is only up when nothing is embedded, so an account card always
-        # launches the first client. The +1 case — adding a client to a running fleet —
-        # is the Launch menu's, which is reachable while tiles are on screen.
-        account_problem = screen_fit.fit_details(resolution, 1, self, live)
-        accounts = 0
-        profile_problems: list[FitProblem] = []
-        profiles = 0
-        for card in self._launch_cards:
-            if isinstance(card, ProfileCard):
-                profiles += 1
-                problem = screen_fit.profile_fit_details(card.profile, self, live)
-                card.set_unavailable(problem)
-                if problem is not None:
-                    profile_problems.append(problem)
-            else:
-                accounts += 1
-                card.set_unavailable(account_problem)
-        self._accounts_banner.set_text(account_banner_text(account_problem) if accounts else "")
-        self._profiles_banner.set_text(profile_banner_text(profile_problems, profiles))
+        """Re-judge every card against the game area as it is now -- see refresh_column_fit."""
+        refresh_column_fit(self._accounts_col, self._profiles_col, self, self.game_area_size)
 
     @property
     def game_area_size(self) -> tuple[int, int]:
@@ -424,7 +232,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         """Re-judge on a splitter drag, which is what makes the answer track the layout.
 
         Sidebar widths and the canvas height are startup seeds written only by the
-        settings dialog — nothing persists a drag — so without this the cards go on
+        settings dialog -- nothing persists a drag -- so without this the cards go on
         describing a layout the user has already moved away from.
         """
         super().resizeEvent(event)
@@ -451,59 +259,6 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             logger.debug("Could not read the character roster for the launch screen", exc_info=True)
             return []
 
-    # ------------------------------------------------------------------
-    # Internal
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _rebuild_list(
-        area: QScrollArea,
-        cards: list[QWidget],
-        add_card: QWidget | None = None,
-        empty_hint: str = "",
-    ) -> None:
-        """Fill a column with *cards*, then *add_card* as its last row.
-
-        The Add card is always last and is never one of *cards*: it is the column's
-        terminator rather than a member of the ordered list, so nothing is dropped after
-        it and the fit pass never sees it (#195).
-
-        *empty_hint* is drawn beneath it only while there are no cards at all, where it is
-        the one line saying what the thing being added is. It is not the old
-        "(No accounts)" — a lone Add card already says the column is empty, and says
-        what to do about it as well.
-        """
-        container = area.widget()
-        layout = container.layout()
-
-        # Remove all existing widgets
-        while layout.count() > 0:
-            item = layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-
-        # Expanding across, so a card fills the column; height-for-width down, so the
-        # column asks each card how tall it is *at the width it got*. Fixed vertically
-        # is what this used to be, and it pinned both the card's minimum and its
-        # maximum to a sizeHint that a wrapped refusal line computes at some unrelated
-        # width -- with setWidgetResizable the scroll area then could not be shorter
-        # than that sum, which is the scroll bar over empty space in #191.
-        for card in [*cards, *([add_card] if add_card is not None else [])]:
-            policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-            policy.setHeightForWidth(True)
-            card.setSizePolicy(policy)
-            layout.addWidget(card)
-
-        if not cards and empty_hint:
-            # ThemedTextLabel because _rebuild_list is static and the hints it makes
-            # are replaced on every refresh — there is nothing to hold a reference on.
-            hint = ThemedTextLabel(empty_hint, css="font-size: 11px;")
-            hint.setWordWrap(True)
-            hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(hint)
-
-        layout.addStretch()
-
 
 class GameView(ThemedMixin, QWidget):
     """Container that shows N ClientTile widgets in a grid layout.
@@ -523,6 +278,8 @@ class GameView(ThemedMixin, QWidget):
     delete_profile_requested = pyqtSignal(str)
     add_account_requested = pyqtSignal()
     add_profile_requested = pyqtSignal()
+    reorder_accounts_requested = pyqtSignal(list)
+    reorder_profiles_requested = pyqtSignal(list)
     manage_accounts_requested = pyqtSignal()
     game_embed_settings_requested = pyqtSignal()
     # A failed launch's tile was clicked away. Carries the account, not the slot: a pending
@@ -565,6 +322,8 @@ class GameView(ThemedMixin, QWidget):
         self._placeholder.delete_profile_requested.connect(self.delete_profile_requested)
         self._placeholder.add_account_requested.connect(self.add_account_requested)
         self._placeholder.add_profile_requested.connect(self.add_profile_requested)
+        self._placeholder.reorder_accounts_requested.connect(self.reorder_accounts_requested)
+        self._placeholder.reorder_profiles_requested.connect(self.reorder_profiles_requested)
         self._placeholder.manage_accounts_requested.connect(self.manage_accounts_requested)
         self._placeholder.show()
 

@@ -1,8 +1,12 @@
 """The Quick Launch columns scroll only when there is something to scroll to (#191).
 
-Both columns are built by ``_GamePlaceholder._make_scroll_area`` and filled by
-``_rebuild_list``, and the invariant they have to hold is one sentence: a vertical
+Both columns are a ``CardColumn`` -- on the launch screen and, since #192, in the Game
+settings tab as well -- and the invariant it has to hold is one sentence: a vertical
 scroll bar appears exactly when the cards draw taller than the viewport.
+
+One host is the point of that sharing: the fix below cannot now be kept on the launch
+screen and lost in the tab, which is what a second implementation of the same column
+would have made possible.
 
 It used to fail as soon as a card was greyed out -- which is to say whenever the game
 resolution did not fit the space the launch screen had -- because ``set_unavailable``
@@ -19,8 +23,8 @@ they keep meaning if a font or a margin changes.
 import pytest
 from PyQt6.QtWidgets import QVBoxLayout, QWidget
 
-from bartlebot.gui.game_embed.game_view import _GamePlaceholder
-from bartlebot.gui.game_embed.launch_cards import AccountCard, AddCard, ProfileCard
+from bartlebot.gui.game_embed.card_columns import CardColumn
+from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 
 ACCOUNT = {"username": "someone@example.com", "alias": "Main"}
 PROFILE = {"name": "Farm Team", "accounts": ["someone@example.com"], "resolution": [1280, 720]}
@@ -46,24 +50,34 @@ def _cards(kind: str, count: int, reason: str | None) -> list[QWidget]:
 
 
 def _column(qapp, cards: list[QWidget], height: int, width: int = 300):
-    """One Quick Launch column, laid out and shown at a fixed size.
+    """One column of cards, laid out and shown with a viewport exactly *height* tall.
 
     Shown because an unshown widget never applies the geometry its layout computed, and
     the scroll bar's visibility is exactly that geometry.
 
+    The host is grown by whatever the column spends on its heading, its rule and its fit
+    banner, so *height* still means what it meant when these tests were written: the room
+    the rows have. Measuring the chrome rather than allowing for it keeps that true if a
+    heading gains a line.
+
+    A real column, Add card and all: it is the last row of every one of them, so the
+    invariant these tests hold has to hold with it in there.
+
     Returns the host as well as the scroll area: the host is the only strong reference to
     the tree, and a caller that drops it takes every widget under it with it.
     """
-    area = _GamePlaceholder._make_scroll_area()
-    # A real column, Add card and all: it is the last row of every one of them, so the
-    # invariant these tests hold has to hold with it in there.
-    _GamePlaceholder._rebuild_list(area, cards, AddCard("Add account"), "An account is one login.")
+    column = CardColumn("Accounts", "An account is one login.", "Add account")
+    column.set_cards(cards)
+    area = column.scroll_area
     host = QWidget()
-    QVBoxLayout(host).addWidget(area)
+    QVBoxLayout(host).addWidget(column)
     host.resize(width, height)
     host.show()
     # Three passes: the show, the resize it provokes, and the re-fit of any card whose
     # own resizeEvent re-measures its text against the width it just got.
+    for _ in range(3):
+        qapp.processEvents()
+    host.resize(width, height + host.height() - area.viewport().height())
     for _ in range(3):
         qapp.processEvents()
     return host, area

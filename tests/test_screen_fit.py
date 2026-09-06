@@ -113,12 +113,22 @@ def test_a_screen_that_cannot_be_measured_refuses_nothing(monkeypatch, qapp):
 
 
 def _click(widget):
+    """Down and up in the same place. Both halves: a card activates on release."""
     widget.mousePressEvent(
         QMouseEvent(
             QMouseEvent.Type.MouseButtonPress,
             QPoint(5, 5).toPointF(),
             Qt.MouseButton.LeftButton,
             Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+    )
+    widget.mouseReleaseEvent(
+        QMouseEvent(
+            QMouseEvent.Type.MouseButtonRelease,
+            QPoint(5, 5).toPointF(),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.NoButton,
             Qt.KeyboardModifier.NoModifier,
         )
     )
@@ -435,7 +445,8 @@ def test_a_partly_fitting_profile_column_says_some_rather_than_none(qapp, monkey
 
 def test_the_banner_link_opens_the_settings_the_advice_points_at(qapp, monkeypatch):
     """ "Lower the resolution" the user then has to go hunting for is half an answer."""
-    from bartlebot.gui.game_embed.game_view import GameView, _FitBanner
+    from bartlebot.gui.game_embed.card_columns import _FitBanner
+    from bartlebot.gui.game_embed.game_view import GameView
 
     monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: ((900, 600), 1.0))
     SettingsManager.instance().game_resolution = (800, 600)
@@ -452,6 +463,6 @@ def test_the_banner_link_opens_the_settings_the_advice_points_at(qapp, monkeypat
 
 def _banner_texts(view):
     """What every visible fit banner in *view* says."""
-    from bartlebot.gui.game_embed.game_view import _FitBanner
+    from bartlebot.gui.game_embed.card_columns import _FitBanner
 
     return [banner.text for banner in view.findChildren(_FitBanner) if banner.text]
