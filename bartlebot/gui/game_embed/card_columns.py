@@ -325,6 +325,9 @@ class CardColumn(QWidget):
         # caller hands over a fresh list.
         self._baseline: list[QWidget] = []
         self._cards: list[QWidget] = []
+        # The Add card at the foot, when this column has one. Not a member of ``_cards``
+        # -- it is the column's terminator, not an entry in the ordered list.
+        self._add_card: QWidget | None = None
         # The in-flight drag: which card the button went down on, where, and whether the
         # pointer has since travelled far enough for it to be a drag and not a click.
         self._press_card: QWidget | None = None
@@ -413,6 +416,17 @@ class CardColumn(QWidget):
         return self._area
 
     @property
+    def add_card(self) -> QWidget | None:
+        """The card at the column's foot, or None for a column built without one.
+
+        Public because a caller may need to *point at* it: the profile editor's Add card
+        opens a picker popup, and a popup is positioned against the widget it belongs to.
+        Held rather than found again, since the whole row set is replaced on every
+        rebuild and a stale reference would anchor to a widget on its way out.
+        """
+        return self._add_card
+
+    @property
     def banner_text(self) -> str:
         """What the column's fit banner currently says -- empty while it is hidden."""
         return self._banner.text
@@ -454,6 +468,7 @@ class CardColumn(QWidget):
         # can hold a widget that is on its way out. A drag in flight goes with them.
         self._cards = list(cards)
         self._baseline = list(cards)
+        self._add_card = None
         self._grips = {}
         self._slots = {}
         self._anims = {}
@@ -471,6 +486,7 @@ class CardColumn(QWidget):
             add_card = AddCard(self._add_text)
             add_card.add_requested.connect(self.add_requested)
             self._add_row(add_card)
+            self._add_card = add_card
 
         if not cards and self._empty_hint:
             # ThemedTextLabel because the hint is replaced on every rebuild -- there is
@@ -883,6 +899,24 @@ class CardColumn(QWidget):
         """Never leave a closed hand behind on a column that is going away."""
         self._cancel_drag()
         super().closeEvent(event)
+
+
+def apply_order(items: list, order: list[int]) -> list | None:
+    """*items* rearranged into *order*, or None if *order* does not describe *items*.
+
+    The inverse of what ``CardColumn.reordered`` emits, and it lives beside that signal
+    rather than beside any one of its listeners: three surfaces now take the permutation,
+    and a guard that only two of them apply is a guard.
+
+    Guarded rather than trusted, because the permutation crosses a signal from a column
+    that was built out of a list read some time earlier, and either surface — or a delete
+    the same gesture raced — can have rewritten it in between. Refusing a stale
+    permutation costs the user one drag; applying one silently reorders a list that is not
+    the one they dragged, and can drop an account off the end of it.
+    """
+    if sorted(order) != list(range(len(items))):
+        return None
+    return [items[index] for index in order]
 
 
 def refresh_column_fit(

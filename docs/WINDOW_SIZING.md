@@ -461,15 +461,17 @@ Three things in that table are the point rather than phrasing:
 
 The surfaces that must stay consistent: `ProfileCard`/`AccountCard`
 (`gui/game_embed/launch_cards.py`), the Launch menu (`gui/main_window.py`),
-`LauncherPopup` (`gui/launcher_popup.py`), and both resolution combos
-(`gui/settings/accounts_tab.py`).
+`LauncherPopup` (`gui/launcher_popup.py`), and both resolution combos — the global one in
+`gui/settings/accounts_tab.py` and the per-profile one in
+`gui/settings/profile_editor.py`, which share `mark_unfittable_resolutions`.
 
-The cards themselves are drawn on two surfaces, and only one of them refuses. The Quick
-Launch screen greys an unfittable card and swallows its clicks; the Game settings tab
-shows the same card at full contrast with the banner above it, because a click there
-edits and editing is what the refusal is asking for. That split is the card's `manage`
-flag, and `refuses_when_unfit` is what reads it — never condition on the fit result
-itself to decide whether to grey something (#192).
+The cards themselves are drawn on three surfaces, and only one of them refuses. The Quick
+Launch screen greys an unfittable card and swallows its clicks; the Game settings tab and
+the profile editor show the same card at full contrast with the banner above it, because
+a click there edits — or, in the editor, does nothing at all — and editing is what the
+refusal is asking for. That split is the card's `CardMode`, and `refuses_when_unfit` is
+what reads it — never condition on the fit result itself to decide whether to grey
+something (#192).
 
 ### Which client count the settings combos judge against
 

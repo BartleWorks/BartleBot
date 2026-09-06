@@ -105,7 +105,7 @@ def test_the_edit_button_edits_without_launching(qapp):
     card.launch_profile_requested.connect(launched.append)
     card.edit_profile_requested.connect(edited.append)
 
-    card._edit_btn.click()
+    card.action_button("Edit").click()
 
     assert edited == ["Farm Team"]
     assert launched == []
@@ -118,7 +118,7 @@ def test_an_account_cards_pencil_edits_without_launching(qapp):
     card.launch_account_requested.connect(lambda *a: launched.append(a))
     card.edit_account_requested.connect(edited.append)
 
-    card._edit_btn.click()
+    card.action_button("Edit").click()
 
     assert edited == [ACCOUNT["username"]]
     assert launched == []
@@ -128,16 +128,17 @@ def test_an_account_cards_pencil_edits_without_launching(qapp):
 def test_the_edit_button_is_revealed_on_hover(qapp, factory):
     """Secondary to launching: a button visible on every card competes with the name."""
     card = factory()
+    edit_btn = card.action_button("Edit")
     # isVisibleTo, not isVisible: the card is never shown in the test, and isVisible is
     # False for every child of an unshown parent — which would pass whatever we did.
-    assert not card._edit_btn.isVisibleTo(card)
+    assert not edit_btn.isVisibleTo(card)
 
     point = QPoint(5, 5).toPointF()
     card.enterEvent(QEnterEvent(point, point, point))
-    assert card._edit_btn.isVisibleTo(card)
+    assert edit_btn.isVisibleTo(card)
 
     card.leaveEvent(QEvent(QEvent.Type.Leave))
-    assert not card._edit_btn.isVisibleTo(card)
+    assert not edit_btn.isVisibleTo(card)
 
 
 @pytest.mark.parametrize("factory", [lambda: AccountCard(ACCOUNT, ROSTER), lambda: ProfileCard(PROFILE, [ACCOUNT])])

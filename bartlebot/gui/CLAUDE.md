@@ -175,10 +175,11 @@ undo by accident:
 - **A configuration that will not fit cannot be launched**, and the entry that cannot
   launch is **disabled with the reason, never hidden**. `bartlebot/gui/screen_fit.py` is
   the one place that asks; the surfaces that must agree are `ProfileCard`/`AccountCard`,
-  the Launch menu, `LauncherPopup`, and both resolution combos in `accounts_tab.py`.
-  Disabled where a click would *launch* it, though: the same cards draw the Game settings
-  tab, where a click edits and the refusal is a note instead. That is the card's `manage`
-  flag and `refuses_when_unfit`, never a fresh test of the fit result (#192).
+  the Launch menu, `LauncherPopup`, and both resolution combos (`accounts_tab.py` and
+  `profile_editor.py`). Disabled where a click would *launch* it, though: the same cards
+  draw the Game settings tab and the profile editor, where a click edits or does nothing
+  at all and the refusal is a note instead. That is the card's `CardMode` and the
+  `refuses_when_unfit` that reads it, never a fresh test of the fit result (#192).
 - **The user never scrolls to see a game window.** Screen space caps the game size
   (configured layout, not the panel minimums), and `minimum_window_size` runs the other
   way to keep the window and the splitters off the game. Both are kept; they are not

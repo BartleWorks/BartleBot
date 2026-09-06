@@ -405,7 +405,7 @@ def profile_editor(monkeypatch):
     class Dialog(_FakeProfileDialog):
         pass
 
-    monkeypatch.setattr(accounts_tab, "_ProfileDialog", Dialog)
+    monkeypatch.setattr(accounts_tab, "ProfileDialog", Dialog)
     monkeypatch.setattr(accounts_tab.QMessageBox, "warning", lambda *a, **k: None)
     SettingsManager.instance().launch_profiles = [{"name": "Farm Team", "accounts": []}]
     return Dialog

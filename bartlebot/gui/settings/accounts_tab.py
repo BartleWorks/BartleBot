@@ -20,16 +20,21 @@ claimed it "saves immediately on each action", which was true of the reorders al
 Every one of them runs ``exec()`` on a dialog or a message box, so every one must be
 called from a synchronous Qt slot: Python 3.13 forbids re-entering Qt's event loop from
 inside a running asyncio task. See the qasync section of CLAUDE.md.
+
+The account editor is here, next to the tab that owns account records. The *profile*
+editor is not: it draws the same cards in the same column as this tab does, so it lives
+in ``profile_editor`` beside nothing but them, and this module imports it rather than the
+other way round. ``mark_unfittable_resolutions`` went with it, being the one thing the
+two resolution combo boxes share.
 """
 
 from __future__ import annotations
 
 from copy import deepcopy
 
-from PyQt6.QtCore import QRectF, Qt, pyqtSignal
+from PyQt6.QtCore import QRectF, Qt
 from PyQt6.QtGui import QColor, QPainter
 from PyQt6.QtWidgets import (
-    QAbstractItemView,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -37,12 +42,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QListWidget,
-    QListWidgetItem,
-    QMenu,
     QMessageBox,
-    QPushButton,
-    QSizePolicy,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -50,96 +50,20 @@ from PyQt6.QtWidgets import (
 
 from bartlebot import character_roster
 from bartlebot.credentials import CredentialStore
-from bartlebot.gui import screen_fit
 from bartlebot.gui.account_accent import ACCOUNT_PALETTE_SIZE, account_accent, account_color_keys, pinned_color_key
 from bartlebot.gui.game_embed.card_columns import (
     EMPTY_ACCOUNTS_HINT,
     EMPTY_PROFILES_HINT,
     CardColumn,
+    apply_order,
     refresh_column_fit,
 )
-from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
+from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode, ProfileCard
+from bartlebot.gui.settings.profile_editor import ProfileDialog, mark_unfittable_resolutions
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
-
-
-def _mark_unfittable_resolutions(
-    combo: QComboBox,
-    client_count: int,
-    widget: QWidget,
-    live_area: tuple[int, int] | None = None,
-) -> None:
-    """Grey out every entry in *combo* that *client_count* clients could not fit at.
-
-    Disabled and explained rather than dropped from the list, which is the same rule the
-    launch surfaces follow: a user who cannot find 1920x1080 in the list learns nothing,
-    while one who sees it greyed out learns that their screen is the reason and that
-    fewer clients would bring it back.
-
-    The item's own resolution is read from its ``userData``, so the "Use global setting"
-    entry — which carries None — is skipped: what it resolves to is the global combo's
-    business, and that combo polices itself.
-    """
-    model = combo.model()
-    for index in range(combo.count()):
-        resolution = combo.itemData(index)
-        if resolution is None:
-            continue
-        reason = screen_fit.fit_problem(tuple(resolution), client_count, widget, live_area)
-        item = model.item(index)
-        if item is not None:
-            item.setEnabled(reason is None)
-        combo.setItemData(index, reason or "", Qt.ItemDataRole.ToolTipRole)
-
-
-class _ReorderableList(QListWidget):
-    """QListWidget with internal-move drag-and-drop that preserves UserRole data.
-
-    Qt's default InternalMove serialises items to MIME (text only), losing any
-    UserRole data set on each item.  This subclass overrides dropEvent to move
-    the actual QListWidgetItem object via takeItem/insertItem instead, so all
-    item data survives the drag.  A ``reordered`` signal is emitted after each
-    successful drop so callers can persist the new order.
-    """
-
-    reordered = pyqtSignal()
-
-    def __init__(self, parent=None) -> None:
-        super().__init__(parent)
-        self.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
-        self.setDefaultDropAction(Qt.DropAction.MoveAction)
-
-    def dropEvent(self, event) -> None:
-        src_row = self.currentRow()
-        if src_row < 0:
-            event.ignore()
-            return
-
-        dest_index = self.indexAt(event.position().toPoint())
-        if dest_index.isValid():
-            dest_row = dest_index.row()
-            if self.dropIndicatorPosition() == QAbstractItemView.DropIndicatorPosition.BelowItem:
-                dest_row += 1
-        else:
-            dest_row = self.count()
-
-        # No-op: dropping onto current position or the gap immediately after it
-        if dest_row == src_row or dest_row == src_row + 1:
-            event.ignore()
-            return
-
-        item = self.takeItem(src_row)
-        if src_row < dest_row:
-            dest_row -= 1
-        self.insertItem(dest_row, item)
-        self.setCurrentRow(dest_row)
-        # Report IgnoreAction so QAbstractItemView::startDrag does not attempt
-        # its own source-row deletion — we already moved the item manually.
-        event.setDropAction(Qt.DropAction.IgnoreAction)
-        event.accept()
-        self.reordered.emit()
 
 
 def _slots_in_use(exclude: str = "") -> dict[int, list[str]]:
@@ -498,20 +422,6 @@ def delete_account(username: str, parent: QWidget | None = None) -> bool:
     return True
 
 
-def _reordered(items: list, order: list[int]) -> list | None:
-    """*items* rearranged into *order*, or None if *order* does not describe *items*.
-
-    Guarded rather than trusted, because the permutation crosses a signal from a column
-    that was built out of a list read some time earlier, and either surface — or a delete
-    the same gesture raced — can have rewritten it in between. Refusing a stale
-    permutation costs the user one drag; applying one silently reorders a list that is not
-    the one they dragged, and can drop an account off the end of it.
-    """
-    if sorted(order) != list(range(len(items))):
-        return None
-    return [items[index] for index in order]
-
-
 def reorder_accounts(order: list[int]) -> bool:
     """Rearrange the stored accounts into *order*. Whether anything was written.
 
@@ -520,7 +430,7 @@ def reorder_accounts(order: list[int]) -> bool:
     window becomes Player 1.
     """
     sm = SettingsManager.instance()
-    accounts = _reordered(sm.accounts, order)
+    accounts = apply_order(sm.accounts, order)
     if accounts is None:
         return False
     sm.accounts = accounts
@@ -531,216 +441,12 @@ def reorder_accounts(order: list[int]) -> bool:
 def reorder_launch_profiles(order: list[int]) -> bool:
     """Rearrange the stored launch profiles into *order*. Whether anything was written."""
     sm = SettingsManager.instance()
-    profiles = _reordered(sm.launch_profiles, order)
+    profiles = apply_order(sm.launch_profiles, order)
     if profiles is None:
         return False
     sm.launch_profiles = profiles
     sm.save()
     return True
-
-
-class _ProfileDialog(QDialog):
-    """Dialog for adding or editing a launch profile.
-
-    Shows only the accounts already included in the profile.  Adding/removing
-    accounts is done via the Add ▾ dropdown and Remove button; order is
-    controlled with the ↑/↓ buttons.  A per-profile resolution override can
-    be selected, or left at "Use global setting".
-    """
-
-    def __init__(
-        self,
-        name: str = "",
-        selected_usernames: list[str] | None = None,
-        resolution: tuple[int, int] | None = None,
-        parent=None,
-        live_game_area: tuple[int, int] | None = None,
-    ) -> None:
-        super().__init__(parent)
-        # The game area behind the settings dialog, so this picker and the Launch menu
-        # agree about which resolutions can be launched. None falls back to the
-        # configured layout alone — see gui/screen_fit.budget_for.
-        self._live_game_area = live_game_area
-        self.setWindowTitle("Launch Profile")
-        self.setMinimumWidth(340)
-
-        layout = QVBoxLayout(self)
-
-        # --- Profile name ---
-        form = QFormLayout()
-        self._name_edit = QLineEdit(name)
-        form.addRow("Profile name:", self._name_edit)
-        layout.addLayout(form)
-
-        # --- Account list (ordered, no checkboxes) ---
-        layout.addWidget(QLabel("Accounts (in player order):"))
-
-        list_and_buttons = QHBoxLayout()
-
-        self._account_list = _ReorderableList()
-        self._account_list.currentRowChanged.connect(self._on_selection_changed)
-        list_and_buttons.addWidget(self._account_list, 1)
-
-        side_buttons = QVBoxLayout()
-
-        # Add — QToolButton with a popup menu (InstantPopup adds its own arrow)
-        self._add_btn = QToolButton()
-        self._add_btn.setText("Add")
-        self._add_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self._add_btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self._add_menu = QMenu(self)
-        self._add_btn.setMenu(self._add_menu)
-        self._add_menu.aboutToShow.connect(self._populate_add_menu)
-
-        self._remove_btn = QPushButton("Remove")
-        self._remove_btn.setEnabled(False)
-        self._remove_btn.clicked.connect(self._on_remove)
-
-        self._up_btn = QPushButton("↑")
-        self._up_btn.setEnabled(False)
-        self._up_btn.clicked.connect(self._on_move_up)
-
-        self._down_btn = QPushButton("↓")
-        self._down_btn.setEnabled(False)
-        self._down_btn.clicked.connect(self._on_move_down)
-
-        side_buttons.addWidget(self._add_btn)
-        side_buttons.addWidget(self._remove_btn)
-        side_buttons.addSpacing(4)
-        side_buttons.addWidget(self._up_btn)
-        side_buttons.addWidget(self._down_btn)
-        side_buttons.addStretch()
-
-        list_and_buttons.addLayout(side_buttons)
-        layout.addLayout(list_and_buttons, 1)
-
-        # --- Per-profile resolution ---
-        res_form = QFormLayout()
-        self._res_combo = QComboBox()
-        self._res_combo.addItem("Use global setting", userData=None)
-        for w, h in VALID_RESOLUTIONS:
-            self._res_combo.addItem(f"{w}×{h}", userData=(w, h))
-
-        if resolution is not None:
-            for i in range(self._res_combo.count()):
-                if self._res_combo.itemData(i) == resolution:
-                    self._res_combo.setCurrentIndex(i)
-                    break
-
-        res_form.addRow("Resolution:", self._res_combo)
-        layout.addLayout(res_form)
-
-        self._res_hint = ThemedTextLabel("", css="font-size: 11px;")
-        self._res_hint.setWordWrap(True)
-        layout.addWidget(self._res_hint)
-
-        # --- OK / Cancel ---
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-
-        # Populate list with pre-selected accounts
-        for username in selected_usernames or []:
-            self._add_account_item(username)
-        self._refresh_resolution_fit()
-
-    def _refresh_resolution_fit(self) -> None:
-        """Re-judge which resolutions this profile could launch at, and say what fits.
-
-        Judged against the profile's *own* account count, which is the number of clients
-        this resolution will actually have to hold. Re-run on every change to the list,
-        because adding a fourth account is exactly what turns a fitting profile into one
-        that has to come down a tier.
-        """
-        count = max(1, self._account_list.count())
-        _mark_unfittable_resolutions(self._res_combo, count, self, self._live_game_area)
-        largest = screen_fit.largest_fitting_resolution(count, self, self._live_game_area)
-        clients = f"{count} client{'s' if count != 1 else ''}"
-        self._res_hint.setText(
-            f"Largest that fits {clients} on this screen: {largest[0]}×{largest[1]}."
-            if largest is not None
-            else f"No offered resolution fits {clients} on this screen — remove an account, "
-            "or make the sidebars and bot canvas smaller in Settings → General."
-        )
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-
-    def _add_account_item(self, username: str) -> None:
-        accounts_meta = {a["username"]: a for a in SettingsManager.instance().accounts}
-        meta = accounts_meta.get(username, {})
-        alias = meta.get("alias") or None
-        display = CredentialStore.display_name(username, alias)
-        item = QListWidgetItem(display)
-        item.setData(Qt.ItemDataRole.UserRole, username)
-        self._account_list.addItem(item)
-
-    def _populate_add_menu(self) -> None:
-        self._add_menu.clear()
-        already_in = {
-            self._account_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._account_list.count())
-        }
-        available = [a for a in SettingsManager.instance().accounts if a["username"] not in already_in]
-        if not available:
-            action = self._add_menu.addAction("(no more accounts)")
-            action.setEnabled(False)
-            return
-        for acct in available:
-            username = acct["username"]
-            alias = acct.get("alias") or None
-            display = CredentialStore.display_name(username, alias)
-            action = self._add_menu.addAction(display)
-            action.triggered.connect(lambda _checked, u=username: self._on_add_account(u))
-
-    def _on_add_account(self, username: str) -> None:
-        self._add_account_item(username)
-        self._refresh_resolution_fit()
-
-    def _on_remove(self) -> None:
-        row = self._account_list.currentRow()
-        if row >= 0:
-            self._account_list.takeItem(row)
-            self._refresh_resolution_fit()
-
-    def _on_move_up(self) -> None:
-        row = self._account_list.currentRow()
-        if row <= 0:
-            return
-        item = self._account_list.takeItem(row)
-        self._account_list.insertItem(row - 1, item)
-        self._account_list.setCurrentRow(row - 1)
-
-    def _on_move_down(self) -> None:
-        row = self._account_list.currentRow()
-        if row < 0 or row >= self._account_list.count() - 1:
-            return
-        item = self._account_list.takeItem(row)
-        self._account_list.insertItem(row + 1, item)
-        self._account_list.setCurrentRow(row + 1)
-
-    def _on_selection_changed(self, row: int) -> None:
-        has_sel = row >= 0
-        self._remove_btn.setEnabled(has_sel)
-        self._up_btn.setEnabled(has_sel and row > 0)
-        self._down_btn.setEnabled(has_sel and row < self._account_list.count() - 1)
-
-    # ------------------------------------------------------------------
-    # Public properties
-    # ------------------------------------------------------------------
-
-    @property
-    def name(self) -> str:
-        return self._name_edit.text().strip()
-
-    @property
-    def selected_usernames(self) -> list[str]:
-        return [self._account_list.item(i).data(Qt.ItemDataRole.UserRole) for i in range(self._account_list.count())]
-
-    @property
-    def resolution(self) -> tuple[int, int] | None:
-        return self._res_combo.currentData()
 
 
 def add_launch_profile(
@@ -756,7 +462,7 @@ def add_launch_profile(
     Returns whether a profile was written. False covers the three ways nothing was:
     the editor cancelled, an empty name, and a duplicate.
     """
-    dlg = _ProfileDialog(parent=parent, live_game_area=live_game_area)
+    dlg = ProfileDialog(parent=parent, live_game_area=live_game_area)
     if dlg.exec() != QDialog.DialogCode.Accepted:
         return False
     name = dlg.name
@@ -801,7 +507,7 @@ def edit_launch_profile(
         return False
     raw_res = profile.get("resolution")
     existing_res = tuple(raw_res) if raw_res else None
-    dlg = _ProfileDialog(
+    dlg = ProfileDialog(
         name=old_name,
         selected_usernames=profile.get("accounts", []),
         resolution=existing_res,
@@ -1024,7 +730,7 @@ class AccountsTab(QWidget):
         that inherits a resolution too large for its account count is still stopped there,
         with a reason naming both numbers.
         """
-        _mark_unfittable_resolutions(self._res_combo, 1, self, self._live_game_area)
+        mark_unfittable_resolutions(self._res_combo, 1, self, self._live_game_area)
 
     # ------------------------------------------------------------------
     # The columns
@@ -1054,7 +760,12 @@ class AccountsTab(QWidget):
 
         account_cards: list[QWidget] = []
         for account in accounts:
-            card = AccountCard(account, self._characters_for(account.get("username", "")), accounts, manage=True)
+            card = AccountCard(
+                account,
+                self._characters_for(account.get("username", "")),
+                accounts,
+                mode=CardMode.MANAGE,
+            )
             card.edit_account_requested.connect(self._on_edit)
             card.delete_account_requested.connect(self._on_delete)
             account_cards.append(card)
@@ -1062,7 +773,7 @@ class AccountsTab(QWidget):
 
         profile_cards: list[QWidget] = []
         for profile in SettingsManager.instance().launch_profiles:
-            card = ProfileCard(profile, accounts, manage=True)
+            card = ProfileCard(profile, accounts, mode=CardMode.MANAGE)
             card.edit_profile_requested.connect(self._on_profile_edit)
             card.duplicate_profile_requested.connect(self._on_profile_duplicate)
             card.delete_profile_requested.connect(self._on_profile_delete)

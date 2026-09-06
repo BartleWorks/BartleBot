@@ -314,13 +314,12 @@ def test_a_refused_action_saves_nothing(store, confirm, account_editor):
 
 
 def _menu_labels(card) -> list[str]:
-    return [label for label, _icon, _handler in card._context_actions()]
+    return [verb.label for verb in card._verbs()]
 
 
 def _fire(card, label: str) -> None:
     """Run the context-menu entry named *label*, without putting a QMenu on screen."""
-    handler = next(h for lbl, _icon, h in card._context_actions() if lbl == label)
-    handler()
+    next(verb for verb in card._verbs() if verb.label == label).run()
 
 
 def test_an_account_card_offers_edit_and_delete(qapp):
@@ -385,16 +384,16 @@ def test_a_greyed_card_still_offers_its_menu(qapp):
 def test_delete_is_not_on_a_card_face(qapp):
     """The body starts a game client; a trash icon 22px from it is a costly mis-click.
 
-    The pencil is the only button on either card, so the whole check is that there is one
-    of them -- a second QToolButton in the header would be the regression.
+    The pencil is the only button on either card here, and Delete is still on the menu --
+    both halves, because a verb dropped from the list entirely would pass the first.
     """
-    from PyQt6.QtWidgets import QToolButton
-
     for card in (
         AccountCard({"username": ONE, "alias": ""}, []),
         ProfileCard({"name": "Solo", "accounts": [ONE]}, _accounts(ONE)),
     ):
-        assert len(card.findChildren(QToolButton)) == 1
+        assert [button.toolTip().split()[0] for button in card.action_buttons] == ["Edit"]
+        assert card.action_button("Delete") is None
+        assert "Delete" in _menu_labels(card)
 
 
 # ---------------------------------------------------------------------------

@@ -45,35 +45,61 @@ the card's own padding whether the dots are drawn or not, and the handle is free
 tall as the thing it moves. The Add card carries the same indent (``GRIP_GUTTER``) so that
 the column's last frame lines up with the ones above it.
 
-TWO SURFACES, ONE CARD
+THREE SURFACES, ONE CARD
 
 The same cards draw the Game settings tab, which used to render the identical two lists
 as ``QListWidget`` rows of formatted text -- so the surface where accounts are *edited*
-said strictly less about them than the surface where they are merely launched (#192).
-``manage=True`` is what varies between the two, and it is one flag rather than three
-because it is one fact -- which surface this is:
+said strictly less about them than the surface where they are merely launched (#192) --
+and the launch profile editor, which had the same fault one dialog deeper: it is the
+surface where a profile's membership is *decided*, and it named its accounts in a list of
+bare strings, with none of the colour, roster or fit the cards behind it were showing.
 
-- the body click **edits** instead of launching, that being the tab's primary verb;
-- the header icons are **pinned open** rather than revealed on hover, there being nothing
-  for them to compete with on a surface whose whole job is those verbs;
-- a card that will not fit is **noted, not greyed**. Greying out the row the user came
-  here to fix is hostile: on the launch screen a card goes grey because clicking it would
-  launch something that cannot fit, and in the tab clicking it is how you fix that.
+``CardMode`` is what varies between the three. It was a ``manage`` boolean while there
+were two, and that held only because those two happened to agree on all four of the
+things it decides. The editor breaks the agreement in two places, so the flag is named
+after the surface instead and the four facts are read back off it:
 
-THE REST OF THE VERBS
+- ``has_body_verb`` -- whether clicking the card body does anything, and what. It
+  launches on the launch screen, edits in the tab, and does **nothing** in the editor,
+  where a card is a row in a list being assembled rather than a thing to open. That third
+  value is one the boolean could not hold, and it is why a MEMBER card also drops the
+  pointing-hand cursor and the hover highlight: both are promises that clicking works.
+- ``pins_chrome`` -- whether the grip and the header icons are pinned open or revealed on
+  hover. Hover is right where the card's job is to be picked out by name; the other two
+  surfaces exist to run the verbs, and hiding them there is backwards.
+- ``refuses_when_unfit`` -- whether a card that will not fit goes grey and stops taking
+  clicks. True only on the launch screen, where a click starts what does not fit.
+  Elsewhere it is **noted, not greyed**: greying out the row the user came here to fix is
+  hostile.
+- ``_verbs()`` -- the list below.
 
-Every other thing you can do to an account or a profile is on the right-click menu:
-Delete on both, and Duplicate on profiles (#194). On the launch screen Delete is
-deliberately *not* on the card face, where a trash icon would sit 22px from a body that
-starts a game client -- a mis-click there costs a stored credential and a character
-roster. The Game tab does carry it, which is safe there for exactly the reason it is not
-here: a body click edits. Duplicate stays on the menu on both, being the third verb of a
-card type that has three.
+VERBS ARE DATA
+
+Every verb a card has is a ``CardVerb``: a label, an icon, a tooltip, what it does, and
+whether it sits on the card's face as well as in its right-click menu. One list per card
+per mode, so *which buttons does this card have* is answered by reading ``_verbs`` rather
+than by reading ``_build``, and a surface wanting a different set is handed one instead of
+needing another branch inside the layout code. The face buttons used to be a hardcoded
+parallel copy of half this list, which is why removing one meant editing ``_build``.
+
+What each mode gets, and why:
+
+- **Delete is menu-only on the launch screen.** A trash there would sit 22px from a body
+  that starts a game client, and a mis-click costs a stored credential and a character
+  roster. The Game tab does put it on the face, which is safe for exactly the reason it is
+  not safe here: a body click there edits.
+- **The editor's verb is a dismiss cross, and it is on the face.** It takes the account
+  out of the profile being edited -- not the account itself -- so the rule above does not
+  reach it: a mis-click costs one re-tick in the account picker, and in that mode there is
+  no body verb beside it to mis-click away from. It is ``TagChip``'s cross, meaning what
+  it means there.
+- **Duplicate stays on the menu everywhere**, being the third verb of a card type that
+  has three.
 
 None of the verbs are implemented here. Each is a signal carrying a name, and the module
 functions in settings/accounts_tab.py are what every surface calls -- so what a card does
-and how a card draws it stay separable, which is what lets the Game tab promote a
-different subset of the same list.
+and how a card draws it stay separable, which is what lets each surface promote a
+different subset of one list.
 
 WHAT THE PILLS MEAN
 
@@ -96,6 +122,7 @@ colours for six accounts.
 from __future__ import annotations
 
 from collections.abc import Callable
+from enum import Enum
 from typing import NamedTuple
 
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal
@@ -200,6 +227,45 @@ STRIPE_WIDTH = 3
 # reads at about the weight of the 1px solid border on the launch cards above it, because
 # the gaps give back what the extra pixel takes.
 ADD_CARD_BORDER_WIDTH = 2
+
+
+class CardMode(Enum):
+    """Which surface a card is on, and so what it does and what it shows.
+
+    One value rather than a handful of booleans, because it is one fact: the four things
+    a card varies by are read off it (see the module docstring), and every name here is a
+    surface that exists. Two booleans would describe four surfaces, two of which do not.
+    """
+
+    #: The Quick Launch screen. A body click launches, the chrome is revealed on hover,
+    #: and a card that will not fit goes grey and refuses its clicks.
+    LAUNCH = "launch"
+    #: The Game settings tab. A body click edits, the chrome is pinned open, and a card
+    #: that will not fit is noted rather than greyed.
+    MANAGE = "manage"
+    #: A row in a list being assembled -- the launch profile editor. The body has no verb
+    #: at all, the chrome is pinned open, and nothing here refuses.
+    MEMBER = "member"
+
+
+class CardVerb(NamedTuple):
+    """One thing a card can do, as data rather than as a line of ``_build``.
+
+    *label* names it in the right-click menu and *tooltip* on the button. They differ
+    because a menu entry sits under a heading the card already gives it, while a bare icon
+    has to say what it acts on: "Remove" against "Remove 'Main' from this profile".
+
+    *on_face* promotes it to a button in the card's header, and a verb that takes it needs
+    a real *icon* to be drawn from. Everything is in the menu either way -- that is the
+    keyboard and the discoverability route, and it is what lets a verb stay off the face
+    without becoming hard to reach.
+    """
+
+    label: str
+    icon: str  # icon name for svg_icon; "" is allowed only for a menu-only verb
+    tooltip: str
+    run: Callable[[], None]
+    on_face: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -511,8 +577,11 @@ class _LaunchCard(ThemedMixin, QWidget):
     # slot that edits is the kind of thing that reads fine and misleads for a year.
     activated = pyqtSignal()
 
-    def __init__(self, parent=None, *, manage: bool = False) -> None:
+    def __init__(self, parent=None, *, mode: CardMode = CardMode.LAUNCH) -> None:
         super().__init__(parent)
+        # Which surface this card is on, and the first thing set: the cursor below is one
+        # of the four facts read off it. See the module docstring for the other three.
+        self._mode = mode
         # The widget is the *row*: a gutter holding the drag handle, and beside it the
         # frame everything else means by "the card". Only the frame is styled, and it
         # keeps the ``LaunchCard`` object name, so every rule in this file still reads
@@ -521,22 +590,14 @@ class _LaunchCard(ThemedMixin, QWidget):
         self._body = QFrame(self)
         self._body.setObjectName("LaunchCard")
         self._body.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        # A pointing hand is the surface promising that clicking does something. In MEMBER
+        # mode nothing happens on a body click, so the promise would be a lie.
+        self.setCursor(Qt.CursorShape.PointingHandCursor if self.has_body_verb else Qt.CursorShape.ArrowCursor)
         self._hovered = False
-        # Which surface this card is on. One flag rather than three that would always have
-        # to agree, because they are one fact: in the Game tab the body click edits, the
-        # verbs are on the card face rather than hidden behind hover, and a card that will
-        # not fit is *noted* rather than greyed out and made unclickable. That last one is
-        # the point — greying out the row the user came here to fix is hostile, and on the
-        # launch screen a card is greyed because clicking it would launch something that
-        # cannot fit, which is not what clicking it does here.
-        self._manage = manage
-        # The card's action buttons, with the icon each was built from: svg_icon bakes the
-        # tint in at render time, so every one of them is re-rendered on a theme pass.
-        # ``_edit_btn`` is the first of them and is held separately because the hover
-        # handlers and the subclasses both reach for it by name.
-        self._action_btns: list[tuple[QToolButton, str]] = []
-        self._edit_btn: QToolButton | None = None
+        # The card's action buttons, with the verb each was built from: svg_icon bakes the
+        # tint in at render time, so every one of them is re-rendered on a theme pass, and
+        # a caller after a particular button asks for it by the verb's label.
+        self._action_btns: list[tuple[QToolButton, CardVerb]] = []
         # The drag handle, and whether the column currently has this card off the layout
         # and following the pointer. ``_dragging`` is a styling state exactly like
         # ``_hovered`` -- one flag that picks which palette apply_theme_styles uses -- and
@@ -584,7 +645,8 @@ class _LaunchCard(ThemedMixin, QWidget):
             return
         self._unavailable = reason
         refuses = bool(reason) and self.refuses_when_unfit
-        self.setCursor(Qt.CursorShape.ArrowCursor if refuses else Qt.CursorShape.PointingHandCursor)
+        clickable = self.has_body_verb and not refuses
+        self.setCursor(Qt.CursorShape.PointingHandCursor if clickable else Qt.CursorShape.ArrowCursor)
         self.setToolTip(_tooltip_for(reason))
         if self._quiet_lbl is not None:
             text = self._refusal_line(reason) or self._available_quiet_text()
@@ -597,14 +659,43 @@ class _LaunchCard(ThemedMixin, QWidget):
         self.refresh_theme_styles()
 
     @property
+    def mode(self) -> CardMode:
+        """Which surface this card is on -- see :class:`CardMode`.
+
+        Public because the things that vary by it are read from outside as well as in:
+        a column asks whether its cards refuse, and a test asks what it built.
+        """
+        return self._mode
+
+    @property
     def refuses_when_unfit(self) -> bool:
         """Whether a card that will not fit goes grey and stops taking clicks.
 
-        True on the launch screen, where a click starts what does not fit. False in the
-        Game tab, where the same card is a thing being edited and the refusal is a note
-        above and beneath it rather than a state it is put into — see ``_manage``.
+        True on the launch screen, where a click starts what does not fit. False on the
+        other two, where the same card is a thing being edited or a row being assembled,
+        and the refusal is a note above and beneath it rather than a state it is put into.
         """
-        return not self._manage
+        return self._mode is CardMode.LAUNCH
+
+    @property
+    def pins_chrome(self) -> bool:
+        """Whether the grip and the header buttons stay visible instead of awaiting hover.
+
+        False only on the launch screen, whose job is to let a name be picked out: a
+        button drawn permanently on every card competes with the name there, and there is
+        nothing for it to compete with on a surface that exists to run the verbs.
+        """
+        return self._mode is not CardMode.LAUNCH
+
+    @property
+    def has_body_verb(self) -> bool:
+        """Whether clicking the card body does anything at all.
+
+        False in MEMBER mode, where the card is a row in a list being assembled: its
+        verbs are the grip and the cross, and the body is not a third one. So it takes no
+        pointing-hand cursor, draws no hover highlight, and emits no ``activated``.
+        """
+        return self._mode is not CardMode.MEMBER
 
     def _available_quiet_text(self) -> str:
         """What the quiet line says when the card can launch. Subclasses that have one override."""
@@ -650,8 +741,12 @@ class _LaunchCard(ThemedMixin, QWidget):
             # finding as the app-wide disabled palette (tests/test_disabled_affordance.py).
             self._apply_unavailable_styles()
             return
-        bg = THEME.node_fill if self._hovered else THEME.surface
-        border = THEME.accent if self._hovered else THEME.border
+        # Hover is the card saying "click me", so a card whose body has no verb does not
+        # say it: in MEMBER mode the highlight would promise an activation that never
+        # comes. Nothing is lost by staying quiet there, the chrome being pinned open.
+        lit = self._hovered and self.has_body_verb
+        bg = THEME.node_fill if lit else THEME.surface
+        border = THEME.accent if lit else THEME.border
         # The stripe rule comes after the shorthand, which sets all four sides: written
         # the other way round the shorthand would overwrite it and the card would lose
         # its colour with nothing in the stylesheet looking wrong.
@@ -668,7 +763,7 @@ class _LaunchCard(ThemedMixin, QWidget):
         for lbl, color in ((self._detail_lbl, THEME.text_muted), (self._quiet_lbl, THEME.text_subtle)):
             if lbl is not None:
                 lbl.setStyleSheet(f"color: {color}; font-size: 10px; background: transparent;")
-        self._restyle_edit_button()
+        self._restyle_action_icons()
 
     def _apply_dragging_styles(self) -> None:
         """The held card: filled, outlined in the accent, and still wearing its stripe.
@@ -697,7 +792,7 @@ class _LaunchCard(ThemedMixin, QWidget):
         for lbl, color in ((self._detail_lbl, THEME.text_muted), (self._quiet_lbl, THEME.text_subtle)):
             if lbl is not None:
                 lbl.setStyleSheet(f"color: {color}; font-size: 10px; background: transparent;")
-        self._restyle_edit_button()
+        self._restyle_action_icons()
 
     @property
     def is_dragging(self) -> bool:
@@ -778,26 +873,26 @@ class _LaunchCard(ThemedMixin, QWidget):
     def _make_grip(self, what: str) -> GripHandle:
         """This card's drag handle, named after what a drag would reorder.
 
-        Revealed and hidden with the action buttons, and pinned open on the same surface
-        they are pinned open on. It is the same judgement: on the launch screen the card's
-        job is to be picked out by name and everything else defers to that, and in the
-        Game tab the card *is* the management surface, so the things you can do to it are
-        on its face.
+        Revealed and hidden with the action buttons, and pinned open on the surfaces they
+        are pinned open on -- ``pins_chrome`` is one answer for both. It is the same
+        judgement: on the launch screen the card's job is to be picked out by name and
+        everything else defers to that, while the Game tab and the profile editor exist to
+        do things to the card, so the things you can do to it are on its face.
         """
         self._grip = GripHandle(f"Drag to reorder {what}", self)
-        self._grip.setVisible(self._manage)
+        self._grip.setVisible(self.pins_chrome)
         return self._grip
 
-    def _restyle_edit_button(self) -> None:
+    def _restyle_action_icons(self) -> None:
         """Re-render every action icon in the current theme.
 
         svg_icon bakes THEME.icon_tint in at render time, so an icon has to be rebuilt on
         every theme pass rather than set once in _build -- an icon set once goes stale on
         a theme switch, with no stylesheet anywhere to grep for. Which is why each button
-        is held beside the name it was drawn from.
+        is held beside the verb it was drawn from.
         """
-        for button, icon_name in self._action_btns:
-            button.setIcon(svg_icon(icon_name, size=14))
+        for button, verb in self._action_btns:
+            button.setIcon(svg_icon(verb.icon, size=14))
 
     def _apply_unavailable_styles(self) -> None:
         """The greyed-out palette. The stripe goes too: it names an account, not a state."""
@@ -812,10 +907,22 @@ class _LaunchCard(ThemedMixin, QWidget):
                 lbl.setStyleSheet(f"color: {THEME.text_disabled}; font-size: 10px; background: transparent;")
         # Not tinted down with them: the pencil is the way out of the state the rest of
         # the card is greyed to report, so it stays at full contrast.
-        self._restyle_edit_button()
+        self._restyle_action_icons()
 
-    def _make_action_button(self, icon_name: str, tooltip: str) -> QToolButton:
-        """One icon in a card's header row: this card's verb, as a button.
+    def _add_face_verbs(self, header: QHBoxLayout) -> None:
+        """Put every verb marked ``on_face`` into *header*, in the order ``_verbs`` gives.
+
+        The one place a card's buttons are built, so which buttons a card has is decided
+        by its verb list and nowhere else. ``_build`` used to name each button in the
+        layout code, which meant a surface wanting a different set needed a branch in
+        there -- and there was no way to ask a card what its verbs were without reading it.
+        """
+        for verb in self._verbs():
+            if verb.on_face:
+                header.addWidget(self._make_verb_button(verb), 0, Qt.AlignmentFlag.AlignVCenter)
+
+    def _make_verb_button(self, verb: CardVerb) -> QToolButton:
+        """One icon in a card's header row: one of this card's verbs, as a button.
 
         A real child widget rather than a hit-tested region of the card, so that it
         consumes its own clicks. The whole card is a hit target, and a painted-on icon
@@ -827,10 +934,10 @@ class _LaunchCard(ThemedMixin, QWidget):
         answer to reaching it — that is what ``contextMenuEvent`` below is for, which is
         also the route for anyone not using a mouse.
 
-        Pinned open in the Game tab, where editing *is* the primary verb: there is nothing
-        for the icons to compete with there, hiding the verbs behind hover on the surface
-        that exists to run them is backwards, and the tab's cards carry a trash as well —
-        which is only safe because a body click there edits rather than launches.
+        Pinned open wherever the card is the thing being worked on rather than launched:
+        there is nothing for the icons to compete with on those surfaces, and hiding the
+        verbs behind hover on a surface that exists to run them is backwards. It is also
+        what lets those surfaces carry a trash, or a cross, on the face at all.
 
         The button's space is held while it is hidden, or revealing it on hover would
         resize the card under the pointer -- which can move the card out from under it,
@@ -844,30 +951,37 @@ class _LaunchCard(ThemedMixin, QWidget):
         button.setSizePolicy(policy)
         button.setAutoRaise(True)
         button.setCursor(Qt.CursorShape.PointingHandCursor)
-        button.setToolTip(tooltip)
-        button.setVisible(self._manage)
-        self._action_btns.append((button, icon_name))
+        button.setToolTip(verb.tooltip)
+        button.clicked.connect(verb.run)
+        button.setVisible(self.pins_chrome)
+        self._action_btns.append((button, verb))
         return button
 
-    def _make_edit_button(self, tooltip: str) -> QToolButton:
-        """The pencil: the first action button on every card, and the one held by name.
+    @property
+    def action_buttons(self) -> list[QToolButton]:
+        """This card's face buttons, in header order. Empty for a card with no face verbs."""
+        return [button for button, _verb in self._action_btns]
 
-        A pencil, not a gear. The gear meant "settings" when this opened the Settings
-        dialog; it opens one profile's editor now (#193), and an icon should promise what
-        happens.
+    def action_button(self, label: str) -> QToolButton | None:
+        """The face button for the verb *label*, or None when that verb is menu-only here.
+
+        Asked by label rather than by position, because which verbs reach the face is a
+        function of the mode: the same card carries a trash on one surface and not on the
+        next, so "the second button" means two different things.
         """
-        self._edit_btn = self._make_action_button("pencil", tooltip)
-        return self._edit_btn
+        for button, verb in self._action_btns:
+            if verb.label == label:
+                return button
+        return None
 
-    def _context_actions(self) -> list[tuple[str, str, Callable[[], None]]]:
-        """(label, icon name, what it does) for this card's right-click menu.
+    def _verbs(self) -> list[CardVerb]:
+        """Everything this card can do, in the order it is offered.
 
-        Subclasses fill it in; a card that returns nothing gets no menu. The label and the
-        icon are the rendering, and the callable is one of the module functions in
-        settings/accounts_tab.py — so promoting an entry to a button later is a change to
-        one ``_build`` and not to any of the verbs.
-
-        Pass "" as the icon name for an entry with no icon.
+        Subclasses fill it in; a card that returns nothing gets no menu and no buttons.
+        The label, the icon and ``on_face`` are the rendering, and ``run`` is a signal
+        emission that some surface has wired to one of the module functions in
+        settings/accounts_tab.py — so moving a verb between the face and the menu is one
+        flag here rather than an edit to any layout code.
         """
         return []
 
@@ -884,13 +998,15 @@ class _LaunchCard(ThemedMixin, QWidget):
         profile -- lowering its resolution, dropping an account -- is exactly what the
         greyed card is telling the user to do.
         """
-        actions = self._context_actions()
-        if not actions:
+        verbs = self._verbs()
+        if not verbs:
             return
         menu = popup_menu(self)
-        for label, icon_name, handler in actions:
-            action = menu.addAction(svg_icon(icon_name, size=14), label) if icon_name else menu.addAction(label)
-            action.triggered.connect(handler)
+        for verb in verbs:
+            action = (
+                menu.addAction(svg_icon(verb.icon, size=14), verb.label) if verb.icon else menu.addAction(verb.label)
+            )
+            action.triggered.connect(verb.run)
         menu.exec(event.globalPos())
 
     def _make_name_label(self, text: str) -> QLabel:
@@ -931,7 +1047,7 @@ class _LaunchCard(ThemedMixin, QWidget):
 
     def _set_actions_visible(self, visible: bool) -> None:
         """Show or hide the header icons — a no-op where they are pinned open."""
-        if self._manage:
+        if self.pins_chrome:
             return
         for button, _icon in self._action_btns:
             button.setVisible(visible)
@@ -980,6 +1096,11 @@ class _LaunchCard(ThemedMixin, QWidget):
         includes the drag handle's gutter. Nothing is drawn in the few pixels between the
         handle and the frame, and a strip of blank column that silently launches a game
         client is not a hit target anyone aimed at.
+
+        A MEMBER card has no body verb, so it never gets this far. Nothing is connected to
+        ``activated`` there, but the guard is explicit rather than relying on that: a card
+        that emits an activation nobody is listening for is a signal waiting to be wired
+        up by accident on the one surface where a body click is meant to do nothing.
         """
         pressed = self._press_pos
         self._press_pos = None
@@ -987,6 +1108,7 @@ class _LaunchCard(ThemedMixin, QWidget):
         if (
             event.button() == Qt.MouseButton.LeftButton
             and pressed is not None
+            and self.has_body_verb
             and not refuses
             and self.frame.geometry().contains(event.position().toPoint())
             and (event.globalPosition().toPoint() - pressed).manhattanLength() < QApplication.startDragDistance()
@@ -1014,6 +1136,11 @@ class AccountCard(_LaunchCard):
     launch_account_requested = pyqtSignal(str, str)  # (username, display_name)
     edit_account_requested = pyqtSignal(str)  # (username)
     delete_account_requested = pyqtSignal(str)  # (username)
+    # Take this account out of the list being assembled -- MEMBER mode only. Deliberately
+    # not ``delete_account_requested``: that one takes a password out of the Credential
+    # Manager, this one takes a name out of a profile, and a surface that confused the two
+    # would destroy a credential on a click meaning "not in this profile".
+    remove_requested = pyqtSignal(str)  # (username)
 
     def __init__(
         self,
@@ -1022,12 +1149,18 @@ class AccountCard(_LaunchCard):
         accounts: list[dict] | None = None,
         parent=None,
         *,
-        manage: bool = False,
+        mode: CardMode = CardMode.LAUNCH,
+        position: int | None = None,
     ) -> None:
-        super().__init__(parent, manage=manage)
+        super().__init__(parent, mode=mode)
         self._username = account.get("username", "")
         self._display_name = CredentialStore.display_name(self._username, account.get("alias") or None)
         self._roster = roster
+        # Which player this account will be, when it is a row in an ordered list. The
+        # profile editor's list *is* an order -- it decides which window becomes Player 1
+        # -- and position in a column is a weak way to say a number the user has to count.
+        # None everywhere else: on the launch screen an account card is not in an order.
+        self._position = position
         # The list this account sits in, because its colour is chosen against the others
         # rather than from its username alone. Defaulting to the account by itself is for
         # the caller that genuinely has one — there is nothing for it to collide with.
@@ -1038,9 +1171,11 @@ class AccountCard(_LaunchCard):
         )
         self._build()
         self.refresh_theme_styles()
-        if manage:
+        # Nothing is connected in MEMBER mode: the body has no verb there. See
+        # ``has_body_verb`` -- this is the branch the ``manage`` boolean could not express.
+        if mode is CardMode.MANAGE:
             self.activated.connect(lambda: self.edit_account_requested.emit(self._username))
-        else:
+        elif mode is CardMode.LAUNCH:
             self.activated.connect(lambda: self.launch_account_requested.emit(self._username, self._display_name))
 
     @property
@@ -1070,17 +1205,16 @@ class AccountCard(_LaunchCard):
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(6)
+        # Ahead of the name, where an ordinal belongs: "P2 Alt" reads as a position and a
+        # name, while the same pill trailing the name reads as another count beside the
+        # roster's. Only ever present in an ordered list -- see ``_position``.
+        if self._position is not None:
+            header.addWidget(NeutralPill(f"P{self._position}"), 0, Qt.AlignmentFlag.AlignVCenter)
         header.addWidget(self._make_name_label(self._display_name), 0)
         if self._roster:
             header.addWidget(NeutralPill(str(len(self._roster))), 0, Qt.AlignmentFlag.AlignVCenter)
         header.addStretch()
-        edit_btn = self._make_edit_button(f"Edit the '{self._display_name}' account")
-        edit_btn.clicked.connect(lambda: self.edit_account_requested.emit(self._username))
-        header.addWidget(edit_btn, 0, Qt.AlignmentFlag.AlignVCenter)
-        if self._manage:
-            delete_btn = self._make_action_button("trash", f"Delete the '{self._display_name}' account")
-            delete_btn.clicked.connect(lambda: self.delete_account_requested.emit(self._username))
-            header.addWidget(delete_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+        self._add_face_verbs(header)
         layout.addLayout(header)
 
         self._detail_lbl = QLabel(character_summary(self._roster), self)
@@ -1100,17 +1234,48 @@ class AccountCard(_LaunchCard):
         # demand so the reason has somewhere to land without rebuilding the card.
         layout.addWidget(self._make_quiet_label())
 
-    def _context_actions(self) -> list[tuple[str, str, Callable[[], None]]]:
-        """Edit and Delete. No Duplicate: two accounts sharing a username is not a thing.
+    def _verbs(self) -> list[CardVerb]:
+        """Edit and Delete -- or, in a list being assembled, Remove and nothing else.
 
-        Delete is here and not on the card face -- see ``_LaunchCard.contextMenuEvent``.
-        It is the harshest verb on this screen: it takes a password out of the Credential
-        Manager and a character roster off disk, neither of which comes back by adding the
-        account again.
+        No Duplicate on any of them: two accounts sharing a username is not a thing.
+
+        Delete reaches the *face* only in the Game tab. It is the harshest verb this card
+        has, taking a password out of the Credential Manager and a character roster off
+        disk, neither of which comes back by adding the account again -- so on the launch
+        screen, where it would sit 22px from a body that starts a game client, it stays on
+        the right-click menu.
+
+        Remove is the whole verb list in MEMBER mode, and it is on the face, because it is
+        not that button: it takes this account out of the profile being edited and costs
+        one re-tick in the picker to undo. Edit is not offered beside it -- editing the
+        account record from inside the profile editor is a dialog inside a dialog, and the
+        Game tab is one Escape away.
         """
+        if self._mode is CardMode.MEMBER:
+            return [
+                CardVerb(
+                    "Remove",
+                    "dismiss",
+                    f"Remove '{self._display_name}' from this profile",
+                    lambda: self.remove_requested.emit(self._username),
+                    on_face=True,
+                ),
+            ]
         return [
-            ("Edit", "pencil", lambda: self.edit_account_requested.emit(self._username)),
-            ("Delete", "trash", lambda: self.delete_account_requested.emit(self._username)),
+            CardVerb(
+                "Edit",
+                "pencil",
+                f"Edit the '{self._display_name}' account",
+                lambda: self.edit_account_requested.emit(self._username),
+                on_face=True,
+            ),
+            CardVerb(
+                "Delete",
+                "trash",
+                f"Delete the '{self._display_name}' account",
+                lambda: self.delete_account_requested.emit(self._username),
+                on_face=self._mode is CardMode.MANAGE,
+            ),
         ]
 
     def resizeEvent(self, event) -> None:
@@ -1154,16 +1319,16 @@ class ProfileCard(_LaunchCard):
     duplicate_profile_requested = pyqtSignal(str)  # (profile_name)
     delete_profile_requested = pyqtSignal(str)  # (profile_name)
 
-    def __init__(self, profile: dict, accounts: list[dict], parent=None, *, manage: bool = False) -> None:
-        super().__init__(parent, manage=manage)
+    def __init__(self, profile: dict, accounts: list[dict], parent=None, *, mode: CardMode = CardMode.LAUNCH) -> None:
+        super().__init__(parent, mode=mode)
         self._profile = profile
         self._name = profile.get("name", "")
         self._accounts = accounts
         self._build()
         self.refresh_theme_styles()
-        if manage:
+        if mode is CardMode.MANAGE:
             self.activated.connect(lambda: self.edit_profile_requested.emit(self._name))
-        else:
+        elif mode is CardMode.LAUNCH:
             self.activated.connect(lambda: self.launch_profile_requested.emit(self._name))
 
     @property
@@ -1186,14 +1351,7 @@ class ProfileCard(_LaunchCard):
         if (resolution := resolution_label(self._profile)) is not None:
             header.addWidget(NeutralPill(resolution), 0, Qt.AlignmentFlag.AlignVCenter)
         header.addStretch()
-
-        edit_btn = self._make_edit_button(f"Edit the '{self._name}' profile")
-        edit_btn.clicked.connect(lambda: self.edit_profile_requested.emit(self._name))
-        header.addWidget(edit_btn, 0, Qt.AlignmentFlag.AlignVCenter)
-        if self._manage:
-            delete_btn = self._make_action_button("trash", f"Delete the '{self._name}' profile")
-            delete_btn.clicked.connect(lambda: self.delete_profile_requested.emit(self._name))
-            header.addWidget(delete_btn, 0, Qt.AlignmentFlag.AlignVCenter)
+        self._add_face_verbs(header)
         layout.addLayout(header)
 
         pills = QHBoxLayout()
@@ -1209,22 +1367,42 @@ class ProfileCard(_LaunchCard):
     def _available_quiet_text(self) -> str:
         return profile_summary(self._profile)
 
-    def _context_actions(self) -> list[tuple[str, str, Callable[[], None]]]:
+    def _verbs(self) -> list[CardVerb]:
         """Edit, Duplicate, Delete. The middle one is the reason profiles have a menu.
 
         Duplicate is how the second profile gets built -- this one plus an account, or
         this one at a smaller resolution -- and it has no icon because it does not need
-        one: it sits between two entries that do, which is enough to read the menu by.
+        one: it sits between two entries that do, which is enough to read the menu by. It
+        stays off the face on every surface, being the third verb of a card with three.
 
-        No kebab button promoting it to the card face. With Delete already reachable here,
-        a kebab would hold Duplicate alone, on one of the two card types, which is a menu
-        that teaches nothing. If it turns out to be undiscoverable, promoting it is a
-        change to ``_build`` -- the verbs are already a list.
+        No kebab button promoting it. With Delete already reachable on the menu, a kebab
+        would hold Duplicate alone, on one of the two card types, which is a menu that
+        teaches nothing. If it turns out to be undiscoverable, promoting it is one flag.
+
+        A profile is never a MEMBER of anything -- profiles hold accounts, not the other
+        way round -- so there is no third list here, only the one flag on Delete.
         """
         return [
-            ("Edit", "pencil", lambda: self.edit_profile_requested.emit(self._name)),
-            ("Duplicate", "", lambda: self.duplicate_profile_requested.emit(self._name)),
-            ("Delete", "trash", lambda: self.delete_profile_requested.emit(self._name)),
+            CardVerb(
+                "Edit",
+                "pencil",
+                f"Edit the '{self._name}' profile",
+                lambda: self.edit_profile_requested.emit(self._name),
+                on_face=True,
+            ),
+            CardVerb(
+                "Duplicate",
+                "",
+                f"Duplicate the '{self._name}' profile",
+                lambda: self.duplicate_profile_requested.emit(self._name),
+            ),
+            CardVerb(
+                "Delete",
+                "trash",
+                f"Delete the '{self._name}' profile",
+                lambda: self.delete_profile_requested.emit(self._name),
+                on_face=self._mode is CardMode.MANAGE,
+            ),
         ]
 
 

@@ -25,7 +25,7 @@ ACCOUNTS = ["one@example.com", "two@example.com"]
 
 
 class _FakeDialog:
-    """Stands in for _ProfileDialog: exec() is the one thing a test cannot run.
+    """Stands in for ProfileDialog: exec() is the one thing a test cannot run.
 
     Class attributes carry what the editor would return, so a test says what the user
     typed rather than driving widgets. The constructor signature matches the keyword call
@@ -72,7 +72,7 @@ def editor(monkeypatch):
     class Dialog(_FakeDialog):
         pass
 
-    monkeypatch.setattr(accounts_tab, "_ProfileDialog", Dialog)
+    monkeypatch.setattr(accounts_tab, "ProfileDialog", Dialog)
     # A refusal puts up a modal warning, which would block the suite. Its return is
     # never read; what the refusal does is decline to save, which is what is asserted.
     monkeypatch.setattr(accounts_tab.QMessageBox, "warning", lambda *a, **k: None)

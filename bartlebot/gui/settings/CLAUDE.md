@@ -37,12 +37,19 @@ Two rules about the settings dialog itself:
 Every write to an account or a launch profile goes through one of the module-level
 functions in `accounts_tab.py` — `add_`/`edit_`/`delete_account`, and
 `add_`/`edit_`/`duplicate_`/`delete_launch_profile`. **Never open `_AccountDialog` or
-`_ProfileDialog` yourself, and never write `sm.accounts` or `sm.launch_profiles` from a
+`ProfileDialog` yourself, and never write `sm.accounts` or `sm.launch_profiles` from a
 widget.** Two surfaces manage these, and since #192 they draw the same cards out of
 the same `CardColumn`; a second copy of the delete cascade is how they drift.
 `reorder_accounts` and `reorder_launch_profiles` are the same rule for a drag —
-both refuse a permutation that no longer describes the stored list, because the
-column that emitted it was built before the drop.
+both refuse a permutation that no longer describes the stored list, and both go through
+`card_columns.apply_order`, which is where that guard lives now that three surfaces take
+a permutation from a column.
+
+The profile editor is `profile_editor.py`, not this module: it draws the same
+`AccountCard`s in the same `CardColumn` as the Game tab, in `CardMode.MEMBER`. Its two
+controls divide one job — the picker owns *which* accounts, the column owns *what order*
+— and both removal routes go through `reconcile_membership`. Do not give either control
+its own list; that is how a card whose cross removes it is left ticked in the popup.
 
 Three things every one of them does, and a new one must:
 

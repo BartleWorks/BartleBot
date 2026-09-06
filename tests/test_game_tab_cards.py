@@ -220,11 +220,11 @@ def test_the_cards_carry_their_verbs_openly_here(qapp, screen, populated, column
     tab = AccountsTab()
     card = getattr(tab, column).cards[0]
 
-    tooltips = [button.toolTip() for button, _icon in card._action_btns]
+    tooltips = [button.toolTip() for button in card.action_buttons]
     assert len(tooltips) == 2
     assert any(t.startswith("Edit") for t in tooltips)
     assert any(t.startswith("Delete") for t in tooltips)
-    assert all(button.isVisible() or not button.isHidden() for button, _icon in card._action_btns)
+    assert all(not button.isHidden() for button in card.action_buttons)
 
 
 def test_the_launch_screens_cards_keep_the_trash_off_their_faces(qapp):
@@ -232,5 +232,5 @@ def test_the_launch_screens_cards_keep_the_trash_off_their_faces(qapp):
     a stored credential and a character roster. It stays on the right-click menu there."""
     card = ProfileCard(PROFILES[0], ACCOUNTS)
 
-    assert [icon for _button, icon in card._action_btns] == ["pencil"]
-    assert card._edit_btn.isHidden()
+    assert card.action_button("Delete") is None
+    assert card.action_button("Edit").isHidden()
