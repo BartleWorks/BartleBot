@@ -18,11 +18,15 @@ import pytest
 
 from bartlebot.bot.strategy_models import DeckData
 from bartlebot.deck_io import (
+    ACTIVE_FLAG_OFFSET,
+    ACTIVE_FLAG_ON,
     ARCHMASTERY_ATTEMPTS,
     CARD_CLICK_ATTEMPTS,
+    ENTRY_STRIDE,
     SLOTS_PER_PAGE,
     DeckApplyReport,
     ItemSlot,
+    _apply_item_toggles,
     _click,
     _settle_deck,
     _share_shortfall,
@@ -77,6 +81,7 @@ def _fast_settle(monkeypatch):
         "DECK_FUSION_FLYOUT_SETTLE",
         "DECK_SPELL_PAGE_SETTLE",
         "DECK_FUSION_CLICK_SETTLE",
+        "DECK_FUSION_CLOSE_SETTLE",
     ):
         monkeypatch.setattr(f"bartlebot.deck_io.{name}", 0.0)
 
@@ -266,6 +271,129 @@ def test_plan_empty_desired_clears_all_active():
     slots = [slot("Blade", 0, active=True), slot("Trap", 9, active=True), slot("Shield", 4)]
     plan = plan_item_toggles(slots, {})
     assert [s.index for s in plan] == [0, 9]
+
+
+# ---------------------------------------------------------------------------
+# Item card click confirmation (#209)
+#
+# A click that never landed used to be indistinguishable from one that did
+# until the whole deck's post-write settle timed out 15s later, and even then
+# nothing retried it. These confirm each click against the slot's own active
+# flag instead, the same shape _place_copies already used for spell cards.
+# ---------------------------------------------------------------------------
+
+
+class _IndexCell:
+    """A grid cell whose center encodes its own index, so a click is traceable."""
+
+    def __init__(self, index: int):
+        self.index = index
+
+    def center(self):
+        return (self.index, 0)
+
+
+class _ItemMouse:
+    """Records clicks and flips the clicked index's active flag -- unless that
+    index is in ``misses``, which models a click the game swallowed."""
+
+    def __init__(self, active: dict[int, bool]):
+        self.active = active
+        self.misses: dict[int, int] = {}
+        self.clicks: list[int] = []
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_exc):
+        return False
+
+    async def click(self, x, _y):
+        self.clicks.append(x)
+        if self.misses.get(x, 0) > 0:
+            self.misses[x] -= 1
+            return
+        self.active[x] = not self.active.get(x, False)
+
+    async def click_window(self, *_args, **_kwargs):
+        return None
+
+
+@pytest.fixture
+def item_toggle_env(monkeypatch):
+    """Wires the confirm reader to a plain ``{index: active}`` dict.
+
+    ``begin`` is fixed at 0, so the confirm reader's address arithmetic recovers
+    a slot's index without a real ``ItemSpells`` DeckListControl behind it.
+    """
+    active: dict[int, bool] = {}
+    mouse = _ItemMouse(active)
+
+    class _Control:
+        async def read_bytes(self, address: int, _n: int) -> bytes:
+            index = (address - ACTIVE_FLAG_OFFSET) // ENTRY_STRIDE
+            return bytes([ACTIVE_FLAG_ON if active.get(index, False) else 1])
+
+    async def _fake_control_for(_client, _deck_window, window_name):
+        assert window_name == "ItemSpells"
+        return _Control()
+
+    async def _fake_entry_vector(_control):
+        return 0, 0
+
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io._control_for", _fake_control_for)
+    monkeypatch.setattr("bartlebot.deck_io._entry_vector", _fake_entry_vector)
+
+    db = FakeDeckBuilder()
+    db.client = SimpleNamespace(root_window=object(), mouse_handler=mouse)
+    db.get_item_spells_rectangle = _async_returning(object())
+    db.divide_rectangle = lambda rect, columns, rows: [_IndexCell(i) for i in range(columns * rows)]
+
+    return SimpleNamespace(db=db, mouse=mouse, active=active)
+
+
+async def test_apply_item_toggles_confirms_a_clean_click(item_toggle_env):
+    env = item_toggle_env
+    await _apply_item_toggles(env.db, object(), [slot("Blade", 0)], total_pages=1)
+
+    assert env.active[0] is True
+    assert env.mouse.clicks == [0]
+
+
+async def test_apply_item_toggles_retries_a_swallowed_click(item_toggle_env):
+    """The first two clicks are swallowed; the fix is noticing and clicking again."""
+    env = item_toggle_env
+    env.mouse.misses[0] = 2
+
+    await _apply_item_toggles(env.db, object(), [slot("Blade", 0)], total_pages=1)
+
+    assert env.active[0] is True
+    assert env.mouse.clicks == [0, 0, 0]
+
+
+async def test_apply_item_toggles_gives_up_after_the_attempt_ceiling(item_toggle_env, caplog):
+    """Bounded the same way CARD_CLICK_ATTEMPTS bounds a spell card's retries."""
+    env = item_toggle_env
+    env.mouse.misses[0] = 99
+
+    with caplog.at_level(logging.WARNING, logger="bartlebot.deck_io"):
+        await _apply_item_toggles(env.db, object(), [slot("Blade", 0)], total_pages=1)
+
+    assert env.mouse.clicks == [0] * CARD_CLICK_ATTEMPTS
+    assert 0 not in env.active  # every click was swallowed; the flag never flipped
+    assert "did not toggle" in caplog.text
+
+
+async def test_apply_item_toggles_deactivates_an_active_slot(item_toggle_env):
+    """The desired state is the click's target, not always 'turn it on'."""
+    env = item_toggle_env
+    env.active[3] = True
+
+    await _apply_item_toggles(env.db, object(), [slot("Blade", 3, active=True)], total_pages=1)
+
+    assert env.active[3] is False
+    assert env.mouse.clicks == [3]
 
 
 # ---------------------------------------------------------------------------
@@ -1317,6 +1445,31 @@ async def test_fusion_root_opens_the_flyout_once_per_base_spell(monkeypatch):
 
     assert db.calls.count("get_graphical_tiered_spell_cards") == 1
     assert db.fusion_added == {"Novus Storm - T05 - A": 1, "Novus Storm - T05 - B": 2}
+
+
+async def test_fusion_flyout_close_waits_out_the_settle_pause(monkeypatch):
+    """#209 follow-up: a card confirmed in CardsInDeck could still be dropped by
+    closing the flyout immediately -- reopening the deck page made it reappear,
+    meaning the server hadn't caught up yet. DECK_FUSION_CLOSE_SETTLE buys it
+    that time before every flyout close, confirmed cards or not.
+    """
+    _tier_patches(monkeypatch)
+    monkeypatch.setattr("bartlebot.deck_io.DECK_FUSION_CLOSE_SETTLE", 1.0)
+    db = FusionRootDeckBuilder()
+
+    sleeps: list[float] = []
+    real_sleep = asyncio.sleep
+
+    async def _spy_sleep(seconds):
+        sleeps.append(seconds)
+        await real_sleep(0)
+
+    monkeypatch.setattr("bartlebot.deck_io.asyncio.sleep", _spy_sleep)
+
+    await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 1}))
+
+    assert 1.0 in sleeps
+    assert db.fusion_added == {"Novus Storm - T05 - B": 1}
 
 
 async def test_fusion_root_survives_an_unreadable_flyout(monkeypatch):

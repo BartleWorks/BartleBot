@@ -226,6 +226,16 @@ DECK_CARD_CONFIRM_TIMEOUT = 2.0
 DECK_CARD_CONFIRM_POLL = 0.05
 # Gap between deck-count reads while confirming a card went in.
 
+DECK_FUSION_CLOSE_SETTLE = 0.5
+# Pause after a base's variant clicks are confirmed in CardsInDeck, before the
+# tier flyout is closed. The entry-vector count that confirms a click can grow
+# ahead of the server actually committing the card -- closing the flyout in
+# that gap has been observed to drop a card the read had just confirmed, and
+# the card reappears if the deck page is closed and reopened, which is the
+# game catching up rather than a UI refresh. Confirming is still what decides
+# ``placed``; this only buys the server time to agree before the flyout that
+# card came from goes away.
+
 LAUNCH_STAGGER_DELAY = 1.0
 
 # How long one launch stage may run before its pending tile starts showing how long it has

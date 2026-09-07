@@ -20,6 +20,7 @@ from bartlebot import strategy_store as store_mod
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
+    DeckData,
     DuelCombatStrategy,
     DuelConfig,
     PlayerAssignment,
@@ -33,6 +34,7 @@ from bartlebot.gui.sidebar.combat_tab import (
     CombatTab,
     _DefaultBinding,
     _DuelBindingPanel,
+    _PlayerDecksSection,
 )
 
 
@@ -1527,3 +1529,88 @@ def test_unassigned_rows_get_no_rail(qapp, store):
     tab = _tab_with(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
 
     assert [p._rail.is_active() for p in tab._group_panels()] == [False, False]
+
+
+# ---------------------------------------------------------------------------
+# _PlayerDecksSection — inline expand/collapse (#213)
+# ---------------------------------------------------------------------------
+
+
+def _content_texts(section, slot: int) -> list[str]:
+    content_layout = section._content_layouts[slot - 1]
+    return [content_layout.itemAt(i).widget().text() for i in range(content_layout.count())]
+
+
+# The section is never shown in these tests (no top-level window under it), so
+# isVisible() would read false regardless of what this widget's own code did —
+# isHidden() tracks the explicit show()/hide() state these tests actually
+# exercise, independent of whether anything ever got mapped to screen.
+
+
+def test_arrow_hidden_and_row_inert_with_no_deck(qapp):
+    section = _PlayerDecksSection()
+    section.refresh({})
+
+    assert section._disclosure_arrows[0].isHidden()
+    section._on_row_clicked(1)
+    assert 1 not in section._expanded
+
+
+def test_clicking_a_row_expands_it_and_shows_the_card_list(qapp):
+    section = _PlayerDecksSection()
+    deck = DeckData(normal={"Test Card": 4})
+    section.refresh({1: deck})
+
+    assert not section._disclosure_arrows[0].isHidden()
+    section._on_row_clicked(1)
+
+    assert 1 in section._expanded
+    assert not section._content_widgets[0].isHidden()
+    assert "Test Card × 4" in _content_texts(section, 1)
+
+
+def test_clicking_an_expanded_row_collapses_it(qapp):
+    section = _PlayerDecksSection()
+    section.refresh({1: DeckData(normal={"Test Card": 4})})
+    section._on_row_clicked(1)
+
+    section._on_row_clicked(1)
+
+    assert 1 not in section._expanded
+    assert section._content_widgets[0].isHidden()
+
+
+def test_refresh_does_not_reset_an_expanded_row(qapp):
+    """refresh() runs after every import/apply/save/load/clear — an expanded
+    row must survive an update to a *different* slot, or the disclosure would
+    read as broken rather than persistent."""
+    section = _PlayerDecksSection()
+    section.refresh({1: DeckData(normal={"Test Card": 4})})
+    section._on_row_clicked(1)
+
+    section.refresh({1: DeckData(normal={"Test Card": 4}), 2: DeckData(normal={"Other Card": 2})})
+
+    assert 1 in section._expanded
+    assert not section._content_widgets[0].isHidden()
+
+
+def test_refresh_updates_an_expanded_rows_card_list(qapp):
+    section = _PlayerDecksSection()
+    section.refresh({1: DeckData(normal={"Test Card": 4})})
+    section._on_row_clicked(1)
+
+    section.refresh({1: DeckData(normal={"Test Card": 4, "Second Card": 1})})
+
+    assert "Second Card × 1" in _content_texts(section, 1)
+
+
+def test_refresh_collapses_a_row_whose_deck_became_empty(qapp):
+    section = _PlayerDecksSection()
+    section.refresh({1: DeckData(normal={"Test Card": 4})})
+    section._on_row_clicked(1)
+
+    section.refresh({1: DeckData()})
+
+    assert 1 not in section._expanded
+    assert section._content_widgets[0].isHidden()
+    assert section._disclosure_arrows[0].isHidden()

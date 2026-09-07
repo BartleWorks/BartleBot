@@ -39,6 +39,7 @@ from bartlebot.combat_grouping import (
     state_label,
 )
 from bartlebot.combat_warnings import exposed_combat_states
+from bartlebot.gui.deck_content import deck_content_lines
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.menu_utils import anchor_menu_to_window
 from bartlebot.gui.sidebar.sidebar_section import (
@@ -52,6 +53,7 @@ from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPicker
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.elided_label import ElidedLabel, apply_muted_color
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
     delete_bot_strategy,
@@ -179,7 +181,6 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
 
     import_requested = pyqtSignal(int)  # 1-based slot number
     apply_requested = pyqtSignal(int)  # 1-based slot number
-    view_requested = pyqtSignal(int)  # 1-based slot number
     save_to_library_requested = pyqtSignal(int)  # 1-based slot number
     load_from_library_requested = pyqtSignal(int)  # 1-based slot number
     clear_requested = pyqtSignal(int)  # 1-based slot number
@@ -196,23 +197,50 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
         self._apply_btns: list[QPushButton] = []
         self._menu_btns: list[QToolButton] = []
         self._deck_summary_labels: list[QLabel] = []
+        self._disclosure_arrows: list[QLabel] = []
+        self._content_widgets: list[QWidget] = []
+        self._content_layouts: list[QVBoxLayout] = []
         self._decks: dict[int, DeckData] = {}
+        # Slots whose card list is unfolded.  Deliberately not touched by
+        # refresh() except to drop a slot whose deck just went empty — a row
+        # a user expanded should stay expanded across the frequent
+        # import/apply/save/load/clear refreshes, or the disclosure would
+        # read as broken rather than persistent.
+        self._expanded: set[int] = set()
         self._editable: bool = True
         self._client_count: int = 0
 
         for i in range(1, _NUM_PLAYER_SLOTS + 1):
+            slot_container = QWidget()
+            slot_layout = QVBoxLayout(slot_container)
+            # _DuelBindingPanel's disclosure arrow sits past NEST_INDENT_PX *and*
+            # its rail slot + gap (spine margin, then _GroupRail, then
+            # _RAIL_GAP_PX before the header) — matching only NEST_INDENT_PX here
+            # left the P1-P4 arrows short of "Defeat The Monster"'s by that width.
+            slot_layout.setContentsMargins(NEST_INDENT_PX + _RAIL_SLOT_PX + _RAIL_GAP_PX, 0, 0, 0)
+            slot_layout.setSpacing(2)
+
             row = QWidget()
             row_layout = QHBoxLayout(row)
             row_layout.setContentsMargins(0, 0, 0, 0)
             row_layout.setSpacing(4)
 
+            # Nested level (this section is already a SidebarSection body), so
+            # muted tint against the section header's own icon_tint arrow —
+            # same convention _DisclosureRow uses for the duel-strategy panels.
+            arrow = QLabel()
+            arrow.setFixedSize(DISCLOSURE_PX, QFontMetrics(self.font()).height())
+            arrow.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            arrow.setPixmap(disclosure_pixmap(False, tint=THEME.text_muted))
+            arrow.setCursor(Qt.CursorShape.PointingHandCursor)
+            arrow.hide()  # matches the "No deck saved" default; refresh() reveals it
+            arrow.mousePressEvent = lambda _ev, slot=i: self._on_row_clicked(slot)
+
             lbl = QLabel(f"P{i}:")
             lbl.setFixedWidth(22)
 
             deck_summary = QLabel("No deck saved")
-            deck_summary.setCursor(Qt.CursorShape.PointingHandCursor)
-            deck_summary.setToolTip("Click to view deck contents")
-            deck_summary.mousePressEvent = lambda _ev, slot=i: self._on_summary_clicked(slot)
+            deck_summary.mousePressEvent = lambda _ev, slot=i: self._on_row_clicked(slot)
 
             import_btn = QPushButton("Import")
             import_btn.setToolTip("Snapshot the deck from this game client")
@@ -237,17 +265,36 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
             slot_menu.aboutToShow.connect(lambda slot=i, m=slot_menu: self._rebuild_slot_menu(m, slot))
             menu_btn.setMenu(slot_menu)
 
+            row_layout.addWidget(arrow)
             row_layout.addWidget(lbl)
             row_layout.addWidget(deck_summary, 1)
             row_layout.addWidget(import_btn)
             row_layout.addWidget(apply_btn)
             row_layout.addWidget(menu_btn)
-            layout.addWidget(row)
+
+            # Card list, folded by default.  Built once and reused across
+            # refreshes rather than created on first expand, so toggling is
+            # never the first time this widget is shown (see gui/CLAUDE.md on
+            # showing a widget before it has a parent).
+            content = QWidget()
+            content_layout = QVBoxLayout(content)
+            # Past the arrow's own width plus the row's spacing, so the card
+            # list lines up under "P1:" rather than under the arrow glyph.
+            content_layout.setContentsMargins(DISCLOSURE_PX + row_layout.spacing(), 0, 0, 4)
+            content_layout.setSpacing(2)
+            content.setVisible(False)
+
+            slot_layout.addWidget(row)
+            slot_layout.addWidget(content)
+            layout.addWidget(slot_container)
 
             self._import_btns.append(import_btn)
             self._apply_btns.append(apply_btn)
             self._menu_btns.append(menu_btn)
             self._deck_summary_labels.append(deck_summary)
+            self._disclosure_arrows.append(arrow)
+            self._content_widgets.append(content)
+            self._content_layouts.append(content_layout)
 
         self.set_content_layout(layout)
         self.refresh_theme_styles()
@@ -255,6 +302,8 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
     def apply_theme_styles(self) -> None:
         for btn in self._menu_btns:
             btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
+        for i, arrow in enumerate(self._disclosure_arrows):
+            arrow.setPixmap(disclosure_pixmap(i + 1 in self._expanded, tint=THEME.text_muted))
 
     #: Label, and the stored value it means, for the three-state override.
     _ARCHMASTERY_MODES = (
@@ -285,10 +334,39 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
         menu.addSeparator()
         menu.addAction("Clear Deck", lambda _=False: self.clear_requested.emit(slot))
 
-    def _on_summary_clicked(self, slot: int) -> None:
+    def _on_row_clicked(self, slot: int) -> None:
         deck = self._decks.get(slot)
         if deck is not None and not deck.is_empty():
-            self.view_requested.emit(slot)
+            self.set_row_expanded(slot, slot not in self._expanded)
+
+    def set_row_expanded(self, slot: int, expanded: bool) -> None:
+        """Fold or unfold one slot's card list, exactly as a click on it would."""
+        if expanded:
+            self._expanded.add(slot)
+            self._rebuild_content(slot)
+        else:
+            self._expanded.discard(slot)
+        i = slot - 1
+        self._content_widgets[i].setVisible(expanded)
+        self._disclosure_arrows[i].setPixmap(disclosure_pixmap(expanded, tint=THEME.text_muted))
+
+    def _rebuild_content(self, slot: int) -> None:
+        """Rebuild the card-list labels for *slot* from the current deck data."""
+        content_layout = self._content_layouts[slot - 1]
+        while (item := content_layout.takeAt(0)) is not None:
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+        deck = self._decks.get(slot)
+        if deck is None or deck.is_empty():
+            return
+        for line in deck_content_lines(deck):
+            css = "font-weight: bold;" if line.bold else ""
+            row_lbl = ThemedTextLabel(line.text, color="text", css=css)
+            row_lbl.setWordWrap(True)
+            content_layout.addWidget(row_lbl)
+            row_lbl.show()
 
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
@@ -335,6 +413,13 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
             menu_btn.setToolTip("More deck actions" if self._editable else "Locked while the bot is running")
 
     def refresh(self, player_decks: dict[int, DeckData]) -> None:
+        """Update every row's summary and, where a slot is expanded, its card list.
+
+        Called far more often than the user folds or unfolds a row — after every
+        import, apply, save, load and clear — so expand state is deliberately
+        untouched here except when a slot's deck just became empty, which leaves
+        nothing for that row to show.
+        """
         self._decks = player_decks
         for i, lbl in enumerate(self._deck_summary_labels):
             slot = i + 1
@@ -344,6 +429,9 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
                 lbl.setText("No deck saved")
                 lbl.setCursor(Qt.CursorShape.ArrowCursor)
                 lbl.setToolTip("")
+                self._disclosure_arrows[i].hide()
+                if slot in self._expanded:
+                    self.set_row_expanded(slot, False)
             else:
                 # Treasure cards are never captured or applied, so the summary
                 # reports only what a deck apply will actually restore.
@@ -354,7 +442,11 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
                     parts.append(f"{sum(deck.item.values())} item")
                 lbl.setText(" · ".join(parts) if parts else "Empty deck")
                 lbl.setCursor(Qt.CursorShape.PointingHandCursor)
-                lbl.setToolTip("Click to view deck contents")
+                lbl.setToolTip("Click to expand deck contents")
+                self._disclosure_arrows[i].show()
+                self._disclosure_arrows[i].setCursor(Qt.CursorShape.PointingHandCursor)
+                if slot in self._expanded:
+                    self._rebuild_content(slot)
         self._reapply_button_states()
 
 
@@ -1063,7 +1155,6 @@ class CombatTab(QWidget):
         self._decks_section = _PlayerDecksSection(self)
         self._decks_section.import_requested.connect(self.import_deck_requested)
         self._decks_section.apply_requested.connect(self.apply_deck_requested)
-        self._decks_section.view_requested.connect(self._on_view_deck)
         self._decks_section.save_to_library_requested.connect(self._on_save_deck_to_library)
         self._decks_section.load_from_library_requested.connect(self._on_load_deck_from_library)
         self._decks_section.clear_requested.connect(self._on_clear_deck)
@@ -1306,17 +1397,6 @@ class CombatTab(QWidget):
     def _refresh_deck_summaries(self) -> None:
         decks = self._bcs.player_decks if self._bcs else {}
         self._decks_section.refresh(decks)
-
-    def _on_view_deck(self, slot: int) -> None:
-        from bartlebot.gui.deck_view_dialog import DeckViewDialog  # noqa: PLC0415
-
-        if self._bcs is None:
-            return
-        deck = self._bcs.player_decks.get(slot)
-        if deck is None or deck.is_empty():
-            return
-        dlg = DeckViewDialog(slot, deck, parent=self)
-        dlg.exec()
 
     def _on_save_deck_to_library(self, slot: int) -> None:
         from bartlebot.bot.strategy_models import DeckPreset  # noqa: PLC0415
