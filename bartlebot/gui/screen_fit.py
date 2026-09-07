@@ -31,9 +31,10 @@ showing one at a time takes the whole sentence.
 from __future__ import annotations
 
 from PyQt6.QtGui import QFontMetrics
-from PyQt6.QtWidgets import QApplication, QPushButton, QWidget
+from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QPushButton, QWidget
 
 from bartlebot import game_sizing
+from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 
 # Stands in for a screen that cannot be measured. Big enough that nothing is refused:
@@ -96,6 +97,54 @@ def right_sidebar_floor() -> int:
     return game_sizing.right_sidebar_floor(QFontMetrics(app.font()).height(), probe.sizeHint().width())
 
 
+#: Spacing between the three widgets of the filter row, from ``_build_filter_row``.
+_FILTER_ROW_SPACING_PX = 4
+
+
+def left_sidebar_floor() -> int:
+    """How wide the left sidebar has to be here for the keep-list picker's filter row to fit.
+
+    The row is ``gui/canvas/drop_keep_list.py``'s search field, category combobox and
+    "Kept only" checkbox side by side (#199) — rebuilt here from the same widget types
+    rather than instantiated, because the real one needs a live bot's drop table to
+    populate, and a probe that needs a bot is a probe the window cannot measure itself
+    against at construction.
+
+    Faithful to the real widgets rather than approximating them, because the whole point
+    of measuring is that the answer differs by style: a bare ``QLineEdit`` stood in for the
+    search field at first and reported 27px less than the real one, which was enough for
+    the scale factor to stay at 1.0 under ``windows11`` and leave the floor unscaled — the
+    same class of bug ``right_sidebar_floor`` records. So: the real ``SearchLineEdit`` with
+    its clear button, and the widest label the combobox can carry — the longest shipped
+    category name with a three-digit count, the biggest shipped bot listing 597 drops.
+
+    The combobox and the checkbox are taken at their *natural* width and the search field
+    at its minimum, which is the row's real floor rather than either size hint on its own
+    — see ``REFERENCE_FILTER_ROW_PX`` for why neither hint answers this.
+
+    Measured from the application font, never a particular widget's, for the same reason
+    as ``right_sidebar_floor``: the width ``LeftSidebar`` enforces and the width
+    ``layout_budget`` subtracts have to be the same number.
+    """
+    app = QApplication.instance()
+    if app is None:
+        return game_sizing.LEFT_SIDEBAR_MIN_WIDTH
+    # Parentless and never shown -- see the identical note on the probe above.
+    font = app.font()
+    search, combo, check = SearchLineEdit("Search drops…"), QComboBox(), QCheckBox("Kept only")
+    search.setClearButtonEnabled(True)
+    combo.addItem("Treasure Cards (999)")
+    for probe in (search, combo, check):
+        probe.setFont(font)
+    row = (
+        search.minimumSizeHint().width()
+        + combo.sizeHint().width()
+        + check.sizeHint().width()
+        + 2 * _FILTER_ROW_SPACING_PX
+    )
+    return game_sizing.left_sidebar_floor(QFontMetrics(font).height(), row)
+
+
 # Left clear of the screen edges when a window is fitted to it, so the frame and the
 # taskbar are never what a dialog's buttons end up behind.
 WINDOW_SCREEN_MARGIN = 40
@@ -149,7 +198,9 @@ def budget_for(
     launch anyway.
     """
     screen_size, dpr = screen_metrics(widget)
-    budget = SettingsManager.instance().layout_budget(screen_size, right_sidebar_floor=right_sidebar_floor())
+    budget = SettingsManager.instance().layout_budget(
+        screen_size, left_sidebar_floor=left_sidebar_floor(), right_sidebar_floor=right_sidebar_floor()
+    )
     if live_area is None:
         return budget, dpr
     return (max(budget[0], live_area[0]), max(budget[1], live_area[1])), dpr

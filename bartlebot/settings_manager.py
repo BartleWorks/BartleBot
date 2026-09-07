@@ -35,7 +35,7 @@ class _GeneralSettings(BaseModel):
     log_max_lines: int = 5000
     window_width: int = 1400
     window_height: int = 800
-    left_sidebar_width: int = 300
+    left_sidebar_width: int = LEFT_SIDEBAR_MIN_WIDTH
     right_sidebar_width: int = RIGHT_SIDEBAR_MIN_WIDTH
     bottom_section_height: int = 220
     auto_save_enabled: bool = True
@@ -92,7 +92,7 @@ _DEFAULTS: dict[str, Any] = {
         "log_max_lines": 5000,
         "window_width": 1400,
         "window_height": 800,
-        "left_sidebar_width": 300,
+        "left_sidebar_width": LEFT_SIDEBAR_MIN_WIDTH,
         "right_sidebar_width": RIGHT_SIDEBAR_MIN_WIDTH,
         "bottom_section_height": 220,
         "auto_save_enabled": True,
@@ -730,6 +730,7 @@ class SettingsManager:
         client_count: int = 1,
         dpr: float = 1.0,
         right_sidebar_floor: int | None = None,
+        left_sidebar_floor: int | None = None,
     ) -> tuple[int, int]:
         """Return (min_width, min_height) based on the configured game resolution.
 
@@ -743,9 +744,14 @@ class SettingsManager:
         match, which is the documented behaviour that lets a launch bigger than the
         current window correct itself.
         """
-        return required_window_size(self.game_resolution, client_count, dpr, right_sidebar_floor)
+        return required_window_size(self.game_resolution, client_count, dpr, right_sidebar_floor, left_sidebar_floor)
 
-    def layout_budget(self, screen_size: tuple[int, int], right_sidebar_floor: int | None = None) -> tuple[int, int]:
+    def layout_budget(
+        self,
+        screen_size: tuple[int, int],
+        right_sidebar_floor: int | None = None,
+        left_sidebar_floor: int | None = None,
+    ) -> tuple[int, int]:
         """The game-grid space *screen_size* leaves once this layout is placed on it.
 
         The cap that decides which resolutions may be launched. Reads the user's
@@ -759,7 +765,10 @@ class SettingsManager:
         """
         return screen_budget(
             screen_size,
-            left_sidebar=max(int(self.get_general("left_sidebar_width", default=300)), LEFT_SIDEBAR_MIN_WIDTH),
+            left_sidebar=max(
+                int(self.get_general("left_sidebar_width", default=LEFT_SIDEBAR_MIN_WIDTH)),
+                left_sidebar_floor if left_sidebar_floor is not None else LEFT_SIDEBAR_MIN_WIDTH,
+            ),
             right_sidebar=max(
                 int(self.get_general("right_sidebar_width", default=RIGHT_SIDEBAR_MIN_WIDTH)),
                 right_sidebar_floor if right_sidebar_floor is not None else RIGHT_SIDEBAR_MIN_WIDTH,

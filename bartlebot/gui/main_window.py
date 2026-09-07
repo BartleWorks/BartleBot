@@ -9,7 +9,7 @@ from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtWidgets import QMainWindow, QMenu, QMenuBar, QMessageBox, QSplitter
 
 from bartlebot.credentials import CredentialStore
-from bartlebot.game_sizing import RIGHT_SIDEBAR_MIN_WIDTH
+from bartlebot.game_sizing import LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
 from bartlebot.gui import screen_fit
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.game_embed.game_view_panel import GameViewPanel
@@ -302,6 +302,7 @@ class MainWindow(QMainWindow):
         min_w, min_h = SettingsManager.instance().minimum_window_size(
             dpr=self.devicePixelRatio() or 1.0,
             right_sidebar_floor=screen_fit.right_sidebar_floor(),
+            left_sidebar_floor=screen_fit.left_sidebar_floor(),
         )
         self.setMinimumSize(min_w, min_h)
 
@@ -326,7 +327,10 @@ class MainWindow(QMainWindow):
         window narrower than both sidebars leaves Qt its own minimums to enforce.
         """
         sm = SettingsManager.instance()
-        left_w = int(sm.get_general("left_sidebar_width", default=300))
+        left_w = max(
+            int(sm.get_general("left_sidebar_width", default=LEFT_SIDEBAR_MIN_WIDTH)),
+            screen_fit.left_sidebar_floor(),
+        )
         right_w = max(
             int(sm.get_general("right_sidebar_width", default=RIGHT_SIDEBAR_MIN_WIDTH)),
             screen_fit.right_sidebar_floor(),
@@ -359,6 +363,7 @@ class MainWindow(QMainWindow):
         min_w, min_h = sm.minimum_window_size(
             dpr=self.devicePixelRatio() or 1.0,
             right_sidebar_floor=screen_fit.right_sidebar_floor(),
+            left_sidebar_floor=screen_fit.left_sidebar_floor(),
         )
         if sm.get_general("maximize_on_open", default=False):
             self.showMaximized()

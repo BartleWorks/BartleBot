@@ -91,20 +91,25 @@ GAME_PANEL_CHROME_PX = 32
 # Minimum BotCanvas size (toolbar + enough graph space)
 BOTCANVAS_MIN_WIDTH = 320
 BOTCANVAS_MIN_HEIGHT = 180
-# Sidebar minimums. The two differ because their content does: the left sidebar's tabs
-# are lists and forms that elide or scroll, while the right one's player card is a row of
-# buttons -- "Entities", "UI Tree", "Unhook" -- that carry a ``Minimum`` size policy and
-# so run off the panel rather than getting narrower. A floor is only worth having at a
-# width the panel is still usable at, so the arithmetic takes the two separately.
-LEFT_SIDEBAR_MIN_WIDTH = 220
-# The right one's floor is *measured*, not pixels: the buttons, their padding and the
-# scrollbar beside them all scale with the system text size, so a machine at 125% needs
-# the same layout in a quarter more pixels. Pinning a pixel count would mean choosing
-# between clipping that machine and charging every other one for it -- on a 1080p screen
-# an extra 80px of sidebar costs a whole rung of the ladder. So the constant is the floor
-# *at the reference metrics*, and ``right_sidebar_floor`` scales it. 300 rounds up a
-# measured 288 (the tool row plus the players tab's own margins, frame and scrollbar) and
-# is deliberately the old default sidebar width, so nothing changes at the reference.
+# Sidebar minimums. Both are *measured*, not pixels: each panel's widest row is a set of
+# controls that carry a ``Minimum``/``Preferred`` size policy with no shrink flag, so they
+# run off the panel rather than getting narrower, and their own width scales with the
+# system text size and the resolved style. A floor is only worth having at a width the
+# panel is still usable at, so the arithmetic takes the two separately -- see
+# ``right_sidebar_floor`` for the right one's, and ``left_sidebar_floor`` below for the
+# left's: the quicksell keep-list picker's filter row -- a search field, a category
+# combobox and a "Kept only" checkbox side by side (#199). Unlike the rest of the surface,
+# whose labels are ``Fixed``-width but short and whose prose wraps, that row's three
+# widgets neither wrap nor elide, so a narrow sidebar overlapped them instead of
+# squeezing or scrolling to them -- what a 220px sidebar was doing in the report.
+#
+# Both constants are the floor *at the reference metrics* (16px text under
+# ``windowsvista``), and ``left_sidebar_floor``/``right_sidebar_floor`` scale them, never
+# below the reference. Pinning a pixel count would mean choosing between clipping a
+# machine with larger system text and charging every other one for it -- on a 1080p
+# screen an extra 80px of sidebar costs a whole rung of the ladder.
+LEFT_SIDEBAR_MIN_WIDTH = 390  # rounds up a measured 378: the filter row plus the gutter,
+# the scroll content margins, the scroll area's frame and its vertical scrollbar.
 RIGHT_SIDEBAR_MIN_WIDTH = 300
 REFERENCE_TEXT_HEIGHT_PX = 16  # QFontMetrics(...).height() for Segoe UI 9pt at 100%
 # The tool row is three buttons, and a QPushButton is never narrower than the *style's*
@@ -114,6 +119,16 @@ REFERENCE_TEXT_HEIGHT_PX = 16  # QFontMetrics(...).height() for Segoe UI 9pt at 
 # 288px here needs 303 on a runner that resolves a different style. So the button's own
 # size hint is the second reference, and the floor takes whichever scale is larger.
 REFERENCE_BUTTON_WIDTH_PX = 75  # QPushButton("Unhook").sizeHint().width(), same reference
+# Same reasoning, one row rather than one button: there is no single "widest control" on
+# the left to carry the style's number, so the second reference is the filter row's width
+# as a whole. Not the row's ``sizeHint``, though, and not its ``minimumSizeHint`` either:
+# the combobox and the checkbox are what must not be squeezed, so they are taken at their
+# *natural* width, while the search field beside them is the one holding the layout's
+# stretch and is taken at its own minimum -- it is designed to be the part that gives.
+# ``minimumSizeHint`` on the row would take the combobox down with it (a QComboBox elides
+# its own text and reports far less than it needs), which is the clipped state in #199.
+# 293 is that sum at the reference metrics; see ``left_sidebar_floor``.
+REFERENCE_FILTER_ROW_PX = 293
 # Shared: the height must stay under the shortest tile any offered resolution produces,
 # or a sidebar rather than the game view becomes the top row's floor.
 SIDEBAR_MIN_HEIGHT = 240
@@ -393,11 +408,40 @@ def right_sidebar_floor(text_height_px: float | None = None, button_width_px: fl
     return round(RIGHT_SIDEBAR_MIN_WIDTH * scale)
 
 
+def left_sidebar_floor(text_height_px: float | None = None, filter_row_px: float | None = None) -> int:
+    """``LEFT_SIDEBAR_MIN_WIDTH`` scaled to the metrics *this machine* reports.
+
+    Same shape as ``right_sidebar_floor``, and for the same reason: the forcing content
+    is not the whole panel, it is one row that does not wrap or elide -- the quicksell
+    keep-list picker's search field, category combobox and "Kept only" checkbox (#199).
+    *text_height_px* is the general term everything else on the surface would need if it
+    ever stopped eliding; *filter_row_px* is that row's own floor, composed as
+    ``REFERENCE_FILTER_ROW_PX`` describes, which carries both the font and the style at
+    once the way a ``QPushButton``'s minimum width does for the right sidebar. The larger
+    of the two scales wins.
+
+    Linear in each, which is an approximation but one that errs wide -- see
+    ``right_sidebar_floor`` for why that is the harmless direction.
+
+    ``None`` for both means "not measured" and returns the reference, which is what the
+    pure arithmetic and its tests use. Everything inside the running app must instead go
+    through ``gui/screen_fit.left_sidebar_floor``, so that the width the widget enforces
+    and the width the fit is computed against cannot come from two different measurements.
+    """
+    scale = max(
+        1.0,
+        (text_height_px or 0) / REFERENCE_TEXT_HEIGHT_PX,
+        (filter_row_px or 0) / REFERENCE_FILTER_ROW_PX,
+    )
+    return round(LEFT_SIDEBAR_MIN_WIDTH * scale)
+
+
 def required_window_size(
     resolution: tuple[int, int],
     client_count: int = 1,
     dpr: float = 1.0,
     right_sidebar: int | None = None,
+    left_sidebar: int | None = None,
 ) -> tuple[int, int]:
     """The window floor a grid of *client_count* clients at *resolution* implies.
 
@@ -414,7 +458,8 @@ def required_window_size(
     """
     game_w, game_h = required_game_area(resolution, client_count, dpr)
     right = right_sidebar if right_sidebar is not None else RIGHT_SIDEBAR_MIN_WIDTH
-    width = LEFT_SIDEBAR_MIN_WIDTH + right + game_w + 2 * SPLITTER_HANDLE_PX
+    left = left_sidebar if left_sidebar is not None else LEFT_SIDEBAR_MIN_WIDTH
+    width = left + right + game_w + 2 * SPLITTER_HANDLE_PX
     height = game_h + GAME_PANEL_CHROME_PX + BOTCANVAS_MIN_HEIGHT + MENU_AND_STATUS_PX + SPLITTER_HANDLE_PX
     return width, height
 
