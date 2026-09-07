@@ -42,8 +42,8 @@ still surprised people, because nothing said which card was being held. The sort
 only evidence a drag was happening, so what the user saw was the *other* cards moving on
 their own. The gesture is the same one; what was missing was every signal around it:
 
-- a **grip** (``launch_cards.GripHandle``) that says a card can be dragged at all, and is
-  now the only place a drag starts, so the cursor can change exactly where dragging works;
+- a **grip** (``widgets.card_frame.GripHandle``) that says a card can be dragged at all,
+  and now the only place a drag starts, so the cursor can change exactly where it works;
 - the dragged card **lifted out of the layout**, following the pointer continuously and
   leaving a ``_DropPlaceholder`` hole where it came from, instead of snapping a row at a
   time with nothing at all happening in between;
