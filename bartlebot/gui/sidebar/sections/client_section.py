@@ -47,12 +47,14 @@ is the same bargain the wizard name already makes with ``wizard_names.cached_nam
 import asyncio
 import logging
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
 
 from bartlebot.gui.game_embed.card_columns import CardColumn
+from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.sidebar.player_card import PlayerCard, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
+from bartlebot.gui.themed import ThemedMixin
 from bartlebot.nodes.timing import (
     CLIENT_REFRESH_INTERVAL_HIDDEN,
     CLIENT_REFRESH_INTERVAL_IDLE,
@@ -78,7 +80,7 @@ def client_refresh_interval(bot_running: bool, players_visible: bool) -> float:
     return CLIENT_REFRESH_INTERVAL_RUN if bot_running else CLIENT_REFRESH_INTERVAL_IDLE
 
 
-class ClientSection(QWidget):
+class ClientSection(ThemedMixin, QWidget):
     """The Players tab's contents: the hooked column, the unhooked section, the bulk row.
 
     Lives in ``RightSidebar``'s Players tab, which supplies the margins and nothing else
@@ -94,6 +96,8 @@ class ClientSection(QWidget):
     rehook_requested = pyqtSignal(int)  # HWND of unhooked client to rehook
     unhook_all_requested = pyqtSignal()
     rehook_all_requested = pyqtSignal()
+
+    _BULK_ICON_SIZE = QSize(14, 14)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -125,6 +129,8 @@ class ClientSection(QWidget):
         self._unhooked_section.setVisible(False)
         layout.addWidget(self._unhooked_section)
 
+        self.refresh_theme_styles()
+
     def _build_bulk_row(self) -> QWidget:
         """Row of Unhook All / Rehook All buttons pinned above both buckets."""
         row = QWidget()
@@ -134,17 +140,23 @@ class ClientSection(QWidget):
 
         self._unhook_all_btn = QPushButton("Unhook All")
         self._unhook_all_btn.setToolTip("Unhook every client (leaves all game windows open)")
+        self._unhook_all_btn.setIconSize(self._BULK_ICON_SIZE)
         self._unhook_all_btn.setEnabled(False)
         self._unhook_all_btn.clicked.connect(self.unhook_all_requested)
         layout.addWidget(self._unhook_all_btn)
 
         self._rehook_all_btn = QPushButton("Rehook All")
         self._rehook_all_btn.setToolTip("Re-hook every unhooked client into BartleBot")
+        self._rehook_all_btn.setIconSize(self._BULK_ICON_SIZE)
         self._rehook_all_btn.setEnabled(False)
         self._rehook_all_btn.clicked.connect(self.rehook_all_requested)
         layout.addWidget(self._rehook_all_btn)
 
         return row
+
+    def apply_theme_styles(self) -> None:
+        self._unhook_all_btn.setIcon(svg_icon("unhook", self._BULK_ICON_SIZE.width()))
+        self._rehook_all_btn.setIcon(svg_icon("hook", self._BULK_ICON_SIZE.width()))
 
     # ------------------------------------------------------------------
     # Public API

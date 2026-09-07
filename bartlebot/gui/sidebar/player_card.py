@@ -463,7 +463,7 @@ class PlayerCard(CardFrame):
         if self._is_unhooked:
             hook = CardVerb(
                 "Rehook",
-                "attach",
+                "hook",
                 "Re-hook this client into BartleBot",
                 lambda: self.rehook_requested.emit(self._client.window_handle),
                 on_face=True,
@@ -471,7 +471,7 @@ class PlayerCard(CardFrame):
         else:
             hook = CardVerb(
                 "Unhook",
-                "detach",
+                "unhook",
                 "Unhook this client (leaves the game window open)",
                 lambda: self.unhook_requested.emit(self._index),
                 on_face=True,
