@@ -125,8 +125,9 @@ TAGS: dict[str, list[str]] = {
     # ── 21_darkmoor ───────────────────────────────────────────────────
     "21_darkmoor/heretical_academy.json": ["Gear", "Spellements", "Dungeon"],
     "21_darkmoor/hierophant_of_destruction.json": ["Gear", "Spellements", "Boss"],
-    "21_darkmoor/sister_sanderson.json": ["Gear", "Spellements", "Boss"],
-    "21_darkmoor/sister_sanderson_teamup.json": ["Gear", "Spellements", "Boss", "Team-Up"],
+    # Team-Up since #162: the separate _teamup copy of this bot was folded back into it,
+    # and the one file now offers both ways in. The tag means "this bot can team up".
+    "21_darkmoor/sister_sanderson.json": ["Gear", "Spellements", "Boss", "Team-Up"],
     # ── aquila ────────────────────────────────────────────────────────
     "aquila/cronus.json": ["Gear", "Boss"],
     "aquila/gladiator_dimachaerus.json": ["Gear", "Boss"],

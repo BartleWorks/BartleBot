@@ -56,8 +56,8 @@ def _humanize(node_type: str) -> str:
     """Convert snake_case node key to a readable label.
 
     Examples:
-        enter_dungeon_teamup → "Enter Dungeon Teamup"
-        handle_combat        → "Handle Combat"
+        enter_zone_via_list → "Enter Zone Via List"
+        handle_combat       → "Handle Combat"
     """
     return node_type.replace("_", " ").title()
 

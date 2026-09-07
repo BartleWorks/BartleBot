@@ -25,6 +25,7 @@ from bartlebot import bot_options, option_values
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.nodes.teleportation import teleport_to_friend
 from bartlebot.nodes.utility import quicksell
+from bartlebot.nodes.zone_entry import enter_dungeon
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -156,11 +157,48 @@ def _teleport_to_friend_details(config, states, clients) -> tuple[list[tuple[str
     return details, editable
 
 
+def _enter_dungeon_message(config, states, clients, message: str) -> str | None:
+    """The Team-Up warning, but only for the run that can actually be split by it.
+
+    ``enter_dungeon`` is in most of the library, so a static warning on it would be one
+    the user learns to click away. What is being warned about is narrower than the node:
+    each client joins the queue on its own, and ``zone_name()`` matches the zone rather
+    than the instance, so two clients matched into *different* copies of the dungeon
+    would both read as arrived and the node would return SUCCESS on a split party.
+
+    That needs all three of: an author who ticked Offers Team-Up, a user who turned the
+    option on, and more than one client hooked. One client cannot be split from itself,
+    and a normal entrance takes everyone through the same sigil.
+
+    Not a refusal. The node cannot tell whether the clients landed together, which is a
+    gap in what can be read rather than something the user got wrong -- and if an
+    instance identity ever becomes readable this turns into a real check instead.
+    """
+    if not any(state.params.get(enter_dungeon.PARAM_OFFERS_TEAM_UP) for state in states):
+        return None
+    if len(clients or []) < 2:
+        return None
+    resolution = option_values.option_resolution(config, enter_dungeon.OPTION_TEAM_UP)
+    if resolution is None or not resolution.value:
+        return None
+    return message
+
+
+def _enter_dungeon_details(config, states, clients) -> list[tuple[str, str]]:
+    """What the queue was asked for, and how many players are about to ask for it."""
+    details: list[tuple[str, str]] = [("Players hooked", str(len(clients or [])))]
+    resolution = option_values.option_resolution(config, enter_dungeon.OPTION_MINIMUM_TEAM_SIZE)
+    if resolution is not None:
+        details.append((enter_dungeon.OPTION_MINIMUM_TEAM_SIZE, f"{resolution.value} ({resolution.source})"))
+    return details
+
+
 #: node type -> ``(config, states, clients) -> details`` (or ``(details, editable)``).
 #: Every builder takes all three: what a node will do is now mostly a question about
 #: the bot's options rather than about one state's params, so a builder that could not
 #: see the config could not answer it.
 _DETAIL_BUILDERS = {
+    "enter_dungeon": _enter_dungeon_details,
     "quicksell": _quicksell_details,
     "teleport_to_friend": _teleport_to_friend_details,
 }
@@ -170,11 +208,14 @@ _DETAIL_BUILDERS = {
 #: default for a node with no entry here; returning None drops the warning for this run.
 #:
 #: This is the answer to "the node is in the bot, but will it do anything?", which a
-#: NodeSpec field cannot answer because it is a question about the bot's options. Only
-#: quicksell has an option that switches the node off wholesale; ``relog``,
-#: ``form_group``, ``collect_reagent`` and ``teleport_to_friend`` all act whenever they
-#: are reached, so a warning naming one is always earned.
+#: NodeSpec field cannot answer because it is a question about the bot's options -- and
+#: for ``enter_dungeon``, about how many clients are hooked. Quicksell has an option that
+#: switches the node off wholesale, and ``enter_dungeon`` warns about one of its two ways
+#: in rather than about itself; ``relog``, ``form_group``, ``collect_reagent`` and
+#: ``teleport_to_friend`` all act whenever they are reached, so a warning naming one is
+#: always earned.
 _MESSAGE_BUILDERS = {
+    "enter_dungeon": _enter_dungeon_message,
     "quicksell": _quicksell_message,
 }
 

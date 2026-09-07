@@ -53,8 +53,6 @@ from bartlebot.nodes.utility.sleep import NODE_SPEC as _sleep_spec
 from bartlebot.nodes.utility.sleep import run as sleep_run
 from bartlebot.nodes.zone_entry.enter_dungeon import NODE_SPEC as _enter_dungeon_spec
 from bartlebot.nodes.zone_entry.enter_dungeon import run as enter_dungeon_run
-from bartlebot.nodes.zone_entry.enter_dungeon_teamup import NODE_SPEC as _enter_dungeon_teamup_spec
-from bartlebot.nodes.zone_entry.enter_dungeon_teamup import run as enter_dungeon_teamup_run
 from bartlebot.nodes.zone_entry.enter_gauntlet import NODE_SPEC as _enter_gauntlet_spec
 from bartlebot.nodes.zone_entry.enter_gauntlet import run as enter_gauntlet_run
 from bartlebot.nodes.zone_entry.enter_zone import NODE_SPEC as _enter_zone_spec
@@ -74,7 +72,6 @@ NODE_REGISTRY: dict = {
     "go_to_world": go_to_world_run,
     "teleport_to_coordinates": teleport_to_coordinates_run,
     "enter_dungeon": enter_dungeon_run,
-    "enter_dungeon_teamup": enter_dungeon_teamup_run,
     "enter_gauntlet": enter_gauntlet_run,
     "enter_zone_via_list": enter_zone_via_list_run,
     "interact": interact_run,
@@ -109,7 +106,6 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "go_to_world": _go_to_world_spec,
     "teleport_to_coordinates": _teleport_to_coordinates_spec,
     "enter_dungeon": _enter_dungeon_spec,
-    "enter_dungeon_teamup": _enter_dungeon_teamup_spec,
     "enter_gauntlet": _enter_gauntlet_spec,
     "enter_zone_via_list": _enter_zone_via_list_spec,
     "interact": _interact_spec,
@@ -144,7 +140,6 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         "Zone Entry",
         [
             "enter_dungeon",
-            "enter_dungeon_teamup",
             "enter_gauntlet",
             "enter_zone",
             "enter_zone_via_list",

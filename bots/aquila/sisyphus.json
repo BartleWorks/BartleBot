@@ -670,7 +670,8 @@
           "y": 3268.84,
           "z": -100.0
         },
-        "offers_challenge_mode": true
+        "offers_challenge_mode": true,
+        "offers_team_up": true
       }
     },
     {
@@ -904,6 +905,26 @@
     },
     {
       "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_17",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_2",
       "dest": "state_3",
       "when": "SUCCESS",
@@ -1037,26 +1058,6 @@
       "source": "state_9",
       "dest": "state_17",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_17",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],

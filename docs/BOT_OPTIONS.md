@@ -99,6 +99,44 @@ Nothing rewrites an option on load. `_apply_bot_defaults` used to overwrite Safe
 Delay from the app setting on open, which is why `bots/` moved on every run;
 `test_opening_and_saving_a_bot_changes_none_of_its_options` is what keeps it still.
 
+## A param gates an option the author knows about
+
+Some choices only exist in some dungeons. Challenge Mode is in a handful of them,
+Team-Up in rather more but far from all, and offering the user a switch for either in
+the other sixty is noise they cannot act on. Two things are being asked, and they
+belong to different people:
+
+| the question | who answers | where it lives |
+|---|---|---|
+| does this sigil offer it, and is this a run to use it on? | the author | a **param** on the node |
+| do I want it this time? | the user | a **bot option**, `required_when` that param |
+
+`BotOptionSpec.required_when` names a bool param on the same node; the option is
+composed into the bot only while some state has that param on, and one state is enough
+for the whole bot. `offers_challenge_mode`/`Challenge Mode` and
+`offers_team_up`/`Team-Up` are the two, and `Minimum Team Size` hangs off the second
+through `depends_on` as well, because nothing it holds can matter while Team-Up is off.
+
+Both halves are read at run time, and **both** have to be on:
+
+```python
+team_up = bool(params.get("offers_team_up")) and bool(machine.get_option("Team-Up", False))
+```
+
+Not belt and braces. An override outlives the option it was set on — the user turns
+Team-Up on for one bot, and the value is keyed to the bot rather than to the node — so
+the param alone is what stops a leftover `True` sending a client at a Team-Up button
+that is not on this sigil. The param alone must not act either: a bot that *can* team
+up still enters alone until the user says otherwise (#162).
+
+The param is also the only curation lever there is for Team-Up, and deliberately a
+convention rather than an enforcement point. Whether a run is a reasonable one to bring
+a matched stranger into is a judgement the bot's author can make and the app cannot;
+what actually wrongs that stranger is what the bot does *after* entry, not how it got
+in. The restricted-zone guard in `docs/RESTRICTED_ZONES.md` stays the only thing in the
+codebase shaped like a no-bypass invariant — enforcing a soft norm the same way dilutes
+what that guard signals.
+
 ## A declaration is derived, not persisted
 
 An option a node requires is **not written to the bot file**. Its name, type,
