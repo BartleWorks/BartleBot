@@ -58,7 +58,7 @@ class LaunchStage(Enum):
     ``value`` is the caption, so the view does not need a second table to render one.
     """
 
-    STARTING = "Starting"
+    STARTING = "Launching game"
     LOGGING_IN = "Logging in"
     LOADING = "Loading"
     # Terminal. A launch that gave up, which is a thing the launcher does quietly far more

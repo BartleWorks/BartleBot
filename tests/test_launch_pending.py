@@ -433,7 +433,7 @@ class TestLaunchStatusText:
         assert text == f"Loading… {int(LAUNCH_STAGE_ELAPSED_HINT)}s"
 
     def test_a_stage_with_no_clock_never_shows_a_number(self) -> None:
-        assert launch_status_text("Starting", None, now=9999.0) == "Starting…"
+        assert launch_status_text("Launching game", None, now=9999.0) == "Launching game…"
 
 
 class TestLauncherReportsStages:
