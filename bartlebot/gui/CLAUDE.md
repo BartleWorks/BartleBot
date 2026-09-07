@@ -126,6 +126,26 @@ the launch cards' hover-revealed buttons use — but it only applies to a widget
 is still asked about.)
 
 
+## The first offscreen render costs 150-200ms
+
+A widget with a `QGraphicsEffect` on it, and a `QWidget.grab()` or `render()` for a
+`QDrag` pixmap, are all painted into an offscreen surface rather than into the window.
+Qt flushes the whole top-level's withheld move and resize events before the first such
+render — it holds them back from hidden widgets, so every unopened tab, menu and dialog
+page built at startup is sitting on a layout that has never run, and they all run at
+once. It is the same 150-200ms whether the target pixmap is full size or **1x1**: the
+cost is the layout flush, not the paint. The second one is free.
+
+Left alone it lands wherever the first offscreen render happens to be, which is a
+gesture — the first card drag of a session stalled for a fifth of a second while the
+shadow went on, and no later one did. Call `warm_offscreen_render(widget)`
+(`gui/offscreen_warmup.py`) a turn after the surface is shown instead; it is per window,
+because the flush is, so a dialog does not inherit the main window's. `CardColumn.showEvent`
+is the pattern. It is per window *and* once: the flag means the layouts outstanding at
+that moment ran, not that the window is immune. Nothing warms the other offscreen sites
+(`favorites_bar`, `combat_order_widget`, `duel_strategy_editor`) — if one ever stalls,
+warm its window; do not add a call per widget class.
+
 ## qasync + Python 3.13 task re-entrancy rule
 
 **Never call a blocking Qt method (e.g. `QDialog.exec()`, `QMessageBox.exec()`) from inside an `async` function that is running as an asyncio Task.**

@@ -79,6 +79,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.game_sizing import FitProblem
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.launch_cards import AddCard, ProfileCard
+from bartlebot.gui.offscreen_warmup import warm_offscreen_render
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
@@ -362,6 +363,11 @@ class CardColumn(QWidget):
         self._autoscroll = QTimer(self)
         self._autoscroll.setInterval(AUTOSCROLL_INTERVAL_MS)
         self._autoscroll.timeout.connect(self._autoscroll_step)
+        # Fired one turn after the column is first shown; see showEvent. Parented to the
+        # column so a surface closed inside that turn takes it with it.
+        self._warmup = QTimer(self)
+        self._warmup.setSingleShot(True)
+        self._warmup.timeout.connect(self._warm_offscreen_render)
         self._build_ui(title, show_settings_link)
 
     # ------------------------------------------------------------------
@@ -899,6 +905,28 @@ class CardColumn(QWidget):
         if order == list(range(len(order))):
             return
         self.reordered.emit(order)
+
+    def showEvent(self, event) -> None:
+        """Warm this window's offscreen render path the first time the column appears.
+
+        The lift attaches a drop shadow, which is the first thing in most sessions to
+        render a widget offscreen -- and Qt spends 150-200ms on the *first* one, flushing
+        every layout the window has been holding back for a hidden widget. Left alone,
+        the user pays it between the two mouse moves that start their first drag, which
+        is exactly what it looks like: the card sticks to the column for a moment and
+        then comes free. See ``gui/offscreen_warmup.py``.
+
+        Deferred a turn rather than run here, because a show event is the frame the
+        column is being drawn on and this is 200ms of work that has nothing to do with
+        drawing it. The timer is the column's own, so a surface closed inside that turn
+        takes its warm-up with it instead of firing into a deleted widget.
+        """
+        super().showEvent(event)
+        self._warmup.start(0)
+
+    def _warm_offscreen_render(self) -> None:
+        """The deferred half of :meth:`showEvent`. A no-op once this window is warmed."""
+        warm_offscreen_render(self)
 
     def closeEvent(self, event) -> None:
         """Never leave a closed hand behind on a column that is going away."""
