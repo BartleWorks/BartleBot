@@ -8,51 +8,38 @@
         "King Artorius - Fire - T05 - B": 1,
         "Attenuate": 1
       },
-      "tc": {},
       "item": {
         "Wand-Fire-180": 2
       },
-      "card_kinds": {},
       "archmastery_school": "Life"
     },
     "2": {
       "normal": {
         "Storm Owl - T05 - A": 1
       },
-      "tc": {},
       "item": {
         "Wand-Storm-180": 3
       },
-      "card_kinds": {},
       "archmastery_school": "Storm"
     },
     "3": {
       "normal": {
         "Storm Owl - T05 - A": 1
       },
-      "tc": {},
       "item": {
         "Wand-Storm-180": 3
       },
-      "card_kinds": {},
       "archmastery_school": "Death"
     },
     "4": {
       "normal": {
         "Storm Owl - T05 - A": 1
       },
-      "tc": {},
       "item": {
         "Wand-Storm-180": 3
       },
-      "card_kinds": {},
       "archmastery_school": "Death"
     }
-  },
-  "default_duel_config": {
-    "min_players": 1,
-    "max_players": 4,
-    "player_assignments": []
   },
   "state_assignments": [
     {
@@ -61,7 +48,6 @@
       ],
       "duel_config": {
         "min_players": 4,
-        "max_players": 4,
         "combat_order": [
           1,
           2,
@@ -73,7 +59,9 @@
             "players": [
               1
             ],
-            "dsl": "{1} pass\n{2} pass\n{3} attenuate @ boss\n{4} art @ boss\nwand @ boss"
+            "dsl": "{1} pass\n{2} pass\n{3} attenuate @ boss\n{4} art @ boss\nwand @ boss",
+            "school": "Fire",
+            "note": "Clears shields with Fire King Artorius, Path B"
           },
           {
             "players": [
@@ -81,7 +69,9 @@
               3,
               4
             ],
-            "dsl": "{1} pass\n{2} pass\n{3} wand @ boss\n{4} owl @ boss\nwand @ boss"
+            "dsl": "{1} pass\n{2} pass\n{3} wand @ boss\n{4} owl @ boss\nwand @ boss",
+            "school": "Storm",
+            "note": "Builds pips, clears Storm shields with wand hits, and then kills with Storm Owl"
           }
         ]
       }
