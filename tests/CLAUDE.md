@@ -130,8 +130,8 @@ viewport heights, and without one it is 0/70. A GUI flake under `-n auto` is usu
 order-dependent state, so look for what an earlier test left behind before reaching for
 `processEvents` or a sleep.
 
-**Pumping can destroy the state you are pumping for.** No test shows or activates its
-windows, so a popup put up with `QMenu.popup()` has no active window behind it: spin the
+**Pumping can destroy the state you are pumping for.** Almost no test shows or activates
+its windows, so a popup put up with `QMenu.popup()` has no active window behind it: spin the
 loop under load and Windows deactivates it, the menu closes itself, and every teardown
 hook — `aboutToHide`, and the parent hand-back `anchor_menu_to_window` connects to it —
 has already fired by the time the assertion looks. The hand-back test in
@@ -139,6 +139,20 @@ has already fired by the time the assertion looks. The hand-back test in
 obvious fix, and the one the issue suggested — made it fail every time instead. Ask first whether the state arrives synchronously: `aboutToShow` is
 emitted from inside `popup()`, so that half wanted no pump at all. `_pump_until` in
 `test_menu_anchoring.py` is there for the tearing-down half, which genuinely does need one.
+
+**`show()` does not give a widget focus; activation does, and it is the WM's answer.**
+`QWidget.hasFocus()` is false unless the widget's window is *active*, and `show()` only
+asks Windows to make it so — the answer arrives as a later event, on the WM's schedule.
+On an idle dev box it lands inside the first `processEvents()`, which is why a test that
+shows a window and calls `setFocus()` looks deterministic; under `-n auto` it can land
+after the test is over, and every `hasFocus()` branch in the widget under test is skipped.
+That is a silent pass-by-omission, not an error: `test_growing_scrolls_an_enclosing_page_to_the_caret`
+failed `assert 0 > 0` because `GrowingTextEdit` correctly declined to scroll a field it
+believed unfocused. `QApplication.setActiveWindow(window)` hands the activation over
+synchronously and is the fix; pumping harder is not, since there is nothing pending to
+pump. Then **assert the focus you arranged** — `_shown_page` in
+`test_growing_text_edit.py` is the pattern, and it matters at both ends: a test asserting
+that an *unfocused* widget stays put passes for free on a window that had no focus to give.
 
 `--dist loadfile` would hide this class of bug by making the accident stable. Order
 independence is a property worth keeping, so CI stays on `load`.

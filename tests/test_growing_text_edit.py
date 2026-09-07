@@ -8,7 +8,7 @@ assertion would be measuring the CI runner's fonts rather than the widget.
 
 import pytest
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QScrollArea, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QApplication, QScrollArea, QVBoxLayout, QWidget
 
 from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
 
@@ -99,22 +99,39 @@ class TestGeometryReporting:
         assert edit.maximumHeight() > edit._line_height(8)  # noqa: SLF001
 
 
+def _shown_page(qapp) -> tuple[QScrollArea, GrowingTextEdit]:
+    """A scrollable page holding an editor, shown and *active*.
+
+    ``show()`` only asks Windows to activate the window; the answer arrives as a
+    later event, and under ``-n auto`` it can arrive after the test has finished.
+    Until it does, ``hasFocus`` is false however many times the editor is given
+    focus — so the widget declines to schedule the scroll this class is about and
+    the test fails having exercised nothing.  ``setActiveWindow`` hands the
+    activation over synchronously instead, which is the whole reason it is called
+    here: the widget's rule is focus, and the test has to be able to state it.
+    """
+    area = QScrollArea()
+    page = QWidget()
+    layout = QVBoxLayout(page)
+    edit = GrowingTextEdit(min_lines=2, max_lines=8)
+    layout.addWidget(edit)
+    layout.addStretch()
+    area.setWidget(page)
+    area.setWidgetResizable(True)
+    area.resize(240, 60)
+    area.show()
+    qapp.processEvents()
+    QApplication.setActiveWindow(area)
+    return area, edit
+
+
 class TestCaretVisibility:
     def test_growing_scrolls_an_enclosing_page_to_the_caret(self, qapp) -> None:
         """Growth is top-anchored, so the line being typed moves down and out."""
-        area = QScrollArea()
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        edit = GrowingTextEdit(min_lines=2, max_lines=8)
-        layout.addWidget(edit)
-        layout.addStretch()
-        area.setWidget(page)
-        area.setWidgetResizable(True)
-        area.resize(240, 60)
-        area.show()
-        qapp.processEvents()
+        area, edit = _shown_page(qapp)
 
         edit.setFocus()
+        assert edit.hasFocus()
         # Typed, not assigned: setPlainText leaves the caret at the *top*, where
         # there is nothing to scroll to.  The case this exists for is a user
         # adding lines at the bottom of a description.
@@ -128,20 +145,12 @@ class TestCaretVisibility:
 
     def test_an_unfocused_editor_leaves_the_page_alone(self, qapp) -> None:
         """A bot being opened must not scroll the sidebar out from under the user."""
-        area = QScrollArea()
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        edit = GrowingTextEdit(min_lines=2, max_lines=8)
-        layout.addWidget(edit)
-        layout.addStretch()
-        area.setWidget(page)
-        area.setWidgetResizable(True)
-        area.resize(240, 60)
-        area.show()
-        qapp.processEvents()
+        area, edit = _shown_page(qapp)
 
-        # Showing a window hands focus to the first child that will take it, and the
-        # editor is the only one — so the case has to be arranged rather than assumed.
+        # Activating a window hands focus to the first child that will take it, and
+        # the editor is the only one — so the case has to be arranged rather than
+        # assumed.  Without the activation above it would arrange itself, and the
+        # test would pass on a window that simply had no focus to give.
         edit.clearFocus()
         assert not edit.hasFocus()
 
