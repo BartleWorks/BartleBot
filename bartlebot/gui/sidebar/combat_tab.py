@@ -213,7 +213,11 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
         for i in range(1, _NUM_PLAYER_SLOTS + 1):
             slot_container = QWidget()
             slot_layout = QVBoxLayout(slot_container)
-            slot_layout.setContentsMargins(0, 0, 0, 0)
+            # _DuelBindingPanel's disclosure arrow sits past NEST_INDENT_PX *and*
+            # its rail slot + gap (spine margin, then _GroupRail, then
+            # _RAIL_GAP_PX before the header) — matching only NEST_INDENT_PX here
+            # left the P1-P4 arrows short of "Defeat The Monster"'s by that width.
+            slot_layout.setContentsMargins(NEST_INDENT_PX + _RAIL_SLOT_PX + _RAIL_GAP_PX, 0, 0, 0)
             slot_layout.setSpacing(2)
 
             row = QWidget()
@@ -274,7 +278,7 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
             # showing a widget before it has a parent).
             content = QWidget()
             content_layout = QVBoxLayout(content)
-            content_layout.setContentsMargins(NEST_INDENT_PX, 0, 0, 4)
+            content_layout.setContentsMargins(0, 0, 0, 4)
             content_layout.setSpacing(2)
             content.setVisible(False)
 
