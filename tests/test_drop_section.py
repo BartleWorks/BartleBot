@@ -55,3 +55,79 @@ def test_item_column_still_sorts_by_name(qapp, section):
 
     table.sortItems(0, Qt.SortOrder.AscendingOrder)
     assert [name for name, _ in _rows(table)] == sorted(_DROPS)
+
+
+# ---------------------------------------------------------------------------
+# Reordering
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def four(qapp):
+    """Four tabs, each holding one drop that names the client it started as."""
+    widget = DropSection()
+    widget.setup_clients(4)
+    for i in range(4):
+        widget.add_drop(f"Item {i}", i + 1, client_index=i)
+    qapp.processEvents()
+    yield widget
+    widget.deleteLater()
+
+
+def _tab_labels(section):
+    return [section._tabs.tabText(i) for i in range(section._tabs.count())]
+
+
+def _first_item(section, idx):
+    table = section.table(idx)
+    return table.item(0, 0).text() if table.rowCount() else None
+
+
+def test_reorder_moves_tables_data_and_labels_together(qapp, four):
+    four.reorder_clients([2, 0, 3, 1])
+    qapp.processEvents()
+
+    assert _tab_labels(four) == ["Player 3", "Player 1", "Player 4", "Player 2"]
+    assert [_first_item(four, i) for i in range(4)] == ["Item 2", "Item 0", "Item 3", "Item 1"]
+    assert [four._data[i] for i in range(4)] == [
+        {"Item 2": 3},
+        {"Item 0": 1},
+        {"Item 3": 4},
+        {"Item 1": 2},
+    ]
+
+
+def test_reorder_keeps_the_widget_under_each_tab(qapp, four):
+    """The table the tab bar shows is the one the backing store thinks it is showing."""
+    four.reorder_clients([3, 2, 1, 0])
+    qapp.processEvents()
+
+    for i in range(4):
+        assert four._tabs.widget(i) is four.table(i)
+
+
+def test_reorder_keeps_the_selected_tab_selected(qapp, four):
+    four._tabs.setCurrentIndex(1)
+
+    four.reorder_clients([2, 0, 3, 1])
+    qapp.processEvents()
+
+    assert four._tabs.currentIndex() == 3  # Player 2's tab, which the drag moved to position 3
+    assert _first_item(four, four._tabs.currentIndex()) == "Item 1"
+
+
+def test_reorder_refuses_a_permutation_that_does_not_describe_the_tabs(qapp, four):
+    four.reorder_clients([0, 1, 2])
+
+    assert _tab_labels(four) == ["Player 1", "Player 2", "Player 3", "Player 4"]
+    assert [_first_item(four, i) for i in range(4)] == ["Item 0", "Item 1", "Item 2", "Item 3"]
+
+
+def test_a_drop_after_a_reorder_lands_on_the_new_index(qapp, four):
+    four.reorder_clients([1, 0, 2, 3])
+    qapp.processEvents()
+
+    four.add_drop("Amber", 5, client_index=0)
+    qapp.processEvents()
+
+    assert four._data[0] == {"Item 1": 2, "Amber": 5}
