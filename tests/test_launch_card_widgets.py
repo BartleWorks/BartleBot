@@ -7,12 +7,16 @@ reaches a card's labels.
 """
 
 import pytest
-from PyQt6.QtCore import QEvent, QPoint, Qt
+from PyQt6.QtCore import QEvent, QObject, QPoint, Qt
 from PyQt6.QtGui import QEnterEvent, QMouseEvent
+from PyQt6.QtWidgets import QWidget
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.account_accent import account_accent
+from bartlebot.gui.game_embed.card_columns import CardColumn
+from bartlebot.gui.game_embed.game_view import _GamePlaceholder
 from bartlebot.gui.game_embed.launch_cards import MAX_CHARACTER_ROWS, AccountCard, ProfileCard
+from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.widgets.tag_pill import AccountPill
 
 ACCOUNT = {"username": "someone@example.com", "alias": "Main"}
@@ -27,16 +31,39 @@ def theme():
     theme_mod.set_theme_instance(before)
 
 
-def _click(widget) -> None:
+def _press(widget, button=Qt.MouseButton.LeftButton, at=QPoint(5, 5)) -> None:
     widget.mousePressEvent(
         QMouseEvent(
             QEvent.Type.MouseButtonPress,
-            QPoint(5, 5).toPointF(),
-            Qt.MouseButton.LeftButton,
-            Qt.MouseButton.LeftButton,
+            at.toPointF(),
+            button,
+            button,
             Qt.KeyboardModifier.NoModifier,
         )
     )
+
+
+def _release(widget, button=Qt.MouseButton.LeftButton, at=QPoint(5, 5)) -> None:
+    widget.mouseReleaseEvent(
+        QMouseEvent(
+            QEvent.Type.MouseButtonRelease,
+            at.toPointF(),
+            button,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+    )
+
+
+def _click(widget, button=Qt.MouseButton.LeftButton) -> None:
+    """A full click: down and up in the same place.
+
+    Both halves, because a card activates on *release* and only for a pointer that never
+    moved -- the column it sits in turns a press-and-drag into a reorder, and a card that
+    fired on press launched what it was being dragged past.
+    """
+    _press(widget, button)
+    _release(widget, button)
 
 
 def test_clicking_an_account_card_launches_that_account(qapp):
@@ -65,15 +92,7 @@ def test_a_right_click_does_not_launch(qapp):
     seen = []
     card.launch_profile_requested.connect(seen.append)
 
-    card.mousePressEvent(
-        QMouseEvent(
-            QEvent.Type.MouseButtonPress,
-            QPoint(5, 5).toPointF(),
-            Qt.MouseButton.RightButton,
-            Qt.MouseButton.RightButton,
-            Qt.KeyboardModifier.NoModifier,
-        )
-    )
+    _click(card, Qt.MouseButton.RightButton)
 
     assert seen == []
 
@@ -86,25 +105,40 @@ def test_the_edit_button_edits_without_launching(qapp):
     card.launch_profile_requested.connect(launched.append)
     card.edit_profile_requested.connect(edited.append)
 
-    card._edit_btn.click()
+    card.action_button("Edit").click()
 
     assert edited == ["Farm Team"]
     assert launched == []
 
 
-def test_the_edit_button_is_revealed_on_hover(qapp):
+def test_an_account_cards_pencil_edits_without_launching(qapp):
+    """Same rule on the other card type, which grew a pencil of its own in #194."""
+    card = AccountCard(ACCOUNT, ROSTER)
+    launched, edited = [], []
+    card.launch_account_requested.connect(lambda *a: launched.append(a))
+    card.edit_account_requested.connect(edited.append)
+
+    card.action_button("Edit").click()
+
+    assert edited == [ACCOUNT["username"]]
+    assert launched == []
+
+
+@pytest.mark.parametrize("factory", [lambda: AccountCard(ACCOUNT, ROSTER), lambda: ProfileCard(PROFILE, [ACCOUNT])])
+def test_the_edit_button_is_revealed_on_hover(qapp, factory):
     """Secondary to launching: a button visible on every card competes with the name."""
-    card = ProfileCard(PROFILE, [ACCOUNT])
+    card = factory()
+    edit_btn = card.action_button("Edit")
     # isVisibleTo, not isVisible: the card is never shown in the test, and isVisible is
     # False for every child of an unshown parent — which would pass whatever we did.
-    assert not card._edit_btn.isVisibleTo(card)
+    assert not edit_btn.isVisibleTo(card)
 
     point = QPoint(5, 5).toPointF()
     card.enterEvent(QEnterEvent(point, point, point))
-    assert card._edit_btn.isVisibleTo(card)
+    assert edit_btn.isVisibleTo(card)
 
     card.leaveEvent(QEvent(QEvent.Type.Leave))
-    assert not card._edit_btn.isVisibleTo(card)
+    assert not edit_btn.isVisibleTo(card)
 
 
 @pytest.mark.parametrize("factory", [lambda: AccountCard(ACCOUNT, ROSTER), lambda: ProfileCard(PROFILE, [ACCOUNT])])
@@ -126,11 +160,12 @@ def test_an_account_with_no_known_characters_still_builds(qapp):
     assert card is not None
 
 
-def test_the_edit_button_keeps_its_space_while_hidden(qapp):
+@pytest.mark.parametrize("factory", [lambda: AccountCard(ACCOUNT, ROSTER), lambda: ProfileCard(PROFILE, [ACCOUNT])])
+def test_the_edit_button_keeps_its_space_while_hidden(qapp, factory):
     """Revealing it on hover must not resize the card: a card that grows under the
     pointer can move out from under it, hiding the button and shrinking back — the
     jitter that made the cards unusable to mouse over."""
-    card = ProfileCard(PROFILE, [ACCOUNT])
+    card = factory()
     card.resize(300, card.sizeHint().height())
     hidden = card.sizeHint()
 
@@ -228,3 +263,66 @@ def test_a_theme_switch_restyles_an_account_pill(qapp, theme):
     qapp.setStyleSheet(theme_mod.THEME.global_stylesheet())
 
     assert pill.styleSheet() != light
+
+
+# ---------------------------------------------------------------------------
+# Nothing a card builds is a window
+# ---------------------------------------------------------------------------
+
+
+class _WindowShowWatcher(QObject):
+    """Records every widget that becomes a *top-level window* while installed."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.shown: list[QWidget] = []
+
+    def eventFilter(self, obj, event) -> bool:
+        if event.type() == QEvent.Type.Show and isinstance(obj, QWidget) and obj.isWindow():
+            self.shown.append(obj)
+        return False
+
+
+def _windows_shown_by(qapp, build):
+    watcher = _WindowShowWatcher()
+    qapp.installEventFilter(watcher)
+    try:
+        build()
+    finally:
+        qapp.removeEventFilter(watcher)
+    return watcher.shown
+
+
+def _column_with_cards():
+    column = CardColumn("Accounts", "hint", "Add account")
+    column.set_cards([AccountCard(ACCOUNT, ROSTER)])
+    return column
+
+
+@pytest.mark.parametrize(
+    "build",
+    [
+        pytest.param(lambda: AccountCard(ACCOUNT, ROSTER), id="account"),
+        pytest.param(lambda: ProfileCard(PROFILE, [ACCOUNT]), id="profile"),
+        pytest.param(lambda: CardColumn("Accounts", "hint", "Add account"), id="column"),
+        pytest.param(_column_with_cards, id="column-with-cards"),
+        pytest.param(lambda: _GamePlaceholder(), id="launch-screen"),
+        pytest.param(lambda: AccountsTab(), id="game-tab"),
+    ],
+)
+def test_building_a_card_puts_no_window_on_the_screen(qapp, build):
+    """A widget's children must be its children from birth.
+
+    A parentless QWidget *is* a top-level window, so ``setVisible(True)`` on one — which
+    the quiet line does whenever it has text — shows a label-sized window for the frame
+    between there and the layout reparenting it. The user sees a flash in the corner of
+    the display every time the cards are rebuilt, and the profile editor rebuilds them on
+    the way out.
+
+    Extended past the cards to the columns and both surfaces that host them, because the
+    same mistake landed one level up in #192: a ``_FitBanner`` hiding its "Change
+    resolution" link before the layout had adopted the button, flashing twice on every
+    app start. Anything that shows or hides a child in its constructor belongs on this
+    list.
+    """
+    assert _windows_shown_by(qapp, build) == []

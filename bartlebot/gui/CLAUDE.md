@@ -114,6 +114,17 @@ loose. `test_building_a_row_never_shows_a_parentless_widget` is the guard, and t
 way it catches it is worth reusing — an event filter on the `QApplication` recording
 every `Show` delivered to a widget whose `parent()` is `None`.
 
+The inverse trap sits one line away: **a hidden widget in a `QBoxLayout` reserves no
+space at all.** The layout skips it outright rather than laying out a zero-size cell,
+so a spacer or placeholder that is parented but never shown holds nothing open and
+every widget after it lands a row early — with the layout, the size hints and the
+geometry all internally consistent about the wrong answer, which is why it reads as an
+arithmetic bug rather than a visibility one. `CardColumn._begin_drag` is the case:
+the placeholder standing in for a lifted card has to be `show()`n by hand, after the
+parent it was constructed with. (`setRetainSizeWhenHidden` is the other way, and is what
+the launch cards' hover-revealed buttons use — but it only applies to a widget the layout
+is still asked about.)
+
 
 ## qasync + Python 3.13 task re-entrancy rule
 
@@ -164,7 +175,11 @@ undo by accident:
 - **A configuration that will not fit cannot be launched**, and the entry that cannot
   launch is **disabled with the reason, never hidden**. `bartlebot/gui/screen_fit.py` is
   the one place that asks; the surfaces that must agree are `ProfileCard`/`AccountCard`,
-  the Launch menu, `LauncherPopup`, and both resolution combos in `accounts_tab.py`.
+  the Launch menu, `LauncherPopup`, and both resolution combos (`accounts_tab.py` and
+  `profile_editor.py`). Disabled where a click would *launch* it, though: the same cards
+  draw the Game settings tab and the profile editor, where a click edits or does nothing
+  at all and the refusal is a note instead. That is the card's `CardMode` and the
+  `refuses_when_unfit` that reads it, never a fresh test of the fit result (#192).
 - **The user never scrolls to see a game window.** Screen space caps the game size
   (configured layout, not the panel minimums), and `minimum_window_size` runs the other
   way to keep the window and the splitters off the game. Both are kept; they are not

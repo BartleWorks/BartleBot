@@ -277,8 +277,8 @@ window has been shown and the game view still holds a default size. Dragging a s
 *wider* therefore costs nothing, which is correct: the window minimum pushes back at
 launch anyway.
 
-Re-judging is deliberately **not** a rebuild. `_GamePlaceholder.refresh_fit()` calls
-`set_unavailable` on the cards it already has, and that returns immediately when the
+Re-judging is deliberately **not** a rebuild. `card_columns.refresh_column_fit()` calls
+`set_unavailable` on the cards each column already has, and that returns immediately when the
 reason has not changed — so a drag costs a few integer comparisons per card per event and
 restyles only on the frame a verdict flips. Rebuilding the cards instead would
 `deleteLater` and recreate every widget several times a second for the length of a drag.
@@ -288,8 +288,11 @@ the launch screen is hidden for the whole life of an embedded client.
 
 The live area is **passed in**, never looked up: `MainWindow.live_game_area` feeds the
 Launch menu and the launch guards directly, `LauncherPopup` reads it from its parent, and
-`SettingsDialog(..., live_game_area=...)` carries it down to the Game tab's two resolution
-pickers — so the settings combos and the Launch menu cannot disagree. A settings tab
+`SettingsDialog(..., live_game_area=...)` carries it down to the Game tab's resolution
+picker *and* to the fit pass over its two card columns — so the settings combos and the
+Launch menu cannot disagree. The tab is handed that size rather than measuring itself:
+the dialog is not the game area, so measuring the tab would answer a question about the
+settings window. A settings tab
 reaching back up its parent chain to find the main window would be the coupling this
 avoids.
 
@@ -370,17 +373,28 @@ a scaled display, which is how this came up; pinned high it charges every 1080p 
 of sidebar for a text size they are not running, and 75px there is a whole rung of the
 ladder — 1280x720 solo becomes 960x540.
 
-So `RIGHT_SIDEBAR_MIN_WIDTH` is the floor **at the reference text height** (16px, Segoe UI
-9pt at 100%), and `game_sizing.right_sidebar_floor(text_height)` scales it, never below the
+So `RIGHT_SIDEBAR_MIN_WIDTH` is the floor **at the reference metrics** (16px text and a
+75px button, Segoe UI 9pt at 100% under `windowsvista`), and
+`game_sizing.right_sidebar_floor(text_height, button_width)` scales it, never below the
 reference. 300 rounds up a measured 288 and is deliberately the old default sidebar width,
-so a machine at 100% sees no change at all.
+so a machine at the reference sees no change at all.
 
-Everything inside the running app takes that number from **`gui/screen_fit.right_sidebar_floor()`**,
-which measures `QApplication.font()` — never a particular widget's. The width the sidebar
-enforces and the width `layout_budget` subtracts have to be the same number, and two
-call sites measuring two different fonts is the same class of bug one level down.
-`RightSidebar` re-measures on `FontChange`, because the theme is applied to the
-application after the widget is built.
+**The text height is only half of it.** A `QPushButton` is never narrower than its style's
+own minimum width, and that number is not a font metric: 75px under `windowsvista`, 80
+under Fusion, 81 under `windows11`, all at the same 16px text. So the same card wants 288px
+of panel on a developer box and 303 on CI, which resolves `windows11` — three pixels over a
+floor scaled on the text alone, and the reason this takes two measurements rather than one.
+The larger scale wins.
+
+Everything inside the running app takes those numbers from **`gui/screen_fit.right_sidebar_floor()`**,
+which measures `QApplication.font()` — never a particular widget's — and a throwaway
+`QPushButton` carrying the widest tool label. The width the sidebar enforces and the width
+`layout_budget` subtracts have to be the same number, and two call sites measuring two
+different fonts is the same class of bug one level down. `RightSidebar` re-measures on
+`FontChange`, because the theme is applied to the application after the widget is built.
+
+`test_the_player_card_fits_the_right_sidebar_under_every_available_style` sweeps
+`QStyleFactory.keys()` so the question CI was asking gets asked locally too.
 
 **Still an estimate on the screen side.** `screen_budget` does *not* subtract
 `GAME_PANEL_CHROME_PX`, the horizontal splitter handle, or the window frame — roughly 78px
@@ -413,10 +427,51 @@ so dragging a sidebar narrower widens it there and then. The same applies to
 the resolution pickers: a resolution too large for the current screen and client count
 appears disabled with the reason, rather than being quietly dropped from the list.
 
+**A surface showing many entries at once says the reason once, not once per entry.**
+`fit_details` returns a `FitProblem` rather than a string, so a caller can take the half
+it needs: `numbers` ("Needs 1624×651 · 1304×800 available") belongs to the entry, and the
+ways out belong to the surface, because they are properties of the layout rather than of
+any one profile. `fit_problem` still returns the whole sentence, which is what a tooltip
+and a disabled menu entry take — those are read one at a time and have nothing to repeat.
+
+Each column carries a `_FitBanner` under its header (`gui/game_embed/card_columns.py`),
+linking to the resolution setting so advice the user has to go hunting to follow is not
+half an answer. **The two columns are worded separately, and must stay that way** — they
+refuse different things:
+
+| column | the banner says | the cards say |
+|---|---|---|
+| Accounts | "Your default game resolution (2048×1536) needs 1650×1279, but only 1200×800 is available. Either lower the default game resolution or increase the size of the game view panel." | nothing — they stay grey and keep showing their characters |
+| Launch Profiles, none fitting | "No launch profiles fit in the game view panel at its current size (1304×800). Lower the resolution they launch at, increase the size of the game view panel, or launch fewer clients." | each its own "Needs …" |
+| Launch Profiles, some fitting | "Some launch profiles do not fit in the game view panel at its current size (1304×800) and have been disabled." | each its own "Needs …" |
+
+Three things in that table are the point rather than phrasing:
+
+- **The accounts banner offers two ways out, not three.** "Launch fewer clients" cannot be
+  taken there — an account card launches exactly one — and a remedy the user cannot act on
+  reads as the app not knowing what it is refusing.
+- **The accounts banner names the *default* resolution**, because that is the setting to
+  change: an account card never launches at a pinned one.
+- **The profiles banner is sized against the panel, not a resolution.** Profiles may each
+  pin their own, so naming one would point at a setting that is not the problem for the
+  cards beside it. It is also why the numbers stay on the profile cards, where they differ,
+  and come off the account cards, where every one of them is the same number — that
+  repetition is the bug this shape exists to prevent, and it is easy to reintroduce by
+  "simplifying" the two columns into one message.
+
 The surfaces that must stay consistent: `ProfileCard`/`AccountCard`
 (`gui/game_embed/launch_cards.py`), the Launch menu (`gui/main_window.py`),
-`LauncherPopup` (`gui/launcher_popup.py`), and both resolution combos
-(`gui/settings/accounts_tab.py`).
+`LauncherPopup` (`gui/launcher_popup.py`), and both resolution combos — the global one in
+`gui/settings/accounts_tab.py` and the per-profile one in
+`gui/settings/profile_editor.py`, which share `mark_unfittable_resolutions`.
+
+The cards themselves are drawn on three surfaces, and only one of them refuses. The Quick
+Launch screen greys an unfittable card and swallows its clicks; the Game settings tab and
+the profile editor show the same card at full contrast with the banner above it, because
+a click there edits — or, in the editor, does nothing at all — and editing is what the
+refusal is asking for. That split is the card's `CardMode`, and `refuses_when_unfit` is
+what reads it — never condition on the fit result itself to decide whether to grey
+something (#192).
 
 ### Which client count the settings combos judge against
 

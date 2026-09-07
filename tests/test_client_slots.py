@@ -39,31 +39,45 @@ class FakeGameView:
 
     def __init__(self) -> None:
         self.tiles: dict[int, int] = {}  # slot → hwnd
+        self.pending: dict[int, str] = {}  # slot → account still launching
         self.labels: dict[int, str] = {}  # slot → caption
         self.rebuilt: list[int] = []  # hwnds whose tile was created, i.e. re-parented
 
     def sync_tiles(self, wanted) -> None:
-        changes = plan_tile_changes(dict(self.tiles), wanted)
+        # Keyed the way the real view keys it: an hwnd for a window, the account for a
+        # launch that has not produced one. See TileSlot.key.
+        current = {slot: ("hwnd", hwnd) for slot, hwnd in self.tiles.items()}
+        current.update({slot: ("pending", name) for slot, name in self.pending.items()})
+        changes = plan_tile_changes(current, wanted)
         for slot in changes.removed:
             self.tiles.pop(slot, None)
+            self.pending.pop(slot, None)
             self.labels.pop(slot, None)
         # Vacate every moving slot before filling any, against the original mapping: a
         # swap moves two tiles at once and clearing them one at a time loses one.
         vacated = {old for old, _new in changes.moved}
         moved_tiles = {slot: hwnd for slot, hwnd in self.tiles.items() if slot not in vacated}
+        moved_pending = {slot: name for slot, name in self.pending.items() if slot not in vacated}
         moved_labels = {slot: text for slot, text in self.labels.items() if slot not in vacated}
         for old, new_slot in changes.moved:
-            moved_tiles[new_slot] = self.tiles[old]
+            if old in self.tiles:
+                moved_tiles[new_slot] = self.tiles[old]
+            if old in self.pending:
+                moved_pending[new_slot] = self.pending[old]
             moved_labels[new_slot] = self.labels.get(old, "")
-        self.tiles, self.labels = moved_tiles, moved_labels
+        self.tiles, self.pending, self.labels = moved_tiles, moved_pending, moved_labels
         for spec in changes.added:
-            self.tiles[spec.slot] = spec.hwnd
-            self.rebuilt.append(spec.hwnd)
+            if spec.is_pending:
+                self.pending[spec.slot] = spec.username or ""
+            else:
+                self.tiles[spec.slot] = spec.hwnd
+                self.rebuilt.append(spec.hwnd)
         for spec in wanted:
             self.labels[spec.slot] = spec.label
 
     def unembed_all(self) -> None:
         self.tiles.clear()
+        self.pending.clear()
         self.labels.clear()
 
 
@@ -125,6 +139,11 @@ def _spec(slot: int, hwnd: int, player: int | None = None) -> TileSlot:
     return TileSlot(slot=slot, hwnd=hwnd, label=f"tile {slot}", player=player)
 
 
+def _pending_spec(slot: int, username: str) -> TileSlot:
+    """A tile for an account whose launch has started but whose window has not appeared."""
+    return TileSlot(slot=slot, hwnd=None, label=username, player=None, username=username)
+
+
 class TestPlanTileChanges:
     def test_everything_new_is_added(self) -> None:
         changes = plan_tile_changes({}, [_spec(0, 10), _spec(1, 20)])
@@ -133,26 +152,26 @@ class TestPlanTileChanges:
         assert changes.moved == ()
 
     def test_a_window_that_is_gone_is_removed(self) -> None:
-        changes = plan_tile_changes({0: 10, 1: 20}, [_spec(0, 10)])
+        changes = plan_tile_changes({0: ("hwnd", 10), 1: ("hwnd", 20)}, [_spec(0, 10)])
         assert changes.removed == (1,)
         assert changes.added == ()
         assert changes.moved == ()
 
     def test_a_window_changing_slot_moves_rather_than_rebuilding(self) -> None:
         """The point of matching on hwnd: rebuilding a tile re-parents the game window."""
-        changes = plan_tile_changes({0: 10}, [_spec(2, 10)])
+        changes = plan_tile_changes({0: ("hwnd", 10)}, [_spec(2, 10)])
         assert changes.moved == ((0, 2),)
         assert changes.added == ()
         assert changes.removed == ()
 
     def test_a_swap_is_two_moves_and_nothing_else(self) -> None:
-        changes = plan_tile_changes({0: 10, 1: 20}, [_spec(0, 20), _spec(1, 10)])
+        changes = plan_tile_changes({0: ("hwnd", 10), 1: ("hwnd", 20)}, [_spec(0, 20), _spec(1, 10)])
         assert sorted(changes.moved) == [(0, 1), (1, 0)]
         assert changes.added == ()
         assert changes.removed == ()
 
     def test_an_unchanged_view_reports_nothing_to_do(self) -> None:
-        changes = plan_tile_changes({0: 10, 1: 20}, [_spec(0, 10), _spec(1, 20)])
+        changes = plan_tile_changes({0: ("hwnd", 10), 1: ("hwnd", 20)}, [_spec(0, 10), _spec(1, 20)])
         assert changes.is_empty
 
 

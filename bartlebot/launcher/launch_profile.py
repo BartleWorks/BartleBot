@@ -23,7 +23,13 @@ from wizwalker.utils import (
 
 from bartlebot.credentials import CredentialStore
 from bartlebot.game_sizing import ui_size_for
-from bartlebot.nodes.timing import LAUNCH_STAGGER_DELAY, jitter
+from bartlebot.launch_tracker import LaunchStage
+from bartlebot.nodes.timing import (
+    LAUNCH_LOGIN_SCREEN_TIMEOUT,
+    LAUNCH_SPAWN_TIMEOUT,
+    LAUNCH_STAGGER_DELAY,
+    jitter,
+)
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
@@ -34,10 +40,27 @@ logger = logging.getLogger(__name__)
 # on and the auto-select setting that decides whether it does anything at all.
 DriveFn = Callable[[str], Awaitable[bool]]
 
-# Claims the slot order for a batch of accounts before their windows exist. Injected for
-# the same reason as DriveFn: the ordering lives on ClientManager, which the launcher does
-# not know about. Without it the order is decided by whichever character loads in first.
-ReserveFn = Callable[[list[str]], None]
+# Called with (username, stage) each time one account's launch moves on, so a caller
+# drawing the wait can say which part of it is running. Injected rather than imported for
+# the same reason as DriveFn -- and optional, because nothing about the launch itself
+# depends on anyone listening.
+ProgressFn = Callable[[str, LaunchStage], None]
+
+
+def _report(progress: ProgressFn | None, username: str, stage: LaunchStage) -> None:
+    """Send one stage report, if anyone is listening, without letting it break the launch.
+
+    A progress callback lands in GUI code, and a launch must not die because a caption
+    failed to draw -- the client is already spawned by the time most of these are sent, so
+    an exception here would strand a real window with no one logging into it.
+    """
+    if progress is None:
+        return
+    try:
+        progress(username, stage)
+    except Exception:
+        logger.exception("Launch progress callback raised for '%s'", username)
+
 
 # Spawn anchor position. Distinct grid offsets per instance aren't needed here:
 # every window gets reparented and re-centered by ClientTile (see
@@ -178,10 +201,23 @@ def _patch_window_config(width: int, height: int, x: int, y: int) -> None:
     )
 
 
-async def _wait_for_login_screen(handle: int) -> None:
-    """Poll until the window title equals 'Wizard101' (login screen is ready)."""
+async def _wait_for_login_screen(handle: int, timeout: float = LAUNCH_LOGIN_SCREEN_TIMEOUT) -> bool:
+    """Poll until the window title equals 'Wizard101' (login screen is ready).
+
+    Returns whether it got there. The wait was unbounded until #186, which meant a window
+    that never reached the login screen -- a crash on startup, a patcher that opened
+    instead -- left its launch running forever, and so its tile spinning, for the rest of
+    the session. Reported rather than raised because a batch is several of these at once
+    and one window failing to come up is not a reason to abandon the ones that did.
+    """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
     while get_window_title(handle) != "Wizard101":
+        if loop.time() >= deadline:
+            logger.error("Launch: window %d never reached the login screen after %.0fs", handle, timeout)
+            return False
         await asyncio.sleep(0.1)
+    return True
 
 
 async def _start_and_claim_handle(known_handles: set[int]) -> int:
@@ -199,7 +235,7 @@ async def _start_and_claim_handle(known_handles: set[int]) -> int:
         await asyncio.sleep(0.1)
 
 
-async def _wait_for_n_new_handles(known_handles: set[int], n: int) -> list[int]:
+async def _wait_for_n_new_handles(known_handles: set[int], n: int, timeout: float = LAUNCH_SPAWN_TIMEOUT) -> list[int]:
     """Poll until *n* handles beyond *known_handles* exist, then return the new ones.
 
     Used to claim a whole batch of instances started back-to-back, instead of
@@ -207,11 +243,20 @@ async def _wait_for_n_new_handles(known_handles: set[int], n: int) -> list[int]:
     doesn't matter, since login credentials are just typed into whichever
     window, so there's no need to correlate a given handle back to the
     start_instance() call that spawned it.
+
+    Raises ``TimeoutError`` if they never appear. Unlike a login screen that does not
+    arrive, this one is not attributable to an account — the handles have not been paired
+    with anybody yet — so the whole batch fails together, which is also what it means: the
+    windows were never started.
     """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
     while True:
         new_handles = set(get_all_wizard_handles()).difference(known_handles)
         if len(new_handles) >= n:
             return list(new_handles)[:n]
+        if loop.time() >= deadline:
+            raise TimeoutError(f"Only {len(new_handles)} of {n} game windows started within {timeout:.0f}s")
         await asyncio.sleep(0.1)
 
 
@@ -221,6 +266,7 @@ async def launch_account(
     display_name: str,
     resolution: tuple[int, int] | None = None,
     drive: DriveFn | None = None,
+    progress: ProgressFn | None = None,
 ) -> str:
     """Start one Wizard101 instance and auto-login with *username*/*password*.
 
@@ -235,17 +281,27 @@ async def launch_account(
     the character is in-game or the drive gives up. Whether the drive actually presses
     anything is the drive's own call — it is where the auto-select setting is read.
     Callers that never want a window advanced pass drive=None.
+
+    If *progress* is given it is told which stage this launch is in, as it enters each one.
     """
     patch_open_browser()
     w, h = resolution if resolution is not None else SettingsManager.instance().game_resolution
     _patch_window_config(w, h, _LAUNCH_ANCHOR_X, _LAUNCH_ANCHOR_Y)
+    _report(progress, username, LaunchStage.STARTING)
     handle = await _start_and_claim_handle(set(get_all_wizard_handles()))
-    await _wait_for_login_screen(handle)
+    if not await _wait_for_login_screen(handle):
+        _report(progress, username, LaunchStage.FAILED)
+        raise RuntimeError(f"'{display_name}' never reached the login screen.")
+    _report(progress, username, LaunchStage.LOGGING_IN)
     instance_login(handle, username, password)
     title = f"[{display_name}] Wizard101"
     set_window_title(handle, title)
-    if drive is not None:
-        await drive(title)
+    _report(progress, username, LaunchStage.LOADING)
+    if drive is not None and not await drive(title):
+        # The quiet failure, and the common one: the drive times out rather than raising,
+        # so until this was read the window sat wherever it stopped and the launch looked
+        # like it had simply finished.
+        _report(progress, username, LaunchStage.FAILED)
     return title
 
 
@@ -254,6 +310,7 @@ async def launch_accounts(
     *,
     resolution: tuple[int, int] | None = None,
     drive: DriveFn | None = None,
+    progress: ProgressFn | None = None,
 ) -> list[str]:
     """Start one instance per account, log each in, and advance them all together.
 
@@ -270,6 +327,13 @@ async def launch_accounts(
     *resolution* is patched into config.xml once for the whole batch, so every account
     here must want the same one — the game reads that file at its own startup and there
     is only one of it. Callers with mixed resolutions launch a batch per resolution.
+
+    *progress* is told which stage each account is in. The batch shape is visible in what
+    it can honestly say: every window's login screen is waited for in one shared gather, so
+    the whole batch sits at STARTING until the slowest of them is up, and the accounts only
+    diverge from ``instance_login`` onward. That is not a reporting gap to paper over — it
+    is what is actually happening, and a per-client stage invented for the shared wait
+    would claim progress that has not been made.
     """
     if not accounts:
         return []
@@ -283,6 +347,8 @@ async def launch_accounts(
     # reach the login screen before starting the next, while the stagger still avoids
     # hitting the process spawn / login server in one tight burst.
     known = set(get_all_wizard_handles())
+    for username, _password, _display in accounts:
+        _report(progress, username, LaunchStage.STARTING)
     for i, _ in enumerate(accounts):
         start_instance()
         if i < len(accounts) - 1:
@@ -290,7 +356,7 @@ async def launch_accounts(
     handles = await _wait_for_n_new_handles(known, len(accounts))
 
     # Single shared wait for all instances to reach the login screen
-    await asyncio.gather(*[_wait_for_login_screen(h) for h in handles])
+    reached = await asyncio.gather(*[_wait_for_login_screen(h) for h in handles])
 
     # Stagger login attempts too — the login server intermittently rejects logins that
     # arrive in too-tight succession.
@@ -300,28 +366,47 @@ async def launch_accounts(
     # overlapping them with the remaining stagger delays is most of the reason a team
     # launch is faster than doing this by hand.
     titles: list[str] = []
-    drives: list[asyncio.Task] = []
+    drives: list[tuple[str, asyncio.Task]] = []
     for i, (handle, (username, password, display_name)) in enumerate(zip(handles, accounts)):
+        # A window that never reached the login screen is skipped rather than typed into.
+        # Its siblings are unaffected — that is the whole reason the wait reports instead
+        # of raising — and typing credentials at whatever screen it is actually showing is
+        # the one outcome worse than not launching it.
+        if not reached[i]:
+            _report(progress, username, LaunchStage.FAILED)
+            continue
+        _report(progress, username, LaunchStage.LOGGING_IN)
         instance_login(handle, username, password)
         title = f"[{display_name}] Wizard101"
         set_window_title(handle, title)
         titles.append(title)
+        _report(progress, username, LaunchStage.LOADING)
         if drive is not None:
-            drives.append(asyncio.create_task(drive(title)))
+            drives.append((username, asyncio.create_task(drive(title))))
         if i < len(accounts) - 1:
             await asyncio.sleep(jitter(LAUNCH_STAGGER_DELAY))
 
     if drives:
-        await asyncio.gather(*drives)
+        # return_exceptions so one drive blowing up does not cancel the report for the
+        # others: every account in this batch has a window by now and each is owed an
+        # answer about its own.
+        outcomes = await asyncio.gather(*(task for _u, task in drives), return_exceptions=True)
+        for (username, _task), outcome in zip(drives, outcomes):
+            if isinstance(outcome, BaseException):
+                logger.error("Auto-select drive for '%s' raised", username, exc_info=outcome)
+                _report(progress, username, LaunchStage.FAILED)
+            elif not outcome:
+                _report(progress, username, LaunchStage.FAILED)
     return titles
 
 
 async def launch_profile(
     profile_name: str,
     drive: DriveFn | None = None,
-    reserve: ReserveFn | None = None,
+    usernames: list[str] | None = None,
+    progress: ProgressFn | None = None,
 ) -> None:
-    """Launch all accounts in the named profile.
+    """Launch the accounts in the named profile.
 
     Looks up the profile in SettingsManager and retrieves passwords from
     CredentialStore (Windows Credential Manager).
@@ -329,9 +414,15 @@ async def launch_profile(
     The accounts go out as one batch — see ``launch_accounts`` for the shape and why it
     is faster than launching them one at a time.
 
-    *reserve* is handed the profile's accounts, in profile order, before any window
-    exists — that call is the only thing that makes the players come up in the order the
-    profile asked for, since nothing about a window carries it.
+    *usernames* narrows the launch to those accounts, still in profile order; None launches
+    the whole profile. It is how a caller that has already claimed the slots passes on
+    which of them it got — an account whose launch is already running is dropped by
+    ``ClientManager.begin_launch`` and must not be spawned a second time here.
+
+    Slot reservation is the caller's, not this function's. It was taken through here by a
+    ``reserve`` callback until the guard needed a single place both launch routes meet
+    (#186), which is one level up: reserving from inside the launch cannot reject a launch
+    that has not started yet.
 
     Raises ``ValueError`` if the profile is not found or has no accounts.
     Raises ``RuntimeError`` if a password is not stored for an account.
@@ -345,6 +436,11 @@ async def launch_profile(
     account_usernames: list[str] = profile.get("accounts", [])
     if not account_usernames:
         raise ValueError(f"Launch profile '{profile_name}' has no accounts")
+    if usernames is not None:
+        wanted = set(usernames)
+        account_usernames = [u for u in account_usernames if u in wanted]
+        if not account_usernames:
+            return
 
     # Build (username, password, display_name) tuples
     accounts_meta = {a["username"]: a for a in settings.accounts}
@@ -358,19 +454,12 @@ async def launch_profile(
         display_name = CredentialStore.display_name(username, alias)
         accounts.append((username, password, display_name))
 
-    # Claim the slot order now, while the profile's own order is still the only order in
-    # play. Doing this after launch would be too late: the windows are indistinguishable
-    # (one shared spawn anchor) and each client is published whenever its own character
-    # finishes loading in.
-    if reserve is not None:
-        reserve([username for username, _password, _display in accounts])
-
     # A per-profile resolution overrides the global setting; the whole profile shares it,
     # which is what lets the accounts go out as one batch.
     profile_res = profile.get("resolution")
     resolution = tuple(profile_res) if profile_res else None
 
-    await launch_accounts(accounts, resolution=resolution, drive=drive)
+    await launch_accounts(accounts, resolution=resolution, drive=drive, progress=progress)
 
 
 # ---------------------------------------------------------------------------

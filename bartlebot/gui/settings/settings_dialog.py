@@ -19,11 +19,16 @@ from bartlebot.gui.settings.rows import ScrollableTab
 from bartlebot.gui.settings.theme_tab import ThemeTab
 from bartlebot.settings_manager import SettingsManager
 
-# The size the dialog opens at when the screen has room for it. Chosen to clear the
-# General tab whole on a 1080p screen with a taskbar, and deliberately shorter than the
+# The size the dialog opens at when the screen has room for it. The height clears the
+# General tab whole on a 1080p screen with a taskbar, and is deliberately shorter than the
 # tallest tab wants to be: a tab that does not fit scrolls, and a dialog that opens the
 # height of its longest page is unreadable long before it is off-screen.
-_PREFERRED_SIZE = (760, 860)
+#
+# The width is the Game tab's, which is now the widest page: two card columns side by
+# side, each of which has to hold a profile's account pills without wrapping them into a
+# third row (#192). Every other tab is a form and was never the constraint. Still clamped
+# to the screen by _fit_to_screen, so this is a preference and not a floor.
+_PREFERRED_SIZE = (900, 860)
 
 # Qt's own ceiling for a widget maximum. An unmeasurable screen reports a size nothing
 # can exceed, and handing that straight to ``setMaximumSize`` earns a warning and a
@@ -155,15 +160,6 @@ class SettingsDialog(QDialog):
         }
         if w := widgets.get(tab_name):
             self._tabs.setCurrentWidget(w)
-
-    def edit_profile(self, profile_name: str) -> None:
-        """Show the Game tab and open the editor for *profile_name*.
-
-        The route the launch screen's profile cards take: they name a profile, and the
-        dialog owns where its editor lives.
-        """
-        self.open_tab("game")
-        self._accounts_tab.edit_profile(profile_name)
 
     def _on_accept(self) -> None:
         self.apply_all()

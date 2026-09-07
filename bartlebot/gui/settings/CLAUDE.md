@@ -25,11 +25,44 @@ Two rules about the settings dialog itself:
   1080p screen and put OK and Cancel under the taskbar (#188). The height stays —
   it is what the descriptions cost — and the three form tabs are wrapped in
   `rows.ScrollableTab` instead. Wrap a new form tab too. Do **not** wrap a tab
-  that carries the layout's stretch, as the Game tab's two lists do: inside a
-  scroll area they collapse to a couple of visible rows. `_fit_to_screen` caps the
+  that carries the layout's stretch, as the Game tab's two card columns do:
+  inside a scroll area they collapse to a couple of visible rows, and a column
+  that scrolls inside a page that scrolls is two bars for one list. `_fit_to_screen` caps the
   dialog at `screen_fit.size_within_screen` on the way up as the last defence, and
   a wrapper forwards `apply()` so the tab in the bar is still one `apply_all` can
   call.
+
+## Card actions
+
+Every write to an account or a launch profile goes through one of the module-level
+functions in `accounts_tab.py` — `add_`/`edit_`/`delete_account`, and
+`add_`/`edit_`/`duplicate_`/`delete_launch_profile`. **Never open `_AccountDialog` or
+`ProfileDialog` yourself, and never write `sm.accounts` or `sm.launch_profiles` from a
+widget.** Two surfaces manage these, and since #192 they draw the same cards out of
+the same `CardColumn`; a second copy of the delete cascade is how they drift.
+`reorder_accounts` and `reorder_launch_profiles` are the same rule for a drag —
+both refuse a permutation that no longer describes the stored list, and both go through
+`card_columns.apply_order`, which is where that guard lives now that three surfaces take
+a permutation from a column.
+
+The profile editor is `profile_editor.py`, not this module: it draws the same
+`AccountCard`s in the same `CardColumn` as the Game tab, in `CardMode.MEMBER`. Its two
+controls divide one job — the picker owns *which* accounts, the column owns *what order*
+— and both removal routes go through `reconcile_membership`. Do not give either control
+its own list; that is how a card whose cross removes it is left ticked in the popup.
+
+Three things every one of them does, and a new one must:
+
+- **Return whether anything was written.** That is the caller's cue to refresh. It is
+  false for a cancelled dialog, a declined confirm, and a name that was refused.
+- **Call `SettingsManager.save()`.** `set` only writes memory. A card on the launch
+  screen has no Settings dialog behind it, so an action that skips this survives until
+  the process exits and no further — which is exactly how #195 shipped.
+- **Be called from a synchronous Qt slot.** Each runs `exec()`, and Python 3.13 forbids
+  re-entering Qt's event loop from inside a running asyncio task.
+
+Deleting an account cascades: the credential, the character roster, and the username in
+every profile that launched it. That is why it is a function and not a button handler.
 
 `SettingsDialog.apply_all` iterates the tab bar rather than naming four tabs.
 A hand-written list is one line to forget when a tab is added, and forgetting it

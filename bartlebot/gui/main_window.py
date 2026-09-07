@@ -221,23 +221,43 @@ class MainWindow(QMainWindow):
         self.bot_canvas.undo_state_changed.connect(self._on_undo_state_changed)
 
         # Set by AppController once ClientManager exists; see set_auto_select_driver
-        # and set_slot_reserver.
+        # and set_launch_registrar.
         self._auto_select_driver = None
-        self._slot_reserver = None
+        self._begin_launch = None
+        self._end_launch = None
+        self._launch_progress = None
+        self._dismiss_launch_fn = None
 
         # Wire placeholder quick-launch signals
         self._game_view_panel.launch_account_requested.connect(
-            lambda u, d: asyncio.ensure_future(self._launch_single_account(u, d))
+            lambda u, d: asyncio.ensure_future(self.launch_account_named(u, d))
         )
-        self._game_view_panel.launch_profile_requested.connect(lambda n: asyncio.ensure_future(self._launch_profile(n)))
+        self._game_view_panel.launch_profile_requested.connect(
+            lambda n: asyncio.ensure_future(self.launch_profile_named(n))
+        )
         self._game_view_panel.manage_accounts_requested.connect(lambda: self._open_settings(tab_name="game"))
+        self._game_view_panel.dismiss_launch_requested.connect(self._dismiss_launch)
         # Setup's rows name the app setting they fall back to; this is the way there.
         self.left_sidebar.app_settings_requested.connect(lambda: self._open_settings(tab_name="bot"))
         # ...and back: those rows resolve through the values that dialog just wrote.
         self.settings_applied.connect(self.left_sidebar.refresh_setup_values)
-        self._game_view_panel.edit_profile_requested.connect(
-            lambda name: self._open_settings(tab_name="game", edit_profile=name)
-        )
+        # Straight to the one editor the gear asks for. It used to go through
+        # _open_settings, which built the whole Settings dialog to reach it and left it
+        # standing behind — see _edit_launch_profile.
+        self._game_view_panel.edit_profile_requested.connect(self._edit_launch_profile)
+        # The Add card at the foot of each column, which goes to the same editor the Game
+        # tab's Add button does and nowhere near the Settings dialog around it (#195).
+        self._game_view_panel.add_account_requested.connect(self._add_account)
+        self._game_view_panel.add_profile_requested.connect(self._add_launch_profile)
+        self._game_view_panel.edit_account_requested.connect(self._edit_account)
+        self._game_view_panel.delete_account_requested.connect(self._delete_account)
+        self._game_view_panel.duplicate_profile_requested.connect(self._duplicate_launch_profile)
+        self._game_view_panel.delete_profile_requested.connect(self._delete_launch_profile)
+        # A column dragged into a new order (#192). Through the same _after_card_action as
+        # the rest, because order is not only what the column draws: the Launch menu lists
+        # both of these, in this order.
+        self._game_view_panel.reorder_accounts_requested.connect(self._reorder_accounts)
+        self._game_view_panel.reorder_profiles_requested.connect(self._reorder_launch_profiles)
 
         # Top row: left sidebar | game view | right sidebar
         self._top_splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -530,7 +550,7 @@ class MainWindow(QMainWindow):
             for profile in profiles:
                 name = profile.get("name", "Unnamed")
                 action = QAction(name, self)
-                action.triggered.connect(lambda _checked, n=name: asyncio.ensure_future(self._launch_profile(n)))
+                action.triggered.connect(lambda _checked, n=name: asyncio.ensure_future(self.launch_profile_named(n)))
                 # Disabled rather than dropped, carrying the reason as its tooltip — the
                 # same rule the Quick Launch cards follow. This menu is rebuilt on every
                 # show, so the answer tracks the client count and the screen.
@@ -556,7 +576,7 @@ class MainWindow(QMainWindow):
                 display = CredentialStore.display_name(username, alias)
                 action = QAction(display, self)
                 action.triggered.connect(
-                    lambda _checked, u=username, d=display: asyncio.ensure_future(self._launch_single_account(u, d))
+                    lambda _checked, u=username, d=display: asyncio.ensure_future(self.launch_account_named(u, d))
                 )
                 self._disable_if_unfittable(action, self._single_account_fit_problem())
                 self._launch_menu.addAction(action)
@@ -583,11 +603,110 @@ class MainWindow(QMainWindow):
         elif tab == "combat":
             self.left_sidebar.switch_to_combat()
 
-    def _open_settings(self, tab_name: str = "general", edit_profile: str | None = None) -> None:
-        """Open Settings, optionally landing straight in one launch profile's editor.
+    # ------------------------------------------------------------------
+    # Card actions
+    # ------------------------------------------------------------------
+    # The verbs on the launch screen's account and profile cards (#194): the pencil, and
+    # the entries on each card's right-click menu. Every one of them is a settings write
+    # the app has to catch up with, and every one of them is the same catching up, which
+    # is what _after_card_action is.
+    #
+    # None of them do the work. The module functions in settings/accounts_tab.py are what
+    # both this screen and the Game tab call, so the two surfaces cannot drift on what a
+    # delete cascades to or on what a duplicate is named.
+    #
+    # All are called from synchronous Qt slots: each runs exec() on a dialog or a message
+    # box, which Python 3.13 forbids from inside a running asyncio task — see CLAUDE.md.
 
-        *edit_profile* is the launch screen's route: a profile card names the profile it
-        stands for, and the settings dialog owns where that profile is edited.
+    def _after_card_action(self, written: bool) -> None:
+        """Bring the app back in line with settings after a card action.
+
+        *written* gates only the two that read settings for something other than the
+        cards: the Launch menu's entries, and the window minimum, which is a function of
+        what the largest profile would launch.
+
+        The cards themselves are rebuilt either way. The action was modal, so the screen
+        behind it has been sitting on cards nothing has re-judged since it opened — and
+        hanging that half off a dialog's result is exactly the second-order bug in #193,
+        where cancelling the outer Settings dialog dropped the refresh for a profile the
+        inner editor had already written.
+        """
+        if written:
+            self._rebuild_launch_menu()
+            self.refresh_minimum_size()
+        self._game_view_panel.refresh_launch_lists()
+
+    def _edit_launch_profile(self, name: str) -> None:
+        """Edit one launch profile, from the pencil on its card or its context menu.
+
+        The card asks to edit a profile, so that is the only dialog it gets. This used to
+        open Settings on the Game tab with the editor on top, which left the whole
+        dialog standing behind the editor once it was dismissed (#193).
+        """
+        from bartlebot.gui.settings.accounts_tab import edit_launch_profile
+
+        self._after_card_action(edit_launch_profile(name, self, self.live_game_area))
+
+    def _duplicate_launch_profile(self, name: str) -> None:
+        """Copy one launch profile, from its context menu. The only action with no dialog."""
+        from bartlebot.gui.settings.accounts_tab import duplicate_launch_profile
+
+        self._after_card_action(duplicate_launch_profile(name))
+
+    def _delete_launch_profile(self, name: str) -> None:
+        """Delete one launch profile, from its context menu. Confirms first."""
+        from bartlebot.gui.settings.accounts_tab import delete_launch_profile
+
+        self._after_card_action(delete_launch_profile(name, self))
+
+    def _add_launch_profile(self) -> None:
+        """Add a launch profile, from the Add card at the foot of the Profiles column.
+
+        The live game area goes through so the editor's resolution picker judges a launch
+        the same way the screen behind it does.
+        """
+        from bartlebot.gui.settings.accounts_tab import add_launch_profile
+
+        self._after_card_action(add_launch_profile(self, self.live_game_area))
+
+    def _add_account(self) -> None:
+        """Add an account, from the Add card at the foot of the Accounts column."""
+        from bartlebot.gui.settings.accounts_tab import add_account
+
+        self._after_card_action(add_account(self))
+
+    def _edit_account(self, username: str) -> None:
+        """Edit one account, from the pencil on its card or its context menu."""
+        from bartlebot.gui.settings.accounts_tab import edit_account
+
+        self._after_card_action(edit_account(username, self))
+
+    def _delete_account(self, username: str) -> None:
+        """Delete one account, from its context menu. Confirms first.
+
+        The heaviest of these: it takes the password out of the Credential Manager, the
+        character roster off disk, and the account out of every profile that launched it
+        — so the profile column is redrawn by the same refresh, with a pill fewer on each
+        card that carried this one.
+        """
+        from bartlebot.gui.settings.accounts_tab import delete_account
+
+        self._after_card_action(delete_account(username, self))
+
+    def _reorder_accounts(self, order: list) -> None:
+        """Persist a drag in the Accounts column. The only card action with no dialog behind it."""
+        from bartlebot.gui.settings.accounts_tab import reorder_accounts
+
+        self._after_card_action(reorder_accounts(list(order)))
+
+    def _reorder_launch_profiles(self, order: list) -> None:
+        """Persist a drag in the Launch Profiles column."""
+        from bartlebot.gui.settings.accounts_tab import reorder_launch_profiles
+
+        self._after_card_action(reorder_launch_profiles(list(order)))
+
+    def _open_settings(self, tab_name: str = "general") -> None:
+        """Open Settings on the named tab.
 
         Called from synchronous Qt slots only. exec() re-enters Qt's event loop, which
         Python 3.13 forbids from inside a running asyncio task — see CLAUDE.md.
@@ -598,8 +717,6 @@ class MainWindow(QMainWindow):
         # way the Launch menu behind them does — a splitter drag moves both.
         dlg = SettingsDialog(self, live_game_area=self.live_game_area)
         dlg.open_tab(tab_name)
-        if edit_profile:
-            dlg.edit_profile(edit_profile)
         if dlg.exec():
             self._rebuild_launch_menu()
             self.refresh_minimum_size()
@@ -629,20 +746,61 @@ class MainWindow(QMainWindow):
     def auto_select_driver(self):
         return self._auto_select_driver
 
-    def set_slot_reserver(self, reserver) -> None:
-        """Supply the callable that claims player slots for accounts about to be launched.
+    def set_launch_registrar(self, begin, end, progress=None, dismiss=None) -> None:
+        """Supply the pair that opens and closes a launch for a set of accounts.
 
-        Injected alongside the driver, and for the same reason — the slot ordering belongs
-        to ClientManager. Without it, players come up in whatever order their characters
-        finish loading in rather than the order the profile lists them.
+        Injected alongside the driver, and for the same reason — both the slot ordering and
+        the set of launches in flight belong to ClientManager. Without *begin*, players come
+        up in whatever order their characters finish loading in rather than the order the
+        profile lists them, and nothing rejects a second click on an account that is already
+        launching.
+
+        Two callables rather than one because the launch has an end as well as a start, and
+        the end is the half that was missing: a launch that fails holds its slot forever
+        unless something gives it back. See ``ClientManager.end_launch``.
+
+        *progress* is the third: what the launcher calls as each account moves between the
+        stages of its launch, so a pending tile can say which one it is in rather than only
+        that it is in one. *dismiss* clears a launch that failed, which nothing else does:
+        a failed attempt is kept open on purpose so its tile can keep saying so.
         """
-        self._slot_reserver = reserver
+        self._begin_launch = begin
+        self._end_launch = end
+        self._launch_progress = progress
+        self._dismiss_launch_fn = dismiss
 
-    @property
-    def slot_reserver(self):
-        return self._slot_reserver
+    def _open_launch(self, usernames: list[str]) -> list[str]:
+        """Claim slots for *usernames*, returning the ones not already launching.
 
-    async def _launch_profile(self, profile_name: str) -> None:
+        Every account launched from this window passes through here, whichever surface
+        asked — a Quick Launch card, the menu, or the floating popup. That is the point:
+        the guard can only reject a duplicate where all of them meet.
+        """
+        if self._begin_launch is None:
+            return list(usernames)
+        return self._begin_launch(usernames)
+
+    def _close_launch(self, usernames: list[str]) -> None:
+        """Release the launches opened by ``_open_launch``. Always from a ``finally``."""
+        if self._end_launch is not None:
+            self._end_launch(usernames)
+
+    def _dismiss_launch(self, username: str) -> None:
+        """Clear a failed launch the user clicked away, and give its slot back.
+
+        A failed launch is the one attempt that ``_close_launch`` leaves open — it has a
+        tile and something to say on it — so this is the only thing that ever ends one.
+        """
+        if self._dismiss_launch_fn is not None:
+            self._dismiss_launch_fn(username)
+
+    async def launch_profile_named(self, profile_name: str) -> None:
+        """Launch a profile's accounts, skipping any that are already launching.
+
+        Public because it is the only way in: the Quick Launch cards, the File menu and
+        the floating launcher popup all land here, so the in-flight guard and the recent
+        list see every launch this window makes.
+        """
         try:
             from bartlebot.launcher.launch_profile import launch_profile
 
@@ -657,14 +815,45 @@ class MainWindow(QMainWindow):
             if reason is not None:
                 QMessageBox.critical(self, "Launch failed", reason)
                 return
-            self._game_view_panel.set_launch_profile(profile_name)
-            await launch_profile(profile_name, drive=self.auto_select_driver, reserve=self.slot_reserver)
+
+            # Claimed here rather than inside launch_profile, so a second click on a
+            # profile that is already coming up is rejected before anything spawns. The
+            # accounts already in flight drop out and the rest still launch — a profile of
+            # four with one account up should bring up the other three.
+            accepted = self._open_launch(list(profile.get("accounts", [])))
+            if not accepted:
+                # Said out loud rather than logged, because this is the click that looks
+                # broken: nothing spawns, nothing changes on screen, and the tiles that
+                # explain why were already there before the click. Only when the *whole*
+                # profile drops out -- a partial one still visibly brings up the rest.
+                logger.info("Launch profile '%s' has nothing left to launch", profile_name)
+                QMessageBox.information(
+                    self,
+                    "Nothing to launch",
+                    f"Every account in '{profile_name}' is already running or launching.",
+                )
+                return
+            try:
+                self._game_view_panel.set_launch_profile(profile_name)
+                await launch_profile(
+                    profile_name,
+                    drive=self.auto_select_driver,
+                    usernames=accepted,
+                    progress=self._launch_progress,
+                )
+            finally:
+                # In a finally so the slots come back on the paths that do not return
+                # normally, which is every failure the launcher has: a missing password
+                # raises from inside launch_profile, and a window that never reaches the
+                # login screen never gets one to hold a slot for.
+                self._close_launch(accepted)
             self._record_recent_launch("profile", profile_name)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))
             logger.exception("Profile launch failed")
 
-    async def _launch_single_account(self, username: str, display_name: str) -> None:
+    async def launch_account_named(self, username: str, display_name: str) -> None:
+        """Launch one account, unless a launch for it is already running."""
         try:
             from bartlebot.launcher.launch_profile import launch_account
 
@@ -682,9 +871,24 @@ class MainWindow(QMainWindow):
             # Claim the slot at the moment of launching, so launching two accounts
             # back-to-back orders them by when they were asked for, not by which one
             # happens to load in first.
-            if self.slot_reserver is not None:
-                self.slot_reserver([username])
-            await launch_account(username, password, display_name, drive=self.auto_select_driver)
+            if not self._open_launch([username]):
+                logger.info("Account '%s' is already running or launching", username)
+                QMessageBox.information(
+                    self,
+                    "Nothing to launch",
+                    f"'{display_name}' is already running or launching.",
+                )
+                return
+            try:
+                await launch_account(
+                    username,
+                    password,
+                    display_name,
+                    drive=self.auto_select_driver,
+                    progress=self._launch_progress,
+                )
+            finally:
+                self._close_launch([username])
             self._record_recent_launch("account", username)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))

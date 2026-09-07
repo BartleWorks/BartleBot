@@ -227,6 +227,24 @@ DECK_CARD_CONFIRM_POLL = 0.05
 # Gap between deck-count reads while confirming a card went in.
 
 LAUNCH_STAGGER_DELAY = 1.0
+
+# How long one launch stage may run before its pending tile starts showing how long it has
+# been in it. Below this the number is noise -- every stage takes some seconds and a
+# counter on all of them reads as a stopwatch rather than as a warning. Above it the
+# distinction the caption cannot otherwise draw is the one that matters: a launch stalled
+# at the login screen and a launch doing fine look identical without it.
+LAUNCH_STAGE_ELAPSED_HINT = 20.0
+
+# How long a launched window may take to reach the login screen before that account is
+# given up on. Generous, because this covers a cold start of the game off a slow disk --
+# but bounded, because the wait had no bound at all and a window that never arrives left
+# its launch running, and so its tile spinning, for the rest of the session.
+LAUNCH_LOGIN_SCREEN_TIMEOUT = 180.0
+
+# How long to wait for a batch's windows to exist at all. Shorter than the login screen
+# wait: this covers process spawn, and a window that has not appeared by now is one the
+# launcher never started rather than one that is being slow.
+LAUNCH_SPAWN_TIMEOUT = 90.0
 # Seconds to wait between starting successive Wizard101 instances, and between
 # successive auto-login attempts, in a multi-account launch profile. The
 # login server intermittently rejects logins that arrive in too-tight

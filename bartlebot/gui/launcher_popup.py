@@ -65,21 +65,27 @@ class LauncherPopup(QWidget):
         """
         return getattr(self.parent(), "live_game_area", None)
 
-    @property
-    def _auto_select_driver(self):
-        """The main window's driver, so a popup launch behaves like a menu launch."""
-        return getattr(self.parent(), "auto_select_driver", None)
-
-    @property
-    def _slot_reserver(self):
-        """The main window's reserver, so a popup launch respects the profile order too."""
-        return getattr(self.parent(), "slot_reserver", None)
-
     async def _run_launch(self, profile_name: str) -> None:
-        try:
-            from bartlebot.launcher.launch_profile import launch_profile
+        """Launch through the main window, rather than calling the launcher directly.
 
-            await launch_profile(profile_name, drive=self._auto_select_driver, reserve=self._slot_reserver)
+        The popup used to assemble its own launch out of borrowed parts — the parent's
+        driver and its slot reserver — which made it a second route to the same launcher
+        and therefore a route the in-flight guard could not see (#186). A click here while
+        that profile was already coming up spawned a second batch, and the fix is one door
+        rather than a second copy of the guard: everything the parent's own launch does,
+        including the fit check and the recent list, is now shared instead of skipped.
+        """
+        window = self.parent()
+        launch = getattr(window, "launch_profile_named", None)
+        if launch is None:
+            # No main window to launch through. Nothing is missing that this could
+            # substitute for — the slot ordering and the guard both live over there — so
+            # say so rather than falling back to a launch that ignores both.
+            logger.error("Launcher popup has no main window to launch '%s' through", profile_name)
+            QMessageBox.critical(self, "Launch failed", "The launcher is not connected to the main window.")
+            return
+        try:
+            await launch(profile_name)
         except Exception as e:
             QMessageBox.critical(self, "Launch failed", str(e))
             logger.exception("Profile launch failed")

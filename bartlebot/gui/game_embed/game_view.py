@@ -15,23 +15,26 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLayout,
     QPushButton,
-    QScrollArea,
-    QSizePolicy,
     QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
 from bartlebot.game_sizing import grid_for, required_game_area
-from bartlebot.gui import screen_fit
-from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile
+from bartlebot.gui.game_embed.card_columns import (
+    EMPTY_ACCOUNTS_HINT,
+    EMPTY_PROFILES_HINT,
+    CardColumn,
+    refresh_column_fit,
+)
+from bartlebot.gui.game_embed.client_tile import ClientTile, DetachedTile, PendingTile
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.tile_slots import TileSlot, plan_tile_changes
+from bartlebot.tile_slots import TileKey, TileSlot, plan_tile_changes
 
 logger = logging.getLogger(__name__)
 
@@ -48,22 +51,36 @@ class _GamePlaceholder(ThemedMixin, QWidget):
     """Placeholder shown in GameView when no clients are embedded.
 
     Three-column layout:
-        [Accounts list] | [Logo + settings links] | [Launch Profiles list]
+        [Accounts column] | [Logo + settings link] | [Launch Profiles column]
+
+    The two outer columns are ``CardColumn``s -- the same widget the Game settings tab is
+    built from, so the surface that launches an account and the surface that edits one
+    draw it identically (#192). Everything a column does, the drag that reorders it
+    included, lives there; this class supplies the cards and decides what a click on one
+    means.
     """
 
-    launch_account_requested = pyqtSignal(str, str)  # (username, display_name)
+    launch_account_requested = pyqtSignal(str, str)
     launch_profile_requested = pyqtSignal(str)  # (profile_name)
+    # The card actions (#194) and the column reorders (#192). Forwarded rather than acted
+    # on: what an edit, a delete or a reorder has to refresh afterwards -- the Launch
+    # menu, the window minimum, these cards -- is the main window's business and not this
+    # widget's.
+    edit_account_requested = pyqtSignal(str)  # (username)
+    delete_account_requested = pyqtSignal(str)  # (username)
     edit_profile_requested = pyqtSignal(str)  # (profile_name)
+    duplicate_profile_requested = pyqtSignal(str)  # (profile_name)
+    delete_profile_requested = pyqtSignal(str)  # (profile_name)
+    add_account_requested = pyqtSignal()
+    add_profile_requested = pyqtSignal()
+    reorder_accounts_requested = pyqtSignal(list)  # (old indices, in their new order)
+    reorder_profiles_requested = pyqtSignal(list)  # (old indices, in their new order)
     manage_accounts_requested = pyqtSignal()
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         # Set before _build_ui: the constructor's own refresh() reads it.
         self._roster_source = None
-        # The live cards, held so a resize can re-judge them without rebuilding. Rebuilding
-        # on a splitter drag would destroy and recreate every widget several times a
-        # second; re-judging is a few integer comparisons that usually change nothing.
-        self._launch_cards: list = []
         self._build_ui()
         self.refresh_theme_styles()
         self.refresh()
@@ -92,24 +109,14 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         body.setSpacing(16)
         outer.addLayout(body, stretch=1)
 
-        # ── Left: Accounts ────────────────────────────────────────────
-        left = QVBoxLayout()
-        left.setSpacing(6)
-        accounts_hdr = ThemedTextLabel("Accounts")
-        accounts_hdr_font = accounts_hdr.font()
-        accounts_hdr_font.setBold(True)
-        accounts_hdr.setFont(accounts_hdr_font)
-        accounts_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        left.addWidget(accounts_hdr)
-        sep_l = QFrame()
-        sep_l.setFrameShape(QFrame.Shape.HLine)
-        sep_l.setFrameShadow(QFrame.Shadow.Sunken)
-        left.addWidget(sep_l)
-        self._accounts_area = self._make_scroll_area()
-        left.addWidget(self._accounts_area, stretch=1)
-        body.addLayout(left, stretch=1)
+        # -- Left: Accounts --------------------------------------------
+        self._accounts_col = CardColumn("Accounts", EMPTY_ACCOUNTS_HINT, "Add account")
+        self._accounts_col.add_requested.connect(self.add_account_requested)
+        self._accounts_col.reordered.connect(self.reorder_accounts_requested)
+        self._accounts_col.settings_requested.connect(self.manage_accounts_requested)
+        body.addWidget(self._accounts_col, stretch=1)
 
-        # ── Center: Logo + links ──────────────────────────────────────
+        # -- Center: Logo + links --------------------------------------
         center = QVBoxLayout()
         center.setSpacing(8)
         center.setAlignment(Qt.AlignmentFlag.AlignHCenter)
@@ -135,43 +142,29 @@ class _GamePlaceholder(ThemedMixin, QWidget):
 
         body.addLayout(center, stretch=1)
 
-        # ── Right: Launch Profiles ────────────────────────────────────
-        right = QVBoxLayout()
-        right.setSpacing(6)
-        profiles_hdr = ThemedTextLabel("Launch Profiles")
-        profiles_hdr_font = profiles_hdr.font()
-        profiles_hdr_font.setBold(True)
-        profiles_hdr.setFont(profiles_hdr_font)
-        profiles_hdr.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        right.addWidget(profiles_hdr)
-        sep_r = QFrame()
-        sep_r.setFrameShape(QFrame.Shape.HLine)
-        sep_r.setFrameShadow(QFrame.Shadow.Sunken)
-        right.addWidget(sep_r)
-        self._profiles_area = self._make_scroll_area()
-        right.addWidget(self._profiles_area, stretch=1)
-        body.addLayout(right, stretch=1)
-
-    @staticmethod
-    def _make_scroll_area() -> QScrollArea:
-        area = QScrollArea()
-        area.setWidgetResizable(True)
-        area.setFrameShape(QFrame.Shape.NoFrame)
-        area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
-        layout.addStretch()
-        area.setWidget(container)
-        return area
+        # -- Right: Launch Profiles ------------------------------------
+        self._profiles_col = CardColumn("Launch Profiles", EMPTY_PROFILES_HINT, "Add launch profile")
+        self._profiles_col.add_requested.connect(self.add_profile_requested)
+        self._profiles_col.reordered.connect(self.reorder_profiles_requested)
+        self._profiles_col.settings_requested.connect(self.manage_accounts_requested)
+        body.addWidget(self._profiles_col, stretch=1)
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
+    @property
+    def accounts_column(self) -> CardColumn:
+        """The Accounts column, for the fit pass and for anyone measuring what it drew."""
+        return self._accounts_col
+
+    @property
+    def profiles_column(self) -> CardColumn:
+        """The Launch Profiles column."""
+        return self._profiles_col
+
     def apply_theme_styles(self) -> None:
-        """The two pieces that are not labels — the rest own their own colour."""
+        """The two pieces that are not labels -- the rest own their own colour."""
         self._logo.setStyleSheet(f"QFrame {{ border: 2px solid {THEME.border}; border-radius: {_LOGO_SIZE // 2}px; }}")
         self._manage_btn.setStyleSheet(
             f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
@@ -192,7 +185,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         """Rebuild the account and profile cards from current settings.
 
         Each card is asked whether what it would launch fits this screen, and greyed out
-        with the reason if it does not — see bartlebot/gui/screen_fit.py for why an
+        with the reason if it does not -- see bartlebot/gui/screen_fit.py for why an
         unfittable launch is refused rather than warned about. The screen is only known
         once the widget is on one, so a card built before the window is shown is measured
         against the primary screen and re-measured on the way back in, which showEvent
@@ -205,40 +198,26 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         for account in accounts:
             card = AccountCard(account, self._characters_for(account.get("username", "")), accounts)
             card.launch_account_requested.connect(self.launch_account_requested)
+            card.edit_account_requested.connect(self.edit_account_requested)
+            card.delete_account_requested.connect(self.delete_account_requested)
             account_cards.append(card)
-        self._rebuild_list(self._accounts_area, account_cards, empty_hint="(No accounts)")
+        self._accounts_col.set_cards(account_cards)
 
         profile_cards: list[QWidget] = []
         for profile in sm.launch_profiles:
             card = ProfileCard(profile, accounts)
             card.launch_profile_requested.connect(self.launch_profile_requested)
             card.edit_profile_requested.connect(self.edit_profile_requested)
+            card.duplicate_profile_requested.connect(self.duplicate_profile_requested)
+            card.delete_profile_requested.connect(self.delete_profile_requested)
             profile_cards.append(card)
-        self._rebuild_list(self._profiles_area, profile_cards, empty_hint="(No profiles)")
+        self._profiles_col.set_cards(profile_cards)
 
-        # Assigned only after _rebuild_list has deleteLater'd the previous cards, so
-        # nothing here can be a reference to a widget that is on its way out.
-        self._launch_cards = [*account_cards, *profile_cards]
         self.refresh_fit()
 
     def refresh_fit(self) -> None:
-        """Re-judge every card against the game area as it is now.
-
-        Cheap by construction: ``set_unavailable`` returns immediately when the reason has
-        not changed, so a drag costs a few comparisons per card per event and restyles
-        only on the frame where a verdict actually flips.
-        """
-        live = self.game_area_size
-        resolution = SettingsManager.instance().game_resolution
-        for card in self._launch_cards:
-            if isinstance(card, ProfileCard):
-                card.set_unavailable(screen_fit.profile_fit_problem(card.profile, self, live))
-            else:
-                # This screen is only up when nothing is embedded, so an account card
-                # always launches the first client. The +1 case — adding a client to a
-                # running fleet — is the Launch menu's, which is reachable while tiles are
-                # on screen.
-                card.set_unavailable(screen_fit.fit_problem(resolution, 1, self, live))
+        """Re-judge every card against the game area as it is now -- see refresh_column_fit."""
+        refresh_column_fit(self._accounts_col, self._profiles_col, self, self.game_area_size)
 
     @property
     def game_area_size(self) -> tuple[int, int]:
@@ -253,7 +232,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         """Re-judge on a splitter drag, which is what makes the answer track the layout.
 
         Sidebar widths and the canvas height are startup seeds written only by the
-        settings dialog — nothing persists a drag — so without this the cards go on
+        settings dialog -- nothing persists a drag -- so without this the cards go on
         describing a layout the user has already moved away from.
         """
         super().resizeEvent(event)
@@ -280,35 +259,6 @@ class _GamePlaceholder(ThemedMixin, QWidget):
             logger.debug("Could not read the character roster for the launch screen", exc_info=True)
             return []
 
-    # ------------------------------------------------------------------
-    # Internal
-    # ------------------------------------------------------------------
-
-    @staticmethod
-    def _rebuild_list(area: QScrollArea, cards: list[QWidget], empty_hint: str) -> None:
-        container = area.widget()
-        layout = container.layout()
-
-        # Remove all existing widgets
-        while layout.count() > 0:
-            item = layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-
-        if not cards:
-            # ThemedTextLabel because _rebuild_list is static and the hints it makes
-            # are replaced on every refresh — there is nothing to hold a reference on.
-            hint = ThemedTextLabel(empty_hint, css="font-size: 11px;")
-            hint.setWordWrap(True)
-            hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(hint)
-        else:
-            for card in cards:
-                card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-                layout.addWidget(card)
-
-        layout.addStretch()
-
 
 class GameView(ThemedMixin, QWidget):
     """Container that shows N ClientTile widgets in a grid layout.
@@ -321,14 +271,33 @@ class GameView(ThemedMixin, QWidget):
     embed_state_changed = pyqtSignal(bool)  # True = ≥1 client embedded
     launch_account_requested = pyqtSignal(str, str)
     launch_profile_requested = pyqtSignal(str)
+    edit_account_requested = pyqtSignal(str)
+    delete_account_requested = pyqtSignal(str)
     edit_profile_requested = pyqtSignal(str)
+    duplicate_profile_requested = pyqtSignal(str)
+    delete_profile_requested = pyqtSignal(str)
+    add_account_requested = pyqtSignal()
+    add_profile_requested = pyqtSignal()
+    reorder_accounts_requested = pyqtSignal(list)
+    reorder_profiles_requested = pyqtSignal(list)
     manage_accounts_requested = pyqtSignal()
     game_embed_settings_requested = pyqtSignal()
+    # A failed launch's tile was clicked away. Carries the account, not the slot: a pending
+    # tile's slot can still move under it, and the launch is keyed by account throughout.
+    dismiss_launch_requested = pyqtSignal(str)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._tiles: dict[int, ClientTile] = {}
         self._detached_tiles: dict[int, DetachedTile] = {}
+        # Slots holding a launch that has not produced a window yet. A third tile kind
+        # rather than a flag on the other two: it has no hwnd, so almost nothing the
+        # other dicts are asked for has an answer here. See PendingTile.
+        self._pending_tiles: dict[int, PendingTile] = {}
+        # Account per pending slot. Kept beside the widgets because it is the pending
+        # tile's identity in plan_tile_changes -- a PendingTile itself only knows the
+        # label it is drawn with, which is a display name and not a key.
+        self._pending_accounts: dict[int, str] = {}
         # Last known wizard name per client index. Kept so a tile created later — a new
         # client, or a detach/reattach — gets its name immediately instead of waiting for
         # the name to change again, which for a stable character never happens.
@@ -346,7 +315,15 @@ class GameView(ThemedMixin, QWidget):
         self._placeholder = _GamePlaceholder(self)
         self._placeholder.launch_account_requested.connect(self.launch_account_requested)
         self._placeholder.launch_profile_requested.connect(self.launch_profile_requested)
+        self._placeholder.edit_account_requested.connect(self.edit_account_requested)
+        self._placeholder.delete_account_requested.connect(self.delete_account_requested)
         self._placeholder.edit_profile_requested.connect(self.edit_profile_requested)
+        self._placeholder.duplicate_profile_requested.connect(self.duplicate_profile_requested)
+        self._placeholder.delete_profile_requested.connect(self.delete_profile_requested)
+        self._placeholder.add_account_requested.connect(self.add_account_requested)
+        self._placeholder.add_profile_requested.connect(self.add_profile_requested)
+        self._placeholder.reorder_accounts_requested.connect(self.reorder_accounts_requested)
+        self._placeholder.reorder_profiles_requested.connect(self.reorder_profiles_requested)
         self._placeholder.manage_accounts_requested.connect(self.manage_accounts_requested)
         self._placeholder.show()
 
@@ -395,8 +372,9 @@ class GameView(ThemedMixin, QWidget):
         tile sits at its ``slot`` and is captioned from its ``player``, so a window with no
         player index is drawn under its account name rather than a number it does not have.
         """
-        current = {slot: tile.hwnd for slot, tile in self._tiles.items()}
-        current.update(self._detached_hwnds)
+        current: dict[int, TileKey] = {slot: ("hwnd", tile.hwnd) for slot, tile in self._tiles.items()}
+        current.update({slot: ("hwnd", hwnd) for slot, hwnd in self._detached_hwnds.items()})
+        current.update({slot: ("pending", name) for slot, name in self._pending_accounts.items()})
         changes = plan_tile_changes(current, tiles)
 
         if not changes.is_empty:
@@ -410,32 +388,67 @@ class GameView(ThemedMixin, QWidget):
         # a tile that is already on screen its player number for the first time.
         self._tile_players = {t.slot: t.player for t in tiles}
         for t in tiles:
-            widget = self._tiles.get(t.slot) or self._detached_tiles.get(t.slot)
+            widget = self._widget_at(t.slot)
             if widget is not None:
                 widget.set_label(t.label)
                 widget.set_wizard_name(self._wizard_name_for(t.player))
+            # Pushed on every sync alongside the captions, and for the same reason: a
+            # launch changing stage moves no tile, so the reconciler has nothing to report
+            # and the only thing that changed is what the tile says.
+            pending = self._pending_tiles.get(t.slot)
+            if pending is not None:
+                pending.set_status(t.status, t.status_since, t.failed)
 
         if changes.is_empty:
             return
-        self._placeholder.setVisible(not self._tiles and not self._detached_tiles)
+        self._placeholder.setVisible(not self._occupied_slots())
         self._recompute_geometry()
         self._update_minimum_size()
         self._set_embed_state(bool(self._tiles))
         self._update_overlay()
 
     def _create_tile(self, spec: TileSlot) -> None:
-        """Build and embed a tile for a window that does not have one yet."""
+        """Build the tile for a slot that does not have one yet, embedded or pending."""
+        if spec.is_pending:
+            self._create_pending_tile(spec)
+            return
         tile = ClientTile(spec.hwnd, spec.label, parent=self)
         tile.set_wizard_name(self._wizard_name_for(spec.player))
         self._tiles[spec.slot] = tile
         tile.detach_requested.connect(lambda slot=spec.slot: self._detach_client(slot))
         tile.show()
         self._remove_detached_tile(spec.slot)
+        self._remove_pending_tile(spec.slot)
+
+    def _create_pending_tile(self, spec: TileSlot) -> None:
+        """Put a busy tile in a slot whose account is launching but has no window yet."""
+        self._remove_pending_tile(spec.slot)
+        tile = PendingTile(spec.label, parent=self)
+        tile.set_status(spec.status, spec.status_since, spec.failed)
+        self._pending_tiles[spec.slot] = tile
+        self._pending_accounts[spec.slot] = spec.username or ""
+        # Connected to the account rather than to the slot, unlike the detach and reattach
+        # buttons: a pending tile's slot can still move under it, and the thing being
+        # dismissed is the launch, which is keyed by account all the way down.
+        username = spec.username or ""
+        tile.dismiss_requested.connect(lambda u=username: self.dismiss_launch_requested.emit(u))
+        tile.show()
+
+    def _remove_pending_tile(self, slot: int) -> None:
+        """Tear down the pending tile in *slot*, if there is one."""
+        self._pending_accounts.pop(slot, None)
+        tile = self._pending_tiles.pop(slot, None)
+        if tile is None:
+            return
+        tile.hide()
+        tile.setParent(None)  # type: ignore[arg-type]
+        tile.deleteLater()
 
     def _destroy_tile(self, slot: int) -> None:
-        """Tear down whatever occupies *slot*, embedded or detached."""
+        """Tear down whatever occupies *slot*, embedded, detached or pending."""
         self._detached_hwnds.pop(slot, None)
         self._remove_detached_tile(slot)
+        self._remove_pending_tile(slot)
         tile = self._tiles.pop(slot, None)
         if tile is None:
             return
@@ -460,6 +473,8 @@ class GameView(ThemedMixin, QWidget):
         tiles = {slot: tile for slot, tile in self._tiles.items() if slot not in vacated}
         detached_tiles = {slot: tile for slot, tile in self._detached_tiles.items() if slot not in vacated}
         detached_hwnds = {slot: hwnd for slot, hwnd in self._detached_hwnds.items() if slot not in vacated}
+        pending_tiles = {slot: tile for slot, tile in self._pending_tiles.items() if slot not in vacated}
+        pending_accounts = {slot: name for slot, name in self._pending_accounts.items() if slot not in vacated}
         for old, new in moves:
             if old in self._tiles:
                 tiles[new] = self._tiles[old]
@@ -467,9 +482,15 @@ class GameView(ThemedMixin, QWidget):
                 detached_tiles[new] = self._detached_tiles[old]
             if old in self._detached_hwnds:
                 detached_hwnds[new] = self._detached_hwnds[old]
+            if old in self._pending_tiles:
+                pending_tiles[new] = self._pending_tiles[old]
+            if old in self._pending_accounts:
+                pending_accounts[new] = self._pending_accounts[old]
         self._tiles = tiles
         self._detached_tiles = detached_tiles
         self._detached_hwnds = detached_hwnds
+        self._pending_tiles = pending_tiles
+        self._pending_accounts = pending_accounts
         for slot, tile in self._tiles.items():
             self._reconnect_detach(tile, slot)
         for slot, dtile in self._detached_tiles.items():
@@ -502,7 +523,7 @@ class GameView(ThemedMixin, QWidget):
         if client_idx not in self._tiles:
             return
         self._destroy_tile(client_idx)
-        self._placeholder.setVisible(not self._tiles and not self._detached_tiles)
+        self._placeholder.setVisible(not self._occupied_slots())
         self._recompute_geometry()
         self._update_minimum_size()
         self._set_embed_state(bool(self._tiles))
@@ -556,6 +577,40 @@ class GameView(ThemedMixin, QWidget):
         return bool(self._detached_hwnds)
 
     @property
+    def pending_slots(self) -> dict[int, str]:
+        """Slot → account, for every launch drawn here that has no window yet.
+
+        Public because "what is this view still waiting for" is a question about the
+        launch rather than about the widgets, and the only alternative is reaching into
+        the tile dicts from outside.
+        """
+        return dict(self._pending_accounts)
+
+    def pending_failed(self, slot: int) -> bool:
+        """Whether the pending tile in *slot* is showing a launch that gave up."""
+        tile = self._pending_tiles.get(slot)
+        return tile is not None and tile.failed
+
+    def pending_status(self, slot: int) -> str | None:
+        """What the pending tile in *slot* currently says, or None if it is not pending.
+
+        Public for the same reason as ``pending_slots``: the caption is a fact about the
+        launch, and reading it is otherwise a reach into the tile widgets.
+        """
+        tile = self._pending_tiles.get(slot)
+        return None if tile is None else tile.status_text
+
+    def tile_geometry(self, slot: int):
+        """The rectangle the tile in *slot* occupies, or None if that slot is empty.
+
+        The grid is laid out by hand rather than by a QLayout — see _recompute_geometry —
+        so where a tile ended up is not readable from anything Qt exposes about this
+        widget, and a tile left out of the layout silently overlaps the one in slot 0.
+        """
+        widget = self._widget_at(slot)
+        return None if widget is None else widget.geometry()
+
+    @property
     def game_area_size(self) -> tuple[int, int]:
         """The logical pixels the tile grid actually has, right now.
 
@@ -590,9 +645,11 @@ class GameView(ThemedMixin, QWidget):
 
         A detached window still owns its slot and comes back into the same grid, so it
         counts: the question this answers is how many tiles the layout has to fit, not
-        how many are currently parented here.
+        how many are currently parented here. So does a launching one, for the same
+        reason and one step earlier -- its window is coming, and the grid it lands in
+        should be the grid that was already drawn for it rather than a resize on arrival.
         """
-        return len(self._tiles) + len(self._detached_tiles)
+        return len(self._occupied_slots())
 
     def set_wizard_names(self, names: list) -> None:
         """Show each client's wizard name on its tile pill.
@@ -607,7 +664,7 @@ class GameView(ThemedMixin, QWidget):
         """
         self._wizard_names = list(names)
         for slot, player in self._tile_players.items():
-            tile = self._tiles.get(slot) or self._detached_tiles.get(slot)
+            tile = self._widget_at(slot)
             if tile is not None:
                 tile.set_wizard_name(self._wizard_name_for(player))
 
@@ -640,7 +697,7 @@ class GameView(ThemedMixin, QWidget):
         and nothing else would prompt a repaint: a tile only updates when its name or
         label *changes*, and neither did. Called from the settings-applied signal.
         """
-        for tile in (*self._tiles.values(), *self._detached_tiles.values()):
+        for tile in (*self._tiles.values(), *self._detached_tiles.values(), *self._pending_tiles.values()):
             tile.update()
 
     def _wizard_name_for(self, player: int | None) -> str | None:
@@ -656,6 +713,21 @@ class GameView(ThemedMixin, QWidget):
     def _player_for(self, slot: int) -> int | None:
         """The player index last synced for *slot*, or None if it has none."""
         return self._tile_players.get(slot)
+
+    def _occupied_slots(self) -> list[int]:
+        """Every slot holding a tile of any kind, in grid order.
+
+        One question with one answer, because the three dicts have to be consulted
+        together everywhere it is asked -- the grid layout, the minimum size, the tile
+        count and whether the launch screen shows. Each of those read two of the three
+        before pending tiles existed, and a pending tile missing from any one of them is a
+        tile drawn on top of another.
+        """
+        return sorted(set(self._tiles) | set(self._detached_tiles) | set(self._pending_tiles))
+
+    def _widget_at(self, slot: int):
+        """Whatever tile occupies *slot*, of any kind, or None."""
+        return self._tiles.get(slot) or self._detached_tiles.get(slot) or self._pending_tiles.get(slot)
 
     def toggle(self) -> None:
         """Show or hide the GameView (used by the toggle_embed keybinding)."""
@@ -698,7 +770,7 @@ class GameView(ThemedMixin, QWidget):
             _OVERLAY_BTN_MARGIN,
         )
 
-        all_slots = sorted(set(self._tiles) | set(self._detached_tiles))
+        all_slots = self._occupied_slots()
         n = len(all_slots)
         if n == 0:
             return
@@ -711,10 +783,9 @@ class GameView(ThemedMixin, QWidget):
             row = pos // cols
             col = pos % cols
             geo = (col * tile_w, row * tile_h, tile_w, tile_h)
-            if idx in self._tiles:
-                self._tiles[idx].setGeometry(*geo)
-            elif idx in self._detached_tiles:
-                self._detached_tiles[idx].setGeometry(*geo)
+            widget = self._widget_at(idx)
+            if widget is not None:
+                widget.setGeometry(*geo)
 
     def _update_minimum_size(self) -> None:
         """Set GameView minimum size to fit the current client grid plus padding.
@@ -731,7 +802,7 @@ class GameView(ThemedMixin, QWidget):
         understated the minimum whenever they differed, and the biggest client was the one
         that got clipped.
         """
-        n = len(self._tiles) + len(self._detached_tiles)
+        n = len(self._occupied_slots())
         if n == 0:
             self.setMinimumSize(0, 0)
             return

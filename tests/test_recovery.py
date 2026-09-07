@@ -17,6 +17,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from bartlebot.client_manager import ClientManager
+from bartlebot.launch_tracker import LaunchTracker
 
 # ---------------------------------------------------------------------------
 # Test harness
@@ -50,6 +51,15 @@ class RecoveryHarness:
     _embeddable_hwnds = ClientManager._embeddable_hwnds
     _account_label = ClientManager._account_label
     tile_slots = ClientManager.tile_slots
+    begin_launch = ClientManager.begin_launch
+    end_launch = ClientManager.end_launch
+    report_launch_stage = ClientManager.report_launch_stage
+    report_launch_failed = ClientManager.report_launch_failed
+    dismiss_launch = ClientManager.dismiss_launch
+    launching = ClientManager.launching
+    active_accounts = ClientManager.active_accounts
+    _release_unarrived = ClientManager._release_unarrived
+    reserve_slots = ClientManager.reserve_slots
     _sync_tiles = ClientManager._sync_tiles
     _regroup_after_recovery = ClientManager._regroup_after_recovery
     # _reconnect_clients drives each relaunched window in through these, the same path
@@ -65,6 +75,7 @@ class RecoveryHarness:
         self._hwnd_titles: dict[int, str] = {}
         self._hwnd_user_ids: dict[int, int] = {}
         self._client_order: list[str | None] = []
+        self._launches = LaunchTracker()
         self._pending_recovery: dict[int, str] = {}
         self._vacated_slots: dict[str, int] = {}
         self._recovery_in_progress: bool = False

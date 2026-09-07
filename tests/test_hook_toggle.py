@@ -11,6 +11,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from bartlebot.client_manager import ClientManager
+from bartlebot.launch_tracker import LaunchTracker
 from tests.test_client_slots import FakeGameView
 
 # ---------------------------------------------------------------------------
@@ -67,6 +68,7 @@ class HookHarness:
         # handler keeps reporting all four regardless of which are hooked.
         self._handler = MagicMock(clients=[])
         self._client_order: list[str | None] = []
+        self._launches = LaunchTracker()
         self._vacated_slots: dict[str, int] = {}
         self._machine = None
         self._game_view = FakeGameView()
