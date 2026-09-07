@@ -130,5 +130,15 @@ viewport heights, and without one it is 0/70. A GUI flake under `-n auto` is usu
 order-dependent state, so look for what an earlier test left behind before reaching for
 `processEvents` or a sleep.
 
+**Pumping can destroy the state you are pumping for.** No test shows or activates its
+windows, so a popup put up with `QMenu.popup()` has no active window behind it: spin the
+loop under load and Windows deactivates it, the menu closes itself, and every teardown
+hook — `aboutToHide`, and the parent hand-back `anchor_menu_to_window` connects to it —
+has already fired by the time the assertion looks. The hand-back test in
+`test_menu_anchoring.py` flaked exactly this way (#166), and pumping *harder* — the
+obvious fix, and the one the issue suggested — made it fail every time instead. Ask first whether the state arrives synchronously: `aboutToShow` is
+emitted from inside `popup()`, so that half wanted no pump at all. `_pump_until` in
+`test_menu_anchoring.py` is there for the tearing-down half, which genuinely does need one.
+
 `--dist loadfile` would hide this class of bug by making the accident stable. Order
 independence is a property worth keeping, so CI stays on `load`.

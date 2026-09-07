@@ -13,6 +13,9 @@ around, so a Qt upgrade that removes it shows up here rather than as a silently
 pointless helper.
 """
 
+import time
+from collections.abc import Callable
+
 import pytest
 from PyQt6.QtCore import QPoint, qInstallMessageHandler
 from PyQt6.QtWidgets import (
@@ -52,6 +55,30 @@ class _Harness:
         self.tile.winId()  # what ClientTile.embed() does — promotes the sibling too
 
 
+_PUMP_TIMEOUT = 2.0
+"""Ceiling on a pump, not a cadence — only a failing test ever waits this long."""
+
+_PUMP_INTERVAL = 0.005
+
+
+def _pump_until(predicate: Callable[[], bool], timeout: float = _PUMP_TIMEOUT) -> bool:
+    """Spin the event loop until *predicate* holds, or *timeout* elapses.
+
+    Use this only where the state under test genuinely arrives on a later spin —
+    tearing a popup down does, putting one up does not.  Pumping for a state
+    that is already true is not free here: see the comment in
+    ``test_anchored_menu_is_handed_back_to_its_owner``.
+    """
+    deadline = time.monotonic() + timeout
+    while True:
+        QApplication.processEvents()
+        if predicate():
+            return True
+        if time.monotonic() >= deadline:
+            return False
+        time.sleep(_PUMP_INTERVAL)
+
+
 @pytest.fixture
 def harness(qapp):
     h = _Harness()
@@ -68,7 +95,7 @@ def _popup_warnings(menu: QMenu) -> list[str]:
         menu.popup(QPoint(0, 0))
         QApplication.processEvents()
         menu.close()
-        QApplication.processEvents()
+        _pump_until(lambda: not menu.isVisible())
     finally:
         qInstallMessageHandler(previous)
     return messages
@@ -96,12 +123,16 @@ def test_anchored_menu_is_handed_back_to_its_owner(harness):
     menu = anchor_menu_to_window(QMenu(harness.button))
     menu.addAction("action")
 
+    # Assert the swap without pumping first.  ``aboutToShow`` is emitted from
+    # inside ``popup()``, so the parent is already the window here — whereas
+    # spinning the loop can *lose* it: nothing in this harness is shown or
+    # activated, so under load the popup is deactivated and closes itself, and
+    # ``aboutToHide`` hands it straight back to the button.  That is #166.
     menu.popup(QPoint(0, 0))
-    QApplication.processEvents()
     assert menu.parentWidget() is harness.window
 
     menu.close()
-    QApplication.processEvents()
+    _pump_until(lambda: menu.parentWidget() is harness.button)
     assert menu.parentWidget() is harness.button
 
 
