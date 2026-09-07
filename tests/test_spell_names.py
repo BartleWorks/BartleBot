@@ -24,12 +24,24 @@ def names_path(tmp_path):
     _load_names.cache_clear()
 
 
-def test_resolves_a_known_internal_name(names_path):
-    assert display_name("Novus Storm - T05 - A", path=names_path) == "Tree of Strife"
-
-
 def test_falls_back_to_the_internal_name_when_unmapped(names_path):
     assert display_name("Fire Cat", path=names_path) == "Fire Cat"
+
+
+def test_appends_path_and_tier_for_a_tiered_variant(names_path):
+    assert display_name("Novus Storm - T05 - A", path=names_path) == "Tree of Strife (Path A, Tier 5)"
+
+
+def test_appends_path_and_tier_even_when_unmapped(names_path):
+    assert display_name("Kraken - T02 - C", path=names_path) == "Kraken - T02 - C (Path C, Tier 2)"
+
+
+def test_appends_path_and_tier_for_a_treasure_card_variant(names_path):
+    assert display_name("Kraken - T02 - C - TC", path=names_path) == "Kraken - T02 - C - TC (Path C, Tier 2)"
+
+
+def test_leaves_a_plain_name_alone(names_path):
+    assert display_name("Soul Burner", path=names_path) == "Ammut"
 
 
 def test_falls_back_when_the_snapshot_file_is_missing(tmp_path):
