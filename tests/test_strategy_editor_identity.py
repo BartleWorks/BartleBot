@@ -129,6 +129,33 @@ def test_pcs_editor_blank_name_keeps_the_existing_one(qapp):
     assert pcs.name == "Original"
 
 
+def test_pcs_editor_loads_description_and_school(qapp):
+    editor = PlayerStrategyEditor()
+    pcs = PlayerCombatStrategy(name="A", dsl="", description="Storm blade support", school="Storm")
+    editor.load(pcs)
+    assert editor._description_edit.text() == "Storm blade support"
+    assert editor._school_combo.value() == "Storm"
+
+
+def test_pcs_editor_flushes_description_and_school(qapp):
+    editor = PlayerStrategyEditor()
+    pcs = PlayerCombatStrategy(name="A", dsl="")
+    editor.load(pcs)
+    editor._description_edit.setText("Life healer")
+    editor._school_combo.set_value("Life")
+    editor.flush()
+    assert pcs.description == "Life healer"
+    assert pcs.school == "Life"
+
+
+def test_pcs_editor_clear_resets_description_and_school(qapp):
+    editor = PlayerStrategyEditor()
+    editor.load(PlayerCombatStrategy(name="A", dsl="", description="X", school="Storm"))
+    editor.clear()
+    assert editor._description_edit.text() == ""
+    assert editor._school_combo.value() is None
+
+
 # ---------------------------------------------------------------------------
 # DuelStrategyEditor — same contract
 # ---------------------------------------------------------------------------

@@ -26,6 +26,10 @@ class PlayerCombatStrategy(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str
     dsl: str = ""
+    # One of deck_io.PIP_SCHOOLS, or None for "any school" — authored, never
+    # inferred from dsl.  See DuelConfig.school_requirements.
+    school: str | None = None
+    description: str = ""
 
     @classmethod
     def load(cls, path: str | Path) -> PlayerCombatStrategy:
@@ -33,7 +37,7 @@ class PlayerCombatStrategy(BaseModel):
             return cls.model_validate(json.load(f))
 
     def save(self, path: str | Path) -> None:
-        _atomic_write(self.model_dump(exclude_none=True), path)
+        _atomic_write(self.model_dump(exclude_defaults=True), path)
 
 
 class DeckData(BaseModel):
@@ -86,6 +90,7 @@ class DeckPreset(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str
     deck: DeckData = Field(default_factory=DeckData)
+    description: str = ""
 
     @classmethod
     def load(cls, path: str | Path) -> DeckPreset:
@@ -93,7 +98,7 @@ class DeckPreset(BaseModel):
             return cls.model_validate(json.load(f))
 
     def save(self, path: str | Path) -> None:
-        _atomic_write(self.model_dump(exclude_none=True), path)
+        _atomic_write(self.model_dump(exclude_defaults=True), path)
 
 
 class PlayerAssignment(BaseModel):
@@ -109,6 +114,11 @@ class PlayerAssignment(BaseModel):
     players: list[int]  # 1-based player numbers, e.g. [1, 2]
     dsl: str = ""  # inline DSL — used when player_combat_strategy_id is None
     player_combat_strategy_id: str | None = None  # UUID of a PlayerCombatStrategy preset
+    # One of deck_io.PIP_SCHOOLS, or None. Authored, never inferred from dsl —
+    # see DuelConfig.school_requirements. Takes precedence over a linked
+    # preset's own school when both are set.
+    school: str | None = None
+    note: str = ""  # e.g. "P2 passes to bank pips for round 3"
 
     @property
     def is_linked(self) -> bool:
@@ -131,6 +141,10 @@ class DuelConfig(BaseModel):
     # None = all players enter combat simultaneously; list = sequential entry order (1-based)
     combat_order: list[int] | None = None
     player_assignments: list[PlayerAssignment] = Field(default_factory=list)
+    # Author-written: what this fight needs and why. Lives on the config itself
+    # (not the named DuelCombatStrategy wrapper) so an inline one-off gets a
+    # description too.
+    description: str = ""
 
     @model_validator(mode="after")
     def clamp_player_range(self) -> DuelConfig:
@@ -175,6 +189,28 @@ class DuelConfig(BaseModel):
         """UUIDs of every PlayerCombatStrategy preset this duel links to."""
         return [a.player_combat_strategy_id for a in self.player_assignments if a.player_combat_strategy_id is not None]
 
+    def school_requirements(self, pcs_by_id: dict[str, PlayerCombatStrategy]) -> dict[str, int]:
+        """Count of players needed per school, e.g. {"Storm": 2, "Life": 1}.
+
+        Resolved per assignment — the assignment's own school, else its linked
+        preset's, else none — and multiplied by how many players that
+        assignment covers.  Descriptive only: never gates a run, since a school
+        tag cannot be verified against the DSL it labels (see decision 01).
+
+        ``pcs_by_id``: {pcs_uuid: PlayerCombatStrategy} — pre-loaded preset data.
+        """
+        counts: dict[str, int] = {}
+        for assignment in self.player_assignments:
+            school = assignment.school
+            if school is None and assignment.player_combat_strategy_id is not None:
+                pcs = pcs_by_id.get(assignment.player_combat_strategy_id)
+                if pcs is not None:
+                    school = pcs.school
+            if school is None:
+                continue
+            counts[school] = counts.get(school, 0) + len(assignment.players)
+        return counts
+
     def is_empty(self) -> bool:
         """True if this config has no player assignments at all.
 
@@ -197,7 +233,7 @@ class DuelCombatStrategy(DuelConfig):
             return cls.model_validate(json.load(f))
 
     def save(self, path: str | Path) -> None:
-        _atomic_write(self.model_dump(exclude_none=True), path)
+        _atomic_write(self.model_dump(exclude_defaults=True), path)
 
 
 class StateAssignment(BaseModel):
@@ -230,6 +266,7 @@ class BotCombatStrategy(BaseModel):
     default_strategy_id: str | None = None
     default_duel_config: DuelConfig = Field(default_factory=DuelConfig)
     state_assignments: list[StateAssignment] = Field(default_factory=list)
+    description: str = ""
 
     @classmethod
     def load(cls, path: str | Path) -> BotCombatStrategy:
@@ -237,7 +274,7 @@ class BotCombatStrategy(BaseModel):
             return cls.model_validate(json.load(f))
 
     def save(self, path: str | Path) -> None:
-        _atomic_write(self.model_dump(exclude_none=True), path)
+        _atomic_write(self.model_dump(exclude_defaults=True), path)
 
     def find_assignment_for_state(self, state_id: str) -> StateAssignment | None:
         """Return the StateAssignment covering this FSM state, or None."""

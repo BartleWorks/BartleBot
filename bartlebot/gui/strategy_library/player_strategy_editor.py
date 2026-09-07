@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from PyQt6.QtCore import QEvent, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QPlainTextEdit,
@@ -13,6 +14,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.strategy_models import PlayerCombatStrategy
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.school_combo import SchoolCombo
 
 _DEBOUNCE_MS = 500
 
@@ -40,6 +42,23 @@ class PlayerStrategyEditor(QWidget):
         self._name_edit.textChanged.connect(self._on_changed)
         layout.addWidget(self._name_edit)
 
+        layout.addWidget(QLabel("Description:"))
+        self._description_edit = QLineEdit()
+        self._description_edit.setPlaceholderText("What this strategy does and why (optional)")
+        self._description_edit.textChanged.connect(self._on_changed)
+        layout.addWidget(self._description_edit)
+
+        school_row = QHBoxLayout()
+        school_row.addWidget(QLabel("School:"))
+        # Authored, never inferred from the DSL — used as a fallback wherever an
+        # assignment links this preset without its own school set.
+        self._school_combo = SchoolCombo()
+        self._school_combo.setToolTip("What school this strategy is written for, if any — descriptive only")
+        self._school_combo.currentIndexChanged.connect(self._on_changed)
+        school_row.addWidget(self._school_combo)
+        school_row.addStretch()
+        layout.addLayout(school_row)
+
         layout.addWidget(QLabel("DSL:"))
         self._dsl_edit = QPlainTextEdit()
         self._dsl_edit.setFont(THEME.font_mono())
@@ -57,6 +76,8 @@ class PlayerStrategyEditor(QWidget):
         self._strategy = strategy
         self._suppress = True
         self._name_edit.setText(strategy.name)
+        self._description_edit.setText(strategy.description)
+        self._school_combo.set_value(strategy.school)
         self._dsl_edit.setPlainText(strategy.dsl)
         self._suppress = False
 
@@ -76,6 +97,8 @@ class PlayerStrategyEditor(QWidget):
         self._strategy = None
         self._suppress = True
         self._name_edit.clear()
+        self._description_edit.clear()
+        self._school_combo.set_value(None)
         self._dsl_edit.clear()
         self._suppress = False
 
@@ -89,6 +112,8 @@ class PlayerStrategyEditor(QWidget):
         if self._strategy is None:
             return
         self._strategy.name = self._name_edit.text().strip() or self._strategy.name
+        self._strategy.description = self._description_edit.text()
+        self._strategy.school = self._school_combo.value()
         self._strategy.dsl = self._dsl_edit.toPlainText()
         self.changed.emit(self._strategy.id)
 

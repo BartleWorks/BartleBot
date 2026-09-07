@@ -996,12 +996,9 @@ class _DuelBindingPanel(QWidget):
         """Fork the linked strategy's fields back into this binding as an inline copy."""
         dcs = self._linked_dcs()
         if dcs is not None:
-            self._binding.duel_config = DuelConfig(
-                min_players=dcs.min_players,
-                max_players=dcs.max_players,
-                combat_order=dcs.combat_order,
-                player_assignments=[a.model_copy(deep=True) for a in dcs.player_assignments],
-            )
+            # Dump over the DuelConfig field set (rather than listing fields by
+            # hand) so a field added later can't be silently dropped here.
+            self._binding.duel_config = DuelConfig.model_validate(dcs.model_dump(exclude={"id", "name"}))
         self._binding.duel_combat_strategy_id = None
         self._refresh()
         self.changed.emit()
@@ -1020,13 +1017,9 @@ class _DuelBindingPanel(QWidget):
         name, ok = QInputDialog.getText(self, "Save as Preset", "Duel Strategy name:")
         if not ok or not name.strip():
             return
-        dcs = DuelCombatStrategy(
-            name=name.strip(),
-            min_players=config.min_players,
-            max_players=config.max_players,
-            combat_order=config.combat_order,
-            player_assignments=[a.model_copy(deep=True) for a in config.player_assignments],
-        )
+        # Dump over the DuelConfig field set (rather than listing fields by
+        # hand) so a field added later can't be silently dropped here.
+        dcs = DuelCombatStrategy(name=name.strip(), **config.model_dump())
         save_duel_strategy(dcs)
         self._all_dcs.append(dcs)
         self._binding.duel_combat_strategy_id = dcs.id
