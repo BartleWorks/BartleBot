@@ -13,7 +13,7 @@ Root.wad by ``tools/dump_spell_names.py``; see that file for how the mapping is
 built and why a snapshot is safe here. A card missing from the snapshot (never
 got a player-facing name, or was added to the game after the snapshot was taken)
 falls back to its internal name rather than showing nothing -- the same choice
-``deck_view_dialog.py`` already made for unviewable treasure cards.
+``deck_content.py`` already made for unviewable treasure cards.
 """
 
 from __future__ import annotations
