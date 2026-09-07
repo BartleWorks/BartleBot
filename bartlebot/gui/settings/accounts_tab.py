@@ -662,10 +662,11 @@ class AccountsTab(QWidget):
         # them to set the resolution by hand in the game's own options, which has not been
         # true since BartleBot started writing preferences.xml before every launch —
         # instructions for work the app already does read as work still outstanding.
-        # Windowed mode is still theirs to set until #200 caches and forces IsFullscreen.
+        # The Windowed mode sentence went the same way in #200, which now forces
+        # IsFullscreen off at launch and restores it after.
         hint = ThemedTextLabel(
-            "Set Wizard101 to Windowed mode in Options → Graphics. BartleBot sets the "
-            "resolution itself at every launch, and at smaller sizes scales the game's own "
+            "BartleBot sets the resolution itself at every launch and runs the game "
+            "windowed, and at smaller sizes scales the game's own "
             "UI down to match while it runs, putting it back when the client closes. "
             "Widescreen sizes keep a larger UI than 4:3 ones of the same height.",
             css="font-size: 11px;",

@@ -58,8 +58,11 @@ class _GeneralSettings(BaseModel):
 
 class _GameEmbedSettings(BaseModel):
     resolution: list[int] = [800, 600]
-    # The game's own UI scale as the user had it, so a clamped launch can give it back.
+    # The game's own display settings as the user had them, so a tiled launch can give
+    # them back: UI scale, windowed resolution, and whether it ran fullscreen.
     original_ui_size: int | None = None
+    original_resolution: str | None = None
+    original_fullscreen: int | None = None
 
 
 class _CanvasSettings(BaseModel):
@@ -114,9 +117,11 @@ _DEFAULTS: dict[str, Any] = {
     },
     "game_embed": {
         "resolution": [800, 600],
-        # The user's own <UISize>, captured once before the first launch clamps it.
-        # See SettingsManager.original_ui_size.
+        # The user's own <UISize>, <Resolution> and <IsFullscreen>, each captured once
+        # before the first launch overwrites it. See SettingsManager.original_ui_size.
         "original_ui_size": None,
+        "original_resolution": None,
+        "original_fullscreen": None,
     },
     "canvas": {
         "minimap_visible": True,
@@ -360,6 +365,46 @@ class SettingsManager:
     @original_ui_size.setter
     def original_ui_size(self, value: int | None) -> None:
         self.set("game_embed", "original_ui_size", value=None if value is None else int(value))
+
+    @property
+    def original_resolution(self) -> str | None:
+        """The user's own ``<Resolution>``, captured before the first launch retiled it.
+
+        Same shape and same reason as :attr:`original_ui_size`: every launch writes the
+        tiled resolution into preferences.xml, so after one session the file holds *our*
+        value and reading it back would adopt it as the user's preference. Kept as the
+        raw ``WxH`` string the game wrote rather than a parsed pair, so whatever it was
+        goes back byte-for-byte.
+
+        None means nothing has been captured — the state before the first launch, and
+        the state after a restore.
+        """
+        raw = self.get("game_embed", "original_resolution", default=None)
+        return None if raw is None else str(raw)
+
+    @original_resolution.setter
+    def original_resolution(self, value: str | None) -> None:
+        self.set("game_embed", "original_resolution", value=None if value is None else str(value))
+
+    @property
+    def original_fullscreen(self) -> int | None:
+        """The user's own ``<IsFullscreen>``, captured before the first launch cleared it.
+
+        A fullscreen game ignores the resolution we patch, so a tiled launch has to force
+        windowed mode — which is the user's setting being overwritten, exactly as the UI
+        scale is, and it gets the same capture-once/restore-on-quit treatment.
+
+        None means nothing has been captured. See :attr:`original_ui_size`.
+        """
+        raw = self.get("game_embed", "original_fullscreen", default=None)
+        try:
+            return None if raw is None else int(raw)
+        except (TypeError, ValueError):
+            return None
+
+    @original_fullscreen.setter
+    def original_fullscreen(self, value: int | None) -> None:
+        self.set("game_embed", "original_fullscreen", value=None if value is None else int(value))
 
     def get_general(self, key: str, default: Any = None) -> Any:
         return self.get("general", key, default=default)

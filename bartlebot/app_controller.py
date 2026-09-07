@@ -24,7 +24,7 @@ from bartlebot.combat_warnings import collect_combat_warnings
 from bartlebot.deck_io import DeckApplyReport, apply_deck, read_deck
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.gui.main_window import MainWindow
-from bartlebot.launcher.launch_profile import restore_ui_size
+from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
@@ -108,22 +108,30 @@ class AppController(QObject):
         self._window.show()
         self._reconfigure_autosave_timer()
         self._prune_dead_strategy_settings()
-        self._restore_game_ui_scale()
+        self._restore_game_display_settings()
         self._check_crash_recovery()
 
-    def _restore_game_ui_scale(self) -> None:
-        """Give the game back the UI scale a previous session clamped, if it kept it.
+    def _restore_game_display_settings(self) -> None:
+        """Give the game back the display settings a previous session overwrote.
 
         A launch below 800x600 has to shrink the game's own HUD to match (see
-        bartlebot/game_sizing.py), and the user plays Wizard101 outside BartleBot, so
-        that clamp is put back on quit. This is the other half: a session that died
-        without reaching the quit path left it in place, and nothing else would ever
-        undo it. No-op when the last session restored it cleanly.
+        bartlebot/game_sizing.py), and every launch retiles the resolution and forces
+        windowed mode. The user plays Wizard101 outside BartleBot, so all three are put
+        back on quit. This is the other half: a session that died without reaching the
+        quit path left them in place, and nothing else would ever undo them. No-op when
+        the last session restored them cleanly.
+
+        Each restore is guarded on its own so one that cannot be written -- a locked
+        file, an install that moved -- does not take the other down with it.
         """
         try:
             restore_ui_size()
         except Exception:
             logger.exception("Could not restore the game's UI scale from a previous session")
+        try:
+            restore_game_prefs()
+        except Exception:
+            logger.exception("Could not restore the game's resolution from a previous session")
 
     def _prune_dead_strategy_settings(self) -> None:
         """Drop remembered strategy selections whose BCS file is gone.
@@ -274,9 +282,10 @@ class AppController(QObject):
         # an app.quit() from elsewhere): releasing the windows is synchronous, so it still
         # works here, where there is no loop left to await an unhook on.
         self._app.aboutToQuit.connect(self._window.game_view.unembed_all)
-        # The game's UI scale is the app's, not ours: a launch that clamped it for the
-        # tiled layout gives it back here. Synchronous, so it still runs at this point.
-        self._app.aboutToQuit.connect(self._restore_game_ui_scale)
+        # The game's UI scale, resolution and window mode are the user's, not ours: a
+        # launch that retiled them gives them back here. Synchronous, so they still run
+        # at this point.
+        self._app.aboutToQuit.connect(self._restore_game_display_settings)
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
 
