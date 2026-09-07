@@ -1,11 +1,12 @@
 """Tests for node_helpers zone matching utilities."""
 
 import asyncio
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 import pytest
-from wizwalker import MemoryReadError
+from wizwalker import XYZ, MemoryReadError
 
+import bartlebot.nodes.node_helpers as nh
 from bartlebot.nodes.node_helpers import (
     _get_window_from_path,
     all_in_zone,
@@ -21,7 +22,11 @@ from bartlebot.nodes.node_helpers import (
     zone_matches,
 )
 from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
-from tests.conftest import FakeClient, FakeEntity, message_box_patches
+from tests.conftest import FakeClient, FakeEntity, FakeMachine, message_box_patches
+
+#: Somewhere and somewhere else — reach_sigil_prompt only ever passes these through.
+_SIGIL = XYZ(0.0, 0.0, 0.0)
+_RESET = XYZ(1.0, 0.0, 0.0)
 
 # ---------------------------------------------------------------------------
 # zone_matches — pure function, no async
@@ -1020,3 +1025,63 @@ async def test_resolve_friend_name_raises_when_the_name_is_absent(monkeypatch):
 
     with pytest.raises(ValueError, match="Could not find friend"):
         await nh_mod.resolve_friend_name(object(), "bob frostgem")
+
+
+# ---------------------------------------------------------------------------
+# reach_sigil_prompt
+#
+# The half enter_dungeon shares between its normal and Team-Up tails. It lived
+# twice, once per node, until the two were merged (#162) — the node tests cover
+# it through each tail; these cover it directly.
+# ---------------------------------------------------------------------------
+
+
+async def test_reach_sigil_prompt_teleports_once_when_the_prompt_appears():
+    client = FakeClient()
+    client.zone_name.return_value = "Hub"
+
+    with patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)):
+        reached = await nh.reach_sigil_prompt(FakeMachine(), [client], "Hub", _SIGIL, _RESET, 0.01, 0)
+
+    assert reached is True
+    client.teleport.assert_called_once_with(_SIGIL)
+
+
+async def test_reach_sigil_prompt_refuses_from_the_wrong_zone():
+    """The pre-condition, and the one failure that must not teleport: a client somewhere
+    else is not a client whose sigil is at these coordinates."""
+    client = FakeClient()
+    client.zone_name.return_value = "Elsewhere"
+
+    reached = await nh.reach_sigil_prompt(FakeMachine(), [client], "Hub", _SIGIL, _RESET, 0.01, 0)
+
+    assert reached is False
+    client.teleport.assert_not_called()
+
+
+async def test_reach_sigil_prompt_gives_up_after_max_retries():
+    client = FakeClient()
+    client.zone_name.return_value = "Hub"
+
+    reached = await nh.reach_sigil_prompt(FakeMachine(), [client], "Hub", _SIGIL, _RESET, 0.01, 0)
+
+    assert reached is False
+    # One sigil teleport and one reset teleport per attempt.
+    assert client.teleport.call_count == nh.MAX_RETRIES * 2
+
+
+async def test_reach_sigil_prompt_clears_a_stale_prompt_first():
+    """A prompt already on screen is not the one this run raised, and entering on it
+    would enter whatever the client happens to be standing on."""
+    client = FakeClient()
+    client.zone_name.return_value = "Hub"
+
+    with (
+        patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True)),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "none_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+    ):
+        reached = await nh.reach_sigil_prompt(FakeMachine(), [client], "Hub", _SIGIL, _RESET, 0.01, 0)
+
+    assert reached is True
+    assert [call.args[0] for call in client.teleport.call_args_list] == [_RESET, _SIGIL]

@@ -600,9 +600,18 @@
   "tags": [
     "Gear",
     "Spellements",
-    "Boss"
+    "Boss",
+    "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Abomination"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_2",
@@ -624,7 +633,8 @@
           "x": 6157.12,
           "y": 3635.8,
           "z": 2.0
-        }
+        },
+        "offers_team_up": true
       }
     },
     {

@@ -347,44 +347,6 @@ async def _record_enter_zone_interact(client, param_form, on_status, on_btn, try
         on_btn("Record")
 
 
-async def _record_enter_dungeon_teamup(client, param_form, on_status, on_btn, try_set_label) -> None:
-    on_btn("Stop")
-    on_status("Starting…")
-    try:
-        from_zone = await client.zone_name()
-        param_form.set_str("from_zone", from_zone)
-        start_pos = await client.body.position()
-        param_form.set_xyz("reset_xyz", start_pos.x, start_pos.y, start_pos.z)
-        on_status("Walk to sigil…")
-
-        last_pos = start_pos
-
-        while True:
-            await asyncio.sleep(RECORDING_POLL_INTERVAL)
-            if await client.is_loading():
-                param_form.set_xyz("sigil_xyz", last_pos.x, last_pos.y, last_pos.z)
-                on_status("Loading…")
-                break
-            last_pos = await client.body.position()
-            param_form.set_xyz("sigil_xyz", last_pos.x, last_pos.y, last_pos.z)
-
-        while await client.is_loading():
-            await asyncio.sleep(RECORDING_POLL_INTERVAL)
-
-        dungeon_zone = await _wait_for_zone_name(client, RECORDING_POLL_INTERVAL)
-        param_form.set_str("dungeon_zone", dungeon_zone)
-        try_set_label(f"{_zone_display(from_zone)} → {_zone_display(dungeon_zone)}")
-        on_status(f"Done — {_zone_display(dungeon_zone)}")
-        on_btn("Record")
-
-    except asyncio.CancelledError:
-        on_status("")
-        on_btn("Record")
-    except Exception as e:
-        on_status(f"Error: {e}")
-        on_btn("Record")
-
-
 async def _record_enter_zone_via_list(client, param_form, on_status, on_btn, try_set_label) -> None:
     on_btn("Stop")
     on_status("Starting…")
@@ -472,7 +434,6 @@ _REGISTRY: dict[str, Any] = {
     "enter_zone": _record_enter_zone_gateway,
     "teleport_to_coordinates": _record_go_to_xyz,
     "enter_dungeon": _record_enter_dungeon,
-    "enter_dungeon_teamup": _record_enter_dungeon_teamup,
     "interact": _record_interact,
     "interact_menu": _record_interact_menu,
     "apply_level_scaling": _record_apply_level_scaling,

@@ -201,7 +201,6 @@ def test_recordable_nodes_contains_all_expected_types():
         "enter_zone",
         "teleport_to_coordinates",
         "enter_dungeon",
-        "enter_dungeon_teamup",
         "interact",
         "interact_menu",
         "apply_level_scaling",
@@ -521,58 +520,6 @@ async def test_enter_dungeon_exception(zero_poll):
     last_status = on_status.call_args_list[-1][0][0]
     assert last_status.startswith("Error:")
     on_btn.assert_called_with("Record")
-
-
-# ---------------------------------------------------------------------------
-# _record_enter_dungeon_teamup  (identical structure to enter_dungeon)
-# ---------------------------------------------------------------------------
-
-
-async def test_enter_dungeon_teamup_happy_path(zero_poll):
-    client = FakeClient()
-    client.zone_name.side_effect = ["Src/World", "Dungeon/Team"]
-    client.body.position.side_effect = [XYZ(0.0, 0.0, 0.0), XYZ(3.0, 4.0, 0.0)]
-    client.is_loading.side_effect = [False, True, False]
-
-    form = FakeParamForm()
-    on_status, on_btn, try_set_label = _callbacks()
-
-    await run_recording("enter_dungeon_teamup", client, form, on_status, on_btn, try_set_label)
-
-    assert form.str_fields["from_zone"] == "Src/World"
-    assert form.str_fields["dungeon_zone"] == "Dungeon/Team"
-    assert form.xyz_fields["sigil_xyz"] == (3.0, 4.0, 0.0)
-
-
-async def test_enter_dungeon_teamup_cancellation(zero_poll):
-    client = FakeClient()
-    client.zone_name.return_value = "Src/World"
-    client.body.position.return_value = XYZ(0.0, 0.0, 0.0)
-    client.is_loading.return_value = False
-
-    form = FakeParamForm()
-    on_status, on_btn, try_set_label = _callbacks()
-
-    task = asyncio.create_task(run_recording("enter_dungeon_teamup", client, form, on_status, on_btn, try_set_label))
-    await asyncio.sleep(0)
-    task.cancel()
-    await task  # coroutine catches CancelledError internally; task completes normally
-
-    on_status.assert_called_with("")
-    on_btn.assert_called_with("Record")
-
-
-async def test_enter_dungeon_teamup_exception(zero_poll):
-    client = FakeClient()
-    client.zone_name.return_value = "Src/World"
-    client.body.position.side_effect = RuntimeError("err")
-
-    form = FakeParamForm()
-    on_status, on_btn, try_set_label = _callbacks()
-
-    await run_recording("enter_dungeon_teamup", client, form, on_status, on_btn, try_set_label)
-
-    assert on_status.call_args_list[-1][0][0].startswith("Error:")
 
 
 # ---------------------------------------------------------------------------

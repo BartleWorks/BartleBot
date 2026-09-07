@@ -2,6 +2,7 @@
 
 from bartlebot.bot.schema import BotConfig
 from bartlebot.gui.safety_warning_dialog import collect_safety_warnings
+from bartlebot.nodes.zone_entry import enter_dungeon
 from bartlebot.settings_manager import SettingsManager
 from tests.conftest import FakeClient
 
@@ -385,3 +386,61 @@ def test_a_bot_that_still_pins_a_name_is_not_offered_the_app_setting_field():
     config = _config({"node_type": "teleport_to_friend", "params": {"friend_name": "Alice", "to_zone": "Z"}})
 
     assert collect_safety_warnings(config)[0].editable_setting is None
+
+
+# ---------------------------------------------------------------------------
+# enter_dungeon — the Team-Up split-party warning
+#
+# enter_dungeon is in most of the library, so all three conditions have to hold
+# before the warning is earned: the author ticked Offers Team-Up, the user turned
+# the option on, and more than one client is hooked.
+# ---------------------------------------------------------------------------
+
+
+def _teamup_config(*, offers: bool = True, team_up: bool = True, team_size: int | None = None) -> BotConfig:
+    options: list[dict] = [{"name": enter_dungeon.OPTION_TEAM_UP, "type": "bool", "default": team_up}]
+    if team_size is not None:
+        options.append({"name": enter_dungeon.OPTION_MINIMUM_TEAM_SIZE, "type": "int", "default": team_size})
+    return _config(
+        {"node_type": "enter_dungeon", "params": {enter_dungeon.PARAM_OFFERS_TEAM_UP: offers}},
+        options=options,
+    )
+
+
+def _enter_dungeon_warning(config, clients):
+    found = [w for w in collect_safety_warnings(config, clients) if "Team-Up" in w.message]
+    return found[0] if found else None
+
+
+def test_teamup_with_two_clients_warns():
+    warning = _enter_dungeon_warning(_teamup_config(), [FakeClient(), FakeClient()])
+
+    assert warning is not None
+    assert "instance" in warning.message
+
+
+def test_teamup_with_one_client_does_not_warn():
+    """One client cannot be split from itself."""
+    assert _enter_dungeon_warning(_teamup_config(), [FakeClient()]) is None
+
+
+def test_a_normal_entrance_does_not_warn():
+    """Every dungeon bot has this node. A warning on all of them is one the user learns
+    to click away, which is the one habit this dialog cannot afford to teach."""
+    assert _enter_dungeon_warning(_teamup_config(team_up=False), [FakeClient(), FakeClient()]) is None
+
+
+def test_the_option_alone_does_not_warn():
+    """Team-Up off at the param means the node will not queue whatever the option says,
+    so the warning would describe something that cannot happen."""
+    assert _enter_dungeon_warning(_teamup_config(offers=False), [FakeClient(), FakeClient()]) is None
+
+
+def test_the_warning_names_the_team_size_and_the_player_count():
+    warning = _enter_dungeon_warning(_teamup_config(team_size=4), [FakeClient(), FakeClient()])
+
+    assert warning is not None
+    assert ("Players hooked", "2") in warning.details
+    assert any(
+        label == enter_dungeon.OPTION_MINIMUM_TEAM_SIZE and value.startswith("4") for label, value in warning.details
+    )

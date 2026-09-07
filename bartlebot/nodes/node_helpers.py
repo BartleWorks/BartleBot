@@ -1080,3 +1080,73 @@ async def open_friend_profile(client, name: str):
 
     await _click_on_friend(client, friends_list, friend_index)
     return await _maybe_get_named_window(client.root_window, "wndCharacter")
+
+
+# ---------------------------------------------------------------------------
+# Dungeon sigils
+# ---------------------------------------------------------------------------
+
+
+async def reach_sigil_prompt(
+    machine,
+    clients: list,
+    from_zone: str,
+    sigil,
+    reset,
+    safety_delay: float,
+    poll_interval: float = POLL_INTERVAL,
+) -> bool:
+    """Get every client standing on a dungeon sigil with its entrance prompt showing.
+
+    The half `enter_dungeon` shares whichever way it is entered — normal or Team-Up —
+    which is the whole of the node up to the point the prompt is on screen:
+
+      1. Verify every client is in *from_zone*.
+      2. Clear a pre-existing prompt by teleporting to *reset*, so a stale one is not
+         mistaken for the one this run raised.
+      3. Up to MAX_RETRIES: teleport to *sigil* and wait ``safety_delay`` for the
+         prompt; on a miss, teleport back to *reset* and try again.
+
+    Returns False having already logged the reason, so a caller's failure path is a
+    bare ``return "FAILURE"``. Logs under the running node, since it is called from
+    one — see ``machine.log`` in the node conventions.
+    """
+    zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
+    if not all(zone_matches(z, from_zone) for z in zones):
+        wrong = [z for z in zones if not zone_matches(z, from_zone)]
+        machine.log(
+            f"FAILURE: clients not in expected zone (expected={from_zone!r}, unexpected={wrong})",
+            logging.WARNING,
+        )
+        return False
+
+    prompts = await asyncio.gather(*[is_visible_by_path(c, DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH) for c in clients])
+    if any(prompts):
+        stale = [i for i, p in enumerate(prompts) if p]
+        machine.log(
+            f"Pre-existing dungeon entrance prompt on client(s) {stale}; teleporting to reset_xyz to clear it",
+            logging.DEBUG,
+        )
+        await asyncio.gather(*[c.teleport(reset) for c in clients])
+        await poll_until(lambda: none_at_dungeon_entrance(clients), safety_delay, poll_interval)
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting clients to sigil", logging.DEBUG)
+        await asyncio.gather(*[c.teleport(sigil) for c in clients])
+
+        machine.log("Waiting for dungeon entrance prompt…", logging.DEBUG)
+        if await poll_until(lambda: all_at_dungeon_entrance(clients), safety_delay, poll_interval):
+            return True
+
+        machine.log(
+            f"Entrance prompt did not appear (attempt {attempt}); resetting to reset_xyz",
+            logging.DEBUG,
+        )
+        await asyncio.gather(*[c.teleport(reset) for c in clients])
+
+    machine.log(
+        f"FAILURE: entrance prompt never appeared after {MAX_RETRIES} attempts",
+        logging.WARNING,
+    )
+    return False
