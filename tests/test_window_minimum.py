@@ -128,6 +128,26 @@ def _keep_list_needs() -> int:
     )
 
 
+def _declared_floor(resolution: tuple[int, int], client_count: int = 1) -> tuple[int, int]:
+    """The arithmetic's own answer, measured the way the window measures it.
+
+    ``MainWindow._apply_minimum_size`` reaches ``required_window_size`` through
+    ``SettingsManager.minimum_window_size`` and hands it the two floors ``screen_fit``
+    measures on *this* machine, so the arithmetic side of the invariant has to be given
+    the same two numbers. Left at the reference constants it quietly asserts that the
+    runner resolves the reference *style* as well — which a dev box on ``windowsvista``
+    does and CI on ``windows11`` does not, by 33px of sidebar between them. Both sides
+    are style and font metrics, so they have to be allowed to grow together, exactly as
+    the two sidebar tests below already say of themselves.
+    """
+    return gs.required_window_size(
+        resolution,
+        client_count,
+        right_sidebar=screen_fit.right_sidebar_floor(),
+        left_sidebar=screen_fit.left_sidebar_floor(),
+    )
+
+
 def _window_floor(window: MainWindow) -> tuple[int, int]:
     """The size Windows will not let *window* go below, on each axis.
 
@@ -173,7 +193,7 @@ def open_window(qapp):
 def test_the_declared_floor_is_the_one_qt_enforces(open_window, resolution, client_count):
     window = open_window(resolution, client_count)
 
-    assert _window_floor(window) <= gs.required_window_size(resolution, client_count)
+    assert _window_floor(window) <= _declared_floor(resolution, client_count)
 
 
 def test_a_fat_tab_does_not_raise_the_window_s_floor(open_window):
@@ -187,7 +207,7 @@ def test_a_fat_tab_does_not_raise_the_window_s_floor(open_window):
     window.right_sidebar.switch_to_log()
     window.ensurePolished()
 
-    assert _window_floor(window) <= gs.required_window_size((2560, 1440))
+    assert _window_floor(window) <= _declared_floor((2560, 1440))
 
 
 def test_the_window_that_was_refused_fits_the_screen_that_refused_it(open_window):

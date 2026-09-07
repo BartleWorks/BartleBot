@@ -12,6 +12,7 @@ from PyQt6.QtCore import QPoint, Qt
 from PyQt6.QtGui import QMouseEvent, QResizeEvent
 from PyQt6.QtWidgets import QApplication, QPushButton
 
+from bartlebot import game_sizing
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard, character_summary, profile_summary
 from bartlebot.settings_manager import SettingsManager
@@ -29,6 +30,20 @@ def screen(monkeypatch):
         monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: metrics)
 
     return _use
+
+
+def _sidebar_excess() -> int:
+    """How much wider than the reference this machine's two sidebar floors are, together.
+
+    ``budget_for`` subtracts the floors ``screen_fit`` measures here, and those are style
+    and font metrics: the same layout leaves 1214px of game width under ``windowsvista``,
+    the style a dev box resolves, and 33 fewer under ``windows11``, the one CI resolves.
+    A literal budget therefore asserts which style the runner happens to have rather than
+    the behaviour this test names — see "One QApplication per worker" in tests/CLAUDE.md.
+    """
+    return (screen_fit.left_sidebar_floor() - game_sizing.LEFT_SIDEBAR_MIN_WIDTH) + (
+        screen_fit.right_sidebar_floor() - game_sizing.RIGHT_SIDEBAR_MIN_WIDTH
+    )
 
 
 def _profile(accounts, resolution=None):
@@ -218,7 +233,7 @@ def test_the_game_view_s_minimum_reaches_the_panel_that_sits_in_the_splitter(qap
 def test_the_budget_takes_the_larger_of_the_layout_and_the_live_area(screen):
     screen(_1080P)
     configured, _dpr = screen_fit.budget_for()
-    assert configured == (1214, 800)
+    assert configured == (1214 - _sidebar_excess(), 800)
 
     wider, _dpr = screen_fit.budget_for(live_area=(1700, 700))
     assert wider == (1700, 800)  # width from the drag, height from the layout

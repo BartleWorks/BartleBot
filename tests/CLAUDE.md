@@ -38,6 +38,35 @@ These bite only under load, so they pass locally and fail on a 2-core CI runner.
 16-core machine oversubscribes a runner 4:1 and stretches every wall-clock test until it
 breaks.
 
+## Not every CI-only failure is a timing one
+
+The section above is about load, so it is the first thing reached for when CI fails and a
+dev box does not — and it is the wrong answer for the other family. **A CI-only failure
+that is deterministic, identical across parallel and serial runs, and off by the same
+number of pixels every time is a style or font difference, not a race.** `-n auto` is
+never implicated in one of these, and removing it changes nothing.
+
+A dev box resolves the `windowsvista` style; a GitHub runner resolves `windows11`, whose
+comboboxes, checkboxes and push buttons are wider at the same font metrics. Both sidebar
+floors are measured from the live style — see `gui/screen_fit.left_sidebar_floor` — so on
+a runner they come out 33px wider between them than `LEFT_SIDEBAR_MIN_WIDTH` and
+`RIGHT_SIDEBAR_MIN_WIDTH`, the references the pure arithmetic returns when nothing is
+measured. **A test comparing a measured widget floor against a literal, or against
+`required_window_size` left at its defaults, is asserting which style the runner has.**
+Give the arithmetic side the same measured floors the widget side got — `_declared_floor`
+in `test_window_minimum.py` and `_sidebar_excess` in `test_screen_fit.py` are the pattern.
+
+Ask the question locally instead of on the runner:
+
+```bash
+QT_STYLE_OVERRIDE=windows11 uv run pytest -n auto   # what CI resolves
+```
+
+That reproduces this whole class exactly, which is how the eleven failures across those
+two modules were found without a push. Where a test can sweep the styles itself it should
+— `test_the_player_card_fits_the_right_sidebar_under_every_available_style` is that, and
+it exists because a 3px overflow reached CI the same way.
+
 Tests whose *subject* is elapsed time are the exception and should stay: the `#114` guards
 in `test_group_manager.py` assert a regroup pays one settle rather than three. Scale
 `_SETTLE` and `_BUDGET` together if they get slow — only their ratio carries the meaning.
