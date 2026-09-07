@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.strategy_models import DeckData
 from bartlebot.deck_io import resolve_apply_archmastery
 from bartlebot.gui.theme import THEME
+from bartlebot.spell_names import display_name
 
 
 class DeckViewDialog(QDialog):
@@ -69,7 +70,7 @@ class DeckViewDialog(QDialog):
             layout.addWidget(header)
 
             for name, count in sorted(cards.items()):
-                row = QLabel(f"  {name} × {count}")
+                row = QLabel(f"  {display_name(name)} × {count}")
                 row.setStyleSheet(f"color: {THEME.text};")
                 row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
                 layout.addWidget(row)
