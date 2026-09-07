@@ -138,12 +138,70 @@ def test_a_tag_no_bot_carries_yields_nothing():
 # ---------------------------------------------------------------------------
 
 
+def _cards(panel: _BotLibraryPanel) -> list:
+    """The card widgets currently in the panel, ignoring the trailing stretch."""
+    layout = panel._cards_layout
+    return [w for i in range(layout.count()) if (w := layout.itemAt(i).widget()) is not None]
+
+
+def test_the_panel_lists_nothing_until_it_is_shown(qapp):
+    """It is BotCanvas's placeholder, and a canvas that opens a bot hides it before it
+    is ever painted — listing in the constructor read every file in bots/ and built a
+    card widget for each one, for a panel nobody was going to see."""
+    panel = _BotLibraryPanel()
+
+    assert panel._all_metas == []
+    assert _cards(panel) == []
+
+
+def test_showing_the_panel_lists_the_library(qapp):
+    panel = _BotLibraryPanel()
+
+    panel.show()
+
+    assert panel._all_metas != []
+    assert panel._cat_list.count() > 0
+
+
+def test_a_second_show_does_not_relist(qapp):
+    """Only the first show pays for the scan; re-showing keeps what is there."""
+    panel = _BotLibraryPanel()
+    panel.show()
+    metas = panel._all_metas
+
+    panel.hide()
+    panel.show()
+
+    assert panel._all_metas is metas
+
+
+def test_a_listing_builds_its_cards_once(qapp):
+    """refresh() used to select row 0 *and* call the row handler by hand. Selecting a
+    row already emits currentRowChanged — the list was cleared, so row 0 is always a
+    change — so every card was built, torn down and built again, and on a profile with
+    no recent files that is the whole library twice."""
+    panel = _BotLibraryPanel()
+    real = panel._show_cards
+    calls = []
+
+    def counting(*args, **kwargs):
+        calls.append(1)
+        return real(*args, **kwargs)
+
+    panel._show_cards = counting
+
+    panel.refresh()
+
+    assert len(calls) == 1
+
+
 def test_the_category_list_offers_all_after_recent(qapp):
     """Recent is the default because opening the library is usually the first step
     of going back to a bot you ran yesterday. All sits under it as the fallback —
     without it there is no way back to the whole library once a world is clicked,
     and nothing for a cross-world tag filter to be scoped to."""
     panel = _BotLibraryPanel()
+    panel.refresh()
     rows = [panel._cat_list.item(i).text() for i in range(panel._cat_list.count())]
 
     assert panel._ALL in rows
@@ -156,6 +214,7 @@ def test_the_category_list_offers_all_after_recent(qapp):
 def test_the_selected_category_is_the_first_row(qapp):
     """The ordering above *is* the default, so the two cannot drift apart."""
     panel = _BotLibraryPanel()
+    panel.refresh()
 
     assert panel._cat_list.currentRow() == 0
 
@@ -164,6 +223,7 @@ def test_switching_category_keeps_the_tag_filter(qapp):
     """It used to clear it, because a filter replaced the listing rather than
     narrowing it. Now that they compose, clearing is just discarding the user's work."""
     panel = _BotLibraryPanel()
+    panel.refresh()
     panel._set_tag_selection(["Gear"])
 
     panel._cat_list.setCurrentRow(panel._cat_list.count() - 1)

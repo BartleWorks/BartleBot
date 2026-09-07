@@ -367,8 +367,17 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         self._all_metas: list[_BotMeta] = []
         self._category_map: dict[str, list[_BotMeta]] = {}
         self._recent_metas: list[_BotMeta] = []
+        # Listed on first show, not here. This is BotCanvas's placeholder, so a canvas
+        # that opens a bot straight away hides it before it is ever painted -- and
+        # listing costs a read of every file in bots/ plus a card widget for each one
+        # that survives the filter, which is the whole library on a fresh profile.
+        self._listed = False
         self._build_ui()
-        self.refresh()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if not self._listed:
+            self.refresh()
 
     # ------------------------------------------------------------------
     # Construction
@@ -526,6 +535,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
     def refresh(self) -> None:
         """Rescan recent files and bots/ directory, rebuild UI."""
+        self._listed = True
         sm = SettingsManager.instance()
         recent_paths = sm.recent_bot_files
 
@@ -572,10 +582,12 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             self._cat_list.addItem(cat)
         self._cat_list.blockSignals(False)
 
-        # Select first category (triggers card refresh)
+        # Select first category. ``clear()`` above left the current row at -1, so this
+        # always changes it and the currentRowChanged connection builds the cards --
+        # calling _on_category_row_changed by hand as well built every card twice, the
+        # first set torn down again before anything could paint it.
         if self._cat_list.count() > 0:
             self._cat_list.setCurrentRow(0)
-            self._on_category_row_changed(0)
         else:
             self._show_cards([])
 

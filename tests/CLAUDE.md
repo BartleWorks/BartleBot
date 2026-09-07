@@ -38,6 +38,35 @@ These bite only under load, so they pass locally and fail on a 2-core CI runner.
 16-core machine oversubscribes a runner 4:1 and stretches every wall-clock test until it
 breaks.
 
+## Not every CI-only failure is a timing one
+
+The section above is about load, so it is the first thing reached for when CI fails and a
+dev box does not — and it is the wrong answer for the other family. **A CI-only failure
+that is deterministic, identical across parallel and serial runs, and off by the same
+number of pixels every time is a style or font difference, not a race.** `-n auto` is
+never implicated in one of these, and removing it changes nothing.
+
+A dev box resolves the `windowsvista` style; a GitHub runner resolves `windows11`, whose
+comboboxes, checkboxes and push buttons are wider at the same font metrics. Both sidebar
+floors are measured from the live style — see `gui/screen_fit.left_sidebar_floor` — so on
+a runner they come out 33px wider between them than `LEFT_SIDEBAR_MIN_WIDTH` and
+`RIGHT_SIDEBAR_MIN_WIDTH`, the references the pure arithmetic returns when nothing is
+measured. **A test comparing a measured widget floor against a literal, or against
+`required_window_size` left at its defaults, is asserting which style the runner has.**
+Give the arithmetic side the same measured floors the widget side got — `_declared_floor`
+in `test_window_minimum.py` and `_sidebar_excess` in `test_screen_fit.py` are the pattern.
+
+Ask the question locally instead of on the runner:
+
+```bash
+QT_STYLE_OVERRIDE=windows11 uv run pytest -n auto   # what CI resolves
+```
+
+That reproduces this whole class exactly, which is how the eleven failures across those
+two modules were found without a push. Where a test can sweep the styles itself it should
+— `test_the_player_card_fits_the_right_sidebar_under_every_available_style` is that, and
+it exists because a 3px overflow reached CI the same way.
+
 Tests whose *subject* is elapsed time are the exception and should stay: the `#114` guards
 in `test_group_manager.py` assert a regroup pays one settle rather than three. Scale
 `_SETTLE` and `_BUDGET` together if they get slow — only their ratio carries the meaning.
@@ -100,6 +129,30 @@ Neither of those was a race: with a stylesheet leaked the mismatch is 70/70 acro
 viewport heights, and without one it is 0/70. A GUI flake under `-n auto` is usually
 order-dependent state, so look for what an earlier test left behind before reaching for
 `processEvents` or a sleep.
+
+**Pumping can destroy the state you are pumping for.** Almost no test shows or activates
+its windows, so a popup put up with `QMenu.popup()` has no active window behind it: spin the
+loop under load and Windows deactivates it, the menu closes itself, and every teardown
+hook — `aboutToHide`, and the parent hand-back `anchor_menu_to_window` connects to it —
+has already fired by the time the assertion looks. The hand-back test in
+`test_menu_anchoring.py` flaked exactly this way (#166), and pumping *harder* — the
+obvious fix, and the one the issue suggested — made it fail every time instead. Ask first whether the state arrives synchronously: `aboutToShow` is
+emitted from inside `popup()`, so that half wanted no pump at all. `_pump_until` in
+`test_menu_anchoring.py` is there for the tearing-down half, which genuinely does need one.
+
+**`show()` does not give a widget focus; activation does, and it is the WM's answer.**
+`QWidget.hasFocus()` is false unless the widget's window is *active*, and `show()` only
+asks Windows to make it so — the answer arrives as a later event, on the WM's schedule.
+On an idle dev box it lands inside the first `processEvents()`, which is why a test that
+shows a window and calls `setFocus()` looks deterministic; under `-n auto` it can land
+after the test is over, and every `hasFocus()` branch in the widget under test is skipped.
+That is a silent pass-by-omission, not an error: `test_growing_scrolls_an_enclosing_page_to_the_caret`
+failed `assert 0 > 0` because `GrowingTextEdit` correctly declined to scroll a field it
+believed unfocused. `QApplication.setActiveWindow(window)` hands the activation over
+synchronously and is the fix; pumping harder is not, since there is nothing pending to
+pump. Then **assert the focus you arranged** — `_shown_page` in
+`test_growing_text_edit.py` is the pattern, and it matters at both ends: a test asserting
+that an *unfocused* widget stays put passes for free on a window that had no focus to give.
 
 `--dist loadfile` would hide this class of bug by making the accident stable. Order
 independence is a property worth keeping, so CI stays on `load`.
