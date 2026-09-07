@@ -303,6 +303,61 @@ class ClientManager(QObject):
         self.clients_changed.emit(self._clients)
         self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
 
+    def reorder_clients(self, order: list[int]) -> None:
+        """Rearrange the whole live client list at once, where ``order[i]`` is the old index now at *i*.
+
+        A sibling to :meth:`swap_clients`, not a replacement -- that one keeps its own
+        callers and its own meaning. What this adds is *one update per gesture*: a drag
+        decomposed into transpositions would rebuild the sidebar, re-derive the tile layout
+        and emit both signals once per transposition, putting intermediate orders on screen
+        that nobody asked for. Everything below the permutation happens exactly once.
+
+        A permutation that does not describe the current list is refused rather than
+        applied. The column that emitted it was built from a list read some moments
+        earlier, and an unhook racing the drag can invalidate it; refusing costs the user
+        one drag, applying reorders a list that is not the one they dragged.
+        """
+        # Deferred: apply_order is a plain function, but it lives beside the signal that
+        # emits the permutation, and that module is a widget module. Importing it lazily
+        # keeps a core module off the GUI's import graph.
+        from bartlebot.gui.game_embed.card_columns import apply_order  # noqa: PLC0415
+
+        reordered = apply_order(self._clients, order)
+        if reordered is None or order == list(range(len(order))):
+            return
+        self._clients[:] = reordered
+        # Keep _client_order in sync so recovery preserves the user's reordering. Positional,
+        # exactly as swap_clients is: _clients is hooked-only and contiguous while
+        # _client_order can hold None for a slot awaiting recovery, so position i in one is
+        # not necessarily slot i in the other. That misalignment belongs to recovery and is
+        # deliberately not corrected here.
+        if len(self._client_order) >= len(order):
+            head = [self._client_order[i] for i in order]
+            self._client_order[: len(order)] = head
+        self._drops_widget.reorder_clients(order)
+        # Both numbers moved -- the slots the tiles sit in and the player indices their
+        # captions read from -- so the view is re-derived rather than relabelled.
+        self._sync_tiles()
+        self.clients_changed.emit(self._clients)
+        self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
+
+    def account_for(self, client) -> str | None:
+        """The account username *client* was launched under, or None when unknown.
+
+        Two things a caller has to plan for:
+
+        - **None is normal, especially early.** The map behind this is filled by
+          ``_refresh_account_identity`` from inside the client loop, so a client hooked a
+          moment ago has no account yet, and a game window BartleBot did not launch may
+          never be identified at all.
+        - **Nothing signals the answer changing.** ``all_clients_changed`` fires when the
+          set of hooked clients changes, not when an identity is merely *learned*, and a
+          signal for that is more machinery than the answer needs. Re-ask on each refresh
+          tick instead -- this is a dict lookup, the same bargain the Wizard row already
+          makes with ``wizard_names.cached_name``.
+        """
+        return self._hwnd_account_map.get(client.window_handle)
+
     async def unhook_client(self, index: int) -> None:
         """Unhook WizWalker from the client at the given index without closing its game window."""
         if index >= len(self._clients):

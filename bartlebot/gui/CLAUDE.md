@@ -126,6 +126,26 @@ the launch cards' hover-revealed buttons use — but it only applies to a widget
 is still asked about.)
 
 
+## The first offscreen render costs 150-200ms
+
+A widget with a `QGraphicsEffect` on it, and a `QWidget.grab()` or `render()` for a
+`QDrag` pixmap, are all painted into an offscreen surface rather than into the window.
+Qt flushes the whole top-level's withheld move and resize events before the first such
+render — it holds them back from hidden widgets, so every unopened tab, menu and dialog
+page built at startup is sitting on a layout that has never run, and they all run at
+once. It is the same 150-200ms whether the target pixmap is full size or **1x1**: the
+cost is the layout flush, not the paint. The second one is free.
+
+Left alone it lands wherever the first offscreen render happens to be, which is a
+gesture — the first card drag of a session stalled for a fifth of a second while the
+shadow went on, and no later one did. Call `warm_offscreen_render(widget)`
+(`gui/offscreen_warmup.py`) a turn after the surface is shown instead; it is per window,
+because the flush is, so a dialog does not inherit the main window's. `CardColumn.showEvent`
+is the pattern. It is per window *and* once: the flag means the layouts outstanding at
+that moment ran, not that the window is immune. Nothing warms the other offscreen sites
+(`favorites_bar`, `combat_order_widget`, `duel_strategy_editor`) — if one ever stalls,
+warm its window; do not add a call per widget class.
+
 ## qasync + Python 3.13 task re-entrancy rule
 
 **Never call a blocking Qt method (e.g. `QDialog.exec()`, `QMessageBox.exec()`) from inside an `async` function that is running as an asyncio Task.**
@@ -234,13 +254,15 @@ Things to preserve:
 
 ## Client section refresh architecture
 
-`ClientSection` (`bartlebot/gui/sidebar/sections/client_section.py`) is a plain `QWidget` filling `RightSidebar`'s Players tab, and runs a long-lived asyncio task (`_refresh_loop`) that polls zone/XYZ data for each connected client. Key design points:
+`ClientSection` (`bartlebot/gui/sidebar/sections/client_section.py`) is a plain `QWidget` filling `RightSidebar`'s Players tab, and runs a long-lived asyncio task (`_refresh_loop`) that polls zone/XYZ data for each connected client. It holds a `CardColumn` of `PlayerCard`s for the hooked clients and a `SidebarSection` of them for the unhooked, and it supplies the Players tab's *only* scroll area — the column's. Key design points:
 
 - **Refresh rate is adaptive**, decided by the pure `client_refresh_interval(bot_running, players_visible)`: `CLIENT_REFRESH_INTERVAL_IDLE` (0.1 s) while idle, `CLIENT_REFRESH_INTERVAL_RUN` (0.5 s) during a bot run, and `CLIENT_REFRESH_INTERVAL_HIDDEN` (2.0 s) whenever the Players tab is not the current tab — visibility is checked *first*, so a hidden tab during a run polls at the slowest rate. `AppController._start_bot()` calls `set_bot_running(True/False)` at the bot lifecycle boundary; `RightSidebar.currentChanged` calls `set_players_visible(True/False)`, which restarts the loop on becoming visible rather than waiting out the in-flight 2 s sleep. Polling never stops entirely, because `AppController`'s zone-dropdown getter reads each widget's cached zone via `client_zones()`. These constants live in `bartlebot/nodes/timing.py`.
-- **Per-widget timeout**: each `ClientWidget.refresh()` call is wrapped in `asyncio.wait_for(timeout=CLIENT_REFRESH_TIMEOUT)` inside the gather so a single slow client read can't stall the whole cycle.
-- **Loading guard**: `ClientWidget._refresh()` checks `is_loading()` first and returns early if True, skipping the more expensive `zone_name()` and `body.position()` reads that produce stale/slow results during zone transitions.
+- **Per-widget timeout**: each `PlayerCard.refresh()` call is wrapped in `asyncio.wait_for(timeout=CLIENT_REFRESH_TIMEOUT)` inside the gather so a single slow client read can't stall the whole cycle.
+- **Loading guard**: `PlayerCard._refresh()` checks `is_loading()` first and returns early if True, skipping the more expensive `zone_name()` and `body.position()` reads that produce stale/slow results during zone transitions.
 - **WizWalker reads are synchronous**: despite the `async def` signatures, WizWalker memory reads (`zone_name()`, `body.position()`, etc.) call `ReadProcessMemory` synchronously on the event loop thread — they are not truly non-blocking. Keep this in mind when reasoning about latency or contention.
-- **The Wizard row costs nothing**: `ClientWidget._refresh()` reads the wizard name from `wizard_names.cached_name()`, a dict lookup. `ClientManager._client_loop` is what fills that cache, once per character. Do not make a sidebar label trigger detection — `resolve_names()` can open the character page, which would flash the game UI every refresh.
+- **The wizard name costs nothing**: `PlayerCard._refresh()` reads it from `wizard_names.cached_name()`, a dict lookup. `ClientManager._client_loop` is what fills that cache, once per character. Do not make a sidebar label trigger detection — `resolve_names()` can open the character page, which would flash the game UI every refresh.
+- **Two things besides the values are re-derived every tick**: the account stripe, because `ClientManager.account_for` learns an identity inside the client loop and signals nothing when it does; and nothing else. Anything resolved once in a card's constructor is resolved before the client is identified.
+- **Cards are re-keyed, not rebuilt.** `set_all_clients` holds each card against its `hwnd` and re-uses it while that window is still in the same bucket, calling `set_index` rather than constructing a replacement — otherwise a drag-reorder resets the freecam toggle and blanks every row until the next tick. A client that crosses between hooked and unhooked *is* rebuilt: whether a card has a drag grip is fixed at construction.
 
 ## Which panel owns what
 

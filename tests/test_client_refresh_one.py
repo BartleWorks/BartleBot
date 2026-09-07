@@ -1,6 +1,6 @@
 """Guards on ``ClientSection._refresh_one``, the per-widget refresh wrapper (#128).
 
-The wrapper exists for one reason: the coroutine ``ClientWidget.refresh()`` returns
+The wrapper exists for one reason: the coroutine ``PlayerCard.refresh()`` returns
 must not be constructed until something is actually going to await it.  ``gather``
 converts each argument into a Task synchronously, and those Tasks have not stepped
 yet — a cancel landing in that window (a tab switch, an unhook, app shutdown) tears
@@ -18,7 +18,7 @@ from bartlebot.gui.sidebar.sections.client_section import ClientSection
 
 
 class FakeClientWidget:
-    """Stands in for ClientWidget; records whether its refresh coroutine ever ran."""
+    """Stands in for a ``PlayerCard``; records whether its refresh coroutine ever ran."""
 
     def __init__(self) -> None:
         self.refreshed = 0

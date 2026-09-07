@@ -8,7 +8,7 @@ label. This is the third option.
 It matters most for the *factories* — ``field_label`` and ``_build_option_parts``
 build a label and hand it back, so nothing can restyle the instance afterwards and
 the staleness lands on whichever widget happened to call them. Returning one of these
-fixes every caller at once, which is why ``ClientWidget``, ``SidebarField`` and
+fixes every caller at once, which is why the player card, ``SidebarField`` and
 ``OptionsSection`` needed no changes of their own.
 
 The colour is named rather than resolved, because a resolved value is exactly the

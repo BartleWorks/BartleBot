@@ -133,6 +133,46 @@ class DropSection(QWidget):
         self._tables[idx_a], self._tables[idx_b] = self._tables[idx_b], self._tables[idx_a]
         self._data[idx_a], self._data[idx_b] = self._data[idx_b], self._data[idx_a]
 
+    def reorder_clients(self, order: list[int]) -> None:
+        """Rearrange the drop tabs into *order*, where ``order[i]`` is the old index now at *i*.
+
+        The two-``moveTab`` trick ``swap_clients`` uses does not generalise to an arbitrary
+        permutation, so the tab bar is walked once selection-sort style: for each target
+        position, find where the tab that belongs there currently sits and move it. Tables
+        and backing data are permuted in the same breath, since a table separated from its
+        dict is a client reading another client's drops.
+
+        Refused outright when *order* does not describe the current tab list -- the same
+        bargain ``card_columns.apply_order`` makes, and for the same reason: the column was
+        built from a client list read some moments earlier.
+
+        The selected tab is restored afterwards. The gesture behind this was about player
+        order, not about which drop table the user was reading.
+        """
+        n = len(self._tables)
+        if sorted(order) != list(range(n)):
+            return
+        if order == list(range(n)):
+            return
+
+        selected = self._tabs.currentIndex()
+        bar = self._tabs.tabBar()
+        # positions[j] is the old index of the tab currently sitting at position j.
+        positions = list(range(n))
+        for target, wanted in enumerate(order):
+            source = positions.index(wanted)
+            if source == target:
+                continue
+            bar.moveTab(source, target)
+            positions.insert(target, positions.pop(source))
+
+        self._tables = [self._tables[i] for i in order]
+        self._data = [self._data[i] for i in order]
+        # Pending rebuilds are keyed by client index, which every one of them just changed.
+        self._pending = {order.index(i) for i in self._pending if i in order}
+        if 0 <= selected < n:
+            self._tabs.setCurrentIndex(order.index(selected))
+
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------

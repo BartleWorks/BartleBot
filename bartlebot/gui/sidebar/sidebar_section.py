@@ -207,11 +207,11 @@ def field_label(text: str) -> QLabel:
 
     Returns a ``ThemedTextLabel`` rather than styling a bare ``QLabel``: a factory
     cannot restyle what it has handed back, so the colour would otherwise go stale on
-    every caller — which is exactly what ``ClientWidget`` and ``SidebarField`` were
+    every caller — which is exactly what the player card and ``SidebarField`` were
     doing.
 
     The trailing colon and the fixed horizontal policy are part of the caption: the
-    policy is what holds the label column at a consistent width in ``ClientWidget``'s
+    policy is what holds the label column at a consistent width in ``PlayerCard``'s
     rows, whose value labels are added with stretch.
     """
     lbl = ThemedTextLabel(text + ":", css="font-size: 11px; font-weight: 600;")

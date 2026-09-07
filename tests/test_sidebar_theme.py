@@ -1,6 +1,6 @@
 """The sidebar's themed widgets, and the factory fix behind most of them.
 
-Three of the five classes in this batch — ClientWidget, SidebarField, OptionsSection
+Three of the five classes in this batch — the player card, SidebarField, OptionsSection
 — had no THEME reference of their own. They were stale because they called a factory
 that built a styled label and handed it back, leaving nothing able to restyle the
 instance. Fixing the factory fixed all three without touching them, which is why the
@@ -103,7 +103,7 @@ def test_field_label_still_reads_as_a_caption(qapp, theme):
     """The colon and the fixed width are the caption, not decoration.
 
     Every caller passes a bare word, so the colon has to come from here; and the
-    fixed horizontal policy is what holds the label column steady in ClientWidget's
+    fixed horizontal policy is what holds the label column steady in a player card's
     rows, whose value labels are added with stretch. Both were dropped when this
     factory stopped styling a bare QLabel, and nothing asserted either.
     """

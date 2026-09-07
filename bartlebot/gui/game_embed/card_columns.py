@@ -42,8 +42,8 @@ still surprised people, because nothing said which card was being held. The sort
 only evidence a drag was happening, so what the user saw was the *other* cards moving on
 their own. The gesture is the same one; what was missing was every signal around it:
 
-- a **grip** (``launch_cards.GripHandle``) that says a card can be dragged at all, and is
-  now the only place a drag starts, so the cursor can change exactly where dragging works;
+- a **grip** (``widgets.card_frame.GripHandle``) that says a card can be dragged at all,
+  and now the only place a drag starts, so the cursor can change exactly where it works;
 - the dragged card **lifted out of the layout**, following the pointer continuously and
   leaving a ``_DropPlaceholder`` hole where it came from, instead of snapping a row at a
   time with nothing at all happening in between;
@@ -79,6 +79,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.game_sizing import FitProblem
 from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.launch_cards import AddCard, ProfileCard
+from bartlebot.gui.offscreen_warmup import warm_offscreen_render
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
@@ -362,6 +363,11 @@ class CardColumn(QWidget):
         self._autoscroll = QTimer(self)
         self._autoscroll.setInterval(AUTOSCROLL_INTERVAL_MS)
         self._autoscroll.timeout.connect(self._autoscroll_step)
+        # Fired one turn after the column is first shown; see showEvent. Parented to the
+        # column so a surface closed inside that turn takes it with it.
+        self._warmup = QTimer(self)
+        self._warmup.setSingleShot(True)
+        self._warmup.timeout.connect(self._warm_offscreen_render)
         self._build_ui(title, show_settings_link)
 
     # ------------------------------------------------------------------
@@ -373,17 +379,22 @@ class CardColumn(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
 
-        header = ThemedTextLabel(title)
-        font = header.font()
-        font.setBold(True)
-        header.setFont(font)
-        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(header)
+        # An empty *title* draws no heading and no rule, rather than an empty bold label
+        # above a line that then reads as a stray divider. That is for a column whose
+        # surface already names it: the Players tab's own label says "Players", and a
+        # second heading under it is the panel saying the same word twice.
+        if title:
+            header = ThemedTextLabel(title)
+            font = header.font()
+            font.setBold(True)
+            header.setFont(font)
+            header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(header)
 
-        rule = QFrame()
-        rule.setFrameShape(QFrame.Shape.HLine)
-        rule.setFrameShadow(QFrame.Shadow.Sunken)
-        layout.addWidget(rule)
+            rule = QFrame()
+            rule.setFrameShape(QFrame.Shape.HLine)
+            rule.setFrameShadow(QFrame.Shadow.Sunken)
+            layout.addWidget(rule)
 
         self._banner = _FitBanner(show_link=show_settings_link)
         self._banner.settings_requested.connect(self.settings_requested)
@@ -894,6 +905,28 @@ class CardColumn(QWidget):
         if order == list(range(len(order))):
             return
         self.reordered.emit(order)
+
+    def showEvent(self, event) -> None:
+        """Warm this window's offscreen render path the first time the column appears.
+
+        The lift attaches a drop shadow, which is the first thing in most sessions to
+        render a widget offscreen -- and Qt spends 150-200ms on the *first* one, flushing
+        every layout the window has been holding back for a hidden widget. Left alone,
+        the user pays it between the two mouse moves that start their first drag, which
+        is exactly what it looks like: the card sticks to the column for a moment and
+        then comes free. See ``gui/offscreen_warmup.py``.
+
+        Deferred a turn rather than run here, because a show event is the frame the
+        column is being drawn on and this is 200ms of work that has nothing to do with
+        drawing it. The timer is the column's own, so a surface closed inside that turn
+        takes its warm-up with it instead of firing into a deleted widget.
+        """
+        super().showEvent(event)
+        self._warmup.start(0)
+
+    def _warm_offscreen_render(self) -> None:
+        """The deferred half of :meth:`showEvent`. A no-op once this window is warmed."""
+        warm_offscreen_render(self)
 
     def closeEvent(self, event) -> None:
         """Never leave a closed hand behind on a column that is going away."""
