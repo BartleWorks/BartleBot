@@ -111,6 +111,98 @@ def _launch_config_updates() -> dict[str, str]:
 # and in bartlebot/game_sizing.py.
 _UI_SIZE_TAG = "UISize"
 
+# The two preferences.xml tags a tiled launch overwrites. Resolution is the size the
+# window opens at, and IsFullscreen decides whether the game reads it at all -- a
+# fullscreen client ignores the resolution we wrote, comes up the wrong size, and no
+# longer fits its tile. Both are the user's own settings, so both are captured and put
+# back exactly as <UISize> is.
+_RESOLUTION_TAG = "Resolution"
+_FULLSCREEN_TAG = "IsFullscreen"
+
+
+def _prefs_path():
+    return get_wiz_install() / "Bin" / "preferences.xml"
+
+
+def _read_prefs_field(tag: str) -> str | None:
+    """The text in *tag* in preferences.xml, or None if it is missing or unreadable.
+
+    None rather than a default, for the same reason as :func:`read_ui_size`: "the game
+    did not write one" means there is nothing to restore, and inventing a value would
+    hand the user back a setting they never chose.
+    """
+    try:
+        text = _prefs_path().read_text(encoding="utf-8")
+    except Exception:
+        # Broad: get_wiz_install() raises its own when the install cannot be found, and a
+        # preference nobody can read must not be what stops the app starting or quitting.
+        logger.warning("Could not read preferences.xml to find <%s>", tag, exc_info=True)
+        return None
+    match = re.search(rf"<{tag}\b[^>]*>([^<]*)</\s*{tag}\s*>", text)
+    return None if match is None else match.group(1).strip()
+
+
+def _prefs_update(width: int, height: int) -> dict[str, str]:
+    """The preferences.xml patch for a launch at *width* x *height*.
+
+    Forces windowed mode alongside the resolution: the game only honours <Resolution>
+    when it is not fullscreen, so patching one without the other produces a window at
+    the wrong size and a tile that cannot hold it, with nothing saying why.
+
+    Captures the user's own values here, once, before either is overwritten -- and from
+    *settings* when a capture already exists rather than from the file, because one
+    patched session leaves our values sitting in preferences.xml and re-reading would
+    adopt them as the user's preference, losing theirs for good. Same trap as
+    :func:`_ui_size_update`.
+    """
+    settings = SettingsManager.instance()
+    if settings.original_resolution is None:
+        captured = _read_prefs_field(_RESOLUTION_TAG)
+        if captured:
+            settings.original_resolution = captured
+            settings.save()
+    if settings.original_fullscreen is None:
+        raw = _read_prefs_field(_FULLSCREEN_TAG)
+        try:
+            captured_fullscreen = None if raw in (None, "") else int(raw)
+        except ValueError:
+            captured_fullscreen = None
+        if captured_fullscreen is not None:
+            settings.original_fullscreen = captured_fullscreen
+            settings.save()
+    return {_RESOLUTION_TAG: f"{width}x{height}", _FULLSCREEN_TAG: "0"}
+
+
+def restore_game_prefs() -> None:
+    """Put the user's own resolution and fullscreen mode back, and forget the captures.
+
+    The other half of :func:`_prefs_update`. Called from the same place as
+    :func:`restore_ui_size` -- on quit, and again on the next start in case that quit
+    never came -- and a no-op with nothing captured, so running it twice costs nothing.
+
+    Both captures are kept if the write fails, so the next start tries again rather than
+    leaving the user's game windowed at a tile-sized resolution with nothing left that
+    remembers what it was.
+    """
+    settings = SettingsManager.instance()
+    updates: dict[str, str] = {}
+    if settings.original_resolution is not None:
+        updates[_RESOLUTION_TAG] = settings.original_resolution
+    if settings.original_fullscreen is not None:
+        updates[_FULLSCREEN_TAG] = str(settings.original_fullscreen)
+    if not updates:
+        return
+    try:
+        _patch_xml_fields(_prefs_path(), updates)
+    except Exception:
+        logger.warning(
+            "Could not restore the game's resolution and window mode — will retry on the next start", exc_info=True
+        )
+        return
+    settings.original_resolution = None
+    settings.original_fullscreen = None
+    settings.save()
+
 
 def read_ui_size() -> int | None:
     """The value in ``<UISize>``, or None if it is missing or unreadable.
@@ -185,11 +277,12 @@ def restore_ui_size() -> None:
 def _patch_window_config(width: int, height: int, x: int, y: int) -> None:
     """Set the game window resolution, UI scale and position before launch.
 
-    Wizard101 reads Resolution from preferences.xml and WindowedX/WindowedY/UISize from
-    config.xml on startup.  Uses the same get_wiz_install() path as patch_open_browser().
+    Wizard101 reads Resolution and IsFullscreen from preferences.xml and
+    WindowedX/WindowedY/UISize from config.xml on startup.  Uses the same
+    get_wiz_install() path as patch_open_browser().
     """
     bin_dir = get_wiz_install() / "Bin"
-    _patch_xml_fields(bin_dir / "preferences.xml", {"Resolution": f"{width}x{height}"})
+    _patch_xml_fields(bin_dir / "preferences.xml", _prefs_update(width, height))
     _patch_xml_fields(
         bin_dir / "config.xml",
         {
