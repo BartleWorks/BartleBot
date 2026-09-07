@@ -50,6 +50,41 @@ class SafetyWarning:
     """
 
 
+def _quicksell_enabled(config) -> bool:
+    """Whether this bot's quicksell nodes will sell anything at all.
+
+    Resolved the way ``run()`` resolves it, through ``resolve_options_for`` rather
+    than by reading the option here: the option's node default is null, so its
+    resolved *value* is ``None`` when no level answers, and only the node's own
+    coercion knows that means on. Two readings of "off" would eventually disagree,
+    and this one decides whether the user is warned about a sale.
+    """
+    return bool(quicksell.resolve_options_for(config)["enabled"])
+
+
+def _quicksell_message(config, states, clients, message: str) -> str | None:
+    """The warning quicksell earns on *this* run, or None to drop it.
+
+    A bot with quicksell nodes is not necessarily a bot that sells: ``Enable
+    Quicksell`` can resolve false, and then the node returns SUCCESS without opening
+    anything. Making the user dismiss an irreversible-sale warning before a run with
+    no sale in it is how they learn to click the dialog away — the one habit this
+    dialog cannot afford to teach.
+
+    Who turned it off decides which way that goes. An override or the app setting is
+    the user's own doing and they need no telling, so the warning goes entirely. A
+    bot file that declares it off is not something the user chose or can see from
+    here, so the one sentence that is still true — the backpack fills, then the bank
+    — is shown on its own instead of being lost.
+    """
+    if _quicksell_enabled(config):
+        return message
+    resolution = option_values.option_resolution(config, quicksell.OPTION_ENABLED)
+    if resolution is not None and resolution.source in (bot_options.SOURCE_OVERRIDE, bot_options.SOURCE_APP_SETTING):
+        return None
+    return quicksell.SAFETY_WARNING_DISABLED
+
+
 def _quicksell_details(config, states, clients) -> list[tuple[str, str]]:
     """What quicksell will actually sell, and which level decided each answer.
 
@@ -61,8 +96,18 @@ def _quicksell_details(config, states, clients) -> list[tuple[str, str]]:
     four levels the run will use, and the caption names the one that answered:
     this dialog is the last thing between the user and an irreversible sale, and
     what the bot file says is not the answer.
+
+    When nothing is being sold the table is the switch alone. What the keep list
+    holds and whether pets are spared are answers to a question that is not being
+    asked, and a row per option would bury the one row that explains the rest.
     """
     details: list[tuple[str, str]] = []
+    if not _quicksell_enabled(config):
+        resolution = option_values.option_resolution(config, quicksell.OPTION_ENABLED)
+        if resolution is None:
+            return []
+        return [(quicksell.OPTION_ENABLED, f"No ({resolution.source})")]
+
     for name in (quicksell.OPTION_ENABLED, *quicksell.SELL_FLAG_OPTIONS.values()):
         resolution = option_values.option_resolution(config, name)
         if resolution is None:
@@ -120,6 +165,19 @@ _DETAIL_BUILDERS = {
     "teleport_to_friend": _teleport_to_friend_details,
 }
 
+#: node type -> ``(config, states, clients, message) -> message or None``, where the
+#: message passed in is the ``NodeSpec.safety_warning``. Returning it unchanged is the
+#: default for a node with no entry here; returning None drops the warning for this run.
+#:
+#: This is the answer to "the node is in the bot, but will it do anything?", which a
+#: NodeSpec field cannot answer because it is a question about the bot's options. Only
+#: quicksell has an option that switches the node off wholesale; ``relog``,
+#: ``form_group``, ``collect_reagent`` and ``teleport_to_friend`` all act whenever they
+#: are reached, so a warning naming one is always earned.
+_MESSAGE_BUILDERS = {
+    "quicksell": _quicksell_message,
+}
+
 
 def collect_safety_warnings(config: BotConfig, clients: list | None = None) -> list[SafetyWarning]:
     """Return a list of SafetyWarning for every risky node type present in *config*.
@@ -128,6 +186,10 @@ def collect_safety_warnings(config: BotConfig, clients: list | None = None) -> l
     states with the same node_type exist. Coverage is driven by the safety_warning
     field on each NodeSpec — adding a warning for a new node type requires only
     setting that field in the node's NODE_SPEC.
+
+    A node type in ``_MESSAGE_BUILDERS`` gets the last word on its own entry: it may
+    reword the warning for what this run will actually do, or drop it entirely when
+    the node is present but inert (#187).
 
     *clients* is passed to detail builders that resolve something against the live
     clients, such as the wizard name behind a teleport target's player slot. It is
@@ -144,13 +206,19 @@ def collect_safety_warnings(config: BotConfig, clients: list | None = None) -> l
         states = states_by_type.get(node_type, [])
         if not states:
             continue
+        message_builder = _MESSAGE_BUILDERS.get(node_type)
+        message = spec.safety_warning
+        if message_builder:
+            message = message_builder(config, states, clients, message)
+            if message is None:
+                continue
         detail_builder = _DETAIL_BUILDERS.get(node_type)
         details: list[tuple[str, str]] = []
         editable: tuple[str, str] | None = None
         if detail_builder:
             built = detail_builder(config, states, clients)
             details, editable = built if isinstance(built, tuple) else (built, None)
-        warnings.append(SafetyWarning(message=spec.safety_warning, details=details, editable_setting=editable))
+        warnings.append(SafetyWarning(message=message, details=details, editable_setting=editable))
 
     return warnings
 

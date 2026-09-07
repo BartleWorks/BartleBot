@@ -110,6 +110,94 @@ def test_an_empty_keep_list_says_nothing_rather_than_showing_a_blank():
     assert details["Quicksell Keep List"].startswith("(nothing)")
 
 
+def test_the_disabled_sentence_is_the_one_the_dialog_shows_when_nothing_sells():
+    """The full warning ends with it, so the two cannot say different things."""
+    from bartlebot.nodes.utility import quicksell
+
+    assert quicksell.NODE_SPEC.safety_warning.endswith(quicksell.SAFETY_WARNING_DISABLED)
+
+
+def test_quicksell_still_warns_when_enabled_resolves_true():
+    config = _config({"node_type": "quicksell", "params": {}})
+
+    warnings = collect_safety_warnings(config)
+
+    assert len(warnings) == 1
+    assert "locked any valuable items" in warnings[0].message
+    assert dict(warnings[0].details)["Enable Quicksell"].startswith("Yes")
+
+
+def test_the_users_own_override_turning_quicksell_off_removes_the_warning():
+    """Nothing is sold, so a sale warning has nothing to say — and a dialog that fires on
+    runs with no risk is one the user learns to click straight through."""
+    config = _config({"node_type": "quicksell", "params": {}})
+    SettingsManager.instance().set_option_override(config.id, "Enable Quicksell", False)
+
+    assert collect_safety_warnings(config) == []
+
+
+def test_turning_quicksell_off_in_settings_removes_the_warning():
+    SettingsManager.instance().set_general("default_quicksell_enabled", False)
+    config = _config({"node_type": "quicksell", "params": {}})
+
+    assert collect_safety_warnings(config) == []
+
+
+def test_an_override_turning_quicksell_back_on_outranks_the_app_setting():
+    SettingsManager.instance().set_general("default_quicksell_enabled", False)
+    config = _config({"node_type": "quicksell", "params": {}})
+    SettingsManager.instance().set_option_override(config.id, "Enable Quicksell", True)
+
+    warnings = collect_safety_warnings(config)
+
+    assert len(warnings) == 1
+    assert "locked any valuable items" in warnings[0].message
+
+
+def test_a_bot_that_declares_quicksell_off_keeps_the_sentence_that_is_still_true():
+    """The user did not choose this one and cannot see it from here, so the cost of a long
+    farm with no selling — backpack, then bank — is still worth saying."""
+    from bartlebot.nodes.utility import quicksell
+
+    config = _config(
+        {"node_type": "quicksell", "params": {}},
+        options=[{"name": "Enable Quicksell", "type": "bool", "default": False}],
+    )
+
+    warnings = collect_safety_warnings(config)
+
+    assert len(warnings) == 1
+    assert warnings[0].message == quicksell.SAFETY_WARNING_DISABLED
+    assert warnings[0].details == [("Enable Quicksell", "No (Bot default)")]
+
+
+def test_a_disabled_quicksell_does_not_drag_the_rest_of_the_table_along():
+    config = _config(
+        {"node_type": "quicksell", "params": {}},
+        options=[
+            {"name": "Enable Quicksell", "type": "bool", "default": False},
+            {"name": "Quicksell Keep List", "type": "drop_keep_list", "default": ["Amber"]},
+        ],
+    )
+
+    details = dict(collect_safety_warnings(config)[0].details)
+
+    assert set(details) == {"Enable Quicksell"}
+
+
+def test_a_suppressed_quicksell_leaves_the_other_warnings_alone():
+    config = _config(
+        {"node_type": "quicksell", "params": {}},
+        {"node_type": "collect_reagent", "params": {"zone": "Z", "entity_name": "Fungus"}},
+    )
+    SettingsManager.instance().set_option_override(config.id, "Enable Quicksell", False)
+
+    warnings = collect_safety_warnings(config)
+
+    assert len(warnings) == 1
+    assert "reagent" in warnings[0].message.lower()
+
+
 def test_quicksell_details_are_listed_once_however_many_nodes_there_are():
     """The settings are the bot's now, not any one state's, so prefixing them with a
     state label would say they could differ between the two — they cannot."""

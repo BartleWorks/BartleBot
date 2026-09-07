@@ -70,6 +70,17 @@ SELL_FLAG_DEFAULTS: dict[str, bool] = {
 #: which is what lets one answer cover every quicksell node in a bot.
 PARAM_SCHEMA: list[ParamField] = []
 
+#: The one part of the safety warning that is still true when nothing is sold.
+#:
+#: Kept apart so the two readers cannot drift: the full warning below ends with it,
+#: and the safety dialog shows it *alone* when a bot the author disabled quicksell
+#: in is run -- the sale the rest of the warning is about is not going to happen,
+#: but a backpack quietly filling over a long unattended farm still is.
+SAFETY_WARNING_DISABLED = (
+    "With Enable Quicksell off nothing is sold: the backpack fills, further drops overflow "
+    "into your shared bank, and once that is full too only Crowns items are kept."
+)
+
 NODE_SPEC = NodeSpec(
     description=(
         "Checks if the main backpack or jewel pouch is full. "
@@ -157,9 +168,7 @@ NODE_SPEC = NodeSpec(
         "Ensure that you have locked any valuable items or have added them to the keep list in "
         "Setup. "
         "Pets are the exception: the quicksell window lists them by nickname, so the keep list "
-        "cannot spare one — turn Sell Pets off to keep your pets. "
-        "With Enable Quicksell off nothing is sold: the backpack fills, further drops overflow "
-        "into your shared bank, and once that is full too only Crowns items are kept."
+        "cannot spare one — turn Sell Pets off to keep your pets. " + SAFETY_WARNING_DISABLED
     ),
 )
 
