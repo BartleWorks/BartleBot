@@ -53,7 +53,7 @@ def stored():
 
 
 def _tick(dialog, keys: list[str]) -> None:
-    """Tick *keys* in the real popup, opened the way the Add card opens it.
+    """Tick *keys* in the real popup, opened the way the Add button opens it.
 
     Driven through an actual ``PickerPopup`` rather than by calling the dialog's slot,
     because half of what these tests are about is that the popup is built from the
@@ -61,7 +61,7 @@ def _tick(dialog, keys: list[str]) -> None:
     """
     dialog.open_account_picker()
     popup = dialog.account_picker
-    assert popup is not None, "the Add card should have opened a picker"
+    assert popup is not None, "the Add button should have opened a picker"
     popup.selection_changed.emit(list(keys))
 
 
@@ -174,7 +174,7 @@ def test_the_cross_removes_the_account_from_both_controls(qapp, screen, stored):
     assert dlg.selected_usernames == [ONE, THREE]
     assert len(dlg.accounts_column.cards) == 2
     # And the picker agrees, because it has no opinion of its own to disagree with: it
-    # is built from the membership each time the Add card opens it.
+    # is built from the membership each time the Add button opens it.
     dlg.open_account_picker()
     assert dlg.account_picker.selection() == [ONE, THREE]
 
@@ -261,7 +261,8 @@ def test_the_position_pills_number_the_players(qapp, screen, stored):
 
 def test_an_empty_profile_says_what_it_will_do(qapp, screen, stored):
     """Said rather than refused: a half-built profile is a legitimate thing to close the
-    dialog on, and there is no Add card here to carry the explanation instead."""
+    dialog on, and there is no Add card in the column to carry the explanation instead --
+    the Add button now lives beside it."""
     from bartlebot.gui.settings.profile_editor import EMPTY_PROFILE_HINT
     from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
@@ -272,20 +273,18 @@ def test_an_empty_profile_says_what_it_will_do(qapp, screen, stored):
     assert EMPTY_PROFILE_HINT in hints
 
 
-def test_the_columns_add_card_opens_the_picker(qapp, screen, stored):
-    """Same shape and same place as the Add card on the other two columns: the thing you
-    press to get another row, at the foot of the rows."""
-    from bartlebot.gui.game_embed.launch_cards import AddCard
-    from bartlebot.gui.settings.profile_editor import ADD_CARD_TEXT
+def test_the_add_button_opens_the_picker(qapp, screen, stored):
+    """Beside the column rather than at its foot, so it holds still while the list under
+    it grows and shrinks."""
+    from bartlebot.gui.settings.profile_editor import ADD_BUTTON_TEXT
 
     dlg = ProfileDialog(selected_usernames=[ONE])
-    add_card = dlg.accounts_column.add_card
 
-    assert isinstance(add_card, AddCard)
-    assert add_card.text == ADD_CARD_TEXT
+    assert dlg.add_button.text() == ADD_BUTTON_TEXT
+    assert dlg.accounts_column.add_card is None
     assert dlg.account_picker is None
 
-    dlg.accounts_column.add_requested.emit()
+    dlg.add_button.click()
 
     assert dlg.account_picker is not None
     assert dlg.account_picker.selection() == [ONE]

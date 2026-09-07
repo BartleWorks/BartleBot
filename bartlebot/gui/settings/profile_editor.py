@@ -20,11 +20,11 @@ The picker owns the *set* and the column owns the *order*. That split is the who
   selection **is** the profile's membership. Ticking four accounts is one open of one
   popup, where the old menu was four opens of a menu that closed after each pick and had
   to be rebuilt each time to hide what was already chosen. It also comes with a filter
-  box, which the ``Add ▾`` menu could never have. It opens from the column's own **Add
-  card**, the dashed card at the foot that both other surfaces already carry, rather than
-  from a button beside the column: the column takes the dialog's vertical stretch, so a
-  button under it sits wherever the dialog's bottom happens to be and reads as belonging
-  to the resolution row it lands next to.
+  box, which the ``Add ▾`` menu could never have. It opens from a fixed **Add** button
+  beside the column rather than a card at its foot: a foot-of-the-list card moves every
+  time a tick or a cross changes how many rows are above it, so a popup anchored there
+  drifts out from under itself mid-edit -- the one moment the anchor most needs to hold
+  still. Beside the column, the button never moves regardless of what the list does.
 - The column owns the order, because ``PickerPopup`` reports its selection in section
   order and the order here is *load-bearing* -- it decides which window becomes Player 1.
   So a tick appends, an untick drops in place, and rearranging is the drag the other two
@@ -53,6 +53,13 @@ the Game tab's global resolution is the same control -- so making this one a pop
 either split the two or drag a second surface along. The greyed-out entries and the
 sentence beneath it say the same things they always did, judged against this profile's own
 account count, which is what makes a fourth account visibly cost a resolution tier.
+
+LIST ON THE LEFT, CONTROLS ON THE RIGHT
+
+The Add button and the resolution combo are both things you set once and glance at, not
+things you read a list of, so they share a column of their own beside the cards rather
+than stacking above or below them. That also settles where the Add button lives without
+another rule: it sits with the other control that is not a card, not with the cards.
 """
 
 from __future__ import annotations
@@ -66,7 +73,9 @@ from PyQt6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QHBoxLayout,
     QLineEdit,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -81,11 +90,12 @@ from bartlebot.gui.widgets.picker_popup import PickerPopup, PickerRow, Section, 
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 
-# Wide enough for an account card to draw what it knows. An ``AccountCard`` fits its
-# character line to the width it is given and is allowed three rows of it, so at the 340
-# this dialog used to be every card wore a "+3 more" -- the card's whole reason for
-# existing, truncated by the dialog holding it.
-PROFILE_DIALOG_MIN_WIDTH = 420
+# Wide enough for an account card to draw what it knows, plus the Add button and
+# resolution combo beside it. An ``AccountCard`` fits its character line to the width it
+# is given and is allowed three rows of it, so a column narrower than about 420 wears a
+# "+3 more" on every card -- the card's whole reason for existing, truncated by the
+# dialog holding it -- and the side column beside it needs its own room on top of that.
+PROFILE_DIALOG_MIN_WIDTH = 620
 
 # Tall enough for four cards and the controls around them, four being the account count
 # the resolution ladder is interesting at. Below this the column scrolls immediately and
@@ -96,16 +106,20 @@ PROFILE_DIALOG_MIN_HEIGHT = 480
 #: cards then let the user read rather than count.
 ACCOUNTS_COLUMN_TITLE = "Accounts (in player order)"
 
-#: Shown only while the profile has no accounts at all, beneath the Add card. Says what
-#: the thing being built *is*, the way the other two columns' empty hints do -- the Add
-#: card above it is already the instruction, so a second one here would be the only text
-#: on screen and still say nothing. An empty profile stays saveable either way: a
-#: half-built profile is a legitimate thing to close the dialog on.
+#: Shown only while the profile has no accounts at all, in the empty column. The Add
+#: button is beside the column rather than inside it now, so this is the only thing an
+#: empty column says -- it has to name what the thing being built *is*, the way the other
+#: two columns' empty hints do, rather than leaning on an Add card above it. An empty
+#: profile stays saveable either way: a half-built profile is a legitimate thing to close
+#: the dialog on.
 EMPTY_PROFILE_HINT = "A profile launches its accounts together, in the order you list them here."
 
-#: What the Add card at the foot of the column says, and the popup it opens. The card
-#: says what pressing it does; the popup's own header names what is being chosen.
-ADD_CARD_TEXT = "Add accounts"
+#: What the Add button beside the column says, and the popup it opens. Named as an
+#: action on *this profile* rather than the bare "Add accounts" the column-foot version
+#: used, since standing apart from the list it no longer reads as one of that list's own
+#: rows -- and "Add accounts" alone suggests entering account details again, not choosing
+#: among the ones already stored.
+ADD_BUTTON_TEXT = "Add/remove profile accounts"
 PICKER_TITLE = "Profile accounts"
 
 
@@ -244,8 +258,8 @@ class ProfileDialog(QDialog):
         }
         self._order: list[str] = list(dict.fromkeys(selected_usernames or []))
         # The open account picker, and when the last one closed. The second is the same
-        # guard ``PickerButton`` carries: a click on the Add card while the popup is up
-        # dismisses the popup and is then delivered to the card, which would open a
+        # guard ``PickerButton`` carries: a click on the Add button while the popup is up
+        # dismisses the popup and is then delivered to the button, which would open a
         # second one on top of the first.
         self._picker: PickerPopup | None = None
         self._picker_closed_at: float | None = None
@@ -257,16 +271,24 @@ class ProfileDialog(QDialog):
         form.addRow("Profile name:", self._name_edit)
         layout.addLayout(form)
 
-        # The Add card opens the picker rather than an account editor. Same shape as the
-        # other two columns and the same place in the reading order — the thing you press
-        # to get another row, at the foot of the rows. No "Change resolution" link on the
-        # banner: the combo it would point at is in this dialog.
-        self._column = CardColumn(
-            ACCOUNTS_COLUMN_TITLE, EMPTY_PROFILE_HINT, add_text=ADD_CARD_TEXT, show_settings_link=False
-        )
-        self._column.add_requested.connect(self.open_account_picker)
+        # List on the left, controls on the right -- see the module docstring. No Add
+        # card at the column's own foot and no "Change resolution" link on its banner:
+        # the Add button and the resolution combo it would point at are both in the side
+        # column beside it.
+        content = QHBoxLayout()
+        self._column = CardColumn(ACCOUNTS_COLUMN_TITLE, EMPTY_PROFILE_HINT, show_settings_link=False)
         self._column.reordered.connect(self._on_reordered)
-        layout.addWidget(self._column, 1)
+        content.addWidget(self._column, 1)
+
+        side = QVBoxLayout()
+        self._add_button = QPushButton(ADD_BUTTON_TEXT)
+        self._add_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        # Not the dialog's default button: Qt hands that to the first ``autoDefault``
+        # button built, which would otherwise be this one rather than OK, and Enter is
+        # supposed to accept the dialog, not open a popup on top of it.
+        self._add_button.setAutoDefault(False)
+        self._add_button.clicked.connect(self.open_account_picker)
+        side.addWidget(self._add_button)
 
         res_form = QFormLayout()
         self._res_combo = QComboBox()
@@ -281,11 +303,15 @@ class ProfileDialog(QDialog):
                     break
 
         res_form.addRow("Resolution:", self._res_combo)
-        layout.addLayout(res_form)
+        side.addLayout(res_form)
 
         self._res_hint = ThemedTextLabel("", css="font-size: 11px;")
         self._res_hint.setWordWrap(True)
-        layout.addWidget(self._res_hint)
+        side.addWidget(self._res_hint)
+        side.addStretch(1)
+        content.addLayout(side)
+
+        layout.addLayout(content, 1)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
@@ -299,14 +325,17 @@ class ProfileDialog(QDialog):
     # ------------------------------------------------------------------
 
     def open_account_picker(self) -> None:
-        """Show the account picker under the column's Add card.
+        """Show the account picker under the Add button.
+
+        Anchored to the button rather than anything in the column: the column's row count
+        changes on every tick and every cross, and an anchor inside it would drift out
+        from under the popup mid-edit. The button's own position never moves.
 
         Built from scratch on every open, like every other ``PickerPopup``: its rows carry
         roster counts, and rebuilding a handful of widgets is nothing next to keeping a
         second copy of the membership that could disagree with ``_order``.
         """
-        anchor = self._column.add_card
-        if anchor is None or not should_open(time.monotonic(), self._picker_closed_at):
+        if not should_open(time.monotonic(), self._picker_closed_at):
             return
         popup = PickerPopup(
             PICKER_TITLE,
@@ -318,7 +347,7 @@ class ProfileDialog(QDialog):
         popup.selection_changed.connect(self._on_picker_changed)
         popup.closed.connect(self._on_picker_closed)
         self._picker = popup
-        popup.popup_at(anchor)
+        popup.popup_at(self._add_button)
 
     def _on_picker_closed(self) -> None:
         self._picker = None
@@ -331,9 +360,8 @@ class ProfileDialog(QDialog):
         membership. Every route in — the picker, a card's cross, a drag, and the initial
         load — ends here, which is what keeps the column and the picker from disagreeing.
 
-        The column is rebuilt whole, so the Add card the open popup was anchored against
-        is replaced under it. That is safe because the popup is parented to the *dialog*:
-        anchoring is a position taken once at open, not a reference the popup keeps.
+        The column is rebuilt whole while a popup may be open above it: safe because the
+        popup is anchored to the Add button, not to anything the rebuild touches.
         """
         self._order = list(order)
         self._rebuild_column()
@@ -429,6 +457,11 @@ class ProfileDialog(QDialog):
     def account_picker(self) -> PickerPopup | None:
         """The open account picker, or None while it is closed."""
         return self._picker
+
+    @property
+    def add_button(self) -> QPushButton:
+        """The button that opens the account picker. Public so a test can drive it."""
+        return self._add_button
 
     @property
     def resolution(self) -> tuple[int, int] | None:
