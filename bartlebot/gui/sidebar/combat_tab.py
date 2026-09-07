@@ -278,7 +278,9 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
             # showing a widget before it has a parent).
             content = QWidget()
             content_layout = QVBoxLayout(content)
-            content_layout.setContentsMargins(0, 0, 0, 4)
+            # Past the arrow's own width plus the row's spacing, so the card
+            # list lines up under "P1:" rather than under the arrow glyph.
+            content_layout.setContentsMargins(DISCLOSURE_PX + row_layout.spacing(), 0, 0, 4)
             content_layout.setSpacing(2)
             content.setVisible(False)
 
