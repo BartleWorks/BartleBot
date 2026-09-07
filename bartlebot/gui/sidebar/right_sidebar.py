@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QEvent, pyqtSignal
-from PyQt6.QtWidgets import QScrollArea, QTabWidget, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QTabWidget, QVBoxLayout, QWidget
 
 from bartlebot.game_sizing import SIDEBAR_MIN_HEIGHT
 from bartlebot.gui import screen_fit
@@ -49,9 +49,14 @@ class RightSidebar(QTabWidget):
         super().__init__(parent)
         # The arithmetic's term, set explicitly so it is the floor Qt enforces -- see the
         # same call in LeftSidebar, and "The panel floors" in game_sizing.py. Wider than
-        # the left one because the player card's tool row does not shrink, and *measured*
-        # rather than fixed because how wide it needs to be is font metrics: the same
-        # three buttons want 300px at 100% system text and 375 at 125%.
+        # the left one, and *measured* rather than fixed because how wide it needs to be is
+        # font and style metrics: a labelled tool button wants 300px of panel at 100%
+        # system text and 375 at 125%.
+        #
+        # The row it was measured from is gone -- #204's player card carries icon verbs and
+        # elided rows in its place -- and the measurement stays exactly as it was, now a
+        # conservative bound rather than a tight one. Lowering it to match would move the
+        # resolution ladder in docs/WINDOW_SIZING.md, which is a different change.
         self._apply_width_floor()
 
         self.clients = ClientSection()
@@ -60,16 +65,15 @@ class RightSidebar(QTabWidget):
         self.log_panel = LogPanel()
 
         # ── Players tab ─────────────────────────────────────────
-        players_content = QWidget()
-        players_vbox = QVBoxLayout(players_content)
+        # ClientSection goes in unwrapped, exactly as DropSection does below: its card
+        # column scrolls internally, and a second scroll area around it would produce two
+        # competing scrollbars -- one for the column and one for the page holding it, both
+        # live, neither covering the whole content.
+        players_page = QWidget()
+        players_vbox = QVBoxLayout(players_page)
         players_vbox.setContentsMargins(8, 8, 8, 8)
         players_vbox.setSpacing(4)
-        players_vbox.addWidget(self.clients)
-        players_vbox.addStretch()  # keeps the cards top-aligned
-
-        players_scroll = QScrollArea()
-        players_scroll.setWidget(players_content)
-        players_scroll.setWidgetResizable(True)
+        players_vbox.addWidget(self.clients, 1)
 
         # ── Drops tab ───────────────────────────────────────────
         # DropSection goes in unwrapped: its tables scroll internally, and a second
@@ -82,7 +86,7 @@ class RightSidebar(QTabWidget):
         drops_vbox.addWidget(self.possible_drops)
         drops_vbox.addWidget(self.drops, 1)
 
-        self.addTab(players_scroll, "Players")  # _PLAYERS_TAB = 0
+        self.addTab(players_page, "Players")  # _PLAYERS_TAB = 0
         self.addTab(drops_page, "Drops")  # _DROPS_TAB   = 1
         self.addTab(self.log_panel, "Log")  # _LOG_TAB     = 2
 

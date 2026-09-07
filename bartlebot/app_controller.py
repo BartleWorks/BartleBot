@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
     from bartlebot.bot.strategy_models import DeckData
 
-#: What ClientWidget shows for a zone it could not read; never a real zone name.
+#: What a PlayerCard shows for a zone it could not read; never a real zone name.
 _ZONE_PLACEHOLDER = "—"
 
 
@@ -218,8 +218,16 @@ class AppController(QObject):
             lambda active, unhooked: w.right_sidebar.clients.set_all_clients(active, unhooked)
         )
 
-        # Reorder buttons in sidebar → swap client positions
-        w.right_sidebar.clients.swap_requested.connect(self._client_manager.swap_clients)
+        # Dragging a player card in the sidebar → reorder the whole client list at once.
+        # A permutation, not a swap: decomposing one drag into transpositions would rebuild
+        # the sidebar once per pair and put intermediate orders on screen -- see
+        # ClientManager.reorder_clients.
+        w.right_sidebar.clients.reordered.connect(self._client_manager.reorder_clients)
+
+        # Which account a client belongs to, for the colour stripe down its card. Injected
+        # rather than signalled: identities are learned inside the client loop and nothing
+        # announces one arriving, so the section re-asks on each refresh tick.
+        w.right_sidebar.clients.set_account_source(self._client_manager.account_for)
 
         # Unhook/rehook buttons in sidebar → ClientManager
         w.right_sidebar.clients.unhook_requested.connect(

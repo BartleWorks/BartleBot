@@ -373,17 +373,22 @@ class CardColumn(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
 
-        header = ThemedTextLabel(title)
-        font = header.font()
-        font.setBold(True)
-        header.setFont(font)
-        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(header)
+        # An empty *title* draws no heading and no rule, rather than an empty bold label
+        # above a line that then reads as a stray divider. That is for a column whose
+        # surface already names it: the Players tab's own label says "Players", and a
+        # second heading under it is the panel saying the same word twice.
+        if title:
+            header = ThemedTextLabel(title)
+            font = header.font()
+            font.setBold(True)
+            header.setFont(font)
+            header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout.addWidget(header)
 
-        rule = QFrame()
-        rule.setFrameShape(QFrame.Shape.HLine)
-        rule.setFrameShadow(QFrame.Shadow.Sunken)
-        layout.addWidget(rule)
+            rule = QFrame()
+            rule.setFrameShape(QFrame.Shape.HLine)
+            rule.setFrameShadow(QFrame.Shadow.Sunken)
+            layout.addWidget(rule)
 
         self._banner = _FitBanner(show_link=show_settings_link)
         self._banner.settings_requested.connect(self.settings_requested)

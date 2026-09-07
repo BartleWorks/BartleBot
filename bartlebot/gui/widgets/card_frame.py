@@ -183,8 +183,12 @@ class CardMode(Enum):
     #: The Game settings tab. A body click edits, the chrome is pinned open, and a card
     #: that will not fit is noted rather than greyed.
     MANAGE = "manage"
-    #: A row in a list being assembled -- the launch profile editor. The body has no verb
-    #: at all, the chrome is pinned open, and nothing here refuses.
+    #: A card whose body is not a button. The chrome is pinned open and nothing refuses,
+    #: exactly as in MANAGE, and the body has no verb at all -- so no pointing-hand cursor,
+    #: no hover highlight and no ``activated``. Two surfaces mean it: a row in a launch
+    #: profile being assembled, whose verbs are the grip and the cross; and a player card
+    #: in the Players tab, whose verbs are on its face and whose body is four live values
+    #: with nothing to open. Named for the first and defined by the property both share.
     MEMBER = "member"
 
 
@@ -417,7 +421,7 @@ class CardFrame(ThemedMixin, QWidget):
     # The frame and its gutter
     # ------------------------------------------------------------------
 
-    def _build_frame(self, what: str) -> QVBoxLayout:
+    def _build_frame(self, what: str, *, draggable: bool = True) -> QVBoxLayout:
         """Lay out the handle and the card frame, and hand back the frame's own layout.
 
         Every card is built into this rather than into itself, so that the grip is beside
@@ -426,11 +430,22 @@ class CardFrame(ThemedMixin, QWidget):
         to its left is transparent and holds only the handle.
 
         *what* names the list a drag would reorder, for the handle's tooltip.
+
+        *draggable* is False for a card that is not in an ordered list at all -- an
+        unhooked player, which sits outside the run ``ClientManager`` keeps contiguous.
+        The gutter stays, holding a spacer of exactly the handle's width: a card built
+        without one is not a card that has moved twenty-two pixels left of the ones above
+        it. ``CardColumn`` reads ``grip`` and skips a card that has none, so this is also
+        what makes such a card undraggable rather than merely unlabelled -- the same
+        arrangement ``AddCard`` uses for the column's terminator.
         """
         row = QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(_GRIP_GAP)
-        row.addWidget(self._make_grip(what), 0)
+        if draggable:
+            row.addWidget(self._make_grip(what), 0)
+        else:
+            row.addSpacing(_GRIP_WIDTH)
         row.addWidget(self._body, 1)
 
         inner = QVBoxLayout(self._body)

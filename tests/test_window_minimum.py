@@ -51,19 +51,47 @@ _SETUP_CONTENT_MARGINS_PX = 16
 
 
 class _FakeClient:
-    """Enough of a client for a ``ClientWidget`` to be built against it.
+    """Enough of a client for a ``PlayerCard`` to be built against it.
 
     The card reads the rest of what it shows asynchronously, on a refresh the suite never
-    spins an event loop for, so its width is settled by the layout alone.
+    spins an event loop for, so its width is settled by the layout alone. ``window_handle``
+    is what ``ClientSection`` keys its cards by across a rebuild, so two of these must not
+    share one — a colliding pair would be re-used as a single card and this would measure
+    a column of one.
     """
 
     process_id = 1234
     title = "Wizard101"
 
+    _next_handle = 0
+
+    def __init__(self) -> None:
+        type(self)._next_handle += 1
+        self.window_handle = type(self)._next_handle
+
 
 # Enough of the ladder to cover both ends and the size that broke: the widest offered
 # rung, a stock one, and the smallest thing on the list.
 _RESOLUTIONS = [(2560, 1440), (1280, 720), min(VALID_RESOLUTIONS, key=lambda r: r[0] * r[1])]
+
+
+def _player_card_needs(sidebar: RightSidebar) -> int:
+    """How wide the sidebar has to be for the first player card to draw uncropped.
+
+    Measured from the **card**, not from ``ClientSection``. The section's own size hint
+    stops at the ``CardColumn``'s scroll area, which does not propagate its content's
+    width — 166px for a card wanting 232 — so a floor asserted against the section is a
+    floor asserted against nothing at all. That non-propagation is the whole reason this
+    test exists: nothing upstream pushes back, so the card runs off the panel rather than
+    being squeezed or scrolled to.
+
+    The terms beyond the card are the ones no widget reports: the players page's own
+    margins, the column's vertical scrollbar (in the viewport once there is a second
+    card), and the tab widget's frame.
+    """
+    card = sidebar.clients.cards[0]
+    scrollbar = sidebar.clients.column.scroll_area.verticalScrollBar()
+    return card.sizeHint().width() + _PLAYERS_CONTENT_MARGINS_PX + scrollbar.sizeHint().width() + _TAB_CHROME_PX
 
 
 def _row_floor(row: QBoxLayout) -> int:
@@ -277,13 +305,13 @@ def test_the_keep_list_filter_row_fits_the_left_sidebar_under_every_available_st
 def test_the_player_card_fits_the_right_sidebar_at_its_floor(qapp):
     """A floor is only worth having at a width the panel is still usable at.
 
-    The card's text lines already elide, so what sets its width is the tool row —
-    ``Entities``, ``UI Tree`` and ``Unhook`` side by side. A ``QPushButton`` carries a
-    ``Minimum`` size policy, which has no shrink flag, so those three never render below
-    their own size hints; and a ``QScrollArea`` does not propagate its content's minimum,
-    so nothing upstream pushes back. The row therefore runs off the panel rather than
-    being squeezed or scrolled to, which is what a 300px-wide sidebar was doing to
-    ``Unhook`` in the report this came from.
+    The card's text rows all elide, so what sets its width is the pair of freecam buttons
+    and the three icon verbs beside them. A ``QPushButton`` carries a ``Minimum`` size
+    policy, which has no shrink flag, so those never render below their own size hints;
+    and a ``QScrollArea`` does not propagate its content's minimum, so nothing upstream
+    pushes back. The row therefore runs off the panel rather than being squeezed or
+    scrolled to, which is what a 300px-wide sidebar was doing to ``Unhook`` in the report
+    this came from.
 
     Measured against the card's natural width for that reason, with two of them so the
     vertical scrollbar is in the viewport and counted, and against the floor *this machine*
@@ -292,20 +320,15 @@ def test_the_player_card_fits_the_right_sidebar_at_its_floor(qapp):
     this asserts nothing. It once did not — the floor scaled on the text height only, and
     CI, which resolves the ``windows11`` style where a button's minimum is 81px rather
     than 75, needed 303px inside the 300 it was promised.
+
+    The floor itself did not move when #204 replaced the labelled tool row with icon
+    verbs. The card only ever needs less than it did, so the margin here got wider rather
+    than the number getting smaller — see ``RightSidebar._apply_width_floor``.
     """
     sidebar = RightSidebar()
     sidebar.clients.set_all_clients([_FakeClient(), _FakeClient()], [])
-    players_tab = sidebar.widget(_PLAYERS_TAB)
 
-    needed = (
-        sidebar.clients.sizeHint().width()
-        + _PLAYERS_CONTENT_MARGINS_PX
-        + 2 * players_tab.frameWidth()
-        + players_tab.verticalScrollBar().sizeHint().width()
-        + _TAB_CHROME_PX
-    )
-
-    assert needed <= screen_fit.right_sidebar_floor()
+    assert _player_card_needs(sidebar) <= screen_fit.right_sidebar_floor()
 
 
 def test_the_player_card_fits_the_right_sidebar_under_every_available_style(qapp):
@@ -329,17 +352,8 @@ def test_the_player_card_fits_the_right_sidebar_under_every_available_style(qapp
             qapp.setStyle(style)
             sidebar = RightSidebar()
             sidebar.clients.set_all_clients([_FakeClient(), _FakeClient()], [])
-            players_tab = sidebar.widget(_PLAYERS_TAB)
 
-            needed = (
-                sidebar.clients.sizeHint().width()
-                + _PLAYERS_CONTENT_MARGINS_PX
-                + 2 * players_tab.frameWidth()
-                + players_tab.verticalScrollBar().sizeHint().width()
-                + _TAB_CHROME_PX
-            )
-
-            assert needed <= screen_fit.right_sidebar_floor(), f"{name} style"
+            assert _player_card_needs(sidebar) <= screen_fit.right_sidebar_floor(), f"{name} style"
     finally:
         qapp.setStyle(QStyleFactory.create(original))
 
