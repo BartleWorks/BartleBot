@@ -74,13 +74,14 @@ dependency on the game being installed at a guessable path. Extract what you nee
 into a checked-in snapshot instead, as `tools/dump_name_tables.py` does for
 `bartlebot/data/name_tables.json`, and regenerate it when the game adds entries.
 
-The three snapshots and their tools:
+The snapshots and their tools:
 
 | snapshot | tool | regenerate when |
 |---|---|---|
 | `data/name_tables.json` | `dump_name_tables.py` | the game adds name entries |
 | `data/dialog_captions.json` | `dump_dialog_captions.py` | a modal is reworded, or a key is added to `KNOWN_KEYS` |
 | `data/world_names.json` | `dump_world_names.py` | a world is added or renamed in any locale |
+| `data/spell_names.json` | `dump_spell_names.py` | a spell is added or renamed |
 
 `WorldNames.lang` is worth knowing about on its own, because its key **is** the world
 segment `zone_name()` returns — `WizardCity`, `DragonSpire`, `MooShu` — and its value is
@@ -94,6 +95,50 @@ WorldNames entries and both have GameData wads; nothing separates them. So
 `worlds.SPIRAL_DOOR_WORLDS` is curated by hand, every exclusion is named with its reason,
 and `test_worlds.py` checks each entry against the snapshot. Guessing a rule here got
 Darkmoor wrong once already.
+
+## Reading a field out of a BINd file: use `katsuba`, not a byte scan
+
+Every game object under `Root.wad` (`Spells/`, `ObjectData/`, etc.) is a `BINd`-
+prefixed binary blob — a serialized `PropertyClass`, not text. Pulling one named
+field out of it without a real deserializer means guessing at a marker in the raw
+bytes, and that guess can silently read the wrong field: `dump_spell_names.py`
+originally found a spell's display-name langcode by searching for the first
+literal `b"Spells_"` and reading the length byte before it, which assumes
+`m_displayName` is always the first localized string in the blob. It isn't —
+field order in the serialized bytes isn't fixed, so for some templates
+`m_description`'s langcode came first and got misread as the name (1457 spells
+got their combat-log template text — `"$eA$ $dT_image$$Damage_image$..."` — as
+their "display name" before this was caught).
+
+[`katsuba`](https://pypi.org/project/katsuba/) is a real BINd deserializer — the
+same one the wizdb/Kimerith-WindHammer Discord-bot toolchain uses — and it reads
+straight off `tools/r800294_WizardDev.json`, the wiztype dump already checked in
+for `typedump.py`, so no separate type dump is needed:
+
+```python
+from katsuba.op import STATEFUL_FLAGS, Serializer, SerializerOptions, TypeList
+from katsuba.wad import Archive
+
+archive = Archive.mmap(str(wad_path))
+types = TypeList.open("tools/r800294_WizardDev.json")
+opts = SerializerOptions()
+opts.flags = STATEFUL_FLAGS
+opts.shallow = False
+opts.skip_unknown_types = True
+ser = Serializer(opts, types)
+
+data = archive["Spells/Tiered Spells/Novus Storm - T05 - A.xml"]
+if data.startswith(b"BINd"):
+    data = data[4:]
+obj = ser.deserialize(data)
+obj.get("m_displayName")  # -> b"Spells_00003940", by name, not position
+```
+
+`tools/dump_spell_names.py` is the worked example. It's a dev-only dependency
+(`uv add --group dev katsuba`) — nothing at runtime reads a WAD, per the rule
+above — so reach for it whenever a new dump tool needs a specific field off a
+`BINd` object rather than an ordered `<Thing>.xml` / `.lang` pair; save the
+marker-scanning approach for cases `katsuba` genuinely can't cover.
 
 ## What neither source answers: window layout
 

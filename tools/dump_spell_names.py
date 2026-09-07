@@ -11,24 +11,28 @@ WHERE THE DATA COMES FROM
     named after its internal name exactly: ``Spells/Tiered Spells/Novus Storm -
     T05 - A.xml`` decodes to the template whose ``name()`` is "Novus Storm - T05
     - A". So the WAD path is the join key -- no deserializer needed to find
-    *which* template a file is, only to pull one field out of it.
+    *which* template a file is.
 
-    That field is the display-name langcode (e.g. "Spells_00003940"), which
-    ``get_langcode_name`` then resolves via ``Locale/en-US/Spells.lang`` -- the
-    same two-step lookup ``CombatCard.display_name`` does against a live client
-    (wizwalker/wizwalker/combat/card.py), just against the archive instead of
-    memory. That's what makes this safe to precompute: nothing here depends on
-    a connected client, so it works for decks belonging to characters that are
-    not currently running.
+    A deserializer *is* needed to find the right *field*, though.
+    ``katsuba`` (the same library the wizdb/Kimerith-WindHammer toolchain uses,
+    and already used by ``wizwalker/examples/read_deck.py`` in our fork) reads
+    a spell's BINd bytes against ``tools/r800294_WizardDev.json`` -- the wiztype
+    dump already checked in for ``typedump.py`` -- and returns a real object with
+    ``m_displayName``, the exact field ``CombatCard.display_name`` reads from a
+    live client (wizwalker/wizwalker/combat/card.py). That value is a langcode
+    (e.g. "Spells_00003940"), which ``get_langcode_name`` then resolves via
+    ``Locale/en-US/Spells.lang``.
 
-    The field is pulled without a full wiztype deserializer: each BINd file
-    encodes a string as a one-byte length (twice the character count) followed
-    by that many ASCII bytes, so the langcode is found by searching for the
-    literal b"Spells_" marker and reading the length byte immediately before it.
-    Confirmed against ~18,000 files; the minority with no match (treasure
-    cards, mob-only and housing/cantrip effects, pet templates with no player-
-    facing name) are simply omitted -- callers fall back to the internal name
-    for anything not in the snapshot, which is the correct answer for those too.
+    An earlier version of this tool skipped the deserializer: it searched the
+    raw bytes for the first literal ``b"Spells_"`` and read the length byte
+    immediately before it, assuming that would be ``m_displayName``. It usually
+    was, but field order in the serialized bytes is not fixed -- for
+    "MonsterMash_Trainable - T02 - B", ``m_description``'s langcode sits at byte
+    offset 74 and the real ``m_displayName``'s at offset 107, so the byte scan
+    silently returned the description's template text (things like
+    "$eA$ $dT_image$$Damage_image$...") as the "name" for 1457 spells, and missed
+    2332 more that it happened not to match at all. Reading the named field
+    directly does not have this failure mode.
 
 WHY A SNAPSHOT IS SAFE
     Same reasoning as tools/dump_name_tables.py: the app does not read Root.wad
@@ -41,6 +45,7 @@ WHY A SNAPSHOT IS SAFE
 USAGE
     uv run python tools/dump_spell_names.py
     uv run python tools/dump_spell_names.py --wad "D:/Games/Wizard101/Data/GameData/Root.wad"
+    uv run python tools/dump_spell_names.py --types tools/r800294_WizardDev.json
 """
 
 from __future__ import annotations
@@ -52,63 +57,56 @@ import sys
 from datetime import date
 from pathlib import Path, PurePosixPath
 
+from katsuba.op import STATEFUL_FLAGS, Serializer, SerializerOptions, TypeList
+from katsuba.wad import Archive
 from wizwalker.file_readers.cache_handler import CacheHandler
-from wizwalker.file_readers.wad import Wad
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from bartlebot.spell_names import NAMES_PATH  # noqa: E402
 
 DEFAULT_WAD = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData\Root.wad")
-SPELLS_PREFIX = "Spells/"
-LANGCODE_MARKER = b"Spells_"
-MAX_LANGCODE_LEN = 80
+DEFAULT_TYPES = Path(__file__).resolve().parent / "r800294_WizardDev.json"
+SPELLS_GLOB = "Spells/**/*.xml"
 
 
-def extract_langcode(data: bytes) -> str | None:
-    """Pull the display-name langcode out of one spell's BINd data.
-
-    Each string field is a one-byte length (twice the character count) followed by
-    that many raw bytes, so the byte immediately before a "Spells_" match gives its
-    exact extent -- this avoids guessing where the token ends from content alone,
-    which matters because some langcodes end in a word (e.g. "Spells_Fire Elf")
-    rather than digits.
-    """
-    search_from = 0
-    while True:
-        idx = data.find(LANGCODE_MARKER, search_from)
-        if idx == -1:
-            return None
-        search_from = idx + 1
-        if idx == 0:
-            continue
-        length = data[idx - 1] // 2
-        if not 0 < length <= MAX_LANGCODE_LEN or idx + length > len(data):
-            continue
-        candidate = data[idx : idx + length]
-        if not all(32 <= b < 127 for b in candidate):
-            continue
-        try:
-            text = candidate.decode("ascii")
-        except UnicodeDecodeError:
-            continue
-        if text.startswith("Spells_"):
-            return text
+def _decode(value) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
 
 
-async def build_snapshot(wad_path: Path) -> dict:
-    wad = Wad(str(wad_path))
+def _build_serializer(types_path: Path) -> Serializer:
+    types = TypeList.open(str(types_path))
+    opts = SerializerOptions()
+    opts.flags = STATEFUL_FLAGS
+    opts.shallow = False
+    opts.skip_unknown_types = True
+    return Serializer(opts, types)
+
+
+async def build_snapshot(wad_path: Path, types_path: Path) -> dict:
+    archive = Archive.mmap(str(wad_path))
+    ser = _build_serializer(types_path)
     cache_handler = CacheHandler()
-
-    spell_files = [n for n in await wad.names() if n.startswith(SPELLS_PREFIX) and n.endswith(".xml")]
 
     names: dict[str, str] = {}
     skipped = 0
-    for path in spell_files:
+    errors = 0
+    for path in archive.iter_glob(SPELLS_GLOB):
         internal_name = PurePosixPath(path).stem
-        data = await wad.get_file(path)
-        langcode = extract_langcode(data)
-        if langcode is None:
+        try:
+            data = archive[path]
+            if data.startswith(b"BINd"):
+                data = data[4:]
+            obj = ser.deserialize(data)
+            langcode = _decode(obj.get("m_displayName"))
+        except Exception:
+            errors += 1
+            continue
+        if not langcode:
             skipped += 1
             continue
         try:
@@ -123,6 +121,7 @@ async def build_snapshot(wad_path: Path) -> dict:
         "generated": date.today().isoformat(),
         "source": str(wad_path),
         "skipped": skipped,
+        "errors": errors,
         "names": names,
     }
 
@@ -130,19 +129,26 @@ async def build_snapshot(wad_path: Path) -> dict:
 async def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--wad", type=Path, default=DEFAULT_WAD, help="path to Root.wad")
+    ap.add_argument("--types", type=Path, default=DEFAULT_TYPES, help="path to a wiztype types JSON dump")
     ap.add_argument("--out", type=Path, default=NAMES_PATH, help="where to write the snapshot")
     args = ap.parse_args()
 
     if not args.wad.exists():
         print(f"Root.wad not found at {args.wad}; pass --wad")
         return 1
+    if not args.types.exists():
+        print(f"types JSON not found at {args.types}; pass --types")
+        return 1
 
-    snapshot = await build_snapshot(args.wad)
+    snapshot = await build_snapshot(args.wad, args.types)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(snapshot, indent=1, ensure_ascii=False), encoding="utf-8")
 
     print(f"wrote {args.out} ({args.out.stat().st_size // 1024} KB)")
-    print(f"  {len(snapshot['names'])} resolved, {snapshot['skipped']} skipped (no player-facing name)")
+    print(
+        f"  {len(snapshot['names'])} resolved, {snapshot['skipped']} skipped "
+        f"(no player-facing name), {snapshot['errors']} errors"
+    )
     return 0
 
 

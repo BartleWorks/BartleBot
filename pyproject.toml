@@ -26,6 +26,7 @@ dev = [
     "pre-commit>=4.0",
     # Supplies the session-scoped `qapp` fixture the GUI tests share (#189).
     "pytest-qt>=4.5.0",
+    "katsuba>=0.4.0",
 ]
 
 # Forks, not upstream: these carry fixes upstream does not have, including the
