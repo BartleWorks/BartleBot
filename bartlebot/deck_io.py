@@ -62,6 +62,7 @@ from bartlebot.nodes.timing import (
     DECK_CARD_CONFIRM_POLL,
     DECK_CARD_CONFIRM_TIMEOUT,
     DECK_FUSION_CLICK_SETTLE,
+    DECK_FUSION_CLOSE_SETTLE,
     DECK_FUSION_FLYOUT_SETTLE,
     DECK_ITEM_PAGE_SETTLE,
     DECK_ITEM_TOGGLE_SETTLE,
@@ -629,6 +630,58 @@ async def read_item_slots(client, deck_window) -> list[ItemSlot]:
 # ---------------------------------------------------------------------------
 
 
+def _item_active_reader(client, deck_window):
+    """An async callable reading item slot ``index``'s active flag, or None if unreadable.
+
+    Mirrors ``card_counter``: built once and reused for the whole toggle sweep,
+    and rebuilt on the next call if a read fails rather than raising, since a
+    stale control is exactly as recoverable as an unreadable card count. The
+    entry vector holds every item card regardless of which page is on screen,
+    so this confirms a click without needing to be rebuilt when the page turns.
+    """
+    control = None
+    begin = None
+
+    async def read(index: int) -> bool | None:
+        nonlocal control, begin
+        try:
+            if control is None:
+                control = await _control_for(client, deck_window, "ItemSpells")
+                begin, _total = await _entry_vector(control)
+            flag = await control.read_bytes(begin + index * ENTRY_STRIDE + ACTIVE_FLAG_OFFSET, 1)
+        except Exception:
+            logger.debug("Could not read item slot %d while confirming a toggle", index, exc_info=True)
+            control = None
+            return None
+        return flag[0] == ACTIVE_FLAG_ON
+
+    return read
+
+
+async def _await_item_toggle(read_active, index: int, want_active: bool) -> bool:
+    """Poll until item slot ``index`` reads as ``want_active``.  Returns whether it did.
+
+    A click here is exactly as easy to lose as a spell-card click, and used to
+    be trusted after one fixed ``DECK_ITEM_TOGGLE_SETTLE`` pause — the caller
+    would find out only once ``_settle_deck`` timed out, and never retried.
+    This polls the flag directly instead, the same shape as
+    ``_await_card_growth``: an unreadable slot is not evidence the click
+    failed, so it is reported as settled rather than driving a retry that could
+    toggle an already-successful click right back off.
+    """
+    deadline = time.perf_counter() + DECK_CARD_CONFIRM_TIMEOUT
+    readable = False
+    while True:
+        state = await read_active(index)
+        if state is not None:
+            readable = True
+            if state == want_active:
+                return True
+        if time.perf_counter() >= deadline:
+            return not readable
+        await asyncio.sleep(DECK_CARD_CONFIRM_POLL)
+
+
 async def _apply_item_toggles(db, deck_window, plan: list[ItemSlot], total_pages: int) -> None:
     """Click each planned slot, walking the item pages forward exactly once.
 
@@ -636,11 +689,16 @@ async def _apply_item_toggles(db, deck_window, plan: list[ItemSlot], total_pages
     sweep never needs to go back.  Rewinding to page 0 clicks Prev a fixed
     ``total_pages - 1`` times — clicking Prev on the first page is a harmless
     no-op, which is what lets us skip the unreliable is_control_grayed() probe.
+
+    Each click is confirmed against the slot's own active flag, and re-clicked
+    up to ``CARD_CLICK_ATTEMPTS`` times if it does not land — see
+    ``_await_item_toggle``.
     """
     if not plan:
         return
 
     client = db.client
+    read_active = _item_active_reader(client, deck_window)
 
     prev_btn = await _maybe_get_named_window(deck_window, "PrevItemSpells")
     async with client.mouse_handler:
@@ -659,9 +717,25 @@ async def _apply_item_toggles(db, deck_window, plan: list[ItemSlot], total_pages
 
         rect = await db.get_item_spells_rectangle()
         cells = db.divide_rectangle(rect, columns=GRID_COLUMNS, rows=GRID_ROWS)
-        async with client.mouse_handler:
-            await client.mouse_handler.click(*cells[slot.slot_index].center())
-        await asyncio.sleep(DECK_ITEM_TOGGLE_SETTLE)
+        center = cells[slot.slot_index].center()
+        want_active = not slot.active
+
+        settled = False
+        for _attempt in range(CARD_CLICK_ATTEMPTS):
+            async with client.mouse_handler:
+                await client.mouse_handler.click(*center)
+            await asyncio.sleep(DECK_ITEM_TOGGLE_SETTLE)
+            settled = await _await_item_toggle(read_active, slot.index, want_active)
+            if settled:
+                break
+            logger.debug("Item card slot %d ('%s') did not toggle, clicking again", slot.index, slot.name)
+        if not settled:
+            logger.warning(
+                "Item card slot %d ('%s') did not toggle after %d attempt(s)",
+                slot.index,
+                slot.name,
+                CARD_CLICK_ATTEMPTS,
+            )
 
 
 # ---------------------------------------------------------------------------
@@ -1013,6 +1087,10 @@ async def _add_fusion_cards(
             # knowable, so report the lot rather than claim a clean partial.
             skipped.extend(requested)
         finally:
+            # The count that confirmed each click can run ahead of the server
+            # actually committing the card; closing the flyout in that gap has
+            # been observed to drop it. See DECK_FUSION_CLOSE_SETTLE.
+            await asyncio.sleep(DECK_FUSION_CLOSE_SETTLE)
             if await _close_tier_flyout(db):
                 current_page = None  # the page was reopened; where it landed is a guess
 
