@@ -296,21 +296,26 @@ settings window. A settings tab
 reaching back up its parent chain to find the main window would be the coupling this
 avoids.
 
-Worked example, 1080p at the default layout (budget 1304x800), over the ladder rungs:
+Worked example, 1080p at the default layout (budget 1214x800), over the ladder rungs:
 
 | clients | grid | largest that fits | scale |
 |---|---|---|---|
-| 1 | 1x1 | 1280x720 | Huge |
-| 2 | 1x2 | 640x480 | Small |
+| 1 | 1x1 | 960x540 | Large |
+| 2 | 1x2 | 560x420 | Tiny |
 | 3-4 | 2x2 | 534x300 | Micro |
 
 Micro is not an edge case — it is what a four-client 1080p user actually runs.
 
 Three and four land on Micro's **16:9** form, the smallest offered resolution. Ranking is
 by area, so the widescreen form wins there while still fitting the 2x2 grid — 2*(534+12) =
-1092 against a 1304 budget. Two clients keep the 4:3 640x480, which shows more game than
-640x360; the 16:9 forms only ever win where they are genuinely bigger. Note that 640x480
-now reads **Small**, not Regular: it is 4:3, so it pays a ladder step.
+1092 against a 1214 budget. Two clients keep a 4:3 form, which shows more game than the
+16:9 of the same rung; the 16:9 forms only ever win where they are genuinely bigger.
+
+The rungs here are one lower than they used to be, and #199 is why: the left sidebar's
+floor went from a bare 220px to a measured 390, and 170px off the budget costs a solo user
+1280x720 and a pair 640x480. That is intrinsic to any honest floor above ~312px rather
+than an artifact of where this one rounded — the old number simply described a panel whose
+content was overlapping itself.
 
 This is the **inverse** of `SettingsManager.minimum_window_size()`, which derives a window
 minimum from a game size already chosen. Both are kept, and they ask opposite questions:
@@ -334,7 +339,7 @@ Qt holds the window to the larger of the claim and what the layout inside actual
 So every term in it has to be a size the corresponding pane will really go down to:
 
 ```
-width  = LEFT_SIDEBAR_MIN_WIDTH + right_sidebar_floor() + game_w + 2*SPLITTER_HANDLE_PX
+width  = left_sidebar_floor() + right_sidebar_floor() + game_w + 2*SPLITTER_HANDLE_PX
 height = game_h + GAME_PANEL_CHROME_PX + BOTCANVAS_MIN_HEIGHT + MENU_AND_STATUS_PX
          + SPLITTER_HANDLE_PX
 ```
@@ -363,9 +368,9 @@ otherwise a sidebar or the canvas, which have no height and width term respectiv
 the floor instead of the game view. `tests/test_window_minimum.py` holds all of it together,
 including the 4K case above as a regression.
 
-### One of the floors is measured, not fixed
+### The sidebar floors are measured, not fixed
 
-The right sidebar's is. Its player card ends in a row of three buttons — `Entities`,
+Both of them. The right sidebar's player card ends in a row of three buttons — `Entities`,
 `UI Tree`, `Unhook` — and those, their padding and the scrollbar beside them are all font
 metrics: the layout that fits in 300px at 100% system text needs 375 at 125%. A pixel
 constant would have to choose which machine to be wrong on. Pinned low it clips the row on
@@ -395,6 +400,22 @@ different fonts is the same class of bug one level down. `RightSidebar` re-measu
 
 `test_the_player_card_fits_the_right_sidebar_under_every_available_style` sweeps
 `QStyleFactory.keys()` so the question CI was asking gets asked locally too.
+
+**The left sidebar is the same shape of problem** (#199). Most of what it holds elides or
+scrolls — which is what its old 220px constant was justified by — but the quicksell
+keep-list picker's filter row does not: a search field, a category `QComboBox` and a
+`Kept only` `QCheckBox` side by side, and the last two carry a `Minimum` size policy,
+which has no shrink flag. At 220px the checkbox was drawn over the dropdown. So
+`LEFT_SIDEBAR_MIN_WIDTH` is 390 — the row's 293px at the reference metrics plus the option
+gutter, the scroll content margins, the scroll area's frame and its scrollbar — and
+`game_sizing.left_sidebar_floor(text_height, filter_row)` scales it the same way, from
+`gui/screen_fit.left_sidebar_floor()`.
+
+Its probe is built from the *real* widget types, including the actual `SearchLineEdit`
+with its clear button and the widest label the combobox can carry. That is not fussiness:
+a bare `QLineEdit` stood in for the search field first and reported 27px less, which held
+the measured scale at 1.0 under `windows11` while the row it had to hold grew by 10px —
+the identical failure to the one above, found by the identical style sweep.
 
 **Still an estimate on the screen side.** `screen_budget` does *not* subtract
 `GAME_PANEL_CHROME_PX`, the horizontal splitter handle, or the window frame — roughly 78px

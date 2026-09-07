@@ -22,13 +22,16 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QStyleFactory, QWidget
+from PyQt6.QtWidgets import QBoxLayout, QComboBox, QScrollArea, QSizePolicy, QStyleFactory, QWidget
 
 from bartlebot import game_sizing as gs
+from bartlebot.bot.schema import DropModel
 from bartlebot.gui import screen_fit
 from bartlebot.gui.canvas.bot_canvas import BotCanvas
+from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
+from bartlebot.gui.sidebar.option_gutter import BAR_WIDTH_PX, GUTTER_BTN_PX, GUTTER_GAP_PX, GUTTER_TO_BODY_PX
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 
@@ -38,6 +41,13 @@ from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
 _PLAYERS_TAB = 0
 _TAB_CHROME_PX = 8
 _PLAYERS_CONTENT_MARGINS_PX = 16  # RightSidebar's players_vbox, 8 a side
+
+# The left sidebar's equivalent: everything between an option row's body and the panel
+# edge. The gutter is the override bar, the two 20px chrome buttons and the gap to the
+# body; the margins are ``LeftSidebar._wrap``'s content vbox, 8 a side. The scroll area's
+# own frame and scrollbar are measured from the widget rather than named here.
+_GUTTER_PX = BAR_WIDTH_PX + GUTTER_GAP_PX + 2 * GUTTER_BTN_PX + GUTTER_TO_BODY_PX
+_SETUP_CONTENT_MARGINS_PX = 16
 
 
 class _FakeClient:
@@ -54,6 +64,68 @@ class _FakeClient:
 # Enough of the ladder to cover both ends and the size that broke: the widest offered
 # rung, a stock one, and the smallest thing on the list.
 _RESOLUTIONS = [(2560, 1440), (1280, 720), min(VALID_RESOLUTIONS, key=lambda r: r[0] * r[1])]
+
+
+def _row_floor(row: QBoxLayout) -> int:
+    """The narrowest *row* can be laid out at without a widget clipping its neighbour.
+
+    A widget whose horizontal policy carries ``ShrinkFlag`` is taken at its minimum hint
+    and everything else at its natural one, which is what a ``QBoxLayout`` itself does —
+    and is the distinction the whole floor turns on. ``minimumSize()`` on the row would
+    answer with the combobox's own minimum hint, which is an elided label: that is the
+    clipped state #199 reports, not a width anything fits at.
+    """
+    total = row.spacing() * (row.count() - 1)
+    for index in range(row.count()):
+        widget = row.itemAt(index).widget()
+        shrinks = bool(widget.sizePolicy().horizontalPolicy().value & QSizePolicy.PolicyFlag.ShrinkFlag.value)
+        total += (widget.minimumSizeHint() if shrinks else widget.sizeHint()).width()
+    return total
+
+
+def _filter_row_of(picker: DropKeepListWidget) -> QBoxLayout:
+    """The keep-list picker's filter row, found by what is in it rather than by index.
+
+    Its position in the outer column is an implementation detail that has already moved
+    once; being the one row holding the category dropdown is not.
+    """
+    outer = picker.layout()
+    for index in range(outer.count()):
+        row = outer.itemAt(index).layout()
+        if row is None:
+            continue
+        if any(isinstance(row.itemAt(i).widget(), QComboBox) for i in range(row.count())):
+            return row
+    raise AssertionError("the keep-list picker has no filter row")
+
+
+def _keep_list_needs() -> int:
+    """How wide the left sidebar has to be for the keep-list picker's filter row.
+
+    The picker is built against a synthetic drop table rather than a bot's, with the
+    longest category name the shipped library uses and a three-digit count, because the
+    combobox sizes itself to the widest *item in its model* — a picker holding one short
+    label would agree with any floor at all.
+    """
+    drops = [
+        DropModel(name=f"Drop {n}", category=category)
+        for category in ("Treasure Cards", "Reagents", "Snacks")
+        for n in range(120)
+    ]
+    picker = DropKeepListWidget(lambda: drops)
+    picker.refresh()
+    picker.ensurePolished()
+
+    # A scroll area of the sidebar's own kind, for the two numbers that are style metrics
+    # rather than constants: how thick its frame is, and how wide its scrollbar is.
+    scroll = QScrollArea()
+    return (
+        _row_floor(_filter_row_of(picker))
+        + _GUTTER_PX
+        + _SETUP_CONTENT_MARGINS_PX
+        + 2 * scroll.frameWidth()
+        + scroll.verticalScrollBar().sizeHint().width()
+    )
 
 
 def _window_floor(window: MainWindow) -> tuple[int, int]:
@@ -137,10 +209,49 @@ def test_each_sidebar_declares_the_floor_the_arithmetic_budgets_for_it(qapp):
     """Explicitly, because only an explicit minimum wins over a layout's in qSmartMinSize.
 
     A sidebar whose floor came from its content instead would be whatever the widest tab
-    happened to need — 562px for the parameter panel, against the 220px budgeted here.
+    happened to need — 562px for the parameter panel, against the width budgeted here.
     """
-    assert LeftSidebar(QWidget()).minimumSize() == QSize(gs.LEFT_SIDEBAR_MIN_WIDTH, gs.SIDEBAR_MIN_HEIGHT)
+    assert LeftSidebar(QWidget()).minimumSize() == QSize(screen_fit.left_sidebar_floor(), gs.SIDEBAR_MIN_HEIGHT)
     assert RightSidebar().minimumSize() == QSize(screen_fit.right_sidebar_floor(), gs.SIDEBAR_MIN_HEIGHT)
+
+
+def test_the_keep_list_filter_row_fits_the_left_sidebar_at_its_floor(qapp):
+    """The left sidebar's counterpart to the player card, and the subject of #199.
+
+    The panel's floor was a bare 220px, justified by a comment saying its content elides
+    or scrolls. Most of it does. The quicksell keep-list picker's filter row does not: a
+    ``QComboBox`` and a ``QCheckBox`` both carry a ``Minimum`` policy, which has no shrink
+    flag, so at 220px the "Kept only" box was drawn over the dropdown rather than being
+    squeezed or scrolled to.
+
+    Measured against the floor *this machine* reports rather than the constant, for the
+    same reason as the right sidebar: both sides are font and style metrics.
+    """
+    assert _keep_list_needs() <= screen_fit.left_sidebar_floor()
+
+
+def test_the_keep_list_filter_row_fits_the_left_sidebar_under_every_available_style(qapp):
+    """The same assertion, asked of the styles this machine can build.
+
+    Not hypothetical here either: the first probe stood a bare ``QLineEdit`` in for the
+    search field, which reported 27px less than the real one — enough that under
+    ``windows11``, the style CI resolves, the measured scale stayed at 1.0 and the floor
+    never moved off its reference while the row it had to hold grew by 10px.
+
+    The style is process-global, like the font — see "One QApplication per worker" in
+    tests/CLAUDE.md — so it goes back.
+    """
+    original = qapp.style().objectName()
+    try:
+        for name in QStyleFactory.keys():
+            style = QStyleFactory.create(name)
+            if style is None:  # pragma: no cover - a key that will not build
+                continue
+            qapp.setStyle(style)
+
+            assert _keep_list_needs() <= screen_fit.left_sidebar_floor(), f"{name} style"
+    finally:
+        qapp.setStyle(QStyleFactory.create(original))
 
 
 def test_the_player_card_fits_the_right_sidebar_at_its_floor(qapp):
@@ -294,6 +405,45 @@ def test_the_floor_takes_whichever_measurement_asks_for_more():
     assert gs.right_sidebar_floor(16, 81) == 324  # the style wins
 
 
+@pytest.mark.parametrize(
+    ("text_height", "expected"),
+    [
+        (None, gs.LEFT_SIDEBAR_MIN_WIDTH),  # not measured: the reference
+        (16, gs.LEFT_SIDEBAR_MIN_WIDTH),  # the reference height itself
+        (20, 488),  # 125% system text
+        (24, 585),  # 150%
+        (8, gs.LEFT_SIDEBAR_MIN_WIDTH),  # smaller text does not narrow the scrollbar
+    ],
+)
+def test_the_left_floor_grows_with_the_system_text_size(text_height, expected):
+    """Everything in the filter row is text-sized, so all of it moves with the setting."""
+    assert gs.left_sidebar_floor(text_height) == expected
+
+
+@pytest.mark.parametrize(
+    ("filter_row", "expected"),
+    [
+        (None, gs.LEFT_SIDEBAR_MIN_WIDTH),  # not measured: the reference
+        (293, gs.LEFT_SIDEBAR_MIN_WIDTH),  # windowsvista, the reference style
+        (301, 401),  # windows11 — wider comboboxes and checkboxes at the same text height
+        (274, gs.LEFT_SIDEBAR_MIN_WIDTH),  # Fusion, narrower: it does not narrow the panel
+    ],
+)
+def test_the_left_floor_grows_with_the_style_s_control_widths(filter_row, expected):
+    """The half of the row's width that the text height does not predict.
+
+    The same argument as the right sidebar's button minimum, arriving from a combobox and
+    a checkbox instead: at one unchanged text height the row wants 293px under
+    ``windowsvista`` and 301 under ``windows11``.
+    """
+    assert gs.left_sidebar_floor(filter_row_px=filter_row) == expected
+
+
+def test_the_left_floor_takes_whichever_measurement_asks_for_more():
+    assert gs.left_sidebar_floor(24, 293) == 585  # text wins
+    assert gs.left_sidebar_floor(16, 301) == 401  # the style wins
+
+
 def test_the_floor_the_widget_holds_is_the_floor_the_budget_subtracts(qapp):
     """The two must be the same number, or the failure this module is about is back.
 
@@ -306,15 +456,20 @@ def test_the_floor_the_widget_holds_is_the_floor_the_budget_subtracts(qapp):
     bigger.setPointSizeF(original.pointSizeF() * 1.5)
     try:
         qapp.setFont(bigger)
-        sidebar = RightSidebar()
-        floor = screen_fit.right_sidebar_floor()
+        right, left = RightSidebar(), LeftSidebar(QWidget())
+        right_floor, left_floor = screen_fit.right_sidebar_floor(), screen_fit.left_sidebar_floor()
 
-        assert floor > gs.RIGHT_SIDEBAR_MIN_WIDTH  # the font change actually moved it
-        assert sidebar.minimumSize().width() == floor
-        assert SettingsManager.instance().layout_budget((1920, 1080), right_sidebar_floor=floor) == gs.screen_budget(
+        # The font change actually moved them, so the rest asserts something.
+        assert right_floor > gs.RIGHT_SIDEBAR_MIN_WIDTH
+        assert left_floor > gs.LEFT_SIDEBAR_MIN_WIDTH
+        assert right.minimumSize().width() == right_floor
+        assert left.minimumSize().width() == left_floor
+        assert SettingsManager.instance().layout_budget(
+            (1920, 1080), left_sidebar_floor=left_floor, right_sidebar_floor=right_floor
+        ) == gs.screen_budget(
             (1920, 1080),
-            left_sidebar=300,
-            right_sidebar=floor,
+            left_sidebar=left_floor,
+            right_sidebar=right_floor,
             bottom_section=220,
             splitter_handle=gs.SPLITTER_HANDLE_PX,
         )

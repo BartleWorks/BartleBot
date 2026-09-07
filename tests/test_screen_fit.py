@@ -65,7 +65,7 @@ def test_the_bug_this_issue_is_about_is_refused(screen):
 
 def test_the_same_pair_at_a_smaller_tier_is_allowed(screen):
     screen(_1080P)
-    assert screen_fit.profile_fit_problem(_profile(["a", "b"], (640, 480))) is None
+    assert screen_fit.profile_fit_problem(_profile(["a", "b"], (560, 420))) is None
 
 
 def test_the_same_pair_fits_a_4k_screen_untouched(screen):
@@ -77,8 +77,8 @@ def test_the_same_pair_fits_a_4k_screen_untouched(screen):
 def test_a_third_client_can_make_a_fitting_resolution_unfittable(screen):
     """A third client forces a 2x2 grid, which is a whole extra row rather than a column."""
     screen(_1080P)
-    assert screen_fit.fit_problem((640, 480), 2) is None
-    assert screen_fit.fit_problem((640, 480), 3) is not None
+    assert screen_fit.fit_problem((560, 420), 2) is None
+    assert screen_fit.fit_problem((560, 420), 3) is not None
 
 
 def test_an_empty_profile_is_not_reported_as_a_sizing_failure(screen):
@@ -90,9 +90,9 @@ def test_an_empty_profile_is_not_reported_as_a_sizing_failure(screen):
 def test_a_wider_sidebar_can_take_a_resolution_away(screen):
     """The budget is the user's configured layout, not the panel minimums."""
     screen(_1080P)
-    assert screen_fit.fit_problem((640, 480), 2) is None
+    assert screen_fit.fit_problem((560, 420), 2) is None
     SettingsManager.instance().set_general("left_sidebar_width", 700)
-    assert screen_fit.fit_problem((640, 480), 2) is not None
+    assert screen_fit.fit_problem((560, 420), 2) is not None
 
 
 def test_the_largest_fitting_resolution_is_offered_as_a_hint(screen):
@@ -218,7 +218,7 @@ def test_the_game_view_s_minimum_reaches_the_panel_that_sits_in_the_splitter(qap
 def test_the_budget_takes_the_larger_of_the_layout_and_the_live_area(screen):
     screen(_1080P)
     configured, _dpr = screen_fit.budget_for()
-    assert configured == (1304, 800)
+    assert configured == (1214, 800)
 
     wider, _dpr = screen_fit.budget_for(live_area=(1700, 700))
     assert wider == (1700, 800)  # width from the drag, height from the layout
@@ -242,12 +242,12 @@ def test_a_merely_small_window_refuses_nothing_the_screen_could_carry(screen):
     It is also the state every card is built in, before the window has ever been shown.
     """
     screen(_1080P)
-    assert screen_fit.fit_problem((640, 480), 2, None, (200, 100)) is None
+    assert screen_fit.fit_problem((560, 420), 2, None, (200, 100)) is None
 
 
 def test_the_hint_grows_with_the_live_area_too(screen):
     screen(_1080P)
-    assert screen_fit.largest_fitting_resolution(2) == (640, 480)
+    assert screen_fit.largest_fitting_resolution(2) == (560, 420)
     assert screen_fit.largest_fitting_resolution(2, None, (1700, 900)) == (800, 600)
 
 
