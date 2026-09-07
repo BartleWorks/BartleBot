@@ -42,10 +42,12 @@ TAG_GROUPS: dict[str, tuple[str, ...]] = {
     "Activity": (
         "Boss",  # one named boss, repeated
         "Mobs",  # a non-boss mob fight; replaces Boss rather than joining it
-        "Dungeon",
-        "Gauntlet",
+        "Dungeon",  # a full dungeon (more than just a single fight)
+        "Challenge Mode",  # dungeons with Challenge Mode available
+        "Gauntlet",  # housing gauntlets
         "Team-Up",  # joins the fight through Team-Up instead of entering alone
         "Gathering",  # a reagent-node route with no combat, unlike a boss that drops reagents
+        "Training Points",  # a bot that completes training point quests
     ),
 }
 
