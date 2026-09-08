@@ -1,6 +1,6 @@
 """Which game window sits in which grid position, and what its caption says.
 
-WHY THERE ARE TWO NUMBERS (#112 follow-up)
+WHY THERE ARE TWO NUMBERS
 
 A window can be embedded long before a character is in game -- embedding is Win32
 ``SetParent`` and ``ClientTile`` needs an hwnd and nothing else -- and that is the whole
@@ -67,7 +67,7 @@ class TileSlot:
 
     Usually a window. Not always: an account whose launch has started but whose window has
     not appeared yet is a tile with no ``hwnd``, drawn as a pending tile so the launch has
-    a visible shape from the first click (#186).
+    a visible shape from the first click.
     """
 
     slot: int
@@ -157,7 +157,7 @@ def build_tile_slots(
     hooked, so it goes in a trailing slot past the reserved ordering.
 
     A reserved slot whose account is *launching* and has no window yet gets a pending tile
-    rather than being skipped (#186). That is the same branch either way -- the reservation
+    rather than being skipped. That is the same branch either way -- the reservation
     already named the account and the slot before the first process was spawned, which is
     exactly what the launch screen was failing to show. The launch has to be running for it
     to be drawn: a reservation outlives the launch that made it and would otherwise leave a

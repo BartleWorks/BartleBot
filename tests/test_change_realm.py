@@ -102,7 +102,7 @@ async def test_realm_hop_timeout():
 
 
 # ---------------------------------------------------------------------------
-# Dungeon exit warning (issue #84)
+# Dungeon exit warning
 # ---------------------------------------------------------------------------
 
 
@@ -146,7 +146,7 @@ async def test_no_warning_still_re_clicks_go_to_realm():
 
 
 async def test_refusal_from_inside_a_dungeon_fails_immediately():
-    """Verified live (#84): inside a dungeon the game refuses outright rather than asking.
+    """Verified live: inside a dungeon the game refuses outright rather than asking.
 
     Re-clicking Go To Realm cannot get past it, so the node must not spend TRIGGER_TIMEOUT
     trying — and the log must name the cause, not report a missing loading screen.
@@ -177,7 +177,7 @@ async def test_refusal_from_inside_a_dungeon_fails_immediately():
 
 
 async def test_dungeon_reset_warning_is_confirmed_and_the_hop_proceeds():
-    """Verified live (#84): outside the dungeon, the same action asks instead of refusing."""
+    """Verified live: outside the dungeon, the same action asks instead of refusing."""
     client = FakeClient()
     client.is_loading.side_effect = [False, True, False]
     patches, clicked = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))

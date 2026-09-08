@@ -1,6 +1,6 @@
 """Move quicksell's node params into the bot's options, in place.
 
-Phase 6 of the declarations/overrides epic (#150) turns quicksell's five params
+Phase 6 of the declarations/overrides epic turns quicksell's five params
 into **bot options**: four that describe the user (Enable Quicksell and the three
 sell flags) and one that is authorial (the keep list).  A param left in a state's
 ``params`` block after that is dead -- ``run()`` never looks there again -- so a

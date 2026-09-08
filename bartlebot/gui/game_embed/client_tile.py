@@ -46,7 +46,7 @@ def launch_status_text(
     stage, and a counter running on all of them reads as a stopwatch rather than as a
     warning. Above it, it draws the distinction the stage name cannot: a launch stalled at
     the login screen and a launch progressing normally say the same thing otherwise, which
-    was the whole complaint (#186).
+    was the whole complaint.
 
     A stage with no name yet — the launcher has not reported one — still says something,
     because a tile that says nothing is the state this replaced.
@@ -280,8 +280,8 @@ class ClientTile(QWidget):
 class _WindowlessTile(QWidget):
     """Shared drawing for the tile kinds that hold a slot without a game window in it.
 
-    Two of them now -- a detached window, and a launch that has not produced a window yet
-    (#186) -- and they differ only in the icon on the pill and the line of body text under
+    Two of them now -- a detached window, and a launch that has not produced a window
+    yet -- and they differ only in the icon on the pill and the line of body text under
     it. The pill layout is the part worth having in one place: it has to agree with
     ``ClientTile``'s to the pixel, because a tile changing kind must not move its caption,
     and it was already written twice before there was a third kind to write it a third
@@ -467,7 +467,7 @@ class PendingTile(_WindowlessTile):
     Drawn from the moment the launch is asked for, which is the point of it: a launch takes
     tens of seconds to minutes before a window exists, and until this the app looked like
     nothing had happened for that whole window -- so the natural response to a slow launch
-    was to click again, and a second click really did start a second batch (#186).
+    was to click again, and a second click really did start a second batch.
 
     Its life is short relative to the launch. The window is titled seconds after login and
     takes over the slot as a real ``ClientTile`` then, long before the character is in game,

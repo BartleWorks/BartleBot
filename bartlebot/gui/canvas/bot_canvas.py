@@ -1024,7 +1024,7 @@ class BotCanvas(QWidget):
         # transparent to the mouse so it never eats a click on the canvas.  A corner
         # pill only exists where the user happens to be looking; a frame is in
         # peripheral vision wherever they look and however far they scroll, which is
-        # what the pill on its own failed to do (#55).
+        # what the pill on its own failed to do.
         self._focus_frame = QWidget(self._view)
         self._focus_frame.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         self._focus_frame.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
@@ -1347,7 +1347,7 @@ class BotCanvas(QWidget):
         """Show the run/edit state in Bar B, and announce it for everyone else.
 
         The header is written to directly rather than through the signal: the status
-        lives here now (#80), and routing it out to MainWindow and back would make the
+        lives here now, and routing it out to MainWindow and back would make the
         bar above the graph depend on a window that may not have connected yet.
         """
         if self._mode == BotMode.EDIT:
@@ -1470,7 +1470,7 @@ class BotCanvas(QWidget):
         # GUI_ONLY: BotMachine logs the same transition, in more detail, a moment
         # either side of these two. Sending them to the session file as well made a
         # state change cost four lines to say two things, and one representative run
-        # carried 9,589 of these — a fifth of the file (#156).
+        # carried 9,589 of these — a fifth of the file.
         logger.info("Entered: %s", state_id, extra=GUI_ONLY)
 
     def on_transition(self, prev_state: str, result: str, next_state: str) -> None:
@@ -1658,7 +1658,7 @@ class BotCanvas(QWidget):
         self._reposition_banner()
 
         # Frame the region. Hiding everything else is what made the canvas look empty
-        # without explanation (#55): the camera never moved, so a region that was small
+        # without explanation: the camera never moved, so a region that was small
         # or off to one side stayed small and off to one side while the rest vanished.
         # Moving the camera is also the clearest signal that anything happened at all.
         region_item = self._scene.region_items.get(region_id)
@@ -1852,11 +1852,11 @@ class BotCanvas(QWidget):
         self._refresh_undo_actions()
 
     def _on_initial_state_requested(self, state_id: str) -> None:
-        """Move the initial-state role to *state_id* (#71)."""
+        """Move the initial-state role to *state_id*."""
         self._set_fsm_role("initial", state_id, "Change initial state")
 
     def _on_recovery_state_requested(self, state_id: str) -> None:
-        """Move the recovery-state role to *state_id* (#71)."""
+        """Move the recovery-state role to *state_id*."""
         self._set_fsm_role("recovery_state", state_id, "Change recovery state")
 
     def _set_fsm_role(self, field: str, state_id: str, undo_desc: str) -> None:
@@ -1865,7 +1865,7 @@ class BotCanvas(QWidget):
         The panel asks and the canvas assigns, because the panel holds no BotConfig
         and because the undo snapshot has to be pushed *before* the mutation.
         ``_on_scene_changed`` then does the rest: it moves the badge, revalidates
-        (moving the initial state changes which nodes are reachable -- #53), and
+        (moving the initial state changes which nodes are reachable), and
         emits ``config_changed``.
         """
         config = self._scene.config
@@ -1987,7 +1987,7 @@ class BotCanvas(QWidget):
     def _restore(self, config: BotConfig) -> None:
         self._config = config
         # Undo hands back a freshly-deserialised BotConfig, so every surface holding
-        # the old object has to be re-bound or its edits go nowhere (#53).
+        # the old object has to be re-bound or its edits go nowhere.
         self._toolbar.set_config(config)
         self._toolbar.set_editable(self._mode == BotMode.EDIT)
         self._scene.setup(config)

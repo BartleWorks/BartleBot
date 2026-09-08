@@ -59,7 +59,7 @@ def test_optional_fields_have_defaults():
 
 def test_a_start_location_in_an_older_file_is_dropped():
     """Nothing read it, so it is not a field any more — but old files still carry
-    it, and a bot that refuses to load is a worse answer than one that forgets (#80)."""
+    it, and a bot that refuses to load is a worse answer than one that forgets."""
     config = BotConfig.model_validate({**VALID_DATA, "start_location": "The Commons"})
 
     assert not hasattr(config, "start_location")

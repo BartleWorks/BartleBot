@@ -13,8 +13,8 @@ It is a ``Qt.WindowType.Popup``, which buys three things a ``QDialog`` would not
 * no ``exec()``, so it cannot trip the qasync task re-entrancy rule in CLAUDE.md.
 
 Being a popup *window* also puts it outside the sidebar's widget tree, so the
-native-window transient-parent bug that ``menu_utils`` exists to work around
-(#119) does not apply here.
+native-window transient-parent bug that ``menu_utils`` exists to work around does
+not apply here.
 
 ``PickerRow.description`` is supported but optional, and the tag picker does not
 use it: a second line of muted text under every name doubled the row height, made

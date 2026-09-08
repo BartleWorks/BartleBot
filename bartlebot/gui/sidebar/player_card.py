@@ -1,6 +1,6 @@
 """``PlayerCard``: one game client in the Players tab, drawn as a card.
 
-Replaces ``ClientWidget``, which was the surface #190 left behind: an unframed stack of
+Replaces ``ClientWidget``, which was the surface the game view rework left behind: an unframed stack of
 rows closed by a horizontal rule, with four 48px ``Copy`` buttons and a pair of ▲/▼
 arrows for order, sitting next to accounts and launch profiles that had become cards.
 
@@ -26,7 +26,7 @@ Not hover-revealed, deliberately. That is the launch screen's bargain, and the j
 recorded in ``CardFrame`` is that hiding verbs behind hover on a surface that exists to
 *run* them is backwards. The Players tab is that kind of surface.
 
-**MEMBER mode, not MANAGE.** #204 asked for "``CardMode.MANAGE`` semantics -- chrome
+**MEMBER mode, not MANAGE.** The Players tab card rework asked for "``CardMode.MANAGE`` semantics -- chrome
 pinned open, nothing refuses", and those are the two properties named. MEMBER has both,
 and MANAGE carries a third this card must not have: a body verb. A MANAGE card wears the
 pointing-hand cursor over its whole face, lights up on hover and emits ``activated`` on a
@@ -43,7 +43,7 @@ the resolution ladder in docs/WINDOW_SIZING.md. This card only ever needs *less*
 one it replaces -- three 22px icon buttons where there were three labelled ones, and
 elided rows where there were labelled rows each closed by a 48px ``Copy``. So the floor
 stays exactly where it was, as a conservative bound rather than a tight one. Lowering it
-to match is a window-sizing change, which is the thing #204 asked this issue not to
+to match is a window-sizing change, which is the thing the Players tab card rework asked this issue not to
 quietly become.
 
 THE REFRESH CONTRACT
@@ -365,7 +365,7 @@ class PlayerCard(CardFrame):
     ui_tree_requested = pyqtSignal()
 
     def __init__(self, client, index: int, *, unhooked: bool = False, parent=None) -> None:
-        # MEMBER, not MANAGE -- see the module docstring. The two agree on everything #204
+        # MEMBER, not MANAGE -- see the module docstring. The two agree on everything the Players tab card rework
         # named and disagree about whether the body is a button, which this card's is not.
         super().__init__(parent, mode=CardMode.MEMBER)
         self._client = client

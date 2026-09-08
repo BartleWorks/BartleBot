@@ -1,4 +1,4 @@
-"""Tests for post-fight drop recording (#127).
+"""Tests for post-fight drop recording.
 
 Drops are announced by the server after the duel has already ended locally, and
 end-of-fight is exactly when a long-running session lags hardest. Two behaviours keep
@@ -42,7 +42,7 @@ def fast(monkeypatch):
 
 
 async def test_late_announcement_is_still_caught(fast):
-    """The drop line is absent for several polls, then appears — the fix for #127."""
+    """The drop line is absent for several polls, then appears — what the fix is for."""
     machine, client = FakeMachine(), FakeClient()
     machine.set_chat_baseline(client, "")
 
@@ -54,7 +54,7 @@ async def test_late_announcement_is_still_caught(fast):
 
 
 async def test_announcement_slower_than_the_window_is_recorded_by_the_next_fight(fast):
-    """The core of #127: a miss must be late, never lost.
+    """The core of the drop-recording fix: a miss must be late, never lost.
 
     Fight one times out with nothing in chat. Fight two takes no fresh snapshot, so
     the message that arrived in between is still ahead of the carried baseline.

@@ -336,7 +336,7 @@ def resolved_at_click_time(requested: str, entry: str) -> bool:
     same evidence — a tiered entry is the wizard's one unlocked variant, and
     ``resolve_tier`` decides against it directly.
 
-    This was #109.  Treating "- T01 - Base" as the base form's only spelling
+    This was the multi-tier spell bug.  Treating "- T01 - Base" as the base form's only spelling
     sent every plainly-named one to ``unresolvable``, reporting spells the
     wizard had as untrained.  It worked before fusion routing existed only by
     accident: wizwalker's tiered branch looks up the bare base, which is exactly

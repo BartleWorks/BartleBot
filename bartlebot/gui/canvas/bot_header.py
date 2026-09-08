@@ -3,7 +3,7 @@
 Bar B sits above the graph, so it owns the *bot*: its name, version, file, author
 and tags, plus the run controls and the run status.  Bar A sits above the game
 windows and owns the *clients*.  Name and status used to live in Bar A essentially
-by accident, which meant they vanished with the game view (#80).
+by accident, which meant they vanished with the game view.
 
 The metadata rows are the ones ``BotInfoSection`` used to hold, lifted rather than
 rewritten: ``_swappable`` and ``_TagsField`` are that section's mechanism, moved
@@ -11,8 +11,8 @@ here whole.  Everything else the old Bot tab carried is gone —
 
 * **Start** (``start_location``) was never read by the engine, and ``go_to_world``
   plus the bot templates make it moot;
-* **Initial State** and **Recovery State** are badges on the nodes themselves
-  (#71), so the labels only ever restated the graph;
+* **Initial State** and **Recovery State** are badges on the nodes themselves,
+  so the labels only ever restated the graph;
 * the **full description** moved to the top of Setup (read) and Options (edit),
   because eliding it here would hide the ``REQUIREMENTS:`` blocks four bots carry.
 

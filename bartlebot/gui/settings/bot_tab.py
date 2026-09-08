@@ -57,7 +57,7 @@ class BotTab(QWidget):
         self._safety_delay_sb = QDoubleSpinBox()
         # The floor is the bot option's, and for the same reason: a negative delay
         # fails silently, because asyncio.sleep returns at once and every window
-        # polled *for* that many seconds expires on its first check (#182).
+        # polled *for* that many seconds expires on its first check.
         self._safety_delay_sb.setRange(0.0, 30.0)
         self._safety_delay_sb.setSingleStep(0.5)
         self._safety_delay_sb.setDecimals(1)

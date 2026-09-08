@@ -1,4 +1,4 @@
-"""Tests for the in-flight launch guard and the pending tiles it puts on screen (#186).
+"""Tests for the in-flight launch guard and the pending tiles it puts on screen.
 
 Three things were wrong before this, and the tests are grouped by them:
 
@@ -541,7 +541,8 @@ class TestPendingTileCaption:
 #
 # The failures that matter here are the quiet ones. A launch that raises already gets a
 # message box; the auto-select drive returning False and a window that never reaches the
-# login screen are timeouts, and until #186 nothing read either -- so the launch simply
+# login screen are timeouts, and until the launching-client indicator landed nothing read
+# either -- so the launch simply
 # looked like it had finished, and the tile spun until the app was restarted.
 # ---------------------------------------------------------------------------
 

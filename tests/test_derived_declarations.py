@@ -276,7 +276,7 @@ def test_saving_does_not_disturb_the_config_in_memory(tmp_path):
 
 
 def test_a_bot_with_enter_dungeon_does_not_gain_challenge_mode_on_a_round_trip(tmp_path):
-    """#159, as a check: 61 bots carried this declaration and 2 could use it."""
+    """The Challenge Mode opt-in, as a check: 61 bots carried this declaration and 2 could use it."""
     path = tmp_path / "bot.json"
     _config().save(path)
 
@@ -417,7 +417,7 @@ def _spec_without(option_name: str):
 
 
 # ---------------------------------------------------------------------------
-# The signature the option surfaces skip a rebuild on (#184)
+# The signature the option surfaces skip a rebuild on
 # ---------------------------------------------------------------------------
 
 
@@ -455,7 +455,7 @@ def test_turning_a_conditional_option_off_moves_the_signature():
 
 def test_a_new_id_moves_the_signature():
     """Save As mints one under a loaded bot, and Setup resolves the user's stored
-    values through it -- so those rows have to be re-resolved (#179)."""
+    values through it -- so those rows have to be re-resolved."""
     config = _config()
     before = options_signature(config)
 

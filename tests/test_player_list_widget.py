@@ -1,4 +1,4 @@
-"""Tests for PlayerListWidget's two limits (#76).
+"""Tests for PlayerListWidget's two limits.
 
 The widget carries two independent notions of "fewer than four players", and the
 whole point is that they behave differently:
@@ -26,7 +26,7 @@ def widget(qapp):
 
 class TestAvailability:
     def test_unavailable_players_keep_their_value(self, widget) -> None:
-        """The #76 hazard: editing a four-client bot with two clients connected."""
+        """The client-checkbox hazard: editing a four-client bot with two clients connected."""
         widget.set_value([1, 3, 4])
         widget.set_available_players(2)
         assert widget.get_value() == [1, 3, 4]

@@ -5,7 +5,7 @@ asks ``is_running()``, which is a process-liveness check, and until it answers F
 dead client stays in the handler, ``_on_clients_removed`` never fires, and nothing is
 relaunched. A window that is closing is not enough.
 
-That is what makes an error popup fatal rather than cosmetic (#79). A client that is
+That is what makes an error popup fatal rather than cosmetic. A client that is
 crashing *sometimes* puts up a modal — its own error box, or the Windows one — which
 parks the process on a message pump waiting for a click nobody is going to give it. The
 window never finishes closing, the process never exits, and the bot sits there forever
@@ -84,7 +84,7 @@ _LPWSTR = ctypes.wintypes.LPWSTR
 _ENUM_PROC = ctypes.WINFUNCTYPE(_BOOL, _HWND, _LPARAM)
 
 # (name, argtypes, restype). Without argtypes a 64-bit HWND is silently truncated to
-# an int and the call goes to the wrong window — see #105 for what that costs.
+# an int and the call goes to the wrong window.
 _USER32_SIGNATURES: tuple[tuple[str, list, object], ...] = (
     ("EnumWindows", [_ENUM_PROC, _LPARAM], _BOOL),
     ("GetWindowThreadProcessId", [_HWND, ctypes.POINTER(_DWORD)], _DWORD),

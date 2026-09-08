@@ -53,7 +53,7 @@ TALL_TYPES: frozenset[str] = frozenset({"drop_keep_list"})
 #: How wide a spin box is allowed to get.  A number field that spans a 400px sidebar
 #: reads as a text field and gives four decimal places' worth of room to a value that
 #: is nearly always one digit -- "3.00 s" occupying the whole panel was half of what
-#: made the Setup screenshot behind #182 look wrong.
+#: made the Setup screenshot behind the Safety Delay validation look wrong.
 NUMERIC_MAX_WIDTH_PX = 110
 
 #: Decimals shown by a float control.  Four was the old default: Safety Delay read

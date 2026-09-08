@@ -33,7 +33,7 @@ THREE SURFACES, ONE CARD
 
 The same cards draw the Game settings tab, which used to render the identical two lists
 as ``QListWidget`` rows of formatted text -- so the surface where accounts are *edited*
-said strictly less about them than the surface where they are merely launched (#192) --
+said strictly less about them than the surface where they are merely launched --
 and the launch profile editor, which had the same fault one dialog deeper: it is the
 surface where a profile's membership is *decided*, and it named its accounts in a list of
 bare strings, with none of the colour, roster or fit the cards behind it were showing.
@@ -501,7 +501,7 @@ class _LaunchCard(CardFrame):
         QLabel's sizeHint height is computed at a width that has nothing to do with the
         column's. Without the flag the layout believes that phantom height, the card's
         sizeHint grows to several times what it draws, and the scroll area it sits in
-        cannot be shorter than the sum -- a scroll bar over empty space (#191).
+        cannot be shorter than the sum -- a scroll bar over empty space.
 
         Ignored horizontally, with a minimum of one pixel, for the same reason as the
         detail line: the text is fitted to whatever width the card ends up with, and must
@@ -818,7 +818,7 @@ class AddCard(ThemedMixin, QWidget):
     A fresh install opened on two columns reading "(No accounts)" and "(No profiles)",
     and nothing on either said what to do about that -- the only way forward was to
     notice a small underlined link between them, open a dialog and find a button under a
-    list (#195). The answer to "how do I get another one of these" belongs where the ones
+    list. The answer to "how do I get another one of these" belongs where the ones
     you have are, which is the convention every card collection whose members are
     launched has settled on: Chrome's profile picker, the Figma file grid, Docker
     Desktop. Always last, and always a card.

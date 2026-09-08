@@ -23,7 +23,7 @@ class BotOptionSpec:
                      arrived from a hand-edited settings.json or bot file. A negative
                      Safety Delay is the case -- it fails silently rather than loudly,
                      since asyncio.sleep returns at once and every window polled *for*
-                     that many seconds expires on its first check (#182).
+                     that many seconds expires on its first check.
         maximum:     Highest value the option may take, or None for no ceiling.
         suffix:      Unit shown inside the control, e.g. " s". Presentation only; the
                      stored value is the bare number.

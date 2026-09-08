@@ -77,7 +77,7 @@ SOURCE_LEVELS: tuple[str, ...] = (SOURCE_OVERRIDE, SOURCE_BOT_FILE, SOURCE_APP_S
 
 #: The Safety Delay option's description, in the one place both readers of it can
 #: reach. The app setting on the Bot settings tab and the option itself are the same
-#: value after #145, and one value described twice is how two descriptions come to
+#: value after the bot-options split, and one value described twice is how two descriptions come to
 #: disagree -- ``test_the_safety_delay_setting_and_option_read_the_same`` is the guard.
 SAFETY_DELAY_DESCRIPTION = (
     "Seconds to allow for game-server responses when waiting for prompts or menus. "
@@ -96,7 +96,7 @@ APP_SETTING_KEYS: dict[str, str] = {
     "Sell Pets": "default_quicksell_sell_pets",
     "Sell Socket Wrenches": "default_quicksell_sell_socket_wrenches",
     "Sell Skeleton Keys": "default_quicksell_sell_skeleton_keys",
-    # A character name is never the bot's to carry (#102), so the app setting is
+    # A character name is never the bot's to carry, so the app setting is
     # the shared level under a per-bot override.
     "Friend Name": "default_friend_name",
 }
@@ -107,9 +107,9 @@ APP_SETTING_KEYS: dict[str, str] = {
 # these three it never is:
 #
 #   Safety Delay    describes the user's connection, not the bot.  A declaration
-#                   would re-create the per-node pin #150 removed, one level up.
+#                   would re-create the per-node pin the override-layer work removed, one level up.
 #   Friend Name     is a character name, so a declaration is a privacy leak and a
-#                   bot only its author can run (#102).
+#                   bot only its author can run.
 #   Enable Quicksell  is whether the user is willing to lose items at all.  An
 #                   author who did not want selling would leave the node out.
 #
@@ -365,7 +365,7 @@ def options_signature(config, specs=None) -> tuple:
     declarations, and building the rows from it costs ~55ms on a 67-state bot --
     paid on every graph edit, while most edits touch no node carrying a
     ``BotOptionSpec`` at all.  Composing costs 0.05ms, so asking whether the answer
-    moved is three orders of magnitude cheaper than rebuilding regardless (#184).
+    moved is three orders of magnitude cheaper than rebuilding regardless.
 
     Carries more than the composed list: the id, because Setup resolves the user's
     overrides through it and Save As moves it under a loaded bot; the drop table,

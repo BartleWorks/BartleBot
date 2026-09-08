@@ -230,7 +230,7 @@ def collect_safety_warnings(config: BotConfig, clients: list | None = None) -> l
 
     A node type in ``_MESSAGE_BUILDERS`` gets the last word on its own entry: it may
     reword the warning for what this run will actually do, or drop it entirely when
-    the node is present but inert (#187).
+    the node is present but inert.
 
     *clients* is passed to detail builders that resolve something against the live
     clients, such as the wizard name behind a teleport target's player slot. It is

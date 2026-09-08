@@ -4,7 +4,7 @@ The Quick Launch screen and the Game settings tab describe the same two things -
 accounts and launch profiles -- and used to do it in two unrelated visual languages: a
 column of cards on one, a ``QListWidget`` of formatted strings on the other. Nothing
 about an account's colour, its roster or whether it would fit survived the trip to the
-surface where accounts are actually *edited* (#192).
+surface where accounts are actually *edited*.
 
 They draw the same cards now, out of this one widget, which owns everything a column has
 that is not a card: its heading, its fit banner, the scroll area, the Add card that
@@ -19,11 +19,11 @@ something pushes a height into every item by hand. Fixed-height cards can hardco
 (``strategy_picker_dialog.py`` does); these cannot -- an ``AccountCard`` re-fits its
 character line to the width it got and a wrapped refusal line adds height too, so the
 recompute would have to run from inside the resize Qt is already running, which is the
-loop #191 came out of. ``takeItem``/``insertItem`` also drops the item-to-widget
+loop the empty-scroll-bar fix came out of. ``takeItem``/``insertItem`` also drops the item-to-widget
 association, so a reordered row draws empty.
 
 So the column is a plain ``QVBoxLayout`` in a ``QScrollArea``, sized ``Expanding`` across
-and ``Preferred`` down with height-for-width -- the arrangement #191 arrived at, now in
+and ``Preferred`` down with height-for-width -- the arrangement the empty-scroll-bar fix arrived at, now in
 one place where it cannot be fixed on one surface and left broken on the other.
 
 THE TWO SURFACES ARE STILL DIFFERENT
@@ -451,7 +451,7 @@ class CardColumn(QWidget):
 
         The Add card is always last and is never one of *cards*: it is the column's
         terminator rather than a member of the ordered list, so nothing is dropped after
-        it and a caller walking ``cards`` to judge fit never sees it (#195).
+        it and a caller walking ``cards`` to judge fit never sees it.
 
         The empty hint is drawn beneath it only while there are no cards at all, where it
         is the one line saying what the thing being added is.
@@ -526,7 +526,7 @@ class CardColumn(QWidget):
         # is what this used to be, and it pinned both the card's minimum and its maximum
         # to a sizeHint that a wrapped refusal line computes at some unrelated width --
         # with setWidgetResizable the scroll area then could not be shorter than that
-        # sum, which is the scroll bar over empty space in #191.
+        # sum, which is the scroll bar over empty space.
         policy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         policy.setHeightForWidth(True)
         card.setSizePolicy(policy)

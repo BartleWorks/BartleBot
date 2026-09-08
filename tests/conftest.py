@@ -434,7 +434,7 @@ def _free_widgets_this_test_created():
     ``deleteLater()`` on its own frees nothing here: it posts a ``DeferredDelete``
     event that only arrives on an event-loop spin, and no Qt event loop runs during
     the suite. So every widget every test constructed used to stay alive for the
-    whole session — 27,918 of them after 20 GUI files in one process (#189).
+    whole session — 27,918 of them after 20 GUI files in one process.
 
     That is quadratic, not merely wasteful, because ``QApplication.setStyleSheet``
     delivers a ``StyleChange`` to every live widget: one app-wide theme broadcast
@@ -486,9 +486,9 @@ def _free_widgets_this_test_created():
 def main_window_stub():
     """A stand-in for MainWindow, for testing what a card action refreshes.
 
-    The eight card-action slots (#194) are one line each on top of
+    The eight card-action slots are one line each on top of
     ``MainWindow._after_card_action``, and what is worth testing about them is which
-    refreshes run -- the second-order bug in #193, where cancelling a dialog dropped the
+    refreshes run -- the second-order bug in the profile-editor dialog work, where cancelling a dialog dropped the
     refresh for a profile already written to disk. Building a real MainWindow to ask that
     costs a game view, a canvas and a client manager, so the slots are called unbound
     against this instead.

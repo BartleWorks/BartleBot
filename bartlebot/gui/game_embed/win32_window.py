@@ -144,7 +144,7 @@ _DWORD = ctypes.wintypes.DWORD
 # (name, argtypes, restype). Declaring these is not decoration: without argtypes a
 # call with the wrong number of arguments is accepted silently and the callee reads
 # garbage off the stack. That is exactly how the SetWindowPos call in the old
-# restore path lost its uFlags (#105).
+# restore path lost its uFlags.
 _SIGNATURES: tuple[tuple[str, list, object], ...] = (
     ("GetParent", [_HWND], _HWND),
     ("SetParent", [_HWND, _HWND], _HWND),

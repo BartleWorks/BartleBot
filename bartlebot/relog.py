@@ -3,7 +3,7 @@
 Two triggers, both decided here so the policy can be tested without a clock, a client, or
 Qt -- following ``client_refresh_interval()`` in ``nodes/timing.py`` as precedent.
 
-**The timer (#163).** A game client degrades the longer it stays logged in: measured over
+**The timer.** A game client degrades the longer it stays logged in: measured over
 801 fights, median combat duration climbed 23 s -> 32 s, and everything outside the game
 process has been ruled out as the cause. Nothing can be done about it from here, and a
 relog is the only thing that clears it, so the mitigation is to relog before the cost
@@ -11,7 +11,7 @@ becomes worth paying. Time-based rather than fight-based: short sessions of 30+ 
 repeatedly failed to reproduce the degradation while two idle hours have, so fights are not
 the unit that matters.
 
-**The GDI ceiling (#164).** One client reached exactly 10,000 GDI objects inside a single
+**The GDI ceiling.** One client reached exactly 10,000 GDI objects inside a single
 session, which is the Windows default per-process ``GDIProcessHandleQuota``. Past that
 point every GDI allocation in that process fails and the game has no reason to handle it
 gracefully. This is a fault ceiling rather than a preference, which is why the threshold is

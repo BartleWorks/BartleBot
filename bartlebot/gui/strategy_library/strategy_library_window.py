@@ -161,7 +161,7 @@ class StrategyLibraryWindow(QDialog):
         # What each tab's right-hand panel is showing.  Tracked here rather than
         # read back from ``currentItem()``: a filter rebuild empties the list
         # without changing what is being edited, and the editor has to survive
-        # that untouched (#223).
+        # that untouched.
         self._pcs_selected_id: str | None = None
         self._dcs_selected_id: str | None = None
         self._deck_selected_id: str | None = None
@@ -317,7 +317,7 @@ class StrategyLibraryWindow(QDialog):
         Both ``clear()`` and the reselect below emit ``currentItemChanged``.
         Letting those reach ``_on_pcs_selected`` made every keystroke in the
         filter box reload the editor and write the strategy to disk twice, which
-        also put the DSL caret back to position 0 (#223) — hence the guard.
+        also put the DSL caret back to position 0 — hence the guard.
         Filtering is a read-only act; it must not touch the editor at all.
         """
         query = self._pcs_filter.text().strip().lower()

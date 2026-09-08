@@ -51,7 +51,7 @@ def test_identifies_the_dungeon_exit_warning():
 
 
 def test_identifies_the_friend_busy_dialog():
-    """Issue #84: this and the dungeon exit warning share a button layout."""
+    """This and the dungeon exit warning share a button layout."""
     assert dc.identify_caption("Your friend is busy right now.") == dc.FRIEND_BUSY
 
 

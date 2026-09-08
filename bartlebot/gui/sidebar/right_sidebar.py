@@ -30,7 +30,7 @@ class RightSidebar(QTabWidget):
     either/or choice — one that had to be re-made by hand every time.  Tabs make
     it explicit and give each side the full panel height.
 
-    **Log** moved here from the left sidebar (#80).  The left one is now the bot's
+    **Log** moved here from the left sidebar.  The left one is now the bot's
     configuration and nothing else, and a log you have to close Setup to read is a
     log nobody watches while a run is going.
 
@@ -53,7 +53,7 @@ class RightSidebar(QTabWidget):
         # font and style metrics: a labelled tool button wants 300px of panel at 100%
         # system text and 375 at 125%.
         #
-        # The row it was measured from is gone -- #204's player card carries icon verbs and
+        # The row it was measured from is gone -- the Players tab card rework's player card carries icon verbs and
         # elided rows in its place -- and the measurement stays exactly as it was, now a
         # conservative bound rather than a tight one. Lowering it to match would move the
         # resolution ladder in docs/WINDOW_SIZING.md, which is a different change.

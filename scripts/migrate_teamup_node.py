@@ -1,4 +1,4 @@
-"""One-time migration: fold ``enter_dungeon_teamup`` back into ``enter_dungeon`` (#162).
+"""One-time migration: fold ``enter_dungeon_teamup`` back into ``enter_dungeon``.
 
 Team-Up was a second copy of ``enter_dungeon`` that differed only in its tail, so the
 two drifted: ``sister_sanderson_teamup.json`` lost both ``check_zone`` states its

@@ -1,4 +1,4 @@
-"""Tests for what BotMachine writes to the log (#156).
+"""Tests for what BotMachine writes to the log.
 
 The subject here is attribution and landmarks, not FSM behaviour: which logger a
 node's own messages are filed under, and the pass/summary lines that give a

@@ -1,4 +1,4 @@
-"""Tests for the sub-pixel text guard behind issue #72.
+"""Tests for the sub-pixel text guard behind the QPainter bug.
 
 The numbers here are anchored to measurements against the real Windows font
 engine at Qt 6.10: drawing text whose glyphs fall below ~0.5 device pixels

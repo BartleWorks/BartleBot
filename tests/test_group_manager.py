@@ -454,7 +454,7 @@ async def test_is_in_group_closes_the_window_afterwards(ui):
 
 @pytest.mark.parametrize("stage", ["compact", "large"])
 async def test_an_open_friends_list_is_closed_before_the_social_button_is_clicked(ui, stage):
-    """Regression (issue #96): starting a run with the friends list up failed the grouping.
+    """Regression: starting a run with the friends list up failed the grouping.
 
     The list sits on top of the social HUD button, so the click landed on the list, the
     social window never opened, and every client read as ungrouped. Both list windows do
@@ -1261,7 +1261,7 @@ async def test_window_closes_survive_a_swallowed_click(ui):
 
 
 # ---------------------------------------------------------------------------
-# Polling rather than waiting (#114)
+# Polling rather than waiting
 #
 # These are wall-clock assertions, which is unusual — but the thing under test IS elapsed
 # time. Each one leaves a production-sized delay in place and asserts the happy path does

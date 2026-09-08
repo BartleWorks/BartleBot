@@ -90,7 +90,7 @@ class LeftSidebar(QTabWidget):
         # that the four bots carrying multi-line ``REQUIREMENTS:`` blocks put them
         # in front of the user rather than behind an ellipsis in the header.  The
         # Options copy is the writable one: the description is authorial, so it
-        # belongs on the declarations surface and not on the values surface (#180).
+        # belongs on the declarations surface and not on the values surface.
         self.setup = SetupSection()
         self.options = OptionsSection()
         self._setup_desc = DescriptionSection(editable=False)
@@ -250,7 +250,7 @@ class LeftSidebar(QTabWidget):
         carrying a ``BotOptionSpec``, so the answer is usually the list already on
         screen.  Composing it costs 0.05ms and building the rows from it costs ~55ms
         on a 67-state bot, so the comparison pays for itself on the first edit that
-        changes nothing (#184).
+        changes nothing.
 
         Deliberately not ``set_config``: that also re-binds the combat tab, whose
         rebind can flush a pending save and come back round through
@@ -266,7 +266,7 @@ class LeftSidebar(QTabWidget):
         Object identity is checked as well as the signature because undo/redo hands
         the canvas a brand-new ``BotConfig`` whose contents are usually identical to
         the one before it: the sections write through the object they hold, so one
-        left bound to the replaced config edits something nothing saves (#53).
+        left bound to the replaced config edits something nothing saves.
         """
         signature = options_signature(config)
         if config is self._built_config and signature == self._built_signature:
@@ -321,7 +321,7 @@ class LeftSidebar(QTabWidget):
         restores from a ``model_dump`` snapshot — while the sections keep editing
         the object they were given at load.  Everything they write from then on
         lands somewhere nothing reads or saves; the initial state is the visible
-        one, because its warnings stop moving with it (#53).
+        one, because its warnings stop moving with it.
 
         Cheap and idempotent for the common case, where the object is unchanged.
         ``_config`` is assigned before ``set_config`` because that call can flush a

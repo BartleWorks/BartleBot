@@ -759,7 +759,7 @@ def test_no_bot_declares_a_user_owned_option():
     outranks the app setting they set it in.
 
     Safety Delay describes the connection, not the bot -- a declaration would put back
-    the per-node pin #150 removed, one level up. Enable Quicksell is whether the user
+    the per-node pin the override-layer work removed, one level up. Enable Quicksell is whether the user
     will part with items at all; an author who did not want selling would leave the node
     out. Friend Name is a character name (see the test above).
 

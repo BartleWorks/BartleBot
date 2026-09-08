@@ -1,4 +1,4 @@
-"""Tests for the per-process GDI count (#164).
+"""Tests for the per-process GDI count.
 
 No real process: user32/kernel32 are fakes, so each test states exactly what the OS
 answers and what the caller is left holding.

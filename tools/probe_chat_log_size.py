@@ -1,7 +1,7 @@
 """Diagnostic: measure the chat log string, and process cost, on every running client.
 
 WHY THIS EXISTS
-    #143 -- the game client lags harder at end of fight the longer a bot has been
+    The end-of-fight lag work -- the game client lags harder at end of fight the longer a bot has been
     running, "truly horrendous" after eight hours. A nine-hour log measured the
     degradation (median fight 23.0s -> 29.0s on the same boss) and ruled out our event
     loop: every state bounded by a fixed sleep stayed flat to two decimals, which a
@@ -66,7 +66,7 @@ WHAT IS ACTUALLY HAPPENING: A FAULT STORM AT END OF FIGHT
       times in fifteen seconds.
 
     That is thrashing in the strict sense, and at roughly 0.5-1 us per soft fault it costs
-    3.5-7 seconds -- which is #143's "upward of 5 seconds on fight end", arrived at from
+    3.5-7 seconds -- which is the end-of-fight lag work's "upward of 5 seconds on fight end", arrived at from
     the other direction.
 
     It replicated over a 12-fight bot run, and again over 4 more: ~4.6M-6.7M faults per
@@ -131,7 +131,7 @@ WHAT IT DOES
     the cause and there is a strong independent candidate -- HookHandler._rewrite_autobot
     restores the original bytes after a FIXED `asyncio.sleep(0.5)`, commented "Give some
     time for execution point to leave hooks", which is an unsynchronized race. A client
-    running seconds behind, which is the entire subject of #143, is exactly where 500 ms
+    running seconds behind, which is the entire subject of the end-of-fight lag work, is exactly where 500 ms
     stops being enough, and these clients were being unhooked in that state routinely.
 
     But it cannot be ruled out either, and a hard minimum working set is a real imposition
@@ -151,8 +151,8 @@ BEFORE YOU RUN IT
     Unhook All in BartleBot, THEN close it, THEN run this. Both halves matter:
 
     * Unhook All releases the game windows. While embedded they are Win32 children of the
-      Qt window and closing BartleBot destroys them with it -- nothing un-embeds on quit
-      (#155). Unhook All does: unhook_all -> _finish_hook_change -> _sync_embedded_clients
+      Qt window and closing BartleBot destroys them with it -- nothing un-embeds on quit.
+      Unhook All does: unhook_all -> _finish_hook_change -> _sync_embedded_clients
       vacates every slot once the client list empties. Quitting without it logs out every
       client, which on a diagnostic run destroys the accumulated state being measured.
     * Unhook All also restores the patched bytes and rewrites the autobot pattern
@@ -423,7 +423,7 @@ def unpin_working_set(pid: int) -> str:
 def pin_working_set(pid: int, minimum_mb: int) -> str:
     """Ask Windows to stop trimming `pid` below `minimum_mb`, and report what happened.
 
-    The faults measured in #143 are soft: `private_bytes` never moves, so the pages are
+    The faults measured in the end-of-fight lag work are soft: `private_bytes` never moves, so the pages are
     already committed and are simply being taken out of the working set and faulted back
     in, over and over. If that is the whole story, a hard *minimum* working set stops it
     dead -- Windows keeps the pages resident and there is nothing left to fault on.
@@ -673,7 +673,7 @@ async def main() -> int:
         metavar="MB",
         help=(
             "ask Windows to stop trimming each client below this many MB, then exit. "
-            "Tests whether the #143 fault storm is pure working-set thrash: pin, farm, "
+            "Tests whether the end-of-fight lag fault storm is pure working-set thrash: pin, farm, "
             "and compare faults-per-fight against the unpinned baseline."
         ),
     )

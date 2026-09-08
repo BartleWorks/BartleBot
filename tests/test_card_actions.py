@@ -1,4 +1,4 @@
-"""The verbs on an account or profile card, and the one API behind them (#194).
+"""The verbs on an account or profile card, and the one API behind them.
 
 Adding, editing and deleting an account or a launch profile used to be possible on
 exactly one surface, and only by way of a selection: select a row in the Game tab, look
@@ -279,7 +279,7 @@ def test_deleting_an_unknown_profile_asks_nothing(store):
 
 
 def test_every_write_is_saved(store, confirm, account_editor):
-    """The bug #195 shipped: a card has no Settings dialog behind it to call save().
+    """The bug the Add-card work shipped: a card has no Settings dialog behind it to call save().
 
     ``SettingsManager.set`` only writes memory, and the one ``save()`` these could reach
     was ``SettingsDialog._on_accept``. So an account added from the launch screen survived

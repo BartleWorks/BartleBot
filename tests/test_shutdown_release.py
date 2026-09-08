@@ -1,4 +1,4 @@
-"""Releasing the clients on the way out (#155).
+"""Releasing the clients on the way out.
 
 Closing BartleBot used to destroy every embedded game window: ``ClientTile`` re-parents
 each one under the Qt window, so Qt took its children down with it, and nothing unhooked

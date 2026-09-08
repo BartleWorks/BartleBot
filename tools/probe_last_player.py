@@ -7,7 +7,7 @@ character select still preselected the character that had most recently *played*
 one config.xml named. LastPlayer is a client-side cache of a value the login server sends
 back, so writing it changes nothing a launch can see.
 
-That closes #112. There is no way to choose a character at launch -- not through the file,
+That closes the LastPlayer work. There is no way to choose a character at launch -- not through the file,
 not through the UI (nothing per-character to click), not through memory (the selection is
 re-derived server-side). A launch gets the most recently played character or nothing.
 
@@ -25,7 +25,7 @@ WHY IT EXISTED
 The launch cards can say which characters live on an account (``bartlebot.character_roster``)
 but not *pick* one. ``tools/probe_character_gid.py`` documents why the obvious routes are
 dead ends -- there is nothing per-character to click at character select, and names are not
-unique -- and names the one remaining lever (#112):
+unique -- and names the one remaining lever:
 
     <LastPlayer TYPE="GID">12345678901234567</LastPlayer>   in Bin/config.xml
 

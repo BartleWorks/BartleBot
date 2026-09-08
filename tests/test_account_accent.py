@@ -112,7 +112,7 @@ def test_a_pin_outranks_a_derived_preference():
 
 
 def test_pinning_a_colour_repaints_nothing_it_does_not_collide_with():
-    """The same guarantee as adding an account, now that a picker can trigger it (#196).
+    """The same guarantee as adding an account, now that a picker can trigger it.
     A user correcting one account's colour must not find the rest of the fleet rearranged
     underneath them — only the account whose slot was actually taken may move."""
     accounts = _accounts(5)

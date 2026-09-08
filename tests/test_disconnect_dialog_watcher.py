@@ -285,7 +285,7 @@ async def test_watcher_still_fires_recovery_when_kill_raises():
 
 
 # ---------------------------------------------------------------------------
-# Caption identification (issue #84, step 6)
+# Caption identification (step 6)
 #
 # The keyword list is English. A client running in any of the game's other six
 # locales matched nothing, and "nothing" reads as "no disconnect" — so a dead

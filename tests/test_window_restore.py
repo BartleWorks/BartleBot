@@ -1,6 +1,6 @@
 """Tests for the Win32 embed/restore mechanics behind the game-window tiles.
 
-Regression coverage for #105: a popped-out game window could not be moved, because
+Regression coverage for the pop-out restore fix: a popped-out game window could not be moved, because
 ``unembed()`` never really restored the window. No Qt and no Wizard101 process are
 needed — ``EmbeddedWindow`` takes an injectable ``user32`` stand-in.
 """

@@ -1,4 +1,4 @@
-"""The player card's pure parts, tested without a QApplication (#204).
+"""The player card's pure parts, tested without a QApplication.
 
 What a card *says* and what colour it wears are decidable from a username, an index and
 the account list, so they live outside the ``QWidget`` subclass and are asked here.

@@ -91,7 +91,7 @@ def _counts_as_arrived(zone: str | None, zone_pattern: str) -> bool:
     ordinary starting position for a bot rather than a rare one. Counting it as arrival
     returned SUCCESS with everyone still inside the dorm, which is the same thing step 3
     below refuses to do when it stops at Ravenwood instead of the dorm it just came
-    through (#157).
+    through.
 
     Only Wizard City is affected: no other world's pattern matches the dorm at all.
     """

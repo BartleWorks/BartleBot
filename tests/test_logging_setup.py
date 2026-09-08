@@ -1,4 +1,4 @@
-"""Tests for the log-readability machinery (#156).
+"""Tests for the log-readability machinery.
 
 These three pieces are what turn a session log from complete into readable, and
 each of them can get a run wrong in a way that is invisible until someone is

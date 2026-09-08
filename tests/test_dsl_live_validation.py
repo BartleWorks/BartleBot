@@ -1,4 +1,4 @@
-"""Tests for live DSL validation in the strategy editors (issue #210, phase 6).
+"""Tests for live DSL validation in the strategy editors (the combat dialog rework, phase 6).
 
 ``validate_dsl`` is pure and cheap (see ``combat_runner.validate_dsl``), so both
 editors run it and reflect the result as an error line plus a colored border.

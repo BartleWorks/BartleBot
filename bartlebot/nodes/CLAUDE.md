@@ -32,7 +32,7 @@ transition) — otherwise the helper aims a teleport at a client already on a lo
 
 A five-hour four-client run writes tens of thousands of lines, and the difference
 between a log you can debug from and one you scroll past is entirely in what does
-*not* get written twice. Three rules keep it that way (#156):
+*not* get written twice. Three rules keep it that way:
 
 - **`machine.log()` is the node-facing API, and files the record under the running
   node** — `bartlebot.node.quicksell`, not `bartlebot.bot.machine`. That is what makes
@@ -89,7 +89,7 @@ before watching for a loading screen can miss it entirely.
 Do **not** infer identity from which buttons are showing. That only works while no
 two dialogs a node can hit share a layout, and it already broke once: the dungeon
 exit warning and the friend-busy dialog both show a right button, so
-`teleport_to_friend` reported every dungeon exit as an unreachable friend (#84).
+`teleport_to_friend` reported every dungeon exit as an unreachable friend.
 
 Captions come from `bartlebot/data/dialog_captions.json`, all seven locales per key
 — memory holds the *resolved* text, so an English substring match fails silently on

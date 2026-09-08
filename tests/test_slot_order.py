@@ -117,7 +117,7 @@ def test_reserving_is_idempotent(harness):
 # ---------------------------------------------------------------------------
 # launch_profile launches the subset it is given
 #
-# Reservation itself moved out of launch_profile with #186: it is the caller's, because
+# Reservation itself moved out of launch_profile with the launching-client indicator: it is the caller's, because
 # rejecting a launch that is already running cannot be done from inside the launch. What
 # is left here is the other half of that handover -- launch_profile spawning exactly the
 # accounts the caller says it claimed, and no others.

@@ -1,4 +1,4 @@
-"""Tests for ClientManager.relog_clients — the scheduled relog cycle (#163, #164).
+"""Tests for ClientManager.relog_clients — the scheduled relog cycle.
 
 A relog is a healthy run being broken on purpose, so almost every test here is about a
 reason *not* to do it. The one that matters most is the recovery pre-check: unlike a crash,
@@ -243,7 +243,7 @@ class TestTheCycle:
 
 
 class TestRemovalIsLoggedAsARelog:
-    """The relog goes through the disconnect path, and must not be filed as a fault (#156)."""
+    """The relog goes through the disconnect path, and must not be filed as a fault."""
 
     def test_a_relogged_client_is_reported_as_a_relog(self, harness, caplog):
         harness._relogging_hwnds = {101}

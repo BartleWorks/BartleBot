@@ -1,4 +1,4 @@
-"""Tests for #66 — inserting a state at a node's input or output port.
+"""Tests for the insert-at-port work — inserting a state at a node's input or output port.
 
 Inserting on an *edge* splits that one edge. Inserting at a *port* takes everything
 on that port at once, which is the case the issue is about: several edges converging
@@ -309,7 +309,7 @@ def test_the_new_state_appears_on_the_canvas(canvas):
 
 
 def test_the_stored_position_matches_where_the_node_is_drawn(canvas):
-    """They diverged by one NODE_H on the edge-insert path before #66."""
+    """They diverged by one NODE_H on the edge-insert path before the insert-at-port work."""
     c = canvas()
 
     new_id = c.scene.insert_state_at_input_port("target", "sleep")

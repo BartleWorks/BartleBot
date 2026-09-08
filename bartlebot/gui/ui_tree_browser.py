@@ -386,7 +386,7 @@ class UITreeBrowserDialog(QDialog):
         self._tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
         # Every column is Interactive so the header dividers can be dragged.  Stretch and
         # ResizeToContents both lock a section against user resizing, which is what kept
-        # Element and the state columns fixed (#137).  Nothing stretches, so the widths
+        # Element and the state columns fixed.  Nothing stretches, so the widths
         # below are what the dialog opens at and the user owns them from there.
         header = self._tree.header()
         header.setStretchLastSection(False)

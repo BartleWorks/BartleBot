@@ -1,4 +1,4 @@
-"""The Players tab as widgets (#204): the drag, the buckets, the stripe, the copy.
+"""The Players tab as widgets: the drag, the buckets, the stripe, the copy.
 
 ``tests/test_player_card_text.py`` has everything decidable from a username and an index.
 What needs a ``QApplication`` is the part that is genuinely widget behaviour, and it is
@@ -375,7 +375,7 @@ def test_a_card_starts_with_every_row_uncopyable(qapp):
 
 
 def test_a_rebuild_keeps_the_freecam_toggle(qapp, section):
-    """Reset on every reorder before #204, when a reorder was a rare pair of buttons.
+    """Reset on every reorder before the Players tab card rework, when a reorder was a rare pair of buttons.
 
     A drag makes it one gesture away and visible, so the cards are re-keyed by hwnd
     instead of rebuilt.

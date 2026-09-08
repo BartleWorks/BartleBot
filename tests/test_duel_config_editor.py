@@ -367,7 +367,7 @@ def test_add_button_tooltip_describes_the_action_when_enabled(qapp):
 
 
 # ---------------------------------------------------------------------------
-# Reordering assignment rows (#95)
+# Reordering assignment rows
 # ---------------------------------------------------------------------------
 
 
@@ -558,7 +558,7 @@ class TestPlayerRangeCannotInvert:
 
 
 # ---------------------------------------------------------------------------
-# Description field (#210 phase 1)
+# Description field (phase 1)
 # ---------------------------------------------------------------------------
 
 
@@ -591,7 +591,7 @@ def test_clear_resets_the_description_field(qapp):
 
 
 # ---------------------------------------------------------------------------
-# Derived school-requirement chips (#210 phase 1)
+# Derived school-requirement chips (phase 1)
 # ---------------------------------------------------------------------------
 
 
@@ -644,7 +644,7 @@ def test_requirements_label_updates_when_a_row_is_removed(qapp):
 
 
 # ---------------------------------------------------------------------------
-# Assignment row: school and note (#210 phase 1)
+# Assignment row: school and note (phase 1)
 # ---------------------------------------------------------------------------
 
 
@@ -718,7 +718,7 @@ def test_unlink_leaves_an_authored_assignment_school_alone(qapp):
 
 
 # ---------------------------------------------------------------------------
-# Regression, #224: the description and note fields were wired to
+# The description and note fields were wired to
 # ``editingFinished``, which only fires when the widget loses focus.  Typing a
 # description and then closing the window -- or hitting the window's Save while
 # the caret was still in the field -- discarded what had just been typed, with

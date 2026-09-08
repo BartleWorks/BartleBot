@@ -112,7 +112,7 @@ def test_the_edit_button_edits_without_launching(qapp):
 
 
 def test_an_account_cards_pencil_edits_without_launching(qapp):
-    """Same rule on the other card type, which grew a pencil of its own in #194."""
+    """Same rule on the other card type, which grew a pencil of its own with the card action verbs."""
     card = AccountCard(ACCOUNT, ROSTER)
     launched, edited = [], []
     card.launch_account_requested.connect(lambda *a: launched.append(a))
@@ -320,7 +320,7 @@ def test_building_a_card_puts_no_window_on_the_screen(qapp, build):
     the way out.
 
     Extended past the cards to the columns and both surfaces that host them, because the
-    same mistake landed one level up in #192: a ``_FitBanner`` hiding its "Change
+    same mistake landed one level up in the Game tab card rework: a ``_FitBanner`` hiding its "Change
     resolution" link before the layout had adopted the button, flashing twice on every
     app start. Anything that shows or hides a child in its constructor belongs on this
     list.

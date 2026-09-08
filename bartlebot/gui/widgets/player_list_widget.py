@@ -21,7 +21,7 @@ class PlayerListWidget(QWidget):
       are not currently connected, and nothing else. It never clears a value and
       never blocks a click, because bots are authored offline: hiding or unchecking
       P3/P4 because only two clients happen to be running would silently rewrite a
-      four-client bot the moment its node was selected (#76).
+      four-client bot the moment its node was selected.
     """
 
     changed = pyqtSignal()

@@ -3,7 +3,7 @@
 WHY THIS EXISTS
 
 BartleBot cannot choose which character an account launches with. The only documented
-lever (#112) is ``<LastPlayer TYPE="GID">`` in ``Bin/config.xml``, and it is a bad one:
+lever is ``<LastPlayer TYPE="GID">`` in ``Bin/config.xml``, and it is a bad one:
 there is a single config.xml for the whole install, so a per-account choice forces the
 patch/start step to be serialized and destroys the batch shape that makes a launch
 profile take seconds rather than minutes.

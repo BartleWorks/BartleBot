@@ -1,4 +1,4 @@
-"""Tests for the (resolution, UI size) ladder and the screen-fit arithmetic (#101).
+"""Tests for the (resolution, UI size) ladder and the screen-fit arithmetic.
 
 No QApplication and no settings: bartlebot/game_sizing.py is pure on purpose, so the
 numbers behind "two clients do not fit on a 1080p screen" can be asserted directly.
@@ -11,7 +11,7 @@ import pytest
 from bartlebot import game_sizing as gs
 from bartlebot.settings_manager import VALID_RESOLUTIONS
 
-# The layout the worked examples in #101 were computed against: a 1080p screen and the
+# The layout the worked examples in the window-scaling work were computed against: a 1080p screen and the
 # default sidebar widths and canvas height, which give a 1304x800 game budget.
 _1080P = (1920, 1080)
 _DEFAULT_BUDGET = gs.screen_budget(_1080P, left_sidebar=300, right_sidebar=300, bottom_section=220, splitter_handle=8)
@@ -259,7 +259,7 @@ def test_a_layout_larger_than_the_screen_leaves_no_budget_rather_than_a_negative
     [(1, (1280, 720)), (2, (640, 480)), (3, (534, 300)), (4, (534, 300))],
 )
 def test_the_largest_tier_that_fits_1080p_at_the_default_layout(clients, expected):
-    """The table from #101: Micro is what a four-client 1080p user actually runs.
+    """The table from the window-scaling work: Micro is what a four-client 1080p user actually runs.
 
     Solo differs from that table, which ranked the six ladder rungs alone and so stopped
     at 800x600. The offered list is not only the ladder — one client on a 1080p screen
@@ -284,7 +284,7 @@ def test_the_widescreen_micro_rung_costs_a_four_client_user_nothing():
     [(1, "Huge"), (2, "Small"), (3, "Micro"), (4, "Micro")],
 )
 def test_the_ui_scale_that_comes_with_the_largest_fitting_resolution(clients, expected):
-    """#101's table, moved on twice.
+    """The window-scaling work's table, moved on twice.
 
     Ranked over the offered list rather than the ladder rungs alone, so solo gets 1280x720
     rather than stopping at 800x600. And two clients now read Small rather than Regular:

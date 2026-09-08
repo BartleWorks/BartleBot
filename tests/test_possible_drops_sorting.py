@@ -1,4 +1,4 @@
-"""Tests for the Possible Drops table's default sort (#144).
+"""Tests for the Possible Drops table's default sort.
 
 Real widget tests (QApplication required): what is under test is that the table
 opens grouped by Category with names ordered inside each group, which is a

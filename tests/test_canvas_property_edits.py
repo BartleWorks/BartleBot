@@ -1,9 +1,9 @@
-"""Regression tests for edits made from the properties panel (issues #121, #64).
+"""Regression tests for edits made from the properties panel.
 
 Both bugs share a shape: an edit the panel writes straight into the model never
 reached the code that redraws the graph.  Changing a node type left the canvas
-showing the old type (#121); rewiring an edge into a self-loop left it drawing
-its old two-node path (#64).
+showing the old type; rewiring an edge into a self-loop left it drawing
+its old two-node path.
 
 These are real widget tests (QApplication required), in the style of
 test_combat_tab.  Only the wiring is exercised — nothing reads pixels.
@@ -45,7 +45,7 @@ def _edge(scene, src, when, dst):
 
 
 # ---------------------------------------------------------------------------
-# #121 — node type dropdown
+# Node type dropdown
 # ---------------------------------------------------------------------------
 
 
@@ -83,7 +83,7 @@ def test_changing_node_type_updates_the_output_ports(qapp):
 
 
 # ---------------------------------------------------------------------------
-# #64 — edge endpoint dropdowns
+# Edge endpoint dropdowns
 # ---------------------------------------------------------------------------
 
 

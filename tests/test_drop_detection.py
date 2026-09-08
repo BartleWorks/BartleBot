@@ -82,7 +82,7 @@ async def test_poll_new_drops_timeout_leaves_baseline_untouched():
 
 
 # ---------------------------------------------------------------------------
-# _find_new_stuff — the chat-log diff (#143)
+# _find_new_stuff — the chat-log diff
 # ---------------------------------------------------------------------------
 
 
@@ -138,7 +138,7 @@ def test_find_new_stuff_prefers_the_longest_overlap_when_lines_repeat():
 
 
 def test_find_new_stuff_is_linear_on_a_large_trimmed_log():
-    """Guards the #143 regression: the old sliding-window version took ~127 ms here.
+    """Guards the end-of-fight lag regression: the old sliding-window version took ~127 ms here.
 
     A generous ceiling — the point is to catch a return to quadratic behaviour, not to
     pin down a wall-clock figure on a loaded CI runner.
@@ -164,7 +164,7 @@ def test_extract_new_drops_reports_only_the_drops_added_after_a_trim():
 
 
 # ---------------------------------------------------------------------------
-# snapshot_chat capping (#143)
+# snapshot_chat capping
 # ---------------------------------------------------------------------------
 
 

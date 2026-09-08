@@ -98,7 +98,7 @@ COMBAT_DROP_MESSAGE_TIMEOUT = 15.0
 # Seconds to keep watching the chat log for a drop announcement after a duel ends.
 # Far longer than the reagent window: end-of-fight is when the server grants loot,
 # and that is exactly when a long-running session lags hardest, so the round-trip
-# that is normally instant can stretch to many seconds (#127).
+# that is normally instant can stretch to many seconds.
 #
 # Paid in full only by a fight that drops nothing at all — poll_new_drops returns
 # as soon as a line appears. It is also not the last line of defence: the caller
@@ -172,8 +172,8 @@ RELOG_IN_GAME_TIMEOUT = 180.0
 # short.
 
 RELOG_WATCH_INTERVAL = 60.0
-# How often a running bot checks whether a relog is due (#163) and samples each client's
-# GDI count (#164). Deliberately coarse: the timer it serves is measured in hours, and GDI
+# How often a running bot checks whether a relog is due and samples each client's
+# GDI count. Deliberately coarse: the timer it serves is measured in hours, and GDI
 # climbs over a whole session, so anything faster is memory reads bought for nothing.
 
 RELOG_PARK_TIMEOUT = 300.0
@@ -445,7 +445,7 @@ WINDOW_CLOSE_CONFIRM_INTERVAL = 0.1
 # notice the click worked, and the common case is that it worked immediately. Sleeping the
 # whole interval before looking put a 0.4 s floor under every window close in the app;
 # group formation closes several windows per invite, so that was among the largest fixed
-# costs in a regroup (#114).
+# costs in a regroup.
 
 GROUP_UI_SETTLE = 1.0
 # Pause after switching to the social window's Group tab, so the page is populated before
@@ -459,7 +459,7 @@ GROUP_UI_SETTLE = 1.0
 #
 # Confirming a JOIN is not that case and no longer pays this: only "grouped" is being
 # waited for there, so group_manager._confirm_joined polls the Leave Group button instead
-# and returns the moment it appears (#114). Same for the two sleeps that used to sit in
+# and returns the moment it appears. Same for the two sleeps that used to sit in
 # _invite_and_accept — the friend profile popup and the "already in a group" refusal are
 # both polled now, the latter raced against the invitation prompt so its absence costs
 # nothing.

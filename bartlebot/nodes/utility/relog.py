@@ -2,17 +2,17 @@
 
 Why a bot would want this: a game client gets slower the longer it stays logged in. Over a
 measured 801-fight overnight run the same fight went from 23 s to 32 s, and the cost is a
-page-fault storm inside the game process that nothing outside it can reach (#143). Logging
-out clears it. That is also what a scheduled relog does (#163) — this node is for a bot that
+page-fault storm inside the game process that nothing outside it can reach. Logging
+out clears it. That is also what a scheduled relog does — this node is for a bot that
 wants to choose the moment instead of waiting for the timer, and for wiring a relog onto a
-FAILURE transition as a last resort (#89).
+FAILURE transition as a last resort.
 
 **The process is never closed here.** The client stays hooked all the way through: the
 player-struct hook is a patch in the game's own code that re-populates itself the moment a
 character loads in, so nothing has to be re-attached, re-embedded, or logged back in with
 stored credentials. That is what makes this cost seconds where the scheduled relog costs
 minutes — and also what it cannot do: a client wedged badly enough to be unable to reach its
-own menu needs the scheduled relog's force-close, and GDI exhaustion (#164) needs the
+own menu needs the scheduled relog's force-close, and GDI exhaustion needs the
 process gone entirely.
 
 **Where the character comes back.** Not where it logged out. Quitting from inside a dungeon
@@ -70,7 +70,7 @@ NODE_SPEC = NodeSpec(
     description=(
         "Logs players out to the character select screen and immediately plays the same "
         "character back in, without closing the game. Clears the slowdown that builds up over "
-        "a long session (#143) in seconds rather than the minutes a full relaunch costs."
+        "a long session in seconds rather than the minutes a full relaunch costs."
     ),
     params=PARAM_SCHEMA,
     returns=[

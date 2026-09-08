@@ -1,4 +1,4 @@
-"""Editing a launch profile opens the editor and nothing else (#193).
+"""Editing a launch profile opens the editor and nothing else.
 
 The gear on a ProfileCard used to reach its editor through the whole Settings dialog:
 ``_open_settings(tab_name="game", edit_profile=name)`` built the dialog, switched it to
@@ -165,7 +165,7 @@ def test_keeping_the_same_name_is_not_a_duplicate(editor):
 # The slot behind the card's gear
 # ---------------------------------------------------------------------------
 # Called unbound against a stand-in: MainWindow is far too heavy to build for this, and
-# what is under test is which refreshes run -- the second-order bug in #193.
+# what is under test is which refreshes run -- the second-order bug in the profile-editor dialog work.
 
 
 def _main_window_stub(saved: bool, monkeypatch):

@@ -2,10 +2,10 @@
 
 Also the home of the *card actions* — the module-level ``add_``/``edit_``/``delete_``/
 ``duplicate_`` functions below, which are what every surface that manages an account or
-a launch profile calls (#194). They live here because the editors they wrap do, not
+a launch profile calls. They live here because the editors they wrap do, not
 because the tab owns them: none of them needs an ``AccountsTab`` to exist, which is the
 whole point. The launch screen's cards reached the profile editor by building the entire
-Settings dialog underneath it until #193, and the Add cards (#195) and the Game tab's own
+Settings dialog underneath it until the profile-editor dialog work, and the Add cards and the Game tab's own
 buttons would each have grown a second copy of the delete cascade otherwise.
 
 Each returns whether anything was written, which is every caller's cue to refresh
@@ -128,7 +128,7 @@ class _Swatch(QToolButton):
 class _AccountColorPicker(ThemedMixin, QWidget):
     """Automatic, then one swatch per palette slot — the colour row in ``_AccountDialog``.
 
-    Two things about it are the point rather than the decoration (#196):
+    Two things about it are the point rather than the decoration:
 
     * **Automatic stays selectable, and is the default.** It clears the pin rather than
       writing a value. Without it a user who picks once could never get a derived colour
@@ -230,7 +230,7 @@ class _AccountDialog(QDialog):
     comes back unchanged with nothing saying why. The alias is the field for what the
     account is *called*.
 
-    The colour row is here for the same reason (#196): a pinned colour is a property of
+    The colour row is here for the same reason: a pinned colour is a property of
     the account record, and this is where a record is edited.
     """
 
@@ -305,7 +305,7 @@ def add_account(parent: QWidget | None = None) -> bool:
     """Open an empty account editor; store the credential and the record if accepted.
 
     A module function for the same reason as ``edit_launch_profile``: the Add affordance
-    is a card at the foot of the launch screen's Accounts column (#195) as well as a
+    is a card at the foot of the launch screen's Accounts column as well as a
     button under the Game tab's list, and the card must not have to build a Settings
     dialog to reach the one editor it wants.
 
@@ -350,7 +350,7 @@ def edit_account(username: str, parent: QWidget | None = None) -> bool:
     alias may legitimately be blank.
 
     Automatic *removes* the ``color`` key rather than writing a sentinel, which is what
-    puts the account back under ``account_color_keys``' de-duplication (#196). A key left
+    puts the account back under ``account_color_keys``' de-duplication. A key left
     behind holding None would read as "pins nothing usable" today, but it is a stored
     value that has to keep meaning that.
     """
@@ -492,7 +492,7 @@ def edit_launch_profile(
     A module function rather than a method because the two places that edit a profile —
     the Game tab's Edit button and the gear on a launch card — have nothing else in
     common, and routing the card through the tab meant building the whole Settings dialog
-    to reach one editor (#193). What the card needs is the editor and the save; what it
+    to reach one editor. What the card needs is the editor and the save; what it
     does not need is a second OK/Cancel around them, applying to every tab.
 
     Returns whether the profile was actually written, which is the caller's cue to
@@ -618,7 +618,7 @@ class AccountsTab(QWidget):
     It used to draw the identical two lists as ``QListWidget`` rows of formatted text — an
     account was a display string, a profile was ``f"{name} ({n} accounts, WxH)"`` — so the
     surface where accounts are *edited* said strictly less about them than the surface
-    where they are merely launched, and neither taught you to read the other (#192). They
+    where they are merely launched, and neither taught you to read the other. They
     are the same cards now, out of the same ``CardColumn``.
 
     What differs is the verbs, and they differ because this is the editing surface: a body
@@ -662,7 +662,7 @@ class AccountsTab(QWidget):
         # them to set the resolution by hand in the game's own options, which has not been
         # true since BartleBot started writing preferences.xml before every launch —
         # instructions for work the app already does read as work still outstanding.
-        # The Windowed mode sentence went the same way in #200, which now forces
+        # The Windowed mode sentence went the same way in the resolution-restore work, which now forces
         # IsFullscreen off at launch and restores it after.
         hint = ThemedTextLabel(
             "BartleBot sets the resolution itself at every launch and runs the game "

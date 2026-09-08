@@ -1216,7 +1216,7 @@ class EditScene(QGraphicsScene):
 
         Both are required and validated against the states list, so a dangling one
         produces a config that saves happily and then refuses to load.  Deleting the
-        initial state has always been able to do this; #71 made the recovery state
+        initial state has always been able to do this; the state-role checkboxes made the recovery state
         as easy to delete, which is what brought it to the surface.
 
         The first remaining state is an arbitrary choice, but it is a *valid* one, and
@@ -1521,7 +1521,7 @@ class EditScene(QGraphicsScene):
         return new_id, node
 
     def insert_state_at_input_port(self, state_id: str, node_type: str) -> str | None:
-        """Insert a state of *node_type* in front of everything entering *state_id* (#66).
+        """Insert a state of *node_type* in front of everything entering *state_id*.
 
         Every transition that ended at *state_id* now ends at the new state instead,
         keeping its own ``when``, flags and label untouched -- those describe the
@@ -1555,7 +1555,7 @@ class EditScene(QGraphicsScene):
         return new_id
 
     def insert_state_at_output_port(self, state_id: str, return_name: str | None, node_type: str) -> str | None:
-        """Insert a state of *node_type* after *state_id*'s *return_name* port (#66).
+        """Insert a state of *node_type* after *state_id*'s *return_name* port.
 
         Every transition leaving that port now leaves the new state instead, keeping
         its ``when``, flags and label; *state_id* is then wired to the new state on the

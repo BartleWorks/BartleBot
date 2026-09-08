@@ -9,7 +9,7 @@ Two things fall out of that:
 
 - **Options owns the only editor.**  Setup is a values surface, and the description
   is authorial; the same split that puts declarations in Options puts the writable
-  copy there (#180).  The read-only copy is not a lesser variant of the editor — it
+  copy there.  The read-only copy is not a lesser variant of the editor — it
   is a wrapping label, so a long block is read in full rather than through a
   capped viewport.
 - **It collapses.**  A header the user can fold is what makes a long block

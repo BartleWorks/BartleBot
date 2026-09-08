@@ -33,7 +33,7 @@ class CategoryThenNameTreeItem(CaseInsensitiveTreeItem):
     Sorting by category alone leaves the rows inside each group in whatever order
     they were inserted, which across a 600-entry drop table is no order at all —
     you can see where a category starts but not find anything in it. Comparing
-    ``(category, name)`` makes the column do the grouping it exists for (#144).
+    ``(category, name)`` makes the column do the grouping it exists for.
 
     Uncategorized rows sort as a group of their own, last in ascending order,
     rather than wherever the em dash happens to land in the collation order.

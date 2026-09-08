@@ -14,7 +14,7 @@ grip besides, so there is no gesture to make there in the first place.
 The column is built with no title and no Add card. There is nothing to add to a list of
 running game clients, and the tab's own label already says "Players" -- a bold heading
 under it would be the panel saying the word twice. Both are one argument each to
-``CardColumn``; the empty-title case is the small change #204 asked to be checked for.
+``CardColumn``; the empty-title case is the small change the Players tab card rework asked to be checked for.
 
 The Unhook All / Rehook All row stays where it was, above both. It acts on both buckets
 at once, so putting half of it in each section header would split one control into two
@@ -331,7 +331,7 @@ class ClientSection(ThemedMixin, QWidget):
         cancel landing in that window (a tab switch, an unhook, shutdown) kills them
         before they await anything.  Passing ``w.refresh()`` in directly meant the
         coroutine was already constructed by then and got garbage collected unawaited —
-        the ``coroutine 'ClientWidget.refresh' was never awaited`` warning in #128.
+        the ``coroutine 'ClientWidget.refresh' was never awaited`` warning.
         """
         await asyncio.wait_for(widget.refresh(), timeout=CLIENT_REFRESH_TIMEOUT)
 

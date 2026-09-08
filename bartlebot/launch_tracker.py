@@ -1,6 +1,6 @@
 """Which accounts have a launch running right now.
 
-WHY THIS IS NOT DERIVED FROM ``_client_order`` (#186)
+WHY THIS IS NOT DERIVED FROM ``_client_order``
 
 A launch reserves its slots before the first process is spawned, so the reserved ordering
 already names every account a launch is about to bring up -- it looks like the pending set

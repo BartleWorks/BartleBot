@@ -3,7 +3,7 @@
 Recovery needs two things from a client that dies: an account to relaunch, and a
 password to log it back in. A client missing either is not recoverable, and nothing
 about a healthy-looking run says so — the run that exposed this lost four clients
-overnight and sat paused for five hours (#79).
+overnight and sat paused for five hours.
 
 The check is worth its dialog only because it is quiet when there is nothing wrong.
 A warning that fires every run is one that gets clicked past, so this appears solely

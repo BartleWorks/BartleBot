@@ -127,7 +127,7 @@ Not belt and braces. An override outlives the option it was set on — the user 
 Team-Up on for one bot, and the value is keyed to the bot rather than to the node — so
 the param alone is what stops a leftover `True` sending a client at a Team-Up button
 that is not on this sigil. The param alone must not act either: a bot that *can* team
-up still enters alone until the user says otherwise (#162).
+up still enters alone until the user says otherwise.
 
 The param is also the only curation lever there is for Team-Up, and deliberately a
 convention rather than an enforcement point. Whether a run is a reasonable one to bring

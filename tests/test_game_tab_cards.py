@@ -1,4 +1,4 @@
-"""The Game settings tab is the launch screen's two card columns (#192).
+"""The Game settings tab is the launch screen's two card columns.
 
 It used to draw the identical two lists as ``QListWidget`` rows of formatted text: an
 account was a display string, a profile was ``f"{name} ({n} accounts, WxH)"``. Nothing
@@ -93,7 +93,7 @@ def test_the_tab_keeps_no_list_widget_for_either_column(qapp, screen, populated)
     """The rows are gone, and with them the selection that fed the button rows.
 
     One ``QListWidget`` survives, inside the profile editor's own account list — that
-    dialog is a different problem and explicitly out of #192's scope. Any second one means
+    dialog is a different problem and explicitly out of the Game tab card rework's scope. Any second one means
     a column came back.
     """
     screen(_4K)

@@ -40,7 +40,7 @@ _DROP_TYPES = {
 # How much of the chat log a snapshot keeps. Snapshots are carried between fights as
 # diff baselines, and the game's log holds thousands of lines after a long session, so
 # an uncapped snapshot makes every later diff and every stored baseline grow with
-# session length (#143). Keeping the *tail* is what the diff needs: new announcements
+# session length. Keeping the *tail* is what the diff needs: new announcements
 # arrive at the end, and a trim only ever removes lines from the front, so a capped
 # baseline survives a trim strictly longer than a full one does. The cap only has to
 # exceed what can arrive between two consecutive snapshots — a poll interval or a
@@ -150,7 +150,7 @@ def _find_new_stuff(old: str, new: str) -> str:
     fills, new announcements push the oldest lines off the front and `old` stops being a
     substring of anything. What survives is an overlap — some suffix of `old` is a prefix
     of `new` — and the longest such overlap is the split point. It is found on line
-    boundaries in O(n) via a KMP failure function (#143). The previous implementation slid
+    boundaries in O(n) via a KMP failure function. The previous implementation slid
     `old` forward one character at a time, re-scanning `new` on every step: O(len(old) x
     len(new)), measured at 127 ms on a 250 KB log and 856 ms when it missed entirely, paid
     on the event loop thread at end of fight — and it misfired, reporting the whole visible

@@ -272,7 +272,7 @@ def test_an_inverted_range_is_repaired_on_load_not_rejected():
 
 
 # ---------------------------------------------------------------------------
-# Authored metadata: description, school, note (#210 phase 1)
+# Authored metadata: description, school, note (phase 1)
 # ---------------------------------------------------------------------------
 
 

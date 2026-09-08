@@ -89,7 +89,7 @@ def test_window_config_patch_carries_the_quick_teleport_tag(tmp_path, config):
 
 
 # ---------------------------------------------------------------------------
-# LastPlayer (#112)
+# LastPlayer
 # ---------------------------------------------------------------------------
 
 
@@ -126,7 +126,7 @@ def test_last_player_is_none_when_the_tag_is_not_a_number(install, config):
 
 
 # ---------------------------------------------------------------------------
-# UISize (#101)
+# UISize
 # ---------------------------------------------------------------------------
 #
 # The game's HUD is fixed-pixel, so a launch below 800x600 has to scale it down or the
@@ -264,7 +264,7 @@ def test_a_failed_restore_keeps_the_capture_for_the_next_start(ui_config):
 
 
 # ---------------------------------------------------------------------------
-# Resolution and IsFullscreen (#200)
+# Resolution and IsFullscreen
 # ---------------------------------------------------------------------------
 #
 # Every launch writes the tiled resolution into preferences.xml, and a fullscreen game

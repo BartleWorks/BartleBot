@@ -69,7 +69,7 @@ async def detect_wizard_name(client) -> str | None:
 
         name = await _read_title_scroll(client)
         if name:
-            # Not the name itself — see the note in read_name_from_memory (#156).
+            # Not the name itself — see the note in read_name_from_memory.
             logger.debug("Detected a wizard name from the character page")
         else:
             logger.warning("Character page gave no readable wizard name")
@@ -281,7 +281,7 @@ async def read_name_from_memory(client) -> str | None:
         # reports, and a wizard name in one links the account to whoever filed it —
         # see "No real player data" in CLAUDE.md. name_keys is not a safer stand-in:
         # `tools/name_keys.py --decode` turns it straight back into the name. That it
-        # resolved at all is the part worth recording (#156).
+        # resolved at all is the part worth recording.
         logger.debug("Resolved a wizard name from memory")
     return name
 

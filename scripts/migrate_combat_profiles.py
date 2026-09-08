@@ -14,7 +14,7 @@ have already had their legacy fields removed.
 Reference commit for old default_combat_config values: 5edbd5879a67439eddcb76848e6a2d76ac154da7
 
 **Its idempotency check no longer detects an unmigrated bot.** Deriving option
-declarations (#159) put every bot file through ``BotConfig.save`` once, which
+declarations put every bot file through ``BotConfig.save`` once, which
 drops any key the model does not carry -- so the legacy fields this script looks
 for are gone from ``bots/`` whether or not the bot was ever migrated. Thirteen
 files still had a ``default_combat_config`` and no ``bot_strategies/`` entry

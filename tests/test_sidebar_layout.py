@@ -1,4 +1,4 @@
-"""Which panel holds what, after the layout reorganisation (#80).
+"""Which panel holds what, after the layout reorganisation.
 
 The left sidebar is now two tabs whose *identity* depends on the mode — Setup and
 Combat while running, Options and Properties while editing — which is §3.5 of the
@@ -130,12 +130,12 @@ def test_closing_the_bot_hides_the_description(sidebar):
 
 
 # ---------------------------------------------------------------------------
-# Only the Options copy is writable (#180)
+# Only the Options copy is writable
 # ---------------------------------------------------------------------------
 
 
 def test_the_options_copy_is_the_only_editor(sidebar):
-    """Phase 5 of #145 left the description rendered twice and editable nowhere.
+    """Phase 5 of the bot-options split left the description rendered twice and editable nowhere.
     The writable copy belongs on the declarations surface, not the values one."""
     assert sidebar.options_description.is_editable
     assert not sidebar.setup_description.is_editable
@@ -282,7 +282,7 @@ def test_an_edit_elsewhere_does_not_move_the_caret(sidebar):
 
 
 # ---------------------------------------------------------------------------
-# Not rebuilding what did not change (#184)
+# Not rebuilding what did not change
 # ---------------------------------------------------------------------------
 
 
@@ -320,7 +320,7 @@ def test_a_replacement_config_rebinds_even_when_it_says_the_same_thing(sidebar):
     """Undo/redo hands the canvas a brand-new ``BotConfig`` restored from a
     ``model_dump``, so its contents usually match the one before it.  The sections
     write through the object they hold: one left bound to the replaced config edits
-    something nothing saves (#53)."""
+    something nothing saves."""
     sidebar.set_config(_config(options=[BotOptionModel(name="repeat", type="bool", default=True)]))
     before = sidebar.setup.option_widgets
 
@@ -333,7 +333,7 @@ def test_a_replacement_config_rebinds_even_when_it_says_the_same_thing(sidebar):
 
 def test_save_as_re_resolves_the_rows_against_the_new_id(sidebar):
     """A fork inherits none of the original's stored values, so Setup must not go on
-    showing them (#179).  Same object, new id -- the one case identity cannot see."""
+    showing them.  Same object, new id -- the one case identity cannot see."""
     config = _config(options=[BotOptionModel(name="repeat", type="bool", default=True)])
     sidebar.set_config(config)
     before = sidebar.setup.option_widgets
@@ -388,7 +388,7 @@ def test_leaving_the_players_tab_lets_the_client_poll_slow_down(qapp):
 
 
 # ---------------------------------------------------------------------------
-# Folding a description out grows the section downwards (#186)
+# Folding a description out grows the section downwards
 # ---------------------------------------------------------------------------
 #
 # A SidebarSection whose content is height-for-width -- which an option row's

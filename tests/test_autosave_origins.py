@@ -2,7 +2,7 @@
 
 Crash recovery needs to know which original file an auto-save was derived from
 so it can label the recovery candidate correctly instead of always falling back
-to "(unsaved new bot)" (issue #107). ``set_autosave_origin`` records that link
+to "(unsaved new bot)". ``set_autosave_origin`` records that link
 at auto-save time; ``get_autosave_origin`` and ``remove_autosave_origin`` read
 and clear it.
 

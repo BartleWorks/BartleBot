@@ -40,7 +40,7 @@ class GameViewPanel(ThemedMixin, QWidget):
 
     The bar sits above the *game windows*, so it says what the clients are doing.
     The bot's name and run status used to live here and moved to Bar B above the
-    graph (#80) — they belong to the bot, and here they vanished with the game view
+    graph — they belong to the bot, and here they vanished with the game view
     whenever it was hidden.
     """
 

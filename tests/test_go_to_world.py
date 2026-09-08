@@ -137,7 +137,7 @@ async def test_wizard_city_passing_through_the_dorm_does_not_stop_there():
 
 
 async def test_starting_in_the_dorm_is_not_already_in_wizard_city():
-    """#157: the dorm matches WizardCity/* but is not a place a bot can carry on from.
+    """The dorm matches WizardCity/* but is not a place a bot can carry on from.
 
     HOME lands every client here, so this is the ordinary starting position — counting it
     as arrival returned SUCCESS with everyone still shut inside the dorm.

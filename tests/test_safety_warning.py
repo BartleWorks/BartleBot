@@ -316,7 +316,7 @@ def test_warning_order_matches_node_specs_order():
 
 
 # ---------------------------------------------------------------------------
-# teleport_to_friend target resolution in the dialog (#102)
+# teleport_to_friend target resolution in the dialog
 # ---------------------------------------------------------------------------
 
 

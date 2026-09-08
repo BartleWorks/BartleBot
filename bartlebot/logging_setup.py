@@ -1,7 +1,7 @@
 """Logging configuration: a per-session file, and a bridge to the in-app log widget.
 
 Three things here exist to make a session log readable rather than merely complete.
-A five-hour four-client run produces tens of thousands of lines, and before #156 the
+A five-hour four-client run produces tens of thousands of lines, and before the log-readability work the
 overwhelming majority of them were noise of three specific kinds:
 
   * every node logged through ``BotMachine.log()``, so every record was named

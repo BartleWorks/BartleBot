@@ -1,6 +1,6 @@
-"""The Quick Launch columns scroll only when there is something to scroll to (#191).
+"""The Quick Launch columns scroll only when there is something to scroll to.
 
-Both columns are a ``CardColumn`` -- on the launch screen and, since #192, in the Game
+Both columns are a ``CardColumn`` -- on the launch screen and, since the Game tab card rework, in the Game
 settings tab as well -- and the invariant it has to hold is one sentence: a vertical
 scroll bar appears exactly when the cards draw taller than the viewport.
 
@@ -133,7 +133,7 @@ def test_a_column_that_overflows_still_scrolls(qapp, kind, reason):
 @pytest.mark.parametrize("count", [0, 1, 2, 5, 20])
 @pytest.mark.parametrize("column_height", [200, 900])
 def test_the_bar_appears_exactly_when_the_cards_overflow(qapp, kind, reason, count, column_height):
-    """The invariant, over the three cases #191 asks the fix to hold for: no cards, one
+    """The invariant, over the three cases the fix has to hold for: no cards, one
     card, and enough cards to genuinely need scrolling."""
     cards = _cards(kind, count, reason)
     _host, area = _column(qapp, cards, column_height)
@@ -166,7 +166,7 @@ def test_an_account_card_that_can_launch_reserves_no_refusal_line(qapp):
 
     An empty QLabel still contributes a line to the card's minimum height while drawing
     nothing, and that difference is scroll range over blank space once a column holds
-    enough cards -- the same defect as #191, a dozen pixels at a time.
+    enough cards -- the same defect, a dozen pixels at a time.
     """
     launchable = _cards("account", 1, None)
     _host, _area = _column(qapp, launchable, 900)

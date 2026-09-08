@@ -1,6 +1,6 @@
 """launch_accounts: one batch of instances, logged in and driven together.
 
-The shape is the reason a team launch — and, since #163, a fleet relog's recovery — costs
+The shape is the reason a team launch — and, since the scheduled relog work, a fleet relog's recovery — costs
 roughly one launch rather than one per client. Each drive spends minutes waiting on
 loading screens and character select, so a batch that advanced them in turn would give
 back everything the batch is for.

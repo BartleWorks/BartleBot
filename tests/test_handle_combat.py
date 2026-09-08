@@ -103,7 +103,7 @@ async def test_named_enemy_uses_vague_name():
 
 
 async def test_wildcard_enemy_name_searches_by_predicate():
-    """Issue #58: a '*' in the enemy field used to be matched literally, so it found nothing."""
+    """A '*' in the enemy field used to be matched literally, so it found nothing."""
     client = FakeClient()
     client.find_closest_by_predicate.return_value = FakeEntity("Bandit/BanditThug")
     client.in_battle.return_value = True

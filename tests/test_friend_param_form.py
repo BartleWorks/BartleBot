@@ -1,4 +1,4 @@
-"""Widget tests for teleport_to_friend's two-mode parameter form (#102).
+"""Widget tests for teleport_to_friend's two-mode parameter form.
 
 Real widget tests (QApplication required), in the style of test_canvas_property_edits.
 They cover the two mechanisms the design leans on and nothing else: that the friend name

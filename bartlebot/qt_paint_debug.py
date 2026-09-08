@@ -5,7 +5,7 @@ session log gave no hint that anything had gone wrong at the Qt level.  This
 installs a message handler that logs every Qt message, and for ``QPainter::``
 messages specifically also dumps the Python stack.
 
-That stack is what resolved issue #72.  QPainter reports the *device* it failed
+That stack is what resolved the QPainter bug.  QPainter reports the *device* it failed
 on, never the caller:
 
     QPainter::begin: Paint device returned engine == 0, type: 3
@@ -20,7 +20,7 @@ Python frame in the dump named the exact ``drawText`` call in one run.
 Dumps are throttled per distinct stack, because the failure repeats four times
 per glyph per repaint — a single pan produced hundreds of lines.
 
-It also swallows the DirectWrite warnings of issue #169.  Windows still ships
+It also swallows the DirectWrite warnings a legacy GDI stock font produces.  Windows still ships
 ten legacy GDI stock fonts (``8514oem``, ``Fixedsys``, ``Modern``, ``MS Sans
 Serif``, ``MS Serif``, ``Roman``, ``Script``, ``Small Fonts``, ``System``,
 ``Terminal``).  None of them is TrueType or OpenType, so ``CreateFontFaceFromHDC``
@@ -33,8 +33,8 @@ inside Qt's own font matching, when a walk over the installed families crosses
 them, so there is no call site to fix.  The narrow match on the family name is
 what keeps a DirectWrite failure for a *real* font a visible warning.
 
-The handler also swallows the ``qt.qpa.screen`` monitor-enumeration warnings of
-issues #42 and #120.  Windows tears the monitor's device instance out of the
+The handler also swallows the ``qt.qpa.screen`` monitor-enumeration warnings a
+powered-down monitor produces.  Windows tears the monitor's device instance out of the
 device tree when the display powers down, so Qt's screen enumeration fails with
 ``0xe0000225`` (``ERROR_NO_SUCH_DEVINST``) on every re-check until it wakes.
 Nothing is wrong — the screens come back with the monitor — but an overnight run
@@ -78,7 +78,7 @@ _DISPLAY_NOISE_FRAGMENTS = (
     "Unable to get device information for",
 )
 
-#: Head of the DirectWrite warning of issue #169.  Matched as a prefix so the
+#: Head of the DirectWrite warning a legacy GDI stock font produces.  Matched as a prefix so the
 #: HRESULT text, the whole ``QFontDef``, the ``LOGFONT`` and the dpi — all of
 #: which vary per family and per screen — are outside the match.
 _FONT_NOISE_PREFIX = "DirectWrite: CreateFontFaceFromHDC() failed"
@@ -119,7 +119,7 @@ def is_painter_message(message: str) -> bool:
 
 
 def is_display_noise(message: str, category: str | None = None) -> bool:
-    """True for the screen warnings a powered-down monitor produces (#42, #120).
+    """True for the screen warnings a powered-down monitor produces.
 
     Narrow on purpose.  ``qt.qpa.screen`` also reports things worth seeing, so
     the two known monitor-enumeration failures are matched by text rather than
@@ -132,7 +132,7 @@ def is_display_noise(message: str, category: str | None = None) -> bool:
 
 
 def is_legacy_font_noise(message: str) -> bool:
-    """True for the DirectWrite warnings a legacy GDI stock font produces (#169).
+    """True for the DirectWrite warnings a legacy GDI stock font produces.
 
     Both halves are required: the DirectWrite prefix, and one of the ten
     families that cannot have a face built for them.  A ``CreateFontFaceFromHDC``

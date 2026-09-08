@@ -55,14 +55,14 @@ class _GamePlaceholder(ThemedMixin, QWidget):
 
     The two outer columns are ``CardColumn``s -- the same widget the Game settings tab is
     built from, so the surface that launches an account and the surface that edits one
-    draw it identically (#192). Everything a column does, the drag that reorders it
+    draw it identically. Everything a column does, the drag that reorders it
     included, lives there; this class supplies the cards and decides what a click on one
     means.
     """
 
     launch_account_requested = pyqtSignal(str, str)
     launch_profile_requested = pyqtSignal(str)  # (profile_name)
-    # The card actions (#194) and the column reorders (#192). Forwarded rather than acted
+    # The card actions and the column reorders. Forwarded rather than acted
     # on: what an edit, a delete or a reorder has to refresh afterwards -- the Launch
     # menu, the window minimum, these cards -- is the main window's business and not this
     # widget's.

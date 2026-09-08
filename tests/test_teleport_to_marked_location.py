@@ -223,7 +223,7 @@ async def test_fast_client_finishes_before_lagging_client_starts():
 
 
 # ---------------------------------------------------------------------------
-# Dungeon exit warning (issue #84)
+# Dungeon exit warning
 # ---------------------------------------------------------------------------
 
 

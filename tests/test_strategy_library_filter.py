@@ -1,4 +1,4 @@
-"""Filtering a Strategy Library list must not disturb the editor beside it (#223).
+"""Filtering a Strategy Library list must not disturb the editor beside it.
 
 ``QListWidget.clear()`` emits ``currentItemChanged(None, previous)``, and
 repopulating then emits it again for the reselect.  Both reached the selection
@@ -55,7 +55,7 @@ def _count_calls(monkeypatch, obj, name):
 
 
 def test_typing_in_the_pcs_filter_leaves_the_dsl_caret_alone(qapp, store):
-    """The repro from #223: one keystroke used to send the caret back to 0."""
+    """The repro from the filter-reload fix: one keystroke used to send the caret back to 0."""
     a = PlayerCombatStrategy(name="Alpha", dsl="any<damage> @ enemy")
     save_player_strategy(a)
 

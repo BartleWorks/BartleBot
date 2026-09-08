@@ -881,8 +881,8 @@ async def open_friends_list(client):
 
     # The large list has to be cleared, not clicked past. Visibility is judged below from
     # NewFriendsListWindow alone, so from the large list this reads "closed" and clicks
-    # btnFriends anyway — and what the game does with that click was never established
-    # (issue #96). Closing first replaces an unknown with the known-good closed state, at
+    # btnFriends anyway — and what the game does with that click was never established.
+    # Closing first replaces an unknown with the known-good closed state, at
     # the cost of one extra toggle in a case that only arises when a list was left open by
     # hand.
     if await is_named_window_visible(client, LARGE_FRIENDS_LIST_WINDOW_NAME):

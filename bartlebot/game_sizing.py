@@ -2,7 +2,7 @@
 
 Wizard101's own options dropdown will not go below 800x600, but that is a UI
 restriction rather than an engine limit: ``Resolution`` is a free-form ``WxH`` string
-and the engine renders whatever is in it, verified down to 400x300 (#101). Two clients
+and the engine renders whatever is in it, verified down to 400x300. Two clients
 at the stock floor do not fit side by side on a 1080p screen, which is the whole reason
 this module exists.
 
@@ -98,7 +98,7 @@ BOTCANVAS_MIN_HEIGHT = 180
 # panel is still usable at, so the arithmetic takes the two separately -- see
 # ``right_sidebar_floor`` for the right one's, and ``left_sidebar_floor`` below for the
 # left's: the quicksell keep-list picker's filter row -- a search field, a category
-# combobox and a "Kept only" checkbox side by side (#199). Unlike the rest of the surface,
+# combobox and a "Kept only" checkbox side by side. Unlike the rest of the surface,
 # whose labels are ``Fixed``-width but short and whose prose wraps, that row's three
 # widgets neither wrap nor elide, so a narrow sidebar overlapped them instead of
 # squeezing or scrolling to them -- what a 220px sidebar was doing in the report.
@@ -126,7 +126,7 @@ REFERENCE_BUTTON_WIDTH_PX = 75  # QPushButton("Unhook").sizeHint().width(), same
 # *natural* width, while the search field beside them is the one holding the layout's
 # stretch and is taken at its own minimum -- it is designed to be the part that gives.
 # ``minimumSizeHint`` on the row would take the combobox down with it (a QComboBox elides
-# its own text and reports far less than it needs), which is the clipped state in #199.
+# its own text and reports far less than it needs), which is the clipped state.
 # 293 is that sum at the reference metrics; see ``left_sidebar_floor``.
 REFERENCE_FILTER_ROW_PX = 293
 # Shared: the height must stay under the shortest tile any offered resolution produces,
@@ -413,7 +413,7 @@ def left_sidebar_floor(text_height_px: float | None = None, filter_row_px: float
 
     Same shape as ``right_sidebar_floor``, and for the same reason: the forcing content
     is not the whole panel, it is one row that does not wrap or elide -- the quicksell
-    keep-list picker's search field, category combobox and "Kept only" checkbox (#199).
+    keep-list picker's search field, category combobox and "Kept only" checkbox.
     *text_height_px* is the general term everything else on the surface would need if it
     ever stopped eliding; *filter_row_px* is that row's own floor, composed as
     ``REFERENCE_FILTER_ROW_PX`` describes, which carries both the font and the style at

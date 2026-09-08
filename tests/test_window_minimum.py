@@ -101,7 +101,7 @@ def _row_floor(row: QBoxLayout) -> int:
     and everything else at its natural one, which is what a ``QBoxLayout`` itself does —
     and is the distinction the whole floor turns on. ``minimumSize()`` on the row would
     answer with the combobox's own minimum hint, which is an elided label: that is the
-    clipped state #199 reports, not a width anything fits at.
+    clipped state the sidebar width bump reports, not a width anything fits at.
     """
     total = row.spacing() * (row.count() - 1)
     for index in range(row.count()):
@@ -264,7 +264,7 @@ def test_each_sidebar_declares_the_floor_the_arithmetic_budgets_for_it(qapp):
 
 
 def test_the_keep_list_filter_row_fits_the_left_sidebar_at_its_floor(qapp):
-    """The left sidebar's counterpart to the player card, and the subject of #199.
+    """The left sidebar's counterpart to the player card, and the subject of the sidebar width bump.
 
     The panel's floor was a bare 220px, justified by a comment saying its content elides
     or scrolls. Most of it does. The quicksell keep-list picker's filter row does not: a
@@ -321,7 +321,7 @@ def test_the_player_card_fits_the_right_sidebar_at_its_floor(qapp):
     CI, which resolves the ``windows11`` style where a button's minimum is 81px rather
     than 75, needed 303px inside the 300 it was promised.
 
-    The floor itself did not move when #204 replaced the labelled tool row with icon
+    The floor itself did not move when the Players tab card rework replaced the labelled tool row with icon
     verbs. The card only ever needs less than it did, so the margin here got wider rather
     than the number getting smaller — see ``RightSidebar._apply_width_floor``.
     """

@@ -100,7 +100,7 @@ def test_entity_name_plain_miss():
 
 
 def test_entity_name_wildcard_anchors_the_whole_name():
-    # The bug behind #58: a wildcard used to be a literal character that matched
+    # The bug behind the enemy-wildcard fix: a wildcard used to be a literal character that matched
     # nothing. It now globs, and anchored, so a leading "*" is load-bearing.
     assert entity_name_matches("Bandit/BanditThug", "*Bandit*") is True
     assert entity_name_matches("Bandit/BanditThug", "Bandit*") is True
@@ -564,7 +564,7 @@ async def test_click_until_gone_returns_as_soon_as_the_window_goes():
     A close that took effect immediately — the common case — used to be invisible until the
     full retry interval had elapsed, which put a floor under every window close in the app.
     Group formation closes several per invite, so that was among the largest fixed costs in
-    a regroup (#114).
+    a regroup.
     """
     from contextlib import ExitStack
 
@@ -715,7 +715,7 @@ async def _open_friends_list_with(visible_names: set[str]) -> list[str]:
 
 
 async def test_open_friends_list_closes_the_large_list_first():
-    """Issue #96: visibility is judged from the compact window alone, so from the LARGE list
+    """Visibility is judged from the compact window alone, so from the LARGE list
     this read "closed" and clicked btnFriends anyway — and what the game does with that
     click was never established. Close first, so the state is known."""
     actions = await _open_friends_list_with({"wndFriendsList"})
@@ -1031,7 +1031,7 @@ async def test_resolve_friend_name_raises_when_the_name_is_absent(monkeypatch):
 # reach_sigil_prompt
 #
 # The half enter_dungeon shares between its normal and Team-Up tails. It lived
-# twice, once per node, until the two were merged (#162) — the node tests cover
+# twice, once per node, until the two were merged — the node tests cover
 # it through each tail; these cover it directly.
 # ---------------------------------------------------------------------------
 

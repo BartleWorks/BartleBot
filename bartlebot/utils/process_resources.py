@@ -1,7 +1,7 @@
 """Per-process resource counts the OS knows and the game does not report.
 
 Only GDI objects so far, and only because a client can exhaust its quota inside one
-session (#164): one reached exactly 10,000, the Windows default per-process
+session: one reached exactly 10,000, the Windows default per-process
 ``GDIProcessHandleQuota``, after which every GDI allocation in that process fails.
 
 Kept free of Qt and of BartleBot types, like ``window_kill``, so it is testable with fake

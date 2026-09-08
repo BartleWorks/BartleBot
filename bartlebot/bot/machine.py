@@ -93,7 +93,7 @@ class BotMachine:
         self._health_monitor: ClientHealthMonitor | None = None
         # Which node's log() calls are currently being attributed. See log().
         self._current_node_type: str | None = None
-        # Run bookkeeping, for the summary logged when run() returns (#156).
+        # Run bookkeeping, for the summary logged when run() returns.
         self._pass_count: int = 0
         self._states_executed: int = 0
         self._results_seen: Counter[str] = Counter()
@@ -209,7 +209,7 @@ class BotMachine:
     def log(self, msg: str, level: int = logging.INFO) -> None:
         """Emit a log message from a node, attributed to that node.
 
-        Every node logs through here, so before #156 every one of these records was
+        Every node logs through here, so before the log-readability work every one of these records was
         named "bartlebot.bot.machine" — four fifths of a session log under a single
         logger, with no way to ask what one node did except by matching message text.
         The record is named for the node that is running instead, which is what makes

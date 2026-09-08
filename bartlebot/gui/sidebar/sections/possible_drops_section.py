@@ -156,7 +156,7 @@ class _DropsListWidget(QWidget):
         self._list.setUniformRowHeights(True)
         self._list.setSortingEnabled(True)
         # Category first: the table opens as the grouping the second column exists for,
-        # with names ordered inside each group (#144). Clicking Item still sorts by name.
+        # with names ordered inside each group. Clicking Item still sorts by name.
         self._list.sortByColumn(self.COL_CATEGORY, Qt.SortOrder.AscendingOrder)
         self._list.setTextElideMode(Qt.TextElideMode.ElideRight)
         self._list.setMinimumHeight(120)

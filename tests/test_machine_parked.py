@@ -1,4 +1,4 @@
-"""Tests for BotMachine's parked signal and the health-check suspension (#163).
+"""Tests for BotMachine's parked signal and the health-check suspension.
 
 ``pause()`` clears an event and returns, so ``is_paused`` goes true while the current node
 is still running — for the whole of a fight, in the worst case. A scheduled relog that

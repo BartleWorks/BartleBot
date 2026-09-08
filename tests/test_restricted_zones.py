@@ -1,4 +1,4 @@
-"""Tests for the PvP restricted-zone guard (#44).
+"""Tests for the PvP restricted-zone guard.
 
 Three layers are covered, because a gap in any one of them is a way into a PvP zone:
 the rule matching itself, the pre-run check that refuses to start such a bot, and the

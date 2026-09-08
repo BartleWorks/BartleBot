@@ -140,7 +140,7 @@ class ClientManager(QObject):
         self._client_loop_task: asyncio.Task | None = None
         self._recovery_task: asyncio.Task | None = None
         # Windows being closed on purpose for a relog. Consumed by _on_clients_removed so
-        # scheduled maintenance is not filed in the log as a fault -- see #156.
+        # scheduled maintenance is not filed in the log as a fault.
         self._relogging_hwnds: set[int] = set()
         self._relog_watch_task: asyncio.Task | None = None
         self._relog_in_progress: bool = False
@@ -402,7 +402,7 @@ class ClientManager(QObject):
 
         Quitting with clients still embedded destroys them: ``ClientTile`` re-parents each
         game window under the Qt window with ``SetParent``, so Qt takes its children down
-        with it when the window is torn down (#155). Unhooking is what releases them —
+        with it when the window is torn down. Unhooking is what releases them —
         the same path the Unhook All button already runs — so this unhooks whichever way
         the user answered, and only then closes the windows it was told to close.
 
@@ -916,7 +916,7 @@ class ClientManager(QObject):
                     self._pending_recovery[orig_pos] = username
                     # A relog is routed through this same path on purpose, and filing
                     # scheduled maintenance as a fault is the kind of double-meaning that
-                    # makes a ten-hour log unreadable (#156). The wording is the only thing
+                    # makes a ten-hour log unreadable. The wording is the only thing
                     # that differs — everything downstream of here is identical.
                     if relogging:
                         logger.info(
@@ -1594,7 +1594,7 @@ class ClientManager(QObject):
                 logger.exception("Relog watch loop error")
 
     def _clients_near_gdi_quota(self) -> list:
-        """Live clients close enough to the 10,000 GDI object cap to need a relog (#164).
+        """Live clients close enough to the 10,000 GDI object cap to need a relog.
 
         One client has been seen reaching the cap exactly, after which every GDI allocation
         in that process fails. A failed read answers 0, which is never a trigger — a live

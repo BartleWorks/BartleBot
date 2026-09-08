@@ -274,7 +274,7 @@ def test_plan_empty_desired_clears_all_active():
 
 
 # ---------------------------------------------------------------------------
-# Item card click confirmation (#209)
+# Item card click confirmation
 #
 # A click that never landed used to be indistinguishable from one that did
 # until the whole deck's post-write settle timed out 15s later, and even then
@@ -1448,7 +1448,7 @@ async def test_fusion_root_opens_the_flyout_once_per_base_spell(monkeypatch):
 
 
 async def test_fusion_flyout_close_waits_out_the_settle_pause(monkeypatch):
-    """#209 follow-up: a card confirmed in CardsInDeck could still be dropped by
+    """The card-settling fix follow-up: a card confirmed in CardsInDeck could still be dropped by
     closing the flyout immediately -- reopening the deck page made it reappear,
     meaning the server hadn't caught up yet. DECK_FUSION_CLOSE_SETTLE buys it
     that time before every flyout close, confirmed cards or not.
@@ -1621,7 +1621,7 @@ def test_partition_reports_no_substitution_for_an_exact_match():
 
 
 # ---------------------------------------------------------------------------
-# A base-form entry has two spellings and two meanings (#109)
+# A base-form entry has two spellings and two meanings
 # ---------------------------------------------------------------------------
 #
 # "Novus Storm - T01 - Base" is the self-describing spelling; other spells name
@@ -1657,7 +1657,7 @@ def test_a_directly_clickable_entry_is_not_a_base_form(requested: str, entry: st
 
 
 def test_partition_defers_a_bare_base_entry_to_click_time():
-    """The #109 regression: this used to land in unresolvable and read as untrained."""
+    """The multi-tier spell regression: this used to land in unresolvable and read as untrained."""
     routing = partition_addable({"Bunyips Rage - T05 - A": 3}, ["Tempest", "Bunyips Rage"])
 
     assert routing.fusion == {"Bunyips Rage - T05 - A": 3}
@@ -2294,7 +2294,7 @@ def test_shortfall_reports_a_partly_filled_request():
 
 
 # ---------------------------------------------------------------------------
-# Archmastery school (#134)
+# Archmastery school
 #
 # The menu is invisible to the window tree, so the open/closed test is geometry:
 # the icons are parked stacked behind the gauge and fan out when it opens.

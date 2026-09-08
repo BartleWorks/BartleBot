@@ -159,7 +159,7 @@ def test_an_override_of_an_untyped_option_is_kept():
 
 
 # ---------------------------------------------------------------------------
-# resolve_option — a value outside the option's range (#182)
+# resolve_option — a value outside the option's range
 # ---------------------------------------------------------------------------
 
 
@@ -470,7 +470,7 @@ def test_save_as_re_resolves_the_value_surfaces(tmp_path, monkeypatch):
 def test_save_as_re_binds_the_combat_tab(tmp_path, monkeypatch):
     """The Combat tab resolves its strategy through the bot id too. Left alone it
     goes on showing the original's strategy, and the next combat edit writes that
-    strategy under the fork's id — binding the fork to it (#179)."""
+    strategy under the fork's id — binding the fork to it."""
     from PyQt6.QtWidgets import QFileDialog  # noqa: PLC0415
 
     dest = tmp_path / "fork.json"

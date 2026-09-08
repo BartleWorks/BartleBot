@@ -1,4 +1,4 @@
-"""Tests for the launch-time fit check and the disabled cards it drives (#101).
+"""Tests for the launch-time fit check and the disabled cards it drives.
 
 ``bartlebot/game_sizing.py`` owns the arithmetic and is tested on its own; what is
 checked here is the layer that supplies it with the screen and the settings, and that an
@@ -73,7 +73,7 @@ def test_a_profile_that_pins_nothing_follows_the_app_setting():
 
 
 def test_the_bug_this_issue_is_about_is_refused(screen):
-    """Two clients at the stock 800x600 floor, on 1080p: the case #101 opens with."""
+    """Two clients at the stock 800x600 floor, on 1080p: the case the window-scaling work opens with."""
     screen(_1080P)
     assert screen_fit.profile_fit_problem(_profile(["a", "b"], (800, 600))) is not None
 
@@ -306,7 +306,7 @@ def _resize(widget, width, height):
 
 
 # ---------------------------------------------------------------------------
-# Fitting a window to the screen (#188)
+# Fitting a window to the screen
 # ---------------------------------------------------------------------------
 
 

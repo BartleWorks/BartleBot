@@ -256,7 +256,7 @@ class AppController(QObject):
         )
 
         # Quit gate: the window asks before it closes, because closing it destroys every
-        # embedded game window (#155).
+        # embedded game window.
         w.set_shutdown_handler(self._confirm_shutdown)
 
         w.update_recent_menu(SettingsManager.instance().recent_bot_files)
@@ -306,7 +306,7 @@ class AppController(QObject):
         Quitting with clients attached is destructive twice over: the embedded game
         windows are Win32 children of the Qt window and die with it, and the WizWalker
         hooks are never released, so a surviving client cannot be hooked again until it
-        is relaunched (#155). Both are fixed by unhooking first — which is async, and
+        is relaunched. Both are fixed by unhooking first — which is async, and
         cannot run from ``aboutToQuit`` — so the close is refused here, the release runs
         as a task, and the task closes the window again when it lands.
         """
@@ -504,7 +504,7 @@ class AppController(QObject):
         # does not have them, and only a reopen tells the truth.
         self._window.left_sidebar.refresh_options(self._loaded_config)
         # The combat half of the same re-resolve: the active strategy and the BCS
-        # list are both keyed on the id, and a fork inherits neither (#179).
+        # list are both keyed on the id, and a fork inherits neither.
         self._window.left_sidebar.rebind_identity()
 
     # ------------------------------------------------------------------
@@ -1011,7 +1011,7 @@ class AppController(QObject):
         and triggers the reconnect procedure via _on_clients_removed. That reaping is
         keyed on the *process* exiting, not the window, so the close has to be seen
         through: a crashing client parks on an error popup and never exits on WM_CLOSE
-        alone, which used to leave recovery waiting forever (#79).
+        alone, which used to leave recovery waiting forever.
         """
         logger.warning("Client hwnd=%d flagged unresponsive — closing it", hwnd)
         task = asyncio.create_task(self._close_dead_client(hwnd))
@@ -1088,7 +1088,7 @@ class AppController(QObject):
         row when the composed list moved -- around 55ms on a 67-state bot, and it was
         being paid once per *character* typed into the description box, which is what
         made that field unusable.  Nothing composes an option from prose, so there is
-        nothing here to rebuild: the guard in ``refresh_options`` (#184) would now
+        nothing here to rebuild: the guard in ``refresh_options`` would now
         skip it either way, and this still saves the recompose and the description's
         own round trip.
         """
@@ -1102,7 +1102,7 @@ class AppController(QObject):
         if canvas_config is not None:
             self._loaded_config = canvas_config
             # Undo/redo replaces the canvas's config object; the sidebar has to
-            # follow it or its edits go nowhere (#53).  No-op the rest of the time.
+            # follow it or its edits go nowhere.  No-op the rest of the time.
             self._window.left_sidebar.sync_config(canvas_config, self._window.bot_canvas.mode == BotMode.EDIT)
         if self._loaded_config is not None:
             self._window.bot_canvas.refresh_initial(self._loaded_config.initial)

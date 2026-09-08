@@ -22,7 +22,7 @@ Two rules about the settings dialog itself:
 
 - **The dialog fits the screen; the tabs do not have to.** A visible hint under
   every row is two rows of height per setting, which grew the dialog taller than a
-  1080p screen and put OK and Cancel under the taskbar (#188). The height stays —
+  1080p screen and put OK and Cancel under the taskbar. The height stays —
   it is what the descriptions cost — and the three form tabs are wrapped in
   `rows.ScrollableTab` instead. Wrap a new form tab too. Do **not** wrap a tab
   that carries the layout's stretch, as the Game tab's two card columns do:
@@ -38,7 +38,7 @@ Every write to an account or a launch profile goes through one of the module-lev
 functions in `accounts_tab.py` — `add_`/`edit_`/`delete_account`, and
 `add_`/`edit_`/`duplicate_`/`delete_launch_profile`. **Never open `_AccountDialog` or
 `ProfileDialog` yourself, and never write `sm.accounts` or `sm.launch_profiles` from a
-widget.** Two surfaces manage these, and since #192 they draw the same cards out of
+widget.** Two surfaces manage these, and since the Game tab card rework they draw the same cards out of
 the same `CardColumn`; a second copy of the delete cascade is how they drift.
 `reorder_accounts` and `reorder_launch_profiles` are the same rule for a drag —
 both refuse a permutation that no longer describes the stored list, and both go through
@@ -57,7 +57,7 @@ Three things every one of them does, and a new one must:
   false for a cancelled dialog, a declined confirm, and a name that was refused.
 - **Call `SettingsManager.save()`.** `set` only writes memory. A card on the launch
   screen has no Settings dialog behind it, so an action that skips this survives until
-  the process exits and no further — which is exactly how #195 shipped.
+  the process exits and no further — which is exactly how the Add-card work shipped.
 - **Be called from a synchronous Qt slot.** Each runs `exec()`, and Python 3.13 forbids
   re-entering Qt's event loop from inside a running asyncio task.
 

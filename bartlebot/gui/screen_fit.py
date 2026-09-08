@@ -105,7 +105,7 @@ def left_sidebar_floor() -> int:
     """How wide the left sidebar has to be here for the keep-list picker's filter row to fit.
 
     The row is ``gui/canvas/drop_keep_list.py``'s search field, category combobox and
-    "Kept only" checkbox side by side (#199) — rebuilt here from the same widget types
+    "Kept only" checkbox side by side — rebuilt here from the same widget types
     rather than instantiated, because the real one needs a live bot's drop table to
     populate, and a probe that needs a bot is a probe the window cannot measure itself
     against at construction.

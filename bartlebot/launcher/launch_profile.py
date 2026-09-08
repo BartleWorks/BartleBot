@@ -95,8 +95,8 @@ def _launch_config_updates() -> dict[str, str]:
 
     Quick friend teleport turns a double-click on a friends list row into a teleport.
     Nodes that drive that list double-click rows to open a friend's profile, so with the
-    option on the click teleports instead and the node quietly does the wrong thing
-    (#111). The game only reads this at startup, which is why it is patched here rather
+    option on the click teleports instead and the node quietly does the wrong thing.
+    The game only reads this at startup, which is why it is patched here rather
     than toggled through the in-game options window.
     """
     if not SettingsManager.instance().disable_quick_friend_teleport:
@@ -297,7 +297,7 @@ def _patch_window_config(width: int, height: int, x: int, y: int) -> None:
 async def _wait_for_login_screen(handle: int, timeout: float = LAUNCH_LOGIN_SCREEN_TIMEOUT) -> bool:
     """Poll until the window title equals 'Wizard101' (login screen is ready).
 
-    Returns whether it got there. The wait was unbounded until #186, which meant a window
+    Returns whether it got there. The wait was unbounded until the launching-client indicator work, which meant a window
     that never reached the login screen -- a crash on startup, a patcher that opened
     instead -- left its launch running forever, and so its tile spinning, for the rest of
     the session. Reported rather than raised because a batch is several of these at once
@@ -513,8 +513,8 @@ async def launch_profile(
     ``ClientManager.begin_launch`` and must not be spawned a second time here.
 
     Slot reservation is the caller's, not this function's. It was taken through here by a
-    ``reserve`` callback until the guard needed a single place both launch routes meet
-    (#186), which is one level up: reserving from inside the launch cannot reject a launch
+    ``reserve`` callback until the guard needed a single place both launch routes meet,
+    which is one level up: reserving from inside the launch cannot reject a launch
     that has not started yet.
 
     Raises ``ValueError`` if the profile is not found or has no accounts.
@@ -556,7 +556,7 @@ async def launch_profile(
 
 
 # ---------------------------------------------------------------------------
-# Last played character (#112, experimental)
+# Last played character (experimental)
 # ---------------------------------------------------------------------------
 
 # The tag the game writes the most recently played character's gid to. Character select

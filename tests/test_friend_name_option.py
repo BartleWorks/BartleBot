@@ -1,7 +1,7 @@
 """The Friend Name option: a value no bot file may ever carry.
 
 A character name in a shared bot file is two bugs at once -- a privacy leak, and a
-bot only its author can run (#102).  The old answer was an ``app_setting_str``
+bot only its author can run.  The old answer was an ``app_setting_str``
 param, a widget that wrote the app setting directly and a ``get_params`` that
 skipped the key: a mechanism invented because a user's value had nowhere else to
 live.  It has somewhere now, so the name is an ordinary bot option with a null

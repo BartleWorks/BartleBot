@@ -13,7 +13,7 @@ those credentials, so whatever id the client reports belongs to that account.
 Learned once, it holds forever, including for a window launched outside BartleBot and
 adopted later. That is the case this exists for: an adopted window's title is a bare
 "Wizard101", so the title-matching path in ``ClientManager._refresh_account_map`` can
-never place it, and until now such a client could not be recovered at all (#79).
+never place it, and until now such a client could not be recovered at all.
 
 **Known limitation.** An account BartleBot has *never* launched has no fingerprint on
 file, so an adopted window belonging to it stays unidentified — and one that isn't in

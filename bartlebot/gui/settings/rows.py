@@ -11,7 +11,7 @@ hands its label to a caller with nothing to re-apply on a theme switch, so a pla
 one keeps whichever palette was live when the tab was built -- see the "GUI
 theming" section of CLAUDE.md.
 
-Descriptions are *visible*, not tooltips. Before #175 the Log, Layout and
+Descriptions are *visible*, not tooltips. Before the description-row rework the Log, Layout and
 Auto-save rows carried no explanation at all and the rest carried theirs only on
 hover, which is a description nobody discovers. A row's hint says what the
 setting does in a line or two; a tooltip is kept only where there is a longer
@@ -19,7 +19,7 @@ setting does in a line or two; a tooltip is kept only where there is a longer
 
 That decision is what :class:`ScrollableTab` exists to pay for: a visible hint
 under every row is two rows of height per setting, and four such tabs stacked
-the dialog past the bottom of a 1080p screen (#188). The height is the cost of
+the dialog past the bottom of a 1080p screen. The height is the cost of
 the descriptions, so the tab scrolls rather than the descriptions going away.
 """
 

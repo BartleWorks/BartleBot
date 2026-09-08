@@ -76,7 +76,7 @@ TAGS: dict[str, list[str]] = {
     # ── 05_dragonspyre ────────────────────────────────────────────────
     "05_dragonspyre/the_great_spyre.json": ["Gear", "Reagents", "Spellements", "Dungeon"],
     "05_dragonspyre/the_necropolis_deep_mushroom.json": ["Reagents", "Gathering"],
-    # Tagged for what it should farm; wants a level-scaling node first (see #56).
+    # Tagged for what it should farm; wants a level-scaling node first.
     "05_dragonspyre/valerik_brightsword.json": ["Gear", "Reagents", "Boss"],
     # ── 06_grizzleheim ────────────────────────────────────────────────
     "06_grizzleheim/mirkholm_keep_ore.json": ["Reagents", "Gathering"],
@@ -125,7 +125,7 @@ TAGS: dict[str, list[str]] = {
     # ── 21_darkmoor ───────────────────────────────────────────────────
     "21_darkmoor/heretical_academy.json": ["Gear", "Spellements", "Dungeon"],
     "21_darkmoor/hierophant_of_destruction.json": ["Gear", "Spellements", "Boss"],
-    # Team-Up since #162: the separate _teamup copy of this bot was folded back into it,
+    # Team-Up since the Team-Up toggle: the separate _teamup copy of this bot was folded back into it,
     # and the one file now offers both ways in. The tag means "this bot can team up".
     "21_darkmoor/sister_sanderson.json": ["Gear", "Spellements", "Boss", "Team-Up"],
     # ── aquila ────────────────────────────────────────────────────────

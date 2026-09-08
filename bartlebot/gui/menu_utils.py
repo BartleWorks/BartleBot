@@ -9,7 +9,7 @@ to a ``QWidgetWindow`` that is not top level, which Qt refuses:
     QWidgetWindow(0x..., name="LeftSidebarClassWindow") must be a top level window.
 
 The popup is still shown, but with no transient parent at all — it is no longer
-tied to the window it belongs to.  See issue #119.
+tied to the window it belongs to.  See the top-level-parent rule.
 """
 
 from __future__ import annotations

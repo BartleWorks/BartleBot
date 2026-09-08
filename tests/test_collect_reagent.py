@@ -62,7 +62,7 @@ async def test_no_entities_found_succeeds():
 
 
 async def test_wildcard_entity_name_searches_by_predicate():
-    """Wildcards in reagent names glob, the same as the enemy name field (#58)."""
+    """Wildcards in reagent names glob, the same as the enemy name field."""
     client = FakeClient()
     client.get_base_entities_with_predicate.return_value = [_entity()]
     client.is_in_npc_range.side_effect = [True, False]

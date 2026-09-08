@@ -5,7 +5,7 @@ Why a client slows down, and the two mechanisms that clear it.
 
 A game client gets slower the longer it stays logged in. Measured over an 801-fight
 overnight run, the same fight went 23 s -> 32 s, and the cost is a page-fault storm inside
-the game process at end of fight (#143). Our event loop, our process state, chat log size,
+the game process at end of fight. Our event loop, our process state, chat log size,
 entity and window counts, handles, GDI, working-set trim and a pinned minimum working set
 have all been ruled out. **There is no lever on it from outside the game.** Logging out
 clears it, so this is a mitigation and always will be.
@@ -14,8 +14,8 @@ Two mechanisms, and they are not interchangeable:
 
 | | how | clears | who triggers it |
 |---|---|---|---|
-| **hard** | `ClientManager.relog_clients()` -> `force_close_client` -> the ordinary crash-recovery chain | the slowdown, and GDI | the watch loop: a timer (#163) and the GDI ceiling (#164) |
-| **soft** | the `relog` node: spellbook -> Preferences -> `QuitButton` -> character select -> Play | the slowdown only | a bot, wherever its author put the node (#89) |
+| **hard** | `ClientManager.relog_clients()` -> `force_close_client` -> the ordinary crash-recovery chain | the slowdown, and GDI | the watch loop: a timer and the GDI ceiling |
+| **soft** | the `relog` node: spellbook -> Preferences -> `QuitButton` -> character select -> Play | the slowdown only | a bot, wherever its author put the node |
 
 The soft path never closes the process, so hooks, embedding and the account session all
 survive and it costs seconds rather than minutes -- but it cannot help a client too wedged
@@ -50,7 +50,7 @@ What must not be broken:
   wanting *different* resolutions still cannot share a batch -- the game reads one
   config.xml at startup -- so those are grouped and launched in turn.
 - **A relog is not a disconnect in the log.** It travels the same removal path, and filing
-  scheduled maintenance as a fault is the double-meaning #156 exists to prevent --
+  scheduled maintenance as a fault is the double-meaning the log-readability work exists to prevent --
   `_relogging_hwnds` is what keeps the wording honest.
 - **A scheduled relog re-enters at the bot's recovery state; the node does not.** Logging
   out is not position-preserving -- quitting inside a dungeon or a house puts the character

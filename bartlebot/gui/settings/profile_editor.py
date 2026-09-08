@@ -1,7 +1,7 @@
 """The launch profile editor: which accounts a profile brings, in which order, at what size.
 
-The last surface still speaking the pre-#192 language, and the worst place for it to have
-survived. This is where a profile's membership is *decided*, and it said less about each
+The last surface still speaking the language from before the Game tab card rework, and
+the worst place for it to have survived. This is where a profile's membership is *decided*, and it said less about each
 account than the read-only cards behind it: a ``QListWidget`` of display strings, a pair
 of ↑/↓ buttons, and an ``Add ▾`` menu that repopulated itself on every open and offered
 "(no more accounts)" once it ran dry. A user picked accounts here and then went back to a

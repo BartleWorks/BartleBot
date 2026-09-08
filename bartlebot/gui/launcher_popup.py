@@ -70,7 +70,7 @@ class LauncherPopup(QWidget):
 
         The popup used to assemble its own launch out of borrowed parts — the parent's
         driver and its slot reserver — which made it a second route to the same launcher
-        and therefore a route the in-flight guard could not see (#186). A click here while
+        and therefore a route the in-flight guard could not see. A click here while
         that profile was already coming up spawned a second batch, and the fix is one door
         rather than a second copy of the guard: everything the parent's own launch does,
         including the fit check and the recent list, is now shared instead of skipped.

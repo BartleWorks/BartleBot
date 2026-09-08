@@ -371,7 +371,7 @@ async def section_d(client) -> None:
         print("      The write survived a relog and the client rendered it. The server")
         print("      took it. A memory write is a real implementation — drop the click")
         print("      path, and correct the 'server-authoritative' claim in this file,")
-        print("      in deck_io, and in #134.")
+        print("      in deck_io, and in the archmastery restore.")
     elif ui_agrees:
         print("      The client believed it and the server did not. This is the trap:")
         print("      it would demo perfectly and do nothing on a real run. Use the")

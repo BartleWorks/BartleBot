@@ -82,7 +82,7 @@ Qt gives a popup the `QWindow` of its parent's nearest *native* ancestor as tran
 parent. Embedding a game client makes `ClientTile` native, and Qt then promotes its
 siblings — the left sidebar, the canvas — to native windows of their own. A menu
 parented to a button inside one resolves to a `QWidgetWindow` that is not top level,
-which Qt refuses outright: `... must be a top level window` (#119), leaving the popup
+which Qt refuses outright: `... must be a top level window`, leaving the popup
 with no transient parent at all.
 
 The helper swaps the menu onto its top-level window on `aboutToShow` and hands it back
@@ -199,7 +199,7 @@ undo by accident:
   `profile_editor.py`). Disabled where a click would *launch* it, though: the same cards
   draw the Game settings tab and the profile editor, where a click edits or does nothing
   at all and the refusal is a note instead. That is the card's `CardMode` and the
-  `refuses_when_unfit` that reads it, never a fresh test of the fit result (#192).
+  `refuses_when_unfit` that reads it, never a fresh test of the fit result.
 - **The user never scrolls to see a game window.** Screen space caps the game size
   (configured layout, not the panel minimums), and `minimum_window_size` runs the other
   way to keep the window and the splitters off the game. Both are kept; they are not
@@ -332,7 +332,7 @@ stylesheet `font-size` never reaches `QWidget.font()`, so the metrics would be m
 at the wrong size.
 
 Bot name and run status were in Bar A, which meant they vanished whenever the
-game view was hidden (#80). `BotHeader` takes two opaque widgets — the transport, and the
+game view was hidden. `BotHeader` takes two opaque widgets — the transport, and the
 whole right-hand end — rather than naming each cluster, because which clusters exist
 depends on the mode, and that is knowledge the header should not acquire.
 `BotCanvas` writes the status straight into its own
@@ -346,7 +346,7 @@ Three things the header does not hold, and should not be given back:
   it, `go_to_world` and the bot templates make it moot, and a field naming a
   place the app will not take you to reads as a promise. Pydantic ignores it in
   an older file and `save()` drops it.
-- **Initial State / Recovery State** are badges on the nodes themselves (#71);
+- **Initial State / Recovery State** are badges on the nodes themselves;
   the labels only restated the graph.
 - **The description** heads Setup (read) and Options (edit) instead. Elided into
   a header it would hide exactly the text a user must read — four bots carry
@@ -497,7 +497,7 @@ already has.
   the one funnel every consumer goes through. An out-of-range value is
   **discarded with a warning so the level below answers, never clamped** — coercing
   a hand-edited `-1` to `0` hides a wrong file. A negative Safety Delay is the case
-  the feature exists for (#182): it fails silently rather than loudly, since
+  the feature exists for: it fails silently rather than loudly, since
   `asyncio.sleep` returns at once and every window polled *for* that many seconds
   expires on its first check.
 - **The keep list's keywords are chips, not a comma-separated field.** At a 400px

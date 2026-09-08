@@ -1,4 +1,4 @@
-"""The Add card at the foot of each Quick Launch column (#195).
+"""The Add card at the foot of each Quick Launch column.
 
 A fresh install opened on two columns reading "(No accounts)" and "(No profiles)". That
 is a dead end: nothing on either column said what to do about it, and the only way
@@ -284,7 +284,7 @@ def test_a_theme_switch_restyles_the_add_card(qapp, theme):
 # ---------------------------------------------------------------------------
 # The Add card and the Game tab's Add button run the same module function, which is what
 # keeps the card from having to build a Settings dialog to reach one editor -- the same
-# seam #193 cut for the profile editor.
+# seam the profile-editor dialog work cut for the profile editor.
 
 
 class _FakeAccountDialog:
@@ -460,7 +460,7 @@ def test_a_cancelled_profile_changes_nothing(profile_editor):
 # The slots behind the two cards
 # ---------------------------------------------------------------------------
 # Called unbound against a stand-in: MainWindow is far too heavy to build for this, and
-# what is under test is which refreshes run -- the same second-order bug as #193.
+# what is under test is which refreshes run -- the same second-order bug as the profile-editor dialog work.
 
 
 def _main_window_stub(monkeypatch, saved: bool):

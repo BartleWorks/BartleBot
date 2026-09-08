@@ -1,6 +1,6 @@
 """Unit tests for the page-fault delta in tools/probe_chat_log_size.py.
 
-PageFaultCount is a DWORD, and the client that ran hottest in #143 wrapped it inside a
+PageFaultCount is a DWORD, and the client that ran hottest in the end-of-fight lag work wrapped it inside a
 single overnight run — reporting 5.46M after 9h47m when the truth was ~4.30 billion. A
 delta that reads as a plain measurement when it is really a wrapped counter is worse than
 no number at all, which is what these pin.

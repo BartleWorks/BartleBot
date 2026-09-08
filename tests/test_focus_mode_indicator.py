@@ -1,4 +1,4 @@
-"""Tests for #55 — making it obvious that the canvas is in focus mode.
+"""Tests for the focus-mode indicator — making it obvious that the canvas is in focus mode.
 
 The issue reports that entering focus mode gives no explanation for everything
 disappearing. A "Viewing: <region>" pill already existed when it was filed, nearly

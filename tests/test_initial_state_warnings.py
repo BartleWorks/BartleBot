@@ -1,4 +1,4 @@
-"""Regression tests for issue #53 — initial-state warnings must track the change.
+"""Regression tests: initial-state warnings must track the change.
 
 Two halves, fixed at different times:
 
@@ -79,7 +79,7 @@ class _Harness:
         """Set the initial state the way a user now does — from the state's own panel.
 
         Selecting the node is what loads it into the properties panel, so this is the
-        whole path: selection → panel → request → canvas mutation (#71).
+        whole path: selection → panel → request → canvas mutation.
         """
         self._show(state_id)
         self.canvas.param_panel.request_initial_role()
@@ -113,7 +113,7 @@ def test_moving_the_initial_state_back_clears_the_orphan(qapp):
 
 
 def test_the_sidebar_follows_the_config_undo_swapped_in(qapp):
-    """#53's surviving half: after an undo the sidebar edited a discarded object."""
+    """The initial-state warning work's surviving half: after an undo the sidebar edited a discarded object."""
     h = _Harness(_config())
     h.canvas.scene.about_to_change.emit("add a state")
     h.canvas.config.states.append(StateModel(id="c", node_type="change_realm", params={}))

@@ -179,7 +179,7 @@ _STOCK_RESOLUTIONS: list[tuple[int, int]] = [
 #
 # The sub-floor ones are the game_sizing ladder: the game's own dropdown stops at
 # 800x600, but that is a UI restriction rather than an engine limit, and each of them
-# pairs with exactly one UI scale (#101). They are what makes 2-4 embedded clients fit a
+# pairs with exactly one UI scale. They are what makes 2-4 embedded clients fit a
 # 1080p screen. The smallest offered is 534x300; 400x300 renders but leaves the
 # teleporter buttons under the interact prompt with no smaller UI scale to escape to,
 # so game_sizing.has_unoccluded_ui_size rejects it and a test holds the whole list to
@@ -433,7 +433,7 @@ class SettingsManager:
     def relog_interval_hours(self) -> float:
         """How often a run relogs every client, in hours. 0 turns it off.
 
-        A game client degrades the longer it stays logged in (#143) and a relog is the only
+        A game client degrades the longer it stays logged in and a relog is the only
         thing that clears it, so this is a maintenance interval rather than a preference
         about behaviour.
         """
@@ -724,7 +724,7 @@ class SettingsManager:
         Renaming an option in the editor already fixes up every transition that
         guards on it; the override store has to join that fixup or the rename
         silently resets the user's value -- the failure mode that ruled out
-        per-node-id keys for the friend name in #102.
+        per-node-id keys for the friend name in the local friend-name work.
         """
         if old_name == new_name:
             return

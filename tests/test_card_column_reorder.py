@@ -1,4 +1,4 @@
-"""Dragging a card up or down its column reorders the list behind it (#192).
+"""Dragging a card up or down its column reorders the list behind it.
 
 Order is a real setting, not a display preference. It is what the Accounts column, the
 Launch Profiles column and the Launch menu all list, and inside a launch profile the
@@ -10,7 +10,7 @@ not, on a ``_ReorderableList`` the cards cannot live in. It is ``CardColumn``'s 
 both surfaces have it and neither can lose it on its own.
 
 Two halves, and the second is the one with teeth: the gesture has to *not* also be a
-click. A card body launches a game client, and until #192 it fired on press — on the
+click. A card body launches a game client, and until the Game tab card rework it fired on press — on the
 first pixel of every drag.
 
 The gesture now starts on the card's grip and nowhere else, so that the cursor can say

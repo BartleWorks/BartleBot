@@ -799,7 +799,7 @@ async def _await_invite_outcome(leader, target) -> tuple[bool, bool]:
 
     The refusal used to be checked after a fixed sleep — absence being the expected outcome,
     there is nothing to poll for on its own — which put a flat second under every successful
-    invite for the sake of a case that almost never happens (#114). Racing it against the
+    invite for the sake of a case that almost never happens. Racing it against the
     prompt removes that floor without giving up the check: whichever window appears first
     ends the wait, and a refusal is still noticed as soon as it is drawn.
 

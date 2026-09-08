@@ -1,4 +1,4 @@
-"""Pinning an account's colour instead of deriving it from the username (#196).
+"""Pinning an account's colour instead of deriving it from the username.
 
 The mechanism was already there and nothing wrote it: ``pinned_color_key`` has always
 read a ``color`` slot off the account record, and ``account_color_keys`` has always

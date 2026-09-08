@@ -3,16 +3,26 @@
 Issues, the backlog board, and how work lands. The merge procedure itself is the `merge` skill.
 
 
-Issues live in the GitHub repo; the backlog board is the user-level project
-**BartleBot Backlog** (`gh project … --owner The-World-Tree`, number 3), linked to the repo.
+Issues live in the GitHub repo; the backlog board is the **org-level** project
+**The World Tree Backlog** (`gh project … --owner The-World-Tree`, number 1), linked to
+BartleBot, BartleBuddy and BartleBuilder.
+
+The board is org-level because **milestones are per-repo and cannot cross products**.
+Its `Product` field carries what a shared milestone would have.
 
 Three mechanisms, three questions. Do not make one do another's job:
 
 | | answers | cardinality |
 |---|---|---|
+| **Issue type** | what kind of work is this | one per issue, org-wide |
 | **Labels** | what is this about | many per issue, permanent |
 | **Milestone** | when does it ship | one per issue, closes |
 | **Project board** | what am I doing next | one board, ongoing |
+
+Issue types are **org-level** (`Bug` / `Feature` / `Task` / `Epic`), so they mean the same
+thing in all three repos. Labels are **per-repo** and carry `area/*` only — do not
+reintroduce `bug`, `enhancement`, `blocked` or `epic` as labels. The first two are issue
+types now, `blocked` is `Status = Blocked` on the board, and `epic` is the `Epic` type.
 
 Two of the board's built-in workflows still run: an issue is auto-added at
 `Backlog`, and moves to `Done` when it closes — which a `Closes #N` line in a
@@ -28,24 +38,25 @@ no commit trail behind it.
 
 ## Filing
 
-- **Two labels, always, at creation**: one type (`bug` / `enhancement`) and exactly
-  one `area/*`. If two areas fit equally well, it is probably two issues.
+- **A type and one label, always, at creation**: an issue type (`Bug` / `Feature` /
+  `Task` / `Epic`) and exactly one `area/*`. If two areas fit equally well, it is
+  probably two issues.
 - **A milestone is a commitment.** Add `1.0.0` only if it blocks going public. No
   milestone is the default and carries no stigma.
 - **Priority and Size are set at triage, not at creation.** Filing is cheap;
   estimating is not. Leave them empty and sweep them periodically.
 - **Never put work items in a markdown checklist.** A checklist line cannot be
   labeled, scheduled, assigned, or closed. More than about three sub-tasks means
-  the issue is an `epic`: decompose it into real sub-issues and link them
-  (`POST /repos/:owner/:repo/issues/:n/sub_issues`). #110 is the worked example.
+  the issue is an `Epic`: set that type, decompose it into real sub-issues and link them
+  (`POST /repos/:owner/:repo/issues/:n/sub_issues`).
 
 ## Bodies
 
 - **Bug**: what happened, what you expected, how to reproduce, and the relevant log
   excerpt — redacted per *No real player data*, which applies to issue bodies and
   pasted logs just as much as to committed files.
-- **Enhancement**: the problem first, then a sketch of the approach. #129 and #102
-  are the models — they explain *why* before *what*.
+- **Feature**: the problem first, then a sketch of the approach. Explain *why* before
+  *what* — an approach with no problem behind it cannot be reviewed or dropped.
 
 ## Closing
 
@@ -86,15 +97,25 @@ are in the `merge` skill. The three things that matter here:
 
 ## Areas
 
-One `area/*` label per issue, from this set:
+One `area/*` label per issue. Three exist in **every** product repo, so a board filter
+on them means the same thing across BartleBot, BartleBuddy and BartleBuilder:
+
+| label | scope |
+|---|---|
+| `area/app-ui` | app shell, sidebar, settings, windowing |
+| `area/clients` | client launching, accounts, characters |
+| `area/meta` | project, process, release |
+
+The rest are **BartleBot-only**, because they name things the other products do not have:
 
 | label | scope |
 |---|---|
 | `area/editor` | bot canvas and node editing UX |
-| `area/app-ui` | app shell, sidebar, settings, windowing |
 | `area/engine` | FSM, run semantics, control flow |
 | `area/nodes` | node library |
 | `area/bot-library` | shipped bot files under `bots/` |
-| `area/clients` | client launching, accounts, characters |
 | `area/combat` | combat DSL, decks, fight tables |
-| `area/meta` | project, process, release |
+
+Replicating all eight into every repo was considered and rejected: BartleBuddy has no
+bot canvas, and a label that can never apply is noise in every picker it appears in.
+When BartleBuddy needs an area of its own, add it there rather than everywhere.

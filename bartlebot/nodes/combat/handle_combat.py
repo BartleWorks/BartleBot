@@ -225,7 +225,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 6. Watch the chat log for this fight's drop announcements. They are a server
     # round-trip that lands after the duel has locally ended, so this polls rather
-    # than reading once (#127).
+    # than reading once.
     drops_found = await poll_combat_drops(machine, clients, list(range(len(clients))))
 
     if drops_found:

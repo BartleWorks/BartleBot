@@ -1,6 +1,6 @@
 """Bar B — the header above the graph, and Bar A above the game windows.
 
-The split these test is the point of #80: the bar over the graph owns the *bot*,
+The split these test is the point of the runtime-config split: the bar over the graph owns the *bot*,
 the bar over the game windows owns the *clients*.  Name and run status used to be
 in the second one, where they disappeared with the game view.
 

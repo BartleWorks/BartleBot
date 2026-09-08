@@ -39,7 +39,7 @@ file, permanently.
 ### wizsprinter — divergence is expected
 
 We maintain this library. Changes land here directly; there is no upstream PR to open
-first, and divergence from Deimos is the normal state rather than a smell. #222 is the
+first, and divergence from Deimos is the normal state rather than a smell. #6 is the
 first change under this policy.
 
 Pull from Deimos *selectively* — cherry-pick or merge a specific fix when it is worth

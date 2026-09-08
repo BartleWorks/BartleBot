@@ -226,7 +226,7 @@ async def test_partial_already_in_zone_with_lagging_client():
 
 
 # ---------------------------------------------------------------------------
-# Dungeon exit warning (issue #84)
+# Dungeon exit warning
 # ---------------------------------------------------------------------------
 
 

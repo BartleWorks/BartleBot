@@ -370,12 +370,12 @@ async def test_straggler_retry_raises_value_error_returns_failure():
 
 
 # ---------------------------------------------------------------------------
-# Dungeon exit warning (issue #84)
+# Dungeon exit warning
 # ---------------------------------------------------------------------------
 
 
 async def test_dungeon_exit_warning_is_not_mistaken_for_a_busy_friend():
-    """Issue #84: porting to a friend out of a dungeon failed outright before this.
+    """Porting to a friend out of a dungeon failed outright before this.
 
     The warning also shows a right button, so the busy check matched it and reported an
     unreachable friend on every dungeon exit. The centre button is what separates them.
@@ -451,7 +451,7 @@ async def test_busy_dialog_behind_the_dungeon_warning_still_fails():
 
 
 # ---------------------------------------------------------------------------
-# Target resolution (#102)
+# Target resolution
 # ---------------------------------------------------------------------------
 
 
@@ -475,7 +475,7 @@ def test_resolve_target_fails_with_a_pointer_when_nothing_is_configured():
 
 
 def test_a_literal_friend_name_still_wins_but_is_marked_deprecated():
-    """Bot files written before #102 keep working; the source label is what says they
+    """Bot files written before the local friend-name work keep working; the source label is what says they
     should not stay that way."""
     target = ttf.resolve_target([], _PARAMS, "Configured Wizard")
 

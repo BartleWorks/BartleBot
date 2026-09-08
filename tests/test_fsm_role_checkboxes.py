@@ -1,4 +1,4 @@
-"""Tests for #71 — initial/recovery state set from the state's own properties panel.
+"""Tests for the state-role checkboxes — initial/recovery state set from the state's own properties panel.
 
 Both roles are bot-wide, exactly-one pointers into the states list, so the checkboxes
 read as checkboxes but behave as radios: checking one moves the role, and the box on
@@ -176,7 +176,7 @@ def test_re_requesting_the_role_a_state_already_holds_is_a_no_op(canvas):
 
 
 def test_moving_the_initial_state_revalidates(canvas):
-    """#53 — the orphan warnings have to move with the role, not just the badge."""
+    """The orphan warnings have to move with the role, not just the badge."""
     assert not any("Unreachable" in w for w in canvas.validation_warnings())
 
     _show(canvas, "b").request_initial_role()
@@ -191,7 +191,7 @@ def test_the_node_badge_follows_the_role(canvas):
     assert canvas.scene.node_items["b"].is_initial
 
 
-# The Bot Info mirror of the two roles is gone with the Bot tab (#80): the badge on
+# The Bot Info mirror of the two roles is gone with the Bot tab: the badge on
 # the node is the only view of them now, which is what the test above covers.
 
 

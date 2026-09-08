@@ -67,8 +67,8 @@ two modules were found without a push. Where a test can sweep the styles itself 
 — `test_the_player_card_fits_the_right_sidebar_under_every_available_style` is that, and
 it exists because a 3px overflow reached CI the same way.
 
-Tests whose *subject* is elapsed time are the exception and should stay: the `#114` guards
-in `test_group_manager.py` assert a regroup pays one settle rather than three. Scale
+Tests whose *subject* is elapsed time are the exception and should stay: the regroup-settle
+guards in `test_group_manager.py` assert a regroup pays one settle rather than three. Scale
 `_SETTLE` and `_BUDGET` together if they get slow — only their ratio carries the meaning.
 
 ## Widget lifetime
@@ -78,7 +78,7 @@ arrives on an event-loop spin, and no Qt event loop runs during the suite. Left 
 every widget every test builds stays alive for the whole session, and that is quadratic
 rather than merely untidy: `QApplication.setStyleSheet` delivers a `StyleChange` to every
 live widget, so one app-wide theme broadcast cost 26 s at 27,918 live widgets and 0.001 s
-at zero. That single leak was most of an 8-minute `-n auto` run (#189).
+at zero. That single leak was most of an 8-minute `-n auto` run.
 
 `_free_widgets_this_test_created` in `conftest.py` handles it: at teardown it closes and
 destroys the *top-level* widgets that did not exist when it was set up, then flushes the
@@ -135,7 +135,7 @@ its windows, so a popup put up with `QMenu.popup()` has no active window behind 
 loop under load and Windows deactivates it, the menu closes itself, and every teardown
 hook — `aboutToHide`, and the parent hand-back `anchor_menu_to_window` connects to it —
 has already fired by the time the assertion looks. The hand-back test in
-`test_menu_anchoring.py` flaked exactly this way (#166), and pumping *harder* — the
+`test_menu_anchoring.py` flaked exactly this way, and pumping *harder* — the
 obvious fix, and the one the issue suggested — made it fail every time instead. Ask first whether the state arrives synchronously: `aboutToShow` is
 emitted from inside `popup()`, so that half wanted no pump at all. `_pump_until` in
 `test_menu_anchoring.py` is there for the tearing-down half, which genuinely does need one.

@@ -1,4 +1,4 @@
-"""Tests for the client close sequence (#79).
+"""Tests for the client close sequence.
 
 No real windows or processes: user32/kernel32 are fakes driven by a scripted timeline,
 so each test states exactly when the process dies and what popups it puts up.
@@ -214,7 +214,7 @@ async def test_popup_is_dismissed_while_waiting_for_exit():
 
 
 async def test_stuck_client_is_terminated_after_grace():
-    """The bug in #79: the popup wins, so the process has to be killed outright."""
+    """The bug in the window-kill work: the popup wins, so the process has to be killed outright."""
     user32 = FakeUser32(
         [
             FakeWindow(1, pid=4242, cls=GAME_CLASS),
@@ -278,7 +278,7 @@ def test_our_prototypes_do_not_leak_onto_the_shared_dll_handles():
 
 @pytest.mark.skipif(sys.platform != "win32", reason="needs the real Win32 DLLs")
 def test_wizwalker_style_enum_windows_still_works_after_our_init():
-    """The exact call from wizwalker.utils.get_windows_from_predicate, which #79's fix broke."""
+    """The exact call from wizwalker.utils.get_windows_from_predicate, which the window-kill work's fix broke."""
     window_kill._user32_cache = None
     window_kill.default_user32()
 

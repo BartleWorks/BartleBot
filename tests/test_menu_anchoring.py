@@ -1,4 +1,4 @@
-"""Regression tests for issue #119 — popups must keep a top-level transient parent.
+"""Regression tests: popups must keep a top-level transient parent.
 
 Embedding a game client makes its tile a native window, and Qt promotes the
 tile's siblings (the sidebar, the canvas) to native windows of their own.  A
@@ -127,7 +127,7 @@ def test_anchored_menu_is_handed_back_to_its_owner(harness):
     # inside ``popup()``, so the parent is already the window here — whereas
     # spinning the loop can *lose* it: nothing in this harness is shown or
     # activated, so under load the popup is deactivated and closes itself, and
-    # ``aboutToHide`` hands it straight back to the button.  That is #166.
+    # ``aboutToHide`` hands it straight back to the button.  That is the menu-ownership flake.
     menu.popup(QPoint(0, 0))
     assert menu.parentWidget() is harness.window
 

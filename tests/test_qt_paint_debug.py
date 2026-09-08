@@ -18,7 +18,7 @@ from bartlebot.qt_paint_debug import (
     stack_signature,
 )
 
-# The four messages that make up one cycle of the issue #72 burst.
+# The four messages that make up one cycle of the QPainter bug burst.
 BURST = [
     "QPainter::begin: Paint device returned engine == 0, type: 3",
     "QPainter::setCompositionMode: Painter not active",
@@ -45,10 +45,10 @@ def test_unrelated_qt_warnings_are_ignored():
 
 
 # ---------------------------------------------------------------------------
-# Monitor-asleep noise (#42, #120)
+# Monitor-asleep noise
 # ---------------------------------------------------------------------------
 
-# Verbatim from issue #42, in both the rendering that carries the category
+# Verbatim from a live capture, in both the rendering that carries the category
 # prefix and the bare one a message handler receives.
 DISPLAY_NOISE = [
     r'qt.qpa.screen: "Unable to open monitor interface to \\.\DISPLAY1:" "Unknown error 0xe0000225."',
@@ -91,10 +91,10 @@ def test_an_overnight_burst_of_noise_collapses_to_one_note_per_interval():
 
 
 # ---------------------------------------------------------------------------
-# Legacy stock-font noise (#169)
+# Legacy stock-font noise
 # ---------------------------------------------------------------------------
 
-# Verbatim from issue #169 — one line per legacy family, all ten of them.
+# Verbatim from a live capture — one line per legacy family, all ten of them.
 _FONT_NOISE_TEMPLATE = (
     "DirectWrite: CreateFontFaceFromHDC() failed "
     "(Indicates an error in an input file such as a font file.) for "

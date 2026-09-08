@@ -2,7 +2,7 @@
 
 The title path can only place a client BartleBot launched. This step places the rest,
 by the account-level user id the client reports in memory, so a window launched
-elsewhere and adopted into BartleBot can still be recovered when it crashes (#79).
+elsewhere and adopted into BartleBot can still be recovered when it crashes.
 
 Exercises the real method against a stub holding only the attributes it touches.
 """

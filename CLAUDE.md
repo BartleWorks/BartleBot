@@ -91,7 +91,7 @@ write to `*.local.json`, never append to a tracked file.
 
 Bot files under `bots/` are the easy one to miss: a parameter holding a real
 character name is *functional*, so redacting it by find-and-replace breaks the
-bot. Move it out of the file instead, as `friend_name` was (#102) — see "When no
+bot. Move it out of the file instead, as `friend_name` was — see "When no
 bot should ever store a value" in `docs/BOT_OPTIONS.md`.
 `test_no_bot_stores_a_friend_name` keeps it out.
 

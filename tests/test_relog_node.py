@@ -1,4 +1,4 @@
-"""Tests for the relog node (#89).
+"""Tests for the relog node.
 
 The node drives a short UI sequence — spellbook, Preferences, Quit, character select, Play
 — and then waits for the world to come back. A fake game stands in for all of it, so these

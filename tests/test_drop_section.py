@@ -1,7 +1,7 @@
 """Tests for the Drops tab's per-client tables.
 
 Real widget tests (QApplication required): what is under test is that the Qty
-column sorts as a number rather than as text (#116), and that the numeric cell
+column sorts as a number rather than as text, and that the numeric cell
 still reads back as text for the CSV export.
 """
 

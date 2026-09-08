@@ -17,7 +17,7 @@ APP_SETTING_KEY = "default_friend_name"
 
 #: The bot option holding the friend to port to. A **bot option**, not a param, and
 #: one no bot file may carry a value for: a character name in a shared file is both a
-#: privacy leak and a bot only its author can run (#102).  The declaration is null
+#: privacy leak and a bot only its author can run.  The declaration is null
 #: everywhere, so the app setting answers by default and a per-bot override sits above
 #: it -- one idler for most bots, a different one for the odd bot that needs it.
 OPTION_FRIEND_NAME = "Friend Name"
@@ -247,7 +247,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     while True:
         # Up to three different modals can be waiting here, and they arrive in a fixed
-        # order (issue #84): porting out of a dungeon raises the exit warning first, a
+        # order: porting out of a dungeon raises the exit warning first, a
         # cross-realm friend raises its own reset warning, and only once those are
         # confirmed can the friend-busy dialog appear. All three are MessageBoxModalWindow
         # and all three show a right button, so the right button does not identify any of

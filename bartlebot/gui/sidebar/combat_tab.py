@@ -1139,7 +1139,7 @@ class CombatTab(QWidget):
         on the old one is stale the moment it does: the chip goes on naming the
         original's strategy, and the next combat edit writes
         ``set_active_strategy`` under the *new* id — binding the fork to the
-        original's strategy, which is exactly what minting an id prevents (#179).
+        original's strategy, which is exactly what minting an id prevents.
         A fork inherits no strategy, so this leaves the tab showing none.
 
         Narrower than ``set_config``, which cannot be used here: its

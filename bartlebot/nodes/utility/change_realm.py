@@ -355,8 +355,8 @@ async def _change_realm_for_client(machine, client, start_page: int, end_page: i
     #     Re-click Go To Realm each tick while still enabled — the button can be clicked
     #     too quickly after it enables, causing the game to ignore the first press.
     #
-    #     Two realm modals can intervene, and they want opposite answers (verified live,
-    #     issue #84). Inside a dungeon the game simply refuses: "You are not allowed to
+    #     Two realm modals can intervene, and they want opposite answers (verified live).
+    #     Inside a dungeon the game simply refuses: "You are not allowed to
     #     switch Realms from this location" — no amount of re-clicking gets past it, so
     #     the node fails immediately rather than burning TRIGGER_TIMEOUT on a button the
     #     game has already declined. Outside a dungeon but still holding a dungeon recall,

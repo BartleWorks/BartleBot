@@ -167,7 +167,7 @@ class BotConfig(BaseModel):
     recovery_state: str
     # No ``start_location``: nothing in the engine ever read it, ``go_to_world`` and the
     # bot templates make it moot, and it read as a promise the app would take you there.
-    # Pydantic ignores it in an older file, and ``save()`` drops it (#80).
+    # Pydantic ignores it in an older file, and ``save()`` drops it.
     drops: list[DropModel] = Field(default_factory=list)
     authors: str | None = None
     # What the bot is *for* — see bartlebot/bot_tags.py. Filters the library panel.

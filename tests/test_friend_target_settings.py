@@ -1,4 +1,4 @@
-"""Tests for the local teleport-target settings introduced with #102.
+"""Tests for the local teleport-target settings introduced with the local friend-name work.
 
 The friend name is machine configuration rather than bot content — bot files must not
 carry a character name — so it lives here, and the history beside it exists only to make

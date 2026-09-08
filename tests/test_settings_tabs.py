@@ -1,6 +1,6 @@
 """The settings dialog's tabs: the Bot split, and descriptions that are visible.
 
-Three things Phase 8 of #145 is meant to keep true, none of which the type system
+Three things Phase 8 of the bot-options split is meant to keep true, none of which the type system
 or the older tests can see:
 
 * every row explains itself **on the page**, not only on hover -- the Log, Layout
@@ -171,12 +171,12 @@ def test_every_default_is_declared_on_its_model():
 
 
 # ---------------------------------------------------------------------------
-# #175
+# The description-row rework
 # ---------------------------------------------------------------------------
 
 
 def test_no_node_calls_a_player_a_client():
-    """The word the user reads for one of their wizards is "player" (#175).
+    """The word the user reads for one of their wizards is "player".
 
     "Client" is the app's word for the process: a window at character select is a
     client and not a player, which is exactly the distinction ``tile_slots.py``
@@ -199,7 +199,7 @@ def test_no_node_calls_a_player_a_client():
 
 
 # ---------------------------------------------------------------------------
-# #188 — the dialog has to fit the screen it opens on
+# The dialog has to fit the screen it opens on
 # ---------------------------------------------------------------------------
 
 

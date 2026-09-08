@@ -8,7 +8,7 @@ a resolution to `VALID_RESOLUTIONS`.
 
 The problem it solves: at 800x600 — the lowest the game's own options menu offers — two
 embedded clients do not fit side by side on a 1920x1080 screen, so the whole game-embedding
-feature was unusable for a 2-4 client user on a standard monitor (#101).
+feature was unusable for a 2-4 client user on a standard monitor.
 
 ## The engine has no 800x600 floor; its options menu does
 
@@ -311,7 +311,7 @@ by area, so the widescreen form wins there while still fitting the 2x2 grid — 
 1092 against a 1214 budget. Two clients keep a 4:3 form, which shows more game than the
 16:9 of the same rung; the 16:9 forms only ever win where they are genuinely bigger.
 
-The rungs here are one lower than they used to be, and #199 is why: the left sidebar's
+The rungs here are one lower than they used to be, and the sidebar width bump is why: the left sidebar's
 floor went from a bare 220px to a measured 390, and 170px off the budget costs a solo user
 1280x720 and a pair 640x480. That is intrinsic to any honest floor above ~312px rather
 than an artifact of where this one rounded — the old number simply described a panel whose
@@ -401,7 +401,7 @@ different fonts is the same class of bug one level down. `RightSidebar` re-measu
 `test_the_player_card_fits_the_right_sidebar_under_every_available_style` sweeps
 `QStyleFactory.keys()` so the question CI was asking gets asked locally too.
 
-**The left sidebar is the same shape of problem** (#199). Most of what it holds elides or
+**The left sidebar is the same shape of problem**. Most of what it holds elides or
 scrolls — which is what its old 220px constant was justified by — but the quicksell
 keep-list picker's filter row does not: a search field, a category `QComboBox` and a
 `Kept only` `QCheckBox` side by side, and the last two carry a `Minimum` size policy,
@@ -492,7 +492,7 @@ the profile editor show the same card at full contrast with the banner above it,
 a click there edits — or, in the editor, does nothing at all — and editing is what the
 refusal is asking for. That split is the card's `CardMode`, and `refuses_when_unfit` is
 what reads it — never condition on the fit result itself to decide whether to grey
-something (#192).
+something.
 
 ### Which client count the settings combos judge against
 

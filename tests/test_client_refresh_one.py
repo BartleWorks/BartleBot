@@ -1,11 +1,11 @@
-"""Guards on ``ClientSection._refresh_one``, the per-widget refresh wrapper (#128).
+"""Guards on ``ClientSection._refresh_one``, the per-widget refresh wrapper.
 
 The wrapper exists for one reason: the coroutine ``PlayerCard.refresh()`` returns
 must not be constructed until something is actually going to await it.  ``gather``
 converts each argument into a Task synchronously, and those Tasks have not stepped
 yet — a cancel landing in that window (a tab switch, an unhook, app shutdown) tears
 them down before they await anything.  A coroutine built by the caller and dropped
-there is garbage collected unawaited, which is the ``RuntimeWarning`` in #128.
+there is garbage collected unawaited, which is the ``RuntimeWarning`` in the ClientWidget.refresh regression.
 
 It is a staticmethod so these can call it without a QApplication.
 """
@@ -56,7 +56,7 @@ async def test_refresh_one_times_out_a_wedged_widget(monkeypatch) -> None:
 
 
 async def test_cancel_before_the_gather_children_start_warns_nothing() -> None:
-    """The #128 regression: cancel in the window between gather() and the first step."""
+    """The ClientWidget.refresh regression: cancel in the window between gather() and the first step."""
     widgets = [FakeClientWidget(), FakeClientWidget()]
 
     async def cycle() -> None:

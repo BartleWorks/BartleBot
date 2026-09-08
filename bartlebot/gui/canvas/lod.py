@@ -14,7 +14,7 @@ distinct glyph, per item, per repaint:
 Pixmap=2, Image=3``) — which is what identifies the failing device as the font
 engine's glyph buffer rather than anything we paint on directly.
 
-This is issue #72.  It surfaced with the minimap because only the minimap's
+This is the QPainter bug.  It surfaced with the minimap because only the minimap's
 fit-to-scene transform is small enough to take labels sub-pixel; the main view
 never gets there, which is why the bursts track minimap repaints exactly.  The
 text renders to nothing at that size, so the fix is to not ask for it — which

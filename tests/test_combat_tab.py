@@ -611,7 +611,7 @@ def test_inline_state_binding_with_content_is_persisted(qapp, store):
 
 
 # ---------------------------------------------------------------------------
-# rebind_identity — Save As gives the loaded bot a new id (#179)
+# rebind_identity — Save As gives the loaded bot a new id
 # ---------------------------------------------------------------------------
 
 
@@ -1576,7 +1576,7 @@ def test_unassigned_rows_get_no_rail(qapp, store):
 
 
 # ---------------------------------------------------------------------------
-# _PlayerDecksSection — inline expand/collapse (#213)
+# _PlayerDecksSection — inline expand/collapse
 # ---------------------------------------------------------------------------
 
 

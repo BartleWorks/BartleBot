@@ -26,7 +26,7 @@ dev = [
     "ruff>=0.15",
     "pytest-xdist>=3.6",
     "pre-commit>=4.0",
-    # Supplies the session-scoped `qapp` fixture the GUI tests share (#189).
+    # Supplies the session-scoped `qapp` fixture the GUI tests share.
     "pytest-qt>=4.5.0",
     "katsuba>=0.4.0",
 ]

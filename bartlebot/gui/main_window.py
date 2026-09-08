@@ -246,14 +246,14 @@ class MainWindow(QMainWindow):
         # standing behind — see _edit_launch_profile.
         self._game_view_panel.edit_profile_requested.connect(self._edit_launch_profile)
         # The Add card at the foot of each column, which goes to the same editor the Game
-        # tab's Add button does and nowhere near the Settings dialog around it (#195).
+        # tab's Add button does and nowhere near the Settings dialog around it.
         self._game_view_panel.add_account_requested.connect(self._add_account)
         self._game_view_panel.add_profile_requested.connect(self._add_launch_profile)
         self._game_view_panel.edit_account_requested.connect(self._edit_account)
         self._game_view_panel.delete_account_requested.connect(self._delete_account)
         self._game_view_panel.duplicate_profile_requested.connect(self._duplicate_launch_profile)
         self._game_view_panel.delete_profile_requested.connect(self._delete_launch_profile)
-        # A column dragged into a new order (#192). Through the same _after_card_action as
+        # A column dragged into a new order. Through the same _after_card_action as
         # the rest, because order is not only what the column draws: the Launch menu lists
         # both of these, in this order.
         self._game_view_panel.reorder_accounts_requested.connect(self._reorder_accounts)
@@ -391,7 +391,7 @@ class MainWindow(QMainWindow):
 
         The window owns the close event but not the clients, so the decision belongs to
         AppController: it may refuse this close, unhook every client asynchronously, and
-        close the window again once that lands (#155).
+        close the window again once that lands.
         """
         self._shutdown_handler = handler
 
@@ -611,7 +611,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Card actions
     # ------------------------------------------------------------------
-    # The verbs on the launch screen's account and profile cards (#194): the pencil, and
+    # The verbs on the launch screen's account and profile cards: the pencil, and
     # the entries on each card's right-click menu. Every one of them is a settings write
     # the app has to catch up with, and every one of them is the same catching up, which
     # is what _after_card_action is.
@@ -632,7 +632,7 @@ class MainWindow(QMainWindow):
 
         The cards themselves are rebuilt either way. The action was modal, so the screen
         behind it has been sitting on cards nothing has re-judged since it opened — and
-        hanging that half off a dialog's result is exactly the second-order bug in #193,
+        hanging that half off a dialog's result is exactly the second-order bug in the profile-editor dialog work,
         where cancelling the outer Settings dialog dropped the refresh for a profile the
         inner editor had already written.
         """
@@ -646,7 +646,7 @@ class MainWindow(QMainWindow):
 
         The card asks to edit a profile, so that is the only dialog it gets. This used to
         open Settings on the Game tab with the editor on top, which left the whole
-        dialog standing behind the editor once it was dismissed (#193).
+        dialog standing behind the editor once it was dismissed.
         """
         from bartlebot.gui.settings.accounts_tab import edit_launch_profile
 

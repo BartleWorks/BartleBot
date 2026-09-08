@@ -235,7 +235,7 @@ async def seed_chat_baselines(machine, clients: list) -> None:
     Called before a fight starts. A client that already has a baseline keeps it: that
     is what lets an announcement which missed the previous fight's poll window still be
     detected by this fight's. Re-snapshotting here would absorb it instead, which is
-    the bug this whole path exists to fix (#127).
+    the bug this whole path exists to fix.
     """
     unseeded = [c for c in clients if machine.chat_baseline(c) is None]
     if not unseeded:
