@@ -73,7 +73,8 @@
             "school": "Storm",
             "note": "Builds pips, clears Storm shields with wand hits, and then kills with Storm Owl"
           }
-        ]
+        ],
+        "description": "Guaranteed turn 4 kill for Challenge Mode Sisyphus. Requires 100% accuracy on all players and 100% Power Pip chance on all Storm wizards when scaled to level 90."
       }
     }
   ]

@@ -63,6 +63,7 @@ from bartlebot.strategy_store import (
     save_bot_strategy,
     save_duel_strategy,
 )
+from bartlebot.strategy_summary import summarize_bot, summarize_duel
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -76,7 +77,6 @@ _BUILT_IN_LABEL = "BartleBot Default Combat Strategy"
 _NO_STRATEGY_LABEL = "(no strategy set)"
 _NOT_CONFIGURED_LABEL = "Not configured — built-in default for every player"
 _ICON_BTN_SIZE = 16
-_DSL_PREVIEW_CHARS = 28
 
 # What an *unset* binding falls back to.  These differ by level and the
 # distinction is not cosmetic: an empty state override does NOT fall through to
@@ -459,57 +459,24 @@ def _format_dcs_meta(config: DuelConfig) -> str:
     """One-line summary of a duel config: player range + combat order.
 
     Takes ``DuelConfig`` so the same helper covers both a linked library
-    DuelCombatStrategy (which IS-A DuelConfig) and an inline one.
+    DuelCombatStrategy (which IS-A DuelConfig) and an inline one.  Thin wrapper
+    over :func:`~bartlebot.strategy_summary.summarize_duel` — the sidebar wants
+    this as its own line, where the picker collapses it into one subtitle.
     """
-    parts = []
-    if config.min_players == 1 and config.max_players == 4:
-        parts.append("Any players")
-    elif config.min_players == config.max_players:
-        parts.append(f"{config.min_players} player{'s' if config.min_players != 1 else ''}")
-    else:
-        parts.append(f"{config.min_players}–{config.max_players} players")
-    if config.combat_order:
-        parts.append(" → ".join(f"P{p}" for p in config.combat_order))
-    else:
-        parts.append("Simultaneous")
-    return " · ".join(parts)
+    return " · ".join(summarize_duel(config, []).facets)
 
 
 def _format_bcs_meta(bcs: BotCombatStrategy) -> str:
     """One-line summary of a BCS: number of state overrides."""
-    n = sum(len(a.state_ids) for a in bcs.state_assignments)
-    return f"{n} state override{'s' if n != 1 else ''}" if n else "Default strategy only"
-
-
-def _summarize_assignment_dsl(assignment, pcs_by_id: dict[str, str]) -> str:
-    """Label for one assignment: the linked preset's name, or its inline DSL truncated."""
-    if assignment.is_linked:
-        return pcs_by_id.get(assignment.player_combat_strategy_id, "(unknown)")
-    dsl = " ".join(assignment.dsl.split())
-    if not dsl:
-        return "(default)"
-    return dsl if len(dsl) <= _DSL_PREVIEW_CHARS else dsl[: _DSL_PREVIEW_CHARS - 1] + "…"
+    return summarize_bot(bcs).facets[0]
 
 
 def _format_dcs_assignments(config: DuelConfig, all_pcs: list[PlayerCombatStrategy]) -> str:
     """One-line summary of player assignments within a duel config (linked or inline)."""
-    if not config.player_assignments:
+    summary = summarize_duel(config, all_pcs)
+    if not summary.lines:
         return "No player assignments"
-    pcs_by_id = {p.id: p.name for p in all_pcs}
-    parts = []
-    for assignment in config.player_assignments:
-        players = sorted(assignment.players)
-        if not players:
-            continue
-        name = _summarize_assignment_dsl(assignment, pcs_by_id)
-        if len(players) == 1:
-            player_str = f"P{players[0]}"
-        elif players == list(range(players[0], players[-1] + 1)):
-            player_str = f"P{players[0]}–P{players[-1]}"
-        else:
-            player_str = ", ".join(f"P{p}" for p in players)
-        parts.append(f"{player_str}: {name}")
-    return " · ".join(parts)
+    return " · ".join(f"{line.players}: {line.label}" for line in summary.lines)
 
 
 def _unique_dcs_name(base: str, existing: list[DuelCombatStrategy]) -> str:
@@ -960,6 +927,7 @@ class _DuelBindingPanel(QWidget):
             current_id=self._binding.duel_combat_strategy_id,
             allow_none=True,
             none_label=self._empty_label,
+            all_pcs=self._all_pcs,
             parent=self,
         )
         if dlg.exec():

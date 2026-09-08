@@ -28,6 +28,7 @@ from bartlebot.strategy_store import (
     load_duel_strategy,
     load_player_strategy,
 )
+from bartlebot.strategy_summary import format_players as _format_players
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -60,18 +61,6 @@ def exposed_combat_states(config: BotConfig) -> list[StateModel]:
 
 def _short(uuid: str) -> str:
     return f"{uuid[:_ID_PREVIEW]}…"
-
-
-def _format_players(players: list[int]) -> str:
-    """'P1', 'P1–P3', or 'P1, P3' depending on whether the run is contiguous."""
-    ordered = sorted(players)
-    if not ordered:
-        return "no players"
-    if len(ordered) == 1:
-        return f"P{ordered[0]}"
-    if ordered == list(range(ordered[0], ordered[-1] + 1)):
-        return f"P{ordered[0]}–P{ordered[-1]}"
-    return ", ".join(f"P{p}" for p in ordered)
 
 
 def collect_combat_warnings(
