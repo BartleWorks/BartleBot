@@ -65,13 +65,13 @@ from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser impor
     TemplateSpell,
 )
 from wizwalker.extensions.wizsprinter.combat_backends.spell_ranking import (
-    expected_damage,
+    expected_value,
     rank_facts,
     ranker_for,
 )
 from wizwalker.extensions.wizsprinter.sprinty_combat import (
     aoe_targets,
-    card_damage_facts,
+    card_facts,
     damage_effects,
     does_card_contain_reqs,
     enemy_targets,
@@ -317,31 +317,54 @@ def section_c(cards: list[CardInfo]) -> None:
         print()
 
 
+# Every category `spell_ranking.CATEGORY_RANKERS` knows about, so the probe
+# reports whatever the hand happens to hold rather than only damage.
+RANKED_CATEGORIES = (
+    SpellType.type_damage,
+    SpellType.type_aoe,
+    SpellType.type_blade,
+    SpellType.type_trap,
+    SpellType.type_charm,
+    SpellType.type_ward,
+    SpellType.type_mod_damage,
+    SpellType.type_mod_heal,
+    SpellType.type_mod_pierce,
+    SpellType.type_inc_damage,
+    SpellType.type_out_damage,
+    SpellType.type_inc_heal,
+    SpellType.type_out_heal,
+    SpellType.type_pierce,
+)
+
+
 async def section_d(raw_cards, cards: list[CardInfo]) -> None:
     print("D. RANKING, AS THE REAL CODE COMPUTES IT")
     print()
-    print("   Scored with sprinty_combat.card_damage_facts and spell_ranking,")
-    print("   not a copy of them, so this is the order combat would actually")
-    print("   pick. Castable-only, since that is the pool selection sorts.")
+    print("   Scored with sprinty_combat.card_facts and spell_ranking, not a")
+    print("   copy of them, so this is the order combat would actually pick.")
+    print("   Castable-only, since that is the pool selection sorts. Categories")
+    print("   nothing in hand matches are skipped.")
     print()
-    for label, spell_type in (("any<damage>", SpellType.type_damage), ("any<aoe>", SpellType.type_aoe)):
-        ranker = ranker_for(TemplateSpell([spell_type]))
+    for spell_type in RANKED_CATEGORIES:
+        label = f"any<{spell_type.name.removeprefix('type_')}>"
+        template = TemplateSpell([spell_type])
+        ranker = ranker_for(template)
         matched = [
             (raw, info)
             for raw, info in zip(raw_cards, cards)
-            if info.castable and (info.matches_aoe if spell_type is SpellType.type_aoe else info.matches_damage)
+            if info.castable and await _safe(does_card_contain_reqs(raw, template), False)
         ]
-        print(f"   {label}")
         if not matched:
-            print("       (nothing castable matches)")
-            print()
             continue
-        facts = [await card_damage_facts(raw, ranker.aoe_only) for raw, _ in matched]
+        print(f"   {label}")
+        facts = [await card_facts(raw, ranker, template) for raw, _ in matched]
         for pos, idx in enumerate(rank_facts(facts, ranker), start=1):
             info = matched[idx][1]
-            tier = "per-pip" if facts[idx].is_per_pip else "fixed"
+            f = facts[idx]
+            tier = "per-pip" if f.is_per_pip else ("flat" if f.is_flat else "normal")
             print(
-                f"       {pos}. {info.name[:34]:<34} tier={tier:<8} expected={expected_damage(facts[idx].damage):.1f}"
+                f"       {pos}. {info.name[:30]:<30} tier={tier:<7} value={expected_value(f.score):>7.1f}"
+                f"  pips={f.pip_cost:<2} src={f.source.name:<8} ench={'y' if f.is_enchanted else 'n'}"
             )
         print()
 
