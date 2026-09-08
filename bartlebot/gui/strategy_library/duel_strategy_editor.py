@@ -216,7 +216,7 @@ class _AssignmentRow(QWidget):
         self._note_edit = QLineEdit()
         self._note_edit.setPlaceholderText('Note (optional) — e.g. "P2 passes to bank pips for round 3"')
         self._note_edit.setText(assignment.note)
-        self._note_edit.editingFinished.connect(self._on_note_changed)
+        self._note_edit.textChanged.connect(self._on_note_changed)
         layout.addWidget(self._note_edit)
 
         self._dsl_edit = _AutoHeightTextEdit()
@@ -581,7 +581,7 @@ class DuelConfigEditor(QWidget):
         # embedded on a BotCombatStrategy gets a description too.
         self._description_edit = QLineEdit()
         self._description_edit.setPlaceholderText("Description (optional) — what this fight needs and why")
-        self._description_edit.editingFinished.connect(self._on_description_changed)
+        self._description_edit.textChanged.connect(self._on_description_changed)
         outer.addWidget(self._description_edit)
 
         # Min/max players

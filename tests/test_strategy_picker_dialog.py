@@ -3,6 +3,17 @@
 Real widget tests (QApplication required) — the behavior under test is Qt
 wiring: filtering, selection, and that a card renders from a StrategySummary
 without crashing on every strategy kind.
+
+Known expiry, #227: ``StrategyPickerDialog`` is being replaced by a run-mode
+pick surface organized around player count and role rather than school, so the
+four tests here that assert its wiring (ordering, selection, filtering, and
+pass-through of the PCS list) describe a dialog that will not exist. Rewrite
+them against the new surface rather than porting them — what they assert is
+right, but they assert it about widgets that are going away.
+
+The two ``StrategyCard`` tests are not affected: the card and the
+``StrategySummary`` layer beneath it survive into #227 and #228, and are the
+reason this half of #210 was kept.
 """
 
 from __future__ import annotations

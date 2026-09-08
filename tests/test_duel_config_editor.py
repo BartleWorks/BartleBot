@@ -715,3 +715,55 @@ def test_unlink_leaves_an_authored_assignment_school_alone(qapp):
     editor._rows[0]._on_unlink()
 
     assert assignment.school == "Life"
+
+
+# ---------------------------------------------------------------------------
+# Regression, #224: the description and note fields were wired to
+# ``editingFinished``, which only fires when the widget loses focus.  Typing a
+# description and then closing the window -- or hitting the window's Save while
+# the caret was still in the field -- discarded what had just been typed, with
+# no indication anything had been lost.  Every other field in this editor writes
+# through on change, including the DSL box immediately below the note; these two
+# were the outliers.
+#
+# ``setText`` is the sharp end of the distinction: it emits ``textChanged`` and
+# never emits ``editingFinished``, so these fail on the old wiring.
+# ---------------------------------------------------------------------------
+
+
+def test_typing_a_description_reaches_the_config_without_losing_focus(qapp):
+    config = DuelConfig()
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    editor._description_edit.setText("Turn 4 kill, needs 100% accuracy")
+
+    assert config.description == "Turn 4 kill, needs 100% accuracy"
+
+
+def test_typing_a_note_reaches_the_assignment_without_losing_focus(qapp):
+    assignment = PlayerAssignment(players=[1], dsl="any<damage>")
+    config = DuelConfig(player_assignments=[assignment])
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    editor._rows[0]._note_edit.setText("Passes to bank pips for round 3")
+
+    assert assignment.note == "Passes to bank pips for round 3"
+
+
+def test_loading_a_description_does_not_itself_fire_changed(qapp):
+    """The ``textChanged`` wiring must not turn ``load`` into a spurious edit.
+
+    ``load`` populates the field with ``setText``, which now emits -- the
+    ``_suppress`` guard is the only thing keeping that from reporting a change
+    the user never made, and marking a freshly opened strategy dirty.
+    """
+    config = DuelConfig(description="Already written")
+    editor = DuelConfigEditor()
+
+    seen = []
+    editor.changed.connect(lambda: seen.append(True))
+    editor.load(config, [])
+
+    assert seen == []
