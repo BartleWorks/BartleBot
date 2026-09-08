@@ -11,11 +11,13 @@ buttons would each have grown a second copy of the delete cascade otherwise.
 Each returns whether anything was written, which is every caller's cue to refresh
 whatever it draws accounts or profiles with.
 
-Each also *saves*. That is not incidental: ``SettingsManager.set`` only writes memory,
-and the one ``save()`` these used to reach was ``SettingsDialog._on_accept``. A card on
-the launch screen has no Settings dialog behind it, so an account added there survived
-until the process exited and no further -- and the tab's own ``apply()`` has always
-claimed it "saves immediately on each action", which was true of the reorders alone.
+Each also *saves*. That is not incidental: the one ``save()`` these used to reach was
+``SettingsDialog._on_accept``, and a card on the launch screen has no Settings dialog
+behind it, so an account added there survived until the process exited and no further --
+and the tab's own ``apply()`` has always claimed it "saves immediately on each action",
+which was true of the reorders alone. The write itself is now the shared account store's
+(``shared.account_store``), which persists on every set; these functions call it once per
+action rather than mutating a list in place.
 
 Every one of them runs ``exec()`` on a dialog or a message box, so every one must be
 called from a synchronous Qt slot: Python 3.13 forbids re-entering Qt's event loop from
@@ -333,7 +335,6 @@ def add_account(parent: QWidget | None = None) -> bool:
         record["color"] = dlg.color
     accounts.append(record)
     SettingsManager.instance().accounts = accounts
-    SettingsManager.instance().save()
     return True
 
 
@@ -378,7 +379,6 @@ def edit_account(username: str, parent: QWidget | None = None) -> bool:
                 a["color"] = dlg.color
             break
     SettingsManager.instance().accounts = accounts
-    SettingsManager.instance().save()
     return True
 
 
@@ -412,13 +412,15 @@ def delete_account(username: str, parent: QWidget | None = None) -> bool:
         return False
     CredentialStore.delete(username)
     character_roster.forget(username)
-    sm = SettingsManager.instance()
-    sm.accounts = [a for a in sm.accounts if a.get("username") != username]
-    profiles = sm.launch_profiles
+    store = SettingsManager.instance().account_store
+    # Both lists in one write. Saving the accounts first would leave a window -- an
+    # interrupted delete, or a second process reading between the two -- in which the
+    # file holds profiles naming an account it no longer has.
+    store.set_accounts([a for a in store.accounts if a.get("username") != username], save=False)
+    profiles = store.launch_profiles
     for p in profiles:
         p["accounts"] = [u for u in p.get("accounts", []) if u != username]
-    sm.launch_profiles = profiles
-    sm.save()
+    store.set_launch_profiles(profiles)
     return True
 
 
@@ -434,7 +436,6 @@ def reorder_accounts(order: list[int]) -> bool:
     if accounts is None:
         return False
     sm.accounts = accounts
-    sm.save()
     return True
 
 
@@ -445,7 +446,6 @@ def reorder_launch_profiles(order: list[int]) -> bool:
     if profiles is None:
         return False
     sm.launch_profiles = profiles
-    sm.save()
     return True
 
 
@@ -478,7 +478,6 @@ def add_launch_profile(
         profile["resolution"] = list(dlg.resolution)
     profiles.append(profile)
     SettingsManager.instance().launch_profiles = profiles
-    SettingsManager.instance().save()
     return True
 
 
@@ -534,7 +533,6 @@ def edit_launch_profile(
                 p.pop("resolution", None)
             break
     SettingsManager.instance().launch_profiles = profiles
-    SettingsManager.instance().save()
     return True
 
 
@@ -582,7 +580,6 @@ def duplicate_launch_profile(name: str) -> bool:
     copy["name"] = _free_profile_name(name, {p.get("name", "") for p in profiles})
     profiles.insert(index + 1, copy)
     SettingsManager.instance().launch_profiles = profiles
-    SettingsManager.instance().save()
     return True
 
 
@@ -608,7 +605,6 @@ def delete_launch_profile(name: str, parent: QWidget | None = None) -> bool:
     if reply != QMessageBox.StandardButton.Yes:
         return False
     SettingsManager.instance().launch_profiles = [p for p in profiles if p.get("name") != name]
-    SettingsManager.instance().save()
     return True
 
 

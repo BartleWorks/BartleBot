@@ -114,8 +114,18 @@ times stopping a legitimate PvE farm mid-fight.
 
 ### Settings, and where a value lives
 
-`SettingsManager` singleton, persisted to `%APPDATA%/BartleBot/settings.json`.
+`SettingsManager` singleton, persisted to `%APPDATA%/Bartleby/BartleBot/settings.json`.
 Credentials go through `keyring` (Windows Credential Manager), never to disk.
+
+`Bartleby` is the **vendor**, not this product: three products are planned under it, and
+the accounts, launch profiles and stored passwords belong to the user rather than to any
+one of them. So `%APPDATA%/Bartleby/` is the vendor root, per-product data sits beneath it,
+and the shared account records live at the root itself in `accounts.json`
+(`bartlebot/shared/`, which imports nothing from `gui/` or `bot/`). The prefix is defined
+once, in `bartlebot/shared/vendor.py`, and imported — never spelled out again, on disk or
+in Credential Manager. `The-World-Tree` is the GitHub organization and is a separate
+string on purpose: it is developer-facing and carries none of the trademark exposure a
+name on the user's disk does.
 
 A value that is not a fact about *this node in this graph* is a bot option, not a
 node param:

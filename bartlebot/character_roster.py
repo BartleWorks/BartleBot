@@ -10,9 +10,10 @@ and playing it -- which is never true of an account sitting on the launch screen
 every account on that screen. So the roster has to be *persisted*, and learned at the one
 moment both halves are known: a live client whose account has been identified.
 
-STORAGE: KEYRING, NOT settings.json
+STORAGE: KEYRING, NOT THE ACCOUNTS FILE
 
-A wizard name is real player data. settings.json is not committed, so nothing forces this
+A wizard name is real player data. The shared accounts file (``shared.account_store``) is
+not committed, so nothing forces this
 choice -- but ``account_identity`` deliberately keeps *nothing* identifying in that file
 and reasons explicitly about a leaked copy of it, storing an HMAC fingerprint rather than
 the user id it stands for. A plaintext roster of wizard names beside those fingerprints
@@ -45,11 +46,14 @@ import logging
 
 import keyring
 
+from bartlebot.shared.vendor import keyring_service
+
 logger = logging.getLogger(__name__)
 
-_SERVICE = "BartleBot-roster"
-# Not CredentialStore's "BartleBot": that service is keyed by account username and holds
-# passwords. A shared namespace would put a roster where a password is expected.
+_SERVICE = keyring_service("roster")
+# A namespace of its own, not CredentialStore's: that service is keyed by account
+# username and holds passwords, so a shared namespace would put a roster where a
+# password is expected. Both take the vendor prefix from `shared.vendor`.
 
 # The keys one roster entry carries. Anything else on a stored entry is dropped on the
 # next write rather than preserved -- see `upsert`.

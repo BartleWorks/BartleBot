@@ -30,10 +30,10 @@ We never do. The only question ever asked of it is "which account is this?", whi
 equality, so what goes to disk is an HMAC-SHA256 fingerprint and nothing else.
 
 The key is a *pepper*, not a salt, and that is the point. A per-record salt written
-beside the digest would stop precomputed tables but not someone holding settings.json:
+beside the digest would stop precomputed tables but not someone holding the accounts file:
 a user id is a bounded integer, dense within its range, so candidates can simply be
 ground against a salt that is sitting right there. Keeping the key in Windows
-Credential Manager instead leaves a leaked settings.json with nothing to grind — the
+Credential Manager instead leaves a leaked accounts file with nothing to grind — the
 attacker needs DPAPI access as this user, and at that point they have the account
 passwords anyway.
 
@@ -44,7 +44,7 @@ not. One HMAC per observed id, stdlib only.
 Losing the key — cleared credentials, a new machine — makes every stored fingerprint
 unmatchable. That degrades to "adopted windows are unidentified", which is where we
 started, and it repairs itself the next time each account is launched from here.
-Copying settings.json to another machine yields fingerprints that match nothing, which
+Copying the accounts file to another machine yields fingerprints that match nothing, which
 is the intended outcome rather than a shortcoming.
 """
 
@@ -58,15 +58,18 @@ from hashlib import sha256
 
 import keyring
 
+from bartlebot.shared.vendor import keyring_service
+
 logger = logging.getLogger(__name__)
 
 SCHEME = 1
 # Version of the fingerprinting scheme, stored alongside each fingerprint so a future
 # change (different construction, longer key) can migrate rather than guess.
 
-_SERVICE = "BartleBot-identity"
-# Deliberately not CredentialStore's "BartleBot": that service is keyed by account
-# username, and a shared namespace would collide with an account named like our key.
+_SERVICE = keyring_service("identity")
+# Deliberately a namespace of its own, not CredentialStore's: that service is keyed by
+# account username, and a shared namespace would collide with an account named like our
+# key. Both take the vendor prefix from `shared.vendor`.
 
 _KEY_NAME = "account-id-key"
 
