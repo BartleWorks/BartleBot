@@ -267,14 +267,28 @@ class TestBuffRanking:
         ]
 
     def test_the_biggest_enchantment_wins(self):
-        # mod_damage has no edge cases: higher is always better.
-        names = ["Strong +30%", "Gargantuan +225", "Monstrous +20%"]
+        # mod_damage has no edge cases: higher is always better. The whole
+        # ladder is flat adds, and `modify_card_damage` is not one of the four
+        # *_flat effect types, so none of them is demoted and they compare
+        # directly against each other.
+        names = ["Strong", "Gargantuan", "Giant", "Monstrous"]
         facts = [
-            CardFacts(score=applies(30)),
-            CardFacts(score=applies(225), is_flat=True),
-            CardFacts(score=applies(20)),
+            CardFacts(score=applies(100)),
+            CardFacts(score=applies(275)),
+            CardFacts(score=applies(225)),
+            CardFacts(score=applies(250)),
         ]
-        assert order(names, facts, MOD_DAMAGE) == ["Strong +30%", "Monstrous +20%", "Gargantuan +225"]
+        assert order(names, facts, MOD_DAMAGE) == ["Gargantuan", "Monstrous", "Giant", "Strong"]
+
+    def test_a_treasure_enchantment_is_kept_back(self):
+        # A treasure-card Gargantuan and a deck one are worth the same; spend
+        # the deck copy and keep the treasure.
+        names = ["Gargantuan (treasure)", "Gargantuan"]
+        facts = [
+            CardFacts(score=applies(275), source=CardSource.treasure),
+            CardFacts(score=applies(275), source=CardSource.deck),
+        ]
+        assert order(names, facts, MOD_DAMAGE) == ["Gargantuan", "Gargantuan (treasure)"]
 
 
 class TestRankerLookup:
