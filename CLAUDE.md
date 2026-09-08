@@ -192,14 +192,15 @@ a `QApplication`; extract the testable logic into a plain function or class.
 ## Reference libraries
 
 Downloaded locally so they can be referenced directly. WizWalker and WizSprinter
-are **forks, not upstream**, pinned by exact commit in `pyproject.toml` — see
+are **ours** — libraries we maintain under `The-World-Tree`, not forks staged for
+an upstream PR — pinned by exact commit in `pyproject.toml`. See
 `docs/UPSTREAM.md` before changing a pin or chasing a memory offset after a game
 patch.
 
 | Library | Local Location | Repo URL | Description |
 |---|---|---|---|
-| WizWalker | `C:\GitHub\wizwalker` | https://github.com/The-World-Tree/wizwalker | Low-level memory hooking. Our fork; tracks `LaurenzLikeThat/wizwalker` for offset fixes, not the `Deimos-Wizard101` original. |
-| WizSprinter | `C:\GitHub\wizsprinter` | https://github.com/The-World-Tree/wizsprinter | Safe wrappers and the combat DSL. Our fork, kept as a fast-forward of `Deimos-Wizard101/wizsprinter` — that upstream is responsive and merges PRs, so our changes go there rather than diverging. |
+| WizWalker | `C:\GitHub\wizwalker` | https://github.com/The-World-Tree/wizwalker | Low-level memory hooking. Ours. Still tracks `LaurenzLikeThat/wizwalker` for offset fixes, not the `Deimos-Wizard101` original. |
+| WizSprinter | `C:\GitHub\wizsprinter` | https://github.com/The-World-Tree/wizsprinter | Safe wrappers and the combat DSL. Ours. Pull selectively from `Deimos-Wizard101/wizsprinter`; their `main` is no longer our baseline. |
 | Deimos | `C:\GitHub\Deimos-Wizard101` | https://github.com/Deimos-Wizard101/Deimos-Wizard101 | An existing Wizard101 botting tool. Examples of interfacing with WizWalker and WizSprinter, plus some custom utilities. |
 
 ## Ruff

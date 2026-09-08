@@ -29,9 +29,9 @@ dev = [
     "katsuba>=0.4.0",
 ]
 
-# Forks, not upstream: these carry fixes upstream does not have, including the
-# memory offsets bartlebot/deck_io.py depends on. Pinned by exact commit --
-# see "Changing wizwalker or wizsprinter" in CLAUDE.md for the bump workflow.
+# Ours, not upstream: these carry fixes the original projects do not have,
+# including the memory offsets bartlebot/deck_io.py depends on. Pinned by exact
+# commit -- see docs/UPSTREAM.md for the bump workflow and the pin tagging rule.
 # HTTPS URLs so CI can fetch them without SSH credentials.
 [tool.uv.sources]
 wizwalker = { git = "https://github.com/The-World-Tree/wizwalker.git", rev = "ba5c32c44488d4ede56c85dd68980ab7012596f2" }
