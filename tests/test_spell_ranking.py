@@ -28,6 +28,10 @@ AOE = ranker_for(TemplateSpell([SpellType.type_aoe]))
 DAMAGE = ranker_for(TemplateSpell([SpellType.type_damage]))
 BLADE = ranker_for(TemplateSpell([SpellType.type_blade]))
 WARD = ranker_for(TemplateSpell([SpellType.type_ward]))
+CHARM = ranker_for(TemplateSpell([SpellType.type_charm]))
+TRAP = ranker_for(TemplateSpell([SpellType.type_trap]))
+INC_DAMAGE = ranker_for(TemplateSpell([SpellType.type_inc_damage]))
+OUT_DAMAGE = ranker_for(TemplateSpell([SpellType.type_out_damage]))
 MOD_DAMAGE = ranker_for(TemplateSpell([SpellType.type_mod_damage]))
 
 
@@ -150,12 +154,19 @@ class TestBuffRanking:
         facts = [CardFacts(score=applies(35)), CardFacts(score=applies(45)), CardFacts(score=applies(25))]
         assert order(names, facts, BLADE) == ["Sharpened Storm Blade", "Storm Blade", "Balanceblade"]
 
-    def test_wards_rank_on_magnitude_not_signed_value(self):
-        # is_ward() requires param < 0, and the caller stores the magnitude, so
-        # a -70 shield must outrank a -50 one rather than the reverse.
-        names = ["Tower Shield -50", "Storm Shield -70"]
-        facts = [CardFacts(score=applies(50)), CardFacts(score=applies(70))]
-        assert order(names, facts, WARD) == ["Storm Shield -70", "Tower Shield -50"]
+    def test_wards_rank_on_magnitude_within_their_own_sign(self):
+        # is_ward() requires param < 0, so every ward is negative and the sign
+        # tier is uniform: -80 must outrank -70 rather than the reverse. The
+        # numbers are Storm Shield and Thermic Shield off a live client.
+        names = ["Thermic Shield", "Storm Shield"]
+        facts = [CardFacts(score=applies(-70, -70)), CardFacts(score=applies(-80))]
+        assert order(names, facts, WARD) == ["Storm Shield", "Thermic Shield"]
+
+    def test_charms_rank_on_magnitude_within_their_own_sign(self):
+        # Voodoo (-90) and Elemental Weakness (three -30s, one per school).
+        names = ["Elemental Weakness", "Voodoo - Amulet"]
+        facts = [CardFacts(score=applies(-30, -30, -30)), CardFacts(score=applies(-90))]
+        assert order(names, facts, CHARM) == ["Voodoo - Amulet", "Elemental Weakness"]
 
     def test_flat_buffs_rank_below_percentage_buffs_whatever_the_number(self):
         # +225 flat and +35% both read as a bare int; comparing them by value
@@ -266,6 +277,60 @@ class TestBuffRanking:
             "Spirit Blade - Amulet",  # 35, one pip
         ]
 
+    def test_the_best_of_a_card_is_its_largest_magnitude_not_its_largest_value(self):
+        # A plain max over signed params would pick the -50 off a card holding
+        # -70 and -50, which is the weaker of the two shields.
+        names = ["-70 and -50", "-60"]
+        facts = [CardFacts(score=applies(-70, -50)), CardFacts(score=applies(-60))]
+        assert order(names, facts, WARD) == ["-70 and -50", "-60"]
+
+
+class TestCategoriesThatAdmitBothSigns:
+    """`is_effect_beneficial` lets five categories match a card aimed at the
+    enemy and one aimed at my own team, and magnitude alone ranked those as
+    equals. The hand is the live one from BartleBot#6.
+    """
+
+    def test_inc_damage_puts_my_shields_ahead_of_traps_on_the_enemy(self):
+        # <inc_damage> reads as "damage incoming to my wizard", so the shields
+        # lead. Storm Shield -80, Thermic -70, Feint +70 (its +30 on self is
+        # not counted -- is_effect_beneficial rejects an ally-positive param),
+        # Storm Trap +40. Magnitude alone interleaved these as 80/70/70/40.
+        names = ["Feint", "Thermic Shield", "Storm Shield", "Storm Trap"]
+        facts = [
+            CardFacts(score=applies(70), pip_cost=1),
+            CardFacts(score=applies(-70, -70)),
+            CardFacts(score=applies(-80)),
+            CardFacts(score=applies(40)),
+        ]
+        assert order(names, facts, INC_DAMAGE) == [
+            "Storm Shield",
+            "Thermic Shield",
+            "Feint",
+            "Storm Trap",
+        ]
+
+    def test_out_damage_puts_my_blades_ahead_of_weaknesses_on_the_enemy(self):
+        # The same reading of the name, and the opposite sign: for outgoing
+        # damage my version is a blade, which is positive. A single global
+        # "negative first" would get this backwards.
+        names = ["Elemental Weakness", "Balanceblade"]
+        facts = [CardFacts(score=applies(-30, -30, -30)), CardFacts(score=applies(25))]
+        assert order(names, facts, OUT_DAMAGE) == ["Balanceblade", "Elemental Weakness"]
+
+    def test_the_sign_tier_outranks_magnitude(self):
+        names = ["huge trap", "tiny shield"]
+        facts = [CardFacts(score=applies(999)), CardFacts(score=applies(-1))]
+        assert order(names, facts, INC_DAMAGE) == ["tiny shield", "huge trap"]
+
+    def test_a_pinned_sign_category_is_unaffected_by_the_tier(self):
+        # Every trap is positive, so the tier is uniform and magnitude decides.
+        names = ["Storm Trap +40", "Feint +70"]
+        facts = [CardFacts(score=applies(40)), CardFacts(score=applies(70))]
+        assert order(names, facts, TRAP) == ["Feint +70", "Storm Trap +40"]
+
+
+class TestEnchantmentRanking:
     def test_the_biggest_enchantment_wins(self):
         # mod_damage has no edge cases: higher is always better. The params are
         # the whole ladder read off a live client, in the order the probe found
