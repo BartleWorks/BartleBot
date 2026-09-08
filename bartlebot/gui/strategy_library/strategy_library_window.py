@@ -158,6 +158,15 @@ class StrategyLibraryWindow(QDialog):
         self._selected_id: str | None = current_id
         self._closed = False
 
+        # What each tab's right-hand panel is showing.  Tracked here rather than
+        # read back from ``currentItem()``: a filter rebuild empties the list
+        # without changing what is being edited, and the editor has to survive
+        # that untouched (#223).
+        self._pcs_selected_id: str | None = None
+        self._dcs_selected_id: str | None = None
+        self._deck_selected_id: str | None = None
+        self._rebuilding = False
+
         self.setWindowTitle("Strategy Library" if mode == "browse" else "Select Duel Strategy")
         self.setMinimumSize(620, 400)
         self.resize(720, 480)
@@ -222,17 +231,18 @@ class StrategyLibraryWindow(QDialog):
         return self._selected_id
 
     def _on_use(self) -> None:
-        item = self._dcs_list.currentItem()
-        if item:
-            self._selected_id = item.data(0x100)
+        if self._dcs_selected_id is not None:
+            self._selected_id = self._dcs_selected_id
             self.accept()
 
     def _on_use_none(self) -> None:
         self._selected_id = None
         self.accept()
 
-    def _on_pick_selection_changed(self, current: QListWidgetItem | None, _previous) -> None:
-        self._use_btn.setEnabled(current is not None)
+    def _on_pick_selection_changed(self, _current: QListWidgetItem | None, _previous) -> None:
+        # Reads the tracked id rather than the row: filtering the selected
+        # strategy out of view is not a deselection, so the button stays as it was.
+        self._use_btn.setEnabled(self._dcs_selected_id is not None)
 
     # ------------------------------------------------------------------
     # PCS tab
@@ -295,39 +305,54 @@ class StrategyLibraryWindow(QDialog):
         return tab
 
     def _reload_pcs(self) -> None:
+        """Re-read every player strategy from disk and re-point the editor at its own."""
+        self._pcs_editor.flush()
         self._all_pcs = list_player_strategies()
         self._rebuild_pcs_list()
+        self._load_pcs_editor()
 
     def _rebuild_pcs_list(self) -> None:
-        query = self._pcs_filter.text().strip().lower()
-        current_id = self._current_pcs_id()
-        self._pcs_list.clear()
-        for pcs in self._all_pcs:
-            if query and query not in pcs.name.lower():
-                continue
-            item = QListWidgetItem(pcs.name)
-            item.setData(0x100, pcs.id)
-            self._pcs_list.addItem(item)
-            if pcs.id == current_id:
-                self._pcs_list.setCurrentItem(item)
+        """Repopulate the visible rows for the current filter text.
 
-    def _current_pcs_id(self) -> str | None:
-        item = self._pcs_list.currentItem()
-        return item.data(0x100) if item else None
+        Both ``clear()`` and the reselect below emit ``currentItemChanged``.
+        Letting those reach ``_on_pcs_selected`` made every keystroke in the
+        filter box reload the editor and write the strategy to disk twice, which
+        also put the DSL caret back to position 0 (#223) — hence the guard.
+        Filtering is a read-only act; it must not touch the editor at all.
+        """
+        query = self._pcs_filter.text().strip().lower()
+        self._rebuilding = True
+        try:
+            self._pcs_list.clear()
+            for pcs in self._all_pcs:
+                if query and query not in pcs.name.lower():
+                    continue
+                item = QListWidgetItem(pcs.name)
+                item.setData(0x100, pcs.id)
+                self._pcs_list.addItem(item)
+                if pcs.id == self._pcs_selected_id:
+                    self._pcs_list.setCurrentItem(item)
+        finally:
+            self._rebuilding = False
 
     def _on_pcs_selected(self, item: QListWidgetItem | None) -> None:
+        if self._rebuilding:
+            return
         self._pcs_editor.flush()
-        if item is None:
+        self._pcs_selected_id = item.data(0x100) if item is not None else None
+        self._load_pcs_editor()
+
+    def _load_pcs_editor(self) -> None:
+        """Show ``_pcs_selected_id`` in the editor, or the empty label if it is gone."""
+        pcs = next((p for p in self._all_pcs if p.id == self._pcs_selected_id), None)
+        if pcs is None:
+            self._pcs_selected_id = None
             self._pcs_editor.hide()
             self._pcs_empty_lbl.show()
             return
-        uuid = item.data(0x100)
-        for pcs in self._all_pcs:
-            if pcs.id == uuid:
-                self._pcs_editor.load(pcs)
-                self._pcs_editor.show()
-                self._pcs_empty_lbl.hide()
-                return
+        self._pcs_editor.load(pcs)
+        self._pcs_editor.show()
+        self._pcs_empty_lbl.hide()
 
     def _on_pcs_saved(self, uuid: str) -> None:
         """Persist the strategy the editor was editing, identified by ``uuid``.
@@ -376,6 +401,7 @@ class StrategyLibraryWindow(QDialog):
         self._pcs_editor.clear()
         delete_player_strategy(uuid)
         self._all_pcs = [p for p in self._all_pcs if p.id != uuid]
+        self._pcs_selected_id = None
         self._rebuild_pcs_list()
         self._pcs_editor.hide()
         self._pcs_empty_lbl.show()
@@ -450,11 +476,13 @@ class StrategyLibraryWindow(QDialog):
         return tab
 
     def _reload_dcs(self) -> None:
+        """Re-read every duel strategy from disk and re-point the editor at its own."""
+        self._dcs_editor.flush()
         self._all_dcs = list_duel_strategies()
         self._rebuild_dcs_list()
+        self._load_dcs_editor()
         # DCS editor needs PCS list for assignment pickers
-        if hasattr(self, "_dcs_editor"):
-            self._dcs_editor.set_pcs_list(self._all_pcs)
+        self._dcs_editor.set_pcs_list(self._all_pcs)
 
     def _on_presets_changed(self) -> None:
         """A DCS assignment row promoted its inline DSL into a new preset."""
@@ -463,35 +491,40 @@ class StrategyLibraryWindow(QDialog):
         self.strategies_changed.emit()
 
     def _rebuild_dcs_list(self) -> None:
+        """Repopulate the visible rows for the current filter text — see ``_rebuild_pcs_list``."""
         query = self._dcs_filter.text().strip().lower()
-        current_id = self._current_dcs_id()
-        self._dcs_list.clear()
-        for dcs in self._all_dcs:
-            if query and query not in dcs.name.lower():
-                continue
-            item = QListWidgetItem(dcs.name)
-            item.setData(0x100, dcs.id)
-            self._dcs_list.addItem(item)
-            if dcs.id == current_id:
-                self._dcs_list.setCurrentItem(item)
-
-    def _current_dcs_id(self) -> str | None:
-        item = self._dcs_list.currentItem()
-        return item.data(0x100) if item else None
+        self._rebuilding = True
+        try:
+            self._dcs_list.clear()
+            for dcs in self._all_dcs:
+                if query and query not in dcs.name.lower():
+                    continue
+                item = QListWidgetItem(dcs.name)
+                item.setData(0x100, dcs.id)
+                self._dcs_list.addItem(item)
+                if dcs.id == self._dcs_selected_id:
+                    self._dcs_list.setCurrentItem(item)
+        finally:
+            self._rebuilding = False
 
     def _on_dcs_selected(self, item: QListWidgetItem | None) -> None:
+        if self._rebuilding:
+            return
         self._dcs_editor.flush()
-        if item is None:
+        self._dcs_selected_id = item.data(0x100) if item is not None else None
+        self._load_dcs_editor()
+
+    def _load_dcs_editor(self) -> None:
+        """Show ``_dcs_selected_id`` in the editor, or the empty label if it is gone."""
+        dcs = next((d for d in self._all_dcs if d.id == self._dcs_selected_id), None)
+        if dcs is None:
+            self._dcs_selected_id = None
             self._dcs_editor.hide()
             self._dcs_empty_lbl.show()
             return
-        uuid = item.data(0x100)
-        for dcs in self._all_dcs:
-            if dcs.id == uuid:
-                self._dcs_editor.load(dcs, self._all_pcs)
-                self._dcs_editor.show()
-                self._dcs_empty_lbl.hide()
-                return
+        self._dcs_editor.load(dcs, self._all_pcs)
+        self._dcs_editor.show()
+        self._dcs_empty_lbl.hide()
 
     def _on_dcs_saved(self, uuid: str) -> None:
         """Persist the strategy the editor was editing — see ``_on_pcs_saved``."""
@@ -534,6 +567,7 @@ class StrategyLibraryWindow(QDialog):
         self._dcs_editor.clear()
         delete_duel_strategy(uuid)
         self._all_dcs = [d for d in self._all_dcs if d.id != uuid]
+        self._dcs_selected_id = None
         self._rebuild_dcs_list()
         self._dcs_editor.hide()
         self._dcs_empty_lbl.show()
@@ -645,51 +679,58 @@ class StrategyLibraryWindow(QDialog):
     def _reload_decks(self) -> None:
         self._all_decks = list_deck_presets()
         self._rebuild_decks_list()
+        self._load_deck_detail()
 
     def _rebuild_decks_list(self) -> None:
+        """Repopulate the visible rows for the current filter text — see ``_rebuild_pcs_list``."""
         query = self._decks_filter.text().strip().lower()
-        current_id = self._current_deck_id()
-        self._decks_list.clear()
-        for preset in self._all_decks:
-            if query and query not in preset.name.lower():
-                continue
-            total = preset.deck.total_cards()
-            label = f"{preset.name}  ({total} cards)" if total else preset.name
-            item = QListWidgetItem(label)
-            item.setData(0x100, preset.id)
-            self._decks_list.addItem(item)
-            if preset.id == current_id:
-                self._decks_list.setCurrentItem(item)
-
-    def _current_deck_id(self) -> str | None:
-        item = self._decks_list.currentItem()
-        return item.data(0x100) if item else None
+        self._rebuilding = True
+        try:
+            self._decks_list.clear()
+            for preset in self._all_decks:
+                if query and query not in preset.name.lower():
+                    continue
+                total = preset.deck.total_cards()
+                label = f"{preset.name}  ({total} cards)" if total else preset.name
+                item = QListWidgetItem(label)
+                item.setData(0x100, preset.id)
+                self._decks_list.addItem(item)
+                if preset.id == self._deck_selected_id:
+                    self._decks_list.setCurrentItem(item)
+        finally:
+            self._rebuilding = False
 
     def _on_deck_selected(self, item: QListWidgetItem | None) -> None:
-        if item is None:
+        if self._rebuilding:
+            return
+        self._deck_selected_id = item.data(0x100) if item is not None else None
+        self._load_deck_detail()
+
+    def _load_deck_detail(self) -> None:
+        """Show ``_deck_selected_id`` in the detail panel, or the empty label if it is gone."""
+        preset = next((d for d in self._all_decks if d.id == self._deck_selected_id), None)
+        if preset is None:
+            self._deck_selected_id = None
             self._deck_detail.hide()
             self._deck_empty_lbl.show()
             return
-        uuid = item.data(0x100)
-        for preset in self._all_decks:
-            if preset.id == uuid:
-                self._deck_detail.load(preset)
-                self._deck_detail.show()
-                self._deck_empty_lbl.hide()
-                return
+        self._deck_detail.load(preset)
+        self._deck_detail.show()
+        self._deck_empty_lbl.hide()
 
     def _on_deck_renamed(self, new_name: str) -> None:
-        item = self._decks_list.currentItem()
-        if item is None:
+        """The detail panel's name box debounced — rename the preset it is showing.
+
+        Relabelling the row is a list rebuild, which no longer reloads the panel,
+        so the caret stays where the user left it in the name box.
+        """
+        preset = next((d for d in self._all_decks if d.id == self._deck_selected_id), None)
+        if preset is None:
             return
-        uuid = item.data(0x100)
-        for preset in self._all_decks:
-            if preset.id == uuid:
-                preset.name = new_name
-                save_deck_preset(preset)
-                self._rebuild_decks_list()
-                self.strategies_changed.emit()
-                return
+        preset.name = new_name
+        save_deck_preset(preset)
+        self._rebuild_decks_list()
+        self.strategies_changed.emit()
 
     def _on_delete_deck(self) -> None:
         item = self._decks_list.currentItem()
@@ -706,6 +747,7 @@ class StrategyLibraryWindow(QDialog):
             return
         delete_deck_preset(uuid)
         self._all_decks = [d for d in self._all_decks if d.id != uuid]
+        self._deck_selected_id = None
         self._rebuild_decks_list()
         self._deck_detail.hide()
         self._deck_empty_lbl.show()
