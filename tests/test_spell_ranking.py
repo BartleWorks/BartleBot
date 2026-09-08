@@ -267,28 +267,38 @@ class TestBuffRanking:
         ]
 
     def test_the_biggest_enchantment_wins(self):
-        # mod_damage has no edge cases: higher is always better. The whole
-        # ladder is flat adds, and `modify_card_damage` is not one of the four
-        # *_flat effect types, so none of them is demoted and they compare
-        # directly against each other.
-        names = ["Strong", "Gargantuan", "Giant", "Monstrous"]
+        # mod_damage has no edge cases: higher is always better. The params are
+        # the whole ladder read off a live client, in the order the probe found
+        # it in hand. Every one came back tier=normal: the ladder is flat adds,
+        # but `modify_card_damage` is not one of the four *_flat effect types,
+        # so none of them is demoted and they compare directly.
+        names = ["Strong", "Giant", "Monstrous", "Gargantuan", "Colossal", "Epic"]
         facts = [
             CardFacts(score=applies(100)),
-            CardFacts(score=applies(275)),
+            CardFacts(score=applies(125)),
+            CardFacts(score=applies(175)),
             CardFacts(score=applies(225)),
-            CardFacts(score=applies(250)),
+            CardFacts(score=applies(275)),
+            CardFacts(score=applies(300)),
         ]
-        assert order(names, facts, MOD_DAMAGE) == ["Gargantuan", "Monstrous", "Giant", "Strong"]
+        assert order(names, facts, MOD_DAMAGE) == [
+            "Epic",
+            "Colossal",
+            "Gargantuan",
+            "Monstrous",
+            "Giant",
+            "Strong",
+        ]
 
     def test_a_treasure_enchantment_is_kept_back(self):
-        # A treasure-card Gargantuan and a deck one are worth the same; spend
-        # the deck copy and keep the treasure.
-        names = ["Gargantuan (treasure)", "Gargantuan"]
+        # A treasure-card Epic and a deck one are worth the same; spend the
+        # deck copy and keep the treasure.
+        names = ["Epic (treasure)", "Epic"]
         facts = [
-            CardFacts(score=applies(275), source=CardSource.treasure),
-            CardFacts(score=applies(275), source=CardSource.deck),
+            CardFacts(score=applies(300), source=CardSource.treasure),
+            CardFacts(score=applies(300), source=CardSource.deck),
         ]
-        assert order(names, facts, MOD_DAMAGE) == ["Gargantuan", "Gargantuan (treasure)"]
+        assert order(names, facts, MOD_DAMAGE) == ["Epic", "Epic (treasure)"]
 
 
 class TestRankerLookup:
