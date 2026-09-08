@@ -22,7 +22,9 @@ _DEBOUNCE_MS = 500
 _DSL_HELP = (
     "{round} move @ target | move @ target | pass — rounds optional, '|' is priority order.\n"
     'Moves: "Named Spell" or any<damage|heal|blade|trap|charm|ward|aura|...>[enchant]\n'
-    "Targets: self, enemy, boss, ally, aoe, named:<name>"
+    "Targets: self, enemy, boss, ally, aoe, named:<name>\n"
+    "Pick one out with ally(0) or enemy(1). ally(last) is the last player on the team, you included,\n"
+    "so every client in the group can share the line."
 )
 
 
