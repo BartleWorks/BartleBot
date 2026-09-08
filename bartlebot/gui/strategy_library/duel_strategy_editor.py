@@ -35,10 +35,17 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.elided_label import ElidedLabel, apply_muted_color
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.gui.widgets.school_combo import SchoolCombo
+from bartlebot.nodes.combat_runner import validate_dsl
 from bartlebot.strategy_store import save_player_strategy
 
 _ICON_BTN_SIZE = 16
 _DSL_EDIT_MIN_HEIGHT = 44  # ~2 lines, so an empty/short DSL box doesn't collapse to nothing
+
+_DSL_HELP = (
+    "{round} move @ target | move @ target | pass — rounds optional, '|' is priority order.\n"
+    'Moves: "Named Spell" or any<damage|heal|blade|trap|charm|ward|aura|...>[enchant]\n'
+    "Targets: self, enemy, boss, ally, aoe, named:<name>"
+)
 
 #: Private to this widget, so a drag from anywhere else is ignored outright.
 _ROW_MIME = "application/x-bartlebot-assignment-row"
@@ -219,8 +226,23 @@ class _AssignmentRow(QWidget):
         # far rarer thing to want than dropping a row onto its neighbour.
         self._dsl_edit.setAcceptDrops(False)
         self._dsl_edit.setPlaceholderText("Combat DSL for these players — blank uses the built-in default")
+        self._dsl_edit.setToolTip(_DSL_HELP)
         self._dsl_edit.textChanged.connect(self._on_dsl_changed)
         layout.addWidget(self._dsl_edit)
+
+        self._dsl_error_lbl = QLabel()
+        self._dsl_error_lbl.setWordWrap(True)
+        self._dsl_error_lbl.hide()
+        layout.addWidget(self._dsl_error_lbl)
+
+        # Validation piggybacks on its own debounce rather than every keystroke —
+        # a half-typed DSL is invalid by definition and must not nag. Kept
+        # separate from any save-debounce further up the embedding chain, since
+        # this row has no reliable access to that timer either way.
+        self._validate_timer = QTimer(self)
+        self._validate_timer.setSingleShot(True)
+        self._validate_timer.setInterval(500)
+        self._validate_timer.timeout.connect(self._update_dsl_validation)
 
         self._apply_style()
         self._refresh_mode()
@@ -278,13 +300,22 @@ class _AssignmentRow(QWidget):
                 self._dsl_edit.setReadOnly(not self._editable)
         finally:
             self._suppress_dsl = False
-        self._apply_style()
+        self._update_dsl_validation()
 
     def _on_dsl_changed(self) -> None:
         if self._suppress_dsl or self._assignment.is_linked:
             return
         self._assignment.dsl = self._dsl_edit.toPlainText()
+        self._validate_timer.stop()
+        self._validate_timer.start()
         self.changed.emit()
+
+    def _update_dsl_validation(self) -> None:
+        """Re-run ``validate_dsl`` and reflect it as a border color plus an error line."""
+        error = validate_dsl(self._dsl_edit.toPlainText())
+        self._dsl_error_lbl.setText(error or "")
+        self._dsl_error_lbl.setVisible(bool(error))
+        self._apply_style()
 
     def _on_school_changed(self) -> None:
         if self._suppress_dsl:
@@ -362,10 +393,14 @@ class _AssignmentRow(QWidget):
 
     def _apply_style(self) -> None:
         bg = THEME.surface if self._dsl_edit.isReadOnly() else THEME.bg
+        error = validate_dsl(self._dsl_edit.toPlainText())
+        border = THEME.error if error else THEME.border
         self._dsl_edit.setFont(THEME.font_mono())
         self._dsl_edit.setStyleSheet(
-            f"QPlainTextEdit {{ background: {bg}; color: {THEME.text}; border: 1px solid {THEME.border}; }}"
+            f"QPlainTextEdit {{ background: {bg}; color: {THEME.text}; "
+            f"border: 1px solid {THEME.border}; border-left: 3px solid {border}; }}"
         )
+        self._dsl_error_lbl.setStyleSheet(f"color: {THEME.error};")
         apply_muted_color(self._link_lbl)
         apply_muted_color(self._grip)
 
