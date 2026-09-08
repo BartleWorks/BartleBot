@@ -4,7 +4,7 @@ Issues, the backlog board, and how work lands. The merge procedure itself is the
 
 
 Issues live in the GitHub repo; the backlog board is the user-level project
-**BartleBot Backlog** (`gh project … --owner BartleBot`, number 3), linked to the repo.
+**BartleBot Backlog** (`gh project … --owner The-World-Tree`, number 3), linked to the repo.
 
 Three mechanisms, three questions. Do not make one do another's job:
 
