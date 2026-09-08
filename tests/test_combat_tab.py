@@ -264,6 +264,28 @@ def test_unlink_forks_the_linked_strategys_fields_into_the_inline_config(qapp, s
     assert binding.duel_config.player_assignments[0].dsl == "frenzy dsl"
 
 
+def test_unlink_carries_description_and_assignment_school_and_note(qapp):
+    """Regression: hand-listing fields in _on_unlink silently drops any field
+    added to DuelConfig or PlayerAssignment after the fact.
+    """
+    dcs = DuelCombatStrategy(
+        name="Frenzy AoE",
+        description="Boss enrages at 50%",
+        player_assignments=[
+            PlayerAssignment(players=[1], dsl="frenzy dsl", school="Storm", note="Kites while others burst"),
+        ],
+    )
+    binding = StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id)
+    panel = _DuelBindingPanel("Boss")
+    panel.load(binding, [dcs], [])
+
+    panel._on_unlink()
+
+    assert binding.duel_config.description == "Boss enrages at 50%"
+    assert binding.duel_config.player_assignments[0].school == "Storm"
+    assert binding.duel_config.player_assignments[0].note == "Kites while others burst"
+
+
 def test_unlink_via_the_default_panel_does_not_crash(qapp):
     """Reproduces the reported crash: unlinking through _DefaultBinding specifically
     (not a raw StateAssignment) used to raise AttributeError — duel_config had no
@@ -325,6 +347,28 @@ def test_promote_creates_a_library_entry_and_links_to_it(qapp, store):
     assert saved.name == "My Preset"
     assert saved.player_assignments[0].dsl == "custom"
     assert seen_presets_changed == [True]
+
+
+def test_promote_carries_description_and_assignment_school_and_note(qapp, store):
+    binding = StateAssignment(
+        state_ids=["s1"],
+        duel_config=DuelConfig(
+            description="Farm loop, no adds",
+            player_assignments=[
+                PlayerAssignment(players=[1], dsl="custom", school="Life", note="Heals through round 2"),
+            ],
+        ),
+    )
+    panel = _DuelBindingPanel("Boss")
+    panel.load(binding, [], [])
+
+    with patch.object(QInputDialog, "getText", return_value=("My Preset", True)):
+        panel._on_promote()
+
+    saved = store_mod.load_duel_strategy(binding.duel_combat_strategy_id)
+    assert saved.description == "Farm loop, no adds"
+    assert saved.player_assignments[0].school == "Life"
+    assert saved.player_assignments[0].note == "Heals through round 2"
 
 
 def test_promote_appends_to_the_panels_own_dcs_list(qapp, store):

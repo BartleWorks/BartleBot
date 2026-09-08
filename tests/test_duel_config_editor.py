@@ -555,3 +555,215 @@ class TestPlayerRangeCannotInvert:
         editor.load(DuelConfig(min_players=3, max_players=4), [])
 
         assert (editor._min_spin.value(), editor._max_spin.value()) == (3, 4)
+
+
+# ---------------------------------------------------------------------------
+# Description field (#210 phase 1)
+# ---------------------------------------------------------------------------
+
+
+def test_load_populates_the_description_field(qapp):
+    config = DuelConfig(description="Boss enrages at 50%")
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    assert editor._description_edit.text() == "Boss enrages at 50%"
+
+
+def test_editing_description_mutates_the_config_live(qapp):
+    config = DuelConfig()
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    editor._description_edit.setText("Farm loop, no adds")
+    editor._description_edit.editingFinished.emit()
+
+    assert config.description == "Farm loop, no adds"
+
+
+def test_clear_resets_the_description_field(qapp):
+    editor = DuelConfigEditor()
+    editor.load(DuelConfig(description="X"), [])
+
+    editor.clear()
+
+    assert editor._description_edit.text() == ""
+
+
+# ---------------------------------------------------------------------------
+# Derived school-requirement chips (#210 phase 1)
+# ---------------------------------------------------------------------------
+
+
+def test_requirements_label_hidden_with_no_school_assignments(qapp):
+    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="x")])
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    assert editor._requirements_lbl.isHidden()
+
+
+def test_requirements_label_shows_derived_counts(qapp):
+    config = DuelConfig(
+        player_assignments=[
+            PlayerAssignment(players=[1, 2], dsl="x", school="Storm"),
+            PlayerAssignment(players=[3], dsl="y", school="Life"),
+        ],
+    )
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    assert not editor._requirements_lbl.isHidden()
+    assert "Storm ×2" in editor._requirements_lbl.text()
+    assert "Life ×1" in editor._requirements_lbl.text()
+
+
+def test_requirements_label_updates_when_a_row_school_changes(qapp):
+    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="x")])
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    editor._rows[0]._school_combo.setCurrentIndex(1)  # first real school after "Any school"
+
+    assert not editor._requirements_lbl.isHidden()
+
+
+def test_requirements_label_updates_when_a_row_is_removed(qapp):
+    config = DuelConfig(
+        player_assignments=[
+            PlayerAssignment(players=[1], dsl="x", school="Storm"),
+            PlayerAssignment(players=[2], dsl="y"),
+        ],
+    )
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    editor._on_remove_row(editor._rows[0])
+
+    assert editor._requirements_lbl.isHidden()
+
+
+# ---------------------------------------------------------------------------
+# Assignment row: school and note (#210 phase 1)
+# ---------------------------------------------------------------------------
+
+
+def test_row_loads_school_and_note_from_the_assignment(qapp):
+    config = DuelConfig(
+        player_assignments=[PlayerAssignment(players=[1], dsl="x", school="Storm", note="Kites adds")],
+    )
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    assert editor._rows[0]._school_combo.value() == "Storm"
+    assert editor._rows[0]._note_edit.text() == "Kites adds"
+
+
+def test_editing_the_row_school_mutates_the_assignment_live(qapp):
+    assignment = PlayerAssignment(players=[1], dsl="x")
+    config = DuelConfig(player_assignments=[assignment])
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    editor._rows[0]._school_combo.setCurrentIndex(1)
+
+    assert assignment.school is not None
+
+
+def test_editing_the_row_note_mutates_the_assignment_live(qapp):
+    assignment = PlayerAssignment(players=[1], dsl="x")
+    config = DuelConfig(player_assignments=[assignment])
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    editor._rows[0]._note_edit.setText("Passes to bank pips")
+    editor._rows[0]._note_edit.editingFinished.emit()
+
+    assert assignment.note == "Passes to bank pips"
+
+
+def test_set_editable_false_disables_school_and_note(qapp):
+    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="x")])
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    editor.set_editable(False)
+
+    assert not editor._rows[0]._school_combo.isEnabled()
+    assert not editor._rows[0]._note_edit.isEnabled()
+
+
+def test_unlink_fills_in_the_assignment_school_from_the_linked_preset(qapp):
+    pcs = PlayerCombatStrategy(name="Preset", dsl="blade", school="Storm")
+    assignment = PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)
+    config = DuelConfig(player_assignments=[assignment])
+    editor = DuelConfigEditor()
+    editor.load(config, [pcs])
+
+    editor._rows[0]._on_unlink()
+
+    assert assignment.school == "Storm"
+
+
+def test_unlink_leaves_an_authored_assignment_school_alone(qapp):
+    pcs = PlayerCombatStrategy(name="Preset", dsl="blade", school="Storm")
+    assignment = PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id, school="Life")
+    config = DuelConfig(player_assignments=[assignment])
+    editor = DuelConfigEditor()
+    editor.load(config, [pcs])
+
+    editor._rows[0]._on_unlink()
+
+    assert assignment.school == "Life"
+
+
+# ---------------------------------------------------------------------------
+# Regression, #224: the description and note fields were wired to
+# ``editingFinished``, which only fires when the widget loses focus.  Typing a
+# description and then closing the window -- or hitting the window's Save while
+# the caret was still in the field -- discarded what had just been typed, with
+# no indication anything had been lost.  Every other field in this editor writes
+# through on change, including the DSL box immediately below the note; these two
+# were the outliers.
+#
+# ``setText`` is the sharp end of the distinction: it emits ``textChanged`` and
+# never emits ``editingFinished``, so these fail on the old wiring.
+# ---------------------------------------------------------------------------
+
+
+def test_typing_a_description_reaches_the_config_without_losing_focus(qapp):
+    config = DuelConfig()
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    editor._description_edit.setText("Turn 4 kill, needs 100% accuracy")
+
+    assert config.description == "Turn 4 kill, needs 100% accuracy"
+
+
+def test_typing_a_note_reaches_the_assignment_without_losing_focus(qapp):
+    assignment = PlayerAssignment(players=[1], dsl="any<damage>")
+    config = DuelConfig(player_assignments=[assignment])
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    editor._rows[0]._note_edit.setText("Passes to bank pips for round 3")
+
+    assert assignment.note == "Passes to bank pips for round 3"
+
+
+def test_loading_a_description_does_not_itself_fire_changed(qapp):
+    """The ``textChanged`` wiring must not turn ``load`` into a spurious edit.
+
+    ``load`` populates the field with ``setText``, which now emits -- the
+    ``_suppress`` guard is the only thing keeping that from reporting a change
+    the user never made, and marking a freshly opened strategy dirty.
+    """
+    config = DuelConfig(description="Already written")
+    editor = DuelConfigEditor()
+
+    seen = []
+    editor.changed.connect(lambda: seen.append(True))
+    editor.load(config, [])
+
+    assert seen == []

@@ -34,10 +34,18 @@ from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPicker
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.elided_label import ElidedLabel, apply_muted_color
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
+from bartlebot.gui.widgets.school_combo import SchoolCombo
+from bartlebot.nodes.combat_runner import validate_dsl
 from bartlebot.strategy_store import save_player_strategy
 
 _ICON_BTN_SIZE = 16
 _DSL_EDIT_MIN_HEIGHT = 44  # ~2 lines, so an empty/short DSL box doesn't collapse to nothing
+
+_DSL_HELP = (
+    "{round} move @ target | move @ target | pass — rounds optional, '|' is priority order.\n"
+    'Moves: "Named Spell" or any<damage|heal|blade|trap|charm|ward|aura|...>[enchant]\n'
+    "Targets: self, enemy, boss, ally, aoe, named:<name>"
+)
 
 #: Private to this widget, so a drag from anywhere else is ignored outright.
 _ROW_MIME = "application/x-bartlebot-assignment-row"
@@ -173,6 +181,13 @@ class _AssignmentRow(QWidget):
         self._player_widget.changed.connect(self._on_players_changed)
         top.addWidget(self._player_widget)
 
+        # Authored, never inferred from the DSL — see DuelConfig.school_requirements.
+        self._school_combo = SchoolCombo()
+        self._school_combo.setToolTip("What school this assignment needs, if any — descriptive only, never enforced")
+        self._school_combo.set_value(assignment.school)
+        self._school_combo.currentIndexChanged.connect(self._on_school_changed)
+        top.addWidget(self._school_combo)
+
         # Elided: preset names are user-supplied, and a plain QLabel would make
         # a long one the minimum width of every panel this row sits in.
         self._link_lbl = ElidedLabel()
@@ -198,6 +213,12 @@ class _AssignmentRow(QWidget):
 
         layout.addLayout(top)
 
+        self._note_edit = QLineEdit()
+        self._note_edit.setPlaceholderText('Note (optional) — e.g. "P2 passes to bank pips for round 3"')
+        self._note_edit.setText(assignment.note)
+        self._note_edit.textChanged.connect(self._on_note_changed)
+        layout.addWidget(self._note_edit)
+
         self._dsl_edit = _AutoHeightTextEdit()
         # The DSL box fills most of the row, and a QPlainTextEdit accepts drops
         # by default -- leaving that on would carve this row's drop target down
@@ -205,8 +226,23 @@ class _AssignmentRow(QWidget):
         # far rarer thing to want than dropping a row onto its neighbour.
         self._dsl_edit.setAcceptDrops(False)
         self._dsl_edit.setPlaceholderText("Combat DSL for these players — blank uses the built-in default")
+        self._dsl_edit.setToolTip(_DSL_HELP)
         self._dsl_edit.textChanged.connect(self._on_dsl_changed)
         layout.addWidget(self._dsl_edit)
+
+        self._dsl_error_lbl = QLabel()
+        self._dsl_error_lbl.setWordWrap(True)
+        self._dsl_error_lbl.hide()
+        layout.addWidget(self._dsl_error_lbl)
+
+        # Validation piggybacks on its own debounce rather than every keystroke —
+        # a half-typed DSL is invalid by definition and must not nag. Kept
+        # separate from any save-debounce further up the embedding chain, since
+        # this row has no reliable access to that timer either way.
+        self._validate_timer = QTimer(self)
+        self._validate_timer.setSingleShot(True)
+        self._validate_timer.setInterval(500)
+        self._validate_timer.timeout.connect(self._update_dsl_validation)
 
         self._apply_style()
         self._refresh_mode()
@@ -224,6 +260,8 @@ class _AssignmentRow(QWidget):
         self._grip.setCursor(Qt.CursorShape.OpenHandCursor if editable else Qt.CursorShape.ArrowCursor)
         self._grip.setToolTip("Drag to reorder this assignment" if editable else "Locked while the bot is running")
         self._player_widget.setEnabled(editable)
+        self._school_combo.setEnabled(editable)
+        self._note_edit.setEnabled(editable)
         self._menu_btn.setEnabled(editable)
         self._menu_btn.setToolTip("Preset actions" if editable else "Locked while the bot is running")
         self._remove_btn.setEnabled(editable)
@@ -262,12 +300,31 @@ class _AssignmentRow(QWidget):
                 self._dsl_edit.setReadOnly(not self._editable)
         finally:
             self._suppress_dsl = False
-        self._apply_style()
+        self._update_dsl_validation()
 
     def _on_dsl_changed(self) -> None:
         if self._suppress_dsl or self._assignment.is_linked:
             return
         self._assignment.dsl = self._dsl_edit.toPlainText()
+        self._validate_timer.stop()
+        self._validate_timer.start()
+        self.changed.emit()
+
+    def _update_dsl_validation(self) -> None:
+        """Re-run ``validate_dsl`` and reflect it as a border color plus an error line."""
+        error = validate_dsl(self._dsl_edit.toPlainText())
+        self._dsl_error_lbl.setText(error or "")
+        self._dsl_error_lbl.setVisible(bool(error))
+        self._apply_style()
+
+    def _on_school_changed(self) -> None:
+        if self._suppress_dsl:
+            return
+        self._assignment.school = self._school_combo.value()
+        self.changed.emit()
+
+    def _on_note_changed(self) -> None:
+        self._assignment.note = self._note_edit.text()
         self.changed.emit()
 
     # -- preset actions ------------------------------------------------
@@ -302,6 +359,11 @@ class _AssignmentRow(QWidget):
         """Fork the linked preset's DSL back into this assignment as inline text."""
         pcs = self._linked_pcs()
         self._assignment.dsl = pcs.dsl if pcs else ""
+        # The assignment's own school (if set) already won over the preset's —
+        # only fill it in here if nothing was authored on the assignment itself.
+        if self._assignment.school is None and pcs is not None:
+            self._assignment.school = pcs.school
+            self._school_combo.set_value(self._assignment.school)
         self._assignment.player_combat_strategy_id = None
         self._refresh_mode()
         self.changed.emit()
@@ -331,10 +393,14 @@ class _AssignmentRow(QWidget):
 
     def _apply_style(self) -> None:
         bg = THEME.surface if self._dsl_edit.isReadOnly() else THEME.bg
+        error = validate_dsl(self._dsl_edit.toPlainText())
+        border = THEME.error if error else THEME.border
         self._dsl_edit.setFont(THEME.font_mono())
         self._dsl_edit.setStyleSheet(
-            f"QPlainTextEdit {{ background: {bg}; color: {THEME.text}; border: 1px solid {THEME.border}; }}"
+            f"QPlainTextEdit {{ background: {bg}; color: {THEME.text}; "
+            f"border: 1px solid {THEME.border}; border-left: 3px solid {border}; }}"
         )
+        self._dsl_error_lbl.setStyleSheet(f"color: {THEME.error};")
         apply_muted_color(self._link_lbl)
         apply_muted_color(self._grip)
 
@@ -511,6 +577,13 @@ class DuelConfigEditor(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(6)
 
+        # On DuelConfig itself, not the named wrapper — an inline one-off
+        # embedded on a BotCombatStrategy gets a description too.
+        self._description_edit = QLineEdit()
+        self._description_edit.setPlaceholderText("Description (optional) — what this fight needs and why")
+        self._description_edit.textChanged.connect(self._on_description_changed)
+        outer.addWidget(self._description_edit)
+
         # Min/max players
         mm_row = QHBoxLayout()
         mm_row.setSpacing(8)
@@ -528,6 +601,12 @@ class DuelConfigEditor(QWidget):
         mm_row.addWidget(self._max_spin)
         mm_row.addStretch()
         outer.addLayout(mm_row)
+
+        # Derived from the assignments below — not a second thing to maintain.
+        self._requirements_lbl = QLabel()
+        self._requirements_lbl.hide()
+        apply_muted_color(self._requirements_lbl)
+        outer.addWidget(self._requirements_lbl)
 
         # Combat order
         outer.addWidget(QLabel("Combat order:"))
@@ -561,6 +640,7 @@ class DuelConfigEditor(QWidget):
         self._config = config
         self._all_pcs = all_pcs
         self._suppress = True
+        self._description_edit.setText(config.description)
         self._min_spin.setValue(config.min_players)
         self._max_spin.setValue(config.max_players)
         self._order_widget.set_value(config.combat_order or [])
@@ -568,11 +648,13 @@ class DuelConfigEditor(QWidget):
         self._suppress = False
         self._apply_max_players_constraints(config.max_players)
         self._update_add_btn()
+        self._update_requirements_label()
 
     def set_pcs_list(self, all_pcs: list[PlayerCombatStrategy]) -> None:
         self._all_pcs = all_pcs
         for row in self._rows:
             row.set_pcs_list(all_pcs)
+        self._update_requirements_label()
 
     def set_editable(self, editable: bool) -> None:
         """Lock or unlock every control, including rows added later.
@@ -582,6 +664,7 @@ class DuelConfigEditor(QWidget):
         fully writable mid-run.
         """
         self._editable = editable
+        self._description_edit.setEnabled(editable)
         self._min_spin.setEnabled(editable)
         self._max_spin.setEnabled(editable)
         self._order_widget.set_editable(editable)
@@ -589,14 +672,35 @@ class DuelConfigEditor(QWidget):
             row.set_editable(editable)
         self._update_add_btn()
 
+    def _update_requirements_label(self) -> None:
+        """Refresh the derived school-requirement chips from the current assignments."""
+        if self._config is None:
+            self._requirements_lbl.hide()
+            return
+        pcs_by_id = {p.id: p for p in self._all_pcs}
+        reqs = self._config.school_requirements(pcs_by_id)
+        if not reqs:
+            self._requirements_lbl.hide()
+            return
+        self._requirements_lbl.setText(" · ".join(f"{school} ×{n}" for school, n in reqs.items()))
+        self._requirements_lbl.show()
+
+    def _on_description_changed(self) -> None:
+        if self._suppress or self._config is None:
+            return
+        self._config.description = self._description_edit.text()
+        self.changed.emit()
+
     def clear(self) -> None:
         """Detach from the loaded config — no pending state to drop, unlike the
         debounced editors, since every edit here is already live on the config.
         """
         self._config = None
         self._suppress = True
+        self._description_edit.clear()
         self._rebuild_assignment_rows()
         self._suppress = False
+        self._update_requirements_label()
 
     def _rebuild_assignment_rows(self) -> None:
         for row in self._rows:
@@ -648,6 +752,7 @@ class DuelConfigEditor(QWidget):
         # Apply current max_players constraint to the new row
         self._rows[-1].set_max_players(max_p)
         self._update_add_btn()
+        self._update_requirements_label()
         self.changed.emit()
 
     def _on_remove_row(self, row: _AssignmentRow) -> None:
@@ -659,6 +764,7 @@ class DuelConfigEditor(QWidget):
         row.deleteLater()
         self._rows.remove(row)
         self._update_add_btn()
+        self._update_requirements_label()
         self.changed.emit()
 
     def _on_reorder_row(self, source_row: _AssignmentRow, target_row: _AssignmentRow, before: bool) -> None:
@@ -750,6 +856,7 @@ class DuelConfigEditor(QWidget):
         self._config.max_players = self._max_spin.value()
         order = self._order_widget.get_value()
         self._config.combat_order = order if order else None
+        self._update_requirements_label()
         self.changed.emit()
 
     def changeEvent(self, event: QEvent) -> None:

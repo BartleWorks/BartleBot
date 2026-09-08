@@ -63,10 +63,12 @@ from bartlebot.strategy_store import (
     save_bot_strategy,
     save_duel_strategy,
 )
+from bartlebot.strategy_summary import summarize_bot, summarize_duel
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
     from bartlebot.gui.strategy_library.strategy_library_window import StrategyLibraryWindow
+    from bartlebot.strategy_summary import StrategySummary
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +78,7 @@ _BUILT_IN_LABEL = "BartleBot Default Combat Strategy"
 _NO_STRATEGY_LABEL = "(no strategy set)"
 _NOT_CONFIGURED_LABEL = "Not configured — built-in default for every player"
 _ICON_BTN_SIZE = 16
-_DSL_PREVIEW_CHARS = 28
+_LINK_TOOLTIP = "Click to link a Duel Strategy from the library"
 
 # What an *unset* binding falls back to.  These differ by level and the
 # distinction is not cosmetic: an empty state override does NOT fall through to
@@ -455,61 +457,9 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
 # ---------------------------------------------------------------------------
 
 
-def _format_dcs_meta(config: DuelConfig) -> str:
-    """One-line summary of a duel config: player range + combat order.
-
-    Takes ``DuelConfig`` so the same helper covers both a linked library
-    DuelCombatStrategy (which IS-A DuelConfig) and an inline one.
-    """
-    parts = []
-    if config.min_players == 1 and config.max_players == 4:
-        parts.append("Any players")
-    elif config.min_players == config.max_players:
-        parts.append(f"{config.min_players} player{'s' if config.min_players != 1 else ''}")
-    else:
-        parts.append(f"{config.min_players}–{config.max_players} players")
-    if config.combat_order:
-        parts.append(" → ".join(f"P{p}" for p in config.combat_order))
-    else:
-        parts.append("Simultaneous")
-    return " · ".join(parts)
-
-
 def _format_bcs_meta(bcs: BotCombatStrategy) -> str:
     """One-line summary of a BCS: number of state overrides."""
-    n = sum(len(a.state_ids) for a in bcs.state_assignments)
-    return f"{n} state override{'s' if n != 1 else ''}" if n else "Default strategy only"
-
-
-def _summarize_assignment_dsl(assignment, pcs_by_id: dict[str, str]) -> str:
-    """Label for one assignment: the linked preset's name, or its inline DSL truncated."""
-    if assignment.is_linked:
-        return pcs_by_id.get(assignment.player_combat_strategy_id, "(unknown)")
-    dsl = " ".join(assignment.dsl.split())
-    if not dsl:
-        return "(default)"
-    return dsl if len(dsl) <= _DSL_PREVIEW_CHARS else dsl[: _DSL_PREVIEW_CHARS - 1] + "…"
-
-
-def _format_dcs_assignments(config: DuelConfig, all_pcs: list[PlayerCombatStrategy]) -> str:
-    """One-line summary of player assignments within a duel config (linked or inline)."""
-    if not config.player_assignments:
-        return "No player assignments"
-    pcs_by_id = {p.id: p.name for p in all_pcs}
-    parts = []
-    for assignment in config.player_assignments:
-        players = sorted(assignment.players)
-        if not players:
-            continue
-        name = _summarize_assignment_dsl(assignment, pcs_by_id)
-        if len(players) == 1:
-            player_str = f"P{players[0]}"
-        elif players == list(range(players[0], players[-1] + 1)):
-            player_str = f"P{players[0]}–P{players[-1]}"
-        else:
-            player_str = ", ".join(f"P{p}" for p in players)
-        parts.append(f"{player_str}: {name}")
-    return " · ".join(parts)
+    return summarize_bot(bcs).facets[0]
 
 
 def _unique_dcs_name(base: str, existing: list[DuelCombatStrategy]) -> str:
@@ -792,7 +742,7 @@ class _DuelBindingPanel(QWidget):
 
         self._chip = _StrategyChip(empty_label)
         self._chip.setMaximumWidth(160)
-        self._chip.setToolTip("Click to link a Duel Strategy from the library")
+        self._chip.setToolTip(_LINK_TOOLTIP)
         self._chip.clicked.connect(self._on_pick_link)
         # Top-aligned against the first fight: the chip describes the whole
         # group, so centring it against a four-line title would leave it
@@ -896,6 +846,22 @@ class _DuelBindingPanel(QWidget):
             return None
         return next((d for d in self._all_dcs if d.id == self._binding.duel_combat_strategy_id), None)
 
+    def _apply_summary(self, summary: StrategySummary) -> None:
+        """Render both meta lines, and the chip tooltip, from one shared summary.
+
+        The meta line carries min/max players *and* the combat order, so a
+        fight whose order differs from its neighbours (Balaur entering
+        P1→P2→P4→P3) is visible without expanding anything.
+        """
+        self._meta_lbl.setText(" · ".join(summary.facets))
+        self._meta_lbl.show()
+        if summary.lines:
+            self._assignments_lbl.setText(" · ".join(f"{line.players}: {line.label}" for line in summary.lines))
+        else:
+            self._assignments_lbl.setText("No player assignments")
+        self._assignments_lbl.show()
+        self._chip.setToolTip(summary.description or _LINK_TOOLTIP)
+
     def _refresh(self) -> None:
         if self._binding is None:
             self.setVisible(False)
@@ -908,12 +874,10 @@ class _DuelBindingPanel(QWidget):
             self._config_editor.hide()
             if dcs is not None:
                 self._chip.set_strategy_name(dcs.name)
-                self._meta_lbl.setText(_format_dcs_meta(dcs))
-                self._meta_lbl.show()
-                self._assignments_lbl.setText(_format_dcs_assignments(dcs, self._all_pcs))
-                self._assignments_lbl.show()
+                self._apply_summary(summarize_duel(dcs, self._all_pcs))
             else:
                 self._chip.set_strategy_name("(missing strategy)")
+                self._chip.setToolTip(_LINK_TOOLTIP)
                 self._meta_lbl.hide()
                 self._assignments_lbl.hide()
             self._refresh_disclosure()
@@ -923,6 +887,7 @@ class _DuelBindingPanel(QWidget):
         config = self._binding.duel_config
         empty = config.is_empty()
         self._chip.set_strategy_name(self._empty_label if empty else "(custom)")
+        self._chip.setToolTip(config.description or _LINK_TOOLTIP)
         if self._expanded:
             self._meta_lbl.hide()
             self._assignments_lbl.hide()
@@ -936,13 +901,7 @@ class _DuelBindingPanel(QWidget):
                 self._meta_lbl.show()
                 self._assignments_lbl.hide()
             else:
-                # The meta line carries min/max players *and* the combat order,
-                # so a fight whose order differs from its neighbours (Balaur
-                # entering P1→P2→P4→P3) is visible without expanding anything.
-                self._meta_lbl.setText(_format_dcs_meta(config))
-                self._meta_lbl.show()
-                self._assignments_lbl.setText(_format_dcs_assignments(config, self._all_pcs))
-                self._assignments_lbl.show()
+                self._apply_summary(summarize_duel(config, self._all_pcs))
         self._refresh_disclosure()
 
     # -- actions ----------------------------------------------------------
@@ -960,6 +919,7 @@ class _DuelBindingPanel(QWidget):
             current_id=self._binding.duel_combat_strategy_id,
             allow_none=True,
             none_label=self._empty_label,
+            all_pcs=self._all_pcs,
             parent=self,
         )
         if dlg.exec():
@@ -996,12 +956,9 @@ class _DuelBindingPanel(QWidget):
         """Fork the linked strategy's fields back into this binding as an inline copy."""
         dcs = self._linked_dcs()
         if dcs is not None:
-            self._binding.duel_config = DuelConfig(
-                min_players=dcs.min_players,
-                max_players=dcs.max_players,
-                combat_order=dcs.combat_order,
-                player_assignments=[a.model_copy(deep=True) for a in dcs.player_assignments],
-            )
+            # Dump over the DuelConfig field set (rather than listing fields by
+            # hand) so a field added later can't be silently dropped here.
+            self._binding.duel_config = DuelConfig.model_validate(dcs.model_dump(exclude={"id", "name"}))
         self._binding.duel_combat_strategy_id = None
         self._refresh()
         self.changed.emit()
@@ -1020,13 +977,9 @@ class _DuelBindingPanel(QWidget):
         name, ok = QInputDialog.getText(self, "Save as Preset", "Duel Strategy name:")
         if not ok or not name.strip():
             return
-        dcs = DuelCombatStrategy(
-            name=name.strip(),
-            min_players=config.min_players,
-            max_players=config.max_players,
-            combat_order=config.combat_order,
-            player_assignments=[a.model_copy(deep=True) for a in config.player_assignments],
-        )
+        # Dump over the DuelConfig field set (rather than listing fields by
+        # hand) so a field added later can't be silently dropped here.
+        dcs = DuelCombatStrategy(name=name.strip(), **config.model_dump())
         save_duel_strategy(dcs)
         self._all_dcs.append(dcs)
         self._binding.duel_combat_strategy_id = dcs.id

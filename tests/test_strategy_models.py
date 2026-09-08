@@ -269,3 +269,111 @@ def test_an_inverted_range_is_repaired_on_load_not_rejected():
         {"name": "Legacy", "min_players": 3, "max_players": 1},
     )
     assert (dcs.min_players, dcs.max_players) == (3, 3)
+
+
+# ---------------------------------------------------------------------------
+# Authored metadata: description, school, note (#210 phase 1)
+# ---------------------------------------------------------------------------
+
+
+def test_new_fields_round_trip_under_exclude_defaults(tmp_path: Path):
+    pcs = PlayerCombatStrategy(name="Blade", dsl="trap @ self", school="Storm", description="Storm blade support")
+    path = tmp_path / f"{pcs.id}.json"
+    pcs.save(path)
+    data = json.loads(path.read_text())
+    assert data == {
+        "id": pcs.id,
+        "name": "Blade",
+        "dsl": "trap @ self",
+        "school": "Storm",
+        "description": "Storm blade support",
+    }
+    loaded = PlayerCombatStrategy.load(path)
+    assert loaded.school == "Storm"
+    assert loaded.description == "Storm blade support"
+
+
+def test_default_valued_new_fields_are_not_written(tmp_path: Path):
+    """A strategy that never sets the new fields writes no trace of them."""
+    pcs = PlayerCombatStrategy(name="Plain", dsl="x")
+    path = tmp_path / f"{pcs.id}.json"
+    pcs.save(path)
+    data = json.loads(path.read_text())
+    assert "school" not in data
+    assert "description" not in data
+
+
+def test_id_survives_exclude_defaults(tmp_path: Path):
+    """A uuid4 default_factory value never equals a freshly generated default, so id is always written."""
+    dcs = DuelCombatStrategy(name="X")
+    path = tmp_path / f"{dcs.id}.json"
+    dcs.save(path)
+    loaded = DuelCombatStrategy.load(path)
+    assert loaded.id == dcs.id
+
+
+def test_description_only_config_is_still_empty():
+    """A description alone is not a real config — is_empty() must not change."""
+    config = DuelConfig(description="Boss enters at 50% health")
+    assert config.is_empty()
+
+
+def test_player_assignment_school_and_note_round_trip(tmp_path: Path):
+    dcs = DuelCombatStrategy(
+        name="Boss",
+        player_assignments=[
+            PlayerAssignment(players=[1], dsl="blade @ self", school="Storm", note="Sets up the kill"),
+        ],
+    )
+    path = tmp_path / f"{dcs.id}.json"
+    dcs.save(path)
+    loaded = DuelCombatStrategy.load(path)
+    assignment = loaded.player_assignments[0]
+    assert assignment.school == "Storm"
+    assert assignment.note == "Sets up the kill"
+
+
+# ---------------------------------------------------------------------------
+# DuelConfig.school_requirements
+# ---------------------------------------------------------------------------
+
+
+def test_school_requirements_counts_players_per_assignment():
+    config = DuelConfig(
+        player_assignments=[
+            PlayerAssignment(players=[1, 2], dsl="x", school="Storm"),
+            PlayerAssignment(players=[3], dsl="y", school="Life"),
+        ],
+    )
+    assert config.school_requirements({}) == {"Storm": 2, "Life": 1}
+
+
+def test_school_requirements_ignores_assignments_with_no_school():
+    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="x")])
+    assert config.school_requirements({}) == {}
+
+
+def test_school_requirements_resolves_through_a_linked_preset():
+    """An unset assignment school falls back to the linked preset's own school."""
+    pcs = PlayerCombatStrategy(name="Storm Blade", dsl="x", school="Storm")
+    config = DuelConfig(
+        player_assignments=[PlayerAssignment(players=[1, 2], player_combat_strategy_id=pcs.id)],
+    )
+    assert config.school_requirements({pcs.id: pcs}) == {"Storm": 2}
+
+
+def test_school_requirements_assignment_school_wins_over_linked_preset():
+    pcs = PlayerCombatStrategy(name="Storm Blade", dsl="x", school="Storm")
+    config = DuelConfig(
+        player_assignments=[
+            PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id, school="Life"),
+        ],
+    )
+    assert config.school_requirements({pcs.id: pcs}) == {"Life": 1}
+
+
+def test_school_requirements_missing_preset_reference_is_ignored():
+    config = DuelConfig(
+        player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id="missing-id")],
+    )
+    assert config.school_requirements({}) == {}
