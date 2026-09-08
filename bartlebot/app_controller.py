@@ -29,6 +29,7 @@ from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.shared.vendor import PRODUCT, VENDOR
 from bartlebot.utils.window_kill import force_close_client
 
 if TYPE_CHECKING:
@@ -65,7 +66,11 @@ class AppController(QObject):
         # Named before the first stylesheet is built, because QStandardPaths derives
         # the cache directory from it and that is where the themed combo box arrow is
         # written. Left unset, Qt falls back to the executable's name — "python".
-        self._app.setApplicationName("BartleBot")
+        #
+        # Organization *and* application, so Qt's own directory lands under the vendor
+        # beside everything else this publisher writes — see shared.vendor.
+        self._app.setOrganizationName(VENDOR)
+        self._app.setApplicationName(PRODUCT)
         self._app.setStyle("Fusion")
         self._apply_theme()
         self._handler = WizSprinter()

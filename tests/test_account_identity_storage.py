@@ -1,9 +1,14 @@
 """Fingerprint storage through a real SettingsManager, to disk and back.
 
 The adoption tests stub SettingsManager, so they prove the learn/adopt logic but say
-nothing about whether a fingerprint actually lands in settings.json — and a fingerprint
-that does not survive the process is worthless, since recognising a window a *previous*
-session launched is the entire reason it exists.
+nothing about whether a fingerprint actually lands on disk — and a fingerprint that does
+not survive the process is worthless, since recognising a window a *previous* session
+launched is the entire reason it exists.
+
+The file is the shared account store's, not settings.json: the account records moved to
+``%APPDATA%/Bartleby/accounts.json`` so a second product by the same publisher can read
+them. ``settings.account_store.path`` is where the assertions look, rather than a literal
+path, because that is the seam under test.
 
 Each test builds a private SettingsManager against tmp_path rather than touching the
 %APPDATA% singleton.
@@ -63,16 +68,20 @@ async def _identify(harness, settings, clients) -> None:
         await ClientManager._refresh_account_identity(harness, clients)
 
 
-async def test_a_learned_fingerprint_reaches_the_file(settings, tmp_path):
-    """The bug this file exists for: the accounts setter only writes memory."""
+def _stored(settings) -> dict:
+    """The shared account store's file, as written."""
+    return json.loads(settings.account_store.path.read_text(encoding="utf-8"))
+
+
+async def test_a_learned_fingerprint_reaches_the_file(settings):
+    """The bug this file exists for: the accounts setter only wrote memory."""
     settings.accounts = [{"username": "user1", "alias": "Jeff"}]
-    settings.save()
 
     harness = IdentityHarness()
     harness._hwnd_account_map = {100: "user1"}
     await _identify(harness, settings, [_client(100, UID)])
 
-    on_disk = json.loads((tmp_path / "settings.json").read_text(encoding="utf-8"))
+    on_disk = _stored(settings)
     stored = account_identity.stored_fingerprint(on_disk["accounts"], "user1")
     assert stored == account_identity.fingerprint(UID, KEY)
 
@@ -80,7 +89,6 @@ async def test_a_learned_fingerprint_reaches_the_file(settings, tmp_path):
 async def test_a_learned_fingerprint_survives_a_restart(settings, tmp_path, monkeypatch):
     """Saturday's case: the session that launched the clients is not the one that adopts them."""
     settings.accounts = [{"username": "user1", "alias": "Jeff"}]
-    settings.save()
 
     launching = IdentityHarness()
     launching._hwnd_account_map = {100: "user1"}
@@ -94,40 +102,39 @@ async def test_a_learned_fingerprint_survives_a_restart(settings, tmp_path, monk
     assert adopting._hwnd_account_map == {555: "user1"}, "the window should be adopted after a restart"
 
 
-async def test_the_user_id_itself_is_never_written(settings, tmp_path):
+async def test_the_user_id_itself_is_never_written(settings):
     settings.accounts = [{"username": "user1", "alias": "Jeff"}]
-    settings.save()
 
     harness = IdentityHarness()
     harness._hwnd_account_map = {100: "user1"}
     await _identify(harness, settings, [_client(100, UID)])
 
-    raw = (tmp_path / "settings.json").read_text(encoding="utf-8")
+    raw = settings.account_store.path.read_text(encoding="utf-8")
     assert str(UID) not in raw
     assert account_identity.fingerprint(UID, KEY) in raw
 
 
-async def test_learning_leaves_other_account_fields_intact(settings, tmp_path):
+async def test_learning_leaves_other_account_fields_intact(settings):
     settings.accounts = [
         {"username": "user1", "alias": "Jeff"},
         {"username": "user2", "alias": "Emma"},
     ]
-    settings.save()
 
     harness = IdentityHarness()
     harness._hwnd_account_map = {100: "user1"}
     await _identify(harness, settings, [_client(100, UID)])
 
-    on_disk = json.loads((tmp_path / "settings.json").read_text(encoding="utf-8"))
+    on_disk = _stored(settings)
     assert on_disk["accounts"][0]["alias"] == "Jeff"
     assert on_disk["accounts"][1] == {"username": "user2", "alias": "Emma"}
 
 
 def test_settings_load_preserves_unknown_account_keys(tmp_path, monkeypatch):
-    """accounts is not a validated section, so extra keys must survive a load untouched.
+    """An account record is not a validated shape, so extra keys must survive untouched.
 
-    If it ever gains a pydantic model, this fails rather than silently dropping every
-    stored fingerprint on the next start.
+    Read through the migration out of settings.json on purpose: an install that predates
+    the shared store has its fingerprints in the old file, and dropping them there would
+    un-adopt every window on the first start after the move.
     """
     monkeypatch.setattr(sm_mod, "_appdata_dir", lambda: tmp_path)
     (tmp_path / "settings.json").write_text(

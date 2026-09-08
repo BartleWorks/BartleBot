@@ -24,6 +24,7 @@ from bartlebot.credentials import CredentialStore
 from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 from bartlebot.gui.settings import accounts_tab
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.shared.account_store import AccountStore
 from tests.conftest import main_window_stub
 
 # Synthetic throughout, as CLAUDE.md requires: these are account usernames rather than
@@ -49,16 +50,17 @@ def store(monkeypatch):
     monkeypatch.setattr(CredentialStore, "store", staticmethod(lambda u, p: stored.__setitem__(u, p)))
     monkeypatch.setattr(CredentialStore, "delete", staticmethod(lambda u: stored.pop(u, None)))
     monkeypatch.setattr(character_roster, "forget", lambda u: forgotten.append(u))
-    # Nothing here should reach the disk; every one of these functions saves, which is
-    # the point of test_every_write_is_saved below.
-    saves: list[int] = []
-    monkeypatch.setattr(SettingsManager, "save", lambda self: saves.append(1))
     sm = SettingsManager.instance()
     sm.accounts = _accounts(ONE, TWO)
     sm.launch_profiles = [
         {"name": "Solo", "accounts": [ONE]},
         {"name": "Duo", "accounts": [ONE, TWO], "resolution": [800, 600]},
     ]
+    # Counted after the setup writes, and stubbed so nothing here reaches the disk. The
+    # store is what persists an account now, so it is the store's save these functions
+    # have to reach -- see test_every_write_is_saved below.
+    saves: list[int] = []
+    monkeypatch.setattr(AccountStore, "save", lambda self: saves.append(1))
     return type("Store", (), {"passwords": stored, "forgotten": forgotten, "saves": saves})
 
 
@@ -281,9 +283,12 @@ def test_deleting_an_unknown_profile_asks_nothing(store):
 def test_every_write_is_saved(store, confirm, account_editor):
     """The bug the Add-card work shipped: a card has no Settings dialog behind it to call save().
 
-    ``SettingsManager.set`` only writes memory, and the one ``save()`` these could reach
-    was ``SettingsDialog._on_accept``. So an account added from the launch screen survived
-    until the process exited and no further.
+    The one ``save()`` these could reach was ``SettingsDialog._on_accept``, so an account
+    added from the launch screen survived until the process exited and no further.
+
+    One save per action, and exactly one: ``delete_account`` changes both the accounts and
+    the profiles that name the deleted one, and writes them together rather than leaving a
+    file that names an account it no longer has.
     """
     confirm(True)
     account_editor.result_alias = "Main"

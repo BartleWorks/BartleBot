@@ -2,7 +2,17 @@
 
 The settings store and the settings dialog. What a *bot option* is, and how it outranks an app setting, is in `docs/BOT_OPTIONS.md`.
 
-Use `SettingsManager` singleton. Persisted to `%APPDATA%/BartleBot/settings.json`. Credentials stored via `keyring` (Windows Credential Manager), never on disk.
+Use `SettingsManager` singleton. Persisted to `%APPDATA%/Bartleby/BartleBot/settings.json`.
+Credentials stored via `keyring` (Windows Credential Manager), never on disk.
+
+**Accounts and launch profiles are not in that file.** They are about the *account*, not
+about this app, so they live one level up in the vendor-level store —
+`%APPDATA%/Bartleby/accounts.json`, `bartlebot/shared/account_store.py` — where a second
+product by this publisher can read them. `SettingsManager.accounts` and `.launch_profiles`
+are a facade over it and are still what you call; `SettingsManager.account_store` is the
+seam, and the only reason to reach it is a change to *both* lists that must be one write.
+The vendor prefix, on disk and in Credential Manager, is `shared/vendor.py` and is defined
+exactly once.
 
 Two rules about the settings dialog itself:
 
@@ -55,9 +65,12 @@ Three things every one of them does, and a new one must:
 
 - **Return whether anything was written.** That is the caller's cue to refresh. It is
   false for a cancelled dialog, a declined confirm, and a name that was refused.
-- **Call `SettingsManager.save()`.** `set` only writes memory. A card on the launch
-  screen has no Settings dialog behind it, so an action that skips this survives until
-  the process exits and no further — which is exactly how the Add-card work shipped.
+- **Persist it.** Assigning `sm.accounts` or `sm.launch_profiles` writes the shared
+  store through, so no `SettingsManager.save()` follows — but an action that changes
+  *both*, as `delete_account` does, goes through `sm.account_store` with `save=False` on
+  the first so the pair reaches disk once. A card on the launch screen has no Settings
+  dialog behind it, so an action that persists nothing survives until the process exits
+  and no further — which is exactly how the Add-card work shipped.
 - **Be called from a synchronous Qt slot.** Each runs `exec()`, and Python 3.13 forbids
   re-entering Qt's event loop from inside a running asyncio task.
 

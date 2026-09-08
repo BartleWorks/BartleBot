@@ -18,6 +18,7 @@ from bartlebot.account_identity import (
     stored_fingerprint,
     with_fingerprint,
 )
+from bartlebot.shared.vendor import keyring_service
 
 KEY = b"\x01" * 32
 OTHER_KEY = b"\x02" * 32
@@ -111,13 +112,14 @@ def test_account_key_is_cached_across_calls(monkeypatch):
 
 def test_unreadable_stored_key_is_replaced(monkeypatch):
     """A corrupt entry must not wedge identification permanently."""
-    fake = FakeKeyring({("BartleBot-identity", "account-id-key"): "not base64 !!!"})
+    service = keyring_service("identity")
+    fake = FakeKeyring({(service, "account-id-key"): "not base64 !!!"})
     monkeypatch.setattr(account_identity, "keyring", fake)
 
     key = account_identity.account_key()
 
     assert len(key) == 32
-    assert base64.b64decode(fake.store[("BartleBot-identity", "account-id-key")]) == key
+    assert base64.b64decode(fake.store[(service, "account-id-key")]) == key
 
 
 # ---------------------------------------------------------------------------

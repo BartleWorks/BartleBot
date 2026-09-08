@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 import json
 import logging
-import os
+import shutil
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Any
@@ -20,6 +20,8 @@ from bartlebot.game_sizing import (
     required_window_size,
     screen_budget,
 )
+from bartlebot.shared.account_store import AccountStore
+from bartlebot.shared.vendor import PRODUCT, product_dir, vendor_dir
 
 logger = logging.getLogger(__name__)
 
@@ -134,8 +136,10 @@ _DEFAULTS: dict[str, Any] = {
         "grid_style": "dots",
         "bot_library_path": "bots",
     },
-    "accounts": [],
-    "launch_profiles": [],
+    # accounts and launch_profiles are deliberately absent: they live one level up, in
+    # the vendor-level store (shared.account_store), because a second product by this
+    # publisher needs them and none of the rest of this file. `_migrate_accounts` moves
+    # a settings file that still carries them, once.
     "recent_launches": [],
     "recent_bot_files": [],
     "autosave_origins": {},
@@ -197,8 +201,42 @@ VALID_RESOLUTIONS: list[tuple[int, int]] = sorted({*SUB_FLOOR_RESOLUTIONS, *_STO
 
 
 def _appdata_dir() -> Path:
-    base = os.environ.get("APPDATA") or Path.home()
-    return Path(base) / "BartleBot"
+    """This product's own data directory, ``%APPDATA%/Bartleby/BartleBot``.
+
+    Under the vendor rather than beside it, because three products are planned by this
+    publisher and the shared data between them — the accounts and launch profiles, in
+    ``shared.account_store`` — sits one level up, at the vendor root. A product directory
+    named for the product, inside a directory named for the publisher, is what makes that
+    layout readable rather than two peer directories with one reaching into the other.
+    """
+    directory = product_dir()
+    _adopt_legacy_appdata(directory)
+    return directory
+
+
+def _adopt_legacy_appdata(directory: Path) -> None:
+    """Move a pre-vendor ``%APPDATA%/BartleBot`` to *directory*, once, if it is still there.
+
+    A rename of the whole directory rather than a per-file migration: settings.json and
+    the auto-saves move together, and a user who has both keeps their unsaved recovery
+    files. Free to do now and only now — after 1.0.0 this is migration code with no end
+    date, the same asymmetry as the keyring rename in ``shared.vendor``.
+
+    Silent on every failure. A locked file makes this a fresh install, which is the state
+    the app already handles, and refusing to start over a directory move would be worse
+    than the settings it is trying to preserve.
+    """
+    if directory.exists():
+        return
+    legacy = directory.parent.parent / PRODUCT
+    if not legacy.is_dir():
+        return
+    try:
+        directory.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(legacy), str(directory))
+        logger.info("Moved settings from %s to %s", legacy, directory)
+    except OSError:
+        logger.warning("Could not move settings from %s to %s; starting fresh", legacy, directory, exc_info=True)
 
 
 def _deep_merge(base: dict, overrides: dict) -> dict:
@@ -228,6 +266,7 @@ class SettingsManager:
     def __init__(self) -> None:
         self._path = _appdata_dir() / "settings.json"
         self._data: dict[str, Any] = {}
+        self._accounts = AccountStore(vendor_dir())
         self._load()
 
     # ------------------------------------------------------------------
@@ -283,6 +322,24 @@ class SettingsManager:
                     exc,
                 )
                 self._data[section_key] = copy.deepcopy(_DEFAULTS[section_key])
+
+        self._migrate_accounts()
+
+    def _migrate_accounts(self) -> None:
+        """Hand a settings file's own accounts and launch profiles to the shared store.
+
+        Runs once per install, because it runs only when there is no shared file yet.
+        Both keys are then dropped from the in-memory data, so the next ``save`` stops
+        writing them and nothing can read the stale copy afterwards: two files each
+        holding an account list, with no rule about which wins, is the state this is
+        avoiding.
+
+        Free while the repo is pre-1.0.0 -- see ``shared.account_store``.
+        """
+        if not self._accounts.exists:
+            self._accounts.adopt(self._data.get("accounts"), self._data.get("launch_profiles"))
+        self._data.pop("accounts", None)
+        self._data.pop("launch_profiles", None)
 
     def save(self) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
@@ -519,22 +576,37 @@ class SettingsManager:
         self.save()
 
     @property
+    def account_store(self) -> AccountStore:
+        """The shared store these two properties are a facade over.
+
+        Public because a caller that changes accounts *and* profiles in one action wants
+        the pair written once -- see ``delete_account``, which strips a deleted username
+        from every profile that names it.
+        """
+        return self._accounts
+
+    @property
     def accounts(self) -> list[dict]:
-        """List of {username, alias?} dicts (no passwords)."""
-        return list(self.get("accounts", default=[]))
+        """List of {username, alias?} dicts (no passwords).
+
+        Kept on ``SettingsManager`` although the records moved to the vendor-level store:
+        every surface that draws an account already asks the settings singleton, and the
+        split is not their business. ``account_store`` is the seam itself.
+        """
+        return self._accounts.accounts
 
     @accounts.setter
     def accounts(self, value: list[dict]) -> None:
-        self.set("accounts", value=value)
+        self._accounts.set_accounts(value)
 
     @property
     def launch_profiles(self) -> list[dict]:
         """List of {name, accounts: [username, ...]} dicts."""
-        return list(self.get("launch_profiles", default=[]))
+        return self._accounts.launch_profiles
 
     @launch_profiles.setter
     def launch_profiles(self, value: list[dict]) -> None:
-        self.set("launch_profiles", value=value)
+        self._accounts.set_launch_profiles(value)
 
     @property
     def recent_launches(self) -> list[dict]:
