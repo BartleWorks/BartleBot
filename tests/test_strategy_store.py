@@ -9,6 +9,8 @@ from bartlebot.bot.strategy_models import (
     PlayerCombatStrategy,
 )
 from bartlebot.strategy_store import (
+    Origin,
+    StrategyKind,
     delete_bot_strategy,
     delete_duel_strategy,
     delete_player_strategy,
@@ -18,9 +20,11 @@ from bartlebot.strategy_store import (
     load_bot_strategy,
     load_duel_strategy,
     load_player_strategy,
+    origin_of,
     save_bot_strategy,
     save_duel_strategy,
     save_player_strategy,
+    unique_name,
 )
 
 # ---------------------------------------------------------------------------
@@ -222,3 +226,75 @@ def test_delete_never_touches_shipped_file(tmp_path: Path):
     delete_player_strategy(original.id, root=shipped, user_root=user)  # no user copy exists yet
 
     assert (shipped / "strategies" / "player" / f"{original.id}.json").exists()
+
+
+# ---------------------------------------------------------------------------
+# unique_name — one naming rule for Duplicate and + New, across all four kinds
+# ---------------------------------------------------------------------------
+
+
+def test_unique_name_returns_the_base_when_it_is_free():
+    assert unique_name("Storm AoE", []) == "Storm AoE"
+    assert unique_name("Storm AoE", ["Fire AoE"]) == "Storm AoE"
+
+
+def test_unique_name_starts_at_two():
+    assert unique_name("Storm AoE", ["Storm AoE"]) == "Storm AoE (2)"
+
+
+def test_unique_name_skips_the_gap_it_finds():
+    taken = ["Storm AoE", "Storm AoE (2)", "Storm AoE (3)"]
+    assert unique_name("Storm AoE", taken) == "Storm AoE (4)"
+
+
+def test_duplicating_a_duplicate_counts_from_the_stem():
+    """ "Storm AoE (2)" duplicated is (3), not "Storm AoE (2) (2)"."""
+    assert unique_name("Storm AoE (2)", ["Storm AoE", "Storm AoE (2)"]) == "Storm AoE (3)"
+
+
+def test_unique_name_is_case_sensitive():
+    """These are user-visible labels; two names differing only in case are two names."""
+    assert unique_name("Storm AoE", ["storm aoe"]) == "Storm AoE"
+
+
+def test_unique_name_leaves_a_parenthesised_name_that_is_not_a_suffix_alone():
+    assert unique_name("Boss (Hard)", []) == "Boss (Hard)"
+    assert unique_name("Boss (Hard)", ["Boss (Hard)"]) == "Boss (Hard) (2)"
+
+
+# ---------------------------------------------------------------------------
+# origin_of — what makes Delete honest
+# ---------------------------------------------------------------------------
+
+
+def test_origin_of_shipped_only(tmp_path: Path):
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    dcs = DuelCombatStrategy(name="Shipped")
+    save_duel_strategy(dcs, shipped)
+    assert origin_of(StrategyKind.DUEL, dcs.id, shipped, user) is Origin.SHIPPED
+
+
+def test_origin_of_user_copy_over_shipped(tmp_path: Path):
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    dcs = DuelCombatStrategy(name="Shipped")
+    save_duel_strategy(dcs, shipped)
+    save_duel_strategy(dcs.model_copy(update={"name": "Mine"}), root=shipped, user_root=user)
+    assert origin_of(StrategyKind.DUEL, dcs.id, shipped, user) is Origin.SHIPPED_OVERRIDE
+
+
+def test_origin_of_user_only(tmp_path: Path):
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    pcs = PlayerCombatStrategy(name="Mine")
+    save_player_strategy(pcs, root=shipped, user_root=user)
+    assert origin_of(StrategyKind.PLAYER, pcs.id, shipped, user) is Origin.USER
+
+
+def test_origin_of_missing(tmp_path: Path):
+    assert origin_of(StrategyKind.DECK, "no-such-uuid", tmp_path) is Origin.MISSING
+
+
+def test_origin_in_a_single_root_sandbox_is_always_user(tmp_path: Path):
+    """Nothing is shipped when both roots are one directory, so nothing is an override."""
+    pcs = PlayerCombatStrategy(name="A")
+    save_player_strategy(pcs, tmp_path)
+    assert origin_of(StrategyKind.PLAYER, pcs.id, tmp_path) is Origin.USER

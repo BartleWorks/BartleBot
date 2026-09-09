@@ -28,6 +28,8 @@ behavior. With both omitted, the real shipped/user roots are used.
 
 from __future__ import annotations
 
+import re
+from enum import Enum
 from pathlib import Path
 
 from bartlebot.bot.strategy_models import (
@@ -38,6 +40,67 @@ from bartlebot.bot.strategy_models import (
 )
 from bartlebot.paths import project_root
 from bartlebot.shared.vendor import product_dir
+
+
+class StrategyKind(Enum):
+    """Which of the four stores an id lives in.
+
+    Only needed by the functions that answer a question *about* a file rather
+    than reading or writing one — :func:`origin_of` and the callers that want
+    one code path across kinds. The read/write API stays four explicit function
+    families, which is what nearly every caller wants.
+    """
+
+    PLAYER = "player"
+    DUEL = "duel"
+    BOT = "bot"
+    DECK = "deck"
+
+
+class Origin(Enum):
+    """Where the file behind an id actually is — what makes Delete honest.
+
+    Deleting only ever removes the user copy (see the module docstring), so on a
+    ``SHIPPED_OVERRIDE`` the act is *revert*, not delete: the shipped file
+    reappears underneath. A surface that offers "Delete" on one of those is
+    promising something the store will not do.
+    """
+
+    #: Shipped only. Nothing to delete; editing it will create a user copy.
+    SHIPPED = "shipped"
+    #: A user copy shadowing a shipped file of the same id. Deleting reverts.
+    SHIPPED_OVERRIDE = "shipped_override"
+    #: User-only — created here, or a shipped file that no longer ships. Deleting removes it.
+    USER = "user"
+    #: No file under either root.
+    MISSING = "missing"
+
+
+#: ``base (2)``, ``base (3)`` — the suffix :func:`unique_name` adds and strips.
+_COPY_SUFFIX = re.compile(r"^(?P<stem>.*?)\s*\((?P<n>\d+)\)$")
+
+
+def unique_name(base: str, existing_names) -> str:
+    """``base``, or the first free ``base (2)``, ``base (3)``, … .
+
+    One naming rule for Duplicate and ``+ New`` across all four strategy kinds,
+    so a copy of a copy reads as ``Storm AoE (3)`` rather than
+    ``Storm AoE copy copy``. A ``base`` that already carries a suffix is counted
+    from its stem for that reason — duplicating ``Storm AoE (2)`` gives
+    ``Storm AoE (3)``, not ``Storm AoE (2) (2)``.
+
+    ``existing_names`` is any iterable of names; comparison is exact, since these
+    are user-visible labels and two names differing only in case are two names.
+    """
+    taken = set(existing_names)
+    if base not in taken:
+        return base
+    match = _COPY_SUFFIX.match(base)
+    stem = match.group("stem") if match else base
+    n = int(match.group("n")) + 1 if match else 2
+    while f"{stem} ({n})" in taken:
+        n += 1
+    return f"{stem} ({n})"
 
 
 def _roots(root: str | Path | None, user_root: str | Path | None) -> tuple[Path, Path]:
@@ -222,3 +285,37 @@ def save_deck_preset(preset: DeckPreset, root: str | Path | None = None, user_ro
 def delete_deck_preset(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
     _, user = _roots(root, user_root)
     (_deck_preset_dir(user) / f"{uuid}.json").unlink(missing_ok=True)
+
+
+# ---------------------------------------------------------------------------
+# Where a file actually lives
+# ---------------------------------------------------------------------------
+
+_KIND_DIRS = {
+    StrategyKind.PLAYER: _player_dir,
+    StrategyKind.DUEL: _duel_dir,
+    StrategyKind.BOT: _bot_strategy_dir,
+    StrategyKind.DECK: _deck_preset_dir,
+}
+
+
+def origin_of(
+    kind: StrategyKind, uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
+) -> Origin:
+    """Which root(s) hold ``uuid`` — see :class:`Origin`.
+
+    The one place a surface can ask whether removing a strategy deletes it or
+    merely reverts it, without reaching for the paths itself. Returns
+    :attr:`Origin.USER` for both roots when they are the same directory (the
+    single-root sandbox a test passes as ``root`` alone), since nothing is
+    shipped in that arrangement and everything written is the user's.
+    """
+    shipped, user = _roots(root, user_root)
+    dir_fn = _KIND_DIRS[kind]
+    in_user = (dir_fn(user) / f"{uuid}.json").exists()
+    if shipped == user:
+        return Origin.USER if in_user else Origin.MISSING
+    in_shipped = (dir_fn(shipped) / f"{uuid}.json").exists()
+    if in_shipped:
+        return Origin.SHIPPED_OVERRIDE if in_user else Origin.SHIPPED
+    return Origin.USER if in_user else Origin.MISSING
