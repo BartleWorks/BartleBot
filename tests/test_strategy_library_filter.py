@@ -296,7 +296,7 @@ def test_renaming_a_deck_relabels_the_row_without_reloading_the_panel(qapp, stor
     page = dlg._pages[StrategyKind.DECK]
     loads = _count_calls(monkeypatch, page._editor, "load")
 
-    page._editor._name_edit.setText("Storm 60 v2")
+    page.about._name_edit.setText("Storm 60 v2")
 
     assert loads == []
     assert dlg._ws.get(StrategyKind.DECK, p.id).name == "Storm 60 v2"

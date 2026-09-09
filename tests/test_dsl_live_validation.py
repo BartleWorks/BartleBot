@@ -72,7 +72,7 @@ def test_pcs_editor_clear_hides_the_error(qapp):
 
 
 # ---------------------------------------------------------------------------
-# _AssignmentRow, via DuelConfigEditor
+# AssignmentCard, via DuelConfigEditor
 # ---------------------------------------------------------------------------
 
 
@@ -81,7 +81,7 @@ def test_assignment_row_load_with_broken_dsl_shows_the_error_immediately(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    assert not editor._rows[0]._dsl_error_lbl.isHidden()
+    assert not editor.cards[0]._dsl_error_lbl.isHidden()
 
 
 def test_assignment_row_empty_dsl_is_not_flagged(qapp):
@@ -89,7 +89,7 @@ def test_assignment_row_empty_dsl_is_not_flagged(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    assert editor._rows[0]._dsl_error_lbl.isHidden()
+    assert editor.cards[0]._dsl_error_lbl.isHidden()
 
 
 def test_assignment_row_editing_starts_the_validate_debounce_not_an_immediate_flag(qapp):
@@ -97,7 +97,7 @@ def test_assignment_row_editing_starts_the_validate_debounce_not_an_immediate_fl
     config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)])
     editor = DuelConfigEditor()
     editor.load(config, [])
-    row = editor._rows[0]
+    row = editor.cards[0]
 
     row._dsl_edit.setPlainText(_INVALID_DSL)
 
@@ -109,7 +109,7 @@ def test_assignment_row_debounced_recheck_flags_invalid_dsl(qapp):
     config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)])
     editor = DuelConfigEditor()
     editor.load(config, [])
-    row = editor._rows[0]
+    row = editor.cards[0]
 
     row._dsl_edit.setPlainText(_INVALID_DSL)
     row._validate_timer.stop()
@@ -131,7 +131,10 @@ def test_a_linked_row_shows_no_dsl_box_and_no_error_of_its_own(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [pcs])
 
-    row = editor._rows[0]
-    assert not row.is_custom()
-    assert row._dsl_error_lbl.isHidden()
+    card = editor.cards[0]
+    assert not card.is_custom()
+    assert card._dsl_error_lbl.isHidden()
+    # ...and the card's own title carries no warning mark either: the broken DSL is not
+    # this assignment's to report.
+    assert card.title_text() == "Broken"
     assert summarize_duel(config, [pcs]).health.status is HealthStatus.INVALID_DSL

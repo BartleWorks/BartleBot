@@ -30,13 +30,13 @@ from bartlebot.bot.strategy_models import (
     PlayerAssignment,
     PlayerCombatStrategy,
 )
+from bartlebot.gui.combat_strategies.assignment_card import CUSTOM_DATA, strategy_menu_entries
 from bartlebot.gui.combat_strategies.dialog import (
     NEW_NAMES,
     CombatStrategyDialog,
     DialogMode,
     _KindPage,
 )
-from bartlebot.gui.combat_strategies.duel_editor import _CUSTOM_DATA
 from bartlebot.strategy_store import (
     StrategyKind,
     list_duel_strategies,
@@ -164,7 +164,7 @@ def test_use_returns_the_selection_and_commits_the_edits(qapp, roots):
     dcs = DuelCombatStrategy(name="Frenzy AoE")
     save_duel_strategy(dcs, shipped)
     dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.PICK, current_id=dcs.id)
-    dlg._pages[StrategyKind.DUEL]._editor._name_edit.setText("Renamed")
+    dlg._pages[StrategyKind.DUEL].about._name_edit.setText("Renamed")
 
     dlg._on_commit()
 
@@ -301,7 +301,7 @@ def test_the_detail_pane_says_what_uses_this_strategy(qapp, roots):
     save_duel_strategy(dcs, shipped)
     dlg = _dialog(roots, kind=StrategyKind.PLAYER, current_id=pcs.id)
 
-    assert dlg._pages[StrategyKind.PLAYER]._usage_lbl.text() == "Used by 1 duel strategy"
+    assert dlg._pages[StrategyKind.PLAYER].about.usage_text == "Used by 1 duel strategy"
 
 
 def test_the_usage_line_counts_a_link_made_a_minute_ago(qapp, roots):
@@ -312,12 +312,12 @@ def test_the_usage_line_counts_a_link_made_a_minute_ago(qapp, roots):
     save_player_strategy(pcs, shipped)
     save_duel_strategy(dcs, shipped)
     dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
-    row = dlg._pages[StrategyKind.DUEL]._editor._config_editor._rows[0]
-    row._strategy_combo.setCurrentIndex(row._strategy_combo.findData(pcs.id))
+    row = dlg._pages[StrategyKind.DUEL]._editor.cards[0]
+    row.choose_strategy(pcs.id)
 
     dlg._pages[StrategyKind.PLAYER].select(pcs.id)
 
-    assert dlg._pages[StrategyKind.PLAYER]._usage_lbl.text() == "Used by 1 duel strategy"
+    assert dlg._pages[StrategyKind.PLAYER].about.usage_text == "Used by 1 duel strategy"
 
 
 # ---------------------------------------------------------------------------
@@ -330,7 +330,7 @@ def test_promoting_a_rows_dsl_makes_a_player_strategy_and_links_it(qapp, roots):
     dcs = DuelCombatStrategy(name="Boss", player_assignments=[PlayerAssignment(players=[1], dsl="blade", school="Ice")])
     save_duel_strategy(dcs, shipped)
     dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
-    row = dlg._pages[StrategyKind.DUEL]._editor._config_editor._rows[0]
+    row = dlg._pages[StrategyKind.DUEL]._editor.cards[0]
 
     with patch("bartlebot.gui.combat_strategies.dialog.QInputDialog.getText", return_value=("Ice Blade", True)):
         row._promote_btn.click()
@@ -346,7 +346,7 @@ def test_a_cancelled_promotion_changes_nothing(qapp, roots):
     dcs = DuelCombatStrategy(name="Boss", player_assignments=[PlayerAssignment(players=[1], dsl="blade")])
     save_duel_strategy(dcs, roots[0])
     dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
-    row = dlg._pages[StrategyKind.DUEL]._editor._config_editor._rows[0]
+    row = dlg._pages[StrategyKind.DUEL]._editor.cards[0]
 
     with patch("bartlebot.gui.combat_strategies.dialog.QInputDialog.getText", return_value=("", False)):
         row._promote_btn.click()
@@ -364,10 +364,9 @@ def test_a_player_strategy_made_on_the_sibling_tab_appears_in_the_selector(qapp,
 
     dlg._tabs.setCurrentWidget(dlg._pages[StrategyKind.DUEL])
 
-    row = dlg._pages[StrategyKind.DUEL]._editor._config_editor._rows[0]
-    assert NEW_NAMES[StrategyKind.PLAYER] in [
-        row._strategy_combo.itemText(i) for i in range(row._strategy_combo.count())
-    ]
+    row = dlg._pages[StrategyKind.DUEL]._editor.cards[0]
+    assert NEW_NAMES[StrategyKind.PLAYER] in [label for label, _data in strategy_menu_entries(dlg._ws.players)]
+    assert row.is_expanded() is False  # naming a strategy elsewhere unfolds nothing here
 
 
 # ---------------------------------------------------------------------------
@@ -381,7 +380,7 @@ def test_a_fresh_assignment_shows_no_dsl_box(qapp, roots):
     save_duel_strategy(dcs, roots[0])
     dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
 
-    row = dlg._pages[StrategyKind.DUEL]._editor._config_editor._rows[0]
+    row = dlg._pages[StrategyKind.DUEL]._editor.cards[0]
     assert not row.is_custom()
     assert row._dsl_edit.isHidden()
     assert row._promote_btn.isHidden()
@@ -391,9 +390,9 @@ def test_choosing_custom_dsl_opens_the_box_and_offers_to_name_it(qapp, roots):
     dcs = DuelCombatStrategy(name="Boss", player_assignments=[PlayerAssignment(players=[1])])
     save_duel_strategy(dcs, roots[0])
     dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
-    row = dlg._pages[StrategyKind.DUEL]._editor._config_editor._rows[0]
+    row = dlg._pages[StrategyKind.DUEL]._editor.cards[0]
 
-    row._strategy_combo.setCurrentIndex(row._strategy_combo.findData(_CUSTOM_DATA))
+    row.choose_strategy(CUSTOM_DATA)
     assert row.is_custom()
     assert row._promote_btn.isHidden()  # nothing to name yet
 
@@ -414,7 +413,7 @@ def test_the_deck_tab_edits_identity_only(qapp, roots):
     dlg = _dialog(roots, kind=StrategyKind.DECK, current_id=preset.id)
     page = dlg._pages[StrategyKind.DECK]
 
-    page._editor._description_edit.setText("for the Storm wizard")
+    page.about._description_edit.setText("for the Storm wizard")
 
     assert dlg._ws.get(StrategyKind.DECK, preset.id).description == "for the Storm wizard"
 

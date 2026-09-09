@@ -23,7 +23,6 @@ from PyQt6.QtCore import QEvent, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QPlainTextEdit,
     QVBoxLayout,
     QWidget,
@@ -63,17 +62,11 @@ class PlayerStrategyEditor(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
 
-        layout.addWidget(QLabel("Name:"))
-        self._name_edit = QLineEdit()
-        self._name_edit.textChanged.connect(self._on_changed)
-        layout.addWidget(self._name_edit)
-
-        layout.addWidget(QLabel("Description:"))
-        self._description_edit = QLineEdit()
-        self._description_edit.setPlaceholderText("What this strategy does and why (optional)")
-        self._description_edit.textChanged.connect(self._on_changed)
-        layout.addWidget(self._description_edit)
-
+        # No name or description field. Both moved up into the detail pane's *About*
+        # section, which every tab now shares — they identify the library entry rather
+        # than describe the strategy, and three tabs each drawing them in a different
+        # arrangement is what the About section exists to end. See
+        # :class:`~bartlebot.gui.combat_strategies.dialog.AboutSection`.
         school_row = QHBoxLayout()
         school_row.addWidget(QLabel("School:"))
         # Authored, never inferred from the DSL — used as a fallback wherever an
@@ -113,8 +106,6 @@ class PlayerStrategyEditor(QWidget):
     def load(self, strategy: PlayerCombatStrategy) -> None:
         self._strategy = strategy
         self._suppress = True
-        self._name_edit.setText(strategy.name)
-        self._description_edit.setText(strategy.description)
         self._school_combo.set_value(strategy.school)
         self._dsl_edit.setPlainText(strategy.dsl)
         self._suppress = False
@@ -128,8 +119,6 @@ class PlayerStrategyEditor(QWidget):
         self._validate_timer.stop()
         self._strategy = None
         self._suppress = True
-        self._name_edit.clear()
-        self._description_edit.clear()
         self._school_combo.set_value(None)
         self._dsl_edit.clear()
         self._suppress = False
@@ -138,10 +127,6 @@ class PlayerStrategyEditor(QWidget):
     def _on_changed(self) -> None:
         if self._suppress or self._strategy is None:
             return
-        # An empty name would leave a nameless card in the list with no way back
-        # to it, so the last non-empty name stands until another is typed.
-        self._strategy.name = self._name_edit.text().strip() or self._strategy.name
-        self._strategy.description = self._description_edit.text()
         self._strategy.school = self._school_combo.value()
         self._strategy.dsl = self._dsl_edit.toPlainText()
         self._validate_timer.stop()

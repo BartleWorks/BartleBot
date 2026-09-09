@@ -53,6 +53,7 @@ from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QInputDialog,
     QLabel,
@@ -60,7 +61,6 @@ from PyQt6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMessageBox,
-    QPushButton,
     QScrollArea,
     QSplitter,
     QTabWidget,
@@ -68,13 +68,13 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.strategy_models import PlayerCombatStrategy
 from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.elided_label import apply_muted_color
+from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.strategy_card import StrategyCard
 from bartlebot.strategy_store import Origin, StrategyKind
@@ -154,58 +154,103 @@ def matches_filter(summary: StrategySummary, query: str) -> str | None:
     return haystack if matches_query(haystack, query) else None
 
 
-class _DuelDetailPane(QWidget):
-    """A DuelCombatStrategy's name over the shared DuelConfig editor.
+class AboutSection(QWidget):
+    """What a library entry *is*: its name, its description, and what depends on it.
 
-    A DuelCombatStrategy IS-A DuelConfig, so the editor below needs no wrapper
-    beyond the one field the library entry adds: the name it is known by.
+    One widget for all three tabs. The three editors each used to draw a name field and a
+    description field in an arrangement of its own — one with the label above, one with
+    it beside, one with the description on the ``DuelConfig`` rather than on the entry —
+    and the usage and origin lines sat above them in a fourth arrangement belonging to
+    the page. That is four ways of saying the same two things on one dialog.
+
+    Model-agnostic on purpose: every strategy kind has a ``name`` and a ``description``,
+    which is all this touches, so the kind never has to be branched on. What differs
+    between tabs is what sits *below* it, which is the editor's business.
+
+    The two muted lines under the fields are things the card list has no room for and the
+    old Strategy Library never said at all: how many things break if this goes, and
+    whether "delete" here means delete or means revert.
     """
 
     changed = pyqtSignal()
-    promote_requested = pyqtSignal(object)  # forwarded from an assignment row
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._strategy = None
+        self._entry = None
         self._suppress = False
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
+        layout.setSpacing(4)
+        layout.addWidget(RuleHeading("About", self))
 
-        layout.addWidget(QLabel("Name:"))
-        self._name_edit = QLineEdit()
-        self._name_edit.textChanged.connect(self._on_name_changed)
-        layout.addWidget(self._name_edit)
+        # A two-column grid rather than labels stacked above their fields: these are two
+        # short one-line values, and stacking them costs two rows of height at the top of
+        # every tab for no gain in legibility.
+        grid = QGridLayout()
+        grid.setContentsMargins(0, 0, 0, 0)
+        grid.setHorizontalSpacing(6)
+        grid.setVerticalSpacing(4)
+        grid.setColumnStretch(1, 1)
+        grid.addWidget(QLabel("Name:", self), 0, 0)
+        self._name_edit = QLineEdit(self)
+        self._name_edit.textChanged.connect(self._on_changed)
+        grid.addWidget(self._name_edit, 0, 1)
+        grid.addWidget(QLabel("Description:", self), 1, 0)
+        self._description_edit = QLineEdit(self)
+        self._description_edit.setPlaceholderText("What this is for and why (optional)")
+        self._description_edit.textChanged.connect(self._on_changed)
+        grid.addWidget(self._description_edit, 1, 1)
+        layout.addLayout(grid)
 
-        self._config_editor = DuelConfigEditor()
-        self._config_editor.changed.connect(self.changed)
-        self._config_editor.promote_requested.connect(self.promote_requested)
-        layout.addWidget(self._config_editor, 1)
+        self._usage_lbl = QLabel(self)
+        apply_muted_color(self._usage_lbl)
+        layout.addWidget(self._usage_lbl)
+        self._origin_lbl = QLabel(self)
+        self._origin_lbl.setWordWrap(True)
+        apply_muted_color(self._origin_lbl)
+        layout.addWidget(self._origin_lbl)
 
-    def load(self, strategy, all_pcs: list[PlayerCombatStrategy]) -> None:
-        self._strategy = strategy
+    def load(self, entry) -> None:
+        self._entry = entry
         self._suppress = True
-        self._name_edit.setText(strategy.name)
-        self._config_editor.load(strategy, all_pcs)
+        self._name_edit.setText(entry.name)
+        self._description_edit.setText(entry.description)
         self._suppress = False
 
     def clear(self) -> None:
-        self._strategy = None
+        self._entry = None
         self._suppress = True
         self._name_edit.clear()
-        self._config_editor.clear()
+        self._description_edit.clear()
+        self._usage_lbl.clear()
+        self._origin_lbl.clear()
+        self._origin_lbl.setVisible(False)
         self._suppress = False
 
-    def set_pcs_list(self, all_pcs: list[PlayerCombatStrategy]) -> None:
-        self._config_editor.set_pcs_list(all_pcs)
+    def set_notes(self, usage: str, origin: str) -> None:
+        """The two muted lines: what uses this entry, and where it came from."""
+        self._usage_lbl.setText(usage)
+        self._origin_lbl.setText(origin)
+        self._origin_lbl.setVisible(bool(origin))
 
-    def _on_name_changed(self) -> None:
-        if self._suppress or self._strategy is None:
+    @property
+    def usage_text(self) -> str:
+        """What the usage line reads. Public so a test can assert what was said."""
+        return self._usage_lbl.text()
+
+    @property
+    def origin_text(self) -> str:
+        """What the origin line reads — empty for an entry with nothing to say."""
+        return self._origin_lbl.text()
+
+    def _on_changed(self) -> None:
+        if self._suppress or self._entry is None:
             return
-        # As in the other editors: the last non-empty name stands, so an entry
-        # can never become a nameless card with no way back to it.
-        self._strategy.name = self._name_edit.text().strip() or self._strategy.name
+        # The last non-empty name stands, so an entry can never become a nameless card
+        # with no way back to it.
+        self._entry.name = self._name_edit.text().strip() or self._entry.name
+        self._entry.description = self._description_edit.text()
         self.changed.emit()
 
 
@@ -270,7 +315,9 @@ class _KindPage(QWidget):
         self._dup_btn = ActionButton("copy", "Duplicate")
         self._dup_btn.clicked.connect(self._on_duplicate)
         buttons.addWidget(self._dup_btn, 1)
-        self._del_btn = ActionButton("trash", _DELETE_TEXT)
+        # Caution from the start, and downgraded to tertiary only once the origin says
+        # this button is a Revert — see ``_update_labels``.
+        self._del_btn = ActionButton("trash", _DELETE_TEXT, style=ActionStyle.CAUTION)
         self._del_btn.clicked.connect(self._on_delete)
         buttons.addWidget(self._del_btn, 1)
         box.addLayout(buttons)
@@ -282,22 +329,15 @@ class _KindPage(QWidget):
         box.setContentsMargins(6, 0, 0, 0)
         box.setSpacing(6)
 
-        # Two lines the card list has no room for and the old library never said
-        # at all: how many things break if this goes, and whether "delete" here
-        # means delete or means revert.
-        self._usage_lbl = QLabel()
-        apply_muted_color(self._usage_lbl)
-        box.addWidget(self._usage_lbl)
-        self._origin_lbl = QLabel()
-        apply_muted_color(self._origin_lbl)
-        box.addWidget(self._origin_lbl)
-
-        sep = QFrame()
-        sep.setFrameShape(QFrame.Shape.HLine)
-        box.addWidget(sep)
+        self._about = AboutSection()
+        self._about.changed.connect(self._on_edited)
+        box.addWidget(self._about)
 
         if self._kind is StrategyKind.DUEL:
-            self._editor = _DuelDetailPane()
+            # No wrapper around the config editor: a DuelCombatStrategy IS-A DuelConfig,
+            # and the one field the library entry added — the name — is the About
+            # section's now.
+            self._editor = DuelConfigEditor()
             self._editor.promote_requested.connect(self.promote_requested)
         elif self._kind is StrategyKind.PLAYER:
             self._editor = PlayerStrategyEditor()
@@ -453,12 +493,14 @@ class _KindPage(QWidget):
         entry = self._ws.get(self._kind, self._selected_id)
         if entry is None:
             self._editor.clear()
-            self._usage_lbl.clear()
-            self._origin_lbl.clear()
-        elif self._kind is StrategyKind.DUEL:
-            self._editor.load(entry, self._ws.players)
+            self._about.clear()
         else:
-            self._editor.load(entry)
+            self._about.load(entry)
+            if self._kind is StrategyKind.DUEL:
+                self._editor.load(entry, self._ws.players)
+            else:
+                self._editor.load(entry)
+        self._about.setVisible(entry is not None)
         self._scroll.setVisible(entry is not None)
         self._empty_lbl.setVisible(entry is None)
         self._dup_btn.setEnabled(entry is not None)
@@ -470,18 +512,20 @@ class _KindPage(QWidget):
         entry = self._ws.get(self._kind, self._selected_id)
         if entry is None:
             return
-        self._usage_lbl.setText(self._ws.usage(entry.id).phrase())
         origin = self._ws.origin(self._kind, entry.id)
         revert = origin is Origin.SHIPPED_OVERRIDE
         self._del_btn.setText(_REVERT_TEXT if revert else _DELETE_TEXT)
         self._del_btn.set_icon_name("revert" if revert else "trash")
+        # A revert is not a caution: the shipped file reappears underneath, so there is
+        # nothing to lose — which is exactly the distinction the two verbs exist to draw.
+        self._del_btn.set_action_style(ActionStyle.TERTIARY if revert else ActionStyle.CAUTION)
         if revert:
-            self._origin_lbl.setText("Your copy of a strategy BartleBot ships — reverting restores the original.")
+            note = "Your copy of a strategy BartleBot ships — reverting restores the original."
         elif origin is Origin.SHIPPED:
-            self._origin_lbl.setText("Ships with BartleBot — editing it saves your own copy.")
+            note = "Ships with BartleBot — editing it saves your own copy."
         else:
-            self._origin_lbl.clear()
-        self._origin_lbl.setVisible(bool(self._origin_lbl.text()))
+            note = ""
+        self._about.set_notes(self._ws.usage(entry.id).phrase(), note)
 
     def _on_edited(self) -> None:
         self._refresh_selected_card()
@@ -542,6 +586,18 @@ class _KindPage(QWidget):
         if self._kind is StrategyKind.DUEL:
             self._editor.set_pcs_list(self._ws.players)
 
+    def set_player_color_keys(self, keys: list[int | None], labels: list[str] | None = None) -> None:
+        """Colour the assignment cards' slot pills. Duel tab only; a no-op elsewhere."""
+        if self._kind is StrategyKind.DUEL:
+            self._editor.set_player_color_keys(keys, labels)
+
+    @property
+    def about(self) -> AboutSection:
+        """This tab's About section. Public because the entry's name and description are
+        edited there now, and a caller checking what a tab says has to be able to ask.
+        """
+        return self._about
+
     # -- theme ----------------------------------------------------------
 
     def _apply_style(self) -> None:
@@ -569,6 +625,8 @@ class CombatStrategyDialog(QDialog):
         current_id: str | None = None,
         allow_none: bool = True,
         none_label: str = NONE_LABEL,
+        player_color_keys: list[int | None] | None = None,
+        player_account_labels: list[str] | None = None,
         parent=None,
     ):
         super().__init__(parent)
@@ -602,6 +660,13 @@ class CombatStrategyDialog(QDialog):
         self._tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self._tabs, 1)
 
+        # Which account is behind each player slot, if anything is hooked. Resolved by the
+        # caller rather than read here: this dialog knows nothing about clients, and the
+        # Combat tab that opens it already has the ``ClientManager`` in reach. Empty is
+        # the normal case — a duel is usually authored with nothing running — and the
+        # pills simply go uncoloured. See gui/widgets/player_pills.py.
+        self._pages[StrategyKind.DUEL].set_player_color_keys(player_color_keys or [], player_account_labels or [])
+
         self._tabs.setCurrentWidget(self._pages[kind])
         self._pages[kind].select(current_id)
 
@@ -612,18 +677,27 @@ class CombatStrategyDialog(QDialog):
     def _build_buttons(self) -> QHBoxLayout:
         row = QHBoxLayout()
         row.setSpacing(6)
+        # ``ActionButton``s rather than Fusion's default chrome, and weighted: the commit
+        # is what this dialog exists to reach, so it is the one PRIMARY on the screen;
+        # falling back to the built-in default is a real alternative to it and takes the
+        # outline; Cancel is neither. See issue #47 and ``ActionStyle``.
         if self._mode is DialogMode.PICK and self._allow_none:
-            self._none_btn = QPushButton(f"Use {self._none_label}")
+            self._none_btn = ActionButton("revert", f"Use {self._none_label}", style=ActionStyle.SECONDARY, fill=False)
             self._none_btn.setToolTip("Fight with BartleBot's built-in DSL instead of a saved strategy")
             self._none_btn.clicked.connect(self._on_use_none)
             row.addWidget(self._none_btn)
         row.addStretch()
-        cancel = QPushButton("Cancel")
+        cancel = ActionButton("dismiss", "Cancel", fill=False)
         cancel.clicked.connect(self.reject)
         row.addWidget(cancel)
         # Both spellings of the same act: commit the working set. Use also
         # returns the selection — see the module docstring.
-        self._commit_btn = QPushButton("Use this" if self._mode is DialogMode.PICK else "Save")
+        self._commit_btn = ActionButton(
+            "checkmark",
+            "Use this" if self._mode is DialogMode.PICK else "Save",
+            style=ActionStyle.PRIMARY,
+            fill=False,
+        )
         self._commit_btn.setDefault(True)
         self._commit_btn.clicked.connect(self._on_commit)
         row.addWidget(self._commit_btn)
