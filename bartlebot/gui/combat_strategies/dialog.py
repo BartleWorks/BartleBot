@@ -584,6 +584,9 @@ class CombatStrategyDialog(QDialog):
         self._used_none = False
         self.setWindowTitle("Pick a Combat Strategy" if mode is DialogMode.PICK else "Combat Strategies")
         self.setMinimumSize(880, 560)
+        # Wider than the minimum so the card sidebar isn't fighting the detail
+        # pane for space by default — see issue #44.
+        self.resize(1040, 640)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(6)

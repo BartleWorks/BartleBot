@@ -61,8 +61,7 @@ class StrategyCard(QWidget):
         self._sub_lbls: list[QLabel] = []
 
         if summary.description:
-            desc = self._add_sub_line(header, summary.description)
-            desc.setWordWrap(True)
+            self._add_sub_line(header, summary.description)
 
         subtitle = summary.subtitle_line()
         if subtitle:
@@ -78,11 +77,16 @@ class StrategyCard(QWidget):
     def _add_sub_line(self, header: QVBoxLayout, text: str) -> QLabel:
         """One muted caption under the name, collected for the theme pass.
 
+        Word-wrapped so a long line — a Player Strategy's DSL preview, in
+        particular — never forces the card, and the sidebar it sits in, to grow
+        a horizontal scrollbar. See issue #44.
+
         No stylesheet is written here: ``_apply_style`` runs at the end of ``__init__``
         and again on every theme change, and a size set in both places is a size that
         can disagree with itself.
         """
         label = QLabel(text)
+        label.setWordWrap(True)
         header.addWidget(label)
         self._sub_lbls.append(label)
         return label
