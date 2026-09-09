@@ -73,6 +73,7 @@ from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.elided_label import apply_muted_color
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.strategy_card import StrategyCard
@@ -263,16 +264,15 @@ class _KindPage(QWidget):
 
         buttons = QHBoxLayout()
         buttons.setSpacing(4)
-        self._new_btn = QPushButton("+ New")
+        self._new_btn = ActionButton("plus", "New")
         self._new_btn.clicked.connect(self._on_new)
-        buttons.addWidget(self._new_btn)
-        self._dup_btn = QPushButton("Duplicate")
+        buttons.addWidget(self._new_btn, 1)
+        self._dup_btn = ActionButton("copy", "Duplicate")
         self._dup_btn.clicked.connect(self._on_duplicate)
-        buttons.addWidget(self._dup_btn)
-        self._del_btn = QPushButton(_DELETE_TEXT)
+        buttons.addWidget(self._dup_btn, 1)
+        self._del_btn = ActionButton("trash", _DELETE_TEXT)
         self._del_btn.clicked.connect(self._on_delete)
-        buttons.addWidget(self._del_btn)
-        buttons.addStretch()
+        buttons.addWidget(self._del_btn, 1)
         box.addLayout(buttons)
         return panel
 
@@ -474,6 +474,7 @@ class _KindPage(QWidget):
         origin = self._ws.origin(self._kind, entry.id)
         revert = origin is Origin.SHIPPED_OVERRIDE
         self._del_btn.setText(_REVERT_TEXT if revert else _DELETE_TEXT)
+        self._del_btn.set_icon_name("revert" if revert else "trash")
         if revert:
             self._origin_lbl.setText("Your copy of a strategy BartleBot ships — reverting restores the original.")
         elif origin is Origin.SHIPPED:
