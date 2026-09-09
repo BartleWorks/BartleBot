@@ -37,7 +37,7 @@ dev = [
 # HTTPS URLs so CI can fetch them without SSH credentials.
 [tool.uv.sources]
 wizwalker = { git = "https://github.com/The-World-Tree/wizwalker.git", rev = "ba5c32c44488d4ede56c85dd68980ab7012596f2" }
-wizsprinter = { git = "https://github.com/The-World-Tree/wizsprinter.git", rev = "ae49fadd74f6f96174bac5eeca1783ec3d01513d" }
+wizsprinter = { git = "https://github.com/The-World-Tree/wizsprinter.git", rev = "77b75393280ceaa4ad4ec5d4c5882aabe9aad638" }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
