@@ -4,8 +4,8 @@
   "description": "Tests combat profiles",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "state_5",
+  "recovery_state": "state_5",
   "drops": [],
   "authors": "BartleBot",
   "tags": [],
@@ -16,8 +16,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to the Commons",
       "position": {
-        "x": 0,
-        "y": 0.0
+        "x": 0.0,
+        "y": 90.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -29,7 +29,7 @@
       "label": "Enter Unicorn Way",
       "position": {
         "x": 440.0,
-        "y": 0.0
+        "y": 90.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -75,6 +75,24 @@
         "enemy": "",
         "max_duration": 0.0,
         "use_default_strategy": true
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "check_zone",
+      "label": "Check if in Unicorn Way",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_Unicorn",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
     }
   ],
@@ -134,6 +152,46 @@
       "source": "state_3",
       "dest": "state_4",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_3",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],

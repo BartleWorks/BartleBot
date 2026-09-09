@@ -1,0 +1,18 @@
+{
+  "id": "97af3def-7ba9-413f-a236-f9449701795e",
+  "name": "Test Combat Profile",
+  "bot_id": "90c3b071-3d9f-4811-894f-45f86d40b82d",
+  "default_duel_config": {
+    "player_assignments": [
+      {
+        "players": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "dsl": "any<blade>[sharp]@ally(last) | any<damage>@enemy"
+      }
+    ]
+  }
+}
