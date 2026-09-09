@@ -13,10 +13,16 @@ Strategy Library window's versions did; the window itself was retired by #4.
 """
 
 import pytest
+from PyQt6.QtCore import Qt
 
 from bartlebot import strategy_store as store_mod
 from bartlebot.bot.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
-from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode, matches_filter
+from bartlebot.gui.combat_strategies.dialog import (
+    CombatStrategyDialog,
+    DialogMode,
+    matches_filter,
+    matches_query,
+)
 from bartlebot.strategy_store import StrategyKind
 from bartlebot.strategy_summary import StrategySummary
 from bartlebot.strategy_workset import StrategyWorkingSet
@@ -72,6 +78,77 @@ def test_an_empty_filter_matches_everything():
 
 def test_the_filter_ignores_case():
     assert matches_filter(StrategySummary(name="Frenzy AoE", description=""), "FRENZY") is not None
+
+
+def test_matches_query_agrees_with_matches_filter():
+    """The cached-haystack path the list uses must not drift from the summary rule."""
+    summary = StrategySummary(name="Frenzy AoE", description="tank and spank")
+    haystack = matches_filter(summary, "")
+
+    for query in ("FRENZY", "tank", "heal", "", "   "):
+        assert matches_query(haystack, query) is (matches_filter(summary, query) is not None)
+
+
+# ---------------------------------------------------------------------------
+# Filtering must not re-summarize (#43)
+# ---------------------------------------------------------------------------
+
+
+def _visible(page):
+    return [i for i, _c in page._card_map if not i.isHidden()]
+
+
+def test_filtering_hides_rows_instead_of_rebuilding_them(qapp, store):
+    """Building a card summarizes its entry, and summarizing parses every DSL it
+    references — seconds of lag per keystroke. Filtering must touch no widget."""
+    a = PlayerCombatStrategy(name="Alpha", dsl="any<blade>[sharp]@ally(2)")
+    b = PlayerCombatStrategy(name="Beta", dsl="any<blade>[sharp]@ally(2)")
+    dlg = _dialog(store, players=[a, b], kind=StrategyKind.PLAYER, current_id=a.id)
+    page = dlg._pages[StrategyKind.PLAYER]
+    before = list(page._card_map)
+
+    page._filter.setText("Alp")
+
+    assert page._card_map == before
+    assert [i.data(Qt.ItemDataRole.UserRole) for i in _visible(page)] == [a.id]
+
+
+def test_clearing_the_filter_shows_every_row_again(qapp, store):
+    a = PlayerCombatStrategy(name="Alpha")
+    b = PlayerCombatStrategy(name="Beta")
+    dlg = _dialog(store, players=[a, b], kind=StrategyKind.PLAYER, current_id=a.id)
+    page = dlg._pages[StrategyKind.PLAYER]
+    page._filter.setText("zzz")
+    assert _visible(page) == []
+
+    page._filter.setText("")
+
+    assert len(_visible(page)) == 2
+
+
+def test_filtering_does_not_re_summarize_any_entry(qapp, store, monkeypatch):
+    """The direct measurement of the bug: one keystroke used to summarize the
+    whole list, and each summary parses a DSL."""
+    players = [PlayerCombatStrategy(name=f"P{i}", dsl="any<blade>[sharp]@ally(2)") for i in range(4)]
+    dlg = _dialog(store, players=players, kind=StrategyKind.PLAYER, current_id=players[0].id)
+    page = dlg._pages[StrategyKind.PLAYER]
+    calls = _count_calls(monkeypatch, page, "summarize")
+
+    for text in ("a", "an", "any"):
+        page._filter.setText(text)
+
+    assert calls == []
+
+
+def test_a_new_entry_still_appears_in_the_list(qapp, store):
+    """The other half of the split: a structural change does rebuild."""
+    dlg = _dialog(store, players=[PlayerCombatStrategy(name="Alpha")], kind=StrategyKind.PLAYER)
+    page = dlg._pages[StrategyKind.PLAYER]
+
+    page._on_new()
+
+    assert len(_visible(page)) == 2
+    assert page.selected_id() is not None
 
 
 # ---------------------------------------------------------------------------

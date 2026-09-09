@@ -112,10 +112,34 @@ NEW_NAMES = {
 
 NONE_LABEL = "(built-in default)"
 
+#: Where a row keeps the text its filter query is matched against, so filtering
+#: never has to re-summarize the entry behind it.
+_HAYSTACK_ROLE = Qt.ItemDataRole.UserRole + 1
+
 #: Origin.SHIPPED_OVERRIDE means the shipped file reappears underneath, so the
 #: honest verb is "revert" — see :class:`bartlebot.strategy_store.Origin`.
 _REVERT_TEXT = "Revert to shipped"
 _DELETE_TEXT = "Delete"
+
+
+def summary_haystack(summary: StrategySummary) -> str:
+    """The text a filter query is matched against, lowercased.
+
+    Description and subtitle are included deliberately: a user looking for "the
+    storm one" is far more likely to have written that in the description than in
+    the name.
+
+    Built once per card and cached on its list item, because ``subtitle_line()``
+    is only cheap relative to the summary it comes from — producing that summary
+    parses every DSL the entry references.
+    """
+    return f"{summary.name} {summary.description} {summary.subtitle_line()}".lower()
+
+
+def matches_query(haystack: str, query: str) -> bool:
+    """Whether a cached haystack passes ``query``. An empty query passes everything."""
+    needle = query.strip().lower()
+    return not needle or needle in haystack
 
 
 def matches_filter(summary: StrategySummary, query: str) -> str | None:
@@ -123,12 +147,10 @@ def matches_filter(summary: StrategySummary, query: str) -> str | None:
 
     Pulled out as a plain function so the filter rule can be tested without a
     ``QApplication``, and so all three tabs cannot drift apart on what "search"
-    means. Description and subtitle are included deliberately: a user looking for
-    "the storm one" is far more likely to have written that in the description
-    than in the name.
+    means.
     """
-    haystack = f"{summary.name} {summary.description} {summary.subtitle_line()}".lower()
-    return haystack if not query or query.strip().lower() in haystack else None
+    haystack = summary_haystack(summary)
+    return haystack if matches_query(haystack, query) else None
 
 
 class _DuelDetailPane(QWidget):
@@ -230,7 +252,8 @@ class _KindPage(QWidget):
         box.setSpacing(4)
 
         self._filter = SearchLineEdit("Filter…")
-        self._filter.textChanged.connect(self.rebuild_list)
+        # Filtering hides rows; it never rebuilds them. See _apply_filter.
+        self._filter.textChanged.connect(self._apply_filter)
         box.addWidget(self._filter)
 
         self._list = QListWidget()
@@ -314,8 +337,15 @@ class _KindPage(QWidget):
     # -- the card list --------------------------------------------------
 
     def rebuild_list(self) -> None:
-        """Redraw every card. Selection is restored by id, not by row index."""
-        query = self._filter.text()
+        """Redraw every card. Selection is restored by id, not by row index.
+
+        Every entry gets a row, filtered-out ones included — the filter only
+        decides which rows are *visible*. Building a ``StrategyCard`` means
+        summarizing the entry, and summarizing a duel or player entry parses each
+        DSL it references, so this is far too expensive to run per keystroke.
+        Call it when the list's *contents* change; call ``_apply_filter`` when
+        only the query does.
+        """
         blocked = self._list.blockSignals(True)
         try:
             self._list.clear()
@@ -323,11 +353,10 @@ class _KindPage(QWidget):
             keep: QListWidgetItem | None = None
             for entry in self._ws.items(self._kind):
                 summary = self.summarize(entry)
-                if matches_filter(summary, query) is None:
-                    continue
                 card = StrategyCard(summary)
                 item = QListWidgetItem()
                 item.setData(Qt.ItemDataRole.UserRole, entry.id)
+                item.setData(_HAYSTACK_ROLE, summary_haystack(summary))
                 item.setSizeHint(card.sizeHint())
                 self._list.addItem(item)
                 self._list.setItemWidget(item, card)
@@ -342,12 +371,40 @@ class _KindPage(QWidget):
                 self._list.setCurrentItem(keep)
         finally:
             self._list.blockSignals(blocked)
-        if keep is None and self._ws.get(self._kind, self._selected_id) is None:
+        self._apply_filter()
+        if keep is None:
             # Actually gone — deleted, or never there. Detach the editor. An entry
             # that is merely filtered out of view stays loaded: typing in the
             # filter box must not empty the pane being edited.
             self._selected_id = None
             self._load_selection()
+
+    def _apply_filter(self) -> None:
+        """Show or hide each existing row against the query. No widgets are built.
+
+        Signals stay blocked throughout: hiding the current row can make Qt move
+        the current item, and that would reload the detail pane mid-keystroke —
+        the defect ``tests/test_strategy_library_filter.py`` exists for. The
+        selected row is restored afterwards even when the query hides it, so the
+        editor keeps the entry it was given.
+        """
+        query = self._filter.text()
+        blocked = self._list.blockSignals(True)
+        try:
+            for item, _card in self._card_map:
+                item.setHidden(not matches_query(item.data(_HAYSTACK_ROLE) or "", query))
+            current = self._current_item()
+            if current is not None and self._list.currentItem() is not current:
+                self._list.setCurrentItem(current)
+        finally:
+            self._list.blockSignals(blocked)
+
+    def _current_item(self) -> QListWidgetItem | None:
+        """The row for ``_selected_id``, visible or not."""
+        for item, _card in self._card_map:
+            if item.data(Qt.ItemDataRole.UserRole) == self._selected_id:
+                return item
+        return None
 
     def select(self, uuid: str | None) -> None:
         """Select ``uuid`` if it is in the list, loading it into the detail pane."""
@@ -381,9 +438,11 @@ class _KindPage(QWidget):
         for item, _card in list(self._card_map):
             if item.data(Qt.ItemDataRole.UserRole) != self._selected_id:
                 continue
-            card = StrategyCard(self.summarize(entry))
+            summary = self.summarize(entry)
+            card = StrategyCard(summary)
             card.set_selected(True)
             item.setSizeHint(card.sizeHint())
+            item.setData(_HAYSTACK_ROLE, summary_haystack(summary))
             self._list.setItemWidget(item, card)
             self._card_map = [(i, card if i is item else c) for i, c in self._card_map]
             return
