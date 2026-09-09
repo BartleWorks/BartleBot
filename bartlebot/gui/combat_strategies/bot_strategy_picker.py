@@ -1,8 +1,19 @@
-"""Modal dialog for selecting a strategy from a searchable card list."""
+"""Modal picker for a Bot Combat Strategy — the one pick that is not a library pick.
+
+Everything else this dialog used to pick (duel strategies, player strategies,
+deck presets) now goes through :class:`~bartlebot.gui.combat_strategies.dialog.
+CombatStrategyDialog` in pick mode, which can also *edit* what it is showing.
+A BotCombatStrategy is different in kind: it is bot-scoped, it is authored on
+the Combat tab itself, and there is no library tab for it to be edited on. So
+this stays, narrowed to that one job, with the ``mode`` switch and the
+``all_pcs`` plumbing the general version needed taken out.
+
+Not folded into a ``PickerPopup`` either: that widget is multi-select only, and
+teaching it a single-select mode would change a widget that fight membership and
+tag picking also depend on, for one caller.
+"""
 
 from __future__ import annotations
-
-from typing import Any
 
 from PyQt6.QtCore import QEvent, Qt
 from PyQt6.QtWidgets import (
@@ -13,56 +24,40 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from bartlebot.bot.strategy_models import BotCombatStrategy
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.strategy_card import StrategyCard
-from bartlebot.strategy_summary import StrategySummary, summarize_bot, summarize_duel, summarize_player
+from bartlebot.strategy_summary import StrategySummary, summarize_bot
+
+NONE_LABEL = "(built-in default)"
 
 
-def _summarize(mode: str, s: Any, all_pcs: list) -> StrategySummary:
-    from bartlebot.bot.strategy_models import (  # noqa: PLC0415
-        BotCombatStrategy,
-        DuelCombatStrategy,
-        PlayerCombatStrategy,
-    )
+class BotStrategyPicker(QDialog):
+    """Searchable card picker over BotCombatStrategies.
 
-    if mode == "duel" and isinstance(s, DuelCombatStrategy):
-        return summarize_duel(s, all_pcs, name=s.name)
-    if mode == "bot" and isinstance(s, BotCombatStrategy):
-        return summarize_bot(s)
-    if mode == "player" and isinstance(s, PlayerCombatStrategy):
-        return summarize_player(s)
-    return StrategySummary(name=getattr(s, "name", ""), description="")
-
-
-class StrategyPickerDialog(QDialog):
-    """Searchable strategy card picker.
-
-    Returns the selected UUID via ``selected_id()``.  None means "built-in default"
-    (only available when allow_none=True).
+    Returns the selected UUID via :meth:`selected_id`. ``None`` means the
+    built-in default, and is only offered when ``allow_none``.
     """
 
     def __init__(
         self,
-        title: str,
-        mode: str,
-        strategies: list,
+        strategies: list[BotCombatStrategy],
         current_id: str | None,
         allow_none: bool = True,
-        none_label: str = "(built-in default)",
-        all_pcs: list | None = None,
+        title: str = "Pick Bot Combat Strategy",
         parent=None,
     ):
         super().__init__(parent)
         self.setWindowTitle(title)
         self.setMinimumSize(380, 340)
 
-        self._mode = mode
-        self._strategies = strategies
-        self._all_pcs = all_pcs or []
         self._selected_id: str | None = current_id
-        self._none_label = none_label
         self._card_map: list[tuple[QListWidgetItem, StrategyCard]] = []
+        self._items: list[tuple[str | None, StrategySummary]] = []
+        if allow_none:
+            self._items.append((None, StrategySummary(name=NONE_LABEL, description="Uses BartleBot's built-in DSL")))
+        self._items.extend((s.id, summarize_bot(s)) for s in strategies)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(6)
@@ -77,7 +72,6 @@ class StrategyPickerDialog(QDialog):
         self._list.currentItemChanged.connect(self._on_item_changed)
         layout.addWidget(self._list, 1)
 
-        self._populate(allow_none, none_label)
         self._rebuild_list()
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -86,13 +80,6 @@ class StrategyPickerDialog(QDialog):
         layout.addWidget(buttons)
 
         self._apply_list_style()
-
-    def _populate(self, allow_none: bool, none_label: str) -> None:
-        self._items: list[tuple[str | None, StrategySummary]] = []
-        if allow_none:
-            self._items.append((None, StrategySummary(name=none_label, description="Uses BartleBot's built-in DSL")))
-        for s in self._strategies:
-            self._items.append((s.id, _summarize(self._mode, s, self._all_pcs)))
 
     def _rebuild_list(self) -> None:
         query = self._filter.text().strip().lower()
@@ -109,7 +96,7 @@ class StrategyPickerDialog(QDialog):
             self._list.addItem(item)
             self._list.setItemWidget(item, card)
             self._card_map.append((item, card))
-            if uuid == self._selected_id or (uuid is None and self._selected_id is None):
+            if uuid == self._selected_id:
                 self._list.setCurrentItem(item)
 
     def _on_item_changed(self, current: QListWidgetItem | None, previous: QListWidgetItem | None) -> None:

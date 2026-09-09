@@ -8,8 +8,9 @@ real QTimer, the same way the identity tests call ``_flush`` directly.
 """
 
 from bartlebot.bot.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
-from bartlebot.gui.strategy_library.duel_strategy_editor import DuelConfigEditor
-from bartlebot.gui.strategy_library.player_strategy_editor import PlayerStrategyEditor
+from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
+from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
+from bartlebot.strategy_summary import HealthStatus, summarize_duel
 
 _INVALID_DSL = "not even close to valid (("
 _VALID_DSL = "any<damage> @ enemy"
@@ -44,7 +45,7 @@ def test_pcs_editor_flush_updates_the_error_after_editing(qapp):
     assert editor._dsl_error_lbl.isHidden()
 
     editor._dsl_edit.setPlainText(_INVALID_DSL)
-    editor.flush()
+    editor._update_dsl_validation()
 
     assert not editor._dsl_error_lbl.isHidden()
 
@@ -55,7 +56,7 @@ def test_pcs_editor_fixing_the_dsl_clears_the_error_on_flush(qapp):
     assert not editor._dsl_error_lbl.isHidden()
 
     editor._dsl_edit.setPlainText(_VALID_DSL)
-    editor.flush()
+    editor._update_dsl_validation()
 
     assert editor._dsl_error_lbl.isHidden()
 
@@ -118,14 +119,19 @@ def test_assignment_row_debounced_recheck_flags_invalid_dsl(qapp):
     assert row.assignment().dsl == _INVALID_DSL
 
 
-def test_assignment_row_linked_preset_reflects_the_preset_dsl_health(qapp):
-    """A read-only linked row still surfaces a broken preset's DSL — it's edited
-    elsewhere (the Player Strategies tab), but a bad link should still be visible
-    where it's used.
+def test_a_linked_row_shows_no_dsl_box_and_no_error_of_its_own(qapp):
+    """A named answer builds no DSL box, so it has no error line to raise.
+
+    A broken Player Strategy is still visible where it is used — the duel's own
+    summary carries INVALID_DSL and its card draws the warning — but the row
+    itself no longer mirrors DSL it does not own.
     """
     pcs = PlayerCombatStrategy(name="Broken", dsl=_INVALID_DSL)
     config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)])
     editor = DuelConfigEditor()
     editor.load(config, [pcs])
 
-    assert not editor._rows[0]._dsl_error_lbl.isHidden()
+    row = editor._rows[0]
+    assert not row.is_custom()
+    assert row._dsl_error_lbl.isHidden()
+    assert summarize_duel(config, [pcs]).health.status is HealthStatus.INVALID_DSL

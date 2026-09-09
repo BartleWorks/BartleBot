@@ -13,7 +13,12 @@ import pytest
 from PyQt6.QtWidgets import QApplication, QPlainTextEdit
 
 from bartlebot.bot.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
-from bartlebot.gui.strategy_library.duel_strategy_editor import DuelConfigEditor, move_item
+from bartlebot.gui.combat_strategies.duel_editor import (
+    _CUSTOM_DATA,
+    _DEFAULT_DATA,
+    DuelConfigEditor,
+    move_item,
+)
 
 
 def test_load_populates_fields_from_the_config(qapp):
@@ -160,19 +165,20 @@ def test_set_pcs_list_propagates_to_existing_rows(qapp):
 
     editor.set_pcs_list([pcs])
 
-    assert "Preset" in editor._rows[0]._link_lbl.text()
+    assert editor._rows[0]._strategy_combo.currentText() == "Preset"
 
 
-def test_promoted_row_reports_via_presets_changed(qapp):
+def test_a_row_asking_to_be_promoted_reaches_the_dialog(qapp):
+    """The row emits itself; naming it and making the entry is the dialog's job."""
     config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="any<damage>")])
     editor = DuelConfigEditor()
     editor.load(config, [])
 
     seen = []
-    editor.presets_changed.connect(lambda: seen.append(True))
-    editor._rows[0].promoted.emit()
+    editor.promote_requested.connect(seen.append)
+    editor._rows[0]._promote_btn.click()
 
-    assert seen == [True]
+    assert seen == [editor._rows[0]]
 
 
 # ---------------------------------------------------------------------------
@@ -186,21 +192,21 @@ def test_promoted_row_reports_via_presets_changed(qapp):
 
 
 def test_wrapped_line_count_empty_text_is_one_line(qapp):
-    from bartlebot.gui.strategy_library.duel_strategy_editor import _wrapped_line_count
+    from bartlebot.gui.combat_strategies.duel_editor import _wrapped_line_count
 
     font = QPlainTextEdit().font()
     assert _wrapped_line_count("", 200, font) == 1
 
 
 def test_wrapped_line_count_counts_explicit_newlines(qapp):
-    from bartlebot.gui.strategy_library.duel_strategy_editor import _wrapped_line_count
+    from bartlebot.gui.combat_strategies.duel_editor import _wrapped_line_count
 
     font = QPlainTextEdit().font()
     assert _wrapped_line_count("a\nb\nc", 400, font) == 3
 
 
 def test_wrapped_line_count_wraps_long_text_at_a_narrow_width(qapp):
-    from bartlebot.gui.strategy_library.duel_strategy_editor import _wrapped_line_count
+    from bartlebot.gui.combat_strategies.duel_editor import _wrapped_line_count
 
     font = QPlainTextEdit().font()
     long_dsl = (
@@ -226,7 +232,7 @@ def _show_and_resize(edit, width, height=20):
 
 
 def test_auto_height_text_edit_grows_with_a_long_dsl(qapp):
-    from bartlebot.gui.strategy_library.duel_strategy_editor import _AutoHeightTextEdit
+    from bartlebot.gui.combat_strategies.duel_editor import _AutoHeightTextEdit
 
     edit = _AutoHeightTextEdit()
     _show_and_resize(edit, 200)
@@ -243,7 +249,7 @@ def test_auto_height_text_edit_grows_with_a_long_dsl(qapp):
 
 
 def test_auto_height_text_edit_respects_the_minimum(qapp):
-    from bartlebot.gui.strategy_library.duel_strategy_editor import _DSL_EDIT_MIN_HEIGHT, _AutoHeightTextEdit
+    from bartlebot.gui.combat_strategies.duel_editor import _DSL_EDIT_MIN_HEIGHT, _AutoHeightTextEdit
 
     edit = _AutoHeightTextEdit()
     _show_and_resize(edit, 200)
@@ -257,7 +263,7 @@ def test_auto_height_text_edit_shrinks_back_down_when_widened(qapp):
     """A long single-line DSL needs fewer wrapped lines once the box is wider —
     covers the resizeEvent path (e.g. the user widens the sidebar).
     """
-    from bartlebot.gui.strategy_library.duel_strategy_editor import _AutoHeightTextEdit
+    from bartlebot.gui.combat_strategies.duel_editor import _AutoHeightTextEdit
 
     edit = _AutoHeightTextEdit()
     _show_and_resize(edit, 200)
@@ -293,7 +299,7 @@ def test_set_editable_false_disables_every_control(qapp):
     assert editor._rows[0]._dsl_edit.isReadOnly()
     assert not editor._rows[0]._player_widget.isEnabled()
     assert not editor._rows[0]._remove_btn.isEnabled()
-    assert not editor._rows[0]._menu_btn.isEnabled()
+    assert not editor._rows[0]._strategy_combo.isEnabled()
 
 
 def test_set_editable_true_reenables_an_inline_row(qapp):
@@ -308,8 +314,8 @@ def test_set_editable_true_reenables_an_inline_row(qapp):
     assert editor._add_btn.isEnabled()
 
 
-def test_a_linked_row_stays_read_only_after_being_reenabled(qapp):
-    """Linked rows are read-only for their own reason; unlocking must not override it."""
+def test_a_linked_row_offers_no_dsl_box_after_being_reenabled(qapp):
+    """A named answer builds no DSL box; unlocking the editor must not conjure one."""
     pcs = PlayerCombatStrategy(name="Preset", dsl="blade")
     config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)])
     editor = DuelConfigEditor()
@@ -318,7 +324,9 @@ def test_a_linked_row_stays_read_only_after_being_reenabled(qapp):
     editor.set_editable(False)
     editor.set_editable(True)
 
-    assert editor._rows[0]._dsl_edit.isReadOnly()
+    row = editor._rows[0]
+    assert not row.is_custom()
+    assert row._dsl_edit.isHidden()
 
 
 def test_rows_added_while_locked_are_locked_too(qapp):
@@ -693,28 +701,73 @@ def test_set_editable_false_disables_school_and_note(qapp):
     assert not editor._rows[0]._note_edit.isEnabled()
 
 
-def test_unlink_fills_in_the_assignment_school_from_the_linked_preset(qapp):
+def _choose(row, data: str) -> None:
+    """Pick an entry in a row's strategy selector by its item data."""
+    row._strategy_combo.setCurrentIndex(row._strategy_combo.findData(data))
+
+
+def test_forking_to_custom_dsl_seeds_from_the_strategy_left_behind(qapp):
     pcs = PlayerCombatStrategy(name="Preset", dsl="blade", school="Storm")
     assignment = PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)
     config = DuelConfig(player_assignments=[assignment])
     editor = DuelConfigEditor()
     editor.load(config, [pcs])
 
-    editor._rows[0]._on_unlink()
+    _choose(editor._rows[0], _CUSTOM_DATA)
 
+    assert assignment.dsl == "blade"
     assert assignment.school == "Storm"
+    assert assignment.player_combat_strategy_id is None
 
 
-def test_unlink_leaves_an_authored_assignment_school_alone(qapp):
+def test_forking_to_custom_dsl_leaves_an_authored_assignment_school_alone(qapp):
     pcs = PlayerCombatStrategy(name="Preset", dsl="blade", school="Storm")
     assignment = PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id, school="Life")
     config = DuelConfig(player_assignments=[assignment])
     editor = DuelConfigEditor()
     editor.load(config, [pcs])
 
-    editor._rows[0]._on_unlink()
+    _choose(editor._rows[0], _CUSTOM_DATA)
 
     assert assignment.school == "Life"
+
+
+def test_choosing_the_built_in_default_clears_both_answers(qapp):
+    assignment = PlayerAssignment(players=[1], dsl="blade")
+    config = DuelConfig(player_assignments=[assignment])
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    _choose(editor._rows[0], _DEFAULT_DATA)
+
+    assert assignment.dsl == ""
+    assert assignment.player_combat_strategy_id is None
+    assert editor._rows[0]._dsl_edit.isHidden()
+
+
+def test_choosing_a_named_strategy_links_it(qapp):
+    pcs = PlayerCombatStrategy(name="Preset", dsl="blade")
+    assignment = PlayerAssignment(players=[1], dsl="pass")
+    config = DuelConfig(player_assignments=[assignment])
+    editor = DuelConfigEditor()
+    editor.load(config, [pcs])
+
+    _choose(editor._rows[0], pcs.id)
+
+    assert assignment.player_combat_strategy_id == pcs.id
+    assert editor._rows[0]._dsl_edit.isHidden()
+
+
+def test_a_link_to_a_deleted_strategy_is_named_rather_than_silently_reset(qapp):
+    """Resetting it would look like it was always configured that way, and Save
+    would then make that true."""
+    assignment = PlayerAssignment(players=[1], player_combat_strategy_id="gone")
+    config = DuelConfig(player_assignments=[assignment])
+    editor = DuelConfigEditor()
+    editor.load(config, [])
+
+    assert editor._rows[0]._strategy_combo.currentText() == "(missing strategy)"
+    assert assignment.player_combat_strategy_id == "gone"
 
 
 # ---------------------------------------------------------------------------

@@ -6,8 +6,9 @@ WHAT THIS TAB IS FOR
 Picking, and reading what was picked. It holds the run-time truth -- which strategy is
 active, which fights it covers, per-client deck state -- and it no longer holds an
 editor. There is no disclosure arrow into a DSL box on any card here: combat editing is
-a user-owned edit that wants an explicit Save/Cancel boundary, and it is moving into a
-dialog of its own. ``Edit in Library…`` on a card is the way through until it exists.
+a user-owned edit that wants an explicit Save/Cancel boundary, and it lives in
+``CombatStrategyDialog``. ``Change…`` on a card opens that dialog in pick mode; ``Edit…``
+opens the same window on the same strategy in manage mode.
 
 TWO SECTIONS, NOT THREE AND A CAPTION
 -------------------------------------
@@ -100,6 +101,8 @@ from bartlebot.combat_grouping import (
     state_label,
 )
 from bartlebot.combat_warnings import exposed_combat_states
+from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
+from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
 from bartlebot.gui.deck_content import deck_content_lines
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
@@ -115,7 +118,6 @@ from bartlebot.gui.sidebar.strategy_panel import (
     PanelRole,
     StrategyPanel,
 )
-from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPickerDialog
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.add_card import AddCard
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
@@ -124,6 +126,7 @@ from bartlebot.gui.widgets.picker_popup import PickerRow, Section
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
+    StrategyKind,
     delete_bot_strategy,
     list_bot_strategies,
     list_duel_strategies,
@@ -132,10 +135,10 @@ from bartlebot.strategy_store import (
     save_duel_strategy,
 )
 from bartlebot.strategy_summary import summarize_bot
+from bartlebot.strategy_workset import StrategyWorkingSet
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig, StateModel
-    from bartlebot.gui.strategy_library.strategy_library_window import StrategyLibraryWindow
 
 logger = logging.getLogger(__name__)
 
@@ -663,7 +666,6 @@ class CombatTab(QWidget):
         self._pending_panel: StrategyPanel | None = None
         self._suppress = False
         self._editable = True
-        self._library_window: StrategyLibraryWindow | None = None
 
         # No debounce timer. There was one, at 500ms, because the inline DSL editor
         # emitted ``changed`` on every keystroke and every keystroke would otherwise have
@@ -751,7 +753,6 @@ class CombatTab(QWidget):
     # ------------------------------------------------------------------
 
     def set_config(self, config: BotConfig | None) -> None:
-        self.flush_pending_save()
         self._config = config
         self._rebind()
 
@@ -765,9 +766,9 @@ class CombatTab(QWidget):
         original's strategy, which is exactly what minting an id prevents.
         A fork inherits no strategy, so this leaves the tab showing none.
 
-        Narrower than ``set_config``, which flushes the Strategy Library's own
-        editors as well; nothing on this tab is ever mid-edit, so there is
-        nothing here to commit before the id changes.
+        Narrower than ``set_config``, which also rebinds the whole tab: nothing
+        here is ever mid-edit, so there is nothing to commit before the id
+        changes.
         """
         self._rebind()
 
@@ -795,10 +796,10 @@ class CombatTab(QWidget):
         self._rebuild_state_assignments()
 
     def refresh_strategy_data(self) -> None:
-        """Reload DCS/BCS/PCS data from disk. Called when StrategyLibraryWindow signals changes.
+        """Reload DCS/BCS/PCS data from disk, after the combat strategy dialog closes.
 
         Pushes the refreshed lists into the existing panel widgets rather than
-        rebuilding them, so a rename in the library reaches the cards without
+        rebuilding them, so a rename made in the dialog reaches the cards without
         destroying and recreating them.
         """
         self._all_dcs = list_duel_strategies()
@@ -918,16 +919,36 @@ class CombatTab(QWidget):
             pruned.append(assignment)
         return pruned
 
-    def flush_pending_save(self) -> None:
-        """Commit any debounced edit held by an open Strategy Library.
+    def open_combat_dialog(
+        self,
+        kind: StrategyKind = StrategyKind.DUEL,
+        mode: DialogMode = DialogMode.MANAGE,
+        current_id: str | None = None,
+        allow_none: bool = True,
+        none_label: str = "(built-in default)",
+    ) -> CombatStrategyDialog | None:
+        """Run the combat strategy dialog. Returns it if accepted, else None.
 
-        This tab keeps none of its own any more — every edit it can make is a
-        discrete act that writes on the spot — but ``AppController`` calls this on
-        ``aboutToQuit`` and the sidebar calls it before every bot switch, and the
-        library window it may have opened still has editors that debounce.
+        Modal, and given a working set loaded fresh each time. Modal because the
+        dialog owns a Save boundary over the same files this tab reads, and a
+        non-modal window editing them alongside the tab is how the two used to
+        disagree about what was on disk. A reload afterwards is unconditional:
+        Cancel writes nothing, so re-reading costs a few files and removes the
+        question of whether it was needed.
         """
-        if self._library_window is not None and self._library_window.isVisible():
-            self._library_window.flush_editors()
+        ws = StrategyWorkingSet.from_store()
+        dlg = CombatStrategyDialog(
+            ws,
+            kind=kind,
+            mode=mode,
+            current_id=current_id,
+            allow_none=allow_none,
+            none_label=none_label,
+            parent=self,
+        )
+        accepted = bool(dlg.exec())
+        self.refresh_strategy_data()
+        return dlg if accepted else None
 
     # ------------------------------------------------------------------
     # UI refresh
@@ -958,31 +979,30 @@ class CombatTab(QWidget):
         if not ok or not name.strip():
             return
         preset = DeckPreset(name=name.strip(), deck=deck.model_copy(deep=True))
+        # Written on the spot rather than through the dialog's working set: a
+        # capture is a discrete act with nothing to cancel, and the deck itself
+        # came from the game, not from anything the user could still be typing.
         save_deck_preset(preset)
-        if self._library_window is not None:
-            self._library_window.reload_decks()
-            self._library_window.focus_deck_preset(preset.id)
 
     def _on_load_deck_from_library(self, slot: int) -> None:
-        from bartlebot.gui.strategy_library.deck_preset_picker_dialog import DeckPresetPickerDialog  # noqa: PLC0415
         from bartlebot.strategy_store import list_deck_presets  # noqa: PLC0415
 
-        presets = list_deck_presets()
-        if not presets:
+        if not list_deck_presets():
             QMessageBox.information(
                 self, "Deck Library empty", "No deck presets saved yet. Use Import and Save to Library first."
             )
             return
-        dlg = DeckPresetPickerDialog(presets, parent=self)
-        if not dlg.exec():
+        dlg = self.open_combat_dialog(kind=StrategyKind.DECK, mode=DialogMode.PICK, allow_none=False)
+        if dlg is None:
             return
         chosen_id = dlg.selected_id()
         if chosen_id is None:
             return
-        chosen = next((p for p in presets if p.id == chosen_id), None)
-        if chosen is None:
-            return
-        if self._bcs is None:
+        # Re-read rather than reaching into the dialog's working set: the dialog
+        # committed on the way out, so the file is the authority, and a preset
+        # renamed or edited in the same visit is already reflected there.
+        chosen = next((p for p in list_deck_presets() if p.id == chosen_id), None)
+        if chosen is None or self._bcs is None:
             return
         self._bcs.player_decks[slot] = chosen.deck.model_copy(deep=True)
         save_bot_strategy(self._bcs)
@@ -1157,18 +1177,10 @@ class CombatTab(QWidget):
         """
         if self._config is None or self._bcs is None or not self._editable:
             return
-        dlg = StrategyPickerDialog(
-            title="Pick Duel Combat Strategy",
-            mode="duel",
-            strategies=self._all_dcs,
-            current_id=None,
-            # No "none" row: picking nothing here would make a card that says nothing,
-            # which is what the default card already is.
-            allow_none=False,
-            all_pcs=self._all_pcs,
-            parent=self,
-        )
-        if not dlg.exec():
+        # No "none" option: picking nothing here would make a card that says nothing,
+        # which is what the default card already is.
+        dlg = self.open_combat_dialog(kind=StrategyKind.DUEL, mode=DialogMode.PICK, allow_none=False)
+        if dlg is None:
             return
         chosen = dlg.selected_id()
         if not chosen:
@@ -1207,17 +1219,14 @@ class CombatTab(QWidget):
         same "none" row — what a binding falls through to is a property of the binding's
         level, not of which widget the click landed on.
         """
-        dlg = StrategyPickerDialog(
-            title="Pick Duel Combat Strategy",
-            mode="duel",
-            strategies=self._all_dcs,
+        dlg = self.open_combat_dialog(
+            kind=StrategyKind.DUEL,
+            mode=DialogMode.PICK,
             current_id=binding.duel_combat_strategy_id,
             allow_none=True,
             none_label=none_label,
-            all_pcs=self._all_pcs,
-            parent=self,
         )
-        if not dlg.exec():
+        if dlg is None:
             return False
         binding.duel_combat_strategy_id = dlg.selected_id()
         return True
@@ -1229,7 +1238,7 @@ class CombatTab(QWidget):
         inline editor was removed means a configuration written before this tab
         stopped offering to write them, or one authored in a bot file by hand.
         Saving it as a preset is the way such a configuration becomes editable
-        again — from the Strategy Library, which is now the only place a
+        again — in the combat strategy dialog, which is now the only place a
         ``DuelConfig`` is edited.
         """
         binding = panel.binding
@@ -1319,8 +1328,7 @@ class CombatTab(QWidget):
         return CUSTOM_LABEL
 
     def _on_edit_dcs_in_library(self, dcs_id: str) -> None:
-        lib = self._ensure_library()
-        lib.focus_duel_strategy(dcs_id)
+        self.open_combat_dialog(kind=StrategyKind.DUEL, mode=DialogMode.MANAGE, current_id=dcs_id)
 
     # ------------------------------------------------------------------
     # BCS picker / menu actions
@@ -1329,9 +1337,7 @@ class CombatTab(QWidget):
     def _on_pick_bcs(self) -> None:
         if self._config is None:
             return
-        dlg = StrategyPickerDialog(
-            title="Pick Bot Combat Strategy",
-            mode="bot",
+        dlg = BotStrategyPicker(
             strategies=self._all_bcs,
             current_id=self._bcs.id if self._bcs else None,
             allow_none=False,
@@ -1415,31 +1421,13 @@ class CombatTab(QWidget):
         self._refresh_deck_summaries()
 
     # ------------------------------------------------------------------
-    # Strategy Library access
-    # ------------------------------------------------------------------
-
-    def _ensure_library(self) -> StrategyLibraryWindow:
-        from bartlebot.gui.strategy_library.strategy_library_window import (
-            StrategyLibraryWindow as _Lib,  # noqa: PLC0415
-        )
-
-        if self._library_window is None or not self._library_window.isVisible():
-            # Parented so it is destroyed with the main window and does not keep
-            # the app alive after everything else has closed.
-            self._library_window = _Lib(parent=self)
-            self._library_window.strategies_changed.connect(self.refresh_strategy_data)
-        self._library_window.show()
-        self._library_window.raise_()
-        self._library_window.activateWindow()
-        return self._library_window
-
-    # ------------------------------------------------------------------
     # Theme / lifecycle
     # ------------------------------------------------------------------
 
-    # No closeEvent: this tab lives inside a QTabWidget and is never closed as a
-    # window, so one would never fire.  Pending edits are flushed via
-    # flush_pending_save(), which AppController calls on aboutToQuit.
+    # No closeEvent, and nothing to flush on quit any more. This tab lives inside a
+    # QTabWidget and is never closed as a window, so a closeEvent would never fire;
+    # and every edit it can make is a discrete act that writes on the spot, while
+    # everything the combat strategy dialog holds is written by its own Save.
 
     # No changeEvent either. Every widget this tab owns now repaints itself on a theme
     # switch -- the cards because CardFrame does, a deck card's content rows because

@@ -11,7 +11,7 @@ import pytest
 from PyQt6.QtCore import QEvent
 
 import bartlebot.gui.theme as theme_mod
-from bartlebot.gui.strategy_library.deck_preset_picker_dialog import DeckPresetPickerDialog
+from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.wiki_import_dialog import WikiImportDialog
@@ -93,13 +93,13 @@ def test_setting_a_status_does_not_lose_the_message(qapp, theme):
 
 
 # ---------------------------------------------------------------------------
-# DeckPresetPickerDialog
+# BotStrategyPicker — the deck picker's list style, on the one picker that outlived it
 # ---------------------------------------------------------------------------
 
 
-def test_the_preset_list_recolours(qapp, theme):
+def test_the_strategy_list_recolours(qapp, theme):
     theme("light")
-    dlg = DeckPresetPickerDialog([])
+    dlg = BotStrategyPicker([], current_id=None)
     light_border = THEME.border
 
     _switch(qapp, dlg, theme, "dark")

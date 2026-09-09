@@ -50,6 +50,7 @@ from bartlebot.bot.strategy_models import (
     PlayerCombatStrategy,
 )
 from bartlebot.strategy_store import (
+    Origin,
     StrategyKind,
     delete_deck_preset,
     delete_duel_strategy,
@@ -58,6 +59,7 @@ from bartlebot.strategy_store import (
     list_deck_presets,
     list_duel_strategies,
     list_player_strategies,
+    origin_of,
     save_deck_preset,
     save_duel_strategy,
     save_player_strategy,
@@ -246,6 +248,17 @@ class StrategyWorkingSet:
             return
         if uuid in slot.baselines:
             slot.deleted.append(uuid)
+
+    def origin(self, kind: StrategyKind, uuid: str) -> Origin:
+        """Where ``uuid``'s file is, under this set's own roots — see :class:`Origin`.
+
+        Offered here so a surface can ask whether removing an entry deletes it or
+        merely reverts it without reaching for the roots the set was built with.
+        An entry created in this session has no file under either root and reads
+        as :attr:`Origin.MISSING`, which is the truth: there is nothing to revert
+        to, and Save would be its first write.
+        """
+        return origin_of(kind, uuid, root=self._root, user_root=self._user_root)
 
     def unique_name(self, kind: StrategyKind, base: str) -> str:
         """``base`` made unique against every live name of that kind — see

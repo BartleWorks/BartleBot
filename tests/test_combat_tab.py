@@ -54,7 +54,7 @@ from bartlebot.gui.sidebar.strategy_panel import (
     CUSTOM_LABEL,
     DEFAULT_PILL,
     DEFAULT_SCOPE_META,
-    EDIT_IN_LIBRARY,
+    EDIT_STRATEGY,
     LOCKED,
     MISSING_LABEL,
     NOT_CONFIGURED_LABEL,
@@ -253,10 +253,10 @@ def test_edit_in_library_is_offered_only_for_a_linked_binding(qapp):
     panel = StrategyPanel()
 
     panel.load(StateAssignment(state_ids=["s1"]), [dcs], [])
-    assert EDIT_IN_LIBRARY not in _verb_labels(panel)
+    assert EDIT_STRATEGY not in _verb_labels(panel)
 
     panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
-    assert EDIT_IN_LIBRARY in _verb_labels(panel)
+    assert EDIT_STRATEGY in _verb_labels(panel)
 
 
 def test_the_edit_button_exists_from_the_start_and_is_shown_when_it_applies(qapp):
@@ -268,7 +268,7 @@ def test_the_edit_button_exists_from_the_start_and_is_shown_when_it_applies(qapp
     """
     dcs = DuelCombatStrategy(name="Frenzy AoE")
     panel = StrategyPanel()
-    button = panel.action_button(EDIT_IN_LIBRARY)
+    button = panel.action_button(EDIT_STRATEGY)
     assert button is not None
 
     panel.load(StateAssignment(state_ids=["s1"]), [dcs], [])
@@ -650,7 +650,7 @@ def test_linked_state_binding_is_persisted_even_with_empty_duel_config(qapp, sto
     bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
     tab = _tab_for(bcs, _config())
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
         tab._on_pick_for_fight("state_9")
@@ -822,7 +822,7 @@ def test_a_fight_leaves_the_pills_for_a_card_of_its_own(qapp, store):
     store_mod.save_duel_strategy(dcs)
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config(label="Howling Chaney"))
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
         tab._on_pick_for_fight("state_9")
@@ -839,7 +839,7 @@ def test_a_pill_click_picks_for_that_fight_alone(qapp, store):
     dcs = _saved_dcs("Frenzy AoE")
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
         tab._default_panel._pills[1].click()
@@ -852,7 +852,7 @@ def test_a_pill_click_picks_for_that_fight_alone(qapp, store):
 def test_a_cancelled_pill_pick_changes_nothing(qapp, store):
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = False
         tab._on_pick_for_fight("state_2")
 
@@ -924,7 +924,7 @@ def test_pick_sets_the_strategy_id_and_saves(qapp, store):
     bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
     tab = _tab_for(bcs, _config())
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
         tab._on_pick_duel(tab._default_panel)
@@ -936,7 +936,7 @@ def test_pick_sets_the_strategy_id_and_saves(qapp, store):
 def test_pick_cancel_leaves_the_binding_unchanged(qapp, store):
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config())
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = False
         tab._on_pick_duel(tab._default_panel)
 
@@ -949,7 +949,7 @@ def test_pick_none_unlinks(qapp, store):
     bcs = BotCombatStrategy(name="BCS", bot_id="bot-1", default_strategy_id=dcs.id)
     tab = _tab_for(bcs, _config())
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = None
         tab._on_pick_duel(tab._default_panel)
@@ -963,7 +963,7 @@ def test_the_picker_none_row_is_labelled_with_what_the_card_falls_through_to(qap
     words — and the two levels say different words."""
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config())
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = False
         tab._on_pick_duel(tab._default_panel)
         default_label = MockDlg.call_args.kwargs["none_label"]
@@ -1310,7 +1310,7 @@ def test_giving_one_fight_a_strategy_leaves_the_others_together(qapp, store):
     dcs = _saved_dcs()
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B", "C"))
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
         tab._on_pick_for_fight("state_2")
@@ -1345,7 +1345,7 @@ def _add_strategy(tab: CombatTab, dcs_id: str | None) -> None:
     live popup window belonging to a tab that test never made.
     """
     with (
-        patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg,
+        patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
         patch.object(StrategyPanel, "open_fights_popup"),
     ):
         MockDlg.return_value.exec.return_value = dcs_id is not None
@@ -1361,7 +1361,7 @@ def test_adding_a_strategy_asks_for_its_fights_straight_away(qapp, store):
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
 
     with (
-        patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg,
+        patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
         patch.object(StrategyPanel, "open_fights_popup") as mock_popup,
     ):
         MockDlg.return_value.exec.return_value = True
@@ -1464,7 +1464,7 @@ def test_linking_a_fight_to_an_in_use_strategy_merges_the_rows(qapp, store):
     tab = _tab_for(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B"))
     assert len(tab._group_panels()) == 1
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
         tab._on_pick_for_fight("state_2")
@@ -1479,7 +1479,7 @@ def test_a_merged_group_is_saved_as_one_assignment(qapp, store):
     bcs = _linked_bcs(dcs.id, ["state_1"])
     tab = _tab_for(bcs, _multi_config("A", "B"))
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
         tab._on_pick_for_fight("state_2")
@@ -1493,7 +1493,7 @@ def test_clearing_a_link_moves_the_whole_group_onto_the_bot_default_card(qapp, s
     dcs = _saved_dcs()
     tab = _tab_for(_linked_bcs(dcs.id, ["state_1"], ["state_2"]), _multi_config("A", "B"))
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = None
         tab._on_pick_duel(tab._group_panels()[0])
@@ -1509,7 +1509,7 @@ def test_picking_on_the_default_card_does_not_rebuild_the_group_cards(qapp, stor
     tab = _tab_for(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B"))
     before = tab._state_panels["state_1"]
 
-    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
         tab._on_pick_duel(tab._default_panel)

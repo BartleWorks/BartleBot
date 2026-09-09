@@ -1,45 +1,80 @@
-"""Editor widgets for DuelConfig and the named DuelCombatStrategy that wraps it."""
+"""Editor for a DuelConfig — the Assemble tier, with the DSL one level deeper.
+
+WHAT AN ASSIGNMENT ROW ASKS
+---------------------------
+
+*What should these players do?* — and the honest answer for most users is the
+name of a Player Strategy, not a line of WizSprinter DSL. So the row's primary
+control is a selector over three kinds of answer:
+
+    (built-in default)  ·  a named Player Strategy  ·  Custom DSL…
+
+Choosing a name is the whole interaction for the Assemble tier: no DSL box is
+built, shown or scrolled past. Choosing ``Custom DSL…`` is the Author tier, and
+opens the editor in place. That replaces a layout where every row put a
+monospace box in front of the user whether or not they could write in one, with
+the preset options folded away behind a ``⋮`` menu — exactly backwards for a
+surface most of whose users will never author a strategy.
+
+The selector is also what retired the modal PCS picker. It reads its options
+from the working set it was handed, so a Player Strategy created on the sibling
+tab of the same dialog is in the list the moment it exists, with no dialog
+stacked on a dialog to choose it.
+
+WHAT LIVES ELSEWHERE NOW
+------------------------
+
+``DuelStrategyEditor``, the debounce wrapper that autosaved a named library
+entry 500ms after every keystroke, is gone. This editor still mutates the config
+it is handed directly — but what it is handed is a working copy, so writing
+through is safe, and when the write happens is the dialog's Save button's
+business. See :mod:`bartlebot.strategy_workset`.
+"""
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QByteArray, QEvent, QMimeData, QPoint, QSize, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QByteArray, QEvent, QMimeData, QPoint, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QDrag, QPainter, QPen, QTextLayout
 from PyQt6.QtWidgets import (
     QApplication,
+    QComboBox,
     QFrame,
     QHBoxLayout,
-    QInputDialog,
     QLabel,
     QLineEdit,
-    QMenu,
-    QMessageBox,
     QPlainTextEdit,
     QPushButton,
     QSpinBox,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
 from bartlebot.bot.strategy_models import (
-    DuelCombatStrategy,
     DuelConfig,
     PlayerAssignment,
     PlayerCombatStrategy,
 )
-from bartlebot.gui.icon_utils import svg_icon
-from bartlebot.gui.menu_utils import anchor_menu_to_window
 from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
-from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPickerDialog
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.elided_label import ElidedLabel, apply_muted_color
+from bartlebot.gui.widgets.elided_label import apply_muted_color
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.gui.widgets.school_combo import SchoolCombo
 from bartlebot.nodes.combat_runner import validate_dsl
-from bartlebot.strategy_store import save_player_strategy
 
-_ICON_BTN_SIZE = 16
 _DSL_EDIT_MIN_HEIGHT = 44  # ~2 lines, so an empty/short DSL box doesn't collapse to nothing
+
+#: The two entries in the strategy selector that are not a Player Strategy, and the
+#: sentinel each carries as its item data. Module-level because the tests name them and
+#: because ``_refresh_mode`` and ``_on_strategy_chosen`` have to agree exactly.
+DEFAULT_CHOICE = "(built-in default)"
+CUSTOM_CHOICE = "Custom DSL…"
+_DEFAULT_DATA = "\x00default"
+_CUSTOM_DATA = "\x00custom"
+
+#: What the row offers once it holds DSL worth reusing. Named in full rather than
+#: "preset": the library tab, the model and the selector all say *Player Strategy*, and
+#: this was the last surface still calling the same thing something else.
+PROMOTE_LABEL = "Save as Player Strategy…"
 
 _DSL_HELP = (
     "{round} move @ target | move @ target | pass — rounds optional, '|' is priority order.\n"
@@ -130,12 +165,12 @@ class _AutoHeightTextEdit(QPlainTextEdit):
 
 
 class _AssignmentRow(QWidget):
-    """One player-assignment row: player checkboxes over an inline DSL editor.
+    """One player-assignment row: which players, and what they should do.
 
-    Inline mode (the common case) edits ``assignment.dsl`` directly.  Linked
-    mode shows the name of a shared PlayerCombatStrategy preset and renders its
-    DSL read-only — edit it in the Player Strategies tab, or unlink to fork a
-    private copy.
+    "What they should do" is a selector over three answers — the built-in
+    default, a named Player Strategy, or custom DSL — and only the third builds
+    a DSL box. See the module docstring for why that ordering is the point of
+    this widget rather than a detail of it.
 
     Rows carry a grip on the left and can be dragged past one another to
     reorder; see :meth:`DuelConfigEditor.move_assignment` for why that is purely
@@ -150,8 +185,10 @@ class _AssignmentRow(QWidget):
     # Emits (self, newly_added_set) after a user-driven player change.
     # Only newly added players are reported so exclusivity only evicts what was just claimed.
     players_changed = pyqtSignal(object, object)
-    # Emitted after this row promotes its inline DSL to a new library preset.
-    promoted = pyqtSignal()
+    #: This row's custom DSL is worth keeping — emits self, for the dialog to turn into a
+    #: Player Strategy in its working set. Not saved here: nothing below the dialog
+    #: decides when a file is written any more.
+    promote_requested = pyqtSignal(object)
 
     def __init__(self, assignment: PlayerAssignment, all_pcs: list[PlayerCombatStrategy], parent=None):
         super().__init__(parent)
@@ -162,6 +199,10 @@ class _AssignmentRow(QWidget):
         self._editable = True
         self._drag_start_pos: QPoint | None = None
         self._drop_edge: str | None = None  # "above" / "below" while a drop hovers
+        # Whether the user asked for the DSL box on a row that has no DSL yet. Without
+        # it, choosing "Custom DSL…" on an empty assignment would resolve straight back
+        # to "(built-in default)" on the next refresh and the box would never appear.
+        self._custom = bool(assignment.dsl.strip()) and not assignment.is_linked
         self.setAcceptDrops(True)
 
         layout = QVBoxLayout(self)
@@ -190,22 +231,14 @@ class _AssignmentRow(QWidget):
         self._school_combo.currentIndexChanged.connect(self._on_school_changed)
         top.addWidget(self._school_combo)
 
-        # Elided: preset names are user-supplied, and a plain QLabel would make
-        # a long one the minimum width of every panel this row sits in.
-        self._link_lbl = ElidedLabel()
-        top.addWidget(self._link_lbl, 1)
-
-        self._menu_btn = QToolButton()
-        self._menu_btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
-        self._menu_btn.setIconSize(QSize(_ICON_BTN_SIZE, _ICON_BTN_SIZE))
-        self._menu_btn.setToolTip("Preset actions")
-        self._menu_btn.setAutoRaise(True)
-        self._menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self._menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
-        self._menu = anchor_menu_to_window(QMenu(self._menu_btn))
-        self._menu.aboutToShow.connect(self._rebuild_menu)
-        self._menu_btn.setMenu(self._menu)
-        top.addWidget(self._menu_btn)
+        # The row's primary control, and the whole of the Assemble tier. Given the
+        # stretch so a long strategy name has somewhere to go: names are user-supplied
+        # and routinely long, and a combo sized to its content would set the minimum
+        # width of every panel this row sits in.
+        self._strategy_combo = QComboBox()
+        self._strategy_combo.setToolTip("What these players should do — a saved strategy, or DSL of your own")
+        self._strategy_combo.currentIndexChanged.connect(self._on_strategy_chosen)
+        top.addWidget(self._strategy_combo, 1)
 
         self._remove_btn = QPushButton("×")
         self._remove_btn.setFixedWidth(24)
@@ -237,6 +270,18 @@ class _AssignmentRow(QWidget):
         self._dsl_error_lbl.hide()
         layout.addWidget(self._dsl_error_lbl)
 
+        # Only ever visible alongside the DSL box, and only once there is DSL to
+        # keep: the offer to name something is meaningless before it exists.
+        self._promote_btn = QPushButton(PROMOTE_LABEL)
+        self._promote_btn.setToolTip("Add this DSL to the Player Strategies tab so other assignments can use it")
+        self._promote_btn.clicked.connect(lambda: self.promote_requested.emit(self))
+        self._promote_btn.hide()
+        promote_row = QHBoxLayout()
+        promote_row.setContentsMargins(0, 0, 0, 0)
+        promote_row.addStretch()
+        promote_row.addWidget(self._promote_btn)
+        layout.addLayout(promote_row)
+
         # Validation piggybacks on its own debounce rather than every keystroke —
         # a half-typed DSL is invalid by definition and must not nag. Kept
         # separate from any save-debounce further up the embedding chain, since
@@ -264,13 +309,12 @@ class _AssignmentRow(QWidget):
         self._player_widget.setEnabled(editable)
         self._school_combo.setEnabled(editable)
         self._note_edit.setEnabled(editable)
-        self._menu_btn.setEnabled(editable)
-        self._menu_btn.setToolTip("Preset actions" if editable else "Locked while the bot is running")
         self._remove_btn.setEnabled(editable)
         self._remove_btn.setToolTip("Remove this assignment" if editable else "Locked while the bot is running")
-        # Goes through _refresh_mode rather than setReadOnly directly: read-only
-        # is also how *linked* rows are rendered, and _refresh_mode is the single
-        # place that reconciles the two reasons a row can be non-writable.
+        # Goes through _refresh_mode rather than setReadOnly/setEnabled directly:
+        # the selector and the DSL box are also driven by which of the three
+        # answers this row holds, and _refresh_mode is the single place that
+        # reconciles the two reasons a row can be non-writable.
         self._refresh_mode()
 
     # -- mode / display ------------------------------------------------
@@ -281,33 +325,104 @@ class _AssignmentRow(QWidget):
             return None
         return next((p for p in self._all_pcs if p.id == pcs_id), None)
 
+    def is_custom(self) -> bool:
+        """Whether this row is answering with DSL of its own rather than a name."""
+        return self._custom and not self._assignment.is_linked
+
+    def _current_data(self) -> str:
+        """The selector item data matching what the assignment actually holds."""
+        if self._assignment.is_linked:
+            return self._assignment.player_combat_strategy_id
+        return _CUSTOM_DATA if self._custom else _DEFAULT_DATA
+
+    def _rebuild_choices(self) -> None:
+        """Repopulate the selector from the working set, keeping the current answer.
+
+        Rebuilt rather than patched because ``set_pcs_list`` can arrive at any
+        moment — a Player Strategy created on the sibling tab, or renamed there —
+        and a diff against the old items would be more code than the rebuild.
+        """
+        combo = self._strategy_combo
+        blocked = combo.blockSignals(True)
+        try:
+            combo.clear()
+            combo.addItem(DEFAULT_CHOICE, _DEFAULT_DATA)
+            for pcs in self._all_pcs:
+                combo.addItem(pcs.name, pcs.id)
+            combo.addItem(CUSTOM_CHOICE, _CUSTOM_DATA)
+            wanted = self._current_data()
+            index = combo.findData(wanted)
+            if index < 0:
+                # A link to a strategy that is no longer in the library. Named
+                # rather than silently reset to the default: resetting would look
+                # like the row was always configured that way, and Save would
+                # then make it true.
+                combo.insertItem(1, "(missing strategy)", wanted)
+                index = 1
+            combo.setCurrentIndex(index)
+        finally:
+            combo.blockSignals(blocked)
+
     def _refresh_mode(self) -> None:
-        """Sync label, DSL text and read-only state to inline vs linked mode."""
+        """Sync the selector, the DSL box's presence, and every read-only state."""
         self._suppress_dsl = True
         try:
-            if self._assignment.is_linked:
-                pcs = self._linked_pcs()
-                name = pcs.name if pcs else "(missing preset)"
-                self._link_lbl.setText(f"🔗 {name}")
-                # Set after setText: ElidedLabel defaults the tooltip to the full
-                # text, and this says the same thing plus where to go to edit it.
-                self._link_lbl.setToolTip(f"{name} — shared preset from the Player Strategies tab")
-                self._link_lbl.show()
-                self._dsl_edit.setPlainText(pcs.dsl if pcs else "")
-                self._dsl_edit.setReadOnly(True)
-            else:
-                self._link_lbl.clear()
-                self._link_lbl.hide()
-                self._dsl_edit.setPlainText(self._assignment.dsl)
-                self._dsl_edit.setReadOnly(not self._editable)
+            self._rebuild_choices()
+            custom = self.is_custom()
+            self._strategy_combo.setEnabled(self._editable)
+            # Cleared rather than left holding stale text when hidden, so the
+            # validator below has nothing to complain about on a row whose answer
+            # is a name.
+            self._dsl_edit.setPlainText(self._assignment.dsl if custom else "")
+            self._dsl_edit.setReadOnly(not self._editable)
+            self._dsl_edit.setVisible(custom)
+            self._promote_btn.setVisible(custom and self._editable and bool(self._assignment.dsl.strip()))
         finally:
             self._suppress_dsl = False
         self._update_dsl_validation()
 
+    def _on_strategy_chosen(self) -> None:
+        """Apply the selector to the assignment — the whole of the Assemble tier."""
+        if self._suppress_dsl:
+            return
+        data = self._strategy_combo.currentData()
+        if data is None:
+            return
+        if data == _DEFAULT_DATA:
+            self._assignment.player_combat_strategy_id = None
+            self._assignment.dsl = ""
+            self._custom = False
+        elif data == _CUSTOM_DATA:
+            # Seeded from the strategy being left behind, so "this one, but with a
+            # tweak" starts from that one rather than from an empty box. Only when
+            # there is nothing already typed — a stashed draft outranks the seed.
+            pcs = self._linked_pcs()
+            if pcs is not None and not self._assignment.dsl.strip():
+                self._assignment.dsl = pcs.dsl
+            # The assignment's own school already won over the linked one, so
+            # only fill it in where nothing was authored here: forking a Storm
+            # strategy into custom DSL must not quietly drop the Storm.
+            if pcs is not None and self._assignment.school is None:
+                self._assignment.school = pcs.school
+                self._school_combo.set_value(self._assignment.school)
+            self._assignment.player_combat_strategy_id = None
+            self._custom = True
+        else:
+            self._assignment.player_combat_strategy_id = data
+            self._custom = False
+        self._refresh_mode()
+        if self.is_custom() and self._editable:
+            self._dsl_edit.setFocus()
+        self.changed.emit()
+
     def _on_dsl_changed(self) -> None:
-        if self._suppress_dsl or self._assignment.is_linked:
+        if self._suppress_dsl or not self.is_custom():
             return
         self._assignment.dsl = self._dsl_edit.toPlainText()
+        # Follows the text rather than waiting for the next _refresh_mode: the
+        # first character typed into an empty box is exactly when the offer to
+        # name it becomes meaningful.
+        self._promote_btn.setVisible(self._editable and bool(self._assignment.dsl.strip()))
         self._validate_timer.stop()
         self._validate_timer.start()
         self.changed.emit()
@@ -329,69 +444,20 @@ class _AssignmentRow(QWidget):
         self._assignment.note = self._note_edit.text()
         self.changed.emit()
 
-    # -- preset actions ------------------------------------------------
+    # -- promotion -----------------------------------------------------
 
-    def _rebuild_menu(self) -> None:
-        self._menu.clear()
-        if self._assignment.is_linked:
-            self._menu.addAction("Change preset…", self._on_pick_pcs)
-            self._menu.addAction("Unlink (edit a private copy)", self._on_unlink)
-        else:
-            self._menu.addAction("Save as preset…", self._on_promote)
-            self._menu.addAction("Link existing preset…", self._on_pick_pcs)
+    def link_to(self, pcs_id: str) -> None:
+        """Point this row at a Player Strategy — how the dialog answers a promotion.
 
-    def _on_promote(self) -> None:
-        """Copy this row's inline DSL into a new library preset and link to it."""
-        dsl = self._assignment.dsl.strip()
-        if not dsl:
-            QMessageBox.information(self, "Nothing to save", "Enter some DSL before saving it as a preset.")
-            return
-        name, ok = QInputDialog.getText(self, "Save as Preset", "Preset name:")
-        if not ok or not name.strip():
-            return
-        pcs = PlayerCombatStrategy(name=name.strip(), dsl=self._assignment.dsl)
-        save_player_strategy(pcs)
-        self._all_pcs.append(pcs)
-        self._assignment.player_combat_strategy_id = pcs.id
+        Public because the naming, the uniqueness check and the working-set entry
+        all belong to the dialog now; the row's part is only to stop being custom
+        and start naming what was made.
+        """
+        self._assignment.player_combat_strategy_id = pcs_id
+        self._assignment.dsl = ""
+        self._custom = False
         self._refresh_mode()
         self.changed.emit()
-        self.promoted.emit()
-
-    def _on_unlink(self) -> None:
-        """Fork the linked preset's DSL back into this assignment as inline text."""
-        pcs = self._linked_pcs()
-        self._assignment.dsl = pcs.dsl if pcs else ""
-        # The assignment's own school (if set) already won over the preset's —
-        # only fill it in here if nothing was authored on the assignment itself.
-        if self._assignment.school is None and pcs is not None:
-            self._assignment.school = pcs.school
-            self._school_combo.set_value(self._assignment.school)
-        self._assignment.player_combat_strategy_id = None
-        self._refresh_mode()
-        self.changed.emit()
-
-    def _on_pick_pcs(self) -> None:
-        if not self._all_pcs:
-            QMessageBox.information(
-                self,
-                "No presets",
-                "No shared player strategies exist yet. Use “Save as preset…” to create one.",
-            )
-            return
-        dlg = StrategyPickerDialog(
-            title="Pick Player Strategy",
-            mode="player",
-            strategies=self._all_pcs,
-            current_id=self._assignment.player_combat_strategy_id,
-            allow_none=False,
-            parent=self,
-        )
-        if dlg.exec():
-            chosen = dlg.selected_id()
-            if chosen is not None:
-                self._assignment.player_combat_strategy_id = chosen
-                self._refresh_mode()
-                self.changed.emit()
 
     def _apply_style(self) -> None:
         bg = THEME.surface if self._dsl_edit.isReadOnly() else THEME.bg
@@ -403,7 +469,6 @@ class _AssignmentRow(QWidget):
             f"border: 1px solid {THEME.border}; border-left: 3px solid {border}; }}"
         )
         self._dsl_error_lbl.setStyleSheet(f"color: {THEME.error};")
-        apply_muted_color(self._link_lbl)
         apply_muted_color(self._grip)
 
     def changeEvent(self, event: QEvent) -> None:
@@ -557,15 +622,18 @@ class DuelConfigEditor(QWidget):
     """Edit a DuelConfig: min/max players, combat order, player assignments.
 
     Mutates the loaded ``DuelConfig`` directly as the user edits — there is no
-    separate "apply" step, and no autosave of its own.  ``changed`` fires on
-    every edit so the embedder decides whether and when to persist: either
-    ``DuelStrategyEditor`` debounce-saving a named library entry that IS-A
-    ``DuelConfig``, or an inline config embedded directly on a
-    ``BotCombatStrategy`` with its own debounce timer.
+    separate "apply" step, and no autosave of its own. What it is handed is a
+    working copy out of :class:`~bartlebot.strategy_workset.StrategyWorkingSet`,
+    so writing through is safe and *when* it is written is the dialog's Save
+    button's business. ``changed`` is still emitted, but only so an embedder can
+    refresh what it draws — nothing downstream of it touches disk.
     """
 
     changed = pyqtSignal()
-    presets_changed = pyqtSignal()  # a row promoted its inline DSL to a new library preset
+    #: A row wants its custom DSL kept as a named Player Strategy. Emits the row,
+    #: for whoever owns the working set to name it, create it and call
+    #: :meth:`_AssignmentRow.link_to`.
+    promote_requested = pyqtSignal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -623,8 +691,8 @@ class DuelConfigEditor(QWidget):
         outer.addWidget(QLabel("Player assignments:"))
 
         # No inner QScrollArea: this widget already lives inside the Combat
-        # tab's single outer scroll area (or the Strategy Library window's), so
-        # nesting a second scrollable region here just hid rows behind a tiny
+        # tab's single outer scroll area (or the combat strategy dialog's detail
+        # pane), so nesting a second scrollable region here just hid rows behind a tiny
         # inner scrollbar nobody could see. Assignment rows render at their
         # full natural height and the page around them scrolls instead.
         self._assignments_container = QWidget()
@@ -694,8 +762,8 @@ class DuelConfigEditor(QWidget):
         self.changed.emit()
 
     def clear(self) -> None:
-        """Detach from the loaded config — no pending state to drop, unlike the
-        debounced editors, since every edit here is already live on the config.
+        """Detach from the loaded config. There is no pending state to drop —
+        every edit is already live on the working copy.
         """
         self._config = None
         self._suppress = True
@@ -720,7 +788,7 @@ class DuelConfigEditor(QWidget):
         row.remove_requested.connect(self._on_remove_row)
         row.reorder_requested.connect(self._on_reorder_row)
         row.players_changed.connect(self._enforce_exclusivity)
-        row.promoted.connect(self.presets_changed)
+        row.promote_requested.connect(self.promote_requested)
         # Insert before the stretch at end
         idx = self._assignments_layout.count() - 1
         self._assignments_layout.insertWidget(idx, row)
@@ -787,9 +855,8 @@ class DuelConfigEditor(QWidget):
         first-match loop cannot come back with a different answer after a
         reorder; nothing about how the bot fights changes here.
 
-        Persistence rides on ``changed`` like every other edit in this widget:
-        ``DuelStrategyEditor`` debounces it into a library save, and an inline
-        config's embedder runs its own timer off the same signal.
+        The reorder is live on the config immediately, like every other edit in
+        this widget; it reaches disk when the dialog is saved, and not before.
         """
         if self._config is None:
             return
@@ -860,95 +927,6 @@ class DuelConfigEditor(QWidget):
         self._config.combat_order = order if order else None
         self._update_requirements_label()
         self.changed.emit()
-
-    def changeEvent(self, event: QEvent) -> None:
-        super().changeEvent(event)
-        # No stylesheet-dependent styling in this widget currently.
-
-
-class DuelStrategyEditor(QWidget):
-    """Edit a DuelCombatStrategy: name, plus the shared DuelConfig fields.
-
-    A thin wrapper around DuelConfigEditor that adds the library entry's
-    identity (name) and owns the debounce/autosave that a named, shared entry
-    needs but a bare DuelConfig does not.
-    """
-
-    # Emitted after debounce with the id of the strategy the edits belong to.
-    # See PlayerStrategyEditor.changed — the id is what keeps a late-firing save
-    # from being applied to whichever strategy the user selected in the meantime.
-    changed = pyqtSignal(str)
-    presets_changed = pyqtSignal()  # a row promoted its inline DSL to a new library preset
-
-    _DEBOUNCE_MS = 500
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._strategy: DuelCombatStrategy | None = None
-        self._suppress = False
-
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(6)
-
-        outer.addWidget(QLabel("Name:"))
-        self._name_edit = QLineEdit()
-        self._name_edit.textChanged.connect(self._on_changed)
-        outer.addWidget(self._name_edit)
-
-        self._config_editor = DuelConfigEditor()
-        self._config_editor.changed.connect(self._on_changed)
-        self._config_editor.presets_changed.connect(self.presets_changed)
-        outer.addWidget(self._config_editor, 1)
-
-        self._save_timer = QTimer(self)
-        self._save_timer.setSingleShot(True)
-        self._save_timer.setInterval(self._DEBOUNCE_MS)
-        self._save_timer.timeout.connect(self._flush)
-
-    def load(self, strategy: DuelCombatStrategy, all_pcs: list[PlayerCombatStrategy]) -> None:
-        self._strategy = strategy
-        self._suppress = True
-        self._name_edit.setText(strategy.name)
-        self._config_editor.load(strategy, all_pcs)  # DuelCombatStrategy IS-A DuelConfig
-        self._suppress = False
-
-    def set_pcs_list(self, all_pcs: list[PlayerCombatStrategy]) -> None:
-        self._config_editor.set_pcs_list(all_pcs)
-
-    def flush(self) -> None:
-        """Immediately commit any pending changes."""
-        if self._save_timer.isActive():
-            self._save_timer.stop()
-            self._flush()
-
-    def clear(self) -> None:
-        """Detach from the loaded strategy and drop any pending save.
-
-        Call this before deleting the strategy being edited — otherwise the
-        debounce timer fires afterwards and writes the file back out.
-        """
-        self._save_timer.stop()
-        self._strategy = None
-        self._suppress = True
-        self._config_editor.clear()
-        self._suppress = False
-
-    def _on_changed(self) -> None:
-        if self._suppress:
-            return
-        self._save_timer.stop()
-        self._save_timer.start()
-
-    def _flush(self) -> None:
-        if self._strategy is None:
-            return
-        # min_players / max_players / combat_order / player_assignments are
-        # already live on self._strategy — DuelConfigEditor mutates it directly.
-        name = self._name_edit.text().strip()
-        if name:
-            self._strategy.name = name
-        self.changed.emit(self._strategy.id)
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)

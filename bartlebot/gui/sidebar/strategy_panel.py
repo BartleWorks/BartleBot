@@ -182,7 +182,7 @@ LOCKED = "Locked while the bot is running"
 
 #: Verb labels, so the tab and the tests name a verb by the same string the menu does.
 CHANGE = "Change…"
-EDIT_IN_LIBRARY = "Edit in Library…"
+EDIT_STRATEGY = "Edit…"
 APPLIES_TO = "Applies to…"
 SAVE_AS_PRESET = "Save as preset…"
 
@@ -567,7 +567,7 @@ class StrategyPanel(CardFrame):
         # Withdrawn rather than greyed. A disabled pencil on an inline config would be an
         # affordance offered and refused every time; there is simply nothing in the
         # library to open, and the button holds its space either way.
-        edit_btn = self.action_button(EDIT_IN_LIBRARY)
+        edit_btn = self.action_button(EDIT_STRATEGY)
         if edit_btn is not None:
             edit_btn.setVisible(self.linked_id is not None)
         self._sync_pill_row()
@@ -642,9 +642,9 @@ class StrategyPanel(CardFrame):
         return [
             CardVerb(CHANGE, "search", "Pick a different Duel Combat Strategy", self.pick_requested.emit, on_face=True),
             CardVerb(
-                EDIT_IN_LIBRARY,
+                EDIT_STRATEGY,
                 "pencil",
-                "Open this strategy in the Strategy Library",
+                "Open this strategy in the combat strategy editor",
                 self._emit_edit_in_library,
                 on_face=True,
             ),

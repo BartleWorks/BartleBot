@@ -276,9 +276,9 @@ class AppController(QObject):
     async def run(self) -> None:
         self._client_manager.start()
         quit_event = asyncio.Event()
-        # Connected before quit_event so debounced edits land while the widgets
-        # are still alive.
-        self._app.aboutToQuit.connect(self._flush_pending_edits)
+        # Nothing to flush here any more: combat edits used to sit in a 500 ms
+        # debounce that a quit could beat, and now live behind the combat strategy
+        # dialog's own Save button. See bartlebot.strategy_workset.
         self._app.aboutToQuit.connect(self._client_manager.stop)
         # The canvas is never closed: Qt delivers QCloseEvent to the window being
         # closed, not to its children, so its own closeEvent never fires in the app.
@@ -293,13 +293,6 @@ class AppController(QObject):
         self._app.aboutToQuit.connect(self._restore_game_display_settings)
         self._app.aboutToQuit.connect(quit_event.set)
         await quit_event.wait()
-
-    def _flush_pending_edits(self) -> None:
-        """Commit debounced combat edits that the 500 ms timer has not fired for yet."""
-        try:
-            self._window.left_sidebar.combat_tab.flush_pending_save()
-        except Exception:
-            logger.exception("Failed to flush pending combat edits on quit")
 
     # ------------------------------------------------------------------
     # Shutdown

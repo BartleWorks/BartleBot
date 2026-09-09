@@ -1,4 +1,21 @@
-"""Editor widget for a single PlayerCombatStrategy (name + DSL text)."""
+"""Editor widget for a single PlayerCombatStrategy (name, description, school, DSL).
+
+The 500ms autosave this widget used to own is gone. It wrote a shipped file
+half a second after every keystroke, which is why Cancel could not mean anything
+and why a half-typed DSL was persisted; it also needed the ``changed(id)``
+signal to carry an id, because a debounced save could land after the user had
+already selected a different strategy in the list.
+
+What replaced it is a boundary rather than a better timer: the strategy handed
+to :meth:`load` is a working copy out of
+:class:`~bartlebot.strategy_workset.StrategyWorkingSet`, so this editor writes
+through to it on every edit and nothing reaches disk until the dialog is saved.
+``changed`` is emitted for whoever wants to redraw a card, and carries nothing —
+there is no longer a delay across which the selection could have moved.
+
+The one thing still debounced is DSL *validation*, which was never about saving:
+a half-typed DSL is invalid by definition and must not nag.
+"""
 
 from __future__ import annotations
 
@@ -17,7 +34,8 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.school_combo import SchoolCombo
 from bartlebot.nodes.combat_runner import validate_dsl
 
-_DEBOUNCE_MS = 500
+#: How long after the last keystroke the DSL is re-validated. Not a save delay.
+_VALIDATE_MS = 500
 
 _DSL_HELP = (
     "{round} move @ target | move @ target | pass — rounds optional, '|' is priority order.\n"
@@ -29,13 +47,12 @@ _DSL_HELP = (
 
 
 class PlayerStrategyEditor(QWidget):
-    """Edit the name and DSL of a PlayerCombatStrategy.  Auto-saves after ``_DEBOUNCE_MS`` ms."""
+    """Edit a PlayerCombatStrategy in place. Writes through; never saves."""
 
-    # Emitted after debounce with the id of the strategy the edits belong to.
-    # The id matters: a debounced edit lands *after* the user may have already
-    # selected a different strategy in the list, so the receiver must save the
-    # strategy that was being edited, not whatever is currently highlighted.
-    changed = pyqtSignal(str)
+    #: An edit landed on the loaded strategy. Carries no id on purpose — the edit
+    #: is already applied by the time this fires, so there is no stale-selection
+    #: window for an id to guard against.
+    changed = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -60,7 +77,7 @@ class PlayerStrategyEditor(QWidget):
         school_row = QHBoxLayout()
         school_row.addWidget(QLabel("School:"))
         # Authored, never inferred from the DSL — used as a fallback wherever an
-        # assignment links this preset without its own school set.
+        # assignment links this strategy without its own school set.
         self._school_combo = SchoolCombo()
         self._school_combo.setToolTip("What school this strategy is written for, if any — descriptive only")
         self._school_combo.currentIndexChanged.connect(self._on_changed)
@@ -82,12 +99,16 @@ class PlayerStrategyEditor(QWidget):
         self._dsl_error_lbl.hide()
         layout.addWidget(self._dsl_error_lbl)
 
-        self._save_timer = QTimer(self)
-        self._save_timer.setSingleShot(True)
-        self._save_timer.setInterval(_DEBOUNCE_MS)
-        self._save_timer.timeout.connect(self._flush)
+        self._validate_timer = QTimer(self)
+        self._validate_timer.setSingleShot(True)
+        self._validate_timer.setInterval(_VALIDATE_MS)
+        self._validate_timer.timeout.connect(self._update_dsl_validation)
 
         self._apply_style()
+
+    def strategy(self) -> PlayerCombatStrategy | None:
+        """The working copy being edited, or None."""
+        return self._strategy
 
     def load(self, strategy: PlayerCombatStrategy) -> None:
         self._strategy = strategy
@@ -97,21 +118,14 @@ class PlayerStrategyEditor(QWidget):
         self._school_combo.set_value(strategy.school)
         self._dsl_edit.setPlainText(strategy.dsl)
         self._suppress = False
+        self._validate_timer.stop()
         self._update_dsl_validation()
 
-    def flush(self) -> None:
-        """Immediately commit any pending changes."""
-        if self._save_timer.isActive():
-            self._save_timer.stop()
-            self._flush()
-
     def clear(self) -> None:
-        """Detach from the loaded strategy and drop any pending save.
-
-        Call this before deleting the strategy being edited — otherwise the
-        debounce timer fires afterwards and writes the file back out.
+        """Detach from the loaded strategy. Nothing is pending — every edit is
+        already live on the working copy.
         """
-        self._save_timer.stop()
+        self._validate_timer.stop()
         self._strategy = None
         self._suppress = True
         self._name_edit.clear()
@@ -124,26 +138,18 @@ class PlayerStrategyEditor(QWidget):
     def _on_changed(self) -> None:
         if self._suppress or self._strategy is None:
             return
-        self._save_timer.stop()
-        self._save_timer.start()
-
-    def _flush(self) -> None:
-        if self._strategy is None:
-            return
+        # An empty name would leave a nameless card in the list with no way back
+        # to it, so the last non-empty name stands until another is typed.
         self._strategy.name = self._name_edit.text().strip() or self._strategy.name
         self._strategy.description = self._description_edit.text()
         self._strategy.school = self._school_combo.value()
         self._strategy.dsl = self._dsl_edit.toPlainText()
-        self._update_dsl_validation()
-        self.changed.emit(self._strategy.id)
+        self._validate_timer.stop()
+        self._validate_timer.start()
+        self.changed.emit()
 
     def _update_dsl_validation(self) -> None:
-        """Re-run ``validate_dsl`` and reflect it as a border color plus an error line.
-
-        Piggybacks on the same debounce as saving (called from ``_flush``, and
-        once up front from ``load``/``clear``) rather than on every keystroke —
-        a half-typed DSL is invalid by definition and must not nag.
-        """
+        """Re-run ``validate_dsl`` and reflect it as a border color plus an error line."""
         error = validate_dsl(self._dsl_edit.toPlainText())
         self._dsl_error_lbl.setText(error or "")
         self._dsl_error_lbl.setVisible(bool(error))
