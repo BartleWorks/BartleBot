@@ -445,7 +445,11 @@ class CardFrame(ThemedMixin, QWidget):
         if draggable:
             row.addWidget(self._make_grip(what), 0)
         else:
-            row.addSpacing(_GRIP_WIDTH)
+            # GRIP_GUTTER, not _GRIP_WIDTH: an explicit spacer gets none of the row's
+            # inter-item spacing the way two real widgets do, so a bare _GRIP_WIDTH
+            # spacer left this frame 4px left of a draggable card's -- and of AddCard,
+            # which reserves the same GRIP_GUTTER as its own left margin.
+            row.addSpacing(GRIP_GUTTER)
         row.addWidget(self._body, 1)
 
         inner = QVBoxLayout(self._body)

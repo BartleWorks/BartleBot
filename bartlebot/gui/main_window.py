@@ -88,6 +88,13 @@ class MainWindow(QMainWindow):
         self.action_browse_library = QAction("Browse Bot Library…", self)
         file_menu.addAction(self.action_browse_library)
 
+        # Beside the bot library because it is the same kind of entry: a library of
+        # reusable things, reachable without a bot open. Combat strategies depend on
+        # which wizards the user owns, not on which bot is loaded, so this is the one
+        # editor that should not be behind opening one.
+        self.action_combat_strategies = QAction("Combat Strategies…", self)
+        file_menu.addAction(self.action_combat_strategies)
+
         self.action_close = QAction("Close Bot", self)
         self.action_close.setShortcut(QKeySequence("Ctrl+W"))
         self.action_close.setEnabled(False)
@@ -207,6 +214,10 @@ class MainWindow(QMainWindow):
         self.right_sidebar.possible_drops.drops_changed.connect(self.left_sidebar.refresh_drops)
         # Wire Browse Bot Library menu action
         self.action_browse_library.triggered.connect(self.bot_canvas.open_library_dialog)
+        # The combat strategy dialog is owned by the Combat tab: it is the surface that
+        # has to reload when the dialog closes, and routing through it keeps one caller.
+        # Wrapped: ``triggered`` passes a checked flag, which would arrive as ``kind``.
+        self.action_combat_strategies.triggered.connect(lambda: self.left_sidebar.combat_tab.open_combat_dialog())
         # Wire sidebar tab switching from canvas
         self.bot_canvas.tab_switch.connect(self._on_canvas_tab_switch)
         # Wire bot status to game view panel title bar

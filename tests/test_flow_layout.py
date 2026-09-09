@@ -142,3 +142,30 @@ def test_hiding_an_item_moves_the_ones_after_it_up(qapp):
     layout.setGeometry(host.rect())
 
     assert layout.itemAt(2).widget().y() == 0  # now the two visible ones share a row
+
+
+def test_insert_widget_places_it_before_the_ones_already_there(qapp):
+    """The strategy card's pill row grows in the middle: pills come and go beside a
+    "Fights…" button that must stay at the end of the row rather than walking along
+    it as they arrive."""
+    _host_w, layout = _host(60)
+    button = layout.itemAt(0).widget()
+    pill = QWidget()
+    pill.setFixedSize(40, 14)
+
+    layout.insertWidget(0, pill)
+
+    assert layout.count() == 2
+    assert [layout.itemAt(i).widget() for i in range(2)] == [pill, button]
+
+
+def test_an_inserted_widget_is_reparented_like_an_added_one(qapp):
+    """``addWidget`` first, then move the item: the reparenting and ownership are
+    things ``QLayout`` alone knows how to do."""
+    host, layout = _host(60)
+    pill = QWidget()
+    pill.setFixedSize(40, 14)
+
+    layout.insertWidget(0, pill)
+
+    assert pill.parent() is host

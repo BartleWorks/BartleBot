@@ -1,5 +1,0 @@
-{
-  "id": "d28513b6-da91-4447-a104-fad6fc8fda8b",
-  "name": "Scald Incindiate",
-  "dsl": "scald[\"Epic - Amulet\"][epic] | feint mass | any<blade>[sharp]@ally(1) | feint[potent]@boss | detonate all | any<aoe>[epic]"
-}

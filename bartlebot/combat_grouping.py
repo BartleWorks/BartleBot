@@ -142,11 +142,12 @@ def group_bindings(bindings: dict[str, StateAssignment], exposed: list[StateMode
     """Return one group per distinct binding, in display order.
 
     Configured groups come first, ordered by their earliest member's position in
-    the FSM; unassigned fights follow individually, also in FSM order.  Keeping
-    the unassigned ones separate rather than collapsing them into a single "uses
-    the bot default" row is deliberate: giving one fight a strategy is the most
-    common action in this panel, and it stays a single click on that fight's own
-    row.
+    the FSM; unassigned fights follow individually, also in FSM order.  They stay
+    *individual* here even though the sidebar draws them as pills on the one
+    default card: each is its own ``StateAssignment``, so giving one fight a
+    strategy is still one click on that fight's own name and touches nothing else.
+    Merging them into a single group would make that click configure every
+    unassigned fight at once.
 
     States absent from ``bindings`` are skipped.  Callers seed a placeholder for
     every exposed state before grouping, so this only bites on a caller that

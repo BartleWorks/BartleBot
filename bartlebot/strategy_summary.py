@@ -89,6 +89,54 @@ class UsageCount:
     def total(self) -> int:
         return self.bots + self.duels
 
+    def phrase(self) -> str:
+        """ "Used by 3 bot strategies and 2 duel strategies" — one sentence, or "Not used yet".
+
+        Lives here rather than in the dialog because a delete confirmation and a
+        detail pane both say it, and two surfaces counting the same references
+        differently is the drift :class:`StrategySummary` exists to prevent.
+        """
+        parts = []
+        if self.bots:
+            parts.append(f"{self.bots} bot strateg{'ies' if self.bots != 1 else 'y'}")
+        if self.duels:
+            parts.append(f"{self.duels} duel strateg{'ies' if self.duels != 1 else 'y'}")
+        if not parts:
+            return "Not used yet"
+        return "Used by " + " and ".join(parts)
+
+
+def find_references(uuid: str, bot_strategies=(), duel_strategies=()) -> UsageCount:
+    """Count what would break if ``uuid`` were removed.
+
+    Takes the lists rather than reading the store, for two reasons. The dialog
+    holds a working set of *unsaved* copies, and a delete confirmation that
+    counted what is on disk would miss a reference added a minute ago; and
+    keeping it pure is what lets it be tested without a sandbox.
+
+    Both kinds of reference are followed, whichever kind ``uuid`` names:
+
+    - a ``BotCombatStrategy`` referencing a DuelCombatStrategy, as its default
+      or through any state assignment
+    - a ``DuelConfig`` referencing a PlayerCombatStrategy through an assignment,
+      counted for the named library entries *and* for the inline configs
+      embedded on a bot strategy
+
+    A bot strategy naming the same id twice — its default plus a state override
+    — counts once. What the user is being told is how many *things* change, not
+    how many fields do.
+    """
+    bots = 0
+    for bcs in bot_strategies:
+        if bcs.default_strategy_id == uuid or any(a.duel_combat_strategy_id == uuid for a in bcs.state_assignments):
+            bots += 1
+            continue
+        inline = [bcs.default_duel_config, *(a.duel_config for a in bcs.state_assignments)]
+        if any(uuid in config.linked_pcs_ids() for config in inline):
+            bots += 1
+    duels = sum(1 for dcs in duel_strategies if uuid in dcs.linked_pcs_ids())
+    return UsageCount(bots=bots, duels=duels)
+
 
 @dataclass(frozen=True)
 class StrategySummary:

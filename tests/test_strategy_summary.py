@@ -13,6 +13,7 @@ from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DeckData,
     DeckPreset,
+    DuelCombatStrategy,
     DuelConfig,
     PlayerAssignment,
     PlayerCombatStrategy,
@@ -21,6 +22,8 @@ from bartlebot.bot.strategy_models import (
 from bartlebot.strategy_summary import (
     Health,
     HealthStatus,
+    UsageCount,
+    find_references,
     format_players,
     summarize_bot,
     summarize_deck,
@@ -225,3 +228,69 @@ def test_health_is_ok_true_only_when_not_invalid():
     assert Health(HealthStatus.OK).is_ok
     assert Health(HealthStatus.EMPTY).is_ok
     assert not Health(HealthStatus.INVALID_DSL, "boom").is_ok
+
+
+# ---------------------------------------------------------------------------
+# find_references — what breaks if this is removed
+# ---------------------------------------------------------------------------
+
+
+def test_find_references_counts_a_bot_default():
+    dcs = DuelCombatStrategy(name="Boss")
+    bcs = BotCombatStrategy(name="Farm", bot_id="b", default_strategy_id=dcs.id)
+    assert find_references(dcs.id, [bcs], []) == UsageCount(bots=1)
+
+
+def test_find_references_counts_a_state_override():
+    dcs = DuelCombatStrategy(name="Boss")
+    bcs = BotCombatStrategy(
+        name="Farm",
+        bot_id="b",
+        state_assignments=[StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id)],
+    )
+    assert find_references(dcs.id, [bcs], []).bots == 1
+
+
+def test_a_bot_naming_the_same_strategy_twice_counts_once():
+    """The user is being told how many things change, not how many fields do."""
+    dcs = DuelCombatStrategy(name="Boss")
+    bcs = BotCombatStrategy(
+        name="Farm",
+        bot_id="b",
+        default_strategy_id=dcs.id,
+        state_assignments=[StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id)],
+    )
+    assert find_references(dcs.id, [bcs], []).bots == 1
+
+
+def test_find_references_counts_a_player_strategy_in_a_duel():
+    pcs = PlayerCombatStrategy(name="Blade")
+    dcs = DuelCombatStrategy(
+        name="Boss",
+        player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)],
+    )
+    assert find_references(pcs.id, [], [dcs]) == UsageCount(duels=1)
+
+
+def test_find_references_reaches_a_bots_inline_config():
+    """An inline DuelConfig on a bot strategy links presets too, and nothing else looks there."""
+    pcs = PlayerCombatStrategy(name="Blade")
+    bcs = BotCombatStrategy(
+        name="Farm",
+        bot_id="b",
+        default_duel_config=DuelConfig(
+            player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
+        ),
+    )
+    assert find_references(pcs.id, [bcs], []).bots == 1
+
+
+def test_find_references_of_something_unused():
+    assert find_references("orphan-id", [], []) == UsageCount()
+
+
+def test_usage_phrase_reads_as_a_sentence():
+    assert UsageCount().phrase() == "Not used yet"
+    assert UsageCount(bots=1).phrase() == "Used by 1 bot strategy"
+    assert UsageCount(duels=2).phrase() == "Used by 2 duel strategies"
+    assert UsageCount(bots=3, duels=1).phrase() == "Used by 3 bot strategies and 1 duel strategy"

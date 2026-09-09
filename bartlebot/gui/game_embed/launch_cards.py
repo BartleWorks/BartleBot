@@ -93,25 +93,28 @@ from typing import NamedTuple
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import (
-    QFrame,
     QHBoxLayout,
     QLabel,
     QSizePolicy,
-    QWidget,
 )
 
 from bartlebot import streamer_mode
 from bartlebot.credentials import CredentialStore
 from bartlebot.game_sizing import FitProblem
 from bartlebot.gui.account_accent import account_accent, account_color_key, account_color_keys
-from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
+
+# Re-exported, not defined here. ``AddCard`` moved to ``widgets/`` when the Combat tab's
+# Duel Combat Strategies section became its second caller -- a terminator card knows
+# nothing about launching, and a sidebar should not import out of ``game_embed`` to draw
+# one. The names stay importable from here because the launch columns and their tests
+# have always spelled them this way, and the card is still what ends *these* columns.
+from bartlebot.gui.widgets.add_card import ADD_CARD_BORDER_WIDTH, AddCard  # noqa: F401
 
 # ``CardMode`` is imported from here by the surfaces that build these cards, since the
 # card and the mode it is built in are one import. The frame itself lives outside
 # game_embed because a second family of cards uses it -- see card_frame.py.
-from bartlebot.gui.widgets.card_frame import GRIP_GUTTER, CardFrame, CardMode, CardVerb
+from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.tag_pill import AccountPill, NeutralPill
 
 # Characters listed in full on an account card before the rest become "+N more", used
@@ -136,15 +139,6 @@ _MORE_GAP = "  "
 # line at a glance down the column, narrow enough that the card still reads as a card
 # and not as a labelled swatch.
 STRIPE_WIDTH = 3
-
-# Border width of the Add card's dashed outline. Two, not one, because Qt scales a dash
-# pattern by the pen width: a 1px dashed border draws as a row of 1px dots, which at the
-# subtle border colour is a line you have to look for -- on the top and left edges of a
-# dark-theme card it was not visible at all. At 2px the dashes are dashes, and the card
-# reads at about the weight of the 1px solid border on the launch cards above it, because
-# the gaps give back what the extra pixel takes.
-ADD_CARD_BORDER_WIDTH = 2
-
 
 # ---------------------------------------------------------------------------
 # Pure text-building. Separated from the widgets so it can be tested without a
@@ -461,7 +455,7 @@ class _LaunchCard(CardFrame):
             self._name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
         for lbl, color in ((self._detail_lbl, THEME.text_muted), (self._quiet_lbl, THEME.text_subtle)):
             if lbl is not None:
-                lbl.setStyleSheet(f"color: {color}; font-size: 10px; background: transparent;")
+                lbl.setStyleSheet(f"color: {color}; font-size: {THEME.font_card_sub_size}px; background: transparent;")
 
     def _apply_state_palette(self) -> bool:
         """Grey a card that cannot launch, on a surface that refuses one."""
@@ -481,7 +475,9 @@ class _LaunchCard(CardFrame):
             self._name_lbl.setStyleSheet(f"color: {THEME.text_disabled}; background: transparent;")
         for lbl in (self._detail_lbl, self._quiet_lbl):
             if lbl is not None:
-                lbl.setStyleSheet(f"color: {THEME.text_disabled}; font-size: 10px; background: transparent;")
+                lbl.setStyleSheet(
+                    f"color: {THEME.text_disabled}; font-size: {THEME.font_card_sub_size}px; background: transparent;"
+                )
         # The face icons are not tinted down with them, and are restyled by the base pass
         # after this returns: the pencil is the way out of the state the rest of the card
         # is greyed to report, so it stays at full contrast.
@@ -810,102 +806,3 @@ class ProfileCard(_LaunchCard):
                 on_face=self._mode is CardMode.MANAGE,
             ),
         ]
-
-
-class AddCard(ThemedMixin, QWidget):
-    """The card at the foot of a launch column: "Add account", "Add profile".
-
-    A fresh install opened on two columns reading "(No accounts)" and "(No profiles)",
-    and nothing on either said what to do about that -- the only way forward was to
-    notice a small underlined link between them, open a dialog and find a button under a
-    list. The answer to "how do I get another one of these" belongs where the ones
-    you have are, which is the convention every card collection whose members are
-    launched has settled on: Chrome's profile picker, the Figma file grid, Docker
-    Desktop. Always last, and always a card.
-
-    Deliberately *not* a ``_LaunchCard``. It launches nothing and has no resolution to
-    judge, so keeping it outside that hierarchy is what makes the fit pass unable to grey
-    it: ``refresh_fit`` walks the launch cards and calls ``set_unavailable`` on each, and
-    this class does not have that method to call. It is also not a member of the ordered
-    list -- nothing is dragged onto it and nothing is dropped after it. It is the
-    column's terminator.
-
-    Dashed rather than solid, which is the whole visual argument: same width, same
-    radius, same hover as the cards above it, so it reads as one of them, but an outline
-    that says it is a slot rather than a thing.
-    """
-
-    add_requested = pyqtSignal()
-
-    def __init__(self, text: str, parent=None) -> None:
-        super().__init__(parent)
-        # Framed like a launch card, and for the same reason: the dashed outline is drawn
-        # on an inner frame so that this card can carry the drag gutter's indent without
-        # its border reaching back across it. A terminator whose frame starts twenty-two
-        # pixels left of every frame above it does not read as the last card in the
-        # column, it reads as a misplaced one.
-        self._body = QFrame(self)
-        self._body.setObjectName("AddCard")
-        self._body.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._hovered = False
-        self._text = text
-        self._build()
-        self.refresh_theme_styles()
-
-    @property
-    def text(self) -> str:
-        """What the card reads. Public so a test can name the column it belongs to."""
-        return self._text
-
-    def _build(self) -> None:
-        row = QHBoxLayout(self)
-        row.setContentsMargins(GRIP_GUTTER, 0, 0, 0)
-        row.setSpacing(0)
-        row.addWidget(self._body)
-
-        layout = QHBoxLayout(self._body)
-        layout.setContentsMargins(10, 8, 10, 8)
-        layout.setSpacing(6)
-        layout.addStretch()
-
-        self._icon_lbl = QLabel(self)
-        self._icon_lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        layout.addWidget(self._icon_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
-
-        self._name_lbl = QLabel(self._text, self)
-        self._name_lbl.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
-        layout.addWidget(self._name_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
-
-        layout.addStretch()
-
-    def apply_theme_styles(self) -> None:
-        border = THEME.accent if self._hovered else THEME.border
-        color = THEME.text if self._hovered else THEME.text_muted
-        # Transparent rather than THEME.surface: an outline the same fill as a real card
-        # reads as one, and the point of the dashes is that this is the empty slot after
-        # them. The hover is where it takes a fill, because that is a hit target
-        # confirming itself.
-        bg = THEME.node_fill if self._hovered else "transparent"
-        self.setStyleSheet(
-            f"#AddCard {{ background: {bg}; border: {ADD_CARD_BORDER_WIDTH}px dashed {border}; border-radius: 4px; }}"
-        )
-        self._name_lbl.setStyleSheet(f"color: {color}; background: transparent;")
-        # svg_icon bakes the tint in at render time, so the pixmap is rebuilt on every
-        # pass rather than set once in _build -- see ProfileCard.apply_theme_styles.
-        self._icon_lbl.setPixmap(svg_pixmap("plus", 12, tint=color))
-
-    def enterEvent(self, event) -> None:
-        self._hovered = True
-        self.refresh_theme_styles()
-        super().enterEvent(event)
-
-    def leaveEvent(self, event) -> None:
-        self._hovered = False
-        self.refresh_theme_styles()
-        super().leaveEvent(event)
-
-    def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.add_requested.emit()
-        super().mousePressEvent(event)

@@ -81,6 +81,17 @@ class FlowLayout(QLayout):
     def addItem(self, item: QLayoutItem) -> None:  # noqa: N802  (Qt override)
         self._items.append(item)
 
+    def insertWidget(self, index: int, widget: QWidget) -> None:  # noqa: N802  (matches QBoxLayout)
+        """Place *widget* at *index* rather than at the end.
+
+        For a row that grows in the middle and keeps a control pinned to the end --
+        pills that come and go beside a button that must not walk along the row as they
+        do. ``addWidget`` first, so ``QLayout`` does the reparenting and ownership it
+        alone knows how to do, and then move the item it appended.
+        """
+        self.addWidget(widget)
+        self._items.insert(index, self._items.pop())
+
     def count(self) -> int:
         return len(self._items)
 

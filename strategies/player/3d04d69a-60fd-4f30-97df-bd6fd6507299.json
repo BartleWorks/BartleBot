@@ -1,5 +1,0 @@
-{
-  "id": "3d04d69a-60fd-4f30-97df-bd6fd6507299",
-  "name": "Blade last position",
-  "dsl": "any<blade>[sharp]@ally(2)"
-}

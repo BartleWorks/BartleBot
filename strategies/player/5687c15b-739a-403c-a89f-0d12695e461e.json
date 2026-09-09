@@ -1,5 +1,0 @@
-{
-  "id": "5687c15b-739a-403c-a89f-0d12695e461e",
-  "name": "Mass Feint or blade fourth player",
-  "dsl": "feint mass | any<blade>[sharp]@ally(2)"
-}

@@ -202,6 +202,12 @@ class _Theme:
     font_node_main_size: int = 11
     font_node_sub_size: int = 8
     font_node_hdr_size: int = 7
+    #: The muted lines under a card's name — a launch card's detail and quiet lines, a
+    #: strategy card's description, facets and assignments. Every card in the app had
+    #: this number written into its own stylesheet as ``font-size: 10px``, which is a
+    #: shared decision kept in four places; it is one token now so the cards cannot
+    #: drift apart, and so a custom theme can move all of them together.
+    font_card_sub_size: int = 10
 
     # ------------------------------------------------------------------
     # QColor helpers
@@ -679,6 +685,7 @@ _COLOR_TOKENS: list[str] = [
         "font_node_main_size",
         "font_node_sub_size",
         "font_node_hdr_size",
+        "font_card_sub_size",
         "REGION_PALETTE",
         # rgba() strings that QColorDialog cannot round-trip
         "minimap_bg",

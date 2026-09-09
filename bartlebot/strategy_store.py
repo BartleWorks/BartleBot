@@ -1,18 +1,35 @@
 """File-based storage for the three combat strategy types plus the deck preset library.
 
-Directory layout (version-controlled, relative to project root):
+Every strategy is read and written across an **ordered pair of roots**:
+
+  shipped — the project root (``bartlebot.paths.project_root``), read-only,
+            what the repo ships and version-controls.
+  user    — ``%APPDATA%/Bartleby/BartleBot`` (``bartlebot.shared.vendor.product_dir``),
+            where every app-initiated write lands.
+
+Reads resolve user-first, falling back to shipped: a user file with the same id
+shadows the shipped one. Writes and deletes only ever touch the user root, so
+editing a shipped strategy copies it into the user root on save, keyed by the
+same id — an override, not a fork. Deleting a user copy of a shipped id is how
+"revert to shipped" works; the shipped file itself is never touched by the app.
+
+Directory layout is identical under both roots:
   strategies/player/   — PlayerCombatStrategy  files, named {uuid}.json
   strategies/duel/     — DuelCombatStrategy     files, named {uuid}.json
   strategies/decks/    — DeckPreset             files, named {uuid}.json
   bot_strategies/      — BotCombatStrategy      files, named {uuid}.json
 
-Each function accepts an optional `root` parameter (path to the project root).
-When omitted it defaults to :func:`bartlebot.paths.project_root`, so callers get
-the correct directory regardless of the process's current working directory.
+Every function accepts an optional ``root``, which sets the shipped root and,
+unless ``user_root`` is also given, doubles as the user root too — so a single
+sandbox directory in a test behaves like one flat store, same as before this
+module had two roots. Pass ``user_root`` explicitly to exercise the shadowing
+behavior. With both omitted, the real shipped/user roots are used.
 """
 
 from __future__ import annotations
 
+import re
+from enum import Enum
 from pathlib import Path
 
 from bartlebot.bot.strategy_models import (
@@ -22,10 +39,94 @@ from bartlebot.bot.strategy_models import (
     PlayerCombatStrategy,
 )
 from bartlebot.paths import project_root
+from bartlebot.shared.vendor import product_dir
 
 
-def _project_root(root: str | Path | None) -> Path:
-    return Path(root) if root is not None else project_root()
+class StrategyKind(Enum):
+    """Which of the four stores an id lives in.
+
+    Only needed by the functions that answer a question *about* a file rather
+    than reading or writing one — :func:`origin_of` and the callers that want
+    one code path across kinds. The read/write API stays four explicit function
+    families, which is what nearly every caller wants.
+    """
+
+    PLAYER = "player"
+    DUEL = "duel"
+    BOT = "bot"
+    DECK = "deck"
+
+
+class Origin(Enum):
+    """Where the file behind an id actually is — what makes Delete honest.
+
+    Deleting only ever removes the user copy (see the module docstring), so on a
+    ``SHIPPED_OVERRIDE`` the act is *revert*, not delete: the shipped file
+    reappears underneath. A surface that offers "Delete" on one of those is
+    promising something the store will not do.
+    """
+
+    #: Shipped only. Nothing to delete; editing it will create a user copy.
+    SHIPPED = "shipped"
+    #: A user copy shadowing a shipped file of the same id. Deleting reverts.
+    SHIPPED_OVERRIDE = "shipped_override"
+    #: User-only — created here, or a shipped file that no longer ships. Deleting removes it.
+    USER = "user"
+    #: No file under either root.
+    MISSING = "missing"
+
+
+#: ``base (2)``, ``base (3)`` — the suffix :func:`unique_name` adds and strips.
+_COPY_SUFFIX = re.compile(r"^(?P<stem>.*?)\s*\((?P<n>\d+)\)$")
+
+
+def unique_name(base: str, existing_names) -> str:
+    """``base``, or the first free ``base (2)``, ``base (3)``, … .
+
+    One naming rule for Duplicate and ``+ New`` across all four strategy kinds,
+    so a copy of a copy reads as ``Storm AoE (3)`` rather than
+    ``Storm AoE copy copy``. A ``base`` that already carries a suffix is counted
+    from its stem for that reason — duplicating ``Storm AoE (2)`` gives
+    ``Storm AoE (3)``, not ``Storm AoE (2) (2)``.
+
+    ``existing_names`` is any iterable of names; comparison is exact, since these
+    are user-visible labels and two names differing only in case are two names.
+    """
+    taken = set(existing_names)
+    if base not in taken:
+        return base
+    match = _COPY_SUFFIX.match(base)
+    stem = match.group("stem") if match else base
+    n = int(match.group("n")) + 1 if match else 2
+    while f"{stem} ({n})" in taken:
+        n += 1
+    return f"{stem} ({n})"
+
+
+def _roots(root: str | Path | None, user_root: str | Path | None) -> tuple[Path, Path]:
+    shipped = Path(root) if root is not None else project_root()
+    if user_root is not None:
+        user = Path(user_root)
+    elif root is not None:
+        user = Path(root)
+    else:
+        user = product_dir()
+    return shipped, user
+
+
+def _merged(shipped_dir: Path, user_dir: Path, loader) -> dict[str, object]:
+    """Load every file under both dirs, keyed by id, user entries winning on collision."""
+    by_id: dict[str, object] = {}
+    for d in (shipped_dir, user_dir):
+        if not d.exists():
+            continue
+        for p in sorted(d.glob("*.json")):
+            try:
+                item = loader(p)
+            except Exception:
+                continue
+            by_id[item.id] = item
+    return by_id
 
 
 # ---------------------------------------------------------------------------
@@ -33,34 +134,38 @@ def _project_root(root: str | Path | None) -> Path:
 # ---------------------------------------------------------------------------
 
 
-def _player_dir(root: str | Path | None) -> Path:
-    return _project_root(root) / "strategies" / "player"
+def _player_dir(root: Path) -> Path:
+    return root / "strategies" / "player"
 
 
-def list_player_strategies(root: str | Path | None = None) -> list[PlayerCombatStrategy]:
-    d = _player_dir(root)
-    if not d.exists():
-        return []
-    strategies = []
-    for p in sorted(d.glob("*.json")):
-        try:
-            strategies.append(PlayerCombatStrategy.load(p))
-        except Exception:
-            pass
-    return strategies
+def list_player_strategies(
+    root: str | Path | None = None, user_root: str | Path | None = None
+) -> list[PlayerCombatStrategy]:
+    shipped, user = _roots(root, user_root)
+    by_id = _merged(_player_dir(shipped), _player_dir(user), PlayerCombatStrategy.load)
+    return list(by_id.values())
 
 
-def load_player_strategy(uuid: str, root: str | Path | None = None) -> PlayerCombatStrategy:
-    return PlayerCombatStrategy.load(_player_dir(root) / f"{uuid}.json")
+def load_player_strategy(
+    uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
+) -> PlayerCombatStrategy:
+    shipped, user = _roots(root, user_root)
+    user_path = _player_dir(user) / f"{uuid}.json"
+    if user_path.exists():
+        return PlayerCombatStrategy.load(user_path)
+    return PlayerCombatStrategy.load(_player_dir(shipped) / f"{uuid}.json")
 
 
-def save_player_strategy(s: PlayerCombatStrategy, root: str | Path | None = None) -> None:
-    s.save(_player_dir(root) / f"{s.id}.json")
+def save_player_strategy(
+    s: PlayerCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None
+) -> None:
+    _, user = _roots(root, user_root)
+    s.save(_player_dir(user) / f"{s.id}.json")
 
 
-def delete_player_strategy(uuid: str, root: str | Path | None = None) -> None:
-    path = _player_dir(root) / f"{uuid}.json"
-    path.unlink(missing_ok=True)
+def delete_player_strategy(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
+    _, user = _roots(root, user_root)
+    (_player_dir(user) / f"{uuid}.json").unlink(missing_ok=True)
 
 
 # ---------------------------------------------------------------------------
@@ -68,34 +173,38 @@ def delete_player_strategy(uuid: str, root: str | Path | None = None) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _duel_dir(root: str | Path | None) -> Path:
-    return _project_root(root) / "strategies" / "duel"
+def _duel_dir(root: Path) -> Path:
+    return root / "strategies" / "duel"
 
 
-def list_duel_strategies(root: str | Path | None = None) -> list[DuelCombatStrategy]:
-    d = _duel_dir(root)
-    if not d.exists():
-        return []
-    strategies = []
-    for p in sorted(d.glob("*.json")):
-        try:
-            strategies.append(DuelCombatStrategy.load(p))
-        except Exception:
-            pass
-    return strategies
+def list_duel_strategies(
+    root: str | Path | None = None, user_root: str | Path | None = None
+) -> list[DuelCombatStrategy]:
+    shipped, user = _roots(root, user_root)
+    by_id = _merged(_duel_dir(shipped), _duel_dir(user), DuelCombatStrategy.load)
+    return list(by_id.values())
 
 
-def load_duel_strategy(uuid: str, root: str | Path | None = None) -> DuelCombatStrategy:
-    return DuelCombatStrategy.load(_duel_dir(root) / f"{uuid}.json")
+def load_duel_strategy(
+    uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
+) -> DuelCombatStrategy:
+    shipped, user = _roots(root, user_root)
+    user_path = _duel_dir(user) / f"{uuid}.json"
+    if user_path.exists():
+        return DuelCombatStrategy.load(user_path)
+    return DuelCombatStrategy.load(_duel_dir(shipped) / f"{uuid}.json")
 
 
-def save_duel_strategy(s: DuelCombatStrategy, root: str | Path | None = None) -> None:
-    s.save(_duel_dir(root) / f"{s.id}.json")
+def save_duel_strategy(
+    s: DuelCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None
+) -> None:
+    _, user = _roots(root, user_root)
+    s.save(_duel_dir(user) / f"{s.id}.json")
 
 
-def delete_duel_strategy(uuid: str, root: str | Path | None = None) -> None:
-    path = _duel_dir(root) / f"{uuid}.json"
-    path.unlink(missing_ok=True)
+def delete_duel_strategy(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
+    _, user = _roots(root, user_root)
+    (_duel_dir(user) / f"{uuid}.json").unlink(missing_ok=True)
 
 
 # ---------------------------------------------------------------------------
@@ -103,51 +212,46 @@ def delete_duel_strategy(uuid: str, root: str | Path | None = None) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _bot_strategy_dir(root: str | Path | None) -> Path:
-    return _project_root(root) / "bot_strategies"
+def _bot_strategy_dir(root: Path) -> Path:
+    return root / "bot_strategies"
 
 
-def list_bot_strategies(bot_id: str, root: str | Path | None = None) -> list[BotCombatStrategy]:
+def list_bot_strategies(
+    bot_id: str, root: str | Path | None = None, user_root: str | Path | None = None
+) -> list[BotCombatStrategy]:
     """Return all BotCombatStrategy files that reference the given bot UUID."""
-    d = _bot_strategy_dir(root)
-    if not d.exists():
-        return []
-    strategies = []
-    for p in sorted(d.glob("*.json")):
-        try:
-            bcs = BotCombatStrategy.load(p)
-            if bcs.bot_id == bot_id:
-                strategies.append(bcs)
-        except Exception:
-            pass
-    return strategies
+    return [bcs for bcs in list_all_bot_strategies(root, user_root) if bcs.bot_id == bot_id]
 
 
-def list_all_bot_strategies(root: str | Path | None = None) -> list[BotCombatStrategy]:
+def list_all_bot_strategies(
+    root: str | Path | None = None, user_root: str | Path | None = None
+) -> list[BotCombatStrategy]:
     """Return every BotCombatStrategy file regardless of bot_id."""
-    d = _bot_strategy_dir(root)
-    if not d.exists():
-        return []
-    strategies = []
-    for p in sorted(d.glob("*.json")):
-        try:
-            strategies.append(BotCombatStrategy.load(p))
-        except Exception:
-            pass
-    return strategies
+    shipped, user = _roots(root, user_root)
+    by_id = _merged(_bot_strategy_dir(shipped), _bot_strategy_dir(user), BotCombatStrategy.load)
+    return list(by_id.values())
 
 
-def load_bot_strategy(uuid: str, root: str | Path | None = None) -> BotCombatStrategy:
-    return BotCombatStrategy.load(_bot_strategy_dir(root) / f"{uuid}.json")
+def load_bot_strategy(
+    uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
+) -> BotCombatStrategy:
+    shipped, user = _roots(root, user_root)
+    user_path = _bot_strategy_dir(user) / f"{uuid}.json"
+    if user_path.exists():
+        return BotCombatStrategy.load(user_path)
+    return BotCombatStrategy.load(_bot_strategy_dir(shipped) / f"{uuid}.json")
 
 
-def save_bot_strategy(s: BotCombatStrategy, root: str | Path | None = None) -> None:
-    s.save(_bot_strategy_dir(root) / f"{s.id}.json")
+def save_bot_strategy(
+    s: BotCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None
+) -> None:
+    _, user = _roots(root, user_root)
+    s.save(_bot_strategy_dir(user) / f"{s.id}.json")
 
 
-def delete_bot_strategy(uuid: str, root: str | Path | None = None) -> None:
-    path = _bot_strategy_dir(root) / f"{uuid}.json"
-    path.unlink(missing_ok=True)
+def delete_bot_strategy(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
+    _, user = _roots(root, user_root)
+    (_bot_strategy_dir(user) / f"{uuid}.json").unlink(missing_ok=True)
 
 
 # ---------------------------------------------------------------------------
@@ -155,31 +259,63 @@ def delete_bot_strategy(uuid: str, root: str | Path | None = None) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _deck_preset_dir(root: str | Path | None) -> Path:
-    return _project_root(root) / "strategies" / "decks"
+def _deck_preset_dir(root: Path) -> Path:
+    return root / "strategies" / "decks"
 
 
-def list_deck_presets(root: str | Path | None = None) -> list[DeckPreset]:
-    d = _deck_preset_dir(root)
-    if not d.exists():
-        return []
-    presets = []
-    for p in sorted(d.glob("*.json")):
-        try:
-            presets.append(DeckPreset.load(p))
-        except Exception:
-            pass
-    return presets
+def list_deck_presets(root: str | Path | None = None, user_root: str | Path | None = None) -> list[DeckPreset]:
+    shipped, user = _roots(root, user_root)
+    by_id = _merged(_deck_preset_dir(shipped), _deck_preset_dir(user), DeckPreset.load)
+    return list(by_id.values())
 
 
-def load_deck_preset(uuid: str, root: str | Path | None = None) -> DeckPreset:
-    return DeckPreset.load(_deck_preset_dir(root) / f"{uuid}.json")
+def load_deck_preset(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> DeckPreset:
+    shipped, user = _roots(root, user_root)
+    user_path = _deck_preset_dir(user) / f"{uuid}.json"
+    if user_path.exists():
+        return DeckPreset.load(user_path)
+    return DeckPreset.load(_deck_preset_dir(shipped) / f"{uuid}.json")
 
 
-def save_deck_preset(preset: DeckPreset, root: str | Path | None = None) -> None:
-    preset.save(_deck_preset_dir(root) / f"{preset.id}.json")
+def save_deck_preset(preset: DeckPreset, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
+    _, user = _roots(root, user_root)
+    preset.save(_deck_preset_dir(user) / f"{preset.id}.json")
 
 
-def delete_deck_preset(uuid: str, root: str | Path | None = None) -> None:
-    path = _deck_preset_dir(root) / f"{uuid}.json"
-    path.unlink(missing_ok=True)
+def delete_deck_preset(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
+    _, user = _roots(root, user_root)
+    (_deck_preset_dir(user) / f"{uuid}.json").unlink(missing_ok=True)
+
+
+# ---------------------------------------------------------------------------
+# Where a file actually lives
+# ---------------------------------------------------------------------------
+
+_KIND_DIRS = {
+    StrategyKind.PLAYER: _player_dir,
+    StrategyKind.DUEL: _duel_dir,
+    StrategyKind.BOT: _bot_strategy_dir,
+    StrategyKind.DECK: _deck_preset_dir,
+}
+
+
+def origin_of(
+    kind: StrategyKind, uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
+) -> Origin:
+    """Which root(s) hold ``uuid`` — see :class:`Origin`.
+
+    The one place a surface can ask whether removing a strategy deletes it or
+    merely reverts it, without reaching for the paths itself. Returns
+    :attr:`Origin.USER` for both roots when they are the same directory (the
+    single-root sandbox a test passes as ``root`` alone), since nothing is
+    shipped in that arrangement and everything written is the user's.
+    """
+    shipped, user = _roots(root, user_root)
+    dir_fn = _KIND_DIRS[kind]
+    in_user = (dir_fn(user) / f"{uuid}.json").exists()
+    if shipped == user:
+        return Origin.USER if in_user else Origin.MISSING
+    in_shipped = (dir_fn(shipped) / f"{uuid}.json").exists()
+    if in_shipped:
+        return Origin.SHIPPED_OVERRIDE if in_user else Origin.SHIPPED
+    return Origin.USER if in_user else Origin.MISSING

@@ -734,9 +734,17 @@ class PickerButton(QToolButton):
     The popup is rebuilt on each click rather than kept: its rows carry counts that
     go stale, and a picker is opened far too rarely for building twenty widgets to
     be worth caching.
+
+    Two signals, because "changing" and "settled" are different questions.
+    ``selection_changed`` fires on every toggle, which is what a filter bar wants --
+    the results should follow the checkbox. ``committed`` fires once, when the popup
+    closes. A caller whose reaction is expensive, or which rebuilds the widget tree
+    this button lives in, must use ``committed``: reacting per toggle would destroy
+    the button while its own popup is still open on top of it.
     """
 
     selection_changed = pyqtSignal(list)
+    committed = pyqtSignal(list)
 
     def __init__(
         self,
@@ -816,6 +824,7 @@ class PickerButton(QToolButton):
 
     def _on_popup_closed(self) -> None:
         self._popup_closed_at = time.monotonic()
+        self.committed.emit(self.selection())
 
     def _on_selection_changed(self, keys: list) -> None:
         self._selected = list(keys)

@@ -233,6 +233,43 @@ def test_toggling_in_the_popup_reaches_the_button(qapp):
     btn._popup.close()
 
 
+def test_committed_holds_until_the_popup_closes(qapp):
+    """Two signals for two questions. A caller that rebuilds the widget tree this
+    button lives in cannot react per toggle -- it would destroy the button while its
+    own popup is still open on top of it -- so it waits for this one."""
+    btn = PickerButton("T")
+    btn.set_sections(SECTIONS)
+    live, settled = [], []
+    btn.selection_changed.connect(live.append)
+    btn.committed.connect(settled.append)
+
+    btn._open()
+    btn._popup._on_row_toggled("kale", True)
+    btn._popup._on_row_toggled("apple", True)
+
+    assert len(live) == 2
+    assert settled == []
+
+    btn._popup.close()
+
+    assert settled == [["apple", "kale"]]
+
+
+def test_committed_fires_even_when_nothing_was_toggled(qapp):
+    """Closing an untouched popup is a commit of the selection it opened with. The
+    caller compares against what it had rather than the button guessing."""
+    btn = PickerButton("T")
+    btn.set_sections(SECTIONS)
+    btn.set_selection(["kale"])
+    settled = []
+    btn.committed.connect(settled.append)
+
+    btn._open()
+    btn._popup.close()
+
+    assert settled == [["kale"]]
+
+
 def test_button_survives_a_theme_change(qapp):
     btn = PickerButton("T")
     btn.setStyleSheet("")

@@ -1,5 +1,0 @@
-{
-  "id": "ffb724ab-bdad-45e2-8629-33ce50d67298",
-  "name": "Frenzy into Lord/Bunyip/Tempest",
-  "dsl": "frenzy | lord[\"Epic - Amulet\"][epic] | bunyip[\"Epic - Amulet\"][epic] | tempest[\"Epic - Amulet\"][epic]"
-}

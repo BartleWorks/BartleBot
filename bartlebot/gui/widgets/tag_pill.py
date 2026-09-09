@@ -16,6 +16,11 @@ Both take their colour from the same call, so the sizes differ and the hues neve
 
 :class:`NeutralPill` is the odd one out and lives here for the shape rather than the
 palette: a caption that wants to look like a pill without claiming a tag colour.
+:class:`ActionPill` is that one with a click behind it -- same metrics, so a pill that
+leads somewhere and a pill that only names something are not two different shapes.
+
+:class:`AccentPill` is a third: the same metrics again, outlined in the accent, for a
+badge that has to be told apart from the pills it shares a row with.
 
 :class:`AccountPill` is the other odd one: it claims a colour, but from the account
 palette rather than the tag one, and it wears it as an outline instead of a fill.
@@ -25,13 +30,21 @@ as one.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QEvent, Qt, pyqtSignal
-from PyQt6.QtWidgets import QLabel, QPushButton, QWidget
+from PyQt6.QtCore import QEvent, QSize, Qt, pyqtSignal
+from PyQt6.QtGui import QFontMetrics
+from PyQt6.QtWidgets import QLabel, QPushButton, QSizePolicy, QWidget
 
 from bartlebot.bot_tags import tag_group
 from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.tag_picker import group_accent
+
+#: The inert pill's own metrics, shared with :class:`ActionPill` so a clickable pill and
+#: a descriptive one are the same shape -- which is the whole reason the clickable one
+#: exists rather than a chip.
+_PILL_HEIGHT = 14
+_PILL_FONT_PX = 9
+_PILL_PAD_X = 6
 
 
 def pill_style(bg: str, fg: str, *, font_size: int = 9, radius: int = 7, pad: str = "1px 6px") -> str:
@@ -161,6 +174,81 @@ class NeutralChip(QPushButton):
             self._restyle()
 
 
+class ActionPill(QPushButton):
+    """A grey pill that runs a verb when clicked, and wears no ✕.
+
+    :class:`NeutralPill`'s exact shape and colour with a hit target behind it, so a row
+    of these and a row of inert pills read as the same kind of thing. The Combat tab's
+    Bot Default Strategy card is the case: it condenses every fight that has no override
+    of its own into one card, one pill each, and a click on a pill opens the strategy
+    picker for that fight — the click that used to land on the fight's own condensed row.
+
+    No ✕, unlike :class:`NeutralChip`. A cross means "remove the thing this names", which
+    for a fight would be an offer to delete a node out of the bot; the pill *leads* to
+    the fight instead of destroying it.
+
+    Carries a *key* beside its text — a state id, where the label is the fight's display
+    name — because a card reuses its pills rather than rebuilding them, and an index into
+    a list of labels is not a stable way to say which one was clicked.
+    """
+
+    activated = pyqtSignal(str)  # this pill's key
+
+    def __init__(self, text: str = "", key: str = "", *, parent: QWidget | None = None) -> None:
+        super().__init__(text, parent)
+        self._key = key
+        self._applying_style = False
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFixedHeight(_PILL_HEIGHT)
+        # Sized from the text rather than from the style. A ``QPushButton``'s own size
+        # hint carries the platform's minimum button width -- 80px on Windows -- which
+        # would make four pills wider than the sidebar they wrap inside.
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        # On the widget as well as in the stylesheet: a stylesheet ``font-size`` never
+        # reaches ``QWidget.font()``, so :meth:`sizeHint` would measure at the base size
+        # and leave every pill several pixels too wide.
+        font = self.font()
+        font.setPixelSize(_PILL_FONT_PX)
+        font.setBold(True)
+        self.setFont(font)
+        self._restyle()
+        self.clicked.connect(lambda: self.activated.emit(self._key))
+
+    @property
+    def key(self) -> str:
+        return self._key
+
+    def set_pill(self, text: str, key: str) -> None:
+        """Re-point this pill at another thing, keeping the widget."""
+        self._key = key
+        self.setText(text)
+        self.updateGeometry()
+
+    def sizeHint(self) -> QSize:
+        return QSize(QFontMetrics(self.font()).horizontalAdvance(self.text()) + 2 * _PILL_PAD_X, _PILL_HEIGHT)
+
+    def _restyle(self) -> None:
+        if self._applying_style:  # see TagPill._restyle
+            return
+        self._applying_style = True
+        try:
+            base = pill_style(
+                THEME.pill_neutral_bg, THEME.pill_text, font_size=_PILL_FONT_PX, pad=f"0px {_PILL_PAD_X}px"
+            )
+            self.setStyleSheet(
+                f"QPushButton {{ border: none; {base} }}"
+                f"QPushButton:hover:enabled {{ background: {THEME.edge_selected}; }}"
+                f"QPushButton:disabled {{ color: {THEME.text_subtle}; }}"
+            )
+        finally:
+            self._applying_style = False
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._restyle()
+
+
 class NeutralPill(QLabel):
     """A small, inert, grey pill for a caption that is not a tag.
 
@@ -181,7 +269,7 @@ class NeutralPill(QLabel):
         super().__init__(text, parent)
         self._applying_style = False
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setFixedHeight(14)
+        self.setFixedHeight(_PILL_HEIGHT)
         self._restyle()
 
     def _restyle(self) -> None:
@@ -190,6 +278,50 @@ class NeutralPill(QLabel):
         self._applying_style = True
         try:
             self.setStyleSheet(pill_style(THEME.pill_neutral_bg, THEME.pill_text))
+        finally:
+            self._applying_style = False
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._restyle()
+
+
+class AccentPill(QLabel):
+    """An inert, accent-outlined pill marking what the row it leads is.
+
+    :class:`NeutralPill`'s metrics with the accent's outline instead of a grey fill, for
+    a badge that shares a row with pills naming *things*. The Combat tab's default
+    strategy card is the case: its pill row is ``Default`` followed by a pill per fight,
+    and the two have to be told apart at a glance because they are different kinds of
+    word -- one qualifies the card, the rest are its contents.
+
+    Outlined rather than filled, for :class:`AccountPill`'s reason turned around. There
+    the outline keeps four saturated fills off one row; here it is that a *filled* accent
+    pill beside grey ones reads as the loudest item in the list rather than as a label on
+    it. It is also the affordance boundary on that card, where the fight pills are
+    :class:`ActionPill`\\ s: no fill, no hover, no pointing hand, nothing to click.
+    """
+
+    def __init__(self, text: str, parent: QWidget | None = None) -> None:
+        super().__init__(text, parent)
+        self._applying_style = False
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setFixedHeight(_PILL_HEIGHT)
+        self._restyle()
+
+    def _restyle(self) -> None:
+        if self._applying_style:  # see TagPill._restyle
+            return
+        self._applying_style = True
+        try:
+            # One pixel of the padding goes to the border, so the text sits at the same
+            # x inside this pill as inside the filled ones beside it.
+            self.setStyleSheet(
+                f"background: transparent; color: {THEME.accent};"
+                f" font-size: {_PILL_FONT_PX}px; font-weight: bold; border-radius: 7px;"
+                f" border: 1px solid {THEME.accent}; padding: 0px {_PILL_PAD_X - 1}px;"
+            )
         finally:
             self._applying_style = False
 
