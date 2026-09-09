@@ -14,7 +14,9 @@ Combat is the one part of a bot that *must* vary per user, because it depends on
 
 The middle tier is the largest, and it is user-owned work. Putting it behind `BotMode.EDIT` would gate a user-owned edit behind an author-owned mode and force a user into graph editing to answer a question about their own wizards. So combat editing has its own edit surface, and the tab that opens it stays a Run-mode surface.
 
-**Assemble must show no DSL.** An assignment picks a Player Strategy from a combo box, and `(built-in default)` is a real, named choice rather than an empty field. Author is one level deeper, behind `Custom DSL…` — never a monospace box in front of a user who will never type into one. Any change that surfaces DSL by default has collapsed the two tiers back together.
+**Assemble must show no DSL.** An assignment picks a Player Strategy from the menu behind its card's search verb, and `(built-in default)` is a real, named choice rather than an empty field. Author is one level deeper, behind `Custom DSL…` — never a monospace box in front of a user who will never type into one. Any change that surfaces DSL by default has collapsed the two tiers back together.
+
+That is also what the assignment card's fold is for. The school, the note and the DSL box live behind the pencil, so what an assignment shows at rest is the two things a reader is scanning for — which players, and what they do. The one exception is a DSL that does not parse: the card wears the `⚠` mark and the error colour on its title *while folded*, because everything else the fold hides is optional and that is not.
 
 ## Five levels, and what each one is a fact about
 
@@ -70,8 +72,10 @@ It is **master-detail, not a popup, and not both**. `PickerPopup` is 400×420 an
 
 Two things fall out of the tabs being pages of one working set:
 
-- **The assignment selector reads its options from the working set**, so a Player Strategy created on the sibling tab is selectable immediately. That is what removed the need for a picker opened on top of a picker.
-- **Promotion is the dialog's job, not the row's.** `Save as Player Strategy…` emits a request; the dialog names it, creates it in the working set, and links the row back to it. A row that wrote its own file would be writing outside the boundary.
+- **The assignment menu reads its options from the working set**, so a Player Strategy created on the sibling tab is selectable immediately. That is what removed the need for a picker opened on top of a picker.
+- **Promotion is the dialog's job, not the card's.** `Save as Player Strategy…` emits a request; the dialog names it, creates it in the working set, and links the card back to it. A card that wrote its own file would be writing outside the boundary.
+
+**Name, description, usage and origin belong to the page, not to the editor under it.** All three tabs draw them in one shared `AboutSection`. They were drawn three different ways before — label-above on the Player tab, label-beside on the Deck tab, and split across two widgets on the Duel tab, where the name belonged to a wrapper pane and the description to the `DuelConfig` beneath it. They identify the *library entry*, which is a thing all three kinds have; what varies between tabs is what sits below.
 
 `BotStrategyPicker` is the one picker left, and it picks the one kind the library does not own: a `BotCombatStrategy` is bot-scoped and edited on the Combat tab itself. `StrategyWorkingSet` holds bot strategies **read-only**, and only to answer *who references what* for a usage count and a delete confirmation.
 

@@ -91,6 +91,76 @@ on `aboutToHide`. The swap cannot happen at construction: a menu built in a widg
 
 A menu with no parent, or one parented directly to a window or dialog, is already fine.
 
+## Buttons: `ActionButton` and its four weights
+
+Use `ActionButton` (`widgets/action_button.py`), not a bare `QPushButton`. Fusion's
+default chrome is a beveled 3D frame sized to its own label, which flattens SVG icons
+against it and makes a row of buttons size each one to its own text.
+
+`ActionStyle` says how much weight a button carries, on Bootstrap's model and for its
+reason — a row of buttons cannot say which one it expects unless they are drawn at
+different weights:
+
+| style | look | for |
+|---|---|---|
+| `PRIMARY` | filled with `accent` | the one thing the surface expects you to do |
+| `SECONDARY` | outlined in `accent`, unfilled | a real alternative to it |
+| `TERTIARY` | no accent — **the default** | everything else |
+| `CAUTION` | filled with `error` | a verb that costs something to undo |
+
+Three rules that are easy to get wrong:
+
+- **`TERTIARY` is the default, and a style is opted into.** Most rows here are
+  equal-weight verbs beside a destructive one (`+ New` / `Duplicate` / `Delete`), and
+  nothing in such a row should look more important than the dangerous button next to
+  it. At most one `PRIMARY` per surface.
+- **A weight varies colour and nothing else.** Every style shares the padding, the
+  radius, the height and one disabled look. A style that also changed the shape would
+  stop being a weight.
+- **`fill=False` for a trailing pair.** These expand by default so a row of them splits
+  its width evenly. A dialog's `[Cancel] [Save]` sits *after* a stretch, and an
+  expanding button there eats the stretch and spreads the pair across the whole footer.
+
+Issue #47 is the rollout; `combat_strategies/dialog.py` is the worked example.
+
+## Section headings
+
+Three, and they are not interchangeable:
+
+| widget | look | for |
+|---|---|---|
+| `SidebarSection` | disclosure triangle + bold label | a region that **folds** |
+| `CardColumn`'s heading | centred bold label + full-width rule | a **column of cards** |
+| `RuleHeading` (`widgets/rule_heading.py`) | left bold label + rule to the right | the regions of a **form** |
+
+A triangle promises a fold, so do not use `SidebarSection` for a region that does not
+have one; a centred heading over left-aligned fields reads as belonging to something
+else. `RuleHeading` draws its rule from `THEME.border` rather than as a sunken `QFrame`
+on purpose — Qt draws a sunken HLine from the palette's Mid/Light pair, which the dark
+theme leaves all but invisible against `surface`.
+
+## Account colours, and what a coloured thing may claim
+
+A palette slot per account (`shared/account_slots.py`), resolved to a colour against the
+live theme (`gui/account_accent.py`). It is a **match target** — find the card wearing
+the same hue — never an identifier, and three rules keep it one:
+
+- **Hold the slot, not the hex.** A widget that stores `account_accent(3)` repaints
+  stale after a theme switch, with nothing in any stylesheet to grep for.
+- **Outline and tint, not a saturated fill.** Four filled pills in a row make the row
+  the loudest thing on the screen when the point of the surface is a *name*. See
+  `AccountPill`.
+- **No account known means no colour, never a default one.** A colour is a claim about
+  which account is behind something; picking one for an unidentified client, or for an
+  account that has been deleted, puts a hue on screen that matches nothing anywhere
+  else. `account_stripe_keys` returns `None` for exactly these, and callers must keep it.
+
+A **player slot** is coloured but never renamed: `P1` stays `P1` on the pill and the
+combat-order chip, with the account's name in the tooltip. A `DuelConfig` stores slots,
+is authored offline and outlives whichever account is in slot 1 tonight — a pill reading
+`Malvin` would be a claim the stored data does not make, and the same card would read
+differently depending on what happened to be hooked. Issue #40 is the rollout.
+
 ## Never show a widget before it has a parent
 
 `setVisible(True)` — or `show()` — on a widget with no parent makes that widget a
