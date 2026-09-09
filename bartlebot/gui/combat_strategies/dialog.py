@@ -122,12 +122,16 @@ _HAYSTACK_ROLE = Qt.ItemDataRole.UserRole + 1
 _REVERT_TEXT = "Revert to shipped"
 _DELETE_TEXT = "Delete"
 
-#: How far a tab's contents sit inside the tab pane, and how far the detail pane sits
-#: from the splitter between it and the card list. Two numbers rather than one because
-#: the splitter handle is already a few pixels of its own: the gap the eye sees beside a
-#: handle is the handle plus this, while the gap beside the pane border is only this.
+#: How far a tab's contents sit inside the tab pane, and how far *each* pane sits from
+#: the splitter between them. Two numbers rather than one because the splitter handle is
+#: already a few pixels of its own: the gap the eye sees beside a handle is the handle
+#: plus this, while the gap beside the pane border is only this.
+#:
+#: The gutter is applied on **both** sides. Giving it to the detail pane alone left the
+#: card list's filter box, its scrollbar and its button row all butted against the
+#: divider — and a scrollbar pressed against a vertical line reads as part of the line.
 _PAGE_INSET = 10
-_DETAIL_GUTTER = 12
+_SPLITTER_GUTTER = 12
 
 
 def summary_haystack(summary: StrategySummary) -> str:
@@ -305,7 +309,7 @@ class _KindPage(QWidget):
     def _build_master(self) -> QWidget:
         panel = QWidget()
         box = QVBoxLayout(panel)
-        box.setContentsMargins(0, 0, 0, 0)
+        box.setContentsMargins(0, 0, _SPLITTER_GUTTER, 0)
         box.setSpacing(4)
 
         self._filter = SearchLineEdit("Filter…")
@@ -337,7 +341,7 @@ class _KindPage(QWidget):
     def _build_detail(self) -> QWidget:
         panel = QWidget()
         box = QVBoxLayout(panel)
-        box.setContentsMargins(_DETAIL_GUTTER, 0, 0, 0)
+        box.setContentsMargins(_SPLITTER_GUTTER, 0, 0, 0)
         box.setSpacing(6)
 
         self._about = AboutSection()
