@@ -32,6 +32,7 @@ from bartlebot.bot.strategy_models import (
 )
 from bartlebot.gui.combat_strategies.assignment_card import CUSTOM_DATA, strategy_menu_entries
 from bartlebot.gui.combat_strategies.dialog import (
+    KIND_LABELS,
     NEW_NAMES,
     CombatStrategyDialog,
     DialogMode,
@@ -423,3 +424,170 @@ def test_every_kind_gets_a_page(qapp, roots):
 
     assert dlg._tabs.count() == 3
     assert all(isinstance(dlg._tabs.widget(i), _KindPage) for i in range(3))
+
+
+# ---------------------------------------------------------------------------
+# The About section — one arrangement of the same two fields on all three tabs
+#
+# They used to be drawn three ways: label-above on the Player tab, label-beside
+# on the Deck tab, and split across two widgets on the Duel tab, where the name
+# belonged to a wrapper pane and the description to the DuelConfig underneath it.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("kind", list(KIND_LABELS))
+def test_every_tab_has_an_about_section(qapp, roots, kind):
+    dlg = _dialog(roots, kind=kind)
+
+    assert dlg._pages[kind].about is not None
+
+
+def _one_of_each(roots):
+    """A saved entry of every kind, so each tab has something selected."""
+    from bartlebot.strategy_store import save_deck_preset  # noqa: PLC0415
+
+    shipped, _user = roots
+    made = {
+        StrategyKind.DUEL: DuelCombatStrategy(name="Boss"),
+        StrategyKind.PLAYER: PlayerCombatStrategy(name="Blade"),
+        StrategyKind.DECK: DeckPreset(name="Storm 60"),
+    }
+    save_duel_strategy(made[StrategyKind.DUEL], shipped)
+    save_player_strategy(made[StrategyKind.PLAYER], shipped)
+    save_deck_preset(made[StrategyKind.DECK], shipped)
+    return made
+
+
+@pytest.mark.parametrize("kind", list(KIND_LABELS))
+def test_the_about_section_loads_the_selected_entry_on_every_tab(qapp, roots, kind):
+    entry = _one_of_each(roots)[kind]
+    dlg = _dialog(roots, kind=kind, current_id=entry.id)
+
+    assert dlg._pages[kind].about._name_edit.text() == entry.name
+
+
+@pytest.mark.parametrize("kind", list(KIND_LABELS))
+def test_editing_the_name_writes_through_on_every_tab(qapp, roots, kind):
+    entry = _one_of_each(roots)[kind]
+    dlg = _dialog(roots, kind=kind, current_id=entry.id)
+
+    dlg._pages[kind].about._name_edit.setText("Renamed")
+
+    assert dlg._ws.get(kind, entry.id).name == "Renamed"
+
+
+@pytest.mark.parametrize("kind", list(KIND_LABELS))
+def test_editing_the_description_writes_through_on_every_tab(qapp, roots, kind):
+    entry = _one_of_each(roots)[kind]
+    dlg = _dialog(roots, kind=kind, current_id=entry.id)
+
+    dlg._pages[kind].about._description_edit.setText("what it is for")
+
+    assert dlg._ws.get(kind, entry.id).description == "what it is for"
+
+
+def test_an_emptied_name_leaves_the_last_one_standing(qapp, roots):
+    """A nameless entry is a nameless card in the list with no way back to it."""
+    entry = _one_of_each(roots)[StrategyKind.PLAYER]
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER, current_id=entry.id)
+
+    dlg._pages[StrategyKind.PLAYER].about._name_edit.setText("")
+
+    assert dlg._ws.get(StrategyKind.PLAYER, entry.id).name == "Blade"
+
+
+def test_loading_an_entry_is_not_itself_an_edit(qapp, roots):
+    """``setText`` emits ``textChanged``; the suppress guard is the only thing keeping a
+    freshly opened strategy from being reported dirty."""
+    entry = _one_of_each(roots)[StrategyKind.DUEL]
+    dlg = _dialog(roots, kind=StrategyKind.DUEL)
+    page = dlg._pages[StrategyKind.DUEL]
+    seen = []
+    page.about.changed.connect(lambda: seen.append(True))
+
+    page.select(entry.id)
+
+    assert seen == []
+
+
+def test_the_about_section_carries_the_origin_note_for_a_shipped_entry(qapp, roots):
+    entry = _one_of_each(roots)[StrategyKind.DUEL]
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=entry.id)
+
+    assert "Ships with BartleBot" in dlg._pages[StrategyKind.DUEL].about.origin_text
+
+
+def test_a_user_owned_entry_has_no_origin_note_to_make(qapp, roots):
+    dlg = _dialog(roots, kind=StrategyKind.DUEL)
+    page = dlg._pages[StrategyKind.DUEL]
+
+    page._on_new()
+
+    assert page.about.origin_text == ""
+
+
+def test_deselecting_empties_the_about_section_with_the_editor(qapp, roots):
+    entry = _one_of_each(roots)[StrategyKind.PLAYER]
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER, current_id=entry.id)
+    page = dlg._pages[StrategyKind.PLAYER]
+
+    page.select(None)
+
+    assert page.about._name_edit.text() == ""
+    assert page.about.usage_text == ""
+
+
+# ---------------------------------------------------------------------------
+# Account colours reach the duel tab's slot pills and combat-order chips (#40)
+# ---------------------------------------------------------------------------
+
+
+def test_the_slot_colours_the_dialog_was_given_reach_the_assignment_cards(qapp, roots):
+    from bartlebot.gui.account_accent import account_accent  # noqa: PLC0415
+
+    dcs = DuelCombatStrategy(name="Boss", player_assignments=[PlayerAssignment(players=[1])])
+    save_duel_strategy(dcs, roots[0])
+
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id, player_color_keys=[4, 5, 6, 7])
+
+    card = dlg._pages[StrategyKind.DUEL]._editor.cards[0]
+    assert account_accent(4) in card.pills.pills[0].styleSheet()
+
+
+def test_a_dialog_given_no_colours_draws_uncoloured_pills(qapp, roots):
+    """Authoring with nothing hooked is the normal case and must not invent a colour."""
+    from bartlebot.gui.account_accent import account_accent  # noqa: PLC0415
+
+    dcs = DuelCombatStrategy(name="Boss", player_assignments=[PlayerAssignment(players=[1])])
+    save_duel_strategy(dcs, roots[0])
+
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
+
+    card = dlg._pages[StrategyKind.DUEL]._editor.cards[0]
+    assert account_accent(4) not in card.pills.pills[0].styleSheet()
+
+
+def test_an_assignment_added_later_gets_the_colours_too(qapp, roots):
+    """The keys are held, not just applied: cards are built long after the dialog opens."""
+    from bartlebot.gui.account_accent import account_accent  # noqa: PLC0415
+
+    dcs = DuelCombatStrategy(name="Boss")
+    save_duel_strategy(dcs, roots[0])
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id, player_color_keys=[4, 5, 6, 7])
+    editor = dlg._pages[StrategyKind.DUEL]._editor
+
+    editor._on_add_assignment()
+
+    assert account_accent(4) in editor.cards[0].pills.pills[0].styleSheet()
+
+
+def test_the_colours_reach_the_combat_order_chips_as_well(qapp, roots):
+    from bartlebot.gui.account_accent import account_accent  # noqa: PLC0415
+
+    dcs = DuelCombatStrategy(name="Boss", combat_order=[1, 2, 3, 4])
+    save_duel_strategy(dcs, roots[0])
+
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id, player_color_keys=[4, 5, 6, 7])
+
+    chips = dlg._pages[StrategyKind.DUEL]._editor._order_widget._chips
+    assert account_accent(4) in next(c for c in chips if c._player_num == 1).styleSheet()
