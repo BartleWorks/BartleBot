@@ -1,5 +1,0 @@
-{
-  "id": "df7770ce-b2f6-47e4-ad40-1d6e44b267b9",
-  "name": "Frenzy into any AoE",
-  "dsl": "any<aura & out_damage> | any<aoe>[epic]"
-}
