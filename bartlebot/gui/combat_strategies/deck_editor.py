@@ -16,9 +16,7 @@ from __future__ import annotations
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import (
     QFrame,
-    QHBoxLayout,
     QLabel,
-    QLineEdit,
     QScrollArea,
     QVBoxLayout,
     QWidget,
@@ -37,25 +35,15 @@ class DeckPresetEditor(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._preset: DeckPreset | None = None
-        self._suppress = False
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
 
-        name_row = QHBoxLayout()
-        name_row.addWidget(QLabel("Name:"))
-        self._name_edit = QLineEdit()
-        self._name_edit.textChanged.connect(self._on_changed)
-        name_row.addWidget(self._name_edit, 1)
-        layout.addLayout(name_row)
-
-        layout.addWidget(QLabel("Description:"))
-        self._description_edit = QLineEdit()
-        self._description_edit.setPlaceholderText("What this deck is for (optional)")
-        self._description_edit.textChanged.connect(self._on_changed)
-        layout.addWidget(self._description_edit)
-
+        # Name and description moved up into the detail pane's shared *About* section —
+        # see :class:`~bartlebot.gui.combat_strategies.dialog.AboutSection`. What is left
+        # here is the one thing this editor was always really showing: what the preset
+        # holds.
         layout.addWidget(QLabel("Cards:"))
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -73,28 +61,11 @@ class DeckPresetEditor(QWidget):
 
     def load(self, preset: DeckPreset) -> None:
         self._preset = preset
-        self._suppress = True
-        self._name_edit.setText(preset.name)
-        self._description_edit.setText(preset.description)
-        self._suppress = False
         self._rebuild_cards()
 
     def clear(self) -> None:
         self._preset = None
-        self._suppress = True
-        self._name_edit.clear()
-        self._description_edit.clear()
-        self._suppress = False
         self._rebuild_cards()
-
-    def _on_changed(self) -> None:
-        if self._suppress or self._preset is None:
-            return
-        # As in PlayerStrategyEditor: an empty name would leave a nameless card
-        # in the list with no way back to it.
-        self._preset.name = self._name_edit.text().strip() or self._preset.name
-        self._preset.description = self._description_edit.text()
-        self.changed.emit()
 
     def _rebuild_cards(self) -> None:
         while self._cards_layout.count():

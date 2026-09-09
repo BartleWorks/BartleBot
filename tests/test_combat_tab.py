@@ -1813,3 +1813,84 @@ def test_deck_tooltips_name_the_run_lock(qapp):
     card = tab._decks_section.card(1)
     assert card.action_button(_IMPORT_DECK).toolTip() == LOCKED
     assert card.action_button(_APPLY_DECK).toolTip() == LOCKED
+
+
+# ---------------------------------------------------------------------------
+# Which account is behind each player slot, for the combat dialog's pills (#40)
+#
+# A callable rather than a pushed value, and asked at the moment the dialog opens.
+# An account identity is learned some time after its client is hooked and nothing
+# announces it arriving, so a value pushed in when the client *set* last changed
+# is stale exactly when someone hooks four clients and opens this dialog.
+# ---------------------------------------------------------------------------
+
+
+def test_a_tab_with_no_account_source_resolves_to_no_colours(qapp):
+    """The normal state in tests and in a session with nothing running."""
+    tab = CombatTab()
+
+    assert tab._player_color_keys() == ([], [])
+
+
+def test_the_source_is_asked_at_resolve_time_rather_than_at_install_time(qapp):
+    tab = CombatTab()
+    answers = [[]]
+    tab.set_player_account_source(lambda: answers[0])
+
+    answers[0] = ["someone@example.com"]
+
+    keys, _labels = tab._player_color_keys()
+    assert len(keys) == 1
+
+
+def test_a_known_account_resolves_to_its_palette_slot(qapp):
+    from bartlebot.gui.account_accent import account_color_keys  # noqa: PLC0415
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    accounts = [{"username": "a@example.com"}, {"username": "b@example.com"}]
+    SettingsManager.instance().accounts = accounts
+    tab = CombatTab()
+    tab.set_player_account_source(lambda: ["b@example.com", "a@example.com"])
+
+    keys, _labels = tab._player_color_keys()
+
+    assert keys == [account_color_keys(accounts)["b@example.com"], account_color_keys(accounts)["a@example.com"]]
+
+
+def test_an_unidentified_client_gets_no_slot_rather_than_a_default(qapp):
+    """A colour here is a claim about which account is running, and there is none."""
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    SettingsManager.instance().accounts = [{"username": "a@example.com"}]
+    tab = CombatTab()
+    tab.set_player_account_source(lambda: [None, "a@example.com"])
+
+    keys, labels = tab._player_color_keys()
+
+    assert keys[0] is None
+    assert labels[0] == ""
+
+
+def test_a_deleted_account_gets_no_slot_either(qapp):
+    """It has no colour anywhere else on screen, so one here would match nothing."""
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    SettingsManager.instance().accounts = [{"username": "a@example.com"}]
+    tab = CombatTab()
+    tab.set_player_account_source(lambda: ["gone@example.com"])
+
+    keys, _labels = tab._player_color_keys()
+
+    assert keys == [None]
+
+
+def test_the_label_is_the_account_s_alias_when_it_has_one(qapp):
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    SettingsManager.instance().accounts = [{"username": "a@example.com", "alias": "Main"}]
+    tab = CombatTab()
+    tab.set_player_account_source(lambda: ["a@example.com"])
+
+    _keys, labels = tab._player_color_keys()
+
+    assert labels == ["Main"]

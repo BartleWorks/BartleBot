@@ -200,6 +200,7 @@ def _str_provider_class():
     return _StrCombatConfigProvider
 
 
+@lru_cache(maxsize=512)
 def validate_dsl(dsl: str) -> str | None:
     """Return a one-line parse error for ``dsl``, or None if it is valid.
 
@@ -210,6 +211,13 @@ def validate_dsl(dsl: str) -> str | None:
 
     Pure — no client, no Qt, no disk.  Used to surface syntax errors in the pre-run
     warning dialog instead of mid-fight.
+
+    Cached because it is not cheap: a parse plus a transform is ~60-90 ms for a
+    typical preset, and the strategy dialog re-summarizes a whole list whenever a
+    card is redrawn.  The grammar is fixed for the life of the process, so the
+    answer for a given string never changes.  ``maxsize`` is generous on purpose —
+    typing in the DSL editor mints a new string per keystroke, and evicting the
+    saved strategies to hold those would defeat the point.
     """
     if not dsl or not dsl.strip():
         return None

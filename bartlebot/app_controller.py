@@ -210,6 +210,14 @@ class AppController(QObject):
         w.left_sidebar.combat_tab.import_deck_requested.connect(self._on_import_deck_requested)
         w.left_sidebar.combat_tab.apply_deck_requested.connect(self._on_apply_deck_requested)
 
+        # Which account is behind each player slot, for the combat dialog's slot pills.
+        # A callable rather than a pushed value: an account identity is learned some time
+        # after its client is hooked and nothing announces it arriving, so the answer is
+        # taken at the moment the dialog opens. See CombatTab.set_player_account_source.
+        w.left_sidebar.combat_tab.set_player_account_source(
+            lambda: [self._client_manager.account_for(c) for c in self._client_manager.clients]
+        )
+
         # Client list changes → start button state. The game view is not connected here:
         # a tile's position follows its slot rather than its player index, so ClientManager
         # syncs the view itself, on every detection tick, including ticks where the client

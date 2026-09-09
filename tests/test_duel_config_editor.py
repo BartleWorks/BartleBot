@@ -10,15 +10,16 @@ it, to prove that split actually holds.
 """
 
 import pytest
-from PyQt6.QtWidgets import QApplication, QPlainTextEdit
 
 from bartlebot.bot.strategy_models import DuelConfig, PlayerAssignment, PlayerCombatStrategy
-from bartlebot.gui.combat_strategies.duel_editor import (
-    _CUSTOM_DATA,
-    _DEFAULT_DATA,
-    DuelConfigEditor,
-    move_item,
+from bartlebot.gui.combat_strategies.assignment_card import (
+    CHANGE_VERB,
+    CUSTOM_DATA,
+    DEFAULT_DATA,
+    MISSING_TITLE,
+    REMOVE_VERB,
 )
+from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor, move_item
 
 
 def test_load_populates_fields_from_the_config(qapp):
@@ -111,7 +112,7 @@ def test_add_assignment_appends_to_the_config_live(qapp):
     editor._on_add_assignment()
 
     assert len(config.player_assignments) == 1
-    assert len(editor._rows) == 1
+    assert len(editor.cards) == 1
 
 
 def test_add_assignment_claims_unclaimed_player_slots(qapp):
@@ -130,7 +131,7 @@ def test_remove_row_removes_from_the_config_live(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    editor._on_remove_row(editor._rows[0])
+    editor._on_remove_card(editor.cards[0])
 
     assert config.player_assignments == []
 
@@ -139,11 +140,11 @@ def test_clear_detaches_and_removes_rows(qapp):
     config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="x")])
     editor = DuelConfigEditor()
     editor.load(config, [])
-    assert editor._rows
+    assert editor.cards
 
     editor.clear()
 
-    assert editor._rows == []
+    assert editor.cards == []
     assert editor._config is None
 
 
@@ -165,7 +166,7 @@ def test_set_pcs_list_propagates_to_existing_rows(qapp):
 
     editor.set_pcs_list([pcs])
 
-    assert editor._rows[0]._strategy_combo.currentText() == "Preset"
+    assert editor.cards[0].title_text() == "Preset"
 
 
 def test_a_row_asking_to_be_promoted_reaches_the_dialog(qapp):
@@ -176,109 +177,9 @@ def test_a_row_asking_to_be_promoted_reaches_the_dialog(qapp):
 
     seen = []
     editor.promote_requested.connect(seen.append)
-    editor._rows[0]._promote_btn.click()
+    editor.cards[0]._promote_btn.click()
 
-    assert seen == [editor._rows[0]]
-
-
-# ---------------------------------------------------------------------------
-# _AutoHeightTextEdit / _wrapped_line_count
-#
-# Regression: the per-assignment DSL box was a fixed 56px QPlainTextEdit —
-# small enough that a real DSL showed one line, maybe two, with the rest
-# hidden behind an easy-to-miss inner scrollbar. It now grows to fit its
-# content instead.
-# ---------------------------------------------------------------------------
-
-
-def test_wrapped_line_count_empty_text_is_one_line(qapp):
-    from bartlebot.gui.combat_strategies.duel_editor import _wrapped_line_count
-
-    font = QPlainTextEdit().font()
-    assert _wrapped_line_count("", 200, font) == 1
-
-
-def test_wrapped_line_count_counts_explicit_newlines(qapp):
-    from bartlebot.gui.combat_strategies.duel_editor import _wrapped_line_count
-
-    font = QPlainTextEdit().font()
-    assert _wrapped_line_count("a\nb\nc", 400, font) == 3
-
-
-def test_wrapped_line_count_wraps_long_text_at_a_narrow_width(qapp):
-    from bartlebot.gui.combat_strategies.duel_editor import _wrapped_line_count
-
-    font = QPlainTextEdit().font()
-    long_dsl = (
-        'scald["Epic - Amulet"][epic] | feint mass | any<blade>[sharp]@ally(1) '
-        "| any<blade & out_damage>[sharp] @ self | any<damage & aoe>"
-    )
-    narrow = _wrapped_line_count(long_dsl, 200, font)
-    wide = _wrapped_line_count(long_dsl, 2000, font)
-
-    assert narrow > 1
-    assert wide == 1
-    assert narrow > wide
-
-
-def _show_and_resize(edit, width, height=20):
-    """A widget's viewport is only laid out to its real size after show() runs
-    at least one paint cycle — resize() alone leaves viewport().width() at an
-    arbitrary default, which _sync_height() would wrap against instead of the
-    requested width."""
-    edit.resize(width, height)
-    edit.show()
-    QApplication.processEvents()
-
-
-def test_auto_height_text_edit_grows_with_a_long_dsl(qapp):
-    from bartlebot.gui.combat_strategies.duel_editor import _AutoHeightTextEdit
-
-    edit = _AutoHeightTextEdit()
-    _show_and_resize(edit, 200)
-    empty_height = edit.height()
-
-    long_dsl = (
-        'scald["Epic - Amulet"][epic] | feint mass | any<blade>[sharp]@ally(1) '
-        "| any<blade & out_damage>[sharp] @ self | any<damage & aoe>"
-    )
-    edit.setPlainText(long_dsl)
-    QApplication.processEvents()
-
-    assert edit.height() > empty_height
-
-
-def test_auto_height_text_edit_respects_the_minimum(qapp):
-    from bartlebot.gui.combat_strategies.duel_editor import _DSL_EDIT_MIN_HEIGHT, _AutoHeightTextEdit
-
-    edit = _AutoHeightTextEdit()
-    _show_and_resize(edit, 200)
-    edit.setPlainText("x")
-    QApplication.processEvents()
-
-    assert edit.height() >= _DSL_EDIT_MIN_HEIGHT
-
-
-def test_auto_height_text_edit_shrinks_back_down_when_widened(qapp):
-    """A long single-line DSL needs fewer wrapped lines once the box is wider —
-    covers the resizeEvent path (e.g. the user widens the sidebar).
-    """
-    from bartlebot.gui.combat_strategies.duel_editor import _AutoHeightTextEdit
-
-    edit = _AutoHeightTextEdit()
-    _show_and_resize(edit, 200)
-    long_dsl = (
-        'scald["Epic - Amulet"][epic] | feint mass | any<blade>[sharp]@ally(1) '
-        "| any<blade & out_damage>[sharp] @ self | any<damage & aoe>"
-    )
-    edit.setPlainText(long_dsl)
-    QApplication.processEvents()
-    narrow_height = edit.height()
-
-    _show_and_resize(edit, 900)
-    wide_height = edit.height()
-
-    assert wide_height < narrow_height
+    assert seen == [editor.cards[0]]
 
 
 # ---------------------------------------------------------------------------
@@ -295,11 +196,12 @@ def test_set_editable_false_disables_every_control(qapp):
 
     assert not editor._min_spin.isEnabled()
     assert not editor._max_spin.isEnabled()
-    assert not editor._add_btn.isEnabled()
-    assert editor._rows[0]._dsl_edit.isReadOnly()
-    assert not editor._rows[0]._player_widget.isEnabled()
-    assert not editor._rows[0]._remove_btn.isEnabled()
-    assert not editor._rows[0]._strategy_combo.isEnabled()
+    assert editor.add_card.isHidden()
+    card = editor.cards[0]
+    assert card._dsl_edit.isReadOnly()
+    assert not card.pills.pills[0].is_editable
+    assert not card.action_button(REMOVE_VERB).isEnabled()
+    assert not card.action_button(CHANGE_VERB).isEnabled()
 
 
 def test_set_editable_true_reenables_an_inline_row(qapp):
@@ -310,8 +212,8 @@ def test_set_editable_true_reenables_an_inline_row(qapp):
     editor.set_editable(False)
     editor.set_editable(True)
 
-    assert not editor._rows[0]._dsl_edit.isReadOnly()
-    assert editor._add_btn.isEnabled()
+    assert not editor.cards[0]._dsl_edit.isReadOnly()
+    assert not editor.add_card.isHidden()
 
 
 def test_a_linked_row_offers_no_dsl_box_after_being_reenabled(qapp):
@@ -324,9 +226,9 @@ def test_a_linked_row_offers_no_dsl_box_after_being_reenabled(qapp):
     editor.set_editable(False)
     editor.set_editable(True)
 
-    row = editor._rows[0]
-    assert not row.is_custom()
-    assert row._dsl_edit.isHidden()
+    card = editor.cards[0]
+    assert not card.is_custom()
+    assert card._dsl_edit.isHidden()
 
 
 def test_rows_added_while_locked_are_locked_too(qapp):
@@ -338,7 +240,7 @@ def test_rows_added_while_locked_are_locked_too(qapp):
     # Bypasses the disabled button the way a stray signal would.
     editor._on_add_assignment()
 
-    assert editor._rows[0]._dsl_edit.isReadOnly()
+    assert editor.cards[0]._dsl_edit.isReadOnly()
 
 
 # ---------------------------------------------------------------------------
@@ -346,32 +248,32 @@ def test_rows_added_while_locked_are_locked_too(qapp):
 # ---------------------------------------------------------------------------
 
 
-def test_add_button_tooltip_names_the_reason_when_slots_are_full(qapp):
+def test_the_add_card_goes_away_and_says_why_when_slots_are_full(qapp):
     config = DuelConfig(max_players=2)
     editor = DuelConfigEditor()
     editor.load(config, [])
     editor._on_add_assignment()
     editor._on_add_assignment()
 
-    assert not editor._add_btn.isEnabled()
-    assert "already has an assignment" in editor._add_btn.toolTip()
+    assert editor.add_card.isHidden()
+    assert "already has a strategy" in editor.add_card.toolTip()
 
 
-def test_add_button_tooltip_names_the_lock_when_a_bot_is_running(qapp):
+def test_the_add_card_goes_away_while_a_bot_is_running(qapp):
     editor = DuelConfigEditor()
     editor.load(DuelConfig(), [])
 
     editor.set_editable(False)
 
-    assert "Locked while the bot is running" in editor._add_btn.toolTip()
+    assert editor.add_card.isHidden()
 
 
-def test_add_button_tooltip_describes_the_action_when_enabled(qapp):
+def test_the_add_card_describes_the_action_when_it_is_offered(qapp):
     editor = DuelConfigEditor()
     editor.load(DuelConfig(), [])
 
-    assert editor._add_btn.isEnabled()
-    assert "Add a player assignment" in editor._add_btn.toolTip()
+    assert not editor.add_card.isHidden()
+    assert "own combat strategy" in editor.add_card.toolTip()
 
 
 # ---------------------------------------------------------------------------
@@ -430,7 +332,7 @@ def test_move_assignment_keeps_the_rows_in_step_with_the_config(qapp):
 
     editor.move_assignment(0, 3)
 
-    assert [row.assignment() for row in editor._rows] == config.player_assignments
+    assert [row.assignment() for row in editor.cards] == config.player_assignments
 
 
 def test_move_assignment_emits_changed(qapp):
@@ -460,35 +362,34 @@ def test_move_assignment_puts_the_widget_where_the_model_says(qapp):
 
     editor.move_assignment(2, 0)
 
-    layout = editor._assignments_layout
-    order = [layout.itemAt(i).widget() for i in range(len(config.player_assignments))]
-    assert order == editor._rows
-    # The stretch that _add_row inserts before must still be last.
-    assert layout.itemAt(layout.count() - 1).widget() is None
+    layout = editor._cards_layout
+    order = [layout.itemAt(i).widget() for i in range(layout.count())]
+    assert order == editor.cards
+    assert len(order) == len(config.player_assignments)
 
 
 def test_dropping_below_a_row_lands_after_it(qapp):
     """A drop on the lower half of row 0 puts the dragged row second, not first."""
     config, editor = _three_row_editor()
-    rows = list(editor._rows)
+    rows = list(editor.cards)
 
-    editor._on_reorder_row(rows[2], rows[0], False)
+    editor._on_reorder_card(rows[2], rows[0], False)
 
     assert [a.dsl for a in config.player_assignments] == ["one", "three", "two"]
 
 
 def test_dropping_above_a_row_lands_before_it(qapp):
     config, editor = _three_row_editor()
-    rows = list(editor._rows)
+    rows = list(editor.cards)
 
-    editor._on_reorder_row(rows[2], rows[0], True)
+    editor._on_reorder_card(rows[2], rows[0], True)
 
     assert [a.dsl for a in config.player_assignments] == ["three", "one", "two"]
 
 
 def test_a_row_refuses_a_drop_from_itself(qapp):
     _config, editor = _three_row_editor()
-    row = editor._rows[0]
+    row = editor.cards[0]
 
     assert not row.accepts_drop_from(row)
 
@@ -498,20 +399,20 @@ def test_a_row_refuses_drops_while_the_bot_is_running(qapp):
     _config, editor = _three_row_editor()
     editor.set_editable(False)
 
-    assert not editor._rows[1].accepts_drop_from(editor._rows[0])
+    assert not editor.cards[1].accepts_drop_from(editor.cards[0])
 
 
 def test_a_row_accepts_a_drop_from_a_sibling(qapp):
     _config, editor = _three_row_editor()
 
-    assert editor._rows[1].accepts_drop_from(editor._rows[0])
+    assert editor.cards[1].accepts_drop_from(editor.cards[0])
 
 
 def test_the_dsl_box_does_not_swallow_row_drops(qapp):
     """The DSL editor accepts drops by default, which would shrink the target."""
     _config, editor = _three_row_editor()
 
-    assert not editor._rows[0]._dsl_edit.acceptDrops()
+    assert not editor.cards[0]._dsl_edit.acceptDrops()
 
 
 class TestPlayerRangeCannotInvert:
@@ -566,39 +467,6 @@ class TestPlayerRangeCannotInvert:
 
 
 # ---------------------------------------------------------------------------
-# Description field (phase 1)
-# ---------------------------------------------------------------------------
-
-
-def test_load_populates_the_description_field(qapp):
-    config = DuelConfig(description="Boss enrages at 50%")
-    editor = DuelConfigEditor()
-    editor.load(config, [])
-
-    assert editor._description_edit.text() == "Boss enrages at 50%"
-
-
-def test_editing_description_mutates_the_config_live(qapp):
-    config = DuelConfig()
-    editor = DuelConfigEditor()
-    editor.load(config, [])
-
-    editor._description_edit.setText("Farm loop, no adds")
-    editor._description_edit.editingFinished.emit()
-
-    assert config.description == "Farm loop, no adds"
-
-
-def test_clear_resets_the_description_field(qapp):
-    editor = DuelConfigEditor()
-    editor.load(DuelConfig(description="X"), [])
-
-    editor.clear()
-
-    assert editor._description_edit.text() == ""
-
-
-# ---------------------------------------------------------------------------
 # Derived school-requirement chips (phase 1)
 # ---------------------------------------------------------------------------
 
@@ -631,7 +499,7 @@ def test_requirements_label_updates_when_a_row_school_changes(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    editor._rows[0]._school_combo.setCurrentIndex(1)  # first real school after "Any school"
+    editor.cards[0]._school_combo.setCurrentIndex(1)  # first real school after "Any school"
 
     assert not editor._requirements_lbl.isHidden()
 
@@ -646,7 +514,7 @@ def test_requirements_label_updates_when_a_row_is_removed(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    editor._on_remove_row(editor._rows[0])
+    editor._on_remove_card(editor.cards[0])
 
     assert editor._requirements_lbl.isHidden()
 
@@ -663,8 +531,8 @@ def test_row_loads_school_and_note_from_the_assignment(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    assert editor._rows[0]._school_combo.value() == "Storm"
-    assert editor._rows[0]._note_edit.text() == "Kites adds"
+    assert editor.cards[0]._school_combo.value() == "Storm"
+    assert editor.cards[0]._note_edit.text() == "Kites adds"
 
 
 def test_editing_the_row_school_mutates_the_assignment_live(qapp):
@@ -673,7 +541,7 @@ def test_editing_the_row_school_mutates_the_assignment_live(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    editor._rows[0]._school_combo.setCurrentIndex(1)
+    editor.cards[0]._school_combo.setCurrentIndex(1)
 
     assert assignment.school is not None
 
@@ -684,8 +552,8 @@ def test_editing_the_row_note_mutates_the_assignment_live(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    editor._rows[0]._note_edit.setText("Passes to bank pips")
-    editor._rows[0]._note_edit.editingFinished.emit()
+    editor.cards[0]._note_edit.setText("Passes to bank pips")
+    editor.cards[0]._note_edit.editingFinished.emit()
 
     assert assignment.note == "Passes to bank pips"
 
@@ -697,13 +565,13 @@ def test_set_editable_false_disables_school_and_note(qapp):
 
     editor.set_editable(False)
 
-    assert not editor._rows[0]._school_combo.isEnabled()
-    assert not editor._rows[0]._note_edit.isEnabled()
+    assert not editor.cards[0]._school_combo.isEnabled()
+    assert not editor.cards[0]._note_edit.isEnabled()
 
 
-def _choose(row, data: str) -> None:
-    """Pick an entry in a row's strategy selector by its item data."""
-    row._strategy_combo.setCurrentIndex(row._strategy_combo.findData(data))
+def _choose(card, data: str) -> None:
+    """Pick one of the three answers the way the change-strategy menu does."""
+    card.choose_strategy(data)
 
 
 def test_forking_to_custom_dsl_seeds_from_the_strategy_left_behind(qapp):
@@ -713,7 +581,7 @@ def test_forking_to_custom_dsl_seeds_from_the_strategy_left_behind(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [pcs])
 
-    _choose(editor._rows[0], _CUSTOM_DATA)
+    _choose(editor.cards[0], CUSTOM_DATA)
 
     assert assignment.dsl == "blade"
     assert assignment.school == "Storm"
@@ -727,7 +595,7 @@ def test_forking_to_custom_dsl_leaves_an_authored_assignment_school_alone(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [pcs])
 
-    _choose(editor._rows[0], _CUSTOM_DATA)
+    _choose(editor.cards[0], CUSTOM_DATA)
 
     assert assignment.school == "Life"
 
@@ -738,11 +606,11 @@ def test_choosing_the_built_in_default_clears_both_answers(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    _choose(editor._rows[0], _DEFAULT_DATA)
+    _choose(editor.cards[0], DEFAULT_DATA)
 
     assert assignment.dsl == ""
     assert assignment.player_combat_strategy_id is None
-    assert editor._rows[0]._dsl_edit.isHidden()
+    assert editor.cards[0]._dsl_edit.isHidden()
 
 
 def test_choosing_a_named_strategy_links_it(qapp):
@@ -752,10 +620,10 @@ def test_choosing_a_named_strategy_links_it(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [pcs])
 
-    _choose(editor._rows[0], pcs.id)
+    _choose(editor.cards[0], pcs.id)
 
     assert assignment.player_combat_strategy_id == pcs.id
-    assert editor._rows[0]._dsl_edit.isHidden()
+    assert editor.cards[0]._dsl_edit.isHidden()
 
 
 def test_a_link_to_a_deleted_strategy_is_named_rather_than_silently_reset(qapp):
@@ -766,32 +634,20 @@ def test_a_link_to_a_deleted_strategy_is_named_rather_than_silently_reset(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    assert editor._rows[0]._strategy_combo.currentText() == "(missing strategy)"
+    assert editor.cards[0].title_text() == MISSING_TITLE
     assert assignment.player_combat_strategy_id == "gone"
 
 
 # ---------------------------------------------------------------------------
-# The description and note fields were wired to
-# ``editingFinished``, which only fires when the widget loses focus.  Typing a
-# description and then closing the window -- or hitting the window's Save while
-# the caret was still in the field -- discarded what had just been typed, with
-# no indication anything had been lost.  Every other field in this editor writes
-# through on change, including the DSL box immediately below the note; these two
-# were the outliers.
+# The note field was wired to ``editingFinished``, which only fires when the
+# widget loses focus.  Typing a note and then hitting the window's Save while the
+# caret was still in the field discarded what had just been typed, with no
+# indication anything had been lost.  Every other field here writes through on
+# change, including the DSL box beside it.
 #
 # ``setText`` is the sharp end of the distinction: it emits ``textChanged`` and
-# never emits ``editingFinished``, so these fail on the old wiring.
+# never emits ``editingFinished``, so this fails on the old wiring.
 # ---------------------------------------------------------------------------
-
-
-def test_typing_a_description_reaches_the_config_without_losing_focus(qapp):
-    config = DuelConfig()
-    editor = DuelConfigEditor()
-    editor.load(config, [])
-
-    editor._description_edit.setText("Turn 4 kill, needs 100% accuracy")
-
-    assert config.description == "Turn 4 kill, needs 100% accuracy"
 
 
 def test_typing_a_note_reaches_the_assignment_without_losing_focus(qapp):
@@ -800,23 +656,6 @@ def test_typing_a_note_reaches_the_assignment_without_losing_focus(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    editor._rows[0]._note_edit.setText("Passes to bank pips for round 3")
+    editor.cards[0]._note_edit.setText("Passes to bank pips for round 3")
 
     assert assignment.note == "Passes to bank pips for round 3"
-
-
-def test_loading_a_description_does_not_itself_fire_changed(qapp):
-    """The ``textChanged`` wiring must not turn ``load`` into a spurious edit.
-
-    ``load`` populates the field with ``setText``, which now emits -- the
-    ``_suppress`` guard is the only thing keeping that from reporting a change
-    the user never made, and marking a freshly opened strategy dirty.
-    """
-    config = DuelConfig(description="Already written")
-    editor = DuelConfigEditor()
-
-    seen = []
-    editor.changed.connect(lambda: seen.append(True))
-    editor.load(config, [])
-
-    assert seen == []

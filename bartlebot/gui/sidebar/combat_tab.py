@@ -69,6 +69,7 @@ the face at all.
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from functools import partial
 from typing import TYPE_CHECKING
 from uuid import uuid4
@@ -101,9 +102,11 @@ from bartlebot.combat_grouping import (
     state_label,
 )
 from bartlebot.combat_warnings import exposed_combat_states
+from bartlebot.credentials import CredentialStore
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
 from bartlebot.gui.deck_content import deck_content_lines
+from bartlebot.gui.sidebar.player_card import account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
 )
@@ -666,6 +669,9 @@ class CombatTab(QWidget):
         self._pending_panel: StrategyPanel | None = None
         self._suppress = False
         self._editable = True
+        # Answers "which account is behind each player slot"; installed by AppController,
+        # which is what holds the ClientManager. See ``set_player_account_source``.
+        self._player_account_source: Callable[[], list[str | None]] | None = None
 
         # No debounce timer. There was one, at 500ms, because the inline DSL editor
         # emitted ``changed`` on every keystroke and every keystroke would otherwise have
@@ -828,6 +834,42 @@ class CombatTab(QWidget):
     def set_client_count(self, count: int) -> None:
         self._decks_section.set_client_count(count)
 
+    def set_player_account_source(self, source: Callable[[], list[str | None]] | None) -> None:
+        """Install what answers *which account is behind each player slot, right now*.
+
+        A callable rather than a value, and asked at the moment the combat dialog opens.
+        An account identity is learned asynchronously after a client is hooked and nothing
+        announces it arriving — ``ClientManager.account_for`` says so in as many words —
+        so a value pushed in when the client *set* last changed would be stale exactly
+        when someone hooks four clients and immediately opens this dialog. Asked at open
+        time it is a dict lookup per client and it is never wrong.
+
+        ``None`` (the default) means nobody has installed one, which is the normal state
+        in tests and in a session with nothing running: the dialog's player pills simply
+        go uncoloured. See gui/widgets/player_pills.py for why that degrades cleanly
+        rather than falling back to a colour.
+        """
+        self._player_account_source = source
+
+    def _player_color_keys(self) -> tuple[list[int | None], list[str]]:
+        """A palette slot and a display name per player slot, both possibly empty.
+
+        Resolved through ``account_stripe_keys`` over the *whole* account list rather than
+        per username, because a colour is only distinct with respect to the others — see
+        gui/account_accent.py. An unidentified client gets no slot and no name, which is
+        the truth about it.
+        """
+        if self._player_account_source is None:
+            return [], []
+        usernames = self._player_account_source()
+        accounts = SettingsManager.instance().accounts
+        aliases = {a.get("username", ""): a for a in accounts}
+        labels = [
+            "" if u is None else CredentialStore.display_name(u, (aliases.get(u) or {}).get("alias") or None)
+            for u in usernames
+        ]
+        return account_stripe_keys(usernames, accounts), labels
+
     # ------------------------------------------------------------------
     # BCS loading / saving
     # ------------------------------------------------------------------
@@ -937,6 +979,7 @@ class CombatTab(QWidget):
         question of whether it was needed.
         """
         ws = StrategyWorkingSet.from_store()
+        color_keys, account_labels = self._player_color_keys()
         dlg = CombatStrategyDialog(
             ws,
             kind=kind,
@@ -944,6 +987,8 @@ class CombatTab(QWidget):
             current_id=current_id,
             allow_none=allow_none,
             none_label=none_label,
+            player_color_keys=color_keys,
+            player_account_labels=account_labels,
             parent=self,
         )
         accepted = bool(dlg.exec())

@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
 
 _CHIP_MIME = "application/x-bartlebot-combat-order-chip"
@@ -27,13 +28,17 @@ def _ordinal(n: int) -> str:
 class _PlayerChip(QFrame):
     """Draggable P{n} chip for CombatOrderWidget. Follows _SlotButton DnD pattern."""
 
-    def __init__(self, player_num: int, widget: CombatOrderWidget) -> None:
+    def __init__(self, player_num: int, widget: CombatOrderWidget, color_key: int | None = None) -> None:
         super().__init__()
         self._player_num = player_num
         self._widget = widget
         self._drag_start_pos: QPoint | None = None
         self._drop_highlight = False
         self._enabled_visual = True
+        # The account currently in this slot, as a palette slot rather than a colour, so a
+        # theme switch re-resolves. ``None`` is the normal case — nothing hooked — and
+        # draws the chip exactly as it always did. See gui/account_accent.py.
+        self._color_key = color_key
         self.setAcceptDrops(True)
         self.setFixedHeight(28)
         self.setMinimumWidth(40)
@@ -54,10 +59,20 @@ class _PlayerChip(QFrame):
             border = THEME.surface_disabled
             border_width = "1px"
         else:
-            bg = THEME.surface
+            # Tinted and outlined in the account's colour rather than filled with it. That
+            # is the app's whole convention for account colour -- see ``AccountPill`` --
+            # and it matters more here than anywhere: four saturated fills in a row would
+            # make the combat order the loudest thing on the panel, when what it is
+            # actually saying is an *order*, which the positions already say.
+            tinted = self._color_key is not None and not self._drop_highlight
+            bg = account_tint(self._color_key) if tinted else THEME.surface
             text_color = THEME.text
-            border = THEME.accent if self._drop_highlight else THEME.border
-            border_width = "2px" if self._drop_highlight else "1px"
+            if self._drop_highlight:
+                border, border_width = THEME.accent, "2px"
+            elif self._color_key is not None:
+                border, border_width = account_accent(self._color_key), "1px"
+            else:
+                border, border_width = THEME.border, "1px"
         self.setStyleSheet(f"QFrame {{ background: {bg}; border: {border_width} solid {border}; border-radius: 4px; }}")
         self._label.setStyleSheet(f"color: {text_color}; font-size: 11px; font-weight: 600; border: none;")
 
@@ -155,10 +170,20 @@ class CombatOrderWidget(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.setSpacing(4)
 
-        # Row 1: checkbox (checked = empty order)
+        # Row 1: checkbox (checked = empty order), and whatever the embedder puts beside
+        # it. The row is a layout rather than a bare widget so that a surface can hang its
+        # own controls off the right-hand end -- the duel editor's Min/Max players belong
+        # on the same line as "Simultaneous entry", being the other half of the same
+        # question. Offered as :meth:`add_header_widget` rather than by handing out the
+        # checkbox, so this widget keeps owning what it built.
+        self._header_layout = QHBoxLayout()
+        self._header_layout.setContentsMargins(0, 0, 0, 0)
+        self._header_layout.setSpacing(6)
         self._checkbox = QCheckBox(empty_label)
         self._checkbox.toggled.connect(self._on_checkbox_toggled)
-        outer.addWidget(self._checkbox)
+        self._header_layout.addWidget(self._checkbox)
+        self._header_layout.addStretch(1)
+        outer.addLayout(self._header_layout)
 
         # Row 2: ordinal header labels
         self._header_row = QWidget()
@@ -180,6 +205,10 @@ class CombatOrderWidget(QWidget):
         self._chip_layout.setContentsMargins(0, 0, 0, 0)
         self._chip_layout.setSpacing(4)
         self._chips: list[_PlayerChip] = []
+        # A palette slot per player, or empty when nothing is hooked. Held rather than
+        # applied, because the chips are rebuilt on every reorder and every max-players
+        # change and each rebuild has to arrive already coloured.
+        self._color_keys: list[int | None] = []
         outer.addWidget(self._chip_row)
 
         self._rebuild_chips()
@@ -187,6 +216,30 @@ class CombatOrderWidget(QWidget):
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    def set_player_color_keys(self, keys: list[int | None]) -> None:
+        """Colour each chip by the account currently in that player slot.
+
+        Shorter lists are the normal case and are fine: two clients hooked colours P1 and
+        P2 and leaves the rest plain, which is the truth about what is running.
+        """
+        self._color_keys = list(keys)
+        self._rebuild_chips()
+
+    def _color_key_for(self, player_num: int) -> int | None:
+        index = player_num - 1
+        return self._color_keys[index] if 0 <= index < len(self._color_keys) else None
+
+    def add_header_widget(self, widget: QWidget) -> None:
+        """Add *widget* to the right-hand end of the row the empty-order checkbox is on.
+
+        For a surface whose own controls answer the same question this widget does — the
+        duel editor's Min/Max players spin boxes, which say how many players there are
+        while the checkbox and the chips say in what order they enter. Putting them here
+        rather than in a row of the embedder's own is what keeps the two aligned when the
+        chip grid is hidden, which is the state the checkbox exists to produce.
+        """
+        self._header_layout.addWidget(widget)
 
     def get_value(self) -> list[int]:
         """Return current order, or [] if the checkbox is checked."""
@@ -245,12 +298,18 @@ class CombatOrderWidget(QWidget):
 
     def _rebuild_chips(self) -> None:
         for chip in self._chips:
+            # Unparented, not merely removed from the layout. ``removeWidget`` takes a
+            # widget out of the layout but leaves it a child of this one, so it keeps
+            # painting at its last geometry until the deferred delete runs -- which shows
+            # up as ghost chips overlapping the new row for a frame or more. Reparenting
+            # to None takes it off the screen in the same breath.
             self._chip_layout.removeWidget(chip)
+            chip.setParent(None)
             chip.deleteLater()
         self._chips.clear()
         enabled = self._drag_enabled
         for player_num in self._order:
-            chip = _PlayerChip(player_num, self)
+            chip = _PlayerChip(player_num, self, self._color_key_for(player_num))
             chip.set_enabled_visual(enabled)
             self._chip_layout.addWidget(chip, 1)
             self._chips.append(chip)

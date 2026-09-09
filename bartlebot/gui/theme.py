@@ -443,8 +443,15 @@ class _Theme:
             }}
 
             /* ── Tab bar ── */
+            /* Only the line under the tab strip. That line is load-bearing -- it is what
+               anchors the tabs to the page, and the selected tab's fill matches the pane
+               so the two read as continuous. The other three sides were not: they drew a
+               box around a page whose own contents already say where they stop, and on a
+               master-detail page (the combat dialog) that box was one more rectangle
+               around a column of rectangles. */
             QTabWidget::pane {{
-                border: 1px solid {self.border};
+                border: none;
+                border-top: 1px solid {self.border};
                 background: {self.bg};
             }}
             QTabBar::tab {{

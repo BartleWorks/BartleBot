@@ -98,14 +98,17 @@ def test_setting_a_status_does_not_lose_the_message(qapp, theme):
 
 
 def test_the_strategy_list_recolours(qapp, theme):
+    """Checked on the fill rather than the border: the list is borderless now — the cards
+    in it draw their own edges, and a box around a column of boxes was one line too many.
+    The fill is the one THEME-derived value left, so it is what proves the re-derive."""
     theme("light")
     dlg = BotStrategyPicker([], current_id=None)
-    light_border = THEME.border
+    light_bg = THEME.bg
 
     _switch(qapp, dlg, theme, "dark")
 
-    assert THEME.border in dlg._list.styleSheet()
-    assert light_border not in dlg._list.styleSheet()
+    assert THEME.bg in dlg._list.styleSheet()
+    assert light_bg not in dlg._list.styleSheet()
     dlg.deleteLater()
 
 
@@ -126,3 +129,19 @@ def test_the_entity_browser_status_follows_the_theme(qapp, theme):
 
     assert dlg._status.styleSheet() != before
     dlg.deleteLater()
+
+
+# ---------------------------------------------------------------------------
+# Tab pane chrome — the strip's line, and nothing else
+# ---------------------------------------------------------------------------
+
+
+def test_the_tab_pane_draws_only_the_line_under_the_strip(qapp, theme):
+    """That line anchors the tabs to the page and the selected tab's fill matches the
+    pane, so the two read as continuous. The other three sides drew a box around a page
+    whose own contents already say where they stop."""
+    theme("dark")
+    pane = THEME.global_stylesheet().split("QTabWidget::pane {")[1].split("}")[0]
+
+    assert "border: none;" in pane
+    assert f"border-top: 1px solid {THEME.border};" in pane

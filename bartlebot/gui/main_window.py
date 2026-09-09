@@ -92,7 +92,7 @@ class MainWindow(QMainWindow):
         # reusable things, reachable without a bot open. Combat strategies depend on
         # which wizards the user owns, not on which bot is loaded, so this is the one
         # editor that should not be behind opening one.
-        self.action_combat_strategies = QAction("Combat Strategies…", self)
+        self.action_combat_strategies = QAction("Browse Combat Strategy Library…", self)
         file_menu.addAction(self.action_combat_strategies)
 
         self.action_close = QAction("Close Bot", self)

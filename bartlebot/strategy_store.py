@@ -7,11 +7,11 @@ Every strategy is read and written across an **ordered pair of roots**:
   user    — ``%APPDATA%/Bartleby/BartleBot`` (``bartlebot.shared.vendor.product_dir``),
             where every app-initiated write lands.
 
-Reads resolve user-first, falling back to shipped: a user file with the same id
+Reads resolve user-first, falling back to default: a user file with the same id
 shadows the shipped one. Writes and deletes only ever touch the user root, so
 editing a shipped strategy copies it into the user root on save, keyed by the
 same id — an override, not a fork. Deleting a user copy of a shipped id is how
-"revert to shipped" works; the shipped file itself is never touched by the app.
+"revert to default" works; the shipped file itself is never touched by the app.
 
 Directory layout is identical under both roots:
   strategies/player/   — PlayerCombatStrategy  files, named {uuid}.json
