@@ -75,13 +75,17 @@ def _player_dir(root: Path) -> Path:
     return root / "strategies" / "player"
 
 
-def list_player_strategies(root: str | Path | None = None, user_root: str | Path | None = None) -> list[PlayerCombatStrategy]:
+def list_player_strategies(
+    root: str | Path | None = None, user_root: str | Path | None = None
+) -> list[PlayerCombatStrategy]:
     shipped, user = _roots(root, user_root)
     by_id = _merged(_player_dir(shipped), _player_dir(user), PlayerCombatStrategy.load)
     return list(by_id.values())
 
 
-def load_player_strategy(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> PlayerCombatStrategy:
+def load_player_strategy(
+    uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
+) -> PlayerCombatStrategy:
     shipped, user = _roots(root, user_root)
     user_path = _player_dir(user) / f"{uuid}.json"
     if user_path.exists():
@@ -89,7 +93,9 @@ def load_player_strategy(uuid: str, root: str | Path | None = None, user_root: s
     return PlayerCombatStrategy.load(_player_dir(shipped) / f"{uuid}.json")
 
 
-def save_player_strategy(s: PlayerCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
+def save_player_strategy(
+    s: PlayerCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None
+) -> None:
     _, user = _roots(root, user_root)
     s.save(_player_dir(user) / f"{s.id}.json")
 
@@ -108,13 +114,17 @@ def _duel_dir(root: Path) -> Path:
     return root / "strategies" / "duel"
 
 
-def list_duel_strategies(root: str | Path | None = None, user_root: str | Path | None = None) -> list[DuelCombatStrategy]:
+def list_duel_strategies(
+    root: str | Path | None = None, user_root: str | Path | None = None
+) -> list[DuelCombatStrategy]:
     shipped, user = _roots(root, user_root)
     by_id = _merged(_duel_dir(shipped), _duel_dir(user), DuelCombatStrategy.load)
     return list(by_id.values())
 
 
-def load_duel_strategy(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> DuelCombatStrategy:
+def load_duel_strategy(
+    uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
+) -> DuelCombatStrategy:
     shipped, user = _roots(root, user_root)
     user_path = _duel_dir(user) / f"{uuid}.json"
     if user_path.exists():
@@ -122,7 +132,9 @@ def load_duel_strategy(uuid: str, root: str | Path | None = None, user_root: str
     return DuelCombatStrategy.load(_duel_dir(shipped) / f"{uuid}.json")
 
 
-def save_duel_strategy(s: DuelCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
+def save_duel_strategy(
+    s: DuelCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None
+) -> None:
     _, user = _roots(root, user_root)
     s.save(_duel_dir(user) / f"{s.id}.json")
 
@@ -148,14 +160,18 @@ def list_bot_strategies(
     return [bcs for bcs in list_all_bot_strategies(root, user_root) if bcs.bot_id == bot_id]
 
 
-def list_all_bot_strategies(root: str | Path | None = None, user_root: str | Path | None = None) -> list[BotCombatStrategy]:
+def list_all_bot_strategies(
+    root: str | Path | None = None, user_root: str | Path | None = None
+) -> list[BotCombatStrategy]:
     """Return every BotCombatStrategy file regardless of bot_id."""
     shipped, user = _roots(root, user_root)
     by_id = _merged(_bot_strategy_dir(shipped), _bot_strategy_dir(user), BotCombatStrategy.load)
     return list(by_id.values())
 
 
-def load_bot_strategy(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> BotCombatStrategy:
+def load_bot_strategy(
+    uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
+) -> BotCombatStrategy:
     shipped, user = _roots(root, user_root)
     user_path = _bot_strategy_dir(user) / f"{uuid}.json"
     if user_path.exists():
@@ -163,7 +179,9 @@ def load_bot_strategy(uuid: str, root: str | Path | None = None, user_root: str 
     return BotCombatStrategy.load(_bot_strategy_dir(shipped) / f"{uuid}.json")
 
 
-def save_bot_strategy(s: BotCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
+def save_bot_strategy(
+    s: BotCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None
+) -> None:
     _, user = _roots(root, user_root)
     s.save(_bot_strategy_dir(user) / f"{s.id}.json")
 

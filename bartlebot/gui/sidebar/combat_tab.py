@@ -52,7 +52,7 @@ from functools import partial
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from PyQt6.QtCore import QEvent, Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QFrame,
@@ -98,6 +98,7 @@ from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPicker
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.elided_label import ElidedLabel
+from bartlebot.gui.widgets.picker_popup import PickerRow, Section
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
@@ -111,7 +112,7 @@ from bartlebot.strategy_store import (
 from bartlebot.strategy_summary import summarize_bot
 
 if TYPE_CHECKING:
-    from bartlebot.bot.schema import BotConfig
+    from bartlebot.bot.schema import BotConfig, StateModel
     from bartlebot.gui.strategy_library.strategy_library_window import StrategyLibraryWindow
 
 logger = logging.getLogger(__name__)
@@ -692,11 +693,15 @@ class CombatTab(QWidget):
         self._assignments_section = SidebarSection(_SPECIALIZED_SECTION, self)
         self._assignments_layout = QVBoxLayout()
         self._assignments_layout.setSpacing(6)
-        # Separates configured groups from the fights that fall through to the bot
-        # default. Persistent rather than rebuilt so its themed stylesheet survives a
-        # rebuild; ``_rebuild_state_assignments`` re-places it.
-        self._group_divider = QLabel(_UNASSIGNED_DIVIDER)
-        self._group_divider.setStyleSheet(f"color: {THEME.text_muted};")
+        # Heads the condensed rows -- the fights nobody has given a strategy to. It is
+        # no longer doing the *separating*: a condensed row and a full card are visibly
+        # different shapes, so the split reads without help. What it still carries is
+        # what those rows fall through to, which shape cannot say, and saying it once
+        # here beats repeating "(bot default)" on each of them.
+        #
+        # ThemedTextLabel rather than a QLabel with a hand-written stylesheet: it
+        # repaints itself on a theme switch, which is what let the tab's changeEvent go.
+        self._group_divider = ThemedTextLabel(_UNASSIGNED_DIVIDER, color="text_subtle", css="font-size: 10px;")
         self._group_divider.hide()
         self._assignments_section.set_content_layout(self._assignments_layout)
         self._content_layout.addWidget(self._assignments_section)
@@ -1046,11 +1051,12 @@ class CombatTab(QWidget):
             )
             panel.set_titles([state_label(s) for s in group.states])
             panel.load(group.assignment, self._all_dcs, self._all_pcs)
+            panel.set_fight_options(self._fight_sections(exposed), list(group.assignment.state_ids))
             panel.set_editable(self._editable)
             panel.pick_requested.connect(partial(self._on_pick_duel, panel))
             panel.promote_requested.connect(partial(self._on_promote, panel))
             panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
-            panel.membership_requested.connect(partial(self._on_edit_membership, group.assignment))
+            panel.membership_changed.connect(partial(self._on_membership_changed, group.assignment))
             self._assignments_layout.addWidget(panel)
             # Keyed per state, so every fight in a group resolves to its panel.
             for state in group.states:
@@ -1136,23 +1142,31 @@ class CombatTab(QWidget):
         distinct = list({id(a): a for a in self._state_bindings.values()}.values())
         self._state_bindings = build_bindings(distinct)
 
-    def _on_edit_membership(self, assignment: StateAssignment) -> None:
-        """Show "Applies to…" for one group and commit the result."""
-        if self._config is None:
-            return
-        from bartlebot.gui.sidebar.applies_to_dialog import AppliesToDialog  # noqa: PLC0415
+    def _fight_sections(self, exposed: list[StateModel]) -> list[Section]:
+        """Every exposed fight as a popup row, each saying what it uses today.
 
-        exposed = exposed_combat_states(self._config)
-        dlg = AppliesToDialog(
-            strategy_name=self._describe_binding_of(assignment),
-            exposed=exposed,
-            chosen_ids=list(assignment.state_ids),
-            describe=self._describe_state_binding,
-            parent=self,
-        )
-        if not dlg.exec():
+        The right-hand slot is the whole reason this is a popup rather than a list of
+        bare names: checking a fight here *moves* it out of whatever group holds it, and
+        ``meta`` is what makes that consequence visible before the click rather than
+        after it. One section, unnamed -- the fights of one bot are not a vocabulary
+        with groups in it.
+        """
+        rows = [
+            PickerRow(key=state.id, label=state_label(state), meta=self._describe_state_binding(state.id))
+            for state in exposed
+        ]
+        return [("", rows)]
+
+    def _on_membership_changed(self, assignment: StateAssignment, chosen_ids: list) -> None:
+        """Commit a group's new membership, once its popup has closed.
+
+        Deliberately not per toggle: this rebuilds the whole section, which would
+        destroy the card holding the popup the user is still clicking in. See
+        ``PickerButton.committed``.
+        """
+        if self._config is None or list(assignment.state_ids) == list(chosen_ids):
             return
-        apply_membership(self._state_bindings, assignment, dlg.selected_ids())
+        apply_membership(self._state_bindings, assignment, list(chosen_ids))
         # Re-asserts both invariants before anything is drawn from the result.
         self._regroup_bindings()
         self._rebuild_state_assignments()
@@ -1297,9 +1311,6 @@ class CombatTab(QWidget):
     # window, so one would never fire.  Pending edits are flushed via
     # flush_pending_save(), which AppController calls on aboutToQuit.
 
-    def changeEvent(self, event: QEvent) -> None:
-        super().changeEvent(event)
-        if event.type() == QEvent.Type.StyleChange:
-            # Every card on this tab is a CardFrame and repaints itself; the divider
-            # is the one plain label left here.
-            self._group_divider.setStyleSheet(f"color: {THEME.text_muted};")
+    # No changeEvent either. Every widget this tab owns now repaints itself on a theme
+    # switch -- the cards because CardFrame does, the divider because ThemedTextLabel
+    # does -- so there is nothing left here for a StyleChange to chase.

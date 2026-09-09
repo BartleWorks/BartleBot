@@ -38,6 +38,38 @@ right". A card frame already says that -- it is a closed shape around exactly th
 fights it governs -- so the rule was a second, weaker drawing of the border sitting
 four pixels inside it.
 
+MEMBERSHIP IS A PILL ROW, NOT A FOOTNOTE
+----------------------------------------
+
+Which fights a strategy covers is the second thing to know about it, and it used to be
+last: an "Applies to" link under four assignment lines, at the foot of the card, with
+one full-width row per fight name. Now it is a wrapped row of pills directly under the
+title, and the button beside them opens a ``PickerPopup`` listing every exposed fight
+with what that fight uses today in the right-hand slot.
+
+A popup rather than the modal that used to do this, and the payload is the reason.
+Browsing *fights* is one line each -- a name and a current value -- which is what
+``POPUP_WIDTH`` was built for. Browsing *strategies* is seven to nine lines each and
+does not fit in 400px at all, which is why picking one is still a dialog. The two are
+not the same question and do not get the same widget.
+
+The pills are inert. ``TagChip`` wears a ✕ because removing a *filter* is the entire
+point of it being on screen; here membership is decided in the popup, and a second
+removal route on the row would re-clutter exactly what the pills declutter.
+
+CONDENSED UNTIL IT HOLDS SOMETHING
+----------------------------------
+
+A fight with no strategy draws as a single muted row carrying its own name, not as a
+full card. It used to be a full one -- frame, name, meta sentence, "Applies to" row --
+saying that it had nothing to say, once per fight; a bot with eight exposed fights and
+two configured showed six of those, and the section read as mostly boilerplate. It
+grows into a full card the moment it holds a strategy.
+
+Only fights condense. The Default Duel Combat Strategy is never "not configured yet" in
+that sense: unset is a real, common and correct state for it, and it says what it falls
+through to instead.
+
 THE GUTTER IS THE NESTING INDENT
 --------------------------------
 
@@ -59,9 +91,8 @@ Two on the face, everything in the right-click menu, per ``card_frame.py``:
   chip inside it that had to be found first.
 - **Edit in Library…** appears only on a linked binding, there being nothing in the
   library to open otherwise.
-- **Applies to…** is in the menu, and is *also* the "Applies to" line in the card body:
-  the label naming which fights a card governs and the control that edits them are one
-  thing, and giving them one vocabulary is cheaper than an icon nobody can read.
+- **Applies to…** is in the menu, and opens the same popup the pill row's own button
+  does -- the menu is the keyboard route to a verb, not a second way of performing it.
 - **Save as preset…** is menu-only. It can only apply to an inline config, which this
   surface can no longer create -- it is how a config from an older bot file gets into
   the library so that it can be picked like everything else.
@@ -82,7 +113,9 @@ from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.elided_label import ElidedLabel
-from bartlebot.gui.widgets.link_button import LinkButton
+from bartlebot.gui.widgets.flow_layout import FlowLayout
+from bartlebot.gui.widgets.picker_popup import PickerButton, Section
+from bartlebot.gui.widgets.tag_pill import NeutralPill
 from bartlebot.strategy_summary import HealthStatus, summarize_duel
 
 if TYPE_CHECKING:
@@ -122,6 +155,28 @@ SAVE_AS_PRESET = "Save as preset…"
 #: ``DuelConfig.max_players`` is bounded at 4 by the game, not by this widget.
 _MAX_ASSIGNMENT_LINES = 4
 
+#: What the fights button says. Fixed, rather than ``PickerButton``'s default summary of
+#: the selection, because the pills beside it already are that summary -- a button
+#: reading "3 selected" next to three pills naming them is the same fact twice.
+FIGHTS_BUTTON = "Fights…"
+
+
+class _FightsButton(PickerButton):
+    """The pill row's anchor: opens the list of fights this strategy could cover.
+
+    A ``PickerPopup`` rather than a modal, and the payload is why. Browsing *fights*
+    is one line each -- a name, and what that fight uses today in the right-hand slot
+    -- which is what 400px was built for. Browsing *strategies* is seven to nine lines
+    each and does not fit, which is why picking one is still a dialog.
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__("Applies to", search_placeholder="Filter fights…", parent=parent)
+        self.setToolTip("Choose which fights use this strategy")
+
+    def format_text(self, labels: list[str]) -> str:
+        return FIGHTS_BUTTON
+
 
 class StrategyPanel(CardFrame):
     """One binding -- the bot default, or one group of fights -- as a card.
@@ -137,7 +192,10 @@ class StrategyPanel(CardFrame):
 
     pick_requested = pyqtSignal()
     edit_in_library_requested = pyqtSignal(str)  # dcs_id
-    membership_requested = pyqtSignal()
+    #: The complete desired membership, once the popup has closed -- not per toggle.
+    #: Acting on each toggle would rebuild this card's own section while its popup is
+    #: still open on top of it; see ``PickerButton.committed``.
+    membership_changed = pyqtSignal(list)  # list[str] of state_ids
     promote_requested = pyqtSignal()
 
     def __init__(
@@ -206,6 +264,23 @@ class StrategyPanel(CardFrame):
             header.addWidget(self._make_verb_button(verb), 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
+        # Directly under the title, because which fights a strategy covers is the
+        # second thing to know about it and the old arrangement put it last -- a
+        # "Applies to" link under four assignment lines, at the bottom of the card,
+        # where it read as a footnote rather than as the scope of everything above it.
+        self._pill_row = QWidget()
+        self._pill_layout = FlowLayout(self._pill_row, spacing=4)
+        self._pills: list[NeutralPill] = []
+        # Inert pills, not chips with a ✕. ``TagChip`` wears one because removing a
+        # *filter* is the whole point of it being on screen; here membership is decided
+        # in the popup, and a second removal route on the row would re-clutter exactly
+        # what the pills are here to declutter.
+        self._fights_btn = _FightsButton(parent=self._pill_row)
+        self._fights_btn.committed.connect(self.membership_changed)
+        self._pill_layout.addWidget(self._fights_btn)
+        layout.addWidget(self._pill_row)
+        self._pill_row.setVisible(False)
+
         # The facets -- "4 players · P1→P2→P3→P4" -- or, when nothing is configured, the
         # sentence naming what this binding falls through to instead.
         self._meta = self._sub_line(layout)
@@ -215,25 +290,6 @@ class StrategyPanel(CardFrame):
         # binding changes under this card on every pick, and destroying widgets mid-
         # refresh is how the old per-state rebuild interrupted edits in progress.
         self._assignment_lbls = [self._sub_line(layout) for _ in range(_MAX_ASSIGNMENT_LINES)]
-
-        # "Applies to  Defeat Balaur" -- the fights this card governs, and the way to
-        # change them. Hidden entirely on the default panel, which governs whatever is
-        # left over rather than a list anyone chose.
-        self._applies_row = QWidget()
-        applies_layout = QHBoxLayout(self._applies_row)
-        applies_layout.setContentsMargins(0, 2, 0, 0)
-        applies_layout.setSpacing(4)
-        self._applies_btn = LinkButton("Applies to", font_size=THEME.font_card_sub_size)
-        self._applies_btn.setToolTip("Choose which fights use this strategy")
-        self._applies_btn.clicked.connect(self.membership_requested)
-        applies_layout.addWidget(self._applies_btn, 0, Qt.AlignmentFlag.AlignTop)
-        self._titles_layout = QVBoxLayout()
-        self._titles_layout.setContentsMargins(0, 0, 0, 0)
-        self._titles_layout.setSpacing(0)
-        applies_layout.addLayout(self._titles_layout, 1)
-        self._title_lbls: list[ElidedLabel] = []
-        layout.addWidget(self._applies_row)
-        self._applies_row.setVisible(False)
 
     def _sub_line(self, layout: QVBoxLayout) -> ElidedLabel:
         """One muted caption inside the frame, elided to whatever width the sidebar has.
@@ -265,27 +321,46 @@ class StrategyPanel(CardFrame):
         self.refresh()
 
     def set_titles(self, titles: list[str]) -> None:
-        """Name every fight this card governs, one per line beside "Applies to".
+        """Name every fight this card governs, as a pill each.
 
-        Surplus labels are hidden rather than destroyed: membership changes while the
-        card is on screen, and a card that rebuilds its own children during a refresh is
-        a card that can delete the widget a click is still travelling to.
+        Pills rather than the stacked lines this used to draw: a group of four fights
+        cost four full-width rows at the bottom of the card, and the four names are
+        short enough to sit on one wrapped row. ``FlowLayout`` is what makes that safe
+        at a 300px sidebar -- they wrap rather than widening the panel.
+
+        Surplus pills are hidden rather than destroyed, for the reason the assignment
+        lines are: membership changes while the card is on screen, and a card that
+        rebuilds its own children during a refresh can delete the widget a click is
+        still travelling to.
         """
         self._titles = list(titles)
-        while len(self._title_lbls) < len(self._titles):
-            label = ElidedLabel()
-            self._titles_layout.addWidget(label)
-            self._title_lbls.append(label)
-        for label, text in zip(self._title_lbls, self._titles):
-            label.setText(text)
-            label.show()
-        for label in self._title_lbls[len(self._titles) :]:
-            label.hide()
-        self._applies_row.setVisible(bool(self._titles) and self._supports_membership)
+        while len(self._pills) < len(self._titles):
+            pill = NeutralPill("")
+            # Before the button, which stays last so it does not move as pills come
+            # and go -- a control that walks along the row is one you have to find
+            # again after every change.
+            self._pill_layout.insertWidget(len(self._pills), pill)
+            self._pills.append(pill)
+        for pill, text in zip(self._pills, self._titles):
+            pill.setText(text)
+            pill.show()
+        for pill in self._pills[len(self._titles) :]:
+            pill.hide()
+        self._sync_pill_row()
         self.refresh_theme_styles()
 
     def titles(self) -> list[str]:
         return list(self._titles)
+
+    def set_fight_options(self, sections: list[Section], selected: list[str]) -> None:
+        """The fights this strategy *could* cover, and the ones it does.
+
+        Built by the tab rather than here: the vocabulary is every exposed fight in the
+        bot plus what each one uses today, and only the tab knows either. The card just
+        shows them.
+        """
+        self._fights_btn.set_sections(sections)
+        self._fights_btn.set_selection(selected)
 
     @property
     def binding(self):
@@ -324,7 +399,7 @@ class StrategyPanel(CardFrame):
         self._editable = editable
         for button in self.action_buttons:
             button.setEnabled(editable)
-        self._applies_btn.setEnabled(editable and self._membership_allowed())
+        self._fights_btn.setEnabled(editable)
         self.setCursor(Qt.CursorShape.PointingHandCursor if editable else Qt.CursorShape.ArrowCursor)
         self.setToolTip("" if editable else LOCKED)
 
@@ -339,7 +414,9 @@ class StrategyPanel(CardFrame):
             return
         self.setVisible(True)
 
-        if self._binding.is_linked:
+        if self._is_condensed():
+            self._render_condensed()
+        elif self._binding.is_linked:
             dcs = next((d for d in self._all_dcs if d.id == self.linked_id), None)
             if dcs is None:
                 # A reference to a file that is gone. Named rather than blanked: the
@@ -361,8 +438,39 @@ class StrategyPanel(CardFrame):
         edit_btn = self.action_button(EDIT_IN_LIBRARY)
         if edit_btn is not None:
             edit_btn.setVisible(self.linked_id is not None)
-        self._applies_btn.setEnabled(self._editable and self._membership_allowed())
+        self._sync_pill_row()
         self.refresh_theme_styles()
+
+    def _is_condensed(self) -> bool:
+        """Whether this is a fight that has not been given a strategy yet.
+
+        Such a fight used to draw a full card -- frame, name, meta sentence, an
+        "Applies to" row -- to say that it had nothing to say. A bot with eight exposed
+        fights and two configured showed six of them, near-identical, and the section
+        read as mostly empty boilerplate. Condensed, it is the fight's own name and the
+        one verb that applies, and it grows into a full card the moment it holds
+        something.
+
+        Only fights condense. The Default Duel Combat Strategy is never "not yet
+        configured" in this sense -- unset is a real, common and correct state for it,
+        with a sentence naming what it falls through to.
+        """
+        return self._supports_membership and not self._membership_allowed()
+
+    def _render_condensed(self) -> None:
+        """One fight, no strategy: its name, and nothing else.
+
+        The name line carries the *fight*, not the strategy, because in this state the
+        fight is what the row is about -- an unconfigured group is always exactly one
+        fight, since ``group_bindings`` merges only the configured ones.
+        """
+        self._invalid = False
+        title = self._titles[0] if self._titles else self._empty_label
+        self._name.setText(title)
+        self._name.setToolTip(f"{title} — {self._empty_meta}")
+        self._meta.setVisible(False)
+        for label in self._assignment_lbls:
+            label.setVisible(False)
 
     def _render_bare(self, name: str, meta: str, invalid: bool = False) -> None:
         """A card with no configuration behind it: a name, one sentence, no assignments."""
@@ -373,6 +481,15 @@ class StrategyPanel(CardFrame):
         self._meta.setVisible(True)
         for label in self._assignment_lbls:
             label.setVisible(False)
+
+    def _sync_pill_row(self) -> None:
+        """Show the pills and the fights button only where membership is a real question.
+
+        Hidden on the Default panel, which governs whatever is left over rather than a
+        list anyone chose, and on a condensed row, whose single fight is already its
+        title -- a pill repeating the name two pixels below it is the same word twice.
+        """
+        self._pill_row.setVisible(self._supports_membership and not self._is_condensed())
 
     def _render_summary(self, name: str, summary: StrategySummary) -> None:
         """Name, facets and one line per player assignment, all from one summary."""
@@ -443,8 +560,11 @@ class StrategyPanel(CardFrame):
         if self.linked_id is not None:
             verbs.append(self._face_verbs()[1])
         if self._membership_allowed():
+            # Opens the same popup the pill row's button does, rather than a second
+            # membership surface of its own -- the menu is the keyboard route to a verb,
+            # not an alternative way of performing it.
             verbs.append(
-                CardVerb(APPLIES_TO, "attach", "Choose which fights use this strategy", self.membership_requested.emit)
+                CardVerb(APPLIES_TO, "attach", "Choose which fights use this strategy", self._fights_btn.click)
             )
         if self._binding is not None and not self._binding.is_linked and not self._binding.duel_config.is_empty():
             verbs.append(
@@ -482,8 +602,16 @@ class StrategyPanel(CardFrame):
         the colour has to go through the palette. That is why this is a loop over
         palettes rather than the stylesheet write every other card does.
         """
-        self._set_text_color(self._name, THEME.error if self._invalid else THEME.text)
-        for label in (self._meta, *self._assignment_lbls, *self._title_lbls):
+        # A condensed row's name is a *fight*, not a strategy, and it is the one thing
+        # in that row -- muted, so a section of them reads as a list of things not yet
+        # configured rather than as a stack of headings competing with the real cards
+        # above them.
+        if self._is_condensed():
+            name_color = THEME.text_muted
+        else:
+            name_color = THEME.error if self._invalid else THEME.text
+        self._set_text_color(self._name, name_color)
+        for label in (self._meta, *self._assignment_lbls):
             self._set_text_color(label, THEME.text_muted)
 
     @staticmethod
