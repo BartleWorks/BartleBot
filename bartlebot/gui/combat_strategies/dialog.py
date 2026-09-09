@@ -122,6 +122,13 @@ _HAYSTACK_ROLE = Qt.ItemDataRole.UserRole + 1
 _REVERT_TEXT = "Revert to shipped"
 _DELETE_TEXT = "Delete"
 
+#: How far a tab's contents sit inside the tab pane, and how far the detail pane sits
+#: from the splitter between it and the card list. Two numbers rather than one because
+#: the splitter handle is already a few pixels of its own: the gap the eye sees beside a
+#: handle is the handle plus this, while the gap beside the pane border is only this.
+_PAGE_INSET = 10
+_DETAIL_GUTTER = 12
+
 
 def summary_haystack(summary: StrategySummary) -> str:
     """The text a filter query is matched against, lowercased.
@@ -274,7 +281,11 @@ class _KindPage(QWidget):
         self._card_map: list[tuple[QListWidgetItem, StrategyCard]] = []
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 6, 0, 0)
+        # A real inset on all four sides. The page used to run edge to edge inside the tab
+        # pane, so the filter box, the cards and the fields all sat directly against its
+        # border — which is most of what made a screen of otherwise ordinary controls read
+        # as crowded. A line with nothing beside it reads as a wall.
+        layout.setContentsMargins(_PAGE_INSET, _PAGE_INSET, _PAGE_INSET, _PAGE_INSET)
         layout.setSpacing(6)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -326,7 +337,7 @@ class _KindPage(QWidget):
     def _build_detail(self) -> QWidget:
         panel = QWidget()
         box = QVBoxLayout(panel)
-        box.setContentsMargins(6, 0, 0, 0)
+        box.setContentsMargins(_DETAIL_GUTTER, 0, 0, 0)
         box.setSpacing(6)
 
         self._about = AboutSection()
@@ -601,8 +612,11 @@ class _KindPage(QWidget):
     # -- theme ----------------------------------------------------------
 
     def _apply_style(self) -> None:
+        # No border on the list itself. It holds a column of cards, each of which draws
+        # its own edge when it is selected, and the splitter handle already says where
+        # this pane stops — a box around a column of boxes is one line too many.
         self._list.setStyleSheet(
-            f"QListWidget {{ border: 1px solid {THEME.border}; background: {THEME.bg}; }}"
+            f"QListWidget {{ border: none; background: {THEME.bg}; }}"
             f"QListWidget::item {{ background: transparent; border: none; padding: 1px; }}"
             f"QListWidget::item:selected {{ background: transparent; border: none; }}"
             f"QListWidget::item:hover {{ background: transparent; border: none; }}"

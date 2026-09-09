@@ -65,3 +65,23 @@ def test_set_text_renames_it(qapp):
     heading.set_text("Combat Order")
 
     assert heading.text == "Combat Order"
+
+
+# ---------------------------------------------------------------------------
+# The gap around it. A heading opens a region, so it carries its own leading
+# space rather than leaving every surface to set a spacer of its own.
+# ---------------------------------------------------------------------------
+
+
+def test_the_heading_keeps_space_above_itself(qapp):
+    heading = RuleHeading("About")
+
+    assert heading.layout().contentsMargins().top() > 0
+
+
+def test_it_sits_closer_to_what_it_introduces_than_to_what_it_follows(qapp):
+    """That asymmetry is what makes the rule read as a heading rather than a divider."""
+    heading = RuleHeading("About")
+
+    margins = heading.layout().contentsMargins()
+    assert margins.bottom() < margins.top()

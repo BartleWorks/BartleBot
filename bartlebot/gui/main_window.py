@@ -85,14 +85,14 @@ class MainWindow(QMainWindow):
         file_menu.addMenu(self._recent_menu)
         self._update_recent_placeholder()
 
-        self.action_browse_library = QAction("Browse Bot Library", self)
+        self.action_browse_library = QAction("Browse Bot Library…", self)
         file_menu.addAction(self.action_browse_library)
 
         # Beside the bot library because it is the same kind of entry: a library of
         # reusable things, reachable without a bot open. Combat strategies depend on
         # which wizards the user owns, not on which bot is loaded, so this is the one
         # editor that should not be behind opening one.
-        self.action_combat_strategies = QAction("Browse Combat Strategy Library", self)
+        self.action_combat_strategies = QAction("Browse Combat Strategy Library…", self)
         file_menu.addAction(self.action_combat_strategies)
 
         self.action_close = QAction("Close Bot", self)

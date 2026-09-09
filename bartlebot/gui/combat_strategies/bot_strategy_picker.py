@@ -119,7 +119,9 @@ class BotStrategyPicker(QDialog):
 
     def _apply_list_style(self) -> None:
         self._list.setStyleSheet(
-            f"QListWidget {{ border: 1px solid {THEME.border}; background: {THEME.bg}; }}"
+            # Borderless, as in the combat dialog: the cards draw their own selected edge
+            # and a box around a column of boxes is one line too many.
+            f"QListWidget {{ border: none; background: {THEME.bg}; }}"
             f"QListWidget::item {{ background: transparent; border: none; padding: 1px; }}"
             f"QListWidget::item:selected {{ background: transparent; border: none; }}"
             f"QListWidget::item:hover {{ background: transparent; border: none; }}"

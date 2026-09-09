@@ -30,6 +30,11 @@ from bartlebot.gui.themed import ThemedMixin
 _RULE_GAP = 8
 _RULE_HEIGHT = 1
 
+#: What the heading keeps clear above and below itself. See the layout in ``__init__``
+#: for why the two differ.
+_SPACE_ABOVE = 10
+_SPACE_BELOW = 2
+
 
 class RuleHeading(ThemedMixin, QWidget):
     """A section heading: bold text at the left, a hairline filling the rest of the row."""
@@ -37,7 +42,12 @@ class RuleHeading(ThemedMixin, QWidget):
     def __init__(self, text: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         row = QHBoxLayout(self)
-        row.setContentsMargins(0, 0, 0, 0)
+        # The space above belongs to the heading rather than to whatever precedes it: a
+        # heading's job is to *open* a region, so it carries its own leading gap and every
+        # surface using one gets the same rhythm without setting a spacer of its own.
+        # Asymmetric, and deliberately -- a rule sitting closer to what it introduces than
+        # to what it follows is what makes it read as a heading rather than as a divider.
+        row.setContentsMargins(0, _SPACE_ABOVE, 0, _SPACE_BELOW)
         row.setSpacing(_RULE_GAP)
 
         self._label = QLabel(text, self)

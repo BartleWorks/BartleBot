@@ -139,6 +139,28 @@ else. `RuleHeading` draws its rule from `THEME.border` rather than as a sunken `
 on purpose — Qt draws a sunken HLine from the palette's Mid/Light pair, which the dark
 theme leaves all but invisible against `surface`.
 
+It also carries its own leading gap, more above than below, so a surface using one gets
+the rhythm without setting a spacer — and so the rule sits nearer what it introduces
+than what it follows, which is what makes it read as a heading rather than a divider.
+
+## Lines need room, or they read as walls
+
+The commonest way a screen here looks crowded is not too many lines; it is lines with
+nothing beside them. Two rules:
+
+- **A line earns its place by separating things that are otherwise ambiguous.** Chrome
+  *around* a group — a border on the list widget holding a column of cards, the box
+  `QTabWidget::pane` used to draw around a whole page — separates nothing: the cards
+  draw their own edges, and a splitter handle already says where a pane stops. The pane
+  keeps only its `border-top`, which is load-bearing (it anchors the tab strip). Borders
+  on the individual elements *stay* — a card, a chip, a field is a thing, and the outline
+  is how it says so.
+- **Inset the contents of anything bordered.** A tab page whose fields run edge to edge
+  inside the pane reads as crowded however few lines are on it. `CombatStrategyDialog`
+  is the worked example: a page inset on all four sides, and a wider gutter on the
+  detail pane, because the gap the eye sees beside a splitter handle is the handle plus
+  the margin while the gap beside a border is only the margin.
+
 ## Account colours, and what a coloured thing may claim
 
 A palette slot per account (`shared/account_slots.py`), resolved to a colour against the
