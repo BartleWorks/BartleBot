@@ -52,6 +52,8 @@ from bartlebot.gui.sidebar.strategy_panel import (
     BUILT_IN_LABEL,
     CHANGE,
     CUSTOM_LABEL,
+    DEFAULT_PILL,
+    DEFAULT_SCOPE_META,
     EDIT_IN_LIBRARY,
     LOCKED,
     MISSING_LABEL,
@@ -62,6 +64,7 @@ from bartlebot.gui.sidebar.strategy_panel import (
     StrategyPanel,
 )
 from bartlebot.gui.widgets.picker_popup import PickerRow
+from bartlebot.gui.widgets.tag_pill import AccentPill, ActionPill, NeutralPill
 
 
 @pytest.fixture
@@ -101,14 +104,19 @@ def _visible_lines(panel: StrategyPanel) -> list[str]:
     return [lbl.full_text() for lbl in panel._assignment_lbls if lbl.isVisibleTo(panel)]
 
 
-def _configured_panel(name: str = "Shared") -> StrategyPanel:
-    """A fight card holding a strategy — the state in which it is a full card.
+def _default_fights(tab: CombatTab) -> list[str]:
+    """The fights on the tab's default card, by label, in order."""
+    return [label for _state_id, label in tab._default_panel.fights()]
 
-    Without one it condenses to a single muted row and has no pills to show, which is
-    the whole point of the condensed state and the wrong subject for a pill test.
+
+def _configured_panel(name: str = "Shared") -> StrategyPanel:
+    """A fight card holding a strategy — the state in which it has pills at all.
+
+    A card with no strategy shows no pill row: its fights are pills on the tab's default
+    card instead, which is the wrong subject for a membership test.
     """
     dcs = DuelCombatStrategy(name=name)
-    panel = StrategyPanel(STATE_INHERIT_LABEL, STATE_INHERIT_META, supports_membership=True)
+    panel = StrategyPanel(STATE_INHERIT_LABEL, STATE_INHERIT_META)
     panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
     return panel
 
@@ -322,7 +330,7 @@ def test_a_locked_card_refuses_its_body_click(qapp):
 
 def test_a_state_panel_offers_applies_to(qapp):
     dcs = DuelCombatStrategy(name="Shared")
-    panel = StrategyPanel(STATE_INHERIT_LABEL, "", supports_membership=True)
+    panel = StrategyPanel(STATE_INHERIT_LABEL, "")
     panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
 
     assert APPLIES_TO in _verb_labels(panel)
@@ -338,10 +346,10 @@ def test_the_default_panel_offers_no_applies_to(qapp):
     assert APPLIES_TO not in _verb_labels(panel)
 
 
-def test_a_condensed_fight_offers_no_applies_to(qapp):
+def test_a_panel_holding_no_strategy_offers_no_applies_to(qapp):
     """A group of fights holding no config is what the grouping pulls back apart on the
     next rebuild, so offering it would look like an edit that quietly undid itself."""
-    panel = StrategyPanel(STATE_INHERIT_LABEL, "", supports_membership=True)
+    panel = StrategyPanel(STATE_INHERIT_LABEL, "")
     panel.load(StateAssignment(state_ids=["s1"]), [], [])
 
     assert APPLIES_TO not in _verb_labels(panel)
@@ -349,7 +357,7 @@ def test_a_condensed_fight_offers_no_applies_to(qapp):
 
 
 def test_the_pill_row_appears_once_a_fight_has_an_inline_config(qapp):
-    panel = StrategyPanel(STATE_INHERIT_LABEL, "", supports_membership=True)
+    panel = StrategyPanel(STATE_INHERIT_LABEL, "")
     panel.load(
         StateAssignment(
             state_ids=["s1"],
@@ -366,7 +374,7 @@ def test_the_pill_row_appears_once_a_fight_has_an_inline_config(qapp):
 def test_the_menu_verb_opens_the_same_popup_as_the_button(qapp):
     """The menu is the keyboard route to a verb, not a second way of performing it."""
     dcs = DuelCombatStrategy(name="Shared")
-    panel = StrategyPanel(STATE_INHERIT_LABEL, "", supports_membership=True)
+    panel = StrategyPanel(STATE_INHERIT_LABEL, "")
     panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
 
     verb = next(v for v in panel._verbs() if v.label == APPLIES_TO)
@@ -378,7 +386,7 @@ def test_membership_is_reported_when_the_popup_closes_not_per_toggle(qapp):
     """Acting per toggle would rebuild the section holding the card whose popup is
     still open on top of it."""
     dcs = DuelCombatStrategy(name="Shared")
-    panel = StrategyPanel(STATE_INHERIT_LABEL, "", supports_membership=True)
+    panel = StrategyPanel(STATE_INHERIT_LABEL, "")
     panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
     panel.set_fight_options([("", [PickerRow(key="s1", label="A"), PickerRow(key="s2", label="B")])], ["s1"])
     seen: list[list[str]] = []
@@ -403,16 +411,18 @@ def _pills(panel: StrategyPanel) -> list[str]:
 def test_every_fight_in_a_group_gets_a_pill(qapp):
     panel = _configured_panel()
 
-    panel.set_titles(["Tse-Tse", "Spectral", "Goliath", "Starburst"])
+    panel.set_fights(
+        [("Tse-Tse", "Tse-Tse"), ("Spectral", "Spectral"), ("Goliath", "Goliath"), ("Starburst", "Starburst")]
+    )
 
     assert _pills(panel) == ["Tse-Tse", "Spectral", "Goliath", "Starburst"]
 
 
 def test_shrinking_a_group_hides_the_surplus_pills(qapp):
     panel = _configured_panel()
-    panel.set_titles(["A", "B", "C"])
+    panel.set_fights([("A", "A"), ("B", "B"), ("C", "C")])
 
-    panel.set_titles(["A"])
+    panel.set_fights([("A", "A")])
 
     assert panel.titles() == ["A"]
     assert _pills(panel) == ["A"]
@@ -420,10 +430,10 @@ def test_shrinking_a_group_hides_the_surplus_pills(qapp):
 
 def test_growing_a_group_reuses_existing_pills(qapp):
     panel = _configured_panel()
-    panel.set_titles(["A"])
+    panel.set_fights([("A", "A")])
     first = panel._pills[0]
 
-    panel.set_titles(["A", "B"])
+    panel.set_fights([("A", "A"), ("B", "B")])
 
     assert panel._pills[0] is first
 
@@ -433,7 +443,7 @@ def test_the_fights_button_stays_last_as_pills_come_and_go(qapp):
     change, which is why FlowLayout grew an insertWidget."""
     panel = _configured_panel()
 
-    panel.set_titles(["A", "B", "C"])
+    panel.set_fights([("A", "A"), ("B", "B"), ("C", "C")])
 
     layout = panel._pill_layout
     assert layout.itemAt(layout.count() - 1).widget() is panel._fights_btn
@@ -441,7 +451,7 @@ def test_the_fights_button_stays_last_as_pills_come_and_go(qapp):
 
 def test_the_pill_row_is_hidden_where_membership_is_not_supported(qapp):
     panel = StrategyPanel()
-    panel.set_titles(["A", "B"])
+    panel.set_fights([("A", "A"), ("B", "B")])
 
     assert panel._pill_row.isHidden()
 
@@ -567,11 +577,23 @@ def _tab_for(bcs: BotCombatStrategy, config: BotConfig) -> CombatTab:
     return tab
 
 
-def test_set_config_creates_one_panel_per_exposed_state(qapp, store):
+def test_an_exposed_state_with_no_strategy_is_a_pill_not_a_panel(qapp, store):
+    """Nothing is configured on a fresh Bot Combat Strategy, so nothing gets a card of
+    its own — every exposed fight is a pill on the default card."""
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config(label="Howling Chaney"))
+
+    assert tab._state_panels == {}
+    assert tab._default_panel.fights() == [("state_9", "Howling Chaney")]
+    assert not tab._default_panel.isHidden()
+
+
+def test_the_section_is_absent_until_a_bot_combat_strategy_exists(qapp, store):
+    """There is no default strategy to name, so the card that names it has nothing to
+    say — and it is the card the section is built around."""
     tab = CombatTab()
     tab.set_config(_config(label="Howling Chaney"))
 
-    assert list(tab._state_panels.keys()) == ["state_9"]
+    assert tab._strategies_section.isHidden()
 
 
 def test_the_specialized_section_is_absent_when_no_fight_opts_out(qapp, store):
@@ -591,14 +613,26 @@ def test_the_specialized_section_is_absent_when_no_fight_opts_out(qapp, store):
     assert tab._state_panels == {}
     # isVisible() is unreliable for a widget tree that was never shown in a window;
     # isHidden() reflects whether show()/hide() was actually called.
-    assert tab._assignments_section.isHidden()
+    assert tab._strategies_section.isHidden()
 
 
-def test_the_specialized_section_appears_once_a_fight_opts_out(qapp, store):
-    tab = CombatTab()
-    tab.set_config(_config())
+def test_the_section_stands_on_the_default_card_alone(qapp, store):
+    """It is not hidden merely because no fight opted out. 49 of the 68 shipped bots with
+    combat expose none, and on those the default card is still what names the strategy
+    every one of their fights will use -- only the add-card has nothing to act on."""
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config(use_default=True))
 
-    assert not tab._assignments_section.isHidden()
+    assert not tab._strategies_section.isHidden()
+    assert not tab._default_panel.isHidden()
+    assert _default_fights(tab) == []
+    assert tab._add_card.isHidden()
+
+
+def test_the_add_card_appears_once_a_fight_opts_out(qapp, store):
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config())
+
+    assert not tab._strategies_section.isHidden()
+    assert not tab._add_card.isHidden()
 
 
 def test_untouched_state_binding_is_not_persisted(qapp, store):
@@ -616,11 +650,10 @@ def test_linked_state_binding_is_persisted_even_with_empty_duel_config(qapp, sto
     bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
     tab = _tab_for(bcs, _config())
 
-    panel = tab._state_panels["state_9"]
     with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
-        tab._on_pick_duel(panel)
+        tab._on_pick_for_fight("state_9")
 
     reloaded = store_mod.load_bot_strategy(bcs.id)
     assert len(reloaded.state_assignments) == 1
@@ -650,7 +683,13 @@ def test_inline_state_binding_with_content_is_persisted(qapp, store):
 
 def test_refresh_strategy_data_does_not_replace_card_widgets(qapp, store):
     """A rename in the library must reach the cards without destroying them."""
-    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config())
+    dcs = _saved_dcs("Frenzy AoE")
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[StateAssignment(state_ids=["state_9"], duel_combat_strategy_id=dcs.id)],
+    )
+    tab = _tab_for(bcs, _config())
     panel_before = tab._state_panels["state_9"]
     default_before = tab._default_panel
 
@@ -661,7 +700,13 @@ def test_refresh_strategy_data_does_not_replace_card_widgets(qapp, store):
 
 
 def test_set_editable_locks_every_card_without_replacing_it(qapp, store):
-    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config())
+    dcs = _saved_dcs()
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[StateAssignment(state_ids=["state_9"], duel_combat_strategy_id=dcs.id)],
+    )
+    tab = _tab_for(bcs, _config())
     panel_before = tab._state_panels["state_9"]
 
     tab.set_editable(False)
@@ -671,39 +716,108 @@ def test_set_editable_locks_every_card_without_replacing_it(qapp, store):
     assert not tab._bcs_card.action_button(_CHANGE_BCS).isEnabled()
 
 
-def test_an_unconfigured_fight_condenses_to_its_own_name(qapp, store):
+def test_the_default_cards_pills_are_locked_with_the_rest(qapp, store):
+    """They are that card's only verb, so a running bot has to reach them."""
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config())
+    card = tab._default_panel
+
+    tab.set_editable(False)
+
+    assert card._pills[0].isEnabled() is False
+    assert card.toolTip() == LOCKED
+
+
+def test_an_unconfigured_fight_is_a_pill_on_the_default_card(qapp, store):
     """It used to draw a full card -- frame, name, meta sentence, Applies-to row -- to
-    say it had nothing to say, once per fight. Condensed it is the fight and the one
-    verb that applies."""
+    say it had nothing to say, once per fight; then a muted row per fight under a bare
+    caption. Now they are pills on the card holding the strategy they all fall through
+    to, which is the shape the rest of the section already had."""
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config(label="Howling Chaney"))
-    panel = tab._state_panels["state_9"]
+    card = tab._default_panel
 
-    assert panel._name.full_text() == "Howling Chaney"
-    assert panel._pill_row.isHidden()
-    assert not panel._meta.isVisibleTo(panel)
-    assert _visible_lines(panel) == []
+    assert _default_fights(tab) == ["Howling Chaney"]
+    assert not card.isHidden()
+    assert card._name.full_text() == BUILT_IN_LABEL
 
 
-def test_a_condensed_fight_still_says_what_it_falls_through_to(qapp, store):
-    """Dropped from the card face, not from the surface: the section caption says it
-    once for all of them, and the row's tooltip says it for this one."""
+def test_the_default_card_is_badged_rather_than_titled(qapp, store):
+    """Once a strategy is picked for it, it is titled with that strategy's name like
+    every other card in the section, so the badge is what says which one is the
+    fallback."""
+    dcs = _saved_dcs()
+    bcs = BotCombatStrategy(name="BCS", bot_id="bot-1", default_strategy_id=dcs.id)
+    tab = _tab_for(bcs, _config())
+
+    assert tab._default_panel._name.full_text() == dcs.name
+    assert tab._default_panel._default_pill.text() == DEFAULT_PILL
+
+
+def test_the_default_cards_badge_is_not_one_of_its_fights(qapp, store):
+    """It qualifies the card; the pills beside it are its contents. Two kinds of word on
+    one row, so they are two kinds of pill."""
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config(label="Howling Chaney"))
+    card = tab._default_panel
 
-    assert STATE_INHERIT_META in tab._state_panels["state_9"]._name.toolTip()
+    assert isinstance(card._default_pill, AccentPill)
+    assert _default_fights(tab) == ["Howling Chaney"]
+    assert not isinstance(card._default_pill, ActionPill)
+
+
+def test_the_default_card_says_what_else_it_governs(qapp, store):
+    """Its pills are not the whole truth: only 30 of the shipped library's 133
+    handle_combat states are exposed, and the other 103 run this strategy without
+    appearing here at all."""
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config(label="Howling Chaney"))
+    card = tab._default_panel
+
+    assert card._scope.full_text() == DEFAULT_SCOPE_META
+    assert card._scope.isVisibleTo(card)
+    assert DEFAULT_SCOPE_META.lower() in card._pills[0].toolTip()
+
+
+def test_the_default_card_offers_no_fights_button(qapp, store):
+    """Its membership is a residue, not a choice: unchecking a fight here would be an
+    offer to send it nowhere."""
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config())
+
+    assert tab._default_panel._fights_btn is None
+    assert APPLIES_TO not in [v.label for v in tab._default_panel._verbs()]
+
+
+def test_the_default_card_stays_when_every_fight_has_a_strategy(qapp, store):
+    """It still holds the strategy for every combat state the sidebar never lists, and
+    its badge keeps the row from reading as a strategy that lost its fights."""
+    dcs = _saved_dcs()
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[StateAssignment(state_ids=["state_9"], duel_combat_strategy_id=dcs.id)],
+    )
+    tab = _tab_for(bcs, _config())
+
+    assert tab._default_panel.fights() == []
+    assert not tab._default_panel.isHidden()
+    assert tab._default_panel._pill_row.isVisibleTo(tab._default_panel)
 
 
 def test_the_two_levels_fall_through_to_different_things(qapp, store):
     """resolve_combat() reaches for bcs.default_strategy_id / default_duel_config before
     the built-in strategy, and the pre-run warning says so too. Telling a fight it falls
     through to "BartleBot Default Combat Strategy" claimed the bot default was skipped."""
-    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config())
+    dcs = _saved_dcs()
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[StateAssignment(state_ids=["state_9"], duel_combat_strategy_id=dcs.id)],
+    )
+    tab = _tab_for(bcs, _config())
 
     assert tab._state_panels["state_9"].empty_label == STATE_INHERIT_LABEL
     assert tab._default_panel.empty_label == BUILT_IN_LABEL
     assert tab._default_panel._name.full_text() == BUILT_IN_LABEL
 
 
-def test_a_fight_grows_into_a_full_card_once_it_holds_a_strategy(qapp, store):
+def test_a_fight_leaves_the_pills_for_a_card_of_its_own(qapp, store):
     dcs = DuelCombatStrategy(name="Frenzy AoE")
     store_mod.save_duel_strategy(dcs)
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config(label="Howling Chaney"))
@@ -711,12 +825,92 @@ def test_a_fight_grows_into_a_full_card_once_it_holds_a_strategy(qapp, store):
     with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
-        tab._on_pick_duel(tab._state_panels["state_9"])
+        tab._on_pick_for_fight("state_9")
 
     panel = tab._state_panels["state_9"]
     assert panel._name.full_text() == "Frenzy AoE"
     assert not panel._pill_row.isHidden()
     assert _pills(panel) == ["Howling Chaney"]
+    assert _default_fights(tab) == []
+
+
+def test_a_pill_click_picks_for_that_fight_alone(qapp, store):
+    """The click the condensed row used to take, on the fight's own name."""
+    dcs = _saved_dcs("Frenzy AoE")
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+
+    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_id.return_value = dcs.id
+        tab._default_panel._pills[1].click()
+
+    assert tab._state_bindings["state_2"].duel_combat_strategy_id == dcs.id
+    assert tab._state_bindings["state_1"].duel_combat_strategy_id is None
+    assert _default_fights(tab) == ["A"]
+
+
+def test_a_cancelled_pill_pick_changes_nothing(qapp, store):
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+
+    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = False
+        tab._on_pick_for_fight("state_2")
+
+    assert tab._state_bindings["state_2"].duel_combat_strategy_id is None
+    assert _default_fights(tab) == ["A", "B"]
+
+
+# ---------------------------------------------------------------------------
+# ActionPill — the clickable pill the bot-default card is built from
+# ---------------------------------------------------------------------------
+
+
+def test_a_pill_reports_its_key_rather_than_its_label(qapp):
+    """Two fights can share a label; nothing but the state id identifies one."""
+    pill = ActionPill("Howling Chaney", "state_9")
+    seen: list[str] = []
+    pill.activated.connect(seen.append)
+
+    pill.click()
+
+    assert seen == ["state_9"]
+
+
+def test_a_reused_pill_reports_the_fight_it_now_names(qapp):
+    """Pills are re-pointed rather than rebuilt, so a stale key would fire a pick against
+    a fight that left the card."""
+    pill = ActionPill("A", "state_1")
+    seen: list[str] = []
+    pill.activated.connect(seen.append)
+
+    pill.set_pill("B", "state_2")
+    pill.click()
+
+    assert pill.text() == "B"
+    assert seen == ["state_2"]
+
+
+def test_a_pill_is_as_wide_as_its_text(qapp):
+    """A QPushButton's own size hint carries the platform's 80px minimum button width,
+    which would make four pills wider than the sidebar they wrap inside."""
+    short = ActionPill("A", "state_1")
+    long = ActionPill("Defeat the second Lost Soul", "state_2")
+
+    assert short.sizeHint().width() < 30
+    assert short.sizeHint().width() < long.sizeHint().width()
+    # The same shape as the inert pills on the cards above it -- that is the whole reason
+    # this is a pill rather than a NeutralChip.
+    assert short.sizeHint().height() == NeutralPill("A").sizeHint().height()
+
+
+def test_the_badge_pill_shares_the_row_without_joining_it(qapp):
+    """Same height, so it sits on the row rather than above or below it; outlined rather
+    than filled, so it reads as a label on the pills and not as the loudest of them."""
+    badge = AccentPill(DEFAULT_PILL)
+
+    assert badge.sizeHint().height() == NeutralPill("A").sizeHint().height()
+    assert "transparent" in badge.styleSheet()
+    assert "border: 1px solid" in badge.styleSheet()
 
 
 # ---------------------------------------------------------------------------
@@ -773,7 +967,7 @@ def test_the_picker_none_row_is_labelled_with_what_the_card_falls_through_to(qap
         MockDlg.return_value.exec.return_value = False
         tab._on_pick_duel(tab._default_panel)
         default_label = MockDlg.call_args.kwargs["none_label"]
-        tab._on_pick_duel(tab._state_panels["state_9"])
+        tab._on_pick_for_fight("state_9")
         state_label = MockDlg.call_args.kwargs["none_label"]
 
     assert default_label == BUILT_IN_LABEL
@@ -849,7 +1043,14 @@ def test_promote_cancel_does_not_create_anything(qapp, store):
 
 def test_promote_reaches_every_cards_library(qapp, store):
     """The new entry has to be pickable from the sibling cards immediately."""
-    tab = _tab_for(_inline_bcs(), _config())
+    bcs = _inline_bcs()
+    bcs.state_assignments = [
+        StateAssignment(
+            state_ids=["state_9"],
+            duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="blade")]),
+        )
+    ]
+    tab = _tab_for(bcs, _config())
 
     with patch.object(QInputDialog, "getText", return_value=("Shared Preset", True)):
         tab._on_promote(tab._default_panel)
@@ -942,8 +1143,9 @@ def test_rebind_identity_redraws_the_state_cards(qapp, store):
     tab.rebind_identity()
 
     assert tab._state_bindings["state_9"].duel_combat_strategy_id is None
-    # Condensed back to the fight's own name, the strategy it named being gone.
-    assert tab._state_panels["state_9"]._name.full_text() == "Boss"
+    # Back to a pill on the bot-default card, the strategy it named being gone.
+    assert tab._state_panels == {}
+    assert _default_fights(tab) == ["Boss"]
 
 
 # ---------------------------------------------------------------------------
@@ -1094,50 +1296,161 @@ def test_separate_assignments_naming_one_strategy_are_drawn_once(qapp, store):
     assert tab._group_panels()[0].titles() == ["Chief Whip", "Noxious Gas Golem"]
 
 
-def test_unassigned_fights_stay_on_their_own_rows(qapp, store):
-    """Not collapsed: giving one fight a strategy must stay a single click."""
+def test_unassigned_fights_share_one_card(qapp, store):
+    """The noise this replaced: a fresh Bot Combat Strategy drew a row per fight, all of
+    them saying the same nothing."""
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B", "C"))
 
-    assert [p.titles() for p in tab._group_panels()] == [["A"], ["B"], ["C"]]
+    assert tab._group_panels() == []
+    assert _default_fights(tab) == ["A", "B", "C"]
 
 
-def test_configured_groups_are_drawn_above_unassigned_fights(qapp, store):
+def test_giving_one_fight_a_strategy_leaves_the_others_together(qapp, store):
+    """Each pill is its own binding, so a pick moves one fight and not the card."""
+    dcs = _saved_dcs()
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B", "C"))
+
+    with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_id.return_value = dcs.id
+        tab._on_pick_for_fight("state_2")
+
+    assert [p.titles() for p in tab._group_panels()] == [["B"]]
+    assert _default_fights(tab) == ["A", "C"]
+
+
+def test_the_default_card_is_drawn_above_the_cards_that_except_it(qapp, store):
+    """First, and the add-card last. It is the only card guaranteed to be there and the
+    one every other card is an exception to; a card that migrated from the foot of the
+    list to the head of it as overrides appeared would be worse than either place."""
     dcs = _saved_dcs()
     tab = _tab_for(_linked_bcs(dcs.id, ["state_2"]), _multi_config("A", "B", "C"))
 
-    assert [p.titles() for p in tab._group_panels()] == [["B"], ["A"], ["C"]]
+    layout = tab._strategies_layout
+    order = [layout.itemAt(i).widget() for i in range(layout.count())]
+    assert order == [tab._default_panel, tab._group_panels()[0], tab._add_card]
+    assert _default_fights(tab) == ["A", "C"]
 
 
-def test_the_divider_appears_only_with_fights_on_both_sides(qapp, store):
+# ---------------------------------------------------------------------------
+# The add-card: giving several fights a strategy at once
+# ---------------------------------------------------------------------------
+
+
+def _add_strategy(tab: CombatTab, dcs_id: str | None) -> None:
+    """Run the add-card's first dialog, stubbed, and stop before its popup opens.
+
+    ``open_fights_popup`` is patched out rather than allowed to fire: the real one is
+    deferred a turn by a QTimer, so an event loop turn in some later test would open a
+    live popup window belonging to a tab that test never made.
+    """
+    with (
+        patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg,
+        patch.object(StrategyPanel, "open_fights_popup"),
+    ):
+        MockDlg.return_value.exec.return_value = dcs_id is not None
+        MockDlg.return_value.selected_id.return_value = dcs_id
+        tab._on_add_strategy()
+
+
+def test_adding_a_strategy_asks_for_its_fights_straight_away(qapp, store):
+    """The two dialogs are chained. A card with no fights forms no group, so it would
+    draw nothing on the next rebuild and be pruned on the next save -- it cannot be left
+    on screen for the user to fill in later, because nothing would bring it back."""
     dcs = _saved_dcs()
-    tab = _tab_for(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B"))
-
-    assert not tab._group_divider.isHidden()
-
-
-def test_no_divider_when_every_fight_is_unassigned(qapp, store):
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
 
-    assert tab._group_divider.isHidden()
+    with (
+        patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg,
+        patch.object(StrategyPanel, "open_fights_popup") as mock_popup,
+    ):
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_id.return_value = dcs.id
+        tab._on_add_strategy()
+        # The popup is deferred a turn: it positions itself against the button's place on
+        # screen, which the layout has not given the card just inserted above it.
+        qapp.processEvents()
+
+    assert tab._pending_panel is not None
+    assert mock_popup.called
 
 
-def test_no_divider_when_every_fight_is_configured(qapp, store):
+def test_a_cancelled_add_makes_no_card(qapp, store):
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+
+    _add_strategy(tab, None)
+
+    assert tab._pending_panel is None
+    assert tab._group_panels() == []
+    assert _default_fights(tab) == ["A", "B"]
+
+
+def test_a_strategy_added_with_no_fights_leaves_no_card(qapp, store):
+    """Closing the fights popup without choosing any undoes the add outright, rather
+    than leaving a card that governs nothing and would vanish on the next save anyway."""
     dcs = _saved_dcs()
-    tab = _tab_for(_linked_bcs(dcs.id, ["state_1", "state_2"]), _multi_config("A", "B"))
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+    _add_strategy(tab, dcs.id)
+    panel = tab._pending_panel
 
-    assert tab._group_divider.isHidden()
+    panel.membership_changed.emit([])
+
+    assert tab._pending_panel is None
+    assert tab._group_panels() == []
+    assert _default_fights(tab) == ["A", "B"]
+    assert store_mod.load_bot_strategy(tab._bcs.id).state_assignments == []
 
 
-def test_the_divider_survives_a_rebuild(qapp, store):
-    """It is persistent so its themed stylesheet is not rebuilt away."""
+def test_a_strategy_added_with_fights_takes_them_off_the_default_card(qapp, store):
+    """The exclusivity rule the whole section runs on: a fight belongs to exactly one
+    card, so the ones chosen here leave the default card's pills."""
+    dcs = _saved_dcs()
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B", "C"))
+    _add_strategy(tab, dcs.id)
+
+    tab._pending_panel.membership_changed.emit(["state_1", "state_3"])
+
+    assert [p.titles() for p in tab._group_panels()] == [["A", "C"]]
+    assert _default_fights(tab) == ["B"]
+    assert tab._pending_panel is None
+
+
+def test_adding_a_strategy_the_bot_already_uses_lands_on_that_card(qapp, store):
+    """One strategy is one card however many fights use it. Adding the strategy another
+    card already names has to join it rather than draw a second card beside it."""
+    dcs = _saved_dcs()
+    tab = _tab_for(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B", "C"))
+    _add_strategy(tab, dcs.id)
+
+    tab._pending_panel.membership_changed.emit(["state_3"])
+
+    assert [p.titles() for p in tab._group_panels()] == [["A", "C"]]
+    assert _default_fights(tab) == ["B"]
+
+
+def test_the_add_flow_saves_what_it_committed(qapp, store):
+    dcs = _saved_dcs()
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+    _add_strategy(tab, dcs.id)
+
+    tab._pending_panel.membership_changed.emit(["state_1"])
+
+    saved = store_mod.load_bot_strategy(tab._bcs.id)
+    assert [(a.state_ids, a.duel_combat_strategy_id) for a in saved.state_assignments] == [(["state_1"], dcs.id)]
+
+
+def test_the_default_card_survives_a_rebuild(qapp, store):
+    """It is persistent for the reason the panels are re-keyed rather than rebuilt: its
+    pills are live targets, and a click travelling to one must not land on a corpse."""
     dcs = _saved_dcs()
     tab = _tab_for(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B"))
-    divider = tab._group_divider
+    card = tab._default_panel
 
     tab._rebuild_state_assignments()
 
-    assert tab._group_divider is divider
-    assert not divider.isHidden()
+    assert tab._default_panel is card
+    assert not card.isHidden()
+    assert _default_fights(tab) == ["B"]
 
 
 # ---------------------------------------------------------------------------
@@ -1149,12 +1462,12 @@ def test_linking_a_fight_to_an_in_use_strategy_merges_the_rows(qapp, store):
     """The whole point: pick a strategy another card uses and they become one."""
     dcs = _saved_dcs()
     tab = _tab_for(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B"))
-    assert len(tab._group_panels()) == 2
+    assert len(tab._group_panels()) == 1
 
     with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
-        tab._on_pick_duel(tab._state_panels["state_2"])
+        tab._on_pick_for_fight("state_2")
 
     assert len(tab._group_panels()) == 1
     assert tab._group_panels()[0].titles() == ["A", "B"]
@@ -1169,14 +1482,14 @@ def test_a_merged_group_is_saved_as_one_assignment(qapp, store):
     with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
-        tab._on_pick_duel(tab._state_panels["state_2"])
+        tab._on_pick_for_fight("state_2")
 
     saved = store_mod.load_bot_strategy(bcs.id)
     assert len(saved.state_assignments) == 1
     assert saved.state_assignments[0].state_ids == ["state_1", "state_2"]
 
 
-def test_clearing_a_link_moves_the_whole_group_below_the_divider(qapp, store):
+def test_clearing_a_link_moves_the_whole_group_onto_the_bot_default_card(qapp, store):
     dcs = _saved_dcs()
     tab = _tab_for(_linked_bcs(dcs.id, ["state_1"], ["state_2"]), _multi_config("A", "B"))
 
@@ -1186,14 +1499,14 @@ def test_clearing_a_link_moves_the_whole_group_below_the_divider(qapp, store):
         tab._on_pick_duel(tab._group_panels()[0])
 
     # Both fights unlinked together — they were one group.
-    assert [p.titles() for p in tab._group_panels()] == [["A"], ["B"]]
-    assert tab._group_divider.isHidden()
+    assert tab._group_panels() == []
+    assert _default_fights(tab) == ["A", "B"]
 
 
 def test_picking_on_the_default_card_does_not_rebuild_the_group_cards(qapp, store):
     """The bot default has no group of its own — nothing below it has moved."""
     dcs = _saved_dcs()
-    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _multi_config("A", "B"))
+    tab = _tab_for(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B"))
     before = tab._state_panels["state_1"]
 
     with patch("bartlebot.gui.sidebar.combat_tab.StrategyPickerDialog") as MockDlg:
@@ -1237,14 +1550,15 @@ def test_committing_an_unchanged_selection_does_nothing(qapp, store):
 
 def test_unchecking_the_last_fight_leaves_the_strategy_unused(qapp, store):
     """A legitimate act -- "stop using this here" -- and one click to undo, so the
-    popup does not refuse it. The card goes and every fight condenses again."""
+    popup does not refuse it. The card goes and both fights fall back to the pills."""
     dcs = _saved_dcs()
     bcs = _linked_bcs(dcs.id, ["state_1"])
     tab = _tab_for(bcs, _multi_config("A", "B"))
 
     tab._on_membership_changed(tab._state_bindings["state_1"], [])
 
-    assert [p.titles() for p in tab._group_panels()] == [["A"], ["B"]]
+    assert tab._group_panels() == []
+    assert _default_fights(tab) == ["A", "B"]
     assert store_mod.load_bot_strategy(bcs.id).state_assignments == []
 
 

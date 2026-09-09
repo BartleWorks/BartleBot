@@ -9,23 +9,28 @@ editor. There is no disclosure arrow into a DSL box on any card here: combat edi
 a user-owned edit that wants an explicit Save/Cancel boundary, and it is moving into a
 dialog of its own. ``Edit in Library…`` on a card is the way through until it exists.
 
-THE THREE LEVELS KEEP THEIR THREE SECTIONS
-------------------------------------------
+TWO SECTIONS, NOT THREE AND A CAPTION
+-------------------------------------
 
 **Bot Combat Strategy** is which of the user's setups for this bot is live -- someone
 who usually runs four wizards and someone who solos want different ones, and a
-``BotCombatStrategy`` is the thing that differs. **Default Duel Combat Strategy** is
-what that setup fights with when nothing more specific applies. **Specialized Duel
-Combat Strategies** are the fights that opted out of it, and there are none in 63 of
-the 81 shipped bots -- ``use_default_strategy: false`` is an author's opt-in, not a
-default -- so that section is *absent* rather than showing "No exposed combat states"
-to most users of most bots.
+``BotCombatStrategy`` is the thing that differs. **Duel Combat Strategies** is what that
+setup fights with: one card per strategy, each naming the fights it covers.
 
-The names were "Bot Combat Strategy", "Default Combat Strategy" and "Duel Combat
-Strategies", which are three near-identical noun phrases for three different levels: the
-middle one did not say it was a *duel* strategy, and the third did not say what made it
-different from the second. The distinction is real and worth keeping visible, so the
-headings say it instead of leaving it to be inferred from the order they appear in.
+That second section used to be two sections and a bare caption -- "Default Duel Combat
+Strategy" over a single card, "Specialized Duel Combat Strategies" over the cards for
+fights that opted out, and "Using the bot default" over one muted row per fight that had
+not. Three headings for a list whose every entry is the same sentence: *this strategy,
+these fights*. The default is now the first card in the one list, wearing a locked
+``Default`` badge on its pill row, and what told the levels apart in headings is told by
+a badge on the card the heading was describing.
+
+The badge is also what keeps that card from ever looking empty. Of the 68 shipped bots
+that fight at all, 49 expose no combat state -- ``use_default_strategy: false`` is an
+author's opt-in -- so on those the section is exactly one card with a badge and no fight
+pills, which is the honest shape of their combat configuration. The add-card is what is
+hidden there instead: with no fight to assign, a second strategy could never be given
+one.
 
 EVERYTHING IS A CARD
 --------------------
@@ -38,6 +43,21 @@ opening a hand-built ``QMenu``, repeated once per level and once per fight. Verb
 data now (``CardVerb``), so which buttons a card has is answered by reading its
 ``_verbs`` rather than its layout, and everything is reachable by right-click whether or
 not it earned a place on the face.
+
+Including the fights that opted out of nothing: they are pills on the default card,
+which is a ``StrategyPanel`` in ``PanelRole.DEFAULT`` rather than a widget of its own.
+On a freshly made Bot Combat Strategy those fights were once the whole section -- nothing
+configured yet, so every exposed fight drew a row saying so, under the tab's last bare
+caption. Condensing them is the move the section already makes for fights that share a
+strategy, applied to the one they share by default.
+
+The section ends with the same dashed ``AddCard`` the launch columns end with, and it is
+the second way in. Its flow is two chained dialogs -- pick a strategy, then pick its
+fights -- because a card holding a strategy and no fights forms no group, draws nothing
+on the next rebuild and is pruned by ``_prune_orphans`` on the next save; it cannot be
+left on screen to be filled in later. A single fight is still quicker through its own
+pill on the default card. The add-card is what pays when several are to share one
+strategy.
 
 One consequence to keep in mind: there is no ``⋮`` button any more, here or on any other
 card in the app. A verb that is not on the face is in the right-click menu, which is the
@@ -52,7 +72,7 @@ from functools import partial
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QFrame,
@@ -92,10 +112,12 @@ from bartlebot.gui.sidebar.strategy_panel import (
     NOT_CONFIGURED_LABEL,
     STATE_INHERIT_LABEL,
     STATE_INHERIT_META,
+    PanelRole,
     StrategyPanel,
 )
 from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPickerDialog
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.add_card import AddCard
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.elided_label import ElidedLabel
 from bartlebot.gui.widgets.picker_popup import PickerRow, Section
@@ -120,15 +142,16 @@ logger = logging.getLogger(__name__)
 _NUM_PLAYER_SLOTS = 4
 _NO_STRATEGY_LABEL = "(no strategy set)"
 _ICON_BTN_SIZE = 16
-_UNASSIGNED_DIVIDER = "Using the bot default"
 
-#: Section headings. Each names its own level, because the three used to be
-#: "Bot Combat Strategy", "Default Combat Strategy" and "Duel Combat Strategies" —
-#: near-identical phrases whose differences were exactly the thing a user had to
-#: understand. See the module docstring.
+#: Section headings. Two, where there were three plus a bare caption: the levels below
+#: the Bot Combat Strategy are all Duel Combat Strategies, and which one is the default
+#: is a fact about a *card* — its ``Default`` badge — rather than about a region of the
+#: sidebar. See the module docstring.
 _BCS_SECTION = "Bot Combat Strategy"
-_DEFAULT_SECTION = "Default Duel Combat Strategy"
-_SPECIALIZED_SECTION = "Specialized Duel Combat Strategies"
+_STRATEGIES_SECTION = "Duel Combat Strategies"
+
+#: The section's terminator, in the AddCard the launch columns end with.
+_ADD_STRATEGY = "Add a strategy for specific fights"
 
 #: Verb labels for the Bot Combat Strategy card, shared with its menu and the tests.
 _CHANGE_BCS = "Change…"
@@ -634,6 +657,10 @@ class CombatTab(QWidget):
         # dropped if it never ends up linked or holding real inline content)
         self._state_bindings: dict[str, StateAssignment] = {}
         self._state_panels: dict[str, StrategyPanel] = {}
+        # A card made by the add-card and not yet given any fights. It exists only so the
+        # membership popup has something to anchor to, and it is dropped unsaved if that
+        # popup closes with nothing chosen — see ``_on_add_strategy``.
+        self._pending_panel: StrategyPanel | None = None
         self._suppress = False
         self._editable = True
         self._library_window: StrategyLibraryWindow | None = None
@@ -668,44 +695,39 @@ class CombatTab(QWidget):
         bcs_section.set_content_layout(bcs_layout)
         self._content_layout.addWidget(bcs_section)
 
-        # ── Default Duel Combat Strategy ─────────────────────────────
-        default_section = SidebarSection(_DEFAULT_SECTION, self)
-        default_layout = QVBoxLayout()
-        default_layout.setSpacing(2)
+        # ── Duel Combat Strategies ───────────────────────────────────
+        # One section for both levels. The default card is first and always present; the
+        # cards for fights that opted out follow it; the AddCard ends the list. All three
+        # of those are persistent widgets, so ``_rebuild_state_assignments`` re-places
+        # them rather than recreating them — a live click target must not be destroyed
+        # mid-gesture, and the add-card's popup is a gesture that spans a rebuild.
+        self._strategies_section = SidebarSection(_STRATEGIES_SECTION, self)
+        self._strategies_layout = QVBoxLayout()
+        self._strategies_layout.setSpacing(6)
+
         # The bot default is the last stop before the built-in strategy, so its empty
         # label names the built-in one. The specialized cards below say something
         # different — see STATE_INHERIT_LABEL.
-        self._default_panel = StrategyPanel(BUILT_IN_LABEL, NOT_CONFIGURED_LABEL)
+        self._default_panel = StrategyPanel(
+            BUILT_IN_LABEL, NOT_CONFIGURED_LABEL, parent=self._strategies_section, role=PanelRole.DEFAULT
+        )
         self._default_panel.pick_requested.connect(partial(self._on_pick_duel, self._default_panel))
         self._default_panel.promote_requested.connect(partial(self._on_promote, self._default_panel))
         self._default_panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
+        self._default_panel.fight_pick_requested.connect(self._on_pick_for_fight)
         self._default_panel.setVisible(False)
-        default_layout.addWidget(self._default_panel)
-        default_section.set_content_layout(default_layout)
-        self._content_layout.addWidget(default_section)
 
-        # ── Specialized Duel Combat Strategies ───────────────────────
-        # Hidden outright when the bot exposes no combat states, which is 63 of the 81
-        # shipped bots. It used to show the words "No exposed combat states" instead —
-        # a permanently empty section, headed by a phrase most users would have to learn
-        # the schema to parse, for a feature their bot does not use and cannot be made to
-        # use from this tab. ``use_default_strategy: false`` is set by the bot's author.
-        self._assignments_section = SidebarSection(_SPECIALIZED_SECTION, self)
-        self._assignments_layout = QVBoxLayout()
-        self._assignments_layout.setSpacing(6)
-        # Heads the condensed rows -- the fights nobody has given a strategy to. It is
-        # no longer doing the *separating*: a condensed row and a full card are visibly
-        # different shapes, so the split reads without help. What it still carries is
-        # what those rows fall through to, which shape cannot say, and saying it once
-        # here beats repeating "(bot default)" on each of them.
-        #
-        # ThemedTextLabel rather than a QLabel with a hand-written stylesheet: it
-        # repaints itself on a theme switch, which is what let the tab's changeEvent go.
-        self._group_divider = ThemedTextLabel(_UNASSIGNED_DIVIDER, color="text_subtle", css="font-size: 10px;")
-        self._group_divider.hide()
-        self._assignments_section.set_content_layout(self._assignments_layout)
-        self._content_layout.addWidget(self._assignments_section)
-        self._assignments_section.setVisible(False)
+        # Hidden outright when the bot exposes no combat state, which is 49 of the 68
+        # shipped bots that fight at all: with nothing to assign, an add-card offers a
+        # strategy that could never be given a fight. ``use_default_strategy: false`` is
+        # the bot author's opt-in, and nothing on this tab can set it.
+        self._add_card = AddCard(_ADD_STRATEGY, parent=self._strategies_section)
+        self._add_card.add_requested.connect(self._on_add_strategy)
+        self._add_card.setVisible(False)
+
+        self._strategies_section.set_content_layout(self._strategies_layout)
+        self._content_layout.addWidget(self._strategies_section)
+        self._strategies_section.setVisible(False)
 
         # ── Player Decks ─────────────────────────────────────────────
         self._decks_section = _PlayerDecksSection(self)
@@ -798,6 +820,7 @@ class CombatTab(QWidget):
         self._bcs_card.set_editable(editable)
         self._decks_section.set_editable(editable)
         self._default_panel.set_editable(editable)
+        self._add_card.setEnabled(editable)
         for panel in self._group_panels():
             panel.set_editable(editable)
 
@@ -1012,55 +1035,77 @@ class CombatTab(QWidget):
         destroys existing panel widgets.  Data-only refreshes go through
         ``refresh_strategy_data`` / panel.set_libraries instead.
 
-        The whole section is hidden when the bot exposes no combat states, rather
-        than shown holding a line of apology — see the constructor.
+        The whole section is hidden when there is no Bot Combat Strategy to describe.
+        It is *not* hidden merely because the bot exposes no fight: the default card
+        still names the strategy every one of that bot's fights will use, which is 49
+        of the 68 shipped bots that fight at all. Only the add-card goes, there being
+        nothing for a second strategy to be assigned to.
+
+        Fights with no strategy of their own get no panel: they are pills on the default
+        card, which is why ``_state_panels`` maps only the configured ones.
         """
-        while self._assignments_layout.count():
-            item = self._assignments_layout.takeAt(0)
+        while self._strategies_layout.count():
+            item = self._strategies_layout.takeAt(0)
             widget = item.widget() if item else None
-            # The divider outlives the rebuild — it is re-placed below.
-            if widget is not None and widget is not self._group_divider:
+            # The default card and the add-card outlive the rebuild — re-placed below.
+            if widget is not None and widget not in (self._default_panel, self._add_card):
                 widget.deleteLater()
         self._state_panels.clear()
-        self._group_divider.hide()
+        # Any half-made card was just deleted with the rest.
+        self._pending_panel = None
+
+        self._strategies_section.setVisible(self._bcs is not None)
+        # First, and always: everything below it is an exception to it.
+        self._strategies_layout.addWidget(self._default_panel)
 
         exposed = exposed_combat_states(self._config) if self._config is not None else []
-        self._assignments_section.setVisible(bool(exposed))
-        if not exposed:
-            return
-
         for state in exposed:
             self._ensure_state_binding(state.id)
         groups = group_bindings(self._state_bindings, exposed)
 
-        # Only worth a divider when there is something on both sides of it.
-        show_divider = any(g.is_configured for g in groups) and any(not g.is_configured for g in groups)
-        divider_placed = False
-
         for group in groups:
-            if show_divider and not divider_placed and not group.is_configured:
-                self._assignments_layout.addWidget(self._group_divider)
-                self._group_divider.show()
-                divider_placed = True
-
-            panel = StrategyPanel(
-                STATE_INHERIT_LABEL,
-                STATE_INHERIT_META,
-                parent=self._assignments_section,
-                supports_membership=True,
-            )
-            panel.set_titles([state_label(s) for s in group.states])
-            panel.load(group.assignment, self._all_dcs, self._all_pcs)
-            panel.set_fight_options(self._fight_sections(exposed), list(group.assignment.state_ids))
-            panel.set_editable(self._editable)
-            panel.pick_requested.connect(partial(self._on_pick_duel, panel))
-            panel.promote_requested.connect(partial(self._on_promote, panel))
-            panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
+            if not group.is_configured:
+                continue
+            panel = self._make_group_panel(group.assignment, exposed, group.states)
             panel.membership_changed.connect(partial(self._on_membership_changed, group.assignment))
-            self._assignments_layout.addWidget(panel)
+            self._strategies_layout.addWidget(panel)
             # Keyed per state, so every fight in a group resolves to its panel.
             for state in group.states:
                 self._state_panels[state.id] = panel
+
+        # An unconfigured group is always exactly one fight — ``split_unconfigured`` sees
+        # to that — so this is one pill per unassigned fight, in FSM order.
+        self._default_panel.set_fights(
+            [(s.id, state_label(s)) for g in groups if not g.is_configured for s in g.states]
+        )
+
+        self._strategies_layout.addWidget(self._add_card)
+        self._add_card.setVisible(bool(exposed))
+
+    def _make_group_panel(
+        self, assignment: StateAssignment, exposed: list[StateModel], states: list[StateModel]
+    ) -> StrategyPanel:
+        """One specialized card, wired to everything but its membership.
+
+        Membership is left to the caller because the two callers want different things
+        from it: a rebuilt card commits straight through ``_on_membership_changed``,
+        while a card the add-card just made has to be dropped again if its popup closes
+        empty.
+        """
+        panel = StrategyPanel(
+            STATE_INHERIT_LABEL,
+            STATE_INHERIT_META,
+            parent=self._strategies_section,
+            role=PanelRole.SPECIALIZED,
+        )
+        panel.set_fights([(s.id, state_label(s)) for s in states])
+        panel.load(assignment, self._all_dcs, self._all_pcs)
+        panel.set_fight_options(self._fight_sections(exposed), list(assignment.state_ids))
+        panel.set_editable(self._editable)
+        panel.pick_requested.connect(partial(self._on_pick_duel, panel))
+        panel.promote_requested.connect(partial(self._on_promote, panel))
+        panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
+        return panel
 
     # ------------------------------------------------------------------
     # Duel Combat Strategy picking
@@ -1077,20 +1122,105 @@ class CombatTab(QWidget):
         binding = panel.binding
         if binding is None:
             return
+        if self._pick_into(binding, panel.empty_label):
+            self._after_linkage_change(panel)
+
+    def _on_pick_for_fight(self, state_id: str) -> None:
+        """Give one fight a strategy of its own — a click on its pill in ``BotDefaultPanel``.
+
+        The same act ``_on_pick_duel`` performs for a card, for a fight that has no card
+        yet: it is the fight that leaves the bot-default pills and arrives as a card of
+        its own, so this always regroups and rebuilds rather than redrawing one panel.
+        """
+        if self._config is None:
+            return
+        binding = self._ensure_state_binding(state_id)
+        if not self._pick_into(binding, STATE_INHERIT_LABEL):
+            return
+        self._regroup_bindings()
+        self._rebuild_state_assignments()
+        self._save_bcs()
+
+    def _on_add_strategy(self) -> None:
+        """Give some fights a strategy of their own — the add-card at the foot of the list.
+
+        Two dialogs, chained, and the chaining is what keeps the invariant that a card on
+        screen is a card in the file. A ``StateAssignment`` with no ``state_ids`` forms no
+        group, so it would draw no card on the next rebuild, and ``_prune_orphans`` drops
+        it outright on the next save: an empty card cannot be left lying about for the
+        user to fill in later, because nothing would bring it back. So the strategy is
+        picked first, the card is made, its own membership popup opens on it immediately,
+        and the card is dropped again if that popup closes with nothing chosen.
+
+        The pill route on the default card is the other way in, and stays the shorter one
+        for a single fight. This is the one that pays when several fights are to share.
+        """
+        if self._config is None or self._bcs is None or not self._editable:
+            return
+        dlg = StrategyPickerDialog(
+            title="Pick Duel Combat Strategy",
+            mode="duel",
+            strategies=self._all_dcs,
+            current_id=None,
+            # No "none" row: picking nothing here would make a card that says nothing,
+            # which is what the default card already is.
+            allow_none=False,
+            all_pcs=self._all_pcs,
+            parent=self,
+        )
+        if not dlg.exec():
+            return
+        chosen = dlg.selected_id()
+        if not chosen:
+            return
+
+        exposed = exposed_combat_states(self._config)
+        assignment = StateAssignment(state_ids=[], duel_combat_strategy_id=chosen)
+        panel = self._make_group_panel(assignment, exposed, [])
+        panel.membership_changed.connect(partial(self._on_pending_membership, assignment, panel))
+        # Where the rebuild would have put it: above the add-card, below the rest.
+        self._strategies_layout.insertWidget(self._strategies_layout.count() - 1, panel)
+        self._pending_panel = panel
+        # Deferred a turn: the popup positions itself against the button's place on
+        # screen, which the layout has not given it yet on the card inserted just above.
+        QTimer.singleShot(0, panel.open_fights_popup)
+
+    def _on_pending_membership(self, assignment: StateAssignment, panel: StrategyPanel, chosen_ids: list) -> None:
+        """Commit the add flow, or undo it — see ``_on_add_strategy``."""
+        if self._pending_panel is not panel:
+            return
+        self._pending_panel = None
+        if not chosen_ids or self._config is None:
+            self._strategies_layout.removeWidget(panel)
+            panel.deleteLater()
+            return
+        # Moves each chosen fight out of whatever holds it, the default card included.
+        apply_membership(self._state_bindings, assignment, list(chosen_ids))
+        self._regroup_bindings()
+        self._rebuild_state_assignments()
+        self._save_bcs()
+
+    def _pick_into(self, binding, none_label: str) -> bool:
+        """Run the picker against *binding*, and say whether it was accepted.
+
+        Shared by the card path and the pill path so both offer the same dialog with the
+        same "none" row — what a binding falls through to is a property of the binding's
+        level, not of which widget the click landed on.
+        """
         dlg = StrategyPickerDialog(
             title="Pick Duel Combat Strategy",
             mode="duel",
             strategies=self._all_dcs,
             current_id=binding.duel_combat_strategy_id,
             allow_none=True,
-            none_label=panel.empty_label,
+            none_label=none_label,
             all_pcs=self._all_pcs,
             parent=self,
         )
         if not dlg.exec():
-            return
+            return False
         binding.duel_combat_strategy_id = dlg.selected_id()
-        self._after_linkage_change(panel)
+        return True
 
     def _on_promote(self, panel: StrategyPanel) -> None:
         """Copy a binding's inline config into a new library entry and link to it.
@@ -1312,5 +1442,5 @@ class CombatTab(QWidget):
     # flush_pending_save(), which AppController calls on aboutToQuit.
 
     # No changeEvent either. Every widget this tab owns now repaints itself on a theme
-    # switch -- the cards because CardFrame does, the divider because ThemedTextLabel
-    # does -- so there is nothing left here for a StyleChange to chase.
+    # switch -- the cards because CardFrame does, a deck card's content rows because
+    # ThemedTextLabel does -- so there is nothing left here for a StyleChange to chase.
