@@ -119,7 +119,7 @@ _HAYSTACK_ROLE = Qt.ItemDataRole.UserRole + 1
 
 #: Origin.SHIPPED_OVERRIDE means the shipped file reappears underneath, so the
 #: honest verb is "revert" — see :class:`bartlebot.strategy_store.Origin`.
-_REVERT_TEXT = "Revert to shipped"
+_REVERT_TEXT = "Revert to default"
 _DELETE_TEXT = "Delete"
 
 #: How far a tab's contents sit inside the tab pane, and how far *each* pane sits from

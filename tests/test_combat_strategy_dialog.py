@@ -251,7 +251,7 @@ def test_a_shipped_override_offers_revert_rather_than_delete(qapp, roots):
     save_duel_strategy(dcs, user)  # the override
     dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
 
-    assert dlg._pages[StrategyKind.DUEL]._del_btn.text() == "Revert to shipped"
+    assert dlg._pages[StrategyKind.DUEL]._del_btn.text() == "Revert to default"
 
 
 def test_a_user_only_strategy_offers_delete(qapp, roots):

@@ -44,7 +44,7 @@ The link/inline pair repeats one level down: a `PlayerAssignment` carries either
 | shipped | `project_root()` — the install directory | yes | **never** |
 | user | `%APPDATA%/Bartleby/BartleBot`, via `bartlebot.shared.vendor.product_dir` | yes, and wins | always |
 
-Every read merges the two with the user copy winning; every write and every delete touches only the user root. A user editing a shipped strategy therefore produces an **override**, not a fork: same id, user copy wins, shipped file untouched and still updatable. Deleting the user copy of a shipped id is not a delete at all — it is *revert to shipped*, and `Origin` / `origin_of()` exist so a surface can tell the two apart and say the honest word on the button.
+Every read merges the two with the user copy winning; every write and every delete touches only the user root. A user editing a shipped strategy therefore produces an **override**, not a fork: same id, user copy wins, shipped file untouched and still updatable. Deleting the user copy of a shipped id is not a delete at all — it is *revert to default*, and `Origin` / `origin_of()` exist so a surface can tell the two apart and say the honest word on the button.
 
 This is what makes a shared bot shareable. `SettingsManager.get_active_strategy(bot_id)` stores *which* strategy a bot uses, per user, in `settings.json`; the bot file never records it. The pick was always user-owned; #2 made the content user-owned too.
 
