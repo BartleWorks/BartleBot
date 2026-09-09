@@ -461,7 +461,7 @@ class _LaunchCard(CardFrame):
             self._name_lbl.setStyleSheet(f"color: {THEME.text}; background: transparent;")
         for lbl, color in ((self._detail_lbl, THEME.text_muted), (self._quiet_lbl, THEME.text_subtle)):
             if lbl is not None:
-                lbl.setStyleSheet(f"color: {color}; font-size: 10px; background: transparent;")
+                lbl.setStyleSheet(f"color: {color}; font-size: {THEME.font_card_sub_size}px; background: transparent;")
 
     def _apply_state_palette(self) -> bool:
         """Grey a card that cannot launch, on a surface that refuses one."""
@@ -481,7 +481,9 @@ class _LaunchCard(CardFrame):
             self._name_lbl.setStyleSheet(f"color: {THEME.text_disabled}; background: transparent;")
         for lbl in (self._detail_lbl, self._quiet_lbl):
             if lbl is not None:
-                lbl.setStyleSheet(f"color: {THEME.text_disabled}; font-size: 10px; background: transparent;")
+                lbl.setStyleSheet(
+                    f"color: {THEME.text_disabled}; font-size: {THEME.font_card_sub_size}px; background: transparent;"
+                )
         # The face icons are not tinted down with them, and are restyled by the base pass
         # after this returns: the pencil is the way out of the state the rest of the card
         # is greyed to report, so it stays at full contrast.

@@ -1,4 +1,49 @@
-"""Combat tab: manage Bot Combat Strategy, state assignments, and player decks."""
+"""Combat tab: the Run-mode surface for a bot's combat configuration.
+
+WHAT THIS TAB IS FOR
+--------------------
+
+Picking, and reading what was picked. It holds the run-time truth -- which strategy is
+active, which fights it covers, per-client deck state -- and it no longer holds an
+editor. There is no disclosure arrow into a DSL box on any card here: combat editing is
+a user-owned edit that wants an explicit Save/Cancel boundary, and it is moving into a
+dialog of its own. ``Edit in Library…`` on a card is the way through until it exists.
+
+THE THREE LEVELS KEEP THEIR THREE SECTIONS
+------------------------------------------
+
+**Bot Combat Strategy** is which of the user's setups for this bot is live -- someone
+who usually runs four wizards and someone who solos want different ones, and a
+``BotCombatStrategy`` is the thing that differs. **Default Duel Combat Strategy** is
+what that setup fights with when nothing more specific applies. **Specialized Duel
+Combat Strategies** are the fights that opted out of it, and there are none in 63 of
+the 81 shipped bots -- ``use_default_strategy: false`` is an author's opt-in, not a
+default -- so that section is *absent* rather than showing "No exposed combat states"
+to most users of most bots.
+
+The names were "Bot Combat Strategy", "Default Combat Strategy" and "Duel Combat
+Strategies", which are three near-identical noun phrases for three different levels: the
+middle one did not say it was a *duel* strategy, and the third did not say what made it
+different from the second. The distinction is real and worth keeping visible, so the
+headings say it instead of leaving it to be inferred from the order they appear in.
+
+EVERYTHING IS A CARD
+--------------------
+
+Every row on this tab is a ``CardFrame`` -- the same frame, hover, verb list and
+right-click menu as the launch profile cards and the player cards, which is what the
+tab was conspicuously not built from. What that replaces, per section: a ``QPushButton``
+styled to look like a search field, two 1pt-smaller muted lines, and a ``⋮`` button
+opening a hand-built ``QMenu``, repeated once per level and once per fight. Verbs are
+data now (``CardVerb``), so which buttons a card has is answered by reading its
+``_verbs`` rather than its layout, and everything is reachable by right-click whether or
+not it earned a place on the face.
+
+One consequence to keep in mind: there is no ``⋮`` button any more, here or on any other
+card in the app. A verb that is not on the face is in the right-click menu, which is the
+convention ``card_frame.py`` sets out and the reason the destructive ones can stay off
+the face at all.
+"""
 
 from __future__ import annotations
 
@@ -7,19 +52,15 @@ from functools import partial
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QActionGroup, QColor, QFontMetrics, QPainter
+from PyQt6.QtCore import QEvent, Qt, pyqtSignal
+from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QInputDialog,
     QLabel,
-    QMenu,
     QMessageBox,
-    QPushButton,
     QScrollArea,
-    QSizePolicy,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -40,19 +81,23 @@ from bartlebot.combat_grouping import (
 )
 from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.gui.deck_content import deck_content_lines
-from bartlebot.gui.icon_utils import svg_icon
-from bartlebot.gui.menu_utils import anchor_menu_to_window
 from bartlebot.gui.sidebar.sidebar_section import (
-    DISCLOSURE_PX,
-    NEST_INDENT_PX,
     SidebarSection,
-    disclosure_pixmap,
 )
-from bartlebot.gui.strategy_library.duel_strategy_editor import DuelConfigEditor
+from bartlebot.gui.sidebar.strategy_panel import (
+    BUILT_IN_LABEL,
+    CUSTOM_LABEL,
+    LOCKED,
+    MISSING_LABEL,
+    NOT_CONFIGURED_LABEL,
+    STATE_INHERIT_LABEL,
+    STATE_INHERIT_META,
+    StrategyPanel,
+)
 from bartlebot.gui.strategy_library.strategy_picker_dialog import StrategyPickerDialog
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.elided_label import ElidedLabel, apply_muted_color
+from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
+from bartlebot.gui.widgets.elided_label import ElidedLabel
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
@@ -63,114 +108,33 @@ from bartlebot.strategy_store import (
     save_bot_strategy,
     save_duel_strategy,
 )
-from bartlebot.strategy_summary import summarize_bot, summarize_duel
+from bartlebot.strategy_summary import summarize_bot
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
     from bartlebot.gui.strategy_library.strategy_library_window import StrategyLibraryWindow
-    from bartlebot.strategy_summary import StrategySummary
 
 logger = logging.getLogger(__name__)
 
-_DEBOUNCE_MS = 500
 _NUM_PLAYER_SLOTS = 4
-_BUILT_IN_LABEL = "BartleBot Default Combat Strategy"
 _NO_STRATEGY_LABEL = "(no strategy set)"
-_NOT_CONFIGURED_LABEL = "Not configured — built-in default for every player"
 _ICON_BTN_SIZE = 16
-_LINK_TOOLTIP = "Click to link a Duel Strategy from the library"
-
-# What an *unset* binding falls back to.  These differ by level and the
-# distinction is not cosmetic: an empty state override does NOT fall through to
-# the built-in default, it falls through to this bot strategy's own Default
-# Combat Strategy — see resolve_combat(), which reaches for
-# ``bcs.default_strategy_id`` / ``bcs.default_duel_config`` before the built-in.
-# Labelling both levels "BartleBot Default Combat Strategy" told the user the
-# bot default would be skipped, and contradicted the pre-run warning text.
-_STATE_INHERIT_LABEL = "(bot default)"
-_STATE_INHERIT_META = "No override — uses the Default Combat Strategy above"
 _UNASSIGNED_DIVIDER = "Using the bot default"
 
-_RAIL_WIDTH_PX = 2  # the drawn rule
-_RAIL_SLOT_PX = 3  # column reserved for it, drawn or not
-_RAIL_GAP_PX = 5  # breathing room between the rule and the content it brackets
+#: Section headings. Each names its own level, because the three used to be
+#: "Bot Combat Strategy", "Default Combat Strategy" and "Duel Combat Strategies" —
+#: near-identical phrases whose differences were exactly the thing a user had to
+#: understand. See the module docstring.
+_BCS_SECTION = "Bot Combat Strategy"
+_DEFAULT_SECTION = "Default Duel Combat Strategy"
+_SPECIALIZED_SECTION = "Specialized Duel Combat Strategies"
 
-
-# ---------------------------------------------------------------------------
-# Strategy chip button
-# ---------------------------------------------------------------------------
-
-
-class _StrategyChip(QPushButton):
-    """Styled chip button showing a strategy name — click to open a picker.
-
-    Strategy names are user-supplied and routinely long ("Heretical Academy
-    4-player single decks"), so the chip elides rather than letting a
-    QPushButton's size hint — which is always its full text width — set the
-    minimum width of the sidebar it sits in.  ``QSizePolicy.Policy.Ignored``
-    drops the size hint out of the layout's minimum-width calculation entirely;
-    eliding then keeps the visible text readable in whatever width remains.
-    """
-
-    _ICON_SIZE = 14
-    # Room the icon and the horizontal padding take, subtracted before eliding.
-    _CHROME_PX = 28
-
-    def __init__(self, text: str = _NO_STRATEGY_LABEL, parent=None):
-        super().__init__(text, parent)
-        self._applying_style = False
-        self._full_text = text
-        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.setIconSize(QSize(self._ICON_SIZE, self._ICON_SIZE))
-        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
-        self._apply_style()
-        self._apply_elide()
-
-    def set_strategy_name(self, name: str) -> None:
-        self._full_text = name
-        self._apply_elide()
-
-    def strategy_name(self) -> str:
-        """The untruncated name, regardless of what is currently visible."""
-        return self._full_text
-
-    def _apply_elide(self) -> None:
-        avail = max(self.width() - self._CHROME_PX, 1)
-        metrics = QFontMetrics(self.font())
-        elided = metrics.elidedText(self._full_text, Qt.TextElideMode.ElideRight, avail)
-        # QAbstractButton.setText short-circuits when the text is unchanged, so
-        # the setText → relayout → resizeEvent → setText path converges.
-        self.setText(elided)
-
-    def resizeEvent(self, event) -> None:
-        super().resizeEvent(event)
-        self._apply_elide()
-
-    def _apply_style(self) -> None:
-        if self._applying_style:
-            return
-        self._applying_style = True
-        try:
-            self.setIcon(svg_icon("search", self._ICON_SIZE, tint=THEME.text_muted))
-            # This widget is fully QSS-drawn already, so it needs its own
-            # disabled rule — the palette's Disabled group can't reach through a
-            # stylesheet that hard-codes background and border.
-            self.setStyleSheet(
-                f"QPushButton {{ text-align: left; padding: 3px 8px; "
-                f"background: {THEME.surface}; color: {THEME.text}; "
-                f"border: 1px solid {THEME.border}; border-radius: 3px; }}"
-                f"QPushButton:hover {{ border-color: {THEME.accent}; }}"
-                f"QPushButton:disabled {{ background: {THEME.surface_disabled}; "
-                f"color: {THEME.text_disabled}; border-color: {THEME.surface_disabled}; }}"
-            )
-        finally:
-            self._applying_style = False
-
-    def changeEvent(self, event: QEvent) -> None:
-        super().changeEvent(event)
-        if event.type() == QEvent.Type.StyleChange:
-            self._apply_style()
-            self._apply_elide()
+#: Verb labels for the Bot Combat Strategy card, shared with its menu and the tests.
+_CHANGE_BCS = "Change…"
+_RENAME_BCS = "Rename…"
+_NEW_BCS = "New…"
+_DUPLICATE_BCS = "Duplicate…"
+_DELETE_BCS = "Delete…"
 
 
 # ---------------------------------------------------------------------------
@@ -178,8 +142,261 @@ class _StrategyChip(QPushButton):
 # ---------------------------------------------------------------------------
 
 
-class _PlayerDecksSection(ThemedMixin, SidebarSection):
-    """Collapsible section showing one import/apply row per player slot."""
+#: Label, and the stored value it means, for a deck's three-state archmastery override.
+#: Module-level because the card offers them as verbs and the card body names the one in
+#: force, and those two have to agree on the words.
+_ARCHMASTERY_MODES = (
+    ("Use the app setting", None),
+    ("Always set it", True),
+    ("Never set it", False),
+)
+
+#: Verb labels for a deck card, shared with its menu and the tests.
+_IMPORT_DECK = "Import from client"
+_APPLY_DECK = "Apply to client"
+_SAVE_DECK = "Save to Library…"
+_LOAD_DECK = "Load from Library…"
+_CLEAR_DECK = "Clear deck"
+_NO_DECK = "No deck saved"
+
+
+class _DeckCard(CardFrame):
+    """One player slot's saved deck: what is in it, and the six things you can do to it.
+
+    Was a row of two ``QPushButton``\\s and a ``⋮`` -- eight text buttons across four
+    slots, and by some distance the loudest thing on the tab. The verbs are the same
+    verbs; they are icons on the face and labels in the right-click menu now, which is
+    the language every other card in the app speaks and is what the section costs to
+    read rather than what it can do.
+
+    A body click unfolds the card list, which is the only non-destructive thing there is
+    to do to a deck that is not one of the verbs -- and it is refused outright on a slot
+    with no deck, there being nothing to unfold.
+
+    The archmastery override is three menu verbs rather than a checkable submenu, and the
+    setting in force is a line *in the card* instead. A ``CardVerb`` carries no check
+    mark, but that is not why: which of the three is active is a fact about the deck, and
+    a fact about the deck belongs where the rest of them are, not behind two hovers.
+    """
+
+    FRAME_NAME = "DeckCard"
+
+    import_requested = pyqtSignal()
+    apply_requested = pyqtSignal()
+    save_to_library_requested = pyqtSignal()
+    load_from_library_requested = pyqtSignal()
+    clear_requested = pyqtSignal()
+    archmastery_mode_changed = pyqtSignal(object)  # True / False / None
+
+    def __init__(self, slot: int, parent: QWidget | None = None) -> None:
+        super().__init__(parent, mode=CardMode.MANAGE)
+        self._slot = slot
+        self._deck: DeckData | None = None
+        self._editable = True
+        self._has_client = False
+        self._expanded = False
+        self._build()
+        self.activated.connect(self._toggle_expanded)
+        self.refresh_theme_styles()
+
+    def _build(self) -> None:
+        layout = self._build_frame("decks", draggable=False)
+
+        header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
+        header.setSpacing(6)
+        self._name = QLabel(f"P{self._slot}")
+        font = self._name.font()
+        font.setBold(True)
+        self._name.setFont(font)
+        header.addWidget(self._name, 0)
+        # Elided rather than wrapped, for the reason StrategyPanel's captions are.
+        self._summary = ElidedLabel(_NO_DECK)
+        header.addWidget(self._summary, 1)
+        self._add_face_verbs(header)
+        layout.addLayout(header)
+
+        # "Archmastery: Fire · always set". Hidden unless the deck names a school, a
+        # deck without one having nothing for the override to act on.
+        self._archmastery = ElidedLabel()
+        self._archmastery.setVisible(False)
+        layout.addWidget(self._archmastery)
+
+        # The card list. Built once and refilled, never created on first expand, so
+        # toggling is never the first time this widget is shown -- see gui/CLAUDE.md on
+        # showing a widget before it has a parent.
+        self._content = QWidget()
+        self._content_layout = QVBoxLayout(self._content)
+        self._content_layout.setContentsMargins(0, 4, 0, 0)
+        self._content_layout.setSpacing(2)
+        self._content.setVisible(False)
+        layout.addWidget(self._content)
+
+    # -- data -----------------------------------------------------------
+
+    @property
+    def slot(self) -> int:
+        return self._slot
+
+    @property
+    def is_expanded(self) -> bool:
+        return self._expanded
+
+    @property
+    def has_deck(self) -> bool:
+        return self._deck is not None and not self._deck.is_empty()
+
+    def set_deck(self, deck: DeckData | None) -> None:
+        """Redraw from *deck*, keeping the fold state unless there is nothing left to fold.
+
+        Called after every import, apply, save, load and clear -- far more often than
+        anyone folds a card -- so an unfolded card stays unfolded, or the disclosure would
+        read as broken rather than persistent.
+        """
+        self._deck = deck
+        if self.has_deck:
+            # Treasure cards are never captured or applied, so the summary reports only
+            # what a deck apply will actually restore.
+            parts = []
+            if deck.normal:
+                parts.append(f"{sum(deck.normal.values())} normal")
+            if deck.item:
+                parts.append(f"{sum(deck.item.values())} item")
+            self._summary.setText(" · ".join(parts) if parts else "Empty deck")
+        else:
+            self._summary.setText(_NO_DECK)
+            self.set_expanded(False)
+
+        school = deck.archmastery_school if deck is not None else None
+        if school:
+            mode = next(label for label, value in _ARCHMASTERY_MODES if value is deck.apply_archmastery)
+            self._archmastery.setText(f"Archmastery: {school} · {mode.lower()}")
+        self._archmastery.setVisible(bool(school))
+
+        if self._expanded:
+            self._rebuild_content()
+        self._reapply_verb_states()
+        self.refresh_theme_styles()
+
+    def set_editable(self, editable: bool) -> None:
+        self._editable = editable
+        self._reapply_verb_states()
+
+    def set_has_client(self, has_client: bool) -> None:
+        """Whether a game client is hooked for this slot -- what Import and Apply need."""
+        self._has_client = has_client
+        self._reapply_verb_states()
+
+    # -- folding --------------------------------------------------------
+
+    def set_expanded(self, expanded: bool) -> None:
+        expanded = expanded and self.has_deck
+        self._expanded = expanded
+        if expanded:
+            self._rebuild_content()
+        self._content.setVisible(expanded)
+
+    def _toggle_expanded(self) -> None:
+        self.set_expanded(not self._expanded)
+
+    def _rebuild_content(self) -> None:
+        while (item := self._content_layout.takeAt(0)) is not None:
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+        if self._deck is None:
+            return
+        for line in deck_content_lines(self._deck):
+            css = "font-weight: bold;" if line.bold else ""
+            row_lbl = ThemedTextLabel(line.text, color="text", css=css)
+            row_lbl.setWordWrap(True)
+            self._content_layout.addWidget(row_lbl)
+            row_lbl.show()
+
+    # -- verbs ----------------------------------------------------------
+
+    def _verbs(self) -> list[CardVerb]:
+        verbs = [
+            CardVerb(_IMPORT_DECK, "download", self._import_tooltip(), self.import_requested.emit, on_face=True),
+            CardVerb(_APPLY_DECK, "upload", self._apply_tooltip(), self.apply_requested.emit, on_face=True),
+            CardVerb(
+                _SAVE_DECK, "save_done", "Save this deck to the Deck Library", self.save_to_library_requested.emit
+            ),
+            CardVerb(
+                _LOAD_DECK, "copy", "Replace this deck from the Deck Library", self.load_from_library_requested.emit
+            ),
+        ]
+        if self._deck is not None and self._deck.archmastery_school:
+            for label, value in _ARCHMASTERY_MODES:
+                verbs.append(
+                    CardVerb(
+                        f"Archmastery: {label.lower()}",
+                        "",
+                        f"When applying this deck, {label.lower()} for {self._deck.archmastery_school}",
+                        partial(self.archmastery_mode_changed.emit, value),
+                    )
+                )
+        if self.has_deck:
+            # Off the face: the body click one icon away unfolds a card list, and a trash
+            # beside it is the mis-click card_frame.py keeps destructive verbs out of.
+            verbs.append(
+                CardVerb(_CLEAR_DECK, "trash", f"Forget the saved deck for P{self._slot}", self.clear_requested.emit)
+            )
+        return verbs
+
+    def _import_tooltip(self) -> str:
+        """What Import would do, or the one reason it currently would not.
+
+        A disabled control that keeps its enabled tooltip tells the user what the button
+        would do but never why it won't -- which is the actual question.
+        """
+        if not self._editable:
+            return LOCKED
+        if not self._has_client:
+            return f"No game client connected for P{self._slot}"
+        return "Snapshot the deck from this game client"
+
+    def _apply_tooltip(self) -> str:
+        if not self._editable:
+            return LOCKED
+        if not self._has_client:
+            return f"No game client connected for P{self._slot}"
+        if not self.has_deck:
+            return f"No deck saved for P{self._slot} — use Import first"
+        return "Push the saved deck to this game client now"
+
+    def _reapply_verb_states(self) -> None:
+        for label, enabled, tooltip in (
+            (_IMPORT_DECK, self._editable and self._has_client, self._import_tooltip()),
+            (_APPLY_DECK, self._editable and self._has_client and self.has_deck, self._apply_tooltip()),
+        ):
+            button = self.action_button(label)
+            if button is not None:
+                button.setEnabled(enabled)
+                button.setToolTip(tooltip)
+        self.setCursor(Qt.CursorShape.PointingHandCursor if self.has_deck else Qt.CursorShape.ArrowCursor)
+        self.setToolTip("" if self._editable else LOCKED)
+
+    def _refuses_activation(self) -> bool:
+        """Nothing to unfold on a slot with no deck, so the body has no verb there."""
+        return not self.has_deck
+
+    def _restyle_content(self) -> None:
+        for label, color in ((self._name, THEME.text), (self._summary, THEME.text_muted)):
+            palette = label.palette()
+            palette.setColor(label.foregroundRole(), QColor(color))
+            label.setPalette(palette)
+        palette = self._archmastery.palette()
+        palette.setColor(self._archmastery.foregroundRole(), QColor(THEME.text_muted))
+        self._archmastery.setPalette(palette)
+
+
+class _PlayerDecksSection(SidebarSection):
+    """Collapsible section holding one ``_DeckCard`` per player slot.
+
+    Signals carry the slot, so the tab never has to ask a card which one it is: each
+    card's own slot-less signal is re-emitted here with the number bound.
+    """
 
     import_requested = pyqtSignal(int)  # 1-based slot number
     apply_requested = pyqtSignal(int)  # 1-based slot number
@@ -194,262 +411,45 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
 
         layout = QVBoxLayout()
         layout.setSpacing(4)
+        self._cards: list[_DeckCard] = []
+        self._client_count = 0
 
-        self._import_btns: list[QPushButton] = []
-        self._apply_btns: list[QPushButton] = []
-        self._menu_btns: list[QToolButton] = []
-        self._deck_summary_labels: list[QLabel] = []
-        self._disclosure_arrows: list[QLabel] = []
-        self._content_widgets: list[QWidget] = []
-        self._content_layouts: list[QVBoxLayout] = []
-        self._decks: dict[int, DeckData] = {}
-        # Slots whose card list is unfolded.  Deliberately not touched by
-        # refresh() except to drop a slot whose deck just went empty — a row
-        # a user expanded should stay expanded across the frequent
-        # import/apply/save/load/clear refreshes, or the disclosure would
-        # read as broken rather than persistent.
-        self._expanded: set[int] = set()
-        self._editable: bool = True
-        self._client_count: int = 0
-
-        for i in range(1, _NUM_PLAYER_SLOTS + 1):
-            slot_container = QWidget()
-            slot_layout = QVBoxLayout(slot_container)
-            # _DuelBindingPanel's disclosure arrow sits past NEST_INDENT_PX *and*
-            # its rail slot + gap (spine margin, then _GroupRail, then
-            # _RAIL_GAP_PX before the header) — matching only NEST_INDENT_PX here
-            # left the P1-P4 arrows short of "Defeat The Monster"'s by that width.
-            slot_layout.setContentsMargins(NEST_INDENT_PX + _RAIL_SLOT_PX + _RAIL_GAP_PX, 0, 0, 0)
-            slot_layout.setSpacing(2)
-
-            row = QWidget()
-            row_layout = QHBoxLayout(row)
-            row_layout.setContentsMargins(0, 0, 0, 0)
-            row_layout.setSpacing(4)
-
-            # Nested level (this section is already a SidebarSection body), so
-            # muted tint against the section header's own icon_tint arrow —
-            # same convention _DisclosureRow uses for the duel-strategy panels.
-            arrow = QLabel()
-            arrow.setFixedSize(DISCLOSURE_PX, QFontMetrics(self.font()).height())
-            arrow.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            arrow.setPixmap(disclosure_pixmap(False, tint=THEME.text_muted))
-            arrow.setCursor(Qt.CursorShape.PointingHandCursor)
-            arrow.hide()  # matches the "No deck saved" default; refresh() reveals it
-            arrow.mousePressEvent = lambda _ev, slot=i: self._on_row_clicked(slot)
-
-            lbl = QLabel(f"P{i}:")
-            lbl.setFixedWidth(22)
-
-            deck_summary = QLabel("No deck saved")
-            deck_summary.mousePressEvent = lambda _ev, slot=i: self._on_row_clicked(slot)
-
-            import_btn = QPushButton("Import")
-            import_btn.setToolTip("Snapshot the deck from this game client")
-            import_btn.clicked.connect(lambda _checked, slot=i: self.import_requested.emit(slot))
-
-            apply_btn = QPushButton("Apply")
-            apply_btn.setToolTip("Push the saved deck to this game client now")
-            apply_btn.clicked.connect(lambda _checked, slot=i: self.apply_requested.emit(slot))
-
-            menu_btn = QToolButton()
-            # No setIcon here: svg_icon bakes THEME.icon_tint in at render time, so the
-            # icon is set by apply_theme_styles instead, over the _menu_btns the loop
-            # already collects.
-            menu_btn.setIconSize(QSize(_ICON_BTN_SIZE, _ICON_BTN_SIZE))
-            menu_btn.setToolTip("More deck actions")
-            menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-            menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
-            slot_menu = anchor_menu_to_window(QMenu(menu_btn))
-            # Rebuilt on every show: the archmastery submenu's check marks have
-            # to reflect the deck as it stands, and the deck changes underneath
-            # this menu on every import, load and clear.
-            slot_menu.aboutToShow.connect(lambda slot=i, m=slot_menu: self._rebuild_slot_menu(m, slot))
-            menu_btn.setMenu(slot_menu)
-
-            row_layout.addWidget(arrow)
-            row_layout.addWidget(lbl)
-            row_layout.addWidget(deck_summary, 1)
-            row_layout.addWidget(import_btn)
-            row_layout.addWidget(apply_btn)
-            row_layout.addWidget(menu_btn)
-
-            # Card list, folded by default.  Built once and reused across
-            # refreshes rather than created on first expand, so toggling is
-            # never the first time this widget is shown (see gui/CLAUDE.md on
-            # showing a widget before it has a parent).
-            content = QWidget()
-            content_layout = QVBoxLayout(content)
-            # Past the arrow's own width plus the row's spacing, so the card
-            # list lines up under "P1:" rather than under the arrow glyph.
-            content_layout.setContentsMargins(DISCLOSURE_PX + row_layout.spacing(), 0, 0, 4)
-            content_layout.setSpacing(2)
-            content.setVisible(False)
-
-            slot_layout.addWidget(row)
-            slot_layout.addWidget(content)
-            layout.addWidget(slot_container)
-
-            self._import_btns.append(import_btn)
-            self._apply_btns.append(apply_btn)
-            self._menu_btns.append(menu_btn)
-            self._deck_summary_labels.append(deck_summary)
-            self._disclosure_arrows.append(arrow)
-            self._content_widgets.append(content)
-            self._content_layouts.append(content_layout)
+        for slot in range(1, _NUM_PLAYER_SLOTS + 1):
+            card = _DeckCard(slot)
+            card.import_requested.connect(partial(self.import_requested.emit, slot))
+            card.apply_requested.connect(partial(self.apply_requested.emit, slot))
+            card.save_to_library_requested.connect(partial(self.save_to_library_requested.emit, slot))
+            card.load_from_library_requested.connect(partial(self.load_from_library_requested.emit, slot))
+            card.clear_requested.connect(partial(self.clear_requested.emit, slot))
+            card.archmastery_mode_changed.connect(partial(self._on_archmastery, slot))
+            layout.addWidget(card)
+            self._cards.append(card)
 
         self.set_content_layout(layout)
-        self.refresh_theme_styles()
 
-    def apply_theme_styles(self) -> None:
-        for btn in self._menu_btns:
-            btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
-        for i, arrow in enumerate(self._disclosure_arrows):
-            arrow.setPixmap(disclosure_pixmap(i + 1 in self._expanded, tint=THEME.text_muted))
+    def _on_archmastery(self, slot: int, mode: object) -> None:
+        self.archmastery_mode_changed.emit(slot, mode)
 
-    #: Label, and the stored value it means, for the three-state override.
-    _ARCHMASTERY_MODES = (
-        ("Use the app setting", None),
-        ("Always set it", True),
-        ("Never set it", False),
-    )
-
-    def _rebuild_slot_menu(self, menu: QMenu, slot: int) -> None:
-        menu.clear()
-        menu.addAction("Save to Library", lambda _=False: self.save_to_library_requested.emit(slot))
-        menu.addAction("Load from Library", lambda _=False: self.load_from_library_requested.emit(slot))
-
-        deck = self._decks.get(slot)
-        # A deck with no saved school has nothing to set, so the override would
-        # be a choice with no effect either way.
-        if deck is not None and deck.archmastery_school:
-            sub = menu.addMenu(f"Archmastery ({deck.archmastery_school})")
-            group = QActionGroup(sub)
-            group.setExclusive(True)
-            for label, value in self._ARCHMASTERY_MODES:
-                action = sub.addAction(label)
-                action.setCheckable(True)
-                action.setChecked(deck.apply_archmastery is value)
-                action.triggered.connect(lambda _checked=False, v=value: self.archmastery_mode_changed.emit(slot, v))
-                group.addAction(action)
-
-        menu.addSeparator()
-        menu.addAction("Clear Deck", lambda _=False: self.clear_requested.emit(slot))
-
-    def _on_row_clicked(self, slot: int) -> None:
-        deck = self._decks.get(slot)
-        if deck is not None and not deck.is_empty():
-            self.set_row_expanded(slot, slot not in self._expanded)
+    def card(self, slot: int) -> _DeckCard:
+        """The card for a 1-based slot. Public so the tab and the tests can read one."""
+        return self._cards[slot - 1]
 
     def set_row_expanded(self, slot: int, expanded: bool) -> None:
-        """Fold or unfold one slot's card list, exactly as a click on it would."""
-        if expanded:
-            self._expanded.add(slot)
-            self._rebuild_content(slot)
-        else:
-            self._expanded.discard(slot)
-        i = slot - 1
-        self._content_widgets[i].setVisible(expanded)
-        self._disclosure_arrows[i].setPixmap(disclosure_pixmap(expanded, tint=THEME.text_muted))
-
-    def _rebuild_content(self, slot: int) -> None:
-        """Rebuild the card-list labels for *slot* from the current deck data."""
-        content_layout = self._content_layouts[slot - 1]
-        while (item := content_layout.takeAt(0)) is not None:
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
-
-        deck = self._decks.get(slot)
-        if deck is None or deck.is_empty():
-            return
-        for line in deck_content_lines(deck):
-            css = "font-weight: bold;" if line.bold else ""
-            row_lbl = ThemedTextLabel(line.text, color="text", css=css)
-            row_lbl.setWordWrap(True)
-            content_layout.addWidget(row_lbl)
-            row_lbl.show()
+        """Fold or unfold one slot's card list, exactly as a body click would."""
+        self.card(slot).set_expanded(expanded)
 
     def set_editable(self, editable: bool) -> None:
-        self._editable = editable
-        self._reapply_button_states()
+        for card in self._cards:
+            card.set_editable(editable)
 
     def set_client_count(self, count: int) -> None:
         self._client_count = count
-        self._reapply_button_states()
-
-    def _reapply_button_states(self) -> None:
-        """Enable/disable each row's buttons, and say *why* when disabled.
-
-        A disabled control that keeps its enabled tooltip ("Push the saved deck
-        to this game client now") tells the user what the button would do but
-        never why it won't — which is the actual question. Every disabled state
-        here has exactly one cause, so it can just be named.
-        """
-        for i, (import_btn, apply_btn, menu_btn) in enumerate(
-            zip(self._import_btns, self._apply_btns, self._menu_btns)
-        ):
-            slot = i + 1
-            has_client = self._editable and slot <= self._client_count
-            has_deck = self._decks.get(slot) is not None and not self._decks[slot].is_empty()
-
-            import_btn.setEnabled(has_client)
-            if has_client:
-                import_btn.setToolTip("Snapshot the deck from this game client")
-            elif not self._editable:
-                import_btn.setToolTip("Locked while the bot is running")
-            else:
-                import_btn.setToolTip(f"No game client connected for P{slot}")
-
-            apply_btn.setEnabled(has_client and has_deck)
-            if has_client and has_deck:
-                apply_btn.setToolTip("Push the saved deck to this game client now")
-            elif not self._editable:
-                apply_btn.setToolTip("Locked while the bot is running")
-            elif not has_client:
-                apply_btn.setToolTip(f"No game client connected for P{slot}")
-            else:
-                apply_btn.setToolTip(f"No deck saved for P{slot} — use Import first")
-
-            menu_btn.setEnabled(self._editable)
-            menu_btn.setToolTip("More deck actions" if self._editable else "Locked while the bot is running")
+        for card in self._cards:
+            card.set_has_client(card.slot <= count)
 
     def refresh(self, player_decks: dict[int, DeckData]) -> None:
-        """Update every row's summary and, where a slot is expanded, its card list.
-
-        Called far more often than the user folds or unfolds a row — after every
-        import, apply, save, load and clear — so expand state is deliberately
-        untouched here except when a slot's deck just became empty, which leaves
-        nothing for that row to show.
-        """
-        self._decks = player_decks
-        for i, lbl in enumerate(self._deck_summary_labels):
-            slot = i + 1
-            deck = player_decks.get(slot)
-            has_deck = deck is not None and not deck.is_empty()
-            if not has_deck:
-                lbl.setText("No deck saved")
-                lbl.setCursor(Qt.CursorShape.ArrowCursor)
-                lbl.setToolTip("")
-                self._disclosure_arrows[i].hide()
-                if slot in self._expanded:
-                    self.set_row_expanded(slot, False)
-            else:
-                # Treasure cards are never captured or applied, so the summary
-                # reports only what a deck apply will actually restore.
-                parts = []
-                if deck.normal:
-                    parts.append(f"{sum(deck.normal.values())} normal")
-                if deck.item:
-                    parts.append(f"{sum(deck.item.values())} item")
-                lbl.setText(" · ".join(parts) if parts else "Empty deck")
-                lbl.setCursor(Qt.CursorShape.PointingHandCursor)
-                lbl.setToolTip("Click to expand deck contents")
-                self._disclosure_arrows[i].show()
-                self._disclosure_arrows[i].setCursor(Qt.CursorShape.PointingHandCursor)
-                if slot in self._expanded:
-                    self._rebuild_content(slot)
-        self._reapply_button_states()
+        for card in self._cards:
+            card.set_deck(player_decks.get(card.slot))
 
 
 # ---------------------------------------------------------------------------
@@ -457,55 +457,11 @@ class _PlayerDecksSection(ThemedMixin, SidebarSection):
 # ---------------------------------------------------------------------------
 
 
-def _format_bcs_meta(bcs: BotCombatStrategy) -> str:
-    """One-line summary of a BCS: number of state overrides."""
-    return summarize_bot(bcs).facets[0]
-
-
-def _unique_dcs_name(base: str, existing: list[DuelCombatStrategy]) -> str:
-    """Return base if unused, otherwise base (2), (3), etc."""
-    names = {d.name for d in existing}
-    if base not in names:
-        return base
-    i = 2
-    while f"{base} ({i})" in names:
-        i += 1
-    return f"{base} ({i})"
-
-
-def _make_icon_btn(icon_name: str, tooltip: str) -> QToolButton:
-    """Small flat icon-only QToolButton."""
-    btn = QToolButton()
-    btn.setIcon(svg_icon(icon_name, _ICON_BTN_SIZE))
-    btn.setIconSize(QSize(_ICON_BTN_SIZE, _ICON_BTN_SIZE))
-    btn.setToolTip(tooltip)
-    btn.setAutoRaise(True)
-    return btn
-
-
-def _make_meta_label(text: str = "") -> ElidedLabel:
-    """One-line muted summary line, elided to whatever width the sidebar has.
-
-    Elided rather than wrapped on purpose: these lines summarise a duel config
-    whose DSL previews run to well over a hundred characters, and wrapping them
-    would trade the horizontal scrollbar for three or four stacked lines per
-    collapsed panel — the opposite of what a collapsed summary is for.  The full
-    text is always in the tooltip.
-    """
-    lbl = ElidedLabel(text)
-    font = lbl.font()
-    font.setPointSize(max(font.pointSize() - 1, 7))
-    lbl.setFont(font)
-    apply_muted_color(lbl)
-    lbl.setContentsMargins(2, 0, 0, 2)
-    return lbl
-
-
 class _DefaultBinding:
     """Adapts BotCombatStrategy's ``default_strategy_id`` / ``default_duel_config``
     fields to the same shape as ``StateAssignment`` — ``duel_config``,
-    ``duel_combat_strategy_id`` (settable), ``is_linked`` — so ``_DuelBindingPanel``
-    can edit either through one interface.
+    ``duel_combat_strategy_id`` (settable), ``is_linked`` — so one ``StrategyPanel``
+    class draws both the bot default and every per-fight override.
     """
 
     def __init__(self, bcs: BotCombatStrategy):
@@ -533,469 +489,125 @@ class _DefaultBinding:
 
 
 # ---------------------------------------------------------------------------
-# Duel binding panel — one state override, or the BCS default
+# Bot Combat Strategy card
 # ---------------------------------------------------------------------------
 
 
-class _GroupRail(QWidget):
-    """Vertical rule bracketing a panel whose fights share one Duel Strategy.
+class _BotStrategyCard(CardFrame):
+    """Which of the user's setups for this bot is live, and the five things you can
+    do to that list.
 
-    Several fight names stacked in a header read as a list, but not necessarily
-    as a list that means "all of these use the strategy on the right".  The rail
-    is what says so, and it spans the panel's whole height — the fights, the
-    summary and the inline editor — so the claim is "this entire block is one
-    group", not merely "these names belong together".
+    A ``BotCombatStrategy`` is not a duel config, so this is not a ``StrategyPanel``:
+    it names a container -- a default plus a set of per-fight overrides plus four
+    decks -- rather than describing what anyone will cast. What it shares is the frame,
+    which is the point: three levels drawn as three different kinds of widget was most
+    of why this tab did not read as one surface.
 
-    The column is reserved whether or not the rule is drawn, so a one-fight
-    panel and a four-fight panel keep their contents on the same left edge.
-    Same reasoning as the disclosure arrow's slot, which survives being
-    withdrawn precisely so the titles stay aligned.
-
-    THEME is read at paint time, so this needs no ``changeEvent`` hook to
-    survive a theme switch.
+    Three verbs reach the face and two do not. Duplicate is rare, and Delete is
+    destructive next to a body that changes the live configuration -- the rule
+    ``card_frame.py`` states for a trash icon 22px from a body click. Both are in the
+    right-click menu, which is also the keyboard route.
     """
 
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._active = False
-        self.setFixedWidth(_RAIL_SLOT_PX)
+    FRAME_NAME = "BotStrategyCard"
 
-    def is_active(self) -> bool:
-        return self._active
+    change_requested = pyqtSignal()
+    new_requested = pyqtSignal()
+    rename_requested = pyqtSignal()
+    duplicate_requested = pyqtSignal()
+    delete_requested = pyqtSignal()
 
-    def set_active(self, active: bool) -> None:
-        if active != self._active:
-            self._active = active
-            self.update()
-
-    def paintEvent(self, event) -> None:  # noqa: ARG002, N802 — Qt naming
-        if not self._active:
-            return
-        painter = QPainter(self)
-        # THEME.border, not an accent: the rail is structure, and it must not
-        # compete with the fight names it is grouping.
-        painter.fillRect(0, 0, _RAIL_WIDTH_PX, self.height(), QColor(THEME.border))
-        painter.end()
-
-
-class _DisclosureRow(QWidget):
-    """Arrow + one title line per fight, behaving as one click target.
-
-    Deliberately not a QToolButton: an auto-raise button brings its own hover
-    frame, pressed state and checked highlight, which made a nested duel panel
-    look like a different kind of control from the section header directly above
-    it rather than one level down from it.  Same glyph, same size, same
-    treatment at every depth — only the indent and the tint change.
-
-    A panel now covers a *group* of fights, so the title is a list.  The fights
-    are stacked vertically rather than joined into one elided string: a joined
-    title truncates, and a membership list that ends early hides which fights an
-    edit is about to reach.  One line each also lets a long name elide against
-    its own width, with its own tooltip, instead of eating the space its
-    neighbours needed.
-    """
-
-    clicked = pyqtSignal()
-
-    def __init__(self, title: str, parent=None):
-        super().__init__(parent)
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
-
-        # Boxed to one line's height and centred within it, so the glyph lines up
-        # with the *first* fight rather than floating against the whole stack.
-        self._arrow = QLabel()
-        self._arrow.setFixedSize(DISCLOSURE_PX, QFontMetrics(self.font()).height())
-        self._arrow.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self._arrow, 0, Qt.AlignmentFlag.AlignTop)
-
-        # Elided per line: these are FSM state labels, which the bot author
-        # writes freely ("Defeat Preceptor of Order").  They are the only part of
-        # a collapsed panel whose width scales with user data.
-        self._titles_layout = QVBoxLayout()
-        self._titles_layout.setContentsMargins(0, 0, 0, 0)
-        self._titles_layout.setSpacing(0)
-        layout.addLayout(self._titles_layout, 1)
-
-        self._title_lbls: list[ElidedLabel] = []
-        self._titles: list[str] = []
-        self.set_title(title)
-
-        self._interactive = True
-        self.set_expanded(False)
-
-    def set_title(self, title: str) -> None:
-        self.set_titles([title])
-
-    def set_titles(self, titles: list[str]) -> None:
-        """Show one line per fight, reusing label widgets across refreshes.
-
-        Surplus labels are hidden rather than destroyed: membership changes
-        while the panel is on screen, and deleting widgets mid-refresh is how
-        the old per-state rebuild interrupted in-progress edits.
-        """
-        self._titles = list(titles)
-        while len(self._title_lbls) < len(self._titles):
-            lbl = ElidedLabel()
-            self._titles_layout.addWidget(lbl)
-            self._title_lbls.append(lbl)
-        for lbl, text in zip(self._title_lbls, self._titles):
-            lbl.setText(text)
-            lbl.show()
-        for lbl in self._title_lbls[len(self._titles) :]:
-            lbl.hide()
-
-    def title(self) -> str:
-        """The first fight's label — what a single-fight panel shows."""
-        return self._titles[0] if self._titles else ""
-
-    def titles(self) -> list[str]:
-        return list(self._titles)
-
-    def set_expanded(self, expanded: bool) -> None:
-        # Nested level: muted tint against the section header's icon_tint.
-        self._arrow.setPixmap(disclosure_pixmap(expanded, tint=THEME.text_muted))
-
-    def set_interactive(self, interactive: bool, reason: str = "") -> None:
-        """Show or withdraw the expand affordance entirely.
-
-        When there is nothing to expand (the binding is linked to a library
-        entry) the arrow is *hidden* rather than shown greyed out — an
-        affordance that is never offered needs no disabled styling, and the
-        empty slot keeps the titles aligned.
-        """
-        self._interactive = interactive
-        self._arrow.setVisible(interactive)
-        self.setCursor(Qt.CursorShape.PointingHandCursor if interactive else Qt.CursorShape.ArrowCursor)
-        self.setToolTip("Expand to edit this duel config inline" if interactive else reason)
-
-    def mousePressEvent(self, event) -> None:  # noqa: ARG002
-        if self._interactive:
-            self.clicked.emit()
-
-
-class _DuelBindingPanel(QWidget):
-    """One duel-config binding: inline (expand to edit directly) or linked to a
-    library DuelCombatStrategy (compact summary + edit-in-library).
-
-    Used for both the Default Combat Strategy and every per-state override —
-    same actions, same layout, in both places.  Operates on any ``binding``
-    object shaped like ``StateAssignment``: ``duel_config``,
-    ``duel_combat_strategy_id`` (settable), ``is_linked``.
-
-    ``empty_label`` / ``empty_meta`` differ between the two uses because the
-    fallback genuinely differs: an unset *default* drops to the built-in
-    strategy, while an unset *state override* drops to the bot's default first.
-    """
-
-    changed = pyqtSignal()
-    presets_changed = pyqtSignal()  # a new library DCS or PCS was created
-    edit_in_library_requested = pyqtSignal(str)  # dcs_id
-    membership_requested = pyqtSignal()  # user asked to edit which fights this group covers
-    # Linking, unlinking or promoting can change how panels *group*: picking a
-    # strategy another panel already uses merges the two.  Kept separate from
-    # ``changed``, which fires on every keystroke in the inline DSL editor and
-    # must never trigger a rebuild that would destroy the editor being typed in.
-    linkage_changed = pyqtSignal()
-
-    def __init__(
-        self,
-        title: str,
-        empty_label: str = _BUILT_IN_LABEL,
-        empty_meta: str = _NOT_CONFIGURED_LABEL,
-        parent=None,
-        supports_membership: bool = False,
-    ):
-        super().__init__(parent)
-        self._binding = None
-        self._all_dcs: list[DuelCombatStrategy] = []
-        self._all_pcs: list[PlayerCombatStrategy] = []
-        self._expanded = False
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent, mode=CardMode.MANAGE)
+        self._bcs: BotCombatStrategy | None = None
         self._editable = True
-        self._empty_label = empty_label
-        self._empty_meta = empty_meta
-        # False for the Default Combat Strategy, which has no state_ids to edit —
-        # it is the fallback for every fight that no group claims.
-        self._supports_membership = supports_membership
+        self._build()
+        self.activated.connect(self.change_requested)
+        self.refresh_theme_styles()
 
-        # Indented one level: this panel is a child of the enclosing
-        # SidebarSection, and the inset is what makes that relationship visible.
-        spine = QHBoxLayout(self)
-        spine.setContentsMargins(NEST_INDENT_PX, 0, 0, 0)
-        spine.setSpacing(_RAIL_GAP_PX)
-        self._rail = _GroupRail()
-        spine.addWidget(self._rail)
-
-        outer = QVBoxLayout()
-        outer.setContentsMargins(0, 0, 0, 0)
-        outer.setSpacing(1)
-        spine.addLayout(outer, 1)
+    def _build(self) -> None:
+        layout = self._build_frame("strategies", draggable=False)
 
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
-        header.setSpacing(4)
+        header.setSpacing(6)
+        self._name = ElidedLabel(_NO_STRATEGY_LABEL)
+        font = self._name.font()
+        font.setBold(True)
+        self._name.setFont(font)
+        header.addWidget(self._name, 1)
+        self._add_face_verbs(header)
+        layout.addLayout(header)
 
-        self._disclosure = _DisclosureRow(title)
-        self._disclosure.clicked.connect(self._on_toggle)
-        header.addWidget(self._disclosure)
+        self._meta = ElidedLabel()
+        layout.addWidget(self._meta)
+        self._meta.setVisible(False)
 
-        self._chip = _StrategyChip(empty_label)
-        self._chip.setMaximumWidth(160)
-        self._chip.setToolTip(_LINK_TOOLTIP)
-        self._chip.clicked.connect(self._on_pick_link)
-        # Top-aligned against the first fight: the chip describes the whole
-        # group, so centring it against a four-line title would leave it
-        # floating beside no particular fight.
-        header.addWidget(self._chip, 1, Qt.AlignmentFlag.AlignTop)
+    def set_strategy(self, bcs: BotCombatStrategy | None) -> None:
+        self._bcs = bcs
+        if bcs is None:
+            self._name.setText(_NO_STRATEGY_LABEL)
+            self._name.setToolTip("No Bot Combat Strategy for this bot yet — right-click to make one")
+            self._meta.setVisible(False)
+        else:
+            self._name.setText(bcs.name)
+            summary = summarize_bot(bcs)
+            self._name.setToolTip(summary.description or bcs.name)
+            self._meta.setText(summary.subtitle_line())
+            self._meta.setVisible(True)
+        self._reapply_verb_states()
+        self.refresh_theme_styles()
 
-        self._menu_btn = QToolButton()
-        self._menu_btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
-        self._menu_btn.setIconSize(QSize(_ICON_BTN_SIZE, _ICON_BTN_SIZE))
-        self._menu_btn.setToolTip("Strategy actions")
-        self._menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self._menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
-        self._menu = anchor_menu_to_window(QMenu(self._menu_btn))
-        # A disabled action has to be able to say why — see _rebuild_menu.
-        self._menu.setToolTipsVisible(True)
-        self._menu.aboutToShow.connect(self._rebuild_menu)
-        self._menu_btn.setMenu(self._menu)
-        header.addWidget(self._menu_btn, 0, Qt.AlignmentFlag.AlignTop)
-
-        outer.addLayout(header)
-
-        self._meta_lbl = _make_meta_label()
-        outer.addWidget(self._meta_lbl)
-        self._assignments_lbl = _make_meta_label()
-        outer.addWidget(self._assignments_lbl)
-
-        self._config_editor = DuelConfigEditor()
-        self._config_editor.changed.connect(self.changed)
-        self._config_editor.presets_changed.connect(self.presets_changed)
-        # Indented one level below this panel's own header, continuing the
-        # "deeper == further right" rule the section headers establish.
-        editor_row = QHBoxLayout()
-        editor_row.setContentsMargins(0, 0, 0, 0)
-        editor_row.setSpacing(0)
-        editor_row.addSpacing(NEST_INDENT_PX)
-        editor_row.addWidget(self._config_editor, 1)
-        outer.addLayout(editor_row)
-        self._config_editor.hide()
-
-    # -- data -----------------------------------------------------------
-
-    def load(self, binding, all_dcs: list[DuelCombatStrategy], all_pcs: list[PlayerCombatStrategy]) -> None:
-        self._binding = binding
-        self._all_dcs = all_dcs
-        self._all_pcs = all_pcs
-        self._expanded = False
-        self._refresh()
-
-    def set_titles(self, titles: list[str]) -> None:
-        """Name every fight this panel governs, one per line."""
-        self._disclosure.set_titles(titles)
-        # A rail beside a single fight would claim a group that does not exist.
-        self._rail.set_active(len(titles) > 1)
-
-    def titles(self) -> list[str]:
-        return self._disclosure.titles()
-
-    def set_libraries(self, all_dcs: list[DuelCombatStrategy], all_pcs: list[PlayerCombatStrategy]) -> None:
-        """Update the reference lists without disturbing expand state or in-progress edits."""
-        self._all_dcs = all_dcs
-        self._all_pcs = all_pcs
-        self._refresh()
+    @property
+    def strategy(self) -> BotCombatStrategy | None:
+        """The strategy this card names, or None. Public so the tab need not re-derive it."""
+        return self._bcs
 
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
-        self._chip.setEnabled(editable)
-        self._menu_btn.setEnabled(editable)
-        self._menu_btn.setToolTip("Strategy actions" if editable else "Locked while the bot is running")
-        # The inline editor has to be locked too.  Disabling only the chip, menu
-        # and disclosure left an already-expanded panel fully editable mid-run —
-        # min/max players, combat order drag, DSL text and add/remove assignment
-        # all stayed live, and the debounce timer happily persisted them.
-        self._config_editor.set_editable(editable)
-        self._refresh_disclosure()
+        self._reapply_verb_states()
+        self.setCursor(Qt.CursorShape.PointingHandCursor if editable else Qt.CursorShape.ArrowCursor)
+        self.setToolTip("" if editable else LOCKED)
 
-    @property
-    def is_expanded(self) -> bool:
-        return self._expanded
+    def _reapply_verb_states(self) -> None:
+        """Rename needs something to rename; New does not.
 
-    def set_expanded(self, expanded: bool) -> None:
-        """Expand or collapse the inline editor. No-op when there is nothing to expand."""
-        if self._binding is None or self._binding.is_linked:
-            return
-        self._expanded = expanded
-        self._refresh()
-
-    def _refresh_disclosure(self) -> None:
-        """Sync the expand affordance to whether expanding is currently possible."""
-        if self._binding is None:
-            self._disclosure.set_interactive(False)
-        elif self._binding.is_linked:
-            self._disclosure.set_interactive(False, "Linked to a Duel Strategy in the library — unlink to edit it here")
-        elif not self._editable:
-            self._disclosure.set_interactive(False, "Locked while the bot is running")
-        else:
-            self._disclosure.set_interactive(True)
-        self._disclosure.set_expanded(self._expanded)
-
-    def _linked_dcs(self):
-        if self._binding is None or not self._binding.is_linked:
-            return None
-        return next((d for d in self._all_dcs if d.id == self._binding.duel_combat_strategy_id), None)
-
-    def _apply_summary(self, summary: StrategySummary) -> None:
-        """Render both meta lines, and the chip tooltip, from one shared summary.
-
-        The meta line carries min/max players *and* the combat order, so a
-        fight whose order differs from its neighbours (Balaur entering
-        P1→P2→P4→P3) is visible without expanding anything.
+        New stays live with no strategy loaded, because that is exactly the state a user
+        gets out of by making one -- a card whose every affordance is dead is a dead end.
         """
-        self._meta_lbl.setText(" · ".join(summary.facets))
-        self._meta_lbl.show()
-        if summary.lines:
-            self._assignments_lbl.setText(" · ".join(f"{line.players}: {line.label}" for line in summary.lines))
-        else:
-            self._assignments_lbl.setText("No player assignments")
-        self._assignments_lbl.show()
-        self._chip.setToolTip(summary.description or _LINK_TOOLTIP)
+        for label in (_RENAME_BCS,):
+            button = self.action_button(label)
+            if button is not None:
+                button.setEnabled(self._editable and self._bcs is not None)
+        button = self.action_button(_NEW_BCS)
+        if button is not None:
+            button.setEnabled(self._editable)
+        button = self.action_button(_CHANGE_BCS)
+        if button is not None:
+            button.setEnabled(self._editable and self._bcs is not None)
 
-    def _refresh(self) -> None:
-        if self._binding is None:
-            self.setVisible(False)
-            return
-        self.setVisible(True)
+    def _verbs(self) -> list[CardVerb]:
+        verbs = [
+            CardVerb(_CHANGE_BCS, "search", "Pick a different Bot Combat Strategy", self.change_requested.emit, True),
+            CardVerb(_RENAME_BCS, "pencil", "Rename this Bot Combat Strategy", self.rename_requested.emit, True),
+            CardVerb(_NEW_BCS, "plus", "Create a new Bot Combat Strategy for this bot", self.new_requested.emit, True),
+        ]
+        if self._bcs is not None:
+            verbs.append(
+                CardVerb(_DUPLICATE_BCS, "copy", "Copy this strategy under a new name", self.duplicate_requested.emit)
+            )
+            verbs.append(CardVerb(_DELETE_BCS, "trash", "Delete this Bot Combat Strategy", self.delete_requested.emit))
+        return verbs
 
-        if self._binding.is_linked:
-            dcs = self._linked_dcs()
-            self._expanded = False
-            self._config_editor.hide()
-            if dcs is not None:
-                self._chip.set_strategy_name(dcs.name)
-                self._apply_summary(summarize_duel(dcs, self._all_pcs))
-            else:
-                self._chip.set_strategy_name("(missing strategy)")
-                self._chip.setToolTip(_LINK_TOOLTIP)
-                self._meta_lbl.hide()
-                self._assignments_lbl.hide()
-            self._refresh_disclosure()
-            return
+    def _refuses_activation(self) -> bool:
+        """A body click picks, and there is nothing to pick between until one exists."""
+        return not self._editable or self._bcs is None
 
-        # Inline
-        config = self._binding.duel_config
-        empty = config.is_empty()
-        self._chip.set_strategy_name(self._empty_label if empty else "(custom)")
-        self._chip.setToolTip(config.description or _LINK_TOOLTIP)
-        if self._expanded:
-            self._meta_lbl.hide()
-            self._assignments_lbl.hide()
-            self._config_editor.load(config, self._all_pcs)
-            self._config_editor.set_editable(self._editable)
-            self._config_editor.show()
-        else:
-            self._config_editor.hide()
-            if empty:
-                self._meta_lbl.setText(self._empty_meta)
-                self._meta_lbl.show()
-                self._assignments_lbl.hide()
-            else:
-                self._apply_summary(summarize_duel(config, self._all_pcs))
-        self._refresh_disclosure()
-
-    # -- actions ----------------------------------------------------------
-
-    def _on_toggle(self) -> None:
-        self.set_expanded(not self._expanded)
-
-    def _on_pick_link(self) -> None:
-        if self._binding is None:
-            return
-        dlg = StrategyPickerDialog(
-            title="Pick Duel Strategy",
-            mode="duel",
-            strategies=self._all_dcs,
-            current_id=self._binding.duel_combat_strategy_id,
-            allow_none=True,
-            none_label=self._empty_label,
-            all_pcs=self._all_pcs,
-            parent=self,
-        )
-        if dlg.exec():
-            self._binding.duel_combat_strategy_id = dlg.selected_id()
-            self._expanded = False
-            self._refresh()
-            self.changed.emit()
-            self.linkage_changed.emit()
-
-    def _rebuild_menu(self) -> None:
-        self._menu.clear()
-        if self._binding is None:
-            return
-        if self._binding.is_linked:
-            self._menu.addAction("Unlink (edit a private copy)", self._on_unlink)
-            self._menu.addAction("Edit in library…", self._on_edit_in_library)
-        else:
-            action = self._menu.addAction("Save as preset…", self._on_promote)
-            action.setEnabled(not self._binding.duel_config.is_empty())
-        if self._supports_membership:
-            # Separated: everything above changes *what* this group does, this
-            # changes *which* fights it does it to.
-            self._menu.addSeparator()
-            action = self._menu.addAction("Applies to…", self.membership_requested.emit)
-            # Nothing to share yet, and a group of fights holding no config is
-            # exactly what split_unconfigured pulls back apart — so offering it
-            # here would look like an edit that quietly undid itself.
-            configured = self._binding.is_linked or not self._binding.duel_config.is_empty()
-            action.setEnabled(configured)
-            if not configured:
-                action.setToolTip("Give this fight a strategy first — there is nothing to share yet")
-
-    def _on_unlink(self) -> None:
-        """Fork the linked strategy's fields back into this binding as an inline copy."""
-        dcs = self._linked_dcs()
-        if dcs is not None:
-            # Dump over the DuelConfig field set (rather than listing fields by
-            # hand) so a field added later can't be silently dropped here.
-            self._binding.duel_config = DuelConfig.model_validate(dcs.model_dump(exclude={"id", "name"}))
-        self._binding.duel_combat_strategy_id = None
-        self._refresh()
-        self.changed.emit()
-        self.linkage_changed.emit()
-
-    def _on_edit_in_library(self) -> None:
-        if self._binding is not None and self._binding.duel_combat_strategy_id:
-            self.edit_in_library_requested.emit(self._binding.duel_combat_strategy_id)
-
-    def _on_promote(self) -> None:
-        """Copy this binding's inline config into a new library entry and link to it."""
-        config = self._binding.duel_config
-        if config.is_empty():
-            QMessageBox.information(self, "Nothing to save", "Add a player assignment before saving it as a preset.")
-            return
-        name, ok = QInputDialog.getText(self, "Save as Preset", "Duel Strategy name:")
-        if not ok or not name.strip():
-            return
-        # Dump over the DuelConfig field set (rather than listing fields by
-        # hand) so a field added later can't be silently dropped here.
-        dcs = DuelCombatStrategy(name=name.strip(), **config.model_dump())
-        save_duel_strategy(dcs)
-        self._all_dcs.append(dcs)
-        self._binding.duel_combat_strategy_id = dcs.id
-        self._expanded = False
-        self._refresh()
-        self.changed.emit()
-        self.linkage_changed.emit()
-        self.presets_changed.emit()
-
-    def changeEvent(self, event: QEvent) -> None:
-        super().changeEvent(event)
-        if event.type() == QEvent.Type.StyleChange:
-            self._disclosure.set_expanded(self._expanded)
-            self._menu_btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
-            apply_muted_color(self._meta_lbl)
-            apply_muted_color(self._assignments_lbl)
+    def _restyle_content(self) -> None:
+        for label, color in ((self._name, THEME.text), (self._meta, THEME.text_muted)):
+            palette = label.palette()
+            palette.setColor(label.foregroundRole(), QColor(color))
+            label.setPalette(palette)
 
 
 # ---------------------------------------------------------------------------
@@ -1020,15 +632,17 @@ class CombatTab(QWidget):
         # state_id → its StateAssignment (owned in-memory; flushed to BCS on save,
         # dropped if it never ends up linked or holding real inline content)
         self._state_bindings: dict[str, StateAssignment] = {}
-        self._state_panels: dict[str, _DuelBindingPanel] = {}
+        self._state_panels: dict[str, StrategyPanel] = {}
         self._suppress = False
         self._editable = True
         self._library_window: StrategyLibraryWindow | None = None
 
-        self._save_timer = QTimer(self)
-        self._save_timer.setSingleShot(True)
-        self._save_timer.setInterval(_DEBOUNCE_MS)
-        self._save_timer.timeout.connect(self._save_bcs)
+        # No debounce timer. There was one, at 500ms, because the inline DSL editor
+        # emitted ``changed`` on every keystroke and every keystroke would otherwise have
+        # written a strategy file. With the editor gone, every remaining way this tab can
+        # change the configuration is a single discrete act — a pick accepted from a
+        # dialog, a membership committed, a deck loaded — so each one saves immediately
+        # and there is no pending state for a bot switch, a Save As or a quit to race.
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -1039,70 +653,54 @@ class CombatTab(QWidget):
         self._content_layout.setContentsMargins(8, 8, 8, 8)
         self._content_layout.setSpacing(4)
 
-        # ── Bot Combat Strategy section ───────────────────────────────
-        bcs_section = SidebarSection("Bot Combat Strategy", self)
+        # ── Bot Combat Strategy ──────────────────────────────────────
+        bcs_section = SidebarSection(_BCS_SECTION, self)
         bcs_layout = QVBoxLayout()
         bcs_layout.setSpacing(2)
-
-        bcs_row = QHBoxLayout()
-        self._bcs_chip = _StrategyChip(_NO_STRATEGY_LABEL)
-        self._bcs_chip.setToolTip("Click to pick a Bot Combat Strategy for this bot")
-        self._bcs_chip.clicked.connect(self._on_pick_bcs)
-        bcs_row.addWidget(self._bcs_chip, 1)
-
-        self._bcs_menu_btn = QToolButton()
-        self._bcs_menu_btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
-        self._bcs_menu_btn.setIconSize(QSize(_ICON_BTN_SIZE, _ICON_BTN_SIZE))
-        self._bcs_menu_btn.setToolTip("Manage Bot Combat Strategies (New, Rename, Duplicate, Delete)")
-        self._bcs_menu_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        self._bcs_menu_btn.setStyleSheet("QToolButton::menu-indicator { image: none; }")
-        bcs_menu = anchor_menu_to_window(QMenu(self._bcs_menu_btn))
-        bcs_menu.addAction("New", self._on_new_bcs)
-        bcs_menu.addAction("Rename", self._on_rename_bcs)
-        bcs_menu.addAction("Duplicate", self._on_duplicate_bcs)
-        bcs_menu.addSeparator()
-        bcs_menu.addAction("Delete", self._on_delete_bcs)
-        self._bcs_menu_btn.setMenu(bcs_menu)
-        bcs_row.addWidget(self._bcs_menu_btn)
-
-        bcs_layout.addLayout(bcs_row)
-        self._bcs_meta_lbl = _make_meta_label()
-        self._bcs_meta_lbl.hide()
-        bcs_layout.addWidget(self._bcs_meta_lbl)
+        self._bcs_card = _BotStrategyCard()
+        self._bcs_card.change_requested.connect(self._on_pick_bcs)
+        self._bcs_card.new_requested.connect(self._on_new_bcs)
+        self._bcs_card.rename_requested.connect(self._on_rename_bcs)
+        self._bcs_card.duplicate_requested.connect(self._on_duplicate_bcs)
+        self._bcs_card.delete_requested.connect(self._on_delete_bcs)
+        bcs_layout.addWidget(self._bcs_card)
         bcs_section.set_content_layout(bcs_layout)
         self._content_layout.addWidget(bcs_section)
 
-        # ── Default Combat Strategy section ───────────────────────────
-        default_section = SidebarSection("Default Combat Strategy", self)
+        # ── Default Duel Combat Strategy ─────────────────────────────
+        default_section = SidebarSection(_DEFAULT_SECTION, self)
         default_layout = QVBoxLayout()
         default_layout.setSpacing(2)
-        # The bot default is the last stop before the built-in strategy, so its
-        # empty label names the built-in one.  State panels below say something
-        # different — see _STATE_INHERIT_LABEL.
-        self._default_panel = _DuelBindingPanel("Default", _BUILT_IN_LABEL, _NOT_CONFIGURED_LABEL)
-        self._default_panel.changed.connect(self._schedule_save)
-        self._default_panel.presets_changed.connect(self._on_presets_changed)
+        # The bot default is the last stop before the built-in strategy, so its empty
+        # label names the built-in one. The specialized cards below say something
+        # different — see STATE_INHERIT_LABEL.
+        self._default_panel = StrategyPanel(BUILT_IN_LABEL, NOT_CONFIGURED_LABEL)
+        self._default_panel.pick_requested.connect(partial(self._on_pick_duel, self._default_panel))
+        self._default_panel.promote_requested.connect(partial(self._on_promote, self._default_panel))
         self._default_panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
         self._default_panel.setVisible(False)
         default_layout.addWidget(self._default_panel)
         default_section.set_content_layout(default_layout)
         self._content_layout.addWidget(default_section)
 
-        # ── Duel Combat Strategies section ───────────────────────────
-        self._assignments_section = SidebarSection("Duel Combat Strategies", self)
+        # ── Specialized Duel Combat Strategies ───────────────────────
+        # Hidden outright when the bot exposes no combat states, which is 63 of the 81
+        # shipped bots. It used to show the words "No exposed combat states" instead —
+        # a permanently empty section, headed by a phrase most users would have to learn
+        # the schema to parse, for a feature their bot does not use and cannot be made to
+        # use from this tab. ``use_default_strategy: false`` is set by the bot's author.
+        self._assignments_section = SidebarSection(_SPECIALIZED_SECTION, self)
         self._assignments_layout = QVBoxLayout()
         self._assignments_layout.setSpacing(6)
-        self._no_assignments_lbl = QLabel("No exposed combat states")
-        self._no_assignments_lbl.setStyleSheet(f"color: {THEME.text_muted};")
-        self._assignments_layout.addWidget(self._no_assignments_lbl)
-        # Separates configured groups from the fights that fall through to the
-        # bot default.  Persistent rather than rebuilt so its themed stylesheet
-        # survives a rebuild; ``_rebuild_state_assignments`` re-places it.
+        # Separates configured groups from the fights that fall through to the bot
+        # default. Persistent rather than rebuilt so its themed stylesheet survives a
+        # rebuild; ``_rebuild_state_assignments`` re-places it.
         self._group_divider = QLabel(_UNASSIGNED_DIVIDER)
         self._group_divider.setStyleSheet(f"color: {THEME.text_muted};")
         self._group_divider.hide()
         self._assignments_section.set_content_layout(self._assignments_layout)
         self._content_layout.addWidget(self._assignments_section)
+        self._assignments_section.setVisible(False)
 
         # ── Player Decks ─────────────────────────────────────────────
         self._decks_section = _PlayerDecksSection(self)
@@ -1126,8 +724,6 @@ class CombatTab(QWidget):
     # ------------------------------------------------------------------
 
     def set_config(self, config: BotConfig | None) -> None:
-        # Commit the outgoing bot's pending BCS edit before _bcs is replaced —
-        # otherwise the timer fires against the newly loaded bot's strategy.
         self.flush_pending_save()
         self._config = config
         self._rebind()
@@ -1136,26 +732,16 @@ class CombatTab(QWidget):
         """Re-resolve the strategy display against the config's *current* id.
 
         Save As mints a fresh id onto the loaded config, and every surface keyed
-        on the old one is stale the moment it does: the chip goes on naming the
+        on the old one is stale the moment it does: the card goes on naming the
         original's strategy, and the next combat edit writes
         ``set_active_strategy`` under the *new* id — binding the fork to the
         original's strategy, which is exactly what minting an id prevents.
         A fork inherits no strategy, so this leaves the tab showing none.
 
-        Narrower than ``set_config``, which cannot be used here: its
-        ``flush_pending_save`` emits ``combat_config_changed``, and the sidebar
-        forwards that as ``config_changed`` — an unsaved edit against a bot saved
-        a moment ago.  The pending edit is still committed, just silently, and
-        against the strategy that owns it (a BCS carries its own ``bot_id``, so
-        it stays with the original bot).
+        Narrower than ``set_config``, which flushes the Strategy Library's own
+        editors as well; nothing on this tab is ever mid-edit, so there is
+        nothing here to commit before the id changes.
         """
-        if self._save_timer.isActive():
-            self._save_timer.stop()
-            blocked = self.blockSignals(True)
-            try:
-                self._save_bcs()
-            finally:
-                self.blockSignals(blocked)
         self._rebind()
 
     def _rebind(self) -> None:
@@ -1164,7 +750,7 @@ class CombatTab(QWidget):
         self._load_bcs()
         self._rebuild_state_assignments()
         self._refresh_deck_summaries()
-        self._refresh_bcs_chip()
+        self._bcs_card.set_strategy(self._bcs)
         self._refresh_default_panel()
         self._suppress = False
 
@@ -1185,27 +771,26 @@ class CombatTab(QWidget):
         """Reload DCS/BCS/PCS data from disk. Called when StrategyLibraryWindow signals changes.
 
         Pushes the refreshed lists into the existing panel widgets rather than
-        rebuilding them, so an in-progress inline edit elsewhere on the tab is
-        not interrupted.
+        rebuilding them, so a rename in the library reaches the cards without
+        destroying and recreating them.
         """
         self._all_dcs = list_duel_strategies()
         self._all_pcs = list_player_strategies()
         if self._config is not None:
             self._all_bcs = list_bot_strategies(self._config.id)
-        self._refresh_bcs_chip()
+        self._bcs_card.set_strategy(self._bcs)
         self._default_panel.set_libraries(self._all_dcs, self._all_pcs)
         for panel in self._group_panels():
             panel.set_libraries(self._all_dcs, self._all_pcs)
 
-    def _group_panels(self) -> list[_DuelBindingPanel]:
+    def _group_panels(self) -> list[StrategyPanel]:
         """Each panel once — ``_state_panels`` maps every fight in a group to the
         same widget, so its values repeat."""
         return list(dict.fromkeys(self._state_panels.values()))
 
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
-        self._bcs_chip.setEnabled(editable)
-        self._bcs_menu_btn.setEnabled(editable)
+        self._bcs_card.set_editable(editable)
         self._decks_section.set_editable(editable)
         self._default_panel.set_editable(editable)
         for panel in self._group_panels():
@@ -1251,10 +836,6 @@ class CombatTab(QWidget):
         fresh = StateAssignment(state_ids=[state_id])
         self._state_bindings[state_id] = fresh
         return fresh
-
-    def _schedule_save(self) -> None:
-        if not self._suppress:
-            self._save_timer.start()
 
     def _save_bcs(self) -> None:
         if self._bcs is None:
@@ -1309,36 +890,20 @@ class CombatTab(QWidget):
             pruned.append(assignment)
         return pruned
 
-    def _save_bcs_immediate(self) -> None:
-        """Save unconditionally — for mutations that bypass the debounce timer."""
-        if self._save_timer.isActive():
-            self._save_timer.stop()
-        self._save_bcs()
-
     def flush_pending_save(self) -> None:
-        """Commit any debounced edit — this tab's BCS and any open Strategy Library.
+        """Commit any debounced edit held by an open Strategy Library.
 
-        A no-op when nothing is pending, so it is safe to call on every config
-        load and before every strategy switch.
+        This tab keeps none of its own any more — every edit it can make is a
+        discrete act that writes on the spot — but ``AppController`` calls this on
+        ``aboutToQuit`` and the sidebar calls it before every bot switch, and the
+        library window it may have opened still has editors that debounce.
         """
         if self._library_window is not None and self._library_window.isVisible():
             self._library_window.flush_editors()
-        if self._save_timer.isActive():
-            self._save_timer.stop()
-            self._save_bcs()
 
     # ------------------------------------------------------------------
     # UI refresh
     # ------------------------------------------------------------------
-
-    def _refresh_bcs_chip(self) -> None:
-        if self._bcs is None:
-            self._bcs_chip.set_strategy_name(_NO_STRATEGY_LABEL)
-            self._bcs_meta_lbl.hide()
-        else:
-            self._bcs_chip.set_strategy_name(self._bcs.name)
-            self._bcs_meta_lbl.setText(_format_bcs_meta(self._bcs))
-            self._bcs_meta_lbl.show()
 
     def _refresh_default_panel(self) -> None:
         if self._bcs is None:
@@ -1439,12 +1004,14 @@ class CombatTab(QWidget):
 
         Only call this when the set of exposed states, or the way they group, may
         have changed (config load, a strategy relinked, membership edited) — it
-        destroys existing panel widgets, which would interrupt an in-progress
-        inline edit.  Data-only refreshes go through ``refresh_strategy_data`` /
-        panel.set_libraries instead.
+        destroys existing panel widgets.  Data-only refreshes go through
+        ``refresh_strategy_data`` / panel.set_libraries instead.
+
+        The whole section is hidden when the bot exposes no combat states, rather
+        than shown holding a line of apology — see the constructor.
         """
-        while self._assignments_layout.count() > 1:
-            item = self._assignments_layout.takeAt(1)
+        while self._assignments_layout.count():
+            item = self._assignments_layout.takeAt(0)
             widget = item.widget() if item else None
             # The divider outlives the rebuild — it is re-placed below.
             if widget is not None and widget is not self._group_divider:
@@ -1452,16 +1019,11 @@ class CombatTab(QWidget):
         self._state_panels.clear()
         self._group_divider.hide()
 
-        if self._config is None:
-            self._no_assignments_lbl.show()
-            return
-
-        exposed = exposed_combat_states(self._config)
+        exposed = exposed_combat_states(self._config) if self._config is not None else []
+        self._assignments_section.setVisible(bool(exposed))
         if not exposed:
-            self._no_assignments_lbl.show()
             return
 
-        self._no_assignments_lbl.hide()
         for state in exposed:
             self._ensure_state_binding(state.id)
         groups = group_bindings(self._state_bindings, exposed)
@@ -1476,31 +1038,93 @@ class CombatTab(QWidget):
                 self._group_divider.show()
                 divider_placed = True
 
-            panel = _DuelBindingPanel(
-                "",
-                _STATE_INHERIT_LABEL,
-                _STATE_INHERIT_META,
+            panel = StrategyPanel(
+                STATE_INHERIT_LABEL,
+                STATE_INHERIT_META,
                 parent=self._assignments_section,
                 supports_membership=True,
             )
             panel.set_titles([state_label(s) for s in group.states])
             panel.load(group.assignment, self._all_dcs, self._all_pcs)
             panel.set_editable(self._editable)
-            panel.changed.connect(self._schedule_save)
-            panel.presets_changed.connect(self._on_presets_changed)
+            panel.pick_requested.connect(partial(self._on_pick_duel, panel))
+            panel.promote_requested.connect(partial(self._on_promote, panel))
             panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
-            panel.linkage_changed.connect(self._on_linkage_changed)
             panel.membership_requested.connect(partial(self._on_edit_membership, group.assignment))
             self._assignments_layout.addWidget(panel)
             # Keyed per state, so every fight in a group resolves to its panel.
             for state in group.states:
                 self._state_panels[state.id] = panel
 
-    def _on_linkage_changed(self) -> None:
-        """A panel linked, unlinked or promoted — groups may have merged or split."""
-        self._regroup_bindings()
-        self._rebuild_state_assignments()
-        self._save_bcs_immediate()
+    # ------------------------------------------------------------------
+    # Duel Combat Strategy picking
+    # ------------------------------------------------------------------
+
+    def _on_pick_duel(self, panel: StrategyPanel) -> None:
+        """Choose which library strategy a panel points at — the tab's central act.
+
+        The dialog is owned here rather than by the panel, because accepting one
+        can merge two panels into one (two fights that now name the same
+        strategy) and only the tab can regroup and redraw them.  The panel just
+        says *pick*.
+        """
+        binding = panel.binding
+        if binding is None:
+            return
+        dlg = StrategyPickerDialog(
+            title="Pick Duel Combat Strategy",
+            mode="duel",
+            strategies=self._all_dcs,
+            current_id=binding.duel_combat_strategy_id,
+            allow_none=True,
+            none_label=panel.empty_label,
+            all_pcs=self._all_pcs,
+            parent=self,
+        )
+        if not dlg.exec():
+            return
+        binding.duel_combat_strategy_id = dlg.selected_id()
+        self._after_linkage_change(panel)
+
+    def _on_promote(self, panel: StrategyPanel) -> None:
+        """Copy a binding's inline config into a new library entry and link to it.
+
+        Only reachable for a binding that already holds one, which since the
+        inline editor was removed means a configuration written before this tab
+        stopped offering to write them, or one authored in a bot file by hand.
+        Saving it as a preset is the way such a configuration becomes editable
+        again — from the Strategy Library, which is now the only place a
+        ``DuelConfig`` is edited.
+        """
+        binding = panel.binding
+        if binding is None or binding.duel_config.is_empty():
+            QMessageBox.information(self, "Nothing to save", "This entry has no inline configuration to save.")
+            return
+        name, ok = QInputDialog.getText(self, "Save as Preset", "Duel Combat Strategy name:")
+        if not ok or not name.strip():
+            return
+        # Dump over the DuelConfig field set (rather than listing fields by
+        # hand) so a field added later can't be silently dropped here.
+        dcs = DuelCombatStrategy(name=name.strip(), **binding.duel_config.model_dump())
+        save_duel_strategy(dcs)
+        self._all_dcs.append(dcs)
+        binding.duel_combat_strategy_id = dcs.id
+        self._after_linkage_change(panel)
+        self.refresh_strategy_data()
+
+    def _after_linkage_change(self, panel: StrategyPanel) -> None:
+        """A panel now names a different strategy: redraw, regroup, save.
+
+        The bot default has no group of its own, so it only redraws.  A
+        per-fight panel may have just joined or left a group, which is a rebuild
+        of the whole section.
+        """
+        if panel is self._default_panel:
+            panel.refresh()
+        else:
+            self._regroup_bindings()
+            self._rebuild_state_assignments()
+        self._save_bcs()
 
     def _regroup_bindings(self) -> None:
         """Re-merge bindings that now share a Duel Strategy.
@@ -1532,28 +1156,23 @@ class CombatTab(QWidget):
         # Re-asserts both invariants before anything is drawn from the result.
         self._regroup_bindings()
         self._rebuild_state_assignments()
-        # Structural, so it bypasses the debounce: a half-applied membership is
-        # not something to leave sitting on a timer.
-        self._save_bcs_immediate()
+        self._save_bcs()
 
     def _describe_state_binding(self, state_id: str) -> str:
         binding = self._state_bindings.get(state_id)
         if binding is None:
-            return _STATE_INHERIT_LABEL
+            return STATE_INHERIT_LABEL
         return self._describe_binding_of(binding)
 
     def _describe_binding_of(self, binding: StateAssignment) -> str:
-        """The same words the panel's chip uses, so the dialog reads as the same thing."""
+        """The same words the panel's own name line uses, so the dialog reads as
+        the same thing — the constants come from ``strategy_panel`` for that reason."""
         if binding.is_linked:
             dcs = next((d for d in self._all_dcs if d.id == binding.duel_combat_strategy_id), None)
-            return dcs.name if dcs is not None else "(missing strategy)"
+            return dcs.name if dcs is not None else MISSING_LABEL
         if binding.duel_config.is_empty():
-            return _STATE_INHERIT_LABEL
-        return "(custom)"
-
-    def _on_presets_changed(self) -> None:
-        """A panel promoted its inline config to a new library DuelCombatStrategy."""
-        self.refresh_strategy_data()
+            return STATE_INHERIT_LABEL
+        return CUSTOM_LABEL
 
     def _on_edit_dcs_in_library(self, dcs_id: str) -> None:
         lib = self._ensure_library()
@@ -1566,8 +1185,6 @@ class CombatTab(QWidget):
     def _on_pick_bcs(self) -> None:
         if self._config is None:
             return
-        # Pending edits belong to the strategy being replaced, not the new one.
-        self.flush_pending_save()
         dlg = StrategyPickerDialog(
             title="Pick Bot Combat Strategy",
             mode="bot",
@@ -1583,7 +1200,7 @@ class CombatTab(QWidget):
                 self._state_bindings = build_bindings(self._bcs.state_assignments) if self._bcs else {}
                 SettingsManager.instance().set_active_strategy(self._config.id, chosen)
                 self._rebuild_state_assignments()
-                self._refresh_bcs_chip()
+                self._bcs_card.set_strategy(self._bcs)
                 self._refresh_default_panel()
                 self._refresh_deck_summaries()
 
@@ -1600,7 +1217,7 @@ class CombatTab(QWidget):
         self._state_bindings = {}
         SettingsManager.instance().set_active_strategy(self._config.id, bcs.id)
         self._rebuild_state_assignments()
-        self._refresh_bcs_chip()
+        self._bcs_card.set_strategy(self._bcs)
         self._refresh_default_panel()
         self._refresh_deck_summaries()
 
@@ -1611,8 +1228,8 @@ class CombatTab(QWidget):
         if not ok or not name.strip():
             return
         self._bcs.name = name.strip()
-        self._save_bcs_immediate()
-        self._refresh_bcs_chip()
+        self._save_bcs()
+        self._bcs_card.set_strategy(self._bcs)
 
     def _on_duplicate_bcs(self) -> None:
         if self._bcs is None or self._config is None:
@@ -1627,7 +1244,7 @@ class CombatTab(QWidget):
         self._state_bindings = build_bindings(new_bcs.state_assignments)
         SettingsManager.instance().set_active_strategy(self._config.id, new_bcs.id)
         self._rebuild_state_assignments()
-        self._refresh_bcs_chip()
+        self._bcs_card.set_strategy(self._bcs)
         self._refresh_default_panel()
 
     def _on_delete_bcs(self) -> None:
@@ -1641,10 +1258,6 @@ class CombatTab(QWidget):
         )
         if ans != QMessageBox.StandardButton.Yes:
             return
-        # Drop rather than flush any pending edit: it belongs to the strategy
-        # being deleted, and letting the timer survive would apply it to whichever
-        # strategy we fall back to below.
-        self._save_timer.stop()
         to_delete = self._bcs
         self._all_bcs = [b for b in self._all_bcs if b.id != to_delete.id]
         delete_bot_strategy(to_delete.id)
@@ -1653,7 +1266,7 @@ class CombatTab(QWidget):
         new_active = self._bcs.id if self._bcs else None
         SettingsManager.instance().set_active_strategy(self._config.id, new_active)
         self._rebuild_state_assignments()
-        self._refresh_bcs_chip()
+        self._bcs_card.set_strategy(self._bcs)
         self._refresh_default_panel()
         self._refresh_deck_summaries()
 
@@ -1687,7 +1300,6 @@ class CombatTab(QWidget):
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
-            self._bcs_menu_btn.setIcon(svg_icon("more_vert", _ICON_BTN_SIZE))
-            self._bcs_meta_lbl.setStyleSheet(f"color: {THEME.text_muted};")
-            self._no_assignments_lbl.setStyleSheet(f"color: {THEME.text_muted};")
+            # Every card on this tab is a CardFrame and repaints itself; the divider
+            # is the one plain label left here.
             self._group_divider.setStyleSheet(f"color: {THEME.text_muted};")

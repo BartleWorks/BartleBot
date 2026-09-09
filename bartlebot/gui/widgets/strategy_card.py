@@ -53,33 +53,39 @@ class StrategyCard(QWidget):
         header.addWidget(name_row)
         self._name_lbl = name_row
 
-        self._desc_lbl: QLabel | None = None
+        # Every line under the name is the same kind of thing — a muted caption at
+        # THEME.font_card_sub_size — so they are held as one list rather than as three
+        # named attributes each restyled by its own line of _apply_style. The three
+        # copies were identical apart from the attribute they wrote to, and one of them
+        # had already been given a colour the other two lacked.
+        self._sub_lbls: list[QLabel] = []
+
         if summary.description:
-            desc = QLabel(summary.description)
+            desc = self._add_sub_line(header, summary.description)
             desc.setWordWrap(True)
-            desc.setStyleSheet("font-size: 10px; background: transparent;")
-            header.addWidget(desc)
-            self._desc_lbl = desc
 
         subtitle = summary.subtitle_line()
-        self._sub_lbl: QLabel | None = None
         if subtitle:
-            sub = QLabel(subtitle)
-            sub.setStyleSheet("font-size: 10px; background: transparent;")
-            header.addWidget(sub)
-            self._sub_lbl = sub
+            self._add_sub_line(header, subtitle)
 
-        self._school_lbl: QLabel | None = None
         if summary.schools:
-            schools_text = " · ".join(f"{count}× {school}" for school, count in summary.schools.items())
-            school_lbl = QLabel(schools_text)
-            school_lbl.setStyleSheet("font-size: 10px; background: transparent;")
-            header.addWidget(school_lbl)
-            self._school_lbl = school_lbl
+            self._add_sub_line(header, " · ".join(f"{count}× {school}" for school, count in summary.schools.items()))
 
         layout.addLayout(header)
 
         self._apply_style()
+
+    def _add_sub_line(self, header: QVBoxLayout, text: str) -> QLabel:
+        """One muted caption under the name, collected for the theme pass.
+
+        No stylesheet is written here: ``_apply_style`` runs at the end of ``__init__``
+        and again on every theme change, and a size set in both places is a size that
+        can disagree with itself.
+        """
+        label = QLabel(text)
+        header.addWidget(label)
+        self._sub_lbls.append(label)
+        return label
 
     def set_selected(self, selected: bool) -> None:
         if self._selected == selected:
@@ -113,12 +119,10 @@ class StrategyCard(QWidget):
             self.setStyleSheet(f"#StrategyCard {{ background: {bg}; border: 1px solid {border}; border-radius: 4px; }}")
             name_color = THEME.error if self._invalid else THEME.text
             self._name_lbl.setStyleSheet(f"color: {name_color}; background: transparent;")
-            if self._desc_lbl:
-                self._desc_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px; background: transparent;")
-            if self._sub_lbl:
-                self._sub_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px; background: transparent;")
-            if self._school_lbl:
-                self._school_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px; background: transparent;")
+            for label in self._sub_lbls:
+                label.setStyleSheet(
+                    f"color: {THEME.text_muted}; font-size: {THEME.font_card_sub_size}px; background: transparent;"
+                )
         finally:
             self._applying_style = False
 
