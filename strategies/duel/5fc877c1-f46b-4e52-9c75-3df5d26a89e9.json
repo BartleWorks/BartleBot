@@ -1,0 +1,34 @@
+{
+  "min_players": 4,
+  "combat_order": [
+    4,
+    3,
+    2,
+    1
+  ],
+  "player_assignments": [
+    {
+      "players": [
+        1,
+        2
+      ],
+      "dsl": "feint mass | feint[potent]@boss | any<blade>[sharp]@ally(1) | any<global>"
+    },
+    {
+      "players": [
+        3
+      ],
+      "dsl": "scald[any<mod_damage>]",
+      "school": "Fire"
+    },
+    {
+      "players": [
+        4
+      ],
+      "dsl": "detonate all"
+    }
+  ],
+  "description": "Default duel strategy for a turn 1 Scald-Incindiate team strategy",
+  "id": "5fc877c1-f46b-4e52-9c75-3df5d26a89e9",
+  "name": "Default Turn 1 Scald-Incindiate"
+}
