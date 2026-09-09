@@ -153,3 +153,72 @@ def test_explicit_root_overrides_project_root(monkeypatch, tmp_path):
     save_player_strategy(PlayerCombatStrategy(name="A", dsl=""), tmp_path / "explicit")
     assert len(list_player_strategies(tmp_path / "explicit")) == 1
     assert list_player_strategies() == []
+
+
+# ---------------------------------------------------------------------------
+# User-owned storage: shipped/user root override (issue #2)
+# ---------------------------------------------------------------------------
+
+
+def test_user_copy_shadows_shipped_on_read(tmp_path: Path):
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    original = PlayerCombatStrategy(name="Shipped Blade", dsl="any<blade> @ self")
+    save_player_strategy(original, shipped)  # write straight into "shipped" for the test
+
+    edited = original.model_copy(update={"name": "My Blade"})
+    save_player_strategy(edited, root=shipped, user_root=user)  # goes to user, same id
+
+    loaded = load_player_strategy(original.id, root=shipped, user_root=user)
+    assert loaded.name == "My Blade"
+
+    # Listing sees one entry — the user copy, not both.
+    result = list_player_strategies(root=shipped, user_root=user)
+    assert len(result) == 1
+    assert result[0].name == "My Blade"
+
+
+def test_write_goes_only_to_user_root(tmp_path: Path):
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    dcs = DuelCombatStrategy(name="New")
+    save_duel_strategy(dcs, root=shipped, user_root=user)
+
+    assert not (shipped / "strategies" / "duel" / f"{dcs.id}.json").exists()
+    assert (user / "strategies" / "duel" / f"{dcs.id}.json").exists()
+
+
+def test_copy_on_write_leaves_shipped_file_untouched(tmp_path: Path):
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    original = BotCombatStrategy(name="Farm", bot_id="bot-1")
+    save_bot_strategy(original, shipped)
+
+    edited = original.model_copy(update={"name": "My Farm"})
+    save_bot_strategy(edited, root=shipped, user_root=user)
+
+    still_shipped = load_bot_strategy(original.id, shipped)  # single-root read: shipped only
+    assert still_shipped.name == "Farm"
+
+    resolved = load_bot_strategy(original.id, root=shipped, user_root=user)
+    assert resolved.name == "My Farm"
+
+
+def test_delete_reverts_user_copy_to_shipped(tmp_path: Path):
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    original = DuelCombatStrategy(name="Shipped")
+    save_duel_strategy(original, shipped)
+
+    edited = original.model_copy(update={"name": "Edited"})
+    save_duel_strategy(edited, root=shipped, user_root=user)
+    assert load_duel_strategy(original.id, root=shipped, user_root=user).name == "Edited"
+
+    delete_duel_strategy(original.id, root=shipped, user_root=user)  # only the user copy is deleted
+    assert load_duel_strategy(original.id, root=shipped, user_root=user).name == "Shipped"
+
+
+def test_delete_never_touches_shipped_file(tmp_path: Path):
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    original = PlayerCombatStrategy(name="Shipped")
+    save_player_strategy(original, shipped)
+
+    delete_player_strategy(original.id, root=shipped, user_root=user)  # no user copy exists yet
+
+    assert (shipped / "strategies" / "player" / f"{original.id}.json").exists()
