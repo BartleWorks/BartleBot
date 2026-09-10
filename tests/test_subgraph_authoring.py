@@ -450,3 +450,39 @@ def test_count_subgraph_uses_reads_raw_json(tmp_path, library):
     (bots / "broken.json").write_text("{not json", encoding="utf-8")
     assert count_subgraph_uses(bots) == {SYNC_ID: 2}
     assert count_subgraph_uses(tmp_path / "missing") == {}
+
+
+# ---------------------------------------------------------------------------
+# The author's lock toggle
+# ---------------------------------------------------------------------------
+
+
+def test_free_toggle_while_editing_reaches_the_pushed_definition(linked, library):
+    assert linked.begin_subgraph_edit(REGION)
+    linked.select_state(m("tp_b"))
+    form = linked.param_panel.param_form
+    assert form.override_button("target_zone") is None, "the author's page has no override toggle"
+    assert form.free_button("target_zone") is not None and not form.free_button("target_zone").isChecked()
+    assert form.expose_button("target_zone") is not None and form.expose_button("target_zone").isEnabled()
+    form.free_button("target_zone").setChecked(True)
+    assert linked.editing_definition.free_params == {"tp_b": ["target_zone"]}
+    # a param an input owns (hub.zone is bound to "world") has no lock, and Expose is off
+    linked.select_state(m("hub"))
+    assert form.free_button("zone") is None
+    assert form.expose_button("zone") is not None and not form.expose_button("zone").isEnabled()
+
+    assert linked.save_subgraph_to_library()
+    assert library.get(SYNC_ID).free_params == {"tp_b": ["target_zone"]}
+    linked.select_state(m("tp_b"))
+    assert form.widget("target_zone").isEnabled() and form.override_button("target_zone") is None, "free now"
+    assert not form.widget("skip_extra_clients_in_zone").isEnabled(), "still the subgraph's"
+
+
+def test_set_param_free_is_refused_outside_an_edit(linked):
+    assert linked.set_param_free(m("hub"), "zone", True) is False
+
+
+def test_save_region_seeds_free_params(plain, library):
+    assert plain.save_region_as_subgraph("r1", name="Startup")
+    defn = library.get(_region(plain, "startup_1").source.subgraph_id)
+    assert defn.free_params == {"state_1": ["relog_clients"], "state_2": ["leader_index", "require_all"]}

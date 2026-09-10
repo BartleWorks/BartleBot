@@ -21,6 +21,10 @@ The rules this module owns:
   whose slugs share a prefix ("Farm" and "Farm 2") cannot be mistaken for nested.
 - **Params resolve in three levels**: an instance's ``param_overrides`` beat an
   input the instance has *set* (non-``None``), which beats the definition's value.
+  The definition also says which params are *free* (``free_params``): a consumer
+  sets those on the node without ceremony, and the edit is stored as an override
+  (:func:`sync_free_overrides`). A member's label is always the consumer's, kept
+  in ``label_overrides``.
 - **Layout is instance-owned**: a member the instance already has keeps its stored
   position; a member new to it is placed at ``anchor + definition position``.
 - **Composition never leaves a bot unloadable**: when the definition is missing,
@@ -32,7 +36,7 @@ The rules this module owns:
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -161,6 +165,62 @@ def resolve_member_params(defn: SubgraphDefinition, def_state: StateModel, sourc
     return params
 
 
+def free_keys(defn: SubgraphDefinition, local: str) -> frozenset[str]:
+    """The params of definition-local state ``local`` that its author left for the consumer."""
+    return frozenset(defn.free_params.get(local, ()))
+
+
+def is_default_param(field: object, value: object) -> bool:
+    """Whether ``value`` is what a fresh node carries for ``field``: unset, its default, empty, or zero.
+
+    ``field`` is a ``ParamField`` (duck-typed: ``default`` and ``type`` are read).
+    An all-zero XYZ and a bare 0 on a number with no declared default count as
+    default too -- "non-empty zones and non-zero XYZs are the author's" is the
+    rule :func:`seed_free_params` applies.
+    """
+    default = getattr(field, "default", None)
+    if value is None or value == default:
+        return True
+    empties: tuple[object, ...] = ("", [], {})
+    if value in empties and default in (None, *empties):
+        return True
+    if getattr(field, "type", "") == "xyz" and isinstance(value, dict):
+        try:
+            return all(float(value.get(k) or 0.0) == 0.0 for k in ("x", "y", "z"))
+        except (TypeError, ValueError):
+            return False
+    if default is None and isinstance(value, int | float) and not isinstance(value, bool) and value == 0:
+        return True
+    return False
+
+
+def seed_free_params(
+    states: list[StateModel], schemas: Mapping[str, Sequence[object]] | None, previous: SubgraphDefinition | None = None
+) -> dict[str, list[str]]:
+    """Which params of ``states`` are free: a state's author-decided set if ``previous`` has the state, else its defaults.
+
+    ``schemas`` maps node type to its ``ParamField``s (the registry's
+    ``NODE_PARAM_SCHEMAS``; passed in so this module stays registry-free). A
+    state ``previous`` already holds keeps its entry there -- the heuristic is a
+    seed, not a live rule, or an author's choices would flip whenever a value
+    changed -- trimmed to the params the node still declares. A new state is
+    seeded: a param still at its default is free, everything set is locked.
+    Without ``schemas`` a new state has no free params.
+    """
+    out: dict[str, list[str]] = {}
+    kept = {s.id for s in previous.states} if previous is not None else set()
+    for s in states:
+        fields = list(schemas.get(s.node_type, [])) if schemas is not None else []
+        keys = {getattr(f, "key", None) for f in fields}
+        if previous is not None and s.id in kept:
+            free = [k for k in previous.free_params.get(s.id, []) if not keys or k in keys]
+        else:
+            free = [f.key for f in fields if is_default_param(f, s.params.get(f.key))]  # type: ignore[attr-defined]
+        if free:
+            out[s.id] = free
+    return out
+
+
 def _stale_overrides(states: list[StateModel], source: SubgraphSource) -> list[str]:
     """Overrides naming a state or param the definition no longer has. Kept, never pruned.
 
@@ -177,6 +237,9 @@ def _stale_overrides(states: list[StateModel], source: SubgraphSource) -> list[s
         for key in params:
             if key not in state.params:
                 reasons.append(f"override '{key}' on '{state_id}' names a param the subgraph no longer sets")
+    for state_id in source.label_overrides:
+        if state_id not in by_id:
+            reasons.append(f"label override on '{state_id}' names a state the subgraph no longer has")
     return reasons
 
 
@@ -247,6 +310,8 @@ def _materialize_local(
     warnings.extend(_stale_overrides(states, source))
     for s in states:
         s.params = resolve_member_params(defn, s, source)
+        if s.id in source.label_overrides:
+            s.label = source.label_overrides[s.id] or None
     return Materialized(states, transitions, regions, warnings)
 
 
@@ -372,6 +437,41 @@ def clear_param_override(source: SubgraphSource, local: str, key: str) -> None:
     params.pop(key, None)
     if not params:
         del source.param_overrides[local]
+
+
+def set_label_override(source: SubgraphSource, local: str, label: str | None) -> None:
+    source.label_overrides[local] = label or ""
+
+
+def clear_label_override(source: SubgraphSource, local: str) -> None:
+    source.label_overrides.pop(local, None)
+
+
+def sync_free_overrides(region: RegionModel, defn: SubgraphDefinition, state: StateModel) -> None:
+    """Record a consumer's edit to a free param, or to the label, of member ``state`` as an override. In place.
+
+    A free param is edited on the node like any other; what makes it survive the
+    next compose is the override this writes. It is written only while the value
+    differs from what the subgraph would give (definition value, or the bound
+    input the instance set), and dropped once it is back, so the override list
+    on the region page shows divergence and nothing else. The label is treated
+    the same, against the definition's label.
+    """
+    source = region.source
+    local = local_id(region.id, state.id)
+    def_state = next((s for s in defn.states if s.id == local), None) if local is not None else None
+    if source is None or local is None or def_state is None:
+        return
+    base = resolve_member_params(defn, def_state, source.model_copy(update={"param_overrides": {}}))
+    for key in free_keys(defn, local):
+        if key in state.params and state.params[key] != base.get(key):
+            set_param_override(source, local, key, state.params[key])
+        else:
+            clear_param_override(source, local, key)
+    if (state.label or None) != (def_state.label or None):
+        set_label_override(source, local, state.label)
+    else:
+        clear_label_override(source, local)
 
 
 def external_edges(config: BotConfig, region: RegionModel) -> list[TransitionModel]:
@@ -525,7 +625,13 @@ def extraction_locals(config: BotConfig, region_id: str) -> dict[str, str]:
 
 
 def extract_definition(
-    config: BotConfig, region_id: str, *, new_id: str, name: str, description: str | None = None
+    config: BotConfig,
+    region_id: str,
+    *,
+    new_id: str,
+    name: str,
+    description: str | None = None,
+    schemas: Mapping[str, Sequence[object]] | None = None,
 ) -> tuple[SubgraphDefinition, SubgraphSource]:
     """Turn an ordinary region into a definition, and return the source that would link it.
 
@@ -534,7 +640,8 @@ def extract_definition(
     map to the bot. The anchor is the members' top-left; definition positions are
     relative to it. Only internal transitions are carried. A linked region wholly
     inside the members becomes a nested instance. No inputs — those are declared
-    while editing.
+    while editing. With ``schemas`` (the registry's param schemas), ``free_params``
+    is seeded from which values are still at their defaults (:func:`seed_free_params`).
 
     Raises ``ValueError`` if a member id cannot be a local id.
     """
@@ -555,15 +662,16 @@ def extract_definition(
             RegionModel(id=r.id, label=r.label, members=[locals_[m] for m in r.members], color=r.color, source=src)
         )
 
+    local_states = [
+        s.model_copy(update={"id": locals_[s.id], "position": _pos_sub(s.position, anchor)}, deep=True) for s in states
+    ]
     defn = SubgraphDefinition(
         id=new_id,
         name=name,
         description=description,
         version=1,
-        states=[
-            s.model_copy(update={"id": locals_[s.id], "position": _pos_sub(s.position, anchor)}, deep=True)
-            for s in states
-        ],
+        free_params=seed_free_params(local_states, schemas),
+        states=local_states,
         transitions=[
             t.model_copy(update={"source": locals_[t.source], "dest": locals_[t.dest]}, deep=True)
             for t in config.transitions
@@ -667,6 +775,7 @@ def definition_values(config: BotConfig, region: RegionModel, defn: SubgraphDefi
         def_state = def_states.get(local) if local is not None else None
         if def_state is not None:
             state.params = dict(def_state.params)
+            state.label = def_state.label
 
 
 def reassign_orphaned_roles(config: BotConfig) -> None:
@@ -690,14 +799,21 @@ def drop_states(config: BotConfig, state_ids: set[str]) -> None:
     reassign_orphaned_roles(config)
 
 
-def push_back(config: BotConfig, region_id: str, previous: SubgraphDefinition) -> tuple[SubgraphDefinition, list[str]]:
+def push_back(
+    config: BotConfig,
+    region_id: str,
+    previous: SubgraphDefinition,
+    schemas: Mapping[str, Sequence[object]] | None = None,
+) -> tuple[SubgraphDefinition, list[str]]:
     """The instance ``region_id`` as a new definition version, after in-place editing.
 
     A member whose id derives from this region maps back to its local id; a
     state added while editing (a plain ``state_N``) keeps its id as the local id,
-    and gets the derived form on the next compose. Inputs are carried from
-    ``previous``; a binding whose state no longer exists is dropped and returned
-    as a warning. ``version`` is ``previous.version + 1``.
+    and gets the derived form on the next compose. Inputs and ``free_params`` are
+    carried from ``previous``; a binding whose state no longer exists is dropped
+    and returned as a warning, and a state new to the definition has its free
+    params seeded from ``schemas`` (:func:`seed_free_params`). ``version`` is
+    ``previous.version + 1``.
     """
     region = _region_by_id(config, region_id)
     members = set(region.members)
@@ -749,6 +865,7 @@ def push_back(config: BotConfig, region_id: str, previous: SubgraphDefinition) -
         description=previous.description,
         version=previous.version + 1,
         inputs=inputs,
+        free_params=seed_free_params(states, schemas, previous=previous),
         states=states,
         transitions=transitions,
         regions=nested,

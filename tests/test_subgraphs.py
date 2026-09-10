@@ -33,11 +33,14 @@ from bartlebot.subgraphs import (
     clear_param_override,
     compose_bot,
     convert_region_to_instance,
+    definition_values,
     detach,
     external_edges,
     extract_definition,
     extraction_locals,
+    free_keys,
     instance_slug,
+    is_default_param,
     linked_region_of,
     linked_regions,
     local_id,
@@ -48,7 +51,9 @@ from bartlebot.subgraphs import (
     rename_states,
     reresolve_member_params,
     resolve_member_params,
+    seed_free_params,
     set_param_override,
+    sync_free_overrides,
     taken_ids,
 )
 
@@ -797,3 +802,112 @@ def test_set_and_clear_param_override_keep_the_map_tidy():
     clear_param_override(source, "hub", "other")
     assert source.param_overrides == {}, "an emptied entry is dropped so nothing stale is written"
     clear_param_override(source, "hub", "zone")  # a miss is not an error
+
+
+# ---------------------------------------------------------------------------
+# Locked, free, and the label
+# ---------------------------------------------------------------------------
+
+
+def _field(**kw):
+    from bartlebot.nodes.param_schema import ParamField  # noqa: PLC0415
+
+    return ParamField(label="", **kw)
+
+
+def test_is_default_param_treats_unset_empty_and_zero_as_default():
+    zone = _field(key="zone", type="str", default="")
+    assert is_default_param(zone, "") and is_default_param(zone, None)
+    assert not is_default_param(zone, "WizardCity/Hub")
+    xyz = _field(key="p", type="xyz", default=None)
+    assert is_default_param(xyz, {"x": 0.0, "y": 0.0, "z": 0.0})
+    assert not is_default_param(xyz, {"x": 1.0, "y": 0.0, "z": 0.0})
+    assert is_default_param(_field(key="n", type="int", default=None), 0)
+    assert not is_default_param(_field(key="n", type="int", default=None), 3)
+    assert not is_default_param(_field(key="b", type="bool", default=False), True)
+    assert is_default_param(_field(key="l", type="player_list", default=[]), [])
+
+
+def test_seed_free_params_frees_defaults_and_keeps_author_choices():
+    """The heuristic is a seed: a state the previous definition had keeps its entry, a new one is seeded."""
+    from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS  # noqa: PLC0415
+
+    defn = sync_players_definition()
+    seeded = seed_free_params(defn.states, NODE_PARAM_SCHEMAS)
+    assert seeded["relog"] == ["relog_clients"]
+    assert "tp_a" not in seeded and "hub" not in seeded, "a zone that is set is the author's"
+    assert seeded["form_group"] == ["leader_index", "require_all"], "explicitly at the default still counts"
+    assert "timeout" not in seeded["wisps"] and "only_safe" in seeded["wisps"]
+
+    previous = defn.model_copy(update={"free_params": {"hub": ["zone", "gone"]}})
+    new = StateModel(id="extra", node_type="teleport_to_world_hub", params={})
+    again = seed_free_params([*defn.states, new], NODE_PARAM_SCHEMAS, previous=previous)
+    assert again["hub"] == ["zone"], "kept, trimmed to the params the node declares"
+    assert "relog" not in again, "previous had nothing free on relog, and that stands"
+    assert again["extra"] == ["zone"]
+    assert seed_free_params([new], None) == {}, "without schemas nothing is seeded"
+    assert free_keys(previous, "hub") == {"zone", "gone"} and free_keys(previous, "relog") == frozenset()
+
+
+def test_extract_seeds_free_params_and_push_carries_them():
+    from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS  # noqa: PLC0415
+
+    bot = plain_bot()
+    defn, source = extract_definition(bot, "r1", new_id="startup", name="Startup", schemas=NODE_PARAM_SCHEMAS)
+    assert defn.free_params == {"state_1": ["relog_clients"], "state_2": ["leader_index", "require_all"]}
+    unseeded, _ = extract_definition(plain_bot(), "r1", new_id="s", name="S")
+    assert unseeded.free_params == {}
+    convert_region_to_instance(bot, "r1", defn, source, instance_id="startup_1")
+    # the author locks one while editing, and adds a state whose value is set
+    defn.free_params["state_2"] = ["require_all"]
+    bot.states.append(
+        StateModel(id="state_9", node_type="relog", position={"x": 0.0, "y": 0.0}, params={"relog_clients": [1]})
+    )
+    bot.regions[0].members.append("state_9")
+    pushed, _ = push_back(bot, "startup_1", defn, schemas=NODE_PARAM_SCHEMAS)
+    assert pushed.free_params == {"state_1": ["relog_clients"], "state_2": ["require_all"]}
+
+
+def test_free_params_must_name_a_state():
+    with pytest.raises(ValueError, match="free_params names unknown state"):
+        SubgraphDefinition(id="d", name="D", states=[StateModel(id="a", node_type="relog")], free_params={"b": ["x"]})
+
+
+def test_label_override_composes_and_a_stale_one_is_reported(library):
+    defn = library.get(SYNC_ID)
+    bot = linked_bot(defn, library, label_overrides={"hub": "Meet at the hub", "gone": "x"})
+    assert {s.id: s.label for s in bot.states}[m("hub")] == "Meet at the hub"
+    composed, report = compose_bot(bot, library)
+    assert {s.id: s.label for s in composed.states}[m("hub")] == "Meet at the hub"
+    assert report.regions[REGION].kind == "linked"
+    assert any("label override on 'gone'" in r for r in report.regions[REGION].reasons)
+    # editing shows the definition's label, as it shows its params
+    definition_values(bot, bot.regions[0], defn)
+    assert {s.id: s.label for s in bot.states}[m("hub")] is None
+
+
+def test_sync_free_overrides_records_divergence_only(bot, library):
+    """A free param or label is an override while it differs from the subgraph's value, and gone once it is back."""
+    defn = library.get(SYNC_ID).model_copy(update={"free_params": {"wisps": ["only_safe", "timeout"]}})
+    region = bot.regions[0]
+    wisps = next(s for s in bot.states if s.id == m("wisps"))
+    wisps.params["only_safe"] = False
+    wisps.label = "Wisps first"
+    sync_free_overrides(region, defn, wisps)
+    assert region.source.param_overrides == {"wisps": {"only_safe": False}}
+    assert region.source.label_overrides == {"wisps": "Wisps first"}
+    wisps.params["only_safe"] = True
+    wisps.label = None
+    sync_free_overrides(region, defn, wisps)
+    assert region.source.param_overrides == {} and region.source.label_overrides == {}
+    # a locked param the consumer has not overridden is left alone
+    wisps.params["timeout"] = 30
+    sync_free_overrides(region, defn, wisps)
+    assert region.source.param_overrides == {}
+    # the baseline for a bound param is the input the instance set, not the definition value
+    defn.free_params["hub"] = ["zone"]
+    region.source.inputs["world"] = "MooShu"
+    hub = next(s for s in bot.states if s.id == m("hub"))
+    hub.params["zone"] = "MooShu"
+    sync_free_overrides(region, defn, hub)
+    assert region.source.param_overrides == {}
