@@ -23,7 +23,7 @@ from unittest.mock import patch
 import pytest
 from PyQt6.QtWidgets import QMessageBox
 
-from bartlebot import strategy_store as store_mod
+from bartlebot import store_roots
 from bartlebot.bot.strategy_models import (
     DeckPreset,
     DuelCombatStrategy,
@@ -57,8 +57,8 @@ def roots(tmp_path, monkeypatch):
         (root / "strategies" / "duel").mkdir(parents=True)
         (root / "strategies" / "decks").mkdir(parents=True)
         (root / "bot_strategies").mkdir(parents=True)
-    monkeypatch.setattr(store_mod, "project_root", lambda: shipped)
-    monkeypatch.setattr(store_mod, "product_dir", lambda: user)
+    monkeypatch.setattr(store_roots, "project_root", lambda: shipped)
+    monkeypatch.setattr(store_roots, "product_dir", lambda: user)
     return shipped, user
 
 

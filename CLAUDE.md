@@ -45,6 +45,7 @@ read on purpose.
 | `docs/WINDOW_SIZING.md` | the (resolution, UI size) ladder, which XML file holds which, and why an unfittable launch is refused |
 | `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value |
 | `docs/COMBAT_CONFIG.md` | the five strategy levels, the two storage roots, the pick/assemble/author split, and the Save/Cancel boundary |
+| `docs/SUBGRAPHS.md` | reusable subgraphs: definition vs. instance, derived member ids, follow-latest with snapshot fallback, the three param levels, instance-owned layout, the authoring verbs |
 | `docs/RELOGGING.md` | why a client slows down, and the two ways to clear it |
 | `docs/RESTRICTED_ZONES.md` | the PvP policy and its three enforcement points |
 | `docs/UPSTREAM.md` | wizwalker/wizsprinter forks, offset fixes, bumping a pin |

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from bartlebot import strategy_store as store_mod
+from bartlebot import store_roots
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DuelCombatStrategy,
@@ -143,7 +143,7 @@ def test_default_root_ignores_cwd(monkeypatch, tmp_path):
     alone must never silently redirect it — that emptied the library for
     anyone who launched the app from outside the project root.
     """
-    monkeypatch.setattr(store_mod, "project_root", lambda: tmp_path / "not-the-real-root")
+    monkeypatch.setattr(store_roots, "project_root", lambda: tmp_path / "not-the-real-root")
     monkeypatch.chdir(tmp_path)  # must have no effect on the default root
     assert list_player_strategies() == []
 
@@ -153,7 +153,7 @@ def test_default_root_ignores_cwd(monkeypatch, tmp_path):
 
 
 def test_explicit_root_overrides_project_root(monkeypatch, tmp_path):
-    monkeypatch.setattr(store_mod, "project_root", lambda: tmp_path / "wrong")
+    monkeypatch.setattr(store_roots, "project_root", lambda: tmp_path / "wrong")
     save_player_strategy(PlayerCombatStrategy(name="A", dsl=""), tmp_path / "explicit")
     assert len(list_player_strategies(tmp_path / "explicit")) == 1
     assert list_player_strategies() == []
