@@ -11,7 +11,7 @@ below says which stage implements it, and the table is updated as they merge.
 |---|---|---|---|
 | 0 | #54 | this document, the Epic decomposition | done |
 | 1 | #55 | schema, two-root store, pure composition — nothing calls it | done |
-| 2 | #56 | compose on open and before run; snapshot on save; validation flags | not started |
+| 2 | #56 | compose on open and before run; snapshot on save; validation flags | done |
 | 3 | #57 | editor read side: locking, group drag, pill state, region page, detach, copy/paste | not started |
 | 4 | #58 | authoring: save-region-as, edit/push/discard, inputs, node-browser tab, nesting | not started |
 
@@ -101,6 +101,20 @@ at the push (Stage 4), so a cycle in the library means a hand-edited file.
 The pre-run recompose is silent — one log line per changed region and a banner entry,
 never a dialog — because a dialog on every run of every bot is noise the user learns to
 click through. The run itself is what tests the update.
+
+Where this happens: `AppController._compose` reloads the session's `SubgraphLibrary`
+and composes; `_open_bot` and crash recovery call it after `BotConfig.load`, and
+`_recompose_before_run` calls it first in the run slot, ahead of the restricted-zone
+check. A changed result goes in through `BotCanvas.replace_config`, the same rebind
+path undo takes, and the report through `BotCanvas.set_compose_report`, which feeds the
+validation banner. Composition raising is a bug, not a library problem, so `_compose`
+logs it and opens the file's snapshot rather than refusing the bot.
+
+**Stage 2 limitation, closed by Stage 3:** nothing is locked yet. A user can delete a
+member of a linked region or edit its params in place, and the next compose on open or
+run puts the definition's version back. `flush_regions` already leaves a linked region
+alone when that takes it below two members, so the region itself survives the round
+trip.
 
 ## A member's params come from three levels
 

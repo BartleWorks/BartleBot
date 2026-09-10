@@ -30,6 +30,8 @@ from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.vendor import PRODUCT, VENDOR
+from bartlebot.subgraph_store import SubgraphLibrary
+from bartlebot.subgraphs import ComposeReport, compose_bot
 from bartlebot.utils.window_kill import force_close_client
 
 if TYPE_CHECKING:
@@ -77,6 +79,9 @@ class AppController(QObject):
         self._current_machine: BotMachine | None = None
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
+        # One view of the subgraph library for the session, reloaded on every open and
+        # before every run so a definition edited on disk reaches the bot that links it.
+        self._subgraph_library = SubgraphLibrary()
 
         # Long-lived asyncio task — held here to prevent GC (event loop keeps weak refs only).
         self._bot_task: asyncio.Task | None = None
@@ -382,6 +387,73 @@ class AppController(QObject):
             QTimer.singleShot(0, self._window.close)
 
     # ------------------------------------------------------------------
+    # Subgraphs
+    # ------------------------------------------------------------------
+
+    @property
+    def subgraph_library(self) -> SubgraphLibrary:
+        """The session's view of the two subgraph roots. Tests swap in a ``tmp_path`` one."""
+        return self._subgraph_library
+
+    @subgraph_library.setter
+    def subgraph_library(self, library: SubgraphLibrary) -> None:
+        self._subgraph_library = library
+
+    def _compose(self, config: BotConfig) -> tuple[BotConfig, ComposeReport]:
+        """Recompose every linked region of ``config`` from the library, reloaded first.
+
+        The result is what the app holds in memory; the file the config came from is
+        never written here (see docs/SUBGRAPHS.md). ``compose_bot`` raising is a bug
+        in composition, not in the library, and a bug there must not make a bot
+        unopenable: it is logged and the snapshot in the file is used as-is.
+        """
+        self._subgraph_library.reload()
+        try:
+            return compose_bot(config, self._subgraph_library)
+        except Exception:
+            logger.exception("Composing subgraphs failed; using the bot file's snapshot")
+            return config, ComposeReport()
+
+    def _recompose_before_run(self) -> bool:
+        """Refresh linked regions from the library before a run. Returns whether to proceed.
+
+        Silent by design: one log line per region that changed and the banner entry
+        the canvas draws from the report, never a dialog -- see docs/SUBGRAPHS.md.
+        The one refusal is a cycle, which has no snapshot worth running. A changed
+        region swaps the in-memory config, exactly as an undo does, and marks the bot
+        unsaved so the refreshed snapshot reaches disk on the next save.
+        """
+        if self._loaded_config is None:
+            return True
+        before = self._loaded_config
+        composed, report = self._compose(before)
+        canvas = self._window.bot_canvas
+        if composed is not before and composed.model_dump() != before.model_dump():
+            for region_id, label in _changed_linked_regions(before, composed):
+                status = report.regions.get(region_id)
+                version = status.library_version if status is not None else None
+                logger.info("Subgraph region '%s' updated to library version %s", label, version)
+            canvas.replace_config(composed, "Update subgraphs")
+            self._loaded_config = composed
+            self._has_unsaved_changes = True
+            self._window.set_save_enabled(True)
+        canvas.set_compose_report(report)
+        labels = {r.id: (r.label or r.id) for r in composed.regions}
+        cycles = [(labels.get(rid, rid), s.reasons) for rid, s in report.regions.items() if s.kind == "cycle"]
+        if not cycles:
+            return True
+        lines = "\n".join(f"\u2022 {label}: {'; '.join(reasons)}" for label, reasons in cycles)
+        logger.critical("Refusing to run: %d subgraph region(s) contain a cycle", len(cycles))
+        QMessageBox.critical(
+            self._window,
+            "Subgraph Cycle",
+            "This bot cannot be run. A linked subgraph contains itself:\n\n"
+            f"{lines}\n\n"
+            "Fix the definition in the subgraph library, or detach the region.",
+        )
+        return False
+
+    # ------------------------------------------------------------------
     # File operations
     # ------------------------------------------------------------------
 
@@ -417,6 +489,7 @@ class AppController(QObject):
         except Exception as e:
             QMessageBox.critical(self._window, "Failed to load bot", str(e))
             return
+        config, report = self._compose(config)
         old_save_path = self._last_save_path
         self._delete_autosave(old_save_path)
         self._has_unsaved_changes = False
@@ -424,6 +497,7 @@ class AppController(QObject):
         self._last_save_path = path
         self._window.set_bot_name(config.name, Path(path).name)
         self._window.bot_canvas.setup(config)
+        self._window.bot_canvas.set_compose_report(report)
         self._window.left_sidebar.set_config(config)
         self._window.right_sidebar.set_config(config)
         self._window.set_save_enabled(True)
@@ -714,6 +788,8 @@ class AppController(QObject):
 
     def _on_run_requested(self) -> None:
         if not self._client_manager.clients or self._loaded_config is None:
+            return
+        if not self._recompose_before_run():
             return
         if not self._check_restricted_zones():
             return
@@ -1270,11 +1346,13 @@ class AppController(QObject):
                 )
                 chosen_paths.discard(autosave_path)
                 continue
+            config, report = self._compose(config)
             self._loaded_config = config
             self._last_save_path = str(original_path) if original_path else None
             display_name = original_path.name if original_path else "Untitled (recovered)"
             self._window.set_bot_name(config.name, display_name)
             self._window.bot_canvas.setup(config)
+            self._window.bot_canvas.set_compose_report(report)
             self._window.left_sidebar.set_config(config)
             self._window.right_sidebar.set_config(config)
             self._window.bot_canvas.enter_edit_mode()
@@ -1291,3 +1369,24 @@ class AppController(QObject):
                     c["autosave_path"].unlink()
                 except OSError:
                     pass
+
+
+def _changed_linked_regions(before: BotConfig, after: BotConfig) -> list[tuple[str, str]]:
+    """``(region id, label)`` for each linked region whose members or version differ between the two."""
+
+    def snapshot(config: BotConfig, region_id: str) -> tuple | None:
+        region = next((r for r in config.regions if r.id == region_id), None)
+        if region is None or region.source is None:
+            return None
+        members = set(region.members)
+        states = tuple(s.model_dump() for s in config.states if s.id in members)
+        internal = tuple(t.model_dump() for t in config.transitions if t.source in members and t.dest in members)
+        return region.source.version, states, internal
+
+    changed: list[tuple[str, str]] = []
+    for region in after.regions:
+        if region.source is None:
+            continue
+        if snapshot(before, region.id) != snapshot(after, region.id):
+            changed.append((region.id, region.label or region.id))
+    return changed

@@ -65,6 +65,7 @@ from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.subgraphs import ComposeReport
 
 logger = logging.getLogger(__name__)
 
@@ -848,6 +849,9 @@ class BotCanvas(QWidget):
         self._active_state: str | None = None
         self._run_externally_enabled: bool = False
         self._n_validation_errors: int = 0
+        # Per-linked-region outcome of the last compose, set by the controller after
+        # setup() and again before a run. Empty for a bot with no linked regions.
+        self._compose_report = ComposeReport()
 
         self._tick_timer = QTimer(self)
         self._tick_timer.setInterval(1000)
@@ -1162,6 +1166,7 @@ class BotCanvas(QWidget):
         self._close_search()
         self._tab_idx = 0
         self._config = config
+        self._compose_report = ComposeReport()
         self._toolbar.set_config(config)
         # Auto-layout when no positions are saved and the setting is enabled
         if (
@@ -1193,6 +1198,7 @@ class BotCanvas(QWidget):
         self.exit_focus_mode()
         self._close_search()
         self._scene.teardown()
+        self._compose_report = ComposeReport()
         self._update_validation_badge()
         self._config = None
         self._toolbar.set_config(None)
@@ -1205,6 +1211,35 @@ class BotCanvas(QWidget):
         self._placeholder.refresh()
         self._placeholder.setVisible(True)
         self._reposition_placeholder()
+
+    def set_compose_report(self, report: ComposeReport) -> None:
+        """Record how each linked region composed, and redraw the validation banner from it.
+
+        A separate call rather than a ``setup`` parameter so every existing caller and
+        test of ``setup`` is untouched. ``setup`` and ``close_bot`` clear it.
+        """
+        self._compose_report = report
+        self._update_validation_badge()
+
+    @property
+    def compose_report(self) -> ComposeReport:
+        return self._compose_report
+
+    def replace_config(self, config: BotConfig, desc: str | None = None) -> None:
+        """Swap the loaded config for ``config`` and rebind every surface to it.
+
+        The same path undo takes (``_restore``), which is what makes the swap safe:
+        the scene, header and properties panel are all rebuilt from the new object
+        and ``config_changed`` tells the controller and sidebars to follow. In EDIT
+        mode a ``desc`` pushes the outgoing config onto the undo stack first, so the
+        swap is one undoable step; in RUN mode there is no stack to push to.
+        """
+        if self._config is None:
+            return
+        if desc is not None:
+            self._on_about_to_change(desc)
+        self._restore(config)
+        self._refresh_undo_actions()
 
     def set_bot_file(self, filename: str | None) -> None:
         """Name the file the loaded bot came from, shown in the header."""
@@ -2052,7 +2087,33 @@ class BotCanvas(QWidget):
             error_lines.extend(f"{name}: {r}" for r in err_reasons)
             warning_lines.extend(f"{name}: {r}" for r in warn_reasons)
         warning_lines.extend(self._orphan_flag_lines(config))
+        sg_errors, sg_warnings = self._subgraph_lines(config)
+        error_lines.extend(sg_errors)
+        warning_lines.extend(sg_warnings)
         return error_lines, warning_lines
+
+    def _subgraph_lines(self, config: BotConfig) -> tuple[list[str], list[str]]:
+        """One line per linked region the last compose could not simply link.
+
+        A ``cycle`` is an error (nothing runnable exists for it); ``held``, ``missing``
+        and ``invalid`` are warnings, since the snapshot in the file still runs; a
+        stale override on a ``linked`` region is a warning too. A region deleted since
+        the report was taken is skipped rather than reported on.
+        """
+        labels = {r.id: (r.label or r.id) for r in config.regions if r.source is not None}
+        errors: list[str] = []
+        warnings: list[str] = []
+        for region_id, status in self._compose_report.regions.items():
+            label = labels.get(region_id)
+            if label is None:
+                continue
+            if status.kind == "cycle":
+                errors.extend(f"Region {label}: subgraph cycle {r}" for r in status.reasons)
+            elif status.kind in ("held", "missing", "invalid"):
+                warnings.extend(f"Region {label}: needs attention \u2014 {r}" for r in status.reasons)
+            else:
+                warnings.extend(f"Region {label}: {r}" for r in status.reasons)
+        return errors, warnings
 
     def _orphan_flag_lines(self, config: BotConfig) -> list[str]:
         """One warning per transition guarding on an option nothing declares.
