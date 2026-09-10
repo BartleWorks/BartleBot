@@ -1,0 +1,1040 @@
+{
+  "id": "6b4a8fb7-fd02-4390-af6d-d392e641de71",
+  "name": "Prince Gobblestone",
+  "description": "Endlessly defeats Prince Gobblestone in Colossus Boulevard, Wizard City",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_15",
+  "recovery_state": "state_3",
+  "drops": [
+    {
+      "name": "Amulet of the Fay",
+      "category": "Amulets"
+    },
+    {
+      "name": "Angelic Drape",
+      "category": "Robes"
+    },
+    {
+      "name": "Antique Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Antique Overshirt",
+      "category": "Robes"
+    },
+    {
+      "name": "Armored Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Ashen Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Band of Purpose",
+      "category": "Rings"
+    },
+    {
+      "name": "Barkskin Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Blonde Strawberry",
+      "category": "Snacks"
+    },
+    {
+      "name": "Blood Bat",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Bloomshroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Cap of Advantages",
+      "category": "Hats"
+    },
+    {
+      "name": "Charbane's Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Charged Cover",
+      "category": "Hats"
+    },
+    {
+      "name": "Cheese Broccoli",
+      "category": "Snacks"
+    },
+    {
+      "name": "Chillcloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Chipped Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Chocolate Strawberry",
+      "category": "Snacks"
+    },
+    {
+      "name": "Colossus Statue",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Cowl of Wisdom",
+      "category": "Hats"
+    },
+    {
+      "name": "Dark Sprite",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Death Trap",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Double Sided Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Engraved Amethyst Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Engraved Citrine Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Engraved Jade Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Engraved Onyx Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Engraved Peridot Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Engraved Sapphire Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Fairy Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Fairy's Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Fire Cat",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire Elf",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fire Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Firestorm Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Flametouched Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Footwraps of Seasons",
+      "category": "Boots"
+    },
+    {
+      "name": "Frost Beetle",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Frostshroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Fur-Lined Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Ghoul",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Gobbler",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Gobblestone's Bib",
+      "category": "Robes"
+    },
+    {
+      "name": "Gobblestone's Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Gobblestone's Frost Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Gobblestone's Fur Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Gobblestone's Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Gobblestone's Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Gobblestone's Storm Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Grumpy Gobblers Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Guiding Light",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Gummy Firecat",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hallowed Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Hardened Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Hat of Eradication",
+      "category": "Hats"
+    },
+    {
+      "name": "Heartsteel",
+      "category": "Athames"
+    },
+    {
+      "name": "Helm of Audacity",
+      "category": "Hats"
+    },
+    {
+      "name": "Honey Sickle",
+      "category": "Seeds"
+    },
+    {
+      "name": "Hood of Storms",
+      "category": "Hats"
+    },
+    {
+      "name": "Hood of Tension",
+      "category": "Hats"
+    },
+    {
+      "name": "Imp",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Imp Lord's Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Insulated Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Jeweled Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Keen Eyes",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lightning Bats",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Locust Swarm",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Lord's Signet",
+      "category": "Rings"
+    },
+    {
+      "name": "Munched Lamppost",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Myth Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Northland Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Novitiate Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Novitiate Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Novitiate Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Pile of Jellybeans",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Pinewood Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Pixie",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Princely Slippers",
+      "category": "Boots"
+    },
+    {
+      "name": "Prop House 1",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Raiment of Storms",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of All Trades",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of the Blizzard",
+      "category": "Robes"
+    },
+    {
+      "name": "Roughspun Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Sapphyra's Studded Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Scarab",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Senior Novice's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Senior Novice's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Shimmering Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Slippers of Excitement",
+      "category": "Boots"
+    },
+    {
+      "name": "Snow Serpent",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Snow Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Spotted Half Rug",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Storm Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Stormcaller's Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Stormforged Mantle",
+      "category": "Robes"
+    },
+    {
+      "name": "Stormweave Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Studded Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Sugar Donut",
+      "category": "Snacks"
+    },
+    {
+      "name": "Thunder Snake",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Time of Legend",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tough",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Troll",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Venomous Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Vestment of Panic",
+      "category": "Robes"
+    },
+    {
+      "name": "Vrixx's Verdant Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Wizard City Theme 2",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wondershroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Wooden Skeleton Key",
+      "category": "Housing Items"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Housing",
+    "Boss"
+  ],
+  "options": [],
+  "states": [
+    {
+      "id": "state_3",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": -880.0,
+        "y": 270.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
+      "position": {
+        "x": 1320.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      },
+      "notes": "This state should only ever fail if there is a UI element blocking the teleport button, which relogging should fix."
+    },
+    {
+      "id": "state_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1760.0,
+        "y": 90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      },
+      "notes": "Ensures that players have enough mana to mark their spot if they need potions."
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_10",
+      "node_type": "form_group",
+      "label": "Form group",
+      "position": {
+        "x": -440.0,
+        "y": 270.0
+      },
+      "params": {
+        "leader_index": 0,
+        "require_all": true
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_dungeon",
+      "label": "Enter dungeon",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/WC_Colossus",
+        "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Colossus_ThroneRoom",
+        "sigil_xyz": {
+          "x": 45018.45,
+          "y": 9182.09,
+          "z": -646.23
+        },
+        "reset_xyz": {
+          "x": 44351.26,
+          "y": 8972.58,
+          "z": -633.44
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": false
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "handle_combat",
+      "label": "Defeat boss",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Gobbler-Green-Baron-L04",
+        "wiki_page": "Creature:Prince Gobblestone",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "state_13",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_14",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 5280.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Streets/Interiors/WC_Colossus_ThroneRoom",
+        "to_zone": "WizardCity/WC_Streets/WC_Colossus",
+        "xyz": {
+          "x": 1618.05,
+          "y": -5455.89,
+          "z": -3166.3
+        },
+        "reset_xyz": {
+          "x": 1618.07,
+          "y": -5061.09,
+          "z": -3166.26
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "teleport_to_player_if_in_zone",
+      "label": "Try teleport to dungeon entrance",
+      "position": {
+        "x": 0.0,
+        "y": 90.0
+      },
+      "params": {
+        "target_zone": "WizardCity/WC_Streets/WC_Colossus",
+        "skip_extra_clients_in_zone": false
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "teleport_to_player_if_in_zone",
+      "label": "Try teleport to world",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "target_zone": "WizardCity/*",
+        "skip_extra_clients_in_zone": true
+      }
+    },
+    {
+      "id": "state_17",
+      "node_type": "go_to_world",
+      "label": "Go to World",
+      "position": {
+        "x": 880.0,
+        "y": 180.0
+      },
+      "params": {
+        "world": "WizardCity"
+      }
+    },
+    {
+      "id": "state_18",
+      "node_type": "enter_zone",
+      "label": "Enter Shopping District",
+      "position": {
+        "x": 2200.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "to_zone": "WizardCity/WC_Shop_Area",
+        "xyz": {
+          "x": 1384.81,
+          "y": -3644.26,
+          "z": -27.99
+        },
+        "reset_xyz": {
+          "x": 1349.43,
+          "y": -3125.51,
+          "z": -27.99
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "state_19",
+      "node_type": "enter_zone",
+      "label": "Enter Colossus Boulevard",
+      "position": {
+        "x": 2640.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Shop_Area",
+        "to_zone": "WizardCity/WC_Streets/WC_Colossus",
+        "xyz": {
+          "x": -2072.96,
+          "y": -5588.41,
+          "z": -29.36
+        },
+        "reset_xyz": {
+          "x": -2063.5,
+          "y": -5252.54,
+          "z": -29.36
+        },
+        "stagger": false
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_14",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_16",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "4445940a",
+      "label": "Defeat boss",
+      "members": [
+        "state_13",
+        "state_8",
+        "state_12",
+        "state_11",
+        "state_9",
+        "state_14"
+      ],
+      "color": 4
+    },
+    {
+      "id": "9f59026b",
+      "label": "Sync players",
+      "members": [
+        "state_4",
+        "state_7",
+        "state_15",
+        "state_3",
+        "state_17",
+        "state_10",
+        "state_16"
+      ],
+      "color": 1
+    }
+  ]
+}
