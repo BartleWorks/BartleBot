@@ -313,6 +313,14 @@ def has_unoccluded_ui_size(resolution: tuple[int, int]) -> bool:
     return _reachable_index(resolution) is not None
 
 
+# The stock 800x600 floor can render Large (see MEASURED_PAIRINGS), but that ceiling is
+# about what the HUD can draw and click, not about what a user arriving at the game's own
+# default resolution should be bumped up to. ui_size_for caps this one resolution at
+# Regular rather than the render-floor ceiling, so a preference larger than Regular gets
+# pulled down at 800x600 specifically instead of riding up to Large.
+_DEFAULT_RESOLUTION_UI_SIZE_CAP: dict[tuple[int, int], str] = {(800, 600): "Regular"}
+
+
 def ui_size_for(preferred_value: int | None, resolution: tuple[int, int]) -> int | None:
     """The ``UISize`` to write for *resolution*, given the user's own preference.
 
@@ -332,14 +340,19 @@ def ui_size_for(preferred_value: int | None, resolution: tuple[int, int]) -> int
     """
     if preferred_value is None:
         return None
-    allowed = max_ui_size(resolution)
     order = {rung.value: index for index, rung in enumerate(UI_SIZE_LADDER)}
+    allowed_name = _DEFAULT_RESOLUTION_UI_SIZE_CAP.get(resolution)
+    allowed_value = next(r.value for r in UI_SIZE_LADDER if r.name == allowed_name) if allowed_name else None
+    allowed = max_ui_size(resolution)
+    allowed_index = order[allowed_value] if allowed_value is not None else order[allowed.value]
     preferred_index = order.get(preferred_value)
     if preferred_index is None:
         # A value outside the enum: the file is not saying anything that can be honoured,
         # so take the ceiling rather than pass an unknown number back to the game.
-        return allowed.value
-    return preferred_value if preferred_index <= order[allowed.value] else allowed.value
+        return allowed_value if allowed_value is not None else allowed.value
+    if preferred_index <= allowed_index:
+        return preferred_value
+    return allowed_value if allowed_value is not None else allowed.value
 
 
 # ---------------------------------------------------------------------------

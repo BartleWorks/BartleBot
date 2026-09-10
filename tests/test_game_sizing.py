@@ -163,6 +163,24 @@ def test_a_value_outside_the_enum_takes_the_ceiling():
     assert gs.ui_size_for(99, (534, 300)) == gs.UI_SIZE_LADDER[0].value
 
 
+def test_the_stock_default_resolution_caps_the_preference_at_regular():
+    """800x600 can render Large, but a preference above Regular is pulled down anyway.
+
+    The render-floor ceiling (max_ui_size) is untouched -- it still answers Large, since
+    that is what actually draws and clicks at this resolution -- this cap is a separate,
+    narrower rule that applies only to 800x600.
+    """
+    regular = gs.UI_SIZE_LADDER[3].value
+    large = gs.UI_SIZE_LADDER[4].value
+    huge = gs.UI_SIZE_LADDER[-1].value
+    assert gs.ui_size_for(large, (800, 600)) == regular
+    assert gs.ui_size_for(huge, (800, 600)) == regular
+    assert gs.ui_size_for(regular, (800, 600)) == regular
+    assert gs.max_ui_size((800, 600)).name == "Large"
+    # The cap is specific to 800x600, not every 4:3 resolution that renders Large.
+    assert gs.ui_size_for(large, (1024, 768)) == large
+
+
 def test_every_offered_resolution_has_a_ui_scale_that_actually_works():
     """The bar a new entry has to clear, and what removed 400x300 from the list.
 
