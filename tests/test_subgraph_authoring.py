@@ -36,6 +36,7 @@ from bartlebot.subgraphs import (
     linked_regions,
     local_id,
     member_id,
+    nested_regions,
     reresolve_member_params,
 )
 from tests.test_subgraph_editor_lock import LOCALS
@@ -89,19 +90,21 @@ def _state(canvas, sid: str):
 def test_save_region_as_subgraph_writes_user_root_and_links_region(plain, library):
     assert plain.save_region_as_subgraph("r1", name="Startup", description="Relog and regroup.")
     config = plain.scene.config
-    region = _region(plain, "r1")
+    # the region takes a readable instance id: the definition's slug plus a count
+    assert [r.id for r in config.regions] == ["startup_1"]
+    region = _region(plain, "startup_1")
     assert region.source is not None
     defn = library.get(region.source.subgraph_id)
     assert defn is not None and defn.name == "Startup" and defn.version == 1
     assert defn.description == "Relog and regroup."
     assert sorted(s.id for s in defn.states) == ["state_1", "state_2"]
-    s1, s2 = member_id("r1", "state_1"), member_id("r1", "state_2")
+    s1, s2 = "startup_1_state_1", "startup_1_state_2"
     assert region.members == [s1, s2]
     assert config.initial == s1 and config.recovery_state == s2
     assert [s.id for s in config.states] == [s1, s2, "state_3"]
     assert plain.scene.is_locked(s1) and not plain.scene.is_locked("state_3")
-    assert plain.compose_report.regions["r1"].kind == "linked"
-    assert plain.scene.region_items["r1"].link_state == "linked"
+    assert plain.compose_report.regions["startup_1"].kind == "linked"
+    assert plain.scene.region_items["startup_1"].link_state == "linked"
     plain.undo()
     assert _region(plain, "r1").source is None
     assert [s.id for s in plain.scene.config.states] == ["state_1", "state_2", "state_3"]
@@ -386,7 +389,7 @@ def test_nested_instance_round_trip(linked, library):
     assert [r.source.subgraph_id for r in pushed.regions] == [SYNC_ID]
     config = linked.scene.config
     outer_region = _region(linked, orid)
-    nested = [r for r in linked_regions(config) if r.id.startswith(member_id(orid, ""))]
+    nested = nested_regions(config, outer_region)
     assert len(nested) == 1
     assert set(nested[0].members) <= set(outer_region.members)
     assert all(linked.scene.linked_region_of(mid).id == orid for mid in nested[0].members)

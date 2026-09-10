@@ -10,7 +10,7 @@ also exported here so BotCanvas can use them without circular imports.
 
 import logging
 import math
-import uuid
+import re
 from collections import defaultdict
 
 from PyQt6.QtCore import QPointF, QRectF, Qt, QTimer, pyqtSignal
@@ -42,11 +42,15 @@ from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary
 from bartlebot.subgraphs import (
     ComposeReport,
     SubgraphCycleError,
+    is_nested_in,
     linked_region_of,
     linked_regions,
     local_id,
     materialize_region,
     member_id,
+    mint_instance_id,
+    nested_regions,
+    taken_ids,
 )
 from bartlebot.subgraphs import detach as detach_subgraph
 
@@ -267,10 +271,18 @@ def _unique_id(existing: list[str]) -> str:
     """
     highest = 0
     for state_id in existing:
-        suffix = state_id.removeprefix("state_")
-        if suffix != state_id and suffix.isdigit():
-            highest = max(highest, int(suffix))
+        match = _STATE_NUMBER.search(state_id)
+        if match:
+            highest = max(highest, int(match.group(1)))
     return f"state_{highest + 1}"
+
+
+#: ``state_N`` on its own, or as the tail of a subgraph member id
+#: (``sync_players_1_state_7``). The tail counts because a member's local id is
+#: ``state_N`` in its definition: a state added while editing that instance takes
+#: its number from here, and becomes local ``state_N`` on push, so a number the
+#: definition already uses must not be handed out again.
+_STATE_NUMBER = re.compile(r"(?:^|_)state_(\d+)$")
 
 
 #: Compose-report kinds → region pill states. ``held`` is an update the bot could
@@ -816,7 +828,7 @@ class EditScene(QGraphicsScene):
             logger.warning("Cannot insert subgraph %s: not in the library", subgraph_id)
             return None
         config = self._config
-        region_id = uuid.uuid4().hex[:8]
+        region_id = mint_instance_id(defn.name, taken_ids(config))
         source = SubgraphSource(
             subgraph_id=subgraph_id,
             version=defn.version,
@@ -885,10 +897,8 @@ class EditScene(QGraphicsScene):
         try:
             for sid in list(region.members):
                 self._delete_node(sid, confirm=False, allow_locked=True)
-            nested_prefix = member_id(region_id, "")
-            for r in list(self._config.regions):
-                if r.id == region_id or r.id.startswith(nested_prefix):
-                    self._region_manager.delete_region(r.id)
+            for r in [region, *nested_regions(self._config, region)]:
+                self._region_manager.delete_region(r.id)
         finally:
             self._in_structural_edit = prev_in_structural
         self._update_scene_rect()
@@ -1468,9 +1478,7 @@ class EditScene(QGraphicsScene):
         # outermost ones only, since a nested instance composes through its outer.
         # A partial selection pastes as ordinary states, as any partial copy does.
         whole = [r for r in linked_regions(self._config) if r.members and set(r.members) <= selected_ids]
-        regions = [
-            r.model_dump() for r in whole if not any(o is not r and r.id.startswith(member_id(o.id, "")) for o in whole)
-        ]
+        regions = [r.model_dump() for r in whole if not any(is_nested_in(r, o) for o in whole)]
         self._clipboard = (states, transitions, regions)
 
     def _paste(self) -> None:
@@ -1619,10 +1627,13 @@ class EditScene(QGraphicsScene):
         new_transitions: list[TransitionModel] = []
         new_regions: list[RegionModel] = []
 
+        taken = taken_ids(config)
         for rd in regions_data:
             old_rid = rd["id"]
-            new_rid = uuid.uuid4().hex[:8]
             source = SubgraphSource.model_validate(rd["source"])
+            defn = library.get(source.subgraph_id) if library is not None else None
+            new_rid = mint_instance_id(defn.name if defn is not None else rd["label"], taken)
+            taken.add(new_rid)
             source.anchor = {"x": float(source.anchor["x"]) + offset_x, "y": float(source.anchor["y"]) + offset_y}
             member_data = [sd for sd in states_data if sd["id"] in set(rd["members"])]
             locals_ = {sd["id"]: (local_id(old_rid, sd["id"]) or sd["id"]) for sd in member_data}
@@ -1634,7 +1645,6 @@ class EditScene(QGraphicsScene):
                 for sd in member_data
                 if sd.get("position")
             }
-            defn = library.get(source.subgraph_id) if library is not None else None
             mat = None
             if defn is not None:
                 try:

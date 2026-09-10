@@ -386,7 +386,7 @@ def _atomic_write_json(data: dict, path: str | Path) -> None:
 
 
 #: The charset a subgraph definition's local ids are drawn from. Member ids are
-#: composed as ``sg_<region id>_<local id>``, so a local id has to be safe to embed.
+#: composed as ``<region id>_<local id>``, so a local id has to be safe to embed.
 SUBGRAPH_LOCAL_ID = re.compile(r"^[A-Za-z0-9_]+$")
 
 

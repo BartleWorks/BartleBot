@@ -166,7 +166,7 @@ def test_delete_key_on_a_whole_instance_removes_it(canvas, monkeypatch):
         scene.node_items[m(loc)].setSelected(True)
     _key(scene, Qt.Key.Key_Delete)
     assert not linked_regions(scene.config)
-    assert not any(s.id.startswith("sg_") for s in scene.config.states)
+    assert not any(s.id in {m(loc) for loc in LOCALS} for s in scene.config.states)
 
 
 def test_remove_instance_deletes_members_and_reassigns_roles(canvas):

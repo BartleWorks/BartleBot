@@ -49,16 +49,32 @@ Two consequences that are easy to forget:
 
 ## Member ids are derived, deterministic, and never recycled
 
-A member's id is `sg_<region id>_<local id>`, charset `[A-Za-z0-9_]`, where the local id
-is the state's id inside the definition. Composing the same instance twice yields the
-same ids; a nested instance prefixes again (`sg_<outer>_sg_<inner>_<local>`).
+A member's id is `<region id>_<local id>`, charset `[A-Za-z0-9_]`, where the local id is
+the state's id inside the definition. A linked region's id is minted from the
+definition's name: `<slug>_<n>`, where the slug is the name lowercased with runs of
+anything else collapsed to `_` ("Sync players" → `sync_players`) and `n` is one above
+every number that slug already carries in the bot, as a region id or at the head of a
+state id (`mint_instance_id`). So the third state of the first "Sync players" instance
+is `sync_players_1_state_3`, and the fourth state of the second is
+`sync_players_2_state_4`. Extracting a region renumbers its local ids `state_1..N` in
+file order, whatever numbers the bot had reached, so the same subgraph reads the same
+in every bot it lands in. Composing the same instance twice yields the same ids; a
+nested instance prefixes again (`<outer>_<inner>_<local>`).
+
+Ids are never *parsed* to find structure. Whether one instance is nested in another
+is a question of membership (every member of the inner is a member of the outer,
+`is_nested_in`), so two definitions whose slugs share a prefix ("Farm" and "Farm 2")
+cannot be mistaken for each other. `local_id` is only meaningful for a state that is a
+member of the region it is asked about.
 
 State ids are the key for everything that outlives an edit: `BotCombatStrategy.
 state_assignments`, `initial`, `recovery_state`, the run highlight, and the reason
 `EditScene._unique_id` never hands out an id it has handed out before. A definition
 update has to land on the *same* ids or every one of those would silently detach. So
 ids come from the definition, never from `_unique_id`, and pasting an instance mints a
-new region id rather than new member ids.
+new region id rather than new member ids. `_unique_id` in turn counts the `state_N`
+tail of a member id: a state added while editing an instance becomes local `state_N`
+on push, so it must not take a number the definition already uses.
 
 Converting an existing region into an instance rewrites its member ids to the derived
 form everywhere they appear — states, transitions, roles, every region's `members` —

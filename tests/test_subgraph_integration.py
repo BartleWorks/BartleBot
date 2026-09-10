@@ -20,7 +20,7 @@ import pytest
 from bartlebot.bot.schema import BotConfig, RegionModel, StateModel, SubgraphSource
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraphs import ComposeReport, compose_bot
+from bartlebot.subgraphs import ComposeReport, compose_bot, local_id
 from tests.test_subgraphs import REGION, SYNC_ID, _all_bot_files, _t, linked_bot, m, sync_players_definition
 
 
@@ -280,7 +280,8 @@ def test_save_as_keeps_member_ids(harness, library, bot_file, tmp_path, monkeypa
     assert saved.regions[0].members == harness._loaded_config.regions[0].members
     assert saved.regions[0].source.subgraph_id == SYNC_ID
     assert saved.regions[0].source.version == 2
-    assert all(s.id.startswith("sg_") for s in saved.states if s.id in saved.regions[0].members)
+    rid = saved.regions[0].id
+    assert all(local_id(rid, s.id) for s in saved.states if s.id in saved.regions[0].members)
 
 
 def test_undo_after_replace_config_restores_previous_graph(harness, library, bot_file):

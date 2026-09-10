@@ -14,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from bartlebot.bot.schema import (
+    SUBGRAPH_LOCAL_ID,
     BotConfig,
     RegionModel,
     StateModel,
@@ -35,15 +36,20 @@ from bartlebot.subgraphs import (
     detach,
     external_edges,
     extract_definition,
+    extraction_locals,
+    instance_slug,
     linked_region_of,
     linked_regions,
     local_id,
     materialize_region,
     member_id,
+    mint_instance_id,
     push_back,
+    rename_states,
     reresolve_member_params,
     resolve_member_params,
     set_param_override,
+    taken_ids,
 )
 
 _REPO = Path(__file__).parent.parent
@@ -258,22 +264,39 @@ def test_every_shipped_bot_composes_to_itself(tmp_path):
         assert composed.to_machine_config() == before, path.name
 
 
-def test_no_shipped_bot_uses_the_sg_prefix_unlinked():
-    """The derived-id prefix is reserved: a hand-written ``sg_`` id would collide with
-    the first instance that composes next to it."""
-    offenders = [
-        f"{p.name}:{s.id}" for p in _all_bot_files() for s in BotConfig.load(p).states if s.id.startswith("sg_")
-    ]
-    assert offenders == []
+def test_instance_slug_is_a_safe_lowercase_id():
+    assert instance_slug("Sync players") == "sync_players"
+    assert instance_slug("  Defeat Boss (v2) -- fast!  ") == "defeat_boss_v2_fast"
+    assert instance_slug("Ünïcode") == "n_code"
+    assert instance_slug("???") == "subgraph"
+    assert SUBGRAPH_LOCAL_ID.match(instance_slug("Farm: Loremaster / 2"))
+
+
+def test_mint_instance_id_numbers_above_every_use_of_the_slug():
+    """The first instance is ``<slug>_1``; the next is above every number the slug has
+    carried -- as a region id, or as the head of a state id a detached or deleted
+    instance left behind -- so an instance id, like a state id, is never recycled."""
+    assert mint_instance_id("Sync players", []) == "sync_players_1"
+    assert mint_instance_id("Sync players", ["sync_players_1", "sync_players_1_state_3"]) == "sync_players_2"
+    # a detached instance keeps its member ids; they still count
+    assert mint_instance_id("Sync players", ["sync_players_4_state_1"]) == "sync_players_5"
+    # "Farm" and "Farm 2" share a prefix but do not confuse each other
+    assert mint_instance_id("Farm", ["farm_2_1", "farm_2_1_state_1"]) == "farm_3"
+    assert mint_instance_id("Farm 2", ["farm_2", "farm_2_state_1"]) == "farm_2_1"
+    assert mint_instance_id("Sync players", ["sync_players_10"]) == "sync_players_11"
+    assert mint_instance_id("Sync players", ["sync_players_x", "sync_players"]) == "sync_players_1"
 
 
 def test_member_ids_never_collide_with_unique_id():
-    """The editor mints ``state_N``; every member id carries the ``sg_`` prefix."""
+    """The editor mints ``state_N`` above every number in use, and a member id's tail
+    counts: a state added while editing an instance becomes local ``state_N`` on
+    push, so it must not take a number the definition already has."""
     from bartlebot.gui.canvas.edit_scene import _unique_id
 
     existing = [m("relog"), m("state_7"), "state_3"]
-    assert _unique_id(existing) == "state_4"
-    assert not any(i.startswith("state_") for i in existing[:2])
+    assert _unique_id(existing) == "state_8"
+    assert _unique_id(["state_3", "farm_1_state_2"]) == "state_4"
+    assert _unique_id(["hand_written", "state_9x"]) == "state_1"
     assert local_id(REGION, m("state_7")) == "state_7"
     assert local_id(REGION, "state_3") is None
     assert local_id("other", m("relog")) is None
@@ -478,7 +501,7 @@ def test_nested_instance_ids_are_prefixed_twice(library):
 
     assert member_id("R", "start") in mat.member_ids
     nested_hub = member_id("R", member_id("in1", "hub"))
-    assert nested_hub == "sg_R_sg_in1_hub"
+    assert nested_hub == "R_in1_hub"
     assert nested_hub in mat.member_ids
     assert [r.id for r in mat.regions] == [member_id("R", "in1")]
     assert nested_hub in mat.regions[0].members
@@ -495,7 +518,7 @@ def test_outer_overrides_reach_nested_members(library):
         subgraph_id="outer", version=1, param_overrides={member_id("in1", "hub"): {"zone": "Deep/Z"}}
     )
     mat = materialize_region("R", source, library.get("outer"), library)
-    assert {s.id: s for s in mat.states}["sg_R_sg_in1_hub"].params["zone"] == "Deep/Z"
+    assert {s.id: s for s in mat.states}["R_in1_hub"].params["zone"] == "Deep/Z"
     assert mat.warnings == []
 
 
@@ -582,8 +605,8 @@ def test_compose_recomposes_a_nested_instance_through_its_outer_region(library):
     library.save(sync_players_definition(version=2, world="Avalon"))
     composed, report = compose_bot(bot, library)
     assert set(report.regions) == {"R"}, "the nested region is not composed on its own"
-    assert {s.id: s for s in composed.states}["sg_R_sg_in1_go_to_world"].params["world"] == "Avalon"
-    assert [r.id for r in composed.regions] == ["R", "sg_R_in1"]
+    assert {s.id: s for s in composed.states}["R_in1_go_to_world"].params["world"] == "Avalon"
+    assert [r.id for r in composed.regions] == ["R", "R_in1"]
     assert composed.regions[1].source.version == 2
 
 
@@ -648,15 +671,37 @@ def test_convert_region_rewrites_roles_and_regions():
     assert BotConfig.model_validate(bot.model_dump()) == bot
 
 
-def test_extract_refuses_an_id_that_cannot_be_local():
+def test_extract_renumbers_local_ids_in_file_order():
+    """A definition starts at ``state_1`` whatever the bot had reached, and an id that
+    could not be local (a hand-written one) is renumbered rather than refused."""
     bot = plain_bot()
-    bot.states[0].id = "has-dash"
-    bot.initial = "has-dash"
-    bot.transitions[0].source = "has-dash"
-    bot.transitions[2].dest = "has-dash"
-    bot.regions[0].members[0] = "has-dash"
-    with pytest.raises(ValueError, match="cannot be a subgraph-local id"):
-        extract_definition(bot, "r1", new_id="x", name="X")
+    rename_states(bot, {"state_1": "has-dash", "state_2": "state_27"})
+    bot.regions[0].members = ["state_27", "has-dash"]  # member order is not file order
+    defn, source = extract_definition(bot, "r1", new_id="x", name="X")
+    assert [s.id for s in defn.states] == ["state_1", "state_2"]
+    assert [(t.source, t.dest) for t in defn.transitions] == [("state_1", "state_2")]
+    assert extraction_locals(bot, "r1") == {"has-dash": "state_1", "state_27": "state_2"}
+
+    id_map = convert_region_to_instance(bot, "r1", defn, source, instance_id="x_1")
+    assert id_map == {"has-dash": "x_1_state_1", "state_27": "x_1_state_2"}
+    assert bot.regions[0].id == "x_1"
+    assert bot.regions[0].members == ["x_1_state_2", "x_1_state_1"]
+    assert bot.initial == "x_1_state_1" and bot.recovery_state == "x_1_state_2"
+    assert [s.id for s in bot.states] == ["x_1_state_1", "x_1_state_2", "state_3"]
+
+
+def test_convert_with_a_minted_instance_id_round_trips_through_compose(tmp_path):
+    bot = plain_bot()
+    defn, source = extract_definition(bot, "r1", new_id="startup", name="Startup")
+    rid = mint_instance_id(defn.name, taken_ids(bot))
+    assert rid == "startup_1"
+    convert_region_to_instance(bot, "r1", defn, source, instance_id=rid)
+    lib = SubgraphLibrary(tmp_path)
+    lib.save(defn)
+    composed, report = compose_bot(bot, lib)
+    assert report.regions == {rid: report.regions[rid]} and report.regions[rid].kind == "linked"
+    assert composed.model_dump() == bot.model_dump()
+    assert mint_instance_id("Startup", taken_ids(bot)) == "startup_2"
 
 
 def test_push_back_bumps_version_and_keeps_inputs(bot, library):
@@ -721,9 +766,9 @@ def test_linked_region_of_answers_the_outermost_instance(library):
         transitions=mat.transitions,
         regions=[RegionModel(id="R", label="Outer", members=mat.member_ids, color=1, source=source), *mat.regions],
     )
-    nested_hub = "sg_R_sg_in1_hub"
+    nested_hub = "R_in1_hub"
     assert linked_region_of(config, nested_hub).id == "R", "the inner region composes through the outer"
-    assert linked_region_of(config, "sg_R_start").id == "R"
+    assert linked_region_of(config, "R_start").id == "R"
     assert linked_region_of(config, "nope") is None
     # detaching the outer leaves the inner as the outermost holder
     detach(config, "R")
