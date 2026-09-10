@@ -274,6 +274,54 @@ def linked_regions(config: BotConfig) -> list[RegionModel]:
     return [r for r in config.regions if r.source is not None]
 
 
+def linked_region_of(config: BotConfig, state_id: str) -> RegionModel | None:
+    """The *outermost* linked region ``state_id`` belongs to, or ``None``.
+
+    A member of a nested instance is inside two linked regions; the outer one is
+    the unit the editor locks and drags, because the inner is composed through it.
+    """
+    holders = [r for r in linked_regions(config) if state_id in r.members]
+    for r in holders:
+        if not any(o is not r and r.id.startswith(_nested_prefix(o.id)) for o in holders):
+            return r
+    return None
+
+
+def reresolve_member_params(config: BotConfig, region: RegionModel, defn: SubgraphDefinition) -> None:
+    """Rewrite every direct member's params from ``defn`` and the instance's inputs and overrides. In place.
+
+    What an input or override edit on the region page needs, without a full
+    recompose: the members stay, only their params move. A member with no state
+    of that local id in ``defn`` (one from a nested instance, or one the
+    definition no longer has) is left alone.
+    """
+    source = region.source
+    if source is None:
+        return
+    def_states = {s.id: s for s in defn.states}
+    for state in config.states:
+        if state.id not in region.members:
+            continue
+        local = local_id(region.id, state.id)
+        def_state = def_states.get(local) if local is not None else None
+        if def_state is not None:
+            state.params = resolve_member_params(defn, def_state, source)
+
+
+def set_param_override(source: SubgraphSource, local: str, key: str, value: object) -> None:
+    source.param_overrides.setdefault(local, {})[key] = value
+
+
+def clear_param_override(source: SubgraphSource, local: str, key: str) -> None:
+    """Drop one override, and the state's entry once it is empty, so nothing stale is written."""
+    params = source.param_overrides.get(local)
+    if params is None:
+        return
+    params.pop(key, None)
+    if not params:
+        del source.param_overrides[local]
+
+
 def external_edges(config: BotConfig, region: RegionModel) -> list[TransitionModel]:
     """Transitions with exactly one endpoint inside ``region``."""
     members = set(region.members)

@@ -32,18 +32,27 @@ from PyQt6.QtWidgets import (
     QSpinBox,
     QStackedWidget,
     QStyledItemDelegate,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
-from bartlebot.bot.schema import FlagCondition, FlagGroup, StateModel, TransitionModel
+from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, SubgraphDefinition, TransitionModel
 from bartlebot.gui.canvas import recording
+from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.gui.widgets.icon_button import ThemedIconButton
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
+from bartlebot.gui.widgets.rule_heading import RuleHeading
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
+from bartlebot.store_roots import Origin
+from bartlebot.subgraphs import RegionStatus, member_id
 from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
 
 logger = logging.getLogger(__name__)
@@ -291,6 +300,9 @@ class _StrChoiceComboBox(QComboBox):
 
 class _DynamicParamForm(ThemedMixin, QWidget):
     changed = pyqtSignal()
+    # (param key, active) when the user flips a row's Override toggle on a locked form.
+    # The form only reports; the canvas records the override and reloads the form.
+    override_toggled = pyqtSignal(str, bool)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -300,6 +312,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._form.addStretch()
         self._widgets: dict[str, Any] = {}
         self._required_widgets: dict[str, Any] = {}
+        # The per-row Override toggles of a locked form; their icons are THEME-tinted.
+        self._override_btns: list[QToolButton] = []
         # Every label load_schema builds that carries a THEME colour, cleared and
         # refilled alongside _widgets. Field labels keep their ParamField because the
         # required marker is a colour baked into *rich text* rather than a stylesheet,
@@ -314,7 +328,17 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         """Pass a callable returning the currently hooked clients."""
         self._get_clients = fn
 
-    def load_schema(self, schema: list, params: dict) -> None:
+    def load_schema(
+        self, schema: list, params: dict, *, locked: bool = False, overrides: frozenset = frozenset()
+    ) -> None:
+        """Rebuild the form for *schema* showing *params*.
+
+        With *locked*, every field is disabled except the keys in *overrides*, and
+        each row carries an Override toggle: on unlocks that one field for this
+        instance, off resets it to the subgraph's value. The toggle wraps the row
+        rather than the widget ``_make_widget`` returns, so every widget type gets
+        it without knowing.
+        """
         self._suppress = True
         # Remove everything except the trailing stretch.
         while self._form.count() > 1:
@@ -325,6 +349,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._required_widgets.clear()
         self._field_labels.clear()
         self._muted_labels.clear()
+        self._override_btns.clear()
+        editable = {field.key: (not locked) or field.key in overrides for field in schema}
         insert_idx = 0
         for field in schema:
             label_w = QLabel()
@@ -348,6 +374,9 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             if field.required:
                 self._required_widgets[field.key] = widget
             display_w = widget if not isinstance(widget, tuple) else widget[3]
+            override_btn = self._make_override_button(field.key, editable[field.key]) if locked else None
+            if locked:
+                display_w.setEnabled(editable[field.key])
             if field.type == "bool":
                 container = QWidget()
                 row = QHBoxLayout(container)
@@ -356,10 +385,22 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 row.addWidget(label_w)
                 row.addStretch()
                 row.addWidget(display_w)
+                if override_btn is not None:
+                    row.addWidget(override_btn)
                 self._form.insertWidget(insert_idx, container)
                 insert_idx += 1
             else:
-                self._form.insertWidget(insert_idx, label_w)
+                if override_btn is not None:
+                    head = QWidget()
+                    head_row = QHBoxLayout(head)
+                    head_row.setContentsMargins(0, 0, 0, 0)
+                    head_row.setSpacing(8)
+                    head_row.addWidget(label_w)
+                    head_row.addStretch()
+                    head_row.addWidget(override_btn)
+                    self._form.insertWidget(insert_idx, head)
+                else:
+                    self._form.insertWidget(insert_idx, label_w)
                 self._form.insertWidget(insert_idx + 1, display_w)
                 insert_idx += 2
             if field.default_hint and not field.required:
@@ -382,30 +423,59 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 controller = self._widgets[field.disabled_by]
                 controlled = self._widgets[field.key]
                 display_w = controlled if not isinstance(controlled, tuple) else controlled[3]
+                ok = editable[field.key]
                 if isinstance(controller, QCheckBox):
-                    display_w.setEnabled(not controller.isChecked())
+                    display_w.setEnabled(ok and not controller.isChecked())
                     controller.checkStateChanged.connect(
-                        lambda state, w=display_w: w.setEnabled(state != Qt.CheckState.Checked)
+                        lambda state, w=display_w, ok=ok: w.setEnabled(ok and state != Qt.CheckState.Checked)
                     )
                 elif isinstance(controller, QLineEdit):
-                    display_w.setEnabled(not controller.text().strip())
-                    controller.textChanged.connect(lambda text, w=display_w: w.setEnabled(not text.strip()))
+                    display_w.setEnabled(ok and not controller.text().strip())
+                    controller.textChanged.connect(
+                        lambda text, w=display_w, ok=ok: w.setEnabled(ok and not text.strip())
+                    )
         # Wire enabled_by: the mirror image, so a pair of fields can be mutually exclusive.
         for field in schema:
             if field.enabled_by and field.enabled_by in self._widgets:
                 controller = self._widgets[field.enabled_by]
                 controlled = self._widgets[field.key]
                 display_w = controlled if not isinstance(controlled, tuple) else controlled[3]
+                ok = editable[field.key]
                 if isinstance(controller, QCheckBox):
-                    display_w.setEnabled(controller.isChecked())
+                    display_w.setEnabled(ok and controller.isChecked())
                     controller.checkStateChanged.connect(
-                        lambda state, w=display_w: w.setEnabled(state == Qt.CheckState.Checked)
+                        lambda state, w=display_w, ok=ok: w.setEnabled(ok and state == Qt.CheckState.Checked)
                     )
         self._suppress = False
         # load_schema *is* this widget's construction — everything above was just
         # built, so this is where its styling is first applied. It also covers
         # _validate_required_fields, which apply_theme_styles re-runs.
         self.refresh_theme_styles()
+
+    def _make_override_button(self, key: str, active: bool) -> QToolButton:
+        btn = QToolButton()
+        btn.setCheckable(True)
+        btn.setChecked(active)
+        btn.setAutoRaise(True)
+        btn.setIconSize(QSize(14, 14))
+        btn.setToolTip("Override this value for this instance" if not active else "Reset to the subgraph's value")
+        btn.setProperty("param_key", key)
+        btn.toggled.connect(lambda checked, k=key: self._on_override_toggled(k, checked))
+        self._override_btns.append(btn)
+        return btn
+
+    def _on_override_toggled(self, key: str, checked: bool) -> None:
+        if self._suppress:
+            return
+        w = self._widgets.get(key)
+        display_w = w if not isinstance(w, tuple) else w[3]
+        if display_w is not None:
+            display_w.setEnabled(checked)
+        self.override_toggled.emit(key, checked)
+
+    def override_button(self, key: str) -> QToolButton | None:
+        """The Override toggle for one row of a locked form, or None."""
+        return next((b for b in self._override_btns if b.property("param_key") == key), None)
 
     def set_param_value(self, key: str, value) -> None:
         """Set one param's widget from outside, as if the user had typed it.
@@ -467,6 +537,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             self._style_field_label(label, field, spaced)
         for label in self._muted_labels:
             label.setStyleSheet(f"color: {THEME.text_muted};")
+        for btn in self._override_btns:
+            btn.setIcon(svg_icon("pencil", 14))
         # The red border on an empty required field is THEME.error, and is applied
         # outside load_schema — re-running the check is what re-derives it.
         self._validate_required_fields()
@@ -1105,6 +1177,61 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
 _PAGE_IDLE = 0
 _PAGE_NODE = 1
 _PAGE_EDGE = 2
+_PAGE_REGION = 3
+
+_ORIGIN_TEXT = {
+    Origin.SHIPPED: "shipped with BartleBot",
+    Origin.SHIPPED_OVERRIDE: "your copy of a shipped subgraph",
+    Origin.USER: "in your library",
+    Origin.MISSING: "not in the library",
+}
+
+
+class _RegionColorRow(ThemedMixin, QWidget):
+    """The six region swatches inline, the selected one ringed in the accent."""
+
+    changed = pyqtSignal(int)
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self._key: int = THEME.REGION_PALETTE[0]
+        self._btns: dict[int, QPushButton] = {}
+        row = QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(6)
+        for key in THEME.REGION_PALETTE:
+            btn = QPushButton()
+            btn.setFixedSize(22, 22)
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setToolTip(f"Region colour {key}")
+            btn.clicked.connect(lambda _=None, k=key: self._on_clicked(k))
+            self._btns[key] = btn
+            row.addWidget(btn)
+        row.addStretch()
+        self.refresh_theme_styles()
+
+    @property
+    def key(self) -> int:
+        return self._key
+
+    def set_key(self, key: int) -> None:
+        self._key = key
+        self.refresh_theme_styles()
+
+    def _on_clicked(self, key: int) -> None:
+        if key == self._key:
+            return
+        self.set_key(key)
+        self.changed.emit(key)
+
+    def apply_theme_styles(self) -> None:
+        for key, btn in self._btns.items():
+            color_hex = THEME.region_color(key).name()
+            border = THEME.accent if key == self._key else "transparent"
+            btn.setStyleSheet(
+                f"QPushButton {{ background: {color_hex}; border: 2px solid {border}; border-radius: 11px; }}"
+                f"QPushButton:hover {{ border-color: {THEME.text_muted}; }}"
+            )
 
 
 class _NodeTypeDelegate(QStyledItemDelegate):
@@ -1159,11 +1286,23 @@ class _ParamPanel(ThemedMixin, QWidget):
     # always names the state taking the role.
     initial_state_requested = pyqtSignal(str)  # state ID
     recovery_state_requested = pyqtSignal(str)  # state ID
+    # A locked member's Override toggle, or a Reset on the region page:
+    # (state id, param key, active). The canvas owns the instance's overrides.
+    override_toggled = pyqtSignal(str, str, bool)
+    # The region page wrote into the shown RegionModel (label, colour, inputs).
+    # The bool says whether the edit is typing (True: the canvas opens a debounced
+    # undo step) or discrete (False: structural_property_changed already pushed
+    # one, as a node-type switch does).
+    region_property_changed = pyqtSignal(bool)
+    detach_requested = pyqtSignal(str)  # region ID
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._state: StateModel | None = None
         self._transition: TransitionModel | None = None
+        self._region: RegionModel | None = None
+        self._locked: bool = False
+        self._region_inputs_initial: dict = {}
         self._suppress: bool = False
         self._get_clients: Callable[[], list] = lambda: []
         # All states for the source/dest dropdowns; populated by show_transition()
@@ -1337,10 +1476,17 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._conn_toggle_btn.clicked.connect(self._toggle_connections)
         self._connections_section.setVisible(False)
 
+        # Lock note -- shown above the form for a member of a linked subgraph
+        self._lock_note = ThemedTextLabel("", color="text_muted")
+        self._lock_note.setWordWrap(True)
+        self._lock_note.setContentsMargins(6, 6, 6, 0)
+        self._lock_note.setVisible(False)
+
         node_outer = QWidget()
         node_vbox = QVBoxLayout(node_outer)
         node_vbox.setContentsMargins(0, 0, 0, 0)
         node_vbox.setSpacing(0)
+        node_vbox.addWidget(self._lock_note)
         node_vbox.addWidget(node_w)
         node_vbox.addWidget(self._record_row)
         node_vbox.addWidget(scroll, 1)
@@ -1385,6 +1531,71 @@ class _ParamPanel(ThemedMixin, QWidget):
         edge_vbox.addStretch()
         self._stack.addWidget(edge_outer)
 
+        # Page 3 — region. Label and colour for every region; the subgraph section
+        # for a linked one.
+        region_outer = QWidget()
+        region_vbox = QVBoxLayout(region_outer)
+        region_vbox.setContentsMargins(0, 0, 0, 0)
+        region_vbox.setSpacing(0)
+        region_form_w = QWidget()
+        rf = QFormLayout(region_form_w)
+        rf.setContentsMargins(6, 6, 6, 6)
+        self._region_label_edit = QLineEdit()
+        self._region_color_row = _RegionColorRow()
+        rf.addRow("Label", self._region_label_edit)
+        rf.addRow("Color", self._region_color_row)
+        region_vbox.addWidget(region_form_w)
+
+        self._region_link_box = QWidget()
+        link_vbox = QVBoxLayout(self._region_link_box)
+        link_vbox.setContentsMargins(6, 0, 6, 6)
+        link_vbox.setSpacing(4)
+        link_vbox.addWidget(RuleHeading("Subgraph"))
+        self._region_defn_name = QLabel()
+        _name_font = self._region_defn_name.font()
+        _name_font.setBold(True)
+        self._region_defn_name.setFont(_name_font)
+        self._region_defn_desc = ThemedTextLabel("", color="text_muted")
+        self._region_defn_desc.setWordWrap(True)
+        self._region_version = ThemedTextLabel("", color="text_muted")
+        self._region_version.setWordWrap(True)
+        self._region_status = ThemedTextLabel("", color="warning")
+        self._region_status.setWordWrap(True)
+        link_vbox.addWidget(self._region_defn_name)
+        link_vbox.addWidget(self._region_defn_desc)
+        link_vbox.addWidget(self._region_version)
+        link_vbox.addWidget(self._region_status)
+        link_vbox.addWidget(RuleHeading("Inputs"))
+        self._region_inputs_form = _DynamicParamForm()
+        self._region_inputs_note = ThemedTextLabel("This subgraph declares no inputs.", color="text_muted")
+        self._region_inputs_note.setContentsMargins(6, 0, 6, 0)
+        link_vbox.addWidget(self._region_inputs_form)
+        link_vbox.addWidget(self._region_inputs_note)
+        self._region_overrides_heading = RuleHeading("Overrides")
+        self._region_overrides_body = QWidget()
+        self._region_overrides_layout = QVBoxLayout(self._region_overrides_body)
+        self._region_overrides_layout.setContentsMargins(6, 0, 6, 0)
+        self._region_overrides_layout.setSpacing(2)
+        link_vbox.addWidget(self._region_overrides_heading)
+        link_vbox.addWidget(self._region_overrides_body)
+        self._region_detach_btn = ActionButton("detach", "Detach from library", fill=False)
+        self._region_detach_btn.setToolTip(
+            "Drop the link to the library. The states stay exactly as they are, and stop following updates."
+        )
+        _detach_row = QWidget()
+        _detach_layout = QHBoxLayout(_detach_row)
+        _detach_layout.setContentsMargins(0, 8, 0, 0)
+        _detach_layout.addStretch()
+        _detach_layout.addWidget(self._region_detach_btn)
+        link_vbox.addWidget(_detach_row)
+        region_vbox.addWidget(self._region_link_box)
+        region_vbox.addStretch()
+        region_scroll = QScrollArea()
+        region_scroll.setWidgetResizable(True)
+        region_scroll.setFrameShape(region_scroll.Shape.NoFrame)
+        region_scroll.setWidget(region_outer)
+        self._stack.addWidget(region_scroll)
+
         self._node_label_edit.textChanged.connect(self._on_node_label_changed)
         self._node_label_edit.editingFinished.connect(self._on_label_editing_finished)
         self._node_type_combo.currentIndexChanged.connect(self._on_node_type_changed)
@@ -1396,6 +1607,11 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._edge_src_combo.currentTextChanged.connect(self._on_edge_src_changed)
         self._edge_dst_combo.currentTextChanged.connect(self._on_edge_dst_changed)
         self._flag_conditions_widget.changed.connect(self._on_flag_conditions_changed)
+        self._param_form.override_toggled.connect(self._on_form_override_toggled)
+        self._region_label_edit.textChanged.connect(self._on_region_label_changed)
+        self._region_color_row.changed.connect(self._on_region_color_changed)
+        self._region_inputs_form.changed.connect(self._on_region_inputs_changed)
+        self._region_detach_btn.clicked.connect(self._on_detach_clicked)
 
         # The connection rows are the one part of this panel a theme switch has to
         # rebuild rather than restyle, and rebuilding deletes widgets — so it is
@@ -1486,7 +1702,23 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._cancel_record()
         self._state = None
         self._transition = None
+        self._region = None
         self._stack.setCurrentIndex(_PAGE_IDLE)
+
+    @property
+    def shown_state(self) -> StateModel | None:
+        """The state on the node page, or None when another page is up."""
+        return self._state
+
+    @property
+    def shown_region(self) -> RegionModel | None:
+        """The region on the region page, or None when another page is up."""
+        return self._region
+
+    @property
+    def is_locked(self) -> bool:
+        """Whether the node page is showing a member of a linked subgraph."""
+        return self._locked
 
     def show_state(
         self,
@@ -1495,30 +1727,188 @@ class _ParamPanel(ThemedMixin, QWidget):
         all_transitions: list[TransitionModel] | None = None,
         initial_id: str | None = None,
         recovery_id: str | None = None,
+        *,
+        locked: bool = False,
+        override_keys: frozenset = frozenset(),
+        subgraph_name: str | None = None,
     ) -> None:
+        """Show *state*. With *locked*, only the roles and overridden params are editable.
+
+        Roles stay enabled on a locked member because they are the bot's, not the
+        subgraph's (docs/SUBGRAPHS.md). Label, type and notes are the definition's,
+        so they lock; a param unlocks one at a time through its Override toggle.
+        """
         self._cancel_record()
         self._state = state
         self._transition = None
+        self._region = None
+        self._locked = locked
         self._all_states_for_node = list(all_states or [])
         self._all_transitions_for_node = list(all_transitions or [])
         self._suppress = True
         self._node_id_lbl.setText(state.id)
         self._node_label_edit.setText(state.label or "")
+        self._node_label_edit.setEnabled(not locked)
         idx = self._node_type_combo.findData(state.node_type, Qt.ItemDataRole.UserRole)
         if idx >= 0:
             self._node_type_combo.setCurrentIndex(idx)
+        self._node_type_combo.setEnabled(not locked)
         schema = NODE_PARAM_SCHEMAS.get(state.node_type, [])
-        self._param_form.load_schema(schema, state.params or {})
+        self._param_form.load_schema(schema, state.params or {}, locked=locked, overrides=override_keys)
         self._rebuild_returns(state.node_type)
         self._rebuild_connections(state.id)
         self._notes_edit.blockSignals(True)
         self._notes_edit.setPlainText(state.notes or "")
         self._notes_edit.blockSignals(False)
+        self._notes_edit.setEnabled(not locked)
+        if locked:
+            name = subgraph_name or "instance"
+            self._lock_note.setText(
+                f"Part of subgraph {name}. Override a value below to change it for this instance only."
+            )
+        self._lock_note.setVisible(locked)
         self._suppress = False
         self._set_role_checks(state.id, initial_id, recovery_id)
-        self._record_row.setVisible(state.node_type in recording.RECORDABLE_NODES)
+        self._record_row.setVisible(state.node_type in recording.RECORDABLE_NODES and not locked)
         self._wiki_import_row.setVisible(state.node_type == "handle_combat")
         self._stack.setCurrentIndex(_PAGE_NODE)
+
+    def show_region(
+        self,
+        region: RegionModel,
+        defn: SubgraphDefinition | None = None,
+        status: RegionStatus | None = None,
+        member_labels: dict[str, str] | None = None,
+    ) -> None:
+        """Show the region page: label and colour, plus the subgraph section for a linked region.
+
+        *defn* is the library's current definition when it has one; *status* is the
+        last compose report's entry for this region; *member_labels* names members
+        in the override list. The page edits ``region`` in place and reports through
+        ``region_property_changed``.
+        """
+        self._cancel_record()
+        self._state = None
+        self._transition = None
+        self._region = region
+        self._suppress = True
+        try:
+            self._region_label_edit.setText(region.label)
+            self._region_color_row.set_key(region.color)
+            source = region.source
+            self._region_link_box.setVisible(source is not None)
+            if source is not None:
+                self._region_defn_name.setText(defn.name if defn is not None else source.subgraph_id)
+                desc = (defn.description or "") if defn is not None else ""
+                self._region_defn_desc.setText(desc)
+                self._region_defn_desc.setVisible(bool(desc))
+                parts = [f"Version {source.version}"]
+                if status is not None and status.library_version not in (None, source.version):
+                    parts.append(f"library version {status.library_version}")
+                if status is not None:
+                    parts.append(_ORIGIN_TEXT.get(status.origin, status.origin.value))
+                self._region_version.setText(" \u00b7 ".join(parts))
+                reasons = list(status.reasons) if status is not None else []
+                self._region_status.setText("\n".join(reasons))
+                self._region_status.setVisible(bool(reasons))
+                schema = [
+                    ParamField(key=i.name, type=i.type, label=i.label or i.name, help=i.help or "", default=i.default)
+                    for i in (defn.inputs if defn is not None else [])
+                ]
+                self._region_inputs_form.load_schema(schema, dict(source.inputs))
+                self._region_inputs_form.setVisible(bool(schema))
+                self._region_inputs_note.setVisible(not schema)
+                self._region_inputs_initial = self._region_inputs_form.get_params()
+                self._rebuild_override_rows(region, member_labels or {})
+        finally:
+            self._suppress = False
+        self._stack.setCurrentIndex(_PAGE_REGION)
+
+    def _rebuild_override_rows(self, region: RegionModel, member_labels: dict[str, str]) -> None:
+        layout = self._region_overrides_layout
+        while layout.count():
+            item = layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+        source = region.source
+        rows = 0
+        if source is not None:
+            for local, params in source.param_overrides.items():
+                state_id = member_id(region.id, local)
+                for key, value in params.items():
+                    row = QWidget()
+                    h = QHBoxLayout(row)
+                    h.setContentsMargins(0, 0, 0, 0)
+                    h.setSpacing(6)
+                    text = QLabel(f"{member_labels.get(state_id, local)} \u00b7 {key} = {value!r}")
+                    text.setWordWrap(True)
+                    reset = ThemedIconButton("revert", size=20, icon_size=14)
+                    reset.setToolTip("Reset to the subgraph's value")
+                    reset.clicked.connect(lambda _=None, sid=state_id, k=key: self.override_toggled.emit(sid, k, False))
+                    h.addWidget(text, 1)
+                    h.addWidget(reset)
+                    layout.addWidget(row)
+                    rows += 1
+        self._region_overrides_heading.setVisible(rows > 0)
+        self._region_overrides_body.setVisible(rows > 0)
+
+    def _on_form_override_toggled(self, key: str, active: bool) -> None:
+        if self._suppress or self._state is None:
+            return
+        self.override_toggled.emit(self._state.id, key, active)
+
+    def _on_region_label_changed(self, text: str) -> None:
+        if self._suppress or self._region is None:
+            return
+        label = text.strip()
+        if not label:
+            return
+        self._region.label = label
+        self.region_property_changed.emit(True)
+
+    def _on_region_color_changed(self, key: int) -> None:
+        if self._suppress or self._region is None:
+            return
+        self.structural_property_changed.emit("Change Region Color")
+        self._region.color = key
+        self.region_property_changed.emit(False)
+
+    def _on_region_inputs_changed(self) -> None:
+        """Write the inputs the user has touched into ``source.inputs``.
+
+        Only a key that was already set, or whose widget moved from what it loaded
+        with, is written: an unset input is ``None`` and leaves the definition's
+        value in place, and a widget always has *some* value, so writing every key
+        would turn every untouched input into an empty override.
+        """
+        if self._suppress or self._region is None or self._region.source is None:
+            return
+        source = self._region.source
+        current = self._region_inputs_form.get_params()
+        for key, value in current.items():
+            if key in source.inputs or value != self._region_inputs_initial.get(key):
+                source.inputs[key] = value
+        self.region_property_changed.emit(True)
+
+    def _on_detach_clicked(self) -> None:
+        if self._region is not None:
+            self.detach_requested.emit(self._region.id)
+
+    @property
+    def region_label_edit(self) -> QLineEdit:
+        return self._region_label_edit
+
+    @property
+    def region_color_row(self) -> _RegionColorRow:
+        return self._region_color_row
+
+    @property
+    def region_inputs_form(self) -> _DynamicParamForm:
+        return self._region_inputs_form
+
+    @property
+    def param_form(self) -> _DynamicParamForm:
+        return self._param_form
 
     @property
     def initial_check(self) -> QCheckBox:

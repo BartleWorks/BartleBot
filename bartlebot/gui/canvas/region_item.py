@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QRectF, Qt
+from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent, QStyleOptionGraphicsItem
 
@@ -32,6 +32,18 @@ _PILL_PAD_X = 10  # horizontal padding inside pill
 _PILL_GAP = 4  # gap between pill bottom and region top
 _PILL_ALPHA = 80  # fill alpha for pill (~31% opacity)
 _BORDER_ALPHA = 100  # ~39% opacity for region border — recedes behind full-opacity edges
+_GLYPH_W = 14  # width of the link glyph inside the pill, screen px
+_GLYPH_GAP = 5  # gap between the glyph and the label
+
+#: Pill states for a linked region — see docs/SUBGRAPHS.md. ``None`` is an ordinary region.
+LINK_STATES = ("linked", "outdated", "missing", "editing")
+
+_LINK_TOOLTIPS = {
+    "linked": "Linked to a library subgraph",
+    "outdated": "Linked to a library subgraph — the update is held; see the validation banner",
+    "missing": "Linked to a library subgraph the library cannot supply; running the stored snapshot",
+    "editing": "Editing this subgraph",
+}
 
 
 class RegionItem(QGraphicsItem):
@@ -59,6 +71,7 @@ class RegionItem(QGraphicsItem):
         self._rect = QRectF()
         self._pill_w_nominal: float = 0.0  # pill width in screen px (zoom-invariant); set on first paint
         self._interactive: bool = False
+        self._link_state: str | None = None
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
@@ -114,7 +127,8 @@ class RegionItem(QGraphicsItem):
         painter.setFont(font)
         fm = painter.fontMetrics()
         text_w = fm.horizontalAdvance(self._label)
-        pill_w = text_w + pill_pad_x * 2
+        glyph_w = (_GLYPH_W + _GLYPH_GAP) * s if self._link_state is not None else 0.0
+        pill_w = text_w + pill_pad_x * 2 + glyph_w
         pill_x = self._rect.left() + (self._rect.width() - pill_w) / 2
         pill_y = self._rect.top() - pill_h - pill_gap
         pill_rect = QRectF(pill_x, pill_y, pill_w, pill_h)
@@ -133,7 +147,37 @@ class RegionItem(QGraphicsItem):
         # buffer — see canvas.lod.  Test against raw_lod, not the clamped one.
         if text_is_legible(fm.height(), raw_lod):
             painter.setPen(label_color)
-            painter.drawText(pill_rect, Qt.AlignmentFlag.AlignCenter, self._label)
+            text_rect = pill_rect.adjusted(glyph_w, 0, 0, 0)
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, self._label)
+        if self._link_state is not None:
+            self._paint_link_glyph(painter, pill_rect, label_color, s)
+
+    def _paint_link_glyph(self, painter: QPainter, pill_rect: QRectF, color: QColor, s: float) -> None:
+        """Two overlapping squares -- an instance of something -- with a status dot.
+
+        The dot is what changes with the state, so the glyph is one shape to learn:
+        no dot for a clean link, the warning colour when the update is held, the
+        error colour when the library cannot supply it, the accent while editing.
+        Colours are read from THEME here, at paint time, so a theme switch needs
+        no bookkeeping.
+        """
+        size = _GLYPH_W * s
+        x = pill_rect.left() + _PILL_PAD_X * s
+        y = pill_rect.top() + (pill_rect.height() - size) / 2
+        sq = size * 0.68
+        painter.save()
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(color, 1.4 * s))
+        painter.drawRoundedRect(QRectF(x, y + size - sq, sq, sq), 2 * s, 2 * s)
+        painter.drawRoundedRect(QRectF(x + size - sq, y, sq, sq), 2 * s, 2 * s)
+        dot_token = {"outdated": "warning", "missing": "error", "editing": "accent"}.get(self._link_state)
+        if dot_token is not None:
+            dot = QColor(THEME.qcolor(dot_token))
+            r = size * 0.22
+            painter.setPen(QPen(dot.darker(_LABEL_DARKER), 1.0 * s))
+            painter.setBrush(QBrush(dot))
+            painter.drawEllipse(QPointF(x + size - r * 0.6, y + r * 0.6), r, r)
+        painter.restore()
 
     def shape(self) -> QPainterPath:
         # boundingRect() is intentionally oversized (8× pill height) so Qt never clips the
@@ -238,4 +282,18 @@ class RegionItem(QGraphicsItem):
 
     def set_color(self, key: int) -> None:
         self._color_key = key
+        self.update()
+
+    @property
+    def link_state(self) -> str | None:
+        """One of :data:`LINK_STATES` for a linked region, ``None`` for an ordinary one."""
+        return self._link_state
+
+    def set_link_state(self, state: str | None) -> None:
+        if state is not None and state not in LINK_STATES:
+            raise ValueError(f"unknown link state {state!r}")
+        if state == self._link_state:
+            return
+        self._link_state = state
+        self.setToolTip(_LINK_TOOLTIPS.get(state, "") if state else "")
         self.update()

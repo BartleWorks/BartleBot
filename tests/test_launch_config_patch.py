@@ -135,7 +135,8 @@ def test_last_player_is_none_when_the_tag_is_not_a_number(install, config):
 
 _HUGE = 4  # the game's largest UI scale, and its default
 _MICRO = 5  # the smallest, and the only one 534x300 can display
-_LARGE = 3  # what a 4:3 client at the stock 800x600 floor can display
+_LARGE = 3  # what a 4:3 client can render at 2048x1536
+_REGULAR = 2  # the cap at the stock 800x600 floor: Large renders there, but its NPC prompts cover the compass
 
 
 @pytest.fixture
@@ -177,8 +178,13 @@ def test_a_launch_the_scale_fits_leaves_it_where_it_is(ui_config):
 
 
 def test_the_stock_floor_still_clamps_a_huge_preference_down(ui_config):
-    """800x600 is 4:3, so it takes Large -- the clamp is not only a sub-floor concern."""
-    assert launch_profile._ui_size_update(800, 600) == {"UISize": str(_LARGE)}
+    """800x600 is capped at Regular -- the clamp is not only a sub-floor concern.
+
+    The HUD can render Large there, but the game's own default resolution is capped
+    one rung lower (``_DEFAULT_RESOLUTION_UI_SIZE_CAP``): at Large the NPC interact
+    prompt sits over the teleport compass button.
+    """
+    assert launch_profile._ui_size_update(800, 600) == {"UISize": str(_REGULAR)}
 
 
 def test_the_capture_is_taken_once_and_never_from_our_own_clamp(ui_config):

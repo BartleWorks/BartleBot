@@ -1,0 +1,206 @@
+"""Stage 3 of #37: the properties panel on a linked region and on its members.
+
+A locked member's page disables what the definition owns (label, type, notes,
+params) but not what the bot owns (the roles), and each param row carries an
+Override toggle. The region page -- reached by selecting a whole region -- edits
+the instance's label, colour and inputs in place, lists its overrides with Reset,
+and offers Detach. Real ``BotCanvas`` tests on the synthetic "sync players"
+instance; nothing here is a real character.
+"""
+
+from __future__ import annotations
+
+import pytest
+from PyQt6.QtWidgets import QLineEdit
+
+from bartlebot.gui.canvas.param_panel import _RegionColorRow
+from bartlebot.store_roots import Origin
+from bartlebot.subgraph_store import SubgraphLibrary
+from bartlebot.subgraphs import ComposeReport, RegionStatus
+from tests.test_subgraph_editor_lock import LOCALS
+from tests.test_subgraphs import REGION, SYNC_ID, linked_bot, m, sync_players_definition
+
+
+@pytest.fixture
+def library(tmp_path) -> SubgraphLibrary:
+    lib = SubgraphLibrary(tmp_path / "library")
+    lib.save(sync_players_definition())
+    return lib
+
+
+@pytest.fixture
+def canvas(qapp, library):
+    from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
+
+    c = BotCanvas()
+    c.set_subgraph_library(library)
+    c.setup(linked_bot(library.get(SYNC_ID), library))
+    c.enter_edit_mode()
+    yield c
+    c.prepare_for_shutdown()
+
+
+def _state(canvas, sid: str):
+    return next(s for s in canvas.scene.config.states if s.id == sid)
+
+
+def _region(canvas, rid: str = REGION):
+    return next(r for r in canvas.scene.config.regions if r.id == rid)
+
+
+def _select_region(canvas, rid: str = REGION) -> None:
+    """What clicking the pill does: select every member, with no member pressed."""
+    scene = canvas.scene
+    scene.clearSelection()
+    for sid in _region(canvas, rid).members:
+        scene.node_items[sid].setSelected(True)
+
+
+# ---------------------------------------------------------------------------
+# The locked node page
+# ---------------------------------------------------------------------------
+
+
+def test_locked_state_panel_disables_fields_but_not_roles(canvas):
+    canvas.select_state(m("hub"))
+    panel = canvas.param_panel
+    assert panel.shown_state is _state(canvas, m("hub"))
+    assert panel.is_locked
+    assert not panel.node_type_combo.isEnabled()
+    assert not panel.param_form.widget("zone").isEnabled()
+    assert panel.param_form.override_button("zone") is not None
+    assert not panel.param_form.override_button("zone").isChecked()
+    # roles are the bot's: hub is neither, so both boxes are live
+    assert panel.initial_check.isEnabled()
+    assert panel.recovery_check.isEnabled()
+
+
+def test_an_external_state_panel_is_not_locked(canvas):
+    canvas.select_state("state_1")
+    panel = canvas.param_panel
+    assert not panel.is_locked
+    assert panel.node_type_combo.isEnabled()
+    assert panel.param_form.override_button("to_zone") is None
+
+
+def test_override_unlocks_one_field_and_reset_removes_it(canvas):
+    canvas.select_state(m("hub"))
+    panel = canvas.param_panel
+    source = _region(canvas).source
+
+    panel.param_form.override_button("zone").setChecked(True)
+    assert source.param_overrides == {"hub": {"zone": "WizardCity/Hub"}}
+    assert panel.shown_state is _state(canvas, m("hub")), "the page is reloaded, not replaced"
+    assert panel.param_form.widget("zone").isEnabled()
+    assert canvas.can_undo()
+
+    panel.param_form.widget("zone").setText("Mooshu/Hub")
+    assert _state(canvas, m("hub")).params["zone"] == "Mooshu/Hub"
+    assert source.param_overrides["hub"]["zone"] == "Mooshu/Hub"
+
+    panel.param_form.override_button("zone").setChecked(False)
+    assert source.param_overrides == {}
+    assert _state(canvas, m("hub")).params["zone"] == "WizardCity/Hub", "re-resolved from the library"
+    assert not panel.param_form.widget("zone").isEnabled()
+
+
+def test_a_role_can_move_onto_a_locked_member(canvas):
+    canvas.select_state(m("hub"))
+    canvas.param_panel.request_recovery_role()
+    assert canvas.scene.config.recovery_state == m("hub")
+
+
+# ---------------------------------------------------------------------------
+# The region page
+# ---------------------------------------------------------------------------
+
+
+def test_selecting_a_whole_region_shows_the_region_page(canvas):
+    _select_region(canvas)
+    panel = canvas.param_panel
+    assert panel.shown_region is _region(canvas)
+    assert panel.shown_state is None
+    assert panel.region_label_edit.text() == "Sync players"
+    assert panel.region_color_row.key == 2
+
+
+def test_an_ordinary_region_gets_the_page_too(canvas):
+    _select_region(canvas, "aabbccdd")
+    panel = canvas.param_panel
+    assert panel.shown_region is _region(canvas, "aabbccdd")
+    assert panel.region_label_edit.text() == "Farm"
+    assert not panel._region_link_box.isVisibleTo(panel)
+
+
+def test_region_page_shows_inputs_and_writes_them_back(canvas):
+    _select_region(canvas)
+    panel = canvas.param_panel
+    world = panel.region_inputs_form.widget("world")
+    assert isinstance(world, QLineEdit)
+    assert world.text() == "", "unset: the definition's value stands"
+    world.setText("Mooshu")
+    assert _region(canvas).source.inputs == {"world": "Mooshu"}
+
+
+def test_input_change_re_resolves_bound_params(canvas):
+    _select_region(canvas)
+    canvas.param_panel.region_inputs_form.widget("world").setText("Mooshu")
+    assert _state(canvas, m("go_to_world")).params["world"] == "Mooshu"
+    assert _state(canvas, m("hub")).params["zone"] == "Mooshu"
+    assert _state(canvas, m("tp_b")).params["target_zone"] == "WizardCity/Hub", "not bound; unchanged"
+
+
+def test_an_override_beats_an_input_on_the_region_page(canvas):
+    _region(canvas).source.param_overrides["hub"] = {"zone": "Elsewhere/Hub"}
+    _select_region(canvas)
+    canvas.param_panel.region_inputs_form.widget("world").setText("Mooshu")
+    assert _state(canvas, m("go_to_world")).params["world"] == "Mooshu"
+    assert _state(canvas, m("hub")).params["zone"] == "Elsewhere/Hub"
+
+
+def test_region_page_lists_overrides_and_reset_clears_them(canvas):
+    _region(canvas).source.param_overrides["hub"] = {"zone": "Elsewhere/Hub"}
+    _select_region(canvas)
+    panel = canvas.param_panel
+    assert panel._region_overrides_body.isVisibleTo(panel)
+    panel.override_toggled.emit(m("hub"), "zone", False)
+    assert _region(canvas).source.param_overrides == {}
+    assert _state(canvas, m("hub")).params["zone"] == "WizardCity/Hub"
+    assert panel.shown_region is _region(canvas)
+    assert not panel._region_overrides_body.isVisibleTo(panel)
+
+
+def test_region_label_edit_renames_the_pill(canvas):
+    _select_region(canvas)
+    canvas.param_panel.region_label_edit.setText("Regroup")
+    assert _region(canvas).label == "Regroup"
+    assert canvas.scene.region_items[REGION]._label == "Regroup"
+
+
+def test_region_colour_change_is_one_undo_step(canvas):
+    _select_region(canvas)
+    row = canvas.param_panel.region_color_row
+    assert isinstance(row, _RegionColorRow)
+    row._on_clicked(5)
+    assert _region(canvas).color == 5
+    assert canvas.can_undo()
+    canvas.undo()
+    assert _region(canvas).color == 2
+
+
+def test_region_page_reports_the_held_status(canvas):
+    canvas.set_compose_report(ComposeReport({REGION: RegionStatus(Origin.USER, "held", ["the update removes 'x'"], 3)}))
+    _select_region(canvas)
+    panel = canvas.param_panel
+    assert "library version 3" in panel._region_version.text()
+    assert "in your library" in panel._region_version.text()
+    assert panel._region_status.isVisibleTo(panel)
+    assert "removes 'x'" in panel._region_status.text()
+
+
+def test_detach_from_the_region_page(canvas):
+    _select_region(canvas)
+    canvas.param_panel.detach_requested.emit(REGION)
+    assert _region(canvas).source is None
+    assert not any(canvas.scene.is_locked(m(loc)) for loc in LOCALS)
+    assert canvas.param_panel.shown_region is _region(canvas), "the page stays up, now as an ordinary region"

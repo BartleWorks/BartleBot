@@ -195,6 +195,7 @@ class AppController(QObject):
         w.bot_canvas.stop_button.clicked.connect(self._stop_bot)
         w.bot_canvas.save_done.connect(self._save_bot)
         w.bot_canvas.set_clients_getter(lambda: self._client_manager.clients)
+        w.bot_canvas.set_subgraph_library(self._subgraph_library)
         w.left_sidebar.set_clients_getter(lambda: self._client_manager.clients)
 
         def _zone_getter() -> list[str]:

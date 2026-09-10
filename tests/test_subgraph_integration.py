@@ -348,22 +348,24 @@ def test_setup_and_close_clear_the_report(harness, library, bot_file):
 
 
 def test_flush_regions_keeps_single_member_linked_region(qapp, library, bot_file):
-    from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
+    """Driven on the manager directly: since Stage 3 a locked member cannot be deleted
+    from the scene, so the states are dropped from the config by hand, the way a
+    definition update that removes members reaches ``flush_regions``."""
+    from PyQt6.QtWidgets import QGraphicsScene  # noqa: PLC0415
 
-    canvas = BotCanvas()
+    from bartlebot.gui.canvas.region_manager import RegionManager  # noqa: PLC0415
+
     config = BotConfig.load(bot_file)
-    canvas.setup(config)
-    canvas.enter_edit_mode()
-    scene = canvas.scene
+    manager = RegionManager(QGraphicsScene(), config, {}, lambda _desc: None, lambda: None)
     members = list(config.regions[0].members)
-    for sid in members[1:]:
-        scene.delete_state(sid, confirm=False)
-    assert [r.id for r in canvas.config.regions if r.source is not None] == [REGION]
-    assert canvas.config.regions[0].members == members[:1]
+    config.states = [st for st in config.states if st.id not in members[1:]]
+    manager.flush_regions()
+    assert [r.id for r in config.regions if r.source is not None] == [REGION]
+    assert config.regions[0].members == members[:1]
     # the ordinary region still goes when it falls below two members
-    scene.delete_state("state_2", confirm=False)
-    assert [r.id for r in canvas.config.regions] == [REGION]
-    canvas.prepare_for_shutdown()
+    config.states = [st for st in config.states if st.id != "state_2"]
+    manager.flush_regions()
+    assert [r.id for r in config.regions] == [REGION]
 
 
 # ---------------------------------------------------------------------------

@@ -12,7 +12,7 @@ below says which stage implements it, and the table is updated as they merge.
 | 0 | #54 | this document, the Epic decomposition | done |
 | 1 | #55 | schema, two-root store, pure composition — nothing calls it | done |
 | 2 | #56 | compose on open and before run; snapshot on save; validation flags | done |
-| 3 | #57 | editor read side: locking, group drag, pill state, region page, detach, copy/paste | not started |
+| 3 | #57 | editor read side: locking, group drag, pill state, region page, detach, copy/paste | done |
 | 4 | #58 | authoring: save-region-as, edit/push/discard, inputs, node-browser tab, nesting | not started |
 
 Extracting the library's repeated regions ("Sync players" and its kin) into shipped
@@ -110,11 +110,10 @@ path undo takes, and the report through `BotCanvas.set_compose_report`, which fe
 validation banner. Composition raising is a bug, not a library problem, so `_compose`
 logs it and opens the file's snapshot rather than refusing the bot.
 
-**Stage 2 limitation, closed by Stage 3:** nothing is locked yet. A user can delete a
-member of a linked region or edit its params in place, and the next compose on open or
-run puts the definition's version back. `flush_regions` already leaves a linked region
-alone when that takes it below two members, so the region itself survives the round
-trip.
+Since Stage 3 the editor locks an instance's members (see *Authoring*), so the only
+edits that reach a member outside an override are the ones the next compose would
+make anyway. `flush_regions` leaves a linked region alone when a definition update
+takes it below two members, so the region itself survives the round trip.
 
 ## A member's params come from three levels
 
@@ -212,6 +211,18 @@ Three rules that fall out of it:
   instance is wired in. The one lock query is `EditScene.is_locked(state_id)`; nothing
   keeps a second flag, so undo needs no lock bookkeeping and turning the query off
   restores today's editor exactly.
+
+  What reads it (Stage 3): pressing a locked member selects the whole instance, so a
+  drag moves the group and a same-place release puts the group back (Qt narrows a
+  click inside a multi-selection to the clicked item, which is right for ordinary
+  nodes and wrong for a unit). `Delete` skips locked members, and a selection that is
+  exactly one instance offers *Remove Subgraph Instance…* instead. The node menu
+  drops *Delete State*, the port inserts that would split an internal edge, and the
+  add/remove entries for a locked region; the region menu drops *Add State Here* and
+  *Remove Region* in favour of *Detach from Library* and *Remove Subgraph Instance…*.
+  `RegionManager.add_to_region` / `remove_from_region` are no-ops on a locked region.
+  A locked node draws a small padlock by its type sub-label; the tooltip names the
+  subgraph.
 - **Pushing a shipped definition makes a user override**, not a fork, keyed by the same
   id — `SHIPPED_OVERRIDE`, like a shipped strategy edited in the dialog. Every bot that
   links the id follows the override. "Revert to default" for one is the same delete
@@ -219,6 +230,35 @@ Three rules that fall out of it:
 - **The editing state is not in the bot config**, so it is not undoable. Done, Save,
   close and open all resolve an open edit first with a synchronous Save / Discard /
   Cancel prompt.
+
+## The properties panel on an instance
+
+Clicking one **member** shows that member's page with the definition's fields — label,
+type, notes and every param — disabled, and the roles enabled, because the roles are the
+bot's. Each param row carries an **Override** toggle: on records the current value in
+`source.param_overrides` and unlocks that one field, so the next edit lands in both
+`state.params` and the override; off drops the override and re-resolves the member from
+the library, so the definition's value shows again. Recording the *current* value first,
+rather than opening an empty field, means nothing visible changes until the user types —
+an override is a diff from the definition, and the diff starts at zero.
+
+Clicking the **pill** selects the whole region and shows the **region page**. Every
+region gets it (label and colour, and the same goes for an ordinary region — one surface,
+not two); a linked one adds the definition's name and description, `Version N` with the
+library's version beside it when the update is held, where the definition comes from,
+the **inputs** form, the **override list** with a Reset per entry, and **Detach from
+library**. The inputs form is a `_DynamicParamForm` built from the definition's
+`SubgraphInput`s; a change writes only the inputs the user touched into `source.inputs`
+— a widget always holds *some* value, and writing every key would turn each untouched
+input into an empty override of the definition — and then re-resolves every direct
+member's params in place through `reresolve_member_params`, under the same debounced
+undo step a param edit takes. A colour change is one immediate undo step, as a node-type
+switch is.
+
+Which page a whole-instance selection shows is decided by where the press landed:
+`EditScene.pressed_member_id` is the locked member under the last press, or `None` for
+a pill click. Both leave the same selection behind, and the selection alone cannot say
+which the user meant.
 
 ## Copying an instance makes a new instance
 
@@ -238,7 +278,7 @@ states — the same thing copy does with any partial selection today.
 | **Autosave and crash recovery** | write and read the in-memory config, which is the composed one; recovery composes again on load like open does |
 | **Save As** | mints a new bot id only; member ids and every `source` are untouched, so the fork still follows the same definitions |
 | **Validation banner** | `cycle` is an error line and disables Run; `held`, `missing`, `invalid` and a stale override are warning lines |
-| **Region pill** | shows linked / outdated (`held`) / missing (`missing`, `invalid`, `cycle`) / editing |
+| **Region pill** | a two-squares glyph marks an instance; its dot is the state — none for linked, warning for outdated (`held`), error for missing (`missing`, `invalid`, `cycle`), accent while editing. `EditScene.refresh_region_states(report)` sets it from the last compose report; a linked region the report does not mention reads as linked |
 | **Combat assignments** | keyed by member id, so they survive updates; re-keyed once on conversion |
 | **`flush_regions`** | never auto-deletes a region with `source`, even with one member |
 | **Nesting** | an instance inserted while editing another becomes an inner linked region; compose recurses; push carries it in the definition's `regions` |

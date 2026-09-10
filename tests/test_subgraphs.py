@@ -29,17 +29,21 @@ from bartlebot.subgraphs import (
     MAX_DEPTH,
     ComposeReport,
     SubgraphCycleError,
+    clear_param_override,
     compose_bot,
     convert_region_to_instance,
     detach,
     external_edges,
     extract_definition,
+    linked_region_of,
     linked_regions,
     local_id,
     materialize_region,
     member_id,
     push_back,
+    reresolve_member_params,
     resolve_member_params,
+    set_param_override,
 )
 
 _REPO = Path(__file__).parent.parent
@@ -697,3 +701,54 @@ def test_detach_keeps_ids(bot):
     assert [s.id for s in bot.states] == ids
     assert linked_regions(bot) == []
     assert bot.regions[0].model_dump(exclude_none=True).keys() == {"id", "label", "members", "color"}
+
+
+# ---------------------------------------------------------------------------
+# The editor's helpers (Stage 3): which instance owns a state, and moving params
+# ---------------------------------------------------------------------------
+
+
+def test_linked_region_of_answers_the_outermost_instance(library):
+    library.save(_outer_definition())
+    source = SubgraphSource(subgraph_id="outer", version=1)
+    mat = materialize_region("R", source, library.get("outer"), library)
+    config = BotConfig(
+        id="b",
+        name="b",
+        initial=mat.member_ids[0],
+        recovery_state=mat.member_ids[0],
+        states=mat.states,
+        transitions=mat.transitions,
+        regions=[RegionModel(id="R", label="Outer", members=mat.member_ids, color=1, source=source), *mat.regions],
+    )
+    nested_hub = "sg_R_sg_in1_hub"
+    assert linked_region_of(config, nested_hub).id == "R", "the inner region composes through the outer"
+    assert linked_region_of(config, "sg_R_start").id == "R"
+    assert linked_region_of(config, "nope") is None
+    # detaching the outer leaves the inner as the outermost holder
+    detach(config, "R")
+    assert linked_region_of(config, nested_hub).id == member_id("R", "in1")
+
+
+def test_reresolve_member_params_applies_inputs_and_overrides_in_place(bot, library):
+    region = bot.regions[0]
+    region.source.inputs["world"] = "Mooshu"
+    region.source.param_overrides["hub"] = {"zone": "Elsewhere/Hub"}
+    reresolve_member_params(bot, region, library.get(SYNC_ID))
+    by_id = {s.id: s for s in bot.states}
+    assert by_id[m("go_to_world")].params["world"] == "Mooshu"
+    assert by_id[m("hub")].params["zone"] == "Elsewhere/Hub"
+    assert by_id[m("tp_b")].params["target_zone"] == "WizardCity/Hub"
+    assert by_id["state_1"].params == {"to_zone": "X/Y"}, "an external state is not the instance's"
+
+
+def test_set_and_clear_param_override_keep_the_map_tidy():
+    source = SubgraphSource(subgraph_id=SYNC_ID, version=1)
+    set_param_override(source, "hub", "zone", "A")
+    set_param_override(source, "hub", "other", 2)
+    assert source.param_overrides == {"hub": {"zone": "A", "other": 2}}
+    clear_param_override(source, "hub", "zone")
+    assert source.param_overrides == {"hub": {"other": 2}}
+    clear_param_override(source, "hub", "other")
+    assert source.param_overrides == {}, "an emptied entry is dropped so nothing stale is written"
+    clear_param_override(source, "hub", "zone")  # a miss is not an error
