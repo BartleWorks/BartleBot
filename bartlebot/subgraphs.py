@@ -506,6 +506,16 @@ def convert_region_to_instance(
     """
     region = _region_by_id(config, region_id)
     id_map = {m: member_id(region_id, m) for m in region.members}
+    rename_states(config, id_map)
+    for r in config.regions:
+        if r.id != region_id and r.source is not None and any(m in id_map.values() for m in r.members):
+            r.id = member_id(region_id, r.id)
+    region.source = source.model_copy(deep=True)
+    return id_map
+
+
+def rename_states(config: BotConfig, id_map: dict[str, str]) -> None:
+    """Rewrite state ids everywhere they appear: states, transitions, roles, region members. In place."""
     for s in config.states:
         if s.id in id_map:
             s.id = id_map[s.id]
@@ -516,10 +526,79 @@ def convert_region_to_instance(
     config.recovery_state = id_map.get(config.recovery_state, config.recovery_state)
     for r in config.regions:
         r.members = [id_map.get(m, m) for m in r.members]
-        if r.id != region_id and r.source is not None and any(m in id_map.values() for m in r.members):
-            r.id = member_id(region_id, r.id)
-    region.source = source.model_copy(deep=True)
-    return id_map
+
+
+def added_member_ids(region: RegionModel) -> dict[str, str]:
+    """``{plain id: derived id}`` for members added while editing, which do not yet carry the region's prefix.
+
+    Saving to the library rewrites them to the derived form first, so the compose
+    that follows finds them in place -- an external edge to a new member would
+    otherwise read as the update removing it, and hold the region.
+    """
+    return {m: member_id(region.id, m) for m in region.members if local_id(region.id, m) is None}
+
+
+def contains_subgraph(defn: SubgraphDefinition, subgraph_id: str, library: SubgraphLibrary) -> bool:
+    """Whether ``defn`` nests ``subgraph_id``, transitively through the library.
+
+    The check a push makes before writing: a definition that contains its own id
+    would compose forever, and the library must never hold one.
+    """
+    seen: set[str] = set()
+    stack = [defn]
+    while stack:
+        d = stack.pop()
+        for r in d.regions:
+            assert r.source is not None
+            inner_id = r.source.subgraph_id
+            if inner_id == subgraph_id:
+                return True
+            if inner_id in seen:
+                continue
+            seen.add(inner_id)
+            inner = library.get(inner_id)
+            if inner is not None:
+                stack.append(inner)
+    return False
+
+
+def definition_values(config: BotConfig, region: RegionModel, defn: SubgraphDefinition) -> None:
+    """Rewrite every direct member's params to the definition's own values. In place.
+
+    Editing shows what gets pushed: inputs and overrides are the *instance's*, so
+    while the region is being edited they are set aside and the definition's
+    values are what the user sees and changes. They are re-applied by the compose
+    that follows a save or a discard.
+    """
+    def_states = {s.id: s for s in defn.states}
+    for state in config.states:
+        if state.id not in region.members:
+            continue
+        local = local_id(region.id, state.id)
+        def_state = def_states.get(local) if local is not None else None
+        if def_state is not None:
+            state.params = dict(def_state.params)
+
+
+def reassign_orphaned_roles(config: BotConfig) -> None:
+    """Move ``initial`` / ``recovery_state`` onto the first state when their holder is gone."""
+    if not config.states:
+        return
+    ids = {s.id for s in config.states}
+    fallback = config.states[0].id
+    if config.initial not in ids:
+        config.initial = fallback
+    if config.recovery_state not in ids:
+        config.recovery_state = fallback
+
+
+def drop_states(config: BotConfig, state_ids: set[str]) -> None:
+    """Remove states, their edges and their region memberships. In place; roles are reassigned."""
+    config.states = [s for s in config.states if s.id not in state_ids]
+    config.transitions = [t for t in config.transitions if t.source not in state_ids and t.dest not in state_ids]
+    for r in config.regions:
+        r.members = [m for m in r.members if m not in state_ids]
+    reassign_orphaned_roles(config)
 
 
 def push_back(config: BotConfig, region_id: str, previous: SubgraphDefinition) -> tuple[SubgraphDefinition, list[str]]:

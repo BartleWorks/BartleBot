@@ -38,7 +38,7 @@ from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
-from bartlebot.subgraph_store import SubgraphLibrary
+from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary
 from bartlebot.subgraphs import (
     ComposeReport,
     SubgraphCycleError,
@@ -367,6 +367,12 @@ class EditScene(QGraphicsScene):
     about_to_change = pyqtSignal(str)  # emitted BEFORE config is mutated; carries description
     focus_region_requested = pyqtSignal(str)
     node_type_chosen = pyqtSignal(str, object)  # (node_type, QPointF canvas position)
+    # Subgraph authoring verbs the scene's menus offer but the canvas performs, since
+    # the library and the editing state live there: (region id) for the first two,
+    # (state id, param key) for the third.
+    save_region_as_subgraph_requested = pyqtSignal(str)
+    edit_subgraph_requested = pyqtSignal(str)
+    expose_input_requested = pyqtSignal(str, str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -692,6 +698,19 @@ class EditScene(QGraphicsScene):
         """The linked region whose members are unlocked for editing, or None."""
         return self._editing_region_id
 
+    def set_editing_region(self, region_id: str | None) -> None:
+        """Unlock one linked region for editing (or none), and redraw what the lock query feeds."""
+        self._editing_region_id = region_id
+        self.refresh_locks()
+        self.refresh_region_states(None)
+
+    def editing_members(self) -> list[str]:
+        """Members of the region being edited, or an empty list."""
+        if self._config is None or self._editing_region_id is None:
+            return []
+        region = next((r for r in self._config.regions if r.id == self._editing_region_id), None)
+        return list(region.members) if region is not None else []
+
     def linked_region_of(self, state_id: str) -> RegionModel | None:
         """The outermost linked region ``state_id`` belongs to, or None."""
         if self._config is None:
@@ -777,6 +796,66 @@ class EditScene(QGraphicsScene):
             if isinstance(item, NodeItem):
                 return item
         return None
+
+    def insert_subgraph_instance(self, subgraph_id: str, pos: QPointF, into_region: str | None = None) -> str | None:
+        """Place a new instance of ``subgraph_id`` with its anchor at ``pos``. Returns the region id.
+
+        ``pos`` is the item position the other insert paths use (top-left of a node),
+        so the anchor is stored in the model convention: left edge, vertical centre.
+        Inputs are prefilled from their defaults. With ``into_region`` the members
+        also join that region -- what makes an instance inserted while editing
+        another subgraph a nested one, which push carries into the definition.
+
+        The scene is rebuilt from the config, as paste does, since a region item
+        and its composed edges are simpler to build once than to grow.
+        """
+        if self._config is None or self._subgraph_library is None:
+            return None
+        defn = self._subgraph_library.get(subgraph_id)
+        if defn is None:
+            logger.warning("Cannot insert subgraph %s: not in the library", subgraph_id)
+            return None
+        config = self._config
+        region_id = uuid.uuid4().hex[:8]
+        source = SubgraphSource(
+            subgraph_id=subgraph_id,
+            version=defn.version,
+            inputs={i.name: i.default for i in defn.inputs if i.default is not None},
+            anchor={"x": pos.x(), "y": pos.y() + NODE_H / 2},
+        )
+        try:
+            mat = materialize_region(region_id, source, defn, self._subgraph_library)
+        except (SubgraphCycleError, LookupError) as exc:
+            logger.warning("Cannot insert subgraph %s: %s", subgraph_id, exc)
+            return None
+        self._pre_edit("Insert Subgraph")
+        self._in_structural_edit = True
+        try:
+            config.states.extend(mat.states)
+            config.transitions.extend(mat.transitions)
+            color = (len(config.regions) % len(THEME.REGION_PALETTE)) + 1
+            config.regions.append(
+                RegionModel(id=region_id, label=defn.name, members=list(mat.member_ids), color=color, source=source)
+            )
+            config.regions.extend(mat.regions)
+            if into_region is not None:
+                outer = next((r for r in config.regions if r.id == into_region), None)
+                if outer is not None:
+                    outer.members.extend(m for m in mat.member_ids if m not in outer.members)
+            self.setup(config)
+            self.clearSelection()
+            for mid in mat.member_ids:
+                node = self._node_items.get(mid)
+                if node is not None:
+                    node.setSelected(True)
+            view = self.views()[0] if self.views() else None
+            first = self._node_items.get(mat.member_ids[0]) if mat.member_ids else None
+            if view is not None and first is not None:
+                view.smooth_pan_if_offscreen(first)
+        finally:
+            self._in_structural_edit = False
+        self.graph_changed.emit()
+        return region_id
 
     def remove_instance(self, region_id: str, *, confirm: bool = True) -> bool:
         """Delete a linked region and every one of its members, nested instances included.
@@ -870,14 +949,20 @@ class EditScene(QGraphicsScene):
         from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
 
         view = self.views()[0] if self.views() else None
-        dlg = NodeBrowserDialog(view, mode="add")
+        dlg = NodeBrowserDialog(view, mode="add", subgraph_library=self._subgraph_library)
         if dlg.exec() and dlg.selected_node_type:
             self.node_type_chosen.emit(dlg.selected_node_type, pos)
 
     def create_state_at(self, node_type: str, pos: QPointF) -> str | None:
-        """Instantiate a state of the given node_type at pos. Called after dialog confirmation."""
+        """Instantiate a state of the given node_type at pos. Called after dialog confirmation.
+
+        A ``subgraph:<id>`` key from the node browser's Subgraphs tab inserts an
+        instance instead, and returns its region id.
+        """
         if self._config is None:
             return None
+        if node_type.startswith(SUBGRAPH_KEY_PREFIX):
+            return self.insert_subgraph_instance(node_type[len(SUBGRAPH_KEY_PREFIX) :], pos)
         self._pre_edit("Create Node")
         state_id = _unique_id([s.id for s in self._config.states])
         default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
@@ -1175,6 +1260,15 @@ class EditScene(QGraphicsScene):
         act_help = QAction("Node Help", menu)
         act_help.triggered.connect(lambda _=None, s=sid: self._open_node_help(s))
         menu.addAction(act_help)
+        if sid in self.editing_members():
+            state = next((st for st in self._config.states if st.id == sid), None) if self._config else None
+            schema = NODE_PARAM_SCHEMAS.get(state.node_type, []) if state is not None else []
+            if schema:
+                sub = menu.addMenu("Expose as Input")
+                for field in schema:
+                    act_x = QAction(field.label, sub)
+                    act_x.triggered.connect(lambda _=None, s=sid, k=field.key: self.expose_input_requested.emit(s, k))
+                    sub.addAction(act_x)
         # Determine target nodes: all selected if the clicked node is part of a multi-selection
         selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
         if len(selected_nodes) >= 2 and item in selected_nodes:
@@ -1227,9 +1321,13 @@ class EditScene(QGraphicsScene):
                 if self._config is None:
                     return
                 view = self.views()[0] if self.views() else None
-                dlg = NodeBrowserDialog(view, mode="add")
+                dlg = NodeBrowserDialog(view, mode="add", subgraph_library=self._subgraph_library)
                 if dlg.exec() and dlg.selected_node_type:
-                    state_id = self.create_state_at(dlg.selected_node_type, pos)
+                    chosen = dlg.selected_node_type
+                    if chosen.startswith(SUBGRAPH_KEY_PREFIX):
+                        self.insert_subgraph_instance(chosen[len(SUBGRAPH_KEY_PREFIX) :], pos, into_region=rid)
+                        return
+                    state_id = self.create_state_at(chosen, pos)
                     if state_id:
                         self._region_manager.add_to_region([state_id], rid)
 
@@ -1245,13 +1343,22 @@ class EditScene(QGraphicsScene):
         menu.addAction(act_rc)
         if locked:
             menu.addSeparator()
+            act_edit = QAction("Edit Subgraph", menu)
+            act_edit.triggered.connect(lambda: self.edit_subgraph_requested.emit(rid))
+            menu.addAction(act_edit)
             act_detach = QAction("Detach from Library", menu)
             act_detach.triggered.connect(lambda: self.detach_region(rid))
             menu.addAction(act_detach)
             act_del = QAction("Remove Subgraph Instance\u2026", menu)
             act_del.triggered.connect(lambda: self.remove_instance(rid))
             menu.addAction(act_del)
+        elif rid == self._editing_region_id:
+            pass  # the crumb's Save / Discard are the only verbs on the region being edited
         else:
+            menu.addSeparator()
+            act_save = QAction("Save Region as Reusable Subgraph\u2026", menu)
+            act_save.triggered.connect(lambda: self.save_region_as_subgraph_requested.emit(rid))
+            menu.addAction(act_save)
             act_del = QAction("Remove Region", menu)
             act_del.triggered.connect(lambda: self._region_manager.delete_region(rid))
             menu.addAction(act_del)

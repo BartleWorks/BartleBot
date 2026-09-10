@@ -459,6 +459,8 @@ class AppController(QObject):
     # ------------------------------------------------------------------
 
     def _new_bot(self) -> None:
+        if not self._window.bot_canvas.resolve_subgraph_edit():
+            return
         self._delete_autosave()
         self._has_unsaved_changes = False
         config = BotConfig(
@@ -481,6 +483,8 @@ class AppController(QObject):
         self._window.set_start_enabled(self._start_enabled())
 
     def _open_bot(self, path: str | None = None) -> None:
+        if not self._window.bot_canvas.resolve_subgraph_edit():
+            return
         if path is None:
             path, _ = QFileDialog.getOpenFileName(self._window, "Open Bot File", "", "Bot Files (*.json)")
         if not path:
@@ -509,6 +513,8 @@ class AppController(QObject):
 
     def _close_bot(self) -> None:
         if self._loaded_config is None:
+            return
+        if not self._window.bot_canvas.resolve_subgraph_edit():
             return
         if self._has_unsaved_changes:
             reply = QMessageBox.question(

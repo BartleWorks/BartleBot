@@ -398,6 +398,15 @@ Two bars, and which one a thing belongs to is decided by what it is *about*:
 | **Bar A** (`game_view_panel.py`) | the game windows | the clients: how many are hooked, the launch profile, the node they are being driven through |
 | **Bar B** (`canvas/bot_header.py`) | the bot's graph | the bot: name, version, file, author, tags, the run buttons, and the run status |
 
+The **properties panel** (`canvas/param_panel.py`) is a page per selection: a node, an
+edge, or — since the subgraph work — a *region*, reached by selecting a whole region's
+members (the pill click). The region page owns the region's label and colour for every
+region and the instance's inputs, overrides and link for a linked one; a locked member's
+node page owns only its roles and its overrides. The **editing crumb**
+(`canvas/subgraph_widgets.EditSubgraphCrumb`) is the canvas's, pinned under the focus
+crumb, and its Save and Discard are the only verbs on a region being edited — the
+region's menu offers none while the edit is open. `docs/SUBGRAPHS.md` has the flow.
+
 Bar B is a three-column grid grouped by *subject*: everything about the bot on the
 left, the run controls in the middle with the clock and the run state either side of
 them, and the tools that act on the *view* — fit, failure-edge toggle — out on the

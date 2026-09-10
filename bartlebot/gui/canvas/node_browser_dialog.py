@@ -37,13 +37,33 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.bot.schema import SubgraphDefinition
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY
+from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.store_roots import Origin
+from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, count_subgraph_uses
+
+_ORIGIN_CHIP = {
+    Origin.SHIPPED: "Shipped",
+    Origin.SHIPPED_OVERRIDE: "Your copy",
+    Origin.USER: "Your library",
+    Origin.MISSING: "Missing",
+}
+
+
+def subgraph_key(subgraph_id: str) -> str:
+    return f"{SUBGRAPH_KEY_PREFIX}{subgraph_id}"
+
+
+def is_subgraph_key(key: str) -> bool:
+    return key.startswith(SUBGRAPH_KEY_PREFIX)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -115,9 +135,9 @@ class _DetailPanel(ThemedMixin, QScrollArea):
 
         self._node_type: str = ""
         self._layout: QVBoxLayout | None = None
-        # The arguments of the last show_node, replayed to restyle. See
-        # apply_theme_styles.
-        self._shown: tuple[str, NodeSpec, object, object] | None = None
+        # The last show_* call, replayed to restyle: ("node", args) or
+        # ("subgraph", args). See apply_theme_styles.
+        self._shown: tuple[str, tuple] | None = None
         self._pending_scroll = None
         self._theme_timer = QTimer(self)
         self._theme_timer.setSingleShot(True)
@@ -163,7 +183,11 @@ class _DetailPanel(ThemedMixin, QScrollArea):
             self.setWidget(placeholder)
             return
         offset = self.verticalScrollBar().value()
-        self._build(*self._shown)
+        kind, args = self._shown
+        if kind == "subgraph":
+            self._build_subgraph(*args)
+        else:
+            self._build(*args)
         self._restore_scroll(offset)
 
     def _restore_scroll(self, offset: int) -> None:
@@ -197,11 +221,81 @@ class _DetailPanel(ThemedMixin, QScrollArea):
 
     def show_node(self, node_type: str, spec: NodeSpec, on_see_also=None, on_favorite_toggled=None) -> None:
         """Replace the scroll area content with documentation for node_type."""
-        self._shown = (node_type, spec, on_see_also, on_favorite_toggled)
+        self._shown = ("node", (node_type, spec, on_see_also, on_favorite_toggled))
         self._clear_pending_scroll()
         self._build(node_type, spec, on_see_also, on_favorite_toggled)
         # Scroll to top when switching nodes
         QTimer.singleShot(0, lambda: self.verticalScrollBar().setValue(0))
+
+    def show_subgraph(self, defn: SubgraphDefinition, origin: Origin, used_by: int) -> None:
+        """Replace the scroll area content with a library subgraph's summary."""
+        self._shown = ("subgraph", (defn, origin, used_by))
+        self._clear_pending_scroll()
+        self._build_subgraph(defn, origin, used_by)
+        QTimer.singleShot(0, lambda: self.verticalScrollBar().setValue(0))
+
+    def _build_subgraph(self, defn: SubgraphDefinition, origin: Origin, used_by: int) -> None:
+        self._node_type = subgraph_key(defn.id)
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(16, 12, 16, 16)
+        layout.setSpacing(10)
+        self._layout = layout
+        self.setWidget(container)
+
+        title_row = QHBoxLayout()
+        title_label = QLabel(defn.name)
+        title_label.setFont(QFont(THEME.font_ui_family, 16, QFont.Weight.Bold))
+        title_label.setStyleSheet(f"color: {THEME.text};")
+        title_row.addWidget(title_label, 1)
+        title_row.addWidget(_Chip("Subgraph", THEME.accent, THEME.chip_text))
+        title_row.addWidget(_Chip(_ORIGIN_CHIP.get(origin, origin.value), THEME.border, THEME.text))
+        layout.addLayout(title_row)
+
+        key_label = QLabel(f"{defn.id} \u00b7 version {defn.version}")
+        key_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+        layout.addWidget(key_label)
+
+        if defn.description:
+            desc = QLabel(defn.description)
+            desc.setWordWrap(True)
+            desc.setStyleSheet(f"color: {THEME.text}; font-size: 11px;")
+            layout.addWidget(desc)
+
+        n = len(defn.states)
+        used = f"Used by {used_by} bot{'s' if used_by != 1 else ''}"
+        summary = QLabel(
+            f"{n} state{'s' if n != 1 else ''}, {len(defn.transitions)} internal transitions \u00b7 {used}"
+        )
+        summary.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+        layout.addWidget(summary)
+
+        layout.addWidget(_make_separator())
+        inputs_hdr = QLabel("Inputs")
+        inputs_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+        inputs_hdr.setStyleSheet(f"color: {THEME.text};")
+        layout.addWidget(inputs_hdr)
+        if defn.inputs:
+            fields = [
+                ParamField(key=i.name, type=i.type, label=i.label or i.name, help=i.help or "", default=i.default)
+                for i in defn.inputs
+            ]
+            layout.addWidget(self._build_params_table(fields))
+        else:
+            none = QLabel("This subgraph declares no inputs; it works as shipped.")
+            none.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+            layout.addWidget(none)
+
+        layout.addWidget(_make_separator())
+        members_hdr = QLabel("States")
+        members_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+        members_hdr.setStyleSheet(f"color: {THEME.text};")
+        layout.addWidget(members_hdr)
+        for st in defn.states:
+            row = QLabel(f"{st.label or st.id} \u2014 {_humanize(st.node_type)}")
+            row.setStyleSheet(f"color: {THEME.text}; font-size: 10px;")
+            layout.addWidget(row)
+        layout.addStretch()
 
     def _build(self, node_type: str, spec: NodeSpec, on_see_also=None, on_favorite_toggled=None) -> None:
         self._node_type = node_type
@@ -486,6 +580,15 @@ class _NodeListItem(QListWidgetItem):
         return self._node_type
 
 
+class _SubgraphListItem(_NodeListItem):
+    """A library subgraph in the list, keyed ``subgraph:<id>`` and shown by its name."""
+
+    def __init__(self, defn: SubgraphDefinition) -> None:
+        super().__init__(subgraph_key(defn.id))
+        self.setText(defn.name)
+        self.setToolTip(defn.description or defn.name)
+
+
 # ---------------------------------------------------------------------------
 # Main dialog
 # ---------------------------------------------------------------------------
@@ -505,6 +608,11 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
               every tab and in search results. Used by insert-at-output-port,
               where a node that cannot produce the port's return value would
               silently turn every rerouted edge unconditional.
+        subgraph_library: When given (and no ``allowed_node_types`` filter is in
+              force), a Subgraphs tab lists the library's definitions under
+              ``subgraph:<id>`` keys, which ``selected_node_type`` returns as it
+              would a node type. A port insert never offers them: an instance has
+              no single output port to reroute through.
     """
 
     def __init__(
@@ -513,11 +621,14 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         mode: Literal["add", "view"] = "add",
         initial_node_type: str | None = None,
         allowed_node_types: set[str] | None = None,
+        subgraph_library: SubgraphLibrary | None = None,
     ) -> None:
         super().__init__(parent)
         self._mode = mode
         self._selected_node_type: str | None = None
         self._allowed_node_types = allowed_node_types
+        self._library = subgraph_library if allowed_node_types is None else None
+        self._use_counts: dict[str, int] | None = None  # computed on first subgraph selection
 
         self.setWindowTitle("Node Browser" if mode == "view" else "Add Node")
         self.setMinimumSize(860, 520)
@@ -532,6 +643,8 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
             ("Favorites", SettingsManager.instance().favorite_nodes),
             *NODE_CATEGORIES,
         ]
+        if self._library is not None:
+            self._tabs_data.append(("Subgraphs", [subgraph_key(sid) for sid in self._library.ids()]))
 
         # ── Search bar ────────────────────────────────────────────
         self._search = SearchLineEdit("Search nodes…")
@@ -690,6 +803,11 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         """
         self._list.clear()
         for nt in node_types:
+            if is_subgraph_key(nt):
+                defn = self._library.get(nt[len(SUBGRAPH_KEY_PREFIX) :]) if self._library is not None else None
+                if defn is not None:
+                    self._list.addItem(_SubgraphListItem(defn))
+                continue
             if nt not in NODE_SPECS:
                 continue
             if self._allowed_node_types is not None and nt not in self._allowed_node_types:
@@ -729,6 +847,11 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
                 self._empty_label.setText(
                     "No favorites yet — click the star button in a node's detail panel to add one."
                 )
+            elif self._tabs_data[index][0] == "Subgraphs":
+                self._empty_label.setText(
+                    "No subgraphs in the library yet — right-click a region and choose "
+                    "Save Region as Reusable Subgraph."
+                )
             else:
                 self._empty_label.setText("No nodes in this category.")
             self._list_stack.setCurrentIndex(1)
@@ -754,6 +877,11 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         for node_type, spec in NODE_SPECS.items():
             if self._spec_matches(node_type, spec, query):
                 matches.append(node_type)
+        if self._library is not None:
+            for sid in self._library.ids():
+                defn = self._library.get(sid)
+                if defn is not None and (query in defn.name.lower() or query in (defn.description or "").lower()):
+                    matches.append(subgraph_key(sid))
 
         if matches:
             self._populate_list(matches)
@@ -804,6 +932,13 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
 
         if self._mode == "add":
             self._add_btn.setEnabled(True)
+
+        if is_subgraph_key(node_type) and self._library is not None:
+            sid = node_type[len(SUBGRAPH_KEY_PREFIX) :]
+            defn = self._library.get(sid)
+            if defn is not None:
+                self._detail.show_subgraph(defn, self._library.origin(sid), self._used_by(sid))
+            return
 
         spec = NODE_SPECS.get(node_type)
         if spec:
@@ -865,9 +1000,20 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
     # Slot: Add button
     # ------------------------------------------------------------------
 
+    def _used_by(self, subgraph_id: str) -> int:
+        """How many bot files in the library link ``subgraph_id``; the scan runs once per dialog."""
+        if self._use_counts is None:
+            from bartlebot.gui.canvas.bot_canvas import _resolve_bots_dir  # noqa: PLC0415
+
+            configured = SettingsManager.instance().get("canvas", "bot_library_path", default="bots")
+            self._use_counts = count_subgraph_uses(_resolve_bots_dir(configured, project_root()))
+        return self._use_counts.get(subgraph_id, 0)
+
     def _on_add(self) -> None:
         if self._selected_node_type:
-            SettingsManager.instance().add_recently_used_node(self._selected_node_type)
+            # Recent stays node types only: a subgraph is found on its own tab.
+            if not is_subgraph_key(self._selected_node_type):
+                SettingsManager.instance().add_recently_used_node(self._selected_node_type)
             self.accept()
 
     # ------------------------------------------------------------------

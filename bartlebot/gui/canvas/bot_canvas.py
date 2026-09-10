@@ -12,6 +12,7 @@ from collections import Counter
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from uuid import uuid4
 
 from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
@@ -28,6 +29,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidget,
+    QMessageBox,
     QPlainTextEdit,
     QPushButton,
     QScrollArea,
@@ -37,7 +39,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.schema import BotConfig, SubgraphDefinition
+from bartlebot.bot.schema import BotConfig, SubgraphDefinition, SubgraphInput, SubgraphInputBinding
 from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
 from bartlebot.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
@@ -54,6 +56,7 @@ from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel
+from bartlebot.gui.canvas.subgraph_widgets import EditSubgraphCrumb, ExposeInputDialog, SubgraphMetaDialog
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
@@ -62,14 +65,24 @@ from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.tag_picker import TagPickerButton
 from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
 from bartlebot.logging_setup import GUI_ONLY
-from bartlebot.nodes.registry import NODE_SPECS
+from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.strategy_store import rekey_bot_strategy_states
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import (
     ComposeReport,
+    added_member_ids,
     clear_param_override,
+    compose_bot,
+    contains_subgraph,
+    convert_region_to_instance,
+    definition_values,
+    drop_states,
+    extract_definition,
     local_id,
+    push_back,
+    rename_states,
     reresolve_member_params,
     set_param_override,
 )
@@ -862,6 +875,11 @@ class BotCanvas(QWidget):
         # The session's subgraph library, handed in by the controller. Read for the
         # region page and for re-resolving a member's params; never written here.
         self._subgraph_library: SubgraphLibrary | None = None
+        # The linked region being edited in place, and the working copy of its
+        # definition that Expose-as-input writes into. Neither is in the bot config,
+        # so neither is undoable -- docs/SUBGRAPHS.md, *Authoring*.
+        self._editing_region_id: str | None = None
+        self._editing_defn: SubgraphDefinition | None = None
 
         self._tick_timer = QTimer(self)
         self._tick_timer.setInterval(1000)
@@ -1101,6 +1119,12 @@ class BotCanvas(QWidget):
         self._focus_crumb.adjustSize()
         self._focus_crumb.setVisible(False)
 
+        # ── Editing-subgraph crumb — below the focus crumb when both show ────
+        self._edit_crumb = EditSubgraphCrumb(self._view)
+        self._edit_crumb.save_requested.connect(self.save_subgraph_to_library)
+        self._edit_crumb.discard_requested.connect(self.discard_subgraph_edit)
+        self._edit_crumb.setVisible(False)
+
         # ── Keyboard shortcuts ────────────────────────────────────────
         fit_shortcut = QShortcut(QKeySequence("Ctrl+0"), self)
         fit_shortcut.activated.connect(self._view.fit_scene)
@@ -1145,6 +1169,12 @@ class BotCanvas(QWidget):
         self._param_panel.override_toggled.connect(self._on_override_toggled)
         self._param_panel.region_property_changed.connect(self._on_region_property_changed)
         self._param_panel.detach_requested.connect(self._on_detach_requested)
+        self._param_panel.edit_subgraph_requested.connect(self.begin_subgraph_edit)
+        self._param_panel.expose_input_requested.connect(self._on_expose_input_requested)
+        self._param_panel.definition_changed.connect(self._on_definition_changed)
+        self._scene.save_region_as_subgraph_requested.connect(self.save_region_as_subgraph)
+        self._scene.edit_subgraph_requested.connect(self.begin_subgraph_edit)
+        self._scene.expose_input_requested.connect(self._on_expose_input_requested)
         self._scene.selectionChanged.connect(self._on_selection_changed)
         self._scene.focus_region_requested.connect(self.enter_focus_mode)
 
@@ -1177,6 +1207,7 @@ class BotCanvas(QWidget):
         self._failure_edges_btn.setChecked(show_failure)
         self.exit_focus_mode()
         self._close_search()
+        self._end_subgraph_edit()
         self._tab_idx = 0
         self._config = config
         self._compose_report = ComposeReport()
@@ -1210,6 +1241,7 @@ class BotCanvas(QWidget):
         self._refresh_undo_actions()
         self.exit_focus_mode()
         self._close_search()
+        self._end_subgraph_edit()
         self._scene.teardown()
         self._compose_report = ComposeReport()
         self._update_validation_badge()
@@ -1369,6 +1401,10 @@ class BotCanvas(QWidget):
         if hasattr(self, "_focus_crumb"):
             self._focus_crumb.adjustSize()
             self._focus_crumb.move(vx + 8, vy + 8)
+        if hasattr(self, "_edit_crumb"):
+            self._edit_crumb.adjustSize()
+            below = self._focus_crumb.height() + 6 if self._focus_crumb.isVisible() else 0
+            self._edit_crumb.move(vx + 8, vy + 8 + below)
         if hasattr(self, "_focus_frame"):
             self._focus_frame.setGeometry(vx, vy, vw, vh)
 
@@ -1566,11 +1602,15 @@ class BotCanvas(QWidget):
         self.enter_edit_mode()
 
     def _on_done_clicked(self) -> None:
+        if not self.resolve_subgraph_edit():
+            return
         self._apply_mode(BotMode.RUN)
         self.mode_changed.emit(BotMode.RUN)
         self.config_changed.emit()
 
     def _on_save_done_clicked(self) -> None:
+        if not self.resolve_subgraph_edit():
+            return
         self._apply_mode(BotMode.RUN)
         self.mode_changed.emit(BotMode.RUN)
         self.save_done.emit()
@@ -2053,6 +2093,265 @@ class BotCanvas(QWidget):
         self._scene.detach_region(region_id)
         self._on_selection_changed()
 
+    # ------------------------------------------------------------------
+    # Subgraph authoring: save-as, edit in place, push, discard, expose
+    # ------------------------------------------------------------------
+
+    @property
+    def editing_region_id(self) -> str | None:
+        """The linked region being edited in place, or None."""
+        return self._editing_region_id
+
+    @property
+    def editing_definition(self) -> SubgraphDefinition | None:
+        """The working copy of the definition being edited (inputs and metadata), or None."""
+        return self._editing_defn
+
+    @property
+    def edit_crumb_text(self) -> str:
+        return self._edit_crumb.text
+
+    def save_region_as_subgraph(self, region_id: str, *, name: str | None = None, description: str | None = None):
+        """Extract an ordinary region into the user library and link the region to it.
+
+        Asks for a name and description unless given. The region's members are
+        renamed to the derived form and every combat assignment of this bot that
+        keyed on an old id is re-keyed through the strategy store, so nothing the
+        user configured against those states falls silent. One undo step.
+        """
+        config = self._scene.config
+        library = self._subgraph_library
+        if config is None or library is None or self._mode != BotMode.EDIT:
+            return False
+        region = next((r for r in config.regions if r.id == region_id), None)
+        if region is None or region.source is not None:
+            return False
+        if name is None:
+            dlg = SubgraphMetaDialog(self, name=region.label)
+            if not dlg.exec():
+                return False
+            name, description = dlg.name, dlg.description
+        work = config.model_copy(deep=True)
+        try:
+            defn, source = extract_definition(work, region_id, new_id=str(uuid4()), name=name, description=description)
+        except ValueError as exc:
+            QMessageBox.critical(self, "Save Region as Subgraph", str(exc))
+            return False
+        library.save(defn)
+        id_map = convert_region_to_instance(work, region_id, defn, source)
+        composed, report = compose_bot(work, library)
+        self._undo_mgr.cancel_debounce()
+        self.replace_config(composed, "Save region as subgraph")
+        self.set_compose_report(report)
+        try:
+            rekeyed = rekey_bot_strategy_states(config.id, id_map)
+        except Exception:
+            logger.exception("Re-keying combat assignments for subgraph %s failed", defn.id)
+            rekeyed = 0
+        logger.info(
+            "Saved region '%s' to the library as subgraph %s; %d combat strategies re-keyed", name, defn.id, rekeyed
+        )
+        return True
+
+    def begin_subgraph_edit(self, region_id: str) -> bool:
+        """Unlock one instance for editing in place, showing the definition's own values.
+
+        Inputs and overrides are the instance's, so they are set aside for the edit
+        and the members show what will be pushed; the compose after Save or Discard
+        puts them back. The rewrite is one undo step; the editing state itself is
+        not in the config and is not undoable.
+        """
+        config = self._scene.config
+        if config is None or self._mode != BotMode.EDIT:
+            return False
+        if self._editing_region_id is not None and not self.resolve_subgraph_edit():
+            return False
+        region = next((r for r in config.regions if r.id == region_id), None)
+        if region is None or region.source is None:
+            return False
+        defn = self._definition_for(region)
+        if defn is None:
+            QMessageBox.warning(
+                self,
+                "Edit Subgraph",
+                "The library has no definition for this instance, so there is nothing to edit.\n\n"
+                "Detach it from the library to make its states your own.",
+            )
+            return False
+        self._undo_mgr.cancel_debounce()
+        self._on_about_to_change("Edit subgraph")
+        definition_values(config, region, defn)
+        self._editing_region_id = region_id
+        self._editing_defn = defn.model_copy(deep=True)
+        self._scene.set_editing_region(region_id)
+        self._edit_crumb.set_subgraph_name(defn.name)
+        self._edit_crumb.setVisible(True)
+        self._reposition_banner()
+        self._on_scene_changed()
+        self._on_selection_changed()
+        return True
+
+    def save_subgraph_to_library(self) -> bool:
+        """Push the edited region back as the next version, then recompose every instance of it here.
+
+        A member added while editing is renamed to the derived form first, so the
+        compose that follows finds it in place rather than reading its external
+        edges as an update that removes it. A definition that would contain itself
+        is refused before anything is written. One undo step.
+        """
+        config = self._scene.config
+        library = self._subgraph_library
+        rid = self._editing_region_id
+        previous = self._editing_defn
+        if config is None or library is None or rid is None or previous is None:
+            return False
+        work = config.model_copy(deep=True)
+        region = next((r for r in work.regions if r.id == rid), None)
+        if region is None:
+            self._end_subgraph_edit()
+            return False
+        rename_states(work, added_member_ids(region))
+        try:
+            pushed, warnings = push_back(work, rid, previous)
+        except ValueError as exc:
+            QMessageBox.critical(self, "Save to Library", str(exc))
+            return False
+        if contains_subgraph(pushed, pushed.id, library):
+            QMessageBox.critical(
+                self,
+                "Save to Library",
+                f"Subgraph '{pushed.name}' would contain itself, which can never finish composing. "
+                "Remove the nested instance of it first.",
+            )
+            return False
+        for warning in warnings:
+            logger.warning("Saving subgraph '%s': %s", pushed.name, warning)
+        library.save(pushed)
+        self._end_subgraph_edit()
+        composed, report = compose_bot(work, library)
+        self._undo_mgr.cancel_debounce()
+        self.replace_config(composed, "Save subgraph to library")
+        self.set_compose_report(report)
+        logger.info("Saved subgraph '%s' version %d to the library", pushed.name, pushed.version)
+        return True
+
+    def discard_subgraph_edit(self) -> None:
+        """Drop the in-place edit: members added go, and the region recomposes from the library."""
+        config = self._scene.config
+        library = self._subgraph_library
+        rid = self._editing_region_id
+        if config is None or library is None or rid is None:
+            self._end_subgraph_edit()
+            return
+        work = config.model_copy(deep=True)
+        region = next((r for r in work.regions if r.id == rid), None)
+        if region is not None:
+            drop_states(work, set(added_member_ids(region)))
+        self._end_subgraph_edit()
+        composed, report = compose_bot(work, library)
+        self._undo_mgr.cancel_debounce()
+        self.replace_config(composed, "Discard subgraph edit")
+        self.set_compose_report(report)
+
+    def resolve_subgraph_edit(self) -> bool:
+        """Settle an open edit with Save / Discard / Cancel. False means the user cancelled.
+
+        Synchronous, for the same reason the run slot's dialogs are: every caller
+        is a Qt slot, never an asyncio task.
+        """
+        if self._editing_region_id is None:
+            return True
+        name = self._editing_defn.name if self._editing_defn is not None else "subgraph"
+        reply = QMessageBox.question(
+            self,
+            "Editing Subgraph",
+            f"Save your changes to subgraph '{name}' to the library?",
+            QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Save,
+        )
+        if reply == QMessageBox.StandardButton.Cancel:
+            return False
+        if reply == QMessageBox.StandardButton.Save:
+            return self.save_subgraph_to_library()
+        self.discard_subgraph_edit()
+        return True
+
+    def _end_subgraph_edit(self) -> None:
+        """Clear the editing state without touching the config. The callers decide what the config does."""
+        self._editing_region_id = None
+        self._editing_defn = None
+        if hasattr(self, "_edit_crumb"):
+            self._edit_crumb.setVisible(False)
+        self._scene.set_editing_region(None)
+
+    def expose_input(
+        self,
+        state_id: str,
+        key: str,
+        *,
+        existing: str | None = None,
+        new_input: SubgraphInput | None = None,
+    ) -> bool:
+        """Bind a member param of the region being edited to an input of the working definition.
+
+        ``existing`` names an input already declared; otherwise ``new_input`` is
+        appended. The binding's state is the member's local id -- a state added
+        while editing keeps its plain id as its local id, as push_back does.
+        """
+        defn = self._editing_defn
+        rid = self._editing_region_id
+        if defn is None or rid is None or state_id not in self._scene.editing_members():
+            return False
+        local = local_id(rid, state_id) or state_id
+        binding = SubgraphInputBinding(state=local, param=key)
+        if existing is not None:
+            target = next((i for i in defn.inputs if i.name == existing), None)
+            if target is None:
+                return False
+            if not any(b.state == local and b.param == key for b in target.bindings):
+                target.bindings.append(binding)
+        elif new_input is not None:
+            if any(i.name == new_input.name for i in defn.inputs):
+                return False
+            defn.inputs.append(new_input.model_copy(update={"bindings": [binding]}))
+        else:
+            return False
+        self._on_definition_changed()
+        return True
+
+    def _on_expose_input_requested(self, state_id: str, key: str) -> None:
+        config = self._scene.config
+        defn = self._editing_defn
+        if config is None or defn is None or state_id not in self._scene.editing_members():
+            return
+        state = next((st for st in config.states if st.id == state_id), None)
+        if state is None:
+            return
+        field = next((f for f in NODE_PARAM_SCHEMAS.get(state.node_type, []) if f.key == key), None)
+        if field is None:
+            return
+        dlg = ExposeInputDialog(
+            defn.inputs,
+            state_local_id=local_id(self._editing_region_id or "", state_id) or state_id,
+            param_key=key,
+            param_type=field.type,
+            param_label=field.label,
+            current_value=state.params.get(key, field.default),
+            parent=self,
+        )
+        if not dlg.exec():
+            return
+        if dlg.choice is not None:
+            self.expose_input(state_id, key, existing=dlg.choice)
+        else:
+            self.expose_input(state_id, key, new_input=dlg.new_input())
+
+    def _on_definition_changed(self) -> None:
+        """The working definition's inputs changed: the region page, if up, shows the new list."""
+        region = self._param_panel.shown_region
+        if region is not None and region.id == self._editing_region_id:
+            self._show_region_page(region)
+
     def _show_state_page(self, state) -> None:
         config = self._scene.config
         if config is None:
@@ -2075,17 +2374,20 @@ class BotCanvas(QWidget):
             locked=locked,
             override_keys=override_keys,
             subgraph_name=name,
+            exposable=state.id in self._scene.editing_members(),
         )
 
     def _show_region_page(self, region) -> None:
         config = self._scene.config
         if config is None:
             return
+        editing = region.id == self._editing_region_id and self._editing_defn is not None
         self._param_panel.show_region(
             region,
-            self._definition_for(region),
+            self._editing_defn if editing else self._definition_for(region),
             self._compose_report.regions.get(region.id),
             {st.id: (st.label or st.id) for st in config.states},
+            editing=editing,
         )
 
     def _deferred_validation(self) -> None:
