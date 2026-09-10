@@ -4,8 +4,8 @@
   "description": "A basic example script for testing purposes.",
   "version": "2.0",
   "clients": "all",
-  "initial": "state_2",
-  "recovery_state": "state_2",
+  "initial": "state_3",
+  "recovery_state": "state_3",
   "drops": [
     {
       "name": "Nothing"
@@ -72,10 +72,23 @@
       "label": "Go to Wizard City",
       "position": {
         "x": -440.0,
-        "y": 0.0
+        "y": 90.0
       },
       "params": {
         "world": "WizardCity"
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "teleport_to_player_if_in_zone",
+      "label": "Teleport to Wizard City",
+      "position": {
+        "x": -880.0,
+        "y": 0.0
+      },
+      "params": {
+        "target_zone": "WizardCity/*",
+        "skip_extra_clients_in_zone": true
       }
     }
   ],
@@ -92,46 +105,6 @@
     },
     {
       "trigger": "advance",
-      "source": "go_to_zone_b",
-      "dest": "go_to_zone_a",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "go_to_zone_a",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "go_to_zone_b",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "go_to_zone_a",
       "dest": "state_1",
       "when": "FAILURE",
@@ -142,6 +115,46 @@
     },
     {
       "trigger": "advance",
+      "source": "go_to_zone_b",
+      "dest": "go_to_zone_a",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "go_to_zone_b",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "go_to_zone_a",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_2",
       "dest": "state_1",
       "when": "SUCCESS",
@@ -153,6 +166,26 @@
     {
       "trigger": "advance",
       "source": "state_2",
+      "dest": "state_2",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
       "dest": "state_2",
       "when": "FAILURE",
       "flags": [],

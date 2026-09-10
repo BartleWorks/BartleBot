@@ -31,6 +31,8 @@ from bartlebot.nodes.teleportation.teleport_to_friend import NODE_SPEC as _telep
 from bartlebot.nodes.teleportation.teleport_to_friend import run as teleport_to_friend_run
 from bartlebot.nodes.teleportation.teleport_to_marked_location import NODE_SPEC as _teleport_to_marked_location_spec
 from bartlebot.nodes.teleportation.teleport_to_marked_location import run as teleport_to_marked_location_run
+from bartlebot.nodes.teleportation.teleport_to_player_if_in_zone import NODE_SPEC as _teleport_to_player_if_in_zone_spec
+from bartlebot.nodes.teleportation.teleport_to_player_if_in_zone import run as teleport_to_player_if_in_zone_run
 from bartlebot.nodes.teleportation.teleport_to_world_hub import NODE_SPEC as _teleport_to_world_hub_spec
 from bartlebot.nodes.teleportation.teleport_to_world_hub import run as teleport_to_world_hub_run
 from bartlebot.nodes.utility.apply_level_scaling import NODE_SPEC as _apply_level_scaling_spec
@@ -86,6 +88,7 @@ NODE_REGISTRY: dict = {
     "mark_location": mark_location_run,
     "teleport_to_marked_location": teleport_to_marked_location_run,
     "teleport_to_friend": teleport_to_friend_run,
+    "teleport_to_player_if_in_zone": teleport_to_player_if_in_zone_run,
     "sleep": sleep_run,
     "wait_for_dialogue": wait_for_dialogue_run,
     "wait_for_health": wait_for_health_run,
@@ -120,6 +123,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "mark_location": _mark_location_spec,
     "teleport_to_marked_location": _teleport_to_marked_location_spec,
     "teleport_to_friend": _teleport_to_friend_spec,
+    "teleport_to_player_if_in_zone": _teleport_to_player_if_in_zone_spec,
     "sleep": _sleep_spec,
     "wait_for_dialogue": _wait_for_dialogue_spec,
     "wait_for_health": _wait_for_health_spec,
@@ -154,6 +158,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "teleport_to_coordinates",
             "teleport_to_friend",
             "teleport_to_marked_location",
+            "teleport_to_player_if_in_zone",
             "teleport_to_world_hub",
         ],
     ),
