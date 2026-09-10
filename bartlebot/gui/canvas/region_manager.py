@@ -77,11 +77,16 @@ class RegionManager:
             region.set_interactive(interactive)
 
     def flush_regions(self) -> None:
-        """Remove stale member IDs from regions; auto-delete regions with < 2 members."""
+        """Remove stale member IDs from regions; auto-delete regions with < 2 members.
+
+        A linked region (one with ``source``) is never auto-deleted: its members are
+        the definition's to decide, and a definition may legitimately have one. The
+        next compose puts a deleted member back.
+        """
         state_ids = {s.id for s in self._config.states}
         for region in list(self._config.regions):
             cleaned = [m for m in region.members if m in state_ids]
-            if len(cleaned) < 2:
+            if len(cleaned) < 2 and region.source is None:
                 self.delete_region(region.id)
             else:
                 region.members[:] = cleaned

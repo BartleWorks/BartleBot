@@ -356,6 +356,17 @@ Things to preserve:
 - **Two things besides the values are re-derived every tick**: the account stripe, because `ClientManager.account_for` learns an identity inside the client loop and signals nothing when it does; and nothing else. Anything resolved once in a card's constructor is resolved before the client is identified.
 - **Cards are re-keyed, not rebuilt.** `set_all_clients` holds each card against its `hwnd` and re-uses it while that window is still in the same bucket, calling `set_index` rather than constructing a replacement — otherwise a drag-reorder resets the freecam toggle and blanks every row until the next tick. A client that crosses between hooked and unhooked *is* rebuilt: whether a card has a drag grip is fixed at construction.
 
+## The canvas config can be swapped under every surface
+
+`BotCanvas.replace_config(config, desc)` swaps the loaded `BotConfig` for another object
+and rebuilds the scene, header and properties panel from it, then emits
+`config_changed` so the controller and both sidebars follow — the same path undo takes
+through `_restore`, and the same rule `AppController._on_config_changed` already
+states: a surface holding a config object must re-bind on that signal or its edits go
+nowhere. The pre-run subgraph recompose (`docs/SUBGRAPHS.md`) is the second caller
+after undo. In EDIT mode a `desc` pushes the outgoing config onto the undo stack first,
+so the swap is one undoable step; in RUN mode there is no stack and none is pushed.
+
 ## Which panel owns what
 
 `LeftSidebar` is the bot's configuration and nothing else, and its tabs are
