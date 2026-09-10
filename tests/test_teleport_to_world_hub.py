@@ -90,8 +90,9 @@ async def test_success_multiple_clients():
     assert result == "SUCCESS"
 
 
-async def test_trigger_timeout_returns_failure():
-    """Clients never enter a loading screen after pressing END → FAILURE."""
+async def test_trigger_timeout_still_reaches_recovery_aware_arrival_check():
+    """A client that never enters a loading screen after pressing END is not failed outright —
+    it still reaches the recovery-aware arrival check, which is what ultimately fails here."""
     client = FakeClient()
     client.zone_name.return_value = "OtherZone"
     client.is_loading.return_value = False  # never starts loading
@@ -100,23 +101,44 @@ async def test_trigger_timeout_returns_failure():
         _BUTTON_ENABLED,
         patch.object(gwh, "TRIGGER_TIMEOUT", 0.01),
         patch.object(gwh, "POLL_INTERVAL", 0),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=["OtherZone"])) as recovery,
     ):
         result = await gwh.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
+    recovery.assert_awaited_once()
+
+
+async def test_stuck_client_recovered_by_a_groupmate_who_arrived():
+    """A client that never loads is not failed outright — the arrival check can still
+    recover it via a groupmate who did make it into the hub zone."""
+    stuck = FakeClient()
+    stuck.zone_name.return_value = "OtherZone"
+    stuck.is_loading.return_value = False  # never starts loading
+
+    with (
+        _BUTTON_ENABLED,
+        patch.object(gwh, "TRIGGER_TIMEOUT", 0.01),
+        patch.object(gwh, "POLL_INTERVAL", 0),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=None)) as recovery,
+    ):
+        result = await gwh.run(FakeMachine(), [stuck], _PARAMS)
+
+    assert result == "SUCCESS"
+    recovery.assert_awaited_once()
 
 
 async def test_wrong_zone_after_loading_returns_failure():
     """Clients load but arrive in an unexpected zone → FAILURE."""
     client = FakeClient()
-    # Pre-check only; wait_for_zone (post-load) is mocked to return wrong zone.
+    # Pre-check only; wait_for_zone_with_recovery (post-load) is mocked to return wrong zone.
     client.zone_name.side_effect = ["OtherZone"]
     client.is_loading.side_effect = [True, False]
 
     with (
         _BUTTON_ENABLED,
         patch.object(gwh, "POLL_INTERVAL", 0),
-        patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=["WrongZone"])),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=["WrongZone"])),
     ):
         result = await gwh.run(FakeMachine(), [client], _PARAMS)
 
@@ -201,7 +223,7 @@ async def test_partial_already_in_zone_wrong_arrival_returns_failure():
     with (
         _BUTTON_ENABLED,
         patch.object(gwh, "POLL_INTERVAL", 0),
-        patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=[_ZONE, "WrongZone"])),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=[_ZONE, "WrongZone"])),
     ):
         result = await gwh.run(FakeMachine(), [c_hub, c_wrong], _PARAMS)
 

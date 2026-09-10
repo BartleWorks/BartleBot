@@ -78,7 +78,11 @@ NODE_SPEC = NodeSpec(
         "rarely where a bot wants them — follow it with Teleport To World Hub.\n\n"
         "Players already in the chosen world are left where they are and the node returns "
         "SUCCESS without travelling, so it is cheap to put at the top of a bot as a "
-        "'get everyone to the right world' step."
+        "'get everyone to the right world' step.\n\n"
+        "The Ravenwood → World Tree and spiral-door legs each fall back to a teleport-to-"
+        "player recovery if some but not all players make the transition, since both are "
+        "enter_zone / enter_zone_via_list underneath — see their usage notes. That needs "
+        "every player to already be mutual in-game friends."
     ),
 )
 

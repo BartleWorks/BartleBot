@@ -166,6 +166,12 @@ NODE_SPEC = NodeSpec(
         "into the same instance of it. A split party would still be reported as a successful entry."
     ),
     max_consecutive_retries=10,
+    usage_notes=(
+        "If some but not all players reach dungeon_zone, the node first tries teleporting the "
+        "stragglers to whichever player did arrive — the same recovery Teleport To Player "
+        "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
+        "every player to already be mutual in-game friends."
+    ),
 )
 
 from bartlebot.nodes.timing import (  # noqa: E402
@@ -221,8 +227,11 @@ async def _set_sigil_mode(machine, client, challenge: bool, safety_delay: float)
 async def _enter_normal(machine, clients: list, from_zone: str, challenge_mode: bool, safety_delay: float) -> bool:
     """Enter through the sigil itself: set the mode, press X, answer the prompt, leave.
 
-    The entrance prompt is already showing on every client. Returns False having logged
-    the reason, or True once every client has left *from_zone*.
+    The entrance prompt is already showing on every client. Returns False only on a real
+    refusal — the game saying no. A client that presses X and simply never leaves from_zone
+    is not failed here: the caller's loading-wait and recovery-aware arrival check run
+    regardless, and a groupmate who did transition gives the straggler a working fallback,
+    the same way enter_zone's trigger retry does.
     """
     # Every client toggles its own prompt, and the mode is confirmed from the prompt
     # title rather than from the toggle button, which has no readable state. Only done
@@ -249,17 +258,21 @@ async def _enter_normal(machine, clients: list, from_zone: str, challenge_mode: 
         )
         return False
 
+    # Bounded by Safety Delay rather than the full zone-change budget: this is only checking
+    # whether the trigger fired, not waiting out a loading screen — that budget belongs to
+    # the arrival check the caller runs afterward.
     machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)
     if not await node_helpers.poll_until(
-        lambda: node_helpers.all_left_zone(clients, from_zone), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
+        lambda: node_helpers.all_left_zone(clients, from_zone), safety_delay, POLL_INTERVAL
     ):
         zones_at_timeout = await asyncio.gather(*[c.zone_name() for c in clients])
         machine.log(f"Client zones at timeout: {list(zones_at_timeout)}", logging.DEBUG)
+        stuck = [z for z in zones_at_timeout if node_helpers.zone_matches(z, from_zone)]
         machine.log(
-            f"FAILURE: timed out after {ZONE_CHANGE_TIMEOUT}s waiting for clients to leave {from_zone!r}",
-            logging.WARNING,
+            f"{len(stuck)} client(s) never left {from_zone!r} after {safety_delay:.1f}s; "
+            "continuing to the recovery-aware arrival check",
+            logging.DEBUG,
         )
-        return False
     return True
 
 
@@ -385,7 +398,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 4. Wait for all clients to arrive in dungeon_zone.
     if (
-        actual := await node_helpers.wait_for_zone(clients, dungeon_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)
+        actual := await node_helpers.wait_for_zone_with_recovery(
+            machine, clients, dungeon_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
+        )
     ) is not None:
         machine.log(f"Zones after dungeon entry: {actual}", logging.DEBUG)
         machine.log(

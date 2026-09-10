@@ -14,9 +14,10 @@ _FRIEND = "WizardFriend"
 
 _PARAMS = {"friend_name": _FRIEND, "to_zone": _TO_ZONE}
 
-# Patch the WizWalker function at its imported reference in the module under test.
+# Patch the WizWalker function at its imported reference in node_helpers, which now owns
+# the shared "port to a friend" mechanics (node_helpers.port_to_friend / teleport_via_friends_list).
 _TELEPORT_OK = patch(
-    "bartlebot.nodes.teleportation.teleport_to_friend.teleport_to_friend_from_list",
+    "bartlebot.nodes.node_helpers.teleport_to_friend_from_list",
     new_callable=AsyncMock,
 )
 

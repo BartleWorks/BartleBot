@@ -125,6 +125,31 @@ async def test_prompt_never_appears_fails():
     client.send_key.assert_not_called()
 
 
+async def test_partial_prompt_presses_x_only_for_the_ready_client():
+    """One client never raises the prompt; the other does — X is pressed only for the one
+    that's ready, and the stuck one is left for the recovery-aware arrival check rather than
+    failing the whole group."""
+    ready = FakeClient()
+    ready.zone_name.side_effect = [_FROM_ZONE, _FROM_ZONE, _TO_ZONE, _TO_ZONE]
+    ready.is_in_npc_range.return_value = True
+    ready.is_loading.side_effect = [True, False]
+
+    stuck = FakeClient()
+    stuck.zone_name.return_value = _FROM_ZONE
+    stuck.is_in_npc_range.return_value = False  # prompt never shows
+
+    with (
+        patch.object(itz, "POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.node_helpers.wait_for_zone_with_recovery", new=AsyncMock(return_value=None)) as recovery,
+    ):
+        result = await itz.run(FakeMachine(), [ready, stuck], _PARAMS)
+
+    assert result == "SUCCESS"
+    recovery.assert_awaited_once()
+    ready.send_key.assert_called()
+    stuck.send_key.assert_not_called()
+
+
 async def test_prompt_retry_then_success():
     """Prompt times out on first attempt; appears after reset on second attempt."""
     client = FakeClient()
@@ -151,8 +176,9 @@ async def test_prompt_retry_then_success():
     assert client.teleport.call_count == 3  # interact, reset, interact
 
 
-async def test_trigger_timeout_fails():
-    """FAILURE when client never enters a loading screen after pressing X."""
+async def test_trigger_timeout_still_reaches_recovery_aware_arrival_check():
+    """A client that never enters a loading screen after pressing X is not failed outright —
+    it still reaches the recovery-aware arrival check, which is what ultimately fails here."""
     client = FakeClient()
     client.is_in_npc_range.side_effect = [False, True]
     client.zone_name.return_value = _FROM_ZONE
@@ -161,23 +187,27 @@ async def test_trigger_timeout_fails():
     with (
         patch.object(itz, "POLL_INTERVAL", 0),
         patch.object(itz, "TRIGGER_TIMEOUT", 0.01),
+        patch(
+            "bartlebot.nodes.node_helpers.wait_for_zone_with_recovery", new=AsyncMock(return_value=[_FROM_ZONE])
+        ) as recovery,
     ):
         result = await itz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
+    recovery.assert_awaited_once()
 
 
 async def test_wrong_to_zone_after_loading_fails():
     """FAILURE when clients load but arrive in an unexpected zone."""
     client = FakeClient()
     client.is_in_npc_range.side_effect = [False, True]
-    # Pre-check only; wait_for_zone (post-load) is mocked to return wrong zone.
+    # Pre-check only; wait_for_zone_with_recovery (post-load) is mocked to return wrong zone.
     client.zone_name.side_effect = [_FROM_ZONE]
     client.is_loading.side_effect = [True, False]
 
     with (
         patch.object(itz, "POLL_INTERVAL", 0),
-        patch("bartlebot.nodes.node_helpers.wait_for_zone", new=AsyncMock(return_value=["WrongZone"])),
+        patch("bartlebot.nodes.node_helpers.wait_for_zone_with_recovery", new=AsyncMock(return_value=["WrongZone"])),
     ):
         result = await itz.run(FakeMachine(), [client], _PARAMS)
 

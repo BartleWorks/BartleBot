@@ -29,11 +29,18 @@ NODE_SPEC = NodeSpec(
         ReturnSpec(
             "FAILURE",
             "The hub teleport button did not become enabled within the timeout, "
-            "players did not enter a loading screen after pressing END, "
-            "or not all players arrived in the expected hub zone.",
+            "or not all players arrived in the expected hub zone (see usage notes — a "
+            "player who never entered a loading screen still gets a recovery attempt "
+            "before this is reported).",
         ),
     ],
     max_consecutive_retries=10,
+    usage_notes=(
+        "If some but not all players reach the hub zone, the node first tries teleporting the "
+        "stragglers to whichever player did arrive — the same recovery Teleport To Player "
+        "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
+        "every player to already be mutual in-game friends."
+    ),
 )
 
 
@@ -50,13 +57,15 @@ async def run(machine, clients: list, params: dict) -> str:
       4. Click the hub teleport button on all clients to move.
       5. "Ever seen" loop: poll until all clients have entered a loading screen. For each
          straggler, confirm a dungeon exit warning if one is up, otherwise re-click the
-         button. Return FAILURE if TRIGGER_TIMEOUT expires.
+         button. A client that never enters a loading screen within TRIGGER_TIMEOUT is not
+         failed here — see step 7.
       6. Wait for all loading screens to finish.
-      7. Wait for all clients (including those already in zone) to arrive in zone.
-         Return FAILURE if any are not.
+      7. Wait for all clients (including those already in zone) to arrive in zone, trying a
+         teleport-to-player recovery for any straggler the moment a groupmate arrives. Return
+         FAILURE if any are still not in zone once that is exhausted.
 
-    FAILURE: hub teleport button not enabled within timeout; clients did not enter a loading
-    screen within TRIGGER_TIMEOUT; not all clients arrived in the hub zone.
+    FAILURE: hub teleport button not enabled within timeout; not all clients arrived in the
+    hub zone after the recovery-aware arrival check.
     """
     zone: str = params["zone"]
 
@@ -112,17 +121,21 @@ async def run(machine, clients: list, params: dict) -> str:
         not_loading_idx = [i for i in range(len(clients_to_move)) if i not in seen_loading]
         machine.log(f"Clients not loading at timeout: {not_loading_idx}", logging.DEBUG)
         machine.log(
-            f"FAILURE: clients did not enter loading screen within {TRIGGER_TIMEOUT}s",
-            logging.WARNING,
+            f"{len(not_loading_idx)} client(s) did not enter a loading screen within "
+            f"{TRIGGER_TIMEOUT}s; continuing to the recovery-aware arrival check",
+            logging.DEBUG,
         )
-        return "FAILURE"
 
     # 4. Wait for loading screens to finish.
     machine.log("Loading screen active, waiting for it to clear…", logging.DEBUG)
     await node_helpers.poll_until(lambda: node_helpers.none_loading(clients_to_move), None, POLL_INTERVAL)
 
     # 5. Wait for all clients to arrive in the expected hub zone.
-    if (actual := await node_helpers.wait_for_zone(clients, zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
+    if (
+        actual := await node_helpers.wait_for_zone_with_recovery(
+            machine, clients, zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
+        )
+    ) is not None:
         machine.log(f"Zones after hub teleport: {actual}", logging.DEBUG)
         machine.log(
             f"FAILURE: not all clients in expected hub zone (expected={zone!r}, got={list(set(actual))})",

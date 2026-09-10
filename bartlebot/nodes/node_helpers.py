@@ -7,6 +7,7 @@ import re
 from typing import NamedTuple
 
 from wizwalker import Keycode, MemoryReadError
+from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +29,11 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     MAX_RETRIES,
     OBJECT_USE_DELAY,
     POLL_INTERVAL,
+    TRIGGER_TIMEOUT,
     WINDOW_CLOSE_CONFIRM_INTERVAL,
     WINDOW_CLOSE_RETRY_INTERVAL,
     WINDOW_CLOSE_TIMEOUT,
+    ZONE_CHANGE_TIMEOUT,
 )
 
 
@@ -489,12 +492,21 @@ async def poll_each_until_seen(
     action_fn,
     timeout: float,
     poll_interval: float = POLL_INTERVAL,
+    stop_fn=None,
 ) -> set[int]:
     """Poll until check_fn has returned True for every client at least once.
 
     Re-calls action_fn for each client not yet seen on every poll cycle.
     Returns the set of client indices that triggered. If all clients triggered,
     len(result) == len(clients); on timeout, len(result) < len(clients).
+
+    `stop_fn`, if given, is awaited once per poll cycle — after a new check_fn read but
+    before the timeout check — as `stop_fn([clients[i] for i in seen])`, and only once at
+    least one client has been seen. Returning True ends the poll immediately, before
+    `timeout` elapses, with whatever has been seen so far. This is for a caller whose
+    action_fn is not the only way a straggler might resolve — a client already-seen
+    reaching some further state elsewhere makes continuing to chase the stragglers here a
+    waste of the very budget meant to bound this poll.
     """
     seen: set[int] = set()
     loop_start = asyncio.get_event_loop().time()
@@ -504,6 +516,8 @@ async def poll_each_until_seen(
             if triggered:
                 seen.add(i)
         if len(seen) == len(clients):
+            return seen
+        if stop_fn is not None and seen and await stop_fn([clients[i] for i in seen]):
             return seen
         if asyncio.get_event_loop().time() - loop_start > timeout:
             return seen
@@ -759,6 +773,92 @@ async def wait_for_zone(
     if await poll_until(lambda: all_in_zone(clients, zone), timeout, poll_interval):
         return None
     return list(await asyncio.gather(*[c.zone_name() for c in clients]))
+
+
+async def wait_for_zone_with_recovery(
+    machine, clients: list, zone: str, timeout: float, poll_interval: float = POLL_INTERVAL
+) -> list[str] | None:
+    """Poll until all clients are in zone, trying a teleport-to-player recovery the moment
+    it becomes viable rather than only after the whole wait is exhausted.
+
+    Some clients failing a zone transition while others land fine is usually not a crash —
+    it means the stragglers have not unlocked the destination, or missed the transition
+    trigger. As soon as at least one client is seen in `zone` and at least one is not, the
+    stragglers are ported to it via the same mechanics teleport_to_player_if_in_zone offers
+    as a standalone node — cheaper than retrying the whole transition from a world hub. All
+    clients must already be mutual in-game friends for this to have anything to work with.
+
+    Every caller of this already waited out any loading screen before calling it, so a
+    client still not in `zone` at that point is not "maybe still loading" — it is either
+    about to catch up within a poll or two, or it never triggered at all. Either way, waiting
+    out the *whole* of `timeout` before even attempting recovery (the previous approach) only
+    delayed the fallback that was going to be needed anyway; recovery is now tried as soon as
+    it can help, with `timeout` still bounding the overall wait for stragglers that recovery
+    could not fix.
+
+    Returns None on success (whether or not recovery was needed), or the list of actual
+    zone names if the deadline passed with some clients still not in `zone`.
+    """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
+    recovery_tried = False
+
+    while True:
+        zones = list(await asyncio.gather(*[c.zone_name() for c in clients]))
+        if all(zone_matches(z, zone) for z in zones):
+            return None
+
+        if not recovery_tried and any(zone_matches(z, zone) for z in zones):
+            recovery_tried = True
+            await _attempt_zone_recovery(machine, clients, zone, zones, poll_interval)
+            continue  # re-read zones immediately; the recovery attempt already spent real time
+
+        if loop.time() >= deadline:
+            return zones
+        await asyncio.sleep(poll_interval)
+
+
+async def _attempt_zone_recovery(
+    machine, clients: list, zone: str, zones: list[str], poll_interval: float = POLL_INTERVAL
+) -> None:
+    """Best-effort teleport-to-player recovery for wait_for_zone_with_recovery.
+
+    Ports whichever clients are not yet in `zone` (per the already-read `zones` snapshot) to
+    whichever hooked client already is. Never raises and does not itself report success —
+    the caller's own polling loop re-reads zones right after this returns and decides that.
+    A recovery that cannot even get started (no client's name cached yet, no friends online,
+    the friend-busy dialog, …) is logged and left for the caller's normal timeout to report.
+    """
+    from bartlebot.nodes.teleportation import teleport_to_player_if_in_zone  # noqa: PLC0415 — avoid a circular import
+
+    target = await teleport_to_player_if_in_zone.find_target_in_zone(clients, zone, zones=zones)
+    if target.error:
+        machine.log(f"Recovery not possible: {target.error}", logging.DEBUG)
+        return
+
+    stragglers = [c for i, c in enumerate(clients) if i != target.index and not zone_matches(zones[i], zone)]
+    if not stragglers:
+        return
+
+    machine.log(
+        f"Some clients did not reach {zone!r} but at least one did; attempting a "
+        f"teleport-to-player recovery for {len(stragglers)} client(s)…",
+        logging.INFO,
+    )
+    try:
+        result = await port_to_friend(stragglers, target.name.lower(), poll_interval=poll_interval)
+    except ValueError as exc:
+        machine.log(f"Recovery teleport failed: {exc}", logging.WARNING)
+        return
+
+    if result.refusal:
+        machine.log(f"Recovery teleport refused — {dialog_captions.describe(result.refusal)}", logging.WARNING)
+        return
+    if len(result.seen_loading) < len(stragglers):
+        machine.log("Recovery teleport: not every straggler entered a loading screen", logging.WARNING)
+        return
+
+    await poll_until(lambda: none_loading(stragglers), None, poll_interval)
 
 
 async def none_loading(clients: list) -> bool:
@@ -1023,6 +1123,93 @@ async def resolve_friend_name(client, friend_name_lower: str) -> str:
             return name
 
     raise ValueError(f"Could not find friend matching {friend_name_lower!r} in online friends list")
+
+
+async def teleport_via_friends_list(client, friend_name_lower: str) -> None:
+    """Resolve the exact-case friend name, then teleport via the in-game friends list.
+
+    teleport_to_friend_from_list uses a case-sensitive string comparison internally, so the
+    exact-case name is looked up first. The mouse handler context is activated here because
+    both the resolution step and WizWalker's click chain require it.
+
+    Raises ValueError if no friends are online or the name is not found.
+    """
+    async with client.mouse_handler:
+        exact_name = await resolve_friend_name(client, friend_name_lower)
+        await teleport_to_friend_from_list(client, name=exact_name)
+
+
+class PortToFriendResult(NamedTuple):
+    """Outcome of port_to_friend()'s loading-detection loop.
+
+    `seen_loading` holds the indices (into the clients_to_move list a caller passed in) that
+    entered a loading screen before the ceiling. `refusal` is set when the game refused the
+    port outright for one client — pair it with dialog_captions.describe(); `refused_index`
+    says which client (again by position in clients_to_move) hit it.
+    """
+
+    seen_loading: set[int]
+    refusal: str | None = None
+    refused_index: int | None = None
+
+
+async def port_to_friend(
+    clients_to_move: list,
+    friend_name_lower: str,
+    *,
+    trigger_timeout: float = TRIGGER_TIMEOUT,
+    ceiling: float = ZONE_CHANGE_TIMEOUT,
+    poll_interval: float = POLL_INTERVAL,
+) -> PortToFriendResult:
+    """Teleport clients_to_move to friend_name_lower via the friends list, and wait for each
+    to enter a loading screen.
+
+    The mechanics shared by every node that ports players to a friend — teleport_to_friend,
+    teleport_to_player_if_in_zone, and node_helpers' own zone-arrival recovery: initiate,
+    watch for whatever modal a not-yet-loading client is showing (a dungeon exit or
+    cross-realm warning is confirmed so the port proceeds; a friend-busy dialog is a refusal),
+    retry a straggler once trigger_timeout's grace period has passed, and cap the whole wait
+    at `ceiling`. Only how the target and the surrounding zone check are resolved differs
+    between callers, and that stays with them.
+
+    Raises ValueError if the initial teleport, or a straggler's retry, cannot resolve the
+    friend (not found, or not online) — the same error teleport_via_friends_list raises.
+
+    None of the waiting here is bounded by Safety Delay: a caller using this as a fast
+    fallback rather than as the whole point of the node should size `ceiling` accordingly
+    rather than assume this returns quickly.
+    """
+    await asyncio.gather(*[teleport_via_friends_list(c, friend_name_lower) for c in clients_to_move])
+
+    seen_loading: set[int] = set()
+    loop_start = asyncio.get_event_loop().time()
+    straggler_after = loop_start + trigger_timeout
+
+    while True:
+        for i, c in enumerate(clients_to_move):
+            if i in seen_loading:
+                continue
+            outcome = await resolve_modal(c)
+            if outcome.refusal:
+                return PortToFriendResult(seen_loading, outcome.refusal, i)
+
+        loading_flags = await asyncio.gather(*[c.is_loading() for c in clients_to_move])
+        for i, is_now_loading in enumerate(loading_flags):
+            if is_now_loading:
+                seen_loading.add(i)
+
+        if len(seen_loading) == len(clients_to_move):
+            return PortToFriendResult(seen_loading)
+
+        now = asyncio.get_event_loop().time()
+        if now - loop_start > ceiling:
+            return PortToFriendResult(seen_loading)
+
+        if now >= straggler_after:
+            stragglers = [c for i, c in enumerate(clients_to_move) if i not in seen_loading]
+            await asyncio.gather(*[teleport_via_friends_list(c, friend_name_lower) for c in stragglers])
+
+        await asyncio.sleep(poll_interval)
 
 
 async def open_friend_profile(client, name: str):

@@ -52,6 +52,12 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     max_consecutive_retries=5,
+    usage_notes=(
+        "If some but not all players end up in the expected zone, the node first tries "
+        "teleporting the stragglers to whichever player did arrive — the same recovery "
+        "Teleport To Player If In Zone offers as a standalone node — before reporting "
+        "FAILURE. That needs every player to already be mutual in-game friends."
+    ),
 )
 
 
@@ -164,10 +170,9 @@ async def run(machine, clients: list, params: dict) -> str:
     # 7. Verify all clients are in the expected zone.
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
     machine.log(f"Zones after recall: {list(zones)}", logging.DEBUG)
-    if not all(node_helpers.zone_matches(z, zone) for z in zones):
-        actual = list(set(zones))
+    if (actual := await node_helpers.wait_for_zone_with_recovery(machine, clients, zone, 0, POLL_INTERVAL)) is not None:
         machine.log(
-            f"FAILURE: not all clients in expected zone (expected={zone!r}, got={actual})",
+            f"FAILURE: not all clients in expected zone (expected={zone!r}, got={list(set(actual))})",
             logging.WARNING,
         )
         return "FAILURE"

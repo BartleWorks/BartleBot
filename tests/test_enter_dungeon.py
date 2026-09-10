@@ -99,11 +99,38 @@ async def test_one_client_stuck_in_source_zone_fails():
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=["Dungeon", "Hub"])),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=["Dungeon", "Hub"])),
     ):
         result = await ed.run(FakeMachine(), [client_a, client_b], _PARAMS)
 
     assert result == "FAILURE"
+
+
+async def test_stuck_client_reaches_recovery_aware_arrival_check_quickly():
+    """A client whose transition never fires after the sigil is bounded by Safety Delay, not
+    the full zone-change timeout, before falling through to the recovery-aware arrival check —
+    and is not failed outright just because it never left from_zone."""
+    client = FakeClient()
+    client.zone_name.return_value = "Hub"  # never leaves
+
+    machine = FakeMachine(options={"Safety Delay": 0.01})
+
+    loop = asyncio.get_event_loop()
+    start = loop.time()
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        # Deliberately huge — if the leave-zone wait still used this instead of Safety
+        # Delay, the test would hang for (close to) this long.
+        patch.object(ed, "ZONE_CHANGE_TIMEOUT", 100.0),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=None)) as recovery,
+    ):
+        result = await ed.run(machine, [client], _PARAMS)
+    elapsed = loop.time() - start
+
+    assert result == "SUCCESS"
+    recovery.assert_awaited_once()
+    assert elapsed < 1.0
 
 
 async def test_prompt_never_appears_retries_exhausted_fails():
@@ -175,7 +202,7 @@ async def test_wrong_dungeon_zone_fails():
     with (
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=["WrongZone"])),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=["WrongZone"])),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)
 
@@ -603,7 +630,7 @@ async def test_teamup_wrong_destination_zone_fails():
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
         patch.object(nh, "is_visible_by_path", side_effect=_visible_for_teamup_window_only),
         patch.object(nh, "click_by_path", new=AsyncMock(return_value=True)),
-        patch.object(nh, "wait_for_zone", new=AsyncMock(return_value=["WrongZone"])),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=["WrongZone"])),
     ):
         result = await ed.run(_teamup_machine(), [client], _TEAMUP_PARAMS)
 

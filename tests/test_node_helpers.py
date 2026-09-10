@@ -1,6 +1,7 @@
 """Tests for node_helpers zone matching utilities."""
 
 import asyncio
+import itertools
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -1085,3 +1086,200 @@ async def test_reach_sigil_prompt_clears_a_stale_prompt_first():
 
     assert reached is True
     assert [call.args[0] for call in client.teleport.call_args_list] == [_RESET, _SIGIL]
+
+
+# ---------------------------------------------------------------------------
+# poll_each_until_seen — stop_fn early exit
+# ---------------------------------------------------------------------------
+
+
+async def test_poll_each_until_seen_stops_early_when_stop_fn_fires():
+    """stop_fn ends the poll as soon as it fires, without waiting out the full timeout —
+    even though a straggler has not been seen and the timeout has not elapsed."""
+    calls = itertools.count()
+
+    async def check_fn(client):
+        return client is _SEEN
+
+    async def action_fn(_client):
+        return None
+
+    _SEEN = object()
+    seen_at_stop = []
+
+    async def stop_fn(seen_clients):
+        seen_at_stop.append(list(seen_clients))
+        next(calls)
+        return True
+
+    result = await nh.poll_each_until_seen(
+        [_SEEN, object()], check_fn, action_fn, timeout=100.0, poll_interval=0, stop_fn=stop_fn
+    )
+
+    assert result == {0}
+    assert seen_at_stop == [[_SEEN]]
+
+
+async def test_poll_each_until_seen_ignores_stop_fn_until_someone_is_seen():
+    """stop_fn is never even called while nobody has triggered — nothing to recover to."""
+    stop_fn = AsyncMock(return_value=True)
+
+    async def check_fn(_client):
+        return False
+
+    async def action_fn(_client):
+        return None
+
+    result = await nh.poll_each_until_seen(
+        [object()], check_fn, action_fn, timeout=0.02, poll_interval=0, stop_fn=stop_fn
+    )
+
+    assert result == set()
+    stop_fn.assert_not_called()
+
+
+async def test_poll_each_until_seen_default_behavior_unaffected_by_stop_fn():
+    """Without stop_fn, behavior is unchanged: polls until everyone is seen."""
+    client = FakeClient()
+    client.zone_name = AsyncMock(side_effect=["Src", "Dst"])
+
+    async def check_fn(c):
+        return await c.zone_name() == "Dst"
+
+    result = await nh.poll_each_until_seen(
+        [client], check_fn, action_fn=lambda c: c.teleport(None), timeout=1.0, poll_interval=0
+    )
+
+    assert result == {0}
+
+
+# ---------------------------------------------------------------------------
+# wait_for_zone_with_recovery
+# ---------------------------------------------------------------------------
+
+import bartlebot.nodes.teleportation.teleport_to_player_if_in_zone as tpz  # noqa: E402
+
+
+async def test_wait_for_zone_with_recovery_returns_none_on_plain_success():
+    """No recovery needed: everyone is already in zone on the first check."""
+    client = FakeClient()
+    client.zone_name.return_value = "Dst"
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(FakeMachine(), [client], "Dst", 0.01, 0)
+
+    assert result is None
+    recovery.assert_not_called()
+
+
+async def test_wait_for_zone_with_recovery_skips_when_nobody_arrived():
+    """No client reached the target zone at all — nothing to port stragglers to, so
+    recovery is never attempted and the deadline is just waited out."""
+    clients = [FakeClient(), FakeClient()]
+    for c in clients:
+        c.zone_name.return_value = "Elsewhere"
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(FakeMachine(), clients, "Dst", 0.01, 0)
+
+    assert result == ["Elsewhere", "Elsewhere"]
+    recovery.assert_not_called()
+
+
+async def test_wait_for_zone_with_recovery_tries_recovery_as_soon_as_its_viable():
+    """One client is already in zone and one is not: recovery is attempted immediately,
+    without waiting out the rest of the timeout first."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    straggler = FakeClient()
+    # Still elsewhere on the first read (triggers recovery); in zone on every read after —
+    # standing in for the recovery attempt itself having ported it.
+    straggler.zone_name = AsyncMock(side_effect=itertools.chain(["Elsewhere"], itertools.repeat("Dst")))
+    machine = FakeMachine()
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(machine, [arrived, straggler], "Dst", 0.01, 0)
+
+    assert result is None
+    recovery.assert_awaited_once()
+    assert recovery.await_args[0][0] is machine
+    assert recovery.await_args[0][1] == [arrived, straggler]
+    assert recovery.await_args[0][2] == "Dst"
+
+
+async def test_wait_for_zone_with_recovery_reports_failure_when_recovery_does_not_help():
+    """Recovery is attempted exactly once; if the straggler still never arrives, the
+    deadline is honoured and the final zones are reported."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    straggler = FakeClient()
+    straggler.zone_name.return_value = "Elsewhere"  # never changes, even after "recovery"
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(FakeMachine(), [arrived, straggler], "Dst", 0.01, 0)
+
+    assert result == ["Dst", "Elsewhere"]
+    recovery.assert_awaited_once()  # not retried on every subsequent poll
+
+
+# ---------------------------------------------------------------------------
+# _attempt_zone_recovery
+# ---------------------------------------------------------------------------
+
+
+async def test_attempt_zone_recovery_ports_only_the_actual_stragglers():
+    """A client not in zone but not the target either is the only one ported — the target
+    itself and any client already in zone are left alone."""
+    target = FakeClient()
+    already_there = FakeClient()
+    straggler = FakeClient()
+    clients = [target, already_there, straggler]
+    zones = ["Dst", "Dst", "Elsewhere"]
+    machine = FakeMachine()
+
+    find_target = AsyncMock(return_value=tpz.ZoneTarget(index=0, name="Luke SkullHunter"))
+    port = AsyncMock(return_value=nh.PortToFriendResult(seen_loading={0}))
+
+    with (
+        patch.object(tpz, "find_target_in_zone", find_target),
+        patch.object(nh, "port_to_friend", port),
+        patch.object(nh, "none_loading", new=AsyncMock(return_value=True)),
+    ):
+        await nh._attempt_zone_recovery(machine, clients, "Dst", zones, 0)
+
+    find_target.assert_awaited_once_with(clients, "Dst", zones=zones)
+    port.assert_awaited_once()
+    assert port.await_args[0][0] == [straggler]
+    assert port.await_args[0][1] == "luke skullhunter"
+
+
+async def test_attempt_zone_recovery_gives_up_quietly_when_no_target_found():
+    """Nobody is in the target zone at all — there is nothing to port anyone to, and this
+    must not attempt a teleport or raise."""
+    machine = FakeMachine()
+    clients = [FakeClient(), FakeClient()]
+    zones = ["Elsewhere", "Elsewhere"]
+
+    find_target = AsyncMock(return_value=tpz.ZoneTarget(error="no hooked client is currently in 'Dst'"))
+    port = AsyncMock()
+
+    with patch.object(tpz, "find_target_in_zone", find_target), patch.object(nh, "port_to_friend", port):
+        await nh._attempt_zone_recovery(machine, clients, "Dst", zones, 0)
+
+    port.assert_not_called()
+
+
+async def test_attempt_zone_recovery_swallows_a_value_error():
+    """A friend that cannot be resolved (offline, not found) must not blow up the caller's
+    poll loop — wait_for_zone_with_recovery's own timeout is what reports the failure."""
+    target = FakeClient()
+    straggler = FakeClient()
+    clients = [target, straggler]
+    zones = ["Dst", "Elsewhere"]
+    machine = FakeMachine()
+
+    find_target = AsyncMock(return_value=tpz.ZoneTarget(index=0, name="Luke SkullHunter"))
+    port = AsyncMock(side_effect=ValueError("Could not find friend"))
+
+    with patch.object(tpz, "find_target_in_zone", find_target), patch.object(nh, "port_to_friend", port):
+        await nh._attempt_zone_recovery(machine, clients, "Dst", zones, 0)  # must not raise

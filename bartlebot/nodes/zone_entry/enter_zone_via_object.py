@@ -97,9 +97,10 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("SUCCESS", "All players are now in to_zone."),
         ReturnSpec(
             "FAILURE",
-            "Players were not in from_zone at the start, the interact prompt never "
-            "appeared after retries, players did not enter a loading screen within "
-            "the timeout, or not all players arrived in to_zone.",
+            "Players were not in from_zone at the start, the interact prompt never appeared "
+            "for any player after retries, or not all players arrived in to_zone (see usage "
+            "notes — a player whose prompt or loading screen never came still gets a "
+            "recovery attempt before this is reported).",
         ),
     ],
     required_bot_options=[
@@ -119,7 +120,11 @@ NODE_SPEC = NodeSpec(
     usage_notes=(
         "Turn on Sequential Interaction when the object only serves one player at a time — the "
         "symptom is that one player transitions and the others' X press does nothing, "
-        "intermittently rather than every run. Zone teleporters are the common case."
+        "intermittently rather than every run. Zone teleporters are the common case.\n\n"
+        "If some but not all players reach to_zone, the node first tries teleporting the "
+        "stragglers to whichever player did arrive — the same recovery Teleport To Player "
+        "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
+        "every player to already be mutual in-game friends."
     ),
 )
 
@@ -143,7 +148,11 @@ async def _await_arrival(machine, clients: list, to_zone: str) -> str:
     machine.log("Loading screen active, waiting for it to clear…", logging.DEBUG)
     await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
-    if (actual := await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)) is not None:
+    if (
+        actual := await node_helpers.wait_for_zone_with_recovery(
+            machine, clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
+        )
+    ) is not None:
         machine.log(f"Zones after interaction: {actual}", logging.DEBUG)
         machine.log(
             f"FAILURE: not all clients in expected zone after transition "
@@ -231,16 +240,22 @@ async def run(machine, clients: list, params: dict) -> str:
          replacing steps 2–5; steps 6–8 (_await_arrival) run either way.
       2. Clear any pre-existing interact prompt by teleporting to reset_xyz.
       3. Retry loop (up to MAX_RETRIES): teleport to interact_xyz, wait for the interact
-         prompt on all clients. If it does not appear, teleport to reset_xyz and retry.
-      4. Press X on all clients simultaneously.
+         prompt on all clients. If it does not appear, teleport to reset_xyz and retry. If
+         some but not all clients ever get the prompt, carry on with just those — not failed
+         outright — and let the recovery-aware arrival check cover the rest. Only fail here
+         if not a single client ever got it.
+      4. Press X on the clients that have the prompt.
       5. Dismiss any dungeon exit warning dialog that appears.
-      6. Poll until all clients have entered a loading screen, re-pressing X for stragglers.
-         Clients already in to_zone are also counted as done. Return FAILURE if timeout expires.
+      6. Poll until those clients have entered a loading screen, re-pressing X for
+         stragglers. Clients already in to_zone are also counted as done. A client that
+         never enters a loading screen is not failed here — see step 8.
       7. Wait for all loading screens to finish.
-      8. Wait for all clients to arrive in to_zone. Return FAILURE if any are not.
+      8. Wait for all clients (including any that never got the prompt) to arrive in to_zone,
+         trying a teleport-to-player recovery for any straggler the moment a groupmate
+         arrives. Return FAILURE if any are still not in to_zone once that is exhausted.
 
-    FAILURE: clients not in from_zone; interact prompt never appeared after MAX_RETRIES;
-    clients did not enter a loading screen within the timeout; not all clients arrived in to_zone.
+    FAILURE: clients not in from_zone; interact prompt never appeared for any client after
+    MAX_RETRIES; not all clients arrived in to_zone after the recovery-aware arrival check.
     """
     from_zone: str = params["from_zone"]
     to_zone: str = params["to_zone"]
@@ -306,20 +321,35 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         await asyncio.gather(*[c.teleport(reset) for c in clients])
 
-    if not prompt_appeared:
+    if prompt_appeared:
+        ready = clients
+    else:
+        # Not every client raised the prompt after MAX_RETRIES — rather than failing the
+        # whole group, press X for whichever clients did get it and let the recovery-aware
+        # arrival check give the rest a teleport-to-player fallback, the same way enter_zone
+        # does for a trigger that never fires.
+        prompted = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
+        ready = [c for c, p in zip(clients, prompted) if p]
+        if not ready:
+            machine.log(
+                f"FAILURE: interact prompt never appeared for any client after {MAX_RETRIES} attempts",
+                logging.WARNING,
+            )
+            return "FAILURE"
+        stuck = [i for i, p in enumerate(prompted) if not p]
         machine.log(
-            f"FAILURE: interact prompt never appeared after {MAX_RETRIES} attempts",
-            logging.WARNING,
+            f"Interact prompt never appeared for client(s) {stuck} after {MAX_RETRIES} attempts; "
+            f"continuing with the {len(ready)} client(s) that did get it",
+            logging.INFO,
         )
-        return "FAILURE"
 
-    # 4. Press X for all clients simultaneously.
-    machine.log("Pressing X to interact", logging.DEBUG)
-    await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in clients])
+    # 4. Press X for whichever clients have the interact prompt.
+    machine.log(f"Pressing X to interact ({len(ready)} client(s))", logging.DEBUG)
+    await asyncio.gather(*[c.send_key(Keycode.X, 0.1) for c in ready])
 
     # 4b. Answer the instance prompt if interacting raised one (e.g. leaving a dungeon).
     machine.log("Checking for an instance prompt…", logging.DEBUG)
-    if refusal := await node_helpers.answer_instance_prompts(clients, safety_delay, POLL_INTERVAL):
+    if refusal := await node_helpers.answer_instance_prompts(ready, safety_delay, POLL_INTERVAL):
         machine.log(
             f"FAILURE: the game refused the zone change — {dialog_captions.describe(refusal)}",
             logging.WARNING,
@@ -342,19 +372,19 @@ async def run(machine, clients: list, params: dict) -> str:
     )
 
     seen_loading = await node_helpers.poll_each_until_seen(
-        clients,
+        ready,
         check_fn=lambda c: _loading_or_arrived(c, to_zone),
         action_fn=lambda c: c.send_key(Keycode.X, 0.1),
         timeout=TRIGGER_TIMEOUT,
         poll_interval=POLL_INTERVAL,
     )
-    if len(seen_loading) < len(clients):
-        not_triggered = [i for i in range(len(clients)) if i not in seen_loading]
+    if len(seen_loading) < len(ready):
+        not_triggered = [i for i in range(len(ready)) if i not in seen_loading]
         machine.log(f"Clients not loading at timeout: {not_triggered}", logging.DEBUG)
         machine.log(
-            f"FAILURE: clients did not enter loading screen within {TRIGGER_TIMEOUT}s",
-            logging.WARNING,
+            f"{len(not_triggered)} of {len(ready)} prompted client(s) did not enter a loading "
+            f"screen within {TRIGGER_TIMEOUT}s; continuing to the recovery-aware arrival check",
+            logging.DEBUG,
         )
-        return "FAILURE"
 
     return await _await_arrival(machine, clients, to_zone)

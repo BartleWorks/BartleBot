@@ -146,7 +146,11 @@ NODE_SPEC = NodeSpec(
     usage_notes=(
         "Turn on Sequential Interaction when the list object only serves one player at a time — "
         "the symptom is that one player's list opens and the others' X press does nothing, "
-        "intermittently rather than every run."
+        "intermittently rather than every run.\n\n"
+        "If some but not all players reach to_zone, the node first tries teleporting the "
+        "stragglers to whichever player did arrive — the same recovery Teleport To Player "
+        "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
+        "every player to already be mutual in-game friends."
     ),
 )
 
@@ -227,7 +231,7 @@ async def _select_zone(client, entry: str, safety_delay: float, aliases: list[st
 
 async def _confirm_arrival(machine, clients: list, to_zone: str) -> str:
     """Wait for every client to reach to_zone. The tail both modes share."""
-    actual = await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT)
+    actual = await node_helpers.wait_for_zone_with_recovery(machine, clients, to_zone, ZONE_CHANGE_TIMEOUT)
     if actual is not None:
         machine.log(
             f"FAILURE: zone change timed out (expected={to_zone!r}, actual={actual})",
