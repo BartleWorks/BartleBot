@@ -4,8 +4,8 @@
   "description": "Endlessly defeats Prince Gobblestone in Colossus Boulevard, Wizard City",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_15",
-  "recovery_state": "state_3",
+  "initial": "sg_44aa4077_state_5",
+  "recovery_state": "sg_44aa4077_state_1",
   "drops": [
     {
       "name": "Amulet of the Fay",
@@ -453,54 +453,6 @@
   "options": [],
   "states": [
     {
-      "id": "state_3",
-      "node_type": "relog",
-      "label": "Relog",
-      "position": {
-        "x": -880.0,
-        "y": 270.0
-      },
-      "params": {
-        "relog_clients": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to world hub",
-      "position": {
-        "x": 1320.0,
-        "y": 90.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_Hub"
-      },
-      "notes": "This state should only ever fail if there is a UI element blocking the teleport button, which relogging should fix."
-    },
-    {
-      "id": "state_7",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
-      "position": {
-        "x": 1760.0,
-        "y": 90.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "timeout": 10.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.1,
-        "only_safe": true
-      },
-      "notes": "Ensures that players have enough mana to mark their spot if they need potions."
-    },
-    {
       "id": "state_8",
       "node_type": "handle_potions",
       "label": "Handle potions",
@@ -524,19 +476,6 @@
         "y": 0.0
       },
       "params": {}
-    },
-    {
-      "id": "state_10",
-      "node_type": "form_group",
-      "label": "Form group",
-      "position": {
-        "x": -440.0,
-        "y": 270.0
-      },
-      "params": {
-        "leader_index": 0,
-        "require_all": true
-      }
     },
     {
       "id": "state_11",
@@ -620,44 +559,6 @@
       }
     },
     {
-      "id": "state_15",
-      "node_type": "teleport_to_player_if_in_zone",
-      "label": "Try teleport to dungeon entrance",
-      "position": {
-        "x": 0.0,
-        "y": 90.0
-      },
-      "params": {
-        "target_zone": "WizardCity/WC_Streets/WC_Colossus",
-        "skip_extra_clients_in_zone": false
-      }
-    },
-    {
-      "id": "state_16",
-      "node_type": "teleport_to_player_if_in_zone",
-      "label": "Try teleport to world",
-      "position": {
-        "x": 440.0,
-        "y": 90.0
-      },
-      "params": {
-        "target_zone": "WizardCity/*",
-        "skip_extra_clients_in_zone": true
-      }
-    },
-    {
-      "id": "state_17",
-      "node_type": "go_to_world",
-      "label": "Go to World",
-      "position": {
-        "x": 880.0,
-        "y": 180.0
-      },
-      "params": {
-        "world": "WizardCity"
-      }
-    },
-    {
       "id": "state_18",
       "node_type": "enter_zone",
       "label": "Enter Shopping District",
@@ -704,13 +605,81 @@
         },
         "stagger": false
       }
+    },
+    {
+      "id": "sg_44aa4077_state_7",
+      "node_type": "go_to_world",
+      "label": "Go to World",
+      "position": {
+        "x": 1320.0,
+        "y": 180.0
+      },
+      "params": {
+        "world": "WizardCity"
+      }
+    },
+    {
+      "id": "sg_44aa4077_state_6",
+      "node_type": "teleport_to_player_if_in_zone",
+      "label": "Try teleport to world",
+      "position": {
+        "x": 880.0,
+        "y": 90.0
+      },
+      "params": {
+        "target_zone": "WizardCity/*",
+        "skip_extra_clients_in_zone": false
+      }
+    },
+    {
+      "id": "sg_44aa4077_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.0,
+        "y": 270.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "sg_44aa4077_state_2",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
+      "position": {
+        "x": 1760.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      },
+      "notes": "This state should only ever fail if there is a UI element blocking the teleport button, which relogging should fix."
+    },
+    {
+      "id": "sg_44aa4077_state_5",
+      "node_type": "teleport_to_player_if_in_zone",
+      "label": "Try teleport to target zone",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "target_zone": "WizardCity/WC_Streets/WC_Colossus",
+        "skip_extra_clients_in_zone": false
+      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_3",
+      "source": "sg_44aa4077_state_1",
+      "dest": "sg_44aa4077_state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -719,9 +688,89 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_15",
+      "source": "sg_44aa4077_state_1",
+      "dest": "sg_44aa4077_state_5",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sg_44aa4077_state_2",
+      "dest": "sg_44aa4077_state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sg_44aa4077_state_2",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sg_44aa4077_state_5",
+      "dest": "sg_44aa4077_state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sg_44aa4077_state_5",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sg_44aa4077_state_6",
+      "dest": "sg_44aa4077_state_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sg_44aa4077_state_6",
+      "dest": "sg_44aa4077_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sg_44aa4077_state_7",
+      "dest": "sg_44aa4077_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sg_44aa4077_state_7",
+      "dest": "sg_44aa4077_state_6",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -740,7 +789,7 @@
     {
       "trigger": "advance",
       "source": "state_11",
-      "dest": "state_4",
+      "dest": "sg_44aa4077_state_2",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -800,67 +849,7 @@
     {
       "trigger": "advance",
       "source": "state_14",
-      "dest": "state_4",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_16",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_17",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_16",
+      "dest": "sg_44aa4077_state_2",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -880,7 +869,7 @@
     {
       "trigger": "advance",
       "source": "state_18",
-      "dest": "state_4",
+      "dest": "sg_44aa4077_state_2",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -900,68 +889,8 @@
     {
       "trigger": "advance",
       "source": "state_19",
-      "dest": "state_4",
+      "dest": "sg_44aa4077_state_2",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_10",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_4",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_18",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -972,26 +901,6 @@
       "source": "state_8",
       "dest": "state_9",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_3",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1023,18 +932,39 @@
       "color": 4
     },
     {
-      "id": "9f59026b",
+      "id": "44aa4077",
       "label": "Sync players",
       "members": [
-        "state_4",
-        "state_7",
-        "state_15",
-        "state_3",
-        "state_17",
-        "state_10",
-        "state_16"
+        "sg_44aa4077_state_7",
+        "sg_44aa4077_state_6",
+        "sg_44aa4077_state_1",
+        "sg_44aa4077_state_2",
+        "sg_44aa4077_state_5"
       ],
-      "color": 1
+      "color": 2,
+      "source": {
+        "subgraph_id": "eb79c486-1189-4752-867f-34dc6563b0f3",
+        "version": 5,
+        "inputs": {
+          "target_zone": "",
+          "world": "WizardCity"
+        },
+        "param_overrides": {
+          "state_6": {
+            "target_zone": "WizardCity/*"
+          },
+          "state_2": {
+            "zone": "WizardCity/WC_Hub"
+          },
+          "state_5": {
+            "target_zone": "WizardCity/WC_Streets/WC_Colossus"
+          }
+        },
+        "anchor": {
+          "x": -440.0003180285766,
+          "y": 0.00040283619699721385
+        }
+      }
     }
   ]
 }
