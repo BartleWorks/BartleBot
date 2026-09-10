@@ -20,6 +20,7 @@ from unittest.mock import patch
 import pytest
 from PyQt6.QtWidgets import QInputDialog, QMessageBox, QScrollArea
 
+from bartlebot import store_roots
 from bartlebot import strategy_store as store_mod
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.bot.strategy_models import (
@@ -72,7 +73,7 @@ def store(tmp_path, monkeypatch):
     """Point the strategy store's default root at an empty tmp_path for the test."""
     for sub in ("strategies/player", "strategies/duel", "strategies/decks", "bot_strategies"):
         (tmp_path / sub).mkdir(parents=True)
-    monkeypatch.setattr(store_mod, "project_root", lambda: tmp_path)
+    monkeypatch.setattr(store_roots, "project_root", lambda: tmp_path)
     return tmp_path
 
 

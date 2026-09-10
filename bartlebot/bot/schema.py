@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 from typing import Literal
@@ -122,6 +123,48 @@ class BotOptionModel(BaseModel):
     depends_on: str | None = None
 
 
+class SubgraphInputBinding(BaseModel):
+    """One member param an input drives: ``state`` is a definition-local id."""
+
+    state: str
+    param: str
+
+
+class SubgraphInput(BaseModel):
+    """A knob a subgraph definition exposes, set per instance in ``SubgraphSource.inputs``.
+
+    ``type`` is a ``ParamField`` type name, so the region page can build its form
+    with the same widgets a node's params get. ``default`` is what a fresh
+    instance is prefilled with; it is *not* applied during composition -- an input
+    the instance has not set leaves the definition's own value in place.
+    """
+
+    name: str
+    label: str | None = None
+    type: str
+    help: str | None = None
+    default: object | None = None
+    bindings: list[SubgraphInputBinding] = Field(default_factory=list)
+
+
+class SubgraphSource(BaseModel):
+    """The link that makes a region an instance of a subgraph definition.
+
+    ``version`` is the definition version the stored members were composed from.
+    ``inputs`` maps input name to value; ``None`` (or absence) means unset.
+    ``param_overrides`` maps a definition-local state id to the params this
+    instance pins on it, and wins over everything. ``anchor`` is where the
+    definition's origin sits on this canvas, in the ``StateModel.position``
+    convention -- layout is instance-owned, see docs/SUBGRAPHS.md.
+    """
+
+    subgraph_id: str
+    version: int
+    inputs: dict[str, object] = Field(default_factory=dict)
+    param_overrides: dict[str, dict[str, object]] = Field(default_factory=dict)
+    anchor: dict = Field(default_factory=lambda: {"x": 0.0, "y": 0.0})
+
+
 # Maps old named region color keys to numbered slots for backward compatibility.
 _REGION_COLOR_MIGRATION: dict[str, int] = {
     "amber": 1,
@@ -138,6 +181,9 @@ class RegionModel(BaseModel):
     label: str
     members: list[str]  # state IDs
     color: int  # palette slot number (1-6)
+    # Set only on a subgraph instance. None is excluded from every dump, so a region
+    # without one is written exactly as before the field existed.
+    source: SubgraphSource | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -316,18 +362,105 @@ class BotConfig(BaseModel):
         return data
 
     def save(self, path: str | Path) -> None:
-        path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        # Write to a sibling temp file then atomically replace the target.
-        # Prevents corruption if the process crashes mid-write.
-        fd, tmp_path = tempfile.mkstemp(dir=path.parent, suffix=".tmp", prefix=path.stem + "_")
+        _atomic_write_json(self._dump_for_file(), path)
+
+
+def _atomic_write_json(data: dict, path: str | Path) -> None:
+    """Write ``data`` to a sibling temp file, then atomically replace ``path``.
+
+    Prevents corruption if the process crashes mid-write.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(dir=path.parent, suffix=".tmp", prefix=path.stem + "_")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        os.replace(tmp_path, path)
+    except Exception:
         try:
-            with os.fdopen(fd, "w", encoding="utf-8") as f:
-                json.dump(self._dump_for_file(), f, indent=2)
-            os.replace(tmp_path, path)
-        except Exception:
-            try:
-                os.unlink(tmp_path)
-            except OSError:
-                pass
-            raise
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise
+
+
+#: The charset a subgraph definition's local ids are drawn from. Member ids are
+#: composed as ``sg_<region id>_<local id>``, so a local id has to be safe to embed.
+SUBGRAPH_LOCAL_ID = re.compile(r"^[A-Za-z0-9_]+$")
+
+
+class SubgraphDefinition(BaseModel):
+    """A reusable subgraph, stored as one file in the subgraph library.
+
+    Holds states, internal transitions and (for nesting) regions, every id local
+    to this file and every position relative to ``(0, 0)``. It has no ``initial``
+    or ``recovery_state``: roles are bot-owned. Composition into a bot is
+    :mod:`bartlebot.subgraphs`; storage is :mod:`bartlebot.subgraph_store`.
+
+    Validation stays registry-free, as ``BotConfig``'s does: a binding's ``param``
+    is not checked against the node's ``ParamField``s here, for the same reason
+    ``_validate_node`` lives in the scene rather than in this module.
+    """
+
+    id: str
+    name: str
+    description: str | None = None
+    version: int = 1
+    inputs: list[SubgraphInput] = Field(default_factory=list)
+    states: list[StateModel]
+    transitions: list[TransitionModel] = Field(default_factory=list)
+    regions: list[RegionModel] = Field(default_factory=list)
+
+    @field_validator("id")
+    @classmethod
+    def id_is_not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("id must not be empty")
+        return value
+
+    @field_validator("version")
+    @classmethod
+    def version_is_positive(cls, value: int) -> int:
+        if value < 1:
+            raise ValueError("version must be >= 1")
+        return value
+
+    @model_validator(mode="after")
+    def ids_are_local_and_consistent(self) -> "SubgraphDefinition":
+        seen: set[str] = set()
+        for s in self.states:
+            if not SUBGRAPH_LOCAL_ID.match(s.id):
+                raise ValueError(f"state id {s.id!r} is not a valid subgraph-local id")
+            if s.id in seen:
+                raise ValueError(f"duplicate state id {s.id!r}")
+            seen.add(s.id)
+        for t in self.transitions:
+            if t.source not in seen or t.dest not in seen:
+                raise ValueError(f"transition {t.source!r} -> {t.dest!r} leaves the definition")
+        names: set[str] = set()
+        for inp in self.inputs:
+            if inp.name in names:
+                raise ValueError(f"duplicate input name {inp.name!r}")
+            names.add(inp.name)
+            for b in inp.bindings:
+                if b.state not in seen:
+                    raise ValueError(f"input {inp.name!r} binds to unknown state {b.state!r}")
+        region_ids: set[str] = set()
+        for r in self.regions:
+            if not SUBGRAPH_LOCAL_ID.match(r.id):
+                raise ValueError(f"region id {r.id!r} is not a valid subgraph-local id")
+            if r.id in region_ids:
+                raise ValueError(f"duplicate region id {r.id!r}")
+            region_ids.add(r.id)
+            if r.source is None:
+                raise ValueError(f"region {r.id!r} in a definition must be a nested instance (carry source)")
+        return self
+
+    @classmethod
+    def load(cls, path: str | Path) -> "SubgraphDefinition":
+        with open(path, encoding="utf-8") as f:
+            return cls.model_validate(json.load(f))
+
+    def save(self, path: str | Path) -> None:
+        _atomic_write_json(self.model_dump(exclude_none=True), path)

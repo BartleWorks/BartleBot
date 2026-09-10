@@ -15,7 +15,7 @@ Strategy Library window's versions did; the window itself was retired by #4.
 import pytest
 from PyQt6.QtCore import Qt
 
-from bartlebot import strategy_store as store_mod
+from bartlebot import store_roots
 from bartlebot.bot.strategy_models import DeckPreset, DuelCombatStrategy, PlayerCombatStrategy
 from bartlebot.gui.combat_strategies.dialog import (
     CombatStrategyDialog,
@@ -35,8 +35,8 @@ def store(tmp_path, monkeypatch):
     (tmp_path / "strategies" / "duel").mkdir(parents=True)
     (tmp_path / "strategies" / "decks").mkdir(parents=True)
     (tmp_path / "bot_strategies").mkdir(parents=True)
-    monkeypatch.setattr(store_mod, "project_root", lambda: tmp_path)
-    monkeypatch.setattr(store_mod, "product_dir", lambda: tmp_path)
+    monkeypatch.setattr(store_roots, "project_root", lambda: tmp_path)
+    monkeypatch.setattr(store_roots, "product_dir", lambda: tmp_path)
     return tmp_path
 
 

@@ -24,6 +24,10 @@ unless ``user_root`` is also given, doubles as the user root too — so a single
 sandbox directory in a test behaves like one flat store, same as before this
 module had two roots. Pass ``user_root`` explicitly to exercise the shadowing
 behavior. With both omitted, the real shipped/user roots are used.
+
+The root resolution and :class:`Origin` live in :mod:`bartlebot.store_roots`,
+shared with the subgraph library; ``Origin`` is re-exported here because every
+combat surface imports it from this module.
 """
 
 from __future__ import annotations
@@ -38,8 +42,31 @@ from bartlebot.bot.strategy_models import (
     DuelCombatStrategy,
     PlayerCombatStrategy,
 )
-from bartlebot.paths import project_root
-from bartlebot.shared.vendor import product_dir
+from bartlebot.store_roots import Origin, merged_by_id, origin_in, resolve_roots
+
+__all__ = [
+    "Origin",
+    "StrategyKind",
+    "delete_bot_strategy",
+    "delete_deck_preset",
+    "delete_duel_strategy",
+    "delete_player_strategy",
+    "list_all_bot_strategies",
+    "list_bot_strategies",
+    "list_deck_presets",
+    "list_duel_strategies",
+    "list_player_strategies",
+    "load_bot_strategy",
+    "load_deck_preset",
+    "load_duel_strategy",
+    "load_player_strategy",
+    "origin_of",
+    "save_bot_strategy",
+    "save_deck_preset",
+    "save_duel_strategy",
+    "save_player_strategy",
+    "unique_name",
+]
 
 
 class StrategyKind(Enum):
@@ -55,25 +82,6 @@ class StrategyKind(Enum):
     DUEL = "duel"
     BOT = "bot"
     DECK = "deck"
-
-
-class Origin(Enum):
-    """Where the file behind an id actually is — what makes Delete honest.
-
-    Deleting only ever removes the user copy (see the module docstring), so on a
-    ``SHIPPED_OVERRIDE`` the act is *revert*, not delete: the shipped file
-    reappears underneath. A surface that offers "Delete" on one of those is
-    promising something the store will not do.
-    """
-
-    #: Shipped only. Nothing to delete; editing it will create a user copy.
-    SHIPPED = "shipped"
-    #: A user copy shadowing a shipped file of the same id. Deleting reverts.
-    SHIPPED_OVERRIDE = "shipped_override"
-    #: User-only — created here, or a shipped file that no longer ships. Deleting removes it.
-    USER = "user"
-    #: No file under either root.
-    MISSING = "missing"
 
 
 #: ``base (2)``, ``base (3)`` — the suffix :func:`unique_name` adds and strips.
@@ -103,30 +111,8 @@ def unique_name(base: str, existing_names) -> str:
     return f"{stem} ({n})"
 
 
-def _roots(root: str | Path | None, user_root: str | Path | None) -> tuple[Path, Path]:
-    shipped = Path(root) if root is not None else project_root()
-    if user_root is not None:
-        user = Path(user_root)
-    elif root is not None:
-        user = Path(root)
-    else:
-        user = product_dir()
-    return shipped, user
-
-
-def _merged(shipped_dir: Path, user_dir: Path, loader) -> dict[str, object]:
-    """Load every file under both dirs, keyed by id, user entries winning on collision."""
-    by_id: dict[str, object] = {}
-    for d in (shipped_dir, user_dir):
-        if not d.exists():
-            continue
-        for p in sorted(d.glob("*.json")):
-            try:
-                item = loader(p)
-            except Exception:
-                continue
-            by_id[item.id] = item
-    return by_id
+_roots = resolve_roots
+_merged = merged_by_id
 
 
 # ---------------------------------------------------------------------------
@@ -311,11 +297,4 @@ def origin_of(
     shipped in that arrangement and everything written is the user's.
     """
     shipped, user = _roots(root, user_root)
-    dir_fn = _KIND_DIRS[kind]
-    in_user = (dir_fn(user) / f"{uuid}.json").exists()
-    if shipped == user:
-        return Origin.USER if in_user else Origin.MISSING
-    in_shipped = (dir_fn(shipped) / f"{uuid}.json").exists()
-    if in_shipped:
-        return Origin.SHIPPED_OVERRIDE if in_user else Origin.SHIPPED
-    return Origin.USER if in_user else Origin.MISSING
+    return origin_in(_KIND_DIRS[kind], uuid, shipped, user)
