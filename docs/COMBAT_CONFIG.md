@@ -91,6 +91,11 @@ Filtering must never disturb the editor beside it. `QListWidget.clear()` emits `
 4. Per 1-based player slot, the matching `PlayerAssignment`'s inline DSL, or the linked Player Strategy's DSL.
 5. Anything unresolved gets the built-in default.
 
+Assignments key on state ids, so a state whose id changes would lose its assignment
+silently. The one place the app renames states — turning a region into a subgraph
+instance (`docs/SUBGRAPHS.md`) — re-keys every strategy of that bot through
+`strategy_store.rekey_bot_strategy_states` in the same step.
+
 `source_label` says which level answered, in the user's vocabulary — `duel strategy 'Frenzy AoE' (via state assignment for 'fight_1')`. It is the older precedent for the logging `BotMachine.get_option` does; see `docs/BOT_OPTIONS.md`. **Never log the strategy's contents in place of the label**, and never log a wizard name.
 
 ## Layers, and what stays Qt-free

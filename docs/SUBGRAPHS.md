@@ -13,7 +13,7 @@ below says which stage implements it, and the table is updated as they merge.
 | 1 | #55 | schema, two-root store, pure composition — nothing calls it | done |
 | 2 | #56 | compose on open and before run; snapshot on save; validation flags | done |
 | 3 | #57 | editor read side: locking, group drag, pill state, region page, detach, copy/paste | done |
-| 4 | #58 | authoring: save-region-as, edit/push/discard, inputs, node-browser tab, nesting | not started |
+| 4 | #58 | authoring: save-region-as, edit/push/discard, inputs, node-browser tab, nesting | done |
 
 Extracting the library's repeated regions ("Sync players" and its kin) into shipped
 definitions and migrating `bots/` is #59, an `area/bot-library` task that depends on
@@ -63,8 +63,8 @@ new region id rather than new member ids.
 Converting an existing region into an instance rewrites its member ids to the derived
 form everywhere they appear — states, transitions, roles, every region's `members` —
 and re-keys this bot's combat assignments through `strategy_store` in the same step
-(Stage 4). The app owns that store and the bot's identity has not changed, so there is
-nothing for the user to redo.
+(`rekey_bot_strategy_states`). The app owns that store and the bot's identity has not
+changed, so there is nothing for the user to redo.
 
 ## An instance follows its definition, and is never unloadable
 
@@ -96,7 +96,7 @@ one of the same id exists simply reverts to the shipped one.
 A `cycle` is an error rather than a warning because there is no snapshot to fall back
 on that is not itself the product of the cycle. Nesting is depth-limited (`MAX_DEPTH`,
 8) as a second guard, and pushing a definition that would contain its own id is refused
-at the push (Stage 4), so a cycle in the library means a hand-edited file.
+at the push (`contains_subgraph`), so a cycle in the library means a hand-edited file.
 
 The pre-run recompose is silent — one log line per changed region and a banner entry,
 never a dialog — because a dialog on every run of every bot is noise the user learns to
@@ -145,10 +145,12 @@ Three things that are load-bearing:
   reason there is none for bot options: the value is the user's, the next update may
   bring the param back, and a dead row cannot affect a resolution. It is reported as a
   reason on a `linked` status.
-- **Editing a subgraph shows definition values.** While an instance is being edited
-  (Stage 4), its members carry the definition's params, not this instance's resolved
-  ones, because what is on screen is what gets pushed. Inputs and overrides are shown
-  greyed on the region page for the duration.
+- **Editing a subgraph shows definition values.** While an instance is being edited,
+  its members carry the definition's params, not this instance's resolved ones,
+  because what is on screen is what gets pushed (`definition_values`). The instance
+  keeps its inputs and overrides untouched in `source`; the region page hides the form
+  and the override list for the duration, and the compose after Save or Discard
+  re-applies them.
 
 An input's type is a `ParamField` type name, so the region page builds its form with the
 same `_DynamicParamForm` that builds a node's. The schema does not validate a binding's
@@ -231,6 +233,28 @@ Three rules that fall out of it:
   close and open all resolve an open edit first with a synchronous Save / Discard /
   Cancel prompt.
 
+How the verbs are built (Stage 4): every one is a `BotCanvas` method, because the
+library and the editing state live there, and the scene's menus and the region page
+only *ask* (`save_region_as_subgraph_requested`, `edit_subgraph_requested`,
+`expose_input_requested`). Each works on a deep copy of the config and lands through
+`replace_config`, so it is one undo step. `begin_subgraph_edit` rewrites the members to
+definition values under its own undo push and sets `EditScene.set_editing_region`, which
+is what unlocks them — the lock query, not a second flag. `save_subgraph_to_library`
+renames members added while editing to the derived form *before* composing
+(`added_member_ids` + `rename_states`), since an external edge to a new member would
+otherwise read as an update removing it and hold the region; then `push_back`, the
+cycle check, `library.save`, and one `compose_bot` that also updates every sibling
+instance in the bot. `discard_subgraph_edit` drops the added members (`drop_states`,
+roles reassigned) and recomposes; members edited or deleted come back from the
+library. The working definition's inputs are the only thing Expose and the region
+page's inputs editor write to, and they reach the library with the push.
+
+Two limits, deliberate: the region page's inputs editor removes inputs and bindings but
+does not rename or re-describe one (Expose declares them, and a definition file is
+plain JSON for anything else); and a pushed shipped definition becomes a
+`SHIPPED_OVERRIDE` with no *Revert to default* surface yet — the strategy store has the
+same delete-is-revert and the button belongs with a library dialog, which is #59's.
+
 ## The properties panel on an instance
 
 Clicking one **member** shows that member's page with the definition's fields — label,
@@ -282,6 +306,7 @@ states — the same thing copy does with any partial selection today.
 | **Combat assignments** | keyed by member id, so they survive updates; re-keyed once on conversion |
 | **`flush_regions`** | never auto-deletes a region with `source`, even with one member |
 | **Nesting** | an instance inserted while editing another becomes an inner linked region; compose recurses; push carries it in the definition's `regions` |
+| **Node browser** | a *Subgraphs* tab whenever the dialog is given the library and no port filter; items are `subgraph:<id>` keys that `EditScene.create_state_at` routes to `insert_subgraph_instance`; the detail pane shows inputs, origin and *Used by N bots* from a raw-JSON scan of the bot library, once per dialog; Recent stays node types only |
 
 ## Out of scope
 
