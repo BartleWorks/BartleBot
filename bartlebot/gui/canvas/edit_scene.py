@@ -10,6 +10,7 @@ also exported here so BotCanvas can use them without circular imports.
 
 import logging
 import math
+import uuid
 from collections import defaultdict
 
 from PyQt6.QtCore import QPointF, QRectF, Qt, QTimer, pyqtSignal
@@ -23,7 +24,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.schema import BotConfig, StateModel, TransitionModel
+from bartlebot.bot.schema import BotConfig, RegionModel, StateModel, SubgraphDefinition, SubgraphSource, TransitionModel
 from bartlebot.gui.canvas.edge_item import (
     EdgeItem,
     bridge_y_above,
@@ -34,8 +35,20 @@ from bartlebot.gui.canvas.graph_view import GraphView
 from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H, NODE_W, NodeItem
 from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.canvas.region_manager import RegionManager
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
+from bartlebot.subgraph_store import SubgraphLibrary
+from bartlebot.subgraphs import (
+    ComposeReport,
+    SubgraphCycleError,
+    linked_region_of,
+    linked_regions,
+    local_id,
+    materialize_region,
+    member_id,
+)
+from bartlebot.subgraphs import detach as detach_subgraph
 
 logger = logging.getLogger(__name__)
 
@@ -260,6 +273,88 @@ def _unique_id(existing: list[str]) -> str:
     return f"state_{highest + 1}"
 
 
+#: Compose-report kinds → region pill states. ``held`` is an update the bot could
+#: not take; the other three are a definition the library could not supply.
+_PILL_STATE_FOR_KIND = {
+    "linked": "linked",
+    "held": "outdated",
+    "missing": "missing",
+    "invalid": "missing",
+    "cycle": "missing",
+}
+
+
+def _uniform_region_moves(config: BotConfig, updates: dict[str, dict]) -> list[tuple[RegionModel, float, float]]:
+    """Linked regions whose every positioned member is about to move by one delta.
+
+    Layout is instance-owned, so a group drag translates the instance's ``anchor``
+    with it and a member the definition adds later still lands where the group now
+    is. A move of only some members is a layout tweak inside the instance and
+    leaves the anchor alone.
+    """
+    by_id = {s.id: s for s in config.states}
+    moves: list[tuple[RegionModel, float, float]] = []
+    for region in linked_regions(config):
+        deltas: set[tuple[float, float]] = set()
+        for m in region.members:
+            state = by_id.get(m)
+            if state is None or state.position is None:
+                continue
+            new = updates.get(m)
+            if new is None:
+                deltas = set()
+                break
+            dx = round(float(new["x"]) - float(state.position["x"]), 3)
+            dy = round(float(new["y"]) - float(state.position["y"]), 3)
+            deltas.add((dx, dy))
+        if len(deltas) == 1:
+            dx, dy = deltas.pop()
+            if dx or dy:
+                moves.append((region, dx, dy))
+    return moves
+
+
+def _clipboard_definition(
+    region_data: dict,
+    source: SubgraphSource,
+    member_data: list[dict],
+    transitions_data: list[dict],
+    locals_: dict[str, str],
+) -> SubgraphDefinition:
+    """A definition synthesised from a copied instance, for a paste the library cannot serve.
+
+    Positions are made relative to the *copied* anchor (``source`` already carries
+    the translated one, so the two are subtracted apart via the members' own
+    stored positions). Nested regions are flattened: their members are plain
+    states of this definition. No inputs -- an override in ``source`` still applies.
+    """
+    old_anchor = region_data["source"].get("anchor") or {"x": 0.0, "y": 0.0}
+    ids = set(locals_)
+    states = []
+    for sd in member_data:
+        new_sd = dict(sd)
+        new_sd["id"] = locals_[sd["id"]]
+        pos = sd.get("position")
+        new_sd["position"] = (
+            {"x": float(pos["x"]) - float(old_anchor["x"]), "y": float(pos["y"]) - float(old_anchor["y"])}
+            if pos
+            else None
+        )
+        states.append(StateModel.model_validate(new_sd))
+    transitions = [
+        TransitionModel.model_validate({**td, "source": locals_[td["source"]], "dest": locals_[td["dest"]]})
+        for td in transitions_data
+        if td["source"] in ids and td["dest"] in ids
+    ]
+    return SubgraphDefinition(
+        id=source.subgraph_id,
+        name=region_data.get("label") or source.subgraph_id,
+        version=source.version,
+        states=states,
+        transitions=transitions,
+    )
+
+
 # ---------------------------------------------------------------------------
 # EditScene — interactive QGraphicsScene
 # ---------------------------------------------------------------------------
@@ -289,7 +384,17 @@ class EditScene(QGraphicsScene):
         self._scroll_timer.setInterval(16)
         self._scroll_timer.timeout.connect(self._on_scroll_timer)
         self._interactive_mode: bool = True
-        self._clipboard: tuple[list[dict], list[dict]] | None = None
+        # (states, transitions, regions) as model dumps. Regions are the linked ones
+        # copied whole; ordinary regions do not travel with a copy.
+        self._clipboard: tuple[list[dict], list[dict], list[dict]] | None = None
+        # The one linked region whose members are unlocked (Stage 4 sets it); None
+        # locks every linked region. This and `is_locked` are the whole lock state.
+        self._editing_region_id: str | None = None
+        self._subgraph_library: SubgraphLibrary | None = None
+        # The locked member the last press landed on, so the canvas can tell a
+        # member click (its node page) from a pill click (the region page) when
+        # both leave the same whole-instance selection behind.
+        self._pressed_member_id: str | None = None
         self._in_structural_edit: bool = False  # re-entrancy guard; suppresses nested about_to_change
         self._snap_enabled: bool = False
         self._grid_style: str = "dots"  # "dots" | "lines" | "none"
@@ -488,8 +593,13 @@ class EditScene(QGraphicsScene):
         self._recompute_offsets()
 
         # Add region items behind nodes (z=-1)
-        self._region_manager = RegionManager(self, config, self._node_items, self._pre_edit, self.graph_changed.emit)
+        self._region_manager = RegionManager(
+            self, config, self._node_items, self._pre_edit, self.graph_changed.emit, self.is_region_locked
+        )
         self._region_manager.setup(self._interactive_mode)
+        self.refresh_locks()
+        # Every linked region reads as linked until the canvas hands over a report.
+        self.refresh_region_states(None)
 
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
         self.setSceneRect(bounds)
@@ -564,6 +674,159 @@ class EditScene(QGraphicsScene):
             reasons = err_reasons + warn_reasons
             node.set_error(is_error, reasons)
             node.set_warning(is_warning, reasons)
+
+    # ------------------------------------------------------------------
+    # Subgraph instances: the lock query, and what reads it
+    # ------------------------------------------------------------------
+
+    def set_subgraph_library(self, library: SubgraphLibrary | None) -> None:
+        """The library a pasted instance composes from and lock tooltips name. May be None."""
+        self._subgraph_library = library
+
+    @property
+    def subgraph_library(self) -> SubgraphLibrary | None:
+        return self._subgraph_library
+
+    @property
+    def editing_region_id(self) -> str | None:
+        """The linked region whose members are unlocked for editing, or None."""
+        return self._editing_region_id
+
+    def linked_region_of(self, state_id: str) -> RegionModel | None:
+        """The outermost linked region ``state_id`` belongs to, or None."""
+        if self._config is None:
+            return None
+        return linked_region_of(self._config, state_id)
+
+    def is_locked(self, state_id: str) -> bool:
+        """Whether ``state_id`` is a member of a linked region that is not being edited.
+
+        The only lock query. Nothing keeps a second flag: undo rebuilds the scene
+        from the config and this answer follows, and making it return False
+        everywhere restores the pre-subgraph editor exactly.
+        """
+        region = self.linked_region_of(state_id)
+        return region is not None and region.id != self._editing_region_id
+
+    def is_region_locked(self, region_id: str) -> bool:
+        """Whether the region's membership is the library's to decide rather than the user's."""
+        if self._config is None:
+            return False
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        return region is not None and region.source is not None and region.id != self._editing_region_id
+
+    def _locked_pair(self, a: str, b: str) -> bool:
+        """True when an edge between ``a`` and ``b`` would be internal to a locked instance."""
+        ra = self.linked_region_of(a)
+        return ra is not None and ra is self.linked_region_of(b) and ra.id != self._editing_region_id
+
+    def _edge_is_locked(self, edge_item: EdgeItem) -> bool:
+        for s, _w, d, ei in self._edge_items:
+            if ei is edge_item:
+                return self._locked_pair(s, d)
+        return False
+
+    def _subgraph_name(self, region: RegionModel) -> str:
+        defn = None
+        if self._subgraph_library is not None and region.source is not None:
+            defn = self._subgraph_library.get(region.source.subgraph_id)
+        return defn.name if defn is not None else region.label
+
+    def refresh_locks(self) -> None:
+        """Re-derive every node's lock glyph from the config. Called by setup and after a detach."""
+        for sid, node in self._node_items.items():
+            region = self.linked_region_of(sid)
+            locked = region is not None and region.id != self._editing_region_id
+            node.set_locked(locked, self._subgraph_name(region) if locked and region is not None else None)
+
+    def refresh_region_states(self, report: ComposeReport | None) -> None:
+        """Push each linked region's pill state from the last compose report.
+
+        A linked region the report does not mention (one pasted since, or nested
+        inside another) reads as ``linked``; an ordinary region has no state.
+        """
+        if self._config is None:
+            return
+        by_id = {r.id: r for r in self._config.regions}
+        for rid, ri in self.region_items.items():
+            region = by_id.get(rid)
+            if region is None or region.source is None:
+                ri.set_link_state(None)
+            elif rid == self._editing_region_id:
+                ri.set_link_state("editing")
+            else:
+                status = report.regions.get(rid) if report is not None else None
+                kind = status.kind if status is not None else "linked"
+                ri.set_link_state(_PILL_STATE_FOR_KIND.get(kind, "linked"))
+
+    def _select_instance_of(self, node: NodeItem, modifiers) -> None:
+        """Select every member of the instance ``node`` belongs to, as the pill click does."""
+        region = self.linked_region_of(node.state_id)
+        if region is None:
+            return
+        members = [self._node_items[m] for m in region.members if m in self._node_items]
+        if all(n.isSelected() for n in members):
+            return
+        if not (modifiers & (Qt.KeyboardModifier.ShiftModifier | Qt.KeyboardModifier.ControlModifier)):
+            self.clearSelection()
+        for n in members:
+            n.setSelected(True)
+
+    def _top_node_at(self, pos: QPointF) -> NodeItem | None:
+        for item in self.items(pos):
+            if isinstance(item, NodeItem):
+                return item
+        return None
+
+    def remove_instance(self, region_id: str, *, confirm: bool = True) -> bool:
+        """Delete a linked region and every one of its members, nested instances included.
+
+        The one way a locked member leaves the graph. Roles are reassigned as on any
+        delete. Returns False if the user cancels, or if ``region_id`` is not an instance.
+        """
+        if self._config is None:
+            return False
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        if region is None or region.source is None:
+            return False
+        if confirm:
+            n = len(region.members)
+            answer = QMessageBox.question(
+                self.views()[0] if self.views() else None,
+                "Remove Subgraph Instance",
+                f"Remove subgraph instance '{region.label}' and its {n} state{'s' if n != 1 else ''}?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return False
+        self._pre_edit("Remove Subgraph Instance")
+        prev_in_structural = self._in_structural_edit
+        self._in_structural_edit = True
+        try:
+            for sid in list(region.members):
+                self._delete_node(sid, confirm=False, allow_locked=True)
+            nested_prefix = member_id(region_id, "")
+            for r in list(self._config.regions):
+                if r.id == region_id or r.id.startswith(nested_prefix):
+                    self._region_manager.delete_region(r.id)
+        finally:
+            self._in_structural_edit = prev_in_structural
+        self._update_scene_rect()
+        self.graph_changed.emit()
+        return True
+
+    def detach_region(self, region_id: str) -> None:
+        """Drop the region's link to the library. Members and ids stay exactly as they are."""
+        if self._config is None:
+            return
+        region = next((r for r in self._config.regions if r.id == region_id), None)
+        if region is None or region.source is None:
+            return
+        self._pre_edit("Detach from Library")
+        detach_subgraph(self._config, region_id)
+        self.refresh_locks()
+        self.graph_changed.emit()
 
     def set_interactive(self, interactive: bool) -> None:
         """Toggle node and edge interactivity for mode switching."""
@@ -642,8 +905,14 @@ class EditScene(QGraphicsScene):
     # Mouse events
     # ------------------------------------------------------------------
 
+    @property
+    def pressed_member_id(self) -> str | None:
+        """The locked member the last left press landed on, or None."""
+        return self._pressed_member_id
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton and self._interactive_mode:
+            self._pressed_member_id = None
             scene_pos = event.scenePos()
             result = self._node_near_port_out(scene_pos)
             if result is not None:
@@ -658,6 +927,18 @@ class EditScene(QGraphicsScene):
                 self.addItem(line)
                 event.accept()
                 return
+
+            # A locked member is pressed as its whole instance, so Qt's multi-item
+            # drag moves the group. Selecting before the default handler runs is
+            # what keeps the selection: Qt leaves an already-selected item's
+            # selection alone on a plain press.
+            pressed = self._top_node_at(scene_pos)
+            if pressed is not None and self.is_locked(pressed.state_id):
+                self._pressed_member_id = pressed.state_id
+                self._select_instance_of(pressed, event.modifiers())
+                if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+                    event.accept()  # Qt would toggle the pressed node back off
+                    return
 
             # Click-cycle: when multiple edges overlap at a point, repeated clicks
             # at the same location cycle through them for individual selection.
@@ -767,6 +1048,13 @@ class EditScene(QGraphicsScene):
             event.accept()
             return
         super().mouseReleaseEvent(event)
+        # A click that did not drag makes Qt keep only the clicked item selected --
+        # the way one click inside a multi-selection narrows it. For a locked member
+        # the unit is the instance, so the group is put back.
+        if self._pressed_member_id is not None and event.button() == Qt.MouseButton.LeftButton:
+            pressed = self._node_items.get(self._pressed_member_id)
+            if pressed is not None and self.is_locked(pressed.state_id):
+                self._select_instance_of(pressed, event.modifiers())
         self._flush_positions()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
@@ -805,25 +1093,68 @@ class EditScene(QGraphicsScene):
     def contextMenuEvent(self, event) -> None:
         if not self._interactive_mode:
             return
+        from PyQt6.QtGui import QTransform
         from PyQt6.QtWidgets import QMenu
 
-        item = self.itemAt(
-            event.scenePos(),
-            self.views()[0].transform()
-            if self.views()
-            else __import__("PyQt6.QtGui", fromlist=["QTransform"]).QTransform(),
-        )
-        menu = QMenu()
+        view = self.views()[0] if self.views() else None
+        item = self.itemAt(event.scenePos(), view.transform() if view is not None else QTransform())
+        menu = popup_menu(view) if view is not None else QMenu()
         if isinstance(item, NodeItem):
-            sid = item.state_id
-            # Ports are painted on the node, so itemAt() has already resolved to the
-            # NodeItem -- the port under the cursor has to be hit-tested separately,
-            # with the same helpers and radius the drag-to-connect path uses so the
-            # target areas agree.  Output first, matching mousePressEvent.
-            port_out_hit = self._node_near_port_out(event.scenePos())
-            port_in_hit = self._node_near_port_in(event.scenePos())
-            if port_out_hit is not None:
-                port_node, port_return = port_out_hit
+            self._build_node_menu(menu, item, event.scenePos())
+        elif isinstance(item, RegionItem):
+            self._build_region_menu(menu, item, event.scenePos())
+        elif isinstance(item, EdgeItem):
+            if not self._edge_is_locked(item):
+                act = QAction("Delete Transition", menu)
+                act.triggered.connect(lambda: self._delete_edge_item(item))
+                menu.addAction(act)
+                act_ins = QAction("Insert State Here", menu)
+                act_ins.triggered.connect(lambda: self._insert_state_on_edge(item))
+                menu.addAction(act_ins)
+        else:
+            scene_pos = event.scenePos()
+            act = QAction("Add State Here", menu)
+            act.triggered.connect(
+                lambda: self.add_state(QPointF(scene_pos.x() - NODE_W / 2, scene_pos.y() - NODE_H / 2))
+            )
+            menu.addAction(act)
+            self._add_create_region_action(menu)
+        if not menu.isEmpty():
+            menu.exec(event.screenPos())
+        menu.deleteLater()
+
+    def _add_create_region_action(self, menu) -> None:
+        selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
+        if len(selected_nodes) >= 2:
+            menu.addSeparator()
+            n = len(selected_nodes)
+            act_cr = QAction(f"Create Region from {n} selected states", menu)
+            act_cr.triggered.connect(lambda: self._region_manager.create_region([nd.state_id for nd in selected_nodes]))
+            menu.addAction(act_cr)
+
+    def _port_carries_internal_edge(self, state_id: str, return_name: str | None, *, incoming: bool) -> bool:
+        """Whether inserting at this port would split an edge internal to a locked instance."""
+        if self._config is None:
+            return False
+        for t in self._config.transitions:
+            if incoming and t.dest == state_id and self._locked_pair(t.source, t.dest):
+                return True
+            if not incoming and t.source == state_id and t.when == return_name and self._locked_pair(t.source, t.dest):
+                return True
+        return False
+
+    def _build_node_menu(self, menu, item: NodeItem, scene_pos: QPointF) -> None:
+        sid = item.state_id
+        locked = self.is_locked(sid)
+        # Ports are painted on the node, so itemAt() has already resolved to the
+        # NodeItem -- the port under the cursor has to be hit-tested separately,
+        # with the same helpers and radius the drag-to-connect path uses so the
+        # target areas agree.  Output first, matching mousePressEvent.
+        port_out_hit = self._node_near_port_out(scene_pos)
+        port_in_hit = self._node_near_port_in(scene_pos)
+        if port_out_hit is not None:
+            port_node, port_return = port_out_hit
+            if not self._port_carries_internal_edge(port_node.state_id, port_return, incoming=False):
                 label = f"Insert State at {port_return} Port" if port_return else "Insert State at Output Port"
                 act_port = QAction(label, menu)
                 act_port.triggered.connect(
@@ -831,68 +1162,63 @@ class EditScene(QGraphicsScene):
                 )
                 menu.addAction(act_port)
                 menu.addSeparator()
-            elif port_in_hit is not None:
+        elif port_in_hit is not None:
+            if not self._port_carries_internal_edge(port_in_hit.state_id, None, incoming=True):
                 act_port = QAction("Insert State at Input Port", menu)
                 act_port.triggered.connect(lambda _=None, s=port_in_hit.state_id: self._prompt_insert_at_input_port(s))
                 menu.addAction(act_port)
                 menu.addSeparator()
+        if not locked:
             act = QAction("Delete State", menu)
             act.triggered.connect(lambda: self._delete_node(item.state_id))
             menu.addAction(act)
-            act_help = QAction("Node Help", menu)
-            act_help.triggered.connect(lambda _=None, s=sid: self._open_node_help(s))
-            menu.addAction(act_help)
-            # Determine target nodes: all selected if the clicked node is part of a multi-selection
-            selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
-            if len(selected_nodes) >= 2 and item in selected_nodes:
-                target_ids = [n.state_id for n in selected_nodes]
-            else:
-                target_ids = [sid]
-            is_multi = len(target_ids) > 1
-            # Region membership actions
-            if self._config and self._config.regions:
-                menu.addSeparator()
-                for region in self._config.regions:
-                    not_members = [i for i in target_ids if i not in region.members]
-                    in_members = [i for i in target_ids if i in region.members]
-                    rid = region.id
-                    rlabel = region.label
-                    if not_members:
-                        label = (
-                            f"Add {len(not_members)} nodes to Region: {rlabel}"
-                            if is_multi
-                            else f"Add to Region: {rlabel}"
-                        )
-                        act_add = QAction(label, menu)
-                        act_add.triggered.connect(
-                            lambda _=None, ids=not_members, r=rid: self._region_manager.add_to_region(ids, r)
-                        )
-                        menu.addAction(act_add)
-                    if in_members:
-                        label = (
-                            f"Remove {len(in_members)} nodes from Region: {rlabel}"
-                            if is_multi
-                            else f"Remove from Region: {rlabel}"
-                        )
-                        act_rem = QAction(label, menu)
-                        act_rem.triggered.connect(
-                            lambda _=None, ids=in_members, r=rid: self._region_manager.remove_from_region(ids, r)
-                        )
-                        menu.addAction(act_rem)
-            # Create region from multi-selection
-            if len(selected_nodes) >= 2:
-                menu.addSeparator()
-                n = len(selected_nodes)
-                act_cr = QAction(f"Create Region from {n} selected states", menu)
-                act_cr.triggered.connect(
-                    lambda: self._region_manager.create_region([nd.state_id for nd in selected_nodes])
-                )
-                menu.addAction(act_cr)
-        elif isinstance(item, RegionItem):
-            rid = item.region_id
-            scene_pos = event.scenePos()
-            add_pos = QPointF(scene_pos.x() - NODE_W / 2, scene_pos.y() - NODE_H / 2)
+        act_help = QAction("Node Help", menu)
+        act_help.triggered.connect(lambda _=None, s=sid: self._open_node_help(s))
+        menu.addAction(act_help)
+        # Determine target nodes: all selected if the clicked node is part of a multi-selection
+        selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
+        if len(selected_nodes) >= 2 and item in selected_nodes:
+            target_ids = [n.state_id for n in selected_nodes]
+        else:
+            target_ids = [sid]
+        is_multi = len(target_ids) > 1
+        # Region membership actions. A locked region's membership is the library's,
+        # so it is offered on neither side.
+        regions = [r for r in (self._config.regions if self._config else []) if not self.is_region_locked(r.id)]
+        if regions:
+            menu.addSeparator()
+            for region in regions:
+                not_members = [i for i in target_ids if i not in region.members]
+                in_members = [i for i in target_ids if i in region.members]
+                rid = region.id
+                rlabel = region.label
+                if not_members:
+                    label = (
+                        f"Add {len(not_members)} nodes to Region: {rlabel}" if is_multi else f"Add to Region: {rlabel}"
+                    )
+                    act_add = QAction(label, menu)
+                    act_add.triggered.connect(
+                        lambda _=None, ids=not_members, r=rid: self._region_manager.add_to_region(ids, r)
+                    )
+                    menu.addAction(act_add)
+                if in_members:
+                    label = (
+                        f"Remove {len(in_members)} nodes from Region: {rlabel}"
+                        if is_multi
+                        else f"Remove from Region: {rlabel}"
+                    )
+                    act_rem = QAction(label, menu)
+                    act_rem.triggered.connect(
+                        lambda _=None, ids=in_members, r=rid: self._region_manager.remove_from_region(ids, r)
+                    )
+                    menu.addAction(act_rem)
+        self._add_create_region_action(menu)
 
+    def _build_region_menu(self, menu, item: RegionItem, scene_pos: QPointF) -> None:
+        rid = item.region_id
+        locked = self.is_region_locked(rid)
+        if not locked:
+            add_pos = QPointF(scene_pos.x() - NODE_W / 2, scene_pos.y() - NODE_H / 2)
             act_add = QAction("Add State Here", menu)
 
             def _add_state_in_region(_=None, rid=rid, pos=add_pos):
@@ -910,39 +1236,25 @@ class EditScene(QGraphicsScene):
             act_add.triggered.connect(_add_state_in_region)
             menu.addAction(act_add)
             menu.addSeparator()
-            act_rn = QAction("Rename Region", menu)
-            act_rn.triggered.connect(lambda: self._region_manager.rename_region(rid))
-            menu.addAction(act_rn)
-            act_rc = QAction("Change Color", menu)
-            act_rc.triggered.connect(lambda: self._region_manager.recolor_region(rid))
-            menu.addAction(act_rc)
+        # Label and colour are the instance's own, so both stay on a linked region.
+        act_rn = QAction("Rename Region", menu)
+        act_rn.triggered.connect(lambda: self._region_manager.rename_region(rid))
+        menu.addAction(act_rn)
+        act_rc = QAction("Change Color", menu)
+        act_rc.triggered.connect(lambda: self._region_manager.recolor_region(rid))
+        menu.addAction(act_rc)
+        if locked:
+            menu.addSeparator()
+            act_detach = QAction("Detach from Library", menu)
+            act_detach.triggered.connect(lambda: self.detach_region(rid))
+            menu.addAction(act_detach)
+            act_del = QAction("Remove Subgraph Instance\u2026", menu)
+            act_del.triggered.connect(lambda: self.remove_instance(rid))
+            menu.addAction(act_del)
+        else:
             act_del = QAction("Remove Region", menu)
             act_del.triggered.connect(lambda: self._region_manager.delete_region(rid))
             menu.addAction(act_del)
-        elif isinstance(item, EdgeItem):
-            act = QAction("Delete Transition", menu)
-            act.triggered.connect(lambda: self._delete_edge_item(item))
-            menu.addAction(act)
-            act_ins = QAction("Insert State Here", menu)
-            act_ins.triggered.connect(lambda: self._insert_state_on_edge(item))
-            menu.addAction(act_ins)
-        else:
-            scene_pos = event.scenePos()
-            act = QAction("Add State Here", menu)
-            act.triggered.connect(
-                lambda: self.add_state(QPointF(scene_pos.x() - NODE_W / 2, scene_pos.y() - NODE_H / 2))
-            )
-            menu.addAction(act)
-            selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
-            if len(selected_nodes) >= 2:
-                menu.addSeparator()
-                n = len(selected_nodes)
-                act_cr = QAction(f"Create Region from {n} selected states", menu)
-                act_cr.triggered.connect(
-                    lambda: self._region_manager.create_region([nd.state_id for nd in selected_nodes])
-                )
-                menu.addAction(act_cr)
-        menu.exec(event.screenPos())
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -1016,6 +1328,9 @@ class EditScene(QGraphicsScene):
         s, d = src_node.state_id, dst_node.state_id
         if any(t.source == s and t.dest == d and t.when == when for t in self._config.transitions):
             return
+        if self._locked_pair(s, d):
+            logger.info("Refusing to add an edge inside locked subgraph instance: %s -> %s", s, d)
+            return
         self._pre_edit("Create Edge")
         t = TransitionModel(trigger="advance", source=s, dest=d, when=when)
         self._config.transitions.append(t)
@@ -1042,14 +1357,21 @@ class EditScene(QGraphicsScene):
         transitions = [
             t.model_dump() for t in self._config.transitions if t.source in selected_ids and t.dest in selected_ids
         ]
-        self._clipboard = (states, transitions)
+        # A linked region travels with the copy when every member is selected -- the
+        # outermost ones only, since a nested instance composes through its outer.
+        # A partial selection pastes as ordinary states, as any partial copy does.
+        whole = [r for r in linked_regions(self._config) if r.members and set(r.members) <= selected_ids]
+        regions = [
+            r.model_dump() for r in whole if not any(o is not r and r.id.startswith(member_id(o.id, "")) for o in whole)
+        ]
+        self._clipboard = (states, transitions, regions)
 
     def _paste(self) -> None:
         if self._config is None or self._clipboard is None:
             return
         self._pre_edit("Paste")
         self._in_structural_edit = True
-        states_data, transitions_data = self._clipboard
+        states_data, transitions_data, regions_data = self._clipboard
 
         # Determine (offset_x, offset_y) to apply to every pasted node's stored position.
         # Clipboard positions: p["x"] = node left edge, p["y"] = node center y (StateModel convention).
@@ -1087,6 +1409,10 @@ class EditScene(QGraphicsScene):
                 ):
                     break
                 offset_y += GRID_H
+
+        if regions_data:
+            self._paste_with_instances(states_data, transitions_data, regions_data, offset_x, offset_y)
+            return
 
         # Build old_id → new_id mapping
         id_map: dict[str, str] = {}
@@ -1152,6 +1478,126 @@ class EditScene(QGraphicsScene):
         self._in_structural_edit = False
         self.graph_changed.emit()
 
+    def _paste_with_instances(
+        self,
+        states_data: list[dict],
+        transitions_data: list[dict],
+        regions_data: list[dict],
+        offset_x: float,
+        offset_y: float,
+    ) -> None:
+        """Paste a clipboard that carries at least one whole linked region.
+
+        Each copied instance becomes a *new* instance: a fresh region id, the same
+        inputs and overrides, the anchor translated with the paste, and members
+        composed from the library so their ids derive from the new region id and
+        never from ``_unique_id``. A member the clipboard had keeps its (translated)
+        position; one the library has since added lands at ``anchor + definition
+        position``, as on any compose. When the library cannot supply the
+        definition, the clipboard's own states stand in for it, so the paste still
+        works and the region flags ``missing`` at the next compose like any other.
+
+        States outside every copied instance paste as ordinary states. The scene is
+        rebuilt from the config afterwards rather than grown item by item -- the
+        same path undo takes -- because a region item, its nested regions and the
+        composed edges are simpler to build once than to thread through the
+        incremental path.
+        """
+        assert self._config is not None
+        config = self._config
+        library = self._subgraph_library
+        id_map: dict[str, str] = {}
+        instance_of: dict[str, str] = {}  # new member id -> new region id
+        new_states: list[StateModel] = []
+        new_transitions: list[TransitionModel] = []
+        new_regions: list[RegionModel] = []
+
+        for rd in regions_data:
+            old_rid = rd["id"]
+            new_rid = uuid.uuid4().hex[:8]
+            source = SubgraphSource.model_validate(rd["source"])
+            source.anchor = {"x": float(source.anchor["x"]) + offset_x, "y": float(source.anchor["y"]) + offset_y}
+            member_data = [sd for sd in states_data if sd["id"] in set(rd["members"])]
+            locals_ = {sd["id"]: (local_id(old_rid, sd["id"]) or sd["id"]) for sd in member_data}
+            existing = {
+                member_id(new_rid, locals_[sd["id"]]): {
+                    "x": sd["position"]["x"] + offset_x,
+                    "y": sd["position"]["y"] + offset_y,
+                }
+                for sd in member_data
+                if sd.get("position")
+            }
+            defn = library.get(source.subgraph_id) if library is not None else None
+            mat = None
+            if defn is not None:
+                try:
+                    mat = materialize_region(new_rid, source, defn, library, existing_positions=existing)
+                except (SubgraphCycleError, LookupError) as exc:
+                    logger.warning("Pasting subgraph %s from its clipboard snapshot: %s", source.subgraph_id, exc)
+                    mat = None
+            if mat is None:
+                defn = _clipboard_definition(rd, source, member_data, transitions_data, locals_)
+                mat = materialize_region(new_rid, source, defn, library, existing_positions=existing)
+            for sd in member_data:
+                id_map[sd["id"]] = member_id(new_rid, locals_[sd["id"]])
+            for mid in mat.member_ids:
+                instance_of[mid] = new_rid
+            new_states.extend(mat.states)
+            new_transitions.extend(mat.transitions)
+            new_regions.append(
+                RegionModel(
+                    id=new_rid,
+                    label=rd["label"],
+                    members=list(mat.member_ids),
+                    color=rd.get("color", 1),
+                    source=source.model_copy(update={"version": defn.version}),
+                )
+            )
+            new_regions.extend(mat.regions)
+
+        # Everything outside a copied instance is an ordinary paste.
+        existing_ids = [st.id for st in config.states] + [st.id for st in new_states]
+        for sd in states_data:
+            if sd["id"] in id_map:
+                continue
+            new_id = _unique_id(existing_ids)
+            existing_ids.append(new_id)
+            id_map[sd["id"]] = new_id
+            new_sd = dict(sd)
+            new_sd["id"] = new_id
+            if new_sd.get("position"):
+                new_sd["position"] = {
+                    "x": new_sd["position"]["x"] + offset_x,
+                    "y": new_sd["position"]["y"] + offset_y,
+                }
+            new_states.append(StateModel.model_validate(new_sd))
+
+        new_ids = {st.id for st in new_states}
+        for td in transitions_data:
+            src, dst = id_map.get(td["source"]), id_map.get(td["dest"])
+            if src is None or dst is None or src not in new_ids or dst not in new_ids:
+                continue  # a member the library version no longer has
+            if instance_of.get(src) is not None and instance_of.get(src) == instance_of.get(dst):
+                continue  # internal to an instance: the composition supplied it
+            new_transitions.append(TransitionModel.model_validate({**td, "source": src, "dest": dst}))
+
+        config.states.extend(new_states)
+        config.transitions.extend(new_transitions)
+        config.regions.extend(new_regions)
+
+        self.setup(config)
+        self.clearSelection()
+        for nid in new_ids:
+            node = self._node_items.get(nid)
+            if node is not None:
+                node.setSelected(True)
+        view = self.views()[0] if self.views() else None
+        first = next((self._node_items[st.id] for st in new_states if st.id in self._node_items), None)
+        if view is not None and first is not None:
+            view.smooth_pan_if_offscreen(first)
+        self._in_structural_edit = False
+        self.graph_changed.emit()
+
     def _delete_selected(self) -> None:
         if self._config is None:
             return
@@ -1161,8 +1607,21 @@ class EditScene(QGraphicsScene):
         nodes = [item for item in selected if isinstance(item, NodeItem)]
         edges = [item for item in selected if isinstance(item, EdgeItem)]
 
+        # Exactly one whole instance and nothing else: that is a remove-instance.
+        if nodes and not edges and all(self.is_locked(n.state_id) for n in nodes):
+            region = self.linked_region_of(nodes[0].state_id)
+            if region is not None and {n.state_id for n in nodes} == set(region.members):
+                self.remove_instance(region.id)
+                return
+
+        # Locked members and locked internal edges are not the user's to delete.
+        nodes = [n for n in nodes if not self.is_locked(n.state_id)]
+        edges = [e for e in edges if not self._edge_is_locked(e)]
+        if not nodes and not edges:
+            return
+
         # Single item — keep the original per-item dialogs (show node label / edge endpoints).
-        if len(selected) == 1:
+        if len(nodes) + len(edges) == 1:
             if nodes:
                 self._delete_node(nodes[0].state_id)
             elif edges:
@@ -1233,9 +1692,16 @@ class EditScene(QGraphicsScene):
         if self._config.recovery_state not in ids:
             self._config.recovery_state = fallback
 
-    def _delete_node(self, state_id: str, *, confirm: bool = True) -> bool:
-        """Delete a state and all its edges.  Returns False if the user cancels."""
+    def _delete_node(self, state_id: str, *, confirm: bool = True, allow_locked: bool = False) -> bool:
+        """Delete a state and all its edges.  Returns False if the user cancels.
+
+        A locked member is refused unless ``allow_locked`` -- which only
+        :meth:`remove_instance` passes, since deleting one member of an instance
+        leaves a hole the next compose fills back in.
+        """
         if self._config is None:
+            return False
+        if not allow_locked and self.is_locked(state_id):
             return False
         if confirm:
             state = next((s for s in self._config.states if s.id == state_id), None)
@@ -1282,8 +1748,10 @@ class EditScene(QGraphicsScene):
         return True
 
     def _delete_edge_item(self, edge_item: EdgeItem, *, confirm: bool = True) -> bool:
-        """Delete a transition edge.  Returns False if the user cancels."""
+        """Delete a transition edge.  Returns False if the user cancels, or the edge is inside a locked instance."""
         if self._config is None:
+            return False
+        if self._edge_is_locked(edge_item):
             return False
         if confirm:
             src = dst = ""
@@ -1667,10 +2135,15 @@ class EditScene(QGraphicsScene):
             if state.position != new_pos:
                 updates[state.id] = new_pos
         if updates:
+            anchor_moves = _uniform_region_moves(self._config, updates)
             self._pre_edit("Move Node")
             for state in self._config.states:
                 if state.id in updates:
                     state.position = updates[state.id]
+            for region, dx, dy in anchor_moves:
+                assert region.source is not None
+                anchor = region.source.anchor
+                region.source.anchor = {"x": float(anchor["x"]) + dx, "y": float(anchor["y"]) + dy}
             self._update_scene_rect()
             self.graph_changed.emit()
 

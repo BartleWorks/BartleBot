@@ -367,6 +367,21 @@ nowhere. The pre-run subgraph recompose (`docs/SUBGRAPHS.md`) is the second call
 after undo. In EDIT mode a `desc` pushes the outgoing config onto the undo stack first,
 so the swap is one undoable step; in RUN mode there is no stack and none is pushed.
 
+## Locked members: ask `EditScene.is_locked`, never keep a second flag
+
+A member of a linked subgraph region (`docs/SUBGRAPHS.md`) cannot be deleted, retyped or
+re-parameterised outside an override, and no edge may be added or removed inside the
+instance. Every surface that refuses one of those asks `EditScene.is_locked(state_id)`
+(or `is_region_locked(region_id)` for membership) at the moment of the edit. Nothing
+caches the answer: the scene is rebuilt from the config on undo, on `replace_config` and
+on paste, and a cached lock would have to be rebuilt with it. The node's padlock glyph
+and the pill's link glyph are *displays* of the query (`refresh_locks`,
+`refresh_region_states`), re-derived on setup and after a detach, not a second source.
+
+The one deliberate hole is `remove_instance`, which deletes locked members on purpose
+and passes `allow_locked=True` to `_delete_node`. Anything else that wants to delete a
+locked member is a bug.
+
 ## Which panel owns what
 
 `LeftSidebar` is the bot's configuration and nothing else, and its tabs are

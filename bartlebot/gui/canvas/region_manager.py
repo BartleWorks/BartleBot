@@ -35,12 +35,16 @@ class RegionManager:
         node_items: dict[str, NodeItem],
         pre_edit_fn: Callable[[str], None],
         graph_changed_fn: Callable[[], None],
+        region_locked_fn: Callable[[str], bool] | None = None,
     ) -> None:
         self._scene = scene
         self._config = config
         self._node_items = node_items
         self._pre_edit = pre_edit_fn
         self._graph_changed = graph_changed_fn
+        # Whether a region's membership is the library's to decide (a linked region
+        # outside an edit). The scene answers; this class keeps no lock state.
+        self._region_locked = region_locked_fn or (lambda _rid: False)
         self._region_items: dict[str, RegionItem] = {}
         self._in_structural_edit = False  # suppresses double graph_changed in remove→delete
 
@@ -118,6 +122,20 @@ class RegionManager:
         ri._recompute_rect()
         self._graph_changed()
 
+    def add_region(self, region: RegionModel) -> None:
+        """Put an already-built region into the config and the scene.
+
+        The caller owns the undo snapshot and the ``graph_changed``; this is the
+        building block for a paste that mints a region rather than a user naming one.
+        """
+        self._config.regions.append(region)
+        ri = RegionItem(region, self._node_items)
+        ri.set_interactive(True)
+        self._scene.addItem(ri)
+        self._region_items[region.id] = ri
+        self._scene.changed.connect(ri._recompute_rect)
+        ri._recompute_rect()
+
     def delete_region(self, region_id: str) -> None:
         self._pre_edit("Delete Region")
         ri = self._region_items.pop(region_id, None)
@@ -164,7 +182,7 @@ class RegionManager:
 
     def add_to_region(self, state_ids: list[str], region_id: str) -> None:
         region = next((r for r in self._config.regions if r.id == region_id), None)
-        if region is None:
+        if region is None or self._region_locked(region_id):
             return
         to_add = [sid for sid in state_ids if sid not in region.members]
         if not to_add:
@@ -181,7 +199,7 @@ class RegionManager:
 
     def remove_from_region(self, state_ids: list[str], region_id: str) -> None:
         region = next((r for r in self._config.regions if r.id == region_id), None)
-        if region is None:
+        if region is None or self._region_locked(region_id):
             return
         to_remove = [sid for sid in state_ids if sid in region.members]
         if not to_remove:

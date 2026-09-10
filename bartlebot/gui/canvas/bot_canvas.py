@@ -37,7 +37,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.schema import BotConfig
+from bartlebot.bot.schema import BotConfig, SubgraphDefinition
 from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
 from bartlebot.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
@@ -65,7 +65,14 @@ from bartlebot.logging_setup import GUI_ONLY
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.subgraphs import ComposeReport
+from bartlebot.subgraph_store import SubgraphLibrary
+from bartlebot.subgraphs import (
+    ComposeReport,
+    clear_param_override,
+    local_id,
+    reresolve_member_params,
+    set_param_override,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -852,6 +859,9 @@ class BotCanvas(QWidget):
         # Per-linked-region outcome of the last compose, set by the controller after
         # setup() and again before a run. Empty for a bot with no linked regions.
         self._compose_report = ComposeReport()
+        # The session's subgraph library, handed in by the controller. Read for the
+        # region page and for re-resolving a member's params; never written here.
+        self._subgraph_library: SubgraphLibrary | None = None
 
         self._tick_timer = QTimer(self)
         self._tick_timer.setInterval(1000)
@@ -1132,6 +1142,9 @@ class BotCanvas(QWidget):
         self._param_panel.select_state_requested.connect(self._on_select_state_requested)
         self._param_panel.initial_state_requested.connect(self._on_initial_state_requested)
         self._param_panel.recovery_state_requested.connect(self._on_recovery_state_requested)
+        self._param_panel.override_toggled.connect(self._on_override_toggled)
+        self._param_panel.region_property_changed.connect(self._on_region_property_changed)
+        self._param_panel.detach_requested.connect(self._on_detach_requested)
         self._scene.selectionChanged.connect(self._on_selection_changed)
         self._scene.focus_region_requested.connect(self.enter_focus_mode)
 
@@ -1219,11 +1232,22 @@ class BotCanvas(QWidget):
         test of ``setup`` is untouched. ``setup`` and ``close_bot`` clear it.
         """
         self._compose_report = report
+        self._scene.refresh_region_states(report)
         self._update_validation_badge()
 
     @property
     def compose_report(self) -> ComposeReport:
         return self._compose_report
+
+    def set_subgraph_library(self, library: SubgraphLibrary | None) -> None:
+        """The library the region page reads definitions from and a pasted instance composes from."""
+        self._subgraph_library = library
+        self._scene.set_subgraph_library(library)
+
+    def _definition_for(self, region) -> SubgraphDefinition | None:
+        if self._subgraph_library is None or region is None or region.source is None:
+            return None
+        return self._subgraph_library.get(region.source.subgraph_id)
 
     def replace_config(self, config: BotConfig, desc: str | None = None) -> None:
         """Swap the loaded config for ``config`` and rebind every surface to it.
@@ -1879,6 +1903,7 @@ class BotCanvas(QWidget):
         self._refresh_terminal()
         self._refresh_recovery()
         self._refresh_errors()
+        self._scene.refresh_region_states(self._compose_report)
         self._update_validation_badge()
         self._minimap.fit_to_scene()
         if self._search_bar.isVisible():
@@ -1943,6 +1968,8 @@ class BotCanvas(QWidget):
         if self._config is not None and self._mode == BotMode.EDIT:
             desc = "Edit transition" if self._param_panel._transition is not None else "Edit params"
             self._undo_mgr.begin_debounce(self._config, desc)
+        if self._param_panel.is_locked:
+            self._sync_overrides_from_shown_state()
         # Refresh the dotted-pen flag indicator on the selected edge when flags change.
         if self._param_panel._transition is not None:
             self._scene.refresh_edge_flags(self._param_panel._transition)
@@ -1952,6 +1979,114 @@ class BotCanvas(QWidget):
         self.config_changed.emit()
         self._refresh_undo_actions()
         self._validation_timer.start()
+
+    def _sync_overrides_from_shown_state(self) -> None:
+        """Copy an overridden param's edited value into the instance's ``param_overrides``.
+
+        The panel writes ``state.params`` as for any node; on a locked member the
+        only editable rows are the overridden ones, and their values also have to
+        land in ``source`` or the next compose would put the definition's back.
+        """
+        state = self._param_panel.shown_state
+        region = self._scene.linked_region_of(state.id) if state is not None else None
+        if state is None or region is None or region.source is None:
+            return
+        local = local_id(region.id, state.id)
+        if local is None:
+            return
+        for key in list(region.source.param_overrides.get(local, {})):
+            if key in state.params:
+                set_param_override(region.source, local, key, state.params[key])
+
+    def _on_override_toggled(self, state_id: str, key: str, active: bool) -> None:
+        """Start or drop a per-instance override of one member param.
+
+        Starting one records the member's current (definition) value, so nothing
+        visible changes until the user edits the now-unlocked field. Dropping one
+        re-resolves the member from the library so the definition's value shows
+        again; without the library the value stays until the next compose.
+        """
+        config = self._scene.config
+        region = self._scene.linked_region_of(state_id)
+        if config is None or region is None or region.source is None:
+            return
+        local = local_id(region.id, state_id)
+        state = next((st for st in config.states if st.id == state_id), None)
+        if local is None or state is None:
+            return
+        self._undo_mgr.cancel_debounce()
+        self._on_about_to_change("Override param" if active else "Reset param")
+        if active:
+            set_param_override(region.source, local, key, state.params.get(key))
+        else:
+            clear_param_override(region.source, local, key)
+            defn = self._definition_for(region)
+            if defn is not None:
+                reresolve_member_params(config, region, defn)
+        self._on_scene_changed()
+        if self._param_panel.shown_state is state:
+            self._show_state_page(state)
+        elif self._param_panel.shown_region is region:
+            self._show_region_page(region)
+
+    def _on_region_property_changed(self, debounced: bool) -> None:
+        """The region page wrote label, colour or inputs into the shown region."""
+        region = self._param_panel.shown_region
+        config = self._scene.config
+        if region is None or config is None:
+            return
+        if debounced and self._config is not None and self._mode == BotMode.EDIT:
+            self._undo_mgr.begin_debounce(self._config, "Edit region")
+        ri = self._scene.region_items.get(region.id)
+        if ri is not None:
+            ri.set_label(region.label)
+            ri.set_color(region.color)
+        defn = self._definition_for(region)
+        if defn is not None:
+            reresolve_member_params(config, region, defn)
+        self.config_changed.emit()
+        self._refresh_undo_actions()
+        self._validation_timer.start()
+
+    def _on_detach_requested(self, region_id: str) -> None:
+        self._undo_mgr.cancel_debounce()
+        self._scene.detach_region(region_id)
+        self._on_selection_changed()
+
+    def _show_state_page(self, state) -> None:
+        config = self._scene.config
+        if config is None:
+            return
+        region = self._scene.linked_region_of(state.id)
+        locked = self._scene.is_locked(state.id)
+        override_keys: frozenset = frozenset()
+        name = None
+        if locked and region is not None and region.source is not None:
+            local = local_id(region.id, state.id)
+            override_keys = frozenset(region.source.param_overrides.get(local, {})) if local else frozenset()
+            defn = self._definition_for(region)
+            name = defn.name if defn is not None else region.label
+        self._param_panel.show_state(
+            state,
+            all_states=list(config.states),
+            all_transitions=config.transitions,
+            initial_id=config.initial,
+            recovery_id=config.recovery_state,
+            locked=locked,
+            override_keys=override_keys,
+            subgraph_name=name,
+        )
+
+    def _show_region_page(self, region) -> None:
+        config = self._scene.config
+        if config is None:
+            return
+        self._param_panel.show_region(
+            region,
+            self._definition_for(region),
+            self._compose_report.regions.get(region.id),
+            {st.id: (st.label or st.id) for st in config.states},
+        )
 
     def _deferred_validation(self) -> None:
         """Run the expensive validation pass after a short debounce from param edits."""
@@ -2234,16 +2369,25 @@ class BotCanvas(QWidget):
             self._param_panel.show_idle()
             return
         item = selected[0]
-        if isinstance(item, NodeItem) and self._scene._config:
-            state = next((s for s in self._scene._config.states if s.id == item.state_id), None)
+        config = self._scene.config
+        # A whole region's members and nothing else: the region page, unless the
+        # press landed on one member of a locked instance, whose own page it is.
+        if config is not None and all(isinstance(i, NodeItem) for i in selected):
+            selected_ids = {i.state_id for i in selected}
+            region = next((r for r in config.regions if r.members and set(r.members) == selected_ids), None)
+            if region is not None:
+                pressed = self._scene.pressed_member_id
+                pressed_state = next((st for st in config.states if st.id == pressed), None) if pressed else None
+                if pressed_state is not None and pressed in selected_ids and self._scene.is_locked(pressed):
+                    self._show_state_page(pressed_state)
+                else:
+                    self._show_region_page(region)
+                self.tab_switch.emit("properties")
+                return
+        if isinstance(item, NodeItem) and config is not None:
+            state = next((s for s in config.states if s.id == item.state_id), None)
             if state:
-                self._param_panel.show_state(
-                    state,
-                    all_states=list(self._scene._config.states),
-                    all_transitions=self._scene._config.transitions,
-                    initial_id=self._scene._config.initial,
-                    recovery_id=self._scene._config.recovery_state,
-                )
+                self._show_state_page(state)
                 self.tab_switch.emit("properties")
         elif isinstance(item, EdgeItem) and self._scene._config:
             for s, w, d, ei in self._scene._edge_items:

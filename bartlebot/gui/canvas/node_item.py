@@ -34,6 +34,7 @@ _BADGE_R = 8  # radius of corner-overlap role badges (initial / terminal)
 _BADGE_GAP = 4  # gap between adjacent badge circles
 _BADGE_FONT_PT = 6  # point size for text glyphs drawn inside badges
 _BADGE_ICON_PAD = 3  # inset padding when rendering SVG icons inside badge circles
+_LOCK_W = 12  # width of the subgraph lock glyph beside the type sub-label
 
 _PLAY_RENDERER: QSvgRenderer | None = None
 _STOP_RENDERER: QSvgRenderer | None = None
@@ -242,6 +243,8 @@ class NodeItem(QGraphicsItem):
         self._is_search_match: bool = False
         self._is_search_current: bool = False
         self._snap_enabled: bool = False
+        self._locked: bool = False
+        self._lock_note: str = ""
         self.setZValue(1)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, interactive)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, interactive)
@@ -433,11 +436,31 @@ class NodeItem(QGraphicsItem):
         self._is_search_current = is_current
         self.update()
 
+    @property
+    def is_locked(self) -> bool:
+        """Whether this node draws the subgraph lock glyph."""
+        return self._locked
+
+    def set_locked(self, locked: bool, subgraph_name: str | None = None) -> None:
+        """Mark this node as a member of a linked subgraph instance.
+
+        Draws a small lock by the type sub-label and explains itself in the tooltip.
+        The node stays movable -- the whole instance drags as a group -- and the
+        scene, not this item, is what refuses the edits a lock forbids.
+        """
+        note = f"Part of subgraph {subgraph_name} \u2014 edit the subgraph to change it" if locked else ""
+        if locked == self._locked and note == self._lock_note:
+            return
+        self._locked = locked
+        self._lock_note = note
+        self._update_tooltip()
+        self.update()
+
     def _update_tooltip(self) -> None:
-        if (self._is_error or self._is_warning) and self._reasons:
-            self.setToolTip("\n".join(self._reasons))
-        else:
-            self.setToolTip("")
+        lines = list(self._reasons) if (self._is_error or self._is_warning) else []
+        if self._lock_note:
+            lines.append(self._lock_note)
+        self.setToolTip("\n".join(lines))
 
     def add_edge(self, edge) -> None:
         if edge not in self._edges:
@@ -468,6 +491,23 @@ class NodeItem(QGraphicsItem):
                 item_rect = self.mapToScene(self.boundingRect()).boundingRect().adjusted(-500, -500, 500, 500)
                 scene.setSceneRect(scene.sceneRect().united(item_rect))
         return super().itemChange(change, value)
+
+    @staticmethod
+    def _paint_lock(painter: QPainter, rect: QRectF, color: QColor) -> None:
+        """A padlock: a body with a shackle over it, in the sub-label's colour."""
+        body_h = rect.height() * 0.5
+        body_w = rect.width() * 0.8
+        x = rect.left() + (rect.width() - body_w) / 2
+        y = rect.bottom() - body_h - 1
+        painter.save()
+        painter.setPen(QPen(color, 1.3))
+        painter.setBrush(QBrush(color))
+        painter.drawRoundedRect(QRectF(x, y, body_w, body_h), 1.5, 1.5)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        shackle_w = body_w * 0.55
+        shackle = QRectF(x + (body_w - shackle_w) / 2, y - body_h * 0.8, shackle_w, body_h * 1.2)
+        painter.drawArc(shackle, 0, 180 * 16)
+        painter.restore()
 
     # ------------------------------------------------------------------
     # Hover events
@@ -603,8 +643,11 @@ class NodeItem(QGraphicsItem):
             painter.setPen(sub_label_color)
             painter.setFont(THEME.font_node_sub())
             fm2 = painter.fontMetrics()
-            sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, NODE_INFO_W - 16)
-            painter.drawText(QRectF(8, 47, NODE_INFO_W - 16, 17), Qt.AlignmentFlag.AlignCenter, sub_elided)
+            sub_w = NODE_INFO_W - 16 - (_LOCK_W + 4 if self._locked else 0)
+            sub_elided = fm2.elidedText(sub_text, Qt.TextElideMode.ElideRight, sub_w)
+            painter.drawText(QRectF(8, 47, sub_w, 17), Qt.AlignmentFlag.AlignCenter, sub_elided)
+            if self._locked:
+                self._paint_lock(painter, QRectF(8 + sub_w + 4, 47, _LOCK_W, 17), sub_label_color)
 
             if self._returns:
                 n = len(self._returns)
