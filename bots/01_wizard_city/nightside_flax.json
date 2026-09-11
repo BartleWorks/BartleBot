@@ -4,8 +4,8 @@
   "description": "Collects Flax/Frosted Flax in Nightside, Wizard City",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "state_5",
+  "recovery_state": "state_5",
   "drops": [
     {
       "name": "Flax"
@@ -17,7 +17,7 @@
   "authors": "BartleBot",
   "tags": [
     "Reagents",
-    "Gathering"
+    "Collecting"
   ],
   "options": [],
   "states": [
@@ -26,8 +26,8 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to The Commons",
       "position": {
-        "x": 0,
-        "y": 0.0
+        "x": 440.0,
+        "y": 180.0
       },
       "params": {
         "zone": "WizardCity/WC_Hub"
@@ -38,8 +38,8 @@
       "node_type": "enter_zone",
       "label": "Enter Nightside",
       "position": {
-        "x": 440.0,
-        "y": 0.0
+        "x": 880.0,
+        "y": 90.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Hub",
@@ -61,15 +61,15 @@
       "node_type": "collect_reagent",
       "label": "Collect Flax",
       "position": {
-        "x": 880.0,
+        "x": 1320.0,
         "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_NightSide",
         "xyz": {
-          "x": 486.69,
-          "y": -1344.1,
-          "z": -28.75
+          "x": 1337.7,
+          "y": -51.14,
+          "z": -6.5
         },
         "entity_names": [
           "FrostedFlax_01"
@@ -81,35 +81,69 @@
       "node_type": "sleep",
       "label": "Wait for Flax to respawn",
       "position": {
-        "x": 1320.0,
+        "x": 1760.0,
         "y": 0.0
       },
       "params": {
         "duration": 3.0
       }
+    },
+    {
+      "id": "state_5",
+      "node_type": "check_zone",
+      "label": "Check if in Nightside",
+      "position": {
+        "x": -880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_NightSide",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "go_to_world",
+      "label": "Go to Wizard City",
+      "position": {
+        "x": -440.0,
+        "y": 90.0
+      },
+      "params": {
+        "world": "WizardCity"
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "enter_zone",
+      "label": "Enter The Commons",
+      "position": {
+        "x": 0.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Ravenwood",
+        "to_zone": "WizardCity/WC_Hub",
+        "xyz": {
+          "x": 54.66,
+          "y": -2084.01,
+          "z": -138.09
+        },
+        "reset_xyz": {
+          "x": 28.45,
+          "y": -1194.0,
+          "z": -28.79
+        },
+        "stagger": false
+      }
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
     {
       "trigger": "advance",
       "source": "state_1",
@@ -123,6 +157,26 @@
     {
       "trigger": "advance",
       "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
@@ -155,6 +209,66 @@
       "source": "state_4",
       "dest": "state_3",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_3",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],

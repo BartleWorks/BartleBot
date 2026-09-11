@@ -1,23 +1,38 @@
 {
   "id": "c2c6ea55-93d8-4d01-9a9a-c591d38c114c",
-  "name": "The Portico Pearl Collector",
+  "name": "The Portico Reagent Collector",
   "description": "Collects Pearls and Golden Pearls in The Portico, Celestia",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "state_7",
+  "recovery_state": "state_7",
   "drops": [
+    {
+      "name": "Aether"
+    },
+    {
+      "name": "Aquamarine"
+    },
+    {
+      "name": "Black Pearl"
+    },
     {
       "name": "Golden Pearl"
     },
     {
+      "name": "Kelp"
+    },
+    {
       "name": "Pearl"
+    },
+    {
+      "name": "Shell"
     }
   ],
   "authors": "BartleBot",
   "tags": [
     "Reagents",
-    "Gathering"
+    "Collecting"
   ],
   "options": [],
   "states": [
@@ -26,7 +41,7 @@
       "node_type": "teleport_to_world_hub",
       "label": "Teleport to Survey Camp",
       "position": {
-        "x": 0,
+        "x": 0.0,
         "y": 0.0
       },
       "params": {
@@ -59,7 +74,7 @@
     {
       "id": "state_3",
       "node_type": "collect_reagent",
-      "label": "Collect Pearl",
+      "label": "Collect Reagents",
       "position": {
         "x": 880.0,
         "y": 0.0
@@ -72,14 +87,16 @@
           "z": -1186.73
         },
         "entity_names": [
-          "Pearl"
+          "Pearl",
+          "Kelp",
+          "Shell"
         ]
       }
     },
     {
       "id": "state_4",
       "node_type": "collect_reagent",
-      "label": "Collect Pearl",
+      "label": "Collect Reagents",
       "position": {
         "x": 1320.0,
         "y": 0.0
@@ -92,14 +109,16 @@
           "z": -1179.23
         },
         "entity_names": [
-          "Pearl"
+          "Pearl",
+          "Kelp",
+          "Shell"
         ]
       }
     },
     {
       "id": "state_5",
       "node_type": "collect_reagent",
-      "label": "Collect Pearl",
+      "label": "Collect Reagents",
       "position": {
         "x": 1760.0,
         "y": 0.0
@@ -112,7 +131,9 @@
           "z": -1190.31
         },
         "entity_names": [
-          "Pearl"
+          "Pearl",
+          "Kelp",
+          "Shell"
         ]
       }
     },
@@ -137,6 +158,18 @@
           "y": 152.86,
           "z": -0.4
         }
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "go_to_world",
+      "label": "Go to Celestia",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "world": "Celestia"
       }
     }
   ],
@@ -193,6 +226,16 @@
     },
     {
       "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_4",
       "dest": "state_5",
       "when": "SUCCESS",
@@ -233,8 +276,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "state_7",
+      "dest": "state_7",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -243,8 +286,18 @@
     },
     {
       "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_4",
-      "dest": "state_5",
+      "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -254,7 +307,7 @@
     {
       "trigger": "advance",
       "source": "state_5",
-      "dest": "state_6",
+      "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",

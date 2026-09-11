@@ -39,12 +39,12 @@ PROJECT_ROOT = Path(__file__).parent.parent
 TAGS: dict[str, list[str]] = {
     # ── 01_wizard_city ────────────────────────────────────────────────
     "01_wizard_city/alicane_swiftarrow.json": ["Boss"],
-    "01_wizard_city/crab_alley_stone_block.json": ["Reagents", "Gathering"],
+    "01_wizard_city/crab_alley_stone_block.json": ["Reagents", "Collecting"],
     "01_wizard_city/foulgaze.json": ["Gear", "Animus", "Boss"],
     "01_wizard_city/harvest_lord.json": ["Gear", "Boss"],
     "01_wizard_city/king_detritus.json": ["Gear", "Reagents", "Boss"],
     "01_wizard_city/lord_nightshade.json": ["Gear", "Mounts", "Boss"],
-    "01_wizard_city/nightside_flax.json": ["Reagents", "Gathering"],
+    "01_wizard_city/nightside_flax.json": ["Reagents", "Collecting"],
     "01_wizard_city/prince_viggor.json": ["Gear", "Reagents", "Boss"],
     "01_wizard_city/sergeant_skullsplitter.json": ["Gear", "Boss"],
     "01_wizard_city/waterworks.json": ["Gear", "Snacks", "Dungeon"],
@@ -52,7 +52,7 @@ TAGS: dict[str, list[str]] = {
     "02_krokotopia/biti_nirini.json": ["Spellements", "Seeds", "Boss"],
     "02_krokotopia/house_of_scales.json": ["Gear", "Dungeon"],
     "02_krokotopia/krokopatra.json": ["Gear", "Spellements", "Boss"],
-    "02_krokotopia/selenopolis_parchment.json": ["Reagents", "Gathering"],
+    "02_krokotopia/selenopolis_parchment.json": ["Reagents", "Collecting"],
     "02_krokotopia/throne_room_of_fire.json": ["Gear", "Dungeon"],
     # ── 03_marleybone ─────────────────────────────────────────────────
     "03_marleybone/barkingham_palace_main_hall.json": ["Gear", "Pets", "Dungeon"],
@@ -62,7 +62,7 @@ TAGS: dict[str, list[str]] = {
     "03_marleybone/ironworks.json": ["Gear", "Dungeon"],
     "03_marleybone/katzensteins_lab.json": ["Gear", "Dungeon"],
     "03_marleybone/ransacked_throne_room.json": ["Gear", "Spellements", "Pets", "Dungeon"],
-    "03_marleybone/scrap_iron_collector.json": ["Reagents", "Gathering"],
+    "03_marleybone/scrap_iron_collector.json": ["Reagents", "Collecting"],
     "03_marleybone/spike_the_crusher.json": ["Gear", "Boss"],
     "03_marleybone/sprockets.json": ["Gear", "Boss"],
     # ── 04_mooshu ─────────────────────────────────────────────────────
@@ -75,29 +75,29 @@ TAGS: dict[str, list[str]] = {
     "04_mooshu/youkai.json": ["Gear", "Boss"],
     # ── 05_dragonspyre ────────────────────────────────────────────────
     "05_dragonspyre/the_great_spyre.json": ["Gear", "Reagents", "Spellements", "Dungeon"],
-    "05_dragonspyre/the_necropolis_deep_mushroom.json": ["Reagents", "Gathering"],
+    "05_dragonspyre/the_necropolis_deep_mushroom.json": ["Reagents", "Collecting"],
     # Tagged for what it should farm; wants a level-scaling node first.
     "05_dragonspyre/valerik_brightsword.json": ["Gear", "Reagents", "Boss"],
     # ── 06_grizzleheim ────────────────────────────────────────────────
-    "06_grizzleheim/mirkholm_keep_ore.json": ["Reagents", "Gathering"],
+    "06_grizzleheim/mirkholm_keep_ore.json": ["Reagents", "Collecting"],
     # ── 07_celestia ───────────────────────────────────────────────────
     "07_celestia/achaelos.json": ["Gear", "Housing", "Boss"],
     # Same level-scaling caveat as valerik_brightsword.
     "07_celestia/big_salgio.json": ["Gear", "Reagents", "Spellements", "Boss"],
     "07_celestia/praetor_mako.json": ["Gear", "Boss"],
     "07_celestia/queen_calypso.json": ["Gear", "Boss"],
-    "07_celestia/the_portico_pearl.json": ["Reagents", "Gathering"],
+    "07_celestia/the_portico_pearl.json": ["Reagents", "Collecting"],
     "07_celestia/trial_of_the_spheres.json": ["Gear", "Dungeon"],
     # ── 09_zafaria ────────────────────────────────────────────────────
     "09_zafaria/mirror_lake.json": ["Gear", "Snacks", "Dungeon"],
     # ── 10_avalon ─────────────────────────────────────────────────────
     "10_avalon/harlequin_knight.json": ["Spellements", "Boss"],
     "10_avalon/jabberwock.json": ["Housing", "Boss"],
-    "10_avalon/the_wild_deep_mushroom.json": ["Reagents", "Gathering"],
+    "10_avalon/the_wild_deep_mushroom.json": ["Reagents", "Collecting"],
     # ── 11_azteca ─────────────────────────────────────────────────────
     "11_azteca/guillermo_shatterer.json": ["Treasure Cards", "Boss"],
     "11_azteca/pyramid_of_mother_moon_tartarus_workaround.json": ["Spellements", "Dungeon"],
-    "11_azteca/the_zocalo_red_mandrake.json": ["Reagents", "Gathering"],
+    "11_azteca/the_zocalo_red_mandrake.json": ["Reagents", "Collecting"],
     # ── 13_polaris ────────────────────────────────────────────────────
     "13_polaris/vigilant_jarilo.json": ["Jewels", "Boss"],
     # ── 14_arcanum ────────────────────────────────────────────────────
@@ -110,8 +110,8 @@ TAGS: dict[str, list[str]] = {
     "15_mirage/fortee_thieves.json": ["Jewels", "Mobs"],
     "15_mirage/mongu_refuge.json": ["Jewels", "Reagents", "Boss"],
     # ── 16_empyrea ────────────────────────────────────────────────────
-    "16_empyrea/aeriel_shores_aethyr_burst.json": ["Reagents", "Gathering"],
-    "16_empyrea/aeriel_shores_silver_chests.json": ["Reagents", "Gathering"],
+    "16_empyrea/aeriel_shores_aethyr_burst.json": ["Reagents", "Collecting"],
+    "16_empyrea/aeriel_shores_silver_chests.json": ["Reagents", "Collecting"],
     "16_empyrea/monkey_spiders.json": ["Jewels", "Seeds", "Mobs"],
     "16_empyrea/secret_tunnel.json": ["Reagents", "Seeds", "Dungeon"],
     # ── 17_karamelle ──────────────────────────────────────────────────

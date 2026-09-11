@@ -30,7 +30,7 @@ def _meta(name: str, *, tags: list[str] | None = None, drops: list[str] | None =
 
 
 JADE = _meta("Jade Oni", tags=["Gear", "Spellements", "Boss"], drops=["Amber", "Jade Robe"])
-FLAX = _meta("Nightside Flax", tags=["Reagents", "Gathering"], drops=["Flax"])
+FLAX = _meta("Nightside Flax", tags=["Reagents", "Collecting"], drops=["Flax"])
 WATER = _meta("Waterworks", tags=["Gear", "Dungeon"], description="Crab Alley", authors="Someone")
 OLYMPUS = _meta("Mt Olympus", tags=["Gear", "Spellements", "Dungeon"])
 ALL = [JADE, FLAX, WATER, OLYMPUS]
@@ -59,7 +59,7 @@ def test_query_matches_description_and_author():
 
 def test_query_matches_a_tag():
     """Typing a tag name works even for someone who never notices the chips."""
-    results, _ = filter_bot_metas(ALL, "gathering", set())
+    results, _ = filter_bot_metas(ALL, "Collecting", set())
 
     assert _names(results) == ["Nightside Flax"]
 
@@ -105,8 +105,8 @@ def test_tags_within_one_group_or_together():
 
 
 def test_or_within_a_group_still_intersects_the_other_group():
-    """ "Gear or Reagents" AND "Gathering" — Jade Oni has Gear but is a Boss."""
-    results, _ = filter_bot_metas(ALL, "", {"Gear", "Reagents", "Gathering"})
+    """ "Gear or Reagents" AND "Collecting" — Jade Oni has Gear but is a Boss."""
+    results, _ = filter_bot_metas(ALL, "", {"Gear", "Reagents", "Collecting"})
 
     assert _names(results) == ["Nightside Flax"]
 
@@ -121,7 +121,7 @@ def test_tags_and_query_intersect():
 
 
 def test_whitespace_only_query_is_treated_as_no_query():
-    results, _ = filter_bot_metas(ALL, "   ", {"Gathering"})
+    results, _ = filter_bot_metas(ALL, "   ", {"Collecting"})
 
     assert _names(results) == ["Nightside Flax"]
 

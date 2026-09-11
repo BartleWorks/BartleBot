@@ -46,7 +46,7 @@ TAG_GROUPS: dict[str, tuple[str, ...]] = {
         "Challenge Mode",  # dungeons with Challenge Mode available
         "Gauntlet",  # housing gauntlets
         "Team-Up",  # joins the fight through Team-Up instead of entering alone
-        "Gathering",  # a reagent-node route with no combat, unlike a boss that drops reagents
+        "Collecting",  # a reagent-node route with no combat, unlike a boss that drops reagents
         "Training Points",  # a bot that completes training point quests
     ),
 }
