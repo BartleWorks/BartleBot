@@ -82,6 +82,7 @@ The snapshots and their tools:
 | `data/dialog_captions.json` | `dump_dialog_captions.py` | a modal is reworded, or a key is added to `KNOWN_KEYS` |
 | `data/world_names.json` | `dump_world_names.py` | a world is added or renamed in any locale |
 | `data/spell_names.json` | `dump_spell_names.py` | a spell is added or renamed |
+| `data/realm_names.json` | `dump_realm_names.py` | a realm is added, retired or renamed; also carries the localized Yes/No the Remember Realm option shows |
 
 `WorldNames.lang` is worth knowing about on its own, because its key **is** the world
 segment `zone_name()` returns — `WizardCity`, `DragonSpire`, `MooShu` — and its value is

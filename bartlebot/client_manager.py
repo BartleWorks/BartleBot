@@ -272,6 +272,8 @@ class ClientManager(QObject):
             expected_title,
             lambda: self.has_client_titled(expected_title),
             lambda: self.pending_client_titled(expected_title),
+            # Remember Realm only matters once there is a realm to come back to.
+            remember_realm=bool(SettingsManager.instance().favorite_realm),
         )
 
     async def await_client_in(self, expected_title: str) -> bool:

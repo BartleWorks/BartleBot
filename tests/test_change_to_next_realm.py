@@ -1,9 +1,10 @@
-"""Unit tests for the change_realm node."""
+"""Unit tests for the change_to_next_realm node (formerly change_realm)."""
 
 from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.node_helpers as nh
-import bartlebot.nodes.utility.change_realm as cr
+import bartlebot.nodes.utility.change_to_next_realm as cr
+import bartlebot.nodes.utility.realm_list as rl
 from bartlebot import dialog_captions
 from bartlebot.nodes.paths import (
     MESSAGE_BOX_CENTER,
@@ -47,7 +48,7 @@ async def test_spellbook_never_opens():
     client = FakeClient()
 
     with (
-        patch.object(cr, "POLL_INTERVAL", 0),
+        patch.object(rl, "POLL_INTERVAL", 0),
         patch.object(nh, "click_by_path", new=AsyncMock()),
         patch.object(nh, "poll_until", new=AsyncMock(return_value=False)),
     ):
@@ -65,7 +66,7 @@ async def test_realm_panel_never_opens():
     # 2. SPELLBOOK_REALMS_BUTTON visible   → True (not a failure gate in the code)
     # 3. REALM_CURRENT_NAME visible        → False (realm panel didn't open) → FAILURE
     with (
-        patch.object(cr, "POLL_INTERVAL", 0),
+        patch.object(rl, "POLL_INTERVAL", 0),
         patch.object(nh, "click_by_path", new=AsyncMock()),
         patch.object(nh, "poll_until", new=AsyncMock(side_effect=[True, True, False])),
     ):
@@ -87,10 +88,10 @@ async def test_realm_hop_timeout():
         return True
 
     with (
-        patch.object(cr, "POLL_INTERVAL", 0),
-        patch.object(cr, "REALM_HOP_TIMEOUT", -1),  # -1 ensures elapsed > timeout immediately
-        patch.object(cr, "_navigate_to_page_1", new=AsyncMock(return_value=True)),
-        patch.object(cr, "_navigate_pages", new=AsyncMock(return_value=True)),
+        patch.object(rl, "POLL_INTERVAL", 0),
+        patch.object(rl, "REALM_HOP_TIMEOUT", -1),  # -1 ensures elapsed > timeout immediately
+        patch.object(rl, "navigate_to_page_1", new=AsyncMock(return_value=True)),
+        patch.object(rl, "navigate_pages", new=AsyncMock(return_value=True)),
         patch.object(nh, "click_by_path", new=AsyncMock()),
         patch.object(nh, "poll_until", new=AsyncMock(return_value=True)),
         patch.object(nh, "is_enabled_by_path", side_effect=fake_is_enabled),
@@ -114,9 +115,9 @@ async def _run_realm_change_with_modal(visible_buttons) -> tuple[str, list[list[
     patches, clicked = message_box_patches(visible_buttons)
 
     with (
-        patch.object(cr, "POLL_INTERVAL", 0),
-        patch.object(cr, "_navigate_to_page_1", new=AsyncMock(return_value=True)),
-        patch.object(cr, "_navigate_pages", new=AsyncMock(return_value=True)),
+        patch.object(rl, "POLL_INTERVAL", 0),
+        patch.object(rl, "navigate_to_page_1", new=AsyncMock(return_value=True)),
+        patch.object(rl, "navigate_pages", new=AsyncMock(return_value=True)),
         patch.object(nh, "poll_until", new=AsyncMock(return_value=True)),
         patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True)),
         patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="SomeRealm")),
@@ -157,9 +158,9 @@ async def test_refusal_from_inside_a_dungeon_fails_immediately():
     machine = FakeMachine()
 
     with (
-        patch.object(cr, "POLL_INTERVAL", 0),
-        patch.object(cr, "_navigate_to_page_1", new=AsyncMock(return_value=True)),
-        patch.object(cr, "_navigate_pages", new=AsyncMock(return_value=True)),
+        patch.object(rl, "POLL_INTERVAL", 0),
+        patch.object(rl, "navigate_to_page_1", new=AsyncMock(return_value=True)),
+        patch.object(rl, "navigate_pages", new=AsyncMock(return_value=True)),
         patch.object(nh, "poll_until", new=AsyncMock(return_value=True)),
         patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True)),
         patch.object(nh, "identify_modal", new=AsyncMock(return_value=dialog_captions.REALM_NOT_ALLOWED_HERE)),
@@ -183,9 +184,9 @@ async def test_dungeon_reset_warning_is_confirmed_and_the_hop_proceeds():
     patches, clicked = message_box_patches((MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
 
     with (
-        patch.object(cr, "POLL_INTERVAL", 0),
-        patch.object(cr, "_navigate_to_page_1", new=AsyncMock(return_value=True)),
-        patch.object(cr, "_navigate_pages", new=AsyncMock(return_value=True)),
+        patch.object(rl, "POLL_INTERVAL", 0),
+        patch.object(rl, "navigate_to_page_1", new=AsyncMock(return_value=True)),
+        patch.object(rl, "navigate_pages", new=AsyncMock(return_value=True)),
         patch.object(nh, "poll_until", new=AsyncMock(return_value=True)),
         patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True)),
         patch.object(nh, "identify_modal", new=AsyncMock(return_value=dialog_captions.REALM_RESETS_DUNGEON)),
@@ -197,3 +198,18 @@ async def test_dungeon_reset_warning_is_confirmed_and_the_hop_proceeds():
 
     assert result == "SUCCESS"
     assert clicked[-1] == MESSAGE_BOX_CENTER
+
+
+# ---------------------------------------------------------------------------
+# The rename
+# ---------------------------------------------------------------------------
+
+
+def test_the_old_node_type_is_gone_and_the_library_uses_the_new_one():
+    """A bot file still saying change_realm would load as an unknown node type."""
+    from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
+
+    assert "change_realm" not in NODE_REGISTRY
+    assert "change_realm" not in NODE_SPECS
+    assert "change_to_next_realm" in NODE_REGISTRY
+    assert "change_to_favorite_realm" in NODE_REGISTRY

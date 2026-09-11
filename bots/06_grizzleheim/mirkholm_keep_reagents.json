@@ -204,7 +204,7 @@
     },
     {
       "id": "state_22",
-      "node_type": "change_realm",
+      "node_type": "change_to_next_realm",
       "label": "Change to next realm",
       "position": {
         "x": 5720.0,

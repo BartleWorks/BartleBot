@@ -99,6 +99,9 @@ APP_SETTING_KEYS: dict[str, str] = {
     # A character name is never the bot's to carry, so the app setting is
     # the shared level under a per-bot override.
     "Friend Name": "default_friend_name",
+    # A favourite realm is where *this user* farms; a bot naming one would herd every
+    # user who runs it into the same realm.
+    "Favorite Realm": "favorite_realm",
 }
 
 # Options an author has no business declaring at all, whatever their dungeon does.
@@ -112,6 +115,9 @@ APP_SETTING_KEYS: dict[str, str] = {
 #                   bot only its author can run.
 #   Enable Quicksell  is whether the user is willing to lose items at all.  An
 #                   author who did not want selling would leave the node out.
+#   Favorite Realm  is where this user's characters farm.  A bot declaring one would
+#                   send everyone who runs it to the same realm -- the crowding the
+#                   setting exists to escape.
 #
 # Deliberately *not* here: ``Sell Pets`` and its two siblings, because a bot whose
 # target drop is a pet has to be able to say so, and the keep list cannot spare an
@@ -127,7 +133,7 @@ APP_SETTING_KEYS: dict[str, str] = {
 # so: an author who really does know their dungeon scales only some players may
 # still say so, and unlike the three above a wrong answer here costs an elixir
 # rather than an item, a name, or a run.
-USER_OWNED_OPTIONS: frozenset[str] = frozenset({"Safety Delay", "Friend Name", "Enable Quicksell"})
+USER_OWNED_OPTIONS: frozenset[str] = frozenset({"Safety Delay", "Friend Name", "Enable Quicksell", "Favorite Realm"})
 
 
 def is_user_owned(name: str) -> bool:
@@ -170,7 +176,7 @@ def value_matches_type(value: Any, declared_type: str | None) -> bool:
         return isinstance(value, int) and not isinstance(value, bool)
     if declared_type == "float":
         return isinstance(value, (int, float)) and not isinstance(value, bool)
-    if declared_type in ("str", "friend_name"):
+    if declared_type in ("str", "friend_name", "realm"):
         return isinstance(value, str)
     if declared_type == "player_list":
         return isinstance(value, list) and all(isinstance(v, int) and not isinstance(v, bool) for v in value)

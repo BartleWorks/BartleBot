@@ -24,7 +24,7 @@ def _config():
         name="t",
         initial="a",
         recovery_state="a",
-        states=[StateModel(id=sid, node_type="change_realm", params={}) for sid in ("a", "b")],
+        states=[StateModel(id=sid, node_type="change_to_next_realm", params={}) for sid in ("a", "b")],
         transitions=[TransitionModel(trigger="advance", source="a", dest="b", when="SUCCESS")],
     )
 
@@ -116,7 +116,7 @@ def test_the_sidebar_follows_the_config_undo_swapped_in(qapp):
     """The initial-state warning work's surviving half: after an undo the sidebar edited a discarded object."""
     h = _Harness(_config())
     h.canvas.scene.about_to_change.emit("add a state")
-    h.canvas.config.states.append(StateModel(id="c", node_type="change_realm", params={}))
+    h.canvas.config.states.append(StateModel(id="c", node_type="change_to_next_realm", params={}))
     h.canvas.scene.graph_changed.emit()
     h.canvas.undo()
 

@@ -488,6 +488,7 @@ def _base_reconnect_patches(display_name: str = "j***n"):
     """Return a stacked context manager with the external deps every reconnect test needs."""
     mock_settings = MagicMock()
     mock_settings.accounts = []
+    mock_settings.favorite_realm = ""  # a MagicMock is truthy; it would ask the cleanup for Remember Realm
     mock_windll = MagicMock()
     mock_windll.user32.FindWindowW.return_value = 0  # no crashed window by default
 
@@ -498,6 +499,7 @@ def _base_reconnect_patches(display_name: str = "j***n"):
         patch("ctypes.windll", mock_windll),
         patch("asyncio.sleep", new_callable=AsyncMock),
         patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+        patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
     )
 
 
@@ -526,6 +528,7 @@ class TestReconnectClients:
         harness._machine = machine
         mock_settings = MagicMock()
         mock_settings.accounts = []
+        mock_settings.favorite_realm = ""  # a MagicMock is truthy; it would ask the cleanup for Remember Realm
 
         with (
             patch("bartlebot.client_manager.CredentialStore") as mock_creds,
@@ -556,6 +559,7 @@ class TestReconnectClients:
 
         mock_settings = MagicMock()
         mock_settings.accounts = []
+        mock_settings.favorite_realm = ""  # a MagicMock is truthy; it would ask the cleanup for Remember Realm
 
         with (
             patch("bartlebot.client_manager.CredentialStore") as mock_creds,
@@ -565,6 +569,7 @@ class TestReconnectClients:
             patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -582,6 +587,7 @@ class TestReconnectClients:
 
         mock_settings = MagicMock()
         mock_settings.accounts = []
+        mock_settings.favorite_realm = ""  # a MagicMock is truthy; it would ask the cleanup for Remember Realm
 
         # Make time run away, so whatever the drive sets its deadline from is already past
         # by its next check. A fixed second value cannot do that: the batch launch hands
@@ -627,6 +633,7 @@ class TestReconnectClients:
 
         mock_settings = MagicMock()
         mock_settings.accounts = []
+        mock_settings.favorite_realm = ""  # a MagicMock is truthy; it would ask the cleanup for Remember Realm
 
         mock_launch = _fake_launch_accounts()
 
@@ -638,6 +645,7 @@ class TestReconnectClients:
             patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -658,6 +666,7 @@ class TestReconnectClients:
 
         mock_settings = MagicMock()
         mock_settings.accounts = []
+        mock_settings.favorite_realm = ""  # a MagicMock is truthy; it would ask the cleanup for Remember Realm
 
         mock_windll = MagicMock()
         mock_windll.user32.FindWindowW.return_value = 0  # no crashed window
@@ -672,6 +681,7 @@ class TestReconnectClients:
             patch("bartlebot.client_manager.get_window_title", return_value="[j***n] Wizard101"),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.return_value = "s3cr3t"
             mock_creds.display_name.return_value = "j***n"
@@ -692,6 +702,7 @@ class TestReconnectClients:
 
         mock_settings = MagicMock()
         mock_settings.accounts = []
+        mock_settings.favorite_realm = ""  # a MagicMock is truthy; it would ask the cleanup for Remember Realm
 
         # The driver reads and tidies up through the handler's client, so it has to be
         # registered there as well as published.
@@ -773,6 +784,7 @@ class TestBatchRecovery:
             patch("bartlebot.client_manager.get_window_title", side_effect=harness._titles.get),
             patch("asyncio.sleep", new_callable=AsyncMock),
             patch("bartlebot.launcher.auto_select.is_enabled_by_path", new_callable=AsyncMock, return_value=False),
+            patch("bartlebot.launcher.auto_select.poll_until", new_callable=AsyncMock, return_value=False),
         ):
             mock_creds.retrieve.side_effect = lambda username: None if username in no_password else "s3cr3t"
             mock_creds.display_name.side_effect = lambda username, _alias=None: username

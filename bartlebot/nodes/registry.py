@@ -37,8 +37,10 @@ from bartlebot.nodes.teleportation.teleport_to_world_hub import NODE_SPEC as _te
 from bartlebot.nodes.teleportation.teleport_to_world_hub import run as teleport_to_world_hub_run
 from bartlebot.nodes.utility.apply_level_scaling import NODE_SPEC as _apply_level_scaling_spec
 from bartlebot.nodes.utility.apply_level_scaling import run as apply_level_scaling_run
-from bartlebot.nodes.utility.change_realm import NODE_SPEC as _change_realm_spec
-from bartlebot.nodes.utility.change_realm import run as change_realm_run
+from bartlebot.nodes.utility.change_to_favorite_realm import NODE_SPEC as _change_to_favorite_realm_spec
+from bartlebot.nodes.utility.change_to_favorite_realm import run as change_to_favorite_realm_run
+from bartlebot.nodes.utility.change_to_next_realm import NODE_SPEC as _change_to_next_realm_spec
+from bartlebot.nodes.utility.change_to_next_realm import run as change_to_next_realm_run
 from bartlebot.nodes.utility.check_if_dropped import NODE_SPEC as _check_if_dropped_spec
 from bartlebot.nodes.utility.check_if_dropped import run as check_if_dropped_run
 from bartlebot.nodes.utility.check_level_scaling import NODE_SPEC as _check_level_scaling_spec
@@ -66,7 +68,8 @@ from bartlebot.nodes.zone_entry.enter_zone_via_object import run as enter_zone_v
 
 NODE_REGISTRY: dict = {
     "apply_level_scaling": apply_level_scaling_run,
-    "change_realm": change_realm_run,
+    "change_to_favorite_realm": change_to_favorite_realm_run,
+    "change_to_next_realm": change_to_next_realm_run,
     "click_path": click_path_run,
     "enter_zone": enter_zone_run,
     "handle_potions": handle_potions_run,
@@ -101,7 +104,8 @@ NODE_REGISTRY: dict = {
 
 NODE_SPECS: dict[str, NodeSpec] = {
     "apply_level_scaling": _apply_level_scaling_spec,
-    "change_realm": _change_realm_spec,
+    "change_to_favorite_realm": _change_to_favorite_realm_spec,
+    "change_to_next_realm": _change_to_next_realm_spec,
     "click_path": _click_path_spec,
     "enter_zone": _enter_zone_spec,
     "handle_potions": _handle_potions_spec,
@@ -187,7 +191,8 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         "Utility",
         [
             "apply_level_scaling",
-            "change_realm",
+            "change_to_favorite_realm",
+            "change_to_next_realm",
             "check_if_dropped",
             "check_level_scaling",
             "check_zone",

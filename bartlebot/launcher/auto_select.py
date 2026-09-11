@@ -67,6 +67,7 @@ import ctypes
 import logging
 from collections.abc import Callable
 
+from bartlebot.launcher.remember_realm import turn_on_remember_realm
 from bartlebot.nodes.node_helpers import click_by_path, is_enabled_by_path, is_visible_by_path, poll_until
 from bartlebot.nodes.paths import BACKPACK_CLOSE_BUTTON_PATH, CHAR_SELECT_PATH, CROWNS_SHOP_PATH
 from bartlebot.nodes.timing import (
@@ -392,7 +393,7 @@ async def wait_for_client_in(
     return is_hooked()
 
 
-async def clean_up_after_auto_select(client) -> None:
+async def clean_up_after_auto_select(client, *, remember_realm: bool = False) -> None:
     """Dismiss anything that opened by itself during login.
 
     The crowns shop opens on its own for some accounts. The chat box is also handled, for
@@ -402,6 +403,12 @@ async def clean_up_after_auto_select(client) -> None:
     Both loops no-op when nothing is open, which is the normal case now that Enter only
     ever lands on the character-select screen.
 
+    *remember_realm* turns the game's Remember Realm option on while that settings window
+    is up, between the two ESC loops — the one moment per launch it is already open, so
+    the player is not seen closing settings and reopening it a moment later. The caller
+    passes it when a favourite realm is set, since that is the only time the option
+    changes anything a bot relies on.
+
     Best-effort throughout: a leftover window is cosmetic, and nothing here should be able
     to fail a launch that otherwise succeeded.
     """
@@ -410,17 +417,29 @@ async def clean_up_after_auto_select(client) -> None:
     async def _esc() -> None:
         await _press(hwnd, _VK_ESCAPE)
 
+    async def _settings_open() -> bool:
+        return await is_enabled_by_path(client, BACKPACK_CLOSE_BUTTON_PATH)
+
+    async def _settings_closed() -> bool:
+        return not await _settings_open()
+
+    # Each ESC is followed by a wait for the window to actually appear or go, capped at
+    # AUTO_SELECT_CLEANUP_INTERVAL. A fixed sleep of that length used to sit here, which
+    # left the player parked in front of an open settings window for two seconds before
+    # anything touched it; the cap is still what stops a second ESC landing mid-animation.
     try:
         for _ in range(_CLEANUP_ATTEMPTS):
-            if await is_enabled_by_path(client, BACKPACK_CLOSE_BUTTON_PATH):
+            if await _settings_open():
                 break
             await _esc()
-            await asyncio.sleep(AUTO_SELECT_CLEANUP_INTERVAL)
+            await poll_until(_settings_open, timeout=AUTO_SELECT_CLEANUP_INTERVAL)
+        if remember_realm and await _settings_open():
+            await turn_on_remember_realm(client)
         for _ in range(_CLEANUP_ATTEMPTS):
-            if not await is_enabled_by_path(client, BACKPACK_CLOSE_BUTTON_PATH):
+            if await _settings_closed():
                 break
             await _esc()
-            await asyncio.sleep(AUTO_SELECT_CLEANUP_INTERVAL)
+            await poll_until(_settings_closed, timeout=AUTO_SELECT_CLEANUP_INTERVAL)
 
         for _ in range(_CLEANUP_ATTEMPTS):
             if not await is_enabled_by_path(client, CROWNS_SHOP_PATH):
@@ -446,17 +465,22 @@ async def drive_client_in(
     get_client: Callable[[], object | None],
     *,
     timeout: float = AUTO_SELECT_TIMEOUT,
+    remember_realm: bool = False,
 ) -> bool:
     """auto_select_character followed by the cleanup pass, for the common case.
 
     *get_client* returns the client for *expected_title* — used both to read the screen
     while driving and to tidy up afterwards. Returns whatever ``auto_select_character``
     returned; cleanup failures do not change it.
+
+    *remember_realm* is handed to the cleanup, which turns the game's Remember Realm
+    option on while it has the settings window open — passed when a favourite realm is
+    set, since that is the only time the option changes anything a bot relies on.
     """
     reached = await auto_select_character(expected_title, is_hooked, get_client, timeout=timeout)
     if not reached:
         return False
     client = get_client()
     if client is not None:
-        await clean_up_after_auto_select(client)
+        await clean_up_after_auto_select(client, remember_realm=remember_realm)
     return True

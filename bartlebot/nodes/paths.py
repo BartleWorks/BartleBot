@@ -130,6 +130,32 @@ REALM_PAGE_LABEL_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "Realm
 # spellbook and reopening is the reliable way back to it.
 SETTINGS_QUIT_BUTTON_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "QuitButton"]
 
+# The "Remember Realm" option, on the third gameplay-options tab of the same settings
+# page. Its value is localized text ("Yes"/"No", "Ja"/"Nein", ...) -- read it through
+# bartlebot.realms.yes_no(), never by comparing to English. The right arrow flips it;
+# OK commits the page. There is no config.xml or preferences.xml tag for it, which is
+# why it is toggled through the UI after login rather than patched before launch.
+SETTINGS_MORE_GAMEPLAY_TAB_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "TabWindow", "MoreGameplayButton"]
+REMEMBER_REALM_VALUE_PATH = [
+    "WorldView",
+    "DeckConfiguration",
+    "SettingPage",
+    "MoreGameplayOptions",
+    "OptionRememberRealm",
+    "OptionControl",
+    "OptionValue",
+]
+REMEMBER_REALM_TOGGLE_PATH = [
+    "WorldView",
+    "DeckConfiguration",
+    "SettingPage",
+    "MoreGameplayOptions",
+    "OptionRememberRealm",
+    "OptionControl",
+    "OptionButtonRight",
+]
+SETTINGS_OK_BUTTON_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "OkButton"]
+
 
 def realm_name_path(row: int) -> list[str]:
     """Return the path to the realm name label for the given row (0–6)."""

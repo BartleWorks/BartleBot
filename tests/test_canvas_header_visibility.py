@@ -27,7 +27,7 @@ def _config():
         name="t",
         initial="a",
         recovery_state="a",
-        states=[StateModel(id="a", node_type="change_realm", params={})],
+        states=[StateModel(id="a", node_type="change_to_next_realm", params={})],
         transitions=[],
     )
 

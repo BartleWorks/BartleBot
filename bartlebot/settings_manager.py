@@ -54,6 +54,7 @@ class _GeneralSettings(BaseModel):
     relog_interval_hours: float = 4.0
     disable_quick_friend_teleport: bool = True
     default_friend_name: str = ""
+    favorite_realm: str = ""
     show_option_descriptions: bool = False
     streamer_mode: bool = False
 
@@ -114,6 +115,7 @@ _DEFAULTS: dict[str, Any] = {
         "relog_interval_hours": 4.0,
         "disable_quick_friend_teleport": True,
         "default_friend_name": "",
+        "favorite_realm": "",
         "show_option_descriptions": False,
         "streamer_mode": False,
     },
@@ -551,6 +553,21 @@ class SettingsManager:
     @default_friend_name.setter
     def default_friend_name(self, value: str) -> None:
         self.set_general("default_friend_name", str(value or "").strip())
+
+    @property
+    def favorite_realm(self) -> str:
+        """Realm key (its English name, e.g. "Balestrom") the user farms in; "" for none.
+
+        Machine configuration, like the friend name above: a shared bot file naming a
+        realm would herd every user who runs it into one place, which is the opposite of
+        what a favourite realm is for. The node reads it as the ``Favorite Realm`` bot
+        option, so a per-bot override in Setup still wins over this.
+        """
+        return str(self.get_general("favorite_realm", default="") or "")
+
+    @favorite_realm.setter
+    def favorite_realm(self, value: str) -> None:
+        self.set_general("favorite_realm", str(value or "").strip())
 
     @property
     def recent_friend_names(self) -> list[str]:
