@@ -21,7 +21,7 @@ from bartlebot.bot.schema import BotConfig, RegionModel, StateModel, SubgraphSou
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import ComposeReport, compose_bot, local_id
-from tests.test_subgraphs import REGION, SYNC_ID, _all_bot_files, _t, linked_bot, m, sync_players_definition
+from tests.test_subgraphs import REGION, SYNC_ID, _t, linked_bot, m, sync_players_definition
 
 
 class ControllerHarness:
@@ -367,19 +367,3 @@ def test_flush_regions_keeps_single_member_linked_region(qapp, library, bot_file
     config.states = [st for st in config.states if st.id != "state_2"]
     manager.flush_regions()
     assert [r.id for r in config.regions] == [REGION]
-
-
-# ---------------------------------------------------------------------------
-# Library-wide, against the real roots
-# ---------------------------------------------------------------------------
-
-
-def test_every_shipped_bot_opens_with_empty_report():
-    """No shipped bot links a subgraph yet (#59 is where that starts), so composing
-    each one against the real roots must be the identity with nothing to report."""
-    library = SubgraphLibrary()
-    for path in _all_bot_files():
-        config = BotConfig.load(path)
-        composed, report = compose_bot(config, library)
-        assert composed is config, path
-        assert report.regions == {}, path

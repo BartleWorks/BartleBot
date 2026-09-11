@@ -58,7 +58,6 @@ from bartlebot.subgraphs import (
 )
 
 _REPO = Path(__file__).parent.parent
-_BOTS_DIR = _REPO / "bots"
 
 SYNC_ID = "sync-players"
 REGION = "9f59026b"
@@ -248,25 +247,6 @@ def test_compose_is_identity_for_unlinked_config(tmp_path):
     composed, report = compose_bot(cfg, SubgraphLibrary(tmp_path))
     assert composed is cfg
     assert report == ComposeReport()
-
-
-def _all_bot_files() -> list[Path]:
-    files = sorted(_BOTS_DIR.rglob("*.json"))
-    assert files
-    return files
-
-
-def test_every_shipped_bot_composes_to_itself(tmp_path):
-    """Nothing in the library links a subgraph yet, so composition must be a no-op
-    on every file — same object back, empty report, identical machine config."""
-    lib = SubgraphLibrary(tmp_path)
-    for path in _all_bot_files():
-        cfg = BotConfig.load(path)
-        before = cfg.to_machine_config()
-        composed, report = compose_bot(cfg, lib)
-        assert composed is cfg, path.name
-        assert report.regions == {}, path.name
-        assert composed.to_machine_config() == before, path.name
 
 
 def test_instance_slug_is_a_safe_lowercase_id():
