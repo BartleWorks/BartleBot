@@ -84,20 +84,23 @@ NODE_SPEC = NodeSpec(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: realm_list.open_realm_list(), realm_list.navigate_to_page_1(), realm_list.navigate_pages(),
-          realm_list.row_name(), realm_list.is_current_realm(), realm_list.hop_to_row(), realms.matches()
+    APIs: realm_list.open_realm_list(), realm_list.wait_for_current_realm_name(), realm_list.navigate_to_page_1(),
+          realm_list.navigate_pages(), realm_list.row_name(), realm_list.is_current_realm(),
+          realm_list.hop_to_row(), realms.matches()
 
     Flow (per client, run concurrently via asyncio.gather):
       1. Resolve the Favorite Realm option; FAILURE at once if it is empty or names a
          realm the snapshot does not know, so the user is told what to set.
       2. Open the spellbook to the Realms tab and wait for the list to render.
-      3. Anchor to page 1.
-      4. On each page, read every row's name and match it against the favourite in
+      3. Read the current realm directly from txtYourRealmName. If it matches the
+         favourite already, close the spellbook and report SUCCESS without paging.
+      4. Otherwise anchor to page 1.
+      5. On each page, read every row's name and match it against the favourite in
          every locale. A blank row ends the page.
-      5. If the matching row's button is disabled the player is already there: close the
+      6. If the matching row's button is disabled the player is already there: close the
          spellbook and report SUCCESS. Otherwise select it, wait out the cooldown, press
          Go To Realm, and wait for the loading screen to start and clear.
-      6. No match and the right arrow enabled: page right and repeat. No match and the
+      7. No match and the right arrow enabled: page right and repeat. No match and the
          arrow disabled: FAILURE, the realm is not in the list.
     """
     favorite = str(machine.get_option(OPTION_FAVORITE_REALM, "") or "").strip()
@@ -127,6 +130,12 @@ async def _change_realm_for_client(machine, client, favorite: str, safety_delay:
     """Find *favorite* in the realm list and hop to it, for one client."""
     if not await realm_list.open_realm_list(machine, client, safety_delay, _TAG):
         return "FAILURE"
+
+    current_name = await realm_list.wait_for_current_realm_name(client, safety_delay)
+    if current_name and realms.matches(favorite, current_name):
+        machine.log(f"SUCCESS: already on {current_name!r}")
+        await realm_list.close_spellbook(client)
+        return "SUCCESS"
 
     machine.log(f"{_TAG}: anchoring to page 1", logging.DEBUG)
     if not await realm_list.navigate_to_page_1(machine, client, TRIGGER_TIMEOUT, _TAG):

@@ -46,10 +46,28 @@ async def is_current_realm(client, row: int) -> bool:
     """Whether *row* is the realm the client is already on.
 
     The current realm's button is grayed out, because you cannot switch to the realm
-    you are already on. txtYourRealmName exists but its text is not readable through
-    WizWalker, so button state is the reliable detection.
+    you are already on. Used while scanning rows on a page; see current_realm_name()
+    for reading the realm directly, without a row to check.
     """
     return not await node_helpers.is_enabled_by_path(client, realm_button_path(row))
+
+
+async def current_realm_name(client) -> str:
+    """The client's current realm, read directly from txtYourRealmName, HTML stripped."""
+    return _strip_html(await node_helpers.get_text_by_path(client, REALM_CURRENT_NAME_PATH))
+
+
+async def wait_for_current_realm_name(client, timeout: float) -> str:
+    """Poll until txtYourRealmName has text, returning it ('' if it never renders)."""
+    name = ""
+
+    async def _ready() -> bool:
+        nonlocal name
+        name = await current_realm_name(client)
+        return bool(name)
+
+    await node_helpers.poll_until(_ready, timeout, POLL_INTERVAL)
+    return name
 
 
 async def close_spellbook(client) -> None:

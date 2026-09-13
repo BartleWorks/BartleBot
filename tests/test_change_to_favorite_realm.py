@@ -14,6 +14,7 @@ import bartlebot.nodes.utility.change_to_favorite_realm as cf
 import bartlebot.nodes.utility.realm_list as rl
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
+    REALM_CURRENT_NAME_PATH,
     REALM_GO_TO_BUTTON_PATH,
     REALM_NEXT_PAGE_PATH,
     REALM_PREV_PAGE_PATH,
@@ -26,13 +27,17 @@ from tests.conftest import FakeClient, FakeMachine
 class _RealmList:
     """Pages of realm names, with one of them marked as the realm the client is on."""
 
-    def __init__(self, pages: list[list[str]], current: str = ""):
+    def __init__(self, pages: list[list[str]], current: str = "", current_name_text: str = ""):
         self.pages = pages
         self.current = current
+        #: What txtYourRealmName reports directly, independent of button state.
+        self.current_name_text = current_name_text
         self.page = 0
         self.clicked: list[list[str]] = []
 
     async def text(self, _client, path):
+        if path == REALM_CURRENT_NAME_PATH:
+            return self.current_name_text
         for row in range(rl.REALMS_PER_PAGE):
             if path == realm_name_path(row):
                 names = self.pages[self.page]
@@ -165,6 +170,23 @@ async def test_already_on_the_favorite_closes_the_spellbook_without_hopping():
 
     assert result == "SUCCESS"
     assert REALM_GO_TO_BUTTON_PATH not in realm_list.clicked
+    assert realm_list.clicked[-1] == BACKPACK_CLOSE_BUTTON_PATH
+    assert any("already on" in msg for msg, _lvl in machine.logs)
+
+
+async def test_already_on_the_favorite_is_detected_from_txtyourrealmname_without_paging():
+    """The current realm is read straight from the settings text, skipping the scan entirely."""
+    client = FakeClient()
+    realm_list = _RealmList(_PAGES, current="Banshee", current_name_text="Banshee")
+    machine = _machine("Banshee")
+
+    with _faked(realm_list):
+        result = await cf._change_realm_for_client(machine, client, "Banshee", 0.0)
+
+    assert result == "SUCCESS"
+    assert REALM_PREV_PAGE_PATH not in realm_list.clicked  # no page-1 anchor
+    assert REALM_NEXT_PAGE_PATH not in realm_list.clicked  # no scanning
+    assert not any(path == realm_button_path(row) for row in range(rl.REALMS_PER_PAGE) for path in realm_list.clicked)
     assert realm_list.clicked[-1] == BACKPACK_CLOSE_BUTTON_PATH
     assert any("already on" in msg for msg, _lvl in machine.logs)
 
