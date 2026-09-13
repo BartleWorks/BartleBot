@@ -120,6 +120,19 @@ uv run python tools/zone_graph/zone_data.py dump WizardCity/WC_Hub gamedata.bin 
    ...
 ```
 
+**`volumes <zone> [--grep regex]`**: the name and position of every volume in the zone's
+`volumes.xml`. Gate volumes are usually named for where they lead, but not always.
+
+```bash
+uv run python tools/zone_graph/zone_data.py volumes WizardCity/WC_Streets/WC_OldeTown --grep Teleport
+```
+```
+  (   -6981.1,     -512.7,  -1400.0)  Conditional Teleporter to Triton Lane
+  (    3122.3,      282.5,     30.0)  TeleportVol_Teleport (Street 2 WC_Shop_Area Exit)
+  (   -5391.0,     3126.6,   -600.0)  Conditional Teleporter to Cyclops Lane
+  ...
+```
+
 **`strings <zone> <entry> [--grep regex]`**: the readable text in a file katsuba can't
 parse, such as `triggers.xml` or `volumes.xml`.
 

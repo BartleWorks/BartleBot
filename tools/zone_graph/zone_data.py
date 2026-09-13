@@ -36,6 +36,7 @@ from wad_common import (
     root_wad,
     text,
     to_plain,
+    volumes,
     xyz,
     zone_display_names,
     zone_wad,
@@ -43,7 +44,16 @@ from wad_common import (
 
 
 def zone_record(zone: str, deserialize: Deserializer, game_data: Path = GAME_DATA):
-    return deserialize(bytes(zone_wad(zone, game_data)["gamedata.bin"]))
+    """The zone's record. Most zones ship it as gamedata.bin; some newer ones (Selenopolis,
+    Nibbleheim Mines) as gamedata.xml. Raises KeyError when the wad has neither."""
+    wad = zone_wad(zone, game_data)
+    for entry in ("gamedata.bin", "gamedata.xml"):
+        try:
+            data = bytes(wad[entry])
+        except KeyError:
+            continue
+        return deserialize(data)
+    raise KeyError(f"{zone} has no gamedata.bin or gamedata.xml")
 
 
 def locations(record) -> list[tuple[str, tuple[float, float, float]]]:
@@ -76,6 +86,9 @@ def main() -> int:
     p_dump.add_argument("zone")
     p_dump.add_argument("entry", help="e.g. gamedata.bin, Compass.xml, spawnData.xml")
     p_dump.add_argument("--out", type=Path, help="write here instead of stdout")
+    p_vol = sub.add_parser("volumes", help="name and position of every volume in the zone's volumes.xml")
+    p_vol.add_argument("zone")
+    p_vol.add_argument("--grep", help="only volumes whose name matches this regex")
     p_str = sub.add_parser("strings", help="printable strings of an entry katsuba cannot read")
     p_str.add_argument("zone")
     p_str.add_argument("entry")
@@ -112,6 +125,12 @@ def main() -> int:
             print(f"wrote {args.out}")
         else:
             print(payload)
+
+    elif args.cmd == "volumes":
+        rx = re.compile(args.grep, re.IGNORECASE) if args.grep else None
+        for name, pos in volumes(bytes(zone_wad(args.zone, args.game_data)["volumes.xml"])):
+            if rx is None or rx.search(name):
+                print(f"  {_fmt(pos)}  {name}")
 
     elif args.cmd == "strings":
         data = bytes(zone_wad(args.zone, args.game_data)[args.entry])

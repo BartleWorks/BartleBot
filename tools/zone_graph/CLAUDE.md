@@ -41,7 +41,16 @@ zone names in the user's language, so never key anything on the English string. 
 the zone path.
 
 `gamedata.bin` has no `BINd` prefix and only deserializes with flags `0`; the `BINd` files
-need `STATEFUL_FLAGS`. `Deserializer` in `wad_common.py` picks by prefix.
+need `STATEFUL_FLAGS`. `Deserializer` in `wad_common.py` picks by prefix. Some newer zones
+(Selenopolis, Nibbleheim Mines) ship the same record as `gamedata.xml` instead;
+`zone_data.zone_record` reads whichever is there.
+
+`volumes.xml` does not deserialize with our type dump, but `wad_common.volumes()` reads each
+volume's name and position straight from the bytes (`zone_data.py volumes <zone>`). A gate's
+volume sits within tens of units of where working bots trigger it -- Olde Town's
+`Conditional Teleporter to Cyclops Lane` is 27 units from `sisyphus.json`'s coordinate -- so
+nearest-volume matching is how the zone navigation tester names the gate a walk used. The
+volume never names its destination, and sizes and shapes are not decoded.
 
 ## Open questions
 
