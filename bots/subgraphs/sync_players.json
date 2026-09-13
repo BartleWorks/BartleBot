@@ -1,0 +1,209 @@
+{
+  "id": "d7c9e775-2ffb-4325-8722-b0e877e3e2b1",
+  "name": "Sync Players subgraph",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_6",
+  "drops": [],
+  "authors": "BartleBot",
+  "tags": [],
+  "options": [],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_player_if_in_zone",
+      "label": "Try teleport to player in target zone",
+      "position": {
+        "x": 0.0,
+        "y": -90.0
+      },
+      "params": {
+        "target_zone": "",
+        "skip_extra_clients_in_zone": true
+      }
+    },
+    {
+      "id": "state_2",
+      "node_type": "teleport_to_player_if_in_zone",
+      "label": "Try teleport to player in target world",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "target_zone": "",
+        "skip_extra_clients_in_zone": true
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "go_to_world",
+      "label": "Go to target world",
+      "position": {
+        "x": 880.0,
+        "y": 90.0
+      },
+      "params": {
+        "world": "WizardCity"
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to target world hub",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": ""
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "change_to_favorite_realm",
+      "label": "Change to favorite realm",
+      "position": {
+        "x": 880.0,
+        "y": -90.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": -440.0,
+        "y": 90.0
+      },
+      "params": {
+        "relog_clients": []
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "change_to_favorite_realm",
+      "label": "Change to favorite realm",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}
