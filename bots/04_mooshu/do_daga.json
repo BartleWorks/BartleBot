@@ -970,17 +970,7 @@
         "mooshu_level_scaling_1_state_3",
         "mooshu_level_scaling_1_state_4"
       ],
-      "color": 2,
-      "source": {
-        "subgraph_id": "a612d1db-5608-46f8-9f64-25629c302385",
-        "version": 1,
-        "inputs": {},
-        "param_overrides": {},
-        "anchor": {
-          "x": 879.9998391691297,
-          "y": -270.0000802744167
-        }
-      }
+      "color": 2
     }
   ]
 }

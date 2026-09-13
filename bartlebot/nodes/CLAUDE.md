@@ -28,6 +28,31 @@ unconditionally sequential against its one hardcoded station.
 Pass `park_after_turn=False` when the interaction removes the client itself (a zone
 transition) — otherwise the helper aims a teleport at a client already on a loading screen.
 
+### Never act on a client that is loading
+
+A client on a loading screen reports the zone it *left*, the position it left from, and the
+UI it left behind, for as long as the screen is up — and a client whose trigger has just
+fired has not started its screen yet. Both read exactly like a client that never moved, so a
+retry loop watching anything other than `is_loading()` will chase one that is already on its
+way. The retry is then applied when it lands: a teleport issued mid-load pulls the client
+straight back out of the zone it just reached, which is issue #70 and looks on screen like a
+successful transition being undone.
+
+Two guards, and a node that moves clients between zones wants whichever fits:
+
+- `skip_while_loading(action_fn)` wraps `poll_each_until_seen`'s `action_fn` whenever
+  `check_fn` is *not* `is_loading()` — a zone name, a position, a window. A loop whose
+  `check_fn` is `is_loading()` already counts a loading client as seen and needs nothing.
+- `wait_for_zone_with_recovery()` holds off both its teleport-to-player recovery and its
+  own timeout verdict while any client that is not yet in the destination is loading, and
+  gives a non-loading straggler `ZONE_SETTLE_GRACE` to start loading before treating it as
+  stuck. Callers get this for free; a caller passing `settle_grace=0` is opting out of the
+  second half only.
+
+`poll_until(none_loading(clients), ...)` is not this guard. It answers "has every screen
+finished", and a screen that has not started yet answers yes — which is how a stale zone
+read reaches the check that follows it.
+
 ## Keeping a session log readable
 
 A five-hour four-client run writes tens of thousands of lines, and the difference

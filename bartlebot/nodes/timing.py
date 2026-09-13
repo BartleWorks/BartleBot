@@ -24,6 +24,14 @@ LOADING_SCREEN_TIMEOUT = 60.0
 # infinite-load crash. Normal Wizard101 loading screens complete in 5–10 s;
 # 60 s provides a generous safety margin.
 
+ZONE_SETTLE_GRACE = 5.0
+# Seconds wait_for_zone_with_recovery holds off teleport-to-player recovery for a client
+# that is not in the destination zone and not (yet) on a loading screen. A client whose
+# transition has fired but whose loading screen has not started still reads its old zone
+# name, and porting it then undoes the arrival it was about to make on its own — the
+# teleport lands after it gets there. Long enough for a slow trigger's loading screen to
+# appear, short enough that a client that never triggered is still recovered quickly.
+
 MAX_RETRIES = 3
 # Default number of attempts for recoverable operations (teleport-and-check loops).
 

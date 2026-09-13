@@ -1,5 +1,6 @@
 """Unit tests for the teleport_to_marked_location node."""
 
+import itertools
 from unittest.mock import AsyncMock, patch
 
 from wizwalker import XYZ
@@ -23,8 +24,9 @@ _RECALL_ENABLED = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_va
 def _ready_client() -> FakeClient:
     """Client with mana, mark set, loads immediately, and arrives at the expected location."""
     c = FakeClient()
-    # is_loading: trigger loop → loading; none_loading wait → done.
-    c.is_loading.side_effect = [True, False]
+    # is_loading: trigger loop → loading; none_loading wait → done; then done for every
+    # later read, including the zone check's own straggler test.
+    c.is_loading.side_effect = itertools.chain([True], itertools.repeat(False))
     # zone_name: final zone check → correct zone.
     c.zone_name.return_value = _ZONE
     # body.position: final XYZ check → at target.
