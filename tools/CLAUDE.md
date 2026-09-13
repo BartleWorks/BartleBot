@@ -97,6 +97,13 @@ WorldNames entries and both have GameData wads; nothing separates them. So
 and `test_worlds.py` checks each entry against the snapshot. Guessing a rule here got
 Darkmoor wrong once already.
 
+### Zone connectivity: `tools/zone_graph/`
+
+Which zones connect, where gates and arrival points sit, and the hub/spiral-door zone
+per world all ship in the game files (`zonemap.nav`, `WorldHubZones.xml`, each zone's own
+wad). Its `CLAUDE.md` has the layouts, and the open questions. Prefer it over
+wizsprinter's hand-built `traversalData/`.
+
 ## Reading a field out of a BINd file: use `katsuba`, not a byte scan
 
 Every game object under `Root.wad` (`Spells/`, `ObjectData/`, etc.) is a `BINd`-
