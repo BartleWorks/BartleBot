@@ -2518,16 +2518,27 @@ class _ParamPanel(ThemedMixin, QWidget):
 
         dialog = WikiImportDialog(parent=self.window())
         if dialog.exec():
-            entries = dialog.selected_entries()
-            if entries:
-                self.wiki_import_completed.emit(entries)
-            # Record where they came from on the node that imported them. The panel
-            # is only shown for handle_combat, so this is the fight whose boss page
-            # was just fetched — the association the import flow already implied and
-            # previously discarded.
-            page = dialog.selected_page()
-            if page:
-                self._param_form.set_param_value(WIKI_PAGE_PARAM, page)
+            self.apply_wiki_import(dialog.selected_entries(), dialog.selected_page())
+
+    def apply_wiki_import(self, entries: list, page: str | None) -> None:
+        """Add imported drops and record the source page on the shown handle_combat node."""
+        if entries:
+            self.wiki_import_completed.emit(entries)
+        # Record where they came from on the node that imported them. The panel
+        # is only shown for handle_combat, so this is the fight whose boss page
+        # was just fetched — the association the import flow already implied and
+        # previously discarded.
+        if not page:
+            return
+        # On a locked subgraph member the field starts disabled and un-overridden;
+        # set_param_value() only ever reaches the widget's text, and a value that
+        # was never registered as an override is discarded the next time the
+        # instance is recomposed from its definition. Flip the override on first,
+        # exactly as the user's own lock toggle would, so the edit sticks.
+        override_btn = self._param_form.override_button(WIKI_PAGE_PARAM)
+        if override_btn is not None and not override_btn.isChecked():
+            override_btn.setChecked(True)
+        self._param_form.set_param_value(WIKI_PAGE_PARAM, page)
 
     # ------------------------------------------------------------------
     # Recording
