@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import time
 
-from PyQt6.QtCore import QRect, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter
+from PyQt6.QtCore import QRect, QRectF, Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot import streamer_mode
 from bartlebot.game_sizing import FOCUS_BORDER, LABEL_GAP, LABEL_RESERVE
+from bartlebot.gui.account_accent import TINT_ALPHA_PERCENT
 from bartlebot.gui.game_embed.win32_window import EmbeddedWindow
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
@@ -26,11 +27,53 @@ __all__ = [
     "PendingTile",
     "launch_status_text",
     "pill_text",
+    "tile_focus_color",
+    "tile_pill_colors",
 ]
 
 # Pill icon constants
 _ICON_SIZE = 18
 _ICON_GAP = 6  # pixels between label text and detach icon
+
+
+def tile_pill_colors(color_key: int | None) -> tuple[QColor, QColor, QColor]:
+    """``(fill, border, text)`` for a tile's caption pill, read from the live theme.
+
+    The same claim the ``P{n}`` pills make on the player cards and the Combat tab (#40):
+    outlined and tinted in the account's colour when the account is known, and the neutral
+    grey pill when it is not -- never a default hue, because a colour here says which
+    account is in the window. The text and icon take the same colour as each other.
+
+    Read at paint time, like everything else a tile draws, so a theme switch needs nothing
+    re-applied.
+    """
+    if color_key is None:
+        grey = THEME.qcolor("pill_neutral_bg")
+        return grey, grey, THEME.qcolor("pill_text")
+    accent = THEME.account_color(color_key)
+    fill = QColor(accent)
+    fill.setAlpha(round(255 * TINT_ALPHA_PERCENT / 100))
+    return fill, accent, THEME.qcolor("text")
+
+
+def tile_focus_color(color_key: int | None) -> QColor:
+    """The highlight round a focused game window: its account's colour, else the accent."""
+    return THEME.account_color(color_key) if color_key is not None else THEME.qcolor("accent")
+
+
+def _draw_pill(painter: QPainter, rect: QRect, color_key: int | None) -> QColor:
+    """Paint the capsule behind a tile caption, and hand back the colour to write in.
+
+    *rect* is the pill's size exactly as it always was; only the shape and the colours
+    changed. The 1px outline is stroked half a pixel inside the rect, so the outer edge is
+    still *rect* and nothing next to the pill moves.
+    """
+    fill, border, text = tile_pill_colors(color_key)
+    painter.setBrush(fill)
+    painter.setPen(QPen(border, 1))
+    radius = (rect.height() - 1) / 2
+    painter.drawRoundedRect(QRectF(rect).adjusted(0.5, 0.5, -0.5, -0.5), radius, radius)
+    return text
 
 
 def launch_status_text(
@@ -102,6 +145,8 @@ class ClientTile(QWidget):
         self._label = label
         self._wizard_name: str | None = None
         self._focused = False
+        # The account in this window, as a palette slot, or None -- see tile_pill_colors.
+        self._color_key: int | None = None
 
         # Pill hit-testing rects (updated each paintEvent)
         self._pill_rect: QRect = QRect()
@@ -154,6 +199,17 @@ class ClientTile(QWidget):
     def wizard_name(self) -> str | None:
         """The wizard name currently shown on this tile, if any."""
         return self._wizard_name
+
+    @property
+    def color_key(self) -> int | None:
+        """The account palette slot the pill and focus border wear, or None."""
+        return self._color_key
+
+    def set_color_key(self, key: int | None) -> None:
+        """Colour the pill and the focus border by an account, repainting if it changed."""
+        if key != self._color_key:
+            self._color_key = key
+            self.update()
 
     def unembed(self) -> None:
         """Restore the game window to a normal, movable top-level window."""
@@ -222,11 +278,11 @@ class ClientTile(QWidget):
         gx = max(0, (self.width() - gw) // 2)
         gy = LABEL_RESERVE + max(0, (self.height() - LABEL_RESERVE - gh) // 2)
 
-        # Focus highlight — filled accent rectangle behind the game window.
-        # The Win32 child covers the game area, leaving only the surrounding
-        # _FOCUS_BORDER-wide strip visible as the accent highlight.
+        # Focus highlight — filled rectangle behind the game window, in the account's
+        # colour (the accent when none is known). The Win32 child covers the game area,
+        # leaving only the surrounding _FOCUS_BORDER-wide strip visible as the highlight.
         if self._focused:
-            painter.setBrush(THEME.qcolor("accent"))
+            painter.setBrush(tile_focus_color(self._color_key))
             painter.setPen(Qt.PenStyle.NoPen)
             painter.drawRect(
                 gx - FOCUS_BORDER,
@@ -254,20 +310,18 @@ class ClientTile(QWidget):
         pill_y = gy - FOCUS_BORDER - LABEL_GAP - pill_h
 
         # Pill background
-        painter.setBrush(THEME.qcolor_client_pill_bg())
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRoundedRect(pill_x, pill_y, pill_w, pill_h, 4, 4)
+        text_color = _draw_pill(painter, QRect(pill_x, pill_y, pill_w, pill_h), self._color_key)
 
         # Label text
-        painter.setPen(THEME.qcolor_client_pill_text())
+        painter.setPen(text_color)
         painter.drawText(
             QRect(pill_x + 8, pill_y + 3, text_w, text_h),
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             text,
         )
 
-        # Detach icon (white-tinted, right side of pill)
-        icon_pm = svg_pixmap("detach", _ICON_SIZE, tint="#ffffff")
+        # Detach icon (right side of pill, in the text's colour)
+        icon_pm = svg_pixmap("detach", _ICON_SIZE, tint=text_color.name())
         ix = pill_x + 8 + text_w + _ICON_GAP
         iy = pill_y + (pill_h - _ICON_SIZE) // 2
         painter.drawPixmap(ix, iy, icon_pm)
@@ -300,6 +354,7 @@ class _WindowlessTile(QWidget):
         super().__init__(parent)
         self._label = label
         self._wizard_name: str | None = None
+        self._color_key: int | None = None
         self._pill_rect: QRect = QRect()
         self._icon_rect: QRect = QRect()
 
@@ -307,6 +362,17 @@ class _WindowlessTile(QWidget):
     def label(self) -> str:
         """The slot label shown on the pill."""
         return self._label
+
+    @property
+    def color_key(self) -> int | None:
+        """The account palette slot the pill wears, or None -- see tile_pill_colors."""
+        return self._color_key
+
+    def set_color_key(self, key: int | None) -> None:
+        """Colour the pill by an account, repainting if it changed."""
+        if key != self._color_key:
+            self._color_key = key
+            self.update()
 
     def set_label(self, label: str) -> None:
         """Set the slot label, repainting if it changed."""
@@ -388,11 +454,9 @@ class _WindowlessTile(QWidget):
         pill_x = (self.width() - pill_w) // 2
         pill_y = FOCUS_BORDER + LABEL_GAP
 
-        painter.setBrush(THEME.qcolor_client_pill_bg())
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRoundedRect(pill_x, pill_y, pill_w, pill_h, 4, 4)
+        text_color = _draw_pill(painter, QRect(pill_x, pill_y, pill_w, pill_h), self._color_key)
 
-        painter.setPen(THEME.qcolor_client_pill_text())
+        painter.setPen(text_color)
         painter.drawText(
             QRect(pill_x + 8, pill_y + 3, text_w, text_h),
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
@@ -404,7 +468,7 @@ class _WindowlessTile(QWidget):
             self._icon_rect = QRect()
             return
 
-        icon_pm = svg_pixmap(self._pill_icon, _ICON_SIZE, tint="#ffffff")
+        icon_pm = svg_pixmap(self._pill_icon, _ICON_SIZE, tint=text_color.name())
         ix = pill_x + 8 + text_w + _ICON_GAP
         iy = pill_y + (pill_h - _ICON_SIZE) // 2
         painter.drawPixmap(ix, iy, icon_pm)

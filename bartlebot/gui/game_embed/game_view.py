@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.game_sizing import grid_for, required_game_area
+from bartlebot.gui.account_accent import account_color_keys
 from bartlebot.gui.game_embed.card_columns import (
     EMPTY_ACCOUNTS_HINT,
     EMPTY_PROFILES_HINT,
@@ -387,11 +388,17 @@ class GameView(ThemedMixin, QWidget):
         # Captions and names are refreshed even when nothing moved: a client hooking gives
         # a tile that is already on screen its player number for the first time.
         self._tile_players = {t.slot: t.player for t in tiles}
+        # Account colours ride the same per-tick push, because a window's account is learned
+        # from its title after the tile exists and nothing announces it. Resolved over the
+        # whole account list, for the reason account_stripe_keys gives: a colour is only
+        # distinct with respect to the others. A tile with no account gets no colour.
+        color_keys = account_color_keys(SettingsManager.instance().accounts)
         for t in tiles:
             widget = self._widget_at(t.slot)
             if widget is not None:
                 widget.set_label(t.label)
                 widget.set_wizard_name(self._wizard_name_for(t.player))
+                widget.set_color_key(color_keys.get(t.username) if t.username else None)
             # Pushed on every sync alongside the captions, and for the same reason: a
             # launch changing stage moves no tile, so the reconciler has nothing to report
             # and the only thing that changed is what the tile says.
@@ -819,6 +826,9 @@ class GameView(ThemedMixin, QWidget):
         label = self._tiles[idx].label
         self._detached_hwnds[idx] = hwnd
         self._create_detached_tile(idx, label)
+        # Carried across rather than waiting for the next sync, so the pill does not
+        # flash grey for a tick on the way out.
+        self._detached_tiles[idx].set_color_key(self._tiles[idx].color_key)
         # Unembed the ClientTile without clearing the DetachedTile
         tile = self._tiles.pop(idx)
         tile.unembed()

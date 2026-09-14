@@ -192,6 +192,12 @@ identity arrives after its client and nothing announces it; a card built between
 takes the last answer at construction, since a tick with an unchanged answer repaints
 nothing.
 
+The Players tab's `P#` pill is the same `PlayerBadge`, keyed off the card's stripe. The
+game view's tile caption is painted (`client_tile.tile_pill_colors`) in the same capsule
+shape and colours at its original size, and a focused window's border is its account's
+colour, falling back to the accent. `GameView.sync_tiles` pushes the key from
+`TileSlot.username` on every tick, alongside the captions.
+
 ## Never show a widget before it has a parent
 
 `setVisible(True)` — or `show()` — on a widget with no parent makes that widget a

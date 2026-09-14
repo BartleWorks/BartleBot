@@ -230,14 +230,6 @@ class _Theme:
         """Return a QColor for the numbered account palette slot (1-8)."""
         return QColor(getattr(self, f"account_{key}"))
 
-    def qcolor_client_pill_bg(self) -> QColor:
-        """Semi-transparent black for the client-tile label pill background."""
-        return QColor(0, 0, 0, 160)
-
-    def qcolor_client_pill_text(self) -> QColor:
-        """Near-opaque white for the client-tile label pill text."""
-        return QColor(255, 255, 255, 230)
-
     # ------------------------------------------------------------------
     # QFont helpers
     # ------------------------------------------------------------------

@@ -337,6 +337,22 @@ class TestGameViewPendingTiles:
         assert view.tile_geometry(0) != view.tile_geometry(1)
         view.deleteLater()
 
+    def test_a_tile_takes_its_account_colour_on_sync_and_none_without_an_account(self, qapp) -> None:
+        from bartlebot.gui.account_accent import account_color_keys
+        from bartlebot.gui.game_embed.game_view import GameView
+        from bartlebot.settings_manager import SettingsManager
+
+        accounts = [{"username": "alpha"}, {"username": "beta"}]
+        SettingsManager.instance().accounts = accounts
+        view = GameView()
+        view.resize(800, 600)
+        anonymous = TileSlot(slot=1, hwnd=None, label="?", player=None, username=None)
+        view.sync_tiles([_pending(0, "beta"), anonymous])
+
+        assert view._widget_at(0).color_key == account_color_keys(accounts)["beta"]
+        assert view._widget_at(1).color_key is None
+        view.deleteLater()
+
     def test_a_launch_that_ends_with_no_window_leaves_nothing_behind(self, qapp) -> None:
         from bartlebot.gui.game_embed.game_view import GameView
 
