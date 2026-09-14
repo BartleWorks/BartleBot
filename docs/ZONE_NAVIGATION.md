@@ -62,6 +62,17 @@ that — extra text the list shows for that member, added on top of its locale n
 than replacing them. It belongs on the member, not `zone_names.json`, because it is a quirk
 of this one list, not the zone's actual display name in any language.
 
+Sometimes the zone's own display name is worse than merely absent from the list: it is
+*another* zone's real row. Empyrea's hub list has two separate rows that both lead to a
+zone called "Chaos Jungle" in the game's own data (`EM_Z12_LandingZone` and
+`EM_Z14_ChaosJungle`), but only one of them, the actual Chaos Jungle, is labelled that in
+the list — the other's row reads "Mandalla". Adding "Mandalla" as an ordinary `list_aliases`
+entry is not enough: the search tries every candidate against every row on the page, so the
+locale names for "Chaos Jungle" would still match the *other* zone's row before "Mandalla"
+is ever tried, and the wrong list entry gets clicked. `list_aliases_only: true` on the
+member drops the zone's own display name from the candidate set entirely, leaving only
+`list_aliases` — required and non-empty when this is set.
+
 ### Rides
 
 These are the only rides in the game, and they differ only in how they start:
@@ -184,8 +195,9 @@ The numbers are estimates and are meant to be tuned; they live in `zone_nav.py`,
 | `source`, `note` | link, network | where the data came from: `bot`, `code`, `game_data`, `recorded` |
 | `volume` | walk | the name of the `volumes.xml` volume nearest the recorded trigger, for reference; routing ignores it |
 
-A list network is `{"zones": {zone: {"interact_xyz", "reset_xyz", "list_aliases"}}, "verified",
-"source"}`. A member may be `{}`: it is on the list, but its own object is not recorded yet, so
+A list network is `{"zones": {zone: {"interact_xyz", "reset_xyz", "list_aliases",
+"list_aliases_only"}}, "verified", "source"}`. A member may be `{}`: it is on the list, but
+its own object is not recorded yet, so
 the list routes into it and not out of it — `list_aliases` still applies if given, since it
 describes how the member is *shown*, not how to reach it. That is how the tester builds a
 network — a list use adds the origin's object and the destination as a member — and networks

@@ -1144,7 +1144,6 @@
             "Marleybone/MB_ScotlandYard/MB_KnightsCourt": {"x": -6800.61, "y": -474.34, "z": -239.49}
           }
         },
-        "Marleybone/MB_ScotlandYard/MB_KatzLab": {},
         "Marleybone/MB_ScotlandYard/MB_KnightsCourt": {
           "arrivals": {
             "Marleybone/MB_ScotlandYard/MB_Roof": {"x": -493.86, "y": -9187.21, "z": -248.2}
@@ -1165,7 +1164,6 @@
             "Marleybone/MB_Station/MB_Station_Hub": {"x": -10.23, "y": -3799.01, "z": 0.01}
           }
         },
-        "Marleybone/MB_Station/MB_Ironworks": {},
         "Marleybone/Interiors/MB_WolfminsterAbbey": {
           "arrivals": {
             "Marleybone/MB_Hub": {"x": -0.74, "y": -3377.52, "z": -0.0}
@@ -4778,13 +4776,17 @@
           }
         },
         "Empyrea/EM_Z12_LandingZone": {
+          "label": "Mandalla",
           "arrivals": {
-            "Empyrea/EM_Z00_Aeriel_HUB": {"x": -799.45, "y": 127.99, "z": -10.67}
+            "Empyrea/EM_Z00_Aeriel_HUB": {"x": -799.45, "y": 127.99, "z": -10.67},
+            "Empyrea/EM_Z13_SamsaraDestroyed": {"x": 811.63, "y": 548.88, "z": 13.37}
           }
         },
         "Empyrea/EM_Z14_ChaosJungle": {
           "arrivals": {
-            "Empyrea/EM_Z13_SamsaraDestroyed": {"x": 4558.15, "y": -4151.68, "z": -105.55}
+            "Empyrea/EM_Z13_SamsaraDestroyed": {"x": 4558.15, "y": -4151.68, "z": -105.55},
+            "Empyrea/EM_Z12_SamsaraVillage": {"x": 4558.15, "y": -4151.68, "z": -105.55},
+            "Empyrea/EM_Z00_Aeriel_HUB": {"x": 4044.72, "y": -3944.06, "z": -145.16}
           }
         },
         "Empyrea/EM_Z15_Nexus": {
@@ -4804,10 +4806,15 @@
             "Empyrea/EM_Z09_NWAeroplains": {"x": 11777.86, "y": 13828.22, "z": -7.34}
           }
         },
-        "Empyrea/EM_Z12_SamsaraVillage": {},
-        "Empyrea/EM_Z13_SamsaraDestroyed": {
+        "Empyrea/EM_Z12_SamsaraVillage": {
           "arrivals": {
             "Empyrea/EM_Z12_LandingZone": {"x": -202.33, "y": 51.74, "z": -14.69}
+          }
+        },
+        "Empyrea/EM_Z13_SamsaraDestroyed": {
+          "arrivals": {
+            "Empyrea/EM_Z12_LandingZone": {"x": -202.33, "y": 51.74, "z": -14.69},
+            "Empyrea/EM_Z14_ChaosJungle": {"x": -15934.63, "y": -18822.35, "z": 251.51}
           }
         },
         "Empyrea/EM_Z09_NWAeroplains": {
@@ -4919,8 +4926,9 @@
           "kind": "object",
           "from": "Empyrea/EM_Z12_LandingZone",
           "to": "Empyrea/EM_Z13_SamsaraDestroyed",
-          "interact_xyz": {"x": 780.1, "y": 259.78, "z": 13.37},
-          "reset_xyz": {"x": 356.59, "y": 371.5, "z": 13.37},
+          "also_arrives_in": ["Empyrea/EM_Z12_SamsaraVillage"],
+          "interact_xyz": {"x": 949.29, "y": 300.33, "z": -8.2},
+          "reset_xyz": {"x": 784.75, "y": 425.34, "z": 13.37},
           "verified": true,
           "source": "recorded"
         },
@@ -4932,6 +4940,16 @@
           "reset_xyz": {"x": -16240.12, "y": -18782.98, "z": 251.51},
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Empyrea/EM_Z12_SamsaraVillage",
+          "to": "Empyrea/EM_Z14_ChaosJungle",
+          "interact_xyz": {"x": -16400.83, "y": -18924.51, "z": 251.51},
+          "reset_xyz": {"x": -16240.12, "y": -18782.98, "z": 251.51},
+          "verified": false,
+          "source": "code",
+          "note": "mirrors EM_Z13_SamsaraDestroyed -> EM_Z14_ChaosJungle; the recording account has finished the quest that swaps this zone and cannot revisit the pre-quest version to confirm"
         },
         {
           "kind": "walk",
@@ -5007,14 +5025,43 @@
           "volume": "TeleportVol_Teleport_2_NEPlains",
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Empyrea/EM_Z14_ChaosJungle",
+          "to": "Empyrea/EM_Z13_SamsaraDestroyed",
+          "also_arrives_in": ["Empyrea/EM_Z12_SamsaraVillage"],
+          "interact_xyz": {"x": 4454.7, "y": -3793.3, "z": -104.09},
+          "reset_xyz": {"x": 4382.94, "y": -3658.86, "z": -105.57},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Empyrea/EM_Z13_SamsaraDestroyed",
+          "to": "Empyrea/EM_Z12_LandingZone",
+          "interact_xyz": {"x": -59.3, "y": 110.33, "z": -14.97},
+          "reset_xyz": {"x": -202.33, "y": 51.74, "z": -14.97},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Empyrea/EM_Z12_SamsaraVillage",
+          "to": "Empyrea/EM_Z12_LandingZone",
+          "interact_xyz": {"x": -59.3, "y": 110.33, "z": -14.97},
+          "reset_xyz": {"x": -202.33, "y": 51.74, "z": -14.97},
+          "verified": false,
+          "source": "code",
+          "note": "mirrors EM_Z13_SamsaraDestroyed -> EM_Z12_LandingZone; the recording account has finished the quest that swaps this zone and cannot revisit the pre-quest version to confirm"
         }
       ],
       "list_networks": [
         {
           "zones": {
             "Empyrea/EM_Z00_Aeriel_HUB": {
-              "interact_xyz": {"x": 4671.3, "y": -4076.21, "z": -29.5},
-              "reset_xyz": {"x": 4669.32, "y": -3629.22, "z": -29.5}
+              "interact_xyz": {"x": 4686.17, "y": -4314.23, "z": -29.5},
+              "reset_xyz": {"x": 4708.64, "y": -4467.14, "z": -4.35}
             },
             "Empyrea/EM_Z02_Zanadu": {
               "interact_xyz": {"x": 4797.06, "y": 6643.6, "z": 25.0},
@@ -5029,7 +5076,10 @@
               "interact_xyz": {"x": 3806.11, "y": 1066.51, "z": 446.56},
               "reset_xyz": {"x": 3112.54, "y": 1281.06, "z": 301.01}
             },
-            "Empyrea/EM_Z12_LandingZone": {},
+            "Empyrea/EM_Z12_LandingZone": {
+              "list_aliases": ["Mandalla"],
+              "list_aliases_only": true
+            },
             "Empyrea/EM_Z06_NimbusHanger": {
               "interact_xyz": {"x": -2280.0, "y": 5.2, "z": 2.0},
               "reset_xyz": {"x": -1992.0, "y": 5.2, "z": 2.0},
@@ -5043,7 +5093,8 @@
             "Empyrea/EM_Z16_Husk": {
               "interact_xyz": {"x": 426.72, "y": 997.03, "z": -901.35},
               "reset_xyz": {"x": 108.56, "y": 921.54, "z": -911.67}
-            }
+            },
+            "Empyrea/EM_Z14_ChaosJungle": {}
           },
           "verified": true,
           "source": "recorded"

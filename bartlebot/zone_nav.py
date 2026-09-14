@@ -467,6 +467,11 @@ def _parse_network(network: dict, where: str, zone_world: dict[str, str], proble
         aliases = spot.get("list_aliases", []) if isinstance(spot, dict) else []
         if not isinstance(aliases, list) or any(not isinstance(a, str) or not a for a in aliases):
             problems.append(f"{where}: {zone!r} list_aliases must be a list of non-empty strings")
+        aliases_only = spot.get("list_aliases_only", False) if isinstance(spot, dict) else False
+        if not isinstance(aliases_only, bool):
+            problems.append(f"{where}: {zone!r} list_aliases_only must be true or false")
+        elif aliases_only and not aliases:
+            problems.append(f"{where}: {zone!r} sets list_aliases_only but has no list_aliases to use")
         has_object[zone] = isinstance(spot, dict) and ("interact_xyz" in spot or "reset_xyz" in spot)
         if not has_object[zone]:
             continue
@@ -481,6 +486,9 @@ def _parse_network(network: dict, where: str, zone_world: dict[str, str], proble
 
     source, note = str(network.get("source", "")), str(network.get("note", ""))
     aliases_by_zone = {zone: (spot.get("list_aliases") or []) for zone, spot in zones.items() if isinstance(spot, dict)}
+    aliases_only_by_zone = {
+        zone: bool(spot.get("list_aliases_only", False)) for zone, spot in zones.items() if isinstance(spot, dict)
+    }
     return [
         Step(
             LIST,
@@ -490,6 +498,7 @@ def _parse_network(network: dict, where: str, zone_world: dict[str, str], proble
                 "interact_xyz": zones[src]["interact_xyz"],
                 "reset_xyz": zones[src]["reset_xyz"],
                 **({"list_aliases": aliases_by_zone[dst]} if aliases_by_zone.get(dst) else {}),
+                **({"list_aliases_only": True} if aliases_only_by_zone.get(dst) else {}),
             },
             verified=verified,
             source=source,

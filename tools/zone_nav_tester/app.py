@@ -378,8 +378,11 @@ class TesterWindow(QMainWindow):
 
     @staticmethod
     def _zone_text(world: zone_nav.World, zone: str) -> str:
+        # The zone id is always shown, not just when a label override is set: two zones can
+        # share the game's own display name too (Empyrea's two "Chaos Jungle" rows), and the
+        # label alone can't be told apart from its sibling in a picker without it.
         marks = [text for flag, text in ((zone == world.hub, "hub"), (zone == world.door, "spiral door")) if flag]
-        return _label(zone) + (f"   [{', '.join(marks)}]" if marks else "")
+        return f"{_label(zone)}  ({zone})" + (f"   [{', '.join(marks)}]" if marks else "")
 
     # ── Speedhack ─────────────────────────────────────────────────────────────
 

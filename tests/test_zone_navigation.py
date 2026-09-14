@@ -180,6 +180,24 @@ async def test_a_lists_own_aliases_are_added_to_the_locale_names(monkeypatch):
     assert params["zone_list_aliases"] == ["Insel", "Isle"]
 
 
+async def test_list_aliases_only_never_tries_the_zones_own_display_name(monkeypatch):
+    """Two Empyrea rows both display "Chaos Jungle" in-game; only one member is really that zone."""
+    game = _Game(monkeypatch, [_HUB])
+    monkeypatch.setattr(zone_names, "display_names", lambda zone: ["Chaos Jungle"])
+    network = {
+        "zones": {
+            _HUB: {"interact_xyz": _xyz(5), "reset_xyz": _xyz(6)},
+            _ISLAND: {"interact_xyz": _xyz(5), "reset_xyz": _xyz(6), "list_aliases": ["Mandalla"], "list_aliases_only": True},
+        },
+        "verified": True,
+    }
+
+    await _go(game, _nav(networks=[network]), _ISLAND)
+
+    [(_, params)] = game.calls
+    assert (params["zone_list_entry"], params["zone_list_aliases"]) == ("Mandalla", [])
+
+
 async def test_a_list_step_without_a_known_name_fails_before_moving(monkeypatch):
     game = _Game(monkeypatch, [_HUB])
     monkeypatch.setattr(zone_names, "display_names", lambda zone: [])

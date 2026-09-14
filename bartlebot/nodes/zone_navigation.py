@@ -84,17 +84,24 @@ def _zone_entry_call(step: zone_nav.Step, zones: dict) -> tuple[ModuleType, dict
             params["object_use_delay"] = p["object_use_delay"]
         return enter_zone_via_object, params
     if step.kind == zone_nav.LIST:
-        # The list shows the game's own name in the client's language, so match every locale.
-        names = zone_names.display_names(step.to_zone)
-        if not names:
-            return (
-                f"no display name is known for {step.to_zone!r}, so its list entry cannot be found; "
-                f"regenerate bartlebot/data/zone_names.json with tools/dump_zone_names.py"
-            )
-        primary, *aliases = names
-        # The map's own list_aliases cover text the list shows that isn't a locale name at
-        # all -- Nimbus Hanger's hub list truncates it to "Nimbus".
-        aliases = [*aliases, *p.get("list_aliases", [])]
+        if p.get("list_aliases_only"):
+            # The list's real text for this member doesn't just omit the zone's own display
+            # name (Nimbus Hanger's "Nimbus") -- that text belongs to a different real zone
+            # that also happens to be on this list, so trying it would click that zone's row
+            # instead. list_aliases is the only safe candidate set here.
+            primary, *aliases = p["list_aliases"]
+        else:
+            # The list shows the game's own name in the client's language, so match every locale.
+            names = zone_names.display_names(step.to_zone)
+            if not names:
+                return (
+                    f"no display name is known for {step.to_zone!r}, so its list entry cannot be found; "
+                    f"regenerate bartlebot/data/zone_names.json with tools/dump_zone_names.py"
+                )
+            primary, *aliases = names
+            # The map's own list_aliases cover text the list shows that isn't a locale name at
+            # all -- Nimbus Hanger's hub list truncates it to "Nimbus".
+            aliases = [*aliases, *p.get("list_aliases", [])]
         return enter_zone_via_list, {
             "zone": step.from_zone,
             "to_zone": step.to_zone,

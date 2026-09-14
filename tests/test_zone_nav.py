@@ -149,6 +149,38 @@ def test_a_list_member_without_an_object_can_still_carry_list_aliases():
     assert nav.links[0].params["list_aliases"] == ["Nimbus"]
 
 
+def test_list_aliases_only_drops_the_zones_own_display_name():
+    """Empyrea's hub list has two rows for "Chaos Jungle" -- only list_aliases is safe to match."""
+    network = {
+        "zones": {
+            _HUB: {"interact_xyz": _xyz(1), "reset_xyz": _xyz(2)},
+            _LX: {"list_aliases": ["Mandalla"], "list_aliases_only": True},
+        },
+        "verified": True,
+    }
+    nav = zone_nav.parse(_raw(networks=[network]))
+
+    into_lx = next(s for s in nav.links if s.to_zone == _LX)
+    assert into_lx.params["list_aliases"] == ["Mandalla"]
+    assert into_lx.params["list_aliases_only"] is True
+
+
+def test_list_aliases_only_needs_list_aliases_to_use():
+    network = {"zones": {_HUB: {"interact_xyz": _xyz(1), "reset_xyz": _xyz(2), "list_aliases_only": True}}}
+
+    with pytest.raises(ValueError, match="list_aliases_only"):
+        zone_nav.parse(_raw(networks=[network]))
+
+
+def test_list_aliases_only_must_be_a_bool():
+    network = {
+        "zones": {_HUB: {"interact_xyz": _xyz(1), "reset_xyz": _xyz(2), "list_aliases": ["Nimbus"], "list_aliases_only": "yes"}}
+    }
+
+    with pytest.raises(ValueError, match="list_aliases_only"):
+        zone_nav.parse(_raw(networks=[network]))
+
+
 def test_a_list_network_links_every_member_both_ways():
     network = {
         "zones": {z: {"interact_xyz": _xyz(1), "reset_xyz": _xyz(2)} for z in (_HUB, _LX, _LY)},
