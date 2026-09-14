@@ -99,6 +99,24 @@ def test_a_button_already_cooling_down_does_not_make_a_walk_a_hub_use():
     assert t.kind == WALK
 
 
+def test_the_speedhack_greying_the_hub_button_for_one_tick_does_not_make_a_walk_a_hub_use():
+    """Confirmed live: under the speedhack, a plain walk reads hub_enabled True for the whole
+    signal window and then False on the single sample just before loading, every time -- the
+    same shape a real click leaves. speed_boosted on that last sample is what tells them apart.
+    """
+    [t] = _feed(
+        Recorder(),
+        [
+            _at(0.0, _A, 0, hub_enabled=True, speed_boosted=True),
+            _at(0.2, _A, 50, hub_enabled=False, speed_boosted=True),
+            _load(0.4, 50),
+            _at(3, _B, 0),
+        ],
+    )
+
+    assert t.kind == WALK
+
+
 def test_a_prompt_long_before_the_load_does_not_count():
     """Walking past an NPC on the way to a gate is still a walk."""
     [t] = _feed(Recorder(), [_at(0.0, _A, 0, prompt=True), _at(5.0, _A, 900), _load(5.2, 900), _at(8, _B, 0)])

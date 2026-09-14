@@ -453,6 +453,7 @@ class TesterWindow(QMainWindow):
             prompt=await c.is_in_npc_range(),
             list_open=await node_helpers.is_visible_by_path(c, UNIVERSE_TELEPORT_BUTTON),
             hub_enabled=await node_helpers.is_enabled_by_path(c, HUB_BUTTON_PATH),
+            speed_boosted=self.speed_check.isChecked(),
         )
 
     def _show_sample(self, sample: recorder.Sample) -> None:

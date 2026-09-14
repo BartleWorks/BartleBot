@@ -11,7 +11,11 @@ HOW A KIND IS DETECTED
     list    the zone-list window was open
     hub     the hub button was enabled, then disabled just before loading (clicking it starts
             the cooldown; a button already cooling down never reads enabled, so it cannot
-            false-positive)
+            false-positive). Not trusted at all while the speedhack was on for that last
+            sample: the game's own pre-load HUD hide reads as this exact pattern under the
+            speedhack (confirmed live: 9 straight enabled reads then one disabled read, on
+            every plain walk, only once the speedhack was switched on) even though no button
+            was ever clicked.
     object  the interact prompt was showing
     walk    none of those
     ride    an object-like transition into a cutscene zone, then out of it again without the
@@ -58,6 +62,7 @@ class Sample:
     prompt: bool = False
     list_open: bool = False
     hub_enabled: bool = False
+    speed_boosted: bool = False
 
 
 @dataclass(frozen=True)
@@ -153,7 +158,7 @@ def _classify(before: list[Sample], came_from: str, arrival: Sample) -> Transiti
 
     if any(s.list_open for s in recent):
         kind = LIST
-    elif not last.hub_enabled and any(s.hub_enabled for s in recent):
+    elif not last.hub_enabled and not last.speed_boosted and any(s.hub_enabled for s in recent):
         kind = HUB
     elif any(s.prompt for s in recent):
         kind = OBJECT
