@@ -2727,61 +2727,1295 @@
       "hub": "Avalon/AV_Z00_Hub",
       "door": "Avalon/AV_Z00_Hub",
       "zones": {
-        "Avalon/AV_Z00_Hub": {},
-        "Avalon/AV_Z01_AbbeyRoad": {},
-        "Avalon/AV_Z02_HighRoad": {},
-        "Avalon/AV_Z03_CaerLyon": {},
-        "Avalon/AV_Z04_TheWild": {},
-        "Avalon/AV_Z07_OuterYard": {},
-        "Avalon/AV_Z05_TheWyrd": {},
-        "Avalon/AV_Z08_LakeShore": {},
-        "Avalon/AV_Z06_DunDara": {},
-        "Avalon/AV_Z09_DeepWater": {},
-        "Avalon/AV_Z10_Catacombs": {},
-        "Avalon/AV_Z11_CrystalCaves": {}
+        "Avalon/AV_Z00_Hub": {
+          "arrivals": {
+            "Avalon/AV_Z01_AbbeyRoad": {"x": 5735.32, "y": -2969.49, "z": -509.6},
+            "Avalon/AV_Z02_HighRoad": {"x": 318.96, "y": 5470.78, "z": -509.78},
+            "Avalon/AV_Z04_TheWild": {"x": 798.69, "y": -468.96, "z": -10.0},
+            "Avalon/AV_Z06_DunDara": {"x": -765.84, "y": -472.56, "z": -10.0},
+            "Avalon/AV_Z03_CaerLyon": {"x": 720.52, "y": -1834.39, "z": -10.0},
+            "Avalon/AV_Z10_Catacombs": {"x": -794.57, "y": -1808.51, "z": -10.0}
+          }
+        },
+        "Avalon/AV_Z01_AbbeyRoad": {
+          "arrivals": {
+            "Avalon/AV_Z00_Hub": {"x": -6864.41, "y": 259.08, "z": 241.41}
+          }
+        },
+        "Avalon/AV_Z02_HighRoad": {
+          "arrivals": {
+            "Avalon/AV_Z00_Hub": {"x": 109.48, "y": -448.35, "z": -5.79},
+            "Avalon/AV_Z03_CaerLyon": {"x": -873.7, "y": 13396.95, "z": 13.15}
+          }
+        },
+        "Avalon/AV_Z03_CaerLyon": {
+          "arrivals": {
+            "Avalon/AV_Z02_HighRoad": {"x": 3795.36, "y": -8539.91, "z": 0.56},
+            "Avalon/AV_Z07_OuterYard": {"x": 1103.75, "y": 23552.8, "z": 1110.4},
+            "Avalon/AV_Z04_TheWild": {"x": -6874.91, "y": 15019.97, "z": 1126.04},
+            "Avalon/AV_Z00_Hub": {"x": 1213.79, "y": -2164.03, "z": 40.76}
+          }
+        },
+        "Avalon/AV_Z04_TheWild": {
+          "arrivals": {
+            "Avalon/AV_Z03_CaerLyon": {"x": 8264.02, "y": -8521.59, "z": 203.27},
+            "Avalon/AV_Z05_TheWyrd": {"x": -3954.81, "y": 8877.91, "z": 224.38},
+            "Avalon/AV_Z00_Hub": {"x": -1008.85, "y": -3314.92, "z": 234.72}
+          }
+        },
+        "Avalon/AV_Z07_OuterYard": {
+          "arrivals": {
+            "Avalon/AV_Z03_CaerLyon": {"x": 6.57, "y": -9195.1, "z": -20.41},
+            "Avalon/AV_Z08_LakeShore": {"x": 6170.51, "y": 1058.13, "z": 310.01}
+          }
+        },
+        "Avalon/AV_Z05_TheWyrd": {
+          "arrivals": {
+            "Avalon/AV_Z04_TheWild": {"x": -5039.08, "y": -8224.31, "z": -1370.91},
+            "Avalon/AV_Z06_DunDara": {"x": 7939.9, "y": -1370.82, "z": -1301.69}
+          }
+        },
+        "Avalon/AV_Z08_LakeShore": {
+          "arrivals": {
+            "Avalon/AV_Z07_OuterYard": {"x": -7976.37, "y": -3854.67, "z": 707.21},
+            "Avalon/AV_Z09_DeepWater": {"x": -4981.91, "y": 625.86, "z": -42.79}
+          }
+        },
+        "Avalon/AV_Z06_DunDara": {
+          "arrivals": {
+            "Avalon/AV_Z05_TheWyrd": {"x": -3320.61, "y": -5029.87, "z": -340.84},
+            "Avalon/AV_Z00_Hub": {"x": -63.07, "y": 5592.19, "z": -35.27}
+          }
+        },
+        "Avalon/AV_Z09_DeepWater": {
+          "arrivals": {
+            "Avalon/AV_Z08_LakeShore": {"x": 443.34, "y": -2233.04, "z": 503.34},
+            "Avalon/AV_Z10_Catacombs": {"x": 205.98, "y": 565.54, "z": 613.15}
+          }
+        },
+        "Avalon/AV_Z10_Catacombs": {
+          "arrivals": {
+            "Avalon/AV_Z09_DeepWater": {"x": 1508.62, "y": 1345.08, "z": 0.0},
+            "Avalon/AV_Z11_CrystalCaves": {"x": -11052.74, "y": 18011.6, "z": -1808.71},
+            "Avalon/AV_Z00_Hub": {"x": -1447.72, "y": -2315.29, "z": 0.0}
+          }
+        },
+        "Avalon/AV_Z11_CrystalCaves": {
+          "arrivals": {
+            "Avalon/AV_Z10_Catacombs": {"x": 225.58, "y": 461.27, "z": 2.0}
+          }
+        }
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z00_Hub",
+          "to": "Avalon/AV_Z01_AbbeyRoad",
+          "xyz": {"x": 6507.69, "y": -2588.39, "z": -509.6},
+          "reset_xyz": {"x": 6153.92, "y": -2825.72, "z": -509.6},
+          "volume": "TeleportVol_Teleport to AbbeyRoad (1)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z01_AbbeyRoad",
+          "to": "Avalon/AV_Z00_Hub",
+          "xyz": {"x": -7402.13, "y": 209.41, "z": 242.61},
+          "volume": "TeleportVol_Teleport To Hub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z00_Hub",
+          "to": "Avalon/AV_Z02_HighRoad",
+          "xyz": {"x": 392.01, "y": 6116.18, "z": -496.3},
+          "reset_xyz": {"x": -51.53, "y": 5420.77, "z": -506.3},
+          "volume": "Activator Volumer POI High Road (1)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z02_HighRoad",
+          "to": "Avalon/AV_Z00_Hub",
+          "xyz": {"x": 462.65, "y": -1039.16, "z": 9.48},
+          "volume": "TeleportVol_Teleport location to Caliburn",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z03_CaerLyon",
+          "to": "Avalon/AV_Z02_HighRoad",
+          "xyz": {"x": 3759.69, "y": -9075.72, "z": 0.56},
+          "reset_xyz": {"x": 3785.6, "y": -8686.58, "z": 0.56},
+          "volume": "Volume-POI-ToHighRoad",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z02_HighRoad",
+          "to": "Avalon/AV_Z03_CaerLyon",
+          "xyz": {"x": -876.48, "y": 13939.64, "z": 117.86},
+          "volume": "Activator Volume POI Care Lyon",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z03_CaerLyon",
+          "to": "Avalon/AV_Z07_OuterYard",
+          "xyz": {"x": 1167.3, "y": 24149.6, "z": 1126.04},
+          "reset_xyz": {"x": 1171.75, "y": 23747.68, "z": 1090.17},
+          "volume": "Activator Volume To OuterYard",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z07_OuterYard",
+          "to": "Avalon/AV_Z03_CaerLyon",
+          "xyz": {"x": 22.62, "y": -9884.93, "z": -10.48},
+          "volume": "TeleportVol_BackToCaerLyon",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z08_LakeShore",
+          "to": "Avalon/AV_Z07_OuterYard",
+          "xyz": {"x": -8953.01, "y": -4230.45, "z": 707.21},
+          "reset_xyz": {"x": -8446.62, "y": -3914.25, "z": 707.21},
+          "volume": "TeleportVol_To Avalon",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z07_OuterYard",
+          "to": "Avalon/AV_Z08_LakeShore",
+          "xyz": {"x": 6620.46, "y": 1050.92, "z": 309.99},
+          "volume": "LakeTeleportVol",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z09_DeepWater",
+          "to": "Avalon/AV_Z08_LakeShore",
+          "xyz": {"x": 430.76, "y": -2499.96, "z": 504.0},
+          "reset_xyz": {"x": 428.88, "y": -2120.18, "z": 490.57},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z08_LakeShore",
+          "to": "Avalon/AV_Z09_DeepWater",
+          "xyz": {"x": -4766.66, "y": 420.84, "z": 0.0},
+          "volume": "Activator Volume AV-LAKE-C04-002",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z10_Catacombs",
+          "to": "Avalon/AV_Z09_DeepWater",
+          "xyz": {"x": 1508.62, "y": 1744.08, "z": -0.0},
+          "reset_xyz": {"x": 1508.62, "y": 1431.6, "z": -0.0},
+          "volume": "TeleportVol_BackToDeep",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Avalon/AV_Z09_DeepWater",
+          "to": "Avalon/AV_Z10_Catacombs",
+          "interact_xyz": {"x": 205.98, "y": 683.74, "z": 613.07},
+          "reset_xyz": {"x": 205.98, "y": 523.54, "z": 613.07},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z10_Catacombs",
+          "to": "Avalon/AV_Z11_CrystalCaves",
+          "xyz": {"x": -10619.01, "y": 18373.07, "z": -1808.72},
+          "reset_xyz": {"x": -10916.15, "y": 18080.47, "z": -1807.94},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z11_CrystalCaves",
+          "to": "Avalon/AV_Z10_Catacombs",
+          "xyz": {"x": -149.05, "y": -34.94, "z": 2.0},
+          "volume": "TeleportVol_BackToCatacombs",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z04_TheWild",
+          "to": "Avalon/AV_Z03_CaerLyon",
+          "xyz": {"x": 8405.36, "y": -8616.33, "z": 233.89},
+          "reset_xyz": {"x": 8036.1, "y": -8429.11, "z": 203.27},
+          "volume": "Volume-POI-CaerLyon",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z03_CaerLyon",
+          "to": "Avalon/AV_Z04_TheWild",
+          "xyz": {"x": -7524.14, "y": 14873.23, "z": 1126.04},
+          "volume": "Teleport Wild",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z04_TheWild",
+          "to": "Avalon/AV_Z05_TheWyrd",
+          "xyz": {"x": -4208.57, "y": 9710.4, "z": 229.08},
+          "reset_xyz": {"x": -4148.6, "y": 9113.42, "z": 198.09},
+          "volume": "TeleportVol_Teleport-ToTheWyrd",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z05_TheWyrd",
+          "to": "Avalon/AV_Z04_TheWild",
+          "xyz": {"x": -5085.15, "y": -8945.84, "z": -1368.7},
+          "volume": "TeleportVol_To_The_Wild",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z05_TheWyrd",
+          "to": "Avalon/AV_Z06_DunDara",
+          "xyz": {"x": 9190.92, "y": -1055.43, "z": -1292.45},
+          "reset_xyz": {"x": 8664.63, "y": -1162.2, "z": -1294.96},
+          "volume": "To_Dun_Dara_Volume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Avalon/AV_Z06_DunDara",
+          "to": "Avalon/AV_Z05_TheWyrd",
+          "xyz": {"x": -4232.72, "y": -4760.7, "z": -416.21},
+          "volume": "Wyrd_POI_Volume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Avalon/AV_Z00_Hub",
+          "to": "Avalon/AV_Z04_TheWild",
+          "interact_xyz": {"x": 1001.8, "y": -294.34, "z": -1.89},
+          "reset_xyz": {"x": 779.81, "y": -546.56, "z": 0.4},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Avalon/AV_Z04_TheWild",
+          "to": "Avalon/AV_Z00_Hub",
+          "interact_xyz": {"x": -714.77, "y": -3107.28, "z": 236.72},
+          "reset_xyz": {"x": -891.22, "y": -3231.86, "z": 236.72},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Avalon/AV_Z00_Hub",
+          "to": "Avalon/AV_Z06_DunDara",
+          "interact_xyz": {"x": -1034.19, "y": -192.49, "z": -5.18},
+          "reset_xyz": {"x": -846.53, "y": -332.28, "z": -9.6},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Avalon/AV_Z06_DunDara",
+          "to": "Avalon/AV_Z00_Hub",
+          "interact_xyz": {"x": -447.17, "y": 5746.66, "z": -34.69},
+          "reset_xyz": {"x": -63.07, "y": 5592.19, "z": -34.27},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Avalon/AV_Z00_Hub",
+          "to": "Avalon/AV_Z03_CaerLyon",
+          "interact_xyz": {"x": 956.01, "y": -2228.27, "z": 0.4},
+          "reset_xyz": {"x": 791.93, "y": -1995.23, "z": -9.6},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Avalon/AV_Z03_CaerLyon",
+          "to": "Avalon/AV_Z00_Hub",
+          "interact_xyz": {"x": 1206.25, "y": -2475.94, "z": 51.09},
+          "reset_xyz": {"x": 1213.79, "y": -2164.03, "z": 40.76},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Avalon/AV_Z00_Hub",
+          "to": "Avalon/AV_Z10_Catacombs",
+          "interact_xyz": {"x": -1167.32, "y": -2102.2, "z": 0.4},
+          "reset_xyz": {"x": -757.57, "y": -1876.1, "z": -9.6},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Avalon/AV_Z10_Catacombs",
+          "to": "Avalon/AV_Z00_Hub",
+          "interact_xyz": {"x": -1505.32, "y": -2858.25, "z": -0.0},
+          "reset_xyz": {"x": -1447.72, "y": -2315.29, "z": -0.0},
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "Azteca": {
       "hub": "Azteca/AZ_Z00_Zocalo",
       "door": "Azteca/AZ_Z00_Zocalo",
       "zones": {
-        "Azteca/AZ_Z00_Zocalo": {},
-        "Azteca/AZ_Z01_ThreePoints": {},
-        "Azteca/AZ_Z03_MangroveMarsh": {},
-        "Azteca/AZ_Z05_ZultunDock": {},
-        "Azteca/AZ_Z02_Cenote": {},
-        "Azteca/AZ_Z04_SaltmeadowSwamp": {},
-        "Azteca/AZ_Z06_CloudburstIsland": {},
-        "Azteca/AZ_Z07_TierraDeBrea": {},
-        "Azteca/AZ_Z09_AltoAlto": {},
-        "Azteca/AZ_Z08_PitchBlackLake": {},
-        "Azteca/AZ_Z10_FloatingMountains": {},
-        "Azteca/AZ_Z11_TwinGiants": {}
+        "Azteca/AZ_Z00_Zocalo": {
+          "arrivals": {
+            "Azteca/AZ_Z03_MangroveMarsh": {"x": 4259.35, "y": 2969.46, "z": 275.5},
+            "Azteca/AZ_Z04_SaltmeadowSwamp": {"x": 3291.89, "y": 3005.39, "z": 276.18},
+            "Azteca/AZ_Z01_ThreePoints": {"x": 14.51, "y": 9098.5, "z": 275.5},
+            "Azteca/AZ_Z05_ZultunDock": {"x": -7742.17, "y": 4446.13, "z": 29.82},
+            "Azteca/AZ_Z06_CloudburstIsland": {"x": -6437.65, "y": 3368.71, "z": 25.14},
+            "Azteca/AZ_Z07_TierraDeBrea": {"x": -4729.75, "y": 7706.8, "z": 275.5}
+          }
+        },
+        "Azteca/AZ_Z01_ThreePoints": {
+          "arrivals": {
+            "Azteca/AZ_Z00_Zocalo": {"x": -26.49, "y": -187.6, "z": 275.18},
+            "Azteca/AZ_Z02_Cenote": {"x": -4717.81, "y": 7106.15, "z": 5.31},
+            "Azteca/AZ_Z10_FloatingMountains": {"x": -1.79, "y": 290.94, "z": 273.18},
+            "Azteca/AZ_Z08_PitchBlackLake": {"x": -4123.13, "y": 2355.83, "z": 273.18},
+            "Azteca/AZ_Z09_AltoAlto": {"x": 4236.29, "y": 4002.92, "z": 273.18},
+            "Azteca/AZ_Z11_TwinGiants": {"x": -1140.36, "y": 7367.65, "z": 804.06}
+          }
+        },
+        "Azteca/AZ_Z03_MangroveMarsh": {
+          "arrivals": {
+            "Azteca/AZ_Z00_Zocalo": {"x": -517.49, "y": -66.42, "z": -9.14},
+            "Azteca/AZ_Z04_SaltmeadowSwamp": {"x": 13422.2, "y": 2888.89, "z": 0.0}
+          }
+        },
+        "Azteca/AZ_Z05_ZultunDock": {
+          "arrivals": {
+            "Azteca/AZ_Z00_Zocalo": {"x": 4854.82, "y": 408.45, "z": -996.43},
+            "Azteca/AZ_Z06_CloudburstIsland": {"x": -1561.3, "y": 6426.79, "z": -976.85}
+          }
+        },
+        "Azteca/AZ_Z02_Cenote": {
+          "arrivals": {
+            "Azteca/AZ_Z01_ThreePoints": {"x": 2525.38, "y": 5187.02, "z": 65.01}
+          }
+        },
+        "Azteca/AZ_Z04_SaltmeadowSwamp": {
+          "arrivals": {
+            "Azteca/AZ_Z00_Zocalo": {"x": -7889.82, "y": 1891.27, "z": 94.65},
+            "Azteca/AZ_Z03_MangroveMarsh": {"x": -9621.03, "y": -64.81, "z": 389.26}
+          }
+        },
+        "Azteca/AZ_Z06_CloudburstIsland": {
+          "arrivals": {
+            "Azteca/AZ_Z05_ZultunDock": {"x": 2134.02, "y": -3271.25, "z": -237.11},
+            "Azteca/AZ_Z09_AltoAlto": {"x": -7041.77, "y": 2656.0, "z": 48.21},
+            "Azteca/AZ_Z07_TierraDeBrea": {"x": -8411.51, "y": -918.55, "z": 46.94},
+            "Azteca/AZ_Z00_Zocalo": {"x": 1697.26, "y": -1858.88, "z": -35.35}
+          }
+        },
+        "Azteca/AZ_Z07_TierraDeBrea": {
+          "arrivals": {
+            "Azteca/AZ_Z06_CloudburstIsland": {"x": 7864.35, "y": 5253.31, "z": 2895.52},
+            "Azteca/AZ_Z08_PitchBlackLake": {"x": -4499.18, "y": -5326.86, "z": 1173.04},
+            "Azteca/AZ_Z00_Zocalo": {"x": 7030.35, "y": 5349.29, "z": 2906.7}
+          }
+        },
+        "Azteca/AZ_Z09_AltoAlto": {
+          "arrivals": {
+            "Azteca/AZ_Z06_CloudburstIsland": {"x": -3725.79, "y": 4402.55, "z": 492.86},
+            "Azteca/AZ_Z10_FloatingMountains": {"x": 1355.69, "y": 5785.18, "z": 901.72},
+            "Azteca/AZ_Z01_ThreePoints": {"x": -437.99, "y": 3489.65, "z": 475.71}
+          }
+        },
+        "Azteca/AZ_Z08_PitchBlackLake": {
+          "arrivals": {
+            "Azteca/AZ_Z07_TierraDeBrea": {"x": -609.88, "y": 325.0, "z": -78.95},
+            "Azteca/AZ_Z01_ThreePoints": {"x": -3384.73, "y": -370.13, "z": -100.0}
+          }
+        },
+        "Azteca/AZ_Z10_FloatingMountains": {
+          "arrivals": {
+            "Azteca/AZ_Z09_AltoAlto": {"x": -11995.92, "y": 10765.78, "z": 2155.64},
+            "Azteca/AZ_Z11_TwinGiants": {"x": 11255.84, "y": -4138.9, "z": 3591.62},
+            "Azteca/AZ_Z01_ThreePoints": {"x": -8790.05, "y": 9003.99, "z": 1829.71}
+          }
+        },
+        "Azteca/AZ_Z11_TwinGiants": {
+          "arrivals": {
+            "Azteca/AZ_Z10_FloatingMountains": {"x": -8550.26, "y": 8480.54, "z": 814.19},
+            "Azteca/AZ_Z01_ThreePoints": {"x": -8866.95, "y": 6319.2, "z": 600.0}
+          }
+        }
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z00_Zocalo",
+          "to": "Azteca/AZ_Z03_MangroveMarsh",
+          "xyz": {"x": 4415.12, "y": 2954.88, "z": 276.18},
+          "reset_xyz": {"x": 3571.94, "y": 3047.13, "z": 331.19},
+          "volume": "Activator Volume To Mangrove Marsh",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z03_MangroveMarsh",
+          "to": "Azteca/AZ_Z00_Zocalo",
+          "xyz": {"x": -1431.96, "y": 86.98, "z": -9.14},
+          "volume": "To_Zocalo_Volume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z00_Zocalo",
+          "to": "Azteca/AZ_Z04_SaltmeadowSwamp",
+          "interact_xyz": {"x": 3519.48, "y": 3012.52, "z": 337.42},
+          "reset_xyz": {"x": 3231.62, "y": 3003.54, "z": 276.18},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z04_SaltmeadowSwamp",
+          "to": "Azteca/AZ_Z00_Zocalo",
+          "interact_xyz": {"x": -8023.59, "y": 1804.69, "z": 92.67},
+          "reset_xyz": {"x": -7804.99, "y": 1896.25, "z": 33.22},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z04_SaltmeadowSwamp",
+          "to": "Azteca/AZ_Z03_MangroveMarsh",
+          "xyz": {"x": -10674.51, "y": -894.63, "z": 389.26},
+          "reset_xyz": {"x": -10428.45, "y": -550.56, "z": 389.26},
+          "volume": "TeleportVol_BackToMangrove",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z03_MangroveMarsh",
+          "to": "Azteca/AZ_Z04_SaltmeadowSwamp",
+          "xyz": {"x": 14625.9, "y": 2348.04, "z": 0.0},
+          "volume": "To_SatlMeadow_SwampPOI_Volume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z00_Zocalo",
+          "to": "Azteca/AZ_Z01_ThreePoints",
+          "xyz": {"x": -11.15, "y": 9547.0, "z": 276.01},
+          "reset_xyz": {"x": 2.56, "y": 9097.22, "z": 276.01},
+          "volume": "Activator Volume POI Three Points",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z01_ThreePoints",
+          "to": "Azteca/AZ_Z02_Cenote",
+          "xyz": {"x": -5276.74, "y": 7362.08, "z": 96.2},
+          "reset_xyz": {"x": -4966.58, "y": 7249.39, "z": 11.23},
+          "volume": "TeleportVol_Teleport to Cenote",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z02_Cenote",
+          "to": "Azteca/AZ_Z01_ThreePoints",
+          "xyz": {"x": 3176.43, "y": 5875.61, "z": 187.11},
+          "volume": "TeleportVol_To ThreePoints",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z01_ThreePoints",
+          "to": "Azteca/AZ_Z00_Zocalo",
+          "interact_xyz": {"x": -1282.04, "y": 855.86, "z": 273.18},
+          "reset_xyz": {"x": -1909.74, "y": 933.46, "z": 273.18},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z05_ZultunDock",
+          "to": "Azteca/AZ_Z00_Zocalo",
+          "interact_xyz": {"x": 5217.79, "y": 403.43, "z": -998.26},
+          "reset_xyz": {"x": 4854.82, "y": 408.45, "z": -998.27},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z00_Zocalo",
+          "to": "Azteca/AZ_Z05_ZultunDock",
+          "interact_xyz": {"x": -8060.73, "y": 4523.38, "z": 30.5},
+          "reset_xyz": {"x": -7858.02, "y": 4473.85, "z": 30.5},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z05_ZultunDock",
+          "to": "Azteca/AZ_Z06_CloudburstIsland",
+          "xyz": {"x": -1531.99, "y": 8167.98, "z": -976.83},
+          "reset_xyz": {"x": -1517.75, "y": 7688.2, "z": -976.84},
+          "volume": "Volume-POI-CloudburstForest",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z06_CloudburstIsland",
+          "to": "Azteca/AZ_Z05_ZultunDock",
+          "xyz": {"x": 4983.9, "y": -4525.92, "z": -512.48},
+          "volume": "Volume-POI-Zultan Volume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z09_AltoAlto",
+          "to": "Azteca/AZ_Z06_CloudburstIsland",
+          "xyz": {"x": -4498.57, "y": 5134.69, "z": 493.8},
+          "reset_xyz": {"x": -4202.32, "y": 4909.71, "z": 493.8},
+          "volume": "TeleportToCloudburstVolume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z06_CloudburstIsland",
+          "to": "Azteca/AZ_Z09_AltoAlto",
+          "interact_xyz": {"x": -7228.49, "y": 3018.76, "z": 9.17},
+          "reset_xyz": {"x": -7041.77, "y": 2656.0, "z": 48.19},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z09_AltoAlto",
+          "to": "Azteca/AZ_Z10_FloatingMountains",
+          "interact_xyz": {"x": 1604.08, "y": 6320.35, "z": 896.74},
+          "reset_xyz": {"x": 1608.04, "y": 5930.37, "z": 903.72},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z10_FloatingMountains",
+          "to": "Azteca/AZ_Z09_AltoAlto",
+          "interact_xyz": {"x": -12499.92, "y": 10767.38, "z": 2155.64},
+          "reset_xyz": {"x": -12010.92, "y": 10765.83, "z": 2155.64},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z10_FloatingMountains",
+          "to": "Azteca/AZ_Z11_TwinGiants",
+          "interact_xyz": {"x": 12911.63, "y": -3786.09, "z": 3737.34},
+          "reset_xyz": {"x": 12473.3, "y": -3983.99, "z": 3689.16},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z11_TwinGiants",
+          "to": "Azteca/AZ_Z10_FloatingMountains",
+          "interact_xyz": {"x": -7557.57, "y": 8984.51, "z": 833.56},
+          "reset_xyz": {"x": -7697.75, "y": 8903.31, "z": 833.56},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z06_CloudburstIsland",
+          "to": "Azteca/AZ_Z07_TierraDeBrea",
+          "xyz": {"x": -8797.47, "y": -1078.87, "z": -53.73},
+          "reset_xyz": {"x": -8397.0, "y": -923.13, "z": 30.8},
+          "volume": "Volume-POI-Tierra Volume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z07_TierraDeBrea",
+          "to": "Azteca/AZ_Z06_CloudburstIsland",
+          "xyz": {"x": 8327.45, "y": 5211.27, "z": 2976.26},
+          "volume": "TeleportVol_Teleport to Cloudburst",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Azteca/AZ_Z07_TierraDeBrea",
+          "to": "Azteca/AZ_Z08_PitchBlackLake",
+          "xyz": {"x": -5058.35, "y": -5592.07, "z": 1173.04},
+          "reset_xyz": {"x": -4800.09, "y": -5406.42, "z": 1173.04},
+          "volume": "Teleport Volume to Pitch Black Lake",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z08_PitchBlackLake",
+          "to": "Azteca/AZ_Z07_TierraDeBrea",
+          "interact_xyz": {"x": 289.5, "y": -126.56, "z": -54.05},
+          "reset_xyz": {"x": -1.89, "y": 8.09, "z": -54.09},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z00_Zocalo",
+          "to": "Azteca/AZ_Z06_CloudburstIsland",
+          "interact_xyz": {"x": -6885.46, "y": 3396.67, "z": 45.19},
+          "reset_xyz": {"x": -6507.25, "y": 3729.8, "z": 0.72},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z06_CloudburstIsland",
+          "to": "Azteca/AZ_Z00_Zocalo",
+          "interact_xyz": {"x": 1358.61, "y": -1843.37, "z": 38.08},
+          "reset_xyz": {"x": 1697.26, "y": -1858.88, "z": -35.38},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z00_Zocalo",
+          "to": "Azteca/AZ_Z07_TierraDeBrea",
+          "interact_xyz": {"x": -5044.65, "y": 7691.93, "z": 330.51},
+          "reset_xyz": {"x": -5122.12, "y": 7139.33, "z": 275.5},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z07_TierraDeBrea",
+          "to": "Azteca/AZ_Z00_Zocalo",
+          "interact_xyz": {"x": 7192.2, "y": 5550.2, "z": 2954.1},
+          "reset_xyz": {"x": 7030.35, "y": 5349.29, "z": 2906.7},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z01_ThreePoints",
+          "to": "Azteca/AZ_Z10_FloatingMountains",
+          "interact_xyz": {"x": 10.63, "y": 627.34, "z": 328.19},
+          "reset_xyz": {"x": 4.71, "y": 468.45, "z": 311.71},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z10_FloatingMountains",
+          "to": "Azteca/AZ_Z01_ThreePoints",
+          "interact_xyz": {"x": -8520.75, "y": 8823.86, "z": 1879.63},
+          "reset_xyz": {"x": -8757.89, "y": 8981.92, "z": 1829.71},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z01_ThreePoints",
+          "to": "Azteca/AZ_Z08_PitchBlackLake",
+          "interact_xyz": {"x": -3846.43, "y": 2627.93, "z": 328.19},
+          "reset_xyz": {"x": -4172.06, "y": 2321.98, "z": 273.18},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z08_PitchBlackLake",
+          "to": "Azteca/AZ_Z01_ThreePoints",
+          "interact_xyz": {"x": -3325.55, "y": -673.41, "z": -44.99},
+          "reset_xyz": {"x": -3383.01, "y": -378.96, "z": -97.32},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z01_ThreePoints",
+          "to": "Azteca/AZ_Z09_AltoAlto",
+          "interact_xyz": {"x": 3860.66, "y": 3990.21, "z": 328.19},
+          "reset_xyz": {"x": 4162.98, "y": 4010.42, "z": 273.18},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z09_AltoAlto",
+          "to": "Azteca/AZ_Z01_ThreePoints",
+          "interact_xyz": {"x": -140.21, "y": 3526.01, "z": 530.72},
+          "reset_xyz": {"x": -437.99, "y": 3489.65, "z": 475.71},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z01_ThreePoints",
+          "to": "Azteca/AZ_Z11_TwinGiants",
+          "interact_xyz": {"x": -1113.5, "y": 7095.92, "z": 862.07},
+          "reset_xyz": {"x": -1089.96, "y": 6823.93, "z": 803.92},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Azteca/AZ_Z11_TwinGiants",
+          "to": "Azteca/AZ_Z01_ThreePoints",
+          "interact_xyz": {"x": -9465.34, "y": 6363.26, "z": 655.01},
+          "reset_xyz": {"x": -9040.48, "y": 6331.98, "z": 601.03},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "Khrysalis": {
       "hub": "Khrysalis/KR_Z00_Hub",
       "door": "Khrysalis/KR_Z00_Hub",
       "zones": {
-        "Khrysalis/KR_Z00_Hub": {},
-        "Khrysalis/KR_Z01_SilentMarket": {},
-        "Khrysalis/KR_Z02_MoonCliffs": {},
-        "Khrysalis/KR_Z03_LastWood": {},
-        "Khrysalis/KR_Z04_TyrianGorge": {},
-        "Khrysalis/KR_Z07_RuinedAlcazar": {},
-        "Khrysalis/KR_Z08_RadianceReborn": {},
-        "Khrysalis/KR_Z09_MantisCity": {},
-        "Khrysalis/KR_Z10_KondhaDesert": {},
-        "Khrysalis/KR_Z11_TheHive": {},
-        "Khrysalis/KR_Z05_FortRachias": {},
-        "Khrysalis/KR_Z06_CrescentBeach": {},
-        "Khrysalis/KR_Z12_ShadowPalace": {}
+        "Khrysalis/KR_Z00_Hub": {
+          "arrivals": {
+            "Khrysalis/KR_Z02_MoonCliffs": {"x": 6188.51, "y": -745.51, "z": 480.31},
+            "Khrysalis/KR_Z01_SilentMarket": {"x": -7002.95, "y": -4091.1, "z": 482.02},
+            "Khrysalis/KR_Z05_FortRachias": {"x": 6188.51, "y": -745.51, "z": 480.31},
+            "Khrysalis/KR_Z04_TyrianGorge": {"x": 6188.51, "y": -745.51, "z": 480.31}
+          }
+        },
+        "Khrysalis/KR_Z01_SilentMarket": {
+          "arrivals": {
+            "Khrysalis/KR_Z00_Hub": {"x": -404.37, "y": -9922.16, "z": 162.27},
+            "Khrysalis/KR_Z09_MantisCity": {"x": 1406.15, "y": 5557.79, "z": -31.3},
+            "Khrysalis/KR_Z07_RuinedAlcazar": {"x": 1406.15, "y": 5557.79, "z": -31.3},
+            "Khrysalis/KR_Z10_KondhaDesert": {"x": 1406.15, "y": 5557.79, "z": -31.3},
+            "Khrysalis/KR_Z11_TheHive": {"x": 1406.15, "y": 5557.79, "z": -31.3}
+          }
+        },
+        "Khrysalis/KR_Z02_MoonCliffs": {
+          "arrivals": {
+            "Khrysalis/KR_Z00_Hub": {"x": 6114.58, "y": 8151.59, "z": 1002.83},
+            "Khrysalis/KR_Z03_LastWood": {"x": 1638.92, "y": 7578.99, "z": 1222.51}
+          }
+        },
+        "Khrysalis/KR_Z03_LastWood": {
+          "arrivals": {
+            "Khrysalis/KR_Z02_MoonCliffs": {"x": 30.12, "y": -265.29, "z": 37.03},
+            "Khrysalis/KR_Z00_Hub": {"x": -12629.8, "y": -16825.63, "z": 359.77}
+          }
+        },
+        "Khrysalis/KR_Z04_TyrianGorge": {
+          "arrivals": {
+            "Khrysalis/KR_Z01_SilentMarket": {"x": -7163.61, "y": -7021.37, "z": 2619.12},
+            "Khrysalis/KR_Z05_FortRachias": {"x": 8845.33, "y": 7607.95, "z": 462.6},
+            "Khrysalis/KR_Z00_Hub": {"x": -1442.57, "y": -2488.28, "z": -1484.88}
+          }
+        },
+        "Khrysalis/KR_Z07_RuinedAlcazar": {
+          "arrivals": {
+            "Khrysalis/KR_Z01_SilentMarket": {"x": 4033.89, "y": 24.07, "z": 137.53},
+            "Khrysalis/KR_Z08_RadianceReborn": {"x": -9.35, "y": -746.58, "z": 107.11}
+          }
+        },
+        "Khrysalis/KR_Z08_RadianceReborn": {
+          "arrivals": {
+            "Khrysalis/KR_Z01_SilentMarket": {"x": 8.67, "y": 4466.49, "z": 125.69},
+            "Khrysalis/KR_Z07_RuinedAlcazar": {"x": 4.66, "y": -3746.36, "z": 128.23}
+          }
+        },
+        "Khrysalis/KR_Z09_MantisCity": {
+          "arrivals": {
+            "Khrysalis/KR_Z01_SilentMarket": {"x": 1658.48, "y": -4342.92, "z": 14.54},
+            "Khrysalis/KR_Z10_KondhaDesert": {"x": 7581.81, "y": 8059.73, "z": 401.46}
+          }
+        },
+        "Khrysalis/KR_Z10_KondhaDesert": {
+          "arrivals": {
+            "Khrysalis/KR_Z09_MantisCity": {"x": 13913.97, "y": -16069.45, "z": -510.3},
+            "Khrysalis/KR_Z01_SilentMarket": {"x": 16072.58, "y": -11299.13, "z": -552.1},
+            "Khrysalis/Interiors/KR_Z10_I08_SolarArcMain": {"x": 4086.55, "y": -7854.15, "z": -528.94},
+            "Khrysalis/KR_Z11_TheHive": {"x": 1319.31, "y": -13743.35, "z": -539.34}
+          }
+        },
+        "Khrysalis/KR_Z11_TheHive": {
+          "arrivals": {
+            "Khrysalis/KR_Z10_KondhaDesert": {"x": 6533.79, "y": -4556.12, "z": -576.52},
+            "Khrysalis/Interiors/KR_Z11_I07_MagiHouseMain": {"x": -6809.63, "y": -6796.89, "z": 2574.38},
+            "Khrysalis/KR_Z01_SilentMarket": {"x": 5441.35, "y": -3945.9, "z": -1295.27}
+          }
+        },
+        "Khrysalis/KR_Z05_FortRachias": {
+          "arrivals": {
+            "Khrysalis/KR_Z04_TyrianGorge": {"x": 3312.94, "y": -8089.99, "z": 259.16},
+            "Khrysalis/KR_Z06_CrescentBeach": {"x": -17124.83, "y": -14258.02, "z": -866.28},
+            "Khrysalis/KR_Z00_Hub": {"x": -8189.46, "y": 3024.07, "z": -0.0}
+          }
+        },
+        "Khrysalis/KR_Z06_CrescentBeach": {
+          "arrivals": {
+            "Khrysalis/KR_Z05_FortRachias": {"x": -6458.19, "y": -6806.81, "z": 1383.03}
+          }
+        },
+        "Khrysalis/KR_Z12_ShadowPalace": {
+          "arrivals": {
+            "Khrysalis/Interiors/KR_Z12_I02_Entry": {"x": 22.39, "y": -8700.91, "z": 65.01},
+            "Khrysalis/Interiors/KR_Z11_I07_MagiHouseMain": {"x": -137.71, "y": -311.17, "z": -2.72}
+          }
+        },
+        "Khrysalis/Interiors/KR_Z10_I08_SolarArcMain": {
+          "arrivals": {
+            "Khrysalis/KR_Z10_KondhaDesert": {"x": 27.01, "y": 3369.58, "z": 20.98}
+          }
+        },
+        "Khrysalis/Interiors/KR_Z12_I02_Entry": {
+          "arrivals": {
+            "Khrysalis/KR_Z12_ShadowPalace": {"x": -1.42, "y": -3982.56, "z": 0.0}
+          }
+        },
+        "Khrysalis/Interiors/KR_Z11_I07_MagiHouseMain": {
+          "arrivals": {
+            "Khrysalis/KR_Z12_ShadowPalace": {"x": -25.36, "y": 1257.4, "z": 5.6},
+            "Khrysalis/KR_Z11_TheHive": {"x": 46.87, "y": -1581.98, "z": 7.11}
+          }
+        }
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z00_Hub",
+          "to": "Khrysalis/KR_Z02_MoonCliffs",
+          "xyz": {"x": 6963.71, "y": 4023.29, "z": 402.59},
+          "reset_xyz": {"x": 6700.52, "y": 3809.58, "z": 402.71},
+          "volume": "Activator Volume to Moon Cliffs",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z02_MoonCliffs",
+          "to": "Khrysalis/KR_Z00_Hub",
+          "xyz": {"x": -5513.16, "y": -844.47, "z": 123.87},
+          "volume": "TeleportVol_To Bastion",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z02_MoonCliffs",
+          "to": "Khrysalis/KR_Z03_LastWood",
+          "xyz": {"x": 912.67, "y": 7821.45, "z": 1201.66},
+          "reset_xyz": {"x": 1211.97, "y": 7603.34, "z": 1161.5},
+          "volume": "Volume-TeleportToLastWood",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z03_LastWood",
+          "to": "Khrysalis/KR_Z02_MoonCliffs",
+          "xyz": {"x": 29.07, "y": 334.71, "z": 51.14},
+          "volume": "TeleportVol_Teleport_To_MoonCliffs",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z00_Hub",
+          "to": "Khrysalis/KR_Z01_SilentMarket",
+          "xyz": {"x": -7407.59, "y": -4358.7, "z": 416.11},
+          "reset_xyz": {"x": -7144.33, "y": -4196.92, "z": 482.02},
+          "volume": "TeleportVol_To SilentMarket",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z01_SilentMarket",
+          "to": "Khrysalis/KR_Z00_Hub",
+          "xyz": {"x": -314.51, "y": -10569.92, "z": 162.32},
+          "volume": "TeleportVol_to Bastion",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z01_SilentMarket",
+          "to": "Khrysalis/KR_Z04_TyrianGorge",
+          "interact_xyz": {"x": 5.78, "y": 7643.52, "z": 5.0},
+          "reset_xyz": {"x": 225.01, "y": 7059.4, "z": 5.0},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z04_TyrianGorge",
+          "to": "Khrysalis/KR_Z05_FortRachias",
+          "xyz": {"x": 9309.62, "y": 7912.98, "z": 472.17},
+          "reset_xyz": {"x": 8783.66, "y": 7555.42, "z": 446.68},
+          "volume": "TeleportFortRachias",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z05_FortRachias",
+          "to": "Khrysalis/KR_Z04_TyrianGorge",
+          "xyz": {"x": 3458.47, "y": -8581.91, "z": 450.2},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z05_FortRachias",
+          "to": "Khrysalis/KR_Z06_CrescentBeach",
+          "xyz": {"x": -17465.82, "y": -13763.52, "z": -866.97},
+          "reset_xyz": {"x": -17297.6, "y": -14015.53, "z": -866.99},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z06_CrescentBeach",
+          "to": "Khrysalis/KR_Z05_FortRachias",
+          "xyz": {"x": -6721.89, "y": -7233.25, "z": 1521.6},
+          "volume": "TeleportVol_Teleport location To For Rachias",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z05_FortRachias",
+          "to": "Khrysalis/KR_Z00_Hub",
+          "interact_xyz": {"x": -13309.5, "y": -16911.64, "z": -902.68},
+          "reset_xyz": {"x": -13711.7, "y": -16709.83, "z": -857.54},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z00_Hub",
+          "to": "Khrysalis/KR_Z03_LastWood",
+          "interact_xyz": {"x": 6690.91, "y": -1758.86, "z": 371.73},
+          "reset_xyz": {"x": 6393.95, "y": -1819.07, "z": 443.7},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z00_Hub",
+          "to": "Khrysalis/KR_Z02_MoonCliffs",
+          "interact_xyz": {"x": 6919.19, "y": -1230.47, "z": 371.73},
+          "reset_xyz": {"x": 6739.35, "y": -1222.83, "z": 371.73},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z02_MoonCliffs",
+          "to": "Khrysalis/KR_Z00_Hub",
+          "interact_xyz": {"x": 6082.77, "y": 8576.41, "z": 1000.55},
+          "reset_xyz": {"x": 6114.58, "y": 8151.59, "z": 1000.54},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z00_Hub",
+          "to": "Khrysalis/KR_Z04_TyrianGorge",
+          "interact_xyz": {"x": 6988.13, "y": -792.42, "z": 371.73},
+          "reset_xyz": {"x": 6787.47, "y": -780.65, "z": 371.73},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z04_TyrianGorge",
+          "to": "Khrysalis/KR_Z00_Hub",
+          "interact_xyz": {"x": -1587.32, "y": -2142.35, "z": -1484.33},
+          "reset_xyz": {"x": -1442.57, "y": -2488.28, "z": -1484.34},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z00_Hub",
+          "to": "Khrysalis/KR_Z05_FortRachias",
+          "interact_xyz": {"x": 6986.5, "y": -285.11, "z": 371.73},
+          "reset_xyz": {"x": 6570.07, "y": -454.3, "z": 371.73},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z01_SilentMarket",
+          "to": "Khrysalis/KR_Z08_RadianceReborn",
+          "interact_xyz": {"x": 2399.08, "y": 7145.95, "z": -81.3},
+          "reset_xyz": {"x": 2059.67, "y": 7045.39, "z": -81.3},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z09_MantisCity",
+          "to": "Khrysalis/KR_Z01_SilentMarket",
+          "interact_xyz": {"x": 1252.01, "y": -4681.59, "z": 53.62},
+          "reset_xyz": {"x": 1497.28, "y": -4248.2, "z": 17.54},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z01_SilentMarket",
+          "to": "Khrysalis/KR_Z07_RuinedAlcazar",
+          "interact_xyz": {"x": 2181.2, "y": 6328.42, "z": -81.3},
+          "reset_xyz": {"x": 1677.16, "y": 6273.66, "z": -81.3},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z07_RuinedAlcazar",
+          "to": "Khrysalis/KR_Z01_SilentMarket",
+          "interact_xyz": {"x": 4447.85, "y": 18.27, "z": 134.0},
+          "reset_xyz": {"x": 4222.87, "y": 21.43, "z": 133.99},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z07_RuinedAlcazar",
+          "to": "Khrysalis/KR_Z08_RadianceReborn",
+          "interact_xyz": {"x": 77.78, "y": 129.94, "z": 139.61},
+          "reset_xyz": {"x": 233.06, "y": 219.03, "z": 110.35},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z08_RadianceReborn",
+          "to": "Khrysalis/KR_Z07_RuinedAlcazar",
+          "interact_xyz": {"x": -5.16, "y": -4997.31, "z": 128.23},
+          "reset_xyz": {"x": -3.6, "y": -4799.32, "z": 128.23},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z01_SilentMarket",
+          "to": "Khrysalis/KR_Z09_MantisCity",
+          "interact_xyz": {"x": 2675.51, "y": 5431.05, "z": -81.3},
+          "reset_xyz": {"x": 2324.63, "y": 5421.69, "z": -81.3},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z09_MantisCity",
+          "to": "Khrysalis/KR_Z10_KondhaDesert",
+          "xyz": {"x": 7575.89, "y": 8549.64, "z": 400.0},
+          "reset_xyz": {"x": 7639.56, "y": 8131.46, "z": 401.59},
+          "volume": "Activator Volume POI Kondha",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z10_KondhaDesert",
+          "to": "Khrysalis/KR_Z09_MantisCity",
+          "xyz": {"x": 14360.09, "y": -16851.09, "z": -475.47},
+          "volume": "TeleportVol_To_MantisCity",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z10_KondhaDesert",
+          "to": "Khrysalis/KR_Z01_SilentMarket",
+          "interact_xyz": {"x": 16214.85, "y": -11332.38, "z": -560.52},
+          "reset_xyz": {"x": 16056.22, "y": -11341.82, "z": -561.55},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z01_SilentMarket",
+          "to": "Khrysalis/KR_Z10_KondhaDesert",
+          "interact_xyz": {"x": 2946.29, "y": 4752.85, "z": -81.3},
+          "reset_xyz": {"x": 2560.87, "y": 4610.13, "z": -81.3},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z10_KondhaDesert",
+          "to": "Khrysalis/Interiors/KR_Z10_I08_SolarArcMain",
+          "xyz": {"x": 4393.54, "y": -7746.88, "z": -527.87},
+          "reset_xyz": {"x": 3720.61, "y": -7870.97, "z": -527.87},
+          "volume": "TeleportVol_To_SolarArc",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/Interiors/KR_Z10_I08_SolarArcMain",
+          "to": "Khrysalis/KR_Z10_KondhaDesert",
+          "xyz": {"x": 43.99, "y": 3846.28, "z": 20.7},
+          "volume": "TeleportVol_To_Kondha",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z10_KondhaDesert",
+          "to": "Khrysalis/KR_Z11_TheHive",
+          "xyz": {"x": 850.55, "y": -13707.51, "z": -537.57},
+          "reset_xyz": {"x": 1287.72, "y": -13609.67, "z": -537.57},
+          "volume": "TeleportToHiveVolume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z11_TheHive",
+          "to": "Khrysalis/KR_Z10_KondhaDesert",
+          "interact_xyz": {"x": 6679.22, "y": -4816.72, "z": -550.44},
+          "reset_xyz": {"x": 6533.79, "y": -4556.12, "z": -580.15},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z12_ShadowPalace",
+          "to": "Khrysalis/Interiors/KR_Z12_I02_Entry",
+          "xyz": {"x": -75.4, "y": -9560.84, "z": 159.35},
+          "reset_xyz": {"x": -89.1, "y": -8957.99, "z": 87.14},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/Interiors/KR_Z12_I02_Entry",
+          "to": "Khrysalis/KR_Z12_ShadowPalace",
+          "xyz": {"x": -26.25, "y": -4996.27, "z": -0.0},
+          "volume": "TeleportVol_BackToShadowPalaceCourtyard",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z12_ShadowPalace",
+          "to": "Khrysalis/Interiors/KR_Z11_I07_MagiHouseMain",
+          "xyz": {"x": 2.82, "y": 178.86, "z": 7.91},
+          "reset_xyz": {"x": -15.09, "y": -159.67, "z": -20.04},
+          "volume": "TeleportVol_ToHOM",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/Interiors/KR_Z11_I07_MagiHouseMain",
+          "to": "Khrysalis/KR_Z11_TheHive",
+          "xyz": {"x": 25.41, "y": -2243.54, "z": 7.11},
+          "reset_xyz": {"x": 132.28, "y": -1909.29, "z": 7.11},
+          "volume": "TeleportVol_BackToHive",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z11_TheHive",
+          "to": "Khrysalis/Interiors/KR_Z11_I07_MagiHouseMain",
+          "xyz": {"x": -7205.39, "y": -7279.34, "z": 2574.38},
+          "volume": "TeleportToHOMVOL",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/Interiors/KR_Z11_I07_MagiHouseMain",
+          "to": "Khrysalis/KR_Z12_ShadowPalace",
+          "xyz": {"x": -1.48, "y": 1944.13, "z": 7.11},
+          "volume": "WayOfNight_VOL",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z01_SilentMarket",
+          "to": "Khrysalis/KR_Z11_TheHive",
+          "interact_xyz": {"x": 3676.92, "y": 3952.88, "z": -81.3},
+          "reset_xyz": {"x": 3283.93, "y": 3951.13, "z": -81.3},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z11_TheHive",
+          "to": "Khrysalis/KR_Z01_SilentMarket",
+          "interact_xyz": {"x": 5441.35, "y": -4347.9, "z": -1309.87},
+          "reset_xyz": {"x": 5441.35, "y": -3945.9, "z": -1293.88},
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "Polaris": {
@@ -2987,108 +4221,1424 @@
     "Arcanum": {
       "hub": "Arcanum/AR_Z01_Hub",
       "door": "Arcanum/AR_Z01_Hub",
-      "zones": {"Arcanum/AR_Z01_Hub": {}, "Arcanum/AR_Z02_LowerDecks": {}},
+      "zones": {
+        "Arcanum/AR_Z01_Hub": {
+          "arrivals": {
+            "Arcanum/AR_Z02_LowerDecks": {"x": -1754.49, "y": -6419.54, "z": -1.57}
+          }
+        },
+        "Arcanum/AR_Z02_LowerDecks": {
+          "arrivals": {
+            "Arcanum/AR_Z01_Hub": {"x": -3931.21, "y": -1004.25, "z": -97.78}
+          }
+        }
+      },
       "links": [],
-      "list_networks": []
+      "list_networks": [
+        {
+          "zones": {
+            "Arcanum/AR_Z01_Hub": {
+              "interact_xyz": {"x": -2039.84, "y": -6153.52, "z": -1.57},
+              "reset_xyz": {"x": -1793.81, "y": -6208.06, "z": -1.57}
+            },
+            "Arcanum/AR_Z02_LowerDecks": {
+              "interact_xyz": {"x": -4270.45, "y": -766.95, "z": -105.16},
+              "reset_xyz": {"x": -4095.49, "y": -888.43, "z": -105.16}
+            }
+          },
+          "verified": true,
+          "source": "recorded"
+        }
+      ]
     },
     "Mirage": {
       "hub": "Mirage/MR_Z00_Hub",
       "door": "Mirage/MR_Z00_Hub",
       "zones": {
-        "Mirage/MR_Z00_Hub": {},
-        "Mirage/MR_Z01_AlkaliBarrows": {},
-        "Mirage/MR_Z02_Aggrobah": {},
-        "Mirage/MR_Z03_CaterwaulCanyon": {},
-        "Mirage/MR_Z04_RubalWastes": {},
-        "Mirage/MR_Z05_Istanboa": {},
-        "Mirage/MR_Z06_YakhalMountain": {},
-        "Mirage/MR_Z07_ThievesDen": {},
-        "Mirage/MR_Z08_EeremPalace": {},
-        "Mirage/MR_Z10_Chronoverge": {}
+        "Mirage/MR_Z00_Hub": {
+          "arrivals": {
+            "Mirage/MR_Z02_Aggrobah": {"x": -5553.88, "y": -935.07, "z": 0.05},
+            "Mirage/MR_Z01_AlkaliBarrows": {"x": -5553.88, "y": -935.07, "z": 0.05},
+            "Mirage/MR_Z03_CaterwaulCanyon": {"x": -5553.88, "y": -935.07, "z": 0.05},
+            "Mirage/MR_Z08_EeremPalace": {"x": -5553.88, "y": -935.07, "z": 0.05},
+            "Mirage/MR_Z06_YakhalMountain": {"x": -5553.88, "y": -935.07, "z": 0.05},
+            "Mirage/MR_Z04_RubalWastes": {"x": -5553.88, "y": -935.07, "z": 0.05},
+            "Mirage/MR_Z05_Istanboa": {"x": -5553.88, "y": -935.07, "z": 0.05}
+          }
+        },
+        "Mirage/MR_Z01_AlkaliBarrows": {
+          "arrivals": {
+            "Mirage/MR_Z00_Hub": {"x": -17213.47, "y": -3579.99, "z": -1089.74}
+          }
+        },
+        "Mirage/MR_Z02_Aggrobah": {
+          "arrivals": {
+            "Mirage/MR_Z00_Hub": {"x": 7038.32, "y": -696.08, "z": -1465.93}
+          }
+        },
+        "Mirage/MR_Z03_CaterwaulCanyon": {
+          "arrivals": {
+            "Mirage/MR_Z00_Hub": {"x": -8106.01, "y": -8515.52, "z": -4355.56},
+            "Mirage/MR_Z07_ThievesDen": {"x": 5617.03, "y": -11207.39, "z": 3562.69}
+          }
+        },
+        "Mirage/MR_Z04_RubalWastes": {
+          "arrivals": {
+            "Mirage/MR_Z00_Hub": {"x": 1690.31, "y": -5988.26, "z": 544.59},
+            "Mirage/MR_Z06_YakhalMountain": {"x": -14720.96, "y": 8483.79, "z": -217.06},
+            "Mirage/MR_Z05_Istanboa": {"x": 9840.1, "y": 876.11, "z": 69.96},
+            "Mirage/MR_Z10_Chronoverge": {"x": -6518.3, "y": -7647.09, "z": 71.22}
+          }
+        },
+        "Mirage/MR_Z05_Istanboa": {
+          "arrivals": {
+            "Mirage/MR_Z04_RubalWastes": {"x": 5650.66, "y": -12384.82, "z": 4997.16},
+            "Mirage/MR_Z00_Hub": {"x": -4198.48, "y": -2200.72, "z": -3524.64}
+          }
+        },
+        "Mirage/MR_Z06_YakhalMountain": {
+          "arrivals": {
+            "Mirage/MR_Z00_Hub": {"x": -2411.34, "y": -4460.03, "z": -2888.68},
+            "Mirage/MR_Z04_RubalWastes": {"x": 7756.21, "y": 2071.72, "z": -2888.46}
+          }
+        },
+        "Mirage/MR_Z07_ThievesDen": {
+          "arrivals": {
+            "Mirage/MR_Z03_CaterwaulCanyon": {"x": -167.0, "y": -272.65, "z": 32.78}
+          }
+        },
+        "Mirage/MR_Z08_EeremPalace": {
+          "arrivals": {
+            "Mirage/MR_Z00_Hub": {"x": -1827.74, "y": -14.64, "z": 51.25}
+          }
+        },
+        "Mirage/MR_Z10_Chronoverge": {
+          "arrivals": {
+            "Mirage/MR_Z04_RubalWastes": {"x": -47.8, "y": -6121.06, "z": 597.78},
+            "Mirage/Interiors/MR_Z10_SandsofTime": {"x": 2518.7, "y": 21.42, "z": 88.99}
+          }
+        },
+        "Mirage/Interiors/MR_Z10_SandsofTime": {
+          "arrivals": {
+            "Mirage/MR_Z10_Chronoverge": {"x": -1314.41, "y": 1283.5, "z": 130.71}
+          }
+        }
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z00_Hub",
+          "to": "Mirage/MR_Z02_Aggrobah",
+          "xyz": {"x": -10432.72, "y": -6282.41, "z": 87.22},
+          "reset_xyz": {"x": -10153.1, "y": -5848.75, "z": 100.08},
+          "volume": "TeleportVol_Teleport location - Aggrobah",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z02_Aggrobah",
+          "to": "Mirage/MR_Z00_Hub",
+          "xyz": {"x": -1087.52, "y": 98.22, "z": -1463.54},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z00_Hub",
+          "to": "Mirage/MR_Z01_AlkaliBarrows",
+          "interact_xyz": {"x": 12989.79, "y": -766.08, "z": 155.68},
+          "reset_xyz": {"x": 12438.82, "y": -1024.21, "z": 156.29},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z01_AlkaliBarrows",
+          "to": "Mirage/MR_Z00_Hub",
+          "xyz": {"x": 3400.07, "y": 3453.87, "z": -364.16},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z00_Hub",
+          "to": "Mirage/MR_Z03_CaterwaulCanyon",
+          "xyz": {"x": 2115.32, "y": 12120.04, "z": -88.39},
+          "reset_xyz": {"x": 2068.72, "y": 11778.21, "z": -86.64},
+          "volume": "TeleportVol_Teleport location - Caterwaul",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z03_CaterwaulCanyon",
+          "to": "Mirage/MR_Z00_Hub",
+          "xyz": {"x": -53.06, "y": 1315.25, "z": 4065.45},
+          "volume": "TeleportVol_Teleport location Caravan",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z03_CaterwaulCanyon",
+          "to": "Mirage/MR_Z07_ThievesDen",
+          "xyz": {"x": 5409.81, "y": -11517.14, "z": 3587.3},
+          "reset_xyz": {"x": 5360.55, "y": -11221.73, "z": 3562.7},
+          "volume": "Activator Volume Thieves Den",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z07_ThievesDen",
+          "to": "Mirage/MR_Z03_CaterwaulCanyon",
+          "xyz": {"x": -166.68, "y": -986.65, "z": 34.74},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z00_Hub",
+          "to": "Mirage/MR_Z08_EeremPalace",
+          "interact_xyz": {"x": -5310.67, "y": -479.79, "z": 0.05},
+          "reset_xyz": {"x": -5488.29, "y": -827.49, "z": 0.05},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z08_EeremPalace",
+          "to": "Mirage/MR_Z00_Hub",
+          "interact_xyz": {"x": 3685.86, "y": -727.54, "z": 1.02},
+          "reset_xyz": {"x": 3649.18, "y": -571.64, "z": 1.02},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z00_Hub",
+          "to": "Mirage/MR_Z06_YakhalMountain",
+          "interact_xyz": {"x": -5205.61, "y": -891.63, "z": 0.05},
+          "reset_xyz": {"x": -5553.88, "y": -935.07, "z": 0.05},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z06_YakhalMountain",
+          "to": "Mirage/MR_Z00_Hub",
+          "interact_xyz": {"x": -2348.63, "y": -4387.34, "z": -2887.17},
+          "reset_xyz": {"x": -2538.73, "y": -4607.66, "z": -2887.17},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z00_Hub",
+          "to": "Mirage/MR_Z04_RubalWastes",
+          "interact_xyz": {"x": -5262.81, "y": -1214.01, "z": 0.05},
+          "reset_xyz": {"x": -5553.88, "y": -935.07, "z": 0.05},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z04_RubalWastes",
+          "to": "Mirage/MR_Z06_YakhalMountain",
+          "xyz": {"x": -14899.69, "y": 8599.9, "z": -209.56},
+          "reset_xyz": {"x": -14558.9, "y": 8386.3, "z": -209.56},
+          "volume": "TeleportVol_Telepot_YachalMountian",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z06_YakhalMountain",
+          "to": "Mirage/MR_Z04_RubalWastes",
+          "xyz": {"x": 8541.14, "y": 1997.95, "z": -2886.17},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z04_RubalWastes",
+          "to": "Mirage/MR_Z05_Istanboa",
+          "xyz": {"x": 9882.69, "y": 1063.89, "z": 88.27},
+          "reset_xyz": {"x": 9668.85, "y": 836.7, "z": 74.46},
+          "volume": "Activator Volume Teleport to Istamboa",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z05_Istanboa",
+          "to": "Mirage/MR_Z04_RubalWastes",
+          "xyz": {"x": 6278.7, "y": -12541.04, "z": 5080.17},
+          "volume": "Activator Volume-POI-ToRubal",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z04_RubalWastes",
+          "to": "Mirage/MR_Z10_Chronoverge",
+          "interact_xyz": {"x": -6764.12, "y": -7446.08, "z": 181.97},
+          "reset_xyz": {"x": -6484.98, "y": -7610.57, "z": 71.22},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z10_Chronoverge",
+          "to": "Mirage/Interiors/MR_Z10_SandsofTime",
+          "xyz": {"x": 2908.32, "y": -12.89, "z": 194.44},
+          "reset_xyz": {"x": 2332.5, "y": -71.6, "z": 2.85},
+          "volume": "Activator Volume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/Interiors/MR_Z10_SandsofTime",
+          "to": "Mirage/MR_Z10_Chronoverge",
+          "xyz": {"x": -1597.44, "y": 1617.85, "z": 130.71},
+          "volume": "TeleportVol_To_Chronoverge",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Mirage/MR_Z10_Chronoverge",
+          "to": "Mirage/MR_Z04_RubalWastes",
+          "xyz": {"x": 6.89, "y": -6776.74, "z": 597.78},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z04_RubalWastes",
+          "to": "Mirage/MR_Z00_Hub",
+          "interact_xyz": {"x": 1270.09, "y": -5768.88, "z": 534.32},
+          "reset_xyz": {"x": 1168.97, "y": -5925.63, "z": 516.71},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z00_Hub",
+          "to": "Mirage/MR_Z02_Aggrobah",
+          "interact_xyz": {"x": -5548.12, "y": -1390.55, "z": 0.05},
+          "reset_xyz": {"x": -5553.88, "y": -935.07, "z": 0.05},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z02_Aggrobah",
+          "to": "Mirage/MR_Z00_Hub",
+          "interact_xyz": {"x": 7002.44, "y": -704.13, "z": -1463.54},
+          "reset_xyz": {"x": 6996.12, "y": -272.17, "z": -1463.54},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z01_AlkaliBarrows",
+          "to": "Mirage/MR_Z00_Hub",
+          "interact_xyz": {"x": -16916.66, "y": -3483.79, "z": -1108.4},
+          "reset_xyz": {"x": -17153.54, "y": -3560.56, "z": -1093.76},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z00_Hub",
+          "to": "Mirage/MR_Z03_CaterwaulCanyon",
+          "interact_xyz": {"x": -5976.73, "y": -946.64, "z": 0.05},
+          "reset_xyz": {"x": -5781.8, "y": -941.31, "z": 0.05},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z03_CaterwaulCanyon",
+          "to": "Mirage/MR_Z00_Hub",
+          "interact_xyz": {"x": -7971.2, "y": -8299.88, "z": -4353.36},
+          "reset_xyz": {"x": -7686.14, "y": -8127.76, "z": -4353.36},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z00_Hub",
+          "to": "Mirage/MR_Z05_Istanboa",
+          "interact_xyz": {"x": -6011.38, "y": -682.07, "z": 0.05},
+          "reset_xyz": {"x": -5553.88, "y": -935.07, "z": 0.05},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Mirage/MR_Z05_Istanboa",
+          "to": "Mirage/MR_Z00_Hub",
+          "interact_xyz": {"x": -4573.47, "y": -2134.34, "z": -3524.45},
+          "reset_xyz": {"x": -4793.33, "y": -2472.08, "z": -3500.0},
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "Empyrea": {
       "hub": "Empyrea/EM_Z00_Aeriel_HUB",
       "door": "Empyrea/EM_Z00_Aeriel_HUB",
       "zones": {
-        "Empyrea/EM_Z00_Aeriel_HUB": {},
-        "Empyrea/EM_Z01_Jungle": {},
-        "Empyrea/EM_Z02_Zanadu": {},
-        "Empyrea/EM_Z03_OuterAthanor": {},
-        "Empyrea/EM_Z04_InnerAthanor": {},
-        "Empyrea/EM_Z05_Sepidious": {},
-        "Empyrea/EM_Z06_NimbusHanger": {},
-        "Empyrea/EM_Z10_PortAero": {},
-        "Empyrea/EM_Z12_LandingZone": {},
-        "Empyrea/EM_Z14_ChaosJungle": {},
-        "Empyrea/EM_Z15_Nexus": {},
+        "Empyrea/EM_Z00_Aeriel_HUB": {
+          "arrivals": {
+            "Empyrea/EM_Z01_Jungle": {"x": 6815.3, "y": -10634.81, "z": -9.79},
+            "Empyrea/EM_Z04_InnerAthanor": {"x": 4658.32, "y": -4418.14, "z": -8.19},
+            "Empyrea/EM_Z06_NimbusHanger": {"x": 4658.32, "y": -4418.14, "z": -8.19},
+            "Empyrea/EM_Z15_Nexus": {"x": 4658.32, "y": -4418.14, "z": -8.19},
+            "Empyrea/EM_Z16_Husk": {"x": 4658.32, "y": -4418.14, "z": -8.19}
+          }
+        },
+        "Empyrea/EM_Z01_Jungle": {
+          "arrivals": {
+            "Empyrea/EM_Z00_Aeriel_HUB": {"x": -1528.61, "y": -10751.54, "z": 1236.71},
+            "Empyrea/Interiors/EM_Z01_MonkeySpiderCave": {"x": -2470.68, "y": -3218.23, "z": -149.36}
+          }
+        },
+        "Empyrea/EM_Z02_Zanadu": {
+          "arrivals": {
+            "Empyrea/Interiors/EM_Z02_Sewers": {"x": 1681.87, "y": -4.41, "z": -0.0},
+            "Empyrea/EM_Z00_Aeriel_HUB": {"x": 4796.47, "y": 6640.09, "z": 25.0}
+          }
+        },
+        "Empyrea/EM_Z03_OuterAthanor": {
+          "arrivals": {
+            "Empyrea/EM_Z02_Zanadu": {"x": 124.48, "y": -1075.1, "z": 63.72}
+          }
+        },
+        "Empyrea/EM_Z04_InnerAthanor": {
+          "arrivals": {
+            "Empyrea/EM_Z05_Sepidious": {"x": -50.05, "y": 328.35, "z": -25.0}
+          }
+        },
+        "Empyrea/EM_Z05_Sepidious": {
+          "arrivals": {
+            "Empyrea/EM_Z04_InnerAthanor": {"x": 3819.42, "y": 1327.6, "z": 444.87},
+            "Empyrea/Interiors/EM_Z05_NodoChord": {"x": -4676.18, "y": -4396.51, "z": -81.77}
+          }
+        },
+        "Empyrea/EM_Z06_NimbusHanger": {
+          "arrivals": {
+            "Empyrea/EM_Z00_Aeriel_HUB": {"x": -2217.38, "y": 37.42, "z": 2.0},
+            "Empyrea/EM_Z07_NimbusCitadel": {"x": 8067.0, "y": 5.2, "z": 2.0}
+          }
+        },
+        "Empyrea/EM_Z10_PortAero": {
+          "arrivals": {
+            "Empyrea/EM_Z06_NimbusHanger": {"x": -3525.3, "y": 3738.17, "z": -39.56},
+            "Empyrea/EM_Z08_SWAeroplains": {"x": 1660.01, "y": 13.2, "z": -236.36}
+          }
+        },
+        "Empyrea/EM_Z12_LandingZone": {
+          "arrivals": {
+            "Empyrea/EM_Z00_Aeriel_HUB": {"x": -799.45, "y": 127.99, "z": -10.67}
+          }
+        },
+        "Empyrea/EM_Z14_ChaosJungle": {
+          "arrivals": {
+            "Empyrea/EM_Z13_SamsaraDestroyed": {"x": 4558.15, "y": -4151.68, "z": -105.55}
+          }
+        },
+        "Empyrea/EM_Z15_Nexus": {
+          "arrivals": {
+            "Empyrea/EM_Z00_Aeriel_HUB": {"x": -1138.91, "y": -146.63, "z": 122.27}
+          }
+        },
         "Empyrea/EM_Z16_Husk": {},
-        "Empyrea/EM_Z07_NimbusCitadel": {},
-        "Empyrea/EM_Z08_SWAeroplains": {},
+        "Empyrea/EM_Z07_NimbusCitadel": {
+          "arrivals": {
+            "Empyrea/EM_Z06_NimbusHanger": {"x": -6.88, "y": -2229.97, "z": 0.2}
+          }
+        },
+        "Empyrea/EM_Z08_SWAeroplains": {
+          "arrivals": {
+            "Empyrea/EM_Z10_PortAero": {"x": -17294.9, "y": -2744.81, "z": -442.08},
+            "Empyrea/EM_Z09_NWAeroplains": {"x": 11777.86, "y": 13828.22, "z": -7.34}
+          }
+        },
         "Empyrea/EM_Z12_SamsaraVillage": {},
-        "Empyrea/EM_Z13_SamsaraDestroyed": {},
-        "Empyrea/EM_Z09_NWAeroplains": {},
-        "Empyrea/EM_Z11_VeloCity": {},
-        "Empyrea/Interiors/EM_Z01_MonkeySpiderCave": {"label": "Monkey Spider Cave"},
-        "Empyrea/Interiors/EM_Z02_Sewers": {"label": "Zanadu Sewers"},
-        "Empyrea/Interiors/EM_Z05_NodoChord": {"label": "Notochord"}
+        "Empyrea/EM_Z13_SamsaraDestroyed": {
+          "arrivals": {
+            "Empyrea/EM_Z12_LandingZone": {"x": -202.33, "y": 51.74, "z": -14.69}
+          }
+        },
+        "Empyrea/EM_Z09_NWAeroplains": {
+          "arrivals": {
+            "Empyrea/EM_Z08_SWAeroplains": {"x": -15407.75, "y": -16303.66, "z": 230.65},
+            "Empyrea/EM_Z11_VeloCity": {"x": -19001.84, "y": 9832.02, "z": 15.82}
+          }
+        },
+        "Empyrea/EM_Z11_VeloCity": {
+          "arrivals": {
+            "Empyrea/EM_Z09_NWAeroplains": {"x": 3130.63, "y": 15.05, "z": 0.9}
+          }
+        },
+        "Empyrea/Interiors/EM_Z01_MonkeySpiderCave": {
+          "label": "Monkey Spider Cave",
+          "arrivals": {
+            "Empyrea/EM_Z01_Jungle": {"x": -149.53, "y": 557.27, "z": 24.63}
+          }
+        },
+        "Empyrea/Interiors/EM_Z02_Sewers": {
+          "label": "Zanadu Sewers",
+          "arrivals": {
+            "Empyrea/EM_Z02_Zanadu": {"x": -10958.7, "y": 6139.59, "z": -509.21}
+          }
+        },
+        "Empyrea/Interiors/EM_Z05_NodoChord": {
+          "label": "Notochord",
+          "arrivals": {
+            "Empyrea/EM_Z05_Sepidious": {"x": -88.18, "y": -5810.37, "z": -57.52}
+          }
+        }
       },
-      "links": [],
-      "list_networks": []
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z00_Aeriel_HUB",
+          "to": "Empyrea/EM_Z01_Jungle",
+          "xyz": {"x": 6964.28, "y": -10979.38, "z": -13.75},
+          "reset_xyz": {"x": 6856.69, "y": -10696.98, "z": -12.19},
+          "volume": "TeleportVol_Teleport location (1)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Empyrea/EM_Z01_Jungle",
+          "to": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave",
+          "interact_xyz": {"x": -1583.44, "y": -6540.29, "z": 281.93},
+          "reset_xyz": {"x": -1706.13, "y": -7123.01, "z": 328.43},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave",
+          "to": "Empyrea/EM_Z01_Jungle",
+          "xyz": {"x": -106.66, "y": 944.9, "z": 151.11},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z01_Jungle",
+          "to": "Empyrea/EM_Z00_Aeriel_HUB",
+          "xyz": {"x": -1575.34, "y": -12112.08, "z": 1642.63},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z02_Zanadu",
+          "to": "Empyrea/Interiors/EM_Z02_Sewers",
+          "xyz": {"x": 1459.13, "y": 13.24, "z": -0.0},
+          "reset_xyz": {"x": 1762.36, "y": 68.68, "z": -0.0},
+          "volume": "TeleportVol_Teleport_To_Sewers",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/Interiors/EM_Z02_Sewers",
+          "to": "Empyrea/EM_Z02_Zanadu",
+          "xyz": {"x": -10931.99, "y": 6477.78, "z": -509.21},
+          "volume": "TeleportVol_Teleport_Zanadu_Fountain",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z05_Sepidious",
+          "to": "Empyrea/Interiors/EM_Z05_NodoChord",
+          "xyz": {"x": -4832.89, "y": -4883.72, "z": -78.93},
+          "reset_xyz": {"x": -4806.06, "y": -4565.72, "z": -78.93},
+          "volume": "AV_POI_Notochord",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/Interiors/EM_Z05_NodoChord",
+          "to": "Empyrea/EM_Z05_Sepidious",
+          "xyz": {"x": -109.75, "y": -6235.81, "z": -57.42},
+          "volume": "TeleportVol_To_Stomach",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Empyrea/EM_Z12_LandingZone",
+          "to": "Empyrea/EM_Z13_SamsaraDestroyed",
+          "interact_xyz": {"x": 780.1, "y": 259.78, "z": 13.37},
+          "reset_xyz": {"x": 356.59, "y": 371.5, "z": 13.37},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Empyrea/EM_Z13_SamsaraDestroyed",
+          "to": "Empyrea/EM_Z14_ChaosJungle",
+          "interact_xyz": {"x": -16400.83, "y": -18924.51, "z": 251.51},
+          "reset_xyz": {"x": -16240.12, "y": -18782.98, "z": 251.51},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z06_NimbusHanger",
+          "to": "Empyrea/EM_Z07_NimbusCitadel",
+          "xyz": {"x": 9357.93, "y": -10.0, "z": 2.0},
+          "reset_xyz": {"x": 8673.94, "y": -15.95, "z": 2.0},
+          "volume": "Activator Volume-ToCitadel",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z07_NimbusCitadel",
+          "to": "Empyrea/EM_Z06_NimbusHanger",
+          "xyz": {"x": 40.22, "y": -3386.03, "z": 1.01},
+          "volume": "Activator Volume-TeleportToHanger",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z10_PortAero",
+          "to": "Empyrea/EM_Z08_SWAeroplains",
+          "xyz": {"x": 2148.72, "y": -32.39, "z": -233.92},
+          "reset_xyz": {"x": 1837.52, "y": -54.77, "z": -236.36},
+          "volume": "TeleportVol_Teleport_2_SWPlains",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z08_SWAeroplains",
+          "to": "Empyrea/EM_Z10_PortAero",
+          "xyz": {"x": -18015.64, "y": -2246.93, "z": -448.6},
+          "volume": "TeleportVol_Teleport_2_PortAero",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z08_SWAeroplains",
+          "to": "Empyrea/EM_Z09_NWAeroplains",
+          "xyz": {"x": 11777.86, "y": 14977.22, "z": 139.71},
+          "reset_xyz": {"x": 11777.86, "y": 14626.22, "z": 104.34},
+          "volume": "TeleportVol_Teleport_2_NWPlains",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z09_NWAeroplains",
+          "to": "Empyrea/EM_Z08_SWAeroplains",
+          "xyz": {"x": -15411.37, "y": -17140.66, "z": 223.86},
+          "volume": "TeleportVol_Teleport_2_SWPlains",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z09_NWAeroplains",
+          "to": "Empyrea/EM_Z11_VeloCity",
+          "xyz": {"x": -19887.69, "y": 9712.77, "z": 131.53},
+          "reset_xyz": {"x": -19430.47, "y": 9547.15, "z": 77.61},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z11_VeloCity",
+          "to": "Empyrea/EM_Z09_NWAeroplains",
+          "xyz": {"x": 3712.15, "y": -8.32, "z": 0.9},
+          "volume": "TeleportVol_Teleport_2_NEPlains",
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
+      "list_networks": [
+        {
+          "zones": {
+            "Empyrea/EM_Z00_Aeriel_HUB": {
+              "interact_xyz": {"x": 4671.3, "y": -4076.21, "z": -29.5},
+              "reset_xyz": {"x": 4669.32, "y": -3629.22, "z": -29.5}
+            },
+            "Empyrea/EM_Z02_Zanadu": {
+              "interact_xyz": {"x": 4797.06, "y": 6643.6, "z": 25.0},
+              "reset_xyz": {"x": 4507.54, "y": 6322.97, "z": 25.0}
+            },
+            "Empyrea/EM_Z03_OuterAthanor": {},
+            "Empyrea/EM_Z04_InnerAthanor": {
+              "interact_xyz": {"x": 183.45, "y": 38.93, "z": -24.04},
+              "reset_xyz": {"x": 73.08, "y": 173.45, "z": -24.04}
+            },
+            "Empyrea/EM_Z05_Sepidious": {
+              "interact_xyz": {"x": 3806.11, "y": 1066.51, "z": 446.56},
+              "reset_xyz": {"x": 3112.54, "y": 1281.06, "z": 301.01}
+            },
+            "Empyrea/EM_Z12_LandingZone": {},
+            "Empyrea/EM_Z06_NimbusHanger": {
+              "interact_xyz": {"x": -2280.0, "y": 5.2, "z": 2.0},
+              "reset_xyz": {"x": -1992.0, "y": 5.2, "z": 2.0}
+            },
+            "Empyrea/EM_Z15_Nexus": {
+              "interact_xyz": {"x": -1190.04, "y": 90.08, "z": 128.87},
+              "reset_xyz": {"x": -825.16, "y": -71.36, "z": 118.24}
+            },
+            "Empyrea/EM_Z10_PortAero": {},
+            "Empyrea/EM_Z16_Husk": {
+              "interact_xyz": {"x": 426.72, "y": 997.03, "z": -901.35},
+              "reset_xyz": {"x": 108.56, "y": 921.54, "z": -911.67}
+            }
+          },
+          "verified": true,
+          "source": "recorded"
+        }
+      ]
     },
     "Karamelle": {
       "hub": "Karamelle/KM_Z00_HUB",
       "door": "Karamelle/KM_Z00_HUB",
       "zones": {
-        "Karamelle/KM_Z00_HUB": {},
-        "Karamelle/KM_Z01_VonTrapEstate": {},
-        "Karamelle/KM_Z02_CandyMountains": {},
-        "Karamelle/KM_Z03_GumdropForest": {},
-        "Karamelle/KM_Z04_Sweetzburg": {},
-        "Karamelle/KM_Z10_Gobblerton": {},
-        "Karamelle/KM_Z05_Nibbleheim": {},
-        "Karamelle/KM_Z06_Mines": {},
-        "Karamelle/KM_Z07_Gutenstadt": {},
-        "Karamelle/KM_Z08_LicoriceForest": {},
-        "Karamelle/KM_Z09_CandyCornFarm": {}
+        "Karamelle/KM_Z00_HUB": {
+          "arrivals": {
+            "Karamelle/KM_Z03_GumdropForest": {"x": 5314.5, "y": -1668.63, "z": 14.87},
+            "Karamelle/KM_Z01_VonTrapEstate": {"x": -8695.19, "y": 453.12, "z": 1382.75},
+            "Karamelle/KM_Z02_CandyMountains": {"x": -5950.27, "y": -7733.46, "z": -328.92},
+            "Karamelle/KM_Z05_Nibbleheim": {"x": 53.97, "y": -9940.85, "z": -364.45},
+            "Karamelle/KM_Z04_Sweetzburg": {"x": 53.97, "y": -9940.85, "z": -364.45}
+          }
+        },
+        "Karamelle/KM_Z01_VonTrapEstate": {
+          "arrivals": {
+            "Karamelle/KM_Z00_HUB": {"x": -1519.29, "y": 496.16, "z": 1146.81},
+            "Karamelle/KM_Z02_CandyMountains": {"x": -112.46, "y": -6422.84, "z": 301.62}
+          }
+        },
+        "Karamelle/KM_Z02_CandyMountains": {
+          "arrivals": {
+            "Karamelle/KM_Z01_VonTrapEstate": {"x": 6503.09, "y": 18025.01, "z": 2384.35},
+            "Karamelle/KM_Z00_HUB": {"x": 3202.58, "y": 317.48, "z": 214.77}
+          }
+        },
+        "Karamelle/KM_Z03_GumdropForest": {
+          "arrivals": {
+            "Karamelle/KM_Z00_HUB": {"x": -506.63, "y": 117.36, "z": 89.44},
+            "Karamelle/KM_Z04_Sweetzburg": {"x": 18991.28, "y": -2540.44, "z": -517.62},
+            "Karamelle/KM_Z10_Gobblerton": {"x": 7922.99, "y": -16322.35, "z": -1021.47}
+          }
+        },
+        "Karamelle/KM_Z04_Sweetzburg": {
+          "arrivals": {
+            "Karamelle/KM_Z03_GumdropForest": {"x": -5384.63, "y": -657.04, "z": 2.5}
+          }
+        },
+        "Karamelle/KM_Z10_Gobblerton": {
+          "arrivals": {
+            "Karamelle/KM_Z00_HUB": {"x": -1444.71, "y": -8331.57, "z": 331.85},
+            "Karamelle/KM_Z03_GumdropForest": {"x": -271.82, "y": -10660.6, "z": 89.54}
+          }
+        },
+        "Karamelle/KM_Z05_Nibbleheim": {
+          "arrivals": {
+            "Karamelle/KM_Z00_HUB": {"x": 2971.54, "y": -7407.92, "z": 16.5},
+            "Karamelle/KM_Z07_Gutenstadt": {"x": 2815.72, "y": 1814.54, "z": 1.5},
+            "Karamelle/KM_Z06_Mines": {"x": -6221.41, "y": -1018.82, "z": 1051.54},
+            "Karamelle/KM_Z09_CandyCornFarm": {"x": 2971.54, "y": -7407.92, "z": 16.5}
+          }
+        },
+        "Karamelle/KM_Z06_Mines": {
+          "arrivals": {
+            "Karamelle/KM_Z05_Nibbleheim": {"x": 820.3, "y": -1527.73, "z": 30.56}
+          }
+        },
+        "Karamelle/KM_Z07_Gutenstadt": {
+          "arrivals": {
+            "Karamelle/KM_Z04_Sweetzburg": {"x": 2140.82, "y": 6424.73, "z": 34.57},
+            "Karamelle/KM_Z05_Nibbleheim": {"x": 2140.82, "y": 6424.73, "z": 34.57},
+            "Karamelle/KM_Z08_LicoriceForest": {"x": -5434.54, "y": -630.13, "z": 2.5}
+          }
+        },
+        "Karamelle/KM_Z08_LicoriceForest": {
+          "arrivals": {
+            "Karamelle/KM_Z07_Gutenstadt": {"x": 694.91, "y": -1208.25, "z": -91.3},
+            "Karamelle/KM_Z09_CandyCornFarm": {"x": -8686.01, "y": 11416.38, "z": -893.46}
+          }
+        },
+        "Karamelle/KM_Z09_CandyCornFarm": {
+          "arrivals": {
+            "Karamelle/KM_Z08_LicoriceForest": {"x": 57.69, "y": -7131.87, "z": 34.12},
+            "Karamelle/KM_Z10_Gobblerton": {"x": -1355.32, "y": -2773.57, "z": 3.0}
+          }
+        }
       },
-      "links": [],
-      "list_networks": []
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z00_HUB",
+          "to": "Karamelle/KM_Z03_GumdropForest",
+          "xyz": {"x": 5672.88, "y": -1714.09, "z": 9.85},
+          "reset_xyz": {"x": 5330.9, "y": -1668.52, "z": 9.85},
+          "volume": "TeleportVol_Teleport location (1)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z03_GumdropForest",
+          "to": "Karamelle/KM_Z00_HUB",
+          "xyz": {"x": -2506.07, "y": 549.8, "z": 157.05},
+          "volume": "TeleportVol_To_Karamelle",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Karamelle/KM_Z00_HUB",
+          "to": "Karamelle/KM_Z01_VonTrapEstate",
+          "interact_xyz": {"x": -8863.65, "y": 462.36, "z": 1378.48},
+          "reset_xyz": {"x": -8674.66, "y": 464.71, "z": 1378.48},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Karamelle/KM_Z01_VonTrapEstate",
+          "to": "Karamelle/KM_Z00_HUB",
+          "interact_xyz": {"x": -1644.01, "y": 698.18, "z": 1146.81},
+          "reset_xyz": {"x": -1519.29, "y": 496.16, "z": 1146.81},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z01_VonTrapEstate",
+          "to": "Karamelle/KM_Z02_CandyMountains",
+          "xyz": {"x": -144.59, "y": -7774.94, "z": 301.62},
+          "reset_xyz": {"x": -179.09, "y": -7263.11, "z": 301.62},
+          "volume": "TeleportVol_Teleport_to_RockCandyMountains",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z02_CandyMountains",
+          "to": "Karamelle/KM_Z01_VonTrapEstate",
+          "xyz": {"x": 7721.96, "y": 19085.85, "z": 2438.03},
+          "volume": "TeleportVol_Teleport location-ToEstate",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z02_CandyMountains",
+          "to": "Karamelle/KM_Z00_HUB",
+          "xyz": {"x": 4103.5, "y": -620.39, "z": 214.77},
+          "reset_xyz": {"x": 3794.28, "y": -331.74, "z": 214.77},
+          "volume": "TeleportVol_Teleport location-ToKMCity",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z00_HUB",
+          "to": "Karamelle/KM_Z02_CandyMountains",
+          "xyz": {"x": -7017.12, "y": -7795.13, "z": -337.95},
+          "volume": "Activator Volume RockCandy",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z03_GumdropForest",
+          "to": "Karamelle/KM_Z04_Sweetzburg",
+          "xyz": {"x": 20001.6, "y": -2659.72, "z": -473.3},
+          "reset_xyz": {"x": 19402.88, "y": -2537.25, "z": -465.73},
+          "volume": "TeleportVol_Teleport location-ToSweetzburg",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z04_Sweetzburg",
+          "to": "Karamelle/KM_Z03_GumdropForest",
+          "xyz": {"x": -5912.45, "y": -710.5, "z": 2.5},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Karamelle/KM_Z07_Gutenstadt",
+          "to": "Karamelle/KM_Z05_Nibbleheim",
+          "interact_xyz": {"x": 1943.21, "y": 6414.04, "z": 35.15},
+          "reset_xyz": {"x": 2209.27, "y": 6303.78, "z": 35.15},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z05_Nibbleheim",
+          "to": "Karamelle/KM_Z06_Mines",
+          "xyz": {"x": -6280.57, "y": -1475.74, "z": 1051.54},
+          "reset_xyz": {"x": -6225.4, "y": -1161.76, "z": 1051.54},
+          "volume": "AV_Teleport_2_Mines",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z06_Mines",
+          "to": "Karamelle/KM_Z05_Nibbleheim",
+          "xyz": {"x": 721.88, "y": -911.44, "z": 6.62},
+          "volume": "TeleportVol_To_Nibbelheim",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z05_Nibbleheim",
+          "to": "Karamelle/KM_Z07_Gutenstadt",
+          "xyz": {"x": 3078.84, "y": 1958.19, "z": 1.5},
+          "volume": "AV_Teleport_To_Gutenstadt",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z07_Gutenstadt",
+          "to": "Karamelle/KM_Z08_LicoriceForest",
+          "xyz": {"x": -5894.21, "y": -706.72, "z": 2.78},
+          "reset_xyz": {"x": -5381.33, "y": -717.86, "z": 2.78},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z08_LicoriceForest",
+          "to": "Karamelle/KM_Z07_Gutenstadt",
+          "xyz": {"x": 1515.61, "y": -1317.92, "z": -89.25},
+          "volume": "TeleportVol_Teleport location_To_ Gutenstadt",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z08_LicoriceForest",
+          "to": "Karamelle/KM_Z09_CandyCornFarm",
+          "xyz": {"x": -9141.8, "y": 11216.73, "z": -891.73},
+          "reset_xyz": {"x": -8697.19, "y": 11412.03, "z": -891.73},
+          "volume": "Activator Volume POI_CandyCorn",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Karamelle/KM_Z09_CandyCornFarm",
+          "to": "Karamelle/KM_Z08_LicoriceForest",
+          "xyz": {"x": 186.13, "y": -8022.43, "z": 39.14},
+          "volume": "TeleportVol_Teleport location (1)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Karamelle/KM_Z10_Gobblerton",
+          "to": "Karamelle/KM_Z03_GumdropForest",
+          "interact_xyz": {"x": -103.09, "y": -11414.54, "z": 89.54},
+          "reset_xyz": {"x": -281.16, "y": -11708.53, "z": 89.54},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Karamelle/KM_Z03_GumdropForest",
+          "to": "Karamelle/KM_Z10_Gobblerton",
+          "interact_xyz": {"x": 8524.31, "y": -16726.52, "z": -1021.02},
+          "reset_xyz": {"x": 8282.27, "y": -16888.06, "z": -1021.04},
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
+      "list_networks": [
+        {
+          "zones": {
+            "Karamelle/KM_Z00_HUB": {
+              "interact_xyz": {"x": 433.09, "y": -10435.73, "z": -356.15},
+              "reset_xyz": {"x": 726.27, "y": -10413.71, "z": -455.57}
+            },
+            "Karamelle/KM_Z05_Nibbleheim": {
+              "interact_xyz": {"x": 2869.0, "y": -7344.7, "z": 16.5},
+              "reset_xyz": {"x": 3459.48, "y": -7222.48, "z": 50.66}
+            },
+            "Karamelle/KM_Z04_Sweetzburg": {
+              "interact_xyz": {"x": 292.59, "y": -1714.74, "z": 17.5},
+              "reset_xyz": {"x": 282.17, "y": -1508.0, "z": 17.5}
+            },
+            "Karamelle/KM_Z07_Gutenstadt": {},
+            "Karamelle/KM_Z10_Gobblerton": {
+              "interact_xyz": {"x": -1694.02, "y": -8280.99, "z": 373.39},
+              "reset_xyz": {"x": -1625.55, "y": -7936.73, "z": 328.01}
+            },
+            "Karamelle/KM_Z08_LicoriceForest": {
+              "interact_xyz": {"x": -1718.92, "y": 6204.12, "z": -89.25},
+              "reset_xyz": {"x": -2117.19, "y": 6182.59, "z": -89.25}
+            },
+            "Karamelle/KM_Z09_CandyCornFarm": {
+              "interact_xyz": {"x": -1281.84, "y": -2674.29, "z": 3.0},
+              "reset_xyz": {"x": -949.65, "y": -2412.41, "z": 3.0}
+            }
+          },
+          "verified": true,
+          "source": "recorded"
+        }
+      ]
     },
     "Lemuria": {
       "hub": "Lemuria/LM_Z00_Hub",
       "door": "Lemuria/LM_Z00_Hub",
       "zones": {
-        "Lemuria/LM_Z00_Hub": {},
-        "Lemuria/LM_Z01_WildLands": {},
-        "Lemuria/LM_Z02_UrsaiVillage": {},
-        "Lemuria/LM_Z03_NightForest": {},
-        "Lemuria/LM_Z07_Heap": {},
-        "Lemuria/LM_Z04_Badlands": {},
-        "Lemuria/LM_Z05_Mandoria": {},
-        "Lemuria/LM_Z06_SkyCity": {},
-        "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter": {}
+        "Lemuria/LM_Z00_Hub": {
+          "arrivals": {
+            "Lemuria/Interiors/LM_Z00_I09_OldOnesComplex": {"x": -1.48, "y": -4844.11, "z": -552.68},
+            "Lemuria/LM_Z01_WildLands": {"x": -6007.39, "y": -6441.16, "z": -428.5},
+            "Lemuria/LM_Z06_SkyCity": {"x": 1.14, "y": -3640.3, "z": -695.37},
+            "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter": {"x": 52.7, "y": -11568.63, "z": -288.12}
+          }
+        },
+        "Lemuria/LM_Z01_WildLands": {
+          "arrivals": {
+            "Lemuria/LM_Z00_Hub": {"x": 6677.42, "y": -6625.48, "z": 382.77},
+            "Lemuria/LM_Z02_UrsaiVillage": {"x": -7602.84, "y": 4072.59, "z": 321.2},
+            "Lemuria/LM_Z03_NightForest": {"x": -4131.17, "y": 16497.93, "z": 620.09},
+            "Lemuria/LM_Z07_Heap": {"x": -1310.26, "y": 15815.43, "z": 978.96}
+          }
+        },
+        "Lemuria/LM_Z02_UrsaiVillage": {
+          "arrivals": {
+            "Lemuria/LM_Z00_Hub": {"x": -965.11, "y": -371.82, "z": 74.27},
+            "Lemuria/LM_Z01_WildLands": {"x": -326.65, "y": 2220.37, "z": 59.98},
+            "Lemuria/LM_Z03_NightForest": {"x": -965.11, "y": -371.82, "z": 74.27}
+          }
+        },
+        "Lemuria/LM_Z03_NightForest": {
+          "arrivals": {
+            "Lemuria/LM_Z00_Hub": {"x": -5598.93, "y": -5317.98, "z": -333.92},
+            "Lemuria/LM_Z01_WildLands": {"x": -5941.08, "y": -4740.98, "z": -331.29},
+            "Lemuria/LM_Z04_Badlands": {"x": 5973.1, "y": -2505.47, "z": -541.75},
+            "Lemuria/LM_Z05_Mandoria": {"x": -5598.93, "y": -5317.98, "z": -333.92}
+          }
+        },
+        "Lemuria/LM_Z07_Heap": {
+          "arrivals": {
+            "Lemuria/LM_Z00_Hub": {"x": 3751.06, "y": -6765.16, "z": -1729.82},
+            "Lemuria/LM_Z01_WildLands": {"x": 4651.72, "y": -9939.26, "z": -1733.2}
+          }
+        },
+        "Lemuria/LM_Z04_Badlands": {
+          "arrivals": {
+            "Lemuria/LM_Z03_NightForest": {"x": 7083.37, "y": 284.26, "z": -13.64},
+            "Lemuria/LM_Z05_Mandoria": {"x": 12783.58, "y": -14693.5, "z": 25.4}
+          }
+        },
+        "Lemuria/LM_Z05_Mandoria": {
+          "arrivals": {
+            "Lemuria/LM_Z04_Badlands": {"x": -389.47, "y": -7792.44, "z": -997.83},
+            "Lemuria/LM_Z03_NightForest": {"x": 5289.66, "y": 4010.27, "z": -649.24}
+          }
+        },
+        "Lemuria/LM_Z06_SkyCity": {
+          "arrivals": {
+            "Lemuria/LM_Z07_Heap": {"x": 2649.98, "y": 500.54, "z": -104.92}
+          }
+        },
+        "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter": {
+          "arrivals": {
+            "Lemuria/LM_Z00_Hub": {"x": -2.41, "y": 2290.39, "z": 4.2}
+          }
+        },
+        "Lemuria/Interiors/LM_Z00_I09_OldOnesComplex": {
+          "arrivals": {
+            "Lemuria/LM_Z00_Hub": {"x": -3245.15, "y": -26.74, "z": 2.0}
+          }
+        }
       },
-      "links": [],
-      "list_networks": []
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Lemuria/Interiors/LM_Z00_I09_OldOnesComplex",
+          "to": "Lemuria/LM_Z00_Hub",
+          "xyz": {"x": -3770.15, "y": -26.74, "z": 2.0},
+          "reset_xyz": {"x": -3371.15, "y": -26.74, "z": 2.0},
+          "volume": "TeleportVol_Teleport source",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z00_Hub",
+          "to": "Lemuria/Interiors/LM_Z00_I09_OldOnesComplex",
+          "xyz": {"x": -12.82, "y": -5608.42, "z": -440.62},
+          "volume": "Activator Volume_ToOldOnesComplex",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z00_Hub",
+          "to": "Lemuria/LM_Z01_WildLands",
+          "xyz": {"x": -6310.43, "y": -6410.02, "z": -428.21},
+          "reset_xyz": {"x": -5905.43, "y": -6411.0, "z": -429.47},
+          "volume": "TeleportVol_Teleport source",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z01_WildLands",
+          "to": "Lemuria/LM_Z00_Hub",
+          "xyz": {"x": 6455.52, "y": -7915.09, "z": 225.5},
+          "volume": "TeleportVol_Teleport source-ToTelos",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z02_UrsaiVillage",
+          "to": "Lemuria/LM_Z01_WildLands",
+          "xyz": {"x": -206.8, "y": 2696.64, "z": 74.54},
+          "reset_xyz": {"x": -201.39, "y": 2309.68, "z": 65.6},
+          "volume": "Activator Volume-TeleportToWildLands",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z01_WildLands",
+          "to": "Lemuria/LM_Z02_UrsaiVillage",
+          "xyz": {"x": -8033.62, "y": 3525.93, "z": 269.17},
+          "volume": "TeleportVol_Teleport source-ToUrsai",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z03_NightForest",
+          "to": "Lemuria/LM_Z01_WildLands",
+          "xyz": {"x": -6711.65, "y": -4818.5, "z": -223.75},
+          "reset_xyz": {"x": -6089.5, "y": -5039.7, "z": -299.63},
+          "volume": "TeleportVol_Teleport source",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z01_WildLands",
+          "to": "Lemuria/LM_Z03_NightForest",
+          "xyz": {"x": -6330.95, "y": 17686.56, "z": 65.39},
+          "volume": "TeleportVol_Teleport source-ToNightForest",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z03_NightForest",
+          "to": "Lemuria/LM_Z04_Badlands",
+          "xyz": {"x": 8506.34, "y": -3806.51, "z": -744.72},
+          "reset_xyz": {"x": 8196.15, "y": -3578.01, "z": -744.96},
+          "volume": "TeleportVol_Teleport source-ToBadlands",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z04_Badlands",
+          "to": "Lemuria/LM_Z03_NightForest",
+          "xyz": {"x": 7192.68, "y": 1242.52, "z": 4.42},
+          "volume": "TeleportVol_To_NightForest",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z05_Mandoria",
+          "to": "Lemuria/LM_Z04_Badlands",
+          "xyz": {"x": -439.74, "y": -8373.43, "z": -899.98},
+          "volume": "TeleportVol_To_Badlands",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z04_Badlands",
+          "to": "Lemuria/LM_Z05_Mandoria",
+          "xyz": {"x": 13370.24, "y": -15312.8, "z": 13.14},
+          "volume": "TeleportVol_To_Mandoria",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Lemuria/LM_Z07_Heap",
+          "to": "Lemuria/LM_Z01_WildLands",
+          "interact_xyz": {"x": 3978.49, "y": -7702.02, "z": -1733.2},
+          "reset_xyz": {"x": 3751.06, "y": -6765.16, "z": -1733.2},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z01_WildLands",
+          "to": "Lemuria/LM_Z07_Heap",
+          "xyz": {"x": 168.04, "y": 17124.92, "z": 978.96},
+          "volume": "TeleportVol_Teleport source-ToHeap",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/LM_Z00_Hub",
+          "to": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter",
+          "xyz": {"x": -34.42, "y": -12261.49, "z": -288.05},
+          "reset_xyz": {"x": 63.87, "y": -11875.69, "z": -287.44},
+          "volume": "TeleportVol_Teleport_HallofHeroes",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter",
+          "to": "Lemuria/LM_Z00_Hub",
+          "xyz": {"x": -2.41, "y": 2689.39, "z": 4.2},
+          "volume": "TeleportVol_Teleport source",
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
+      "list_networks": [
+        {
+          "zones": {
+            "Lemuria/LM_Z00_Hub": {
+              "interact_xyz": {"x": -23.31, "y": -3001.07, "z": -664.03},
+              "reset_xyz": {"x": -34.33, "y": -2689.26, "z": -695.37}
+            },
+            "Lemuria/LM_Z02_UrsaiVillage": {},
+            "Lemuria/LM_Z03_NightForest": {
+              "interact_xyz": {"x": -5176.69, "y": -5373.56, "z": -340.74},
+              "reset_xyz": {"x": -5369.3, "y": -5343.09, "z": -349.4}
+            },
+            "Lemuria/LM_Z04_Badlands": {
+              "interact_xyz": {"x": 3957.83, "y": -616.88, "z": 16.69},
+              "reset_xyz": {"x": 4113.5, "y": -649.28, "z": -4.82}
+            },
+            "Lemuria/LM_Z05_Mandoria": {
+              "interact_xyz": {"x": 5182.31, "y": 4281.05, "z": -617.91},
+              "reset_xyz": {"x": 5273.72, "y": 4068.9, "z": -649.24}
+            },
+            "Lemuria/LM_Z07_Heap": {
+              "interact_xyz": {"x": 3998.22, "y": -6761.01, "z": -1700.59},
+              "reset_xyz": {"x": 3948.51, "y": -7386.47, "z": -1733.2}
+            },
+            "Lemuria/LM_Z06_SkyCity": {
+              "interact_xyz": {"x": 2812.71, "y": 689.46, "z": -73.59},
+              "reset_xyz": {"x": 2689.19, "y": 566.91, "z": -104.93}
+            }
+          },
+          "verified": true,
+          "source": "recorded"
+        }
+      ]
     },
     "Novus": {
       "hub": "Novus/NV_Z01_Conatus",
       "door": "Novus/NV_Z01_Conatus",
       "zones": {
-        "Novus/NV_Z01_Conatus": {},
-        "Novus/NV_Z02_StoneOfHeaven": {},
-        "Novus/NV_Z03_PuertoNuovo_VA": {},
-        "Novus/NV_Z04_NewVicorgia": {},
-        "Novus/NV_Z05_LaVilleRose": {},
-        "Novus/NV_Z06_NucleusGallery": {},
-        "Novus/NV_Z07_DoomMoon": {},
+        "Novus/NV_Z01_Conatus": {
+          "arrivals": {
+            "Novus/NV_Z02_StoneOfHeaven": {"x": -15376.04, "y": 2107.15, "z": 3259.49},
+            "Novus/NV_Z05_LaVilleRose": {"x": -16569.81, "y": 734.16, "z": 3513.04},
+            "Novus/NV_Z03_PuertoNuovo_VA": {"x": -15586.39, "y": -2596.31, "z": 3319.53},
+            "Novus/NV_Z04_NewVicorgia": {"x": -16496.82, "y": -1081.45, "z": 3514.21}
+          }
+        },
+        "Novus/NV_Z02_StoneOfHeaven": {
+          "arrivals": {
+            "Novus/NV_Z01_Conatus": {"x": 770.98, "y": -2526.34, "z": 127.03},
+            "Novus/NV_Z06_NucleusGallery": {"x": 7631.48, "y": -12892.79, "z": 8747.26}
+          }
+        },
+        "Novus/NV_Z03_PuertoNuovo_VA": {
+          "arrivals": {
+            "Novus/NV_Z01_Conatus": {"x": -2377.51, "y": 232.77, "z": 6.98}
+          }
+        },
+        "Novus/NV_Z04_NewVicorgia": {
+          "arrivals": {
+            "Novus/NV_Z01_Conatus": {"x": 17.55, "y": -3194.65, "z": -270.8}
+          }
+        },
+        "Novus/NV_Z05_LaVilleRose": {
+          "arrivals": {
+            "Novus/NV_Z01_Conatus": {"x": 240.09, "y": -3076.92, "z": 283.96}
+          }
+        },
+        "Novus/NV_Z06_NucleusGallery": {
+          "arrivals": {
+            "Novus/NV_Z01_Conatus": {"x": -50.77, "y": -2189.86, "z": -65.66},
+            "Novus/NV_Z02_StoneOfHeaven": {"x": -319.3, "y": -701.19, "z": -53.72},
+            "Novus/NV_Z05_LaVilleRose": {"x": 163.65, "y": -1827.29, "z": -59.0}
+          }
+        },
+        "Novus/NV_Z07_DoomMoon": {
+          "arrivals": {
+            "Novus/NV_Z01_Conatus": {"x": 11.21, "y": -2115.61, "z": -3.03}
+          }
+        },
         "Novus/NV_Z08_DaseinEstate": {},
         "Novus/NV_Z03_PuertoNuovo_MQ": {}
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z02_StoneOfHeaven",
+          "to": "Novus/NV_Z01_Conatus",
+          "interact_xyz": {"x": 450.09, "y": -2264.77, "z": 127.03},
+          "reset_xyz": {"x": 770.98, "y": -2526.34, "z": 127.03},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z01_Conatus",
+          "to": "Novus/NV_Z02_StoneOfHeaven",
+          "interact_xyz": {"x": -15696.53, "y": 2217.67, "z": 3313.84},
+          "reset_xyz": {"x": -15398.73, "y": 2114.97, "z": 3267.29},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z01_Conatus",
+          "to": "Novus/NV_Z05_LaVilleRose",
+          "interact_xyz": {"x": -16888.55, "y": 849.57, "z": 3545.31},
+          "reset_xyz": {"x": -16569.81, "y": 734.16, "z": 3513.04},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z05_LaVilleRose",
+          "to": "Novus/NV_Z01_Conatus",
+          "interact_xyz": {"x": 388.13, "y": -3689.28, "z": 283.96},
+          "reset_xyz": {"x": 350.06, "y": -3531.82, "z": 283.96},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z01_Conatus",
+          "to": "Novus/NV_Z06_NucleusGallery",
+          "interact_xyz": {"x": -13946.25, "y": -1550.99, "z": 2729.85},
+          "reset_xyz": {"x": -13674.4, "y": -1525.87, "z": 2653.95},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z06_NucleusGallery",
+          "to": "Novus/NV_Z02_StoneOfHeaven",
+          "interact_xyz": {"x": -488.02, "y": -688.83, "z": -13.1},
+          "reset_xyz": {"x": -278.11, "y": -690.95, "z": -59.69},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z02_StoneOfHeaven",
+          "to": "Novus/NV_Z06_NucleusGallery",
+          "interact_xyz": {"x": 7951.05, "y": -13096.73, "z": 8740.92},
+          "reset_xyz": {"x": 7764.08, "y": -12978.57, "z": 8743.9},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z05_LaVilleRose",
+          "to": "Novus/NV_Z06_NucleusGallery",
+          "interact_xyz": {"x": 26505.24, "y": 78777.58, "z": -3199.01},
+          "reset_xyz": {"x": 26669.84, "y": 78782.73, "z": -3199.01},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z01_Conatus",
+          "to": "Novus/NV_Z03_PuertoNuovo_VA",
+          "interact_xyz": {"x": -15738.68, "y": -2576.65, "z": 3347.69},
+          "reset_xyz": {"x": -15491.8, "y": -2621.45, "z": 3288.94},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z03_PuertoNuovo_VA",
+          "to": "Novus/NV_Z01_Conatus",
+          "interact_xyz": {"x": -3063.79, "y": 88.08, "z": 6.98},
+          "reset_xyz": {"x": -2913.19, "y": 126.4, "z": 6.98},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z04_NewVicorgia",
+          "to": "Novus/NV_Z01_Conatus",
+          "interact_xyz": {"x": 24.4, "y": -3758.39, "z": -270.8},
+          "reset_xyz": {"x": 10.05, "y": -3570.78, "z": -270.8},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z01_Conatus",
+          "to": "Novus/NV_Z04_NewVicorgia",
+          "interact_xyz": {"x": -16766.25, "y": -1043.29, "z": 3541.89},
+          "reset_xyz": {"x": -16496.82, "y": -1081.45, "z": 3514.21},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z01_Conatus",
+          "to": "Novus/NV_Z07_DoomMoon",
+          "interact_xyz": {"x": -10680.08, "y": -8251.17, "z": 2605.78},
+          "reset_xyz": {"x": -10685.33, "y": -7946.08, "z": 2550.73},
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "Wallaru": {

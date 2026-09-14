@@ -202,3 +202,17 @@ verified. `tools/zone_nav_tester/app.py` has the details; the detection rules ar
 - links for every world but Wizard City: the zones are declared, the links are what the tester
   is for
 - Wintertusk, which is not declared at all
+
+## Known gap: a teleporter shortcut can be locked
+
+Some `object` links are not doors or teleporters but a boat, dock, or similar one-off
+interaction to a zone that also has an ordinary teleporter once unlocked -- in the data
+they're indistinguishable, both stored as plain `object` links. A handful of Zafaria's hub
+teleporters (to Stone Town, Waterfront, Drum Jungle, Elephant Graveyard) are the known case:
+each is also reachable by the zone's own first-visit method, and the hub teleporter is
+usually unlocked automatically on that first visit, but not guaranteed to be for every
+account/quest state. The planner has no notion of "unlocked for this account" and always
+takes the cheapest `object` link, so a client that has not yet unlocked a given teleporter
+could be routed onto a link it cannot actually use. Considered low priority: teleporters are
+unlocked on first entry in the overwhelming majority of cases, and `avoid={OBJECT}` (the
+Test tab's "Walk only") is the workaround when it does come up.
