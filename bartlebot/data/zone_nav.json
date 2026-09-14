@@ -484,12 +484,28 @@
         "Krokotopia/KT_Hub": {
           "arrivals": {
             "Krokotopia/KT_WorldTeleporter": {"x": 14.22, "y": 232.65, "z": -22.17},
-            "Krokotopia/KT_Pyramid/KT_AltarOfKings": {"x": -36.57, "y": 7429.13, "z": 495.6}
+            "Krokotopia/KT_Pyramid/KT_AltarOfKings": {"x": -36.57, "y": 7429.13, "z": 495.6},
+            "Krokotopia/Interiors/KT_Library": {"x": 3501.21, "y": 5935.59, "z": -220.19}
           }
         },
-        "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis": {},
-        "Krokotopia/KT_Hub_Crypt": {},
-        "Krokotopia/KT_Hub_Sphinx": {},
+        "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis": {
+          "arrivals": {
+            "Krokotopia/KT_Hub": {"x": 1723.69, "y": -321.93, "z": 81.01},
+            "Krokotopia/KT_Selenopolis/KT_Z05_Market": {"x": 9688.82, "y": -10451.42, "z": 531.91},
+            "Krokotopia/KT_Selenopolis/KT_Z06_Forgotten": {"x": 22230.27, "y": -9614.48, "z": 1680.5}
+          }
+        },
+        "Krokotopia/KT_Hub_Crypt": {
+          "arrivals": {
+            "Krokotopia/KT_Hub": {"x": -8870.59, "y": -6836.14, "z": -261.77}
+          }
+        },
+        "Krokotopia/KT_Hub_Sphinx": {
+          "arrivals": {
+            "Krokotopia/Interiors/KT_School": {"x": 13527.57, "y": 1959.85, "z": 1138.61},
+            "Krokotopia/KT_Krokosphinx/KT_EntranceHall": {"x": 14760.74, "y": 3914.59, "z": 1083.13}
+          }
+        },
         "Krokotopia/KT_Pyramid/KT_AltarOfKings": {
           "arrivals": {
             "Krokotopia/KT_Hub": {"x": 4.0, "y": -2029.07, "z": -0.0},
@@ -497,16 +513,45 @@
             "Krokotopia/KT_Pyramid/KT_Chamber": {"x": -3665.2, "y": 3706.47, "z": -311.53}
           }
         },
-        "Krokotopia/KT_Selenopolis/KT_Z05_Market": {},
-        "Krokotopia/KT_Selenopolis/KT_Z06_Forgotten": {},
-        "Krokotopia/KT_Selenopolis/KT_Z07_Garden": {},
-        "Krokotopia/KT_Tomb/KT_WellOfSpirits": {},
+        "Krokotopia/KT_Selenopolis/KT_Z05_Market": {
+          "arrivals": {
+            "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis": {"x": -30.99, "y": -2483.19, "z": 0.0},
+            "Krokotopia/KT_Selenopolis/Interiors/KT_Z05I08_Storage_A_Int": {"x": -3984.15, "y": -16.18, "z": 0.0},
+            "Krokotopia/KT_Selenopolis/Interiors/KT_Z05I09_Storage_B_Int": {"x": 3782.77, "y": -9.12, "z": 0.0}
+          }
+        },
+        "Krokotopia/KT_Selenopolis/KT_Z06_Forgotten": {
+          "arrivals": {
+            "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis": {"x": 438.14, "y": -13.05, "z": 1.0}
+          }
+        },
+        "Krokotopia/KT_Selenopolis/KT_Z07_Garden": {
+          "arrivals": {
+            "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis": {"x": -128.91, "y": 868.55, "z": -549.28},
+            "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I02_Gutter": {"x": -5153.25, "y": 9025.16, "z": -543.62},
+            "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium": {"x": 2759.21, "y": 8486.63, "z": -549.28}
+          }
+        },
+        "Krokotopia/KT_Tomb/KT_WellOfSpirits": {
+          "arrivals": {
+            "Krokotopia/KT_Hub_Crypt": {"x": 22.74, "y": -182.69, "z": -0.0},
+            "Krokotopia/KT_Tomb/KT_AhnicTomb": {"x": -1548.08, "y": 4194.98, "z": -500.0},
+            "Krokotopia/KT_Tomb/KT_Barracks": {"x": 1510.65, "y": 7237.04, "z": -881.06},
+            "Krokotopia/KT_Tomb/KT_DjeseritTomb": {"x": 2289.73, "y": 6603.25, "z": 0.0}
+          }
+        },
         "Krokotopia/KT_WorldTeleporter": {
           "arrivals": {
             "Krokotopia/KT_Hub": {"x": 9.06, "y": -2597.65, "z": 627.47}
           }
         },
-        "Krokotopia/KT_Krokosphinx/KT_EntranceHall": {},
+        "Krokotopia/KT_Krokosphinx/KT_EntranceHall": {
+          "arrivals": {
+            "Krokotopia/KT_Hub_Sphinx": {"x": -279.62, "y": 8.23, "z": -0.0},
+            "Krokotopia/KT_Krokosphinx/KT_ChampHall": {"x": 4637.43, "y": -3646.08, "z": 0.0},
+            "Krokotopia/KT_Krokosphinx/KT_Arena": {"x": 6692.93, "y": 36.39, "z": 0.0}
+          }
+        },
         "Krokotopia/KT_Pyramid/KT_Chamber": {
           "arrivals": {
             "Krokotopia/KT_Pyramid/KT_AltarOfKings": {"x": 724.63, "y": 36.26, "z": -0.0}
@@ -522,15 +567,68 @@
             "Krokotopia/KT_Pyramid/KT_AltarOfKings": {"x": -4.22, "y": 683.16, "z": -0.0}
           }
         },
-        "Krokotopia/KT_Tomb/KT_AhnicTomb": {},
-        "Krokotopia/KT_Tomb/KT_Barracks": {},
-        "Krokotopia/KT_Tomb/KT_DjeseritTomb": {},
-        "Krokotopia/KT_Tomb/KT_TempleOfStorms": {},
-        "Krokotopia/KT_Krokosphinx/KT_Arena": {},
-        "Krokotopia/KT_Krokosphinx/KT_ChampHall": {},
-        "Krokotopia/Interiors/KT_HallofDoors": {},
-        "Krokotopia/Interiors/KT_Library": {},
-        "Krokotopia/Interiors/KT_School": {}
+        "Krokotopia/KT_Tomb/KT_AhnicTomb": {
+          "arrivals": {
+            "Krokotopia/KT_Tomb/KT_WellOfSpirits": {"x": 653.99, "y": 7.62, "z": -2.98}
+          }
+        },
+        "Krokotopia/KT_Tomb/KT_Barracks": {
+          "arrivals": {
+            "Krokotopia/KT_Tomb/KT_WellOfSpirits": {"x": 701.3, "y": 8.03, "z": 0.0}
+          }
+        },
+        "Krokotopia/KT_Tomb/KT_DjeseritTomb": {
+          "arrivals": {
+            "Krokotopia/KT_Tomb/KT_WellOfSpirits": {"x": -650.45, "y": 2.43, "z": -2.98}
+          }
+        },
+        "Krokotopia/KT_Krokosphinx/KT_Arena": {
+          "arrivals": {
+            "Krokotopia/KT_Krokosphinx/KT_EntranceHall": {"x": -1.46, "y": -455.05, "z": 0.0}
+          }
+        },
+        "Krokotopia/KT_Krokosphinx/KT_ChampHall": {
+          "arrivals": {
+            "Krokotopia/KT_Krokosphinx/KT_EntranceHall": {"x": 336.11, "y": -19.87, "z": 51.99}
+          }
+        },
+        "Krokotopia/Interiors/KT_HallofDoors": {
+          "arrivals": {
+            "Krokotopia/Interiors/KT_Library": {"x": -2533.35, "y": -7.18, "z": 1.0}
+          }
+        },
+        "Krokotopia/Interiors/KT_Library": {
+          "arrivals": {
+            "Krokotopia/KT_Hub": {"x": -16.86, "y": -0.42, "z": 15.7},
+            "Krokotopia/Interiors/KT_HallofDoors": {"x": 732.86, "y": -530.37, "z": -105.07}
+          }
+        },
+        "Krokotopia/Interiors/KT_School": {
+          "arrivals": {
+            "Krokotopia/KT_Hub_Sphinx": {"x": -292.61, "y": 2.47, "z": 2.0},
+            "G14_HS/HS_Z01_ZigazagUpper": {"x": -287.99, "y": -10.99, "z": 0.74}
+          }
+        },
+        "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I02_Gutter": {
+          "arrivals": {
+            "Krokotopia/KT_Selenopolis/KT_Z07_Garden": {"x": -355.18, "y": -2.16, "z": -0.0}
+          }
+        },
+        "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium": {
+          "arrivals": {
+            "Krokotopia/KT_Selenopolis/KT_Z07_Garden": {"x": 915.98, "y": -11.49, "z": 0.02}
+          }
+        },
+        "Krokotopia/KT_Selenopolis/Interiors/KT_Z05I08_Storage_A_Int": {
+          "arrivals": {
+            "Krokotopia/KT_Selenopolis/KT_Z05_Market": {"x": 6973.15, "y": -9240.91, "z": -465.06}
+          }
+        },
+        "Krokotopia/KT_Selenopolis/Interiors/KT_Z05I09_Storage_B_Int": {
+          "arrivals": {
+            "Krokotopia/KT_Selenopolis/KT_Z05_Market": {"x": -9798.32, "y": -15804.22, "z": -2.13}
+          }
+        }
       },
       "links": [
         {
@@ -618,6 +716,338 @@
           "volume": "Activator Volume (1)",
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Krokotopia/KT_Hub_Sphinx",
+          "to": "Krokotopia/Interiors/KT_School",
+          "interact_xyz": {"x": 14167.33, "y": 2043.23, "z": 1140.46},
+          "reset_xyz": {"x": 14308.46, "y": 2217.55, "z": 1199.75},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "G14_HS/HS_Z01_ZigazagUpper",
+          "to": "Krokotopia/Interiors/KT_School",
+          "xyz": {"x": 10059.74, "y": 5001.86, "z": 65.18},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Krokotopia/Interiors/KT_School",
+          "to": "Krokotopia/KT_Hub_Sphinx",
+          "interact_xyz": {"x": -577.45, "y": 3.18, "z": 2.0},
+          "reset_xyz": {"x": -340.13, "y": -8.44, "z": 2.0},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Hub_Sphinx",
+          "to": "Krokotopia/KT_Krokosphinx/KT_EntranceHall",
+          "xyz": {"x": 15652.78, "y": 3948.88, "z": 702.82},
+          "reset_xyz": {"x": 15256.76, "y": 3907.56, "z": 850.45},
+          "volume": "TeleportVol_Teleport location (Krok_Hub IceCrypt Entrance)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Krokosphinx/KT_EntranceHall",
+          "to": "Krokotopia/KT_Hub_Sphinx",
+          "xyz": {"x": -598.82, "y": 8.23, "z": 0.0},
+          "volume": "TeleportVol_Teleport (KT_SphinxHub KT_Hub Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Krokosphinx/KT_EntranceHall",
+          "to": "Krokotopia/KT_Krokosphinx/KT_ChampHall",
+          "xyz": {"x": 4598.75, "y": -3932.35, "z": -0.02},
+          "reset_xyz": {"x": 4581.59, "y": -3623.65, "z": -0.02},
+          "volume": "ChampionsZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Krokosphinx/KT_ChampHall",
+          "to": "Krokotopia/KT_Krokosphinx/KT_EntranceHall",
+          "xyz": {"x": 1064.37, "y": -25.59, "z": 3.3},
+          "volume": "EntranceZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Krokosphinx/KT_EntranceHall",
+          "to": "Krokotopia/KT_Krokosphinx/KT_Arena",
+          "xyz": {"x": 7211.19, "y": 39.71, "z": 20.3},
+          "reset_xyz": {"x": 6872.46, "y": 58.17, "z": 0.0},
+          "volume": "ArenaZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Krokosphinx/KT_Arena",
+          "to": "Krokotopia/KT_Krokosphinx/KT_EntranceHall",
+          "xyz": {"x": 1.3, "y": -1113.6, "z": 10.98},
+          "volume": "EntranceZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Hub",
+          "to": "Krokotopia/KT_Hub_Crypt",
+          "xyz": {"x": -3333.67, "y": -1829.89, "z": -35.35},
+          "reset_xyz": {"x": -3027.18, "y": -1592.84, "z": -33.99},
+          "volume": "Activator Volume (Hub To Crypt Island Teleporter)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Hub_Crypt",
+          "to": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+          "xyz": {"x": -10660.59, "y": -8558.45, "z": -373.0},
+          "reset_xyz": {"x": -10210.93, "y": -8125.79, "z": -373.0},
+          "volume": "TeleportVol_Teleport location (Krok_Hub StormCrypt Entrance)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+          "to": "Krokotopia/KT_Tomb/KT_AhnicTomb",
+          "xyz": {"x": -2270.64, "y": 4201.22, "z": -494.79},
+          "reset_xyz": {"x": -1910.18, "y": 4158.3, "z": -500.0},
+          "volume": "TeleportVol_Teleport (KT_Crypt_Hub KT_Crypt_Level01 Entrance)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Tomb/KT_AhnicTomb",
+          "to": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+          "xyz": {"x": 1357.49, "y": 60.12, "z": 18.12},
+          "volume": "TeleportVol_Teleport (KT_Crypt_Level01 KT_Crypt_Hub Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+          "to": "Krokotopia/KT_Tomb/KT_Barracks",
+          "xyz": {"x": 1467.13, "y": 7596.8, "z": -1000.0},
+          "reset_xyz": {"x": 1487.21, "y": 7225.35, "z": -875.12},
+          "volume": "BarracksZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Tomb/KT_Barracks",
+          "to": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+          "xyz": {"x": 1556.3, "y": 8.03, "z": 112.03},
+          "volume": "TeleportVol_Teleport (KT_Crypt_Level03 KT_Crypt_Hub Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+          "to": "Krokotopia/KT_Tomb/KT_DjeseritTomb",
+          "xyz": {"x": 2851.22, "y": 6633.45, "z": 2.24},
+          "reset_xyz": {"x": 2434.75, "y": 6559.44, "z": -0.0},
+          "volume": "TeleportVol_Teleport (KT_Crypt_Hub KT_Crypt_Level02 Entrance) (1)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Tomb/KT_DjeseritTomb",
+          "to": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+          "xyz": {"x": -1505.45, "y": 2.43, "z": 10.56},
+          "volume": "TeleportVol_Teleport (KT_Crypt_Level02 KT_Crypt_Hub Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Krokotopia/KT_Hub",
+          "to": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
+          "interact_xyz": {"x": 2197.53, "y": -1717.65, "z": -111.21},
+          "reset_xyz": {"x": 2344.4, "y": -1254.37, "z": -89.77},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
+          "to": "Krokotopia/KT_Selenopolis/KT_Z07_Garden",
+          "xyz": {"x": 9644.92, "y": 7652.35, "z": 160.4},
+          "reset_xyz": {"x": 9560.23, "y": 7222.62, "z": 160.4},
+          "volume": "TeleportVol_Teleport_2_Garden",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I02_Gutter",
+          "to": "Krokotopia/KT_Selenopolis/KT_Z07_Garden",
+          "xyz": {"x": 1198.82, "y": -2.16, "z": 106.08},
+          "reset_xyz": {"x": 877.82, "y": -2.16, "z": 0.02},
+          "volume": "TeleportVol_Teleport source-ToGarden",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/KT_Z07_Garden",
+          "to": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I02_Gutter",
+          "xyz": {"x": -5330.27, "y": 9023.38, "z": -543.62},
+          "volume": "TeleportVol_Teleport source-ToGutter",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/KT_Z07_Garden",
+          "to": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium",
+          "xyz": {"x": 3328.33, "y": 8420.59, "z": -492.25},
+          "reset_xyz": {"x": 3035.16, "y": 8356.99, "z": -543.62},
+          "volume": "Activator Volume-TeleportToVivarium",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium",
+          "to": "Krokotopia/KT_Selenopolis/KT_Z07_Garden",
+          "xyz": {"x": -491.02, "y": -11.49, "z": 97.52},
+          "volume": "TeleportVol_Teleport source-ToGarden",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
+          "to": "Krokotopia/KT_Selenopolis/KT_Z05_Market",
+          "xyz": {"x": 9711.13, "y": -10921.29, "z": 534.18},
+          "reset_xyz": {"x": 9689.62, "y": -10468.2, "z": 534.18},
+          "volume": "TeleportVol_Teleport_2_Market",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/KT_Z05_Market",
+          "to": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
+          "xyz": {"x": -30.99, "y": -2977.11, "z": 0.0},
+          "volume": "TeleportVol_Teleport_2_Selenopolis",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/KT_Z05_Market",
+          "to": "Krokotopia/KT_Selenopolis/Interiors/KT_Z05I08_Storage_A_Int",
+          "xyz": {"x": -4309.29, "y": 1.02, "z": 0.0},
+          "reset_xyz": {"x": -3991.68, "y": 30.77, "z": -0.0},
+          "volume": "ActivatorVolume_POI_UndergroundMarket",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/Interiors/KT_Z05I08_Storage_A_Int",
+          "to": "Krokotopia/KT_Selenopolis/KT_Z05_Market",
+          "xyz": {"x": 7557.78, "y": -9240.91, "z": -365.06},
+          "volume": "TeleportVol_Teleport_Source_To_MarketPlaceOfIdeas",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/KT_Z05_Market",
+          "to": "Krokotopia/KT_Selenopolis/Interiors/KT_Z05I09_Storage_B_Int",
+          "xyz": {"x": 4251.14, "y": -20.53, "z": 0.0},
+          "reset_xyz": {"x": 3915.25, "y": -12.09, "z": 0.0},
+          "volume": "ActivatorVolume_POI_GrandExposition",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/Interiors/KT_Z05I09_Storage_B_Int",
+          "to": "Krokotopia/KT_Selenopolis/KT_Z05_Market",
+          "xyz": {"x": -10189.8, "y": -15804.22, "z": -2.13},
+          "volume": "TeleportVol_TeleportSource_To_Market Place of Ideas_01",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
+          "to": "Krokotopia/KT_Selenopolis/KT_Z06_Forgotten",
+          "xyz": {"x": 22703.22, "y": -9607.98, "z": 1689.46},
+          "reset_xyz": {"x": 22363.38, "y": -9599.83, "z": 1689.46},
+          "volume": "TeleportVol_Teleport_2_Tomb",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/KT_Z06_Forgotten",
+          "to": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
+          "xyz": {"x": 2231.54, "y": -13.05, "z": 1.0},
+          "volume": "TeleportVol_To The Hub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Hub",
+          "to": "Krokotopia/Interiors/KT_Library",
+          "xyz": {"x": 3653.87, "y": 6121.47, "z": -219.56},
+          "reset_xyz": {"x": 3445.06, "y": 5901.11, "z": -219.61},
+          "volume": "TeleportVol_Teleport location (Hub Library Entrance)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/Interiors/KT_Library",
+          "to": "Krokotopia/Interiors/KT_HallofDoors",
+          "xyz": {"x": 1151.86, "y": -785.15, "z": -101.56},
+          "reset_xyz": {"x": 845.05, "y": -622.29, "z": -101.56},
+          "volume": "TeleportVol_ToHallofDoors",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/Interiors/KT_HallofDoors",
+          "to": "Krokotopia/Interiors/KT_Library",
+          "xyz": {"x": -3051.3, "y": -48.65, "z": 1.0},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/Interiors/KT_Library",
+          "to": "Krokotopia/KT_Hub",
+          "xyz": {"x": -194.94, "y": -7.77, "z": -1.57},
+          "volume": "TeleportVol_Teleport location (Library Hub Exit)",
+          "verified": true,
+          "source": "recorded"
         }
       ],
       "list_networks": []
@@ -626,133 +1056,1671 @@
       "hub": "Marleybone/MB_Hub",
       "door": "Marleybone/Interiors/MB_WolfminsterAbbey",
       "zones": {
-        "Marleybone/MB_Hub": {},
-        "Marleybone/MB_BigBen/MB_Museum": {},
-        "Marleybone/MB_Station/MB_Station_Hub": {},
-        "Marleybone/MB_BigBen/MB_BigBen": {},
-        "Marleybone/MB_BigBen/MB_CounterweightEast": {},
-        "Marleybone/MB_BigBen/MB_CounterweightWest": {},
-        "Marleybone/MB_ScotlandYard/MB_Roof": {},
+        "Marleybone/MB_Hub": {
+          "arrivals": {
+            "Marleybone/Interiors/MB_WolfminsterAbbey": {"x": 16.18, "y": -4666.71, "z": 0.0},
+            "Marleybone/MB_Station/MB_Station_Hub": {"x": 9365.77, "y": -7216.98, "z": -0.0},
+            "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard": {"x": 6640.42, "y": 1310.45, "z": -0.0},
+            "Marleybone/MB_BigBen/MB_Museum": {"x": -259.21, "y": 8605.37, "z": 0.0},
+            "Marleybone/Interiors/MB_ScotlandYard": {"x": -9115.49, "y": 2296.71, "z": 0.0}
+          }
+        },
+        "Marleybone/MB_BigBen/MB_Museum": {
+          "arrivals": {
+            "Marleybone/MB_Hub": {"x": 13.05, "y": -156.58, "z": -0.0}
+          }
+        },
+        "Marleybone/MB_Station/MB_Station_Hub": {
+          "arrivals": {
+            "Marleybone/MB_Hub": {"x": -2.88, "y": -2409.96, "z": -294.45}
+          }
+        },
+        "Marleybone/MB_ScotlandYard/MB_Roof": {
+          "arrivals": {
+            "Marleybone/Interiors/MB_ScotlandYard": {"x": -252.86, "y": -4.85, "z": -59.99},
+            "Marleybone/MB_ScotlandYard/MB_Prison": {"x": -2156.81, "y": -2337.39, "z": -240.0},
+            "Marleybone/MB_ScotlandYard/MB_KnightsCourt": {"x": -6800.61, "y": -474.34, "z": -239.49}
+          }
+        },
         "Marleybone/MB_ScotlandYard/MB_KatzLab": {},
-        "Marleybone/MB_ScotlandYard/MB_KnightsCourt": {},
-        "Marleybone/MB_ScotlandYard/MB_Prison": {},
+        "Marleybone/MB_ScotlandYard/MB_KnightsCourt": {
+          "arrivals": {
+            "Marleybone/MB_ScotlandYard/MB_Roof": {"x": -493.86, "y": -9187.21, "z": -248.2}
+          }
+        },
+        "Marleybone/MB_ScotlandYard/MB_Prison": {
+          "arrivals": {
+            "Marleybone/MB_ScotlandYard/MB_Roof": {"x": 164.99, "y": -1828.87, "z": -230.0}
+          }
+        },
         "Marleybone/MB_Station/MB_ChelseaCourt": {},
         "Marleybone/MB_Station/MB_HydePark": {},
         "Marleybone/MB_Station/MB_Ironworks": {},
-        "Marleybone/Interiors/MB_WolfminsterAbbey": {}
+        "Marleybone/Interiors/MB_WolfminsterAbbey": {
+          "arrivals": {
+            "Marleybone/MB_Hub": {"x": -0.74, "y": -3377.52, "z": -0.0}
+          }
+        },
+        "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard": {
+          "arrivals": {
+            "Marleybone/MB_Hub": {"x": -410.39, "y": -1391.98, "z": -4812.39}
+          }
+        },
+        "Marleybone/Interiors/MB_ScotlandYard": {
+          "arrivals": {
+            "Marleybone/MB_Hub": {"x": -1.99, "y": -233.41, "z": -0.0},
+            "Marleybone/MB_ScotlandYard/MB_Roof": {"x": 1.81, "y": 1879.22, "z": 0.0}
+          }
+        }
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Marleybone/Interiors/MB_WolfminsterAbbey",
+          "to": "Marleybone/MB_Hub",
+          "xyz": {"x": 1.6, "y": -3681.73, "z": -0.0},
+          "reset_xyz": {"x": 1.6, "y": -3132.73, "z": -0.0},
+          "volume": "TeleportVol_ToMainHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/MB_Hub",
+          "to": "Marleybone/Interiors/MB_WolfminsterAbbey",
+          "xyz": {"x": 41.53, "y": -5326.36, "z": 19.99},
+          "volume": "AbbeyZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/MB_Hub",
+          "to": "Marleybone/MB_Station/MB_Station_Hub",
+          "xyz": {"x": 9543.35, "y": -7475.02, "z": 30.0},
+          "reset_xyz": {"x": 9200.76, "y": -7030.03, "z": -0.0},
+          "volume": "TeleportVol_ToAirportHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/MB_Station/MB_Station_Hub",
+          "to": "Marleybone/MB_Hub",
+          "xyz": {"x": 3.78, "y": -2724.92, "z": -285.05},
+          "volume": "TeleportVol_ToMainHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/MB_Hub",
+          "to": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+          "xyz": {"x": 6989.72, "y": 1302.07, "z": -0.0},
+          "reset_xyz": {"x": 6565.65, "y": 1240.81, "z": -0.0},
+          "volume": "To BarkinghamCourtyard",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+          "to": "Marleybone/MB_Hub",
+          "xyz": {"x": -410.39, "y": -557.98, "z": -4823.62},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/MB_Hub",
+          "to": "Marleybone/MB_BigBen/MB_Museum",
+          "xyz": {"x": -197.21, "y": 9128.13, "z": -0.0},
+          "reset_xyz": {"x": -65.51, "y": 8676.67, "z": -0.0},
+          "volume": "MuseumZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/MB_BigBen/MB_Museum",
+          "to": "Marleybone/MB_Hub",
+          "xyz": {"x": 32.96, "y": -627.22, "z": 0.01},
+          "volume": "TeleportVol_ToMB_Hub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/MB_Hub",
+          "to": "Marleybone/Interiors/MB_ScotlandYard",
+          "xyz": {"x": -9363.86, "y": 2295.23, "z": 0.0},
+          "reset_xyz": {"x": -8780.48, "y": 2338.67, "z": 20.0},
+          "volume": "TeleportVol_ToScotlandYard",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/Interiors/MB_ScotlandYard",
+          "to": "Marleybone/MB_Hub",
+          "xyz": {"x": -30.79, "y": -452.03, "z": -0.0},
+          "volume": "TeleportVol_ToMainHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/Interiors/MB_ScotlandYard",
+          "to": "Marleybone/MB_ScotlandYard/MB_Roof",
+          "xyz": {"x": -2.51, "y": 2014.33, "z": 10.0},
+          "reset_xyz": {"x": -63.55, "y": 1712.25, "z": 0.0},
+          "volume": "TeleportVol_ToScotYardHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/MB_ScotlandYard/MB_Roof",
+          "to": "Marleybone/Interiors/MB_ScotlandYard",
+          "xyz": {"x": -54.92, "y": 2.81, "z": -49.98},
+          "volume": "TeleportVol_Teleport to MB Hub to ScotYard Hub Interior",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/MB_ScotlandYard/MB_Roof",
+          "to": "Marleybone/MB_ScotlandYard/MB_Prison",
+          "xyz": {"x": -2189.19, "y": -2536.37, "z": -240.0},
+          "reset_xyz": {"x": -2219.47, "y": -2234.67, "z": -240.0},
+          "volume": "TeleportVol_Teleport to Scot Yard Zone 1",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/MB_ScotlandYard/MB_Prison",
+          "to": "Marleybone/MB_ScotlandYard/MB_Roof",
+          "xyz": {"x": 164.99, "y": -2266.87, "z": -230.0},
+          "volume": "TeleportVol_ToScotYardHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/MB_ScotlandYard/MB_Roof",
+          "to": "Marleybone/MB_ScotlandYard/MB_KnightsCourt",
+          "xyz": {"x": -6937.52, "y": -515.93, "z": -239.49},
+          "reset_xyz": {"x": -6398.11, "y": -490.81, "z": -239.49},
+          "volume": "KnightZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Marleybone/MB_ScotlandYard/MB_KnightsCourt",
+          "to": "Marleybone/MB_ScotlandYard/MB_Roof",
+          "xyz": {"x": -493.86, "y": -9409.21, "z": -240.0},
+          "volume": "YardZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "MooShu": {
       "hub": "MooShu/MS_Hub",
       "door": "MooShu/Interiors/MS_Teleport_Chamber",
       "zones": {
-        "MooShu/MS_Hub": {},
-        "MooShu/MS_Catmandu": {},
-        "MooShu/MS_War/MS_War_RuinedVillage_Hub": {},
-        "MooShu/MS_Death/MS_Death_Hub_RuinedTemple": {},
-        "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage": {},
-        "MooShu/MS_War/MS_War_BattlefieldA": {},
-        "MooShu/MS_War/MS_War_BattlefieldB": {},
-        "MooShu/MS_Death/MS_Death_Zone1_BurialGround": {},
-        "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage": {},
-        "MooShu/MS_Death/MS_Death_Zone3_AncientTree": {},
-        "MooShu/MS_Plague/MS_Plague_Zone1_WaterfallCave": {},
-        "MooShu/MS_Plague/MS_Plague_Zone2_RiverVillage": {},
-        "MooShu/MS_Plague/MS_Plague_Zone3_CliffsidePalace": {},
-        "MooShu/Interiors/MS_RockDojoT2": {},
-        "MooShu/Interiors/MS_Teleport_Chamber": {},
-        "MooShu/Interiors/MS_WaterDojot1_Common": {}
+        "MooShu/MS_Hub": {
+          "arrivals": {
+            "MooShu/Interiors/MS_Teleport_Chamber": {"x": 62.89, "y": 17.76, "z": 1.1},
+            "MooShu/MS_Catmandu": {"x": 11210.16, "y": -8416.69, "z": -158.19},
+            "MooShu/Interiors/MS_RockDojoT2": {"x": 11518.76, "y": -12498.38, "z": -154.0},
+            "MooShu/MS_War/MS_War_RuinedVillage_Hub": {"x": 3057.03, "y": 2961.61, "z": 1.1},
+            "MooShu/Interiors/MS_WaterDojot1_Common": {"x": 11762.29, "y": 12839.86, "z": 27.29}
+          }
+        },
+        "MooShu/MS_Catmandu": {
+          "arrivals": {
+            "MooShu/MS_Hub": {"x": -214.03, "y": -28.17, "z": 83.41}
+          }
+        },
+        "MooShu/MS_War/MS_War_RuinedVillage_Hub": {
+          "arrivals": {
+            "MooShu/MS_Hub": {"x": 684.04, "y": 422.24, "z": 1.59},
+            "MooShu/MS_War/MS_War_BattlefieldB": {"x": 2320.94, "y": -22275.54, "z": -268.18}
+          }
+        },
+        "MooShu/MS_Death/MS_Death_Hub_RuinedTemple": {
+          "arrivals": {
+            "MooShu/Interiors/MS_RockDojoT2": {"x": -3499.67, "y": -6928.03, "z": -79.59},
+            "MooShu/MS_Death/MS_Death_Zone1_BurialGround": {"x": -8778.24, "y": 16847.76, "z": -173.26},
+            "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage": {"x": 9204.82, "y": 31306.52, "z": -117.79}
+          }
+        },
+        "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage": {
+          "arrivals": {
+            "MooShu/Interiors/MS_WaterDojot1_Common": {"x": 95.35, "y": -770.42, "z": -19.98},
+            "MooShu/MS_Plague/MS_Plague_Zone1_WaterfallCave": {"x": 11649.41, "y": 7072.28, "z": 480.01},
+            "MooShu/MS_Plague/MS_Plague_Zone2_RiverVillage": {"x": -12566.82, "y": 7020.8, "z": 480.02}
+          }
+        },
+        "MooShu/MS_War/MS_War_BattlefieldB": {
+          "arrivals": {
+            "MooShu/MS_War/MS_War_RuinedVillage_Hub": {"x": 364.63, "y": 6.87, "z": 1.69}
+          }
+        },
+        "MooShu/MS_Death/MS_Death_Zone1_BurialGround": {
+          "arrivals": {
+            "MooShu/MS_Death/MS_Death_Hub_RuinedTemple": {"x": -7012.3, "y": -20692.88, "z": 32.94}
+          }
+        },
+        "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage": {
+          "arrivals": {
+            "MooShu/MS_Death/MS_Death_Hub_RuinedTemple": {"x": -3105.9, "y": 150.56, "z": 0.0}
+          }
+        },
+        "MooShu/MS_Plague/MS_Plague_Zone1_WaterfallCave": {
+          "arrivals": {
+            "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage": {"x": -120.04, "y": 1835.39, "z": 2.1}
+          }
+        },
+        "MooShu/MS_Plague/MS_Plague_Zone2_RiverVillage": {
+          "arrivals": {
+            "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage": {"x": 440.84, "y": -1960.95, "z": 27.81}
+          }
+        },
+        "MooShu/Interiors/MS_RockDojoT2": {
+          "arrivals": {
+            "MooShu/MS_Hub": {"x": 2445.06, "y": 9.15, "z": 30.0}
+          }
+        },
+        "MooShu/Interiors/MS_Teleport_Chamber": {
+          "arrivals": {
+            "MooShu/MS_Hub": {"x": 6.77, "y": -4821.92, "z": 0.01}
+          }
+        },
+        "MooShu/Interiors/MS_WaterDojot1_Common": {
+          "arrivals": {
+            "MooShu/MS_Hub": {"x": 2410.51, "y": 7.65, "z": 30.0},
+            "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage": {"x": -1460.49, "y": -1608.06, "z": 0.0}
+          }
+        }
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Hub",
+          "to": "MooShu/Interiors/MS_Teleport_Chamber",
+          "xyz": {"x": -620.47, "y": -14.39, "z": 124.0},
+          "reset_xyz": {"x": -328.48, "y": -30.53, "z": 1.1},
+          "volume": "TeleportVol_Teleport location (To Teleport Hub)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/Interiors/MS_Teleport_Chamber",
+          "to": "MooShu/MS_Hub",
+          "xyz": {"x": -26.81, "y": -5226.68, "z": 0.01},
+          "volume": "TeleportVol_Teleport to Hub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "MooShu/MS_Hub",
+          "to": "MooShu/MS_Catmandu",
+          "interact_xyz": {"x": 11537.85, "y": -8199.17, "z": -114.85},
+          "reset_xyz": {"x": 11526.12, "y": -7907.08, "z": -158.65},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "MooShu/MS_Catmandu",
+          "to": "MooShu/MS_Hub",
+          "interact_xyz": {"x": -286.63, "y": -0.06, "z": 83.82},
+          "reset_xyz": {"x": -29.25, "y": 161.87, "z": 57.42},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Hub",
+          "to": "MooShu/Interiors/MS_RockDojoT2",
+          "xyz": {"x": 11470.62, "y": -13044.93, "z": 53.85},
+          "reset_xyz": {"x": 11480.29, "y": -12693.97, "z": -78.93},
+          "volume": "TeleportVol_ToDeathHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/Interiors/MS_RockDojoT2",
+          "to": "MooShu/MS_Hub",
+          "xyz": {"x": 2874.64, "y": 9.15, "z": 30.0},
+          "volume": "TeleportVol_ToMainHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Hub",
+          "to": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
+          "xyz": {"x": 3137.76, "y": 3354.63, "z": 1.1},
+          "reset_xyz": {"x": 3113.59, "y": 3017.51, "z": 1.1},
+          "volume": "WarZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
+          "to": "MooShu/MS_Hub",
+          "xyz": {"x": 1940.44, "y": 790.99, "z": -0.0},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
+          "to": "MooShu/MS_War/MS_War_BattlefieldB",
+          "xyz": {"x": 3125.14, "y": -22292.08, "z": -320.41},
+          "reset_xyz": {"x": 2787.56, "y": -22274.13, "z": -320.41},
+          "volume": "TeleportVol_ToWar1",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_War/MS_War_BattlefieldB",
+          "to": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
+          "xyz": {"x": -123.41, "y": 6.87, "z": 0.1},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/Interiors/MS_RockDojoT2",
+          "to": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
+          "xyz": {"x": -1868.78, "y": 1714.47, "z": 0.0},
+          "reset_xyz": {"x": -1505.25, "y": 1672.01, "z": 0.0},
+          "volume": "TeleportVol_Teleport location 0",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
+          "to": "MooShu/MS_Death/MS_Death_Zone1_BurialGround",
+          "xyz": {"x": -9950.74, "y": 16997.61, "z": -103.0},
+          "reset_xyz": {"x": -9529.04, "y": 16937.36, "z": -127.87},
+          "volume": "TeleportVol_To Death Zone 1",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Death/MS_Death_Zone1_BurialGround",
+          "to": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
+          "xyz": {"x": -7055.61, "y": -21663.92, "z": 0.01},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
+          "to": "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage",
+          "xyz": {"x": 9438.8, "y": 31683.6, "z": -79.59},
+          "reset_xyz": {"x": 9073.2, "y": 30984.8, "z": -146.14},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage",
+          "to": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
+          "xyz": {"x": -3642.9, "y": 150.56, "z": 181.1},
+          "volume": "TeleportVol_To Death Hub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Hub",
+          "to": "MooShu/Interiors/MS_WaterDojot1_Common",
+          "xyz": {"x": 11762.29, "y": 13922.86, "z": 222.15},
+          "volume": "TeleportVol_ToPlagueHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/Interiors/MS_WaterDojot1_Common",
+          "to": "MooShu/MS_Hub",
+          "xyz": {"x": 2920.51, "y": 7.65, "z": 30.0},
+          "volume": "TeleportVol_ToMainHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/Interiors/MS_WaterDojot1_Common",
+          "to": "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage",
+          "xyz": {"x": -1868.89, "y": 1745.51, "z": 0.0},
+          "reset_xyz": {"x": -1548.58, "y": 1594.78, "z": 0.0},
+          "volume": "TeleportVol_ToPlagueHub2",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage",
+          "to": "MooShu/Interiors/MS_WaterDojot1_Common",
+          "xyz": {"x": 284.86, "y": -2028.22, "z": -19.12},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage",
+          "to": "MooShu/MS_Plague/MS_Plague_Zone1_WaterfallCave",
+          "xyz": {"x": 13505.5, "y": 6903.26, "z": 479.62},
+          "reset_xyz": {"x": 13143.39, "y": 6877.77, "z": 479.84},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Plague/MS_Plague_Zone1_WaterfallCave",
+          "to": "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage",
+          "xyz": {"x": -138.4, "y": 800.54, "z": 0.0},
+          "volume": "PlagueHubZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage",
+          "to": "MooShu/MS_Plague/MS_Plague_Zone2_RiverVillage",
+          "xyz": {"x": -13786.97, "y": 6818.22, "z": 479.69},
+          "reset_xyz": {"x": -13246.97, "y": 6816.42, "z": 480.0},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Plague/MS_Plague_Zone2_RiverVillage",
+          "to": "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage",
+          "xyz": {"x": 440.84, "y": -1174.95, "z": -0.94},
+          "volume": "PLAGUEHUBZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "DragonSpire": {
       "hub": "DragonSpire/DS_Hub_Cathedral",
       "door": "DragonSpire/DS_Hub_Cathedral",
       "zones": {
-        "DragonSpire/DS_Hub_Cathedral": {},
-        "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library": {},
-        "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis": {},
-        "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy": {},
-        "DragonSpire/DS_A1_Knowledge/DS_A1Z1_WizardTower": {},
-        "DragonSpire/DS_A1_Knowledge/DS_A1Z2_ConquestPlaza": {},
-        "DragonSpire/DS_A1_Knowledge/DS_A1Z3_GrandChasm": {},
-        "DragonSpire/DS_A2_Battle/DS_A2Z1_Hatchery": {},
-        "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena": {},
-        "DragonSpire/DS_A2_Battle/DS_A2Z3_Detention": {},
-        "DragonSpire/DS_A3_Kings/DS_A3Z1_CrystalGrove": {},
-        "DragonSpire/DS_A3_Kings/DS_A3Z2_Amphitheatre": {},
+        "DragonSpire/DS_Hub_Cathedral": {
+          "arrivals": {
+            "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library": {"x": -202.37, "y": 466.51, "z": -0.04},
+            "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis": {"x": 521.8, "y": 168.02, "z": -0.04},
+            "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy": {"x": -202.37, "y": 466.51, "z": -0.04}
+          }
+        },
+        "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library": {
+          "arrivals": {
+            "DragonSpire/DS_Hub_Cathedral": {"x": -8.37, "y": 192.32, "z": -20.51},
+            "DragonSpire/DS_A1_Knowledge/DS_A1Z1_WizardTower": {"x": 5525.23, "y": 7076.4, "z": 375.0},
+            "DragonSpire/DS_A1_Knowledge/Interiors/DS_Library_Interior": {"x": 1882.52, "y": 6268.3, "z": 400.12},
+            "DragonSpire/DS_A1_Knowledge/DS_A1Z2_ConquestPlaza": {"x": 448.26, "y": 10054.35, "z": 791.1},
+            "DragonSpire/DS_A1_Knowledge/DS_A1Z3_GrandChasm": {"x": -3174.23, "y": 6427.26, "z": 620.83}
+          }
+        },
+        "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis": {
+          "arrivals": {
+            "DragonSpire/DS_A1_Knowledge/DS_A1Z2_ConquestPlaza": {"x": 12.5, "y": -982.27, "z": -185.3},
+            "DragonSpire/DS_Hub_Cathedral": {"x": 3012.5, "y": 1181.05, "z": -600.0},
+            "DragonSpire/DS_A2_Battle/DS_A2Z1_Hatchery": {"x": 7166.83, "y": 10161.86, "z": 203.53},
+            "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena": {"x": -41.84, "y": 14183.4, "z": 1091.1}
+          }
+        },
+        "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy": {
+          "arrivals": {
+            "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena": {"x": -4.83, "y": 266.83, "z": 0.0},
+            "DragonSpire/DS_A3_Kings/DS_A3Z1_CrystalGrove": {"x": -1983.48, "y": 6480.14, "z": 599.97},
+            "DragonSpire/DS_A3_Kings/DS_A3Z2_Amphitheatre": {"x": 3763.2, "y": 2419.22, "z": 0.0},
+            "DragonSpire/DS_Hub_Cathedral": {"x": 3108.54, "y": 9452.55, "z": 1998.84}
+          }
+        },
+        "DragonSpire/DS_A1_Knowledge/DS_A1Z1_WizardTower": {
+          "arrivals": {
+            "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library": {"x": -31769.56, "y": -14010.82, "z": 0.0}
+          }
+        },
+        "DragonSpire/DS_A1_Knowledge/DS_A1Z2_ConquestPlaza": {
+          "arrivals": {
+            "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library": {"x": -8028.72, "y": -9761.3, "z": 0.0},
+            "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis": {"x": 21117.17, "y": 33574.78, "z": -1.34}
+          }
+        },
+        "DragonSpire/DS_A1_Knowledge/DS_A1Z3_GrandChasm": {
+          "arrivals": {
+            "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library": {"x": 35004.52, "y": -12050.66, "z": -2.49}
+          }
+        },
+        "DragonSpire/DS_A2_Battle/DS_A2Z1_Hatchery": {
+          "arrivals": {
+            "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis": {"x": 20959.44, "y": -11998.17, "z": -1.32}
+          }
+        },
+        "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena": {
+          "arrivals": {
+            "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis": {"x": -11119.08, "y": -20026.02, "z": 80.51},
+            "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy": {"x": 20014.49, "y": 51099.05, "z": 0.0}
+          }
+        },
+        "DragonSpire/DS_A3_Kings/DS_A3Z1_CrystalGrove": {
+          "arrivals": {
+            "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy": {"x": 8056.75, "y": 54650.73, "z": 0.0}
+          }
+        },
+        "DragonSpire/DS_A3_Kings/DS_A3Z2_Amphitheatre": {
+          "arrivals": {
+            "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy": {"x": -13551.08, "y": -12066.6, "z": 0.0}
+          }
+        },
         "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone": {},
-        "DragonSpire/DS_A1_Knowledge/Interiors/DS_Library_Interior": {}
+        "DragonSpire/DS_A1_Knowledge/Interiors/DS_Library_Interior": {
+          "arrivals": {
+            "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library": {"x": 0.89, "y": 2575.69, "z": 0.0}
+          }
+        }
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "object",
+          "from": "DragonSpire/DS_Hub_Cathedral",
+          "to": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+          "interact_xyz": {"x": -1139.73, "y": 1227.67, "z": -0.07},
+          "reset_xyz": {"x": -751.48, "y": 843.76, "z": -0.04},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+          "to": "DragonSpire/DS_Hub_Cathedral",
+          "interact_xyz": {"x": -8.37, "y": -518.68, "z": -20.62},
+          "reset_xyz": {"x": -8.37, "y": -8.68, "z": -20.53},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+          "to": "DragonSpire/DS_A1_Knowledge/DS_A1Z1_WizardTower",
+          "xyz": {"x": 6337.44, "y": 7124.45, "z": 376.93},
+          "reset_xyz": {"x": 5926.46, "y": 7127.68, "z": 375.0},
+          "volume": "VolumeTowerOfKnowledge",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A1_Knowledge/DS_A1Z1_WizardTower",
+          "to": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+          "xyz": {"x": -32129.56, "y": -14010.82, "z": 30.01},
+          "volume": "Volume-ToLibrary",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+          "to": "DragonSpire/DS_A1_Knowledge/Interiors/DS_Library_Interior",
+          "xyz": {"x": 1928.58, "y": 5782.01, "z": 533.51},
+          "reset_xyz": {"x": 2005.75, "y": 6222.3, "z": 400.12},
+          "volume": "TeleportVol_ToLibrary",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A1_Knowledge/Interiors/DS_Library_Interior",
+          "to": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+          "xyz": {"x": 1.05, "y": 3358.69, "z": -0.0},
+          "volume": "TeleportVol_TeleportToLibraryHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+          "to": "DragonSpire/DS_A1_Knowledge/DS_A1Z2_ConquestPlaza",
+          "xyz": {"x": 477.4, "y": 11353.74, "z": 791.11},
+          "reset_xyz": {"x": 516.16, "y": 11032.06, "z": 791.11},
+          "volume": "Volume-ToConquestPlaza",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A1_Knowledge/DS_A1Z2_ConquestPlaza",
+          "to": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+          "xyz": {"x": -8026.54, "y": -10136.3, "z": 30.0},
+          "volume": "TeleportVol_Teleport-ToLibrary",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+          "to": "DragonSpire/DS_A1_Knowledge/DS_A1Z3_GrandChasm",
+          "xyz": {"x": -3576.59, "y": 6412.3, "z": 656.31},
+          "reset_xyz": {"x": -3250.03, "y": 6397.17, "z": 627.4},
+          "volume": "TeleportVol_Teleport-ToGrandChasm",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A1_Knowledge/DS_A1Z3_GrandChasm",
+          "to": "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library",
+          "xyz": {"x": 35316.61, "y": -12053.95, "z": 30.01},
+          "volume": "TeleportVol_Teleport-ToLibrary",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A1_Knowledge/DS_A1Z2_ConquestPlaza",
+          "to": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
+          "xyz": {"x": 21124.54, "y": 34723.15, "z": 30.01},
+          "reset_xyz": {"x": 21158.89, "y": 34402.99, "z": 0.0},
+          "volume": "TeleportVol_Teleport-ToNecropolis",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
+          "to": "DragonSpire/DS_A1_Knowledge/DS_A1Z2_ConquestPlaza",
+          "xyz": {"x": 12.5, "y": -1732.27, "z": -185.3},
+          "volume": "Volume-Conquest",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
+          "to": "DragonSpire/DS_Hub_Cathedral",
+          "interact_xyz": {"x": 3484.32, "y": 1159.47, "z": -600.0},
+          "reset_xyz": {"x": 2951.7, "y": 1227.95, "z": -600.0},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "DragonSpire/DS_Hub_Cathedral",
+          "to": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
+          "interact_xyz": {"x": -1267.99, "y": -1277.61, "z": -0.09},
+          "reset_xyz": {"x": -1040.2, "y": -1047.21, "z": -0.04},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
+          "to": "DragonSpire/DS_A2_Battle/DS_A2Z1_Hatchery",
+          "xyz": {"x": 7978.52, "y": 10222.48, "z": 200.04},
+          "reset_xyz": {"x": 7376.6, "y": 10258.5, "z": 200.04},
+          "volume": "Volume-DrakeHatchery",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A2_Battle/DS_A2Z1_Hatchery",
+          "to": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
+          "xyz": {"x": 22207.44, "y": -11998.17, "z": 30.0},
+          "volume": "TeleportVol_Teleport-ToNecropolis",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
+          "to": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
+          "xyz": {"x": 35.53, "y": 15593.42, "z": 1091.11},
+          "reset_xyz": {"x": 57.5, "y": 15183.02, "z": 1091.11},
+          "volume": "TeleportVol_Teleport-TheCrucible",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
+          "to": "DragonSpire/DS_A2_Battle/DS_A2Hub_Necropolis",
+          "xyz": {"x": -9865.08, "y": -20026.19, "z": 30.01},
+          "volume": "Volume-ToNecropolis",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
+          "to": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
+          "xyz": {"x": 19994.65, "y": 52129.7, "z": 30.01},
+          "reset_xyz": {"x": 19981.03, "y": 51787.86, "z": 0.0},
+          "volume": "TeleportVol_Teleport-ToAcademy",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
+          "to": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
+          "xyz": {"x": -4.83, "y": -294.17, "z": 0.0},
+          "volume": "TeleportVol_TeleportToArena",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
+          "to": "DragonSpire/DS_A3_Kings/DS_A3Z1_CrystalGrove",
+          "xyz": {"x": -2684.66, "y": 6495.77, "z": 599.97},
+          "reset_xyz": {"x": -2097.26, "y": 6615.29, "z": 599.97},
+          "volume": "TeleportVol_TeleportCrystal Grove",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A3_Kings/DS_A3Z1_CrystalGrove",
+          "to": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
+          "xyz": {"x": 8056.75, "y": 55130.73, "z": 30.01},
+          "volume": "TeleportVol_Teleport-ToAcademy",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
+          "to": "DragonSpire/DS_A3_Kings/DS_A3Z2_Amphitheatre",
+          "xyz": {"x": 3939.72, "y": 2411.61, "z": 0.0},
+          "reset_xyz": {"x": 3577.72, "y": 2384.73, "z": 0.0},
+          "volume": "TeleportVol_TeleportAmphitheater",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "DragonSpire/DS_A3_Kings/DS_A3Z2_Amphitheatre",
+          "to": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
+          "xyz": {"x": -14001.08, "y": -12066.6, "z": 0.0},
+          "volume": "TeleportVol_Teleport-ToAcademy",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
+          "to": "DragonSpire/DS_Hub_Cathedral",
+          "interact_xyz": {"x": 3855.7, "y": 10161.57, "z": 1998.84},
+          "reset_xyz": {"x": 3691.64, "y": 10025.73, "z": 1998.84},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "DragonSpire/DS_Hub_Cathedral",
+          "to": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
+          "interact_xyz": {"x": 1336.99, "y": -1342.61, "z": -0.11},
+          "reset_xyz": {"x": 1190.49, "y": -1209.41, "z": -0.07},
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "Grizzleheim": {
       "hub": "Grizzleheim/GH_MainHub",
       "door": "Grizzleheim/GH_MainHub",
       "zones": {
-        "Grizzleheim/GH_MainHub": {},
-        "Grizzleheim/GH_AbandCity/GH_EntranceHall": {},
-        "Grizzleheim/GH_HFjord/GH_HFjord": {},
-        "Grizzleheim/GH_Hero": {},
-        "Grizzleheim/GH_Raven": {},
-        "Grizzleheim/GH_RedClaw": {},
-        "Grizzleheim/GH_Wolf": {},
-        "Grizzleheim/GH_HFjord/GH_Austrilund": {},
-        "Grizzleheim/GH_HFjord/GH_Nastrond": {},
-        "Grizzleheim/GH_HFjord/GH_Nordrilund": {},
-        "Grizzleheim/GH_HFjord/GH_Sudrilund": {},
-        "Grizzleheim/GH_HFjord/GH_Vestrilund": {}
+        "Grizzleheim/GH_MainHub": {
+          "arrivals": {
+            "Grizzleheim/GH_Hero": {"x": 9572.88, "y": 3716.69, "z": 542.73},
+            "Grizzleheim/GH_Wolf": {"x": 8810.43, "y": 5647.93, "z": 651.54},
+            "Grizzleheim/GH_RedClaw": {"x": -9658.95, "y": 6352.35, "z": 922.67},
+            "Grizzleheim/GH_Raven": {"x": -8567.59, "y": 2203.09, "z": 200.1},
+            "Grizzleheim/GH_AbandCity/GH_EntranceHall": {"x": 5941.43, "y": -4857.9, "z": -1098.75}
+          }
+        },
+        "Grizzleheim/GH_AbandCity/GH_EntranceHall": {
+          "arrivals": {
+            "Grizzleheim/GH_MainHub": {"x": 11.84, "y": 107.54, "z": 0.0}
+          }
+        },
+        "Grizzleheim/GH_HFjord/GH_HFjord": {
+          "arrivals": {
+            "Grizzleheim/GH_MainHub": {"x": -23.65, "y": 342.18, "z": -292.68},
+            "Grizzleheim/GH_HFjord/GH_Nordrilund": {"x": -1666.98, "y": 16403.32, "z": -1111.29},
+            "Grizzleheim/GH_HFjord/GH_Vestrilund": {"x": -15105.49, "y": 2009.44, "z": -900.0},
+            "Grizzleheim/GH_HFjord/GH_Sudrilund": {"x": -3911.74, "y": -78.17, "z": 400.0},
+            "Grizzleheim/GH_HFjord/GH_Austrilund": {"x": 301.53, "y": 11303.55, "z": -200.0}
+          }
+        },
+        "Grizzleheim/GH_Hero": {
+          "arrivals": {
+            "Grizzleheim/GH_MainHub": {"x": -5480.57, "y": -3691.92, "z": 232.06}
+          }
+        },
+        "Grizzleheim/GH_Raven": {
+          "arrivals": {
+            "Grizzleheim/GH_MainHub": {"x": 519.82, "y": -254.16, "z": -101.65}
+          }
+        },
+        "Grizzleheim/GH_RedClaw": {
+          "arrivals": {
+            "Grizzleheim/GH_MainHub": {"x": -20.27, "y": -7328.2, "z": -452.66}
+          }
+        },
+        "Grizzleheim/GH_Wolf": {
+          "arrivals": {
+            "Grizzleheim/GH_MainHub": {"x": -57.59, "y": 308.3, "z": -3.54}
+          }
+        },
+        "Grizzleheim/GH_HFjord/GH_Austrilund": {
+          "arrivals": {
+            "Grizzleheim/GH_HFjord/GH_HFjord": {"x": -1801.97, "y": 490.81, "z": 26.12}
+          }
+        },
+        "Grizzleheim/GH_HFjord/GH_Nordrilund": {
+          "arrivals": {
+            "Grizzleheim/GH_HFjord/GH_HFjord": {"x": -134.95, "y": -549.58, "z": 1127.95}
+          }
+        },
+        "Grizzleheim/GH_HFjord/GH_Sudrilund": {
+          "arrivals": {
+            "Grizzleheim/GH_HFjord/GH_HFjord": {"x": -6031.12, "y": 7565.12, "z": -986.38}
+          }
+        },
+        "Grizzleheim/GH_HFjord/GH_Vestrilund": {
+          "arrivals": {
+            "Grizzleheim/GH_HFjord/GH_HFjord": {"x": 3167.72, "y": -271.21, "z": -71.03}
+          }
+        }
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_MainHub",
+          "to": "Grizzleheim/GH_Hero",
+          "xyz": {"x": 10796.22, "y": 3722.07, "z": 503.92},
+          "reset_xyz": {"x": 10043.53, "y": 3742.66, "z": 503.92},
+          "volume": "HeroCampTeleportVolume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_Hero",
+          "to": "Grizzleheim/GH_MainHub",
+          "xyz": {"x": -6646.26, "y": -3989.22, "z": 425.77},
+          "volume": "TeleportVol_ToGrizzleHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_MainHub",
+          "to": "Grizzleheim/GH_Wolf",
+          "xyz": {"x": 8858.76, "y": 6015.65, "z": 728.29},
+          "reset_xyz": {"x": 8759.87, "y": 5688.26, "z": 665.34},
+          "volume": "WolfFortressTeleportVolume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_Wolf",
+          "to": "Grizzleheim/GH_MainHub",
+          "xyz": {"x": -805.23, "y": -868.34, "z": -256.15},
+          "volume": "TeleportVol_TeleportToWolfHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_MainHub",
+          "to": "Grizzleheim/GH_RedClaw",
+          "xyz": {"x": -9824.18, "y": 6575.05, "z": 973.63},
+          "reset_xyz": {"x": -9479.41, "y": 6276.68, "z": 894.23},
+          "volume": "Activator Volume-POI-ToRedClaw",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_RedClaw",
+          "to": "Grizzleheim/GH_MainHub",
+          "xyz": {"x": 45.22, "y": -7728.84, "z": -471.57},
+          "volume": "TeleportVol_TeleportToHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_MainHub",
+          "to": "Grizzleheim/GH_Raven",
+          "xyz": {"x": -8583.91, "y": 1724.03, "z": 200.2},
+          "reset_xyz": {"x": -8471.67, "y": 2417.0, "z": 200.2},
+          "volume": "RavenFortressTeleportVolume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_Raven",
+          "to": "Grizzleheim/GH_MainHub",
+          "xyz": {"x": 1198.57, "y": -133.19, "z": -109.32},
+          "volume": "HubPOIVolume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_MainHub",
+          "to": "Grizzleheim/GH_AbandCity/GH_EntranceHall",
+          "xyz": {"x": 6505.1, "y": -5403.03, "z": -1099.8},
+          "reset_xyz": {"x": 6200.27, "y": -5671.96, "z": -1099.8},
+          "volume": "TeleportVol_ToAbandonedCity",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_AbandCity/GH_EntranceHall",
+          "to": "Grizzleheim/GH_MainHub",
+          "xyz": {"x": 44.49, "y": -566.67, "z": 22.22},
+          "volume": "TeleportVol_TeleportToHub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Grizzleheim/GH_MainHub",
+          "to": "Grizzleheim/GH_HFjord/GH_HFjord",
+          "interact_xyz": {"x": -2407.0, "y": -5002.52, "z": -280.39},
+          "reset_xyz": {"x": -2428.26, "y": -4719.46, "z": -280.39},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_HFjord/GH_HFjord",
+          "to": "Grizzleheim/GH_HFjord/GH_Nordrilund",
+          "xyz": {"x": -1660.56, "y": 16769.44, "z": -1111.29},
+          "reset_xyz": {"x": -1670.54, "y": 16244.52, "z": -1111.29},
+          "volume": "VolumeToNordrilund",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_HFjord/GH_Nordrilund",
+          "to": "Grizzleheim/GH_HFjord/GH_HFjord",
+          "xyz": {"x": -122.82, "y": -1038.43, "z": 1112.74},
+          "volume": "TeleportVol_Teleport location To HFjord",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_HFjord/GH_HFjord",
+          "to": "Grizzleheim/GH_HFjord/GH_Vestrilund",
+          "xyz": {"x": -15525.72, "y": 2033.9, "z": -900.0},
+          "reset_xyz": {"x": -15097.76, "y": 2130.47, "z": -900.0},
+          "volume": "VolumeToVestrilund",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_HFjord/GH_Vestrilund",
+          "to": "Grizzleheim/GH_HFjord/GH_HFjord",
+          "xyz": {"x": 3702.53, "y": -222.68, "z": 12.5},
+          "volume": "TeleportVol_Teleport location HFjord",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_HFjord/GH_HFjord",
+          "to": "Grizzleheim/GH_HFjord/GH_Sudrilund",
+          "xyz": {"x": -3872.64, "y": -695.14, "z": 400.0},
+          "reset_xyz": {"x": -3953.35, "y": -353.55, "z": 400.0},
+          "volume": "VolumeToSudrilund",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_HFjord/GH_Sudrilund",
+          "to": "Grizzleheim/GH_HFjord/GH_HFjord",
+          "xyz": {"x": -6062.45, "y": 8437.69, "z": -988.72},
+          "volume": "teleport",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_HFjord/GH_Austrilund",
+          "to": "Grizzleheim/GH_HFjord/GH_HFjord",
+          "xyz": {"x": -2191.97, "y": 489.45, "z": 7.98},
+          "reset_xyz": {"x": -1801.97, "y": 490.81, "z": 7.98},
+          "volume": "To HFjord",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Grizzleheim/GH_HFjord/GH_HFjord",
+          "to": "Grizzleheim/GH_HFjord/GH_Austrilund",
+          "xyz": {"x": 739.28, "y": 11288.86, "z": -200.0},
+          "volume": "VolumeToAustrilund",
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "Celestia": {
       "hub": "Celestia/CL_Hub",
       "door": "Celestia/CL_Hub",
       "zones": {
-        "Celestia/CL_Hub": {},
-        "Celestia/CL_Z01_Survey_Camp": {},
-        "Celestia/CL_Z03_District_Of_The_Stars": {},
-        "Celestia/CL_Z05_The_Floating_Land": {},
-        "Celestia/CL_Z06_StormHaven": {},
-        "Celestia/CL_Z09_Science_Center": {},
-        "Celestia/CL_Z10_Kingdom_Of_The_Crabs": {},
-        "Celestia/CL_Z11_Temple_Of_The_Sun": {},
-        "Celestia/CL_Z02_Crab_Realm": {},
-        "Celestia/CL_Z04_Temple_Of_The_Stars": {},
-        "Celestia/CL_Z07_Storm_Lord_Temple": {}
+        "Celestia/CL_Hub": {
+          "arrivals": {
+            "Celestia/CL_Z01_Survey_Camp": {"x": -4121.56, "y": 12447.84, "z": -975.22},
+            "Celestia/CL_Z09_Science_Center": {"x": 4022.87, "y": 12454.45, "z": -946.6},
+            "Celestia/CL_Z10_Kingdom_Of_The_Crabs": {"x": 2392.89, "y": 15992.74, "z": -948.28},
+            "Celestia/CL_Z05_The_Floating_Land": {"x": -6534.58, "y": 8200.38, "z": -872.17},
+            "Celestia/CL_Z06_StormHaven": {"x": 5681.92, "y": 7694.5, "z": -855.44},
+            "Celestia/CL_Z03_District_Of_The_Stars": {"x": -32.63, "y": 10003.27, "z": -900.0}
+          }
+        },
+        "Celestia/CL_Z01_Survey_Camp": {
+          "arrivals": {
+            "Celestia/CL_Hub": {"x": -3662.83, "y": -1525.32, "z": -10.21},
+            "Celestia/CL_Z02_Crab_Realm": {"x": 29992.96, "y": -8882.81, "z": -1053.06}
+          }
+        },
+        "Celestia/CL_Z03_District_Of_The_Stars": {
+          "arrivals": {
+            "Celestia/CL_Hub": {"x": 10.14, "y": -377.76, "z": 184.03}
+          }
+        },
+        "Celestia/CL_Z05_The_Floating_Land": {
+          "arrivals": {
+            "Celestia/CL_Hub": {"x": 6330.82, "y": -6399.33, "z": -399.7}
+          }
+        },
+        "Celestia/CL_Z06_StormHaven": {
+          "arrivals": {
+            "Celestia/CL_Hub": {"x": 24742.89, "y": 12677.78, "z": 380.49},
+            "Celestia/CL_Z07_Storm_Lord_Temple": {"x": -10114.17, "y": 240.45, "z": -1707.09}
+          }
+        },
+        "Celestia/CL_Z09_Science_Center": {
+          "arrivals": {
+            "Celestia/CL_Hub": {"x": -1076.0, "y": -6007.02, "z": -244.52}
+          }
+        },
+        "Celestia/CL_Z10_Kingdom_Of_The_Crabs": {
+          "arrivals": {
+            "Celestia/CL_Hub": {"x": -182.21, "y": 215.3, "z": -95.35}
+          }
+        },
+        "Celestia/CL_Z02_Crab_Realm": {
+          "arrivals": {
+            "Celestia/CL_Z01_Survey_Camp": {"x": -13375.26, "y": 6595.83, "z": 130.85}
+          }
+        },
+        "Celestia/CL_Z07_Storm_Lord_Temple": {
+          "arrivals": {
+            "Celestia/CL_Z06_StormHaven": {"x": 3415.09, "y": 13.08, "z": 494.05}
+          }
+        }
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Hub",
+          "to": "Celestia/CL_Z01_Survey_Camp",
+          "xyz": {"x": -4322.17, "y": 12440.91, "z": -971.78},
+          "reset_xyz": {"x": -3903.44, "y": 12396.92, "z": -1045.76},
+          "volume": "Activator POI Promenade",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Z01_Survey_Camp",
+          "to": "Celestia/CL_Z02_Crab_Realm",
+          "xyz": {"x": 30778.03, "y": -9082.63, "z": -1143.71},
+          "reset_xyz": {"x": 30653.83, "y": -9436.42, "z": -1103.7},
+          "volume": "Activator Volume to Zone 02",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Z02_Crab_Realm",
+          "to": "Celestia/CL_Z01_Survey_Camp",
+          "xyz": {"x": -13352.74, "y": 6272.61, "z": 131.61},
+          "volume": "Activator Volume POI Survey Camp",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Z01_Survey_Camp",
+          "to": "Celestia/CL_Hub",
+          "xyz": {"x": -3635.74, "y": -1857.14, "z": -10.21},
+          "volume": "TeleportVol_Teleport To Hub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Hub",
+          "to": "Celestia/CL_Z09_Science_Center",
+          "xyz": {"x": 4341.77, "y": 12406.08, "z": -974.62},
+          "reset_xyz": {"x": 3870.85, "y": 12403.71, "z": -1063.32},
+          "volume": "Activator POI Science Center",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Z09_Science_Center",
+          "to": "Celestia/CL_Hub",
+          "xyz": {"x": -1409.94, "y": -6865.35, "z": -159.75},
+          "volume": "TeleportVol_Teleport location To Hub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Hub",
+          "to": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
+          "xyz": {"x": 2596.98, "y": 16163.22, "z": -948.28},
+          "reset_xyz": {"x": 2364.1, "y": 15892.64, "z": -980.31},
+          "volume": "Activator POI Crab Empire",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
+          "to": "Celestia/CL_Hub",
+          "xyz": {"x": 213.33, "y": -182.61, "z": 15.9},
+          "volume": "TeleportVol_To Hub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Hub",
+          "to": "Celestia/CL_Z05_The_Floating_Land",
+          "xyz": {"x": -6680.12, "y": 8192.57, "z": -808.78},
+          "reset_xyz": {"x": -6242.7, "y": 8215.21, "z": -949.6},
+          "volume": "Activator POI Jungle",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Z05_The_Floating_Land",
+          "to": "Celestia/CL_Hub",
+          "xyz": {"x": 6657.45, "y": -6702.17, "z": -250.05},
+          "volume": "TeleportVol_To Hub (1)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Hub",
+          "to": "Celestia/CL_Z06_StormHaven",
+          "xyz": {"x": 6214.19, "y": 7685.8, "z": -702.58},
+          "reset_xyz": {"x": 5881.23, "y": 7690.39, "z": -804.66},
+          "volume": "Activator Volume to Zone 06",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Z06_StormHaven",
+          "to": "Celestia/CL_Hub",
+          "xyz": {"x": 25372.7, "y": 13345.66, "z": 654.48},
+          "volume": "TeleportVol_Teleport location to Hub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Celestia/CL_Z06_StormHaven",
+          "to": "Celestia/CL_Z07_Storm_Lord_Temple",
+          "interact_xyz": {"x": -10468.81, "y": 183.52, "z": -1601.96},
+          "reset_xyz": {"x": -10114.0, "y": 244.41, "z": -1706.68},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Celestia/CL_Z07_Storm_Lord_Temple",
+          "to": "Celestia/CL_Z06_StormHaven",
+          "interact_xyz": {"x": 3993.87, "y": 29.14, "z": 494.05},
+          "reset_xyz": {"x": 3415.09, "y": 13.08, "z": 494.05},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Celestia/CL_Hub",
+          "to": "Celestia/CL_Z03_District_Of_The_Stars",
+          "interact_xyz": {"x": 98.56, "y": 10389.07, "z": -899.7},
+          "reset_xyz": {"x": 674.21, "y": 10994.38, "z": -899.7},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Celestia/CL_Z03_District_Of_The_Stars",
+          "to": "Celestia/CL_Hub",
+          "xyz": {"x": 23.43, "y": -761.53, "z": 149.4},
+          "volume": "TeleportVol_Teleport location 0",
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "Wysteria": {
       "hub": "Wysteria/PA_Hub",
       "door": "Wysteria/PA_Hub",
-      "zones": {"Wysteria/PA_Hub": {}, "Wysteria/PA_Z01_Pegasus": {}, "Wysteria/PA_Z02_Tanglewood": {}},
-      "links": [],
+      "zones": {
+        "Wysteria/PA_Hub": {
+          "arrivals": {
+            "Wysteria/PA_Z01_Pegasus": {"x": 2871.78, "y": 12701.94, "z": 750.17},
+            "Wysteria/PA_Z02_Tanglewood": {"x": -9888.67, "y": 7546.45, "z": -1749.79}
+          }
+        },
+        "Wysteria/PA_Z01_Pegasus": {
+          "arrivals": {
+            "Wysteria/PA_Hub": {"x": 11.73, "y": -293.52, "z": -1.88}
+          }
+        },
+        "Wysteria/PA_Z02_Tanglewood": {
+          "arrivals": {
+            "Wysteria/PA_Hub": {"x": 125.08, "y": -20.26, "z": -13.61}
+          }
+        }
+      },
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Wysteria/PA_Hub",
+          "to": "Wysteria/PA_Z01_Pegasus",
+          "xyz": {"x": 3290.99, "y": 13104.02, "z": 750.17},
+          "reset_xyz": {"x": 3089.67, "y": 12881.59, "z": 750.17},
+          "volume": "Teleport-Z01_Pegasus",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Wysteria/PA_Z01_Pegasus",
+          "to": "Wysteria/PA_Hub",
+          "xyz": {"x": 31.58, "y": -881.19, "z": -1.88},
+          "volume": "TeleportVol_Teleport-PA_Hub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Wysteria/PA_Hub",
+          "to": "Wysteria/PA_Z02_Tanglewood",
+          "xyz": {"x": -10149.07, "y": 7599.21, "z": -1745.37},
+          "reset_xyz": {"x": -9785.54, "y": 7740.47, "z": -1749.8},
+          "volume": "Teleport-TangleWoodWay",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Wysteria/PA_Z02_Tanglewood",
+          "to": "Wysteria/PA_Hub",
+          "xyz": {"x": 142.21, "y": -419.07, "z": -13.61},
+          "volume": "TeleportVol_TeleportToHub",
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "Zafaria": {
       "hub": "Zafaria/ZF_Z00_Hub",
       "door": "Zafaria/ZF_Z00_Hub",
       "zones": {
-        "Zafaria/ZF_Z00_Hub": {},
-        "Zafaria/ZF_Z01_Baobab_Crown": {},
-        "Zafaria/ZF_Z02_Baobab_Market": {},
-        "Zafaria/ZF_Z03_Savannah": {},
-        "Zafaria/ZF_Z05_Zamunda_Outskirts": {},
-        "Zafaria/ZF_Z06_Zamunda": {},
-        "Zafaria/ZF_Z07_Stone_Town": {},
-        "Zafaria/ZF_Z12_Shining_Mountain": {},
-        "Zafaria/ZF_Z08_Waterfront": {},
-        "Zafaria/ZF_Z09_Drum_Jungle": {},
-        "Zafaria/ZF_Z10_Elephant_Graveyard": {}
+        "Zafaria/ZF_Z00_Hub": {
+          "arrivals": {
+            "Zafaria/ZF_Z01_Baobab_Crown": {"x": 3880.7, "y": 5816.43, "z": 65.59},
+            "Zafaria/ZF_Z03_Savannah": {"x": -1349.13, "y": 3648.23, "z": -888.01},
+            "Zafaria/ZF_Z05_Zamunda_Outskirts": {"x": -381.91, "y": 6133.51, "z": -721.52},
+            "Zafaria/ZF_Z02_Baobab_Market": {"x": 8354.41, "y": 1965.56, "z": -839.15},
+            "Zafaria/ZF_Z07_Stone_Town": {"x": -219.78, "y": 1585.48, "z": -971.66},
+            "Zafaria/ZF_Z08_Waterfront": {"x": -219.78, "y": 1585.48, "z": -971.66},
+            "Zafaria/ZF_Z09_Drum_Jungle": {"x": -219.78, "y": 1585.48, "z": -971.66},
+            "Zafaria/ZF_Z10_Elephant_Graveyard": {"x": -219.78, "y": 1585.48, "z": -971.66}
+          }
+        },
+        "Zafaria/ZF_Z01_Baobab_Crown": {
+          "arrivals": {
+            "Zafaria/ZF_Z00_Hub": {"x": -362.85, "y": 12.76, "z": -69.79}
+          }
+        },
+        "Zafaria/ZF_Z02_Baobab_Market": {
+          "arrivals": {
+            "Zafaria/ZF_Z00_Hub": {"x": -6867.99, "y": 589.81, "z": 410.27},
+            "Zafaria/ZF_Z07_Stone_Town": {"x": 9129.26, "y": -3728.77, "z": -120.13}
+          }
+        },
+        "Zafaria/ZF_Z03_Savannah": {
+          "arrivals": {
+            "Zafaria/ZF_Z00_Hub": {"x": 27226.84, "y": 3612.82, "z": 527.64}
+          }
+        },
+        "Zafaria/ZF_Z05_Zamunda_Outskirts": {
+          "arrivals": {
+            "Zafaria/ZF_Z00_Hub": {"x": -4462.26, "y": -8790.26, "z": 60.64},
+            "Zafaria/ZF_Z06_Zamunda": {"x": -4947.92, "y": 2750.24, "z": 8.75}
+          }
+        },
+        "Zafaria/ZF_Z06_Zamunda": {
+          "arrivals": {
+            "Zafaria/ZF_Z05_Zamunda_Outskirts": {"x": -1209.49, "y": -7293.8, "z": -20.66}
+          }
+        },
+        "Zafaria/ZF_Z07_Stone_Town": {
+          "arrivals": {
+            "Zafaria/ZF_Z02_Baobab_Market": {"x": 7234.24, "y": 6549.86, "z": -378.7},
+            "Zafaria/ZF_Z00_Hub": {"x": -1100.79, "y": 8504.72, "z": -42.87}
+          }
+        },
+        "Zafaria/ZF_Z08_Waterfront": {
+          "arrivals": {
+            "Zafaria/ZF_Z07_Stone_Town": {"x": 4109.65, "y": 690.34, "z": 3.69},
+            "Zafaria/ZF_Z09_Drum_Jungle": {"x": 5794.75, "y": 1642.91, "z": 3.69},
+            "Zafaria/ZF_Z00_Hub": {"x": 215.34, "y": 2684.62, "z": 27.68}
+          }
+        },
+        "Zafaria/ZF_Z09_Drum_Jungle": {
+          "arrivals": {
+            "Zafaria/ZF_Z08_Waterfront": {"x": 198.25, "y": 283.7, "z": -18.15},
+            "Zafaria/ZF_Z10_Elephant_Graveyard": {"x": 12701.45, "y": 10725.26, "z": -31.59},
+            "Zafaria/ZF_Z00_Hub": {"x": 7581.08, "y": 2312.79, "z": 1211.3}
+          }
+        },
+        "Zafaria/ZF_Z10_Elephant_Graveyard": {
+          "arrivals": {
+            "Zafaria/ZF_Z09_Drum_Jungle": {"x": -0.38, "y": -10088.66, "z": -5.33},
+            "Zafaria/ZF_Z00_Hub": {"x": 1053.28, "y": -7565.49, "z": 14.77}
+          }
+        }
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Zafaria/ZF_Z00_Hub",
+          "to": "Zafaria/ZF_Z01_Baobab_Crown",
+          "xyz": {"x": 3290.47, "y": 6272.37, "z": 220.04},
+          "reset_xyz": {"x": 3603.03, "y": 6087.78, "z": 144.92},
+          "volume": "TeleportVol_To_ZF_Z01_Crown",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Zafaria/ZF_Z01_Baobab_Crown",
+          "to": "Zafaria/ZF_Z00_Hub",
+          "xyz": {"x": -713.24, "y": -7.9, "z": -212.96},
+          "volume": "TeleportVol_To_Hub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Zafaria/ZF_Z00_Hub",
+          "to": "Zafaria/ZF_Z03_Savannah",
+          "xyz": {"x": -1758.77, "y": 3726.38, "z": -895.01},
+          "reset_xyz": {"x": -1416.11, "y": 3686.3, "z": -885.11},
+          "volume": "Teleport to Savannah",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Zafaria/ZF_Z03_Savannah",
+          "to": "Zafaria/ZF_Z00_Hub",
+          "xyz": {"x": 27785.6, "y": 3934.28, "z": 533.7},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Zafaria/ZF_Z00_Hub",
+          "to": "Zafaria/ZF_Z05_Zamunda_Outskirts",
+          "xyz": {"x": -688.06, "y": 6662.53, "z": -691.29},
+          "reset_xyz": {"x": -442.63, "y": 6302.54, "z": -724.49},
+          "volume": "Teleport to Zamunda",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Zafaria/ZF_Z05_Zamunda_Outskirts",
+          "to": "Zafaria/ZF_Z00_Hub",
+          "xyz": {"x": -4606.89, "y": -9593.32, "z": 70.08},
+          "volume": "POI-BaobabCrossroads",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Zafaria/ZF_Z05_Zamunda_Outskirts",
+          "to": "Zafaria/ZF_Z06_Zamunda",
+          "xyz": {"x": -4947.92, "y": 3365.24, "z": 8.75},
+          "volume": "Teleport to Zamunda",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Zafaria/ZF_Z06_Zamunda",
+          "to": "Zafaria/ZF_Z05_Zamunda_Outskirts",
+          "xyz": {"x": -1204.5, "y": -8193.8, "z": 11.59},
+          "volume": "POI-ZamundaOutskirts",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Zafaria/ZF_Z00_Hub",
+          "to": "Zafaria/ZF_Z02_Baobab_Market",
+          "xyz": {"x": 8958.14, "y": 1738.1, "z": -852.79},
+          "reset_xyz": {"x": 8382.71, "y": 1897.19, "z": -842.5},
+          "volume": "TeleportVol_To_ZF_Z02_MaketPlace",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Zafaria/ZF_Z02_Baobab_Market",
+          "to": "Zafaria/ZF_Z00_Hub",
+          "xyz": {"x": -7554.24, "y": 621.93, "z": 409.69},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z02_Baobab_Market",
+          "to": "Zafaria/ZF_Z07_Stone_Town",
+          "interact_xyz": {"x": 9416.01, "y": -3317.95, "z": -287.48},
+          "reset_xyz": {"x": 9129.26, "y": -3728.77, "z": -93.39},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z07_Stone_Town",
+          "to": "Zafaria/ZF_Z02_Baobab_Market",
+          "interact_xyz": {"x": 7464.55, "y": 6425.46, "z": -371.72},
+          "reset_xyz": {"x": 7234.24, "y": 6549.86, "z": -371.72},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z07_Stone_Town",
+          "to": "Zafaria/ZF_Z08_Waterfront",
+          "interact_xyz": {"x": 628.99, "y": 84.3, "z": -474.37},
+          "reset_xyz": {"x": 784.11, "y": 493.91, "z": -437.42},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z08_Waterfront",
+          "to": "Zafaria/ZF_Z09_Drum_Jungle",
+          "interact_xyz": {"x": 6171.53, "y": 1088.8, "z": 3.69},
+          "reset_xyz": {"x": 5907.19, "y": 1203.12, "z": 3.69},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z09_Drum_Jungle",
+          "to": "Zafaria/ZF_Z08_Waterfront",
+          "interact_xyz": {"x": -184.01, "y": -27.6, "z": -16.17},
+          "reset_xyz": {"x": -88.45, "y": 114.32, "z": -16.22},
+          "sequential": true,
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Zafaria/ZF_Z09_Drum_Jungle",
+          "to": "Zafaria/ZF_Z10_Elephant_Graveyard",
+          "xyz": {"x": 13709.5, "y": 10747.76, "z": -29.73},
+          "reset_xyz": {"x": 13349.5, "y": 10753.02, "z": -29.59},
+          "volume": "To_Elephant_Graveyard_Volume",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Zafaria/ZF_Z10_Elephant_Graveyard",
+          "to": "Zafaria/ZF_Z09_Drum_Jungle",
+          "xyz": {"x": 10.95, "y": -10685.58, "z": -22.3},
+          "volume": "TeleportVol_TeleportToDrumJungle",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z07_Stone_Town",
+          "to": "Zafaria/ZF_Z00_Hub",
+          "interact_xyz": {"x": -1350.49, "y": 8538.7, "z": -17.97},
+          "reset_xyz": {"x": -1100.79, "y": 8504.72, "z": -42.87},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z00_Hub",
+          "to": "Zafaria/ZF_Z07_Stone_Town",
+          "interact_xyz": {"x": 69.09, "y": 1475.12, "z": -1027.51},
+          "reset_xyz": {"x": -219.78, "y": 1585.48, "z": -1006.58},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z00_Hub",
+          "to": "Zafaria/ZF_Z08_Waterfront",
+          "interact_xyz": {"x": -353.14, "y": 1959.29, "z": -1007.23},
+          "reset_xyz": {"x": -272.6, "y": 1815.28, "z": -1018.38},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z08_Waterfront",
+          "to": "Zafaria/ZF_Z00_Hub",
+          "interact_xyz": {"x": 194.84, "y": 2986.93, "z": 27.64},
+          "reset_xyz": {"x": 215.34, "y": 2684.62, "z": 27.69},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z00_Hub",
+          "to": "Zafaria/ZF_Z09_Drum_Jungle",
+          "interact_xyz": {"x": -629.72, "y": 1478.47, "z": -954.38},
+          "reset_xyz": {"x": -219.78, "y": 1585.48, "z": -1006.58},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z09_Drum_Jungle",
+          "to": "Zafaria/ZF_Z00_Hub",
+          "interact_xyz": {"x": 7882.29, "y": 1756.04, "z": 1211.3},
+          "reset_xyz": {"x": 7779.51, "y": 1946.02, "z": 1211.3},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z00_Hub",
+          "to": "Zafaria/ZF_Z10_Elephant_Graveyard",
+          "interact_xyz": {"x": -3.53, "y": 1026.32, "z": -970.41},
+          "reset_xyz": {"x": -84.48, "y": 1277.61, "z": -990.61},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z10_Elephant_Graveyard",
+          "to": "Zafaria/ZF_Z00_Hub",
+          "interact_xyz": {"x": 1252.75, "y": -7789.62, "z": 27.06},
+          "reset_xyz": {"x": 1053.28, "y": -7565.49, "z": 22.24},
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "Avalon": {
@@ -1228,8 +3196,24 @@
     "G14_HS": {
       "hub": "G14_HS/HS_Z01_ZigazagUpper",
       "entered_from": "Krokotopia",
-      "zones": {"G14_HS/HS_Z01_ZigazagUpper": {}},
-      "links": [],
+      "zones": {
+        "G14_HS/HS_Z01_ZigazagUpper": {
+          "arrivals": {
+            "Krokotopia/Interiors/KT_School": {"x": 10054.28, "y": 4448.33, "z": -0.0}
+          }
+        }
+      },
+      "links": [
+        {
+          "kind": "object",
+          "from": "Krokotopia/Interiors/KT_School",
+          "to": "G14_HS/HS_Z01_ZigazagUpper",
+          "interact_xyz": {"x": 97.93, "y": 254.99, "z": 2.0},
+          "reset_xyz": {"x": 268.94, "y": 108.77, "z": 2.0},
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "G14_SB": {
