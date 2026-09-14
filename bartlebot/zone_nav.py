@@ -402,10 +402,18 @@ def _parse_network(network: dict, where: str, zone_world: dict[str, str], proble
     zones = network.get("zones") or {}
     if not zones:
         problems.append(f"{where}: a list network needs at least one zone")
+    # A member with no object recorded yet (spot == {}) is a destination only; list_aliases
+    # is about how the entry is shown, so it applies either way and does not by itself count
+    # as "the object is recorded".
+    has_object: dict[str, bool] = {}
     for zone, spot in zones.items():
         if zone not in zone_world:
             problems.append(f"{where}: zone {zone!r} is not declared")
-        if spot == {}:
+        aliases = spot.get("list_aliases", []) if isinstance(spot, dict) else []
+        if not isinstance(aliases, list) or any(not isinstance(a, str) or not a for a in aliases):
+            problems.append(f"{where}: {zone!r} list_aliases must be a list of non-empty strings")
+        has_object[zone] = isinstance(spot, dict) and ("interact_xyz" in spot or "reset_xyz" in spot)
+        if not has_object[zone]:
             continue
         for name in ("interact_xyz", "reset_xyz"):
             if not isinstance(spot, dict) or _bad_xyz(spot.get(name)):
@@ -417,18 +425,23 @@ def _parse_network(network: dict, where: str, zone_world: dict[str, str], proble
         return []
 
     source, note = str(network.get("source", "")), str(network.get("note", ""))
+    aliases_by_zone = {zone: (spot.get("list_aliases") or []) for zone, spot in zones.items() if isinstance(spot, dict)}
     return [
         Step(
             LIST,
             src,
             dst,
-            {"interact_xyz": zones[src]["interact_xyz"], "reset_xyz": zones[src]["reset_xyz"]},
+            {
+                "interact_xyz": zones[src]["interact_xyz"],
+                "reset_xyz": zones[src]["reset_xyz"],
+                **({"list_aliases": aliases_by_zone[dst]} if aliases_by_zone.get(dst) else {}),
+            },
             verified=verified,
             source=source,
             note=note,
         )
         for src, dst in itertools.permutations(zones, 2)
-        if zones[src]
+        if has_object[src]
     ]
 
 

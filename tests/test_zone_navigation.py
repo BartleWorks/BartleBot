@@ -157,6 +157,24 @@ async def test_a_list_step_matches_the_destination_in_every_locale(monkeypatch):
     assert (params["zone_list_entry"], params["zone_list_aliases"]) == ("Island", ["Insel"])
 
 
+async def test_a_lists_own_aliases_are_added_to_the_locale_names(monkeypatch):
+    """Nimbus Hanger's hub list shows "Nimbus" -- not a locale name, so it can't come from display_names()."""
+    game = _Game(monkeypatch, [_HUB])
+    monkeypatch.setattr(zone_names, "display_names", lambda zone: ["Island", "Insel"])
+    network = {
+        "zones": {
+            _HUB: {"interact_xyz": _xyz(5), "reset_xyz": _xyz(6)},
+            _ISLAND: {"interact_xyz": _xyz(5), "reset_xyz": _xyz(6), "list_aliases": ["Isle"]},
+        },
+        "verified": True,
+    }
+
+    await _go(game, _nav(networks=[network]), _ISLAND)
+
+    [(_, params)] = game.calls
+    assert params["zone_list_aliases"] == ["Insel", "Isle"]
+
+
 async def test_a_list_step_without_a_known_name_fails_before_moving(monkeypatch):
     game = _Game(monkeypatch, [_HUB])
     monkeypatch.setattr(zone_names, "display_names", lambda zone: [])

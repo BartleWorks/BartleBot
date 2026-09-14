@@ -4901,7 +4901,8 @@
             "Empyrea/EM_Z12_LandingZone": {},
             "Empyrea/EM_Z06_NimbusHanger": {
               "interact_xyz": {"x": -2280.0, "y": 5.2, "z": 2.0},
-              "reset_xyz": {"x": -1992.0, "y": 5.2, "z": 2.0}
+              "reset_xyz": {"x": -1992.0, "y": 5.2, "z": 2.0},
+              "list_aliases": ["Nimbus"]
             },
             "Empyrea/EM_Z15_Nexus": {
               "interact_xyz": {"x": -1190.04, "y": 90.08, "z": 128.87},

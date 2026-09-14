@@ -112,6 +112,43 @@ def test_a_list_object_skips_the_streets_between():
     assert steps[0].params["interact_xyz"] == _xyz(12)
 
 
+def test_a_list_aliases_an_entry_whose_list_text_is_not_its_display_name():
+    """Nimbus Hanger's hub list shows just "Nimbus" -- not a locale name, so it lives here."""
+    network = {
+        "zones": {
+            _HUB: {"interact_xyz": _xyz(1), "reset_xyz": _xyz(2)},
+            _LX: {"interact_xyz": _xyz(3), "reset_xyz": _xyz(4), "list_aliases": ["Nimbus"]},
+        },
+        "verified": True,
+    }
+    nav = zone_nav.parse(_raw(networks=[network]))
+
+    into_lx = next(s for s in nav.links if s.to_zone == _LX)
+    out_of_lx = next(s for s in nav.links if s.from_zone == _LX)
+    assert into_lx.params["list_aliases"] == ["Nimbus"]
+    assert "list_aliases" not in out_of_lx.params
+
+
+def test_list_aliases_must_be_non_empty_strings():
+    network = {"zones": {_HUB: {"interact_xyz": _xyz(1), "reset_xyz": _xyz(2), "list_aliases": ["", 3]}}}
+
+    with pytest.raises(ValueError, match="list_aliases"):
+        zone_nav.parse(_raw(networks=[network]))
+
+
+def test_a_list_member_without_an_object_can_still_carry_list_aliases():
+    network = {
+        "zones": {
+            _HUB: {"interact_xyz": _xyz(1), "reset_xyz": _xyz(2)},
+            _LX: {"list_aliases": ["Nimbus"]},
+        },
+        "verified": True,
+    }
+    nav = zone_nav.parse(_raw(networks=[network]))
+
+    assert nav.links[0].params["list_aliases"] == ["Nimbus"]
+
+
 def test_a_list_network_links_every_member_both_ways():
     network = {
         "zones": {z: {"interact_xyz": _xyz(1), "reset_xyz": _xyz(2)} for z in (_HUB, _LX, _LY)},

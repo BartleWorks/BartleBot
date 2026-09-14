@@ -56,6 +56,12 @@ confirmed for every world; it means the entry can be matched in all seven locale
 game's own `WizardZone.lang`, the way `go_to_world` searches the spiral door, once a zone-name
 snapshot exists.
 
+The assumption is not always right: Empyrea's hub list shows Nimbus Hanger's row as just
+"Nimbus", not a locale variant of its real name at all. A member's `list_aliases` covers
+that — extra text the list shows for that member, added on top of its locale names rather
+than replacing them. It belongs on the member, not `zone_names.json`, because it is a quirk
+of this one list, not the zone's actual display name in any language.
+
 ### Rides
 
 The Oasis boat to Krokosphinx, Digmoore Station's airships to Hyde Park and Chelsea Court,
@@ -141,11 +147,12 @@ The numbers are estimates and are meant to be tuned; they live in `zone_nav.py`,
 | `source`, `note` | link, network | where the data came from: `bot`, `code`, `game_data`, `recorded` |
 | `volume` | walk | the name of the `volumes.xml` volume nearest the recorded trigger, for reference; routing ignores it |
 
-A list network is `{"zones": {zone: {"interact_xyz", "reset_xyz"}}, "verified", "source"}`. A
-member may be `{}`: it is on the list, but its own object is not recorded yet, so the list
-routes into it and not out of it. That is how the tester builds a network — a list use adds
-the origin's object and the destination as a member — and networks found to share a zone are
-merged, since they are one list.
+A list network is `{"zones": {zone: {"interact_xyz", "reset_xyz", "list_aliases"}}, "verified",
+"source"}`. A member may be `{}`: it is on the list, but its own object is not recorded yet, so
+the list routes into it and not out of it — `list_aliases` still applies if given, since it
+describes how the member is *shown*, not how to reach it. That is how the tester builds a
+network — a list use adds the origin's object and the destination as a member — and networks
+found to share a zone are merged, since they are one list.
 
 The file has one layout, `zone_nav.dumps()`: two-space indent, small objects on one line. The
 tester writes it that way, and a test fails if a hand edit leaves it in any other.

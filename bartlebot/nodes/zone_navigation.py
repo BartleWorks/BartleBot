@@ -64,6 +64,9 @@ def step_call(step: zone_nav.Step) -> tuple[ModuleType, dict] | str:
                 f"regenerate bartlebot/data/zone_names.json with tools/dump_zone_names.py"
             )
         primary, *aliases = names
+        # The map's own list_aliases cover text the list shows that isn't a locale name at
+        # all -- Nimbus Hanger's hub list truncates it to "Nimbus".
+        aliases = [*aliases, *p.get("list_aliases", [])]
         return enter_zone_via_list, {
             "zone": step.from_zone,
             "to_zone": step.to_zone,
