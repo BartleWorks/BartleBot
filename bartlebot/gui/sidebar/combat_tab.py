@@ -43,7 +43,9 @@ styled to look like a search field, two 1pt-smaller muted lines, and a ``⋮`` b
 opening a hand-built ``QMenu``, repeated once per level and once per fight. Verbs are
 data now (``CardVerb``), so which buttons a card has is answered by reading its
 ``_verbs`` rather than its layout, and everything is reachable by right-click whether or
-not it earned a place on the face.
+not it earned a place on the face -- and, on the deck cards, by a kebab button that opens
+the same menu without the mouse having to know right-click is a thing to try (see
+``CardFrame._make_kebab_button``).
 
 Including the fights that opted out of nothing: they are pills on the default card,
 which is a ``StrategyPanel`` in ``PanelRole.DEFAULT`` rather than a widget of its own.
@@ -60,10 +62,11 @@ left on screen to be filled in later. A single fight is still quicker through it
 pill on the default card. The add-card is what pays when several are to share one
 strategy.
 
-One consequence to keep in mind: there is no ``⋮`` button any more, here or on any other
-card in the app. A verb that is not on the face is in the right-click menu, which is the
-convention ``card_frame.py`` sets out and the reason the destructive ones can stay off
-the face at all.
+One consequence to keep in mind: there is no per-card hand-built ``QMenu`` any more,
+here or anywhere else in the app. A verb that is not on the face is in the right-click
+menu ``card_frame.py`` builds from the same ``_verbs`` list every time, which is the
+reason the destructive ones can stay off the face at all -- a ``⋮`` button, where one is
+built at all, opens that same menu rather than one of its own.
 """
 
 from __future__ import annotations
@@ -195,9 +198,11 @@ class _DeckCard(CardFrame):
 
     Was a row of two ``QPushButton``\\s and a ``⋮`` -- eight text buttons across four
     slots, and by some distance the loudest thing on the tab. The verbs are the same
-    verbs; they are icons on the face and labels in the right-click menu now, which is
-    the language every other card in the app speaks and is what the section costs to
-    read rather than what it can do.
+    verbs; Import and Apply are icons on the face, and the rest -- Save, Load, the
+    archmastery override, Clear -- are in a menu reached by right-click or by the kebab
+    button beside them (see ``CardFrame._make_kebab_button``), which is the language
+    every other card in the app speaks and is what the section costs to read rather than
+    what it can do.
 
     A body click unfolds the card list, which is the only non-destructive thing there is
     to do to a deck that is not one of the verbs -- and it is refused outright on a slot
@@ -244,6 +249,7 @@ class _DeckCard(CardFrame):
         self._summary = ElidedLabel(_NO_DECK)
         header.addWidget(self._summary, 1)
         self._add_face_verbs(header)
+        header.addWidget(self._make_kebab_button("More deck actions"), 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
         # "Archmastery: Fire · always set". Hidden unless the deck names a school, a

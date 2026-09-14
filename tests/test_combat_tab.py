@@ -1737,6 +1737,21 @@ def test_clear_is_offered_only_where_there_is_a_deck_to_clear(qapp):
     assert section.card(1).action_button(_CLEAR_DECK) is None
 
 
+def test_deck_card_kebab_opens_the_same_menu_right_click_does(qapp):
+    """Issue #46: Save, Load and Clear were reachable only by right-click, with
+    nothing on the card saying a menu was there at all. The kebab button is the
+    click route to the same list ``_verbs`` already builds for the right-click menu."""
+    section = _PlayerDecksSection()
+    section.refresh({1: DeckData(normal={"Test Card": 4})})
+
+    card = section.card(1)
+    assert card._kebab_btn is not None
+    assert not card._kebab_btn.isHidden()
+
+    menu = card._build_verbs_menu()
+    assert [action.text() for action in menu.actions()] == _verb_labels(card)
+
+
 def test_the_archmastery_override_is_named_in_the_card(qapp):
     """Which of the three is in force is a fact about the deck, so it belongs where the
     rest of them are rather than behind two hovers of a submenu."""
