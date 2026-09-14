@@ -179,9 +179,9 @@ _DELETE_BCS = "Delete…"
 #: Module-level because the card offers them as verbs and the card body names the one in
 #: force, and those two have to agree on the words.
 _ARCHMASTERY_MODES = (
-    ("Use the app setting", None),
-    ("Always set it", True),
-    ("Never set it", False),
+    ("Use app setting", None),
+    ("Always set", True),
+    ("Never set", False),
 )
 
 #: Verb labels for a deck card, shared with its menu and the tests.
@@ -366,7 +366,7 @@ class _DeckCard(CardFrame):
             for label, value in _ARCHMASTERY_MODES:
                 verbs.append(
                     CardVerb(
-                        f"Archmastery: {label.lower()}",
+                        f"Archmastery: {label}",
                         "",
                         f"When applying this deck, {label.lower()} for {self._deck.archmastery_school}",
                         partial(self.archmastery_mode_changed.emit, value),

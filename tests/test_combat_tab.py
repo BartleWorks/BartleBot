@@ -1762,7 +1762,7 @@ def test_the_archmastery_override_is_named_in_the_card(qapp):
     card = section.card(1)
     assert not card._archmastery.isHidden()
     assert "Fire" in card._archmastery.full_text()
-    assert "always set it" in card._archmastery.full_text()
+    assert "always set" in card._archmastery.full_text()
 
 
 def test_no_archmastery_verbs_without_a_school_to_set(qapp):
@@ -1781,7 +1781,7 @@ def test_an_archmastery_verb_emits_the_slot_and_the_value(qapp):
     seen: list[tuple[int, object]] = []
     section.archmastery_mode_changed.connect(lambda slot, mode: seen.append((slot, mode)))
 
-    verb = next(v for v in section.card(1)._verbs() if "never" in v.label)
+    verb = next(v for v in section.card(1)._verbs() if "Never" in v.label)
     verb.run()
 
     assert seen == [(1, False)]
