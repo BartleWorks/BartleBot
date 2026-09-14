@@ -80,7 +80,7 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.elided_label import ElidedLabel
-from bartlebot.gui.widgets.tag_pill import NeutralPill
+from bartlebot.gui.widgets.player_pills import PlayerBadge
 
 #: What every row reads before anything is known, and the one value nothing will copy.
 PLACEHOLDER = "—"
@@ -392,8 +392,9 @@ class PlayerCard(CardFrame):
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(6)
         # Ahead of the name, where an ordinal belongs, and only on a hooked card: an
-        # unhooked client is not Player anything until it is hooked back in.
-        self._pill = NeutralPill(player_pill_text(self._index)) if not self._is_unhooked else None
+        # unhooked client is not Player anything until it is hooked back in. The same
+        # account-coloured pill the Combat tab's deck card for this slot wears (#40).
+        self._pill = PlayerBadge(self._index + 1) if not self._is_unhooked else None
         if self._pill is not None:
             header.addWidget(self._pill, 0, Qt.AlignmentFlag.AlignVCenter)
         self._name = CopyValue("Click to copy this wizard's name", bold=True, parent=self)
@@ -554,7 +555,7 @@ class PlayerCard(CardFrame):
             return
         self._index = index
         if self._pill is not None:
-            self._pill.setText(player_pill_text(index))
+            self._pill.set_player(index + 1)
 
     def set_color_key(self, key: int | None) -> None:
         """Stripe the card's left edge with an account's colour, or None to drop the stripe.
@@ -563,7 +564,11 @@ class PlayerCard(CardFrame):
         an identity from inside ``ClientManager``'s loop and signals nothing when it does,
         so a card coloured in its constructor is one that was built before the answer
         existed and never asks again.
+
+        The ``P{n}`` pill takes the same key, so the pill and the stripe cannot disagree.
         """
+        if self._pill is not None:
+            self._pill.set_color_key(key)
         if key == self._stripe_key:
             return
         self._stripe_key = key

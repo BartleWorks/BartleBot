@@ -252,14 +252,15 @@ _MAX_SLOTS = 4
 class PlayerBadge(QLabel):
     """An inert ``P{n}`` pill, coloured by whoever is in that slot right now.
 
-    The Combat tab's version of :class:`PlayerSlotPill`: the same claim -- the text is the
-    slot, the colour is the account -- with nothing to toggle, because that tab reads a
-    configuration rather than editing one. Two states rather than three:
+    The read-only form of :class:`PlayerSlotPill`: the same claim -- the text is the slot,
+    the colour is the account -- with nothing to toggle. The Combat tab wears it on its
+    order, assignment lines and deck cards, and the Players tab on each player card, so a
+    slot reads the same pill in both places. Two states rather than three:
 
     * **coloured** -- outlined and tinted in the account's colour, as ``AccountPill`` is.
-    * **uncoloured** -- the grey ``NeutralPill`` look, which is how the Players tab's own
-      ``P{n}`` pill reads. Nothing hooked is the normal state while configuring a bot, and
-      it must not pick a default hue (gui/CLAUDE.md, *Account colours*).
+    * **uncoloured** -- the grey ``NeutralPill`` look. Nothing hooked, or an identity not
+      learned yet, is a normal state, and it must not pick a default hue (gui/CLAUDE.md,
+      *Account colours*).
     """
 
     def __init__(self, player: int, parent: QWidget | None = None) -> None:
