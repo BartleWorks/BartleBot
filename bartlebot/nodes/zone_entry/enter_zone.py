@@ -165,11 +165,15 @@ async def _transition_group(machine, group: list, from_zone: str, to_zone: str, 
         # already transitioned are not disturbed. Bounded by Safety Delay rather than the
         # full zone-change budget: this is only checking whether the trigger fired, not
         # waiting out a loading screen — that budget belongs to the arrival check below.
+        #
+        # A client on a loading screen has triggered but still reads from_zone, so the
+        # retry is skipped for it: that teleport would be applied on arrival and drop the
+        # client back at the bounding box in the zone it just reached (#70).
         machine.log(f"Waiting for clients to leave {from_zone!r}…", logging.DEBUG)
         seen_left = await node_helpers.poll_each_until_seen(
             group,
             check_fn=lambda c: _has_left_zone(c, from_zone),
-            action_fn=lambda c: c.teleport(target),
+            action_fn=node_helpers.skip_while_loading(lambda c: c.teleport(target)),
             timeout=safety_delay,
             poll_interval=POLL_INTERVAL,
             # Stop chasing the stragglers the moment a groupmate who already left from_zone

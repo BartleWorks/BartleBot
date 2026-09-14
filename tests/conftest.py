@@ -146,6 +146,8 @@ class FakeMachine:
         # unnoticed for the rest of the run, so both sides are recorded.
         self.health_checks_suspended: set[int] = set()
         self.health_checks_resumed: set[int] = set()
+        # Mirrors BotMachine.port_map: None until something surveys who can port to whom.
+        self.port_map = None
 
     def log(self, msg: str, level: int = logging.INFO) -> None:
         self.logs.append((msg, level))
@@ -295,6 +297,28 @@ def _fine_grained_timers():
         yield
     finally:
         winmm.timeEndPeriod(1)
+
+
+# ---------------------------------------------------------------------------
+# Zone-settle grace
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _fast_zone_settle_grace(monkeypatch):
+    """Compress wait_for_zone_with_recovery's straggler settle window.
+
+    ZONE_SETTLE_GRACE is five seconds of real time, and it is paid by every test whose
+    zone check does not succeed on the first read — a handful of node failure paths, plus
+    every recovery test. node_helpers reads it at call time rather than binding it as a
+    default argument, so patching the module attribute reaches it.
+
+    A test whose subject *is* the grace (the #70 regression tests) passes ``settle_grace``
+    explicitly instead of relying on this.
+    """
+    from bartlebot.nodes import node_helpers
+
+    monkeypatch.setattr(node_helpers, "ZONE_SETTLE_GRACE", 0.05)
 
 
 # ---------------------------------------------------------------------------

@@ -105,6 +105,58 @@ async def test_fuzzy_match_partial_name():
     assert result == "SUCCESS"
 
 
+async def test_an_exact_match_on_a_later_page_beats_a_fuzzy_hit_on_an_earlier_one():
+    """ "Inner Athanor" must not select "Outer Athanor" just because it scores 0.77 on the fuzzy
+    ratio (Empyrea's real list: both are real, distinct zones on the same network). The
+    substring-only first pass has to reach the later page before any fuzzy match is allowed
+    to fire, or the false positive on page 1 wins before page 2 is ever read."""
+    client = _ready_client()
+    client.zone_name.side_effect = ["TestZone", "DestZone"]
+    click_mock = AsyncMock(return_value=True)
+    params = {**_PARAMS, "zone_list_entry": "Inner Athanor"}
+
+    opt_texts = (
+        ["Outer Athanor", "", "", ""]  # page 1 scan: no substring match
+        + ["Inner Athanor", "", "", ""]  # page_changed check sees page 2
+        + ["Inner Athanor", "", "", ""]  # page 2 scan: substring match at option 0
+    )
+    opt_iter = iter(opt_texts)
+
+    async def _get_text(c, path):
+        try:
+            return next(opt_iter)
+        except StopIteration:
+            return ""
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch.object(evl, "ZONE_CHANGE_TIMEOUT", 0.1),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", _get_text),
+        patch(f"{_NH}.click_by_path", click_mock),
+    ):
+        result = await evl.run(FakeMachine(), [client], params)
+
+    assert result == "SUCCESS"
+    paths_clicked = [call.args[1] for call in click_mock.call_args_list]
+    # The first click must be Next (page 1's false-positive-shaped entry was never clicked);
+    # the option-0 click (page 2's real match) comes after it.
+    assert paths_clicked[0] == evl.UNIVERSE_NEXT_PAGE
+    assert evl.universe_zone_option_path(0) in paths_clicked
+    assert paths_clicked.index(evl.universe_zone_option_path(0)) > paths_clicked.index(evl.UNIVERSE_NEXT_PAGE)
+
+
+def test_substring_match_rejects_the_paired_qualifier_that_fuzzy_match_would_accept():
+    """Documents the bug directly: "outer athanor" scores 0.77 on _fuzzy_match's own 0.75
+    threshold against a query for "inner athanor" — no threshold separates that from a real
+    near-duplicate spelling, which is why the exact-first pass uses containment only."""
+    queries = evl._queries("Inner Athanor", None)
+
+    assert evl._fuzzy_match("Outer Athanor", queries) is True
+    assert evl._substring_match("Outer Athanor", queries) is False
+    assert evl._substring_match("Inner Athanor", queries) is True
+
+
 async def test_circular_detection_fails_when_no_match():
     """Entry absent from all pages; wrap-around detected via repeated page signature → cancel → FAILURE."""
     client = _ready_client()
@@ -402,6 +454,35 @@ async def test_sequential_prompt_never_appears_fails():
 
     assert result == "FAILURE"
     assert any("interact prompt never appeared for client(s) [1]" in msg for msg, _ in machine.logs)
+
+
+async def test_sequential_turn_that_fails_for_one_client_is_left_to_the_arrival_check():
+    """One player's failed turn is not the group's: the one that teleported is already on its way,
+    so the arrival check -- not the turn -- decides, and the player left behind is named."""
+    c1, c2 = _positional_client(), _positional_client()
+    c2.is_in_npc_range.side_effect = None
+    c2.is_in_npc_range.return_value = False  # never gets the prompt
+    machine = FakeMachine()
+    arrival = AsyncMock(return_value=["DestZone", "TestZone"])
+
+    async def _click(client, path):
+        if list(path) == list(evl.UNIVERSE_TELEPORT_BUTTON):
+            client.state["gone"] = True
+        return True
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch(f"{_NH}.OBJECT_USE_DELAY", 0),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 20)),
+        patch(f"{_NH}.click_by_path", AsyncMock(side_effect=_click)),
+        patch(f"{_NH}.wait_for_zone_with_recovery", arrival),
+    ):
+        result = await evl.run(machine, [c1, c2], {**_PARAMS, "sequential": True})
+
+    assert result == "FAILURE"
+    arrival.assert_awaited_once()
+    assert any("did not use the list" in msg and "[2]" in msg for msg, _ in machine.logs)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

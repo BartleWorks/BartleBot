@@ -18,10 +18,12 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     FRIENDS_LIST_WINDOW_NAME,
     FRIENDS_LIST_WINDOW_NAMES,
     GAUNTLET_ENTRANCE_PATH,
+    HUB_BUTTON_PATH,
     LARGE_FRIENDS_LIST_WINDOW_NAME,
     MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
     MESSAGE_BOX_RIGHT,
+    TELEPORT_TIMER_PATH,
 )
 from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     DIALOG_FAST_POLL_INTERVAL,
@@ -34,6 +36,7 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     WINDOW_CLOSE_RETRY_INTERVAL,
     WINDOW_CLOSE_TIMEOUT,
     ZONE_CHANGE_TIMEOUT,
+    ZONE_SETTLE_GRACE,
 )
 
 
@@ -486,6 +489,31 @@ async def poll_until(condition_coro, timeout: float | None, poll_interval: float
         return False
 
 
+def skip_while_loading(action_fn):
+    """Wrap a straggler-retry action so it never fires at a client that is loading.
+
+    A loading client is not a straggler that needs prodding: its trigger has already
+    fired, and every state a retry loop watches — zone name, position, the UI — is frozen
+    at its pre-transition value until the screen clears. Retrying it there is at best
+    wasted (a click the game cannot receive) and at worst destructive: a teleport issued
+    mid-load is applied when the client lands, pulling it straight back out of the zone it
+    had just reached on its own. That is issue #70, and on screen it looks like a
+    successful transition undone the moment it completes.
+
+    Wrap any action_fn whose check_fn is something *other* than the loading screen — a zone
+    name, a position, a window. A loop whose check_fn is is_loading() already counts a
+    loading client as seen and never retries it, so it needs no wrapper and should not pay
+    for a second read of the same flag.
+    """
+
+    async def _guarded(client) -> None:
+        if await client.is_loading():
+            return
+        await action_fn(client)
+
+    return _guarded
+
+
 async def poll_each_until_seen(
     clients: list,
     check_fn,
@@ -507,6 +535,11 @@ async def poll_each_until_seen(
     action_fn is not the only way a straggler might resolve — a client already-seen
     reaching some further state elsewhere makes continuing to chase the stragglers here a
     waste of the very budget meant to bound this poll.
+
+    If check_fn is anything other than the loading screen itself, wrap action_fn in
+    skip_while_loading() — a client mid-loading-screen still reads its old zone, position
+    and UI, so an unguarded retry fires at a client that is already on its way and lands
+    once it arrives.
     """
     seen: set[int] = set()
     loop_start = asyncio.get_event_loop().time()
@@ -775,11 +808,44 @@ async def wait_for_zone(
     return list(await asyncio.gather(*[c.zone_name() for c in clients]))
 
 
+import contextlib  # noqa: E402 -- beside the one switch that uses them
+import contextvars  # noqa: E402
+
+_straggler_recovery: contextvars.ContextVar[bool] = contextvars.ContextVar("straggler_recovery", default=True)
+
+
+def straggler_recovery() -> bool:
+    """Whether wait_for_zone_with_recovery ports stragglers when its caller does not say. On by default."""
+    return _straggler_recovery.get()
+
+
+@contextlib.contextmanager
+def without_straggler_recovery():
+    """Turn straggler recovery off for everything awaited inside the block, in this task and its children."""
+    token = _straggler_recovery.set(False)
+    try:
+        yield
+    finally:
+        _straggler_recovery.reset(token)
+
+
 async def wait_for_zone_with_recovery(
-    machine, clients: list, zone: str, timeout: float, poll_interval: float = POLL_INTERVAL
+    machine,
+    clients: list,
+    zone: str,
+    timeout: float,
+    poll_interval: float = POLL_INTERVAL,
+    settle_grace: float | None = None,
+    recover: bool | None = None,
 ) -> list[str] | None:
     """Poll until all clients are in zone, trying a teleport-to-player recovery the moment
     it becomes viable rather than only after the whole wait is exhausted.
+
+    `recover=False` only waits and reports. Left as None it follows straggler_recovery(),
+    which zone navigation turns off around every step it runs: it sorts out its own stragglers
+    once the step is over, rather than porting them into a zone the rest are about to leave.
+    A context variable rather than a param, so it reaches the step nodes -- and whatever they
+    call -- without every one of them growing an argument no bot author should ever set.
 
     Some clients failing a zone transition while others land fine is usually not a crash —
     it means the stragglers have not unlocked the destination, or missed the transition
@@ -788,19 +854,30 @@ async def wait_for_zone_with_recovery(
     as a standalone node — cheaper than retrying the whole transition from a world hub. All
     clients must already be mutual in-game friends for this to have anything to work with.
 
-    Every caller of this already waited out any loading screen before calling it, so a
-    client still not in `zone` at that point is not "maybe still loading" — it is either
-    about to catch up within a poll or two, or it never triggered at all. Either way, waiting
-    out the *whole* of `timeout` before even attempting recovery (the previous approach) only
-    delayed the fallback that was going to be needed anyway; recovery is now tried as soon as
-    it can help, with `timeout` still bounding the overall wait for stragglers that recovery
-    could not fix.
+    Waiting out the *whole* of `timeout` before even attempting recovery (the original
+    approach) only delayed the fallback that was going to be needed anyway, so recovery is
+    tried as soon as it can help, with `timeout` still bounding the overall wait for
+    stragglers that recovery could not fix.
+
+    What that speed has to respect is that a straggler's zone name is stale, not wrong,
+    while its transition is in flight: a client on a loading screen still reports the zone
+    it left, and one whose trigger has just fired has not started its loading screen yet.
+    Recovering either of those ports a client that was already arriving, and the teleport
+    lands *after* it gets there — a correct transition undone (#70). So no client is
+    treated as a straggler while it is loading, and `settle_grace` is the quiet window a
+    non-loading straggler gets to start loading before it counts as one. The grace re-arms
+    every time a straggler is seen loading, which also keeps the timeout verdict honest:
+    a client mid-transition is never reported as one that failed to arrive. An endless
+    loading screen is ClientHealthMonitor's to call, not this loop's.
 
     Returns None on success (whether or not recovery was needed), or the list of actual
     zone names if the deadline passed with some clients still not in `zone`.
     """
+    if settle_grace is None:
+        settle_grace = ZONE_SETTLE_GRACE  # read here, not in the signature, so it stays tunable
     loop = asyncio.get_event_loop()
     deadline = loop.time() + timeout
+    settled_after = loop.time() + settle_grace
     recovery_tried = False
 
     while True:
@@ -808,12 +885,23 @@ async def wait_for_zone_with_recovery(
         if all(zone_matches(z, zone) for z in zones):
             return None
 
-        if not recovery_tried and any(zone_matches(z, zone) for z in zones):
+        behind = [c for c, z in zip(clients, zones) if not zone_matches(z, zone)]
+        now = loop.time()
+        # Mid-transition, not stuck: let the screen clear and re-read before judging it.
+        arriving = any(await asyncio.gather(*[c.is_loading() for c in behind]))
+        if arriving:
+            settled_after = now + settle_grace
+        elif (
+            (straggler_recovery() if recover is None else recover)
+            and not recovery_tried
+            and now >= settled_after
+            and any(zone_matches(z, zone) for z in zones)
+        ):
             recovery_tried = True
             await _attempt_zone_recovery(machine, clients, zone, zones, poll_interval)
             continue  # re-read zones immediately; the recovery attempt already spent real time
 
-        if loop.time() >= deadline:
+        if not arriving and now >= deadline and now >= settled_after:
             return zones
         await asyncio.sleep(poll_interval)
 
@@ -873,6 +961,30 @@ async def get_text_by_path(client, path: list[str]) -> str:
     if window is None:
         return ""
     return await window.maybe_text() or ""
+
+
+_COUNTDOWN = re.compile(r"(?:(\d+):)?(\d+(?:\.\d+)?)")
+
+
+def parse_countdown(text: str | None) -> float | None:
+    """The seconds a countdown shows, written "25" or "0:25", markup allowed; None if it shows no number."""
+    match = _COUNTDOWN.search(re.sub(r"<[^>]*>", " ", text or ""))
+    if match is None:
+        return None
+    minutes, seconds = match.groups()
+    return int(minutes or 0) * 60 + float(seconds)
+
+
+async def teleport_cooldown(client) -> float | None:
+    """Seconds before the hub and HOME buttons can be used again. One timer covers both.
+
+    0.0 while the hub button is enabled. The timer only shows while the buttons are disabled,
+    so a disabled button with no readable timer returns None: disabled for a reason, and for a
+    time, this cannot read.
+    """
+    if await is_enabled_by_path(client, HUB_BUTTON_PATH):
+        return 0.0
+    return parse_countdown(await get_text_by_path(client, TELEPORT_TIMER_PATH))
 
 
 async def click_until_gone(
@@ -1179,7 +1291,34 @@ async def port_to_friend(
     fallback rather than as the whole point of the node should size `ceiling` accordingly
     rather than assume this returns quickly.
     """
-    await asyncio.gather(*[teleport_via_friends_list(c, friend_name_lower) for c in clients_to_move])
+    return await port_clients(
+        clients_to_move,
+        lambda client: teleport_via_friends_list(client, friend_name_lower),
+        trigger_timeout=trigger_timeout,
+        ceiling=ceiling,
+        poll_interval=poll_interval,
+    )
+
+
+async def port_clients(
+    clients_to_move: list,
+    initiate,
+    *,
+    trigger_timeout: float = TRIGGER_TIMEOUT,
+    ceiling: float = ZONE_CHANGE_TIMEOUT,
+    poll_interval: float = POLL_INTERVAL,
+) -> PortToFriendResult:
+    """Start a port on every client with `initiate`, and wait for each to enter a loading screen.
+
+    `initiate(client)` is how one client's port is started, called once for everyone and again
+    for each straggler after `trigger_timeout`: the friends list for port_to_friend, the group
+    roster for group_manager.port_to_group_member. Everything after the start is the same
+    whichever way it began -- the dungeon exit and cross-realm warnings are confirmed, a
+    friend-busy dialog is a refusal -- so it lives here once. See port_to_friend for the rest.
+
+    Raises whatever `initiate` raises; both starters raise ValueError when they cannot begin.
+    """
+    await asyncio.gather(*[initiate(c) for c in clients_to_move])
 
     seen_loading: set[int] = set()
     loop_start = asyncio.get_event_loop().time()
@@ -1207,7 +1346,7 @@ async def port_to_friend(
 
         if now >= straggler_after:
             stragglers = [c for i, c in enumerate(clients_to_move) if i not in seen_loading]
-            await asyncio.gather(*[teleport_via_friends_list(c, friend_name_lower) for c in stragglers])
+            await asyncio.gather(*[initiate(c) for c in stragglers])
 
         await asyncio.sleep(poll_interval)
 

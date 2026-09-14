@@ -42,9 +42,10 @@ OPTION_TYPES: tuple[str, ...] = ("bool", "int", "float", "str", "str_list", "pla
 
 #: Types a **node** may declare that the dialog does not offer.  Each is one of the
 #: types above underneath -- a str_list, a str -- with a control that knows something
-#: the generic one cannot: this bot's own drop table, this machine's friends list.
-#: Not offered for hand-adding, because a hand-added option has neither behind it.
-NODE_ONLY_TYPES: tuple[str, ...] = ("drop_keep_list", "friend_name")
+#: the generic one cannot: this bot's own drop table, this machine's friends list, the
+#: game's realm table.  Not offered for hand-adding, because a hand-added option has
+#: none of those behind it.
+NODE_ONLY_TYPES: tuple[str, ...] = ("drop_keep_list", "friend_name", "realm")
 
 #: Types whose control is a table rather than a field, so a list of rows reads better
 #: with them at the bottom than with the short rows arranged around them.
@@ -70,6 +71,7 @@ TYPE_LABELS: dict[str, str] = {
     "player_list": "Players",
     "drop_keep_list": "Keep list",
     "friend_name": "Wizard name",
+    "realm": "Realm",
 }
 
 
@@ -197,6 +199,10 @@ def make_option_widget(
         from bartlebot.gui.widgets.friend_name_edit import FriendNameEdit  # noqa: PLC0415
 
         widget = FriendNameEdit(get_clients)
+    elif opt_type == "realm":
+        from bartlebot.gui.widgets.realm_combo import RealmCombo  # noqa: PLC0415
+
+        widget = RealmCombo()
     elif opt_type == "bool":
         widget = BoolChoice() if explicit_bool else QCheckBox(label)
     elif opt_type == "int":

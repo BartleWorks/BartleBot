@@ -208,6 +208,16 @@ async def _trigger_sequentially(
     )
     unprompted, unfinished = node_helpers.summarize_turns(results, numbers)
 
+    # One player's failed turn is not the group's: whoever went through is already on the
+    # other side, and the arrival check is what decides what happens to the rest.
+    behind = sorted(set(unprompted) | set(unfinished))
+    if behind and len(behind) < len(clients):
+        machine.log(
+            f"Client(s) {behind} did not go through the object; continuing to the arrival check",
+            logging.INFO,
+        )
+        return None
+
     if refusals:
         machine.log(
             f"FAILURE: the game refused the zone change — {dialog_captions.describe(refusals[0])}",
@@ -387,4 +397,57 @@ async def run(machine, clients: list, params: dict) -> str:
             logging.DEBUG,
         )
 
+    # 6. Some went through and some did not: most likely an object that serves one player at a
+    #    time, so the rest get turns before anything else is tried for them.
+    await _take_turns_if_contended(
+        machine,
+        clients,
+        [ready[i] for i in seen_loading],
+        interact,
+        reset,
+        from_zone,
+        to_zone,
+        safety_delay,
+        params.get("object_use_delay"),
+    )
     return await _await_arrival(machine, clients, to_zone)
+
+
+async def _take_turns_if_contended(
+    machine,
+    clients: list,
+    through: list,
+    interact,
+    reset,
+    from_zone: str,
+    to_zone: str,
+    safety_delay: float,
+    object_use_delay,
+) -> None:
+    """Send the clients a parallel use left behind through the object one at a time.
+
+    An object that serves one player at a time swallows everyone else's keypress, and nothing
+    in the data says which objects those are until someone has watched it happen -- so this
+    catches it when it does, and says which object it was, since the Sequential Interaction
+    flag is still what makes the next run quick.
+
+    `through` is who the parallel press already saw loading or arrived. Only when someone went
+    through: if nobody did, the object is not being shared badly, it is not working, and turns
+    would not change that. The rest are read once more first, and a client that started
+    loading after the press window closed gets no turn, since it is already on its way (#70).
+    """
+    if not through or len(through) == len(clients):
+        return
+    candidates = [c for c in clients if not any(c is t for t in through)]
+    committed = await asyncio.gather(*[_loading_or_arrived(c, to_zone) for c in candidates])
+    left = [c for c, done in zip(candidates, committed) if not done]
+    if not left:
+        return
+    machine.log(
+        f"{len(left)} of {len(clients)} client(s) did not go through {from_zone!r} → {to_zone!r} with the rest; "
+        f"giving them turns at the object. If this keeps happening, the object serves one player at a time: "
+        f"turn on Sequential Interaction, or mark the link sequential on the navigation map",
+        logging.WARNING,
+    )
+    # Whatever the turns achieve, the arrival check that follows is what reports it.
+    await _trigger_sequentially(machine, left, interact, reset, to_zone, safety_delay, object_use_delay)

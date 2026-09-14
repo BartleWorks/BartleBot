@@ -268,7 +268,7 @@ def test_the_add_buttons_name_the_group_they_add(qapp):
     already report the selection, so the caption is free to be a call to action."""
     field, _section = _field([], editable=True)
 
-    assert [b.text() for b in field._pickers.values()] == ["Add Rewards…", "Add Activity…"]
+    assert [b.text() for b in field._pickers.values()] == ["Add Rewards…", "Add Activity…", "Add Type…"]
 
 
 def test_an_add_button_keeps_its_caption_once_something_is_selected(qapp):

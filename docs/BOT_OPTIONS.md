@@ -215,7 +215,12 @@ committed bot is both a privacy leak and a bot only its author can run.
 
 That is still a bot option with a null declaration; what changes is that the
 declaration must **stay** null — so `Friend Name` is in `USER_OWNED_OPTIONS` and the
-Options tab has no row for it. Nothing enforces that in the schema, so the guard is
+Options tab has no row for it. `Favorite Realm` is the same shape for a different
+reason: a realm in a shared bot file would send everyone who runs it to the same
+realm, which is the crowding a favourite realm exists to escape. It is a `realm`
+option — a `str` holding the realm's key, picked from the `data/realm_names.json`
+snapshot rather than typed, because the node matches the key against every locale's
+display text and a free-typed name has nothing to match. Nothing enforces that in the schema, so the guard is
 `test_no_bot_stores_a_friend_name`, which checks both places a name could land: the
 old `friend_name` param, and a *declaration* of the option that a hand-edited file
 could still carry. Setup — where a user actually sets it — writes an override and

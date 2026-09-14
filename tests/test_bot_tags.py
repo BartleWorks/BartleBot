@@ -25,7 +25,7 @@ def test_known_tags_survive():
 
 def test_output_is_in_vocabulary_order_not_input_order():
     """Storage order is fixed so the editor cannot produce diff noise by reordering."""
-    assert normalize_tags(["Gathering", "Boss", "Gear"]) == ["Gear", "Boss", "Gathering"]
+    assert normalize_tags(["Collecting", "Boss", "Gear"]) == ["Gear", "Boss", "Collecting"]
 
 
 def test_duplicates_collapse():
@@ -70,8 +70,8 @@ def test_tags_default_to_empty():
 
 def test_tags_survive_a_round_trip(tmp_path):
     """UndoManager round-trips through model_dump/model_validate on every edit."""
-    config = BotConfig.model_validate(_minimal_bot(tags=["Gathering", "Reagents"]))
+    config = BotConfig.model_validate(_minimal_bot(tags=["Collecting", "Reagents"]))
     path = tmp_path / "b.json"
     config.save(path)
 
-    assert BotConfig.load(path).tags == ["Reagents", "Gathering"]
+    assert BotConfig.load(path).tags == ["Reagents", "Collecting"]

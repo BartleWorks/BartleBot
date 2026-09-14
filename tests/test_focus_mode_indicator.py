@@ -25,12 +25,14 @@ from bartlebot.gui.canvas.node_item import GRID_H, GRID_W
 def _config():
     """Two clusters far apart, so focusing one is a real camera move."""
     states = [
-        StateModel(id="a", node_type="change_realm", params={}, position={"x": 0.0, "y": 0.0}),
-        StateModel(id="b", node_type="change_realm", params={}, position={"x": 0.0, "y": float(GRID_H)}),
-        StateModel(id="far1", node_type="change_realm", params={}, position={"x": float(GRID_W * 12), "y": 0.0}),
+        StateModel(id="a", node_type="change_to_next_realm", params={}, position={"x": 0.0, "y": 0.0}),
+        StateModel(id="b", node_type="change_to_next_realm", params={}, position={"x": 0.0, "y": float(GRID_H)}),
+        StateModel(
+            id="far1", node_type="change_to_next_realm", params={}, position={"x": float(GRID_W * 12), "y": 0.0}
+        ),
         StateModel(
             id="far2",
-            node_type="change_realm",
+            node_type="change_to_next_realm",
             params={},
             position={"x": float(GRID_W * 12), "y": float(GRID_H)},
         ),

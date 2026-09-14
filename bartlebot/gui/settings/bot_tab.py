@@ -26,6 +26,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot_options import SAFETY_DELAY_DESCRIPTION
 from bartlebot.gui.settings.rows import hint, section_label
+from bartlebot.gui.widgets.realm_combo import RealmCombo
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -153,6 +154,28 @@ class BotTab(QWidget):
         layout.addLayout(players_form)
 
         # ------------------------------------------------------------------
+        # Realms
+        # ------------------------------------------------------------------
+        layout.addWidget(section_label("Realms"))
+
+        realms_form = QFormLayout()
+        realms_form.setSpacing(4)
+
+        self._favorite_realm_combo = RealmCombo()
+        self._favorite_realm_combo.set_value(sm.favorite_realm)
+        realms_form.addRow("Favorite realm:", self._favorite_realm_combo)
+        realms_form.addRow(
+            hint(
+                "The realm change_to_favorite_realm switches every player to. Yours rather than the "
+                "bot's: a realm in a shared bot file would send everyone who runs it to the same "
+                "place. With one set, every launched player also has the game's Remember Realm "
+                "option turned on, so a relogged player comes back to the realm it left."
+            )
+        )
+
+        layout.addLayout(realms_form)
+
+        # ------------------------------------------------------------------
         # Quicksell
         # ------------------------------------------------------------------
         layout.addWidget(section_label("Quicksell"))
@@ -228,6 +251,7 @@ class BotTab(QWidget):
         if friend_name != sm.default_friend_name:
             sm.default_friend_name = friend_name
             sm.add_recent_friend_name(friend_name)
+        sm.favorite_realm = self._favorite_realm_combo.get_value()
         sm.set_general("default_quicksell_enabled", self._quicksell_enabled_cb.isChecked())
         sm.set_general("default_quicksell_sell_pets", self._sell_pets_cb.isChecked())
         sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())

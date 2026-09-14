@@ -5,6 +5,24 @@ import json
 from bartlebot import worlds
 
 
+def test_the_world_gate_title_is_in_the_snapshot_english_first():
+    assert worlds.world_gate_titles()[0] == "Spiral Map"
+    assert len(worlds.world_gate_titles()) > 1
+
+
+def test_a_world_gate_title_matches_through_markup_and_case():
+    assert worlds.is_world_gate_title("Spiral Map")
+    assert worlds.is_world_gate_title("<center>SPIRAL  MAP</center>")
+    assert worlds.is_world_gate_title("<center>Spirala</center>")
+
+
+def test_other_list_titles_are_not_a_world_gate():
+    assert not worlds.is_world_gate_title("Map")
+    assert not worlds.is_world_gate_title("Spiral Map of Empyrea")
+    assert not worlds.is_world_gate_title("")
+    assert not worlds.is_world_gate_title(None)
+
+
 def test_every_spiral_door_world_is_in_the_snapshot():
     """A typo in SPIRAL_DOOR_WORLDS must fail here, not silently empty the editor dropdown."""
     missing = [world for world in worlds.SPIRAL_DOOR_WORLDS if not worlds.display_names(world)]

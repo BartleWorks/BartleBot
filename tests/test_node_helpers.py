@@ -25,6 +25,33 @@ from bartlebot.nodes.node_helpers import (
 from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 from tests.conftest import FakeClient, FakeEntity, FakeMachine, message_box_patches
 
+
+@pytest.mark.parametrize(
+    ("text", "seconds"),
+    [("25", 25.0), ("0:25", 25.0), ("1:05", 65.0), ("<center>12</center>", 12.0), ("", None), ("Ready", None)],
+)
+def test_parse_countdown_reads_seconds_or_minutes_and_seconds(text, seconds):
+    assert nh.parse_countdown(text) == seconds
+
+
+async def test_teleport_cooldown_is_zero_while_the_hub_button_is_enabled():
+    with (
+        patch.object(nh, "is_enabled_by_path", AsyncMock(return_value=True)),
+        patch.object(nh, "get_text_by_path", AsyncMock(return_value="25")) as read_timer,
+    ):
+        assert await nh.teleport_cooldown(FakeClient()) == 0.0
+    read_timer.assert_not_called()
+
+
+@pytest.mark.parametrize(("timer", "left"), [("25", 25.0), ("", None)])
+async def test_teleport_cooldown_reads_the_timer_while_the_buttons_are_disabled(timer, left):
+    with (
+        patch.object(nh, "is_enabled_by_path", AsyncMock(return_value=False)),
+        patch.object(nh, "get_text_by_path", AsyncMock(return_value=timer)),
+    ):
+        assert await nh.teleport_cooldown(FakeClient()) == left
+
+
 #: Somewhere and somewhere else — reach_sigil_prompt only ever passes these through.
 _SIGIL = XYZ(0.0, 0.0, 0.0)
 _RESET = XYZ(1.0, 0.0, 0.0)
@@ -1187,8 +1214,8 @@ async def test_wait_for_zone_with_recovery_skips_when_nobody_arrived():
 
 
 async def test_wait_for_zone_with_recovery_tries_recovery_as_soon_as_its_viable():
-    """One client is already in zone and one is not: recovery is attempted immediately,
-    without waiting out the rest of the timeout first."""
+    """One client is already in zone and one is not: recovery is attempted as soon as the
+    straggler has settled, without waiting out the rest of the timeout first."""
     arrived = FakeClient()
     arrived.zone_name.return_value = "Dst"
     straggler = FakeClient()
@@ -1198,7 +1225,7 @@ async def test_wait_for_zone_with_recovery_tries_recovery_as_soon_as_its_viable(
     machine = FakeMachine()
 
     with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
-        result = await nh.wait_for_zone_with_recovery(machine, [arrived, straggler], "Dst", 0.01, 0)
+        result = await nh.wait_for_zone_with_recovery(machine, [arrived, straggler], "Dst", 0.01, 0, settle_grace=0)
 
     assert result is None
     recovery.assert_awaited_once()
@@ -1220,6 +1247,122 @@ async def test_wait_for_zone_with_recovery_reports_failure_when_recovery_does_no
 
     assert result == ["Dst", "Elsewhere"]
     recovery.assert_awaited_once()  # not retried on every subsequent poll
+
+
+async def test_wait_for_zone_with_recovery_never_ports_when_recovery_is_off():
+    """Zone navigation sorts out its own stragglers after the step, so it only wants the wait."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    straggler = FakeClient()
+    straggler.zone_name.return_value = "Elsewhere"
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(
+            FakeMachine(), [arrived, straggler], "Dst", 0.01, 0, settle_grace=0, recover=False
+        )
+
+    assert result == ["Dst", "Elsewhere"]
+    recovery.assert_not_awaited()
+
+
+# ---------------------------------------------------------------------------
+# wait_for_zone_with_recovery — a straggler that is still arriving (#70)
+# ---------------------------------------------------------------------------
+
+
+async def test_a_loading_straggler_is_never_ported():
+    """A client on a loading screen reads the zone it left, not the one it is entering.
+    Porting it there lands the teleport after it arrives and undoes the transition."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    straggler = FakeClient()
+    # Elsewhere and loading for several polls, then arrives under its own power.
+    straggler.zone_name = AsyncMock(side_effect=itertools.chain(["Elsewhere"] * 3, itertools.repeat("Dst")))
+    straggler.is_loading = AsyncMock(side_effect=itertools.chain([True] * 3, itertools.repeat(False)))
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(
+            FakeMachine(), [arrived, straggler], "Dst", 0.01, 0, settle_grace=0
+        )
+
+    assert result is None
+    recovery.assert_not_awaited()
+
+
+async def test_a_loading_straggler_is_not_reported_as_a_timeout():
+    """The deadline does not run out under a client that is mid-transition — reporting one
+    as never-arrived is the same wrong call as porting it."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    straggler = FakeClient()
+    straggler.zone_name = AsyncMock(side_effect=itertools.chain(["Elsewhere"] * 4, itertools.repeat("Dst")))
+    straggler.is_loading = AsyncMock(side_effect=itertools.chain([True] * 4, itertools.repeat(False)))
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()):
+        # Deadline already spent: without the loading check this returns the stale zones.
+        result = await nh.wait_for_zone_with_recovery(FakeMachine(), [arrived, straggler], "Dst", 0, 0, settle_grace=0)
+
+    assert result is None
+
+
+async def test_a_straggler_whose_loading_screen_has_not_started_gets_the_settle_grace():
+    """The window between a trigger firing and its loading screen appearing reads exactly
+    like a client that never triggered. The grace covers it; recovery waits."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    straggler = FakeClient()
+    # Never seen loading at all — arrival is the only evidence the trigger ever fired.
+    straggler.zone_name = AsyncMock(side_effect=itertools.chain(["Elsewhere"] * 2, itertools.repeat("Dst")))
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(
+            FakeMachine(), [arrived, straggler], "Dst", 0.01, 0, settle_grace=5.0
+        )
+
+    assert result is None
+    recovery.assert_not_awaited()
+
+
+async def test_a_straggler_that_stays_put_through_the_grace_is_still_recovered():
+    """The grace delays recovery; it does not cancel it. A client that never triggered is
+    not loading and never arrives, so it is ported once the window closes."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    straggler = FakeClient()
+    straggler.zone_name.return_value = "Elsewhere"
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(
+            FakeMachine(), [arrived, straggler], "Dst", 0.01, 0, settle_grace=0.02
+        )
+
+    assert result == ["Dst", "Elsewhere"]
+    recovery.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# skip_while_loading
+# ---------------------------------------------------------------------------
+
+
+async def test_skip_while_loading_suppresses_the_retry_mid_load():
+    client = FakeClient()
+    client.is_loading.return_value = True
+    action = AsyncMock()
+
+    await nh.skip_while_loading(action)(client)
+
+    action.assert_not_awaited()
+
+
+async def test_skip_while_loading_passes_the_retry_through_otherwise():
+    client = FakeClient()
+    client.is_loading.return_value = False
+    action = AsyncMock()
+
+    await nh.skip_while_loading(action)(client)
+
+    action.assert_awaited_once_with(client)
 
 
 # ---------------------------------------------------------------------------

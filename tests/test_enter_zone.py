@@ -133,6 +133,26 @@ async def test_only_stragglers_are_reteleported_on_retry():
     assert left.teleport.call_count == 1
 
 
+async def test_a_loading_client_is_not_re_teleported_to_the_trigger():
+    """A client on a loading screen still reads from_zone, so the leave-check cannot see it
+    go. Re-teleporting it there lands the teleport when it arrives and drops it back at the
+    bounding box in the zone it just reached (#70)."""
+    loading = FakeClient()
+    # pre-check -> "Src"; still reading "Src" while the screen is up; then in Dst.
+    loading.zone_name = AsyncMock(side_effect=itertools.chain(["Src", "Src", "Src"], itertools.repeat("Dst")))
+    loading.is_loading = AsyncMock(side_effect=itertools.chain([True, True], itertools.repeat(False)))
+
+    with (
+        patch.object(gtz, "POLL_INTERVAL", 0),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=None)),
+    ):
+        result = await gtz.run(FakeMachine(), [loading], _PARAMS)
+
+    assert result == "SUCCESS"
+    # Only the opening teleport into the bounding box; no retry fired during the load.
+    assert loading.teleport.call_count == 1
+
+
 async def test_confirmed_arrival_stops_remaining_trigger_retries():
     """As soon as one client is confirmed in to_zone, a stuck groupmate is not chased through
     the remaining reset_xyz retries — recovery is attempted immediately instead."""

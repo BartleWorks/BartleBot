@@ -49,16 +49,32 @@ Two consequences that are easy to forget:
 
 ## Member ids are derived, deterministic, and never recycled
 
-A member's id is `sg_<region id>_<local id>`, charset `[A-Za-z0-9_]`, where the local id
-is the state's id inside the definition. Composing the same instance twice yields the
-same ids; a nested instance prefixes again (`sg_<outer>_sg_<inner>_<local>`).
+A member's id is `<region id>_<local id>`, charset `[A-Za-z0-9_]`, where the local id is
+the state's id inside the definition. A linked region's id is minted from the
+definition's name: `<slug>_<n>`, where the slug is the name lowercased with runs of
+anything else collapsed to `_` ("Sync players" → `sync_players`) and `n` is one above
+every number that slug already carries in the bot, as a region id or at the head of a
+state id (`mint_instance_id`). So the third state of the first "Sync players" instance
+is `sync_players_1_state_3`, and the fourth state of the second is
+`sync_players_2_state_4`. Extracting a region renumbers its local ids `state_1..N` in
+file order, whatever numbers the bot had reached, so the same subgraph reads the same
+in every bot it lands in. Composing the same instance twice yields the same ids; a
+nested instance prefixes again (`<outer>_<inner>_<local>`).
+
+Ids are never *parsed* to find structure. Whether one instance is nested in another
+is a question of membership (every member of the inner is a member of the outer,
+`is_nested_in`), so two definitions whose slugs share a prefix ("Farm" and "Farm 2")
+cannot be mistaken for each other. `local_id` is only meaningful for a state that is a
+member of the region it is asked about.
 
 State ids are the key for everything that outlives an edit: `BotCombatStrategy.
 state_assignments`, `initial`, `recovery_state`, the run highlight, and the reason
 `EditScene._unique_id` never hands out an id it has handed out before. A definition
 update has to land on the *same* ids or every one of those would silently detach. So
 ids come from the definition, never from `_unique_id`, and pasting an instance mints a
-new region id rather than new member ids.
+new region id rather than new member ids. `_unique_id` in turn counts the `state_N`
+tail of a member id: a state added while editing an instance becomes local `state_N`
+on push, so it must not take a number the definition already uses.
 
 Converting an existing region into an instance rewrites its member ids to the derived
 form everywhere they appear — states, transitions, roles, every region's `members` —
@@ -153,9 +169,51 @@ Three things that are load-bearing:
   re-applies them.
 
 An input's type is a `ParamField` type name, so the region page builds its form with the
-same `_DynamicParamForm` that builds a node's. The schema does not validate a binding's
-param key against the node registry, for the same reason `_validate_node` lives in the
-scene and not in `schema.py`: the models stay registry-free.
+same `_DynamicParamForm` that builds a node's; what the input does not carry (a
+`str_choice`'s dropdown, a placeholder, a numeric range) comes from the first bound member
+param of the same type (`input_param_field`), so a World input gets the node's dropdown
+and not an empty combo. The schema does not validate a binding's param key against the
+node registry, for the same reason `_validate_node` lives in the scene and not in
+`schema.py`: the models stay registry-free.
+
+### Locked, free, or an input: the author says who owns each param
+
+Every member param is in one of three states, and the author decides which while editing:
+
+| state | owner | the consumer sets it | stored as |
+|---|---|---|---|
+| **Locked** | the subgraph | only by an explicit override, which stops that value following the library | `param_overrides` |
+| **Free** | the consumer, per node | on the node, like any param, with no ceremony | `param_overrides` (written only while it differs from the subgraph's value) |
+| **Input** | the consumer, once per instance | on the region page; fans out to every bound param | `source.inputs` |
+
+Free and Input differ in where the value is set and whether it fans out, not in who owns
+it. The rule of thumb for an author: if two members must agree, make it an input; if only
+one member cares, free is enough; everything the subgraph's behaviour depends on stays
+locked. "Sync players" frees or exposes almost everything, since it runs at the start of
+nearly every bot in any world; "MooShu level scaling" locks everything, since its values
+*are* the subgraph.
+
+`free_params` lives on the definition (local state id → param keys); a state with no entry
+has everything locked. It is **seeded at extraction, and again for every state new to a
+push**, from which values were still at their defaults (`seed_free_params`,
+`is_default_param`): an empty zone, an all-zero XYZ, a number left at zero, a value equal
+to the field's default is free; anything the author set is locked. The seed is a guess, so
+it runs once — a state the previous definition already had keeps the author's entry
+unchanged, or an author's choices would flip whenever a value changed. A required free
+param is empty in a fresh instance, and node validation already flags a required empty
+param and blocks Run: that is the "fill these in" signal, with no extra UI.
+
+A free param a consumer edits is still an override underneath (`sync_free_overrides`),
+which is what makes it survive the next compose. It is written only while the value
+differs from what the subgraph would give (the definition value, or the bound input the
+instance set) and dropped once it is back, so the region page's override list shows
+divergence and nothing else.
+
+**A member's label is always the consumer's.** Not worth locking: the definition's labels
+are generic ("Go to zone") and a consumer renaming one is the common case. A changed label
+is kept in `source.label_overrides` the same way, listed on the region page with a Reset,
+and re-applied on compose; the definition's label stands until it is overridden, so an
+author's rename still propagates. Notes and the node type stay the definition's.
 
 ## Layout is instance-owned
 
@@ -200,6 +258,7 @@ the others. Simulink's "edit linked block, then push" is the model. The verbs:
 | **Save to library** | the region being edited | pushes members, internal edges, nested instances and carried inputs back as `version + 1`, refuses a cycle, then recomposes every other instance of that id in this bot |
 | **Discard** | the region being edited | recomposes the region from the library and clears the editing state |
 | **Expose as input…** | a member param, while editing | binds it to an existing input of a compatible type or a new one; the current value becomes the input's default |
+| **Lock / Free** (the padlock on a param row) | a member param, while editing | toggles the param between locked (the subgraph's) and free (the consumer's); a param an input owns shows neither |
 | **Detach from Library** | an instance | drops `source`; members and ids stay exactly as they are |
 | **Remove Subgraph Instance…** | an instance | deletes every member and the region, after a confirm; orphaned roles are reassigned as on any delete |
 | **Insert** (node browser, Subgraphs tab) | the canvas | mints a region id, places the instance at the click as `anchor`, prefills inputs from their defaults |
@@ -257,14 +316,28 @@ same delete-is-revert and the button belongs with a library dialog, which is #59
 
 ## The properties panel on an instance
 
-Clicking one **member** shows that member's page with the definition's fields — label,
-type, notes and every param — disabled, and the roles enabled, because the roles are the
-bot's. Each param row carries an **Override** toggle: on records the current value in
+Clicking one **member** shows that member's page with the definition's fields — type,
+notes and every locked param — disabled, and the roles, the label and every free param
+enabled, because those are the consumer's. Each locked row carries a **padlock**: closed,
+the value follows the library; clicking it opens the lock, records the current value in
 `source.param_overrides` and unlocks that one field, so the next edit lands in both
-`state.params` and the override; off drops the override and re-resolves the member from
-the library, so the definition's value shows again. Recording the *current* value first,
-rather than opening an empty field, means nothing visible changes until the user types —
-an override is a diff from the definition, and the diff starts at zero.
+`state.params` and the override; closing it drops the override and re-resolves the member
+from the library, so the definition's value shows again. Recording the *current* value
+first, rather than opening an empty field, means nothing visible changes until the user
+types — an override is a diff from the definition, and the diff starts at zero. A free
+row has no padlock: nothing on it needs explaining. The open padlock's tooltip and the
+note at the top of the page say what an override means (the value stops following the
+subgraph); there is no dialog, because one per unlocked field is noise and the region
+page's override list is the summary.
+
+While the region is being **edited**, the same rows carry the author's controls instead:
+a padlock that toggles the param between locked and free (`free_toggled`, written to the
+working definition like Expose, and pushed with it), and the Expose button; a row an input
+already owns has no padlock and a disabled Expose that names the input.
+
+The two padlock icons are drawn to be told apart at 14 px: the shackle is a semicircle on
+the body, and the open one is that shackle mirrored about its right foot, so its other
+end hangs beside the body — a small gap between shackle and body is easy to miss.
 
 Clicking the **pill** selects the whole region and shows the **region page**. Every
 region gets it (label and colour, and the same goes for an ordinary region — one surface,

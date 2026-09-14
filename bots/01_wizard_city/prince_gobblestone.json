@@ -4,8 +4,8 @@
   "description": "Endlessly defeats Prince Gobblestone in Colossus Boulevard, Wizard City",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_15",
-  "recovery_state": "state_3",
+  "initial": "sync_players_1_state_2",
+  "recovery_state": "sync_players_1_state_1",
   "drops": [
     {
       "name": "Amulet of the Fay",
@@ -453,55 +453,7 @@
   "options": [],
   "states": [
     {
-      "id": "state_3",
-      "node_type": "relog",
-      "label": "Relog",
-      "position": {
-        "x": -880.0,
-        "y": 270.0
-      },
-      "params": {
-        "relog_clients": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to world hub",
-      "position": {
-        "x": 1320.0,
-        "y": 90.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_Hub"
-      },
-      "notes": "This state should only ever fail if there is a UI element blocking the teleport button, which relogging should fix."
-    },
-    {
-      "id": "state_7",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
-      "position": {
-        "x": 1760.0,
-        "y": 90.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "timeout": 10.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.1,
-        "only_safe": true
-      },
-      "notes": "Ensures that players have enough mana to mark their spot if they need potions."
-    },
-    {
-      "id": "state_8",
+      "id": "defeat_boss_1_state_1",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
@@ -516,7 +468,7 @@
       }
     },
     {
-      "id": "state_9",
+      "id": "defeat_boss_1_state_2",
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
@@ -526,20 +478,7 @@
       "params": {}
     },
     {
-      "id": "state_10",
-      "node_type": "form_group",
-      "label": "Form group",
-      "position": {
-        "x": -440.0,
-        "y": 270.0
-      },
-      "params": {
-        "leader_index": 0,
-        "require_all": true
-      }
-    },
-    {
-      "id": "state_11",
+      "id": "defeat_boss_1_state_3",
       "node_type": "enter_dungeon",
       "label": "Enter dungeon",
       "position": {
@@ -564,7 +503,7 @@
       }
     },
     {
-      "id": "state_12",
+      "id": "defeat_boss_1_state_4",
       "node_type": "handle_combat",
       "label": "Defeat boss",
       "position": {
@@ -579,7 +518,7 @@
       }
     },
     {
-      "id": "state_13",
+      "id": "defeat_boss_1_state_5",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
@@ -596,7 +535,7 @@
       }
     },
     {
-      "id": "state_14",
+      "id": "defeat_boss_1_state_6",
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
@@ -617,44 +556,6 @@
           "z": -3166.26
         },
         "stagger": false
-      }
-    },
-    {
-      "id": "state_15",
-      "node_type": "teleport_to_player_if_in_zone",
-      "label": "Try teleport to dungeon entrance",
-      "position": {
-        "x": 0.0,
-        "y": 90.0
-      },
-      "params": {
-        "target_zone": "WizardCity/WC_Streets/WC_Colossus",
-        "skip_extra_clients_in_zone": false
-      }
-    },
-    {
-      "id": "state_16",
-      "node_type": "teleport_to_player_if_in_zone",
-      "label": "Try teleport to world",
-      "position": {
-        "x": 440.0,
-        "y": 90.0
-      },
-      "params": {
-        "target_zone": "WizardCity/*",
-        "skip_extra_clients_in_zone": true
-      }
-    },
-    {
-      "id": "state_17",
-      "node_type": "go_to_world",
-      "label": "Go to World",
-      "position": {
-        "x": 880.0,
-        "y": 180.0
-      },
-      "params": {
-        "world": "WizardCity"
       }
     },
     {
@@ -704,23 +605,90 @@
         },
         "stagger": false
       }
+    },
+    {
+      "id": "sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": -440.0,
+        "y": 180.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "sync_players_1_state_2",
+      "node_type": "teleport_to_player_if_in_zone",
+      "label": "Try teleport to target zone",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "target_zone": "WizardCity/WC_Streets/WC_Colossus",
+        "skip_extra_clients_in_zone": false
+      }
+    },
+    {
+      "id": "sync_players_1_state_3",
+      "node_type": "teleport_to_player_if_in_zone",
+      "label": "Try teleport to world",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "target_zone": "WizardCity/*",
+        "skip_extra_clients_in_zone": false
+      }
+    },
+    {
+      "id": "sync_players_1_state_4",
+      "node_type": "go_to_world",
+      "label": "Go to world",
+      "position": {
+        "x": 880.0,
+        "y": 180.0
+      },
+      "params": {
+        "world": "WizardCity"
+      }
+    },
+    {
+      "id": "sync_players_1_state_5",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
+      "position": {
+        "x": 1760.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      }
+    },
+    {
+      "id": "sync_players_1_state_7",
+      "node_type": "change_to_favorite_realm",
+      "label": "Change to favorite realm",
+      "position": {
+        "x": 1320.0,
+        "y": 180.0
+      },
+      "params": {}
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_15",
+      "source": "defeat_boss_1_state_3",
+      "dest": "defeat_boss_1_state_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -729,8 +697,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_12",
+      "source": "defeat_boss_1_state_4",
+      "dest": "defeat_boss_1_state_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -739,8 +707,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_4",
+      "source": "defeat_boss_1_state_4",
+      "dest": "defeat_boss_1_state_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -749,8 +717,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_13",
+      "source": "defeat_boss_1_state_5",
+      "dest": "defeat_boss_1_state_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -759,8 +727,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_14",
+      "source": "defeat_boss_1_state_5",
+      "dest": "defeat_boss_1_state_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -769,8 +737,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_14",
+      "source": "defeat_boss_1_state_6",
+      "dest": "defeat_boss_1_state_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -779,18 +747,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_14",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_8",
+      "source": "defeat_boss_1_state_1",
+      "dest": "defeat_boss_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -799,69 +757,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_4",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_8",
+      "source": "defeat_boss_1_state_2",
+      "dest": "defeat_boss_1_state_3",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_16",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_17",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_16",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -879,18 +777,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_4",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_19",
-      "dest": "state_8",
+      "dest": "defeat_boss_1_state_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -899,8 +787,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_4",
+      "source": "sync_players_1_state_3",
+      "dest": "sync_players_1_state_4",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -909,8 +797,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_3",
+      "source": "sync_players_1_state_4",
+      "dest": "sync_players_1_state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -919,8 +807,18 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_10",
+      "source": "sync_players_1_state_2",
+      "dest": "sync_players_1_state_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_3",
+      "dest": "sync_players_1_state_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -929,8 +827,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_7",
+      "source": "sync_players_1_state_1",
+      "dest": "sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -939,8 +837,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_3",
+      "source": "sync_players_1_state_1",
+      "dest": "sync_players_1_state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -949,8 +847,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_4",
+      "source": "sync_players_1_state_5",
+      "dest": "sync_players_1_state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -959,7 +857,37 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
+      "source": "sync_players_1_state_4",
+      "dest": "sync_players_1_state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_7",
+      "dest": "sync_players_1_state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_7",
+      "dest": "sync_players_1_state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_5",
       "dest": "state_18",
       "when": "SUCCESS",
       "flags": [],
@@ -969,8 +897,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
+      "source": "sync_players_1_state_2",
+      "dest": "defeat_boss_1_state_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -979,8 +907,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_3",
+      "source": "state_18",
+      "dest": "sync_players_1_state_5",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -989,8 +917,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_3",
+      "source": "state_19",
+      "dest": "sync_players_1_state_5",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -999,9 +927,39 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_11",
-      "when": "SUCCESS",
+      "source": "defeat_boss_1_state_1",
+      "dest": "sync_players_1_state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "defeat_boss_1_state_2",
+      "dest": "sync_players_1_state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "defeat_boss_1_state_3",
+      "dest": "sync_players_1_state_5",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "defeat_boss_1_state_6",
+      "dest": "sync_players_1_state_5",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1010,31 +968,62 @@
   ],
   "regions": [
     {
-      "id": "4445940a",
+      "id": "defeat_boss_1",
       "label": "Defeat boss",
       "members": [
-        "state_13",
-        "state_8",
-        "state_12",
-        "state_11",
-        "state_9",
-        "state_14"
+        "defeat_boss_1_state_1",
+        "defeat_boss_1_state_2",
+        "defeat_boss_1_state_3",
+        "defeat_boss_1_state_4",
+        "defeat_boss_1_state_5",
+        "defeat_boss_1_state_6"
       ],
-      "color": 4
+      "color": 4,
+      "source": {
+        "subgraph_id": "201b8a96-4afc-47fb-9bd3-1ef6af46026f",
+        "version": 2,
+        "inputs": {},
+        "param_overrides": {},
+        "label_overrides": {},
+        "anchor": {
+          "x": 3080.0,
+          "y": 0.0
+        }
+      }
     },
     {
-      "id": "9f59026b",
+      "id": "sync_players_1",
       "label": "Sync players",
       "members": [
-        "state_4",
-        "state_7",
-        "state_15",
-        "state_3",
-        "state_17",
-        "state_10",
-        "state_16"
+        "sync_players_1_state_1",
+        "sync_players_1_state_2",
+        "sync_players_1_state_3",
+        "sync_players_1_state_4",
+        "sync_players_1_state_5",
+        "sync_players_1_state_7"
       ],
-      "color": 1
+      "color": 2,
+      "source": {
+        "subgraph_id": "24556de8-5917-4f4e-8760-177b0be20c3d",
+        "version": 3,
+        "inputs": {},
+        "param_overrides": {
+          "state_5": {
+            "zone": "WizardCity/WC_Hub"
+          },
+          "state_3": {
+            "target_zone": "WizardCity/*"
+          },
+          "state_2": {
+            "target_zone": "WizardCity/WC_Streets/WC_Colossus"
+          }
+        },
+        "label_overrides": {},
+        "anchor": {
+          "x": -440.00045280312963,
+          "y": -0.00018769964140119555
+        }
+      }
     }
   ]
 }

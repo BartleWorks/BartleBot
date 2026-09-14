@@ -24,12 +24,26 @@ LOADING_SCREEN_TIMEOUT = 60.0
 # infinite-load crash. Normal Wizard101 loading screens complete in 5–10 s;
 # 60 s provides a generous safety margin.
 
+ZONE_SETTLE_GRACE = 5.0
+# Seconds wait_for_zone_with_recovery holds off teleport-to-player recovery for a client
+# that is not in the destination zone and not (yet) on a loading screen. A client whose
+# transition has fired but whose loading screen has not started still reads its old zone
+# name, and porting it then undoes the arrival it was about to make on its own — the
+# teleport lands after it gets there. Long enough for a slow trigger's loading screen to
+# appear, short enough that a client that never triggered is still recovered quickly.
+
 MAX_RETRIES = 3
 # Default number of attempts for recoverable operations (teleport-and-check loops).
 
 TRIGGER_TIMEOUT = 10.0
 # Seconds to wait for a UI event to fire after an input (loading screen start,
 # button becoming enabled, dialog appearing).
+
+RIDE_TIMEOUT = 180.0
+# Ceiling on waiting out a ride -- a boat, an airship, a dragon -- for a player whose skip
+# never landed. Skipping normally ends a ride within seconds of the prompt appearing, and a
+# ride left alone ends on its own well inside this, so reaching it means the player is stuck
+# rather than slow; what is left is the arrival check's teleport-to-player recovery.
 
 QUICKSELL_COMPLETE_TIMEOUT = 15.0
 # Seconds to wait for the backpack close button to reappear after confirming

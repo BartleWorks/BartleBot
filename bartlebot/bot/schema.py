@@ -101,9 +101,9 @@ class StateModel(BaseModel):
 
 class BotOptionModel(BaseModel):
     name: str
-    # The last two are declared by nodes only and never offered in the Add Option
+    # The last three are declared by nodes only and never offered in the Add Option
     # dialog: they are a str / str_list underneath, with a richer control in Setup.
-    type: Literal["bool", "int", "float", "str", "str_list", "player_list", "drop_keep_list", "friend_name"]
+    type: Literal["bool", "int", "float", "str", "str_list", "player_list", "drop_keep_list", "friend_name", "realm"]
     # The author's recommended value -- *not* the user's current one, which lives in
     # settings.json (see bartlebot.bot_options). None means the author has no opinion,
     # which is what lets the app setting below it be reachable at all.
@@ -153,15 +153,20 @@ class SubgraphSource(BaseModel):
     ``version`` is the definition version the stored members were composed from.
     ``inputs`` maps input name to value; ``None`` (or absence) means unset.
     ``param_overrides`` maps a definition-local state id to the params this
-    instance pins on it, and wins over everything. ``anchor`` is where the
-    definition's origin sits on this canvas, in the ``StateModel.position``
-    convention -- layout is instance-owned, see docs/SUBGRAPHS.md.
+    instance pins on it, and wins over everything. A consumer's edit to a *free*
+    param (``SubgraphDefinition.free_params``) lands here too, so the two are
+    told apart only by how the panel shows them. ``label_overrides`` maps a
+    local id to the label this instance gives that member: a label is always
+    the consumer's to change. ``anchor`` is where the definition's origin sits
+    on this canvas, in the ``StateModel.position`` convention -- layout is
+    instance-owned, see docs/SUBGRAPHS.md.
     """
 
     subgraph_id: str
     version: int
     inputs: dict[str, object] = Field(default_factory=dict)
     param_overrides: dict[str, dict[str, object]] = Field(default_factory=dict)
+    label_overrides: dict[str, str] = Field(default_factory=dict)
     anchor: dict = Field(default_factory=lambda: {"x": 0.0, "y": 0.0})
 
 
@@ -386,7 +391,7 @@ def _atomic_write_json(data: dict, path: str | Path) -> None:
 
 
 #: The charset a subgraph definition's local ids are drawn from. Member ids are
-#: composed as ``sg_<region id>_<local id>``, so a local id has to be safe to embed.
+#: composed as ``<region id>_<local id>``, so a local id has to be safe to embed.
 SUBGRAPH_LOCAL_ID = re.compile(r"^[A-Za-z0-9_]+$")
 
 
@@ -398,6 +403,12 @@ class SubgraphDefinition(BaseModel):
     or ``recovery_state``: roles are bot-owned. Composition into a bot is
     :mod:`bartlebot.subgraphs`; storage is :mod:`bartlebot.subgraph_store`.
 
+    ``free_params`` maps a local state id to the params the author left for the
+    consumer to set on the node itself (a one-off zone, a wait); every other
+    param is *locked*, the subgraph's own, and a consumer changes one only by an
+    explicit override. It is seeded at extraction from which values were still
+    at their defaults, then the author's to toggle while editing.
+
     Validation stays registry-free, as ``BotConfig``'s does: a binding's ``param``
     is not checked against the node's ``ParamField``s here, for the same reason
     ``_validate_node`` lives in the scene rather than in this module.
@@ -408,6 +419,7 @@ class SubgraphDefinition(BaseModel):
     description: str | None = None
     version: int = 1
     inputs: list[SubgraphInput] = Field(default_factory=list)
+    free_params: dict[str, list[str]] = Field(default_factory=dict)
     states: list[StateModel]
     transitions: list[TransitionModel] = Field(default_factory=list)
     regions: list[RegionModel] = Field(default_factory=list)
@@ -446,6 +458,9 @@ class SubgraphDefinition(BaseModel):
             for b in inp.bindings:
                 if b.state not in seen:
                     raise ValueError(f"input {inp.name!r} binds to unknown state {b.state!r}")
+        for state_id in self.free_params:
+            if state_id not in seen:
+                raise ValueError(f"free_params names unknown state {state_id!r}")
         region_ids: set[str] = set()
         for r in self.regions:
             if not SUBGRAPH_LOCAL_ID.match(r.id):

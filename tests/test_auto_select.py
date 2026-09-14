@@ -355,7 +355,7 @@ async def test_drive_runs_cleanup_on_success(keys, fast, game):
     with patch.object(auto_select, "clean_up_after_auto_select", cleanup):
         reached = await drive_client_in(TITLE, HookedWhenInWorld(game), lambda: game)
     assert reached is True
-    cleanup.assert_awaited_once_with(game)
+    cleanup.assert_awaited_once_with(game, remember_realm=False)
 
 
 async def test_drive_skips_cleanup_on_timeout(keys, fast):

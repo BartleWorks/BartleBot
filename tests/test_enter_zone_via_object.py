@@ -1,5 +1,7 @@
 """Unit tests for the enter_zone_via_object node."""
 
+import itertools
+from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
 from wizwalker import Keycode
@@ -332,30 +334,57 @@ async def test_sequential_clients_transition_one_at_a_time():
     assert overlaps == [False, False]
 
 
-async def test_sequential_client_never_triggers_fails():
-    """A client whose keypress does not start a transition is named in the failure."""
-    good = _sequential_client()
-    stuck = _sequential_client()
-
+def _swallow_keypresses(client: FakeClient) -> None:
     async def _no_transition(key, delay):
-        stuck.state["at_interact"] = stuck.state["at_interact"]  # keypress swallowed
+        client.state["at_interact"] = client.state["at_interact"]  # keypress swallowed
 
-    stuck.send_key.side_effect = _no_transition
-    machine = FakeMachine()
-    params = {**_PARAMS, "sequential": True}
+    client.send_key.side_effect = _no_transition
 
-    with (
+
+def _sequential_patches():
+    return (
         patch.object(itz, "POLL_INTERVAL", 0),
         patch.object(itz, "TRIGGER_TIMEOUT", 0.05),
         patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
         patch("bartlebot.nodes.node_helpers.OBJECT_USE_DELAY", 0),
         patch("bartlebot.nodes.node_helpers.is_visible_by_path", AsyncMock(return_value=False)),
         patch("bartlebot.nodes.node_helpers.get_text_by_path", AsyncMock(return_value="")),
-    ):
-        result = await itz.run(machine, [good, stuck], params)
+    )
+
+
+async def test_a_sequential_client_that_never_triggers_is_left_to_the_arrival_check():
+    """One player's failed turn is not the group's: the one that went through is already across,
+    so the arrival check -- not the turn -- decides, and the stuck player is named."""
+    good = _sequential_client()
+    stuck = _sequential_client()
+    _swallow_keypresses(stuck)
+    machine = FakeMachine()
+    arrival = AsyncMock(return_value=[_TO_ZONE, _FROM_ZONE])
+
+    with ExitStack() as stack:
+        for p in _sequential_patches():
+            stack.enter_context(p)
+        stack.enter_context(patch("bartlebot.nodes.node_helpers.wait_for_zone_with_recovery", new=arrival))
+        result = await itz.run(machine, [good, stuck], {**_PARAMS, "sequential": True})
 
     assert result == "FAILURE"
-    assert any("did not enter a loading screen" in msg and "[2]" in msg for msg, _ in machine.logs)
+    arrival.assert_awaited_once()
+    assert any("did not go through" in msg and "[2]" in msg for msg, _ in machine.logs)
+
+
+async def test_sequential_clients_that_all_fail_to_trigger_fail_the_step():
+    clients = [_sequential_client(), _sequential_client()]
+    for client in clients:
+        _swallow_keypresses(client)
+    machine = FakeMachine()
+
+    with ExitStack() as stack:
+        for p in _sequential_patches():
+            stack.enter_context(p)
+        result = await itz.run(machine, clients, {**_PARAMS, "sequential": True})
+
+    assert result == "FAILURE"
+    assert any("did not enter a loading screen" in msg and "[1, 2]" in msg for msg, _ in machine.logs)
 
 
 async def test_sequential_does_not_park_a_departing_client():
@@ -375,3 +404,82 @@ async def test_sequential_does_not_park_a_departing_client():
     assert result == "SUCCESS"
     # Park at reset, then the approach to interact — and nothing after the keypress.
     assert [call.args[0].x for call in client.teleport.call_args_list] == [1.0, 0.0]
+
+
+# ---------------------------------------------------------------------------
+# A parallel use that leaves some clients behind
+# ---------------------------------------------------------------------------
+
+
+def _goes_through() -> FakeClient:
+    """Raises the prompt, loads on its first keypress, and arrives -- however often it is read."""
+    c = FakeClient()
+    c.is_in_npc_range.side_effect = itertools.chain([False], itertools.repeat(True))
+    c.zone_name.side_effect = itertools.chain([_FROM_ZONE], itertools.repeat(_TO_ZONE))
+    c.is_loading.side_effect = itertools.chain([True], itertools.repeat(False))
+    return c
+
+
+def _left_behind() -> FakeClient:
+    """Raises the prompt with everyone else, but its keypress never starts a transition."""
+    c = FakeClient()
+    c.is_in_npc_range.side_effect = itertools.chain([False], itertools.repeat(True))
+    c.zone_name.return_value = _FROM_ZONE
+    return c
+
+
+async def test_clients_a_parallel_use_left_behind_get_turns_at_the_object():
+    """One went through and one's keypress was swallowed: the object serves one player at a time."""
+    through, behind = _goes_through(), _left_behind()
+    machine = FakeMachine()
+    turns = AsyncMock(return_value=None)
+
+    with (
+        patch.object(itz, "POLL_INTERVAL", 0),
+        patch.object(itz, "TRIGGER_TIMEOUT", 0.01),
+        patch.object(itz, "_trigger_sequentially", turns),
+        patch("bartlebot.nodes.node_helpers.wait_for_zone_with_recovery", new=AsyncMock(return_value=None)),
+    ):
+        result = await itz.run(machine, [through, behind], _PARAMS)
+
+    assert result == "SUCCESS"
+    turns.assert_awaited_once()
+    assert turns.await_args.args[1] == [behind]
+    assert any("Sequential Interaction" in msg for msg, _ in machine.logs)
+
+
+async def test_a_client_that_starts_loading_after_the_press_window_gets_no_turn():
+    """It is already on its way; a turn would teleport it back out of where it lands (#70)."""
+    through, behind = _goes_through(), _left_behind()
+    turns = AsyncMock(return_value=None)
+
+    with (
+        patch.object(itz, "POLL_INTERVAL", 0),
+        patch.object(itz, "_trigger_sequentially", turns),
+        patch.object(itz, "_loading_or_arrived", AsyncMock(return_value=True)),
+        patch("bartlebot.nodes.node_helpers.poll_each_until_seen", AsyncMock(return_value={0})),
+        patch("bartlebot.nodes.node_helpers.wait_for_zone_with_recovery", new=AsyncMock(return_value=None)),
+    ):
+        await itz.run(FakeMachine(), [through, behind], _PARAMS)
+
+    turns.assert_not_awaited()
+
+
+async def test_nobody_going_through_gives_no_turns():
+    """If nobody went through, the object is not being shared badly: it is not working."""
+    clients = [_left_behind(), _left_behind()]
+    turns = AsyncMock(return_value=None)
+
+    with (
+        patch.object(itz, "POLL_INTERVAL", 0),
+        patch.object(itz, "_trigger_sequentially", turns),
+        patch("bartlebot.nodes.node_helpers.poll_each_until_seen", AsyncMock(return_value=set())),
+        patch(
+            "bartlebot.nodes.node_helpers.wait_for_zone_with_recovery",
+            new=AsyncMock(return_value=[_FROM_ZONE, _FROM_ZONE]),
+        ),
+    ):
+        result = await itz.run(FakeMachine(), clients, _PARAMS)
+
+    assert result == "FAILURE"
+    turns.assert_not_awaited()

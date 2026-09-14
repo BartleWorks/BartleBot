@@ -32,7 +32,7 @@
   "authors": "BartleBot",
   "tags": [
     "Reagents",
-    "Gathering"
+    "Collecting"
   ],
   "options": [
     {
@@ -80,7 +80,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "change_realm",
+      "node_type": "change_to_next_realm",
       "label": "Change realm",
       "position": {
         "x": 880.0,

@@ -73,6 +73,7 @@ from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import (
     ComposeReport,
     added_member_ids,
+    clear_label_override,
     clear_param_override,
     compose_bot,
     contains_subgraph,
@@ -80,11 +81,15 @@ from bartlebot.subgraphs import (
     definition_values,
     drop_states,
     extract_definition,
+    free_keys,
     local_id,
+    mint_instance_id,
     push_back,
     rename_states,
     reresolve_member_params,
     set_param_override,
+    sync_free_overrides,
+    taken_ids,
 )
 
 logger = logging.getLogger(__name__)
@@ -1171,6 +1176,8 @@ class BotCanvas(QWidget):
         self._param_panel.detach_requested.connect(self._on_detach_requested)
         self._param_panel.edit_subgraph_requested.connect(self.begin_subgraph_edit)
         self._param_panel.expose_input_requested.connect(self._on_expose_input_requested)
+        self._param_panel.free_toggled.connect(self.set_param_free)
+        self._param_panel.label_override_reset.connect(self._on_label_override_reset)
         self._param_panel.definition_changed.connect(self._on_definition_changed)
         self._scene.save_region_as_subgraph_requested.connect(self.save_region_as_subgraph)
         self._scene.edit_subgraph_requested.connect(self.begin_subgraph_edit)
@@ -1489,7 +1496,7 @@ class BotCanvas(QWidget):
 
     def set_zone_getter(self, fn: Callable[[], list[str]]) -> None:
         """Pass a callable that returns zone suggestions (current player zones + history)."""
-        self._param_panel._param_form._get_zone_suggestions = fn
+        self._param_panel.set_zone_suggestions_getter(fn)
 
     def _apply_pill_stylesheets(self) -> None:
         _pill_base = "border-radius: 4px; padding: 1px 7px;"
@@ -2021,11 +2028,13 @@ class BotCanvas(QWidget):
         self._validation_timer.start()
 
     def _sync_overrides_from_shown_state(self) -> None:
-        """Copy an overridden param's edited value into the instance's ``param_overrides``.
+        """Copy an edited override, free param or label of a locked member into its instance's ``source``.
 
-        The panel writes ``state.params`` as for any node; on a locked member the
-        only editable rows are the overridden ones, and their values also have to
-        land in ``source`` or the next compose would put the definition's back.
+        The panel writes ``state.params`` and ``state.label`` as for any node; on
+        a locked member the editable rows are the overridden and free ones and
+        the label, and their values also have to land in ``source`` or the next
+        compose would put the definition's back. A free param or label is
+        recorded only while it differs from the subgraph's (``sync_free_overrides``).
         """
         state = self._param_panel.shown_state
         region = self._scene.linked_region_of(state.id) if state is not None else None
@@ -2034,9 +2043,39 @@ class BotCanvas(QWidget):
         local = local_id(region.id, state.id)
         if local is None:
             return
+        defn = self._definition_for(region)
+        free = free_keys(defn, local) if defn is not None else frozenset()
         for key in list(region.source.param_overrides.get(local, {})):
-            if key in state.params:
+            if key in state.params and key not in free:
                 set_param_override(region.source, local, key, state.params[key])
+        if defn is not None:
+            sync_free_overrides(region, defn, state)
+
+    def _on_label_override_reset(self, state_id: str) -> None:
+        """Drop a member's label override and show the definition's label again. One undo step."""
+        config = self._scene.config
+        region = self._scene.linked_region_of(state_id)
+        if config is None or region is None or region.source is None:
+            return
+        local = local_id(region.id, state_id)
+        state = next((st for st in config.states if st.id == state_id), None)
+        defn = self._definition_for(region)
+        def_state = next((s for s in defn.states if s.id == local), None) if defn is not None else None
+        if local is None or state is None:
+            return
+        self._undo_mgr.cancel_debounce()
+        self._on_about_to_change("Reset label")
+        clear_label_override(region.source, local)
+        if def_state is not None:
+            state.label = def_state.label
+            node = self._scene.node_items.get(state_id)
+            if node is not None:
+                node.set_label(state.label)
+        self._on_scene_changed()
+        if self._param_panel.shown_region is region:
+            self._show_region_page(region)
+        elif self._param_panel.shown_state is state:
+            self._show_state_page(state)
 
     def _on_override_toggled(self, state_id: str, key: str, active: bool) -> None:
         """Start or drop a per-instance override of one member param.
@@ -2133,12 +2172,15 @@ class BotCanvas(QWidget):
             name, description = dlg.name, dlg.description
         work = config.model_copy(deep=True)
         try:
-            defn, source = extract_definition(work, region_id, new_id=str(uuid4()), name=name, description=description)
+            defn, source = extract_definition(
+                work, region_id, new_id=str(uuid4()), name=name, description=description, schemas=NODE_PARAM_SCHEMAS
+            )
         except ValueError as exc:
             QMessageBox.critical(self, "Save Region as Subgraph", str(exc))
             return False
         library.save(defn)
-        id_map = convert_region_to_instance(work, region_id, defn, source)
+        instance_id = mint_instance_id(name, taken_ids(work))
+        id_map = convert_region_to_instance(work, region_id, defn, source, instance_id=instance_id)
         composed, report = compose_bot(work, library)
         self._undo_mgr.cancel_debounce()
         self.replace_config(composed, "Save region as subgraph")
@@ -2212,7 +2254,7 @@ class BotCanvas(QWidget):
             return False
         rename_states(work, added_member_ids(region))
         try:
-            pushed, warnings = push_back(work, rid, previous)
+            pushed, warnings = push_back(work, rid, previous, schemas=NODE_PARAM_SCHEMAS)
         except ValueError as exc:
             QMessageBox.critical(self, "Save to Library", str(exc))
             return False
@@ -2319,6 +2361,26 @@ class BotCanvas(QWidget):
         self._on_definition_changed()
         return True
 
+    def set_param_free(self, state_id: str, key: str, free: bool) -> bool:
+        """Mark one param of a member of the region being edited as free (consumers set it) or locked.
+
+        Written to the working definition, like Expose; it reaches the library
+        with the push. False when no edit is open or ``state_id`` is not a member.
+        """
+        defn = self._editing_defn
+        rid = self._editing_region_id
+        if defn is None or rid is None or state_id not in self._scene.editing_members():
+            return False
+        local = local_id(rid, state_id) or state_id
+        keys = [k for k in defn.free_params.get(local, []) if k != key]
+        if free:
+            keys.append(key)
+        if keys:
+            defn.free_params[local] = keys
+        else:
+            defn.free_params.pop(local, None)
+        return True
+
     def _on_expose_input_requested(self, state_id: str, key: str) -> None:
         config = self._scene.config
         defn = self._editing_defn
@@ -2358,13 +2420,22 @@ class BotCanvas(QWidget):
             return
         region = self._scene.linked_region_of(state.id)
         locked = self._scene.is_locked(state.id)
+        exposable = state.id in self._scene.editing_members()
         override_keys: frozenset = frozenset()
+        free: frozenset = frozenset()
+        bound: dict[str, str] = {}
         name = None
         if locked and region is not None and region.source is not None:
             local = local_id(region.id, state.id)
             override_keys = frozenset(region.source.param_overrides.get(local, {})) if local else frozenset()
             defn = self._definition_for(region)
             name = defn.name if defn is not None else region.label
+            if defn is not None and local is not None:
+                free = free_keys(defn, local)
+        elif exposable and self._editing_defn is not None and self._editing_region_id is not None:
+            local = local_id(self._editing_region_id, state.id) or state.id
+            free = free_keys(self._editing_defn, local)
+            bound = {b.param: i.name for i in self._editing_defn.inputs for b in i.bindings if b.state == local}
         self._param_panel.show_state(
             state,
             all_states=list(config.states),
@@ -2374,7 +2445,9 @@ class BotCanvas(QWidget):
             locked=locked,
             override_keys=override_keys,
             subgraph_name=name,
-            exposable=state.id in self._scene.editing_members(),
+            exposable=exposable,
+            free_keys=free,
+            bound_inputs=bound,
         )
 
     def _show_region_page(self, region) -> None:

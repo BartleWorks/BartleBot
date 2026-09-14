@@ -962,22 +962,44 @@ class AppController(QObject):
         deadlocks the qasync loop under Python 3.13 (see CLAUDE.md).
         """
         await self._apply_pre_run_decks()
-        await self._form_pre_run_group()
+        states = await self._form_pre_run_group()
+        await self._survey_pre_run_ports(states)
 
-    async def _form_pre_run_group(self) -> None:
+    async def _survey_pre_run_ports(self, states: list | None) -> None:
+        """Read who among the clients can port to whom, for zone navigation. See bartlebot.port_map.
+
+        Runs whether or not auto-grouping is on: a friends list is one text read per client,
+        and a route planned around a port that cannot happen costs far more. Never raises —
+        a node that finds no map surveys for itself.
+        """
+        from bartlebot import port_map  # noqa: PLC0415
+
+        clients = self._client_manager.clients
+        machine = self._current_machine
+        if machine is None or len(clients) < 2:
+            return
+        try:
+            machine.port_map = await port_map.survey(clients, states=states)
+        except Exception:
+            logger.warning("Port survey failed — zone navigation will survey when it needs one", exc_info=True)
+
+    async def _form_pre_run_group(self) -> list | None:
         """Put all clients into one in-game group, if the user has that enabled.
 
         Group membership is lost whenever a client logs off or crashes, and it is what
         guarantees the first turn in combat, so it is re-established at the start of every
         run rather than assumed to have survived from the last one.
+
+        Returns the group states it read when it left membership as it found it, so the port
+        survey can reuse them; None when it read nothing, or changed the group.
         """
         if not SettingsManager.instance().auto_group_players:
-            return
+            return None
 
         clients = self._client_manager.clients
         if len(clients) < 2:
             logger.debug("Skipping pre-run grouping — fewer than two clients connected")
-            return
+            return None
 
         try:
             # Survey once and hand the result to form_group. Each survey opens and closes
@@ -986,7 +1008,7 @@ class AppController(QObject):
             states = await group_manager.read_group_states(clients)
             if all(s.grouped for s in states) and group_manager.same_group(states) is not False:
                 logger.debug("Skipping pre-run grouping — all clients are already in one group")
-                return
+                return states
             names = await wizard_names.resolve_names(clients)
             result = await group_manager.form_group(clients, names, states=states)
             if result.success:
@@ -1193,6 +1215,7 @@ class AppController(QObject):
             # Undo/redo replaces the canvas's config object; the sidebar has to
             # follow it or its edits go nowhere.  No-op the rest of the time.
             self._window.left_sidebar.sync_config(canvas_config, self._window.bot_canvas.mode == BotMode.EDIT)
+            self._window.right_sidebar.sync_config(canvas_config)
         if self._loaded_config is not None:
             self._window.bot_canvas.refresh_initial(self._loaded_config.initial)
             self._window.bot_canvas.refresh_recovery(self._loaded_config.recovery_state)

@@ -82,6 +82,8 @@ The snapshots and their tools:
 | `data/dialog_captions.json` | `dump_dialog_captions.py` | a modal is reworded, or a key is added to `KNOWN_KEYS` |
 | `data/world_names.json` | `dump_world_names.py` | a world is added or renamed in any locale |
 | `data/spell_names.json` | `dump_spell_names.py` | a spell is added or renamed |
+| `data/realm_names.json` | `dump_realm_names.py` | a realm is added, retired or renamed; also carries the localized Yes/No the Remember Realm option shows |
+| `data/zone_names.json` | `dump_zone_names.py` | a zone is added or renamed in any locale |
 
 `WorldNames.lang` is worth knowing about on its own, because its key **is** the world
 segment `zone_name()` returns — `WizardCity`, `DragonSpire`, `MooShu` — and its value is
@@ -95,6 +97,13 @@ WorldNames entries and both have GameData wads; nothing separates them. So
 `worlds.SPIRAL_DOOR_WORLDS` is curated by hand, every exclusion is named with its reason,
 and `test_worlds.py` checks each entry against the snapshot. Guessing a rule here got
 Darkmoor wrong once already.
+
+### Zone connectivity: `tools/zone_graph/`
+
+Which zones connect, where gates and arrival points sit, and the hub/spiral-door zone
+per world all ship in the game files (`zonemap.nav`, `WorldHubZones.xml`, each zone's own
+wad). Its `CLAUDE.md` has the layouts, and the open questions. Prefer it over
+wizsprinter's hand-built `traversalData/`.
 
 ## Reading a field out of a BINd file: use `katsuba`, not a byte scan
 

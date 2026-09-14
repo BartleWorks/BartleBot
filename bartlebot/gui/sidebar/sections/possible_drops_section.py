@@ -330,6 +330,11 @@ class PossibleDropsSection(SidebarSection):
         self._drops_widget.changed.connect(self._on_drops_changed)
         self._drops_widget.import_requested.connect(self._on_import_requested)
 
+    @property
+    def config(self) -> BotConfig | None:
+        """The BotConfig this list writes its edits into."""
+        return self._config
+
     def set_config(self, config: BotConfig | None) -> None:
         self._config = config
         self._drops_widget.set_items(config.drops if config is not None else [])

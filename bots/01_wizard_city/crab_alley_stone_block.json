@@ -17,7 +17,7 @@
   "authors": "BartleBot",
   "tags": [
     "Reagents",
-    "Gathering"
+    "Collecting"
   ],
   "options": [],
   "states": [
@@ -142,7 +142,7 @@
     },
     {
       "id": "state_14",
-      "node_type": "change_realm",
+      "node_type": "change_to_next_realm",
       "label": "Change realm",
       "position": {
         "x": 2640.0,

@@ -23,6 +23,8 @@ from bartlebot.nodes.interaction.wait_for_dialogue import run as wait_for_dialog
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.teleportation.go_to_world import NODE_SPEC as _go_to_world_spec
 from bartlebot.nodes.teleportation.go_to_world import run as go_to_world_run
+from bartlebot.nodes.teleportation.go_to_zone import NODE_SPEC as _go_to_zone_spec
+from bartlebot.nodes.teleportation.go_to_zone import run as go_to_zone_run
 from bartlebot.nodes.teleportation.mark_location import NODE_SPEC as _mark_location_spec
 from bartlebot.nodes.teleportation.mark_location import run as mark_location_run
 from bartlebot.nodes.teleportation.teleport_to_coordinates import NODE_SPEC as _teleport_to_coordinates_spec
@@ -37,8 +39,10 @@ from bartlebot.nodes.teleportation.teleport_to_world_hub import NODE_SPEC as _te
 from bartlebot.nodes.teleportation.teleport_to_world_hub import run as teleport_to_world_hub_run
 from bartlebot.nodes.utility.apply_level_scaling import NODE_SPEC as _apply_level_scaling_spec
 from bartlebot.nodes.utility.apply_level_scaling import run as apply_level_scaling_run
-from bartlebot.nodes.utility.change_realm import NODE_SPEC as _change_realm_spec
-from bartlebot.nodes.utility.change_realm import run as change_realm_run
+from bartlebot.nodes.utility.change_to_favorite_realm import NODE_SPEC as _change_to_favorite_realm_spec
+from bartlebot.nodes.utility.change_to_favorite_realm import run as change_to_favorite_realm_run
+from bartlebot.nodes.utility.change_to_next_realm import NODE_SPEC as _change_to_next_realm_spec
+from bartlebot.nodes.utility.change_to_next_realm import run as change_to_next_realm_run
 from bartlebot.nodes.utility.check_if_dropped import NODE_SPEC as _check_if_dropped_spec
 from bartlebot.nodes.utility.check_if_dropped import run as check_if_dropped_run
 from bartlebot.nodes.utility.check_level_scaling import NODE_SPEC as _check_level_scaling_spec
@@ -63,15 +67,19 @@ from bartlebot.nodes.zone_entry.enter_zone_via_list import NODE_SPEC as _enter_z
 from bartlebot.nodes.zone_entry.enter_zone_via_list import run as enter_zone_via_list_run
 from bartlebot.nodes.zone_entry.enter_zone_via_object import NODE_SPEC as _enter_zone_via_object_spec
 from bartlebot.nodes.zone_entry.enter_zone_via_object import run as enter_zone_via_object_run
+from bartlebot.nodes.zone_entry.enter_zone_via_ride import NODE_SPEC as _enter_zone_via_ride_spec
+from bartlebot.nodes.zone_entry.enter_zone_via_ride import run as enter_zone_via_ride_run
 
 NODE_REGISTRY: dict = {
     "apply_level_scaling": apply_level_scaling_run,
-    "change_realm": change_realm_run,
+    "change_to_favorite_realm": change_to_favorite_realm_run,
+    "change_to_next_realm": change_to_next_realm_run,
     "click_path": click_path_run,
     "enter_zone": enter_zone_run,
     "handle_potions": handle_potions_run,
     "teleport_to_world_hub": teleport_to_world_hub_run,
     "go_to_world": go_to_world_run,
+    "go_to_zone": go_to_zone_run,
     "teleport_to_coordinates": teleport_to_coordinates_run,
     "enter_dungeon": enter_dungeon_run,
     "enter_gauntlet": enter_gauntlet_run,
@@ -80,6 +88,7 @@ NODE_REGISTRY: dict = {
     "interact_menu": interact_menu_run,
     "quicksell": quicksell_run,
     "enter_zone_via_object": enter_zone_via_object_run,
+    "enter_zone_via_ride": enter_zone_via_ride_run,
     "handle_combat": handle_combat_run,
     "collect_reagent": collect_reagent_run,
     "check_health": check_health_run,
@@ -101,12 +110,14 @@ NODE_REGISTRY: dict = {
 
 NODE_SPECS: dict[str, NodeSpec] = {
     "apply_level_scaling": _apply_level_scaling_spec,
-    "change_realm": _change_realm_spec,
+    "change_to_favorite_realm": _change_to_favorite_realm_spec,
+    "change_to_next_realm": _change_to_next_realm_spec,
     "click_path": _click_path_spec,
     "enter_zone": _enter_zone_spec,
     "handle_potions": _handle_potions_spec,
     "teleport_to_world_hub": _teleport_to_world_hub_spec,
     "go_to_world": _go_to_world_spec,
+    "go_to_zone": _go_to_zone_spec,
     "teleport_to_coordinates": _teleport_to_coordinates_spec,
     "enter_dungeon": _enter_dungeon_spec,
     "enter_gauntlet": _enter_gauntlet_spec,
@@ -115,6 +126,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "interact_menu": _interact_menu_spec,
     "quicksell": _quicksell_spec,
     "enter_zone_via_object": _enter_zone_via_object_spec,
+    "enter_zone_via_ride": _enter_zone_via_ride_spec,
     "handle_combat": _handle_combat_spec,
     "collect_reagent": _collect_reagent_spec,
     "check_health": _check_health_spec,
@@ -148,12 +160,14 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "enter_zone",
             "enter_zone_via_list",
             "enter_zone_via_object",
+            "enter_zone_via_ride",
         ],
     ),
     (
         "Teleportation",
         [
             "go_to_world",
+            "go_to_zone",
             "mark_location",
             "teleport_to_coordinates",
             "teleport_to_friend",
@@ -187,7 +201,8 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         "Utility",
         [
             "apply_level_scaling",
-            "change_realm",
+            "change_to_favorite_realm",
+            "change_to_next_realm",
             "check_if_dropped",
             "check_level_scaling",
             "check_zone",

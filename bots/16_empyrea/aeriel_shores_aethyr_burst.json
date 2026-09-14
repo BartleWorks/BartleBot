@@ -4,8 +4,8 @@
   "description": "Collects Aethyr Bursts (Aethyr Dust and Aethyr Ore) in Aeriel Shores and Aeriel Jungle, Empyrea",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "state_29",
+  "recovery_state": "state_29",
   "drops": [
     {
       "name": "Shocked Key"
@@ -17,7 +17,7 @@
   "authors": "BartleBot",
   "tags": [
     "Reagents",
-    "Gathering"
+    "Collecting"
   ],
   "options": [],
   "states": [
@@ -35,7 +35,7 @@
     },
     {
       "id": "state_28",
-      "node_type": "change_realm",
+      "node_type": "change_to_next_realm",
       "label": "Change realm",
       "position": {
         "x": 440,
@@ -322,6 +322,18 @@
         "entity_names": [
           "AetherOre"
         ]
+      }
+    },
+    {
+      "id": "state_29",
+      "node_type": "go_to_world",
+      "label": "Go to Empyrea",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "world": "Empyrea"
       }
     }
   ],
@@ -640,6 +652,26 @@
       "trigger": "advance",
       "source": "state_7",
       "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_29",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",

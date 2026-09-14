@@ -3,6 +3,7 @@
 import asyncio
 import difflib
 import logging
+from collections.abc import Callable
 
 from wizwalker import XYZ, Keycode
 
@@ -188,17 +189,16 @@ def _queries(entry: str, aliases: list[str] | None) -> list[str]:
     return list(dict.fromkeys(q for c in candidates if (q := (c or "").strip().lower())))
 
 
-async def _select_zone(client, entry: str, safety_delay: float, aliases: list[str] | None = None) -> bool:
-    """Navigate the zone list UI on a single client to find and click the matching entry.
+async def _search_pages(client, safety_delay: float, match: Callable[[str], bool]) -> bool:
+    """Walk pages from wherever the list currently sits, clicking the first entry `match` accepts.
 
-    Returns True if the entry was found and clicked, False if all pages were exhausted.
-    Assumes the zone list UI is already open.
+    Returns True if an entry was found and clicked, False if all pages were exhausted —
+    in which case the list is left on the page it started on, not wherever the walk ended.
 
     Page navigation uses a visited-signature set to detect when the list has wrapped
     around (all pages seen), since the prev/next buttons never become disabled — they
     always cycle through the list circularly.
     """
-    queries = _queries(entry, aliases)
     visited: set[tuple[str, ...]] = set()
 
     async def read_texts() -> list[str]:
@@ -217,8 +217,7 @@ async def _select_zone(client, entry: str, safety_delay: float, aliases: list[st
         visited.add(sig)
 
         for i, text in enumerate(texts):
-            logging.debug(f"Searching for any of {queries!r} in {text!r} (client={client}, option={i})")
-            if _fuzzy_match(text, queries):
+            if match(text):
                 await node_helpers.click_by_path(client, universe_zone_option_path(i))
                 return True
 
@@ -227,6 +226,40 @@ async def _select_zone(client, entry: str, safety_delay: float, aliases: list[st
         await node_helpers.poll_until(lambda s=snapshot: page_changed(s), safety_delay, POLL_INTERVAL)
 
     return False
+
+
+def _substring_match(text: str, queries_lower: list[str]) -> bool:
+    """Case-insensitive containment only — no ratio fallback. See `_select_zone`."""
+    t = text.strip().lower()
+    return bool(t) and any(query_lower and query_lower in t for query_lower in queries_lower)
+
+
+async def _select_zone(client, entry: str, safety_delay: float, aliases: list[str] | None = None) -> bool:
+    """Navigate the zone list UI on a single client to find and click the matching entry.
+
+    Returns True if the entry was found and clicked, False if all pages were exhausted.
+    Assumes the zone list UI is already open.
+
+    Two passes, substring first and fuzzy second, rather than one pass trying both: a
+    fuzzy ratio match on an early page must never pre-empt a real substring match sitting
+    on a later one. Paired qualifiers collide often enough for this to matter — "Inner
+    Athanor" against "Outer Athanor" scores 0.77 on `_fuzzy_match`'s own 0.75 threshold in
+    English, 0.94 in Greek, so no threshold separates a genuine near-duplicate spelling
+    from a real, different zone that merely shares most of its letters. The first pass
+    alone already resolves any list where the correct entry appears verbatim (or as an
+    exact alias) anywhere on it, which is every list this node has been pointed at so far;
+    the second pass exists only for a display name closer than a raw substring check
+    catches — a stripped accent, a differently quoted apostrophe.
+    """
+    queries = _queries(entry, aliases)
+    if await _search_pages(client, safety_delay, lambda text: _substring_match(text, queries)):
+        return True
+
+    def fuzzy(text: str) -> bool:
+        logging.debug(f"No exact match; fuzzy-searching for any of {queries!r} in {text!r} (client={client})")
+        return _fuzzy_match(text, queries)
+
+    return await _search_pages(client, safety_delay, fuzzy)
 
 
 async def _confirm_arrival(machine, clients: list, to_zone: str) -> str:
@@ -301,6 +334,16 @@ async def _use_list_sequentially(
     )
     unprompted, unfinished = node_helpers.summarize_turns(results, numbers)
 
+    # One player's failed turn is not the group's: whoever teleported is already on its way,
+    # and the arrival check is what decides what happens to the rest.
+    behind = sorted(set(unprompted) | set(unfinished))
+    if behind and len(behind) < len(clients):
+        machine.log(
+            f"Client(s) {behind} did not use the list; continuing to the arrival check",
+            logging.INFO,
+        )
+        return None
+
     if refusals:
         machine.log(
             f"FAILURE: the game refused the teleport — {dialog_captions.describe(refusals[0])}",
@@ -340,8 +383,9 @@ async def run(machine, clients: list, params: dict) -> str:
       4. Press X on all clients to open the zone list.
       5. Wait for the zone list UI to open (UNIVERSE_TELEPORT_BUTTON visible on all
          clients). Return FAILURE if it never appears within Safety Delay.
-      6. For each client in parallel: navigate pages searching for zone_list_entry using
-         fuzzy matching. After each failed page, click Next and wait for the page to
+      6. For each client in parallel: navigate pages searching for zone_list_entry, a
+         substring pass over every page before a fuzzy pass is ever allowed to (see
+         _select_zone). After each failed page, click Next and wait for the page to
          change. A visited-signature set detects when all pages have been cycled through
          (the list wraps circularly — Next/Prev are never disabled). If not found on
          any page, click cancel on all clients and return FAILURE.

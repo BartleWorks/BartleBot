@@ -9,12 +9,22 @@ the whole policy is testable on a ``tmp_path``. docs/SUBGRAPHS.md has the design
 
 The rules this module owns:
 
-- **Member ids are derived**: ``sg_<region id>_<local id>``, deterministic, so a
+- **Member ids are derived**: ``<region id>_<local id>``, deterministic, so a
   definition update lands on the same ids that combat assignments and roles key on.
+  A linked region's id is minted as ``<slug of the definition name>_<n>`` with ``n``
+  above every number that slug has carried in the bot (:func:`mint_instance_id`), so
+  the third state of the first "Sync players" instance is ``sync_players_1_state_3``.
   A nested instance prefixes again: the inner definition composes to local ids like
-  ``sg_<inner region>_<local>`` and the outer instance prefixes every one of them.
+  ``<inner region>_<local>`` and the outer instance prefixes every one of them.
+- **Nesting is membership**: an instance is inside another when every member of it
+  is a member of the other. Ids are never parsed to find that out, so two definitions
+  whose slugs share a prefix ("Farm" and "Farm 2") cannot be mistaken for nested.
 - **Params resolve in three levels**: an instance's ``param_overrides`` beat an
   input the instance has *set* (non-``None``), which beats the definition's value.
+  The definition also says which params are *free* (``free_params``): a consumer
+  sets those on the node without ceremony, and the edit is stored as an override
+  (:func:`sync_free_overrides`). A member's label is always the consumer's, kept
+  in ``label_overrides``.
 - **Layout is instance-owned**: a member the instance already has keeps its stored
   position; a member new to it is placed at ``anchor + definition position``.
 - **Composition never leaves a bot unloadable**: when the definition is missing,
@@ -25,6 +35,8 @@ The rules this module owns:
 
 from __future__ import annotations
 
+import re
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Literal
 
@@ -40,7 +52,6 @@ from bartlebot.bot.schema import (
 from bartlebot.store_roots import Origin
 from bartlebot.subgraph_store import SubgraphLibrary
 
-ID_PREFIX = "sg_"
 #: Nesting depth past which composition refuses. A cycle is caught by id before this
 #: is reached; the limit is the second guard, against a chain that is merely absurd.
 MAX_DEPTH = 8
@@ -63,15 +74,60 @@ class SubgraphCycleError(Exception):
 
 def member_id(region_id: str, local: str) -> str:
     """The bot-level id of ``local`` inside the instance ``region_id``."""
-    return f"{ID_PREFIX}{region_id}_{local}"
+    return f"{region_id}_{local}"
 
 
 def local_id(region_id: str, member: str) -> str | None:
-    """The inverse of :func:`member_id`; ``None`` if ``member`` is not this region's."""
-    prefix = f"{ID_PREFIX}{region_id}_"
+    """The inverse of :func:`member_id`; ``None`` if ``member`` is not this region's.
+
+    Only meaningful for a state that *is* a member of ``region_id``: another
+    region's id may happen to extend this one ("farm_2" and "farm_2_1"), so ask
+    membership first, never this.
+    """
+    prefix = f"{region_id}_"
     if member.startswith(prefix) and len(member) > len(prefix):
         return member[len(prefix) :]
     return None
+
+
+def instance_slug(name: str) -> str:
+    """``"Sync players"`` -> ``"sync_players"``: lowercase, runs of anything else to ``_``."""
+    return re.sub(r"[^a-z0-9]+", "_", name.lower()).strip("_") or "subgraph"
+
+
+def taken_ids(config: BotConfig) -> set[str]:
+    """Every id an instance id must stay clear of: region ids and state ids."""
+    return {r.id for r in config.regions} | {s.id for s in config.states}
+
+
+def mint_instance_id(name: str, existing: Iterable[str]) -> str:
+    """A fresh linked-region id ``<slug>_<n>`` for a definition called ``name``.
+
+    ``n`` is one above every number the slug already carries in ``existing`` --
+    whether as a region id (``sync_players_2``) or as the head of a state id
+    (``sync_players_2_state_3``, which a detached instance leaves behind as an
+    ordinary state). Never the lowest free number, for the reason
+    ``EditScene._unique_id`` gives: combat assignments key on state ids, and a
+    recycled instance id would hand a deleted instance's strategies to the next.
+    """
+    slug = instance_slug(name)
+    pattern = re.compile(rf"^{re.escape(slug)}_(\d+)(?:_|$)")
+    highest = 0
+    for i in existing:
+        match = pattern.match(i)
+        if match:
+            highest = max(highest, int(match.group(1)))
+    return f"{slug}_{highest + 1}"
+
+
+def is_nested_in(inner: RegionModel, outer: RegionModel) -> bool:
+    """Whether the linked region ``inner`` composes through ``outer``: every member is ``outer``'s."""
+    return inner is not outer and bool(inner.members) and set(inner.members) <= set(outer.members)
+
+
+def nested_regions(config: BotConfig, region: RegionModel) -> list[RegionModel]:
+    """The linked regions composed through ``region``, in file order."""
+    return [r for r in linked_regions(config) if is_nested_in(r, region)]
 
 
 def _pos_add(a: dict | None, b: dict | None) -> dict | None:
@@ -109,6 +165,62 @@ def resolve_member_params(defn: SubgraphDefinition, def_state: StateModel, sourc
     return params
 
 
+def free_keys(defn: SubgraphDefinition, local: str) -> frozenset[str]:
+    """The params of definition-local state ``local`` that its author left for the consumer."""
+    return frozenset(defn.free_params.get(local, ()))
+
+
+def is_default_param(field: object, value: object) -> bool:
+    """Whether ``value`` is what a fresh node carries for ``field``: unset, its default, empty, or zero.
+
+    ``field`` is a ``ParamField`` (duck-typed: ``default`` and ``type`` are read).
+    An all-zero XYZ and a bare 0 on a number with no declared default count as
+    default too -- "non-empty zones and non-zero XYZs are the author's" is the
+    rule :func:`seed_free_params` applies.
+    """
+    default = getattr(field, "default", None)
+    if value is None or value == default:
+        return True
+    empties: tuple[object, ...] = ("", [], {})
+    if value in empties and default in (None, *empties):
+        return True
+    if getattr(field, "type", "") == "xyz" and isinstance(value, dict):
+        try:
+            return all(float(value.get(k) or 0.0) == 0.0 for k in ("x", "y", "z"))
+        except (TypeError, ValueError):
+            return False
+    if default is None and isinstance(value, int | float) and not isinstance(value, bool) and value == 0:
+        return True
+    return False
+
+
+def seed_free_params(
+    states: list[StateModel], schemas: Mapping[str, Sequence[object]] | None, previous: SubgraphDefinition | None = None
+) -> dict[str, list[str]]:
+    """Which params of ``states`` are free: a state's author-decided set if ``previous`` has the state, else its defaults.
+
+    ``schemas`` maps node type to its ``ParamField``s (the registry's
+    ``NODE_PARAM_SCHEMAS``; passed in so this module stays registry-free). A
+    state ``previous`` already holds keeps its entry there -- the heuristic is a
+    seed, not a live rule, or an author's choices would flip whenever a value
+    changed -- trimmed to the params the node still declares. A new state is
+    seeded: a param still at its default is free, everything set is locked.
+    Without ``schemas`` a new state has no free params.
+    """
+    out: dict[str, list[str]] = {}
+    kept = {s.id for s in previous.states} if previous is not None else set()
+    for s in states:
+        fields = list(schemas.get(s.node_type, [])) if schemas is not None else []
+        keys = {getattr(f, "key", None) for f in fields}
+        if previous is not None and s.id in kept:
+            free = [k for k in previous.free_params.get(s.id, []) if not keys or k in keys]
+        else:
+            free = [f.key for f in fields if is_default_param(f, s.params.get(f.key))]  # type: ignore[attr-defined]
+        if free:
+            out[s.id] = free
+    return out
+
+
 def _stale_overrides(states: list[StateModel], source: SubgraphSource) -> list[str]:
     """Overrides naming a state or param the definition no longer has. Kept, never pruned.
 
@@ -125,6 +237,9 @@ def _stale_overrides(states: list[StateModel], source: SubgraphSource) -> list[s
         for key in params:
             if key not in state.params:
                 reasons.append(f"override '{key}' on '{state_id}' names a param the subgraph no longer sets")
+    for state_id in source.label_overrides:
+        if state_id not in by_id:
+            reasons.append(f"label override on '{state_id}' names a state the subgraph no longer has")
     return reasons
 
 
@@ -195,6 +310,8 @@ def _materialize_local(
     warnings.extend(_stale_overrides(states, source))
     for s in states:
         s.params = resolve_member_params(defn, s, source)
+        if s.id in source.label_overrides:
+            s.label = source.label_overrides[s.id] or None
     return Materialized(states, transitions, regions, warnings)
 
 
@@ -282,7 +399,7 @@ def linked_region_of(config: BotConfig, state_id: str) -> RegionModel | None:
     """
     holders = [r for r in linked_regions(config) if state_id in r.members]
     for r in holders:
-        if not any(o is not r and r.id.startswith(_nested_prefix(o.id)) for o in holders):
+        if not any(is_nested_in(r, o) for o in holders):
             return r
     return None
 
@@ -322,14 +439,45 @@ def clear_param_override(source: SubgraphSource, local: str, key: str) -> None:
         del source.param_overrides[local]
 
 
+def set_label_override(source: SubgraphSource, local: str, label: str | None) -> None:
+    source.label_overrides[local] = label or ""
+
+
+def clear_label_override(source: SubgraphSource, local: str) -> None:
+    source.label_overrides.pop(local, None)
+
+
+def sync_free_overrides(region: RegionModel, defn: SubgraphDefinition, state: StateModel) -> None:
+    """Record a consumer's edit to a free param, or to the label, of member ``state`` as an override. In place.
+
+    A free param is edited on the node like any other; what makes it survive the
+    next compose is the override this writes. It is written only while the value
+    differs from what the subgraph would give (definition value, or the bound
+    input the instance set), and dropped once it is back, so the override list
+    on the region page shows divergence and nothing else. The label is treated
+    the same, against the definition's label.
+    """
+    source = region.source
+    local = local_id(region.id, state.id)
+    def_state = next((s for s in defn.states if s.id == local), None) if local is not None else None
+    if source is None or local is None or def_state is None:
+        return
+    base = resolve_member_params(defn, def_state, source.model_copy(update={"param_overrides": {}}))
+    for key in free_keys(defn, local):
+        if key in state.params and state.params[key] != base.get(key):
+            set_param_override(source, local, key, state.params[key])
+        else:
+            clear_param_override(source, local, key)
+    if (state.label or None) != (def_state.label or None):
+        set_label_override(source, local, state.label)
+    else:
+        clear_label_override(source, local)
+
+
 def external_edges(config: BotConfig, region: RegionModel) -> list[TransitionModel]:
     """Transitions with exactly one endpoint inside ``region``."""
     members = set(region.members)
     return [t for t in config.transitions if (t.source in members) != (t.dest in members)]
-
-
-def _nested_prefix(region_id: str) -> str:
-    return f"{ID_PREFIX}{region_id}_"
 
 
 def compose_bot(config: BotConfig, library: SubgraphLibrary) -> tuple[BotConfig, ComposeReport]:
@@ -359,11 +507,11 @@ def compose_bot(config: BotConfig, library: SubgraphLibrary) -> tuple[BotConfig,
     report = ComposeReport()
 
     # Nested instances are recomposed by their outer region, so only the outermost
-    # linked regions drive the loop: a region whose id is prefixed by another
-    # linked region's is inside it.
-    outer_ids = [r.id for r in linked_regions(result)]
-    for region in list(linked_regions(result)):
-        if any(region.id != o and region.id.startswith(_nested_prefix(o)) for o in outer_ids):
+    # linked regions drive the loop: a region whose members all belong to another
+    # linked region is inside it.
+    all_linked = linked_regions(result)
+    for region in list(all_linked):
+        if any(is_nested_in(region, o) for o in all_linked):
             continue
         source = region.source
         assert source is not None
@@ -411,7 +559,7 @@ def compose_bot(config: BotConfig, library: SubgraphLibrary) -> tuple[BotConfig,
 
 def _replace_members(config: BotConfig, region: RegionModel, mat: Materialized) -> None:
     old = set(region.members)
-    nested_prefix = _nested_prefix(region.id)
+    nested = nested_regions(config, region)
 
     first_index = next((i for i, s in enumerate(config.states) if s.id in old), len(config.states))
     kept_states = [s for s in config.states if s.id not in old]
@@ -425,7 +573,7 @@ def _replace_members(config: BotConfig, region: RegionModel, mat: Materialized) 
     insert_t = sum(1 for t in config.transitions[:first_t] if not (t.source in old and t.dest in old))
     config.transitions = kept_t[:insert_t] + mat.transitions + kept_t[insert_t:]
 
-    kept_r = [r for r in config.regions if not r.id.startswith(nested_prefix)]
+    kept_r = [r for r in config.regions if not any(r is n for n in nested)]
     at = next(i for i, r in enumerate(kept_r) if r is region) + 1
     config.regions = kept_r[:at] + mat.regions + kept_r[at:]
     region.members = list(mat.member_ids)
@@ -450,66 +598,115 @@ def _anchor_of(states: list[StateModel]) -> dict:
     return {"x": min(float(p["x"]) for p in positioned), "y": min(float(p["y"]) for p in positioned)}
 
 
+def extraction_locals(config: BotConfig, region_id: str) -> dict[str, str]:
+    """``{member id: local id}`` an extraction of ``region_id`` assigns: ``state_1..N`` in file order.
+
+    A definition starts life with clean local ids rather than whatever numbers the
+    bot had reached, so the same subgraph reads the same in every bot it lands in.
+    A member of a nested instance keeps its local id *inside* that instance
+    (``<inner region>_<inner local>``), since the inner definition owns it.
+    Shared by :func:`extract_definition` and :func:`convert_region_to_instance` so
+    the two cannot disagree.
+    """
+    region = _region_by_id(config, region_id)
+    members = set(region.members)
+    nested_member_ids = {m for r in nested_regions(config, region) for m in r.members}
+    locals_: dict[str, str] = {}
+    n = 0
+    for s in config.states:
+        if s.id not in members:
+            continue
+        if s.id in nested_member_ids:
+            locals_[s.id] = s.id
+            continue
+        n += 1
+        locals_[s.id] = f"state_{n}"
+    return locals_
+
+
 def extract_definition(
-    config: BotConfig, region_id: str, *, new_id: str, name: str, description: str | None = None
+    config: BotConfig,
+    region_id: str,
+    *,
+    new_id: str,
+    name: str,
+    description: str | None = None,
+    schemas: Mapping[str, Sequence[object]] | None = None,
 ) -> tuple[SubgraphDefinition, SubgraphSource]:
     """Turn an ordinary region into a definition, and return the source that would link it.
 
-    Local ids are the current member ids, so the conversion that follows
-    (:func:`convert_region_to_instance`) keeps them recognisable. The anchor is
-    the members' top-left; definition positions are relative to it. Only
-    internal transitions are carried. A linked region wholly inside the members
-    becomes a nested instance. No inputs — those are declared while editing.
+    Local ids are renumbered ``state_1..N`` in file order (:func:`extraction_locals`);
+    the conversion that follows (:func:`convert_region_to_instance`) applies the same
+    map to the bot. The anchor is the members' top-left; definition positions are
+    relative to it. Only internal transitions are carried. A linked region wholly
+    inside the members becomes a nested instance. No inputs — those are declared
+    while editing. With ``schemas`` (the registry's param schemas), ``free_params``
+    is seeded from which values are still at their defaults (:func:`seed_free_params`).
 
     Raises ``ValueError`` if a member id cannot be a local id.
     """
     region = _region_by_id(config, region_id)
     members = set(region.members)
-    by_id = {s.id: s for s in config.states}
-    states = [by_id[m] for m in region.members if m in by_id]
+    states = [s for s in config.states if s.id in members]
+    locals_ = extraction_locals(config, region_id)
     for s in states:
-        if not SUBGRAPH_LOCAL_ID.match(s.id):
+        if not SUBGRAPH_LOCAL_ID.match(locals_[s.id]):
             raise ValueError(f"state id {s.id!r} cannot be a subgraph-local id")
     anchor = _anchor_of(states)
 
     nested: list[RegionModel] = []
-    nested_member_ids: set[str] = set()
-    for r in config.regions:
-        if r.id == region_id or r.source is None or not set(r.members) <= members:
-            continue
+    for r in nested_regions(config, region):
         src = r.source.model_copy(deep=True)
         src.anchor = _pos_sub(src.anchor, anchor) or {"x": 0.0, "y": 0.0}
-        nested.append(RegionModel(id=r.id, label=r.label, members=list(r.members), color=r.color, source=src))
-        nested_member_ids.update(r.members)
+        nested.append(
+            RegionModel(id=r.id, label=r.label, members=[locals_[m] for m in r.members], color=r.color, source=src)
+        )
 
+    local_states = [
+        s.model_copy(update={"id": locals_[s.id], "position": _pos_sub(s.position, anchor)}, deep=True) for s in states
+    ]
     defn = SubgraphDefinition(
         id=new_id,
         name=name,
         description=description,
         version=1,
-        states=[s.model_copy(update={"position": _pos_sub(s.position, anchor)}, deep=True) for s in states],
-        transitions=[t.model_copy(deep=True) for t in config.transitions if t.source in members and t.dest in members],
+        free_params=seed_free_params(local_states, schemas),
+        states=local_states,
+        transitions=[
+            t.model_copy(update={"source": locals_[t.source], "dest": locals_[t.dest]}, deep=True)
+            for t in config.transitions
+            if t.source in members and t.dest in members
+        ],
         regions=nested,
     )
     return defn, SubgraphSource(subgraph_id=new_id, version=1, anchor=anchor)
 
 
 def convert_region_to_instance(
-    config: BotConfig, region_id: str, defn: SubgraphDefinition, source: SubgraphSource
+    config: BotConfig,
+    region_id: str,
+    defn: SubgraphDefinition,
+    source: SubgraphSource,
+    *,
+    instance_id: str | None = None,
 ) -> dict[str, str]:
     """Rewrite the region's member ids to the derived form and attach ``source``. In place.
 
-    Every place a member id appears is rewritten: states, transitions, ``initial``,
-    ``recovery_state`` and every region's ``members``. A linked region nested inside
-    gets its id prefixed too. Returns ``{old id: new id}`` so the caller can re-key
-    what lives outside the config (combat assignments).
+    The region takes ``instance_id`` (mint one with :func:`mint_instance_id`; the
+    default keeps its current id). Every place a member id appears is rewritten:
+    states, transitions, ``initial``, ``recovery_state`` and every region's
+    ``members``. A linked region nested inside gets its id prefixed too. Returns
+    ``{old id: new id}`` so the caller can re-key what lives outside the config
+    (combat assignments).
     """
     region = _region_by_id(config, region_id)
-    id_map = {m: member_id(region_id, m) for m in region.members}
+    new_rid = instance_id or region_id
+    nested = nested_regions(config, region)
+    id_map = {m: member_id(new_rid, loc) for m, loc in extraction_locals(config, region_id).items()}
     rename_states(config, id_map)
-    for r in config.regions:
-        if r.id != region_id and r.source is not None and any(m in id_map.values() for m in r.members):
-            r.id = member_id(region_id, r.id)
+    for r in nested:
+        r.id = member_id(new_rid, r.id)
+    region.id = new_rid
     region.source = source.model_copy(deep=True)
     return id_map
 
@@ -578,6 +775,7 @@ def definition_values(config: BotConfig, region: RegionModel, defn: SubgraphDefi
         def_state = def_states.get(local) if local is not None else None
         if def_state is not None:
             state.params = dict(def_state.params)
+            state.label = def_state.label
 
 
 def reassign_orphaned_roles(config: BotConfig) -> None:
@@ -601,14 +799,21 @@ def drop_states(config: BotConfig, state_ids: set[str]) -> None:
     reassign_orphaned_roles(config)
 
 
-def push_back(config: BotConfig, region_id: str, previous: SubgraphDefinition) -> tuple[SubgraphDefinition, list[str]]:
+def push_back(
+    config: BotConfig,
+    region_id: str,
+    previous: SubgraphDefinition,
+    schemas: Mapping[str, Sequence[object]] | None = None,
+) -> tuple[SubgraphDefinition, list[str]]:
     """The instance ``region_id`` as a new definition version, after in-place editing.
 
     A member whose id derives from this region maps back to its local id; a
     state added while editing (a plain ``state_N``) keeps its id as the local id,
-    and gets the derived form on the next compose. Inputs are carried from
-    ``previous``; a binding whose state no longer exists is dropped and returned
-    as a warning. ``version`` is ``previous.version + 1``.
+    and gets the derived form on the next compose. Inputs and ``free_params`` are
+    carried from ``previous``; a binding whose state no longer exists is dropped
+    and returned as a warning, and a state new to the definition has its free
+    params seeded from ``schemas`` (:func:`seed_free_params`). ``version`` is
+    ``previous.version + 1``.
     """
     region = _region_by_id(config, region_id)
     members = set(region.members)
@@ -620,9 +825,7 @@ def push_back(config: BotConfig, region_id: str, previous: SubgraphDefinition) -
             raise ValueError(f"state id {m!r} cannot be a subgraph-local id")
 
     nested: list[RegionModel] = []
-    for r in config.regions:
-        if r.id == region_id or r.source is None or not set(r.members) <= members:
-            continue
+    for r in nested_regions(config, region):
         src = r.source.model_copy(deep=True)
         src.anchor = _pos_sub(src.anchor, anchor) or {"x": 0.0, "y": 0.0}
         nested.append(
@@ -662,6 +865,7 @@ def push_back(config: BotConfig, region_id: str, previous: SubgraphDefinition) -
         description=previous.description,
         version=previous.version + 1,
         inputs=inputs,
+        free_params=seed_free_params(states, schemas, previous=previous),
         states=states,
         transitions=transitions,
         regions=nested,

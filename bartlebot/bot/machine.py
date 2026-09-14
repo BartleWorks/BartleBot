@@ -29,6 +29,7 @@ def _format_duration(seconds: float) -> str:
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
+    from bartlebot.port_map import PortMap
 
 _QTY_PREFIX = re.compile(r"^(\d+)\s+(.+)$")
 
@@ -91,6 +92,8 @@ class BotMachine:
         self._max_consecutive_same_state = max_consecutive_same_state
         self._consecutive_same_state_count: int = 0
         self._health_monitor: ClientHealthMonitor | None = None
+        # Who can port to whom, surveyed before the run. See the port_map property.
+        self._port_map: PortMap | None = None
         # Which node's log() calls are currently being attributed. See log().
         self._current_node_type: str | None = None
         # Run bookkeeping, for the summary logged when run() returns.
@@ -307,6 +310,19 @@ class BotMachine:
     def health_monitor(self) -> "ClientHealthMonitor | None":
         """The monitor for the current run, or None when no run is in flight."""
         return self._health_monitor
+
+    @property
+    def port_map(self) -> "PortMap | None":
+        """Who among this run's clients can port to whom, or None until surveyed.
+
+        Set by pre-run setup. A node that needs it and finds None surveys for itself, which
+        is what a run started outside the app (the node tester) gets.
+        """
+        return self._port_map
+
+    @port_map.setter
+    def port_map(self, value: "PortMap | None") -> None:
+        self._port_map = value
 
     async def wait_until_parked(self, timeout: float) -> bool:
         """Wait for the run loop to reach its paused wait. True once it has.

@@ -13,6 +13,8 @@ which dialog is showing when the same path is shared by multiple contexts.
 # compassAndTeleporterButtons group
 HUB_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "GoHomeButton"]
 GOTO_DORM_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "GotoDormButton"]
+# Seconds left on the cooldown the hub and HOME buttons share. Shown only while they are disabled.
+TELEPORT_TIMER_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "GoHomeButton", "txtGoHomeTimer"]
 MARK_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "MarkButton"]
 RECALL_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "RecallButton"]
 RECALL_TIMER_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "RecallButton", "txtRecallTimer"]
@@ -129,6 +131,32 @@ REALM_PAGE_LABEL_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "Realm
 # is how that is detected — a settings page opened fresh always shows it, so closing the
 # spellbook and reopening is the reliable way back to it.
 SETTINGS_QUIT_BUTTON_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "QuitButton"]
+
+# The "Remember Realm" option, on the third gameplay-options tab of the same settings
+# page. Its value is localized text ("Yes"/"No", "Ja"/"Nein", ...) -- read it through
+# bartlebot.realms.yes_no(), never by comparing to English. The right arrow flips it;
+# OK commits the page. There is no config.xml or preferences.xml tag for it, which is
+# why it is toggled through the UI after login rather than patched before launch.
+SETTINGS_MORE_GAMEPLAY_TAB_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "TabWindow", "MoreGameplayButton"]
+REMEMBER_REALM_VALUE_PATH = [
+    "WorldView",
+    "DeckConfiguration",
+    "SettingPage",
+    "MoreGameplayOptions",
+    "OptionRememberRealm",
+    "OptionControl",
+    "OptionValue",
+]
+REMEMBER_REALM_TOGGLE_PATH = [
+    "WorldView",
+    "DeckConfiguration",
+    "SettingPage",
+    "MoreGameplayOptions",
+    "OptionRememberRealm",
+    "OptionControl",
+    "OptionButtonRight",
+]
+SETTINGS_OK_BUTTON_PATH = ["WorldView", "DeckConfiguration", "SettingPage", "OkButton"]
 
 
 def realm_name_path(row: int) -> list[str]:
@@ -329,6 +357,13 @@ def group_member_name_path(line: int) -> list[str]:
     return ["WorldView", "SocialSystemsWindow", "GroupLayout", "SubGroupLayout", f"Line{line}", "NameText"]
 
 
+# The popup a click on a Group-tab roster line opens, and its button that ports to that
+# member. The group route to a player, for two of ours who are grouped but not friends:
+# group_manager.teleport_to_group_member.
+FRIENDLY_PLAYER_MENU_PATH = ["WorldView", "FriendlyPlayerMenu"]
+FRIENDLY_PLAYER_GO_TO_BUTTON_PATH = ["WorldView", "FriendlyPlayerMenu", "GoToPlayerButton"]
+
+
 # Shown to the INVITER when the player they invited is already in a group.
 ALREADY_IN_GROUP_DISMISS_PATH = MESSAGE_BOX_RIGHT
 
@@ -400,6 +435,8 @@ UNIVERSE_NEXT_PAGE = ["WorldView", "", "messageBoxBG", "ControlSprite", "optionW
 UNIVERSE_PREV_PAGE = ["WorldView", "", "messageBoxBG", "ControlSprite", "optionWindow", "leftButton"]
 UNIVERSE_TELEPORT_BUTTON = ["WorldView", "", "messageBoxBG", "ControlSprite", "teleportButton"]
 UNIVERSE_CANCEL_BUTTON = ["WorldView", "", "messageBoxBG", "ControlSprite", "cancelButton"]
+# The list window's title: "Spiral Map" on a World Gate (worlds.is_world_gate_title).
+UNIVERSE_TITLE = ["WorldView", "", "messageBoxBG", "ControlSprite", "title"]
 
 
 def universe_zone_option_path(index: int) -> list[str]:

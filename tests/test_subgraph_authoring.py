@@ -36,6 +36,7 @@ from bartlebot.subgraphs import (
     linked_regions,
     local_id,
     member_id,
+    nested_regions,
     reresolve_member_params,
 )
 from tests.test_subgraph_editor_lock import LOCALS
@@ -89,19 +90,21 @@ def _state(canvas, sid: str):
 def test_save_region_as_subgraph_writes_user_root_and_links_region(plain, library):
     assert plain.save_region_as_subgraph("r1", name="Startup", description="Relog and regroup.")
     config = plain.scene.config
-    region = _region(plain, "r1")
+    # the region takes a readable instance id: the definition's slug plus a count
+    assert [r.id for r in config.regions] == ["startup_1"]
+    region = _region(plain, "startup_1")
     assert region.source is not None
     defn = library.get(region.source.subgraph_id)
     assert defn is not None and defn.name == "Startup" and defn.version == 1
     assert defn.description == "Relog and regroup."
     assert sorted(s.id for s in defn.states) == ["state_1", "state_2"]
-    s1, s2 = member_id("r1", "state_1"), member_id("r1", "state_2")
+    s1, s2 = "startup_1_state_1", "startup_1_state_2"
     assert region.members == [s1, s2]
     assert config.initial == s1 and config.recovery_state == s2
     assert [s.id for s in config.states] == [s1, s2, "state_3"]
     assert plain.scene.is_locked(s1) and not plain.scene.is_locked("state_3")
-    assert plain.compose_report.regions["r1"].kind == "linked"
-    assert plain.scene.region_items["r1"].link_state == "linked"
+    assert plain.compose_report.regions["startup_1"].kind == "linked"
+    assert plain.scene.region_items["startup_1"].link_state == "linked"
     plain.undo()
     assert _region(plain, "r1").source is None
     assert [s.id for s in plain.scene.config.states] == ["state_1", "state_2", "state_3"]
@@ -386,7 +389,7 @@ def test_nested_instance_round_trip(linked, library):
     assert [r.source.subgraph_id for r in pushed.regions] == [SYNC_ID]
     config = linked.scene.config
     outer_region = _region(linked, orid)
-    nested = [r for r in linked_regions(config) if r.id.startswith(member_id(orid, ""))]
+    nested = nested_regions(config, outer_region)
     assert len(nested) == 1
     assert set(nested[0].members) <= set(outer_region.members)
     assert all(linked.scene.linked_region_of(mid).id == orid for mid in nested[0].members)
@@ -447,3 +450,39 @@ def test_count_subgraph_uses_reads_raw_json(tmp_path, library):
     (bots / "broken.json").write_text("{not json", encoding="utf-8")
     assert count_subgraph_uses(bots) == {SYNC_ID: 2}
     assert count_subgraph_uses(tmp_path / "missing") == {}
+
+
+# ---------------------------------------------------------------------------
+# The author's lock toggle
+# ---------------------------------------------------------------------------
+
+
+def test_free_toggle_while_editing_reaches_the_pushed_definition(linked, library):
+    assert linked.begin_subgraph_edit(REGION)
+    linked.select_state(m("tp_b"))
+    form = linked.param_panel.param_form
+    assert form.override_button("target_zone") is None, "the author's page has no override toggle"
+    assert form.free_button("target_zone") is not None and not form.free_button("target_zone").isChecked()
+    assert form.expose_button("target_zone") is not None and form.expose_button("target_zone").isEnabled()
+    form.free_button("target_zone").setChecked(True)
+    assert linked.editing_definition.free_params == {"tp_b": ["target_zone"]}
+    # a param an input owns (hub.zone is bound to "world") has no lock, and Expose is off
+    linked.select_state(m("hub"))
+    assert form.free_button("zone") is None
+    assert form.expose_button("zone") is not None and not form.expose_button("zone").isEnabled()
+
+    assert linked.save_subgraph_to_library()
+    assert library.get(SYNC_ID).free_params == {"tp_b": ["target_zone"]}
+    linked.select_state(m("tp_b"))
+    assert form.widget("target_zone").isEnabled() and form.override_button("target_zone") is None, "free now"
+    assert not form.widget("skip_extra_clients_in_zone").isEnabled(), "still the subgraph's"
+
+
+def test_set_param_free_is_refused_outside_an_edit(linked):
+    assert linked.set_param_free(m("hub"), "zone", True) is False
+
+
+def test_save_region_seeds_free_params(plain, library):
+    assert plain.save_region_as_subgraph("r1", name="Startup")
+    defn = library.get(_region(plain, "startup_1").source.subgraph_id)
+    assert defn.free_params == {"state_1": ["relog_clients"], "state_2": ["leader_index", "require_all"]}

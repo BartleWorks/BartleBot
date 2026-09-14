@@ -67,7 +67,10 @@ class ParamField:
         key:          JSON key used in the params dict.
         type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" |
                       "str_list" | "int_choice" | "str_choice" | "player_list" | "player_slot" |
-                      "wiki_page".
+                      "wiki_page" | "nav_zone".
+                      "nav_zone" is a zone on the navigation map, picked from a list grouped by
+                      world (bartlebot/gui/widgets/zone_picker.py). Only the zone path is stored:
+                      the map already says which world it is in.
                       "text" renders as a multi-line QPlainTextEdit.
                       "player_slot" is the single-select sibling of "player_list": one 1-based client
                       index, or 0 for none.

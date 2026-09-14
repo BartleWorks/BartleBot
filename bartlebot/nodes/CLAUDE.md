@@ -21,12 +21,48 @@ between nodes (a menu confirmed open, a zone list dismissed, a loading screen be
 is why it is a callback rather than a fixed sequence.
 
 This is offered as an optional `sequential` param on `interact`, `interact_menu`,
-`enter_zone_via_object`, and `enter_zone_via_list`; it defaults off, and the parallel path
-in each of those nodes is untouched by it. `apply_level_scaling` predates the helper and is
-unconditionally sequential against its one hardcoded station.
+`enter_zone_via_object`, and `enter_zone_via_list`; it defaults off. `apply_level_scaling`
+predates the helper and is unconditionally sequential against its one hardcoded station.
+
+`enter_zone_via_object`'s parallel path also falls back to turns on its own: when some clients
+went through and the rest are still standing there after the re-press window, the rest take
+turns and a warning names the object, since nothing says an object serves one player at a time
+until someone has watched it happen. It never gives a turn to a client that is loading (#70).
+A sequential turn that fails for one client no longer fails the step for the group; the arrival
+check decides, as it does for the parallel path.
+
+`wait_for_zone_with_recovery`'s teleport-to-player recovery can be switched off for everything
+inside a block with `node_helpers.without_straggler_recovery()`. Zone navigation does this
+around every step it runs, because a straggler ported partway through a route lands in a zone
+the others are about to leave; it ports them once, at the end (see `docs/ZONE_NAVIGATION.md`).
 
 Pass `park_after_turn=False` when the interaction removes the client itself (a zone
 transition) — otherwise the helper aims a teleport at a client already on a loading screen.
+
+### Never act on a client that is loading
+
+A client on a loading screen reports the zone it *left*, the position it left from, and the
+UI it left behind, for as long as the screen is up — and a client whose trigger has just
+fired has not started its screen yet. Both read exactly like a client that never moved, so a
+retry loop watching anything other than `is_loading()` will chase one that is already on its
+way. The retry is then applied when it lands: a teleport issued mid-load pulls the client
+straight back out of the zone it just reached, which is issue #70 and looks on screen like a
+successful transition being undone.
+
+Two guards, and a node that moves clients between zones wants whichever fits:
+
+- `skip_while_loading(action_fn)` wraps `poll_each_until_seen`'s `action_fn` whenever
+  `check_fn` is *not* `is_loading()` — a zone name, a position, a window. A loop whose
+  `check_fn` is `is_loading()` already counts a loading client as seen and needs nothing.
+- `wait_for_zone_with_recovery()` holds off both its teleport-to-player recovery and its
+  own timeout verdict while any client that is not yet in the destination is loading, and
+  gives a non-loading straggler `ZONE_SETTLE_GRACE` to start loading before treating it as
+  stuck. Callers get this for free; a caller passing `settle_grace=0` is opting out of the
+  second half only.
+
+`poll_until(none_loading(clients), ...)` is not this guard. It answers "has every screen
+finished", and a screen that has not started yet answers yes — which is how a stale zone
+read reaches the check that follows it.
 
 ## Keeping a session log readable
 

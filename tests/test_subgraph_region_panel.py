@@ -13,7 +13,8 @@ from __future__ import annotations
 import pytest
 from PyQt6.QtWidgets import QLineEdit
 
-from bartlebot.gui.canvas.param_panel import _RegionColorRow
+from bartlebot.bot.schema import SubgraphInput, SubgraphInputBinding
+from bartlebot.gui.canvas.param_panel import _RegionColorRow, _StrChoiceComboBox, _ZoneWidget
 from bartlebot.store_roots import Origin
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import ComposeReport, RegionStatus
@@ -35,6 +36,38 @@ def canvas(qapp, library):
     c = BotCanvas()
     c.set_subgraph_library(library)
     c.setup(linked_bot(library.get(SYNC_ID), library))
+    c.enter_edit_mode()
+    yield c
+    c.prepare_for_shutdown()
+
+
+def _free_definition():
+    """The fixture definition with one free param, and two inputs a fresh instance's page builds widgets for."""
+    defn = sync_players_definition()
+    defn.free_params = {"tp_b": ["target_zone"]}
+    defn.inputs.append(
+        SubgraphInput(
+            name="spiral_world",
+            label="Spiral world",
+            type="str_choice",
+            bindings=[SubgraphInputBinding(state="go_to_world", param="world")],
+        )
+    )
+    defn.inputs.append(
+        SubgraphInput(name="hub_zone", type="str", bindings=[SubgraphInputBinding(state="hub", param="zone")])
+    )
+    return defn
+
+
+@pytest.fixture
+def free_canvas(qapp, tmp_path):
+    from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
+
+    lib = SubgraphLibrary(tmp_path / "free")
+    lib.save(_free_definition())
+    c = BotCanvas()
+    c.set_subgraph_library(lib)
+    c.setup(linked_bot(lib.get(SYNC_ID), lib))
     c.enter_edit_mode()
     yield c
     c.prepare_for_shutdown()
@@ -204,3 +237,71 @@ def test_detach_from_the_region_page(canvas):
     assert _region(canvas).source is None
     assert not any(canvas.scene.is_locked(m(loc)) for loc in LOCALS)
     assert canvas.param_panel.shown_region is _region(canvas), "the page stays up, now as an ordinary region"
+
+
+# ---------------------------------------------------------------------------
+# Free params, the label, and the lock toggle
+# ---------------------------------------------------------------------------
+
+
+def test_a_free_param_is_editable_without_a_toggle_and_records_an_override(free_canvas):
+    c = free_canvas
+    c.select_state(m("tp_b"))
+    form = c.param_panel.param_form
+    assert form.widget("target_zone").isEnabled() and form.override_button("target_zone") is None
+    assert not form.widget("skip_extra_clients_in_zone").isEnabled()
+    assert form.override_button("skip_extra_clients_in_zone") is not None
+    form.widget("target_zone").setText("MooShu/Hub")
+    assert _state(c, m("tp_b")).params["target_zone"] == "MooShu/Hub"
+    assert _region(c).source.param_overrides == {"tp_b": {"target_zone": "MooShu/Hub"}}
+    form.widget("target_zone").setText("WizardCity/Hub")
+    assert _region(c).source.param_overrides == {}, "back at the subgraph's value: nothing to override"
+
+
+def test_lock_toggle_reads_locked_then_overridden(canvas):
+    canvas.select_state(m("hub"))
+    form = canvas.param_panel.param_form
+    assert "subgraph owns this value" in form.override_button("zone").toolTip()
+    form.override_button("zone").setChecked(True)
+    assert "no longer follows the subgraph" in form.override_button("zone").toolTip()
+    assert form.override_button("zone").isChecked()
+
+
+def test_a_locked_member_label_is_editable_and_its_override_resets(free_canvas):
+    c = free_canvas
+    c.select_state(m("hub"))
+    panel = c.param_panel
+    assert panel.is_locked and panel.node_label_edit.isEnabled()
+    panel.node_label_edit.setText("Meet here")
+    assert _state(c, m("hub")).label == "Meet here"
+    assert _region(c).source.label_overrides == {"hub": "Meet here"}
+    _select_region(c)
+    assert panel._region_overrides_body.isVisibleTo(panel)
+    panel.label_override_reset.emit(m("hub"))
+    assert _region(c).source.label_overrides == {}
+    assert _state(c, m("hub")).label is None
+    assert not panel._region_overrides_body.isVisibleTo(panel)
+    assert c.can_undo()
+
+
+def test_region_inputs_form_takes_choices_from_the_bound_param(free_canvas):
+    c = free_canvas
+    _select_region(c)
+    form = c.param_panel.region_inputs_form
+    world = form.widget("spiral_world")
+    assert isinstance(world, _StrChoiceComboBox) and world.count() > 1, "the node's dropdown, not an empty combo"
+    world.set_value("MooShu")
+    assert _region(c).source.inputs["spiral_world"] == "MooShu"
+    assert _state(c, m("go_to_world")).params["world"] == "MooShu"
+    assert isinstance(form.widget("hub_zone"), _ZoneWidget)
+    assert isinstance(form.widget("world"), QLineEdit), "a str input bound to a str_choice stays a plain field"
+
+
+def test_region_inputs_form_shares_the_client_and_zone_getters(free_canvas):
+    c = free_canvas
+    c.set_clients_getter(lambda: ["one"])
+    c.set_zone_getter(lambda: ["WizardCity/Hub"])
+    _select_region(c)
+    form = c.param_panel.region_inputs_form
+    assert form._get_clients() == ["one"]
+    assert form._get_zone_suggestions() == ["WizardCity/Hub"]

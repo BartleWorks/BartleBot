@@ -25,7 +25,8 @@ def _config(transitions=None, states=None):
         name="t",
         initial="a",
         recovery_state="a",
-        states=states or [StateModel(id=sid, node_type="change_realm", params={}) for sid in ("a", "b", "c", "target")],
+        states=states
+        or [StateModel(id=sid, node_type="change_to_next_realm", params={}) for sid in ("a", "b", "c", "target")],
         transitions=transitions
         if transitions is not None
         else [
@@ -244,8 +245,8 @@ def test_output_port_accepts_a_condition_node_on_a_condition_port(canvas):
     config = _config(
         states=[
             StateModel(id="cond", node_type="check_health", params={}),
-            StateModel(id="b", node_type="change_realm", params={}),
-            StateModel(id="a", node_type="change_realm", params={}),
+            StateModel(id="b", node_type="change_to_next_realm", params={}),
+            StateModel(id="a", node_type="change_to_next_realm", params={}),
         ],
         transitions=[TransitionModel(trigger="advance", source="cond", dest="b", when="TRUE")],
     )
@@ -276,7 +277,7 @@ def test_the_onward_edge_is_not_unconditional(canvas):
 def test_the_onward_edge_uses_the_happy_path_return(canvas):
     c = canvas()
 
-    new_id = c.scene.insert_state_at_input_port("target", "change_realm")
+    new_id = c.scene.insert_state_at_input_port("target", "change_to_next_realm")
 
     assert _t(c.config, new_id, "target").when == "SUCCESS"
 
@@ -344,9 +345,9 @@ def test_the_browser_offers_only_the_allowed_types(qapp):
     """Tabs and search both funnel through _populate_list, so one filter covers both."""
     from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
 
-    dlg = NodeBrowserDialog(None, mode="add", allowed_node_types={"sleep", "change_realm"})
+    dlg = NodeBrowserDialog(None, mode="add", allowed_node_types={"sleep", "change_to_next_realm"})
     try:
-        assert set(dlg.offered_node_types) == {"sleep", "change_realm"}
+        assert set(dlg.offered_node_types) == {"sleep", "change_to_next_realm"}
     finally:
         dlg.deleteLater()
 
@@ -412,10 +413,10 @@ def _grid_config():
     from bartlebot.gui.canvas.node_item import GRID_W
 
     states = [
-        StateModel(id="a", node_type="change_realm", params={}, position={"x": 0.0, "y": 0.0}),
-        StateModel(id="b", node_type="change_realm", params={}, position={"x": 0.0, "y": 90.0}),
-        StateModel(id="c", node_type="change_realm", params={}, position={"x": 0.0, "y": 180.0}),
-        StateModel(id="target", node_type="change_realm", params={}, position={"x": float(GRID_W), "y": 90.0}),
+        StateModel(id="a", node_type="change_to_next_realm", params={}, position={"x": 0.0, "y": 0.0}),
+        StateModel(id="b", node_type="change_to_next_realm", params={}, position={"x": 0.0, "y": 90.0}),
+        StateModel(id="c", node_type="change_to_next_realm", params={}, position={"x": 0.0, "y": 180.0}),
+        StateModel(id="target", node_type="change_to_next_realm", params={}, position={"x": float(GRID_W), "y": 90.0}),
     ]
     return _config(states=states)
 

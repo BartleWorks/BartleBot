@@ -21,7 +21,7 @@ def _config(transitions=None):
         name="t",
         initial="a",
         recovery_state="a",
-        states=[StateModel(id=sid, node_type="change_realm", params={}) for sid in ("a", "b", "c")],
+        states=[StateModel(id=sid, node_type="change_to_next_realm", params={}) for sid in ("a", "b", "c")],
         transitions=transitions
         if transitions is not None
         else [
