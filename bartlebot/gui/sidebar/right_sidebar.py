@@ -128,6 +128,19 @@ class RightSidebar(QTabWidget):
     def set_config(self, config: BotConfig | None) -> None:
         self.possible_drops.set_config(config)
 
+    def sync_config(self, config: BotConfig | None) -> None:
+        """Rebind Possible Drops if *config* is a different object than it holds.
+
+        The right-hand half of ``LeftSidebar.sync_config``, and the same bug: undo/redo
+        hands the canvas a brand-new ``BotConfig``, and a list left bound to the old one
+        shows every drop added to it while the Setup keep-list picker and the saved file
+        never see them.  The wiki import makes it look worse than it is, because the
+        page it records goes onto the node -- the canvas's object -- and does save.
+        """
+        if config is self.possible_drops.config:
+            return
+        self.set_config(config)
+
     def set_editable(self, editable: bool) -> None:
         self.possible_drops.set_editable(editable)
 
