@@ -162,8 +162,16 @@ class NavMap:
             current = self.worlds[current.entered_from]
         return current.key
 
-    def steps_from(self, zone: str, *, include_unverified: bool = False, avoid: Collection[str] = ()) -> list[Step]:
-        """Every single step out of `zone`, leaving out unverified links and the kinds in `avoid`.
+    def steps_from(
+        self,
+        zone: str,
+        *,
+        include_unverified: bool = False,
+        avoid: Collection[str] = (),
+        avoid_links: Collection[Step] = (),
+    ) -> list[Step]:
+        """Every single step out of `zone`, leaving out unverified links, the kinds in `avoid`,
+        and the particular steps in `avoid_links`.
 
         HOME works from anywhere, including a zone no world declares -- a castle, a zone off the
         map entirely -- so it is how a client with no other step still has a route.
@@ -174,7 +182,19 @@ class NavMap:
             steps.append(Step(HUB, zone, world.hub, source="implied"))
         if self.home is not None and zone != self.home and HOME not in avoid:
             steps.append(Step(HOME, zone, self.home, source="implied"))
+        if avoid_links:
+            avoided = {link_key(s) for s in avoid_links}
+            steps = [s for s in steps if link_key(s) not in avoided]
         return steps
+
+
+def link_key(step: Step) -> tuple[str, str, str]:
+    """What identifies one zone change for `avoid_links`: its kind and its two zones.
+
+    Not the Step itself, whose equality also compares provenance, so a step recorded from a
+    run still matches the one the map generates.
+    """
+    return step.kind, step.from_zone, step.to_zone
 
 
 def step_cost(step: Step, *, clients: int = 1, teleport_wait: float = 0.0) -> Cost:
@@ -203,8 +223,12 @@ def plan(
     clients: int = 1,
     include_unverified: bool = False,
     avoid: Collection[str] = (),
+    avoid_links: Collection[Step] = (),
 ) -> list[Step] | None:
     """The cheapest steps from `start` to `target`, [] if already there, None if unreachable.
+
+    `avoid_links` leaves out particular steps rather than whole kinds: a teleporter that just
+    failed for every client, most likely one this account has not unlocked.
 
     `teleport_cooldown` is what is left right now of the cooldown the hub and HOME buttons
     share. The search state carries whether either has been used yet, because a second use of
@@ -232,7 +256,7 @@ def plan(
                 state, step = prev[state]
                 route.append(step)
             return route[::-1]
-        for step in nav.steps_from(zone, include_unverified=include_unverified, avoid=avoid):
+        for step in nav.steps_from(zone, include_unverified=include_unverified, avoid=avoid, avoid_links=avoid_links):
             teleports = step.kind in (HUB, HOME)
             wait = (TELEPORT_COOLDOWN if used_teleport else teleport_cooldown) if teleports else 0.0
             nxt = (step.to_zone, used_teleport or teleports)

@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from bartlebot import worlds, zone_names, zone_nav
+from bartlebot import port_map, wizard_names, worlds, zone_names, zone_nav
 from bartlebot.nodes import node_helpers, wizard_city, zone_navigation
 from bartlebot.nodes.interaction import interact
 from bartlebot.nodes.teleportation import teleport_to_world_hub
@@ -18,6 +18,8 @@ _DELTA = "Delta/Hub"
 """Delta is another world, its World Gate in its hub."""
 _LANDS_IN = {"Alpha/*": _DOOR, "Delta/*": _DELTA}
 """Where a gate step, which arrives anywhere in a world, puts the fake clients."""
+_NAMES = ["Luke SkullHunter", "Misha SkullSeer", "Michelle HistoryBond", "Naomi HexPaint"]
+"""Synthetic names from tools/name_key_samples.json -- never a real player's."""
 
 
 def _xyz(x: float) -> dict:
@@ -26,6 +28,10 @@ def _xyz(x: float) -> dict:
 
 def _walk(src: str, dst: str, verified: bool = True) -> dict:
     return {"kind": "walk", "from": src, "to": dst, "xyz": _xyz(1), "reset_xyz": _xyz(2), "verified": verified}
+
+
+def _teleporter(src: str, dst: str) -> dict:
+    return {"kind": "object", "from": src, "to": dst, "interact_xyz": _xyz(3), "reset_xyz": _xyz(4), "verified": True}
 
 
 def _nav(*links, networks=(), beta_links=()) -> zone_nav.NavMap:
@@ -59,10 +65,27 @@ def _nav(*links, networks=(), beta_links=()) -> zone_nav.NavMap:
 
 
 class _Game:
-    """Clients whose zone the fake nodes move, and a record of every node call."""
+    """Clients whose zone the fake nodes move, and a record of every node call.
 
-    def __init__(self, monkeypatch, zones: list[str], results: dict | None = None):
+    `friends` makes every client a friend of every other, so they can port to one another;
+    `misses` is {player number: how many moving calls it sits out}; `cannot_port` names the
+    players a port never lands.
+    """
+
+    def __init__(
+        self,
+        monkeypatch,
+        zones: list[str],
+        results: dict | None = None,
+        *,
+        friends: bool = False,
+        misses: dict[int, int] | None = None,
+        cannot_port=(),
+    ):
         self.calls: list[tuple[str, dict]] = []
+        self.groups: list[list[int]] = []
+        self.recovery: list[bool] = []
+        self.waves: list[tuple[list[int], list[int]]] = []
         self.clients = []
         for zone in zones:
             client = FakeClient()
@@ -70,12 +93,18 @@ class _Game:
             client.zone_name = AsyncMock(side_effect=lambda c=client: c.where)
             self.clients.append(client)
         results = results or {}
+        misses = dict(misses or {})
 
         def fake(name: str, arrive):
             async def run(machine, clients, params):
                 self.calls.append((name, params))
+                self.groups.append([self.number(c) for c in clients])
+                self.recovery.append(node_helpers.straggler_recovery())
                 if results.get(name, "SUCCESS") == "SUCCESS" and arrive is not None:
                     for c in clients:
+                        if misses.get(self.number(c)):
+                            misses[self.number(c)] -= 1
+                            continue
                         c.where = arrive(params)
                 return results.get(name, "SUCCESS")
 
@@ -98,6 +127,33 @@ class _Game:
             "teleport_home_and_verify_dorm",
             lambda machine, clients: _succeeded(go_home(machine, clients, {})),
         )
+
+        names = _NAMES[: len(zones)]
+        if friends:
+            for client, name in zip(self.clients, names):
+                wizard_names.remember(client, name)
+            ports = port_map.PortMap.from_survey(
+                names, [[n for n in names if n != me] for me in names], [() for _ in names]
+            )
+        else:
+            ports = port_map.PortMap()
+        self.survey = AsyncMock(return_value=ports)
+        monkeypatch.setattr(port_map, "survey", self.survey)
+
+        unported = set(cannot_port)
+
+        async def port_waves(machine, clients, waiting, arrived, pm):
+            self.waves.append(([self.number(c) for c in waiting], [self.number(c) for c in arrived]))
+            left = [c for c in waiting if self.number(c) in unported]
+            for c in waiting:
+                if self.number(c) not in unported:
+                    c.where = arrived[0].where
+            return left
+
+        monkeypatch.setattr(port_map, "port_waves", port_waves)
+
+    def number(self, client) -> int:
+        return next(i + 1 for i, c in enumerate(self.clients) if c is client)
 
     @property
     def names(self) -> list[str]:
@@ -189,9 +245,9 @@ async def test_a_gate_step_without_a_known_world_name_fails_before_moving(monkey
 
 async def test_an_object_step_passes_its_teleporter_settings(monkeypatch):
     game = _Game(monkeypatch, [_HUB])
-    teleporter = {"kind": "object", "from": _HUB, "to": _ISLAND, "interact_xyz": _xyz(3), "reset_xyz": _xyz(4)}
+    teleporter = _teleporter(_HUB, _ISLAND)
 
-    await _go(game, _nav({**teleporter, "sequential": True, "object_use_delay": 8.0, "verified": True}), _ISLAND)
+    await _go(game, _nav({**teleporter, "sequential": True, "object_use_delay": 8.0}), _ISLAND)
 
     [(name, params)] = game.calls
     assert name == "object"
@@ -201,8 +257,7 @@ async def test_an_object_step_passes_its_teleporter_settings(monkeypatch):
 
 async def test_avoided_kinds_are_left_out_of_the_route(monkeypatch):
     game = _Game(monkeypatch, [_HUB])
-    teleporter = {"kind": "object", "from": _HUB, "to": _S2, "interact_xyz": _xyz(3), "reset_xyz": _xyz(4)}
-    nav = _nav({**teleporter, "verified": True}, _walk(_HUB, _S1), _walk(_S1, _S2))
+    nav = _nav(_teleporter(_HUB, _S2), _walk(_HUB, _S1), _walk(_S1, _S2))
 
     outcome = await _go(game, nav, _S2, avoid={"object", "list"})
 
@@ -367,7 +422,7 @@ async def test_no_route_says_so_without_moving(monkeypatch):
     assert game.calls == []
 
 
-async def test_a_failed_step_stops_the_run(monkeypatch):
+async def test_a_failed_step_with_no_other_route_stops_the_run(monkeypatch):
     game = _Game(monkeypatch, [_HUB], results={"walk": "FAILURE"})
 
     outcome = await _go(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
@@ -375,6 +430,16 @@ async def test_a_failed_step_stops_the_run(monkeypatch):
     assert not outcome.success
     assert game.names == ["walk"]
     assert outcome.taken == []
+
+
+async def test_a_step_nobody_makes_is_planned_around(monkeypatch):
+    """A teleporter that fails for everyone -- most likely one this account has not unlocked."""
+    game = _Game(monkeypatch, [_HUB], results={"object": "FAILURE"})
+
+    outcome = await _go(game, _nav(_teleporter(_HUB, _S2), _walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
+
+    assert outcome.success
+    assert game.names == ["object", "walk", "walk"]
 
 
 async def test_tentative_links_are_used_only_when_asked_and_reported(monkeypatch):
@@ -402,9 +467,8 @@ async def test_a_cooling_hub_button_loses_a_tie_to_a_teleporter(monkeypatch, lef
     """A timer read as seconds left, or a disabled button with no timer to read."""
     game = _Game(monkeypatch, [_S2])
     monkeypatch.setattr(node_helpers, "teleport_cooldown", AsyncMock(return_value=left))
-    teleporter = {"kind": "object", "from": _S2, "to": _HUB, "interact_xyz": _xyz(3), "reset_xyz": _xyz(4)}
 
-    await _go(game, _nav({**teleporter, "verified": True}), _HUB)
+    await _go(game, _nav(_teleporter(_S2, _HUB)), _HUB)
 
     assert game.names == ["object"]
 
@@ -427,3 +491,124 @@ async def test_a_target_off_the_map_is_refused(monkeypatch, target):
 
     assert not outcome.success
     assert "not on the navigation map" in outcome.reason
+
+
+async def test_a_zone_a_link_swaps_in_for_the_target_counts_as_arriving(monkeypatch):
+    """Samsara Village: the quest line replaces the zone, and arriving in either is arriving."""
+    game = _Game(monkeypatch, [_ISLAND])
+
+    outcome = await _go(game, _nav({**_walk(_HUB, _S1), "also_arrives_in": [_ISLAND]}), _S1)
+
+    assert outcome.success
+    assert game.calls == []
+
+
+async def test_the_step_nodes_own_straggler_recovery_is_off_while_they_run(monkeypatch):
+    """Their recovery would port a straggler into a zone the rest are about to leave."""
+    game = _Game(monkeypatch, [_HUB, _HUB])
+
+    await _go(game, _nav(_walk(_HUB, _S1)), _S1)
+
+    assert game.recovery == [False]
+    assert node_helpers.straggler_recovery() is True
+
+
+# ── Several clients: travelling together, or following one ─────────────────
+
+
+_LONG = (_walk(_HUB, _S1), _walk(_S1, _S2), _walk(_S2, _ISLAND))
+"""Three transitions: past the limit for travelling together."""
+
+
+async def test_a_short_route_on_foot_is_travelled_together_without_a_survey(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
+
+    outcome = await _go(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
+
+    assert outcome.success
+    assert game.groups == [[1, 2], [1, 2]]
+    assert game.waves == []
+    game.survey.assert_not_awaited()
+
+
+async def test_a_long_route_is_travelled_by_one_client_and_the_rest_port_to_it(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
+
+    outcome = await _go(game, _nav(*_LONG), _ISLAND)
+
+    assert outcome.success
+    assert game.groups == [[1], [1], [1]]
+    assert game.waves == [([2], [1])]
+    assert all(c.where == _ISLAND for c in game.clients)
+
+
+async def test_a_route_through_a_teleporter_is_travelled_by_one_client(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
+
+    outcome = await _go(game, _nav(_teleporter(_HUB, _ISLAND)), _ISLAND)
+
+    assert outcome.success
+    assert game.groups == [[1]]
+    assert game.waves == [([2], [1])]
+
+
+async def test_clients_that_cannot_port_to_each_other_travel_together(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB])
+
+    outcome = await _go(game, _nav(*_LONG), _ISLAND)
+
+    assert outcome.success
+    assert game.groups == [[1, 2], [1, 2], [1, 2]]
+    assert game.waves == []
+
+
+async def test_a_split_start_follows_the_client_with_the_cheapest_route(monkeypatch):
+    game = _Game(monkeypatch, [_DELTA, _S1], friends=True)
+
+    outcome = await _go(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
+
+    assert outcome.success
+    assert game.groups == [[2]]
+    assert game.calls[0][1]["from_zone"] == _S1
+    assert game.waves == [([1], [2])]
+
+
+async def test_a_client_already_there_is_the_one_the_others_port_to(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _S2], friends=True)
+
+    outcome = await _go(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
+
+    assert outcome.success
+    assert game.calls == []
+    assert game.waves == [([1], [2])]
+
+
+async def test_a_client_that_cannot_port_travels_there_itself(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True, cannot_port={2})
+
+    outcome = await _go(game, _nav(*_LONG), _ISLAND)
+
+    assert outcome.success
+    assert game.groups == [[1], [1], [1], [2], [2], [2]]
+    assert game.waves == [([2], [1])]
+
+
+async def test_a_client_that_misses_a_step_twice_waits_and_ports_at_the_end(monkeypatch):
+    """No teleport and no step is run on it once it is left behind: it only ports, at the end."""
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True, misses={2: 2})
+
+    outcome = await _go(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
+
+    assert outcome.success
+    assert game.groups == [[1, 2], [2], [1]]
+    assert game.waves == [([2], [1])]
+
+
+async def test_a_client_that_makes_the_retry_carries_on_with_the_group(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True, misses={2: 1})
+
+    outcome = await _go(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
+
+    assert outcome.success
+    assert game.groups == [[1, 2], [2], [1, 2]]
+    assert game.waves == []

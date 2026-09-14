@@ -357,6 +357,13 @@ def group_member_name_path(line: int) -> list[str]:
     return ["WorldView", "SocialSystemsWindow", "GroupLayout", "SubGroupLayout", f"Line{line}", "NameText"]
 
 
+# The popup a click on a Group-tab roster line opens, and its button that ports to that
+# member. The group route to a player, for two of ours who are grouped but not friends:
+# group_manager.teleport_to_group_member.
+FRIENDLY_PLAYER_MENU_PATH = ["WorldView", "FriendlyPlayerMenu"]
+FRIENDLY_PLAYER_GO_TO_BUTTON_PATH = ["WorldView", "FriendlyPlayerMenu", "GoToPlayerButton"]
+
+
 # Shown to the INVITER when the player they invited is already in a group.
 ALREADY_IN_GROUP_DISMISS_PATH = MESSAGE_BOX_RIGHT
 

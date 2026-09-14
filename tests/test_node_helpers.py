@@ -1249,6 +1249,22 @@ async def test_wait_for_zone_with_recovery_reports_failure_when_recovery_does_no
     recovery.assert_awaited_once()  # not retried on every subsequent poll
 
 
+async def test_wait_for_zone_with_recovery_never_ports_when_recovery_is_off():
+    """Zone navigation sorts out its own stragglers after the step, so it only wants the wait."""
+    arrived = FakeClient()
+    arrived.zone_name.return_value = "Dst"
+    straggler = FakeClient()
+    straggler.zone_name.return_value = "Elsewhere"
+
+    with patch.object(nh, "_attempt_zone_recovery", new=AsyncMock()) as recovery:
+        result = await nh.wait_for_zone_with_recovery(
+            FakeMachine(), [arrived, straggler], "Dst", 0.01, 0, settle_grace=0, recover=False
+        )
+
+    assert result == ["Dst", "Elsewhere"]
+    recovery.assert_not_awaited()
+
+
 # ---------------------------------------------------------------------------
 # wait_for_zone_with_recovery — a straggler that is still arriving (#70)
 # ---------------------------------------------------------------------------

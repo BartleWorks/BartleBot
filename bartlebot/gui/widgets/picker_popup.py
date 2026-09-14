@@ -86,18 +86,45 @@ class PickerRow:
 Section = tuple[str, list[PickerRow]]
 
 
-def filter_sections(sections: list[Section], query: str) -> list[Section]:
+def filter_sections(sections: list[Section], query: str, *, broad: bool = False) -> list[Section]:
     """Narrow *sections* to rows matching *query*, dropping sections left empty.
 
     Matches the description too, for callers that set one — free when they do not,
     since an empty description matches no non-empty query.
 
+    ``broad`` is for a picker whose rows are only told apart by their section and
+    ``meta`` — the zone picker, where a zone's world is its section and its id its
+    meta. The query splits on whitespace and every term has to match somewhere in the
+    row's label, description or meta, or its section's title: "kroko entr" finds
+    Entrance Hall under Krokotopia, and a world's name alone keeps its whole section.
+    Off by default, since a tag picker's meta is a count ("49 bots") that every row
+    would match.
+
     Pure and module level, so the matching can be tested without a QApplication.
     """
+    if broad:
+        terms = query.casefold().split()
+        if not terms:
+            return list(sections)
+        out: list[Section] = []
+        for title, rows in sections:
+            heading = title.casefold()
+            hits = [
+                r
+                for r in rows
+                if all(
+                    t in heading or t in r.label.casefold() or t in r.description.casefold() or t in r.meta.casefold()
+                    for t in terms
+                )
+            ]
+            if hits:
+                out.append((title, hits))
+        return out
+
     q = query.strip().casefold()
     if not q:
         return list(sections)
-    out: list[Section] = []
+    out = []
     for title, rows in sections:
         hits = [r for r in rows if q in r.label.casefold() or q in r.description.casefold()]
         if hits:
@@ -121,6 +148,17 @@ def summarize(labels: list[str], placeholder: str, *, limit: int = 2) -> str:
 def selection_caption(count: int) -> str:
     """The popup header's right-hand status text."""
     return "" if count == 0 else f"{count} selected"
+
+
+def apply_toggle(selected: set[str], key: str, checked: bool, *, single_select: bool = False) -> set[str]:
+    """The selection after the row *key* is toggled to *checked*.
+
+    Single-select has no "off": the row clicked is the selection, including the one already
+    chosen, whose click only closes the popup. Pure, so it can be tested without a QApplication.
+    """
+    if single_select:
+        return {key}
+    return selected | {key} if checked else selected - {key}
 
 
 #: How long after a popup closes a click on its own button is treated as the click
@@ -234,10 +272,12 @@ class _RowWidget(QWidget):
 
     toggled = pyqtSignal(str, bool)
 
-    def __init__(self, row: PickerRow, checked: bool, parent=None) -> None:
+    def __init__(self, row: PickerRow, checked: bool, parent=None, *, indicator: bool = True) -> None:
         super().__init__(parent)
         self._row = row
         self._selected = checked
+        # A single-select picker draws no checkbox: the highlight alone says which row is chosen.
+        self._indicator = indicator
         self._hover = False
         self._cursor = False
         self.setMouseTracking(True)
@@ -293,9 +333,10 @@ class _RowWidget(QWidget):
 
         dim = self._row.dim
         x = _PAD_X
-        box = QRect(x, (rect.height() - _BOX) // 2, _BOX, _BOX)
-        self._paint_indicator(painter, box)
-        x = box.right() + 1 + _GAP
+        if self._indicator:
+            box = QRect(x, (rect.height() - _BOX) // 2, _BOX, _BOX)
+            self._paint_indicator(painter, box)
+            x = box.right() + 1 + _GAP
 
         if self._row.accent:
             dot = QRect(x, (rect.height() - _DOT) // 2, _DOT, _DOT)
@@ -491,16 +532,24 @@ class PickerPopup(QWidget):
         *,
         search_placeholder: str = "Filter…",
         parent: QWidget | None = None,
+        single_select: bool = False,
+        width: int = POPUP_WIDTH,
+        broad: bool = False,
     ) -> None:
         super().__init__(parent, Qt.WindowType.Popup)
         self._sections = sections
         self._selected: set[str] = set(selected or [])
         self._applying_style = False
-        self._order = [r.key for _, rows in sections for r in rows]
+        self._order = list(dict.fromkeys(r.key for _, rows in sections for r in rows))
         self._rows: list[_RowWidget] = []
         self._cursor_key: str | None = None
+        # Single-select: no checkboxes, no count or Clear, and a pick closes the popup. A row
+        # can appear in two sections (the zone picker's suggestions), so keys are deduplicated.
+        self._single_select = single_select
+        # See filter_sections: rows told apart only by their section and meta.
+        self._broad = broad
 
-        self.setFixedWidth(POPUP_WIDTH)
+        self.setFixedWidth(width)
         self.setObjectName("PickerPopup")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
@@ -574,6 +623,9 @@ class PickerPopup(QWidget):
             self.move(QPoint(rect.left(), rect.top() + rect.height()))
         self.show()
         self._search.setFocus()
+        if self._single_select and self._selected:
+            # Open on the current choice, scrolled into view, rather than at the top of a long list.
+            self._set_cursor(next(iter(self._selected)))
 
     # -- keyboard ------------------------------------------------------
 
@@ -629,6 +681,10 @@ class PickerPopup(QWidget):
         self.selection_changed.emit([])
 
     def _refresh_header(self) -> None:
+        if self._single_select:
+            # Nothing to count and nothing to clear: there is always exactly the one choice.
+            self._header.set_state("", False)
+            return
         self._header.set_state(selection_caption(len(self._selected)), bool(self._selected))
 
     def _rebuild(self) -> None:
@@ -639,7 +695,7 @@ class PickerPopup(QWidget):
                 w.deleteLater()
         self._rows = []
 
-        visible = filter_sections(self._sections, self._search.text())
+        visible = filter_sections(self._sections, self._search.text(), broad=self._broad)
         if not visible:
             empty = QLabel("No matches.")
             empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -662,7 +718,7 @@ class PickerPopup(QWidget):
             self._body_layout.insertWidget(at, header)
             at += 1
             for row in rows:
-                w = _RowWidget(row, row.key in self._selected)
+                w = _RowWidget(row, row.key in self._selected, indicator=not self._single_select)
                 w.toggled.connect(self._on_row_toggled)
                 self._body_layout.insertWidget(at, w)
                 self._rows.append(w)
@@ -676,12 +732,15 @@ class PickerPopup(QWidget):
         self._refresh_header()
 
     def _on_row_toggled(self, key: str, checked: bool) -> None:
-        if checked:
-            self._selected.add(key)
-        else:
-            self._selected.discard(key)
+        self._selected = apply_toggle(self._selected, key, checked, single_select=self._single_select)
+        if self._single_select:
+            # The same key can be a row in two sections; both should show the choice.
+            for row in self._rows:
+                row.set_selected(row.key == key)
         self._refresh_header()
         self.selection_changed.emit(self.selection())
+        if self._single_select:
+            self.close()
 
     def _apply_style(self) -> None:
         if self._applying_style:
@@ -752,12 +811,17 @@ class PickerButton(QToolButton):
         *,
         placeholder: str = "—",
         search_placeholder: str = "Filter…",
+        single_select: bool = False,
+        popup_width: int = POPUP_WIDTH,
+        broad: bool = False,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._title = title
         self._placeholder = placeholder
         self._search_placeholder = search_placeholder
+        # Handed to every popup this opens; see PickerPopup.
+        self._popup_options = {"single_select": single_select, "width": popup_width, "broad": broad}
         self._sections: list[Section] = []
         self._selected: list[str] = []
         self._applying_style = False
@@ -816,6 +880,7 @@ class PickerButton(QToolButton):
             self._selected,
             search_placeholder=self._search_placeholder,
             parent=self,
+            **self._popup_options,
         )
         popup.selection_changed.connect(self._on_selection_changed)
         popup.closed.connect(self._on_popup_closed)

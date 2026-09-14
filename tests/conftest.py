@@ -146,6 +146,8 @@ class FakeMachine:
         # unnoticed for the rest of the run, so both sides are recorded.
         self.health_checks_suspended: set[int] = set()
         self.health_checks_resumed: set[int] = set()
+        # Mirrors BotMachine.port_map: None until something surveys who can port to whom.
+        self.port_map = None
 
     def log(self, msg: str, level: int = logging.INFO) -> None:
         self.logs.append((msg, level))

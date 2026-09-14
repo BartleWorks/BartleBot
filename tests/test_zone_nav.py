@@ -254,6 +254,26 @@ def test_avoiding_a_kind_can_leave_no_route():
     assert _ISLAND not in zone_nav.reachable(zone_nav.parse(raw), _HUB, avoid={"object"})
 
 
+def test_an_avoided_link_is_routed_around_without_avoiding_its_kind():
+    """A teleporter that failed for everyone -- one the account has not unlocked -- is skipped,
+    while every other object link stays usable."""
+    raw = _raw(_object(_HUB, _S3), _object(_HUB, _S1), _walk(_S1, _S2), _walk(_S2, _S3))
+    [failed] = zone_nav.plan(zone_nav.parse(raw), _HUB, _S3)
+
+    assert _route(raw, _HUB, _S3, avoid_links=[failed]) == [
+        ("object", _HUB, _S1),
+        ("walk", _S1, _S2),
+        ("walk", _S2, _S3),
+    ]
+
+
+def test_an_avoided_implied_step_is_left_out_too():
+    raw = _raw(_walk(_S2, _S3), _walk(_S3, _HUB))
+    hub = zone_nav.Step("hub", _S2, _HUB)
+
+    assert _route(raw, _S2, _HUB, avoid_links=[hub]) == [("walk", _S2, _S3), ("walk", _S3, _HUB)]
+
+
 def test_a_ride_carries_its_cutscene_zone():
     steps = zone_nav.plan(zone_nav.parse(_raw(_ride(_S1, _ISLAND, "Alpha/Boat"))), _S1, _ISLAND)
 

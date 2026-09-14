@@ -21,9 +21,20 @@ between nodes (a menu confirmed open, a zone list dismissed, a loading screen be
 is why it is a callback rather than a fixed sequence.
 
 This is offered as an optional `sequential` param on `interact`, `interact_menu`,
-`enter_zone_via_object`, and `enter_zone_via_list`; it defaults off, and the parallel path
-in each of those nodes is untouched by it. `apply_level_scaling` predates the helper and is
-unconditionally sequential against its one hardcoded station.
+`enter_zone_via_object`, and `enter_zone_via_list`; it defaults off. `apply_level_scaling`
+predates the helper and is unconditionally sequential against its one hardcoded station.
+
+`enter_zone_via_object`'s parallel path also falls back to turns on its own: when some clients
+went through and the rest are still standing there after the re-press window, the rest take
+turns and a warning names the object, since nothing says an object serves one player at a time
+until someone has watched it happen. It never gives a turn to a client that is loading (#70).
+A sequential turn that fails for one client no longer fails the step for the group; the arrival
+check decides, as it does for the parallel path.
+
+`wait_for_zone_with_recovery`'s teleport-to-player recovery can be switched off for everything
+inside a block with `node_helpers.without_straggler_recovery()`. Zone navigation does this
+around every step it runs, because a straggler ported partway through a route lands in a zone
+the others are about to leave; it ports them once, at the end (see `docs/ZONE_NAVIGATION.md`).
 
 Pass `park_after_turn=False` when the interaction removes the client itself (a zone
 transition) — otherwise the helper aims a teleport at a client already on a loading screen.

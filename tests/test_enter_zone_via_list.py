@@ -456,6 +456,35 @@ async def test_sequential_prompt_never_appears_fails():
     assert any("interact prompt never appeared for client(s) [1]" in msg for msg, _ in machine.logs)
 
 
+async def test_sequential_turn_that_fails_for_one_client_is_left_to_the_arrival_check():
+    """One player's failed turn is not the group's: the one that teleported is already on its way,
+    so the arrival check -- not the turn -- decides, and the player left behind is named."""
+    c1, c2 = _positional_client(), _positional_client()
+    c2.is_in_npc_range.side_effect = None
+    c2.is_in_npc_range.return_value = False  # never gets the prompt
+    machine = FakeMachine()
+    arrival = AsyncMock(return_value=["DestZone", "TestZone"])
+
+    async def _click(client, path):
+        if list(path) == list(evl.UNIVERSE_TELEPORT_BUTTON):
+            client.state["gone"] = True
+        return True
+
+    with (
+        patch.object(evl, "POLL_INTERVAL", 0),
+        patch(f"{_NH}.OBJECT_USE_DELAY", 0),
+        patch(f"{_NH}.is_visible_by_path", AsyncMock(return_value=True)),
+        patch(f"{_NH}.get_text_by_path", AsyncMock(side_effect=["Krokotopia", "", "", ""] * 20)),
+        patch(f"{_NH}.click_by_path", AsyncMock(side_effect=_click)),
+        patch(f"{_NH}.wait_for_zone_with_recovery", arrival),
+    ):
+        result = await evl.run(machine, [c1, c2], {**_PARAMS, "sequential": True})
+
+    assert result == "FAILURE"
+    arrival.assert_awaited_once()
+    assert any("did not use the list" in msg and "[2]" in msg for msg, _ in machine.logs)
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # Zone List Aliases — the same entry under another locale's spelling
 # ══════════════════════════════════════════════════════════════════════════════

@@ -808,6 +808,27 @@ async def wait_for_zone(
     return list(await asyncio.gather(*[c.zone_name() for c in clients]))
 
 
+import contextlib  # noqa: E402 -- beside the one switch that uses them
+import contextvars  # noqa: E402
+
+_straggler_recovery: contextvars.ContextVar[bool] = contextvars.ContextVar("straggler_recovery", default=True)
+
+
+def straggler_recovery() -> bool:
+    """Whether wait_for_zone_with_recovery ports stragglers when its caller does not say. On by default."""
+    return _straggler_recovery.get()
+
+
+@contextlib.contextmanager
+def without_straggler_recovery():
+    """Turn straggler recovery off for everything awaited inside the block, in this task and its children."""
+    token = _straggler_recovery.set(False)
+    try:
+        yield
+    finally:
+        _straggler_recovery.reset(token)
+
+
 async def wait_for_zone_with_recovery(
     machine,
     clients: list,
@@ -815,9 +836,16 @@ async def wait_for_zone_with_recovery(
     timeout: float,
     poll_interval: float = POLL_INTERVAL,
     settle_grace: float | None = None,
+    recover: bool | None = None,
 ) -> list[str] | None:
     """Poll until all clients are in zone, trying a teleport-to-player recovery the moment
     it becomes viable rather than only after the whole wait is exhausted.
+
+    `recover=False` only waits and reports. Left as None it follows straggler_recovery(),
+    which zone navigation turns off around every step it runs: it sorts out its own stragglers
+    once the step is over, rather than porting them into a zone the rest are about to leave.
+    A context variable rather than a param, so it reaches the step nodes -- and whatever they
+    call -- without every one of them growing an argument no bot author should ever set.
 
     Some clients failing a zone transition while others land fine is usually not a crash —
     it means the stragglers have not unlocked the destination, or missed the transition
@@ -863,7 +891,12 @@ async def wait_for_zone_with_recovery(
         arriving = any(await asyncio.gather(*[c.is_loading() for c in behind]))
         if arriving:
             settled_after = now + settle_grace
-        elif not recovery_tried and now >= settled_after and any(zone_matches(z, zone) for z in zones):
+        elif (
+            (straggler_recovery() if recover is None else recover)
+            and not recovery_tried
+            and now >= settled_after
+            and any(zone_matches(z, zone) for z in zones)
+        ):
             recovery_tried = True
             await _attempt_zone_recovery(machine, clients, zone, zones, poll_interval)
             continue  # re-read zones immediately; the recovery attempt already spent real time
@@ -1258,7 +1291,34 @@ async def port_to_friend(
     fallback rather than as the whole point of the node should size `ceiling` accordingly
     rather than assume this returns quickly.
     """
-    await asyncio.gather(*[teleport_via_friends_list(c, friend_name_lower) for c in clients_to_move])
+    return await port_clients(
+        clients_to_move,
+        lambda client: teleport_via_friends_list(client, friend_name_lower),
+        trigger_timeout=trigger_timeout,
+        ceiling=ceiling,
+        poll_interval=poll_interval,
+    )
+
+
+async def port_clients(
+    clients_to_move: list,
+    initiate,
+    *,
+    trigger_timeout: float = TRIGGER_TIMEOUT,
+    ceiling: float = ZONE_CHANGE_TIMEOUT,
+    poll_interval: float = POLL_INTERVAL,
+) -> PortToFriendResult:
+    """Start a port on every client with `initiate`, and wait for each to enter a loading screen.
+
+    `initiate(client)` is how one client's port is started, called once for everyone and again
+    for each straggler after `trigger_timeout`: the friends list for port_to_friend, the group
+    roster for group_manager.port_to_group_member. Everything after the start is the same
+    whichever way it began -- the dungeon exit and cross-realm warnings are confirmed, a
+    friend-busy dialog is a refusal -- so it lives here once. See port_to_friend for the rest.
+
+    Raises whatever `initiate` raises; both starters raise ValueError when they cannot begin.
+    """
+    await asyncio.gather(*[initiate(c) for c in clients_to_move])
 
     seen_loading: set[int] = set()
     loop_start = asyncio.get_event_loop().time()
@@ -1286,7 +1346,7 @@ async def port_to_friend(
 
         if now >= straggler_after:
             stragglers = [c for i, c in enumerate(clients_to_move) if i not in seen_loading]
-            await asyncio.gather(*[teleport_via_friends_list(c, friend_name_lower) for c in stragglers])
+            await asyncio.gather(*[initiate(c) for c in stragglers])
 
         await asyncio.sleep(poll_interval)
 

@@ -3,7 +3,7 @@
 How BartleBot gets every client from wherever they are to a named zone, without the bot
 author recording each gate along the way. The map lives in `bartlebot/data/zone_nav.json`;
 `bartlebot/zone_nav.py` loads it and plans routes over it, and
-`bartlebot/nodes/zone_navigation.py` runs a route. No node uses it yet; the tester does.
+`bartlebot/nodes/zone_navigation.py` runs a route. The Go To Zone node and the tester both run it.
 
 The research behind the zone list — which zones count as main zones, and how they were
 picked from the game files — is in `tools/zone_graph/`.
@@ -260,13 +260,53 @@ that worked.
 
 `zone_navigation.navigate(machine, clients, target)` plans from where the clients are, runs the
 first step through its zone-entry node, and plans again from wherever they landed. Another
-world is part of the plan, not a separate trip first. A group split within one world regroups
-with the hub button; a group split across worlds regroups at home. A route with no way on is a
-failure naming where it stopped. A list step matches the destination's name in every locale from
+world is part of the plan, not a separate trip first. A route with no way on is a failure naming
+where it stopped. A list step matches the destination's name in every locale from
 `bartlebot/data/zone_names.json` (`tools/dump_zone_names.py`), and a gate step matches the
 world's name the same way from `world_names.json`.
 
-The `go_to_world` node is unchanged: bots that use it still go home and through the World Tree.
+The Go To Zone node (`nodes/teleportation/go_to_zone.py`) is `navigate()` with the zone as its one
+param, chosen in a picker grouped by world (`gui/widgets/zone_picker.py`). Only the zone path is
+stored: the map already says which world it is in. The `go_to_world` node is unchanged: bots that
+use it still go home and through the World Tree.
+
+### Running a route with several clients
+
+A port is one loading screen for any number of clients, from anywhere. A group taking a transition
+together is not: the game loads its players in one at a time. So a group does not always travel
+together.
+
+| the clients start | and the route | they |
+|---|---|---|
+| in one zone | has at most `TRAVEL_TOGETHER_MAX_TRANSITIONS` (2) transitions and no object step | travel together |
+| in one zone | is longer, or takes a teleporter | follow one client: it travels, the rest port to it |
+| in several zones | — | follow one client |
+
+The client that travels is the one the most others can port to, then the one with the cheapest
+route, then the lowest player number; a client already in the target zone has the cheapest route of
+all. Nobody else moves until it arrives, so no two clients ever use an object at once. Clients that
+cannot port to one another travel together instead, regrouping first if they are split: at the hub
+within one world, at home across worlds.
+
+**Who can port to whom** is `bartlebot/port_map.py`, surveyed in pre-run setup: every client's
+online friends list, then the Group tab if the friends lists leave a pair unconnected. A port goes
+through the friends list where there is one, else through the group (the member's roster line, then
+Go To Player). Ports run in waves, so a client with no route to the traveller still gets there
+through someone who already has. A route that fails is dropped for the rest of the run, and a client
+that cannot port at all travels there itself once the others have arrived.
+
+**A client that misses a step** while travelling together gets one more go at it alone; for a walk
+through a gate that has been opened, only the walk is retried. A client that misses it again stays
+exactly where it is -- nothing teleports it or runs a step on it -- while the rest carry on, and it
+ports to them at the end. The step nodes' own teleport-to-player recovery is turned off for the
+steps navigation runs (`node_helpers.without_straggler_recovery()`), since it would port a straggler
+into a zone the others are about to leave. A step nobody makes is planned around once
+(`plan(avoid_links=...)`): that is usually a teleporter the account has not unlocked.
+
+**An object that serves one player at a time** but is not marked `sequential` is caught by
+`enter_zone_via_object` itself: when some clients go through and the rest are still standing there,
+the rest take turns, and a warning names the link so it can be marked. The flag still matters,
+because the planner only costs a teleporter per client when it is set.
 
 ## Mapping it: the tester
 
@@ -310,7 +350,6 @@ change at the skip reads as a hub button use and is dropped. Their two links wer
 
 ## Not built yet
 
-- the navigation node, a wrapper around `navigate()`
 - Wintertusk, which is not declared at all
 
 ## Known gap: a teleporter shortcut can be locked

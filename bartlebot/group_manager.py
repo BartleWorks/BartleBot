@@ -48,6 +48,8 @@ from bartlebot.nodes.paths import (
     ALREADY_IN_GROUP_DISMISS_PATH,
     CHARACTER_PROFILE_CLOSE_PATH,
     CHARACTER_PROFILE_PATH,
+    FRIENDLY_PLAYER_GO_TO_BUTTON_PATH,
+    FRIENDLY_PLAYER_MENU_PATH,
     FRIENDS_LIST_WINDOW_NAMES,
     GROUP_INVITE_ACCEPT_PATH,
     GROUP_ROSTER_LINES,
@@ -230,12 +232,20 @@ async def _read_roster(client) -> tuple[str, ...]:
 
     Returns them in line order with blanks dropped. Never raises: an unreadable roster
     yields (), which every caller treats as "cannot tell" rather than as "empty group".
+    """
+    return tuple(name for _, name in await _roster_lines(client))
+
+
+async def _roster_lines(client) -> list[tuple[int, str]]:
+    """Each member on the Group tab with the roster line it is on. The social window must be open.
+
+    The line is what teleport_to_group_member clicks. Never raises.
 
     Lines are read to GROUP_ROSTER_LINES rather than stopping at the first blank one,
     because an empty slot in the middle of the list would otherwise truncate the members
     after it. A line beyond the ones the game drew simply resolves to no window.
     """
-    names: list[str] = []
+    lines: list[tuple[int, str]] = []
     for line in range(1, GROUP_ROSTER_LINES + 1):
         try:
             raw = await node_helpers.get_text_by_path(client, group_member_name_path(line))
@@ -248,8 +258,8 @@ async def _read_roster(client) -> tuple[str, ...]:
         if name.casefold() in _ROSTER_PLACEHOLDERS:
             logger.debug("Ignoring placeholder text %r on group roster line %d", name, line)
             continue
-        names.append(name)
-    return tuple(names)
+        lines.append((line, name))
+    return lines
 
 
 # Text that appears in a roster NameText but is not a player.
@@ -921,3 +931,60 @@ async def _close_invite_windows(leader, target) -> None:
     and closed once at the end of form_group.
     """
     await asyncio.gather(close_social_window(target), _close_overlapping_windows(leader))
+
+
+async def teleport_to_group_member(client, name: str) -> None:
+    """Start a port to a member of this client's group. Raises ValueError if it cannot start.
+
+    The group route to a player, for two of ours who are grouped but not friends (see
+    bartlebot.port_map): open the social window on the Group tab, click the member's roster
+    line, and press Go To Player on the popup it opens. The same contract as
+    node_helpers.teleport_via_friends_list, so node_helpers.port_clients can drive either.
+
+    Waits out any form_group in progress first, since that opens and closes this same window
+    on every client, but does not hold the lock itself: ports must not queue behind each other.
+    """
+    lock = _form_group_lock()
+    if lock.locked():
+        async with lock:
+            pass
+
+    if not await _open_social_window(client):
+        raise ValueError("the social window did not open")
+    wanted = name.casefold()
+    line = next((ln for ln, member in await _roster_lines(client) if member.casefold() == wanted), None)
+    if line is None:
+        await close_social_window(client)
+        raise ValueError("that player is not on this client's group roster")
+
+    # Resolved once and clicked as found: re-walking the path to click could land elsewhere.
+    rows = await node_helpers.find_windows_by_path(client.root_window, group_member_name_path(line))
+    if not rows or not await node_helpers.click_window(client, rows[0]):
+        await close_social_window(client)
+        raise ValueError(f"group roster line {line} could not be clicked")
+    if not await node_helpers.poll_until(
+        lambda: node_helpers.is_visible_by_path(client, FRIENDLY_PLAYER_MENU_PATH),
+        timeout=TRIGGER_TIMEOUT,
+        poll_interval=POLL_INTERVAL,
+    ):
+        await close_social_window(client)
+        raise ValueError("the player menu did not open")
+    if not await node_helpers.click_by_path(client, FRIENDLY_PLAYER_GO_TO_BUTTON_PATH):
+        await close_social_window(client)
+        raise ValueError("the Go To Player button could not be clicked")
+
+
+async def port_to_group_member(clients_to_move: list, name: str, **kwargs) -> node_helpers.PortToFriendResult:
+    """Port every client to a member of their group, and wait for each to start loading.
+
+    node_helpers.port_to_friend's counterpart through the Group tab, with the same arguments
+    and result. The social window can stay open across the port, so it is closed on every
+    client once the loading screens have cleared.
+    """
+    try:
+        return await node_helpers.port_clients(
+            clients_to_move, lambda client: teleport_to_group_member(client, name), **kwargs
+        )
+    finally:
+        await node_helpers.poll_until(lambda: node_helpers.none_loading(clients_to_move), None, POLL_INTERVAL)
+        await asyncio.gather(*(close_social_window(c) for c in clients_to_move))

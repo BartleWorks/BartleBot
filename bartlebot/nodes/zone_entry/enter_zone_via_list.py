@@ -334,6 +334,16 @@ async def _use_list_sequentially(
     )
     unprompted, unfinished = node_helpers.summarize_turns(results, numbers)
 
+    # One player's failed turn is not the group's: whoever teleported is already on its way,
+    # and the arrival check is what decides what happens to the rest.
+    behind = sorted(set(unprompted) | set(unfinished))
+    if behind and len(behind) < len(clients):
+        machine.log(
+            f"Client(s) {behind} did not use the list; continuing to the arrival check",
+            logging.INFO,
+        )
+        return None
+
     if refusals:
         machine.log(
             f"FAILURE: the game refused the teleport — {dialog_captions.describe(refusals[0])}",

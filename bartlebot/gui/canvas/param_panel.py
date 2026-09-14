@@ -49,6 +49,7 @@ from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.zone_picker import NavZoneButton
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.store_roots import Origin
@@ -715,6 +716,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                     result[key] = 0
             elif isinstance(w, _StrChoiceComboBox):
                 result[key] = w.get_value()
+            elif isinstance(w, NavZoneButton):
+                result[key] = w.value()
             elif isinstance(w, QCheckBox):
                 result[key] = w.isChecked()
         return result
@@ -890,6 +893,13 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             btns_row.addWidget(tp_btn, 1)
             outer_layout.addLayout(btns_row)
             return (spins[0], spins[1], spins[2], outer)
+        if field_type == "nav_zone":
+            w = NavZoneButton(self._get_zone_suggestions)
+            w.set_value(str(val) if val else "")
+            if help_text:
+                w.setToolTip(help_text)
+            w.changed.connect(self._emit_changed)
+            return w
         if field_type == "str_choice":
             w = _StrChoiceComboBox()
             w.add_choices(choices or [])
