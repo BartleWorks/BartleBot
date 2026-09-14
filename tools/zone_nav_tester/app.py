@@ -56,6 +56,7 @@ from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
+    QDoubleSpinBox,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -88,6 +89,9 @@ UNHOOK_TIMEOUT = 10.0
 STATUS_COLORS = {tree.VERIFIED: "#2e7d32", tree.TENTATIVE: "#b26a00", tree.NO_DATA: "#8a8a8a"}
 HERE_BACKGROUND = "#d6e9ff"
 KINDS = (recorder.WALK, recorder.OBJECT, recorder.LIST, recorder.RIDE)
+
+DEFAULT_SPEED_MULTIPLIER = 5.0
+SPEED_MULTIPLIER_RANGE = (0.1, 20.0)
 
 
 class ConsoleMachine:
@@ -143,6 +147,8 @@ class TesterWindow(QMainWindow):
         self._poller: asyncio.Task | None = None
         self._release_task: asyncio.Task | None = None
         self._unhooked = False
+        self._speed_original: int | None = None
+        """The client's un-modified speed_multiplier value, read once so it can be restored."""
         self.setWindowTitle("Zone Navigation Tester")
         self.resize(1200, 820)
         self._build()
@@ -177,6 +183,9 @@ class TesterWindow(QMainWindow):
                 task.cancel()
                 with contextlib.suppress(asyncio.CancelledError, Exception):
                     await task
+        if self._speed_original is not None:
+            with contextlib.suppress(Exception):
+                await self.client.client_object.write_speed_multiplier(self._speed_original)
         try:
             await asyncio.wait_for(self.client.close(), UNHOOK_TIMEOUT)
             logger.info("Client unhooked")
@@ -200,6 +209,21 @@ class TesterWindow(QMainWindow):
                 label.textInteractionFlags() | label.textInteractionFlags().TextSelectableByMouse
             )
             outer.addWidget(label)
+
+        speed_row = QHBoxLayout()
+        self.speed_check = QCheckBox("Speedhack")
+        self.speed_check.toggled.connect(self._on_speed_toggled)
+        speed_row.addWidget(self.speed_check)
+        self.speed_spin = QDoubleSpinBox()
+        self.speed_spin.setDecimals(1)
+        self.speed_spin.setSingleStep(0.1)
+        self.speed_spin.setRange(*SPEED_MULTIPLIER_RANGE)
+        self.speed_spin.setValue(DEFAULT_SPEED_MULTIPLIER)
+        self.speed_spin.setSuffix("x")
+        self.speed_spin.valueChanged.connect(self._on_speed_value_changed)
+        speed_row.addWidget(self.speed_spin)
+        speed_row.addStretch(1)
+        outer.addLayout(speed_row)
 
         split = QSplitter()
         self.tree_widget = QTreeWidget()
@@ -357,6 +381,34 @@ class TesterWindow(QMainWindow):
         marks = [text for flag, text in ((zone == world.hub, "hub"), (zone == world.door, "spiral door")) if flag]
         return _label(zone) + (f"   [{', '.join(marks)}]" if marks else "")
 
+    # ── Speedhack ─────────────────────────────────────────────────────────────
+
+    def _modified_speed(self) -> int:
+        return round((self.speed_spin.value() - 1) * 100)
+
+    @qasync.asyncSlot(bool)
+    async def _on_speed_toggled(self, checked: bool) -> None:
+        try:
+            if checked:
+                self._speed_original = await self.client.client_object.speed_multiplier()
+                await self.client.client_object.write_speed_multiplier(self._modified_speed())
+                logger.info("Speedhack enabled at %.1fx", self.speed_spin.value())
+            elif self._speed_original is not None:
+                await self.client.client_object.write_speed_multiplier(self._speed_original)
+                logger.info("Speedhack disabled")
+                self._speed_original = None
+        except Exception:
+            logger.exception("Failed to change the speed multiplier")
+
+    @qasync.asyncSlot(float)
+    async def _on_speed_value_changed(self, _value: float) -> None:
+        if not self.speed_check.isChecked():
+            return
+        try:
+            await self.client.client_object.write_speed_multiplier(self._modified_speed())
+        except Exception:
+            logger.exception("Failed to change the speed multiplier")
+
     # ── Polling ───────────────────────────────────────────────────────────────
 
     async def poll(self) -> None:
@@ -373,7 +425,20 @@ class TesterWindow(QMainWindow):
             if self.record_check.isChecked() and self.executing is None:
                 for transition in self.recorder.feed(sample):
                     self._on_transition(transition)
+            if self.speed_check.isChecked():
+                # A zone or realm change resets the game's speed multiplier; keep it pinned.
+                await self._maintain_speed()
             await asyncio.sleep(POLL_SECONDS)
+
+    async def _maintain_speed(self) -> None:
+        try:
+            wanted = self._modified_speed()
+            if await self.client.client_object.speed_multiplier() != wanted:
+                await self.client.client_object.write_speed_multiplier(wanted)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.debug("Failed to maintain the speed multiplier", exc_info=True)
 
     async def _read_sample(self) -> recorder.Sample:
         c = self.client
