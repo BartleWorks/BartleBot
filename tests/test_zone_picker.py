@@ -5,7 +5,13 @@ No QApplication: zone_sections, describe_zone and filter_sections are plain func
 
 from bartlebot import zone_nav
 from bartlebot.gui.widgets.picker_popup import PickerRow, filter_sections
-from bartlebot.gui.widgets.zone_picker import SUGGESTED_TITLE, describe_zone, zone_id, zone_sections
+from bartlebot.gui.widgets.zone_picker import (
+    SUGGESTED_TITLE,
+    describe_zone,
+    is_destination,
+    zone_id,
+    zone_sections,
+)
 
 _HUB = "Krokotopia/KT_Hub"
 _ENTRANCE = "Krokotopia/KT_Krokosphinx/KT_EntranceHall"
@@ -60,6 +66,25 @@ def test_a_zone_is_described_world_first_with_its_id_and_an_unknown_one_is_marke
     assert describe_zone(_nav(), _ENTRANCE).startswith("Krokotopia · ")
     assert describe_zone(_nav(), _ENTRANCE).endswith(" (KT_EntranceHall)")
     assert describe_zone(_nav(), "Nowhere/Zone") == "Nowhere/Zone (not on the map)"
+
+
+def test_only_a_listed_zone_is_a_destination():
+    assert is_destination(_nav(), _ENTRANCE)
+    assert not is_destination(_nav(), _DOJO)
+    assert not is_destination(_nav(), "Nowhere/Zone")
+
+
+def test_the_shipped_map_keeps_pass_through_zones_out_of_the_list():
+    nav = zone_nav.load()
+
+    for zone in (
+        "WizardCity/Interiors/WC_Housing_Dorm_Interior",
+        "MooShu/Interiors/MS_RockDojoT2",
+        "MooShu/Interiors/MS_WaterDojot1_Common",
+        "Khrysalis/Interiors/KR_Z11_I07_MagiHouseMain",
+    ):
+        assert zone in nav.world_of(zone).zones
+        assert not is_destination(nav, zone)
 
 
 _ROWS_K = [PickerRow("k1", "Entrance Hall", meta="KT_EntranceHall"), PickerRow("k2", "The Oasis", meta="KT_Hub")]

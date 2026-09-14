@@ -168,6 +168,37 @@ async def test_fill_leaves_the_zone_alone_when_the_read_fails_or_the_player_is_g
     assert form.get_params()["zone"] == _ENTRANCE
 
 
+async def test_fill_refuses_a_zone_that_is_not_in_the_list_and_says_why(qapp):
+    form = _form({"zone": _ENTRANCE}, clients=[_ZoneClient(_ENTRANCE), _ZoneClient("Nowhere/Zone")])
+    field = form.widget("zone")
+    edits = []
+    form.changed.connect(lambda: edits.append(1))
+    assert field.notice.isHidden()
+
+    await field._fill_from_player(1)
+
+    assert form.get_params()["zone"] == _ENTRANCE
+    assert edits == []
+    assert not field.notice.isHidden()
+    assert field.notice.text() == (
+        "Zone not filled: Player 2 is in Nowhere/Zone, which is not a valid destination on the current zone map. "
+        "Try selecting the nearest major zone."
+    )
+
+    await field._fill_from_player(0)  # a fill that works clears the reason
+    assert field.notice.isHidden()
+
+
+async def test_picking_a_zone_clears_a_refused_fill(qapp):
+    form = _form({}, clients=[_ZoneClient("Nowhere/Zone")])
+    field = form.widget("zone")
+    await field._fill_from_player(0)
+
+    field.picker.changed.emit(_ENTRANCE)
+
+    assert field.notice.isHidden()
+
+
 def test_the_authoring_machine_reads_safety_delay_from_the_app_setting(monkeypatch):
     from bartlebot.gui.canvas import param_panel
 

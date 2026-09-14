@@ -57,6 +57,16 @@ def zone_sections(nav: zone_nav.NavMap, suggested: Iterable[str] = ()) -> list[S
     return [(SUGGESTED_TITLE, here), *by_world] if here else by_world
 
 
+def is_destination(nav: zone_nav.NavMap, zone: str) -> bool:
+    """Whether `zone` is in the picker's list: on the map, and not a zone routes only pass through.
+
+    Go To Zone fails on anything else, so a zone that arrives some other way -- filled from where
+    a player stands -- is checked against this.
+    """
+    world = nav.world_of(zone)
+    return world is not None and zone in world.destinations()
+
+
 def describe_zone(nav: zone_nav.NavMap, zone: str) -> str:
     """ "Krokotopia · Entrance Hall (KT_EntranceHall)" for a zone on the map; the raw path, marked, for one that is not.
 

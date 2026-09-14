@@ -1645,6 +1645,7 @@
           }
         },
         "MooShu/Interiors/MS_RockDojoT2": {
+          "destination": false,
           "arrivals": {
             "MooShu/MS_Hub": {"x": 2445.06, "y": 9.15, "z": 30.0},
             "MooShu/MS_Death/MS_Death_Hub_RuinedTemple": {"x": -1409.59, "y": 1582.45, "z": 0.0}
@@ -1657,6 +1658,7 @@
           }
         },
         "MooShu/Interiors/MS_WaterDojot1_Common": {
+          "destination": false,
           "arrivals": {
             "MooShu/MS_Hub": {"x": 2410.51, "y": 7.65, "z": 30.0},
             "MooShu/MS_Plague/MS_Plague_Hub_FarmVillage": {"x": -1460.49, "y": -1608.06, "z": 0.0}
@@ -4042,6 +4044,7 @@
         },
         "Khrysalis/Interiors/KR_Z11_I07_MagiHouseMain": {
           "label": "House of the Magi",
+          "destination": false,
           "arrivals": {
             "Khrysalis/KR_Z12_ShadowPalace": {"x": -25.36, "y": 1257.4, "z": 5.6},
             "Khrysalis/KR_Z11_TheHive": {"x": 46.87, "y": -1581.98, "z": 7.11}

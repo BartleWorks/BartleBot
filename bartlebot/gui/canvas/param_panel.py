@@ -49,7 +49,7 @@ from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.gui.widgets.zone_picker import NavZoneButton
+from bartlebot.gui.widgets.zone_picker import NavZoneButton, is_destination
 from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
@@ -353,6 +353,13 @@ class _NavZoneField(QWidget):
         btns_row.addWidget(self.go_btn, 1)
         outer.addLayout(btns_row)
 
+        # Why the last fill was refused; cleared by the next pick or fill.
+        self.notice = ThemedTextLabel(color="error", css="font-size: 11px;")
+        self.notice.setWordWrap(True)
+        outer.addWidget(self.notice)
+        self.notice.setVisible(False)
+        self.picker.changed.connect(lambda _zone: self.notice.setVisible(False))
+
     def value(self) -> str:
         return self.picker.value()
 
@@ -380,8 +387,18 @@ class _NavZoneField(QWidget):
             zone = await clients[idx].zone_name()
         except Exception:
             return
+        if not zone:
+            return
         try:
-            if zone and zone != self.value():
+            if not is_destination(self.picker.nav, zone):
+                self.notice.setText(
+                    f"Zone not filled: Player {idx + 1} is in {zone}, which is not a valid destination on the "
+                    "current zone map. Try selecting the nearest major zone."
+                )
+                self.notice.setVisible(True)
+                return
+            self.notice.setVisible(False)
+            if zone != self.value():
                 self.set_value(zone)
                 self.changed.emit(zone)
         except RuntimeError:
