@@ -42,7 +42,8 @@
         },
         "WizardCity/WC_Streets/WC_Cyclops": {
           "arrivals": {
-            "WizardCity/WC_Streets/WC_DarkCave": {"x": -6.18, "y": 13505.83, "z": 0.09}
+            "WizardCity/WC_Streets/WC_DarkCave": {"x": -6.18, "y": 13505.83, "z": 0.09},
+            "Aquila/AQ_Z00_Hub": {"x": -9914.0, "y": 8531.67, "z": 31.21}
           }
         },
         "WizardCity/WC_Streets/WC_Firecat": {
@@ -473,6 +474,15 @@
           "volume": "TeleportVol_Teleport location (Cavern to Street4)",
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Aquila/AQ_Z00_Hub",
+          "to": "WizardCity/WC_Streets/WC_Cyclops",
+          "interact_xyz": {"x": -64.46, "y": -936.2, "z": 337.91},
+          "reset_xyz": {"x": -47.83, "y": -767.87, "z": 298.35},
+          "verified": true,
+          "source": "recorded"
         }
       ],
       "list_networks": []
@@ -485,7 +495,8 @@
           "arrivals": {
             "Krokotopia/KT_WorldTeleporter": {"x": 14.22, "y": 232.65, "z": -22.17},
             "Krokotopia/KT_Pyramid/KT_AltarOfKings": {"x": -36.57, "y": 7429.13, "z": 495.6},
-            "Krokotopia/Interiors/KT_Library": {"x": 3501.21, "y": 5935.59, "z": -220.19}
+            "Krokotopia/Interiors/KT_Library": {"x": 3501.21, "y": 5935.59, "z": -220.19},
+            "G14_SB/SB_Z01_KimbaalungVillage": {"x": -10588.67, "y": 2007.5, "z": 3341.55}
           }
         },
         "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis": {
@@ -1046,6 +1057,14 @@
           "to": "Krokotopia/KT_Hub",
           "xyz": {"x": -194.94, "y": -7.77, "z": -1.57},
           "volume": "TeleportVol_Teleport location (Library Hub Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "G14_SB/SB_Z01_KimbaalungVillage",
+          "to": "Krokotopia/KT_Hub",
+          "xyz": {"x": 4312.35, "y": -2648.31, "z": -172.55},
           "verified": true,
           "source": "recorded"
         }
@@ -5493,7 +5512,8 @@
         },
         "Novus/NV_Z03_PuertoNuovo_VA": {
           "arrivals": {
-            "Novus/NV_Z01_Conatus": {"x": -2377.51, "y": 232.77, "z": 6.98}
+            "Novus/NV_Z01_Conatus": {"x": -2377.51, "y": 232.77, "z": 6.98},
+            "Novus/NV_Z03_PuertoNuovo_MQ": {"x": -2891.97, "y": 2867.43, "z": 6.98}
           }
         },
         "Novus/NV_Z04_NewVicorgia": {
@@ -5518,8 +5538,11 @@
             "Novus/NV_Z01_Conatus": {"x": 11.21, "y": -2115.61, "z": -3.03}
           }
         },
-        "Novus/NV_Z08_DaseinEstate": {},
-        "Novus/NV_Z03_PuertoNuovo_MQ": {}
+        "Novus/NV_Z03_PuertoNuovo_MQ": {
+          "arrivals": {
+            "Novus/NV_Z03_PuertoNuovo_VA": {"x": -6217.18, "y": 2842.4, "z": -2890.69}
+          }
+        }
       },
       "links": [
         {
@@ -5638,6 +5661,24 @@
           "reset_xyz": {"x": -10685.33, "y": -7946.08, "z": 2550.73},
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Novus/NV_Z03_PuertoNuovo_VA",
+          "to": "Novus/NV_Z03_PuertoNuovo_MQ",
+          "xyz": {"x": -3179.66, "y": 2806.87, "z": 9.5},
+          "volume": "TeleportVol_Teleport_2_MQ_Side",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Novus/NV_Z03_PuertoNuovo_MQ",
+          "to": "Novus/NV_Z03_PuertoNuovo_VA",
+          "xyz": {"x": -5635.56, "y": 3014.37, "z": -2871.57},
+          "volume": "TeleportVol_Teleport_2_VA_Side",
+          "verified": true,
+          "source": "recorded"
         }
       ],
       "list_networks": []
@@ -5646,17 +5687,148 @@
       "hub": "Wallaru/WL_Z01_Hub",
       "door": "Wallaru/WL_Z01_Hub",
       "zones": {
-        "Wallaru/WL_Z01_Hub": {},
-        "Wallaru/WL_Z02_Outback": {},
-        "Wallaru/WL_Z03_Kingsland": {},
-        "Wallaru/WL_Z05_Wobbegong_JT": {},
+        "Wallaru/WL_Z01_Hub": {
+          "arrivals": {
+            "Wallaru/WL_Z02_Outback": {"x": 23.17, "y": 17927.08, "z": 2.0},
+            "Wallaru/WL_Z05_Wobbegong_JT": {"x": 3578.83, "y": 15792.4, "z": 2.0},
+            "Wallaru/WL_Z06_CollieRanch": {"x": 3578.83, "y": 15792.4, "z": 2.0}
+          }
+        },
+        "Wallaru/WL_Z02_Outback": {
+          "arrivals": {
+            "Wallaru/WL_Z01_Hub": {"x": 8044.06, "y": -2108.1, "z": 88.08},
+            "Wallaru/WL_Z03_Kingsland": {"x": 18003.11, "y": -1122.32, "z": 103.34}
+          }
+        },
+        "Wallaru/WL_Z03_Kingsland": {
+          "arrivals": {
+            "Wallaru/WL_Z01_Hub": {"x": -8388.83, "y": -3001.27, "z": -9.73},
+            "Wallaru/WL_Z02_Outback": {"x": 1751.49, "y": 15825.65, "z": 1289.61}
+          }
+        },
+        "Wallaru/WL_Z05_Wobbegong_JT": {
+          "arrivals": {
+            "Wallaru/WL_Z02_Outback": {"x": 5144.77, "y": -7695.69, "z": 200.35}
+          }
+        },
         "Wallaru/WL_Z06_CollieRanch": {},
-        "Wallaru/WL_Z07_EucalyptusForest": {},
-        "Wallaru/WL_Z08_BillabongResort": {},
-        "Wallaru/WL_Z04_TheDreaming": {}
+        "Wallaru/WL_Z07_EucalyptusForest": {
+          "arrivals": {
+            "Wallaru/WL_Z06_CollieRanch": {"x": 5673.16, "y": -7182.05, "z": 933.58},
+            "Wallaru/WL_Z08_BillabongResort": {"x": 5673.16, "y": -7182.05, "z": 933.58},
+            "Wallaru/WL_Z04_TheDreaming": {"x": -1472.74, "y": 9971.24, "z": 1127.38}
+          }
+        },
+        "Wallaru/WL_Z08_BillabongResort": {
+          "arrivals": {
+            "Wallaru/WL_Z07_EucalyptusForest": {"x": -100.2, "y": 614.51, "z": 22.0}
+          }
+        },
+        "Wallaru/WL_Z04_TheDreaming": {
+          "arrivals": {
+            "Wallaru/WL_Z07_EucalyptusForest": {"x": 344.69, "y": -2295.24, "z": -0.62}
+          }
+        }
       },
-      "links": [],
-      "list_networks": []
+      "links": [
+        {
+          "kind": "walk",
+          "from": "Wallaru/WL_Z01_Hub",
+          "to": "Wallaru/WL_Z02_Outback",
+          "xyz": {"x": 86.9, "y": 18502.22, "z": 2.0},
+          "reset_xyz": {"x": 146.51, "y": 17869.01, "z": 2.0},
+          "volume": "TeleportVol_Teleport to Outback",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Wallaru/WL_Z02_Outback",
+          "to": "Wallaru/WL_Z01_Hub",
+          "xyz": {"x": -450.4, "y": 6716.27, "z": 110.83},
+          "volume": "TeleportVol_Teleport_2_Hub",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Wallaru/WL_Z01_Hub",
+          "to": "Wallaru/WL_Z03_Kingsland",
+          "interact_xyz": {"x": -7725.62, "y": 18498.2, "z": 2.0},
+          "reset_xyz": {"x": -7798.07, "y": 18166.48, "z": 2.0},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Wallaru/WL_Z02_Outback",
+          "to": "Wallaru/WL_Z03_Kingsland",
+          "xyz": {"x": 18710.05, "y": -310.15, "z": 141.88},
+          "reset_xyz": {"x": 18471.16, "y": -606.36, "z": 129.05},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Wallaru/WL_Z03_Kingsland",
+          "to": "Wallaru/WL_Z02_Outback",
+          "xyz": {"x": 2613.86, "y": 16967.87, "z": 1299.55},
+          "volume": "TeleportVol_Teleport source (1)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Wallaru/WL_Z04_TheDreaming",
+          "to": "Wallaru/WL_Z07_EucalyptusForest",
+          "xyz": {"x": 275.66, "y": -2666.88, "z": -1.06},
+          "reset_xyz": {"x": 344.69, "y": -2295.24, "z": -1.04},
+          "volume": "TeleportVol_TeleportSource_To_EucForest",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Wallaru/WL_Z07_EucalyptusForest",
+          "to": "Wallaru/WL_Z04_TheDreaming",
+          "xyz": {"x": -1694.76, "y": 10854.95, "z": 1305.1},
+          "volume": "TeleportVol_TeleportSource_To_TheDreaming",
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
+      "list_networks": [
+        {
+          "zones": {
+            "Wallaru/WL_Z02_Outback": {
+              "interact_xyz": {"x": 8116.09, "y": -1695.41, "z": 96.11},
+              "reset_xyz": {"x": 7663.51, "y": -1343.99, "z": 148.26}
+            },
+            "Wallaru/WL_Z05_Wobbegong_JT": {
+              "interact_xyz": {"x": 5104.99, "y": -7635.67, "z": 193.37},
+              "reset_xyz": {"x": 5413.27, "y": -8100.79, "z": 191.56}
+            },
+            "Wallaru/WL_Z01_Hub": {
+              "interact_xyz": {"x": 2983.97, "y": 15496.87, "z": 2.0},
+              "reset_xyz": {"x": 3058.54, "y": 15221.79, "z": 2.0}
+            },
+            "Wallaru/WL_Z06_CollieRanch": {
+              "interact_xyz": {"x": 668.67, "y": -1476.92, "z": -545.51},
+              "reset_xyz": {"x": 496.09, "y": -1499.11, "z": -543.6}
+            },
+            "Wallaru/WL_Z07_EucalyptusForest": {
+              "interact_xyz": {"x": 5653.68, "y": -7168.04, "z": 900.62},
+              "reset_xyz": {"x": 6082.39, "y": -7476.24, "z": 871.52}
+            },
+            "Wallaru/WL_Z08_BillabongResort": {
+              "interact_xyz": {"x": -779.78, "y": 1006.32, "z": 2.0},
+              "reset_xyz": {"x": -610.36, "y": 912.86, "z": 2.0}
+            }
+          },
+          "verified": true,
+          "source": "recorded"
+        }
+      ]
     },
     "Darkmoor": {
       "hub": "Darkmoor/DM_Z00_OutsidersCamp",
@@ -5729,19 +5901,96 @@
     "Aquila": {
       "hub": "Aquila/AQ_Z00_Hub",
       "entered_from": "WizardCity",
-      "zones": {"Aquila/AQ_Z00_Hub": {}},
-      "links": [],
+      "zones": {
+        "Aquila/AQ_Z00_Hub": {
+          "arrivals": {
+            "WizardCity/WC_Streets/WC_Cyclops": {"x": -44.04, "y": -661.28, "z": 245.03}
+          }
+        }
+      },
+      "links": [
+        {
+          "kind": "object",
+          "from": "WizardCity/WC_Streets/WC_Cyclops",
+          "to": "Aquila/AQ_Z00_Hub",
+          "interact_xyz": {"x": -10088.36, "y": 8215.4, "z": 25.9},
+          "reset_xyz": {"x": -9930.14, "y": 8265.85, "z": 25.9},
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "G14_DM": {
       "hub": "G14_DM/DM_Z01_CastleDarkmoor",
       "entered_from": "WizardCity",
       "zones": {
-        "G14_DM/DM_Z01_CastleDarkmoor": {},
-        "G14_DM/DM_Z06_Bridge": {},
-        "G14_DM/DM_Z04_LandingZone2": {}
+        "G14_DM/DM_Z01_CastleDarkmoor": {
+          "arrivals": {
+            "WizardCity/WC_NightSide": {"x": -5.99, "y": -3036.73, "z": -146.11},
+            "G14_DM/DM_Z06_Bridge": {"x": -4411.73, "y": -1850.55, "z": -121.64},
+            "G14_DM/DM_Z04_LandingZone2": {"x": -5103.07, "y": -1781.96, "z": -114.15}
+          }
+        },
+        "G14_DM/DM_Z06_Bridge": {
+          "arrivals": {
+            "G14_DM/DM_Z01_CastleDarkmoor": {"x": 247.18, "y": 1640.53, "z": 0.7}
+          }
+        },
+        "G14_DM/DM_Z04_LandingZone2": {
+          "arrivals": {
+            "G14_DM/DM_Z01_CastleDarkmoor": {"x": -2087.12, "y": -3032.01, "z": 753.94}
+          }
+        }
       },
-      "links": [],
+      "links": [
+        {
+          "kind": "walk",
+          "from": "WizardCity/WC_NightSide",
+          "to": "G14_DM/DM_Z01_CastleDarkmoor",
+          "xyz": {"x": -2329.21, "y": -585.6, "z": 17.96},
+          "reset_xyz": {"x": -1963.73, "y": -584.33, "z": 1.27},
+          "volume": "TeleportVOL_Darkmoor",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "G14_DM/DM_Z01_CastleDarkmoor",
+          "to": "G14_DM/DM_Z06_Bridge",
+          "interact_xyz": {"x": -4356.43, "y": -1515.47, "z": -125.29},
+          "reset_xyz": {"x": -4394.47, "y": -1816.32, "z": -127.78},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "G14_DM/DM_Z06_Bridge",
+          "to": "G14_DM/DM_Z01_CastleDarkmoor",
+          "interact_xyz": {"x": 39.68, "y": 1521.0, "z": 0.7},
+          "reset_xyz": {"x": 202.01, "y": 1598.76, "z": 0.7},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "G14_DM/DM_Z01_CastleDarkmoor",
+          "to": "G14_DM/DM_Z04_LandingZone2",
+          "interact_xyz": {"x": -5036.67, "y": -1508.1, "z": -119.1},
+          "reset_xyz": {"x": -5012.84, "y": -1713.36, "z": -117.97},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "G14_DM/DM_Z04_LandingZone2",
+          "to": "G14_DM/DM_Z01_CastleDarkmoor",
+          "interact_xyz": {"x": -2069.92, "y": -3312.74, "z": 755.51},
+          "reset_xyz": {"x": -2117.73, "y": -3100.24, "z": 755.51},
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     },
     "G14_HS": {
@@ -5770,8 +6019,24 @@
     "G14_SB": {
       "hub": "G14_SB/SB_Z01_KimbaalungVillage",
       "entered_from": "Krokotopia",
-      "zones": {"G14_SB/SB_Z01_KimbaalungVillage": {}},
-      "links": [],
+      "zones": {
+        "G14_SB/SB_Z01_KimbaalungVillage": {
+          "arrivals": {
+            "Krokotopia/KT_Hub": {"x": 3819.24, "y": -3302.25, "z": -153.93}
+          }
+        }
+      },
+      "links": [
+        {
+          "kind": "object",
+          "from": "Krokotopia/KT_Hub",
+          "to": "G14_SB/SB_Z01_KimbaalungVillage",
+          "interact_xyz": {"x": -10616.38, "y": 1719.07, "z": 3341.55},
+          "reset_xyz": {"x": -10597.25, "y": 1952.62, "z": 3341.55},
+          "verified": true,
+          "source": "recorded"
+        }
+      ],
       "list_networks": []
     }
   }
