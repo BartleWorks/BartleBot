@@ -50,8 +50,10 @@ from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlo
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.zone_picker import NavZoneButton
+from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
+from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import Origin
 from bartlebot.subgraphs import RegionStatus, member_id
 from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
@@ -291,6 +293,120 @@ class _ZoneWidget(QWidget):
                 self.setText(zone)
         except Exception:
             pass
+
+
+class _AuthoringMachine:
+    """The slice of BotMachine zone navigation reads, for a trip started from the properties panel.
+
+    Records go under the Go To Zone node's logger, as they would in a run. Safety Delay is the
+    user's app setting: there is no bot run here to hold an override or a declaration.
+    """
+
+    def __init__(self) -> None:
+        # None until navigate() surveys who can port to whom; see BotMachine.port_map.
+        self.port_map = None
+
+    def log(self, msg: str, level: int = logging.INFO) -> None:
+        logging.getLogger("bartlebot.node.go_to_zone").log(level, msg)
+
+    def get_option(self, name: str, default=None):
+        if name == "Safety Delay":
+            return SettingsManager.instance().default_safety_delay
+        return default
+
+
+# Held so a trip started from a panel that is rebuilt mid-trip is not garbage-collected.
+_NAV_TASKS: set[asyncio.Task] = set()
+
+
+class _NavZoneField(QWidget):
+    """A 'nav_zone' param: the zone picker, then Fill current and Go side by side beneath it.
+
+    Fill sets the zone from a connected player's current zone, as the zone and xyz fields do. Go
+    runs the same navigation the Go To Zone node runs, so a bot can be authored from wherever the
+    players happen to be without starting a run.
+    """
+
+    changed = pyqtSignal(str)
+
+    def __init__(self, get_suggested: Callable[[], list[str]], get_clients: Callable[[], list], parent=None):
+        super().__init__(parent)
+        self._get_clients = get_clients
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(4)
+
+        self.picker = NavZoneButton(get_suggested)
+        self.picker.changed.connect(self.changed)
+        outer.addWidget(self.picker)
+
+        btns_row = QHBoxLayout()
+        btns_row.setContentsMargins(0, 0, 0, 0)
+        btns_row.setSpacing(4)
+        self.fill_btn = ActionButton("download", "Fill current")
+        self.fill_btn.setToolTip("Fill from a connected player's current zone")
+        self.fill_btn.clicked.connect(self._show_fill_menu)
+        btns_row.addWidget(self.fill_btn, 1)
+        self.go_btn = ActionButton("play", "Go to zone")
+        self.go_btn.setToolTip("Take all connected players to this zone now")
+        self.go_btn.clicked.connect(self._on_go)
+        btns_row.addWidget(self.go_btn, 1)
+        outer.addLayout(btns_row)
+
+    def value(self) -> str:
+        return self.picker.value()
+
+    def set_value(self, zone: str) -> None:
+        self.picker.set_value(zone)
+
+    def _show_fill_menu(self) -> None:
+        clients = self._get_clients()
+        if not clients:
+            return
+        if len(clients) == 1:
+            asyncio.ensure_future(self._fill_from_player(0))
+            return
+        menu = popup_menu(self.fill_btn)
+        for i in range(len(clients)):
+            action = menu.addAction(f"Fill from Player {i + 1}")
+            action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._fill_from_player(idx)))
+        menu.exec(self.fill_btn.mapToGlobal(self.fill_btn.rect().bottomLeft()))
+
+    async def _fill_from_player(self, idx: int) -> None:
+        clients = self._get_clients()
+        if idx >= len(clients):
+            return
+        try:
+            zone = await clients[idx].zone_name()
+        except Exception:
+            return
+        try:
+            if zone and zone != self.value():
+                self.set_value(zone)
+                self.changed.emit(zone)
+        except RuntimeError:
+            pass  # the panel was rebuilt while the zone was read
+
+    def _on_go(self) -> None:
+        zone = self.value()
+        clients = self._get_clients()
+        if not zone or not clients:
+            return
+        self.go_btn.setEnabled(False)
+        task = asyncio.ensure_future(self._navigate(zone, list(clients)))
+        _NAV_TASKS.add(task)
+        task.add_done_callback(_NAV_TASKS.discard)
+
+    async def _navigate(self, zone: str, clients: list) -> None:
+        try:
+            await zone_navigation.navigate(_AuthoringMachine(), clients, zone)
+        except Exception:
+            logger.exception("Go To Zone from the properties panel failed")
+        finally:
+            try:
+                self.go_btn.setEnabled(True)
+            except RuntimeError:
+                pass  # the panel was rebuilt while the players travelled
 
 
 class _IntChoiceComboBox(QComboBox):
@@ -716,7 +832,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                     result[key] = 0
             elif isinstance(w, _StrChoiceComboBox):
                 result[key] = w.get_value()
-            elif isinstance(w, NavZoneButton):
+            elif isinstance(w, _NavZoneField):
                 result[key] = w.value()
             elif isinstance(w, QCheckBox):
                 result[key] = w.isChecked()
@@ -894,7 +1010,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             outer_layout.addLayout(btns_row)
             return (spins[0], spins[1], spins[2], outer)
         if field_type == "nav_zone":
-            w = NavZoneButton(self._get_zone_suggestions)
+            w = _NavZoneField(self._get_zone_suggestions, self._get_clients)
             w.set_value(str(val) if val else "")
             if help_text:
                 w.setToolTip(help_text)

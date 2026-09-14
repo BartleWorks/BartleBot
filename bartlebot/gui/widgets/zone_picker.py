@@ -13,8 +13,8 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QWidget
+from PyQt6.QtCore import QSize, pyqtSignal
+from PyQt6.QtWidgets import QSizePolicy, QWidget
 
 from bartlebot import worlds, zone_names, zone_nav
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
@@ -22,6 +22,8 @@ from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 SUGGESTED_TITLE = "Where players are"
 POPUP_WIDTH = 480
 """Wider than the tag pickers: a row carries a zone name and a zone id of up to 29 characters."""
+MINIMUM_WIDTH = 80
+"""The narrowest the button may be squeezed to; its caption is clipped below its own width."""
 
 
 def zone_id(zone: str) -> str:
@@ -56,11 +58,15 @@ def zone_sections(nav: zone_nav.NavMap, suggested: Iterable[str] = ()) -> list[S
 
 
 def describe_zone(nav: zone_nav.NavMap, zone: str) -> str:
-    """ "Entrance Hall · Krokotopia" for a zone on the map; the raw path, marked, for one that is not."""
+    """ "Krokotopia · Entrance Hall (KT_EntranceHall)" for a zone on the map; the raw path, marked, for one that is not.
+
+    The world leads because it is the coarser choice, the way the picker's sections read; the zone
+    id trails so the name the session log uses is visible without opening the picker.
+    """
     world = nav.world_of(zone)
     if world is None or zone not in world.zones:
         return f"{zone} (not on the map)"
-    return f"{zone_names.label(zone)} · {worlds.label(world.key)}"
+    return f"{worlds.label(world.key)} · {zone_names.label(zone)} ({zone_id(zone)})"
 
 
 class NavZoneButton(PickerButton):
@@ -89,6 +95,8 @@ class NavZoneButton(PickerButton):
         )
         self.nav = zone_nav.load() if nav is None else nav
         self._get_suggested = get_suggested
+        # Spans its column; the caption is clipped rather than widening the panel to fit it.
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.set_sections(zone_sections(self.nav))
         # Refreshed as the button goes down, before it opens the popup: where the players are
         # is worth suggesting only as of now.
@@ -101,6 +109,10 @@ class NavZoneButton(PickerButton):
     def set_value(self, zone: str) -> None:
         """Set the zone without emitting ``changed``."""
         self.set_selection([zone] if zone else [])
+
+    def minimumSizeHint(self) -> QSize:  # noqa: N802 - Qt override
+        # QToolButton's minimum is its full text width, which would hold the panel open for a long zone id.
+        return QSize(MINIMUM_WIDTH, super().minimumSizeHint().height())
 
     def format_text(self, labels: list[str]) -> str:
         zone = self.value()

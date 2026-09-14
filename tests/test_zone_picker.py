@@ -56,8 +56,9 @@ def test_no_suggestions_means_no_suggestion_section():
     assert SUGGESTED_TITLE not in dict(zone_sections(_nav()))
 
 
-def test_a_zone_is_described_with_its_world_and_an_unknown_one_is_marked():
-    assert describe_zone(_nav(), _ENTRANCE).endswith(" · Krokotopia")
+def test_a_zone_is_described_world_first_with_its_id_and_an_unknown_one_is_marked():
+    assert describe_zone(_nav(), _ENTRANCE).startswith("Krokotopia · ")
+    assert describe_zone(_nav(), _ENTRANCE).endswith(" (KT_EntranceHall)")
     assert describe_zone(_nav(), "Nowhere/Zone") == "Nowhere/Zone (not on the map)"
 
 
