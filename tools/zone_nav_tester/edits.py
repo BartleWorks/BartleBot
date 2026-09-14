@@ -80,6 +80,63 @@ def add_list_spot(
     network["verified"] = had and verified
 
 
+def add_list_member(raw: dict, zone: str, interact: dict, reset: dict, *, verified: bool = False) -> str:
+    """Record the list object standing in `zone`, without a list use to tie it to a network.
+
+    A list lives inside one world, so the zone joins the network already holding it, else
+    its world's only network, else a new one. Returns "added" or "updated". Raises
+    ValueError when the world has several networks and none holds the zone yet: which list
+    this object belongs to cannot be told from its position.
+
+    Anything else on the member -- list_aliases, list_aliases_only -- is kept.
+    """
+    holding = [
+        n for spec in raw["worlds"].values() for n in spec.get("list_networks", []) if zone in n.get("zones", {})
+    ]
+    world = world_declaring(raw, zone)
+    networks = raw["worlds"][world].setdefault("list_networks", [])
+    if holding:
+        network = holding[0]
+    elif len(networks) == 1:
+        network = networks[0]
+    elif not networks:
+        network = {"zones": {}, "verified": verified, "source": SOURCE}
+        networks.append(network)
+    else:
+        raise ValueError(f"{world} has {len(networks)} list networks and none holds {zone} yet; add it by hand")
+    had = network["zones"].get(zone) or {}
+    verb = "updated" if "interact_xyz" in had else "added"
+    network["zones"][zone] = {**had, "interact_xyz": interact, "reset_xyz": reset}
+    # One flag covers the whole network, so an untested member makes all of it tentative.
+    network["verified"] = network.get("verified", False) and verified
+    return verb
+
+
+def world_with_door(raw: dict, zone: str) -> str | None:
+    return next((key for key, spec in raw["worlds"].items() if spec.get("door") == zone), None)
+
+
+def set_world_gate(raw: dict, zone: str, interact: dict, reset: dict, *, verified: bool = False) -> str:
+    """Record the World Gate standing in `zone`, on the world whose door that is.
+
+    Returns "added" or "updated". Raises ValueError when `zone` is no world's door: a gate
+    stands where go_to_world lands, so one found anywhere else means the map's door is wrong.
+    Any note on an existing gate is kept.
+    """
+    world = world_with_door(raw, zone)
+    if world is None:
+        raise ValueError(f"{zone} is no world's door; set the world's door first if the gate really stands here")
+    had = raw["worlds"][world].get("gate") or {}
+    raw["worlds"][world]["gate"] = {
+        **had,
+        "interact_xyz": interact,
+        "reset_xyz": reset,
+        "verified": verified,
+        "source": SOURCE,
+    }
+    return "updated" if had else "added"
+
+
 def set_arrival(raw: dict, zone: str, came_from: str, point: dict) -> None:
     world = world_declaring(raw, zone)
     raw["worlds"][world]["zones"][zone].setdefault("arrivals", {})[came_from] = point
@@ -96,6 +153,9 @@ def mark_verified(raw: dict, steps: list[zone_nav.Step]) -> int:
                     for n in spec.get("list_networks", [])
                     if {step.from_zone, step.to_zone} <= set(n.get("zones", {}))
                 ]
+            elif step.kind == zone_nav.GATE:
+                # The gate used stands in the world whose door the step starts from.
+                entries = [spec["gate"]] if spec.get("door") == step.from_zone and spec.get("gate") else []
             else:
                 # A ride finished from inside its cutscene zone is the stored link boarded elsewhere.
                 from_zone = step.params.get("board_zone", step.from_zone)

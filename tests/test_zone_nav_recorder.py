@@ -1,6 +1,6 @@
 """Unit tests for the zone navigation tester's transition recorder."""
 
-from tools.zone_nav_tester.recorder import HUB, LIST, OBJECT, RIDE, WALK, Recorder, Sample
+from tools.zone_nav_tester.recorder import HUB, LIST, OBJECT, RIDE, WALK, ListWatcher, Recorder, Sample
 
 _A, _B, _BOAT = "W/A", "W/B", "W/Boat"
 
@@ -82,6 +82,78 @@ def test_an_open_zone_list_makes_it_a_list():
     )
 
     assert t.kind == LIST
+
+
+def _watch(samples: list[Sample]) -> list:
+    watcher = ListWatcher()
+    return [spot for sample in samples if (spot := watcher.feed(sample)) is not None]
+
+
+def test_opening_a_list_records_its_object_without_leaving_the_zone():
+    [spot] = _watch(
+        [_at(0.0, _A, -400), _at(0.2, _A, -200), _at(0.4, _A, 30, prompt=True), _at(0.6, _A, 31, list_open=True)]
+    )
+
+    assert spot.zone == _A
+    assert spot.interact_xyz == (31, 0.0, 0.0)
+    assert spot.reset_xyz == (-200, 0.0, 0.0)
+    assert spot.world_gate is False
+
+
+def test_a_list_left_open_is_reported_once_and_again_when_reopened():
+    spots = _watch(
+        [
+            _at(0.0, _A, -400),
+            _at(0.2, _A, 30, list_open=True),
+            _at(0.4, _A, 30, list_open=True),
+            _at(0.6, _A, 30),
+            _at(0.8, _A, 40, list_open=True),
+        ]
+    )
+
+    assert [spot.interact_xyz for spot in spots] == [(30, 0.0, 0.0), (40, 0.0, 0.0)]
+
+
+def test_a_poll_that_missed_the_prompt_still_places_the_object_where_the_list_opened():
+    [spot] = _watch([_at(0.0, _A, -400), _at(0.2, _A, 30, list_open=True)])
+
+    assert spot.interact_xyz == (30, 0.0, 0.0)
+    assert spot.reset_xyz == (-400, 0.0, 0.0)
+
+
+def test_no_spot_clear_of_the_object_leaves_the_list_object_without_a_reset():
+    [spot] = _watch([_at(0.0, _A, 30), _at(0.2, _A, 31, list_open=True)])
+
+    assert spot.reset_xyz is None
+
+
+def test_a_list_objects_reset_never_comes_from_the_zone_before():
+    [spot] = _watch([_at(0.0, _A, -400), _load(0.2, -400), _at(3.0, _B, 20), _at(3.2, _B, 30, list_open=True)])
+
+    assert spot.zone == _B
+    assert spot.reset_xyz is None
+
+
+def test_a_list_window_left_up_through_a_load_is_not_a_list_in_the_new_zone():
+    spots = _watch(
+        [
+            _at(0.0, _A, -400),
+            _at(0.2, _A, 30, list_open=True),
+            _load(0.4, 30),
+            _at(3.0, _B, 0, list_open=True),
+            _at(3.2, _B, 0),
+            _at(3.4, _B, 5, list_open=True),
+        ]
+    )
+
+    assert [spot.zone for spot in spots] == [_A, _B]
+    assert spots[1].interact_xyz == (5, 0.0, 0.0)
+
+
+def test_a_world_gate_is_reported_as_one():
+    [spot] = _watch([_at(0.0, _A, -400), _at(0.2, _A, 30, list_open=True, world_gate=True)])
+
+    assert spot.world_gate is True
 
 
 def test_the_hub_button_greying_out_makes_it_the_hub_button():

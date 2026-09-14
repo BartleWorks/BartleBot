@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from functools import cache
 from pathlib import Path
 
@@ -88,16 +89,24 @@ their own GameData wads, so none of them can be filtered out by a rule:
 """
 
 
+WORLD_GATE_TITLE_KEY = "GUI:00001017"
+"""The World Gate list window's title, "Spiral Map" in English. A zone list opens the same
+window, so this title is what tells a World Gate from a zone list without using either."""
+
+
 @cache
-def _world_names() -> dict[str, dict[str, str]]:
-    """{world key: {locale: display text}} from the checked-in snapshot."""
+def _snapshot() -> dict:
     try:
-        raw = json.loads(WORLD_NAMES_PATH.read_text(encoding="utf-8"))
+        return json.loads(WORLD_NAMES_PATH.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         logger.exception("Could not read world names from %s; the spiral door cannot be searched", WORLD_NAMES_PATH)
         return {}
 
-    worlds: dict[str, dict[str, str]] = raw.get("worlds", {})
+
+@cache
+def _world_names() -> dict[str, dict[str, str]]:
+    """{world key: {locale: display text}} from the checked-in snapshot."""
+    worlds: dict[str, dict[str, str]] = _snapshot().get("worlds", {})
     missing = [key for key in SPIRAL_DOOR_WORLDS if key not in worlds]
     if missing:
         logger.warning(
@@ -127,6 +136,30 @@ def label(world: str) -> str:
     answer than an empty combo box entry when the snapshot is stale or unreadable.
     """
     return next(iter(display_names(world)), world)
+
+
+def world_gate_titles() -> list[str]:
+    """Every locale's World Gate window title, deduped, en-US first."""
+    by_locale = _snapshot().get("world_gate_title", {})
+    if not by_locale:
+        logger.warning("world_names.json has no World Gate title. Regenerate with tools/dump_world_names.py")
+    return list(dict.fromkeys(by_locale[loc] for loc in ("en-US", *LOCALES) if loc in by_locale))
+
+
+_MARKUP = re.compile(r"<[^>]*>")
+
+
+def _plain(text: str) -> str:
+    return " ".join(_MARKUP.sub(" ", text).split()).casefold()
+
+
+def is_world_gate_title(text: str | None) -> bool:
+    """True when `text`, read from the list window's title, is the World Gate's in any locale.
+
+    Exact after stripping markup and case, not a substring match: a zone list's own title
+    could easily contain the word "map".
+    """
+    return bool(text) and _plain(text) in {_plain(title) for title in world_gate_titles()}
 
 
 def zone_pattern(world: str) -> str:

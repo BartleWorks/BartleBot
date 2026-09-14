@@ -9,21 +9,47 @@
     "client, so both are verified. A zone with no link into it is declared but has no",
     "route yet."
   ],
+  "home": "WizardCity/Interiors/WC_Housing_Dorm_Interior",
   "worlds": {
     "WizardCity": {
       "hub": "WizardCity/WC_Hub",
       "door": "WizardCity/WC_Ravenwood_Teleporter",
+      "gate": {
+        "interact_xyz": {"x": -14.88, "y": -179.86, "z": 89.21},
+        "reset_xyz": {"x": 4.5, "y": -650.71, "z": 89.21},
+        "verified": true,
+        "source": "code",
+        "note": "go_to_world.py"
+      },
       "zones": {
         "WizardCity/WC_Hub": {
           "arrivals": {
-            "WizardCity/WC_Streets/Interiors/WC_PET_Park": {"x": 8131.45, "y": -1881.07, "z": -30.48}
+            "WizardCity/WC_Streets/Interiors/WC_PET_Park": {"x": 8131.45, "y": -1881.07, "z": -30.48},
+            "WizardCity/WC_Shop_Area": {"x": 1349.43, "y": -3125.51, "z": -30.48},
+            "WizardCity/WC_Golem_Tower": {"x": -5927.12, "y": 2465.64, "z": 225.59},
+            "WizardCity/WC_NightSide": {"x": 2800.34, "y": 4725.81, "z": 10.47},
+            "WizardCity/WC_Streets/WC_Unicorn": {"x": 6099.13, "y": 5063.83, "z": -30.47}
           }
         },
         "WizardCity/WC_Ravenwood": {},
         "WizardCity/WC_Ravenwood_Teleporter": {},
-        "WizardCity/WC_Golem_Tower": {},
-        "WizardCity/WC_NightSide": {},
-        "WizardCity/WC_Shop_Area": {},
+        "WizardCity/Interiors/WC_Housing_Dorm_Interior": {"destination": false},
+        "WizardCity/WC_Golem_Tower": {
+          "arrivals": {
+            "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB": {"x": -3318.51, "y": 1813.63, "z": 30.1}
+          }
+        },
+        "WizardCity/WC_NightSide": {
+          "arrivals": {
+            "G14_DM/DM_Z01_CastleDarkmoor": {"x": -936.58, "y": -314.31, "z": 52.03}
+          }
+        },
+        "WizardCity/WC_Shop_Area": {
+          "arrivals": {
+            "WizardCity/WC_Streets/WC_Colossus": {"x": -2068.52, "y": -4881.83, "z": -30.47},
+            "WizardCity/WC_Streets/WC_OldeTown": {"x": -5442.13, "y": -3267.83, "z": -30.47}
+          }
+        },
         "WizardCity/WC_Duel_Arena": {
           "arrivals": {
             "WizardCity/WC_Streets/WC_Unicorn": {"x": 5.22, "y": -9556.72, "z": 408.52}
@@ -37,7 +63,10 @@
         "WizardCity/WC_Streets/WC_Colossus": {},
         "WizardCity/WC_Streets/WC_OldeTown": {
           "arrivals": {
-            "WizardCity/WC_Streets/Interiors/WC_OldeTown_AuctionHouse": {"x": -1330.42, "y": 2153.27, "z": -270.0}
+            "WizardCity/WC_Streets/Interiors/WC_OldeTown_AuctionHouse": {"x": -1330.42, "y": 2153.27, "z": -270.0},
+            "WizardCity/WC_Streets/WC_Cyclops": {"x": -5056.44, "y": 2800.96, "z": -600.0},
+            "WizardCity/WC_Streets/WC_Triton": {"x": -6804.0, "y": -598.44, "z": -1400.0},
+            "WizardCity/WC_Streets/WC_Firecat": {"x": -11761.04, "y": -2339.22, "z": -2200.0}
           }
         },
         "WizardCity/WC_Streets/WC_Cyclops": {
@@ -53,7 +82,8 @@
         },
         "WizardCity/WC_Streets/WC_Triton": {
           "arrivals": {
-            "WizardCity/WC_Streets/WC_HauntedCave": {"x": -37017.65, "y": 2729.72, "z": -0.0}
+            "WizardCity/WC_Streets/WC_HauntedCave": {"x": -37017.65, "y": 2729.72, "z": -0.0},
+            "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater": {"x": -12556.76, "y": -2940.23, "z": -1400.0}
           }
         },
         "WizardCity/WC_Streets/WC_Catacombs": {
@@ -118,6 +148,15 @@
         }
       },
       "links": [
+        {
+          "kind": "walk",
+          "from": "WizardCity/Interiors/WC_Housing_Dorm_Interior",
+          "to": "WizardCity/WC_Ravenwood",
+          "xyz": {"x": -197.23, "y": 1.41, "z": 0.0},
+          "verified": true,
+          "source": "code",
+          "note": "wizard_city.py"
+        },
         {
           "kind": "walk",
           "from": "WizardCity/WC_Ravenwood_Teleporter",
@@ -483,6 +522,124 @@
           "reset_xyz": {"x": -47.83, "y": -767.87, "z": 298.35},
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "WizardCity/WC_Shop_Area",
+          "to": "WizardCity/WC_Hub",
+          "xyz": {"x": -50.63, "y": -188.21, "z": -29.36},
+          "reset_xyz": {"x": -39.9, "y": -563.06, "z": -29.36},
+          "volume": "TeleportVol_Teleport location (WC_Shop Hub)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "WizardCity/WC_Golem_Tower",
+          "to": "WizardCity/WC_Hub",
+          "xyz": {"x": 344.04, "y": -711.91, "z": 50.68},
+          "reset_xyz": {"x": 126.85, "y": -178.42, "z": 0.12},
+          "volume": "TeleportVol_Teleport location (WC_Golem_Tower Hub Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "WizardCity/WC_NightSide",
+          "to": "WizardCity/WC_Hub",
+          "xyz": {"x": 634.81, "y": -2727.7, "z": 136.38},
+          "reset_xyz": {"x": 528.21, "y": -2447.28, "z": 53.82},
+          "volume": "TeleportVol_Teleport location (Nightside Hub Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "WizardCity/WC_Streets/WC_Unicorn",
+          "to": "WizardCity/WC_Hub",
+          "xyz": {"x": -15.13, "y": -1104.73, "z": 0.03},
+          "reset_xyz": {"x": -60.42, "y": -747.59, "z": 0.03},
+          "volume": "TeleportVol_Teleport location (Street1 Hub Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
+          "to": "WizardCity/WC_Golem_Tower",
+          "xyz": {"x": 574.76, "y": -16963.58, "z": 4.74},
+          "reset_xyz": {"x": 22.0, "y": -16773.68, "z": 4.75},
+          "volume": "TeleportVol_Teleport location - Golem Court",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "G14_DM/DM_Z01_CastleDarkmoor",
+          "to": "WizardCity/WC_NightSide",
+          "xyz": {"x": -10.95, "y": -3312.68, "z": -145.75},
+          "volume": "TeleportVol_BacktoNightSide",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "WizardCity/WC_Streets/WC_Colossus",
+          "to": "WizardCity/WC_Shop_Area",
+          "xyz": {"x": -19.98, "y": 1116.62, "z": 2.2},
+          "reset_xyz": {"x": -5.48, "y": 681.86, "z": 1.88},
+          "volume": "ShoppingZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "WizardCity/WC_Streets/WC_OldeTown",
+          "to": "WizardCity/WC_Shop_Area",
+          "xyz": {"x": 2962.86, "y": 273.47, "z": 4.83},
+          "reset_xyz": {"x": 2467.18, "y": 200.67, "z": 2.2},
+          "volume": "TeleportVol_Teleport (Street 2 WC_Shop_Area Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "WizardCity/WC_Streets/WC_Cyclops",
+          "to": "WizardCity/WC_Streets/WC_OldeTown",
+          "xyz": {"x": 4182.65, "y": 3003.42, "z": 0.89},
+          "reset_xyz": {"x": 3714.87, "y": 2989.11, "z": 0.89},
+          "volume": "TeleportVol_Teleport (Street3 Street2 Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "WizardCity/WC_Streets/WC_Triton",
+          "to": "WizardCity/WC_Streets/WC_OldeTown",
+          "xyz": {"x": 20.41, "y": 2446.67, "z": 0.12},
+          "reset_xyz": {"x": 5.33, "y": 2038.95, "z": 0.12},
+          "volume": "TeleportVol_Teleport (Street4 Street2 Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "WizardCity/WC_Streets/WC_Firecat",
+          "to": "WizardCity/WC_Streets/WC_OldeTown",
+          "xyz": {"x": 2664.09, "y": 0.25, "z": 7.14},
+          "reset_xyz": {"x": 2196.63, "y": 22.84, "z": 1.0},
+          "volume": "TeleportVol_Teleport (Street5 Street2 Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
+          "to": "WizardCity/WC_Streets/WC_Triton",
+          "interact_xyz": {"x": 71.28, "y": 3258.75, "z": 25.24},
+          "reset_xyz": {"x": 31.75, "y": 2970.45, "z": -4.01},
+          "verified": true,
+          "source": "recorded"
         }
       ],
       "list_networks": []
@@ -497,19 +654,23 @@
             "Krokotopia/KT_Pyramid/KT_AltarOfKings": {"x": -36.57, "y": 7429.13, "z": 495.6},
             "Krokotopia/Interiors/KT_Library": {"x": 3501.21, "y": 5935.59, "z": -220.19},
             "G14_SB/SB_Z01_KimbaalungVillage": {"x": -10588.67, "y": 2007.5, "z": 3341.55},
-            "Krokotopia/KT_Hub_Sphinx": {"x": 3610.66, "y": 3198.53, "z": 26.31}
+            "Krokotopia/KT_Hub_Sphinx": {"x": 3610.66, "y": 3198.53, "z": 26.31},
+            "Krokotopia/KT_Hub_Crypt": {"x": -2899.29, "y": -1465.48, "z": -103.51},
+            "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis": {"x": 2149.89, "y": -982.0, "z": -84.85}
           }
         },
         "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis": {
           "arrivals": {
             "Krokotopia/KT_Hub": {"x": 1723.69, "y": -321.93, "z": 81.01},
             "Krokotopia/KT_Selenopolis/KT_Z05_Market": {"x": 9688.82, "y": -10451.42, "z": 531.91},
-            "Krokotopia/KT_Selenopolis/KT_Z06_Forgotten": {"x": 22230.27, "y": -9614.48, "z": 1680.5}
+            "Krokotopia/KT_Selenopolis/KT_Z06_Forgotten": {"x": 22230.27, "y": -9614.48, "z": 1680.5},
+            "Krokotopia/KT_Selenopolis/KT_Z07_Garden": {"x": 9703.44, "y": 7336.58, "z": 158.13}
           }
         },
         "Krokotopia/KT_Hub_Crypt": {
           "arrivals": {
-            "Krokotopia/KT_Hub": {"x": -8870.59, "y": -6836.14, "z": -261.77}
+            "Krokotopia/KT_Hub": {"x": -8870.59, "y": -6836.14, "z": -261.77},
+            "Krokotopia/KT_Tomb/KT_WellOfSpirits": {"x": -10355.45, "y": -8239.18, "z": -373.41}
           }
         },
         "Krokotopia/KT_Hub_Sphinx": {
@@ -522,7 +683,8 @@
           "arrivals": {
             "Krokotopia/KT_Hub": {"x": 4.0, "y": -2029.07, "z": -0.0},
             "Krokotopia/KT_Pyramid/KT_Hall": {"x": 1139.03, "y": 2126.96, "z": 0.0},
-            "Krokotopia/KT_Pyramid/KT_Chamber": {"x": -3665.2, "y": 3706.47, "z": -311.53}
+            "Krokotopia/KT_Pyramid/KT_Chamber": {"x": -3665.2, "y": 3706.47, "z": -311.53},
+            "Krokotopia/KT_Pyramid/KT_PalaceOfFire": {"x": 4225.88, "y": 7061.36, "z": 973.67}
           }
         },
         "Krokotopia/KT_Selenopolis/KT_Z05_Market": {
@@ -1108,9 +1270,60 @@
           "verified": true,
           "source": "recorded",
           "note": "coordinates entered by hand: the tester reads the ride as a hub button use"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Hub_Crypt",
+          "to": "Krokotopia/KT_Hub",
+          "xyz": {"x": -8629.1, "y": -6603.76, "z": -292.37},
+          "volume": "TeleportVol_Teleport location (Krok_Hub StormIsland Return)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
+          "to": "Krokotopia/KT_Hub",
+          "interact_xyz": {"x": -69.23, "y": 12.3, "z": 82.51},
+          "reset_xyz": {"x": 234.67, "y": 20.29, "z": 82.51},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+          "to": "Krokotopia/KT_Hub_Crypt",
+          "xyz": {"x": 22.74, "y": -896.69, "z": 0.0},
+          "volume": "CryptIslandZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Pyramid/KT_PalaceOfFire",
+          "to": "Krokotopia/KT_Pyramid/KT_AltarOfKings",
+          "xyz": {"x": -4.22, "y": 1337.16, "z": 68.07},
+          "volume": "TeleportVol_Teleport (Krok_Pyramid_Level02 Krok_Pyramid_Hub Exit)",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Krokotopia/KT_Selenopolis/KT_Z07_Garden",
+          "to": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
+          "xyz": {"x": -280.59, "y": -1862.09, "z": -543.61},
+          "volume": "TeleportVol_Teleport source",
+          "verified": true,
+          "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": 9.45, "y": -296.29, "z": 134.37},
+        "reset_xyz": {"x": 8.03, "y": -583.57, "z": 128.77},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Marleybone": {
       "hub": "Marleybone/MB_Hub",
@@ -1380,7 +1593,13 @@
           "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": 4.32, "y": -308.52, "z": 60.0},
+        "reset_xyz": {"x": 2.38, "y": -543.71, "z": 60.0},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "MooShu": {
       "hub": "MooShu/MS_Hub",
@@ -1447,7 +1666,8 @@
         },
         "MooShu/Interiors/MS_RockDojoT2": {
           "arrivals": {
-            "MooShu/MS_Hub": {"x": 2445.06, "y": 9.15, "z": 30.0}
+            "MooShu/MS_Hub": {"x": 2445.06, "y": 9.15, "z": 30.0},
+            "MooShu/MS_Death/MS_Death_Hub_RuinedTemple": {"x": -1409.59, "y": 1582.45, "z": 0.0}
           }
         },
         "MooShu/Interiors/MS_Teleport_Chamber": {
@@ -1672,9 +1892,23 @@
           "volume": "PLAGUEHUBZoneEntry",
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
+          "to": "MooShu/Interiors/MS_RockDojoT2",
+          "xyz": {"x": -3360.02, "y": -8083.61, "z": -79.59},
+          "verified": true,
+          "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": 9.22, "y": -345.77, "z": 168.78},
+        "reset_xyz": {"x": 4.58, "y": -506.15, "z": 168.78},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "DragonSpire": {
       "hub": "DragonSpire/DS_Hub_Cathedral",
@@ -2017,7 +2251,13 @@
           "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": 4901.38, "y": -5814.48, "z": 2466.52},
+        "reset_xyz": {"x": 4901.38, "y": -5628.84, "z": 2466.52},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Grizzleheim": {
       "hub": "Grizzleheim/GH_MainHub",
@@ -2029,7 +2269,8 @@
             "Grizzleheim/GH_Wolf": {"x": 8810.43, "y": 5647.93, "z": 651.54},
             "Grizzleheim/GH_RedClaw": {"x": -9658.95, "y": 6352.35, "z": 922.67},
             "Grizzleheim/GH_Raven": {"x": -8567.59, "y": 2203.09, "z": 200.1},
-            "Grizzleheim/GH_AbandCity/GH_EntranceHall": {"x": 5941.43, "y": -4857.9, "z": -1098.75}
+            "Grizzleheim/GH_AbandCity/GH_EntranceHall": {"x": 5941.43, "y": -4857.9, "z": -1098.75},
+            "Grizzleheim/GH_HFjord/GH_HFjord": {"x": -2385.31, "y": -4867.15, "z": -280.39}
           }
         },
         "Grizzleheim/GH_AbandCity/GH_EntranceHall": {
@@ -2267,9 +2508,24 @@
           "volume": "VolumeToAustrilund",
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Grizzleheim/GH_HFjord/GH_HFjord",
+          "to": "Grizzleheim/GH_MainHub",
+          "interact_xyz": {"x": 47.38, "y": 389.91, "z": -292.68},
+          "reset_xyz": {"x": 4.56, "y": 567.02, "z": -292.68},
+          "verified": true,
+          "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": -47.04, "y": -8590.48, "z": 750.2},
+        "reset_xyz": {"x": -47.04, "y": -8277.71, "z": 716.98},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Celestia": {
       "hub": "Celestia/CL_Hub",
@@ -2480,7 +2736,13 @@
           "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": 5.32, "y": 60.43, "z": -49.7},
+        "reset_xyz": {"x": -1.97, "y": 333.01, "z": -49.7},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Wysteria": {
       "hub": "Wysteria/PA_Hub",
@@ -2543,7 +2805,13 @@
           "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": -19.74, "y": 50.21, "z": 15.22},
+        "reset_xyz": {"x": -31.97, "y": 401.84, "z": 15.21},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Zafaria": {
       "hub": "Zafaria/ZF_Z00_Hub",
@@ -2591,7 +2859,8 @@
         "Zafaria/ZF_Z07_Stone_Town": {
           "arrivals": {
             "Zafaria/ZF_Z02_Baobab_Market": {"x": 7234.24, "y": 6549.86, "z": -378.7},
-            "Zafaria/ZF_Z00_Hub": {"x": -1100.79, "y": 8504.72, "z": -42.87}
+            "Zafaria/ZF_Z00_Hub": {"x": -1100.79, "y": 8504.72, "z": -42.87},
+            "Zafaria/ZF_Z08_Waterfront": {"x": 608.33, "y": 206.08, "z": -306.15}
           }
         },
         "Zafaria/ZF_Z08_Waterfront": {
@@ -2848,9 +3117,24 @@
           "reset_xyz": {"x": 1053.28, "y": -7565.49, "z": 22.24},
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Zafaria/ZF_Z08_Waterfront",
+          "to": "Zafaria/ZF_Z07_Stone_Town",
+          "interact_xyz": {"x": 4246.79, "y": 574.77, "z": 3.69},
+          "reset_xyz": {"x": 4113.24, "y": 1172.02, "z": 3.69},
+          "verified": true,
+          "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": 117.88, "y": 44.14, "z": -709.61},
+        "reset_xyz": {"x": 350.1, "y": 58.69, "z": -709.61},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Avalon": {
       "hub": "Avalon/AV_Z00_Hub",
@@ -3217,7 +3501,13 @@
           "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": -0.71, "y": -3471.0, "z": 0.4},
+        "reset_xyz": {"x": -7.7, "y": -3248.82, "z": 0.4},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Azteca": {
       "hub": "Azteca/AZ_Z00_Zocalo",
@@ -3655,7 +3945,13 @@
           "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": 4254.91, "y": -10186.43, "z": 177.15},
+        "reset_xyz": {"x": 4039.89, "y": -10093.2, "z": 141.22},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Khrysalis": {
       "hub": "Khrysalis/KR_Z00_Hub",
@@ -3666,7 +3962,8 @@
             "Khrysalis/KR_Z02_MoonCliffs": {"x": 6188.51, "y": -745.51, "z": 480.31},
             "Khrysalis/KR_Z01_SilentMarket": {"x": -7002.95, "y": -4091.1, "z": 482.02},
             "Khrysalis/KR_Z05_FortRachias": {"x": 6188.51, "y": -745.51, "z": 480.31},
-            "Khrysalis/KR_Z04_TyrianGorge": {"x": 6188.51, "y": -745.51, "z": 480.31}
+            "Khrysalis/KR_Z04_TyrianGorge": {"x": 6188.51, "y": -745.51, "z": 480.31},
+            "Khrysalis/KR_Z03_LastWood": {"x": 6188.51, "y": -745.51, "z": 480.31}
           }
         },
         "Khrysalis/KR_Z01_SilentMarket": {
@@ -3675,7 +3972,8 @@
             "Khrysalis/KR_Z09_MantisCity": {"x": 1406.15, "y": 5557.79, "z": -31.3},
             "Khrysalis/KR_Z07_RuinedAlcazar": {"x": 1406.15, "y": 5557.79, "z": -31.3},
             "Khrysalis/KR_Z10_KondhaDesert": {"x": 1406.15, "y": 5557.79, "z": -31.3},
-            "Khrysalis/KR_Z11_TheHive": {"x": 1406.15, "y": 5557.79, "z": -31.3}
+            "Khrysalis/KR_Z11_TheHive": {"x": 1406.15, "y": 5557.79, "z": -31.3},
+            "Khrysalis/KR_Z04_TyrianGorge": {"x": -393.89, "y": 9728.52, "z": 188.19}
           }
         },
         "Khrysalis/KR_Z02_MoonCliffs": {
@@ -4143,15 +4441,51 @@
           "reset_xyz": {"x": 5441.35, "y": -3945.9, "z": -1293.88},
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Khrysalis/KR_Z03_LastWood",
+          "to": "Khrysalis/KR_Z00_Hub",
+          "interact_xyz": {"x": -12780.17, "y": -17196.99, "z": 360.82},
+          "reset_xyz": {"x": -12697.58, "y": -16993.02, "z": 360.82},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Khrysalis/KR_Z04_TyrianGorge",
+          "to": "Khrysalis/KR_Z01_SilentMarket",
+          "xyz": {"x": -7582.13, "y": -7554.02, "z": 2711.05},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": 264.34, "y": -7308.0, "z": -0.0},
+        "reset_xyz": {"x": 80.53, "y": -7227.28, "z": -0.0},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Polaris": {
       "hub": "Polaris/PL_Z00_Walruskberg",
       "door": "Polaris/PL_Z00_Walruskberg",
       "zones": {
-        "Polaris/PL_Z00_Walruskberg": {},
+        "Polaris/PL_Z00_Walruskberg": {
+          "arrivals": {
+            "Polaris/PL_Z02_ForlornTaig": {"x": 4015.9, "y": -1859.6, "z": -117.56},
+            "Polaris/PL_Z03_IcefallPassage": {"x": -1641.94, "y": 2133.97, "z": -129.34},
+            "Polaris/PL_Z04_UrvilleStation": {"x": -1641.94, "y": 2133.97, "z": -129.34},
+            "Polaris/PL_Z06_KatabaIceblock": {"x": -1641.94, "y": 2133.97, "z": -129.34},
+            "Polaris/Interiors/PL_Z06_GolemGarden": {"x": -1641.94, "y": 2133.97, "z": -129.34},
+            "Polaris/Interiors/PL_Z06_TitanPod": {"x": -1641.94, "y": 2133.97, "z": -129.34},
+            "Polaris/PL_Z07_BorealisPeaks": {"x": -1641.94, "y": 2133.97, "z": -129.34},
+            "Polaris/Interiors/PL_Z07_SkyAnchorPeak": {"x": -1641.94, "y": 2133.97, "z": -129.34},
+            "Polaris/PL_Z01_Harbor": {"x": -4614.84, "y": 895.77, "z": 536.63}
+          }
+        },
         "Polaris/PL_Z01_Harbor": {
           "arrivals": {
             "Polaris/PL_Z00_Walruskberg": {"x": 1177.72, "y": 5384.13, "z": 332.43}
@@ -4159,7 +4493,8 @@
         },
         "Polaris/PL_Z02_ForlornTaig": {
           "arrivals": {
-            "Polaris/PL_Z00_Walruskberg": {"x": 1768.56, "y": -24202.55, "z": 1142.57}
+            "Polaris/PL_Z00_Walruskberg": {"x": 1768.56, "y": -24202.55, "z": 1142.57},
+            "Polaris/Interiors/PL_Z02_BabaYagaHut_Int": {"x": 95.33, "y": -24798.01, "z": 1325.57}
           }
         },
         "Polaris/PL_Z03_IcefallPassage": {
@@ -4343,9 +4678,105 @@
           "volume": "TeleportVol_Teleport location To Harbor",
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Polaris/PL_Z02_ForlornTaig",
+          "to": "Polaris/PL_Z00_Walruskberg",
+          "xyz": {"x": -43.83, "y": 1384.12, "z": -35.97},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Polaris/PL_Z03_IcefallPassage",
+          "to": "Polaris/PL_Z00_Walruskberg",
+          "interact_xyz": {"x": 5522.89, "y": -28179.07, "z": 3979.0},
+          "reset_xyz": {"x": 5745.61, "y": -28215.83, "z": 3979.0},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Polaris/PL_Z04_UrvilleStation",
+          "to": "Polaris/PL_Z00_Walruskberg",
+          "interact_xyz": {"x": 2982.6, "y": -11738.92, "z": -1057.59},
+          "reset_xyz": {"x": 2551.96, "y": -12052.75, "z": -1176.27},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Polaris/PL_Z06_KatabaIceblock",
+          "to": "Polaris/PL_Z00_Walruskberg",
+          "interact_xyz": {"x": 6201.76, "y": 2381.39, "z": -154.11},
+          "reset_xyz": {"x": 6281.43, "y": 2109.5, "z": -154.01},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Polaris/Interiors/PL_Z06_GolemGarden",
+          "to": "Polaris/PL_Z00_Walruskberg",
+          "interact_xyz": {"x": -49.42, "y": 535.52, "z": -4.81},
+          "reset_xyz": {"x": -25.79, "y": 11.05, "z": -4.81},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Polaris/Interiors/PL_Z06_TitanPod",
+          "to": "Polaris/PL_Z00_Walruskberg",
+          "interact_xyz": {"x": -1296.39, "y": -816.95, "z": 7.82},
+          "reset_xyz": {"x": -855.56, "y": -450.87, "z": 7.82},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Polaris/PL_Z07_BorealisPeaks",
+          "to": "Polaris/PL_Z00_Walruskberg",
+          "interact_xyz": {"x": 2306.02, "y": -237.73, "z": 12.65},
+          "reset_xyz": {"x": 1984.18, "y": -69.87, "z": 66.72},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Polaris/Interiors/PL_Z07_SkyAnchorPeak",
+          "to": "Polaris/PL_Z00_Walruskberg",
+          "interact_xyz": {"x": -1718.86, "y": -1589.5, "z": 1.18},
+          "reset_xyz": {"x": -1449.09, "y": -1432.76, "z": -13.82},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Polaris/Interiors/PL_Z02_BabaYagaHut_Int",
+          "to": "Polaris/PL_Z02_ForlornTaig",
+          "xyz": {"x": 424.95, "y": -16.09, "z": 6.98},
+          "volume": "TeleportVol_Teleport location",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Polaris/PL_Z01_Harbor",
+          "to": "Polaris/PL_Z00_Walruskberg",
+          "xyz": {"x": 1160.05, "y": 5759.38, "z": 346.25},
+          "volume": "TeleportVol_Teleport location Walruskberg",
+          "verified": true,
+          "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": 3356.08, "y": 3142.33, "z": 76.53},
+        "reset_xyz": {"x": 3219.27, "y": 3002.36, "z": 57.03},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Arcanum": {
       "hub": "Arcanum/AR_Z01_Hub",
@@ -4367,18 +4798,24 @@
         {
           "zones": {
             "Arcanum/AR_Z01_Hub": {
-              "interact_xyz": {"x": -2039.84, "y": -6153.52, "z": -1.57},
-              "reset_xyz": {"x": -1793.81, "y": -6208.06, "z": -1.57}
+              "interact_xyz": {"x": -1979.72, "y": -6281.82, "z": -1.57},
+              "reset_xyz": {"x": -1754.49, "y": -6419.54, "z": -1.57}
             },
             "Arcanum/AR_Z02_LowerDecks": {
-              "interact_xyz": {"x": -4270.45, "y": -766.95, "z": -105.16},
-              "reset_xyz": {"x": -4095.49, "y": -888.43, "z": -105.16}
+              "interact_xyz": {"x": -4109.35, "y": -883.14, "z": -105.16},
+              "reset_xyz": {"x": -3984.8, "y": -967.81, "z": -105.16}
             }
           },
           "verified": true,
           "source": "recorded"
         }
-      ]
+      ],
+      "gate": {
+        "interact_xyz": {"x": -2.81, "y": -6789.62, "z": -3.98},
+        "reset_xyz": {"x": -0.94, "y": -6982.2, "z": -44.24},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Mirage": {
       "hub": "Mirage/MR_Z00_Hub",
@@ -4720,7 +5157,13 @@
           "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": 818.24, "y": 4028.87, "z": 2211.83},
+        "reset_xyz": {"x": 793.29, "y": 3764.61, "z": 2212.98},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Empyrea": {
       "hub": "Empyrea/EM_Z00_Aeriel_HUB",
@@ -4732,7 +5175,8 @@
             "Empyrea/EM_Z04_InnerAthanor": {"x": 4658.32, "y": -4418.14, "z": -8.19},
             "Empyrea/EM_Z06_NimbusHanger": {"x": 4658.32, "y": -4418.14, "z": -8.19},
             "Empyrea/EM_Z15_Nexus": {"x": 4658.32, "y": -4418.14, "z": -8.19},
-            "Empyrea/EM_Z16_Husk": {"x": 4658.32, "y": -4418.14, "z": -8.19}
+            "Empyrea/EM_Z16_Husk": {"x": 4658.32, "y": -4418.14, "z": -8.19},
+            "Empyrea/EM_Z03_OuterAthanor": {"x": 4658.32, "y": -4418.14, "z": -8.19}
           }
         },
         "Empyrea/EM_Z01_Jungle": {
@@ -4754,7 +5198,8 @@
         },
         "Empyrea/EM_Z04_InnerAthanor": {
           "arrivals": {
-            "Empyrea/EM_Z05_Sepidious": {"x": -50.05, "y": 328.35, "z": -25.0}
+            "Empyrea/EM_Z05_Sepidious": {"x": -50.05, "y": 328.35, "z": -25.0},
+            "Empyrea/EM_Z03_OuterAthanor": {"x": -50.05, "y": 328.35, "z": -25.0}
           }
         },
         "Empyrea/EM_Z05_Sepidious": {
@@ -5054,31 +5499,46 @@
           "verified": false,
           "source": "code",
           "note": "mirrors EM_Z13_SamsaraDestroyed -> EM_Z12_LandingZone; the recording account has finished the quest that swaps this zone and cannot revisit the pre-quest version to confirm"
+        },
+        {
+          "kind": "walk",
+          "from": "Empyrea/EM_Z01_Jungle",
+          "to": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave",
+          "xyz": {"x": -3021.84, "y": -3523.17, "z": -125.21},
+          "volume": "Activator Volume Teleport to EM_Z01_SpiderCave",
+          "verified": true,
+          "source": "recorded"
         }
       ],
       "list_networks": [
         {
           "zones": {
             "Empyrea/EM_Z00_Aeriel_HUB": {
-              "interact_xyz": {"x": 4686.17, "y": -4314.23, "z": -29.5},
-              "reset_xyz": {"x": 4708.64, "y": -4467.14, "z": -4.35}
+              "interact_xyz": {"x": 4633.07, "y": -3941.25, "z": -29.5},
+              "reset_xyz": {"x": 4544.03, "y": -3682.08, "z": -29.5}
             },
             "Empyrea/EM_Z02_Zanadu": {
-              "interact_xyz": {"x": 4797.06, "y": 6643.6, "z": 25.0},
-              "reset_xyz": {"x": 4507.54, "y": 6322.97, "z": 25.0}
+              "interact_xyz": {"x": 4791.16, "y": 6627.12, "z": 25.0},
+              "reset_xyz": {"x": 4584.96, "y": 6387.18, "z": 25.0}
             },
-            "Empyrea/EM_Z03_OuterAthanor": {},
+            "Empyrea/EM_Z03_OuterAthanor": {
+              "interact_xyz": {"x": 6.8, "y": -1355.48, "z": 55.89},
+              "reset_xyz": {"x": 85.15, "y": -1168.82, "z": 59.79}
+            },
             "Empyrea/EM_Z04_InnerAthanor": {
-              "interact_xyz": {"x": 183.45, "y": 38.93, "z": -24.04},
-              "reset_xyz": {"x": 73.08, "y": 173.45, "z": -24.04}
+              "interact_xyz": {"x": 71.59, "y": 158.2, "z": -24.04},
+              "reset_xyz": {"x": -80.79, "y": 370.0, "z": -24.04}
             },
             "Empyrea/EM_Z05_Sepidious": {
-              "interact_xyz": {"x": 3806.11, "y": 1066.51, "z": 446.56},
-              "reset_xyz": {"x": 3112.54, "y": 1281.06, "z": 301.01}
+              "interact_xyz": {"x": 3711.72, "y": 1150.78, "z": 422.48},
+              "reset_xyz": {"x": 3515.84, "y": 1321.45, "z": 374.75},
+              "list_aliases": ["Sepidious"]
             },
             "Empyrea/EM_Z12_LandingZone": {
               "list_aliases": ["Mandalla"],
-              "list_aliases_only": true
+              "list_aliases_only": true,
+              "interact_xyz": {"x": -680.88, "y": -132.24, "z": -8.2},
+              "reset_xyz": {"x": -578.16, "y": 167.74, "z": -8.2}
             },
             "Empyrea/EM_Z06_NimbusHanger": {
               "interact_xyz": {"x": -2280.0, "y": 5.2, "z": 2.0},
@@ -5086,20 +5546,32 @@
               "list_aliases": ["Nimbus"]
             },
             "Empyrea/EM_Z15_Nexus": {
-              "interact_xyz": {"x": -1190.04, "y": 90.08, "z": 128.87},
-              "reset_xyz": {"x": -825.16, "y": -71.36, "z": 118.24}
+              "interact_xyz": {"x": -1144.55, "y": 160.58, "z": 126.26},
+              "reset_xyz": {"x": -800.59, "y": -117.96, "z": 123.8}
             },
-            "Empyrea/EM_Z10_PortAero": {},
+            "Empyrea/EM_Z10_PortAero": {
+              "interact_xyz": {"x": -3753.18, "y": 4092.21, "z": -35.06},
+              "reset_xyz": {"x": -3920.07, "y": 4362.34, "z": -35.08}
+            },
             "Empyrea/EM_Z16_Husk": {
-              "interact_xyz": {"x": 426.72, "y": 997.03, "z": -901.35},
-              "reset_xyz": {"x": 108.56, "y": 921.54, "z": -911.67}
+              "interact_xyz": {"x": 301.03, "y": 779.14, "z": -911.67},
+              "reset_xyz": {"x": 171.6, "y": 598.04, "z": -911.67}
             },
-            "Empyrea/EM_Z14_ChaosJungle": {}
+            "Empyrea/EM_Z14_ChaosJungle": {
+              "interact_xyz": {"x": 3944.03, "y": -3876.03, "z": -144.03},
+              "reset_xyz": {"x": 3953.79, "y": -3697.37, "z": -144.03}
+            }
           },
           "verified": true,
           "source": "recorded"
         }
-      ]
+      ],
+      "gate": {
+        "interact_xyz": {"x": 5417.33, "y": -1702.1, "z": -8.54},
+        "reset_xyz": {"x": 5669.02, "y": -1794.07, "z": -29.49},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Karamelle": {
       "hub": "Karamelle/KM_Z00_HUB",
@@ -5370,35 +5842,44 @@
         {
           "zones": {
             "Karamelle/KM_Z00_HUB": {
-              "interact_xyz": {"x": 433.09, "y": -10435.73, "z": -356.15},
-              "reset_xyz": {"x": 726.27, "y": -10413.71, "z": -455.57}
+              "interact_xyz": {"x": 497.45, "y": -10414.95, "z": -355.75},
+              "reset_xyz": {"x": 784.72, "y": -10418.03, "z": -481.93}
             },
             "Karamelle/KM_Z05_Nibbleheim": {
-              "interact_xyz": {"x": 2869.0, "y": -7344.7, "z": 16.5},
-              "reset_xyz": {"x": 3459.48, "y": -7222.48, "z": 50.66}
+              "interact_xyz": {"x": 2944.71, "y": -7080.59, "z": 16.5},
+              "reset_xyz": {"x": 3042.04, "y": -6956.25, "z": 16.5}
             },
             "Karamelle/KM_Z04_Sweetzburg": {
-              "interact_xyz": {"x": 292.59, "y": -1714.74, "z": 17.5},
-              "reset_xyz": {"x": 282.17, "y": -1508.0, "z": 17.5}
+              "interact_xyz": {"x": 209.66, "y": -1729.74, "z": 17.5},
+              "reset_xyz": {"x": 103.83, "y": -1526.3, "z": 17.5}
             },
-            "Karamelle/KM_Z07_Gutenstadt": {},
+            "Karamelle/KM_Z07_Gutenstadt": {
+              "interact_xyz": {"x": 1064.73, "y": 6407.87, "z": 35.15},
+              "reset_xyz": {"x": 902.13, "y": 6274.97, "z": 35.15}
+            },
             "Karamelle/KM_Z10_Gobblerton": {
-              "interact_xyz": {"x": -1694.02, "y": -8280.99, "z": 373.39},
-              "reset_xyz": {"x": -1625.55, "y": -7936.73, "z": 328.01}
+              "interact_xyz": {"x": -1361.27, "y": -8206.51, "z": 298.88},
+              "reset_xyz": {"x": -1106.42, "y": -8010.15, "z": 221.98}
             },
             "Karamelle/KM_Z08_LicoriceForest": {
-              "interact_xyz": {"x": -1718.92, "y": 6204.12, "z": -89.25},
-              "reset_xyz": {"x": -2117.19, "y": 6182.59, "z": -89.25}
+              "interact_xyz": {"x": -1748.89, "y": 6148.96, "z": -89.25},
+              "reset_xyz": {"x": -1986.36, "y": 5972.79, "z": -89.25}
             },
             "Karamelle/KM_Z09_CandyCornFarm": {
-              "interact_xyz": {"x": -1281.84, "y": -2674.29, "z": 3.0},
-              "reset_xyz": {"x": -949.65, "y": -2412.41, "z": 3.0}
+              "interact_xyz": {"x": -1279.31, "y": -2653.92, "z": 3.0},
+              "reset_xyz": {"x": -1084.86, "y": -2503.04, "z": 3.0}
             }
           },
           "verified": true,
           "source": "recorded"
         }
-      ]
+      ],
+      "gate": {
+        "interact_xyz": {"x": 60.26, "y": -6730.37, "z": -4.29},
+        "reset_xyz": {"x": 72.7, "y": -6435.91, "z": -4.29},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Lemuria": {
       "hub": "Lemuria/LM_Z00_Hub",
@@ -5625,35 +6106,41 @@
         {
           "zones": {
             "Lemuria/LM_Z00_Hub": {
-              "interact_xyz": {"x": -23.31, "y": -3001.07, "z": -664.03},
-              "reset_xyz": {"x": -34.33, "y": -2689.26, "z": -695.37}
+              "interact_xyz": {"x": 0.55, "y": -3016.22, "z": -664.03},
+              "reset_xyz": {"x": 0.55, "y": -2542.27, "z": -726.95}
             },
             "Lemuria/LM_Z02_UrsaiVillage": {},
             "Lemuria/LM_Z03_NightForest": {
-              "interact_xyz": {"x": -5176.69, "y": -5373.56, "z": -340.74},
-              "reset_xyz": {"x": -5369.3, "y": -5343.09, "z": -349.4}
+              "interact_xyz": {"x": -5144.61, "y": -5377.24, "z": -339.69},
+              "reset_xyz": {"x": -5611.32, "y": -5322.2, "z": -346.44}
             },
             "Lemuria/LM_Z04_Badlands": {
-              "interact_xyz": {"x": 3957.83, "y": -616.88, "z": 16.69},
-              "reset_xyz": {"x": 4113.5, "y": -649.28, "z": -4.82}
+              "interact_xyz": {"x": 3958.22, "y": -583.42, "z": 16.72},
+              "reset_xyz": {"x": 4431.78, "y": -617.89, "z": -30.4}
             },
             "Lemuria/LM_Z05_Mandoria": {
-              "interact_xyz": {"x": 5182.31, "y": 4281.05, "z": -617.91},
-              "reset_xyz": {"x": 5273.72, "y": 4068.9, "z": -649.24}
+              "interact_xyz": {"x": 5195.28, "y": 4290.49, "z": -617.91},
+              "reset_xyz": {"x": 5335.05, "y": 3875.69, "z": -675.2}
             },
             "Lemuria/LM_Z07_Heap": {
-              "interact_xyz": {"x": 3998.22, "y": -6761.01, "z": -1700.59},
-              "reset_xyz": {"x": 3948.51, "y": -7386.47, "z": -1733.2}
+              "interact_xyz": {"x": 3990.11, "y": -6776.3, "z": -1700.59},
+              "reset_xyz": {"x": 3488.53, "y": -6791.39, "z": -1773.41}
             },
             "Lemuria/LM_Z06_SkyCity": {
-              "interact_xyz": {"x": 2812.71, "y": 689.46, "z": -73.59},
-              "reset_xyz": {"x": 2689.19, "y": 566.91, "z": -104.93}
+              "interact_xyz": {"x": 2742.36, "y": 603.66, "z": -72.31},
+              "reset_xyz": {"x": 2516.86, "y": 251.8, "z": -134.24}
             }
           },
           "verified": true,
           "source": "recorded"
         }
-      ]
+      ],
+      "gate": {
+        "interact_xyz": {"x": 0.55, "y": 338.74, "z": 171.9},
+        "reset_xyz": {"x": 0.55, "y": 155.62, "z": 61.71},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Novus": {
       "hub": "Novus/NV_Z01_Conatus",
@@ -5664,7 +6151,8 @@
             "Novus/NV_Z02_StoneOfHeaven": {"x": -15376.04, "y": 2107.15, "z": 3259.49},
             "Novus/NV_Z05_LaVilleRose": {"x": -16569.81, "y": 734.16, "z": 3513.04},
             "Novus/NV_Z03_PuertoNuovo_VA": {"x": -15586.39, "y": -2596.31, "z": 3319.53},
-            "Novus/NV_Z04_NewVicorgia": {"x": -16496.82, "y": -1081.45, "z": 3514.21}
+            "Novus/NV_Z04_NewVicorgia": {"x": -16496.82, "y": -1081.45, "z": 3514.21},
+            "Novus/NV_Z07_DoomMoon": {"x": -10666.24, "y": -7759.1, "z": 2516.28}
           }
         },
         "Novus/NV_Z02_StoneOfHeaven": {
@@ -5686,7 +6174,8 @@
         },
         "Novus/NV_Z05_LaVilleRose": {
           "arrivals": {
-            "Novus/NV_Z01_Conatus": {"x": 240.09, "y": -3076.92, "z": 283.96}
+            "Novus/NV_Z01_Conatus": {"x": 240.09, "y": -3076.92, "z": 283.96},
+            "Novus/NV_Z06_NucleusGallery": {"x": 26778.17, "y": 78785.99, "z": -3199.01}
           }
         },
         "Novus/NV_Z06_NucleusGallery": {
@@ -5842,9 +6331,33 @@
           "volume": "TeleportVol_Teleport_2_VA_Side",
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z07_DoomMoon",
+          "to": "Novus/NV_Z01_Conatus",
+          "interact_xyz": {"x": 7.01, "y": -1944.03, "z": 12.48},
+          "reset_xyz": {"x": 15.76, "y": -2201.29, "z": 1.64},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "object",
+          "from": "Novus/NV_Z06_NucleusGallery",
+          "to": "Novus/NV_Z05_LaVilleRose",
+          "interact_xyz": {"x": 543.2, "y": -1879.82, "z": 25.53},
+          "reset_xyz": {"x": 206.94, "y": -1943.6, "z": -61.57},
+          "verified": true,
+          "source": "recorded"
         }
       ],
-      "list_networks": []
+      "list_networks": [],
+      "gate": {
+        "interact_xyz": {"x": -10064.2, "y": 2149.11, "z": 2558.76},
+        "reset_xyz": {"x": -10068.92, "y": 1847.58, "z": 2507.83},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Wallaru": {
       "hub": "Wallaru/WL_Z01_Hub",
@@ -5854,7 +6367,8 @@
           "arrivals": {
             "Wallaru/WL_Z02_Outback": {"x": 23.17, "y": 17927.08, "z": 2.0},
             "Wallaru/WL_Z05_Wobbegong_JT": {"x": 3578.83, "y": 15792.4, "z": 2.0},
-            "Wallaru/WL_Z06_CollieRanch": {"x": 3578.83, "y": 15792.4, "z": 2.0}
+            "Wallaru/WL_Z06_CollieRanch": {"x": 3578.83, "y": 15792.4, "z": 2.0},
+            "Wallaru/WL_Z03_Kingsland": {"x": -7040.86, "y": 17044.82, "z": 2.0}
           }
         },
         "Wallaru/WL_Z02_Outback": {
@@ -5958,6 +6472,15 @@
           "volume": "TeleportVol_TeleportSource_To_TheDreaming",
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "walk",
+          "from": "Wallaru/WL_Z03_Kingsland",
+          "to": "Wallaru/WL_Z01_Hub",
+          "xyz": {"x": -8591.02, "y": -3566.33, "z": 2.49},
+          "volume": "TeleportVol_Teleport source",
+          "verified": true,
+          "source": "recorded"
         }
       ],
       "list_networks": [
@@ -5991,7 +6514,13 @@
           "verified": true,
           "source": "recorded"
         }
-      ]
+      ],
+      "gate": {
+        "interact_xyz": {"x": 123.04, "y": -3206.5, "z": 67.36},
+        "reset_xyz": {"x": 130.65, "y": -2968.9, "z": 67.36},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Darkmoor": {
       "hub": "Darkmoor/DM_Z00_OutsidersCamp",
@@ -6032,8 +6561,8 @@
         {
           "zones": {
             "Darkmoor/DM_Z00_OutsidersCamp": {
-              "interact_xyz": {"x": 1806.09, "y": 1453.27, "z": 0.3},
-              "reset_xyz": {"x": 1647.47, "y": 1321.66, "z": 0.3}
+              "interact_xyz": {"x": -1.77, "y": -2183.13, "z": 75.08},
+              "reset_xyz": {"x": -5.83, "y": -1925.28, "z": 22.11}
             },
             "Darkmoor/DM_Z01_Graveholm": {
               "interact_xyz": {"x": 10309.72, "y": -5677.21, "z": 2.0},
@@ -6059,7 +6588,13 @@
           "verified": true,
           "source": "recorded"
         }
-      ]
+      ],
+      "gate": {
+        "interact_xyz": {"x": -4.6, "y": -2159.63, "z": 75.08},
+        "reset_xyz": {"x": -5.63, "y": -1963.92, "z": 45.59},
+        "verified": true,
+        "source": "recorded"
+      }
     },
     "Aquila": {
       "hub": "Aquila/AQ_Z00_Hub",

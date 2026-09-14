@@ -2,6 +2,8 @@
 
 import copy
 
+import pytest
+
 from bartlebot import zone_nav
 from tools.zone_nav_tester import edits
 
@@ -95,6 +97,89 @@ def test_a_network_is_verified_only_while_every_member_was_used_in_game():
     assert network["verified"] is False
 
 
+_SPOT = {"x": 0.0, "y": 0.0, "z": 0.0}
+
+
+def test_a_list_object_recorded_in_place_starts_its_worlds_network():
+    raw = _raw()
+
+    assert edits.add_list_member(raw, "W/A", _SPOT, _SPOT, verified=True) == "added"
+    [network] = raw["worlds"]["W"]["list_networks"]
+    assert network["zones"] == {"W/A": {"interact_xyz": _SPOT, "reset_xyz": _SPOT}}
+    assert network["verified"] is True
+    zone_nav.parse(raw)
+
+
+def test_list_objects_recorded_in_place_join_their_worlds_one_network():
+    raw = _raw()
+    edits.add_list_member(raw, "W/Hub", _SPOT, _SPOT)
+    edits.add_list_member(raw, "W/A", _SPOT, _SPOT)
+
+    assert _pairs(raw) == {("W/Hub", "W/A"), ("W/A", "W/Hub")}
+
+
+def test_a_member_listed_without_an_object_gets_one_in_place():
+    raw = _raw()
+    edits.add_list_spot(raw, "W/Hub", "W/B", _SPOT, _SPOT)
+
+    assert edits.add_list_member(raw, "W/B", _SPOT, _SPOT) == "added"
+    assert _pairs(raw) == {("W/Hub", "W/B"), ("W/B", "W/Hub")}
+
+
+def test_recording_a_list_object_again_moves_it_and_keeps_its_aliases():
+    raw = _raw()
+    own = {"list_aliases": ["Alpha"], "list_aliases_only": True, "interact_xyz": _SPOT, "reset_xyz": _SPOT}
+    raw["worlds"]["W"]["list_networks"] = [{"zones": {"W/A": own}, "verified": True}]
+    moved = {"x": 5.0, "y": 0.0, "z": 0.0}
+
+    assert edits.add_list_member(raw, "W/A", moved, moved, verified=True) == "updated"
+    assert raw["worlds"]["W"]["list_networks"][0]["zones"]["W/A"] == {
+        "list_aliases": ["Alpha"],
+        "list_aliases_only": True,
+        "interact_xyz": moved,
+        "reset_xyz": moved,
+    }
+    assert raw["worlds"]["W"]["list_networks"][0]["verified"] is True
+
+
+def test_a_list_object_is_refused_when_its_world_has_several_lists():
+    raw = _raw()
+    own = {"interact_xyz": _SPOT, "reset_xyz": _SPOT}
+    raw["worlds"]["W"]["list_networks"] = [{"zones": {"W/Hub": own}}, {"zones": {"W/B": own}}]
+
+    with pytest.raises(ValueError, match="2 list networks"):
+        edits.add_list_member(raw, "W/A", _SPOT, _SPOT)
+
+
+def test_a_world_gate_is_saved_on_the_world_whose_door_it_stands_in():
+    raw = _raw()
+
+    assert edits.set_world_gate(raw, "W/Hub", _SPOT, _SPOT, verified=True) == "added"
+    assert raw["worlds"]["W"]["gate"] == {
+        "interact_xyz": _SPOT,
+        "reset_xyz": _SPOT,
+        "verified": True,
+        "source": "recorded",
+    }
+    assert "list_networks" not in raw["worlds"]["W"]
+    assert zone_nav.parse(raw).worlds["W"].gate["verified"] is True
+
+
+def test_recording_a_world_gate_again_moves_it_and_keeps_its_note():
+    raw = _raw()
+    raw["worlds"]["W"]["gate"] = {"interact_xyz": _SPOT, "reset_xyz": _SPOT, "note": "by the fountain"}
+    moved = {"x": 5.0, "y": 0.0, "z": 0.0}
+
+    assert edits.set_world_gate(raw, "W/Hub", moved, moved) == "updated"
+    assert raw["worlds"]["W"]["gate"]["note"] == "by the fountain"
+    assert raw["worlds"]["W"]["gate"]["interact_xyz"] == moved
+
+
+def test_a_world_gate_outside_any_door_is_refused():
+    with pytest.raises(ValueError, match="no world's door"):
+        edits.set_world_gate(_raw(), "W/A", _SPOT, _SPOT)
+
+
 def test_an_arrival_point_becomes_the_walk_backs_reset():
     raw = _raw()
     edits.upsert_link(raw, _walk("W/A", "W/Hub"))
@@ -115,6 +200,16 @@ def test_mark_verified_covers_links_and_list_networks():
 
     assert edits.mark_verified(raw, steps) == 2
     assert all(s.verified for s in zone_nav.parse(raw).links)
+
+
+def test_mark_verified_covers_the_world_gate_a_step_used():
+    raw = _raw()
+    raw["worlds"]["U"] = {"hub": "U/Hub", "door": "U/Hub", "zones": {"U/Hub": {}}}
+    raw["worlds"]["W"]["gate"] = {"interact_xyz": _SPOT, "reset_xyz": _SPOT, "verified": False}
+    [step] = [s for s in zone_nav.parse(raw).links if s.kind == zone_nav.GATE]
+
+    assert edits.mark_verified(raw, [step]) == 1
+    assert raw["worlds"]["W"]["gate"]["verified"] is True
 
 
 def test_declaring_a_zone_adds_it_to_the_world():

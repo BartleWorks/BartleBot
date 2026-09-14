@@ -15,7 +15,7 @@ TEST tab
 
     Walk only and No hub button leave those links out of routes and out of the tree colours.
     A teleporter usually wins, so this is how a street route gets previewed, run and seen as
-    mapped. Getting to the world and regrouping still use the spiral door and the hub button.
+    mapped. Regrouping still uses the hub button, or HOME for a group split across worlds.
 
     Closing the window unhooks the client: any running route is stopped first, and the
     client is released before the process exits.
@@ -29,6 +29,13 @@ MAP tab
     card, change the kind if it is wrong, and Save -- it goes straight into
     bartlebot/data/zone_nav.json as a verified link, since you just used it in the game. A
     recording never silently replaces a verified link that already exists. Review with git diff.
+
+    A list object is recorded without using it: open the list and the List object card holds
+    the zone, where the list opened (its interact point) and the last spot clear of its prompt
+    (its reset). A zone change never replaces that card. Close the list, and Verify both points
+    live checks both from inside the same zone before you save. A World Gate is recognised by
+    its window title and recorded the same way, but saved as its world's gate rather than into
+    a list network. It must stand in the world's door zone.
 
 USAGE
     uv run python -m tools.zone_nav_tester              # the first client found
@@ -45,6 +52,7 @@ import asyncio
 import contextlib
 import json
 import logging
+import math
 import signal
 import sys
 import time
@@ -70,10 +78,12 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from wizwalker import XYZ
 
 from bartlebot import worlds, zone_names, zone_nav
-from bartlebot.nodes import node_helpers, wizard_city, zone_navigation
-from bartlebot.nodes.paths import HUB_BUTTON_PATH, UNIVERSE_TELEPORT_BUTTON
+from bartlebot.nodes import node_helpers, zone_navigation
+from bartlebot.nodes.paths import HUB_BUTTON_PATH, UNIVERSE_TELEPORT_BUTTON, UNIVERSE_TITLE
+from bartlebot.nodes.timing import POLL_INTERVAL
 from bartlebot.restricted_zones import check_zone
 from tools.zone_nav_tester import edits, recorder, tree
 from tools.zone_nav_tester.game_data import GameData
@@ -85,6 +95,13 @@ VOLUME_MATCH_DISTANCE = 400.0
 ARRIVAL_MATCH_DISTANCE = 600.0
 SAFETY_DELAY = 3.0
 UNHOOK_TIMEOUT = 10.0
+
+RESET_VERIFY_STEP = 40.0
+"""How much further out to push a candidate reset point each time it still shows the prompt."""
+RESET_VERIFY_MAX_STEPS = 10
+"""Safety cap on verification nudges -- an object wider than this needs a reset point by hand."""
+RESET_VERIFY_TIMEOUT = 2.0
+"""Seconds to let is_in_npc_range() settle after each teleport during verification."""
 
 STATUS_COLORS = {tree.VERIFIED: "#2e7d32", tree.TENTATIVE: "#b26a00", tree.NO_DATA: "#8a8a8a"}
 HERE_BACKGROUND = "#d6e9ff"
@@ -131,6 +148,22 @@ def _world_label(nav: zone_nav.NavMap, key: str) -> str:
     return worlds.label(key) if worlds.display_names(key) else _label(nav.worlds[key].hub)
 
 
+def retreat_points(
+    candidate: tuple[float, float, float], away_from: tuple[float, float, float]
+) -> list[tuple[float, float, float]]:
+    """RESET_VERIFY_MAX_STEPS points retreating from `away_from` through `candidate`, each
+    RESET_VERIFY_STEP further out than the last. Pure geometry, no client — `_find_clear_point`
+    is what actually visits them and checks the interact prompt at each."""
+    ax, ay, az = away_from
+    dx, dy, dz = candidate[0] - ax, candidate[1] - ay, candidate[2] - az
+    base = math.dist((0.0, 0.0, 0.0), (dx, dy, dz)) or 1.0
+    ux, uy, uz = dx / base, dy / base, dz / base
+    return [
+        (ax + ux * length, ay + uy * length, az + uz * length)
+        for length in (base + RESET_VERIFY_STEP * i for i in range(RESET_VERIFY_MAX_STEPS))
+    ]
+
+
 class TesterWindow(QMainWindow):
     def __init__(self, client, game: GameData) -> None:
         super().__init__()
@@ -149,6 +182,13 @@ class TesterWindow(QMainWindow):
         self._unhooked = False
         self._speed_original: int | None = None
         """The client's un-modified speed_multiplier value, read once so it can be restored."""
+        self.list_watcher = recorder.ListWatcher()
+        self.list_spot: recorder.ListObject | None = None
+        """The last list window opened. Kept apart from `pending`, so a zone change cannot replace it."""
+        self.list_checked: tuple[bool, tuple[float, float, float] | None] | None = None
+        """(prompt shown at interact_xyz, reset confirmed clear or None) once list_spot is verified live."""
+        self._list_verifying = False
+        self._list_save_ready = False
         self.setWindowTitle("Zone Navigation Tester")
         self.resize(1200, 820)
         self._build()
@@ -306,8 +346,8 @@ class TesterWindow(QMainWindow):
     def _build_map_tab(self) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
-        self.record_check = QCheckBox("Record zone transitions")
-        self.record_check.toggled.connect(lambda _on: self.recorder.reset())
+        self.record_check = QCheckBox("Record zone transitions and list objects")
+        self.record_check.toggled.connect(lambda _on: (self.recorder.reset(), self.list_watcher.reset()))
         layout.addWidget(self.record_check)
 
         self.card = QGroupBox("Recorded transition")
@@ -345,7 +385,38 @@ class TesterWindow(QMainWindow):
         actions.addStretch(1)
         card.addLayout(actions)
         layout.addWidget(self.card, 1)
+
+        self.list_card = QGroupBox("List object")
+        list_card = QVBoxLayout(self.list_card)
+        self.list_summary = QLabel()
+        self.list_summary.setWordWrap(True)
+        list_card.addWidget(self.list_summary)
+        self.list_declare = QCheckBox()
+        self.list_declare.toggled.connect(self._show_list_card)
+        list_card.addWidget(self.list_declare)
+        self.list_details = QPlainTextEdit(readOnly=True)
+        self.list_details.setFont(QFont("Consolas", 9))
+        list_card.addWidget(self.list_details, 1)
+        list_actions = QHBoxLayout()
+        self.list_verify_button = QPushButton("Verify both points live")
+        self.list_verify_button.setToolTip(
+            "Teleports to the interact point to confirm the prompt shows, then to the reset point to "
+            "confirm it does not, retreating further from the object until it does not. Close the list "
+            "first; the client stays in this zone throughout."
+        )
+        self.list_verify_button.clicked.connect(self._verify_list_spot)
+        self.list_save_button = QPushButton("Save list object")
+        self.list_save_button.clicked.connect(self._save_list_spot)
+        self.list_discard_button = QPushButton("Discard")
+        self.list_discard_button.clicked.connect(self._discard_list_spot)
+        for button in (self.list_verify_button, self.list_save_button, self.list_discard_button):
+            list_actions.addWidget(button)
+        list_actions.addStretch(1)
+        list_card.addLayout(list_actions)
+        layout.addWidget(self.list_card, 1)
+
         self._show_card()
+        self._show_list_card()
         return page
 
     def _fill_worlds(self) -> None:
@@ -428,6 +499,9 @@ class TesterWindow(QMainWindow):
             if self.record_check.isChecked() and self.executing is None:
                 for transition in self.recorder.feed(sample):
                     self._on_transition(transition)
+                if (spot := self.list_watcher.feed(sample)) is not None:
+                    self._on_list_object(spot)
+            self._refresh_list_buttons()
             if self.speed_check.isChecked():
                 # A zone or realm change resets the game's speed multiplier; keep it pinned.
                 await self._maintain_speed()
@@ -449,12 +523,14 @@ class TesterWindow(QMainWindow):
         pos = await c.body.position()
         if loading:
             return recorder.Sample(time.monotonic(), None, (pos.x, pos.y, pos.z), loading=True)
+        list_open = await node_helpers.is_visible_by_path(c, UNIVERSE_TELEPORT_BUTTON)
         return recorder.Sample(
             time.monotonic(),
             await c.zone_name(),
             (pos.x, pos.y, pos.z),
             prompt=await c.is_in_npc_range(),
-            list_open=await node_helpers.is_visible_by_path(c, UNIVERSE_TELEPORT_BUTTON),
+            list_open=list_open,
+            world_gate=list_open and worlds.is_world_gate_title(await node_helpers.get_text_by_path(c, UNIVERSE_TITLE)),
             hub_enabled=await node_helpers.is_enabled_by_path(c, HUB_BUTTON_PATH),
             speed_boosted=self.speed_check.isChecked(),
         )
@@ -467,7 +543,8 @@ class TesterWindow(QMainWindow):
             for on, name in (
                 (sample.loading, "LOADING"),
                 (sample.prompt, "prompt"),
-                (sample.list_open, "zone list open"),
+                (sample.list_open and not sample.world_gate, "zone list open"),
+                (sample.list_open and sample.world_gate, "World Gate open"),
                 (sample.hub_enabled, "hub button ready"),
             )
             if on
@@ -557,35 +634,31 @@ class TesterWindow(QMainWindow):
             lines.append(f"avoiding: {', '.join(sorted(avoid))}")
         lines.append("")
 
-        via_door = start is None or not zone_navigation.in_reach(nav, start, world)
+        if start is None:
+            return lines + ["The client's zone is not known yet."]
         cooldown = 0.0 if self.sample and self.sample.hub_enabled else zone_nav.HUB_BUTTON_COOLDOWN
-        route = (
-            None
-            if via_door
-            else zone_nav.plan(nav, start, target, hub_cooldown=cooldown, include_unverified=include, avoid=avoid)
-        )
-        if route is None:
-            # What navigate() does next: the spiral door, then plan from where it leaves you.
-            via_door = True
-            entry = nav.entry_world(world.key)
-            door = wizard_city.RAVENWOOD_ZONE if entry == "WizardCity" else nav.worlds[entry].door
-            route = zone_nav.plan(nav, door, target, include_unverified=include, avoid=avoid)
-            lines.append(f"0. spiral door to {_world_label(nav, entry)} (lands in {_label(door)})")
-
+        route = zone_nav.plan(nav, start, target, hub_cooldown=cooldown, include_unverified=include, avoid=avoid)
         if route is None:
             return lines + self._explain_missing(nav, world, target, include)
 
-        total = 0.0
+        transitions, waiting = 0, 0.0
         for i, step in enumerate(route, start=1):
-            total += zone_nav.step_cost(step)
+            cost = zone_nav.step_cost(step)
+            transitions, waiting = transitions + cost.transitions, waiting + cost.waiting
             flags = [] if step.verified else ["tentative"]
             if isinstance(runnable := zone_navigation.step_call(step), str):
                 flags.append(f"CANNOT RUN: {runnable}")
-            lines.append(
-                f"{i}. {step.kind:<6} {_label(step.from_zone)} -> {_label(step.to_zone)}"
-                + (f"   ({'; '.join(flags)})" if flags else "")
+            to = (
+                f"{_world_label(nav, step.params['world'])} ({_label(step.to_zone)})"
+                if step.kind == zone_nav.GATE
+                else _label(step.to_zone)
             )
-        lines += ["", f"about {total:.0f} s after reaching the world" if via_door else f"about {total:.0f} s"]
+            lines.append(
+                f"{i}. {step.kind:<6} {_label(step.from_zone)} -> {to}" + (f"   ({'; '.join(flags)})" if flags else "")
+            )
+        lines += ["", f"{transitions} transition{'' if transitions == 1 else 's'}"]
+        if waiting:
+            lines[-1] += f", plus {waiting:.0f} s waiting"
         return lines
 
     def _explain_missing(self, nav: zone_nav.NavMap, world: zone_nav.World, target: str, include: bool) -> list[str]:
@@ -690,7 +763,7 @@ class TesterWindow(QMainWindow):
             return
         src, dst = nav.world_of(t.from_zone), nav.world_of(t.to_zone)
         if src is None or dst is None or nav.entry_world(src.key) != nav.entry_world(dst.key):
-            logger.info("Not recorded: %s crosses worlds (spiral door, friend teleport or recall)", where)
+            logger.info("Not recorded: %s crosses worlds (World Gate, friend teleport or recall)", where)
             return
         if self.pending is not None:
             logger.warning("Unsaved transition replaced: %s -> %s", self.pending.from_zone, self.pending.to_zone)
@@ -763,6 +836,216 @@ class TesterWindow(QMainWindow):
         self.save_button.setText("Save arrival point only" if keep else "Save link")
         self.save_button.setEnabled(ready and (draft.link is not None or (keep and draft.arrival is not None)))
 
+    # ── List objects ──────────────────────────────────────────────────────────
+
+    def _on_list_object(self, spot: recorder.ListObject) -> None:
+        logger.info("%s opened in %s", "World Gate" if spot.world_gate else "Zone list", _label(spot.zone))
+        self.list_spot = spot
+        self.list_checked = None
+        self._show_list_card()
+
+    def _list_points(self) -> tuple[tuple[float, float, float], tuple[float, float, float] | None, list[str]]:
+        """What saving list_spot would write, live-checked values winning, and what to know first."""
+        spot = self.list_spot
+        reset = spot.reset_xyz
+        notes = ["interact_xyz: where you stood when the list opened"]
+        if self.list_checked is not None:
+            interact_ok, checked_reset = self.list_checked
+            notes[0] += (
+                " -- prompt confirmed live"
+                if interact_ok
+                else " -- WARNING: no prompt there when teleported to it; open the list again from where it works"
+            )
+            reset = checked_reset
+            notes.append(
+                "reset_xyz: confirmed live, no prompt there"
+                if checked_reset is not None
+                else f"no reset_xyz: the prompt still showed {RESET_VERIFY_MAX_STEPS} steps out. "
+                f"Walk further from the object, come back, and open the list again."
+            )
+        elif reset is not None:
+            notes.append(
+                f"reset_xyz: the last spot {recorder.PROMPT_CLEAR_DISTANCE:.0f}+ units from the object with no "
+                f"prompt, before you reached it. A wide interact radius can still reach it: verify before saving."
+            )
+        else:
+            notes.append(
+                f"no reset_xyz: you were never {recorder.PROMPT_CLEAR_DISTANCE:.0f}+ units from the object before "
+                f"opening it. Walk away, come back, and open the list again."
+            )
+        return spot.interact_xyz, reset, notes
+
+    def _show_list_card(self) -> None:
+        spot = self.list_spot
+        self.list_discard_button.setEnabled(spot is not None)
+        self.list_declare.setVisible(False)
+        self._list_save_ready = False
+        if spot is None:
+            self.list_summary.setText(
+                "Open a zone list or World Gate in the game with Record ticked. You do not need to use it."
+            )
+            self.list_details.setPlainText("")
+            self.list_save_button.setEnabled(False)
+            self._refresh_list_buttons()
+            return
+
+        what = "World Gate" if spot.world_gate else "zone list"
+        self.list_summary.setText(f"<b>{what}</b> &nbsp; {_label(spot.zone)}<br><small>{spot.zone}</small>")
+        interact, reset, notes = self._list_points()
+        lines = [f"interact_xyz: {edits.xyz(interact)}", f"reset_xyz:    {edits.xyz(reset) if reset else None}", ""]
+        ready = reset is not None
+        world = zone_nav.load().world_of(spot.zone)
+        raw = self._read_raw()
+        if hit := check_zone(spot.zone):
+            lines.append(f"Restricted zone, nothing is recorded: {hit.describe()}")
+            ready = False
+        if spot.world_gate:
+            # A door is always a declared zone, so there is nothing to offer declaring.
+            stored = self._stored_gate(raw, spot.zone)
+            if (door_world := edits.world_with_door(raw, spot.zone)) is None:
+                lines.append("This zone is no world's door, so the gate has nowhere to be saved. Check the door.")
+                ready = False
+            elif stored is None:
+                lines.append(f"No World Gate saved for {door_world} yet.")
+            else:
+                lines.append(f"Saved now: interact {stored['interact_xyz']}, reset {stored['reset_xyz']}")
+            self._finish_list_card(lines, notes, ready, "World Gate", stored is not None)
+            return
+        if spot.zone not in self._declared():
+            self.list_declare.setVisible(True)
+            self.list_declare.setText(f"Add {_label(spot.zone)} ({spot.zone}) to {world.key if world else '?'}'s zones")
+            ready = ready and world is not None and self.list_declare.isChecked()
+        stored = next(
+            (
+                network["zones"][spot.zone]
+                for spec in raw["worlds"].values()
+                for network in spec.get("list_networks", [])
+                if spot.zone in network.get("zones", {})
+            ),
+            None,
+        )
+        if stored is None:
+            lines.append("On no list yet: saving adds it to its world's list network.")
+        elif "interact_xyz" not in stored:
+            lines.append("On a list, but its own object is not recorded yet: routes lead into it, not out.")
+        else:
+            lines.append(f"Saved now: interact {stored['interact_xyz']}, reset {stored['reset_xyz']}")
+        self._finish_list_card(lines, notes, ready, "list object", bool(stored and "interact_xyz" in stored))
+
+    def _finish_list_card(self, lines: list[str], notes: list[str], ready: bool, what: str, saved: bool) -> None:
+        lines += ["", *notes]
+        self.list_details.setPlainText("\n".join(lines))
+        self.list_save_button.setText(f"Update {what}" if saved else f"Save {what}")
+        self._list_save_ready = ready
+        self.list_save_button.setEnabled(ready)
+        self._refresh_list_buttons()
+
+    @staticmethod
+    def _stored_gate(raw: dict, zone: str) -> dict | None:
+        world = edits.world_with_door(raw, zone)
+        return raw["worlds"][world].get("gate") if world else None
+
+    def _list_verify_ready(self) -> bool:
+        """Verifying moves the client, so only while it stands in the object's zone with the list closed."""
+        spot, s = self.list_spot, self.sample
+        return (
+            spot is not None
+            and spot.reset_xyz is not None
+            and s is not None
+            and s.zone == spot.zone
+            and not s.loading
+            and not s.list_open
+            and self.executing is None
+            and not self._list_verifying
+        )
+
+    def _refresh_list_buttons(self) -> None:
+        self.list_verify_button.setEnabled(self._list_verify_ready())
+
+    @qasync.asyncSlot()
+    async def _verify_list_spot(self) -> None:
+        """Confirm the prompt shows at interact_xyz, then find a reset point where it does not.
+
+        A passing sample the watcher saw as clear can still be inside a wide interact radius
+        once you teleport straight to it, which Empyrea's lists showed. Checking live is the same
+        test enter_zone_via_list makes at runtime, so it cannot be fooled by radius size.
+        """
+        spot = self.list_spot
+        if not self._list_verify_ready():
+            return
+        self._list_verifying = True
+        self.list_verify_button.setText("Verifying…")
+        self._refresh_list_buttons()
+        c = self.client
+        try:
+            await c.teleport(XYZ(*spot.interact_xyz))
+            interact_ok = await node_helpers.poll_until(
+                lambda: node_helpers.all_in_npc_range([c]), RESET_VERIFY_TIMEOUT, POLL_INTERVAL
+            )
+            reset = await self._find_clear_point(spot.reset_xyz, spot.interact_xyz)
+        except Exception:
+            logger.exception("Verifying the list object failed")
+            return
+        finally:
+            self._list_verifying = False
+            self.list_verify_button.setText("Verify both points live")
+            # The tester moved the client; what it walked through before no longer leads here.
+            self.recorder.reset()
+            self.list_watcher.reset()
+            self._refresh_list_buttons()
+        logger.info("Verified list object in %s: prompt %s, reset %s", spot.zone, interact_ok, reset)
+        if self.list_spot is spot:
+            self.list_checked = (interact_ok, reset)
+            self._show_list_card()
+
+    def _save_list_spot(self) -> None:
+        spot = self.list_spot
+        if spot is None or not self._list_save_ready:
+            return
+        interact, reset, _ = self._list_points()
+        raw = self._read_raw()
+        what = "World Gate" if spot.world_gate else "list object"
+        try:
+            # The list opened at interact_xyz in a real client: the same evidence a recorded list
+            # use gave add_list_spot, which saved as verified too.
+            if spot.world_gate:
+                verb = edits.set_world_gate(raw, spot.zone, edits.xyz(interact), edits.xyz(reset), verified=True)
+            else:
+                if edits.world_declaring(raw, spot.zone) is None:
+                    edits.declare_zone(raw, zone_nav.load().world_of(spot.zone).key, spot.zone)
+                verb = edits.add_list_member(raw, spot.zone, edits.xyz(interact), edits.xyz(reset), verified=True)
+        except ValueError as exc:
+            logger.error("%s not saved: %s", what, exc)
+            return
+        if self._write_raw(raw):
+            logger.info("%s %s in %s", verb.capitalize(), what, spot.zone)
+            self._show_list_card()
+
+    def _discard_list_spot(self) -> None:
+        self.list_spot = None
+        self.list_checked = None
+        self._show_list_card()
+
+    async def _find_clear_point(
+        self,
+        candidate: tuple[float, float, float],
+        away_from: tuple[float, float, float],
+    ) -> tuple[float, float, float] | None:
+        """Teleport to `candidate`; if the interact prompt is still up, retreat further along
+        the line from `away_from` through `candidate` and try again.
+
+        Returns the first position confirmed clear, or None if RESET_VERIFY_MAX_STEPS ran out
+        without ever losing the prompt.
+        """
+        c = self.client
+        for point in retreat_points(candidate, away_from):
+            await c.teleport(XYZ(*point))
+            if await node_helpers.poll_until(
+                lambda: node_helpers.none_in_npc_range([c]), RESET_VERIFY_TIMEOUT, POLL_INTERVAL
+            ):
+                return point
+        return None
+
     def _draft(self, kind: str) -> Draft:
         t = self.pending
         nav = zone_nav.load()
@@ -813,7 +1096,8 @@ class TesterWindow(QMainWindow):
             if kind == recorder.LIST:
                 notes.append(
                     f"Saves where the list object stands in {_label(t.from_zone)}. {_label(t.to_zone)} "
-                    f"joins the network once a list use from there is recorded too."
+                    f"joins the network once a list use from there is recorded too. Opening a list without "
+                    f"using it records its object in place, on the List object card, where it can be verified."
                 )
         if kind == recorder.RIDE and link is not None:
             if t.ride_zone:

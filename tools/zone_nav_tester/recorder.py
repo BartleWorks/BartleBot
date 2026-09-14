@@ -33,6 +33,13 @@ WHICH COORDINATES
     far_xyz         the last position at least RESET_DISTANCE from the trigger: a walk's
                     fallback reset, when no arrival point is known
     arrival_xyz     where the player landed
+
+A LIST OBJECT WITHOUT A ZONE CHANGE
+    ListWatcher reports each opening of a list window, zone change or not: where the player
+    stood when it opened is the object's interact position, and the same pre-prompt rule
+    as above gives its reset. It is separate from Recorder because a list object belongs to
+    one zone -- recording it should never need the player to leave, and a list use that
+    does leave is still a Transition as before.
 """
 
 from __future__ import annotations
@@ -64,6 +71,8 @@ class Sample:
     loading: bool = False
     prompt: bool = False
     list_open: bool = False
+    world_gate: bool = False
+    """The open list window is a World Gate's, not a zone list's. Meaningless unless list_open."""
     hub_enabled: bool = False
     speed_boosted: bool = False
 
@@ -171,24 +180,73 @@ def _classify(before: list[Sample], came_from: str, arrival: Sample) -> Transiti
     else:
         kind = WALK
 
-    prompt_xyz = pre_prompt_xyz = None
-    prompted = [i for i, s in enumerate(before) if s.prompt]
-    if prompted:
-        prompt_xyz = before[prompted[-1]].xyz
-        # The last spot before the final run of prompt samples that is clearly away from the
-        # object. Just "the sample before the prompt" is not enough: a player standing still
-        # while the prompt comes up is already where it shows.
-        start = prompted[-1]
-        while start > 0 and before[start - 1].prompt:
-            start -= 1
-        pre_prompt_xyz = next(
-            (
-                s.xyz
-                for s in reversed(before[:start])
-                if not s.prompt and distance(s.xyz, prompt_xyz) >= PROMPT_CLEAR_DISTANCE
-            ),
-            None,
-        )
-
+    prompt_xyz, pre_prompt_xyz = _prompt_points(before)
     far = next((s.xyz for s in reversed(before) if distance(s.xyz, last.xyz) >= RESET_DISTANCE), None)
     return Transition(kind, came_from, arrival.zone, last.xyz, prompt_xyz, pre_prompt_xyz, far, arrival.xyz)
+
+
+def _prompt_points(samples: list[Sample]) -> tuple[XYZ | None, XYZ | None]:
+    """(the last position with the prompt showing, a spot clear of it before that run), or Nones."""
+    prompted = [i for i, s in enumerate(samples) if s.prompt]
+    if not prompted:
+        return None, None
+    prompt_xyz = samples[prompted[-1]].xyz
+    # The last spot before the final run of prompt samples that is clearly away from the
+    # object. Just "the sample before the prompt" is not enough: a player standing still
+    # while the prompt comes up is already where it shows.
+    start = prompted[-1]
+    while start > 0 and samples[start - 1].prompt:
+        start -= 1
+    pre_prompt_xyz = next(
+        (
+            s.xyz
+            for s in reversed(samples[:start])
+            if not s.prompt and distance(s.xyz, prompt_xyz) >= PROMPT_CLEAR_DISTANCE
+        ),
+        None,
+    )
+    return prompt_xyz, pre_prompt_xyz
+
+
+@dataclass(frozen=True)
+class ListObject:
+    """A list window opened in `zone`: where its object is, and a reset clear of its prompt."""
+
+    zone: str
+    interact_xyz: XYZ
+    reset_xyz: XYZ | None
+    """None if the player was never PROMPT_CLEAR_DISTANCE from the object without the prompt."""
+    world_gate: bool
+
+
+class ListWatcher:
+    """Feed samples in order; ``feed`` returns a ListObject the moment a list window opens."""
+
+    def __init__(self) -> None:
+        self._zone: str | None = None
+        self._history: deque[Sample] = deque()
+        self._was_open = False
+
+    def reset(self) -> None:
+        """Forget everything, e.g. after the tester moved the client itself."""
+        self.__init__()
+
+    def feed(self, sample: Sample) -> ListObject | None:
+        if sample.loading or not sample.zone:
+            # _was_open carries through the load: a list window still up on arrival is the
+            # one just used, left behind, not a new list opened in the new zone.
+            return None
+        if sample.zone != self._zone:
+            self._zone = sample.zone
+            self._history.clear()
+        opened = sample.list_open and not self._was_open
+        self._was_open = sample.list_open
+        # The opening sample is at the object by definition, whether or not a poll caught the
+        # prompt before the window covered it, so it counts as the last prompted position.
+        self._history.append(replace(sample, prompt=True) if opened else sample)
+        while sample.t - self._history[0].t > HISTORY_SECONDS:
+            self._history.popleft()
+        if not opened:
+            return None
+        _, reset_xyz = _prompt_points(list(self._history))
+        return ListObject(sample.zone, sample.xyz, reset_xyz, sample.world_gate)

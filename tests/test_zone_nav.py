@@ -87,11 +87,18 @@ def test_a_walk_beats_the_hub_button_on_a_near_tie():
     assert _route(_raw(_walk(_S1, _HUB)), _S1, _HUB) == [("walk", _S1, _HUB)]
 
 
-def test_a_cooling_hub_button_makes_walking_worth_it():
+def test_a_cooling_hub_button_loses_a_tie_it_would_otherwise_win():
+    """Two transitions either way. Fresh, the button has less to go wrong than a teleporter; cooling, it waits."""
+    raw = _raw(_walk(_HUB, _S1), _object(_S2, _S3), _walk(_S3, _S1))
+
+    assert _route(raw, _S2, _S1, hub_cooldown=0.0) == [("hub", _S2, _HUB), ("walk", _HUB, _S1)]
+    assert _route(raw, _S2, _S1, hub_cooldown=30.0) == [("object", _S2, _S3), ("walk", _S3, _S1)]
+
+
+def test_waiting_out_the_hub_button_beats_an_extra_transition():
     raw = _raw(_walk(_S2, _S1), _walk(_S1, _HUB))
 
-    assert _route(raw, _S2, _HUB, hub_cooldown=0.0) == [("hub", _S2, _HUB)]
-    assert _route(raw, _S2, _HUB, hub_cooldown=30.0) == [("walk", _S2, _S1), ("walk", _S1, _HUB)]
+    assert _route(raw, _S2, _HUB, hub_cooldown=30.0) == [("hub", _S2, _HUB)]
 
 
 def test_a_list_object_skips_the_streets_between():
@@ -174,7 +181,14 @@ def test_list_aliases_only_needs_list_aliases_to_use():
 
 def test_list_aliases_only_must_be_a_bool():
     network = {
-        "zones": {_HUB: {"interact_xyz": _xyz(1), "reset_xyz": _xyz(2), "list_aliases": ["Nimbus"], "list_aliases_only": "yes"}}
+        "zones": {
+            _HUB: {
+                "interact_xyz": _xyz(1),
+                "reset_xyz": _xyz(2),
+                "list_aliases": ["Nimbus"],
+                "list_aliases_only": "yes",
+            }
+        }
     }
 
     with pytest.raises(ValueError, match="list_aliases_only"):
@@ -193,7 +207,7 @@ def test_a_list_network_links_every_member_both_ways():
 
 
 def test_a_sequential_teleporter_loses_to_a_short_walk_with_a_full_group():
-    """Azteca's teleporters need 8-10 s per player; four players pay that three times."""
+    """Azteca's teleporters take one player at a time: four players are four loading screens."""
     raw = _raw(
         _object(_HUB, _S3, sequential=True, object_use_delay=9.0),
         _walk(_HUB, _S1),
@@ -287,18 +301,17 @@ def test_an_undeclared_zone_can_still_use_the_hub_button():
 def test_a_second_hub_use_waits_out_the_cooldown():
     """Beta's button, then Alpha's: the second press pays the full cooldown the first started.
 
-    Alpha's hub is two walks from Street2 or one second button press. Pressed fresh, the
-    button wins; as a second press in the same route, it waits 30 s and the walks win.
+    From Street2, Alpha's hub is one teleporter or one button press. Pressed fresh, the button
+    wins the tie; as a second press in the same route it waits 30 s, and the teleporter wins.
     """
-    fresh = _raw(_walk(_S2, _S1), _walk(_S1, _HUB))
+    fresh = _raw(_object(_S2, _HUB))
     assert _route(fresh, _S2, _HUB) == [("hub", _S2, _HUB)]
 
-    second = _raw(_walk(_S2, _S1), _walk(_S1, _HUB), beta_links=[_walk("Beta/Hub", _S2)])
+    second = _raw(_object(_S2, _HUB), beta_links=[_walk("Beta/Hub", _S2)])
     assert _route(second, "Beta/Far", _HUB) == [
         ("hub", "Beta/Far", "Beta/Hub"),
         ("walk", "Beta/Hub", _S2),
-        ("walk", _S2, _S1),
-        ("walk", _S1, _HUB),
+        ("object", _S2, _HUB),
     ]
 
 
@@ -334,6 +347,116 @@ def test_reachable_follows_links_and_the_hub_button():
     nav = zone_nav.parse(_raw(_walk(_HUB, _S1), _walk(_S1, _S2)))
 
     assert zone_nav.reachable(nav, _S2) == {_S2, _HUB, _S1}
+
+
+def _spiral(*, far_gate: bool = True, far_gate_verified: bool = True) -> dict:
+    """Worlds joined by World Gates, and a home: HOME lands in Home's dorm, two walks from its gate.
+
+    Far's gate is in its hub, Near's door is a walk from its hub and has no gate recorded, and
+    Side is entered from Near.
+    """
+    raw = {
+        "home": "Home/Dorm",
+        "worlds": {
+            "Home": {
+                "hub": "Home/Hub",
+                "door": "Home/Tree",
+                "gate": {"interact_xyz": _xyz(7), "reset_xyz": _xyz(8), "verified": True},
+                "zones": {"Home/Dorm": {"destination": False}, "Home/Hub": {}, "Home/Tree": {}},
+                "links": [_walk("Home/Dorm", "Home/Hub"), _walk("Home/Hub", "Home/Tree")],
+            },
+            "Far": {
+                "hub": "Far/Hub",
+                "door": "Far/Hub",
+                "zones": {"Far/Hub": {}, "Far/Deep": {}},
+                "links": [_walk("Far/Hub", "Far/Deep")],
+            },
+            "Near": {
+                "hub": "Near/Hub",
+                "door": "Near/Door",
+                "zones": {"Near/Hub": {}, "Near/Door": {}},
+                "links": [_walk("Near/Door", "Near/Hub")],
+            },
+            "Side": {
+                "hub": "Side/Hub",
+                "entered_from": "Near",
+                "zones": {"Side/Hub": {}},
+                "links": [_walk("Near/Hub", "Side/Hub")],
+            },
+        },
+    }
+    if far_gate:
+        raw["worlds"]["Far"]["gate"] = {"interact_xyz": _xyz(9), "reset_xyz": _xyz(10), "verified": far_gate_verified}
+    return raw
+
+
+def test_a_world_gate_reaches_every_other_world_with_a_door():
+    nav = zone_nav.parse(_spiral())
+
+    gates = {(s.from_zone, s.to_zone, s.params["world"]) for s in nav.links if s.kind == "gate"}
+
+    assert gates == {
+        ("Home/Tree", "Far/Hub", "Far"),
+        ("Home/Tree", "Near/Door", "Near"),
+        ("Far/Hub", "Home/Tree", "Home"),
+        ("Far/Hub", "Near/Door", "Near"),
+    }
+    far_to_near = next(s for s in nav.links if (s.from_zone, s.to_zone) == ("Far/Hub", "Near/Door"))
+    assert far_to_near.params["interact_xyz"] == _xyz(9)
+
+
+def test_the_worlds_own_gate_beats_going_home():
+    """The hub button and the gate are two transitions; HOME, two walks and a gate are four."""
+    assert _route(_spiral(), "Far/Deep", "Near/Hub") == [
+        ("hub", "Far/Deep", "Far/Hub"),
+        ("gate", "Far/Hub", "Near/Door"),
+        ("walk", "Near/Door", "Near/Hub"),
+    ]
+
+
+def test_a_world_without_a_gate_recorded_still_routes_home_to_one():
+    assert _route(_spiral(far_gate=False), "Far/Deep", "Near/Hub") == [
+        ("home", "Far/Deep", "Home/Dorm"),
+        ("walk", "Home/Dorm", "Home/Hub"),
+        ("walk", "Home/Hub", "Home/Tree"),
+        ("gate", "Home/Tree", "Near/Door"),
+        ("walk", "Near/Door", "Near/Hub"),
+    ]
+
+
+def test_home_is_one_step_from_a_zone_on_no_map():
+    """A castle is in no world, so neither the hub button nor any link leaves it. HOME does."""
+    assert _route(_spiral(), "Housing/Castle", "Home/Hub") == [
+        ("home", "Housing/Castle", "Home/Dorm"),
+        ("walk", "Home/Dorm", "Home/Hub"),
+    ]
+
+
+def test_a_side_world_is_reached_through_its_parents_gate():
+    assert _route(_spiral(), "Far/Hub", "Side/Hub") == [
+        ("gate", "Far/Hub", "Near/Door"),
+        ("walk", "Near/Door", "Near/Hub"),
+        ("walk", "Near/Hub", "Side/Hub"),
+    ]
+
+
+def test_an_unverified_gate_is_left_out_unless_asked_for():
+    raw = _spiral(far_gate_verified=False)
+
+    assert _route(raw, "Far/Deep", "Near/Hub")[0][0] == "home"
+    assert _route(raw, "Far/Deep", "Near/Hub", include_unverified=True)[0][0] == "hub"
+
+
+def test_avoiding_home_can_leave_no_route():
+    assert _route(_spiral(far_gate=False), "Far/Deep", "Near/Hub", avoid={"home"}) is None
+
+
+def test_a_home_that_is_not_declared_is_refused():
+    raw = _spiral()
+    raw["home"] = "Home/Nowhere"
+
+    with pytest.raises(ValueError, match="home"):
+        zone_nav.parse(raw)
 
 
 def test_connectors_are_not_destinations():
@@ -447,13 +570,13 @@ def test_a_client_left_on_a_ride_finishes_it():
     assert (step.kind, step.from_zone, step.params["board_zone"]) == ("ride", "Alpha/Boat", _S1)
 
 
-def test_a_ride_with_its_own_zone_costs_a_second_load():
+def test_a_ride_with_its_own_zone_is_a_second_transition():
     link = _ride(_S1, _ISLAND, "Alpha/Boat")
     in_zone = {k: v for k, v in link.items() if k != "ride_zone"}
     [with_zone] = zone_nav.plan(zone_nav.parse(_raw(link)), _S1, _ISLAND)
     [without] = zone_nav.plan(zone_nav.parse(_raw(in_zone)), _S1, _ISLAND)
 
-    assert zone_nav.step_cost(with_zone) - zone_nav.step_cost(without) == zone_nav.LOAD_SECONDS
+    assert (zone_nav.step_cost(with_zone).transitions, zone_nav.step_cost(without).transitions) == (2, 1)
 
 
 def test_a_gated_walk_carries_its_unlock_and_pays_for_the_wait():
@@ -465,7 +588,9 @@ def test_a_gated_walk_carries_its_unlock_and_pays_for_the_wait():
     [plain] = zone_nav.plan(zone_nav.parse(_raw(_walk(_HUB, _S1))), _HUB, _S1)
 
     assert step.params["unlock"] == {"objects": spots, "opens_after": 20.0}
-    assert zone_nav.step_cost(step) - zone_nav.step_cost(plain) == 20.0 + 3 * zone_nav.UNLOCK_OBJECT_SECONDS
+    gated_cost, plain_cost = zone_nav.step_cost(step), zone_nav.step_cost(plain)
+    assert gated_cost.transitions == plain_cost.transitions
+    assert gated_cost.waiting - plain_cost.waiting == 20.0
 
 
 @pytest.mark.parametrize(
@@ -501,6 +626,41 @@ def test_a_door_in_another_world_is_refused():
     raw["worlds"]["Alpha"]["door"] = "Beta/Hub"
 
     with pytest.raises(ValueError, match="door"):
+        zone_nav.parse(raw)
+
+
+def test_a_world_gate_is_read_with_its_world():
+    raw = _raw()
+    raw["worlds"]["Alpha"]["gate"] = {"interact_xyz": _xyz(1), "reset_xyz": _xyz(2), "verified": True}
+
+    nav = zone_nav.parse(raw)
+
+    assert nav.worlds["Alpha"].gate["interact_xyz"] == _xyz(1)
+    assert nav.worlds["Alpha"].gate["verified"] is True
+    assert nav.worlds["Beta"].gate is None
+
+
+def test_a_world_gate_defaults_to_unverified():
+    raw = _raw()
+    raw["worlds"]["Alpha"]["gate"] = {"interact_xyz": _xyz(1), "reset_xyz": _xyz(2)}
+
+    assert zone_nav.parse(raw).worlds["Alpha"].gate["verified"] is False
+
+
+def test_a_world_gate_without_a_door_is_refused():
+    raw = _raw()
+    raw["worlds"]["Beta"]["gate"] = {"interact_xyz": _xyz(1), "reset_xyz": _xyz(2)}
+
+    with pytest.raises(ValueError, match="gate needs the world's door"):
+        zone_nav.parse(raw)
+
+
+@pytest.mark.parametrize("gate", [{"interact_xyz": _xyz(1)}, {"interact_xyz": _xyz(1), "reset_xyz": {"x": 1}}, []])
+def test_an_incomplete_world_gate_is_refused(gate):
+    raw = _raw()
+    raw["worlds"]["Alpha"]["gate"] = gate
+
+    with pytest.raises(ValueError, match="gate"):
         zone_nav.parse(raw)
 
 
@@ -688,10 +848,26 @@ def test_the_world_tree_reaches_the_commons_by_button_or_on_foot():
     nav = _shipped()
     tree, commons = "WizardCity/WC_Ravenwood_Teleporter", "WizardCity/WC_Hub"
 
-    assert [s.kind for s in zone_nav.plan(nav, tree, commons)] == ["hub"]
-    assert [s.to_zone for s in zone_nav.plan(nav, tree, commons, hub_cooldown=30.0)] == [
+    assert [s.kind for s in zone_nav.plan(nav, tree, commons, hub_cooldown=30.0)] == ["hub"]
+    assert [s.to_zone for s in zone_nav.plan(nav, tree, commons, avoid={"hub"})] == [
         "WizardCity/WC_Ravenwood",
         commons,
+    ]
+
+
+def test_home_is_the_dorm_that_pressing_home_verifies():
+    from bartlebot.nodes import wizard_city
+
+    assert _shipped().home == wizard_city.DORM_ZONE
+
+
+def test_the_commons_reaches_another_world_through_the_world_tree_gate():
+    steps = zone_nav.plan(_shipped(), "WizardCity/WC_Hub", "Krokotopia/KT_WorldTeleporter")
+
+    assert [(s.kind, s.to_zone) for s in steps] == [
+        ("walk", "WizardCity/WC_Ravenwood"),
+        ("walk", "WizardCity/WC_Ravenwood_Teleporter"),
+        ("gate", "Krokotopia/KT_WorldTeleporter"),
     ]
 
 

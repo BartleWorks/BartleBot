@@ -38,20 +38,35 @@ LIST = "list"
 """Pick the destination from a zone-list object: enter_zone_via_list. Generated, never stored."""
 HUB = "hub"
 """Click the compass hub button: teleport_to_world_hub. Implied for every zone, never stored."""
+GATE = "gate"
+"""Pick another world at a World Gate: enter_zone_via_list. Generated from each world's gate."""
+HOME = "home"
+"""Press HOME, landing in the dorm. Implied for every zone but the dorm, never stored."""
 
-# ── Cost estimates ─────────────────────────────────────────────────────────────
-# Seconds, so that a route is the one a user would call fastest. These are estimates to
-# tune, not timeouts -- nothing waits on them, which is why they are not in nodes/timing.py.
-LOAD_SECONDS = 10.0
-COST_SECONDS: dict[str, float] = {
-    WALK: LOAD_SECONDS,
-    OBJECT: LOAD_SECONDS + 2.0,  # the interact prompt
-    LIST: LOAD_SECONDS + 5.0,  # opening the list and paging to the entry
-    RIDE: LOAD_SECONDS + 5.0,  # boarding and the skip prompt; a ride with its own zone adds a load
-    HUB: LOAD_SECONDS + 1.0,  # a hair over a walk, so a walk wins an exact tie
-}
-UNLOCK_OBJECT_SECONDS = 3.0
-"""Using one of the objects that opens a gate, on top of the gate's own wait: Tomb of Storms."""
+# ── Cost ───────────────────────────────────────────────────────────────────────
+
+
+@dataclass(frozen=True, order=True)
+class Cost:
+    """What a route costs, compared field by field: fewest transitions wins, the rest only break ties.
+
+    Transitions rather than estimated seconds, because a loading screen is the one cost that is
+    real on every machine, and it scales with the group where the game makes it: a teleporter
+    that takes players one at a time is a loading screen per player.
+    """
+
+    transitions: int = 0
+    waiting: float = 0.0
+    """Seconds with no loading screen to show for them: a hub button cooling down, a gate opening."""
+    effort: int = 0
+    """How much can go wrong on the way; the kinds are ranked in EFFORT."""
+
+    def __add__(self, other: Cost) -> Cost:
+        return Cost(self.transitions + other.transitions, self.waiting + other.waiting, self.effort + other.effort)
+
+
+EFFORT: dict[str, int] = {WALK: 0, HUB: 1, OBJECT: 2, LIST: 3, RIDE: 3, GATE: 3, HOME: 4}
+"""A walk has the fewest ways to fail. HOME the most: castles to unequip, and a dungeon's exit warning."""
 HUB_BUTTON_COOLDOWN = 30.0
 """What a second hub-button use in one route waits, since the first just started the cooldown."""
 
@@ -67,11 +82,11 @@ _OPTIONAL_XYZ: dict[str, tuple[str, ...]] = {WALK: ("reset_xyz",)}
 
 @dataclass(frozen=True)
 class Step:
-    """One zone change: a stored link, a generated list link, or the hub button.
+    """One zone change: a stored link, a generated list or gate link, the hub button, or HOME.
 
     ``params`` holds what the kind's zone-entry node needs beyond the two zones -- the xyz
-    fields, ``sequential``, a ride's ``board`` and ``ride_zone``, and ``board_zone`` on the step
-    that finishes a ride from inside its cutscene zone. ``arrives_in`` is ``to_zone`` plus any
+    fields, ``sequential``, a ride's ``board`` and ``ride_zone``, ``board_zone`` on the step
+    that finishes a ride from inside its cutscene zone, and a gate's destination ``world``. ``arrives_in`` is ``to_zone`` plus any
     zone the quest line swaps in for it; arriving in any of them counts.
     """
 
@@ -96,6 +111,8 @@ class World:
     door: str | None = None
     entered_from: str | None = None
     zones: dict[str, dict] = field(default_factory=dict)
+    gate: dict | None = None
+    """The World Gate standing in `door`: interact_xyz, reset_xyz, verified, source, note. None until recorded."""
 
     def destinations(self) -> list[str]:
         """Zones a user may pick as a destination: every declared zone but the connectors."""
@@ -114,6 +131,8 @@ class World:
 class NavMap:
     worlds: dict[str, World] = field(default_factory=dict)
     links: list[Step] = field(default_factory=list)
+    home: str | None = None
+    """The zone HOME lands in: the dorm. Without one, no route presses HOME."""
 
     def __post_init__(self) -> None:
         self._zone_world = {zone: world.key for world in self.worlds.values() for zone in world.zones}
@@ -144,26 +163,35 @@ class NavMap:
         return current.key
 
     def steps_from(self, zone: str, *, include_unverified: bool = False, avoid: Collection[str] = ()) -> list[Step]:
-        """Every single step out of `zone`, leaving out unverified links and the kinds in `avoid`."""
+        """Every single step out of `zone`, leaving out unverified links and the kinds in `avoid`.
+
+        HOME works from anywhere, including a zone no world declares -- a castle, a zone off the
+        map entirely -- so it is how a client with no other step still has a route.
+        """
         steps = [s for s in self._out.get(zone, ()) if (s.verified or include_unverified) and s.kind not in avoid]
         world = self.world_of(zone)
         if world is not None and zone != world.hub and HUB not in avoid:
             steps.append(Step(HUB, zone, world.hub, source="implied"))
+        if self.home is not None and zone != self.home and HOME not in avoid:
+            steps.append(Step(HOME, zone, self.home, source="implied"))
         return steps
 
 
-def step_cost(step: Step, *, clients: int = 1, hub_wait: float = 0.0) -> float:
-    """Estimated seconds for `step`. `hub_wait` is the cooldown left if it is a hub step."""
-    cost = COST_SECONDS[step.kind]
+def step_cost(step: Step, *, clients: int = 1, hub_wait: float = 0.0) -> Cost:
+    """What `step` costs for a group of `clients`. `hub_wait` is the cooldown left if it is a hub step."""
+    transitions, waiting, effort = 1, 0.0, EFFORT[step.kind]
     if step.kind == RIDE and "ride_zone" in step.params:
-        cost += LOAD_SECONDS
-    if unlock := step.params.get("unlock"):
-        cost += unlock["opens_after"] + UNLOCK_OBJECT_SECONDS * len(unlock["objects"])
+        transitions += 1  # the cutscene zone is a loading screen of its own
     if step.kind == OBJECT and step.params.get("sequential"):
-        cost += step.params.get("object_use_delay", OBJECT_USE_DELAY) * max(clients - 1, 0)
+        # One player at a time: each one's loading screen is its own transition.
+        transitions = max(clients, 1)
+        waiting += step.params.get("object_use_delay", OBJECT_USE_DELAY) * max(clients - 1, 0)
+    if unlock := step.params.get("unlock"):
+        waiting += unlock["opens_after"]
+        effort += len(unlock["objects"])
     if step.kind == HUB:
-        cost += hub_wait
-    return cost
+        waiting += hub_wait
+    return Cost(transitions, waiting, effort)
 
 
 def plan(
@@ -190,9 +218,9 @@ def plan(
         return []
 
     tiebreak = itertools.count()
-    best: dict[tuple[str, bool], float] = {(start, False): 0.0}
+    best: dict[tuple[str, bool], Cost] = {(start, False): Cost()}
     prev: dict[tuple[str, bool], tuple[tuple[str, bool], Step]] = {}
-    heap = [(0.0, next(tiebreak), start, False)]
+    heap = [(Cost(), next(tiebreak), start, False)]
     while heap:
         cost, _, zone, used_hub = heapq.heappop(heap)
         state = (zone, used_hub)
@@ -208,7 +236,7 @@ def plan(
             wait = (HUB_BUTTON_COOLDOWN if used_hub else hub_cooldown) if step.kind == HUB else 0.0
             nxt = (step.to_zone, used_hub or step.kind == HUB)
             total = cost + step_cost(step, clients=clients, hub_wait=wait)
-            if total < best.get(nxt, float("inf")):
+            if nxt not in best or total < best[nxt]:
                 best[nxt] = total
                 prev[nxt] = (state, step)
                 heapq.heappush(heap, (total, next(tiebreak), step.to_zone, nxt[1]))
@@ -272,6 +300,7 @@ def parse(raw: dict) -> NavMap:
             door=spec.get("door"),
             entered_from=spec.get("entered_from"),
             zones={zone: dict(attrs) if isinstance(attrs, dict) else {} for zone, attrs in zones.items()},
+            gate=_parse_gate(spec, key, problems),
         )
 
     for world in worlds.values():
@@ -289,7 +318,11 @@ def parse(raw: dict) -> NavMap:
             seen.add(current)
             current = worlds[current].entered_from
 
-    links: list[Step] = []
+    home = raw.get("home")
+    if home is not None and home not in zone_world:
+        problems.append(f"home {home!r} is not a declared zone")
+
+    links: list[Step] = _gate_links(worlds)
     for key, spec in raw_worlds.items():
         for i, link in enumerate(spec.get("links") or []):
             if step := _parse_link(link, f"{key} link {i}", zone_world, problems):
@@ -329,7 +362,58 @@ def parse(raw: dict) -> NavMap:
 
     if problems:
         raise ValueError("zone_nav.json is invalid:\n  " + "\n  ".join(problems))
-    return NavMap(worlds, links)
+    return NavMap(worlds, links, home)
+
+
+def _gate_links(worlds: dict[str, World]) -> list[Step]:
+    """A gate link from each world's recorded World Gate to every other world with a door.
+
+    Every gate lists every world the character has unlocked, so the destination needs a door
+    -- where its gate drops arriving players -- but no gate recorded of its own. A side world
+    has no door and is not on the list; its way in is an ordinary link from its parent.
+    """
+    return [
+        Step(
+            GATE,
+            world.door,
+            other.door,
+            {"interact_xyz": world.gate["interact_xyz"], "reset_xyz": world.gate["reset_xyz"], "world": other.key},
+            verified=world.gate["verified"],
+            source=world.gate["source"],
+            note=world.gate["note"],
+        )
+        for world in worlds.values()
+        if world.gate is not None and world.door is not None
+        for other in worlds.values()
+        if other is not world and other.door is not None
+    ]
+
+
+def _parse_gate(spec: dict, where: str, problems: list[str]) -> dict | None:
+    """A world's World Gate. It stands where go_to_world lands, so only a world with a door has one."""
+    if "gate" not in spec:
+        return None
+    gate = spec["gate"]
+    before = len(problems)
+    if spec.get("door") is None:
+        problems.append(f"{where}: a gate needs the world's door, the zone it stands in")
+    if not isinstance(gate, dict):
+        problems.append(f"{where}: gate must be an object")
+        return None
+    for name in ("interact_xyz", "reset_xyz"):
+        if _bad_xyz(gate.get(name)):
+            problems.append(f"{where}: gate needs {name} as an {{x, y, z}} object")
+    if not isinstance(gate.get("verified", False), bool):
+        problems.append(f"{where}: gate verified must be true or false")
+    if len(problems) > before:
+        return None
+    return {
+        "interact_xyz": gate["interact_xyz"],
+        "reset_xyz": gate["reset_xyz"],
+        "verified": gate.get("verified", False),
+        "source": str(gate.get("source", "")),
+        "note": str(gate.get("note", "")),
+    }
 
 
 def _check_zone_attrs(attrs: dict, where: str, problems: list[str]) -> None:

@@ -1,18 +1,23 @@
-"""Unit tests for navigate(): the world first, then one planned step at a time."""
+"""Unit tests for navigate(): one planned step at a time, World Gates and HOME included."""
 
 from unittest.mock import AsyncMock
 
 import pytest
 
-from bartlebot import zone_names, zone_nav
-from bartlebot.nodes import node_helpers, zone_navigation
+from bartlebot import worlds, zone_names, zone_nav
+from bartlebot.nodes import node_helpers, wizard_city, zone_navigation
 from bartlebot.nodes.interaction import interact
-from bartlebot.nodes.teleportation import go_to_world, teleport_to_world_hub
+from bartlebot.nodes.teleportation import teleport_to_world_hub
 from bartlebot.nodes.utility import sleep
 from bartlebot.nodes.zone_entry import enter_zone, enter_zone_via_list, enter_zone_via_object, enter_zone_via_ride
 from tests.conftest import FakeClient, FakeMachine
 
 _HUB, _DOOR, _S1, _S2, _ISLAND = "Alpha/Hub", "Alpha/Door", "Alpha/S1", "Alpha/S2", "Alpha/Island"
+_HOME = "Alpha/Dorm"
+_DELTA = "Delta/Hub"
+"""Delta is another world, its World Gate in its hub."""
+_LANDS_IN = {"Alpha/*": _DOOR, "Delta/*": _DELTA}
+"""Where a gate step, which arrives anywhere in a world, puts the fake clients."""
 
 
 def _xyz(x: float) -> dict:
@@ -24,14 +29,16 @@ def _walk(src: str, dst: str, verified: bool = True) -> dict:
 
 
 def _nav(*links, networks=(), beta_links=()) -> zone_nav.NavMap:
+    """Alpha, with HOME's dorm a walk from its hub; Beta, a side world entered from it; and Delta, with a gate."""
     return zone_nav.parse(
         {
+            "home": _HOME,
             "worlds": {
                 "Alpha": {
                     "hub": _HUB,
                     "door": _DOOR,
-                    "zones": {z: {} for z in (_HUB, _DOOR, _S1, _S2, _ISLAND)},
-                    "links": list(links),
+                    "zones": {z: {} for z in (_HUB, _DOOR, _S1, _S2, _ISLAND, _HOME)},
+                    "links": [*links, _walk(_HOME, _HUB)],
                     "list_networks": list(networks),
                 },
                 "Beta": {
@@ -40,7 +47,13 @@ def _nav(*links, networks=(), beta_links=()) -> zone_nav.NavMap:
                     "zones": {"Beta/Hub": {}},
                     "links": list(beta_links),
                 },
-            }
+                "Delta": {
+                    "hub": _DELTA,
+                    "door": _DELTA,
+                    "gate": {"interact_xyz": _xyz(8), "reset_xyz": _xyz(9), "verified": True},
+                    "zones": {_DELTA: {}},
+                },
+            },
         }
     )
 
@@ -70,17 +83,29 @@ class _Game:
 
         monkeypatch.setattr(enter_zone, "run", fake("walk", lambda p: p["to_zone"]))
         monkeypatch.setattr(enter_zone_via_object, "run", fake("object", lambda p: p["to_zone"]))
-        monkeypatch.setattr(enter_zone_via_list, "run", fake("list", lambda p: p["to_zone"]))
+        monkeypatch.setattr(
+            enter_zone_via_list, "run", fake("list", lambda p: _LANDS_IN.get(p["to_zone"], p["to_zone"]))
+        )
         monkeypatch.setattr(enter_zone_via_ride, "run", fake("ride", lambda p: p["to_zone"]))
         monkeypatch.setattr(interact, "run", fake("interact", None))
         monkeypatch.setattr(sleep, "run", fake("sleep", None))
         monkeypatch.setattr(teleport_to_world_hub, "run", fake("hub", lambda p: p["zone"]))
-        monkeypatch.setattr(go_to_world, "run", fake("go_to_world", lambda p: _DOOR))
         monkeypatch.setattr(node_helpers, "is_enabled_by_path", AsyncMock(return_value=True))
+        monkeypatch.setattr(worlds, "display_names", lambda world: [world, world.lower()])
+        go_home = fake("home", lambda p: _HOME)
+        monkeypatch.setattr(
+            wizard_city,
+            "teleport_home_and_verify_dorm",
+            lambda machine, clients: _succeeded(go_home(machine, clients, {})),
+        )
 
     @property
     def names(self) -> list[str]:
         return [name for name, _ in self.calls]
+
+
+async def _succeeded(run) -> bool:
+    return await run == "SUCCESS"
 
 
 async def _go(game: _Game, nav, target: str, **kwargs) -> zone_navigation.Outcome:
@@ -107,23 +132,59 @@ async def test_walks_each_step_with_the_links_coordinates(monkeypatch):
     assert [s.to_zone for s in outcome.taken] == [_S1, _S2]
 
 
-async def test_another_world_goes_through_the_spiral_door_then_the_hub_button(monkeypatch):
-    game = _Game(monkeypatch, ["Gamma/Somewhere"])
+async def test_another_world_is_reached_through_the_gate_where_the_clients_are(monkeypatch):
+    game = _Game(monkeypatch, [_DELTA])
+
+    outcome = await _go(game, _nav(_walk(_DOOR, _S1)), _S1)
+
+    assert outcome.success
+    assert game.names == ["list", "walk"]
+    assert game.calls[0][1] == {
+        "zone": _DELTA,
+        "to_zone": "Alpha/*",
+        "interact_xyz": _xyz(8),
+        "reset_xyz": _xyz(9),
+        "zone_list_entry": "Alpha",
+        "zone_list_aliases": ["alpha"],
+    }
+
+
+async def test_a_side_world_is_reached_through_its_parents_gate(monkeypatch):
+    game = _Game(monkeypatch, [_DELTA])
+
+    outcome = await _go(game, _nav(_walk(_DOOR, _S1), beta_links=[_walk(_S1, "Beta/Hub")]), "Beta/Hub")
+
+    assert outcome.success
+    assert game.names == ["list", "walk", "walk"]
+
+
+async def test_a_client_on_no_map_goes_home_first(monkeypatch):
+    game = _Game(monkeypatch, ["Housing/Castle"])
 
     outcome = await _go(game, _nav(_walk(_HUB, _S1)), _S1)
 
     assert outcome.success
-    assert game.calls[0] == ("go_to_world", {"world": "Alpha"})
-    assert game.names[1:] == ["hub", "walk"]
+    assert game.names == ["home", "walk", "walk"]
 
 
-async def test_a_side_world_is_reached_through_its_parents_door(monkeypatch):
-    game = _Game(monkeypatch, ["Gamma/Somewhere"])
+async def test_a_group_split_across_worlds_regroups_at_home(monkeypatch):
+    game = _Game(monkeypatch, [_DELTA, _S1])
 
-    await _go(game, _nav(_walk(_HUB, _S1), beta_links=[_walk(_S1, "Beta/Hub")]), "Beta/Hub")
+    outcome = await _go(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
 
-    assert game.calls[0] == ("go_to_world", {"world": "Alpha"})
-    assert game.names[-1] == "walk"
+    assert outcome.success
+    assert game.names == ["home", "walk", "walk", "walk"]
+
+
+async def test_a_gate_step_without_a_known_world_name_fails_before_moving(monkeypatch):
+    game = _Game(monkeypatch, [_DELTA])
+    monkeypatch.setattr(worlds, "display_names", lambda world: [])
+
+    outcome = await _go(game, _nav(), _DOOR)
+
+    assert not outcome.success
+    assert "display name" in outcome.reason
+    assert game.calls == []
 
 
 async def test_an_object_step_passes_its_teleporter_settings(monkeypatch):
@@ -187,7 +248,12 @@ async def test_list_aliases_only_never_tries_the_zones_own_display_name(monkeypa
     network = {
         "zones": {
             _HUB: {"interact_xyz": _xyz(5), "reset_xyz": _xyz(6)},
-            _ISLAND: {"interact_xyz": _xyz(5), "reset_xyz": _xyz(6), "list_aliases": ["Mandalla"], "list_aliases_only": True},
+            _ISLAND: {
+                "interact_xyz": _xyz(5),
+                "reset_xyz": _xyz(6),
+                "list_aliases": ["Mandalla"],
+                "list_aliases_only": True,
+            },
         },
         "verified": True,
     }
@@ -291,14 +357,14 @@ async def test_a_group_left_on_a_ride_finishes_it(monkeypatch):
     assert (name, params["from_zone"], params["ride_zone"]) == ("ride", _S1, "Alpha/Dragon")
 
 
-async def test_no_route_tries_the_door_once_then_says_so(monkeypatch):
+async def test_no_route_says_so_without_moving(monkeypatch):
     game = _Game(monkeypatch, [_HUB])
 
     outcome = await _go(game, _nav(), _ISLAND)
 
     assert not outcome.success
     assert "no route" in outcome.reason
-    assert game.names == ["go_to_world"]
+    assert game.calls == []
 
 
 async def test_a_failed_step_stops_the_run(monkeypatch):
@@ -331,13 +397,14 @@ async def test_a_split_group_regroups_at_the_hub(monkeypatch):
     assert game.names == ["hub", "walk"]
 
 
-async def test_a_cooling_hub_button_is_walked_around(monkeypatch):
+async def test_a_cooling_hub_button_loses_a_tie_to_a_teleporter(monkeypatch):
     game = _Game(monkeypatch, [_S2])
     monkeypatch.setattr(node_helpers, "is_enabled_by_path", AsyncMock(return_value=False))
+    teleporter = {"kind": "object", "from": _S2, "to": _HUB, "interact_xyz": _xyz(3), "reset_xyz": _xyz(4)}
 
-    await _go(game, _nav(_walk(_S2, _S1), _walk(_S1, _HUB)), _HUB)
+    await _go(game, _nav({**teleporter, "verified": True}), _HUB)
 
-    assert game.names == ["walk", "walk"]
+    assert game.names == ["object"]
 
 
 async def test_a_client_in_a_restricted_zone_is_refused(monkeypatch):

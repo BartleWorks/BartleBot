@@ -426,6 +426,8 @@ UNIVERSE_NEXT_PAGE = ["WorldView", "", "messageBoxBG", "ControlSprite", "optionW
 UNIVERSE_PREV_PAGE = ["WorldView", "", "messageBoxBG", "ControlSprite", "optionWindow", "leftButton"]
 UNIVERSE_TELEPORT_BUTTON = ["WorldView", "", "messageBoxBG", "ControlSprite", "teleportButton"]
 UNIVERSE_CANCEL_BUTTON = ["WorldView", "", "messageBoxBG", "ControlSprite", "cancelButton"]
+# The list window's title: "Spiral Map" on a World Gate (worlds.is_world_gate_title).
+UNIVERSE_TITLE = ["WorldView", "", "messageBoxBG", "ControlSprite", "title"]
 
 
 def universe_zone_option_path(index: int) -> list[str]:
