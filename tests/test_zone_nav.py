@@ -361,12 +361,99 @@ def test_an_object_without_a_reset_is_refused():
         zone_nav.parse(_raw(link))
 
 
-def test_a_ride_without_its_cutscene_zone_is_refused():
+def test_a_ride_inside_its_own_zone_needs_no_cutscene_zone():
+    """The Krokotopia boats: nothing loads until the skip."""
     link = _ride(_S1, _ISLAND, "Alpha/Boat")
     del link["ride_zone"]
 
+    [step] = zone_nav.plan(zone_nav.parse(_raw(link)), _S1, _ISLAND)
+
+    assert step.params["board"] == "object"
+    assert "ride_zone" not in step.params
+
+
+def test_a_ride_boarded_through_a_gate_needs_its_cutscene_zone():
+    link = {"kind": "ride", "board": "walk", "from": _S1, "to": _ISLAND, "xyz": _xyz(1), "verified": True}
+
     with pytest.raises(ValueError, match="ride_zone"):
         zone_nav.parse(_raw(link))
+
+
+def test_a_ride_boarded_through_a_gate_takes_a_walks_coordinates():
+    link = {"kind": "ride", "board": "walk", "from": _S1, "to": _ISLAND, "ride_zone": "Alpha/Airship"}
+    raw = _raw({**link, "xyz": _xyz(1), "verified": True})
+    raw["worlds"]["Alpha"]["zones"][_S1] = {"arrivals": {_ISLAND: _xyz(9)}}
+
+    [step] = zone_nav.plan(zone_nav.parse(raw), _S1, _ISLAND)
+
+    assert step.params["xyz"] == _xyz(1)
+    # Like a walk, it resets to where the ride back lands.
+    assert step.params["reset_xyz"] == _xyz(9)
+
+
+def test_an_unknown_way_to_board_is_refused():
+    with pytest.raises(ValueError, match="board"):
+        zone_nav.parse(_raw({**_ride(_S1, _ISLAND, "Alpha/Boat"), "board": "swim"}))
+
+
+def test_a_ride_zone_on_the_map_is_refused():
+    with pytest.raises(ValueError, match="declared zone"):
+        zone_nav.parse(_raw(_ride(_S1, _ISLAND, _S2)))
+
+
+def test_two_rides_through_one_cutscene_zone_are_refused():
+    """A client found in the zone could not tell which ride it is on."""
+    with pytest.raises(ValueError, match="more than one ride"):
+        zone_nav.parse(_raw(_ride(_S1, _ISLAND, "Alpha/Boat"), _ride(_S2, _ISLAND, "Alpha/Boat")))
+
+
+def test_a_client_left_on_a_ride_finishes_it():
+    nav = zone_nav.parse(_raw(_ride(_S1, _ISLAND, "Alpha/Boat")))
+
+    [step] = zone_nav.plan(nav, "Alpha/Boat", _ISLAND)
+
+    assert (step.kind, step.from_zone, step.params["board_zone"]) == ("ride", "Alpha/Boat", _S1)
+
+
+def test_a_ride_with_its_own_zone_costs_a_second_load():
+    link = _ride(_S1, _ISLAND, "Alpha/Boat")
+    in_zone = {k: v for k, v in link.items() if k != "ride_zone"}
+    [with_zone] = zone_nav.plan(zone_nav.parse(_raw(link)), _S1, _ISLAND)
+    [without] = zone_nav.plan(zone_nav.parse(_raw(in_zone)), _S1, _ISLAND)
+
+    assert zone_nav.step_cost(with_zone) - zone_nav.step_cost(without) == zone_nav.LOAD_SECONDS
+
+
+def test_a_gated_walk_carries_its_unlock_and_pays_for_the_wait():
+    """Tomb of Storms: three objects, then the gate appears 20 s later."""
+    spots = [{"interact_xyz": _xyz(n), "reset_xyz": _xyz(n + 10)} for n in (3, 4, 5)]
+    gated = _walk(_HUB, _S1, unlock={"objects": spots, "opens_after": 20})
+
+    [step] = zone_nav.plan(zone_nav.parse(_raw(gated)), _HUB, _S1)
+    [plain] = zone_nav.plan(zone_nav.parse(_raw(_walk(_HUB, _S1))), _HUB, _S1)
+
+    assert step.params["unlock"] == {"objects": spots, "opens_after": 20.0}
+    assert zone_nav.step_cost(step) - zone_nav.step_cost(plain) == 20.0 + 3 * zone_nav.UNLOCK_OBJECT_SECONDS
+
+
+@pytest.mark.parametrize(
+    "unlock",
+    [
+        {"objects": [], "opens_after": 20},
+        {"objects": [{"interact_xyz": _xyz(3)}], "opens_after": 20},
+        {"objects": [{"interact_xyz": _xyz(3), "reset_xyz": _xyz(4)}]},
+    ],
+)
+def test_an_incomplete_unlock_is_refused(unlock):
+    with pytest.raises(ValueError, match="unlock"):
+        zone_nav.parse(_raw(_walk(_HUB, _S1, unlock=unlock)))
+
+
+def test_only_a_walk_can_be_unlocked():
+    spots = [{"interact_xyz": _xyz(3), "reset_xyz": _xyz(4)}]
+
+    with pytest.raises(ValueError, match="unlock"):
+        zone_nav.parse(_raw(_object(_HUB, _S1, unlock={"objects": spots, "opens_after": 20})))
 
 
 def test_a_hub_that_is_not_declared_is_refused():

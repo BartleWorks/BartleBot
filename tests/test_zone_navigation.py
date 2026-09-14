@@ -6,8 +6,10 @@ import pytest
 
 from bartlebot import zone_names, zone_nav
 from bartlebot.nodes import node_helpers, zone_navigation
+from bartlebot.nodes.interaction import interact
 from bartlebot.nodes.teleportation import go_to_world, teleport_to_world_hub
-from bartlebot.nodes.zone_entry import enter_zone, enter_zone_via_list, enter_zone_via_object
+from bartlebot.nodes.utility import sleep
+from bartlebot.nodes.zone_entry import enter_zone, enter_zone_via_list, enter_zone_via_object, enter_zone_via_ride
 from tests.conftest import FakeClient, FakeMachine
 
 _HUB, _DOOR, _S1, _S2, _ISLAND = "Alpha/Hub", "Alpha/Door", "Alpha/S1", "Alpha/S2", "Alpha/Island"
@@ -59,7 +61,7 @@ class _Game:
         def fake(name: str, arrive):
             async def run(machine, clients, params):
                 self.calls.append((name, params))
-                if results.get(name, "SUCCESS") == "SUCCESS":
+                if results.get(name, "SUCCESS") == "SUCCESS" and arrive is not None:
                     for c in clients:
                         c.where = arrive(params)
                 return results.get(name, "SUCCESS")
@@ -69,6 +71,9 @@ class _Game:
         monkeypatch.setattr(enter_zone, "run", fake("walk", lambda p: p["to_zone"]))
         monkeypatch.setattr(enter_zone_via_object, "run", fake("object", lambda p: p["to_zone"]))
         monkeypatch.setattr(enter_zone_via_list, "run", fake("list", lambda p: p["to_zone"]))
+        monkeypatch.setattr(enter_zone_via_ride, "run", fake("ride", lambda p: p["to_zone"]))
+        monkeypatch.setattr(interact, "run", fake("interact", None))
+        monkeypatch.setattr(sleep, "run", fake("sleep", None))
         monkeypatch.setattr(teleport_to_world_hub, "run", fake("hub", lambda p: p["zone"]))
         monkeypatch.setattr(go_to_world, "run", fake("go_to_world", lambda p: _DOOR))
         monkeypatch.setattr(node_helpers, "is_enabled_by_path", AsyncMock(return_value=True))
@@ -187,14 +192,85 @@ async def test_a_list_step_without_a_known_name_fails_before_moving(monkeypatch)
     assert game.calls == []
 
 
-async def test_a_ride_cannot_run_yet(monkeypatch):
+async def test_a_ride_boarded_by_interacting_passes_its_interact_point(monkeypatch):
     game = _Game(monkeypatch, [_S1])
     ride = {"kind": "ride", "from": _S1, "to": _ISLAND, "interact_xyz": _xyz(1), "reset_xyz": _xyz(2)}
 
-    outcome = await _go(game, _nav({**ride, "ride_zone": "Alpha/Boat", "verified": True}), _ISLAND)
+    outcome = await _go(game, _nav({**ride, "ride_zone": "Alpha/Dragon", "verified": True}), _ISLAND)
+
+    assert outcome.success
+    assert game.calls == [
+        (
+            "ride",
+            {
+                "from_zone": _S1,
+                "to_zone": _ISLAND,
+                "board": "object",
+                "board_xyz": _xyz(1),
+                "reset_xyz": _xyz(2),
+                "ride_zone": "Alpha/Dragon",
+            },
+        )
+    ]
+
+
+async def test_a_ride_inside_its_zone_passes_no_ride_zone(monkeypatch):
+    game = _Game(monkeypatch, [_S1])
+    boat = {"kind": "ride", "from": _S1, "to": _ISLAND, "interact_xyz": _xyz(1), "reset_xyz": _xyz(2)}
+
+    await _go(game, _nav({**boat, "verified": True}), _ISLAND)
+
+    [(_, params)] = game.calls
+    assert "ride_zone" not in params
+
+
+async def test_a_ride_boarded_through_a_gate_passes_the_gate(monkeypatch):
+    game = _Game(monkeypatch, [_S1])
+    airship = {"kind": "ride", "board": "walk", "from": _S1, "to": _ISLAND, "xyz": _xyz(7)}
+
+    await _go(game, _nav({**airship, "ride_zone": "Alpha/Airship", "verified": True}), _ISLAND)
+
+    [(_, params)] = game.calls
+    assert (params["board"], params["board_xyz"]) == ("walk", _xyz(7))
+    assert "reset_xyz" not in params
+
+
+async def test_a_gated_walk_opens_its_gate_with_one_player_then_waits_for_it(monkeypatch):
+    """Tomb of Storms: the gate is shared, so player 1 uses the three objects, then everyone walks."""
+    game = _Game(monkeypatch, [_HUB, _HUB])
+    spots = [{"interact_xyz": _xyz(n), "reset_xyz": _xyz(n + 10)} for n in (3, 4, 5)]
+    gated = {**_walk(_HUB, _S1), "unlock": {"objects": spots, "opens_after": 20}}
+
+    outcome = await _go(game, _nav(gated), _S1)
+
+    assert outcome.success
+    assert game.names == ["interact", "interact", "interact", "sleep", "walk"]
+    opening = [params for _, params in game.calls[:3]]
+    assert [p["interact_xyz"] for p in opening] == [_xyz(3), _xyz(4), _xyz(5)]
+    assert all(p["interact_clients"] == [1] and p["has_dialogue"] is False for p in opening)
+    assert game.calls[3][1] == {"duration": 20.0}
+
+
+async def test_a_gate_that_will_not_open_stops_before_the_walk(monkeypatch):
+    game = _Game(monkeypatch, [_HUB], results={"interact": "FAILURE"})
+    spots = [{"interact_xyz": _xyz(3), "reset_xyz": _xyz(4)}]
+
+    outcome = await _go(game, _nav({**_walk(_HUB, _S1), "unlock": {"objects": spots, "opens_after": 20}}), _S1)
 
     assert not outcome.success
-    assert "ride helper" in outcome.reason
+    assert game.names == ["interact"]
+
+
+async def test_a_group_left_on_a_ride_finishes_it(monkeypatch):
+    """The ride zone is on no map; the ride out of it is, and it still boards from the dock."""
+    game = _Game(monkeypatch, ["Alpha/Dragon"])
+    ride = {"kind": "ride", "from": _S1, "to": _ISLAND, "interact_xyz": _xyz(1), "reset_xyz": _xyz(2)}
+
+    outcome = await _go(game, _nav({**ride, "ride_zone": "Alpha/Dragon", "verified": True}), _ISLAND)
+
+    assert outcome.success
+    [(name, params)] = game.calls
+    assert (name, params["from_zone"], params["ride_zone"]) == ("ride", _S1, "Alpha/Dragon")
 
 
 async def test_no_route_tries_the_door_once_then_says_so(monkeypatch):

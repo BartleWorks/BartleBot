@@ -140,9 +140,29 @@ def test_a_ride_is_one_transition_through_its_cutscene_zone():
     )
 
     [t] = out
-    assert (t.kind, t.from_zone, t.to_zone, t.ride_zone) == (RIDE, _A, _B, _BOAT)
+    assert (t.kind, t.from_zone, t.to_zone, t.ride_zone, t.board) == (RIDE, _A, _B, _BOAT, OBJECT)
     assert t.prompt_xyz == (10, 0.0, 0.0)
     assert t.arrival_xyz == (77, 0.0, 0.0)
+
+
+def test_an_airship_boarded_through_a_gate_is_a_ride_boarded_on_foot():
+    rec = Recorder(may_be_ride_zone=lambda zone: zone == _BOAT)
+    out = _feed(
+        rec,
+        [
+            _at(0.0, _A, 0),
+            _at(0.2, _A, 400),
+            _load(0.4, 400),
+            _at(3.0, _BOAT, 5000),
+            _at(4.0, _BOAT, 5000, prompt=True),
+            _load(5.0, 5000),
+            _at(8.0, _B, 77),
+        ],
+    )
+
+    [t] = out
+    assert (t.kind, t.board, t.ride_zone) == (RIDE, WALK, _BOAT)
+    assert t.trigger_xyz == (400, 0.0, 0.0)
 
 
 def test_walking_around_a_possible_cutscene_zone_releases_the_transition_into_it():
@@ -155,11 +175,12 @@ def test_walking_around_a_possible_cutscene_zone_releases_the_transition_into_it
     assert (t.kind, t.to_zone) == (OBJECT, _BOAT)
 
 
-def test_a_walk_into_an_unmapped_zone_is_reported_at_once():
-    """Rides start at an interaction, so only those are held back."""
+def test_a_walk_into_an_unmapped_zone_is_reported_once_you_walk_around_it():
+    """An airship is boarded through a gate, so a walk may be the start of a ride too."""
     rec = Recorder(may_be_ride_zone=lambda zone: True)
 
-    [t] = _feed(rec, [_at(0.0, _A, 0), _load(0.2, 0), _at(3.0, _BOAT, 0)])
+    assert _feed(rec, [_at(0.0, _A, 0), _load(0.2, 0), _at(3.0, _BOAT, 0)]) == []
+    [t] = _feed(rec, [_at(4.0, _BOAT, 400)])
 
     assert t.kind == WALK
 

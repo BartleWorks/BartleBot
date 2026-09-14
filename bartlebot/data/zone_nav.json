@@ -496,7 +496,8 @@
             "Krokotopia/KT_WorldTeleporter": {"x": 14.22, "y": 232.65, "z": -22.17},
             "Krokotopia/KT_Pyramid/KT_AltarOfKings": {"x": -36.57, "y": 7429.13, "z": 495.6},
             "Krokotopia/Interiors/KT_Library": {"x": 3501.21, "y": 5935.59, "z": -220.19},
-            "G14_SB/SB_Z01_KimbaalungVillage": {"x": -10588.67, "y": 2007.5, "z": 3341.55}
+            "G14_SB/SB_Z01_KimbaalungVillage": {"x": -10588.67, "y": 2007.5, "z": 3341.55},
+            "Krokotopia/KT_Hub_Sphinx": {"x": 3610.66, "y": 3198.53, "z": 26.31}
           }
         },
         "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis": {
@@ -817,10 +818,28 @@
           "from": "Krokotopia/KT_Hub",
           "to": "Krokotopia/KT_Hub_Crypt",
           "xyz": {"x": -3333.67, "y": -1829.89, "z": -35.35},
-          "reset_xyz": {"x": -3027.18, "y": -1592.84, "z": -33.99},
+          "reset_xyz": {"x": -2658.96, "y": -1370.57, "z": -118.23},
           "volume": "Activator Volume (Hub To Crypt Island Teleporter)",
+          "unlock": {
+            "objects": [
+              {
+                "interact_xyz": {"x": -3280.76, "y": -2772.5, "z": -35.35},
+                "reset_xyz": {"x": -2658.96, "y": -1370.57, "z": -118.23}
+              },
+              {
+                "interact_xyz": {"x": -4471.05, "y": -2578.28, "z": -35.35},
+                "reset_xyz": {"x": -2658.96, "y": -1370.57, "z": -118.23}
+              },
+              {
+                "interact_xyz": {"x": -4263.48, "y": -1404.98, "z": -35.35},
+                "reset_xyz": {"x": -2658.96, "y": -1370.57, "z": -118.23}
+              }
+            ],
+            "opens_after": 20
+          },
           "verified": true,
-          "source": "recorded"
+          "source": "recorded",
+          "note": "unlock entered by hand; the walk's xyz was recorded"
         },
         {
           "kind": "walk",
@@ -1067,6 +1086,28 @@
           "xyz": {"x": 4312.35, "y": -2648.31, "z": -172.55},
           "verified": true,
           "source": "recorded"
+        },
+        {
+          "kind": "ride",
+          "from": "Krokotopia/KT_Hub",
+          "to": "Krokotopia/KT_Hub_Sphinx",
+          "board": "object",
+          "interact_xyz": {"x": 4362.91, "y": 3172.85, "z": 25.79},
+          "reset_xyz": {"x": 3830.68, "y": 2730.76, "z": 28.44},
+          "verified": true,
+          "source": "recorded",
+          "note": "coordinates entered by hand: the tester reads the ride as a hub button use"
+        },
+        {
+          "kind": "ride",
+          "from": "Krokotopia/KT_Hub_Sphinx",
+          "to": "Krokotopia/KT_Hub",
+          "board": "object",
+          "interact_xyz": {"x": 11898.28, "y": 47.06, "z": 1219.8},
+          "reset_xyz": {"x": 12138.83, "y": 500.44, "z": 1219.8},
+          "verified": true,
+          "source": "recorded",
+          "note": "coordinates entered by hand: the tester reads the ride as a hub button use"
         }
       ],
       "list_networks": []
@@ -1091,7 +1132,9 @@
         },
         "Marleybone/MB_Station/MB_Station_Hub": {
           "arrivals": {
-            "Marleybone/MB_Hub": {"x": -2.88, "y": -2409.96, "z": -294.45}
+            "Marleybone/MB_Hub": {"x": -2.88, "y": -2409.96, "z": -294.45},
+            "Marleybone/MB_Station/MB_HydePark": {"x": 2.06, "y": 8516.22, "z": -293.84},
+            "Marleybone/MB_Station/MB_ChelseaCourt": {"x": 2.06, "y": 8516.22, "z": -293.84}
           }
         },
         "Marleybone/MB_ScotlandYard/MB_Roof": {
@@ -1112,8 +1155,16 @@
             "Marleybone/MB_ScotlandYard/MB_Roof": {"x": 164.99, "y": -1828.87, "z": -230.0}
           }
         },
-        "Marleybone/MB_Station/MB_ChelseaCourt": {},
-        "Marleybone/MB_Station/MB_HydePark": {},
+        "Marleybone/MB_Station/MB_ChelseaCourt": {
+          "arrivals": {
+            "Marleybone/MB_Station/MB_Station_Hub": {"x": -15283.25, "y": 3722.49, "z": 0.01}
+          }
+        },
+        "Marleybone/MB_Station/MB_HydePark": {
+          "arrivals": {
+            "Marleybone/MB_Station/MB_Station_Hub": {"x": -10.23, "y": -3799.01, "z": 0.01}
+          }
+        },
         "Marleybone/MB_Station/MB_Ironworks": {},
         "Marleybone/Interiors/MB_WolfminsterAbbey": {
           "arrivals": {
@@ -1281,6 +1332,52 @@
           "to": "Marleybone/MB_ScotlandYard/MB_Roof",
           "xyz": {"x": -493.86, "y": -9409.21, "z": -240.0},
           "volume": "YardZoneEntry",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "ride",
+          "from": "Marleybone/MB_Station/MB_Station_Hub",
+          "to": "Marleybone/MB_Station/MB_HydePark",
+          "board": "walk",
+          "xyz": {"x": 4734.64, "y": 8069.78, "z": -113.55},
+          "reset_xyz": {"x": 4378.33, "y": 7984.15, "z": -113.55},
+          "volume": "Activator Volume Hyde Park",
+          "ride_zone": "Marleybone/MB_Station/MB_FlightToHydePark",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "ride",
+          "from": "Marleybone/MB_Station/MB_HydePark",
+          "to": "Marleybone/MB_Station/MB_Station_Hub",
+          "board": "walk",
+          "xyz": {"x": 847.95, "y": -3779.16, "z": 0.0},
+          "volume": "TeleportVol_ToAirportHub",
+          "ride_zone": "Marleybone/MB_Station/MB_FlightFromHydePark",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "ride",
+          "from": "Marleybone/MB_Station/MB_Station_Hub",
+          "to": "Marleybone/MB_Station/MB_ChelseaCourt",
+          "board": "walk",
+          "xyz": {"x": 4356.7, "y": 11552.58, "z": -113.55},
+          "reset_xyz": {"x": 4033.89, "y": 11590.93, "z": -113.55},
+          "volume": "Chelsea Court Platform",
+          "ride_zone": "Marleybone/MB_Station/MB_FlightToCourt",
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "ride",
+          "from": "Marleybone/MB_Station/MB_ChelseaCourt",
+          "to": "Marleybone/MB_Station/MB_Station_Hub",
+          "board": "walk",
+          "xyz": {"x": -15157.05, "y": 3057.99, "z": 0.0},
+          "volume": "DigmooreZoneEntry",
+          "ride_zone": "Marleybone/MB_Station/MB_FlightFromCourt",
           "verified": true,
           "source": "recorded"
         }
@@ -1654,7 +1751,11 @@
             "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy": {"x": -13551.08, "y": -12066.6, "z": 0.0}
           }
         },
-        "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone": {},
+        "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone": {
+          "arrivals": {
+            "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy": {"x": 12.08, "y": -997.25, "z": 100.0}
+          }
+        },
         "DragonSpire/DS_A1_Knowledge/Interiors/DS_Library_Interior": {
           "arrivals": {
             "DragonSpire/DS_A1_Knowledge/DS_A1Hub_Library": {"x": 0.89, "y": 2575.69, "z": 0.0}
@@ -1903,6 +2004,17 @@
           "to": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
           "interact_xyz": {"x": 1336.99, "y": -1342.61, "z": -0.11},
           "reset_xyz": {"x": 1190.49, "y": -1209.41, "z": -0.07},
+          "verified": true,
+          "source": "recorded"
+        },
+        {
+          "kind": "ride",
+          "from": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
+          "to": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
+          "board": "object",
+          "interact_xyz": {"x": -5297.76, "y": 10150.06, "z": 1998.8},
+          "reset_xyz": {"x": -5070.32, "y": 10140.34, "z": 1998.8},
+          "ride_zone": "DragonSpire/DS_A3_Kings/DS_A3_FlightPath",
           "verified": true,
           "source": "recorded"
         }

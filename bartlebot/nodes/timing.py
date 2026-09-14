@@ -39,6 +39,12 @@ TRIGGER_TIMEOUT = 10.0
 # Seconds to wait for a UI event to fire after an input (loading screen start,
 # button becoming enabled, dialog appearing).
 
+RIDE_TIMEOUT = 180.0
+# Ceiling on waiting out a ride -- a boat, an airship, a dragon -- for a player whose skip
+# never landed. Skipping normally ends a ride within seconds of the prompt appearing, and a
+# ride left alone ends on its own well inside this, so reaching it means the player is stuck
+# rather than slow; what is left is the arrival check's teleport-to-player recovery.
+
 QUICKSELL_COMPLETE_TIMEOUT = 15.0
 # Seconds to wait for the backpack close button to reappear after confirming
 # a quicksell. Selling a full backpack triggers a server-side transaction that

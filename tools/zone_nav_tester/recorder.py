@@ -18,9 +18,12 @@ HOW A KIND IS DETECTED
             was ever clicked.
     object  the interact prompt was showing
     walk    none of those
-    ride    an object-like transition into a cutscene zone, then out of it again without the
-            player walking anywhere. Only zones the caller says could be one are held back for
-            this, so a transition into a mapped zone is reported at once.
+    ride    an object or walk transition into a cutscene zone -- the dragon is boarded by
+            interacting, the airships through a gate -- then out of it again without the player
+            walking anywhere. Only zones the caller says could be one are held back for this, so
+            a transition into a mapped zone is reported at once. The Krokotopia boats ride
+            inside the zone they start in and keep the hub button disabled throughout, so their
+            skip reads as a hub button use: they are added by hand.
 
 WHICH COORDINATES
     trigger_xyz     the last position before loading: a walk's xyz
@@ -76,6 +79,8 @@ class Transition:
     far_xyz: XYZ | None
     arrival_xyz: XYZ
     ride_zone: str | None = None
+    board: str | None = None
+    """For a ride, how it was boarded: OBJECT or WALK."""
 
 
 def distance(a: XYZ, b: XYZ) -> float:
@@ -136,11 +141,12 @@ class Recorder:
                     to_zone=transition.to_zone,
                     arrival_xyz=transition.arrival_xyz,
                     ride_zone=held.to_zone,
+                    board=held.kind,
                 )
             ]
         done = [held] if held is not None else []
-        # Rides always start at an interaction: a boat, an airship, a dragon.
-        if transition.kind == OBJECT and self._may_be_ride_zone(transition.to_zone):
+        # A ride with a cutscene zone starts at an interaction (the dragon) or a gate (the airships).
+        if transition.kind in (OBJECT, WALK) and self._may_be_ride_zone(transition.to_zone):
             self._held = transition
             return done
         return [*done, transition]

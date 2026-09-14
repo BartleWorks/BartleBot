@@ -17,7 +17,7 @@ import json
 import logging
 from collections import defaultdict
 from collections.abc import Collection
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from functools import cache
 from pathlib import Path
 
@@ -33,7 +33,7 @@ WALK = "walk"
 OBJECT = "object"
 """Interact with a teleporter or door: enter_zone_via_object."""
 RIDE = "ride"
-"""Interact, land in a cutscene zone, press X to skip it."""
+"""Board a boat, airship or dragon, then press X to skip the ride: enter_zone_via_ride."""
 LIST = "list"
 """Pick the destination from a zone-list object: enter_zone_via_list. Generated, never stored."""
 HUB = "hub"
@@ -47,17 +47,20 @@ COST_SECONDS: dict[str, float] = {
     WALK: LOAD_SECONDS,
     OBJECT: LOAD_SECONDS + 2.0,  # the interact prompt
     LIST: LOAD_SECONDS + 5.0,  # opening the list and paging to the entry
-    RIDE: 2 * LOAD_SECONDS + 3.0,  # into the cutscene zone, then out of it
+    RIDE: LOAD_SECONDS + 5.0,  # boarding and the skip prompt; a ride with its own zone adds a load
     HUB: LOAD_SECONDS + 1.0,  # a hair over a walk, so a walk wins an exact tie
 }
+UNLOCK_OBJECT_SECONDS = 3.0
+"""Using one of the objects that opens a gate, on top of the gate's own wait: Tomb of Storms."""
 HUB_BUTTON_COOLDOWN = 30.0
 """What a second hub-button use in one route waits, since the first just started the cooldown."""
 
-# Required xyz fields per stored kind, then the optional ones.
+_STORED_KINDS = (WALK, OBJECT, RIDE)
+# Required xyz fields per way of starting a link, then the optional ones. A ride starts the way
+# its `board` says: by interacting, like an object, or through a gate, like a walk.
 _REQUIRED_XYZ: dict[str, tuple[str, ...]] = {
     WALK: ("xyz",),
     OBJECT: ("interact_xyz", "reset_xyz"),
-    RIDE: ("interact_xyz", "reset_xyz"),
 }
 _OPTIONAL_XYZ: dict[str, tuple[str, ...]] = {WALK: ("reset_xyz",)}
 
@@ -67,8 +70,9 @@ class Step:
     """One zone change: a stored link, a generated list link, or the hub button.
 
     ``params`` holds what the kind's zone-entry node needs beyond the two zones -- the xyz
-    fields, ``sequential``, ``ride_zone``. ``arrives_in`` is ``to_zone`` plus any zone the
-    quest line swaps in for it; arriving in any of them counts.
+    fields, ``sequential``, a ride's ``board`` and ``ride_zone``, and ``board_zone`` on the step
+    that finishes a ride from inside its cutscene zone. ``arrives_in`` is ``to_zone`` plus any
+    zone the quest line swaps in for it; arriving in any of them counts.
     """
 
     kind: str
@@ -116,6 +120,12 @@ class NavMap:
         self._out: dict[str, list[Step]] = defaultdict(list)
         for step in self.links:
             self._out[step.from_zone].append(step)
+            if step.kind == RIDE and "ride_zone" in step.params:
+                # A client left on the ride -- a run stopped on the dragon -- finishes it, rather than
+                # pressing the hub button from a zone it can do nothing else in.
+                ride_zone = step.params["ride_zone"]
+                finish = replace(step, from_zone=ride_zone, params={**step.params, "board_zone": step.from_zone})
+                self._out[ride_zone].append(finish)
 
     def world_of(self, zone: str) -> World | None:
         """The world a zone belongs to: the one declaring it, else the one its path starts with.
@@ -145,6 +155,10 @@ class NavMap:
 def step_cost(step: Step, *, clients: int = 1, hub_wait: float = 0.0) -> float:
     """Estimated seconds for `step`. `hub_wait` is the cooldown left if it is a hub step."""
     cost = COST_SECONDS[step.kind]
+    if step.kind == RIDE and "ride_zone" in step.params:
+        cost += LOAD_SECONDS
+    if unlock := step.params.get("unlock"):
+        cost += unlock["opens_after"] + UNLOCK_OBJECT_SECONDS * len(unlock["objects"])
     if step.kind == OBJECT and step.params.get("sequential"):
         cost += step.params.get("object_use_delay", OBJECT_USE_DELAY) * max(clients - 1, 0)
     if step.kind == HUB:
@@ -294,7 +308,9 @@ def parse(raw: dict) -> NavMap:
     for step in links:
         # A walk's reset point defaults to where a player lands coming back the other way:
         # the game puts arrivals clear of the gate, so the trigger cannot fire there.
-        if step.kind == WALK and "reset_xyz" not in step.params and step.from_zone in by_zone:
+        # A ride boarded through a gate is started the same way, so it gets the same default.
+        on_foot = step.kind == WALK or step.params.get("board") == WALK
+        if on_foot and "reset_xyz" not in step.params and step.from_zone in by_zone:
             if (landing := by_zone[step.from_zone].arrival(step.from_zone, step.to_zone)) is not None:
                 step.params["reset_xyz"] = landing
 
@@ -304,6 +320,12 @@ def parse(raw: dict) -> NavMap:
     problems.extend(
         f"{kind} link {src!r} -> {dst!r} appears more than once" for (kind, src, dst), n in counts.items() if n > 1
     )
+    # A client found in a cutscene zone finishes that zone's ride, so the zone must name one ride.
+    rides_through = defaultdict(int)
+    for step in links:
+        if "ride_zone" in step.params:
+            rides_through[step.params["ride_zone"]] += 1
+    problems.extend(f"ride_zone {zone!r} is used by more than one ride" for zone, n in rides_through.items() if n > 1)
 
     if problems:
         raise ValueError("zone_nav.json is invalid:\n  " + "\n  ".join(problems))
@@ -330,21 +352,25 @@ def _bad_xyz(value) -> bool:
 def _parse_link(link: dict, where: str, zone_world: dict[str, str], problems: list[str]) -> Step | None:
     before = len(problems)
     kind = link.get("kind")
-    if kind not in _REQUIRED_XYZ:
-        problems.append(f"{where}: unknown kind {kind!r} (stored links are {', '.join(_REQUIRED_XYZ)})")
+    if kind not in _STORED_KINDS:
+        problems.append(f"{where}: unknown kind {kind!r} (stored links are {', '.join(_STORED_KINDS)})")
         return None
     src, dst = link.get("from"), link.get("to")
     for label, zone in (("from", src), ("to", dst)):
         if zone not in zone_world:
             problems.append(f"{where}: {label} zone {zone!r} is not declared")
 
-    params: dict = {}
-    for name in _REQUIRED_XYZ[kind]:
+    board = link.get("board", OBJECT) if kind == RIDE else kind
+    if board not in _REQUIRED_XYZ:
+        problems.append(f"{where}: board must be {WALK!r} or {OBJECT!r}, not {board!r}")
+        return None
+    params: dict = {"board": board} if kind == RIDE else {}
+    for name in _REQUIRED_XYZ[board]:
         if _bad_xyz(link.get(name)):
             problems.append(f"{where}: {name} must be an {{x, y, z}} object")
         else:
             params[name] = link[name]
-    for name in _OPTIONAL_XYZ.get(kind, ()):
+    for name in _OPTIONAL_XYZ.get(board, ()):
         if name in link:
             if _bad_xyz(link[name]):
                 problems.append(f"{where}: {name} must be an {{x, y, z}} object")
@@ -359,12 +385,41 @@ def _parse_link(link: dict, where: str, zone_world: dict[str, str], problems: li
                 problems.append(f"{where}: object_use_delay must be a number >= 0")
             else:
                 params["object_use_delay"] = float(delay)
+    if "unlock" in link:
+        # A gate that objects open, and that appears only a while later: Tomb of Storms.
+        unlock = link["unlock"]
+        objects = unlock.get("objects") if isinstance(unlock, dict) else None
+        opens_after = unlock.get("opens_after") if isinstance(unlock, dict) else None
+        if kind != WALK:
+            problems.append(f"{where}: only a walk can have an unlock")
+        elif (
+            not isinstance(objects, list)
+            or not objects
+            or any(
+                not isinstance(o, dict) or _bad_xyz(o.get("interact_xyz")) or _bad_xyz(o.get("reset_xyz"))
+                for o in objects
+            )
+        ):
+            problems.append(f"{where}: unlock needs objects, each with interact_xyz and reset_xyz")
+        elif not isinstance(opens_after, int | float) or isinstance(opens_after, bool) or opens_after < 0:
+            problems.append(f"{where}: unlock needs opens_after, the seconds the gate takes to appear")
+        else:
+            params["unlock"] = {
+                "objects": [{"interact_xyz": o["interact_xyz"], "reset_xyz": o["reset_xyz"]} for o in objects],
+                "opens_after": float(opens_after),
+            }
     if kind == RIDE:
+        # ride_zone is optional: the Krokotopia boats ride inside the zone they start in.
         ride_zone = link.get("ride_zone")
-        if not isinstance(ride_zone, str) or not ride_zone:
-            problems.append(f"{where}: a ride needs ride_zone")
+        if ride_zone is None:
+            if board == WALK:
+                problems.append(f"{where}: a ride boarded through a gate needs ride_zone, since the gate loads one")
+        elif not isinstance(ride_zone, str) or not ride_zone:
+            problems.append(f"{where}: ride_zone must be a zone name")
         elif hit := check_zone(ride_zone):
             problems.append(f"{where}: ride_zone {ride_zone!r} is restricted: {hit.describe()}")
+        elif ride_zone in zone_world:
+            problems.append(f"{where}: ride_zone {ride_zone!r} is a declared zone, and a route cannot stop on a ride")
         else:
             params["ride_zone"] = ride_zone
 

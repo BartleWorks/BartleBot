@@ -17,7 +17,7 @@ of zone changes, and those come in five kinds:
 |---|---|---|
 | `walk` | touches a transition volume | `enter_zone` |
 | `object` | interacts with a teleporter or door | `enter_zone_via_object` |
-| `ride` | interacts, lands in a cutscene zone, presses X to skip it | a ride helper (not built yet) |
+| `ride` | boards a boat, airship or dragon, presses X to skip the ride | `enter_zone_via_ride` |
 | `list` | picks the destination from a zone-list object | `enter_zone_via_list` |
 | `hub` | clicks the compass hub button | `teleport_to_world_hub` |
 
@@ -64,11 +64,45 @@ of this one list, not the zone's actual display name in any language.
 
 ### Rides
 
-The Oasis boat to Krokosphinx, Digmoore Station's airships to Hyde Park and Chelsea Court,
-and the dragon from Dragonspyre Academy to Dragon's Roost each put the player in a cutscene
-zone first. The skip prompt appears as soon as the player is in it, and each client skips
-for itself. A ride link names that zone in `ride_zone`; the airships' zones are one-way
-(`MB_FlightToCourt`, `MB_FlightFromCourt`), so each direction is its own link.
+These are the only rides in the game, and they differ only in how they start:
+
+| ride | boarded by | cutscene zone |
+|---|---|---|
+| the Oasis ↔ Krokosphinx boats | interacting | none: the boat moves through the zone it started in |
+| Digmoore Station ↔ Hyde Park, Chelsea Court airships | walking into a gate | one per direction (`MB_FlightToCourt`, `MB_FlightFromCourt`) |
+| Dragonspyre Academy → Dragon's Roost dragon | interacting | `DS_A3_FlightPath` |
+
+The Ironworks airship is a ride too, but it is behind a dungeon entrance, so it is not on the map.
+The dragon has no ride back: Dragon's Roost to the Academy is an ordinary teleporter.
+
+A ride link's `board` says how it starts, `walk` or `object` (the default), and it takes that
+kind's coordinates. `ride_zone` names the cutscene zone when there is one; a ride boarded through
+a gate always has one, since a gate is a zone change.
+
+All of them end the same way: press X on the skip prompt, and the player goes straight to the
+destination. The prompt shows anywhere on the ride, so nothing is reset for it, and each client
+skips for itself. `enter_zone_via_ride` teleports only while boarding: once a client is on the
+ride it is being carried, and a teleport would pull it off. A boat loads nothing when it is
+boarded, so a client counts as aboard once, within the Safety Delay of pressing X, it is somewhere
+other than the interact point without having been teleported: the boat is moving it. The next
+prompt it sees is the skip. A client whose skip never lands still arrives when the ride ends by itself.
+
+A client can be left in a cutscene zone — a run stopped on the dragon. The planner gives every
+`ride_zone` a step that finishes its ride, which is why a cutscene zone may belong to only one
+ride and may not also be a declared zone.
+
+### A gate opened by objects
+
+The Oasis to Tomb of Storms is a plain walk through a gate that is not there until three objects
+have been used, in any order and without dialogue. The gate appears 20 seconds after the last one,
+stays 20 seconds, and is shared: one player opening it opens it for everyone. So it is a walk link
+with an `unlock` — the objects and `opens_after` — and `step_call` runs it as `interact` at each
+object with player 1 alone, `sleep` for `opens_after`, then the walk for the whole group. Using an
+object again does not close an open gate, so it is always opened fresh rather than tried first.
+The walk has 20 seconds to fire, which Safety Delay's three attempts fit inside unless it is set
+above about six seconds.
+
+The objects are added to the link by hand: no zone change happens at them for the tester to record.
 
 ### Doors and side worlds
 
@@ -88,7 +122,8 @@ be asked for.
 
 Routes are costed in estimated seconds, not hops, because the question a user cares about is
 which way is faster. A loading screen is the unit (`LOAD_SECONDS`); a list costs a little
-more for opening and paging it, an object a little more for the prompt, a ride two loads.
+more for opening and paging it, an object a little more for the prompt. A ride costs a load plus
+boarding and the skip prompt, and a second load when it has a cutscene zone.
 The hub button costs a load plus whatever is left of its cooldown — the caller passes that
 in, since it can read whether the button is enabled — and a second use in the same route
 pays the whole cooldown.
@@ -138,10 +173,12 @@ The numbers are estimates and are meant to be tuned; they live in `zone_nav.py`,
 | `label` | zone | the name to show when the game's is ambiguous: `EM_Z02_Sewers` is "Zanadu" in game, "Zanadu Sewers" here |
 | `arrivals` | zone | `{from zone: xyz}`: where a player lands coming from that zone. A walk from here to there with no `reset_xyz` uses it |
 | `kind`, `from`, `to` | link | one direction of one zone change |
-| `xyz`, `reset_xyz` | walk | as `enter_zone`; `reset_xyz` optional |
-| `interact_xyz`, `reset_xyz` | object, ride | as `enter_zone_via_object` |
+| `board` | ride | `object` (the default) or `walk`: how the ride is boarded, which decides its coordinates |
+| `xyz`, `reset_xyz` | walk, ride boarded on foot | as `enter_zone`; `reset_xyz` optional |
+| `unlock` | walk | `{"objects": [{interact_xyz, reset_xyz}, …], "opens_after": seconds}`: a gate those objects open |
+| `interact_xyz`, `reset_xyz` | object, ride boarded by interacting | as `enter_zone_via_object` |
 | `sequential`, `object_use_delay` | object | as `enter_zone_via_object` |
-| `ride_zone` | ride | the cutscene zone the ride passes through |
+| `ride_zone` | ride | the cutscene zone the ride passes through; left out for the boats, required on foot |
 | `also_arrives_in` | link | other zones that count as arriving — for zones the quest line swaps, like Samsara Village |
 | `verified` | link, network | the link has worked in a real client; defaults to **false** |
 | `source`, `note` | link, network | where the data came from: `bot`, `code`, `game_data`, `recorded` |
@@ -187,8 +224,7 @@ the spiral door when a client is out of reach, regroups a split group with the h
 then plans, runs the first step through its zone-entry node, and plans again from wherever
 the clients landed. It uses the door at most once, and a route that still has no way on is a
 failure naming where it stopped. A list step matches the destination's name in every locale
-from `bartlebot/data/zone_names.json` (`tools/dump_zone_names.py`). A ride step fails until the
-ride helper exists.
+from `bartlebot/data/zone_names.json` (`tools/dump_zone_names.py`).
 
 ## Mapping it: the tester
 
@@ -202,10 +238,14 @@ still to record when there is none, and marks the tentative links a successful r
 verified. `tools/zone_nav_tester/app.py` has the details; the detection rules are in
 `recorder.py`.
 
+It records the dragon and the airships as rides: a transition into an unmapped zone, by interacting
+or through a gate, is held until it is clear whether the player leaves that zone again without
+walking. The boats cannot be recorded: the hub button is disabled for the whole ride, so the zone
+change at the skip reads as a hub button use and is dropped. Their two links were entered by hand.
+
 ## Not built yet
 
 - the navigation node, a wrapper around `navigate()`
-- the ride helper
 - links for every world but Wizard City: the zones are declared, the links are what the tester
   is for
 - Wintertusk, which is not declared at all

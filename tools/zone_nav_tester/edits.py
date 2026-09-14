@@ -97,10 +97,12 @@ def mark_verified(raw: dict, steps: list[zone_nav.Step]) -> int:
                     if {step.from_zone, step.to_zone} <= set(n.get("zones", {}))
                 ]
             else:
+                # A ride finished from inside its cutscene zone is the stored link boarded elsewhere.
+                from_zone = step.params.get("board_zone", step.from_zone)
                 entries = [
                     link
                     for link in spec.get("links", [])
-                    if (link.get("kind"), link.get("from"), link.get("to")) == (step.kind, step.from_zone, step.to_zone)
+                    if (link.get("kind"), link.get("from"), link.get("to")) == (step.kind, from_zone, step.to_zone)
                 ]
             for entry in entries:
                 if not entry.get("verified", False):

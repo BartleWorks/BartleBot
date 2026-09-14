@@ -65,6 +65,8 @@ from bartlebot.nodes.zone_entry.enter_zone_via_list import NODE_SPEC as _enter_z
 from bartlebot.nodes.zone_entry.enter_zone_via_list import run as enter_zone_via_list_run
 from bartlebot.nodes.zone_entry.enter_zone_via_object import NODE_SPEC as _enter_zone_via_object_spec
 from bartlebot.nodes.zone_entry.enter_zone_via_object import run as enter_zone_via_object_run
+from bartlebot.nodes.zone_entry.enter_zone_via_ride import NODE_SPEC as _enter_zone_via_ride_spec
+from bartlebot.nodes.zone_entry.enter_zone_via_ride import run as enter_zone_via_ride_run
 
 NODE_REGISTRY: dict = {
     "apply_level_scaling": apply_level_scaling_run,
@@ -83,6 +85,7 @@ NODE_REGISTRY: dict = {
     "interact_menu": interact_menu_run,
     "quicksell": quicksell_run,
     "enter_zone_via_object": enter_zone_via_object_run,
+    "enter_zone_via_ride": enter_zone_via_ride_run,
     "handle_combat": handle_combat_run,
     "collect_reagent": collect_reagent_run,
     "check_health": check_health_run,
@@ -119,6 +122,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "interact_menu": _interact_menu_spec,
     "quicksell": _quicksell_spec,
     "enter_zone_via_object": _enter_zone_via_object_spec,
+    "enter_zone_via_ride": _enter_zone_via_ride_spec,
     "handle_combat": _handle_combat_spec,
     "collect_reagent": _collect_reagent_spec,
     "check_health": _check_health_spec,
@@ -152,6 +156,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "enter_zone",
             "enter_zone_via_list",
             "enter_zone_via_object",
+            "enter_zone_via_ride",
         ],
     ),
     (

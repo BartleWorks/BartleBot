@@ -22,9 +22,11 @@ from types import ModuleType
 
 from bartlebot import zone_names, zone_nav
 from bartlebot.nodes import node_helpers, wizard_city
+from bartlebot.nodes.interaction import interact
 from bartlebot.nodes.paths import HUB_BUTTON_PATH
 from bartlebot.nodes.teleportation import go_to_world, teleport_to_world_hub
-from bartlebot.nodes.zone_entry import enter_zone, enter_zone_via_list, enter_zone_via_object
+from bartlebot.nodes.utility import sleep
+from bartlebot.nodes.zone_entry import enter_zone, enter_zone_via_list, enter_zone_via_object, enter_zone_via_ride
 from bartlebot.restricted_zones import check_zone
 
 MAX_STEPS = 30
@@ -43,12 +45,38 @@ class Outcome:
         return [step for step in self.taken if not step.verified]
 
 
-def step_call(step: zone_nav.Step) -> tuple[ModuleType, dict] | str:
-    """The zone-entry node and params that run `step`, or why it cannot run yet."""
+def step_call(step: zone_nav.Step) -> list[tuple[ModuleType, dict]] | str:
+    """The nodes and params that run `step`, in order, or why it cannot run.
+
+    Every step is one zone-entry node, except a walk through a gate that has to be opened first.
+    """
     p = step.params
     zones = {"from_zone": step.from_zone, "to_zone": step.to_zone}
     if step.kind == zone_nav.WALK:
-        return enter_zone, {**zones, "xyz": p["xyz"], **({"reset_xyz": p["reset_xyz"]} if "reset_xyz" in p else {})}
+        walk = (enter_zone, {**zones, "xyz": p["xyz"], **({"reset_xyz": p["reset_xyz"]} if "reset_xyz" in p else {})})
+        if not (unlock := p.get("unlock")):
+            return [walk]
+        # The gate is shared, so one player opens it for the group; then it takes a while to appear.
+        opening = [
+            (
+                interact,
+                {
+                    "zone": step.from_zone,
+                    "interact_xyz": spot["interact_xyz"],
+                    "reset_xyz": spot["reset_xyz"],
+                    "interact_clients": [1],
+                    "has_dialogue": False,
+                },
+            )
+            for spot in unlock["objects"]
+        ]
+        return [*opening, (sleep, {"duration": unlock["opens_after"]}), walk]
+    call = _zone_entry_call(step, zones)
+    return call if isinstance(call, str) else [call]
+
+
+def _zone_entry_call(step: zone_nav.Step, zones: dict) -> tuple[ModuleType, dict] | str:
+    p = step.params
     if step.kind == zone_nav.OBJECT:
         params = {**zones, "interact_xyz": p["interact_xyz"], "reset_xyz": p["reset_xyz"]}
         params["sequential"] = p.get("sequential", False)
@@ -75,9 +103,15 @@ def step_call(step: zone_nav.Step) -> tuple[ModuleType, dict] | str:
             "zone_list_entry": primary,
             "zone_list_aliases": aliases,
         }
+    if step.kind == zone_nav.RIDE:
+        # A ride finished from inside its cutscene zone still names the zone it is boarded in.
+        params = {"from_zone": p.get("board_zone", step.from_zone), "to_zone": step.to_zone, "board": p["board"]}
+        params["board_xyz"] = p["interact_xyz"] if p["board"] == zone_nav.OBJECT else p["xyz"]
+        params.update({name: p[name] for name in ("reset_xyz", "ride_zone") if name in p})
+        return enter_zone_via_ride, params
     if step.kind == zone_nav.HUB:
         return teleport_to_world_hub, {"zone": step.to_zone}
-    return f"{step.kind} steps cannot run yet: the ride helper is not built"
+    return f"{step.kind} steps cannot run: no zone-entry node runs them"
 
 
 def in_reach(nav: zone_nav.NavMap, zone: str | None, world: zone_nav.World) -> bool:
@@ -171,13 +205,13 @@ async def navigate(
             return _failed(machine, f"no route from {zones[0]!r} to {target!r}", taken)
 
         step = route[0]
-        call = step_call(step)
-        if isinstance(call, str):
-            return _failed(machine, call, taken)
-        node, params = call
+        calls = step_call(step)
+        if isinstance(calls, str):
+            return _failed(machine, calls, taken)
         machine.log(f"Step {len(taken) + 1}: {step.kind} {step.from_zone!r} -> {step.to_zone!r}")
-        if await node.run(machine, clients, params) != "SUCCESS":
-            return _failed(machine, f"{step.kind} step {step.from_zone!r} -> {step.to_zone!r} failed", taken)
+        for node, params in calls:
+            if await node.run(machine, clients, params) != "SUCCESS":
+                return _failed(machine, f"{step.kind} step {step.from_zone!r} -> {step.to_zone!r} failed", taken)
         taken.append(step)
 
     return _failed(machine, f"gave up after {MAX_STEPS} steps without reaching {target!r}", taken)

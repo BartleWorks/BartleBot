@@ -765,8 +765,13 @@ class TesterWindow(QMainWindow):
         nav = zone_nav.load()
         notes: list[str] = []
         link: dict | None = {"kind": kind, "from": t.from_zone, "to": t.to_zone}
+        # A ride is boarded the way its first transition went: through a gate, or by interacting.
+        board = (t.board or recorder.OBJECT) if kind == recorder.RIDE else kind
+        if kind == recorder.RIDE:
+            link["board"] = board
+        prompt_xyz, pre_prompt_xyz = t.prompt_xyz, t.pre_prompt_xyz
 
-        if kind == recorder.WALK:
+        if board == recorder.WALK:
             link["xyz"] = edits.xyz(t.trigger_xyz)
             world = nav.world_of(t.from_zone)
             if world is not None and world.arrival(t.from_zone, t.to_zone):
@@ -784,13 +789,13 @@ class TesterWindow(QMainWindow):
                     f"WARNING: no volume within {VOLUME_MATCH_DISTANCE:.0f} units. If this was a teleport, a "
                     f"mark/recall or a friend port rather than a gate, discard it."
                 )
-        elif t.prompt_xyz is None:
+        elif prompt_xyz is None:
             notes.append(
                 "No interact prompt was seen before the zone change, so there is no interact position. "
                 "Record it again, or pick walk if it was a gate."
             )
             link = None
-        elif t.pre_prompt_xyz is None:
+        elif pre_prompt_xyz is None:
             notes.append(
                 f"You were never {recorder.PROMPT_CLEAR_DISTANCE:.0f}+ units from the object before its prompt "
                 f"came up, so there is no reset position where the prompt is gone. Walk away from the object, "
@@ -798,21 +803,24 @@ class TesterWindow(QMainWindow):
             )
             link = None
         else:
-            link["interact_xyz"] = edits.xyz(t.prompt_xyz)
-            link["reset_xyz"] = edits.xyz(t.pre_prompt_xyz)
+            link["interact_xyz"] = edits.xyz(prompt_xyz)
+            link["reset_xyz"] = edits.xyz(pre_prompt_xyz)
             if kind == recorder.OBJECT and self.sequential_check.isChecked():
                 link["sequential"] = True
-            if kind == recorder.RIDE:
-                if t.ride_zone:
-                    link["ride_zone"] = t.ride_zone
-                else:
-                    notes.append("A ride needs the cutscene zone it passes through, and none was seen.")
-                    link = None
-            if kind == recorder.LIST and link is not None:
+            if kind == recorder.LIST:
                 notes.append(
                     f"Saves where the list object stands in {_label(t.from_zone)}. {_label(t.to_zone)} "
                     f"joins the network once a list use from there is recorded too."
                 )
+        if kind == recorder.RIDE and link is not None:
+            if t.ride_zone:
+                link["ride_zone"] = t.ride_zone
+            else:
+                notes.append(
+                    "No cutscene zone was seen. The Krokotopia boats ride inside the zone they start in and "
+                    "cannot be recorded: add them by hand."
+                )
+                link = None
         if link is not None and kind != recorder.LIST:
             # You just did it in the game, so it has worked in a real client.
             link.update(verified=True, source=edits.SOURCE)
