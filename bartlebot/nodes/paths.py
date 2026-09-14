@@ -13,6 +13,8 @@ which dialog is showing when the same path is shared by multiple contexts.
 # compassAndTeleporterButtons group
 HUB_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "GoHomeButton"]
 GOTO_DORM_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "GotoDormButton"]
+# Seconds left on the cooldown the hub and HOME buttons share. Shown only while they are disabled.
+TELEPORT_TIMER_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "GoHomeButton", "txtGoHomeTimer"]
 MARK_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "MarkButton"]
 RECALL_BUTTON_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "RecallButton"]
 RECALL_TIMER_PATH = ["WorldView", "windowHUD", "compassAndTeleporterButtons", "RecallButton", "txtRecallTimer"]

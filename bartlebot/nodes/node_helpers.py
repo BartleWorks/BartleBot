@@ -18,10 +18,12 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     FRIENDS_LIST_WINDOW_NAME,
     FRIENDS_LIST_WINDOW_NAMES,
     GAUNTLET_ENTRANCE_PATH,
+    HUB_BUTTON_PATH,
     LARGE_FRIENDS_LIST_WINDOW_NAME,
     MESSAGE_BOX_CAPTION_PATH,
     MESSAGE_BOX_CENTER,
     MESSAGE_BOX_RIGHT,
+    TELEPORT_TIMER_PATH,
 )
 from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     DIALOG_FAST_POLL_INTERVAL,
@@ -926,6 +928,30 @@ async def get_text_by_path(client, path: list[str]) -> str:
     if window is None:
         return ""
     return await window.maybe_text() or ""
+
+
+_COUNTDOWN = re.compile(r"(?:(\d+):)?(\d+(?:\.\d+)?)")
+
+
+def parse_countdown(text: str | None) -> float | None:
+    """The seconds a countdown shows, written "25" or "0:25", markup allowed; None if it shows no number."""
+    match = _COUNTDOWN.search(re.sub(r"<[^>]*>", " ", text or ""))
+    if match is None:
+        return None
+    minutes, seconds = match.groups()
+    return int(minutes or 0) * 60 + float(seconds)
+
+
+async def teleport_cooldown(client) -> float | None:
+    """Seconds before the hub and HOME buttons can be used again. One timer covers both.
+
+    0.0 while the hub button is enabled. The timer only shows while the buttons are disabled,
+    so a disabled button with no readable timer returns None: disabled for a reason, and for a
+    time, this cannot read.
+    """
+    if await is_enabled_by_path(client, HUB_BUTTON_PATH):
+        return 0.0
+    return parse_countdown(await get_text_by_path(client, TELEPORT_TIMER_PATH))
 
 
 async def click_until_gone(

@@ -28,7 +28,6 @@ from typing import Protocol
 from bartlebot import worlds, zone_names, zone_nav
 from bartlebot.nodes import node_helpers, wizard_city
 from bartlebot.nodes.interaction import interact
-from bartlebot.nodes.paths import HUB_BUTTON_PATH
 from bartlebot.nodes.teleportation import teleport_to_world_hub
 from bartlebot.nodes.utility import sleep
 from bartlebot.nodes.zone_entry import enter_zone, enter_zone_via_list, enter_zone_via_object, enter_zone_via_ride
@@ -160,10 +159,10 @@ def _zone_entry_call(step: zone_nav.Step, zones: dict) -> tuple[Runs, dict] | st
     return f"{step.kind} steps cannot run: no zone-entry node runs them"
 
 
-async def _hub_cooldown(clients: list) -> float:
-    """What is left of the hub button's cooldown. The button says only whether it is enabled."""
-    enabled = await asyncio.gather(*[node_helpers.is_enabled_by_path(c, HUB_BUTTON_PATH) for c in clients])
-    return 0.0 if all(enabled) else zone_nav.HUB_BUTTON_COOLDOWN
+async def _teleport_cooldown(clients: list) -> float:
+    """The longest wait left on any client's hub/HOME cooldown. A timer that cannot be read counts as a full one."""
+    left = await asyncio.gather(*[node_helpers.teleport_cooldown(c) for c in clients])
+    return max((zone_nav.TELEPORT_COOLDOWN if seconds is None else seconds for seconds in left), default=0.0)
 
 
 def _failed(machine, reason: str, taken: list[zone_nav.Step]) -> Outcome:
@@ -220,7 +219,7 @@ async def navigate(
             nav,
             zones[0],
             target,
-            hub_cooldown=await _hub_cooldown(clients),
+            teleport_cooldown=await _teleport_cooldown(clients),
             clients=len(clients),
             include_unverified=include_unverified,
             avoid=avoid,

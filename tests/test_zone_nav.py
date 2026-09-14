@@ -91,14 +91,14 @@ def test_a_cooling_hub_button_loses_a_tie_it_would_otherwise_win():
     """Two transitions either way. Fresh, the button has less to go wrong than a teleporter; cooling, it waits."""
     raw = _raw(_walk(_HUB, _S1), _object(_S2, _S3), _walk(_S3, _S1))
 
-    assert _route(raw, _S2, _S1, hub_cooldown=0.0) == [("hub", _S2, _HUB), ("walk", _HUB, _S1)]
-    assert _route(raw, _S2, _S1, hub_cooldown=30.0) == [("object", _S2, _S3), ("walk", _S3, _S1)]
+    assert _route(raw, _S2, _S1, teleport_cooldown=0.0) == [("hub", _S2, _HUB), ("walk", _HUB, _S1)]
+    assert _route(raw, _S2, _S1, teleport_cooldown=30.0) == [("object", _S2, _S3), ("walk", _S3, _S1)]
 
 
 def test_waiting_out_the_hub_button_beats_an_extra_transition():
     raw = _raw(_walk(_S2, _S1), _walk(_S1, _HUB))
 
-    assert _route(raw, _S2, _HUB, hub_cooldown=30.0) == [("hub", _S2, _HUB)]
+    assert _route(raw, _S2, _HUB, teleport_cooldown=30.0) == [("hub", _S2, _HUB)]
 
 
 def test_a_list_object_skips_the_streets_between():
@@ -445,6 +445,23 @@ def test_an_unverified_gate_is_left_out_unless_asked_for():
 
     assert _route(raw, "Far/Deep", "Near/Hub")[0][0] == "home"
     assert _route(raw, "Far/Deep", "Near/Hub", include_unverified=True)[0][0] == "hub"
+
+
+def test_the_hub_button_right_after_home_waits_out_their_shared_cooldown():
+    """One timer covers both buttons. Fresh, the button would beat the teleporter on effort; after HOME it waits."""
+    raw = _spiral()
+    raw["worlds"]["Home"]["links"][0] = _object("Home/Dorm", "Home/Hub")
+
+    assert _route(raw, "Housing/Castle", "Home/Hub") == [
+        ("home", "Housing/Castle", "Home/Dorm"),
+        ("object", "Home/Dorm", "Home/Hub"),
+    ]
+
+
+def test_a_cooling_timer_delays_home_too():
+    step = zone_nav.Step(zone_nav.HOME, "Far/Deep", "Home/Dorm")
+
+    assert zone_nav.step_cost(step, teleport_wait=12.0).waiting == 12.0
 
 
 def test_avoiding_home_can_leave_no_route():
@@ -848,7 +865,7 @@ def test_the_world_tree_reaches_the_commons_by_button_or_on_foot():
     nav = _shipped()
     tree, commons = "WizardCity/WC_Ravenwood_Teleporter", "WizardCity/WC_Hub"
 
-    assert [s.kind for s in zone_nav.plan(nav, tree, commons, hub_cooldown=30.0)] == ["hub"]
+    assert [s.kind for s in zone_nav.plan(nav, tree, commons, teleport_cooldown=30.0)] == ["hub"]
     assert [s.to_zone for s in zone_nav.plan(nav, tree, commons, avoid={"hub"})] == [
         "WizardCity/WC_Ravenwood",
         commons,

@@ -74,6 +74,8 @@ class Sample:
     world_gate: bool = False
     """The open list window is a World Gate's, not a zone list's. Meaningless unless list_open."""
     hub_enabled: bool = False
+    teleport_cooldown: float | None = 0.0
+    """Seconds left on the hub/HOME cooldown; None if the buttons are disabled with no timer to read."""
     speed_boosted: bool = False
 
 

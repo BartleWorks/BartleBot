@@ -159,9 +159,10 @@ one transition beats three streets.
 `zone_nav.Cost` compares transitions first. Waiting and then effort only break ties.
 
 - **Waiting** is time with no loading screen:
-  - whatever is left of the hub button's cooldown (the caller passes that in, since it can read
-    whether the button is enabled)
-  - the whole cooldown for a second use in the same route
+  - whatever is left of the cooldown the hub and HOME buttons share, read from the timer under
+    the hub button (`TELEPORT_TIMER_PATH`, shown only while the buttons are disabled; a disabled
+    button with no readable timer counts as a full cooldown)
+  - the whole cooldown for a second use of either button in the same route
   - a gate's `opens_after`
   - the delay between players at a sequential teleporter
 - **Effort** ranks the kinds by how much can go wrong (`EFFORT`): walk, then hub, then object,

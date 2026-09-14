@@ -25,6 +25,33 @@ from bartlebot.nodes.node_helpers import (
 from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT
 from tests.conftest import FakeClient, FakeEntity, FakeMachine, message_box_patches
 
+
+@pytest.mark.parametrize(
+    ("text", "seconds"),
+    [("25", 25.0), ("0:25", 25.0), ("1:05", 65.0), ("<center>12</center>", 12.0), ("", None), ("Ready", None)],
+)
+def test_parse_countdown_reads_seconds_or_minutes_and_seconds(text, seconds):
+    assert nh.parse_countdown(text) == seconds
+
+
+async def test_teleport_cooldown_is_zero_while_the_hub_button_is_enabled():
+    with (
+        patch.object(nh, "is_enabled_by_path", AsyncMock(return_value=True)),
+        patch.object(nh, "get_text_by_path", AsyncMock(return_value="25")) as read_timer,
+    ):
+        assert await nh.teleport_cooldown(FakeClient()) == 0.0
+    read_timer.assert_not_called()
+
+
+@pytest.mark.parametrize(("timer", "left"), [("25", 25.0), ("", None)])
+async def test_teleport_cooldown_reads_the_timer_while_the_buttons_are_disabled(timer, left):
+    with (
+        patch.object(nh, "is_enabled_by_path", AsyncMock(return_value=False)),
+        patch.object(nh, "get_text_by_path", AsyncMock(return_value=timer)),
+    ):
+        assert await nh.teleport_cooldown(FakeClient()) == left
+
+
 #: Somewhere and somewhere else — reach_sigil_prompt only ever passes these through.
 _SIGIL = XYZ(0.0, 0.0, 0.0)
 _RESET = XYZ(1.0, 0.0, 0.0)

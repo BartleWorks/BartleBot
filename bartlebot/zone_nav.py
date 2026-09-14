@@ -67,8 +67,8 @@ class Cost:
 
 EFFORT: dict[str, int] = {WALK: 0, HUB: 1, OBJECT: 2, LIST: 3, RIDE: 3, GATE: 3, HOME: 4}
 """A walk has the fewest ways to fail. HOME the most: castles to unequip, and a dungeon's exit warning."""
-HUB_BUTTON_COOLDOWN = 30.0
-"""What a second hub-button use in one route waits, since the first just started the cooldown."""
+TELEPORT_COOLDOWN = 30.0
+"""The cooldown the hub and HOME buttons share: what a second use of either in one route waits."""
 
 _STORED_KINDS = (WALK, OBJECT, RIDE)
 # Required xyz fields per way of starting a link, then the optional ones. A ride starts the way
@@ -177,8 +177,8 @@ class NavMap:
         return steps
 
 
-def step_cost(step: Step, *, clients: int = 1, hub_wait: float = 0.0) -> Cost:
-    """What `step` costs for a group of `clients`. `hub_wait` is the cooldown left if it is a hub step."""
+def step_cost(step: Step, *, clients: int = 1, teleport_wait: float = 0.0) -> Cost:
+    """What `step` costs for a group of `clients`. `teleport_wait` is the cooldown left, for a hub or home step."""
     transitions, waiting, effort = 1, 0.0, EFFORT[step.kind]
     if step.kind == RIDE and "ride_zone" in step.params:
         transitions += 1  # the cutscene zone is a loading screen of its own
@@ -189,8 +189,8 @@ def step_cost(step: Step, *, clients: int = 1, hub_wait: float = 0.0) -> Cost:
     if unlock := step.params.get("unlock"):
         waiting += unlock["opens_after"]
         effort += len(unlock["objects"])
-    if step.kind == HUB:
-        waiting += hub_wait
+    if step.kind in (HUB, HOME):
+        waiting += teleport_wait
     return Cost(transitions, waiting, effort)
 
 
@@ -199,16 +199,16 @@ def plan(
     start: str,
     target: str,
     *,
-    hub_cooldown: float = 0.0,
+    teleport_cooldown: float = 0.0,
     clients: int = 1,
     include_unverified: bool = False,
     avoid: Collection[str] = (),
 ) -> list[Step] | None:
     """The cheapest steps from `start` to `target`, [] if already there, None if unreachable.
 
-    `hub_cooldown` is what is left of the hub button's cooldown right now. The search state
-    carries whether the button has been used yet, because a second use waits the full
-    cooldown the first one started.
+    `teleport_cooldown` is what is left right now of the cooldown the hub and HOME buttons
+    share. The search state carries whether either has been used yet, because a second use of
+    either waits the full cooldown the first one started.
 
     `avoid` leaves whole kinds out -- ``{OBJECT, LIST}`` for a route on foot, which is how a
     street route gets tested when a teleporter would always win, and how a user skips
@@ -222,8 +222,8 @@ def plan(
     prev: dict[tuple[str, bool], tuple[tuple[str, bool], Step]] = {}
     heap = [(Cost(), next(tiebreak), start, False)]
     while heap:
-        cost, _, zone, used_hub = heapq.heappop(heap)
-        state = (zone, used_hub)
+        cost, _, zone, used_teleport = heapq.heappop(heap)
+        state = (zone, used_teleport)
         if cost > best[state]:
             continue
         if zone == target:
@@ -233,9 +233,10 @@ def plan(
                 route.append(step)
             return route[::-1]
         for step in nav.steps_from(zone, include_unverified=include_unverified, avoid=avoid):
-            wait = (HUB_BUTTON_COOLDOWN if used_hub else hub_cooldown) if step.kind == HUB else 0.0
-            nxt = (step.to_zone, used_hub or step.kind == HUB)
-            total = cost + step_cost(step, clients=clients, hub_wait=wait)
+            teleports = step.kind in (HUB, HOME)
+            wait = (TELEPORT_COOLDOWN if used_teleport else teleport_cooldown) if teleports else 0.0
+            nxt = (step.to_zone, used_teleport or teleports)
+            total = cost + step_cost(step, clients=clients, teleport_wait=wait)
             if nxt not in best or total < best[nxt]:
                 best[nxt] = total
                 prev[nxt] = (state, step)

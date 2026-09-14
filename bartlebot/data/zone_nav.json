@@ -6560,10 +6560,7 @@
       "list_networks": [
         {
           "zones": {
-            "Darkmoor/DM_Z00_OutsidersCamp": {
-              "interact_xyz": {"x": -1.77, "y": -2183.13, "z": 75.08},
-              "reset_xyz": {"x": -5.83, "y": -1925.28, "z": 22.11}
-            },
+            "Darkmoor/DM_Z00_OutsidersCamp": {},
             "Darkmoor/DM_Z01_Graveholm": {
               "interact_xyz": {"x": 10309.72, "y": -5677.21, "z": 2.0},
               "reset_xyz": {"x": 10096.4, "y": -5619.7, "z": 2.0}

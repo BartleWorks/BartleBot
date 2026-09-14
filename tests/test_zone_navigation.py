@@ -90,7 +90,7 @@ class _Game:
         monkeypatch.setattr(interact, "run", fake("interact", None))
         monkeypatch.setattr(sleep, "run", fake("sleep", None))
         monkeypatch.setattr(teleport_to_world_hub, "run", fake("hub", lambda p: p["zone"]))
-        monkeypatch.setattr(node_helpers, "is_enabled_by_path", AsyncMock(return_value=True))
+        monkeypatch.setattr(node_helpers, "teleport_cooldown", AsyncMock(return_value=0.0))
         monkeypatch.setattr(worlds, "display_names", lambda world: [world, world.lower()])
         go_home = fake("home", lambda p: _HOME)
         monkeypatch.setattr(
@@ -397,9 +397,11 @@ async def test_a_split_group_regroups_at_the_hub(monkeypatch):
     assert game.names == ["hub", "walk"]
 
 
-async def test_a_cooling_hub_button_loses_a_tie_to_a_teleporter(monkeypatch):
+@pytest.mark.parametrize("left", [12.0, None])
+async def test_a_cooling_hub_button_loses_a_tie_to_a_teleporter(monkeypatch, left):
+    """A timer read as seconds left, or a disabled button with no timer to read."""
     game = _Game(monkeypatch, [_S2])
-    monkeypatch.setattr(node_helpers, "is_enabled_by_path", AsyncMock(return_value=False))
+    monkeypatch.setattr(node_helpers, "teleport_cooldown", AsyncMock(return_value=left))
     teleporter = {"kind": "object", "from": _S2, "to": _HUB, "interact_xyz": _xyz(3), "reset_xyz": _xyz(4)}
 
     await _go(game, _nav({**teleporter, "verified": True}), _HUB)

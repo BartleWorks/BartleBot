@@ -82,7 +82,7 @@ from wizwalker import XYZ
 
 from bartlebot import worlds, zone_names, zone_nav
 from bartlebot.nodes import node_helpers, zone_navigation
-from bartlebot.nodes.paths import HUB_BUTTON_PATH, UNIVERSE_TELEPORT_BUTTON, UNIVERSE_TITLE
+from bartlebot.nodes.paths import HUB_BUTTON_PATH, TELEPORT_TIMER_PATH, UNIVERSE_TELEPORT_BUTTON, UNIVERSE_TITLE
 from bartlebot.nodes.timing import POLL_INTERVAL
 from bartlebot.restricted_zones import check_zone
 from tools.zone_nav_tester import edits, recorder, tree
@@ -524,6 +524,8 @@ class TesterWindow(QMainWindow):
         if loading:
             return recorder.Sample(time.monotonic(), None, (pos.x, pos.y, pos.z), loading=True)
         list_open = await node_helpers.is_visible_by_path(c, UNIVERSE_TELEPORT_BUTTON)
+        hub_enabled = await node_helpers.is_enabled_by_path(c, HUB_BUTTON_PATH)
+        timer = "" if hub_enabled else await node_helpers.get_text_by_path(c, TELEPORT_TIMER_PATH)
         return recorder.Sample(
             time.monotonic(),
             await c.zone_name(),
@@ -531,13 +533,18 @@ class TesterWindow(QMainWindow):
             prompt=await c.is_in_npc_range(),
             list_open=list_open,
             world_gate=list_open and worlds.is_world_gate_title(await node_helpers.get_text_by_path(c, UNIVERSE_TITLE)),
-            hub_enabled=await node_helpers.is_enabled_by_path(c, HUB_BUTTON_PATH),
+            hub_enabled=hub_enabled,
+            teleport_cooldown=0.0 if hub_enabled else node_helpers.parse_countdown(timer),
             speed_boosted=self.speed_check.isChecked(),
         )
 
     def _show_sample(self, sample: recorder.Sample) -> None:
         self.sample = sample
         x, y, z = sample.xyz
+        cooling = ""
+        if not sample.loading and not sample.hub_enabled:
+            left = sample.teleport_cooldown
+            cooling = "teleport buttons disabled" if left is None else f"teleport cooldown {left:.0f} s"
         flags = [
             name
             for on, name in (
@@ -546,6 +553,7 @@ class TesterWindow(QMainWindow):
                 (sample.list_open and not sample.world_gate, "zone list open"),
                 (sample.list_open and sample.world_gate, "World Gate open"),
                 (sample.hub_enabled, "hub button ready"),
+                (bool(cooling), cooling),
             )
             if on
         ]
@@ -636,8 +644,9 @@ class TesterWindow(QMainWindow):
 
         if start is None:
             return lines + ["The client's zone is not known yet."]
-        cooldown = 0.0 if self.sample and self.sample.hub_enabled else zone_nav.HUB_BUTTON_COOLDOWN
-        route = zone_nav.plan(nav, start, target, hub_cooldown=cooldown, include_unverified=include, avoid=avoid)
+        left = self.sample.teleport_cooldown if self.sample else None
+        cooldown = zone_nav.TELEPORT_COOLDOWN if left is None else left
+        route = zone_nav.plan(nav, start, target, teleport_cooldown=cooldown, include_unverified=include, avoid=avoid)
         if route is None:
             return lines + self._explain_missing(nav, world, target, include)
 
