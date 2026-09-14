@@ -164,7 +164,8 @@ def test_panel_shows_custom_when_unlinked_and_nonempty(qapp):
     panel.load(binding, [], [])
 
     assert panel._name.full_text() == CUSTOM_LABEL
-    assert _visible_lines(panel) == ["P1: blade"]
+    assert _visible_lines(panel) == ["blade"]
+    assert panel._assignment_badges[0].players == [1]
 
 
 def test_every_assignment_gets_its_own_line(qapp):
@@ -1910,3 +1911,139 @@ def test_the_label_is_the_account_s_alias_when_it_has_one(qapp):
     _keys, labels = tab._player_color_keys()
 
     assert labels == ["Main"]
+
+
+# ---------------------------------------------------------------------------
+# The tab's own player pills and deck stripes (#40)
+#
+# Every P# on the tab is a pill wearing the colour of the account in that slot, and each
+# deck card is striped like the player card for the same slot, so a deck, an assignment
+# and a wizard are matched by hue rather than by reading.
+# ---------------------------------------------------------------------------
+
+
+def _two_accounts():
+    from bartlebot.gui.account_accent import account_color_keys  # noqa: PLC0415
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    accounts = [{"username": "a@example.com"}, {"username": "b@example.com"}]
+    SettingsManager.instance().accounts = accounts
+    return account_color_keys(accounts)
+
+
+def test_a_deck_card_is_striped_by_the_account_in_its_slot(qapp):
+    from bartlebot.gui.account_accent import account_accent  # noqa: PLC0415
+
+    keys = _two_accounts()
+    tab = CombatTab()
+
+    tab.set_player_account_source(lambda: ["b@example.com", None])
+
+    card = tab._decks_section.card(1)
+    assert card.color_key == keys["b@example.com"]
+    assert f"border-left: 3px solid {account_accent(keys['b@example.com'])}" in card.styleSheet()
+    assert card._name.color_key == keys["b@example.com"]
+
+
+def test_a_deck_card_with_nobody_known_in_its_slot_has_no_stripe(qapp):
+    """An unidentified client and an empty slot are the same answer: no colour at all."""
+    _two_accounts()
+    tab = CombatTab()
+
+    tab.set_player_account_source(lambda: ["a@example.com", None])
+
+    for slot in (2, 3):
+        card = tab._decks_section.card(slot)
+        assert card.color_key is None
+        assert "border-left" not in card.styleSheet()
+        assert card._name.color_key is None
+
+
+def test_a_deck_card_s_pill_still_reads_its_slot(qapp):
+    _two_accounts()
+    tab = CombatTab()
+
+    tab.set_player_account_source(lambda: ["a@example.com"])
+
+    assert tab._decks_section.card(1)._name.text() == "P1"
+
+
+def test_the_combat_order_is_drawn_as_pills_in_order(qapp):
+    dcs = DuelCombatStrategy(
+        name="Ordered",
+        min_players=2,
+        max_players=2,
+        combat_order=[2, 1],
+        player_assignments=[PlayerAssignment(players=[1, 2], dsl="x")],
+    )
+    panel = StrategyPanel()
+    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
+
+    assert panel._order_badges.players == [2, 1]
+    assert panel._meta.full_text() == "2 players ·"
+    assert "P2 → P1" in panel._meta.toolTip()
+
+
+def test_a_simultaneous_duel_keeps_the_word_and_draws_no_order_pills(qapp):
+    dcs = DuelCombatStrategy(name="Together", player_assignments=[PlayerAssignment(players=[1], dsl="x")])
+    panel = StrategyPanel()
+    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
+
+    assert panel._order_badges.players == []
+    assert panel._meta.full_text().endswith("Simultaneous")
+
+
+def test_pills_are_coloured_by_slot_not_by_position(qapp):
+    """P2 leads a 2 → 1 order, so the first order pill wears slot 2's colour."""
+    dcs = DuelCombatStrategy(
+        name="Ordered",
+        min_players=2,
+        max_players=2,
+        combat_order=[2, 1],
+        player_assignments=[PlayerAssignment(players=[2], dsl="x")],
+    )
+    panel = StrategyPanel()
+    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
+
+    panel.set_player_colors([3, 4], ["Main", "Alt"])
+
+    assert [b.color_key for b in panel._order_badges.badges] == [4, 3]
+    assert [b.color_key for b in panel._assignment_badges[0].badges] == [4]
+
+
+def test_colours_survive_a_redraw_of_the_card(qapp):
+    """A pick replaces the binding under the card; the pills must not come back plain."""
+    first = DuelCombatStrategy(name="One", player_assignments=[PlayerAssignment(players=[1], dsl="x")])
+    second = DuelCombatStrategy(name="Two", player_assignments=[PlayerAssignment(players=[1], dsl="y")])
+    panel = StrategyPanel()
+    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=first.id), [first, second], [])
+    panel.set_player_colors([5], [""])
+
+    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=second.id), [first, second], [])
+
+    assert panel._assignment_badges[0].badges[0].color_key == 5
+
+
+def test_the_tab_polls_for_colours_only_while_it_is_visible(qapp):
+    tab = CombatTab()
+    assert not tab.is_polling_player_colors
+
+    tab.show()
+    try:
+        assert tab.is_polling_player_colors
+    finally:
+        tab.hide()
+
+    assert not tab.is_polling_player_colors
+
+
+def test_an_unchanged_answer_repaints_nothing(qapp):
+    _two_accounts()
+    tab = CombatTab()
+    tab.set_player_account_source(lambda: ["a@example.com"])
+    card = tab._decks_section.card(1)
+
+    with patch.object(card, "set_player_color") as recolour:
+        tab.refresh_player_colors()
+
+    recolour.assert_not_called()

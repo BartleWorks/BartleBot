@@ -294,3 +294,26 @@ def test_usage_phrase_reads_as_a_sentence():
     assert UsageCount(bots=1).phrase() == "Used by 1 bot strategy"
     assert UsageCount(duels=2).phrase() == "Used by 2 duel strategies"
     assert UsageCount(bots=3, duels=1).phrase() == "Used by 3 bot strategies and 1 duel strategy"
+
+
+def test_an_assignment_line_carries_its_slots_as_numbers():
+    """A range like P1–P3 cannot wear three accounts' colours, so the members travel too."""
+    config = DuelConfig(player_assignments=[PlayerAssignment(players=[3, 1, 2], dsl="x")])
+
+    line = summarize_duel(config, []).lines[0]
+
+    assert line.players == "P1–P3"
+    assert line.slots == (1, 2, 3)
+
+
+def test_a_duel_summary_carries_its_combat_order():
+    config = DuelConfig(min_players=2, max_players=2, combat_order=[2, 1])
+
+    summary = summarize_duel(config, [])
+
+    assert summary.combat_order == (2, 1)
+    assert summary.facets[-1] == "P2 → P1"
+
+
+def test_a_simultaneous_duel_has_no_combat_order():
+    assert summarize_duel(DuelConfig(), []).combat_order == ()

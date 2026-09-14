@@ -135,8 +135,9 @@ from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.elided_label import ElidedLabel
 from bartlebot.gui.widgets.flow_layout import FlowLayout
 from bartlebot.gui.widgets.picker_popup import PickerButton, Section
+from bartlebot.gui.widgets.player_pills import PlayerBadgeRow
 from bartlebot.gui.widgets.tag_pill import AccentPill, ActionPill, NeutralPill
-from bartlebot.strategy_summary import HealthStatus, summarize_duel
+from bartlebot.strategy_summary import HealthStatus, format_combat_order, summarize_duel
 
 if TYPE_CHECKING:
     from bartlebot.bot.strategy_models import DuelCombatStrategy, PlayerCombatStrategy
@@ -368,15 +369,28 @@ class StrategyPanel(CardFrame):
             self._scope.setToolTip(DEFAULT_SCOPE_META)
             self._scope.setVisible(True)
 
-        # The facets -- "4 players · P1→P2→P3→P4" -- or, when nothing is configured, the
-        # sentence naming what this binding falls through to instead.
-        self._meta = self._sub_line(layout)
+        # The facets -- "4 players ·" then the combat order as P1 → P2 → P3 → P4 pills -- or,
+        # when nothing is configured, the sentence naming what this binding falls through
+        # to instead. The order is pills rather than text so each slot wears its account's
+        # colour (#40); "Simultaneous" has no slots and stays a word.
+        self._meta_row, self._meta, self._order_badges = self._badge_line(layout, separator="→", badges_first=False)
 
         # One line per player assignment, built to the maximum a duel config can hold and
         # then hidden down to what it has. Reused rather than created per refresh: the
         # binding changes under this card on every pick, and destroying widgets mid-
-        # refresh is how the old per-state rebuild interrupted edits in progress.
-        self._assignment_lbls = [self._sub_line(layout) for _ in range(_MAX_ASSIGNMENT_LINES)]
+        # refresh is how the old per-state rebuild interrupted edits in progress. The
+        # players lead each line as pills, for the same reason the order is pills.
+        self._assignment_rows: list[QWidget] = []
+        self._assignment_lbls: list[ElidedLabel] = []
+        self._assignment_badges: list[PlayerBadgeRow] = []
+        for _ in range(_MAX_ASSIGNMENT_LINES):
+            row, label, badges = self._badge_line(layout)
+            self._assignment_rows.append(row)
+            self._assignment_lbls.append(label)
+            self._assignment_badges.append(badges)
+        # Per player slot, index 0 being P1. Held so a refresh re-colours what it redraws.
+        self._color_keys: list[int | None] = []
+        self._account_labels: list[str] = []
 
     def _sub_line(self, layout: QVBoxLayout) -> ElidedLabel:
         """One muted caption inside the frame, elided to whatever width the sidebar has.
@@ -390,6 +404,44 @@ class StrategyPanel(CardFrame):
         layout.addWidget(label)
         label.setVisible(False)
         return label
+
+    def _badge_line(
+        self, layout: QVBoxLayout, *, separator: str = "", badges_first: bool = True
+    ) -> tuple[QWidget, ElidedLabel, PlayerBadgeRow]:
+        """A caption line with a row of player pills in it, hidden until it is filled.
+
+        The row, not the label, is what is shown and hidden, so a line with nothing in it
+        takes no spacing in the card. The label is elided exactly as ``_sub_line``'s is;
+        where the pills come after it, a stretch keeps them beside the text rather than
+        pushed to the card's far edge.
+        """
+        row = QWidget()
+        row_layout = QHBoxLayout(row)
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        row_layout.setSpacing(4)
+        label = ElidedLabel()
+        badges = PlayerBadgeRow(separator)
+        if badges_first:
+            row_layout.addWidget(badges, 0, Qt.AlignmentFlag.AlignVCenter)
+            row_layout.addWidget(label, 1)
+        else:
+            row_layout.addWidget(label, 0)
+            row_layout.addWidget(badges, 0, Qt.AlignmentFlag.AlignVCenter)
+            row_layout.addStretch(1)
+        layout.addWidget(row)
+        row.setVisible(False)
+        return row, label, badges
+
+    def set_player_colors(self, keys: list[int | None], labels: list[str]) -> None:
+        """Colour every player pill on the card by the account in that slot right now.
+
+        ``keys`` and ``labels`` are per slot, index 0 being P1; shorter lists leave the
+        rest uncoloured. Held on the card, so a pick that redraws the lines keeps them.
+        """
+        self._color_keys = list(keys)
+        self._account_labels = list(labels)
+        for badges in (self._order_badges, *self._assignment_badges):
+            badges.set_player_colors(self._color_keys, self._account_labels)
 
     # ------------------------------------------------------------------
     # Data
@@ -579,9 +631,10 @@ class StrategyPanel(CardFrame):
         self._name.setText(name)
         self._name.setToolTip(name)
         self._meta.setText(meta)
-        self._meta.setVisible(True)
-        for label in self._assignment_lbls:
-            label.setVisible(False)
+        self._order_badges.set_players([])
+        self._meta_row.setVisible(True)
+        for row in self._assignment_rows:
+            row.setVisible(False)
 
     def _sync_pill_row(self) -> None:
         """Show the pill row wherever it has something to say.
@@ -606,21 +659,30 @@ class StrategyPanel(CardFrame):
             self._name.setText(name)
             self._name.setToolTip(summary.description or name)
 
-        self._meta.setText(" · ".join(summary.facets))
-        self._meta.setVisible(bool(summary.facets))
-
         lines = summary.lines[:_MAX_ASSIGNMENT_LINES]
-        for label, line in zip(self._assignment_lbls, lines):
-            label.setText(f"{line.players}: {line.label}" if line.players else line.label)
-            label.setVisible(True)
-        for label in self._assignment_lbls[len(lines) :]:
-            label.setVisible(False)
+        # The order facet is drawn as pills after the text, so it leaves the text; the
+        # words stay in the tooltip. "Simultaneous" has no slots and is kept as a word.
+        order_text = format_combat_order(summary.combat_order) if summary.combat_order else None
+        parts = [facet for facet in summary.facets if facet != order_text]
         if not lines:
             # Said out loud rather than left blank. A duel config with a player range and
             # a combat order but no assignments runs the built-in DSL for everyone, which
             # is a real configuration and not an empty card.
-            self._meta.setText(" · ".join([*summary.facets, "no player assignments"]))
-            self._meta.setVisible(True)
+            parts.append("no player assignments")
+        text = " · ".join(parts)
+        self._meta.setText(f"{text} ·" if text and summary.combat_order else text)
+        self._meta.setToolTip(" · ".join([*summary.facets, *([] if lines else ["no player assignments"])]))
+        self._order_badges.set_players(summary.combat_order)
+        self._meta_row.setVisible(bool(parts) or bool(summary.combat_order))
+
+        for row, label, badges, line in zip(
+            self._assignment_rows, self._assignment_lbls, self._assignment_badges, lines
+        ):
+            badges.set_players(line.slots)
+            label.setText(line.label)
+            row.setVisible(True)
+        for row in self._assignment_rows[len(lines) :]:
+            row.setVisible(False)
 
     def _membership_allowed(self) -> bool:
         """Whether "Applies to…" can act yet.

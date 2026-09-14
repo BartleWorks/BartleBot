@@ -32,11 +32,14 @@ The account's name is in the tooltip, which is where a claim that can go stale b
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from PyQt6.QtCore import QEvent, Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
 #: The pill's metrics. Deliberately ``AccountPill``'s, so a slot pill and an account pill
 #: on the same screen are one shape at two sizes of claim rather than two shapes.
@@ -228,3 +231,168 @@ class PlayerPillBar(QWidget):
     def set_editable(self, editable: bool) -> None:
         for pill in self._pills:
             pill.set_editable(editable)
+
+
+# ---------------------------------------------------------------------------
+# Read-only: naming a slot rather than toggling it
+# ---------------------------------------------------------------------------
+
+#: ``NeutralPill``'s height, not ``PlayerSlotPill``'s. A badge sits inside a caption line
+#: on a sidebar card, where an 18px pill would make the line taller than the text beside it.
+_BADGE_HEIGHT = 14
+#: One pixel less than ``NeutralPill``'s padding, because a badge always draws a 1px
+#: border -- in the fill colour when uncoloured -- so the text sits at the same x whether
+#: or not an account is known, and a badge does not change width when one arrives.
+_BADGE_PAD_X = 5
+
+#: How many badges a row builds. A Wizard101 team is four wizards.
+_MAX_SLOTS = 4
+
+
+class PlayerBadge(QLabel):
+    """An inert ``P{n}`` pill, coloured by whoever is in that slot right now.
+
+    The Combat tab's version of :class:`PlayerSlotPill`: the same claim -- the text is the
+    slot, the colour is the account -- with nothing to toggle, because that tab reads a
+    configuration rather than editing one. Two states rather than three:
+
+    * **coloured** -- outlined and tinted in the account's colour, as ``AccountPill`` is.
+    * **uncoloured** -- the grey ``NeutralPill`` look, which is how the Players tab's own
+      ``P{n}`` pill reads. Nothing hooked is the normal state while configuring a bot, and
+      it must not pick a default hue (gui/CLAUDE.md, *Account colours*).
+    """
+
+    def __init__(self, player: int, parent: QWidget | None = None) -> None:
+        super().__init__(f"P{player}", parent)
+        self._player = player
+        self._color_key: int | None = None
+        self._account_label = ""
+        self._applying_style = False
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setFixedHeight(_BADGE_HEIGHT)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self._restyle()
+
+    @property
+    def player(self) -> int:
+        """The 1-based slot this badge names."""
+        return self._player
+
+    @property
+    def color_key(self) -> int | None:
+        """The account palette slot it wears, or None for the uncoloured look."""
+        return self._color_key
+
+    def set_player(self, player: int) -> None:
+        """Re-point this badge at another slot, keeping the widget."""
+        if player == self._player:
+            return
+        self._player = player
+        self.setText(f"P{player}")
+        self._restyle()
+
+    def set_color_key(self, key: int | None) -> None:
+        if key == self._color_key:
+            return
+        self._color_key = key
+        self._restyle()
+
+    def set_account_label(self, label: str) -> None:
+        """Name the account in this slot, for the tooltip. Empty when nobody is known."""
+        if label == self._account_label:
+            return
+        self._account_label = label
+        self._restyle()
+
+    def _restyle(self) -> None:
+        if self._applying_style:  # see PlayerSlotPill._restyle
+            return
+        self._applying_style = True
+        try:
+            if self._color_key is None:
+                fill = border = THEME.pill_neutral_bg
+                text = THEME.pill_text
+            else:
+                fill, border, text = account_tint(self._color_key), account_accent(self._color_key), THEME.text
+            self.setStyleSheet(
+                f"background: {fill}; color: {text}; font-size: 9px; font-weight: bold;"
+                f" border-radius: {_BADGE_HEIGHT // 2}px; border: 1px solid {border}; padding: 0px {_BADGE_PAD_X}px;"
+            )
+            who = f" — {self._account_label}" if self._account_label else ""
+            self.setToolTip(f"Player {self._player}{who}")
+        finally:
+            self._applying_style = False
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._restyle()
+
+
+class PlayerBadgeRow(QWidget):
+    """A run of :class:`PlayerBadge`\\ s, optionally joined by a separator such as ``→``.
+
+    Built once to four badges and hidden down to what is shown, rather than rebuilt: the
+    Combat tab redraws its cards on every pick, and destroying children mid-refresh is how
+    that tab used to delete a widget a click was still travelling to.
+
+    Colours are held per *slot*, not per position, so a combat order of ``P3 → P1`` puts
+    slot 3's account colour on the first badge -- the same hue P3 wears everywhere else.
+    """
+
+    def __init__(self, separator: str = "", parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        row = QHBoxLayout(self)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(3)
+        self._badges: list[PlayerBadge] = []
+        self._separators: list[ThemedTextLabel] = []
+        self._players: list[int] = []
+        self._color_keys: list[int | None] = []
+        self._account_labels: list[str] = []
+        for index in range(_MAX_SLOTS):
+            if index and separator:
+                sep = ThemedTextLabel(separator, color="text_muted", parent=self)
+                row.addWidget(sep, 0, Qt.AlignmentFlag.AlignVCenter)
+                self._separators.append(sep)
+            badge = PlayerBadge(index + 1, self)
+            row.addWidget(badge, 0, Qt.AlignmentFlag.AlignVCenter)
+            self._badges.append(badge)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.set_players([])
+
+    @property
+    def players(self) -> list[int]:
+        """The slots currently shown, in display order."""
+        return list(self._players)
+
+    @property
+    def badges(self) -> list[PlayerBadge]:
+        """The shown badges, in display order."""
+        return self._badges[: len(self._players)]
+
+    def set_players(self, players: Sequence[int]) -> None:
+        self._players = list(players)[:_MAX_SLOTS]
+        for index, badge in enumerate(self._badges):
+            if index < len(self._players):
+                badge.set_player(self._players[index])
+            badge.setVisible(index < len(self._players))
+        for index, sep in enumerate(self._separators, start=1):
+            sep.setVisible(index < len(self._players))
+        self._apply_colors()
+
+    def set_player_colors(self, keys: Sequence[int | None], labels: Sequence[str] = ()) -> None:
+        """A palette slot and an account name per player slot, index 0 being P1.
+
+        Shorter lists are the normal case -- two clients hooked says nothing about P3.
+        """
+        self._color_keys = list(keys)
+        self._account_labels = list(labels)
+        self._apply_colors()
+
+    def _apply_colors(self) -> None:
+        for badge in self.badges:
+            index = badge.player - 1
+            badge.set_color_key(self._color_keys[index] if 0 <= index < len(self._color_keys) else None)
+            badge.set_account_label(self._account_labels[index] if 0 <= index < len(self._account_labels) else "")

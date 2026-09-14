@@ -144,6 +144,12 @@ CLIENT_REFRESH_INTERVAL_HIDDEN = 2.0
 # not stop entirely because AppController's zone-dropdown getter reads each
 # widget's cached zone, and a frozen cache would offer zones nobody is in.
 
+PLAYER_COLOR_REFRESH_INTERVAL = 1.0
+# Seconds between the Combat tab re-asking which account is behind each player slot, while
+# the tab is on screen. An identity is learned some time after its client is hooked and
+# nothing announces it, so the tab polls; the ask is a dict lookup per client and the
+# widgets repaint only when the answer changed.
+
 CLIENT_DETECT_INTERVAL = 1.0
 # Seconds between ClientManager detection cycles: notice new game windows, rebuild the
 # slot ordering, re-read wizard names. Hook activation no longer happens inline here, so

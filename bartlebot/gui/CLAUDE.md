@@ -183,6 +183,15 @@ is authored offline and outlives whichever account is in slot 1 tonight — a pi
 `Malvin` would be a claim the stored data does not make, and the same card would read
 differently depending on what happened to be hooked. Issue #40 is the rollout.
 
+On the Combat tab every `P#` is a `PlayerBadge` (`widgets/player_pills.py`) — the deck
+cards, each assignment line and the combat order — and each deck card carries the same
+left stripe as the player card for its slot. Colours are held **per slot, not per
+position**, so a `P3 → P1` order puts slot 3's hue first. The tab polls its account
+source on a timer (`PLAYER_COLOR_REFRESH_INTERVAL`) only while it is visible, because an
+identity arrives after its client and nothing announces it; a card built between ticks
+takes the last answer at construction, since a tick with an unchanged answer repaints
+nothing.
+
 ## Never show a widget before it has a parent
 
 `setVisible(True)` — or `show()` — on a widget with no parent makes that widget a
