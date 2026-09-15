@@ -6,6 +6,7 @@ Extracted so that machine.py does not need to import from a specific node module
 import asyncio
 import logging
 from functools import lru_cache
+from typing import NamedTuple
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.nodes.timing import COMBAT_DROP_MESSAGE_POLL, COMBAT_DROP_MESSAGE_TIMEOUT
@@ -200,9 +201,30 @@ def _str_provider_class():
     return _StrCombatConfigProvider
 
 
-@lru_cache(maxsize=512)
+class DslError(NamedTuple):
+    """Why a DSL does not parse, and where.
+
+    ``line`` and ``column`` are 1-based, and 0 when the failure has no position — an
+    unexpected end of input, or an error raised while transforming a tree that parsed.
+    """
+
+    message: str
+    line: int = 0
+    column: int = 0
+
+
 def validate_dsl(dsl: str) -> str | None:
-    """Return a one-line parse error for ``dsl``, or None if it is valid.
+    """Return a one-line parse error for ``dsl``, or None if it is valid. See :func:`dsl_error`."""
+    error = dsl_error(dsl)
+    return error.message if error else None
+
+
+@lru_cache(maxsize=512)
+def dsl_error(dsl: str) -> DslError | None:
+    """Return why ``dsl`` does not parse, and where, or None if it is valid.
+
+    The position is what the DSL editor underlines; everything else wants only the
+    message, through :func:`validate_dsl`.
 
     An empty or whitespace-only DSL is reported as valid: ``resolve_dsl_for_player``
     returns None for it and ``resolve_combat`` substitutes the built-in default, so
@@ -225,7 +247,14 @@ def validate_dsl(dsl: str) -> str | None:
         _str_provider_class()(dsl)
     except Exception as exc:
         message = str(exc).strip()
-        return message.splitlines()[0] if message else exc.__class__.__name__
+        # Lark's UnexpectedInput carries both; an unexpected end of input sets them to -1.
+        line, column = getattr(exc, "line", 0), getattr(exc, "column", 0)
+        positioned = isinstance(line, int) and isinstance(column, int) and line > 0 and column > 0
+        return DslError(
+            message.splitlines()[0] if message else exc.__class__.__name__,
+            line if positioned else 0,
+            column if positioned else 0,
+        )
     return None
 
 

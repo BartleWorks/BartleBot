@@ -11,7 +11,7 @@ from unittest.mock import patch
 import pytest
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
-from bartlebot.nodes.combat_runner import _lark_parser, _str_provider_class, validate_dsl
+from bartlebot.nodes.combat_runner import _lark_parser, _str_provider_class, dsl_error, validate_dsl
 
 # Real DSLs taken from strategies/player/*.json.
 _VALID_DSLS = [
@@ -89,7 +89,7 @@ def test_lark_grammar_is_compiled_only_once():
         return real_lark(*args, **kwargs)
 
     _lark_parser.cache_clear()
-    validate_dsl.cache_clear()  # else validate_dsl's own cache answers 4 of the 5
+    dsl_error.cache_clear()  # else validate_dsl's cache answers 4 of the 5
     try:
         with patch("lark.Lark", side_effect=counting_lark):
             for _ in range(5):
@@ -98,7 +98,7 @@ def test_lark_grammar_is_compiled_only_once():
         assert build_count == 1
     finally:
         _lark_parser.cache_clear()
-        validate_dsl.cache_clear()
+        dsl_error.cache_clear()
 
 
 def test_parser_returns_the_same_object_every_time():
@@ -114,25 +114,42 @@ def test_repeated_validation_of_one_dsl_parses_it_once():
     every entry's DSL each time it redraws a card. Without this cache, typing one
     character in the filter box cost seconds (#43)."""
     dsl = "any<blade>[sharp]@ally(2)"
-    validate_dsl.cache_clear()
+    dsl_error.cache_clear()
     try:
         with patch("bartlebot.nodes.combat_runner._str_provider_class", wraps=_str_provider_class) as provider_class:
             for _ in range(10):
                 assert validate_dsl(dsl) is None
+                assert dsl_error(dsl) is None
 
         assert provider_class.call_count == 1
     finally:
-        validate_dsl.cache_clear()
+        dsl_error.cache_clear()
 
 
 def test_the_cache_does_not_confuse_two_dsls():
-    validate_dsl.cache_clear()
+    dsl_error.cache_clear()
     try:
         assert validate_dsl("any<blade>[sharp]@ally(2)") is None
         assert validate_dsl("@@@ not a dsl") is not None
         assert validate_dsl("any<blade>[sharp]@ally(2)") is None
     finally:
-        validate_dsl.cache_clear()
+        dsl_error.cache_clear()
+
+
+def test_a_parse_error_says_where_the_parser_stopped():
+    error = dsl_error("pass @ self\nany<damag> @ enemy")
+
+    assert error is not None
+    assert (error.line, error.column) == (2, 5)
+    assert error.message == validate_dsl("pass @ self\nany<damag> @ enemy")
+
+
+def test_an_error_with_no_position_reports_zero_rather_than_lark_s_minus_one():
+    error = dsl_error("any<blade")
+
+    assert error is not None
+    assert error.line >= 0
+    assert error.column >= 0
 
 
 def test_provider_class_is_cached():

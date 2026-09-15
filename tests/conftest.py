@@ -495,14 +495,21 @@ def _free_widgets_this_test_created():
     if QApplication.instance() is None:
         return
     from PyQt6 import sip  # noqa: PLC0415
-    from PyQt6.QtCore import QEvent  # noqa: PLC0415
+    from PyQt6.QtCore import QEvent, Qt  # noqa: PLC0415
 
-    for widget in QApplication.topLevelWidgets():
-        if id(widget) in before_ids or sip.isdeleted(widget):
-            continue
-        widget.close()
-        widget.deleteLater()
-    QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    new = [w for w in QApplication.topLevelWidgets() if id(w) not in before_ids and not sip.isdeleted(w)]
+    # Popups last. A QCompleter's popup is a parentless window the completer holds by raw
+    # pointer and deletes itself, so freeing the popup first leaves its owner to free it
+    # again: exit 127, no traceback, and only when topLevelWidgets() happens to list the
+    # popup first. Freeing owners first lets each take its popup with it.
+    popups = [w for w in new if w.windowType() == Qt.WindowType.Popup]
+    for batch in ([w for w in new if w not in popups], popups):
+        for widget in batch:
+            if sip.isdeleted(widget):
+                continue
+            widget.close()
+            widget.deleteLater()
+        QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
     # Held until here only so an id() cannot be recycled onto a new widget.
     del before
 

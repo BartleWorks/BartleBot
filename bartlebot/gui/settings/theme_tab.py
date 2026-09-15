@@ -46,6 +46,10 @@ _SECTIONS: list[tuple[str, list[str]]] = [
     ("Minimap", ["minimap_viewport"]),
     ("Regions", ["region_1", "region_2", "region_3", "region_4", "region_5", "region_6"]),
     ("Icon", ["icon_tint"]),
+    (
+        "Combat DSL",
+        ["syntax_keyword", "syntax_type", "syntax_target", "syntax_number", "syntax_string", "syntax_punct"],
+    ),
 ]
 
 # Human-readable label overrides (token_name → display label)
@@ -89,6 +93,12 @@ _LABELS: dict[str, str] = {
     "region_5": "Region 5",
     "region_6": "Region 6",
     "icon_tint": "Icon tint",
+    "syntax_keyword": "Keywords",
+    "syntax_type": "Spell types",
+    "syntax_target": "Targets",
+    "syntax_number": "Numbers",
+    "syntax_string": "Quoted names",
+    "syntax_punct": "Punctuation",
 }
 
 # Contrast pairs to check: (text_token, background_token, display_name)

@@ -222,7 +222,7 @@ any<heal>[potent] @ self
 | `boss` | Cast on the boss specifically |
 | `ally` | Cast on any ally |
 | `aoe` | Area-of-effect (all enemies) |
-| `named:<name>` | Cast on a specifically named entity |
+| `Nightshade`, `"Lord Nightshade"` | Cast on the combatant whose name contains it (there is no `named:` prefix) |
 
 ### Separator / Priority
 
