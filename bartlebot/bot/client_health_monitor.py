@@ -1,8 +1,10 @@
 """Background health monitoring for WizSprinter clients.
 
-Three polling loops run concurrently:
+Five polling loops run concurrently:
 - _disconnect_dialog_watcher: polls for the in-game disconnect modal every 0.25 s;
   force-kills the process on detection so the recovery flow takes over immediately.
+- _network_link_watcher: polls the HUD's network status icons, for a connection that
+  failed without the modal; recovers a client stuck on "bad" or "broken".
 - _client_status_watcher: calls zone_name() every few seconds to detect
   clients that have crashed or are unresponsive.
 - _loading_screen_watcher: calls is_loading() every poll interval to detect
@@ -17,10 +19,22 @@ import asyncio
 import logging
 import time
 from collections.abc import Callable
+from dataclasses import dataclass
 
 from bartlebot import dialog_captions, restricted_zones
-from bartlebot.nodes.paths import MESSAGE_BOX_CAPTION_PATH
-from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL
+from bartlebot.nodes.paths import (
+    MESSAGE_BOX_CAPTION_PATH,
+    NETWORK_LINK_BAD_PATH,
+    NETWORK_LINK_BROKEN_PATH,
+    NETWORK_LINK_SLOW_PATH,
+)
+from bartlebot.nodes.timing import (
+    LOADING_SCREEN_TIMEOUT,
+    NETWORK_LINK_BAD_TIMEOUT,
+    NETWORK_LINK_BROKEN_POLLS,
+    NETWORK_LINK_POLL_INTERVAL,
+    POLL_INTERVAL,
+)
 from bartlebot.utils.window_kill import terminate_process
 
 logger = logging.getLogger(__name__)
@@ -88,6 +102,54 @@ _DISCONNECT_KEYWORDS: frozenset[str] = frozenset({"disconnect", "connection", "n
 # Note "network" would also match the "Network Connection Status" label, which is not a
 # disconnect at all. Another reason it is the fallback rather than the test.
 
+LINK_SLOW = "slow"
+LINK_BAD = "bad"
+LINK_BROKEN = "broken"
+
+_NETWORK_LINK_HUD_PATH = NETWORK_LINK_BROKEN_PATH[:-1]
+# The three icons are siblings, so the HUD is walked to once and its children read once.
+
+_NETWORK_LINK_SPRITES: tuple[tuple[str, str], ...] = (
+    (LINK_BROKEN, NETWORK_LINK_BROKEN_PATH[-1]),
+    (LINK_BAD, NETWORK_LINK_BAD_PATH[-1]),
+    (LINK_SLOW, NETWORK_LINK_SLOW_PATH[-1]),
+)
+# Most severe first, so a client whose icons are mid-transition reports the worse state.
+
+
+async def _network_link_level(client) -> str | None:
+    """Return the most severe network status icon the client's HUD is showing, or None.
+
+    Reads each sprite's *own* visible flag. The spriteNetworkLinkImage inside it reads
+    visible whether or not anything is wrong, so a path to the image says nothing. None
+    covers both a healthy link and a HUD that is not there to read, such as at character
+    select; neither is evidence of a failure.
+    """
+    hud = await _traverse_path(client.root_window, _NETWORK_LINK_HUD_PATH)
+    if hud is None:
+        return None
+    wanted = {sprite for _, sprite in _NETWORK_LINK_SPRITES}
+    found: dict[str, object] = {}
+    for child in await hud.children():
+        name = await child.name()
+        if name in wanted:
+            found.setdefault(name, child)
+    for level, sprite in _NETWORK_LINK_SPRITES:
+        window = found.get(sprite)
+        if window is not None and await window.is_visible():
+            return level
+    return None
+
+
+@dataclass
+class _LinkStreak:
+    """One client's unbroken run of a single network status icon."""
+
+    level: str
+    started: float
+    polls: int = 0
+    paused_at: float | None = None
+
 
 class ClientHealthMonitor:
     """Monitors WizSprinter clients for crashes and loading-screen hangs.
@@ -154,13 +216,14 @@ class ClientHealthMonitor:
     async def run(self) -> None:
         """Start all health-check loops and wait until the stop flag is set."""
         dialog_task = asyncio.create_task(self._disconnect_dialog_watcher())
+        network_task = asyncio.create_task(self._network_link_watcher())
         status_task = asyncio.create_task(self._client_status_watcher())
         loading_task = asyncio.create_task(self._loading_screen_watcher())
         restricted_task = asyncio.create_task(self._restricted_zone_watcher())
         try:
             await self._stop_flag.wait()
         finally:
-            for t in (dialog_task, status_task, loading_task, restricted_task):
+            for t in (dialog_task, network_task, status_task, loading_task, restricted_task):
                 t.cancel()
                 try:
                     await t
@@ -185,6 +248,22 @@ class ClientHealthMonitor:
         terminating takes any error popup it might be showing with it.
         """
         terminate_process(pid)
+
+    def _recover(self, client, reason: str) -> None:
+        """Kill a client that has lost its connection and hand it to recovery.
+
+        Shared by every watcher whose signal is "the game is still running but its
+        connection is gone": nothing is left to shut down cleanly, and killing the process
+        is what gets remove_dead_clients() to reap it and start the relaunch.
+        """
+        hwnd = client.window_handle
+        logger.warning("Client hwnd=%d %s — force-killing and triggering recovery", hwnd, reason)
+        self._flagged.add(hwnd)
+        try:
+            self._force_kill_process(client.process_id)
+        except Exception:
+            logger.exception("Failed to force-kill process for hwnd=%d", hwnd)
+        self._fire_disconnected(hwnd)
 
     async def _disconnect_dialog_watcher(self) -> None:
         """Detect in-game disconnect modals and force-kill the client process.
@@ -211,16 +290,7 @@ class ClientHealthMonitor:
                     continue
                 if not modal_visible:
                     continue
-                logger.warning(
-                    "Client hwnd=%d shows a disconnect modal — force-killing and triggering recovery",
-                    hwnd,
-                )
-                self._flagged.add(hwnd)
-                try:
-                    self._force_kill_process(client.process_id)
-                except Exception:
-                    logger.exception("Failed to force-kill process for hwnd=%d", hwnd)
-                self._fire_disconnected(hwnd)
+                self._recover(client, "shows a disconnect modal")
 
     @staticmethod
     async def _is_disconnect_modal_visible(client) -> bool:
@@ -246,6 +316,74 @@ class ClientHealthMonitor:
             return key in dialog_captions.DISCONNECTS
 
         return any(kw in text.lower() for kw in _DISCONNECT_KEYWORDS)
+
+    async def _network_link_watcher(self) -> None:
+        """Recover clients whose connection failed without a disconnect modal.
+
+        The game does not always put up the modal _disconnect_dialog_watcher looks for.
+        Sometimes the client drops off the server and carries on, still walkable, and
+        the only sign is the network status icon in the HUD. zone_name() keeps answering
+        and no loading screen appears, so none of the other watchers will notice.
+
+        Slow only warns. Bad triggers recovery after NETWORK_LINK_BAD_TIMEOUT: the game
+        can recover from it, but rarely does. Broken never recovers, so it only has to
+        be read NETWORK_LINK_BROKEN_POLLS times in a row, to rule out a misread.
+        """
+        streaks: dict[int, _LinkStreak] = {}
+        while not self._stop_flag.is_set():
+            await asyncio.sleep(NETWORK_LINK_POLL_INTERVAL)
+            clients = list(self._clients_ref())
+            for gone in streaks.keys() - {c.window_handle for c in clients}:
+                del streaks[gone]
+            for client in clients:
+                await self._check_network_link(client, streaks, time.monotonic())
+
+    async def _check_network_link(self, client, streaks: dict[int, _LinkStreak], now: float) -> None:
+        """Advance one client's network-icon streak by one poll, recovering it if due.
+
+        A loading screen pauses the streak rather than ending it. A client showing
+        "broken" as a zone change begins is still broken when it lands, and the icon is
+        not worth trusting while the screen is up. A read that fails leaves the streak
+        untouched: it is no evidence either way, and an unreadable client belongs to
+        _client_status_watcher.
+        """
+        hwnd = client.window_handle
+        if hwnd in self._flagged:
+            streaks.pop(hwnd, None)
+            return
+        try:
+            loading = await client.is_loading()
+            level = None if loading else await _network_link_level(client)
+        except Exception:
+            return
+
+        streak = streaks.get(hwnd)
+        if loading:
+            if streak is not None and streak.paused_at is None:
+                streak.paused_at = now
+            return
+        if streak is not None and streak.paused_at is not None:
+            streak.started += now - streak.paused_at
+            streak.paused_at = None
+
+        if level is None:
+            if streak is not None:
+                logger.info("Client hwnd=%d network status cleared (was %s)", hwnd, streak.level)
+                del streaks[hwnd]
+            return
+        if streak is None or streak.level != level:
+            streak = streaks[hwnd] = _LinkStreak(level=level, started=now)
+            logger.warning("Client hwnd=%d network status shows %s", hwnd, level)
+        streak.polls += 1
+
+        if level == LINK_BROKEN and streak.polls >= NETWORK_LINK_BROKEN_POLLS:
+            reason = f"has shown a broken network link for {streak.polls} polls"
+        elif level == LINK_BAD and now - streak.started >= NETWORK_LINK_BAD_TIMEOUT:
+            reason = f"has shown a bad network link for {now - streak.started:.0f}s"
+        else:
+            return
+        del streaks[hwnd]
+        self._recover(client, reason)
 
     async def _client_status_watcher(self) -> None:
         """Detect unresponsive clients via zone_name() polling.

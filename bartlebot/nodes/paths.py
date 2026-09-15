@@ -41,6 +41,14 @@ POTION_EXIT_PATH = ["WorldView", "main", "exit"]
 # Potion usage button in the HUD
 POTION_USAGE_PATH = ["WorldView", "windowHUD", "btnPotions"]
 
+# Network status icons in the HUD, mildest first. Each sprite's own visible flag is set only
+# while the game is showing that state, which is what makes it readable. The
+# spriteNetworkLinkImage inside each one reads visible all the time, so never path to it.
+# A connection can fail with no disconnect modal at all, and these are then the only sign.
+NETWORK_LINK_SLOW_PATH = ["WorldView", "windowHUD", "spriteNetworkLinkSlow"]
+NETWORK_LINK_BAD_PATH = ["WorldView", "windowHUD", "spriteNetworkLinkBad"]
+NETWORK_LINK_BROKEN_PATH = ["WorldView", "windowHUD", "spriteNetworkLinkBroken"]
+
 # Generic modal message box buttons — shared by all in-game message boxes.
 # YES / OK typically use centerButton; NO / Cancel typically use rightButton.
 # Read MESSAGE_BOX_CAPTION_PATH to identify which dialog is showing.
