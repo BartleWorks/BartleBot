@@ -43,6 +43,14 @@ ART_DIRNAME = "art"
 #: Where the extractor writes the per-spell PNGs, relative to :func:`art_dir`.
 SPELLS_DIRNAME = "spells"
 
+#: Where the extractor writes the school and archmastery icons.
+ICONS_DIRNAME = "icons"
+
+#: Logical names for the two icons that are not a school, so that neither the
+#: extractor nor the GUI spells a game texture filename.
+ARCHMASTERY_ICON = "archmastery"
+UNIVERSAL_ICON = "universal"
+
 #: Maps template name -> PNG filename. Written by the extractor, read here.
 INDEX_FILENAME = "index.json"
 
@@ -63,15 +71,33 @@ def spells_dir() -> Path:
     return art_dir() / SPELLS_DIRNAME
 
 
+def icons_dir() -> Path:
+    return art_dir() / ICONS_DIRNAME
+
+
+def school_icon_name(school: str) -> str:
+    """The icon key for a school, from the name a deck stores ("Fire" -> "school_fire").
+
+    Case-folded because the deck's value comes from wizwalker's school table and the
+    extractor's from :data:`~bartlebot.spell_schools.SCHOOL_ORDER`; keying on the exact
+    casing would make the two agree only by luck.
+    """
+    return f"school_{school.casefold()}"
+
+
 @cache
-def _index() -> dict[str, str]:
-    """Template name -> PNG filename, or empty when no art has been extracted.
+def _manifest() -> dict:
+    """The whole index file, or empty when no art has been extracted.
 
     Cached because it is read once per card per redraw and the file only changes when
     the extractor runs -- which is a manual act, after which :func:`forget_cache`
     is what makes the new file visible. A missing file is the common case and says
     nothing; an unreadable one is worth a line in the log, since the user did run the
     extractor and is entitled to know why they see no art.
+
+    One read for both maps: the spell images and the icons are written by the same run
+    and live in the same file, so reading it twice would only be two chances to
+    disagree about what is in it.
     """
     path = index_path()
     if not path.exists():
@@ -81,11 +107,23 @@ def _index() -> dict[str, str]:
     except (OSError, ValueError):
         logger.exception("could not read extracted card art index at %s", path)
         return {}
-    images = raw.get("images")
-    if not isinstance(images, dict):
-        logger.warning("card art index at %s has no usable 'images' map", path)
-        return {}
-    return images
+    return raw if isinstance(raw, dict) else {}
+
+
+def _section(key: str) -> dict[str, str]:
+    """One name -> filename map out of the manifest, or empty if it is not usable."""
+    value = _manifest().get(key)
+    return value if isinstance(value, dict) else {}
+
+
+def _index() -> dict[str, str]:
+    """Template name -> PNG filename."""
+    return _section("images")
+
+
+def _icons() -> dict[str, str]:
+    """Icon key -> PNG filename. Empty for a cache written before icons were extracted."""
+    return _section("icons")
 
 
 def forget_cache() -> None:
@@ -94,7 +132,7 @@ def forget_cache() -> None:
     For the extractor finishing inside a running app, and for tests pointing the
     product directory somewhere else.
     """
-    _index.cache_clear()
+    _manifest.cache_clear()
 
 
 def is_available() -> bool:
@@ -113,4 +151,19 @@ def art_path(template_name: str) -> Path | None:
     if not filename:
         return None
     path = spells_dir() / filename
+    return path if path.exists() else None
+
+
+def icon_path(name: str) -> Path | None:
+    """The PNG for an icon key, or None if there is not one on this machine.
+
+    Same three "no icon" cases as :func:`art_path`, and the same answer to all three.
+    An art cache extracted before icons were added has no ``icons`` map at all, which
+    lands here as None per key rather than as an error -- the surfaces using icons all
+    keep the text form they replaced.
+    """
+    filename = _icons().get(name)
+    if not filename:
+        return None
+    path = icons_dir() / filename
     return path if path.exists() else None

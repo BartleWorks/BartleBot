@@ -110,8 +110,31 @@ its absence as the ordinary case rather than as a missing dependency.
 It reads each spell's `m_imageName` and pulls that texture from `GUI/SummonedImages`
 (nearly all in `_Shared-WorldData.wad`, a dozen in `Root.wad`), converting DXT3/DXT5 to
 PNG because Qt's build here has no `dds` plugin. One PNG per *image*, not per template:
-18,006 templates share 1,308 images. `Pillow` is a dev dependency for exactly this and
+18,007 templates share 1,308 images. `Pillow` is a dev dependency for exactly this and
 is not imported at runtime. `bartlebot/card_art.py` is the read side.
+
+The same run also writes 13 UI icons into `art/icons/`, and they are keyed by a
+**logical name** — `archmastery`, `universal`, `school_fire` — rather than by the
+texture they came from, so neither the extractor's caller nor the GUI ever spells a
+KingsIsle filename. `ICON_SOURCES` is the one place the two meet. What they resolve to,
+and why each was picked over its neighbours:
+
+| key | texture | why this one |
+|---|---|---|
+| `archmastery` | `GUI/Icons/Icon_Archmastery.dds` | the rainbow spiral meaning *archmastery*, carrying no school |
+| `universal` | `GUI/Icons/Type_Global.dds` | the game's own "any school" mark, as stamped on card art |
+| `school_<name>` | `GUI/Schools/Art_School_<School>.dds` | the ringed medallion the in-game archmastery picker uses |
+
+Two traps in that table. `Art_School_` is split across archives — seven schools in
+`Root.wad`, and Moon, Star, Sun and Shadow in `_Shared-WorldData.wad` — so a probe that
+lists only one wad concludes it covers seven schools and stops looking; it covers all
+eleven. And `Type_Global` exists at 32×32 **and nowhere larger**, its `.tga` twin being
+smaller still, so 32px is a hard ceiling on how big any surface may draw it rather than
+a default to raise later.
+
+Searching for these is its own trap: a name-matching probe keyed on the school names
+cannot find a texture called *Universal* or *Global*, and one that caps its per-match
+output silently hides whatever sorts last. Both happened here.
 
 Follow the same split for any new asset work: a *name* or an *id* can be snapshotted
 into `bartlebot/data/`, a *texture, model or sound* goes to the machine-local cache.

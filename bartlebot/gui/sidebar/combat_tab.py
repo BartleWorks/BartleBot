@@ -105,6 +105,7 @@ from bartlebot.combat_grouping import (
 )
 from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.credentials import CredentialStore
+from bartlebot.deck_io import resolve_apply_archmastery
 from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
@@ -126,6 +127,7 @@ from bartlebot.gui.sidebar.strategy_panel import (
 )
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.add_card import AddCard
+from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge
 from bartlebot.gui.widgets.card_art_tile import ROW_TILE, CardArtStrip, CardArtTile, card_pixmap, tooltip_for
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.elided_label import ElidedLabel
@@ -249,6 +251,12 @@ class _DeckCard(CardFrame):
         # A pill, coloured by the account in this slot, where a bold "P1" used to be (#40).
         self._name = PlayerBadge(self._slot)
         header.addWidget(self._name, 0, Qt.AlignmentFlag.AlignVCenter)
+        # The deck's archmastery as the game's own two icons, beside the pill: the facts
+        # about the deck run left to right from here, and the row's right-hand end stays
+        # entirely things that can be clicked.
+        self._archmastery_icons = ArchmasteryBadge(parent=self)
+        self._archmastery_icons.setVisible(False)
+        header.addWidget(self._archmastery_icons, 0, Qt.AlignmentFlag.AlignVCenter)
         # Elided rather than wrapped, for the reason StrategyPanel's captions are.
         self._summary = ElidedLabel(_NO_DECK)
         header.addWidget(self._summary, 1)
@@ -256,8 +264,11 @@ class _DeckCard(CardFrame):
         header.addWidget(self._make_kebab_button("More deck actions"), 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
-        # "Archmastery: Fire · always set". Hidden unless the deck names a school, a
-        # deck without one having nothing for the override to act on.
+        # The other half of the same fact, and exactly one of the two is ever up: the
+        # icons on the header row where they have been extracted, this sentence where
+        # they have not. A row of its own because it is a sentence; both hidden unless
+        # the deck names a school, a deck without one having nothing for the override
+        # to act on.
         self._archmastery = ElidedLabel()
         self._archmastery.setVisible(False)
         layout.addWidget(self._archmastery)
@@ -316,10 +327,20 @@ class _DeckCard(CardFrame):
             self.set_expanded(False)
 
         school = deck.archmastery_school if deck is not None else None
+        will_set = False
+        note = ""
         if school:
             mode = next(label for label, value in _ARCHMASTERY_MODES if value is deck.apply_archmastery)
-            self._archmastery.setText(f"Archmastery: {school} · {mode.lower()}")
-        self._archmastery.setVisible(bool(school))
+            note = f"Archmastery: {school} · {mode.lower()}"
+            self._archmastery.setText(note)
+            # Resolved rather than stored, because the medallion only names the school
+            # when the apply will actually set it -- see archmastery_badge.py.
+            will_set, _source = resolve_apply_archmastery(deck)
+        self._archmastery_icons.set_archmastery(school, will_set, note)
+        # The icons where they exist, the sentence where they do not, never both.
+        show_icons = bool(school) and self._archmastery_icons.has_icons()
+        self._archmastery_icons.setVisible(show_icons)
+        self._archmastery.setVisible(bool(school) and not show_icons)
 
         self._rebuild_art()
         if self._expanded:

@@ -33,6 +33,7 @@ since a repaint is what a theme switch causes anyway.
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 
 from PyQt6.QtCore import QRectF, QSize, Qt
 from PyQt6.QtGui import QColor, QFont, QPainter, QPixmap
@@ -73,6 +74,20 @@ def _scaled_pixmap(path: str, size: int, stamp: float) -> QPixmap:
     )
 
 
+def pixmap_for_path(path: Path, size: int) -> QPixmap | None:
+    """An extracted PNG at *size*, or None if it cannot be read.
+
+    Shared with the archmastery icons, which come out of the same cache and want the
+    same mtime-keyed scaling; only the lookup that finds the path differs.
+    """
+    try:
+        stamp = path.stat().st_mtime
+    except OSError:
+        return None
+    pixmap = _scaled_pixmap(str(path), size, stamp)
+    return None if pixmap.isNull() else pixmap
+
+
 def card_pixmap(template: str, size: int) -> QPixmap | None:
     """The extracted art for *template* at *size*, or None if there is none.
 
@@ -80,14 +95,7 @@ def card_pixmap(template: str, size: int) -> QPixmap | None:
     and for the handful of cards whose texture the game's own files do not contain.
     """
     path = card_art.art_path(template)
-    if path is None:
-        return None
-    try:
-        stamp = path.stat().st_mtime
-    except OSError:
-        return None
-    pixmap = _scaled_pixmap(str(path), size, stamp)
-    return None if pixmap.isNull() else pixmap
+    return None if path is None else pixmap_for_path(path, size)
 
 
 def tooltip_for(entry: DeckCardEntry) -> str:

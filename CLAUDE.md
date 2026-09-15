@@ -112,7 +112,8 @@ asset*: `data/spell_names.json`, `data/zone_names.json` and `data/spell_schools.
 are all extracted from `Root.wad` and all tracked, because a snapshot of names is what
 lets the app talk about the game without shipping any of it.
 
-Art therefore has no checked-in snapshot and never gets one. The user extracts it on
+Art therefore has no checked-in snapshot and never gets one — not the spell card art,
+and not the school and archmastery icons beside it. The user extracts all of it on
 their own machine with `tools/extract_card_art.py`, into
 `%APPDATA%/Bartleby/BartleBot/art` — outside the repo entirely, so an accidental `git
 add` cannot reach it. `bartlebot/card_art.py` is the read side, and **every lookup

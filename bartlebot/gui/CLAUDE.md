@@ -252,6 +252,27 @@ display name covers many templates, and a tiered variant draws its base spell's
 texture, so two identical-looking tiles can be different cards. That is what the tile's
 tooltip names the template for.
 
+The same cache holds the school and archmastery icons, under `card_art.icon_path` and
+logical keys rather than texture names. `ArchmasteryBadge` is the worked example, and
+the fallback is the same shape: the deck card keeps its `Archmastery: Fire · always
+set` line, on a row of its own, for every install that has not extracted them. Two
+rules it is easy to lose:
+
+- **Both icons or neither.** A lone archmastery spiral says the deck has an opinion
+  without saying what it is, so `has_icons()` is false unless the mark *and* the
+  medallion both resolved — which also covers an icon set missing the one school this
+  deck happens to name.
+- **The medallion names the school only when the school will actually be set.** A deck
+  can carry a school it will never apply: the override resolves through an app setting
+  whose shipped default is off. A Fire medallion on a card whose apply leaves
+  archmastery alone is a claim about the wizard that the deck does not make, so the
+  universal mark stands in. That means the badge asks `resolve_apply_archmastery`, not
+  `deck.archmastery_school` alone.
+
+An icon is artwork in its own colours, so a widget drawing one reads no `THEME` value
+and needs neither `ThemedMixin` nor a `changeEvent` — the guard test agrees, and this is
+the same exemption the card art tiles take.
+
 ## A widget that wraps has to say so in its size policy
 
 `FlowLayout` wraps correctly and the parent still reserves **one row**, because a

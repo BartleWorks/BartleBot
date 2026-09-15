@@ -84,6 +84,33 @@ def test_an_index_with_no_images_map_reads_as_no_art(art_home):
     assert not card_art.is_available()
 
 
+def test_an_icon_in_the_index_finds_its_file(art_home):
+    card_art.icons_dir().mkdir(parents=True, exist_ok=True)
+    card_art.index_path().write_text(json.dumps({"icons": {"archmastery": "archmastery.png"}}), encoding="utf-8")
+    (card_art.icons_dir() / "archmastery.png").write_bytes(b"only its presence is read")
+
+    path = card_art.icon_path("archmastery")
+
+    assert path is not None
+    assert path.name == "archmastery.png"
+
+
+def test_an_art_cache_written_before_icons_existed_reads_as_no_icons(art_home):
+    """The spell art still resolves: a missing ``icons`` map is an older cache, not a
+    broken one, and the surfaces using icons keep the text they replaced."""
+    _write_index({"Tempest": "Spell_Storm_Tempest.png"}, files=("Spell_Storm_Tempest.png",))
+
+    assert card_art.art_path("Tempest") is not None
+    assert card_art.icon_path("archmastery") is None
+
+
+def test_an_icon_whose_file_is_gone_reads_as_missing(art_home):
+    card_art.art_dir().mkdir(parents=True, exist_ok=True)
+    card_art.index_path().write_text(json.dumps({"icons": {"archmastery": "archmastery.png"}}), encoding="utf-8")
+
+    assert card_art.icon_path("archmastery") is None
+
+
 def test_forgetting_the_cache_picks_up_a_later_extraction(art_home):
     assert not card_art.is_available()
 
