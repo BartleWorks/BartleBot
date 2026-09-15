@@ -21,8 +21,8 @@ MEMORY LAYOUT
     reads start coming back empty.
 
     DeckListControl entry vector   0x300 (begin) / 0x308 (end), stride 0x28
-        wizwalker's DeckListControl.spell_entries() still reads 0x280, which is
-        null in the current build — that is why it returns nothing.
+        wizwalker's DeckListControl.spell_entries() read 0x280 until the
+        bartlebot-pin-20260915 pin, and returned nothing; it now reads 0x300.
     Entry +0x15 (uint8)            0x00 = card toggled ON, 0x01 = toggled OFF
         Only meaningful for ItemSpells.  Note entry +0x10
         (valid_graphical_spell) is 0 for every entry and carries no state.

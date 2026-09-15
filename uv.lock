@@ -70,7 +70,7 @@ requires-dist = [
     { name = "transitions", specifier = ">=0.9" },
     { name = "wakepy", specifier = ">=1.0" },
     { name = "wizsprinter", git = "https://github.com/The-World-Tree/wizsprinter.git?rev=77b75393280ceaa4ad4ec5d4c5882aabe9aad638" },
-    { name = "wizwalker", git = "https://github.com/The-World-Tree/wizwalker.git?rev=ba5c32c44488d4ede56c85dd68980ab7012596f2" },
+    { name = "wizwalker", git = "https://github.com/The-World-Tree/wizwalker.git?rev=26affbaadb7b3f75fe7342c1f7176a99ca45d572" },
 ]
 
 [package.metadata.requires-dev]
@@ -1017,7 +1017,7 @@ dependencies = [
 [[package]]
 name = "wizwalker"
 version = "1.8.2"
-source = { git = "https://github.com/The-World-Tree/wizwalker.git?rev=ba5c32c44488d4ede56c85dd68980ab7012596f2#ba5c32c44488d4ede56c85dd68980ab7012596f2" }
+source = { git = "https://github.com/The-World-Tree/wizwalker.git?rev=26affbaadb7b3f75fe7342c1f7176a99ca45d572#26affbaadb7b3f75fe7342c1f7176a99ca45d572" }
 dependencies = [
     { name = "aiofiles" },
     { name = "appdirs" },
