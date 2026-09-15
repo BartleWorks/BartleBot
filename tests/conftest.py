@@ -451,8 +451,40 @@ def _restore_app_stylesheet():
 # ---------------------------------------------------------------------------
 
 
+_WIDGETS_BEFORE = pytest.StashKey[set[int]]()
+_WIDGETS_PINNED = pytest.StashKey[list]()
+
+
+@pytest.hookimpl(wrapper=True, trylast=True)
+def pytest_runtest_call(item):
+    """Hold the test's top-level widgets from the moment it returns until they are reaped.
+
+    pytest-qt's own ``pytest_runtest_call`` wrapper is ``tryfirst``, so it is outermost and
+    calls ``processEvents()`` after the test function returns but before any fixture
+    teardown. By then a widget the test kept only in a local is garbage — a ``QDialog``
+    with its signals connected to its own bound methods is a reference cycle — and the
+    cyclic collector can run inside a paint event that pump is delivering. Collecting the
+    wrapper deletes the C++ dialog, its popup, and the very row whose ``paintEvent`` is on
+    the stack: an access violation in ``QPainter``, and only when the allocation count
+    happens to trip a collection there (issue #80).
+
+    This wrapper is innermost, so it runs first once the test returns, and a strong
+    reference is all it takes. ``_free_widgets_this_test_created`` releases the pins
+    after it has freed the widgets deterministically.
+    """
+    try:
+        return (yield)
+    finally:
+        before_ids = item.stash.get(_WIDGETS_BEFORE, None)
+        if before_ids is not None:
+            from PyQt6.QtWidgets import QApplication  # noqa: PLC0415
+
+            if QApplication.instance() is not None:
+                item.stash[_WIDGETS_PINNED] = [w for w in QApplication.topLevelWidgets() if id(w) not in before_ids]
+
+
 @pytest.fixture(autouse=True)
-def _free_widgets_this_test_created():
+def _free_widgets_this_test_created(request):
     """Destroy the top-level widgets a test built, before the next test starts.
 
     ``deleteLater()`` on its own frees nothing here: it posts a ``DeferredDelete``
@@ -491,6 +523,7 @@ def _free_widgets_this_test_created():
 
     before = QApplication.topLevelWidgets() if QApplication.instance() is not None else []
     before_ids = {id(w) for w in before}
+    request.node.stash[_WIDGETS_BEFORE] = before_ids
     yield
     if QApplication.instance() is None:
         return
@@ -510,6 +543,9 @@ def _free_widgets_this_test_created():
             widget.close()
             widget.deleteLater()
         QApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    # Freed deterministically above, so the collector no longer has anything to race.
+    if _WIDGETS_PINNED in request.node.stash:
+        del request.node.stash[_WIDGETS_PINNED]
     # Held until here only so an id() cannot be recycled onto a new widget.
     del before
 
