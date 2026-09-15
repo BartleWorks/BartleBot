@@ -29,6 +29,20 @@ MEMORY LAYOUT
 
     Item cards sit in a row-major 8x2 grid, 16 slots per page, so a card at
     vector index i is at page i // 16, slot i % 16.
+
+PAGING
+    Pages are turned by writing the list's first-visible index, never by
+    clicking the page buttons.  Derived with ``tools/probe_deck_page_index.py``:
+
+    SpellListControl start index   0x388, page * 6   (DeckBuilder.set_page)
+    DeckListControl start index    0x320, page * 16  (ItemSpells)
+
+    The game keeps a second page counter that only the buttons update.  It
+    decides whether the buttons are enabled -- Prev does nothing on a written
+    page -- and a tier flyout close restores the page from it, to page one after
+    a write.  So every click is preceded by a write of its page, and writes are
+    never mixed with the buttons.  Pages index the raw entry vector, which is why
+    the spellbook is read with unreadable entries kept as blanks.
 """
 
 from __future__ import annotations
@@ -47,6 +61,7 @@ from wizwalker.memory.memory_objects.conditionals import school_to_str
 from wizwalker.memory.memory_objects.window import (
     DeckListControlSpellEntry,
     DynamicDeckListControl,
+    DynamicSpellListControl,
 )
 
 from bartlebot.card_kinds import classify_effects
@@ -351,9 +366,9 @@ def resolved_at_click_time(requested: str, entry: str) -> bool:
 def plan_normal_cards(desired: dict[str, int], available: list[str]) -> NormalCardPlan:
     """Split a saved deck's normal cards into what this account can and cannot supply.
 
-    Runs *before* the deck is cleared.  wizwalker's ``_add_all_normal_cards``
-    raises on the first name it cannot place, and ``write_deck`` clears the deck
-    first — so a single unowned card used to leave the wizard with an empty deck
+    Runs *before* the deck is cleared.  wizwalker's ``_add_all_normal_cards``,
+    which placed these cards before ``_add_direct_cards``, raised on the first
+    name it could not place after ``write_deck`` had cleared the deck — so a single unowned card used to leave the wizard with an empty deck
     and a log line claiming the run would "continue with whatever was set".
     Filtering up front turns that into a partial deck, matching how item cards
     have always behaved (see ``plan_item_toggles``).
@@ -393,8 +408,7 @@ def partition_addable(addable: dict[str, int], available: list[str]) -> CardRout
         A wizard who has unlocked exactly one variant sees it listed outright
         ("Novus Storm - T04 - B"), so a deck asking for T05-B resolves down to
         that entry and it can simply be clicked.  Plain untiered cards land here
-        too.  These are safe to hand to wizwalker's ``_add_all_normal_cards``,
-        which takes its no-op "name in spell_names" branch and cannot raise.
+        too.  ``_add_direct_cards`` clicks these straight off the spellbook.
 
     *fusion* — the spellbook entry is the spell's *base form*, which yields
         either a variant flyout or the base card itself depending on how many
@@ -407,8 +421,8 @@ def partition_addable(addable: dict[str, int], available: list[str]) -> CardRout
     *unresolvable* — no spellbook entry shares the base, or the only unlocked
         variant is on another path or a higher tier than asked for.
 
-    Splitting up front is what keeps ``_add_all_normal_cards`` from ever seeing
-    a name it would raise on, which matters because it runs after the clear.
+    Splitting up front means nothing that runs after the clear has to decide
+    what kind of name it was handed.
 
     ``substitutions`` records every card whose name changed on the way into
     *direct*.  It is returned rather than logged because this function is pure;
@@ -457,7 +471,8 @@ def expected_normal_deck(direct: dict[str, int], fusion_placed: dict[str, int]) 
     out a timeout on every apply.
 
     ``direct`` is keyed by the entry that was clicked, since ``partition_addable``
-    resolves substitutions into it.  ``fusion_placed`` is keyed by the card that
+    resolves substitutions into it, and like ``fusion_placed`` it holds the
+    copies ``_place_copies`` confirmed rather than the copies asked for.  ``fusion_placed`` is keyed by the card that
     was actually clicked and counted by ``_add_fusion_cards``, which is why no
     renaming or skip-filtering happens here any more: a count that was confirmed
     against the deck already reflects every substitution and every shortfall.
@@ -466,6 +481,22 @@ def expected_normal_deck(direct: dict[str, int], fusion_placed: dict[str, int]) 
     for card, count in fusion_placed.items():
         expected[card] = expected.get(card, 0) + count
     return expected
+
+
+def direct_requesters(addable: dict[str, int], routing: CardRouting) -> dict[str, dict[str, int]]:
+    """The deck names behind each direct spellbook entry, with their counts.
+
+    ``partition_addable`` folds a substituted tier into the entry it resolved to,
+    and sums the copies when two names land on one entry.  The report still has to
+    say which *requested* card fell short or never went in, so this undoes the
+    fold.  The counts for one entry sum to ``routing.direct[entry]``.
+    """
+    by_entry: dict[str, dict[str, int]] = {}
+    for name, count in addable.items():
+        entry = routing.substitutions.get(name, name)
+        if entry in routing.direct and name not in routing.fusion and name not in routing.unresolvable:
+            by_entry.setdefault(entry, {})[name] = count
+    return by_entry
 
 
 def count_names(names: list[str]) -> dict[str, int]:
@@ -682,17 +713,32 @@ async def _await_item_toggle(read_active, index: int, want_active: bool) -> bool
         await asyncio.sleep(DECK_CARD_CONFIRM_POLL)
 
 
-async def _apply_item_toggles(db, deck_window, plan: list[ItemSlot], total_pages: int) -> None:
-    """Click each planned slot, walking the item pages forward exactly once.
+async def _set_item_page(client, deck_window, page: int, total_pages: int) -> None:
+    """Put ItemSpells on ``page`` (0-based) by writing the list's start index.
 
-    ``plan`` is in index order, so pages are visited in ascending order and the
-    sweep never needs to go back.  Rewinding to page 0 clicks Prev a fixed
-    ``total_pages - 1`` times — clicking Prev on the first page is a harmless
-    no-op, which is what lets us skip the unreliable is_control_grayed() probe.
+    Replaces rewinding with Prev and clicking Next, which cannot be mixed with a
+    write: Prev stays disabled on a written page.  See PAGING in the module
+    docstring.  Only whole pages inside the list are written; nothing past the
+    end has been probed.
+    """
+    if not 0 <= page < total_pages:
+        raise ValueError(f"item page {page} is outside the {total_pages} page(s) of item cards")
+    control = await _control_for(client, deck_window, "ItemSpells")
+    await control.write_start_index(page * SLOTS_PER_PAGE)
+    await asyncio.sleep(DECK_ITEM_PAGE_SETTLE)
+
+
+async def _apply_item_toggles(db, deck_window, plan: list[ItemSlot], total_pages: int) -> None:
+    """Click each planned slot, writing its item page first whenever it changes.
+
+    ``plan`` is in index order, so each page is written once.  The first slot's
+    page is always written, because the page the list was left on is unknown.
 
     Each click is confirmed against the slot's own active flag, and re-clicked
     up to ``CARD_CLICK_ATTEMPTS`` times if it does not land — see
-    ``_await_item_toggle``.
+    ``_await_item_toggle``.  A slot whose page cannot be written is skipped
+    rather than clicked, since the click would toggle whatever sits there on the
+    page still showing.
     """
     if not plan:
         return
@@ -700,20 +746,22 @@ async def _apply_item_toggles(db, deck_window, plan: list[ItemSlot], total_pages
     client = db.client
     read_active = _item_active_reader(client, deck_window)
 
-    prev_btn = await _maybe_get_named_window(deck_window, "PrevItemSpells")
-    async with client.mouse_handler:
-        for _ in range(max(0, total_pages - 1)):
-            await client.mouse_handler.click_window(prev_btn)
-            await asyncio.sleep(DECK_ITEM_PAGE_SETTLE)
-
-    current_page = 0
+    current_page: int | None = None
     for slot in plan:
-        while current_page < slot.page:
-            next_btn = await _maybe_get_named_window(deck_window, "NextItemSpells")
-            async with client.mouse_handler:
-                await client.mouse_handler.click_window(next_btn)
-            await asyncio.sleep(DECK_ITEM_PAGE_SETTLE)
-            current_page += 1
+        if slot.page != current_page:
+            try:
+                await _set_item_page(client, deck_window, slot.page, total_pages)
+            except Exception:
+                logger.warning(
+                    "Could not turn the item cards to page %d — slot %d ('%s') is not toggled",
+                    slot.page + 1,
+                    slot.index,
+                    slot.name,
+                    exc_info=True,
+                )
+                current_page = None
+                continue
+            current_page = slot.page
 
         rect = await db.get_item_spells_rectangle()
         cells = db.divide_rectangle(rect, columns=GRID_COLUMNS, rows=GRID_ROWS)
@@ -787,17 +835,34 @@ async def _spell_list_kinds(db) -> dict[str, str]:
     return kinds
 
 
+async def _spell_list_control(db):
+    window = await _maybe_get_named_window(db._deck_config_window, "AllPageSpellList")  # noqa: SLF001
+    return DynamicSpellListControl(db.client.hook_handler, await window.read_base_address())
+
+
 async def _spell_list_names(db) -> list[str]:
-    """Template names of every card in the account's spell list, in list order.
+    """Template names of every entry in the account's spell list, in vector order.
 
     Order matters: ``calcuate_position_of_card_in_page`` derives a card's page
     and slot from its index here, so this must stay a positional list rather
     than a set.
+
+    Read from the raw entry vector, not wizwalker's ``get_graphical_spell_cards``.
+    That one drops entries it cannot read, and every card after a dropped entry
+    would then be computed one slot early -- the wrong card, or the wrong page,
+    because the page written is an index into the raw vector.  An unreadable
+    entry is kept as ``""`` so the positions still line up.
     """
+    control = await _spell_list_control(db)
     names: list[str] = []
-    for spell in await db.get_graphical_spell_cards():
-        template = await spell.spell_template()
-        names.append(await template.name() if template else "")
+    for entry in await control.spell_entries():
+        try:
+            graphical = await entry.graphical_spell()
+            template = await graphical.spell_template() if graphical else None
+            names.append((await template.name() or "") if template else "")
+        except Exception:
+            logger.debug("Unreadable spellbook entry at index %d", len(names), exc_info=True)
+            names.append("")
     return names
 
 
@@ -921,13 +986,14 @@ async def _place_copies(db, count_cards, position: tuple[int, int], wanted: int,
     return placed
 
 
-async def _close_tier_flyout(db) -> bool:
-    """Dismiss the tier flyout.  Returns True if the spellbook page was lost.
+async def _close_tier_flyout(db) -> None:
+    """Dismiss the tier flyout.
 
-    The close button leaves the page beneath it alone, so the sweep in
-    ``_add_fusion_cards`` can keep counting.  The fallback does not: reopening
-    the deck page puts the spellbook back on page one, and a sweep that went on
-    counting from there would click whatever now sits under its coordinates.
+    Either way the spellbook page is lost.  The close button restores it from the
+    game's button-driven page counter, which a written page never moved, so it
+    lands on page one; the fallback reopens the deck page, which does the same.
+    Callers write the page again before their next click rather than track
+    where it went.
     """
     try:
         close_btn = await _maybe_get_named_window(db._deck_config_window, "CloseTSMPUnlockedPageButton")  # noqa: SLF001
@@ -936,29 +1002,74 @@ async def _close_tier_flyout(db) -> bool:
     except Exception:
         logger.debug("Tier flyout close button unavailable, refreshing the deck page", exc_info=True)
         await db.refresh_deck_page()
-        return True
-    return False
 
 
-async def _seek_spell_page(db, current: int | None, target: int) -> int:
-    """Put the spellbook on ``target``, returning the page now shown.
+async def _set_spell_page(db, page: int) -> None:
+    """Put the spellbook on ``page`` (0-based) by writing the list's start index.
 
-    Forward moves click PageDown and nothing else.  Anything else defers to
-    wizwalker's ``_go_to_spell_page``, which rewinds to the first page before
-    advancing — correct from an unknown position, and needlessly expensive from
-    a known one, which is the whole reason this exists.  ``current`` is None
-    when the position is unknown: on entry, and after a flyout close had to
-    reopen the page.
+    One write from anywhere, where the PageDown clicks it replaces cost a click
+    per page plus a full rewind from an unknown position.  wizwalker's
+    ``set_page`` raises ``ValueError`` for a page outside the spellbook.  Never
+    mix this with the page buttons -- see PAGING in the module docstring.
     """
-    if current is None or current > target:
-        await db._go_to_spell_page(target)  # noqa: SLF001
-        return target
-    for _ in range(target - current):
-        next_btn = await _maybe_get_named_window(db._deck_config_window, "PageDown")  # noqa: SLF001
-        async with db.client.mouse_handler:
-            await db.client.mouse_handler.click_window(next_btn)
-        await asyncio.sleep(DECK_SPELL_PAGE_SETTLE)
-    return target
+    await db.set_page(page)
+    await asyncio.sleep(DECK_SPELL_PAGE_SETTLE)
+
+
+async def _add_direct_cards(
+    db, count_cards, direct: dict[str, int], requested_by: dict[str, dict[str, int]], spell_names: list[str]
+) -> tuple[dict[str, int], list[str], dict[str, tuple[int, int]]]:
+    """Click each direct card straight off the spellbook, writing its page first.
+
+    Replaces wizwalker's ``_add_all_normal_cards``, which paged with PageUp and
+    PageDown -- a rewind of up to fifty clicks, then one click per page -- and
+    trusted every card click after a fixed pause.  Here reaching a page is one
+    write, and each card goes through ``_place_copies``, so a lost click is
+    noticed and clicked again the same way a fusion variant's is.
+
+    Positions are computed before any page is written: slot coordinates come
+    from the list control's rectangle and do not change with the page.
+
+    ``requested_by`` maps each spellbook entry to the deck names that resolved to
+    it (see ``direct_requesters``), because the report speaks in requested names.
+    Returns ``(placed, skipped, short)``: confirmed copies by entry, requested
+    names of which not one copy went in, and requested name -> (got, asked) for
+    the rest.  Never raises -- this runs after the clear.
+    """
+    placed: dict[str, int] = {}
+    skipped: list[str] = []
+    short: dict[str, tuple[int, int]] = {}
+
+    sweep: list[tuple[int, str, tuple[int, int]]] = []
+    for entry in direct:
+        try:
+            page_idx, card_idx = db.calcuate_position_of_card_in_page(spell_names, entry)
+            sweep.append((page_idx, entry, await db.calculate_card_position(card_idx)))
+        except Exception:
+            logger.warning("Could not locate '%s' in the spellbook — it is skipped", entry, exc_info=True)
+            skipped.extend(requested_by.get(entry, {entry: direct[entry]}))
+    sweep.sort(key=lambda item: item[0])
+
+    for page_idx, entry, position in sweep:
+        wanted = direct[entry]
+        requesters = requested_by.get(entry, {entry: wanted})
+        try:
+            await _set_spell_page(db, page_idx)
+            landed = await _place_copies(db, count_cards, position, wanted, entry)
+        except Exception:
+            # Which copies went in before the failure is not knowable, so report
+            # the card rather than claim a clean partial -- as the fusion pass does.
+            logger.warning("Failed while adding '%s'", entry, exc_info=True)
+            skipped.extend(requesters)
+            continue
+        if not landed:
+            skipped.extend(requesters)
+            continue
+        placed[entry] = landed
+        if landed < wanted:
+            for name, got in _share_shortfall(requesters, landed).items():
+                short[name] = (got, requesters[name])
+    return placed, skipped, short
 
 
 async def _add_fusion_cards(
@@ -984,14 +1095,11 @@ async def _add_fusion_cards(
     ``_fill_base_form`` finishes what the click started.
 
     One flyout open/close per distinct base spell, regardless of how many
-    variants or copies of it the deck asks for, and one *forward* sweep of the
-    spellbook across all of them.  Both matter: ``_go_to_spell_page`` rewinds to
-    the first page before advancing, so calling it per base walked the whole
-    book over again each time — on a 16-page spellbook with three fusion spells
-    that was 57 page clicks and ~5.7 s of paging, against 12 clicks for a sweep.
-    Bases are therefore visited in page order, not deck order, and the page is
-    only ever advanced.  This mirrors what wizwalker's own ``_add_all_normal_cards``
-    does for ordinary cards, for the same reason.
+    variants or copies of it the deck asks for.  Each base's page is written
+    directly (``_set_spell_page``) rather than paged to, so reaching it costs the
+    same wherever the spellbook was left -- which matters, because closing a
+    flyout resets a written page.  Bases are still visited in page order, so the
+    log reads in spellbook order.
 
     Every click is confirmed against the deck's card count rather than trusted
     after a fixed delay.  The flyout used to be closed 50 ms after the last
@@ -1033,10 +1141,11 @@ async def _add_fusion_cards(
         sweep.append((page_idx, base, entry, position, requested))
     sweep.sort(key=lambda item: item[0])
 
-    current_page: int | None = None  # unknown: the direct pass left it anywhere
     for page_idx, base, entry, position, requested in sweep:
         try:
-            current_page = await _seek_spell_page(db, current_page, page_idx)
+            # Written for every base, even one on the page already showing: the
+            # previous base's flyout close reset it (see _close_tier_flyout).
+            await _set_spell_page(db, page_idx)
             # Taken before the click, because this one is ambiguous: it opens a
             # flyout for a wizard holding two paths and adds a card for one
             # holding none, and only the count says which happened.
@@ -1050,7 +1159,6 @@ async def _add_fusion_cards(
         except Exception:
             logger.warning("Could not open the variant list for '%s' — its cards are skipped", base, exc_info=True)
             skipped.extend(requested)
-            current_page = None  # the failure may have been the page turn itself
             continue
 
         if not owned:
@@ -1091,8 +1199,7 @@ async def _add_fusion_cards(
             # actually committing the card; closing the flyout in that gap has
             # been observed to drop it. See DECK_FUSION_CLOSE_SETTLE.
             await asyncio.sleep(DECK_FUSION_CLOSE_SETTLE)
-            if await _close_tier_flyout(db):
-                current_page = None  # the page was reopened; where it landed is a guess
+            await _close_tier_flyout(db)
 
     return substitutions, skipped, placed, short
 
@@ -1723,8 +1830,8 @@ async def write_deck(db, deck: DeckData, *, set_archmastery: bool | None = None)
     just costs time and click risk for no benefit.
 
     Which cards can be placed is worked out *before* the clear, because
-    ``_add_all_normal_cards`` raises on the first name it cannot place and by
-    then the deck is gone: one unplaceable card used to leave the wizard holding
+    wizwalker's ``_add_all_normal_cards``, which this once called, raised on the
+    first name it could not place, and by then the deck was gone: one unplaceable card used to leave the wizard holding
     an empty deck while the caller logged that the run would "continue with
     whatever was set".  If nothing at all can be placed the deck is left
     untouched, since clearing is only ever worth doing as the first half of a
@@ -1758,12 +1865,14 @@ async def write_deck(db, deck: DeckData, *, set_archmastery: bool | None = None)
     spell_names: list[str] = []
     direct: dict[str, int] = {}
     fusion: dict[str, int] = {}
+    requested_by: dict[str, dict[str, int]] = {}
     if deck.normal:
         await db.view_deck_cards()
         spell_names = await _spell_list_names(db)
         plan = plan_normal_cards(deck.normal, spell_names)
         routing = partition_addable(plan.addable, spell_names)
         direct, fusion = routing.direct, routing.fusion
+        requested_by = direct_requesters(plan.addable, routing)
         # Substitutions for *fusion* cards are reported by _add_fusion_cards,
         # which is where they are decided; these are the ones settled here.
         for requested, used in sorted(routing.substitutions.items()):
@@ -1806,35 +1915,43 @@ async def write_deck(db, deck: DeckData, *, set_archmastery: bool | None = None)
     await db.clear_deck()
     await db.view_deck_cards()
 
+    count_cards = card_counter(db.client, deck_window)  # one control, shared by both passes
+
+    direct_placed: dict[str, int] = {}
     if direct:
-        # Private upstream method: it precomputes every card position and makes
-        # one forward sweep, where the public add_by_name() re-reads the spell
-        # list and rewinds the pages per card.  Re-check on a wizwalker bump.
-        # Every name here is an exact spellbook entry, so it takes the plain
-        # branch and its raising tiered path is never reached.
-        await db._add_all_normal_cards(direct)  # noqa: SLF001
+        direct_placed, direct_skipped, direct_short = await _add_direct_cards(
+            db, count_cards, direct, requested_by, spell_names
+        )
+        for name in direct_skipped:
+            report.substitutions.pop(name, None)  # nothing went in, so nothing was substituted
+        report.merge({}, direct_skipped)
+        report.short.update(direct_short)
 
     fusion_placed: dict[str, int] = {}
     if fusion:
-        count_cards = card_counter(db.client, deck_window)
         fusion_subs, fusion_skipped, fusion_placed, fusion_short = await _add_fusion_cards(
             db, count_cards, fusion, spell_names
         )
         report.merge(fusion_subs, fusion_skipped)
-        report.short = {name: (got, fusion[name]) for name, got in fusion_short.items() if name not in fusion_skipped}
+        report.short.update(
+            {name: (got, fusion[name]) for name, got in fusion_short.items() if name not in fusion_skipped}
+        )
 
     slots = await read_item_slots(db.client, deck_window)
     plan = plan_item_toggles(slots, deck.item)
     if plan:
         logger.info("Toggling %d item card slot(s)", len(plan))
-        await _apply_item_toggles(db, deck_window, plan, page_count(len(slots)))
+        # A slot's page comes from its vector index, and read_item_slots skips
+        # unreadable entries, so count pages from the highest index, not the count.
+        total_pages = page_count(max(s.index for s in slots) + 1)
+        await _apply_item_toggles(db, deck_window, plan, total_pages)
 
     # Last thing before the caller closes the page: the game's card list lags the
     # clicks that filled it, and closing early loses the stragglers.
     await _settle_deck(
         db.client,
         deck_window,
-        expected_normal_deck(direct, fusion_placed),
+        expected_normal_deck(direct_placed, fusion_placed),
         deck.item,
     )
     return report

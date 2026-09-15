@@ -30,12 +30,14 @@ from bartlebot.deck_io import (
     _click,
     _settle_deck,
     _share_shortfall,
+    _spell_list_names,
     active_item_counts,
     apply_deck,
     archmastery_menu_is_open,
     count_names,
     deck_matches,
     deck_page_open,
+    direct_requesters,
     expected_normal_deck,
     page_count,
     parse_tiered_name,
@@ -86,6 +88,36 @@ def _fast_settle(monkeypatch):
         monkeypatch.setattr(f"bartlebot.deck_io.{name}", 0.0)
 
 
+class _FakeSpellEntry:
+    """One raw spellbook vector entry; a ``None`` name models one that cannot be read."""
+
+    def __init__(self, name: str | None):
+        self._name = name
+
+    async def graphical_spell(self):
+        if self._name is None:
+            raise RuntimeError("unreadable entry")
+        template = SimpleNamespace(name=_async_returning(self._name))
+        return SimpleNamespace(spell_template=_async_returning(template))
+
+
+@pytest.fixture(autouse=True)
+def _fake_spell_list(monkeypatch):
+    """Serve the raw spellbook read from the fake builder's ``spell_list``.
+
+    The real control is a DynamicSpellListControl over live memory.  Only that
+    lookup is replaced, so ``_spell_list_names``' entry-by-entry read stays under
+    test.
+    """
+
+    async def _control(db):
+        db.calls.append("read_spell_list")
+        entries = [_FakeSpellEntry(name) for name in db.spell_list]
+        return SimpleNamespace(spell_entries=_async_returning(entries))
+
+    monkeypatch.setattr("bartlebot.deck_io._spell_list_control", _control)
+
+
 def _async_returning(value):
     """Build a zero-arg coroutine function that yields ``value``.
 
@@ -100,19 +132,32 @@ def _async_returning(value):
 
 
 class FakeDeckBuilder:
-    """Minimal DeckBuilder stand-in that records calls and rejects the unsafe ones."""
+    """Minimal DeckBuilder stand-in that records calls and rejects the unsafe ones.
+
+    Pages the spellbook the way the game does: ``set_page`` moves ``page``, and a
+    click at a card position lands on whatever that slot holds on the page
+    showing.  ``added`` reads the result back from the clicks, so a card clicked
+    on the wrong page shows up as the wrong card.
+    """
 
     #: Template names the fake account's spell list contains. Anything a deck
     #: asks for outside this is treated as not owned, exactly as in the game.
     spell_list: list[str] = ["Tempest", "Frenzy", "Epic", "Sharpened Blade", "Storm Lord"]
+    CARDS_PER_PAGE = 6
+    #: Entries clicked to open a flyout (or to add a base form) by the fusion
+    #: pass.  Clicks on them are not direct placements, so ``added`` leaves them out.
+    base_forms: frozenset[str] = frozenset()
 
     def __init__(self):
         self.calls: list[str] = []
-        self.added: dict[str, int] | None = None
+        self.page = 0
+        self._deck_config_window = object()
         # No deck behavior by default, so read_archmastery_school answers None
         # without a live client. Tests about the school replace this.
         self.client = SimpleNamespace(
             root_window=object(),
+            hook_handler=None,
+            mouse_handler=_FakeMouse(self),
             client_object=SimpleNamespace(try_get_deck_behavior=AsyncMock(return_value=None)),
         )
         # Real DeckBuilder constructs this False and open_deck_page() never sets
@@ -121,8 +166,39 @@ class FakeDeckBuilder:
         # _CtxDeckBuilder resets it to False to test that apply_deck does its part.
         self._on_deck_page = True
 
+    @property
+    def added(self) -> dict[str, int] | None:
+        """Spellbook card -> copies clicked straight off the spellbook, or None if none were."""
+        mouse = self.client.mouse_handler
+        counts: dict[str, int] = {}
+        for (x, _y), page in zip(mouse.clicks, mouse.pages):
+            if x >= _VARIANT_CLICK_BASE:
+                continue  # inside a flyout
+            name = self.spell_list[page * self.CARDS_PER_PAGE + x - 1]
+            if parse_tiered_name(name).is_fusion_root or name in self.base_forms:
+                continue
+            counts[name] = counts.get(name, 0) + 1
+        return counts or None
+
+    def calcuate_position_of_card_in_page(self, cards: list, name: str) -> tuple[int, int]:
+        """The real 6-per-page arithmetic, so page indices are not all zero."""
+        index = cards.index(name) + 1
+        slot = index % self.CARDS_PER_PAGE or self.CARDS_PER_PAGE
+        return (index - 1) // self.CARDS_PER_PAGE, slot
+
+    async def calculate_card_position(self, card_index: int) -> tuple[int, int]:
+        return (card_index, 0)
+
+    async def set_page(self, page: int) -> None:
+        pages = max(1, -(-len(self.spell_list) // self.CARDS_PER_PAGE))
+        if not 0 <= page < pages:
+            raise ValueError(f"page {page} is outside the spellbook's {pages} page(s)")
+        self.calls.append(f"set_page:{page}")
+        self.page = page
+
     async def refresh_deck_page(self) -> None:
         self.calls.append("refresh_deck_page")
+        self.page = 0  # reopening the deck page puts the spellbook back on page one
 
     async def get_graphical_spell_cards(self) -> list:
         self.calls.append("get_graphical_spell_cards")
@@ -143,11 +219,13 @@ class FakeDeckBuilder:
             raise AssertionError("view_deck_cards() with _on_deck_page False would switch to the treasure card view")
         self.calls.append("view_deck_cards")
 
-    async def _add_all_normal_cards(self, section: dict[str, int]) -> None:
-        self.calls.append("_add_all_normal_cards")
-        self.added = dict(section)
-
     # -- forbidden: these hang or corrupt the spell list ----------------
+
+    async def _add_all_normal_cards(self, section: dict[str, int]) -> None:
+        raise AssertionError("must not page with PageUp/PageDown: a written page leaves them unusable")
+
+    async def _go_to_spell_page(self, page: int) -> None:
+        raise AssertionError("must not page with PageUp/PageDown: a written page leaves them unusable")
 
     async def view_tc_cards(self) -> None:
         raise AssertionError("must not switch to the treasure card view")
@@ -327,12 +405,16 @@ def item_toggle_env(monkeypatch):
     a slot's index without a real ``ItemSpells`` DeckListControl behind it.
     """
     active: dict[int, bool] = {}
+    page_writes: list[int] = []
     mouse = _ItemMouse(active)
 
     class _Control:
         async def read_bytes(self, address: int, _n: int) -> bytes:
             index = (address - ACTIVE_FLAG_OFFSET) // ENTRY_STRIDE
             return bytes([ACTIVE_FLAG_ON if active.get(index, False) else 1])
+
+        async def write_start_index(self, start_index: int) -> None:
+            page_writes.append(start_index)
 
     async def _fake_control_for(_client, _deck_window, window_name):
         assert window_name == "ItemSpells"
@@ -350,7 +432,7 @@ def item_toggle_env(monkeypatch):
     db.get_item_spells_rectangle = _async_returning(object())
     db.divide_rectangle = lambda rect, columns, rows: [_IndexCell(i) for i in range(columns * rows)]
 
-    return SimpleNamespace(db=db, mouse=mouse, active=active)
+    return SimpleNamespace(db=db, mouse=mouse, active=active, page_writes=page_writes)
 
 
 async def test_apply_item_toggles_confirms_a_clean_click(item_toggle_env):
@@ -396,6 +478,48 @@ async def test_apply_item_toggles_deactivates_an_active_slot(item_toggle_env):
     assert env.mouse.clicks == [3]
 
 
+async def test_apply_item_toggles_writes_each_page_once(item_toggle_env):
+    """Pages are written, never clicked to: Prev does nothing on a written page."""
+    env = item_toggle_env
+
+    await _apply_item_toggles(env.db, object(), [slot("A", 2), slot("B", 5), slot("C", 17)], total_pages=2)
+
+    assert env.page_writes == [0, SLOTS_PER_PAGE]
+
+
+async def test_apply_item_toggles_skips_a_slot_whose_page_cannot_be_written(item_toggle_env, caplog):
+    """Clicking anyway would toggle whatever sits in that slot on the page still showing."""
+    env = item_toggle_env
+
+    with caplog.at_level(logging.WARNING, logger="bartlebot.deck_io"):
+        await _apply_item_toggles(env.db, object(), [slot("Blade", 17)], total_pages=1)
+
+    assert env.page_writes == []
+    assert env.mouse.clicks == []
+    assert "not toggled" in caplog.text
+
+
+async def test_write_deck_counts_item_pages_from_the_highest_index(monkeypatch):
+    """read_item_slots skips unreadable entries, so the slot count can undercount pages."""
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _no_normal_cards)
+
+    async def _gappy_slots(*_args, **_kwargs):
+        return [slot("Blade", 0), slot("Trap", 17)]  # two readable slots, on two pages
+
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _gappy_slots)
+    seen: list[int] = []
+
+    async def _spy(_db, _window, _plan, total_pages):
+        seen.append(total_pages)
+
+    monkeypatch.setattr("bartlebot.deck_io._apply_item_toggles", _spy)
+
+    await write_deck(FakeDeckBuilder(), DeckData(item={"Trap": 1}))
+
+    assert seen == [2]
+
+
 # ---------------------------------------------------------------------------
 # write_deck orchestration
 # ---------------------------------------------------------------------------
@@ -409,10 +533,10 @@ async def test_write_deck_clears_then_adds_normal_cards(monkeypatch):
     await write_deck(db, DeckData(normal={"Tempest": 4}))
     assert db.calls == [
         "view_deck_cards",
-        "get_graphical_spell_cards",
+        "read_spell_list",
         "clear_deck",
         "view_deck_cards",
-        "_add_all_normal_cards",
+        "set_page:0",
     ]
     assert db.added == {"Tempest": 4}
 
@@ -430,7 +554,7 @@ async def test_write_deck_reads_the_spell_list_before_clearing(monkeypatch):
 
     await write_deck(db, DeckData(normal={"Tempest": 4}))
 
-    assert db.calls.index("get_graphical_spell_cards") < db.calls.index("clear_deck")
+    assert db.calls.index("read_spell_list") < db.calls.index("clear_deck")
 
 
 async def test_write_deck_skips_unowned_cards_instead_of_emptying_the_deck(monkeypatch):
@@ -647,10 +771,10 @@ async def test_apply_deck_opens_the_builder_and_writes(fake_deck_builder):
     assert db.entered and db.exited
     assert db.calls == [
         "view_deck_cards",
-        "get_graphical_spell_cards",
+        "read_spell_list",
         "clear_deck",
         "view_deck_cards",
-        "_add_all_normal_cards",
+        "set_page:0",
     ]
     assert db.added == {"Tempest": 4}
 
@@ -874,7 +998,7 @@ async def test_write_deck_settles_before_returning(monkeypatch):
     db = FakeDeckBuilder()
     await write_deck(db, DeckData(normal={"Tempest": 2}))
 
-    assert "_add_all_normal_cards" in db.calls
+    assert db.added == {"Tempest": 2}
     assert settling.reads > 1  # it waited rather than closing on the first read
 
 
@@ -1287,8 +1411,11 @@ _VARIANT_CLICK_BASE = 1000  # keeps flyout click positions distinguishable
 
 
 class _FakeMouse:
-    def __init__(self):
+    def __init__(self, builder=None):
+        self.builder = builder
         self.clicks: list[tuple[int, int]] = []
+        #: The builder's spellbook page at each click, parallel to ``clicks``.
+        self.pages: list[int] = []
         self.window_clicks: list[str] = []
 
     async def __aenter__(self):
@@ -1299,9 +1426,15 @@ class _FakeMouse:
 
     async def click(self, x, y):
         self.clicks.append((x, y))
+        self.pages.append(self.builder.page if self.builder else 0)
 
     async def click_window(self, window=None, *_args, **_kwargs):
-        self.window_clicks.append(getattr(window, "window_name", "?"))
+        name = getattr(window, "window_name", "?")
+        self.window_clicks.append(name)
+        if name == "CloseTSMPUnlockedPageButton" and self.builder:
+            # As probed: the close restores the page from the button-driven
+            # counter, which a written page never moved -- page one.
+            self.builder.page = 0
         return None
 
 
@@ -1312,22 +1445,8 @@ class FusionRootDeckBuilder(FakeDeckBuilder):
     #: What the flyout lists once the root is clicked.
     owned_tiers = ["Novus Storm - T05 - A", "Novus Storm - T05 - B"]
 
-    def __init__(self):
-        super().__init__()
-        self._deck_config_window = object()
-        self.client = SimpleNamespace(root_window=object(), mouse_handler=_FakeMouse())
-
-    def calcuate_position_of_card_in_page(self, cards: list, name: str) -> tuple[int, int]:
-        return 0, cards.index(name) + 1
-
-    async def calculate_card_position(self, card_index: int) -> tuple[int, int]:
-        return (card_index, 0)
-
     async def calculate_tiered_spell_card_position(self, card_number: int) -> tuple[int, int]:
         return (_VARIANT_CLICK_BASE + card_number, 0)
-
-    async def _go_to_spell_page(self, page: int) -> None:
-        self.calls.append(f"_go_to_spell_page:{page}")
 
     async def get_graphical_tiered_spell_cards(self) -> list:
         self.calls.append("get_graphical_tiered_spell_cards")
@@ -1689,6 +1808,7 @@ class NoPathDeckBuilder(FusionRootDeckBuilder):
     """A wizard with nothing unlocked: clicking the entry adds a card, no flyout."""
 
     spell_list = ["Tempest", "Frenzy", "Bunyips Rage"]
+    base_forms = frozenset({"Bunyips Rage"})
 
     async def get_graphical_tiered_spell_cards(self) -> list:
         self.calls.append("get_graphical_tiered_spell_cards")
@@ -1990,13 +2110,14 @@ async def test_a_deck_saved_before_kinds_existed_still_applies(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# The fusion pass sweeps the spellbook forward once
+# Spellbook pages are written, never paged to
 # ---------------------------------------------------------------------------
 #
-# _go_to_spell_page rewinds to page one before advancing, so calling it per base
-# re-walked the whole spellbook each time — and in deck order, so it bounced
-# 0 -> 11 -> 0 -> 9 -> 0 -> 7. Bases are visited in page order now, and the page
-# only ever advances.
+# Clicking through the spellbook cost a click per page plus a full rewind from an
+# unknown position (#48). The page is now written directly, and because a flyout
+# close restores the page from a counter a write never moves, every base writes
+# its page again. The fake resets the page on close, so a pass that trusted the
+# page it was left on would click a filler card.
 
 
 async def _named_window(_parent, name, *_args, **_kwargs):
@@ -2006,7 +2127,6 @@ async def _named_window(_parent, name, *_args, **_kwargs):
 class MultiPageDeckBuilder(FusionRootDeckBuilder):
     """A spellbook long enough to page through, with three fusion spells on it."""
 
-    CARDS_PER_PAGE = 6
     spell_list = (
         [f"Filler {i}" for i in range(7)]
         + ["Thunder Snake"]  # page 1
@@ -2015,12 +2135,12 @@ class MultiPageDeckBuilder(FusionRootDeckBuilder):
         + [f"Filler {i}" for i in range(13, 19)]
         + ["Bunyips Rage"]  # page 3
     )
+    base_forms = frozenset({"Thunder Snake", "Lightning Bats", "Bunyips Rage"})
 
-    def calcuate_position_of_card_in_page(self, cards: list, name: str) -> tuple[int, int]:
-        """The real 6-per-page arithmetic, so page indices are not all zero."""
-        index = cards.index(name) + 1
-        slot = index % self.CARDS_PER_PAGE or self.CARDS_PER_PAGE
-        return (index - 1) // self.CARDS_PER_PAGE, slot
+    def __init__(self):
+        super().__init__()
+        #: Bases whose flyout was opened, in the order the sweep reached them.
+        self.flyout_order: list[str] = []
 
     async def get_graphical_tiered_spell_cards(self) -> list:
         """Every base offers the same two paths, so the flyout is always populated."""
@@ -2031,30 +2151,19 @@ class MultiPageDeckBuilder(FusionRootDeckBuilder):
 
     @property
     def last_clicked_base(self) -> str:
-        """Which spellbook entry the most recent page-click landed on."""
-        page = self._rewound_to + self.page_downs
-        for name in ("Thunder Snake", "Lightning Bats", "Bunyips Rage"):
-            if self.calcuate_position_of_card_in_page(self.spell_list, name)[0] == page:
-                return name
-        raise AssertionError(f"no fusion base on page {page}")
-
-    def __init__(self):
-        super().__init__()
-        self._rewound_to = 0
-        #: Bases whose flyout was opened, in the order the sweep reached them.
-        self.flyout_order: list[str] = []
-
-    async def _go_to_spell_page(self, page: int) -> None:
-        self.calls.append(f"rewind:{page}")
-        self._rewound_to = page
+        """The fusion base the most recent spellbook click landed on, given the page it was on."""
+        mouse = self.client.mouse_handler
+        x, page = next(
+            (x, page) for (x, _y), page in reversed(list(zip(mouse.clicks, mouse.pages))) if x < _VARIANT_CLICK_BASE
+        )
+        name = self.spell_list[page * self.CARDS_PER_PAGE + x - 1]
+        if name not in self.base_forms:
+            raise AssertionError(f"the click landed on {name!r}, not a fusion base")
+        return name
 
     @property
-    def rewinds(self) -> list[str]:
-        return [c for c in self.calls if c.startswith("rewind:")]
-
-    @property
-    def page_downs(self) -> int:
-        return self.client.mouse_handler.window_clicks.count("PageDown")
+    def page_writes(self) -> list[int]:
+        return [int(call.split(":")[1]) for call in self.calls if call.startswith("set_page:")]
 
 
 def _sweep_patches(monkeypatch):
@@ -2063,45 +2172,31 @@ def _sweep_patches(monkeypatch):
     monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
 
 
-async def test_fusion_pass_rewinds_only_once(monkeypatch):
+_THREE_BASES = {"Bunyips Rage - T05 - A": 1, "Lightning Bats - T05 - A": 1, "Thunder Snake - T05 - A": 1}
+
+
+async def test_fusion_pass_writes_each_bases_page(monkeypatch):
+    """Every base lands after a flyout close reset the page, so none can skip its write."""
     _sweep_patches(monkeypatch)
     db = MultiPageDeckBuilder()
 
-    await write_deck(
-        db,
-        DeckData(
-            normal={
-                "Bunyips Rage - T05 - A": 1,
-                "Lightning Bats - T05 - A": 1,
-                "Thunder Snake - T05 - A": 1,
-            }
-        ),
-    )
+    await write_deck(db, DeckData(normal=_THREE_BASES))
 
-    assert db.rewinds == ["rewind:1"]  # to the first base's page, then forward only
+    assert db.page_writes == [1, 2, 3]
+    assert db.flyout_order == ["Thunder Snake", "Lightning Bats", "Bunyips Rage"]
 
 
-async def test_fusion_pass_advances_one_page_at_a_time(monkeypatch):
-    """Pages 1, 2 and 3 in order: two PageDown clicks, not a walk per base."""
+async def test_fusion_pass_never_clicks_the_page_buttons(monkeypatch):
     _sweep_patches(monkeypatch)
     db = MultiPageDeckBuilder()
 
-    await write_deck(
-        db,
-        DeckData(
-            normal={
-                "Bunyips Rage - T05 - A": 1,
-                "Lightning Bats - T05 - A": 1,
-                "Thunder Snake - T05 - A": 1,
-            }
-        ),
-    )
+    await write_deck(db, DeckData(normal=_THREE_BASES))
 
-    assert db.page_downs == 2
+    assert not {"PageUp", "PageDown"} & set(db.client.mouse_handler.window_clicks)
 
 
 async def test_fusion_pass_visits_bases_in_page_order(monkeypatch):
-    """Deck order is arbitrary; the sweep must follow the spellbook."""
+    """Deck order is arbitrary; the sweep follows the spellbook."""
     _sweep_patches(monkeypatch)
     db = MultiPageDeckBuilder()
 
@@ -2111,11 +2206,11 @@ async def test_fusion_pass_visits_bases_in_page_order(monkeypatch):
     )
 
     assert db.flyout_order == ["Thunder Snake", "Bunyips Rage"]  # pages 1 then 3
-    assert db.rewinds == ["rewind:1"]  # Thunder Snake's page, the earlier of the two
+    assert db.page_writes == [1, 3]
 
 
-async def test_a_reopened_deck_page_forces_another_rewind(monkeypatch):
-    """The close fallback reopens the page, so the tracked position is a guess."""
+async def test_a_reopened_deck_page_is_written_back_to_the_next_bases_page(monkeypatch):
+    """The close fallback reopens the page on page one; the next write puts it right."""
     _sweep_patches(monkeypatch)
     db = MultiPageDeckBuilder()
 
@@ -2132,7 +2227,37 @@ async def test_a_reopened_deck_page_forces_another_rewind(monkeypatch):
     )
 
     assert db.calls.count("refresh_deck_page") == 2  # the fallback fired for each base
-    assert db.rewinds == ["rewind:1", "rewind:2"]  # so each base re-sought its page
+    assert db.flyout_order == ["Thunder Snake", "Lightning Bats"]  # both clicks found their base
+    assert db.page_writes == [1, 2]
+
+
+async def test_direct_cards_are_placed_page_by_page(monkeypatch):
+    _sweep_patches(monkeypatch)
+    db = MultiPageDeckBuilder()
+
+    await write_deck(db, DeckData(normal={"Filler 13": 2, "Filler 0": 1}))  # pages 2 and 0
+
+    assert db.page_writes == [0, 2]
+    assert db.added == {"Filler 0": 1, "Filler 13": 2}
+    assert not {"PageUp", "PageDown"} & set(db.client.mouse_handler.window_clicks)
+
+
+async def test_spell_list_names_keeps_an_unreadable_entry_as_a_blank():
+    """wizwalker's own list drops it, which shifts every later card one slot early."""
+    db = FakeDeckBuilder()
+    db.spell_list = ["Tempest", None, "Frenzy"]
+
+    assert await _spell_list_names(db) == ["Tempest", "", "Frenzy"]
+
+
+def test_direct_requesters_undoes_the_tier_fold():
+    addable = {"Novus Storm - T05 - B": 2, "Novus Storm - T04 - B": 1, "Tempest": 3}
+    routing = partition_addable(addable, ["Tempest", "Novus Storm - T04 - B"])
+
+    assert direct_requesters(addable, routing) == {
+        "Novus Storm - T04 - B": {"Novus Storm - T05 - B": 2, "Novus Storm - T04 - B": 1},
+        "Tempest": {"Tempest": 3},
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -2251,6 +2376,60 @@ async def test_an_unreadable_count_falls_back_to_clicking_once(monkeypatch):
 
     assert db.fusion_added == {"Novus Storm - T05 - A": 2}  # clicked once each, as before
     assert report.is_clean
+
+
+# -- direct cards are confirmed the same way --------------------------------
+
+
+async def test_a_swallowed_direct_click_is_clicked_again(monkeypatch):
+    """wizwalker's sweep trusted every click after a fixed pause."""
+    _tier_patches(monkeypatch)
+    db = FakeDeckBuilder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, at_variant=False, lost=1))
+
+    report = await write_deck(db, DeckData(normal={"Tempest": 2}))
+
+    assert db.added == {"Tempest": 3}  # two asked for, one re-clicked
+    assert report.is_clean
+
+
+async def test_a_direct_card_the_deck_never_takes_is_skipped_not_substituted(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = SingleVariantDeckBuilder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, at_variant=False, cap=0))
+
+    report = await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 2}))
+
+    assert report.skipped == ["Novus Storm - T05 - B"]  # the requested name, not the entry
+    assert report.substitutions == {}
+
+
+async def test_a_partly_placed_direct_card_is_reported_under_its_requested_name(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = SingleVariantDeckBuilder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, at_variant=False, cap=1))
+
+    report = await write_deck(db, DeckData(normal={"Novus Storm - T05 - B": 2}))
+
+    assert report.short == {"Novus Storm - T05 - B": (1, 2)}
+    assert report.substitutions == {"Novus Storm - T05 - B": "Novus Storm - T04 - B"}
+
+
+async def test_the_settle_expects_only_the_direct_copies_that_landed(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = FakeDeckBuilder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, at_variant=False, cap=2))
+    expected: dict[str, int] = {}
+
+    async def _spy_settle(_client, _window, expected_normal, _desired_item):
+        expected.update(expected_normal)
+        return True
+
+    monkeypatch.setattr("bartlebot.deck_io._settle_deck", _spy_settle)
+
+    await write_deck(db, DeckData(normal={"Tempest": 3}))
+
+    assert expected == {"Tempest": 2}
 
 
 # -- the base-form path counts its opening click too ------------------------
