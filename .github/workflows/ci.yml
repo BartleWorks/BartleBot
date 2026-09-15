@@ -37,4 +37,6 @@ jobs:
         # -n auto, not a fixed count: GitHub runners have far fewer cores than a
         # dev machine, and oversubscribing them stretches the suite's few
         # wall-clock-sensitive tests until they fail.
-        run: uv run pytest -n auto
+        # Coverage is reported, not gated: the number is for reading, and no
+        # threshold fails the run. Source and report settings are in pyproject.toml.
+        run: uv run pytest -n auto --cov
