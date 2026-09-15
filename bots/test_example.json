@@ -20,14 +20,16 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "go_to_zone",
-      "label": "Go to zone",
+      "node_type": "teleport_to_friend",
+      "label": "Teleport to friend",
       "position": {
-        "x": -440.0,
+        "x": 0.0,
         "y": 0.0
       },
       "params": {
-        "zone": "Khrysalis/KR_Z12_ShadowPalace"
+        "target_hooked_player": true,
+        "target_player": 1,
+        "to_zone": "WizardCity/WC_Streets/WC_Unicorn"
       }
     }
   ],

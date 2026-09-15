@@ -1,37 +1,19 @@
 {
   "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
   "name": "Boss Farmer Template",
-  "description": "Template bot file for a boss farming bot. To use this template to create your own bot, follow these steps:\n\n1) Change the target zone in \"Try teleport to dungeon entrance\" to the zone that the dungeon entrance is in. You can also save this for last if you aren't at the dungeon entrance zone yet, since you will end there after the last step.\n\n2) Change the zone in \"Try teleport to world\" to the world prefix with a \"*\" zone wildcard (e.g. \"WizardCity/*\" without the quotes if the desired world is Wizard City).\n\n3) Change the world in \"Go to world\" to the correct world.\n\n4) Edit the nodes in the \"Go to dungeon entrance\" region so they navigate to the dungeon entrance correctly. The easiest way to do this is by using the Record feature to record each step while you navigate there in-game. You may need to add more enter_zone nodes if your dungeon entrance requires you to navigate through multiple zones when you start from the world hub.\n\n5) Edit the \"Enter dungeon\" node and record yourself entering the dungeon.\n\n6) Edit the \"Defeat boss\" node by copying the name of the boss from the Players tab and pasting it in the \"Enemy name\" field. This ensures that the bot will attempt to pull the boss first. If left empty, players will teleport to the closest enemy when the node becomes active.\n\n7) Populate the drop list for the boss by clicking \"Import drops from wiki\" and pasting the Wizard101 wiki page URL for the boss.\n\n7) Edit the \"Exit dungeon\" node and record yourself exiting the dungeon.\n\n8) Edit the \"Quicksell\" node to keep relevant drops.\n\n9) In the left side of the toolbar above the bot canvas, update the bot name/author and add tags to the bot by clicking \"Add Rewards...\" and \"Add Activity...\"",
+  "description": "Template bot file for a boss farming bot. To use this template to create your own bot, follow these steps:\n\n1) Change the zone in \"Go to dungeon entrance zone\" to the zone you enter the boss dungeon from.\n\n2) Edit the \"Enter dungeon\" node and record yourself entering the dungeon.\n\n3) Edit the \"Defeat boss\" node by copying the name of the boss from the Players tab and pasting it in the \"Enemy name\" field. This ensures that the bot will attempt to pull the boss first. If left empty, players will teleport to the closest enemy when the node becomes active.\n\n4) Populate the drop list for the boss by clicking \"Import drops from wiki\" and pasting the Wizard101 wiki page URL for the boss.\n\n5) Edit the \"Exit dungeon\" node and record yourself exiting the dungeon.\n\n6) Edit the \"Quicksell\" node to keep relevant drops.\n\n7) In the left side of the toolbar above the bot canvas, update the bot name/author and add tags to the bot by clicking \"Add Rewards...\" and \"Add Activity...\"",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_6",
-  "recovery_state": "state_6",
+  "initial": "state_17",
+  "recovery_state": "state_16",
   "drops": [],
   "authors": "BartleBot",
   "tags": [
-    "Boss"
+    "Boss",
+    "Template"
   ],
   "options": [],
   "states": [
-    {
-      "id": "state_6",
-      "node_type": "enter_zone",
-      "label": "Enter dungeon entrance zone",
-      "position": {
-        "x": 2200.0,
-        "y": 90.0
-      },
-      "params": {
-        "from_zone": "",
-        "to_zone": "",
-        "xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "stagger": false
-      }
-    },
     {
       "id": "state_8",
       "node_type": "handle_potions",
@@ -132,6 +114,30 @@
         },
         "stagger": false
       }
+    },
+    {
+      "id": "state_16",
+      "node_type": "relog",
+      "label": "Relog all players",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": []
+      }
+    },
+    {
+      "id": "state_17",
+      "node_type": "go_to_zone",
+      "label": "Go to dungeon entrance zone",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": ""
+      }
     }
   ],
   "transitions": [
@@ -207,7 +213,57 @@
     },
     {
       "trigger": "advance",
-      "source": "state_6",
+      "source": "state_12",
+      "dest": "state_14",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_16",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_16",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_16",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
       "dest": "state_8",
       "when": "SUCCESS",
       "flags": [],
@@ -217,8 +273,28 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_14",
+      "source": "state_17",
+      "dest": "state_16",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_17",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_17",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
