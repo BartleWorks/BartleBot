@@ -62,6 +62,40 @@ class DeckGroup:
     entries: tuple[DeckCardEntry, ...]
 
 
+#: Label, and the stored value it means, for a deck's three-state archmastery override.
+#: Module-level and Qt-free because three surfaces offer them and two of them also *name*
+#: the one in force -- the sidebar deck card as menu verbs plus a line in the card, and
+#: the Deck Presets page as a radio triple. Three copies of these words is how the
+#: wordings drift.
+ARCHMASTERY_MODES: tuple[tuple[str, bool | None], ...] = (
+    ("Use app setting", None),
+    ("Always set", True),
+    ("Never set", False),
+)
+
+
+def archmastery_mode_label(deck: DeckData) -> str:
+    """The label for the override this deck stores, whatever it resolves to.
+
+    The *stored* answer, not the resolved one: this names which of the three the user
+    picked, which is what a surface offering all three has to agree with.
+    """
+    return next(label for label, value in ARCHMASTERY_MODES if value is deck.apply_archmastery)
+
+
+def archmastery_note(deck: DeckData) -> str:
+    """The deck's archmastery as one short line, or "" when it saved no school.
+
+    The compact form, for a card that has one line to spend: the school and which of
+    the three modes is stored. :func:`archmastery_line` is the longer form, which names
+    the level that *answered* instead -- worth the words on a surface that is choosing
+    between the levels rather than reporting one.
+    """
+    if not deck.archmastery_school:
+        return ""
+    return f"Archmastery: {deck.archmastery_school} · {archmastery_mode_label(deck).lower()}"
+
+
 def archmastery_line(deck: DeckData) -> str | None:
     """The deck's archmastery note, or None when it saved no school.
 

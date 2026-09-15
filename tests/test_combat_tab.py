@@ -1649,28 +1649,12 @@ def test_binding_descriptions_match_the_card_wording(qapp, store):
 def _content_texts(card) -> list[str]:
     """Each row of the unfolded list, as one string per row.
 
-    A card row is a composite now -- art tile, count, display name, and the template
-    name where it differs -- so its text is gathered from the labels inside it. The
-    headings and the archmastery note are still plain labels.
+    A card row is a composite -- art tile, count, display name, and the template name
+    where it differs -- so its text is gathered from the labels inside it. That gather
+    belongs to the list widget itself now, because the Deck Presets page shows the same
+    rows; see ``tests/test_deck_card_list.py``.
     """
-    layout = card._content_layout
-    texts: list[str] = []
-    for i in range(layout.count()):
-        widget = layout.itemAt(i).widget()
-        if widget is None:
-            continue
-        row = widget.layout()
-        if row is None:
-            texts.append(widget.text())
-            continue
-        parts = []
-        for j in range(row.count()):
-            child = row.itemAt(j).widget()
-            getter = getattr(child, "text", None)
-            if callable(getter):
-                parts.append(getter())
-        texts.append(" ".join(parts))
-    return texts
+    return card.content.row_texts()
 
 
 # The section is never shown in these tests (no top-level window under it), so

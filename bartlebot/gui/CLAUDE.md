@@ -247,6 +247,14 @@ the summary line carries the counts either way, and a single card with no art is
 skipped rather than given a placeholder — a placeholder per missing card turns an
 install with no art at all into a grid of grey squares.
 
+**A deck is listed by `DeckCardList` (`widgets/deck_card_list.py`), on both surfaces
+that list one** — the sidebar card's unfolded rows and the dialog's Deck Presets page.
+It was the sidebar's own rows against `QLabel(f"  {name} × {count}")` off the raw dict,
+so the library page listed a deck unsorted, unheaded and unillustrated while the
+sidebar three panels away did all three. The grouping and the order are
+`deck_groups`' on both, never the surface's, and a row whose card has no art is the
+row minus its tile — the count and the name still carry it.
+
 Look art up by the **template name** (`deck_io`'s own key), never the display name: one
 display name covers many templates, and a tiered variant draws its base spell's
 texture, so two identical-looking tiles can be different cards. That is what the tile's
