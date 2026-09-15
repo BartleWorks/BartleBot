@@ -108,7 +108,7 @@ from bartlebot.credentials import CredentialStore
 from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
-from bartlebot.gui.deck_content import DeckCardEntry, archmastery_line, deck_groups
+from bartlebot.gui.deck_content import DeckCardEntry, deck_groups
 from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
@@ -389,11 +389,8 @@ class _DeckCard(CardFrame):
                 widget.deleteLater()
         if self._deck is None:
             return
-        note = archmastery_line(self._deck)
-        if note:
-            label = ThemedTextLabel(note, color="text", parent=self._content)
-            label.setWordWrap(True)
-            self._add_content(label)
+        # No archmastery note here: the card's own header line already carries it, and
+        # unfolding a card put the same fact on screen twice in two different wordings.
         for group in deck_groups(self._deck):
             heading = ThemedTextLabel(group.heading, color="text", css="font-weight: bold;", parent=self._content)
             self._add_content(heading)

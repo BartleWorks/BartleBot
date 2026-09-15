@@ -20,6 +20,7 @@ from dataclasses import dataclass
 from bartlebot.bot.strategy_models import DeckData
 from bartlebot.deck_io import resolve_apply_archmastery
 from bartlebot.spell_names import display_name
+from bartlebot.spell_schools import deck_sort_key
 
 
 @dataclass(frozen=True)
@@ -76,7 +77,12 @@ def archmastery_line(deck: DeckData) -> str | None:
 
 
 def deck_groups(deck: DeckData) -> list[DeckGroup]:
-    """The deck's cards, grouped and sorted by template name within each group.
+    """The deck's cards, grouped, and ordered within a group as the game orders them.
+
+    School first, in ``spell_schools.SCHOOL_ORDER``, then alphabetically by display
+    name -- what the game's own deck window does, so a deck reads the same way here
+    as it does in the client. Cards whose school the snapshot does not know sort
+    last, together.
 
     Treasure cards are omitted, and deliberately: they can be neither read nor
     restored, so listing them would promise a round trip that cannot happen. ``tc``
@@ -94,8 +100,13 @@ def deck_groups(deck: DeckData) -> list[DeckGroup]:
         if not cards:
             continue
         entries = tuple(
-            DeckCardEntry(template=name, display=display_name(name), count=count)
-            for name, count in sorted(cards.items())
+            sorted(
+                (
+                    DeckCardEntry(template=name, display=display_name(name), count=count)
+                    for name, count in cards.items()
+                ),
+                key=lambda entry: deck_sort_key(entry.template, entry.display),
+            )
         )
         groups.append(DeckGroup(label=label, heading=heading, entries=entries))
     return groups

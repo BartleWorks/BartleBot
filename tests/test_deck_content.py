@@ -86,10 +86,29 @@ def test_groups_carry_the_template_name_beside_the_display_name():
     assert (entry.template, entry.count) == ("Test Card A", 2)
 
 
-def test_groups_are_sorted_by_template_name():
+def test_cards_with_no_known_school_sort_alphabetically():
     deck = DeckData(normal={"Test Card B": 1, "Test Card A": 1})
 
     assert [entry.template for entry in deck_groups(deck)[0].entries] == ["Test Card A", "Test Card B"]
+
+
+def test_cards_are_grouped_by_school_in_the_games_order():
+    # Storm before Balance before Shadow, and none of that is alphabetical -- it is
+    # the order the game's own deck window uses. Real card names, because the school
+    # comes from the shipped snapshot.
+    deck = DeckData(normal={"Judgement": 1, "Tempest": 1, "Tower Shield": 1, "Epic": 1})
+
+    order = [entry.template for entry in deck_groups(deck)[0].entries]
+
+    assert order == ["Tower Shield", "Epic", "Tempest", "Judgement"]
+
+
+def test_an_unknown_card_sorts_after_every_known_school():
+    deck = DeckData(normal={"Not A Real Card Template": 1, "Tempest": 1})
+
+    order = [entry.template for entry in deck_groups(deck)[0].entries]
+
+    assert order == ["Tempest", "Not A Real Card Template"]
 
 
 def test_an_empty_group_is_dropped_rather_than_returned_empty():
