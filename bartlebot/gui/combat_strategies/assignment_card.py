@@ -267,9 +267,9 @@ class AssignmentCard(CardFrame):
 
     def _verbs(self) -> list[CardVerb]:
         return [
-            CardVerb(CHANGE_VERB, "search", "Choose what these players do", self._open_strategy_menu, on_face=True),
+            CardVerb(CHANGE_VERB, "search", "Change Player Combat Strategy", self._open_strategy_menu, on_face=True),
             CardVerb(
-                EDIT_VERB, "pencil", "School, note and custom DSL for this assignment", self.toggle_expanded, True
+                EDIT_VERB, "pencil", "Edit required school, note, and custom DSL", self.toggle_expanded, True
             ),
             CardVerb(REMOVE_VERB, "dismiss", "Remove this assignment", lambda: self.remove_requested.emit(self), True),
         ]
@@ -476,7 +476,7 @@ class AssignmentCard(CardFrame):
             button = self.action_button(EDIT_VERB)
             if button is not None:
                 button.setToolTip(
-                    "Hide this assignment's details" if self._expanded else "School, note and custom DSL for this"
+                    "Hide this assignment's details" if self._expanded else "Edit required school, note, and custom DSL"
                 )
         finally:
             self._suppress = False
