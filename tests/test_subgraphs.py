@@ -97,13 +97,13 @@ def sync_players_definition(version: int = 1, world: str = "WizardCity") -> Subg
                 id="tp_a",
                 node_type="teleport_to_player_if_in_zone",
                 position={"x": 880.0, "y": 0.0},
-                params={"target_zone": "DragonSpyre/DS_Hub", "skip_extra_clients_in_zone": True},
+                params={"target_zone": "DragonSpyre/DS_Hub"},
             ),
             StateModel(
                 id="tp_b",
                 node_type="teleport_to_player_if_in_zone",
                 position={"x": 1320.0, "y": 0.0},
-                params={"target_zone": f"{world}/Hub", "skip_extra_clients_in_zone": True},
+                params={"target_zone": f"{world}/Hub"},
             ),
             StateModel(
                 id="go_to_world", node_type="go_to_world", position={"x": 1760.0, "y": 90.0}, params={"world": world}

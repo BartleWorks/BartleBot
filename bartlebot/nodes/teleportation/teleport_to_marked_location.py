@@ -2,18 +2,15 @@
 
 import asyncio
 import logging
-import math
 
 from wizwalker import XYZ
 
 from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.node_helpers import POSITION_MARGIN, TRIGGER_MARGIN
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import RECALL_BUTTON_PATH
 from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, TRIGGER_TIMEOUT
-
-TRIGGER_MARGIN = 5.0  # minimum XYZ movement that counts as a same-zone recall trigger
-POSITION_MARGIN = 10.0  # acceptable distance from target XYZ after recall
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -148,7 +145,7 @@ async def run(machine, clients: list, params: dict) -> str:
         loading = await asyncio.gather(*[c.is_loading() for c in clients])
         positions = await asyncio.gather(*[c.body.position() for c in clients])
         for i, (is_now, pos) in enumerate(zip(loading, positions)):
-            if is_now or _distance(pos, start_positions[i]) > TRIGGER_MARGIN:
+            if is_now or node_helpers.distance(pos, start_positions[i]) > TRIGGER_MARGIN:
                 seen_triggered.add(i)
         if len(seen_triggered) == len(clients):
             break
@@ -183,7 +180,7 @@ async def run(machine, clients: list, params: dict) -> str:
         f"Positions after recall: {[(round(p.x, 1), round(p.y, 1), round(p.z, 1)) for p in positions]}",
         logging.DEBUG,
     )
-    off_target = [i for i, p in enumerate(positions) if _distance(p, target) > POSITION_MARGIN]
+    off_target = [i for i, p in enumerate(positions) if node_helpers.distance(p, target) > POSITION_MARGIN]
     if off_target:
         machine.log(
             f"FAILURE: client(s) {off_target} not at expected XYZ after recall (margin={POSITION_MARGIN})",
@@ -199,7 +196,3 @@ async def _all_recall_enabled(clients: list) -> bool:
     """Return True when the RecallButton is enabled (not grayed) for every client."""
     results = await asyncio.gather(*[node_helpers.is_enabled_by_path(c, RECALL_BUTTON_PATH) for c in clients])
     return all(results)
-
-
-def _distance(a: XYZ, b: XYZ) -> float:
-    return math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)

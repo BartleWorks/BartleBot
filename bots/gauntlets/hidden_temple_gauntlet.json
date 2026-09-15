@@ -28,7 +28,7 @@
       },
       "params": {
         "target_hooked_player": false,
-        "to_zone": "*Housing*"
+        "to_zone": ""
       }
     },
     {

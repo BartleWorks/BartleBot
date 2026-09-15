@@ -21,8 +21,7 @@
         "y": -90.0
       },
       "params": {
-        "target_zone": "",
-        "skip_extra_clients_in_zone": true
+        "target_zone": ""
       }
     },
     {
@@ -34,8 +33,7 @@
         "y": 0.0
       },
       "params": {
-        "target_zone": "",
-        "skip_extra_clients_in_zone": true
+        "target_zone": ""
       }
     },
     {

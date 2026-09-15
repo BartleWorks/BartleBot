@@ -64,6 +64,22 @@ Two guards, and a node that moves clients between zones wants whichever fits:
 finished", and a screen that has not started yet answers yes — which is how a stale zone
 read reaches the check that follows it.
 
+### A port to a player does not always load
+
+Porting to a player shows a loading screen only when it changes zone or realm. Within one
+zone and realm the player's position jumps onto the target instead, and a port onto someone
+you are already standing beside does nothing visible at all. A wait that counts only loading
+screens re-ports a player that already arrived, forever (#69), and cannot tell a player that
+was already there from one whose port failed (#14).
+
+`node_helpers.port_clients` accepts all three, so start any port to a player through it
+(`port_to_friend`, `group_manager.port_to_group_member`) rather than watching `is_loading()`
+yourself. Pass `maybe_there` only for clients with a reason to already be at the target: those
+alone may be presumed there after a re-issue, and every presumption should be logged by player
+number. Realm cannot be read without opening the spellbook, so never skip porting a player for
+sharing the target's zone or coordinates. When the target is one of ours, use
+`gather_at_player`, which checks arrival against the target's own zone and position.
+
 ## Keeping a session log readable
 
 A five-hour four-client run writes tens of thousands of lines, and the difference

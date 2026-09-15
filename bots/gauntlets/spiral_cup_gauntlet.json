@@ -411,7 +411,7 @@
       },
       "params": {
         "target_hooked_player": false,
-        "to_zone": "Housing_AR_Dormroom/Interior"
+        "to_zone": ""
       }
     },
     {

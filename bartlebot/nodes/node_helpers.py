@@ -3,7 +3,9 @@
 import asyncio
 import fnmatch
 import logging
+import math
 import re
+from collections.abc import Collection
 from typing import NamedTuple
 
 from wizwalker import Keycode, MemoryReadError
@@ -31,6 +33,7 @@ from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     MAX_RETRIES,
     OBJECT_USE_DELAY,
     POLL_INTERVAL,
+    PORT_QUIET_GRACE,
     TRIGGER_TIMEOUT,
     WINDOW_CLOSE_CONFIRM_INTERVAL,
     WINDOW_CLOSE_RETRY_INTERVAL,
@@ -942,7 +945,7 @@ async def _attempt_zone_recovery(
     if result.refusal:
         machine.log(f"Recovery teleport refused — {dialog_captions.describe(result.refusal)}", logging.WARNING)
         return
-    if len(result.seen_loading) < len(stragglers):
+    if result.missing(len(stragglers)):
         machine.log("Recovery teleport: not every straggler entered a loading screen", logging.WARNING)
         return
 
@@ -1251,18 +1254,55 @@ async def teleport_via_friends_list(client, friend_name_lower: str) -> None:
         await teleport_to_friend_from_list(client, name=exact_name)
 
 
-class PortToFriendResult(NamedTuple):
-    """Outcome of port_to_friend()'s loading-detection loop.
+TRIGGER_MARGIN = 5.0
+"""Units a client must move, with no loading screen, for a port or recall to count as having happened."""
 
-    `seen_loading` holds the indices (into the clients_to_move list a caller passed in) that
-    entered a loading screen before the ceiling. `refusal` is set when the game refused the
-    port outright for one client — pair it with dialog_captions.describe(); `refused_index`
-    says which client (again by position in clients_to_move) hit it.
+POSITION_MARGIN = 10.0
+"""Units a client may land from where it was sent and still count as there. A port puts you exactly
+on the player you port to, and a teleport exactly on its XYZ; this is only room for the odd wobble."""
+
+
+def distance(a, b) -> float:
+    """Straight-line distance between two XYZ-shaped points."""
+    return math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
+
+
+async def _position_or_none(client):
+    """The client's position, or None when it cannot be read -- a body mid-load, say."""
+    try:
+        return await client.body.position()
+    except Exception:
+        logger.debug("Could not read a client's position", exc_info=True)
+        return None
+
+
+class PortToFriendResult(NamedTuple):
+    """Outcome of port_clients()'s wait for every port to start.
+
+    Indices are into the clients_to_move list the caller passed in. A port shows itself one of
+    three ways, and each has its own set:
+
+    * `seen_loading` -- the client entered a loading screen: another zone, or the same zone on
+      another realm.
+    * `jumped` -- its position moved with no loading screen: the same zone and realm.
+    * `presumed` -- neither, through a re-issue, for a client the caller said may already be
+      where it is going. A port onto a player you are standing beside does nothing visible.
+
+    `refusal` is set when the game refused the port outright for one client — pair it with
+    dialog_captions.describe(); `refused_index` says which client hit it. `missing()` is what
+    is left over: clients that showed nothing at all by the ceiling.
     """
 
     seen_loading: set[int]
     refusal: str | None = None
     refused_index: int | None = None
+    jumped: frozenset[int] = frozenset()
+    presumed: frozenset[int] = frozenset()
+
+    def missing(self, count: int) -> list[int]:
+        """Indices below `count` that neither loaded, jumped, nor were presumed already there."""
+        started = self.seen_loading | self.jumped | self.presumed
+        return [i for i in range(count) if i not in started]
 
 
 async def port_to_friend(
@@ -1272,6 +1312,7 @@ async def port_to_friend(
     trigger_timeout: float = TRIGGER_TIMEOUT,
     ceiling: float = ZONE_CHANGE_TIMEOUT,
     poll_interval: float = POLL_INTERVAL,
+    maybe_there: Collection[int] = (),
 ) -> PortToFriendResult:
     """Teleport clients_to_move to friend_name_lower via the friends list, and wait for each
     to enter a loading screen.
@@ -1297,6 +1338,7 @@ async def port_to_friend(
         trigger_timeout=trigger_timeout,
         ceiling=ceiling,
         poll_interval=poll_interval,
+        maybe_there=maybe_there,
     )
 
 
@@ -1307,48 +1349,215 @@ async def port_clients(
     trigger_timeout: float = TRIGGER_TIMEOUT,
     ceiling: float = ZONE_CHANGE_TIMEOUT,
     poll_interval: float = POLL_INTERVAL,
+    maybe_there: Collection[int] = (),
+    quiet_grace: float | None = None,
 ) -> PortToFriendResult:
-    """Start a port on every client with `initiate`, and wait for each to enter a loading screen.
+    """Start a port on every client with `initiate`, and wait for each port to show itself.
 
-    `initiate(client)` is how one client's port is started, called once for everyone and again
-    for each straggler after `trigger_timeout`: the friends list for port_to_friend, the group
-    roster for group_manager.port_to_group_member. Everything after the start is the same
-    whichever way it began -- the dungeon exit and cross-realm warnings are confirmed, a
+    `initiate(client)` is how one client's port is started: the friends list for port_to_friend,
+    the group roster for group_manager.port_to_group_member. Everything after the start is the
+    same whichever way it began -- the dungeon exit and cross-realm warnings are confirmed, a
     friend-busy dialog is a refusal -- so it lives here once. See port_to_friend for the rest.
+
+    What a successful port looks like depends on where the client starts, and the realm it is on
+    cannot be read without opening the spellbook, so every sign is accepted from every client:
+
+    * another zone, or the same zone on another realm -- a loading screen;
+    * the same zone and realm, standing elsewhere -- no loading screen, but the client's position
+      jumps onto the target (more than TRIGGER_MARGIN);
+    * the same zone and realm, already beside the target -- nothing at all.
+
+    Only the last is ambiguous, so it is only ever concluded for the indices in `maybe_there`:
+    clients the caller has reason to think are already there. Such a client that shows nothing
+    for `quiet_grace` has its port re-issued once, in case the first never registered, and
+    after another `quiet_grace` is presumed there. Every other quiet client is re-issued once
+    per `trigger_timeout` -- once per window, not every poll -- until `ceiling`.
 
     Raises whatever `initiate` raises; both starters raise ValueError when they cannot begin.
     """
+    if quiet_grace is None:
+        quiet_grace = PORT_QUIET_GRACE  # read here, not in the signature, so it stays tunable
+    maybe_there = set(maybe_there)
+    count = len(clients_to_move)
+    loop = asyncio.get_event_loop()
+
+    # Positions are read before the port, or a jump that happens during initiate goes unseen.
+    start_positions = await asyncio.gather(*[_position_or_none(c) for c in clients_to_move])
     await asyncio.gather(*[initiate(c) for c in clients_to_move])
 
     seen_loading: set[int] = set()
-    loop_start = asyncio.get_event_loop().time()
-    straggler_after = loop_start + trigger_timeout
+    jumped: set[int] = set()
+    presumed: set[int] = set()
+    loop_start = loop.time()
+    last_attempt = [loop_start] * count
+    reissued = [False] * count
+
+    def result(refusal: str | None = None, refused_index: int | None = None) -> PortToFriendResult:
+        return PortToFriendResult(seen_loading, refusal, refused_index, frozenset(jumped), frozenset(presumed))
 
     while True:
-        for i, c in enumerate(clients_to_move):
-            if i in seen_loading:
+        for i in range(count):
+            if i in seen_loading or i in jumped or i in presumed:
                 continue
-            outcome = await resolve_modal(c)
+            outcome = await resolve_modal(clients_to_move[i])
             if outcome.refusal:
-                return PortToFriendResult(seen_loading, outcome.refusal, i)
+                return result(outcome.refusal, i)
+            if outcome.answered:
+                # The port only starts once the dialog is gone, so its quiet window starts then too.
+                last_attempt[i] = loop.time()
 
         loading_flags = await asyncio.gather(*[c.is_loading() for c in clients_to_move])
         for i, is_now_loading in enumerate(loading_flags):
             if is_now_loading:
                 seen_loading.add(i)
 
-        if len(seen_loading) == len(clients_to_move):
-            return PortToFriendResult(seen_loading)
+        # A loading client still reports the position it left, so only the rest are read.
+        unsettled = [i for i in range(count) if i not in seen_loading and i not in jumped and i not in presumed]
+        positions = await asyncio.gather(*[_position_or_none(clients_to_move[i]) for i in unsettled])
+        quiet: list[int] = []
+        for i, pos in zip(unsettled, positions):
+            start = start_positions[i]
+            if pos is not None and start is not None and distance(pos, start) > TRIGGER_MARGIN:
+                jumped.add(i)
+            else:
+                quiet.append(i)
 
-        now = asyncio.get_event_loop().time()
-        if now - loop_start > ceiling:
-            return PortToFriendResult(seen_loading)
+        now = loop.time()
+        due: list[int] = []
+        for i in quiet:
+            grace = quiet_grace if i in maybe_there else trigger_timeout
+            if now - last_attempt[i] < grace:
+                continue
+            if i in maybe_there and reissued[i]:
+                presumed.add(i)
+            else:
+                due.append(i)
 
-        if now >= straggler_after:
-            stragglers = [c for i, c in enumerate(clients_to_move) if i not in seen_loading]
-            await asyncio.gather(*[initiate(c) for c in stragglers])
+        if len(seen_loading | jumped | presumed) == count or now - loop_start > ceiling:
+            return result()
+
+        if due:
+            await asyncio.gather(*[initiate(clients_to_move[i]) for i in due])
+            after = loop.time()
+            for i in due:
+                last_attempt[i] = after
+                reissued[i] = True
 
         await asyncio.sleep(poll_interval)
+
+
+async def gather_at_player(
+    machine,
+    clients: list,
+    target_index: int,
+    target_name: str,
+    *,
+    poll_interval: float = POLL_INTERVAL,
+) -> bool:
+    """Port every client but `clients[target_index]` onto that player, and confirm they are with it.
+
+    The hooked-player half of teleport_to_friend and the whole of teleport_to_player_if_in_zone.
+    Because the target is one of ours, its zone and position are readable, which makes this
+    exact where porting to a friend by name is not:
+
+    * Nobody is skipped for being in the target's zone, or even beside it. Neither can see
+      realm -- two players at the same login spawn on different realms read identically -- and
+      a port within the same zone and realm costs no loading screen, so it is cheaper to send
+      it than to be wrong about skipping it.
+    * A mover already in the target's zone within POSITION_MARGIN of it is the one case whose
+      port shows nothing, so it is the only one passed to port_clients as `maybe_there`.
+    * Arrival is every mover in the target's zone and within POSITION_MARGIN of it. That still
+      cannot see realm, but a mover on another realm loads when ported, so the only way through
+      it is two re-issued ports that both failed silently.
+
+    Logs its own reasons, naming players by number and never by name, and returns False on any
+    failure: a player still loading, a friend not found, a refusal, a port that never showed
+    itself, or a mover that did not end up with the target.
+    """
+    target = clients[target_index]
+    target_no = target_index + 1
+    numbers = [i + 1 for i in range(len(clients)) if i != target_index]
+    movers = [c for i, c in enumerate(clients) if i != target_index]
+    if not movers:
+        machine.log(f"No other players to port to P{target_no}")
+        return True
+
+    # Everything below reads zones and positions, and a loading client reports the ones it left.
+    if not await poll_until(lambda: none_loading(clients), ZONE_CHANGE_TIMEOUT, poll_interval):
+        machine.log("FAILURE: a player is still on a loading screen, so no position can be trusted", logging.WARNING)
+        return False
+
+    target_zone, target_pos = await asyncio.gather(target.zone_name(), _position_or_none(target))
+    if target_pos is None:
+        machine.log(f"FAILURE: P{target_no}'s position could not be read", logging.WARNING)
+        return False
+    zones = await asyncio.gather(*[c.zone_name() for c in movers])
+    positions = await asyncio.gather(*[_position_or_none(c) for c in movers])
+    beside = {
+        i
+        for i, (zone, pos) in enumerate(zip(zones, positions))
+        if zone == target_zone and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
+    }
+    machine.log(
+        f"Porting player(s) {numbers} to P{target_no}; already beside it: {[numbers[i] for i in sorted(beside)]}",
+        logging.DEBUG,
+    )
+
+    try:
+        result = await port_to_friend(
+            movers,
+            target_name.lower(),
+            trigger_timeout=TRIGGER_TIMEOUT,
+            ceiling=ZONE_CHANGE_TIMEOUT,
+            poll_interval=poll_interval,
+            maybe_there=beside,
+        )
+    except ValueError:
+        # The message names the player it could not find, so it stays out of the log.
+        machine.log(f"FAILURE: P{target_no} is not on the online friends list of every player", logging.WARNING)
+        return False
+
+    if result.refusal:
+        machine.log(
+            f"FAILURE: P{numbers[result.refused_index]} cannot reach P{target_no} — "
+            f"{dialog_captions.describe(result.refusal)}",
+            logging.WARNING,
+        )
+        return False
+    if missing := result.missing(len(movers)):
+        machine.log(
+            f"FAILURE: player(s) {[numbers[i] for i in missing]} showed no sign of porting within "
+            f"{ZONE_CHANGE_TIMEOUT:.0f}s",
+            logging.WARNING,
+        )
+        return False
+    for i in sorted(result.presumed):
+        machine.log(f"P{numbers[i]} neither loaded nor moved; it was already beside P{target_no}")
+
+    await poll_until(lambda: none_loading(movers), None, poll_interval)
+
+    if await poll_until(lambda: _all_beside(target, movers), ZONE_CHANGE_TIMEOUT, poll_interval):
+        return True
+    target_zone = await target.zone_name()
+    zones = await asyncio.gather(*[c.zone_name() for c in movers])
+    machine.log(
+        f"FAILURE: not every player ended up with P{target_no} (its zone {target_zone!r}, theirs {sorted(set(zones))})",
+        logging.WARNING,
+    )
+    return False
+
+
+async def _all_beside(target, movers: list) -> bool:
+    """Whether every mover is in the target's zone and within POSITION_MARGIN of it."""
+    target_zone, target_pos = await asyncio.gather(target.zone_name(), _position_or_none(target))
+    if target_pos is None:
+        return False
+    zones = await asyncio.gather(*[c.zone_name() for c in movers])
+    positions = await asyncio.gather(*[_position_or_none(c) for c in movers])
+    return all(
+        zone == target_zone and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
+        for zone, pos in zip(zones, positions)
+    )
 
 
 async def open_friend_profile(client, name: str):

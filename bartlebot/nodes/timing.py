@@ -45,6 +45,14 @@ ZONE_SETTLE_GRACE = 5.0
 # teleport lands after it gets there. Long enough for a slow trigger's loading screen to
 # appear, short enough that a client that never triggered is still recovered quickly.
 
+PORT_QUIET_GRACE = 5.0
+# Seconds a port to a player may show nothing -- no loading screen, no jump in position, no
+# dialog -- before port_clients acts on it, for a client that may already be standing where it
+# is going. The first time it is re-issued; the second time the client is presumed already
+# there, because a port onto someone you are beside, on the same realm, does nothing visible.
+# Sized like ZONE_SETTLE_GRACE: long enough for a cross-realm port's loading screen to appear,
+# since re-issuing a port that was about to start is what undoes an arrival (#70).
+
 MAX_RETRIES = 3
 # Default number of attempts for recoverable operations (teleport-and-check loops).
 
