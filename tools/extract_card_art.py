@@ -1,0 +1,212 @@
+"""Extract spell card art from the installed game into the local art cache.
+
+Run by the user, on their own machine, never by the app on a schedule::
+
+    uv run python tools/extract_card_art.py
+    uv run python tools/extract_card_art.py --dry-run
+    uv run python tools/extract_card_art.py --game-dir "D:/Games/Wizard101/Data/GameData"
+
+WHY THIS IS A TOOL AND NOT A FEATURE
+    Nothing extracted may ever become a tracked file: the repo goes public at 1.0.0
+    and a committed game texture carries the same exposure as committed player data
+    (see "No real player data" in the root ``CLAUDE.md``). Writing into
+    ``%APPDATA%/Bartleby/BartleBot/art`` puts the output somewhere the repo cannot
+    reach even by accident, and leaves every install without art until its user asks
+    for it. ``bartlebot/card_art.py`` is the read side, and treats absent art as the
+    ordinary case.
+
+WHERE THE ART COMES FROM
+    Each spell under ``Spells/`` in ``Root.wad`` is a BINd blob whose ``m_imageName``
+    names a texture by bare filename ("Spell_Storm_Tempest.dds"). Those textures live
+    in ``GUI/SummonedImages/`` -- nearly all in ``_Shared-WorldData.wad``, a dozen in
+    ``Root.wad`` -- so this resolves by basename across both rather than by path.
+    Reading the *named* field needs a real deserializer: see the byte-scan failure
+    described at the top of ``tools/dump_spell_names.py``.
+
+    The textures are DXT3/DXT5 DDS, which Qt cannot read (its build has no dds
+    plugin), so they are converted to PNG here. They are written **uncropped**, at
+    their full 128x128 with the circular frame and its transparent corners intact:
+    the display size and any crop are the UI's business and change more often than
+    the cache should be rebuilt.
+
+    One PNG per *image*, not per template: 18,000 templates share about 1,300
+    images, and the index maps every template name onto the file it uses.
+
+REGENERATE IT when a game patch adds or reworks spells. Art already extracted is
+overwritten; nothing here is incremental, because the whole run costs a few seconds.
+"""
+
+from __future__ import annotations
+
+import argparse
+import io
+import json
+import logging
+import sys
+from datetime import date
+from pathlib import Path, PurePosixPath
+
+from katsuba.op import STATEFUL_FLAGS, Serializer, SerializerOptions, TypeList
+from katsuba.wad import Archive
+from PIL import Image
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from bartlebot.card_art import INDEX_FILENAME, art_dir, spells_dir  # noqa: E402
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_GAME_DIR = Path(r"C:\ProgramData\KingsIsle Entertainment\Wizard101\Data\GameData")
+DEFAULT_TYPES = Path(__file__).resolve().parent / "r800294_WizardDev.json"
+
+SPELLS_GLOB = "Spells/**/*.xml"
+#: Searched in order; the first WAD holding a texture of that name wins. _Shared first
+#: because that is where all but a dozen of them are.
+TEXTURE_WADS = ("_Shared-WorldData.wad", "Root.wad")
+#: Where the spell textures sit inside those WADs.
+TEXTURE_GLOB = "GUI/**"
+
+
+def _decode(value) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return str(value)
+
+
+def _build_serializer(types_path: Path) -> Serializer:
+    types = TypeList.open(str(types_path))
+    opts = SerializerOptions()
+    opts.flags = STATEFUL_FLAGS
+    opts.shallow = False
+    opts.skip_unknown_types = True
+    return Serializer(opts, types)
+
+
+def read_image_names(root_wad: Path, types_path: Path) -> dict[str, str]:
+    """Template name -> the texture filename it names, for every spell in Root.wad.
+
+    The WAD path's stem *is* the template's internal name (see
+    ``tools/dump_spell_names.py``), so the key needs no deserializing -- only
+    ``m_imageName`` does.
+    """
+    archive = Archive.mmap(str(root_wad))
+    ser = _build_serializer(types_path)
+
+    images: dict[str, str] = {}
+    for path in archive.iter_glob(SPELLS_GLOB):
+        try:
+            data = archive[path]
+            if data.startswith(b"BINd"):
+                data = data[4:]
+            image = _decode(ser.deserialize(data).get("m_imageName"))
+        except Exception:
+            logger.debug("could not read a spell template at %s", path, exc_info=True)
+            continue
+        if image:
+            images[PurePosixPath(path).stem] = image
+    return images
+
+
+def index_textures(game_dir: Path) -> dict[str, tuple[Archive, str]]:
+    """Lowercased texture basename -> the archive holding it and its path inside.
+
+    By basename because ``m_imageName`` carries no directory, and across both WADs
+    because the spell textures are split between them.
+    """
+    found: dict[str, tuple[Archive, str]] = {}
+    for wad_name in TEXTURE_WADS:
+        wad_path = game_dir / wad_name
+        if not wad_path.exists():
+            logger.warning("no %s in %s -- some art may be missing", wad_name, game_dir)
+            continue
+        archive = Archive.mmap(str(wad_path))
+        for entry in archive.iter_glob(TEXTURE_GLOB):
+            found.setdefault(PurePosixPath(entry).name.lower(), (archive, entry))
+    return found
+
+
+def extract(game_dir: Path, types_path: Path, out_dir: Path, *, dry_run: bool = False) -> dict:
+    """Convert every spell texture to PNG under *out_dir*, and return the index."""
+    wanted = read_image_names(game_dir / "Root.wad", types_path)
+    textures = index_textures(game_dir)
+
+    png_dir = out_dir / spells_dir().name
+    if not dry_run:
+        png_dir.mkdir(parents=True, exist_ok=True)
+
+    images: dict[str, str] = {}
+    written: set[str] = set()
+    missing: dict[str, str] = {}
+    failed: dict[str, str] = {}
+    for template, texture in sorted(wanted.items()):
+        key = PurePosixPath(texture.replace("\\", "/")).name
+        hit = textures.get(key.lower())
+        if hit is None:
+            # The game names a texture its own files do not contain. A handful of
+            # spells are like this; it costs those cards their art and nothing else.
+            missing[template] = texture
+            continue
+        filename = f"{PurePosixPath(key).stem}.png"
+        if filename not in written:
+            if not dry_run:
+                archive, entry = hit
+                try:
+                    Image.open(io.BytesIO(archive[entry])).convert("RGBA").save(png_dir / filename)
+                except Exception as exc:  # noqa: BLE001 - one bad texture must not stop the run
+                    failed[template] = f"{texture}: {exc}"
+                    continue
+            written.add(filename)
+        images[template] = filename
+
+    return {
+        "_comment": "Generated by tools/extract_card_art.py from the local game install. Not for redistribution.",
+        "generated": date.today().isoformat(),
+        "source": str(game_dir),
+        "images": images,
+        "files": len(written),
+        "missing": missing,
+        "failed": failed,
+    }
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    ap.add_argument("--game-dir", type=Path, default=DEFAULT_GAME_DIR, help="the game's Data/GameData directory")
+    ap.add_argument("--types", type=Path, default=DEFAULT_TYPES, help="path to a wiztype types JSON dump")
+    ap.add_argument("--out", type=Path, default=None, help="where to write the cache (default: the art cache)")
+    ap.add_argument("--dry-run", action="store_true", help="report what would be written, write nothing")
+    args = ap.parse_args()
+
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
+    out_dir = args.out or art_dir()
+    if not (args.game_dir / "Root.wad").exists():
+        print(f"No Root.wad under {args.game_dir}; pass --game-dir")
+        return 1
+    if not args.types.exists():
+        print(f"types JSON not found at {args.types}; pass --types")
+        return 1
+
+    index = extract(args.game_dir, args.types, out_dir, dry_run=args.dry_run)
+
+    if not args.dry_run:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / INDEX_FILENAME).write_text(json.dumps(index, indent=1, ensure_ascii=False), encoding="utf-8")
+
+    size = sum(f.stat().st_size for f in (out_dir / spells_dir().name).glob("*.png")) if not args.dry_run else 0
+    print(f"{'would write' if args.dry_run else 'wrote'} {index['files']} images for {len(index['images'])} templates")
+    if size:
+        print(f"  {size / 1e6:.1f} MB in {out_dir / spells_dir().name}")
+    if index["missing"]:
+        print(f"  {len(index['missing'])} templates name a texture the game files do not contain")
+    if index["failed"]:
+        print(f"  {len(index['failed'])} textures could not be converted")
+    if not args.dry_run:
+        print(f"  index: {out_dir / INDEX_FILENAME}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

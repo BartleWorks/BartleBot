@@ -1647,8 +1647,30 @@ def test_binding_descriptions_match_the_card_wording(qapp, store):
 
 
 def _content_texts(card) -> list[str]:
+    """Each row of the unfolded list, as one string per row.
+
+    A card row is a composite now -- art tile, count, display name, and the template
+    name where it differs -- so its text is gathered from the labels inside it. The
+    headings and the archmastery note are still plain labels.
+    """
     layout = card._content_layout
-    return [layout.itemAt(i).widget().text() for i in range(layout.count())]
+    texts: list[str] = []
+    for i in range(layout.count()):
+        widget = layout.itemAt(i).widget()
+        if widget is None:
+            continue
+        row = widget.layout()
+        if row is None:
+            texts.append(widget.text())
+            continue
+        parts = []
+        for j in range(row.count()):
+            child = row.itemAt(j).widget()
+            getter = getattr(child, "text", None)
+            if callable(getter):
+                parts.append(getter())
+        texts.append(" ".join(parts))
+    return texts
 
 
 # The section is never shown in these tests (no top-level window under it), so
@@ -1677,7 +1699,7 @@ def test_a_body_click_unfolds_the_card_list(qapp):
 
     assert card.is_expanded
     assert not card._content.isHidden()
-    assert "Test Card × 4" in _content_texts(card)
+    assert "×4 Test Card" in _content_texts(card)
 
 
 def test_a_second_body_click_folds_it_again(qapp):
@@ -1712,7 +1734,7 @@ def test_refresh_updates_an_unfolded_cards_list(qapp):
 
     section.refresh({1: DeckData(normal={"Test Card": 4, "Second Card": 1})})
 
-    assert "Second Card × 1" in _content_texts(section.card(1))
+    assert "×1 Second Card" in _content_texts(section.card(1))
 
 
 def test_refresh_folds_a_card_whose_deck_became_empty(qapp):

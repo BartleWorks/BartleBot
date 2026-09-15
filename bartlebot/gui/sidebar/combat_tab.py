@@ -108,7 +108,7 @@ from bartlebot.credentials import CredentialStore
 from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
-from bartlebot.gui.deck_content import deck_content_lines
+from bartlebot.gui.deck_content import DeckCardEntry, archmastery_line, deck_groups
 from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
@@ -126,6 +126,7 @@ from bartlebot.gui.sidebar.strategy_panel import (
 )
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.add_card import AddCard
+from bartlebot.gui.widgets.card_art_tile import ROW_TILE, CardArtStrip, CardArtTile, card_pixmap, tooltip_for
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.elided_label import ElidedLabel
 from bartlebot.gui.widgets.picker_popup import PickerRow, Section
@@ -261,6 +262,14 @@ class _DeckCard(CardFrame):
         self._archmastery.setVisible(False)
         layout.addWidget(self._archmastery)
 
+        # The collapsed card's card art: one tile per distinct card, wrapping, with a
+        # rotated divider between Normal and Item. Hidden while the card is unfolded,
+        # and on any install whose user has not run tools/extract_card_art.py -- the
+        # summary line above says what is in the deck either way.
+        self._art = CardArtStrip(parent=self)
+        self._art.setVisible(False)
+        layout.addWidget(self._art)
+
         # The card list. Built once and refilled, never created on first expand, so
         # toggling is never the first time this widget is shown -- see gui/CLAUDE.md on
         # showing a widget before it has a parent.
@@ -312,6 +321,7 @@ class _DeckCard(CardFrame):
             self._archmastery.setText(f"Archmastery: {school} · {mode.lower()}")
         self._archmastery.setVisible(bool(school))
 
+        self._rebuild_art()
         if self._expanded:
             self._rebuild_content()
         self._reapply_verb_states()
@@ -354,9 +364,23 @@ class _DeckCard(CardFrame):
         if expanded:
             self._rebuild_content()
         self._content.setVisible(expanded)
+        # The strip and the list are the same cards, so only one of them is up at a
+        # time: art while folded, names while not.
+        self._art.setVisible(self._art.has_art() and not expanded)
 
     def _toggle_expanded(self) -> None:
         self.set_expanded(not self._expanded)
+
+    def _rebuild_art(self) -> None:
+        """Refill the collapsed strip, and decide whether it appears at all.
+
+        Hidden while the card is unfolded, because the list below names the same cards,
+        and on an install with no extracted art, where ``set_groups`` finds none and
+        leaves the strip empty. Neither case changes the rest of the card: the summary
+        line carries the counts whether or not there is art to show.
+        """
+        self._art.set_groups(deck_groups(self._deck) if self.has_deck else [])
+        self._art.setVisible(self._art.has_art() and not self._expanded)
 
     def _rebuild_content(self) -> None:
         while (item := self._content_layout.takeAt(0)) is not None:
@@ -365,12 +389,54 @@ class _DeckCard(CardFrame):
                 widget.deleteLater()
         if self._deck is None:
             return
-        for line in deck_content_lines(self._deck):
-            css = "font-weight: bold;" if line.bold else ""
-            row_lbl = ThemedTextLabel(line.text, color="text", css=css)
-            row_lbl.setWordWrap(True)
-            self._content_layout.addWidget(row_lbl)
-            row_lbl.show()
+        note = archmastery_line(self._deck)
+        if note:
+            label = ThemedTextLabel(note, color="text", parent=self._content)
+            label.setWordWrap(True)
+            self._add_content(label)
+        for group in deck_groups(self._deck):
+            heading = ThemedTextLabel(group.heading, color="text", css="font-weight: bold;", parent=self._content)
+            self._add_content(heading)
+            for entry in group.entries:
+                self._add_content(self._make_card_row(entry))
+
+    def _add_content(self, widget: QWidget) -> None:
+        """Put a built widget into the unfolded list, then show it.
+
+        In that order, and never the reverse: a widget shown while it still has no
+        parent is a top-level window until the next line reparents it -- one real
+        frame of it, per row -- see gui/CLAUDE.md.
+        """
+        self._content_layout.addWidget(widget)
+        widget.show()
+
+    def _make_card_row(self, entry: DeckCardEntry) -> QWidget:
+        """One card in the unfolded list: art, count, display name, template name.
+
+        The template name is muted and shown only where it differs from the display
+        name. For most cards the two are the same string -- an unresolved card falls
+        back to its own template name -- and the pair would read as the name twice.
+        """
+        row = QWidget(self._content)
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+        pixmap = card_pixmap(entry.template, ROW_TILE)
+        if pixmap is not None:
+            layout.addWidget(CardArtTile(entry, pixmap, ROW_TILE, row), 0)
+        layout.addWidget(ThemedTextLabel(f"×{entry.count}", color="text", parent=row), 0)
+        # The name takes the slack and wraps; a fixed-width name label and a trailing
+        # stretch instead left "Bunyip's Rage (Path A, Tier 5)" clipped mid-word at a
+        # 390px sidebar, which is the width this panel is usually at.
+        name = ThemedTextLabel(entry.display, color="text", parent=row)
+        name.setWordWrap(True)
+        layout.addWidget(name, 1)
+        if entry.shows_template:
+            template = ThemedTextLabel(entry.template, parent=row)
+            template.setWordWrap(True)
+            layout.addWidget(template, 0)
+        row.setToolTip(tooltip_for(entry))
+        return row
 
     # -- verbs ----------------------------------------------------------
 

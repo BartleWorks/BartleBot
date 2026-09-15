@@ -30,6 +30,10 @@ dev = [
     "pytest-qt>=4.5.0",
     "katsuba>=0.4.0",
     "pytest-cov>=6.0",
+    # Decodes the game's DXT3/DXT5 textures for tools/extract_card_art.py. Dev-only:
+    # nothing at runtime reads a WAD, and the extracted art is PNG by the time the app
+    # sees it -- Qt's build here has no dds plugin, which is why the tool converts.
+    "pillow>=11.0",
 ]
 
 # Ours, not upstream: these carry fixes the original projects do not have,
