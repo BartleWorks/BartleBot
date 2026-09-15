@@ -249,13 +249,15 @@ def test_a_free_param_is_editable_without_a_toggle_and_records_an_override(free_
     c.select_state(m("tp_b"))
     form = c.param_panel.param_form
     assert form.widget("target_zone").isEnabled() and form.override_button("target_zone") is None
-    assert not form.widget("skip_extra_clients_in_zone").isEnabled()
-    assert form.override_button("skip_extra_clients_in_zone") is not None
     form.widget("target_zone").setText("MooShu/Hub")
     assert _state(c, m("tp_b")).params["target_zone"] == "MooShu/Hub"
     assert _region(c).source.param_overrides == {"tp_b": {"target_zone": "MooShu/Hub"}}
     form.widget("target_zone").setText("WizardCity/Hub")
     assert _region(c).source.param_overrides == {}, "back at the subgraph's value: nothing to override"
+    # A param that is not free stays locked, and offers its override toggle instead.
+    c.select_state(m("form_group"))
+    assert not form.widget("require_all").isEnabled()
+    assert form.override_button("require_all") is not None
 
 
 def test_lock_toggle_reads_locked_then_overridden(canvas):

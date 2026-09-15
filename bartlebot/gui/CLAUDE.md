@@ -696,6 +696,9 @@ already has.
   node gates on both, so a stale override cannot send a client at a toggle that is not
   there, and the composed default stays `False`: the author is saying it is available,
   not that it is wanted. They can still pin a default by declaring one.
+  `required_unless` is the mirror, for an option one mode of a node ignores:
+  `teleport_to_friend` composes Friend Name only while some state is *not* porting to a
+  hooked player, so a bot mixing the two modes keeps the row.
 - **The list is ordered by where an option comes from, not by whether it is in
   the file.** The author's own options first, then the derived ones grouped by the
   node that requires them. Ordering the file's options first instead made a row

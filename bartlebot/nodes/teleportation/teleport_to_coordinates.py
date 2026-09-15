@@ -2,14 +2,12 @@
 
 import asyncio
 import logging
-import math
 
 from wizwalker import XYZ
 
 from bartlebot.nodes import node_helpers
+from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
-
-POSITION_MARGIN = 10.0  # units; teleport is direct so any deviation indicates an issue
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -88,7 +86,7 @@ async def run(machine, clients: list, params: dict) -> str:
         f"Positions after teleport: {[(round(p.x, 1), round(p.y, 1), round(p.z, 1)) for p in positions]}",
         logging.DEBUG,
     )
-    off_target = [i for i, p in enumerate(positions) if _distance(p, target) > POSITION_MARGIN]
+    off_target = [i for i, p in enumerate(positions) if node_helpers.distance(p, target) > POSITION_MARGIN]
     if off_target:
         machine.log(
             f"FAILURE: client(s) {off_target} did not reach target XYZ (margin={POSITION_MARGIN})",
@@ -98,7 +96,3 @@ async def run(machine, clients: list, params: dict) -> str:
 
     machine.log(f"SUCCESS: all clients at target XYZ in {zone!r}")
     return "SUCCESS"
-
-
-def _distance(a: XYZ, b: XYZ) -> float:
-    return math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)

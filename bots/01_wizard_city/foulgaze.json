@@ -504,8 +504,7 @@
         "y": -90.0
       },
       "params": {
-        "target_zone": "WizardCity/WC_Streets/WC_OldeTown",
-        "skip_extra_clients_in_zone": false
+        "target_zone": "WizardCity/WC_Streets/WC_OldeTown"
       }
     },
     {
@@ -517,8 +516,7 @@
         "y": 0.0
       },
       "params": {
-        "target_zone": "WizardCity/*",
-        "skip_extra_clients_in_zone": false
+        "target_zone": "WizardCity/*"
       }
     },
     {

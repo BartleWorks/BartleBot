@@ -475,7 +475,8 @@ def test_free_toggle_while_editing_reaches_the_pushed_definition(linked, library
     assert library.get(SYNC_ID).free_params == {"tp_b": ["target_zone"]}
     linked.select_state(m("tp_b"))
     assert form.widget("target_zone").isEnabled() and form.override_button("target_zone") is None, "free now"
-    assert not form.widget("skip_extra_clients_in_zone").isEnabled(), "still the subgraph's"
+    linked.select_state(m("form_group"))
+    assert not form.widget("require_all").isEnabled(), "still the subgraph's"
 
 
 def test_set_param_free_is_refused_outside_an_edit(linked):

@@ -276,7 +276,7 @@
       "params": {
         "target_hooked_player": false,
         "target_player": 1,
-        "to_zone": "*Housing*"
+        "to_zone": ""
       }
     },
     {

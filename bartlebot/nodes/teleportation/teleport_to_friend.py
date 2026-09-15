@@ -49,29 +49,39 @@ PARAM_SCHEMA: list[ParamField] = [
         key="to_zone",
         type="str",
         label="Destination Zone",
-        help="Expected zone name after teleport. Players already in this zone are skipped. Used to verify arrival.",
+        help=(
+            "Optional. Where the target is expected to be. With a hooked player, the node fails before "
+            "anyone ports if that player is somewhere else. With a friend, every player must arrive "
+            "here. Leave it blank when you cannot know — a friend's house, say — and the node checks "
+            "only that everyone ended up together."
+        ),
         default="",
-        required=True,
+        required=False,
     ),
 ]
 
 NODE_SPEC = NodeSpec(
     description=(
-        "Teleports one or more players to a target using the in-game friends list. The target is "
-        "either one of this bot's own players — its wizard name is read from the game, so nothing "
-        "is stored — or the Friend Name option, valued on this machine. Players already in the "
-        "destination zone are skipped. Handles the friend-busy error dialog and verifies arrival zone."
+        "Teleports players to a target using the in-game friends list. The target is either one of "
+        "this bot's own players — its wizard name is read from the game, so nothing is stored — or "
+        "the Friend Name option, valued on this machine. Every player but a hooked target is sent: "
+        "being in the same zone says nothing about realm, and a port within the same zone and realm "
+        "is quick. Handles the friend-busy error dialog and verifies that everyone arrived."
     ),
     params=PARAM_SCHEMA,
     returns=[
-        ReturnSpec("SUCCESS", "All players are now in to_zone."),
+        ReturnSpec(
+            "SUCCESS",
+            "Every player is with the target: standing on a hooked player, or in the same zone as "
+            "each other (and in to_zone, if set) for a friend.",
+        ),
         ReturnSpec(
             "FAILURE",
             "No teleport target could be resolved (no friend name configured, or the target "
-            "player's wizard name has not been detected yet); friend not found or not online; "
-            "the friend-busy dialog appeared (friend has teleports off, or is somewhere you "
-            "cannot follow them into); players did not enter a loading screen within the trigger "
-            "timeout; or not all players arrived in to_zone after loading.",
+            "player's wizard name has not been detected yet); a hooked target is not in to_zone; "
+            "friend not found or not online; the friend-busy dialog appeared (friend has teleports "
+            "off, or is somewhere you cannot follow them into); a player showed no sign of porting; "
+            "or not every player ended up with the target.",
         ),
     ],
     required_bot_options=[
@@ -81,6 +91,9 @@ NODE_SPEC = NodeSpec(
             # Null, always: the author has no opinion about whose wizard you port to,
             # and cannot have one. The level below is your app setting.
             default=None,
+            # A hooked-player port never reads it, so a bot whose every port is to a
+            # hooked player gets no Setup row for a name it will not use.
+            required_unless="target_hooked_player",
             description=(
                 "Wizard name to search for in the friends list (case-insensitive). Must be online "
                 "and on each player's friends list. This is your value, not the bot's \u2014 it is "
@@ -94,6 +107,9 @@ NODE_SPEC = NodeSpec(
         "Both accounts must be in-game friends even in hooked-player mode: this drives the friends "
         "list, it does not port through the party. The target player is expected to already be at "
         "the destination and is never asked to port to itself. "
+        "A port within the same zone and realm shows no loading screen, and one onto a player you "
+        "are already beside shows nothing at all; both are accepted, and a player that shows nothing "
+        "is logged as presumed already there. "
         "In friend-name mode the name is a bot option valued on this machine, not in the bot file, so a bot can be "
         "shared without carrying anyone's character name and each user points it at their own idler."
     ),
@@ -169,28 +185,28 @@ def resolve_target(clients: list, params: dict, configured: str = "") -> TargetR
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: client.zone_name(), client.is_loading(), node_helpers.port_to_friend()
+    APIs: client.zone_name(), client.is_loading(), client.body.position(),
+          node_helpers.gather_at_player(), node_helpers.port_to_friend()
 
     Flow:
       0. Resolve the teleport target: a hooked player's wizard name, or the Friend Name
          bot option. No target -> FAILURE.
-      1. Check if all clients are already in to_zone. Return SUCCESS immediately if so.
-      2. Filter to only clients not yet in to_zone, and drop the target itself — it is
-         already where everyone is going, and cannot port to itself.
-      3. node_helpers.port_to_friend(): initiate the teleport for all clients_to_move,
-         answer modals, retry stragglers, and wait for each to enter a loading screen.
-         ValueError (friend not found/offline), a refusal, or not every client loading
-         within the timeout -> FAILURE.
-      4. Wait for all loading screens to finish.
-      5. Wait for all clients (including those already in to_zone) to arrive in to_zone.
-         Return FAILURE if any are not.
+      1. Hooked player: its zone and position are readable, so the port is exact.
+         a. If to_zone is set and the target is not in it, FAILURE before anyone ports.
+         b. node_helpers.gather_at_player() ports everyone else onto it and confirms each
+            is standing with it.
+      2. Friend by name: nothing about the friend is readable, so every client ports.
+         a. node_helpers.port_to_friend() accepts a loading screen or a jump in position,
+            and — because any client might already be at the friend — presumes a client
+            that shows nothing through one re-issue is already there, and logs it.
+         b. Once loading clears, every client must be in one zone, and in to_zone if set.
 
-    FAILURE: no target could be resolved; only the target itself is outside to_zone; friend
-    not found or not online; friend-busy dialog appeared (friend has teleports off, or is
-    somewhere unreachable); loading not detected within ZONE_CHANGE_TIMEOUT; not all clients
-    arrived in to_zone.
+    FAILURE: no target could be resolved; a hooked target is not in to_zone; friend not found
+    or not online; friend-busy dialog appeared (friend has teleports off, or is somewhere
+    unreachable); a client showed no sign of porting within ZONE_CHANGE_TIMEOUT; clients did
+    not end up together (or in to_zone, when set).
     """
-    to_zone: str = params["to_zone"]
+    to_zone: str = str(params.get("to_zone") or "").strip()
 
     # 0. Resolve the target once, and say which level answered — never the name itself at
     #    INFO, which is what a user pastes into an issue.
@@ -198,70 +214,97 @@ async def run(machine, clients: list, params: dict) -> str:
     if target.error:
         machine.log(f"FAILURE: {target.error}", logging.WARNING)
         return "FAILURE"
-    friend_name: str = target.name.lower()
-    machine.log(f"teleport_to_friend: target from {target.source}, to_zone={to_zone!r}")
+    machine.log(f"teleport_to_friend: target from {target.source}, to_zone={to_zone or '(not set)'!r}")
     machine.log(f"Resolved target name: {target.name!r}", logging.DEBUG)
 
-    # 1. Early exit if all clients already in to_zone.
-    zones = await asyncio.gather(*[c.zone_name() for c in clients])
-    machine.log(f"Current zones: {list(zones)}", logging.DEBUG)
-    if all(node_helpers.zone_matches(z, to_zone) for z in zones):
-        machine.log(f"SUCCESS: all clients already in {to_zone!r}")
-        return "SUCCESS"
+    if target.target_index is not None:
+        return await _gather_at_hooked_player(machine, clients, target, to_zone)
+    return await _port_to_named_friend(machine, clients, target, to_zone)
 
-    clients_to_move = [
-        c
-        for i, (c, z) in enumerate(zip(clients, zones))
-        if not node_helpers.zone_matches(z, to_zone) and i != target.target_index
-    ]
-    if not clients_to_move:
-        machine.log(f"FAILURE: only the target ({target.source}) is outside {to_zone!r}", logging.WARNING)
+
+async def _gather_at_hooked_player(machine, clients: list, target: TargetResolution, to_zone: str) -> str:
+    """Step 1 of run(): port everyone onto one of this bot's own players."""
+    target_client = clients[target.target_index]
+
+    # a. to_zone is a statement about where the target is, so check it before moving anyone:
+    #    otherwise a target that is somewhere unexpected takes the whole group with it.
+    if to_zone:
+        await node_helpers.poll_until(
+            lambda: node_helpers.none_loading([target_client]), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
+        )
+        target_zone = await target_client.zone_name()
+        if not node_helpers.zone_matches(target_zone, to_zone):
+            machine.log(
+                f"FAILURE: the target ({target.source}) is in {target_zone!r}, not {to_zone!r}", logging.WARNING
+            )
+            return "FAILURE"
+
+    # b. Port everyone else onto it and confirm they are standing with it.
+    if not await node_helpers.gather_at_player(
+        machine, clients, target.target_index, target.name, poll_interval=POLL_INTERVAL
+    ):
         return "FAILURE"
-    machine.log(f"{len(clients_to_move)} of {len(clients)} client(s) will teleport", logging.DEBUG)
 
-    # 2. Initiate the teleport and wait for it to trigger a loading screen.
-    machine.log("Calling teleport_to_friend_from_list…", logging.DEBUG)
+    machine.log(f"SUCCESS: every player is with {target.source}")
+    return "SUCCESS"
+
+
+async def _port_to_named_friend(machine, clients: list, target: TargetResolution, to_zone: str) -> str:
+    """Step 2 of run(): port everyone to a friend who is not one of this bot's players."""
+    # Quiet clients are judged by their position, and a loading client reports the one it left.
+    if not await node_helpers.poll_until(
+        lambda: node_helpers.none_loading(clients), ZONE_CHANGE_TIMEOUT, POLL_INTERVAL
+    ):
+        machine.log("FAILURE: a player is still on a loading screen", logging.WARNING)
+        return "FAILURE"
+
+    # a. Any client might already be standing at the friend, and nothing says which.
     try:
         port_result = await node_helpers.port_to_friend(
-            clients_to_move,
-            friend_name,
+            clients,
+            target.name.lower(),
             trigger_timeout=TRIGGER_TIMEOUT,
             ceiling=ZONE_CHANGE_TIMEOUT,
             poll_interval=POLL_INTERVAL,
+            maybe_there=range(len(clients)),
         )
-    except ValueError as exc:
-        machine.log(f"FAILURE: {exc}", logging.WARNING)
+    except ValueError:
+        # The message names the friend it could not find, so it stays out of the log.
+        machine.log(
+            f"FAILURE: the target ({target.source}) is not on every player's online friends list", logging.WARNING
+        )
         return "FAILURE"
 
     if port_result.refusal:
         machine.log(
-            f"FAILURE: client {port_result.refused_index} cannot reach the target ({target.source}) — "
+            f"FAILURE: P{port_result.refused_index + 1} cannot reach the target ({target.source}) — "
             f"{dialog_captions.describe(port_result.refusal)}",
             logging.WARNING,
         )
         return "FAILURE"
-    if len(port_result.seen_loading) < len(clients_to_move):
-        not_triggered = [i for i in range(len(clients_to_move)) if i not in port_result.seen_loading]
-        machine.log(f"Clients not loading at timeout: {not_triggered}", logging.DEBUG)
+    if missing := port_result.missing(len(clients)):
         machine.log(
-            f"FAILURE: {len(not_triggered)} client(s) did not enter a loading screen within {ZONE_CHANGE_TIMEOUT:.0f}s",
+            f"FAILURE: player(s) {[i + 1 for i in missing]} showed no sign of porting within "
+            f"{ZONE_CHANGE_TIMEOUT:.0f}s",
             logging.WARNING,
         )
         return "FAILURE"
+    for i in sorted(port_result.presumed):
+        # The one case a failed port could hide in, so it is always visible after the fact.
+        machine.log(f"P{i + 1} neither loaded nor moved; presumed already with the target ({target.source})")
 
-    # 3. Wait for all loading screens to finish.
-    machine.log("Loading detected; waiting for screens to clear…", logging.DEBUG)
-    await node_helpers.poll_until(lambda: node_helpers.none_loading(clients_to_move), None, POLL_INTERVAL)
+    await node_helpers.poll_until(lambda: node_helpers.none_loading(clients), None, POLL_INTERVAL)
 
-    # 4. Verify all clients (including those already in to_zone) arrived.
-    actual_zones = await node_helpers.wait_for_zone(clients, to_zone, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL)
-    if actual_zones is not None:
-        machine.log(f"Zones after teleport: {actual_zones}", logging.DEBUG)
-        machine.log(
-            f"FAILURE: not all clients in expected zone (expected={to_zone!r}, got={list(set(actual_zones))})",
-            logging.WARNING,
-        )
+    # b. Nobody knows the friend's zone, but everyone who ported to them shares it.
+    async def _together() -> bool:
+        zones = await asyncio.gather(*[c.zone_name() for c in clients])
+        return len(set(zones)) == 1 and (not to_zone or node_helpers.zone_matches(zones[0], to_zone))
+
+    if not await node_helpers.poll_until(_together, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL):
+        zones = await asyncio.gather(*[c.zone_name() for c in clients])
+        expected = f"all in {to_zone!r}" if to_zone else "all in one zone"
+        machine.log(f"FAILURE: players did not end up together (expected {expected}, got {zones})", logging.WARNING)
         return "FAILURE"
 
-    machine.log(f"SUCCESS: all clients in {to_zone!r}")
+    machine.log(f"SUCCESS: every player is with the target ({target.source})")
     return "SUCCESS"

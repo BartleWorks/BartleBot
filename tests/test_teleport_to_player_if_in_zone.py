@@ -2,77 +2,66 @@
 
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.teleportation.teleport_to_player_if_in_zone as tpz
 from bartlebot import wizard_names
 from bartlebot.nodes.paths import MESSAGE_BOX_RIGHT
 from tests.conftest import FakeClient, FakeMachine, message_box_patches
+from tests.port_sim import PortSim
 
 _ZONE = "DungeonZone"
 _ELSEWHERE = "HubZone"
 _TARGET_NAME = "Luke SkullHunter"
+_AT_TARGET = (100.0, 200.0, 0.0)
+_FAR = (900.0, -400.0, 0.0)
 
 _PARAMS = {"target_zone": _ZONE}
 
-# Patch the WizWalker function at its imported reference in node_helpers, which now owns
-# the shared "port to a friend" mechanics (node_helpers.port_to_friend / teleport_via_friends_list).
-_TELEPORT_OK = patch(
-    "bartlebot.nodes.node_helpers.teleport_to_friend_from_list",
-    new_callable=AsyncMock,
-)
-_RESOLVE_OK = patch.object(nh, "resolve_friend_name", new=AsyncMock(return_value=_TARGET_NAME))
-_NO_DIALOG = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False))
+
+@pytest.fixture(autouse=True)
+def _forget_names():
+    yield
+    wizard_names.clear_cache()
 
 
-def _caption(text: str):
-    return patch.object(nh, "get_text_by_path", new=AsyncMock(return_value=text))
+@pytest.fixture(autouse=True)
+def fast(monkeypatch):
+    monkeypatch.setattr(tpz, "POLL_INTERVAL", 0.001)
+    monkeypatch.setattr(nh, "TRIGGER_TIMEOUT", 0.05)
+    monkeypatch.setattr(nh, "PORT_QUIET_GRACE", 0.05)
 
 
-_NO_CAPTION = _caption("")
+def _sim() -> PortSim:
+    sim = PortSim()
+    sim.target = sim.player(_ZONE, _AT_TARGET, name=_TARGET_NAME)
+    return sim
 
 
-def _target_client() -> FakeClient:
-    """Client already in _ZONE, whose wizard name is cached."""
-    c = FakeClient()
-    c.zone_name = AsyncMock(return_value=_ZONE)
-    wizard_names.remember(c, _TARGET_NAME)
-    return c
-
-
-def _mover_client() -> FakeClient:
-    """Client elsewhere that teleports in and arrives."""
-    c = FakeClient()
-    c.zone_name = AsyncMock(side_effect=[_ELSEWHERE, _ZONE])
-    c.is_loading = AsyncMock(side_effect=[True, False])
-    return c
-
-
-def _clear_cache_after(fn):
-    async def wrapper(*args, **kwargs):
-        try:
-            return await fn(*args, **kwargs)
-        finally:
-            wizard_names.clear_cache()
-
-    return wrapper
+async def _run(sim: PortSim, clients: list, params: dict = _PARAMS) -> tuple[str, FakeMachine]:
+    machine = FakeMachine()
+    with (
+        patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
+        patch.object(nh, "resolve_modal", new=AsyncMock(return_value=nh.ModalOutcome(answered=False))),
+    ):
+        return await tpz.run(machine, clients, params), machine
 
 
 # ---------------------------------------------------------------------------
-# No target in zone
+# No target
 # ---------------------------------------------------------------------------
 
 
 async def test_no_client_in_zone_returns_failure():
     """FAILURE when no hooked client is in target_zone; nothing is touched."""
-    clients = [FakeClient(), FakeClient()]
-    for c in clients:
-        c.zone_name = AsyncMock(return_value=_ELSEWHERE)
+    sim = PortSim()
+    clients = [sim.player(_ELSEWHERE), sim.player(_ELSEWHERE)]
 
-    with _TELEPORT_OK as mock_tp:
-        result = await tpz.run(FakeMachine(), clients, _PARAMS)
+    result, _ = await _run(sim, clients)
 
     assert result == "FAILURE"
-    mock_tp.assert_not_called()
+    assert sim.ported == []
 
 
 async def test_empty_target_zone_returns_failure():
@@ -80,222 +69,150 @@ async def test_empty_target_zone_returns_failure():
     assert result == "FAILURE"
 
 
-# ---------------------------------------------------------------------------
-# Target name not yet known
-# ---------------------------------------------------------------------------
-
-
 async def test_target_name_not_cached_returns_failure():
     """FAILURE when the client found in target_zone has no cached wizard name."""
-    client = FakeClient()
-    client.zone_name = AsyncMock(return_value=_ZONE)
+    sim = PortSim()
+    unnamed = sim.player(_ZONE, _AT_TARGET)
+    mover = sim.player(_ELSEWHERE)
 
-    with _TELEPORT_OK as mock_tp:
-        result = await tpz.run(FakeMachine(), [client], _PARAMS)
+    result, _ = await _run(sim, [unnamed, mover])
 
     assert result == "FAILURE"
-    mock_tp.assert_not_called()
+    assert sim.ported == []
 
 
 # ---------------------------------------------------------------------------
-# Happy paths
+# Who ports, and how the port shows itself
 # ---------------------------------------------------------------------------
 
 
 async def test_single_target_no_other_clients_returns_success():
-    """Only the target is hooked — nothing to move → SUCCESS without any teleport call."""
-    target = _target_client()
+    sim = _sim()
 
-    with _TELEPORT_OK as mock_tp:
-        try:
-            result = await tpz.run(FakeMachine(), [target], _PARAMS)
-        finally:
-            wizard_names.clear_cache()
+    result, _ = await _run(sim, [sim.target])
 
     assert result == "SUCCESS"
-    mock_tp.assert_not_called()
+    assert sim.ported == []
 
 
-async def test_other_client_teleports_to_target():
-    """The non-target client is teleported to the target and arrives → SUCCESS."""
-    target = _target_client()
-    mover = _mover_client()
+async def test_a_player_in_another_zone_loads_in():
+    sim = _sim()
+    mover = sim.player(_ELSEWHERE, _FAR)
 
-    with _TELEPORT_OK as mock_tp, _RESOLVE_OK, _NO_DIALOG, patch.object(tpz, "POLL_INTERVAL", 0):
-        try:
-            result = await tpz.run(FakeMachine(), [target, mover], _PARAMS)
-        finally:
-            wizard_names.clear_cache()
+    result, _ = await _run(sim, [sim.target, mover])
 
     assert result == "SUCCESS"
-    assert mock_tp.call_count == 1
-    assert mock_tp.call_args[0][0] is mover
+    assert sim.ported == [mover]
+    assert mover.where == sim.target.where
 
 
-async def test_first_in_player_order_is_the_target():
-    """Two clients are in target_zone; the lower-numbered one is picked as target."""
-    first_in_zone = _target_client()
-    wizard_names.remember(first_in_zone, "First Wizard")
-    second_in_zone = FakeClient()
-    second_in_zone.zone_name = AsyncMock(return_value=_ZONE)
-    wizard_names.remember(second_in_zone, "Second Wizard")
-    mover = _mover_client()
+async def test_a_player_in_the_same_zone_ports_without_a_loading_screen():
+    """#69: the port happened, never loaded, and the node kept re-porting until it gave up."""
+    sim = _sim()
+    mover = sim.player(_ZONE, _FAR)
 
-    resolved_names = []
-
-    async def _resolve(_client, name_lower):
-        resolved_names.append(name_lower)
-        return "First Wizard"
-
-    params = {"target_zone": _ZONE, "skip_extra_clients_in_zone": True}
-
-    with (
-        _TELEPORT_OK as mock_tp,
-        patch.object(nh, "resolve_friend_name", new=AsyncMock(side_effect=_resolve)),
-        _NO_DIALOG,
-        patch.object(tpz, "POLL_INTERVAL", 0),
-    ):
-        try:
-            result = await tpz.run(FakeMachine(), [first_in_zone, second_in_zone, mover], params)
-        finally:
-            wizard_names.clear_cache()
+    result, _ = await _run(sim, [sim.target, mover])
 
     assert result == "SUCCESS"
-    # Only the mover teleports; first_in_zone is the target and second_in_zone is skipped as an extra.
-    assert mock_tp.call_count == 1
-    assert resolved_names == ["first wizard"]
+    assert sim.ported == [mover], "ported once, and not again"
+    assert mover.where == sim.target.where
+
+
+async def test_a_player_already_beside_the_target_is_presumed_there_and_logged():
+    sim = _sim()
+    beside = sim.player(_ZONE, _AT_TARGET)
+
+    result, machine = await _run(sim, [sim.target, beside])
+
+    assert result == "SUCCESS"
+    assert any("P2" in msg and "already beside P1" in msg for msg, _ in machine.logs)
+
+
+async def test_a_player_beside_the_target_on_another_realm_still_ports():
+    """The same zone and coordinates on another realm read exactly like standing beside the target."""
+    sim = _sim()
+    other_realm = sim.player(_ZONE, _AT_TARGET, realm="elsewhere")
+
+    result, _ = await _run(sim, [sim.target, other_realm])
+
+    assert result == "SUCCESS"
+    assert sim.times_ported(other_realm) == 1
+    assert other_realm.realm == sim.target.realm
+
+
+async def test_first_in_player_order_is_the_target_and_everyone_else_ports():
+    """Being in Target Zone no longer excuses a player: it says nothing about realm or position."""
+    sim = _sim()
+    also_in_zone = sim.player(_ZONE, _FAR, name="Second Wizard")
+    elsewhere = sim.player(_ELSEWHERE, _FAR)
+
+    result, _ = await _run(sim, [sim.target, also_in_zone, elsewhere])
+
+    assert result == "SUCCESS"
+    assert sim.times_ported(sim.target) == 0
+    assert sim.times_ported(also_in_zone) == 1 and sim.times_ported(elsewhere) == 1
+
+
+async def test_an_old_bot_file_still_carrying_skip_extra_clients_in_zone_runs():
+    sim = _sim()
+    mover = sim.player(_ZONE, _FAR)
+
+    result, _ = await _run(sim, [sim.target, mover], {"target_zone": _ZONE, "skip_extra_clients_in_zone": True})
+
+    assert result == "SUCCESS"
+    assert sim.ported == [mover]
 
 
 # ---------------------------------------------------------------------------
-# skip_extra_clients_in_zone
+# Failures
 # ---------------------------------------------------------------------------
 
 
-async def test_extra_client_in_zone_teleports_by_default():
-    """skip_extra_clients_in_zone off (default): an extra client already in target_zone is
-    still re-teleported to the target, since being in the same zone isn't the same place."""
-    target = _target_client()
-    extra = FakeClient()
-    extra.zone_name = AsyncMock(side_effect=[_ZONE, _ZONE])
-    extra.is_loading = AsyncMock(side_effect=[True, False])
+async def test_a_port_that_lands_somewhere_else_fails(monkeypatch):
+    monkeypatch.setattr(nh, "ZONE_CHANGE_TIMEOUT", 0.2)
+    sim = _sim()
+    lost = sim.player(_ELSEWHERE, _FAR, port="lost")
 
-    with _TELEPORT_OK as mock_tp, _RESOLVE_OK, _NO_DIALOG, patch.object(tpz, "POLL_INTERVAL", 0):
-        try:
-            result = await tpz.run(FakeMachine(), [target, extra], _PARAMS)
-        finally:
-            wizard_names.clear_cache()
+    result, _ = await _run(sim, [sim.target, lost])
 
-    assert result == "SUCCESS"
-    assert mock_tp.call_count == 1
-    assert mock_tp.call_args[0][0] is extra
+    assert result == "FAILURE"
 
 
-async def test_extra_client_in_zone_is_skipped_when_flagged():
-    """skip_extra_clients_in_zone on: an extra client already in target_zone is left alone."""
-    target = _target_client()
-    extra = FakeClient()
-    extra.zone_name = AsyncMock(return_value=_ZONE)
-    extra.is_loading = AsyncMock(return_value=False)
+async def test_a_port_that_never_shows_itself_fails(monkeypatch):
+    """A player in another zone is never presumed there: its port has to load."""
+    monkeypatch.setattr(nh, "ZONE_CHANGE_TIMEOUT", 0.3)
+    sim = _sim()
+    stuck = sim.player(_ELSEWHERE, _FAR, port="ignored")
 
-    params = {"target_zone": _ZONE, "skip_extra_clients_in_zone": True}
+    result, machine = await _run(sim, [sim.target, stuck])
 
-    with _TELEPORT_OK as mock_tp:
-        try:
-            result = await tpz.run(FakeMachine(), [target, extra], params)
-        finally:
-            wizard_names.clear_cache()
-
-    assert result == "SUCCESS"
-    mock_tp.assert_not_called()
-
-
-# ---------------------------------------------------------------------------
-# Friend-busy dialog / failures downstream, mirroring teleport_to_friend
-# ---------------------------------------------------------------------------
+    assert result == "FAILURE"
+    assert any("showed no sign of porting" in msg for msg, _ in machine.logs)
 
 
 async def test_friend_busy_dialog_returns_failure():
-    target = _target_client()
-    mover = FakeClient()
-    mover.zone_name = AsyncMock(return_value=_ELSEWHERE)
-    mover.is_loading = AsyncMock(return_value=False)
+    sim = _sim()
+    mover = sim.player(_ELSEWHERE, _FAR, port="ignored")
     patches, clicked = message_box_patches((MESSAGE_BOX_RIGHT,))
-    machine = FakeMachine()
 
     with (
-        _TELEPORT_OK,
-        _RESOLVE_OK,
+        patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)),
         patches[0],
         patches[1],
-        _caption("Your friend is busy right now."),
-        patch.object(tpz, "POLL_INTERVAL", 0),
+        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="Your friend is busy right now.")),
     ):
-        try:
-            result = await tpz.run(machine, [target, mover], _PARAMS)
-        finally:
-            wizard_names.clear_cache()
+        result = await tpz.run(FakeMachine(), [sim.target, mover], _PARAMS)
 
     assert result == "FAILURE"
     assert clicked == [MESSAGE_BOX_RIGHT]
 
 
-async def test_friend_not_found_returns_failure():
-    target = _target_client()
-    mover = FakeClient()
-    mover.zone_name = AsyncMock(return_value=_ELSEWHERE)
+async def test_friend_not_found_returns_failure_without_naming_them():
+    sim = _sim()
+    sim.fail_from_call = 1
+    mover = sim.player(_ELSEWHERE, _FAR)
 
-    not_found = patch.object(
-        nh,
-        "resolve_friend_name",
-        new=AsyncMock(side_effect=ValueError("Could not find friend")),
-    )
-    with not_found:
-        try:
-            result = await tpz.run(FakeMachine(), [target, mover], _PARAMS)
-        finally:
-            wizard_names.clear_cache()
+    result, machine = await _run(sim, [sim.target, mover])
 
     assert result == "FAILURE"
-
-
-async def test_trigger_timeout_returns_failure():
-    target = _target_client()
-    mover = FakeClient()
-    mover.zone_name = AsyncMock(return_value=_ELSEWHERE)
-    mover.is_loading = AsyncMock(return_value=False)
-
-    with (
-        _TELEPORT_OK,
-        _RESOLVE_OK,
-        _NO_DIALOG,
-        patch.object(tpz, "TRIGGER_TIMEOUT", 0),
-        patch.object(tpz, "ZONE_CHANGE_TIMEOUT", 0.01),
-        patch.object(tpz, "POLL_INTERVAL", 0),
-    ):
-        try:
-            result = await tpz.run(FakeMachine(), [target, mover], _PARAMS)
-        finally:
-            wizard_names.clear_cache()
-
-    assert result == "FAILURE"
-
-
-async def test_wrong_zone_after_loading_returns_failure():
-    target = _target_client()
-    mover = FakeClient()
-    mover.zone_name = AsyncMock(return_value=_ELSEWHERE)
-    mover.is_loading = AsyncMock(side_effect=[True, False])
-
-    with (
-        _TELEPORT_OK,
-        _RESOLVE_OK,
-        _NO_DIALOG,
-        patch.object(tpz, "POLL_INTERVAL", 0),
-        patch.object(tpz, "ZONE_CHANGE_TIMEOUT", 0.01),
-    ):
-        try:
-            result = await tpz.run(FakeMachine(), [target, mover], _PARAMS)
-        finally:
-            wizard_names.clear_cache()
-
-    assert result == "FAILURE"
+    assert not any(_TARGET_NAME.casefold() in msg.casefold() for msg, level in machine.logs if level > 10)

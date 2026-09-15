@@ -107,6 +107,16 @@ def test_the_name_is_remembered_for_autocomplete_only(qapp, settings, monkeypatc
     assert _NAME in settings.recent_friend_names
 
 
+def test_setup_has_no_row_for_it_when_the_node_ports_to_a_hooked_player(qapp, settings):
+    """The node reads the target's name from the game in that mode, so a field here
+    would be one that does nothing -- and reads as though it decides the target."""
+    config = _config()
+    config.states[0].params["target_hooked_player"] = True
+    section = _section(settings, config)
+
+    assert _OPTION not in section.option_widgets
+
+
 def test_the_declaration_editor_does_not_offer_it_at_all(qapp, settings):
     """A row here would be a place to type a character name into a file people
     share. The author has nothing to say about whose wizard you port to, so the
