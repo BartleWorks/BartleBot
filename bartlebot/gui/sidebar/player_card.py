@@ -575,16 +575,22 @@ class PlayerCard(CardFrame):
         self.refresh_theme_styles()
 
     def set_bot_running(self, running: bool) -> None:
-        """Lock the Unhook verb for the length of a run.
+        """Lock the Unhook verb and the drag grip for the length of a run.
 
-        Unhooking mid-run pulls a client out from under the FSM. An unhooked card is not
-        touched: rehooking during a run is how a client that dropped out is brought back.
+        Unhooking mid-run pulls a client out from under the FSM. Reordering mid-run changes
+        which client a node's player index means while that node is running -- a node that
+        remembered something per player before an await would hand it back to the wrong
+        one afterwards. ``ClientManager.reorder_clients`` refuses one too; this is what
+        stops the gesture being offered. An unhooked card is not touched: rehooking during a
+        run is how a client that dropped out is brought back, and it has no grip.
         """
         if self._is_unhooked:
             return
         button = self.action_button("Unhook")
         if button is not None:
             button.setEnabled(not running)
+        if self.grip is not None:
+            self.grip.set_locked(running, "Players can't be reordered while a bot is running")
 
     # ------------------------------------------------------------------
     # The theme pass

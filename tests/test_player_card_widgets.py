@@ -478,6 +478,38 @@ def test_a_run_locks_unhook_and_leaves_rehook_alone(qapp, section):
     assert host
 
 
+def test_a_run_locks_the_drag_grip(qapp, section):
+    """Reordering mid-run moves a running node's players under it (#15)."""
+    host, clients = section(active=2)
+    seen: list[list] = []
+    clients.reordered.connect(seen.append)
+
+    clients.set_bot_running(True)
+    card = clients.column.cards[0]
+    assert not card.grip.isEnabled()
+    assert "bot is running" in card.grip.toolTip()
+    _drag(qapp, card, _row_height(clients.column))
+    assert seen == [], "a locked grip must not start a drag"
+
+    clients.set_bot_running(False)
+    assert card.grip.isEnabled()
+    assert "bot is running" not in card.grip.toolTip()
+    _drag(qapp, clients.column.cards[0], _row_height(clients.column))
+    assert seen == [[1, 0]]
+    assert host
+
+
+def test_a_card_that_arrives_mid_run_is_locked_too(qapp, section):
+    """A client hooked during a run gets a fresh card, and it must not arrive draggable."""
+    host, clients = section(active=1)
+
+    clients.set_bot_running(True)
+    clients.set_all_clients([clients.cards[0].client, _FakeClient(9)], [])
+
+    assert [card.grip.isEnabled() for card in clients.column.cards] == [False, False]
+    assert host
+
+
 def test_the_body_of_a_player_card_is_not_a_button(qapp, section):
     """MEMBER mode, not MANAGE: there is no "open this player" for a body click to mean."""
     host, clients = section(active=1)

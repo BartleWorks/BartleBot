@@ -167,6 +167,15 @@ async def _set_equipped(client, row: int, equipped: bool) -> bool:
     """
     icon = housing_castle_equipped_icon_path(row)
     if await node_helpers.is_visible_by_path(client, icon) == equipped:
+        # Logged at INFO because this is the one read nothing downstream re-checks. A fist
+        # that reads stale here reports success without clicking, which is a castle left
+        # off (or on) with the log saying it was put back -- one candidate for #15.
+        logger.info(
+            "hwnd %d: castle row %d already reads %s; Equip_Item not clicked",
+            client.window_handle,
+            row,
+            "equipped" if equipped else "unequipped",
+        )
         return True
 
     # Selecting the row is what enables Equip_Item. The probe read the button as already

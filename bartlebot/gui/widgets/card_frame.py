@@ -158,6 +158,9 @@ _GRIP_DOTS = 12
 _GRIP_INSET = 4
 _GRIP_WIDTH = 18
 _GRIP_GAP = 4
+# How strongly a locked grip's dots are drawn. Still there, so nothing moves and the handle
+# can be pointed at for its tooltip; faint enough not to read as an invitation.
+_GRIP_LOCKED_OPACITY = 0.35
 # What a card that is not draggable has to indent by to line its frame up with the ones
 # that are. The Add card is the only such card, and a column whose last frame starts
 # twenty-two pixels to the left of every frame above it reads as a mistake.
@@ -256,6 +259,8 @@ class GripHandle(ThemedMixin, QWidget):
         # a column with room to spare.
         self.setCursor(Qt.CursorShape.OpenHandCursor)
         self.setToolTip(tooltip)
+        # Kept so a lock can say why it is locked and then give the original back.
+        self._tooltip = tooltip
         # Held while hidden, so the gutter is the same width whether the handle is drawn
         # in it or not. Without this the card's frame would slide left on every hover-out,
         # which is the shift that moving the grip out of the header exists to stop.
@@ -300,11 +305,26 @@ class GripHandle(ThemedMixin, QWidget):
         """
         rows = self.column_height // _GRIP_DOTS
         painter = QPainter(self)
+        if not self.isEnabled():
+            painter.setOpacity(_GRIP_LOCKED_OPACITY)
         left = (self.width() - _GRIP_DOTS) // 2
         top = (self.height() - rows * _GRIP_DOTS) // 2
         for row in range(rows):
             painter.drawPixmap(left, top + row * _GRIP_DOTS, self._tile)
         painter.end()
+
+    def set_locked(self, locked: bool, reason: str = "") -> None:
+        """Refuse to start a drag, and say *reason* in the tooltip, until unlocked.
+
+        Disabled and dimmed rather than hidden: a handle that vanishes moves nothing (its
+        size is retained) but leaves the user wondering where the gesture went, while a
+        greyed one with a reason in its tooltip answers that. ``CardColumn`` reads
+        ``isEnabled`` before starting a drag, so this is the only lock there is.
+        """
+        self.setEnabled(not locked)
+        self.setCursor(Qt.CursorShape.ArrowCursor if locked else Qt.CursorShape.OpenHandCursor)
+        self.setToolTip(reason if locked and reason else self._tooltip)
+        self.update()
 
     def set_held(self, held: bool) -> None:
         """Close the hand while the card this grip belongs to is being dragged."""
