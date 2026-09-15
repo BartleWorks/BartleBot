@@ -11,7 +11,14 @@ from unittest.mock import patch
 import pytest
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
-from bartlebot.nodes.combat_runner import _lark_parser, _str_provider_class, dsl_error, validate_dsl
+from bartlebot.nodes.combat_runner import (
+    _lark_parser,
+    _str_provider_class,
+    dsl_error,
+    dsl_warning_text,
+    dsl_warnings,
+    validate_dsl,
+)
 
 # Real DSLs taken from strategies/player/*.json.
 _VALID_DSLS = [
@@ -165,3 +172,63 @@ def test_provider_parses_without_a_client():
 
     assert provider.config is not None
     assert provider.filename == "<inline>"
+
+
+# ---------------------------------------------------------------------------
+# Spell names no card has — against the real snapshot
+# ---------------------------------------------------------------------------
+
+
+def _warned_names(dsl: str) -> list[str]:
+    lines = dsl.split("\n")
+    return [lines[w.line - 1][w.column - 1 : w.column - 1 + w.length] for w in dsl_warnings(dsl)]
+
+
+def test_names_that_find_a_card_are_not_warned_about():
+    dsl = "feint mass | feint[potent]@boss\nTempest | Storm Lord | any<blade>[Sharpened Blade] @ self"
+    assert dsl_warnings(dsl) == ()
+
+
+@pytest.mark.parametrize(
+    ("dsl", "advice"),
+    [
+        # The usual opener: the AoE feint, then a single feint on the boss if needed.
+        ("mass feint | feint[potent]@boss", "so write Feint Mass instead."),
+        ("Incindiate @ aoe", "the card is named Detonate All."),
+        ("Fire Elemental @ self", "the card is named Minion Fire."),
+        ("Strom Lord @ aoe", "Did you mean Storm Lord?"),
+    ],
+)
+def test_the_common_mistakes_are_warned_about_with_what_to_write(dsl, advice):
+    (warning,) = dsl_warnings(dsl)
+    assert warning.message.endswith(advice)
+
+
+def test_a_warning_covers_the_name_where_it_is_written():
+    # One word on the second line: the grammar splits a multi-word name there into lines of
+    # its own, which is a parser bug of its own and not what this is testing.
+    dsl = "Tempest @ aoe\n  Zzyzx[Epic] @ enemy | pass"
+    (warning,) = dsl_warnings(dsl)
+    assert (warning.line, warning.column, warning.length) == (2, 3, 5)
+
+
+def test_enchants_and_discard_lists_are_checked_but_combatants_and_keywords_are_not():
+    dsl = "Tempest[Zzyzx] @ Lord Zzyzx | discard @ spell(Incindiate, any<aoe>) | pass"
+    assert _warned_names(dsl) == ["Zzyzx", "Incindiate"]
+
+
+def test_a_number_in_an_unquoted_name_is_warned_about_across_the_whole_name():
+    dsl = "Detonate All 200 @ aoe"
+    (warning,) = dsl_warnings(dsl)
+    assert "read a digit at a time" in warning.message
+    assert _warned_names(dsl) == ["Detonate All 200"]
+
+
+def test_a_dsl_that_does_not_parse_has_no_name_warnings():
+    assert dsl_warnings("Strom Lord @ @") == ()
+
+
+def test_each_warning_message_is_listed_once():
+    warnings = dsl_warnings("Strom Lord @ aoe | Strom Lord @ boss")
+    assert len(warnings) == 2
+    assert dsl_warning_text(warnings) == warnings[0].message

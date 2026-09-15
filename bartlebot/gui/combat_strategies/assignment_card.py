@@ -68,7 +68,7 @@ from bartlebot.gui.widgets.dsl_edit import DslGrowingTextEdit
 from bartlebot.gui.widgets.player_pills import PlayerPillBar
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.school_combo import SchoolCombo
-from bartlebot.nodes.combat_runner import dsl_error, validate_dsl
+from bartlebot.nodes.combat_runner import dsl_error, dsl_warning_text, dsl_warnings, validate_dsl
 
 #: The two answers in the strategy menu that are not a Player Strategy, and the sentinel
 #: each carries. Module level because the tests name them and because ``choose_strategy``
@@ -483,7 +483,8 @@ class AssignmentCard(CardFrame):
                 f"color: {THEME.text_muted}; font-size: {THEME.font_card_sub_size}px; background: transparent;"
             )
         self._school_label.setStyleSheet(f"color: {THEME.text_muted}; background: transparent;")
-        self._dsl_error_lbl.setStyleSheet(f"color: {THEME.error}; background: transparent;")
+        label_color = THEME.error if error else THEME.syntax_warning
+        self._dsl_error_lbl.setStyleSheet(f"color: {label_color}; background: transparent;")
         self._dsl_edit.setFont(THEME.font_mono())
         self._dsl_edit.setStyleSheet(
             f"QTextEdit {{ background: {THEME.surface if self._dsl_edit.isReadOnly() else THEME.bg};"
@@ -522,9 +523,10 @@ class AssignmentCard(CardFrame):
     def _on_dsl_changed(self) -> None:
         if self._suppress or not self.is_custom():
             return
-        # The underline marks a column in the text as it was validated; after an edit it
-        # points at the wrong character until the debounce re-checks.
+        # The underlines mark columns in the text as it was validated; after an edit they
+        # point at the wrong characters until the debounce re-checks.
         self._dsl_edit.set_dsl_error(None)
+        self._dsl_edit.set_dsl_warnings(())
         self._assignment.dsl = self._dsl_edit.toPlainText()
         # Follows the text rather than waiting for the next refresh: the first character
         # typed into an empty box is exactly when the offer to name it becomes meaningful.
@@ -549,12 +551,17 @@ class AssignmentCard(CardFrame):
         Same mark and same tooltip as ``StrategyCard``, so a broken thing looks broken
         wherever it is drawn.
         """
-        error = dsl_error(self._dsl_edit.toPlainText()) if self.is_custom() else None
-        self._dsl_error_lbl.setText(error.message if error else "")
-        self._dsl_error_lbl.setVisible(bool(error))
+        dsl = self._dsl_edit.toPlainText()
+        error = dsl_error(dsl) if self.is_custom() else None
+        # Spell names no card has share the line, but not the title's mark: the move still
+        # runs, and the snapshot they are checked against can be older than the game.
+        warnings = dsl_warnings(dsl) if self.is_custom() else ()
+        self._dsl_error_lbl.setText(error.message if error else dsl_warning_text(warnings))
+        self._dsl_error_lbl.setVisible(bool(error or warnings))
         self._title_lbl.setText(f"{self._title}  ⚠" if error else self._title)
         self._title_lbl.setToolTip(f"Does not parse: {error.message}" if error else "")
         self._dsl_edit.set_dsl_error(error)
+        self._dsl_edit.set_dsl_warnings(warnings)
         self._restyle_content()
 
     # ------------------------------------------------------------------

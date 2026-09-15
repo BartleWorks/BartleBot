@@ -32,7 +32,7 @@ from bartlebot.dsl_syntax import DSL_HELP
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.dsl_edit import DslPlainTextEdit
 from bartlebot.gui.widgets.school_combo import SchoolCombo
-from bartlebot.nodes.combat_runner import dsl_error, validate_dsl
+from bartlebot.nodes.combat_runner import dsl_error, dsl_warning_text, dsl_warnings, validate_dsl
 
 #: How long after the last keystroke the DSL is re-validated. Not a save delay.
 _VALIDATE_MS = 500
@@ -123,20 +123,28 @@ class PlayerStrategyEditor(QWidget):
         self._strategy.school = self._school_combo.value()
         dsl = self._dsl_edit.toPlainText()
         if dsl != self._strategy.dsl:
-            # The underline marks a column in the text as it was validated; after an
-            # edit it points at the wrong character until the debounce re-checks.
+            # The underlines mark columns in the text as it was validated; after an
+            # edit they point at the wrong characters until the debounce re-checks.
             self._dsl_edit.set_dsl_error(None)
+            self._dsl_edit.set_dsl_warnings(())
         self._strategy.dsl = dsl
         self._validate_timer.stop()
         self._validate_timer.start()
         self.changed.emit()
 
     def _update_dsl_validation(self) -> None:
-        """Re-parse the DSL and reflect it as a border colour, an error line and an underline."""
-        error = dsl_error(self._dsl_edit.toPlainText())
-        self._dsl_error_lbl.setText(error.message if error else "")
-        self._dsl_error_lbl.setVisible(bool(error))
+        """Re-parse the DSL and reflect it as a border colour, a line of text and underlines.
+
+        A parse error takes the line; otherwise it lists the spell names no card has.
+        Only the error colours the border — an unknown name still runs.
+        """
+        dsl = self._dsl_edit.toPlainText()
+        error = dsl_error(dsl)
+        warnings = dsl_warnings(dsl)
+        self._dsl_error_lbl.setText(error.message if error else dsl_warning_text(warnings))
+        self._dsl_error_lbl.setVisible(bool(error or warnings))
         self._dsl_edit.set_dsl_error(error)
+        self._dsl_edit.set_dsl_warnings(warnings)
         self._apply_style()
 
     def _apply_style(self) -> None:
@@ -146,7 +154,7 @@ class PlayerStrategyEditor(QWidget):
             f"QPlainTextEdit {{ background: {THEME.bg}; color: {THEME.text}; "
             f"border: 1px solid {THEME.border}; border-left: 3px solid {border}; }}"
         )
-        self._dsl_error_lbl.setStyleSheet(f"color: {THEME.error};")
+        self._dsl_error_lbl.setStyleSheet(f"color: {THEME.error if error else THEME.syntax_warning};")
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)

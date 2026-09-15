@@ -16,7 +16,7 @@ from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
 from bartlebot.gui.theme import DARK, LIGHT, active_theme, set_theme_instance
 from bartlebot.gui.widgets.dsl_edit import DslGrowingTextEdit, DslPlainTextEdit
-from bartlebot.nodes.combat_runner import dsl_error
+from bartlebot.nodes.combat_runner import dsl_error, dsl_warnings
 
 _BROKEN = "any<damag> @ enemy"  # stops parsing at line 1, column 5
 
@@ -77,9 +77,9 @@ def _luminance(hex_colour: str) -> float:
 @pytest.mark.parametrize("ground", ["bg", "surface"])
 def test_dsl_syntax_colours_are_legible(palette, ground):
     """4.5:1 on both grounds — an editable DSL box is drawn on ``bg``, a read-only one on ``surface``."""
-    for kind in dsl_syntax.Kind:
-        lighter, darker = sorted((_luminance(getattr(palette, kind.value)), _luminance(getattr(palette, ground))))
-        assert (darker + 0.05) / (lighter + 0.05) >= 4.5, kind
+    for token in [kind.value for kind in dsl_syntax.Kind] + ["syntax_warning"]:
+        lighter, darker = sorted((_luminance(getattr(palette, token)), _luminance(getattr(palette, ground))))
+        assert (darker + 0.05) / (lighter + 0.05) >= 4.5, token
 
 
 @pytest.mark.parametrize("editor_class", [DslPlainTextEdit, DslGrowingTextEdit])
@@ -249,6 +249,54 @@ def test_choosing_an_opener_queues_what_goes_inside_it(qapp, qtbot):
     edit.show_completions(forced=False, may_open=True)
 
     assert "damage" in _offered(edit)
+
+
+# ---------------------------------------------------------------------------
+# Spell names no card has
+# ---------------------------------------------------------------------------
+
+_UNKNOWN = "Strom Lord @ aoe"  # the name is columns 0-9
+
+
+def _underline_colour(edit, column: int, line: int = 0) -> str | None:
+    fmt = _format_at(edit, column, line)
+    if fmt is None or fmt.underlineStyle() != QTextCharFormat.UnderlineStyle.WaveUnderline:
+        return None
+    return fmt.underlineColor().name()
+
+
+def test_an_unknown_spell_name_is_underlined_in_the_warning_colour(qapp, light):
+    edit = DslPlainTextEdit()
+    edit.setPlainText(_UNKNOWN)
+
+    edit.set_dsl_warnings(dsl_warnings(_UNKNOWN))
+
+    assert all(_underline_colour(edit, column) == LIGHT.syntax_warning.lower() for column in range(10))
+    assert _underline_colour(edit, 11) is None
+
+
+def test_the_player_editor_lists_unknown_names_and_clears_them_on_an_edit(qapp):
+    editor = PlayerStrategyEditor()
+    editor.load(PlayerCombatStrategy(name="A", dsl=_UNKNOWN))
+    assert "Did you mean Storm Lord?" in editor._dsl_error_lbl.text()
+    assert not editor._dsl_error_lbl.isHidden()
+    assert editor._dsl_edit.highlighter.warnings == dsl_warnings(_UNKNOWN)
+
+    editor._dsl_edit.setPlainText("Storm Lord @ aoe")
+
+    assert editor._dsl_edit.highlighter.warnings == ()
+
+
+def test_the_assignment_card_lists_unknown_names_and_clears_them_on_an_edit(qapp):
+    editor = DuelConfigEditor()
+    editor.load(DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=_UNKNOWN)]), [])
+    card = editor.cards[0]
+    assert "Did you mean Storm Lord?" in card._dsl_error_lbl.text()
+    assert card._dsl_edit.highlighter.warnings == dsl_warnings(_UNKNOWN)
+
+    card._dsl_edit.setPlainText("Storm Lord @ aoe")
+
+    assert card._dsl_edit.highlighter.warnings == ()
 
 
 def test_a_read_only_box_offers_nothing(qapp, qtbot):

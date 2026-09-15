@@ -202,6 +202,9 @@ class _Theme:
     syntax_number: str = "#0b6e4a"  # rounds, indices, thresholds
     syntax_string: str = "#a31515"  # "Quoted Spell"
     syntax_punct: str = "#6b6b6b"  # @ | & < > [ ] ?( )
+    # A spell name no card has: its underline, and the line saying why. Not ``warning``,
+    # which is a pill fill and reads at under 4.5:1 as text on ``surface``.
+    syntax_warning: str = "#8a5a00"
 
     # ------------------------------------------------------------------
     # Game-embed client tile (helper methods below)
@@ -597,6 +600,7 @@ DARK = _Theme(
     syntax_number="#b5cea8",
     syntax_string="#ce9178",
     syntax_punct="#9e9e9e",
+    syntax_warning="#cca700",
 )
 
 

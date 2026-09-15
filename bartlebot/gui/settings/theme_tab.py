@@ -48,7 +48,15 @@ _SECTIONS: list[tuple[str, list[str]]] = [
     ("Icon", ["icon_tint"]),
     (
         "Combat DSL",
-        ["syntax_keyword", "syntax_type", "syntax_target", "syntax_number", "syntax_string", "syntax_punct"],
+        [
+            "syntax_keyword",
+            "syntax_type",
+            "syntax_target",
+            "syntax_number",
+            "syntax_string",
+            "syntax_punct",
+            "syntax_warning",
+        ],
     ),
 ]
 
@@ -99,6 +107,7 @@ _LABELS: dict[str, str] = {
     "syntax_number": "Numbers",
     "syntax_string": "Quoted names",
     "syntax_punct": "Punctuation",
+    "syntax_warning": "Unknown spell names",
 }
 
 # Contrast pairs to check: (text_token, background_token, display_name)

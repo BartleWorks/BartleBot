@@ -1,4 +1,7 @@
-"""Text boxes for the combat DSL: syntax colouring, a parse-error underline, and completion.
+"""Text boxes for the combat DSL: syntax colouring, underlines, and completion.
+
+Two kinds of underline: a parse error, in ``error``, and a spell name no card has, in
+``syntax_warning`` — ``combat_runner.dsl_error`` and ``dsl_warnings`` decide both.
 
 Two classes, because the DSL is edited in two widgets of different Qt types —
 ``DslPlainTextEdit`` for the Player Strategies tab and ``DslGrowingTextEdit`` for an
@@ -33,7 +36,7 @@ from PyQt6.QtWidgets import QCompleter, QPlainTextEdit, QWidget
 from bartlebot import dsl_syntax
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
-from bartlebot.nodes.combat_runner import DslError
+from bartlebot.nodes.combat_runner import DslError, DslWarning
 
 logger = logging.getLogger(__name__)
 
@@ -48,21 +51,30 @@ class DslHighlighter(QSyntaxHighlighter):
     def __init__(self, document: QTextDocument) -> None:
         super().__init__(document)
         self._error: DslError | None = None
+        self._warnings: tuple[DslWarning, ...] = ()
 
     @property
     def error(self) -> DslError | None:
         return self._error
+
+    @property
+    def warnings(self) -> tuple[DslWarning, ...]:
+        return self._warnings
 
     def set_error(self, error: DslError | None) -> None:
         """Underline *error*'s position, or nothing. Re-colours only the lines involved."""
         if error == self._error:
             return
         previous, self._error = self._error, error
-        document = self.document()
-        for lineno in {e.line for e in (previous, error) if e is not None and e.line > 0}:
-            block = document.findBlockByNumber(lineno - 1)
-            if block.isValid():
-                self.rehighlightBlock(block)
+        self._rehighlight_lines(e.line for e in (previous, error) if e is not None)
+
+    def set_warnings(self, warnings: tuple[DslWarning, ...]) -> None:
+        """Underline each of *warnings* in place of the last set. Re-colours only the lines involved."""
+        warnings = tuple(warnings)
+        if warnings == self._warnings:
+            return
+        previous, self._warnings = self._warnings, warnings
+        self._rehighlight_lines(w.line for w in (*previous, *warnings))
 
     def highlightBlock(self, text: str | None) -> None:  # noqa: N802 - Qt override
         # PyQt6 aborts the process when an exception escapes a virtual method, and
@@ -80,7 +92,22 @@ class DslHighlighter(QSyntaxHighlighter):
             fmt.setForeground(THEME.qcolor(span.kind.value))
             self.setFormat(span.start, span.length, fmt)
         self.setCurrentBlockState(dsl_syntax.encode_stack(scan.stack))
+        self._underline_warnings(text)
         self._underline_error(text)
+
+    def _rehighlight_lines(self, linenos) -> None:  # noqa: ANN001
+        document = self.document()
+        for lineno in {n for n in linenos if n > 0}:
+            block = document.findBlockByNumber(lineno - 1)
+            if block.isValid():
+                self.rehighlightBlock(block)
+
+    def _underline_warnings(self, text: str) -> None:
+        lineno = self.currentBlock().blockNumber() + 1
+        for warning in self._warnings:
+            if warning.line == lineno and warning.column > 0:
+                start = warning.column - 1
+                self._underline(start, min(len(text), start + max(1, warning.length)), "syntax_warning")
 
     def _underline_error(self, text: str) -> None:
         error = self._error
@@ -92,10 +119,14 @@ class DslHighlighter(QSyntaxHighlighter):
         # non-space from there, so a single character is not a squiggle too small to see.
         start = min(error.column - 1, len(text) - 1)
         end = max(start + 1, _NON_SPACE.match(text, start).end())
+        self._underline(start, end, "error")
+
+    def _underline(self, start: int, end: int, token: str) -> None:
+        colour = THEME.qcolor(token)
         for position in range(start, end):
             fmt = self.format(position)
             fmt.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
-            fmt.setUnderlineColor(THEME.qcolor("error"))
+            fmt.setUnderlineColor(colour)
             self.setFormat(position, 1, fmt)
 
 
@@ -149,6 +180,12 @@ class _DslEditMixin:
         highlighter = self._dsl_highlighter
         if highlighter is not None:
             self._recolour_quietly(lambda: highlighter.set_error(error))
+
+    def set_dsl_warnings(self, warnings: tuple[DslWarning, ...]) -> None:
+        """Underline each spell name in *warnings*; an empty tuple clears them."""
+        highlighter = self._dsl_highlighter
+        if highlighter is not None:
+            self._recolour_quietly(lambda: highlighter.set_warnings(warnings))
 
     def show_completions(self, *, forced: bool, may_open: bool) -> bool:
         """Offer what can go at the cursor, and return whether the popup is showing.
