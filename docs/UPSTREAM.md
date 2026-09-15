@@ -89,14 +89,29 @@ cd ../BartleBot
 uv lock && uv sync
 ```
 
-While iterating rapidly, reinstall the local copy as editable instead of bumping the
-pin each time — undo it before trusting a test run, since it silently overrides the
-pinned version:
+While iterating rapidly, install the local copy as editable instead of bumping the pin
+each time. **Every plain `uv run` syncs the venv back to `uv.lock` first**, which
+uninstalls the editable copy and reinstalls the pinned commit without a word, so the
+run that follows tests the pin, not your edit. Pass `--no-sync` on every command while
+the editable copy is in:
 
 ```bash
-uv pip install -e ../wizwalker    # live editing
-uv sync                           # back to the pinned commit
+uv pip install --no-deps -e ../wizsprinter   # live editing; --no-deps leaves the other pin alone
+uv run --no-sync pytest                      # --no-sync every time, or the pin comes back
+uv sync                                      # back to the pinned commit
 ```
+
+Before trusting a result, check which copy was imported — this names the checkout when
+the editable copy is live, and `.venv` when it is not:
+
+```bash
+uv run --no-sync python -c "import wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser as p; print(p.__file__)"
+```
+
+Never copy an edited file over the one in `.venv` instead. uv installs by hardlinking
+from its cache, so the copy rewrites the cached pinned wheel too, and `uv sync` then
+"restores" your edit. If it has happened, `uv cache clean <lib>` and then
+`uv sync --reinstall-package <lib>`.
 
 **Tag every commit you pin.** A pinned SHA reachable only from a branch tip can be
 orphaned by a force-push, rebase, or branch rename, and `uv sync` then fails for
