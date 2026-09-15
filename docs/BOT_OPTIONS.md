@@ -117,6 +117,12 @@ for the whole bot. `offers_challenge_mode`/`Challenge Mode` and
 `offers_team_up`/`Team-Up` are the two, and `Minimum Team Size` hangs off the second
 through `depends_on` as well, because nothing it holds can matter while Team-Up is off.
 
+`required_unless` is the mirror: the option is composed only while some state has that
+param *off*, and an absent param counts as off. `teleport_to_friend` uses it for Friend
+Name, which a port to a hooked player never reads. The one-state rule matters more here
+than for Challenge Mode: a bot with one hooked-player port and one port by name still
+needs the name, so the row stays.
+
 Both halves are read at run time, and **both** have to be on:
 
 ```python

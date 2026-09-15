@@ -453,6 +453,50 @@ def test_turning_a_conditional_option_off_moves_the_signature():
     assert options_signature(config) != before
 
 
+def _teleport_states(*modes) -> list[dict]:
+    """One teleport_to_friend state per mode: True/False for the param, None for absent."""
+    return [
+        {
+            "id": f"s{i}",
+            "node_type": "teleport_to_friend",
+            "params": {} if mode is None else {"target_hooked_player": mode},
+        }
+        for i, mode in enumerate(modes)
+    ]
+
+
+def test_friend_name_is_not_composed_when_every_port_is_to_a_hooked_player():
+    """A hooked-player port never reads Friend Name, so Setup has no row for it."""
+    config = _config(states=_teleport_states(True, True))
+
+    assert "Friend Name" not in _named(compose_options(config))
+
+
+def test_one_friend_name_port_keeps_friend_name_for_the_whole_bot():
+    """Hiding the row because *some* node ports to a hooked player would leave the one
+    that ports by name with nothing to read."""
+    config = _config(states=_teleport_states(True, False))
+
+    assert "Friend Name" in _named(compose_options(config))
+
+
+def test_a_file_without_the_mode_param_still_composes_friend_name():
+    """``resolve_target`` treats an absent param as friend-name mode, for files written
+    before the hooked-player mode existed -- so their option has to stay."""
+    config = _config(states=_teleport_states(None))
+
+    assert "Friend Name" in _named(compose_options(config))
+
+
+def test_switching_a_port_to_a_hooked_player_moves_the_signature():
+    config = _config(states=_teleport_states(False))
+    before = options_signature(config)
+
+    config.states[0].params["target_hooked_player"] = True
+
+    assert options_signature(config) != before
+
+
 def test_a_new_id_moves_the_signature():
     """Save As mints one under a loaded bot, and Setup resolves the user's stored
     values through it -- so those rows have to be re-resolved."""

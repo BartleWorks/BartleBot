@@ -435,6 +435,8 @@ class _DetailPanel(ThemedMixin, QScrollArea):
                 # note above ("automatically injects") would otherwise be wrong for it.
                 if opt.required_when:
                     row.addWidget(_Chip(f"if {opt.required_when}", THEME.border, THEME.text_muted))
+                if opt.required_unless:
+                    row.addWidget(_Chip(f"unless {opt.required_unless}", THEME.border, THEME.text_muted))
 
                 if opt.description:
                     opt_desc = QLabel(opt.description)

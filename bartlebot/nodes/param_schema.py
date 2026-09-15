@@ -46,6 +46,16 @@ class BotOptionSpec:
                      offering the user a switch for it in the other sixty is noise they
                      cannot act on. The author states the fact about their dungeon in a
                      param, and the *option* -- whether to use it -- stays the user's.
+        required_unless: The mirror of required_when: the option is required only while
+                     the named bool param on the same node is False, or absent. Empty
+                     string = no link.
+
+                     This is for an option one mode of a node reads and the other ignores:
+                     teleport_to_friend reads Friend Name only when it is not targeting a
+                     hooked player, so a Friend Name row in Setup for a bot whose every
+                     port is to a hooked player is a field that does nothing. An absent
+                     param counts as off, so a file written before the param existed keeps
+                     the option it still needs.
     """
 
     name: str
@@ -57,6 +67,7 @@ class BotOptionSpec:
     suffix: str | None = None
     depends_on: str = ""
     required_when: str = ""
+    required_unless: str = ""
 
 
 @dataclass

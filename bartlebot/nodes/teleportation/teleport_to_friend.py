@@ -91,6 +91,9 @@ NODE_SPEC = NodeSpec(
             # Null, always: the author has no opinion about whose wizard you port to,
             # and cannot have one. The level below is your app setting.
             default=None,
+            # A hooked-player port never reads it, so a bot whose every port is to a
+            # hooked player gets no Setup row for a name it will not use.
+            required_unless="target_hooked_player",
             description=(
                 "Wizard name to search for in the friends list (case-insensitive). Must be online "
                 "and on each player's friends list. This is your value, not the bot's \u2014 it is "

@@ -303,6 +303,10 @@ def required_option_specs(config, specs=None) -> dict:
     A spec carrying ``required_when`` is required only by a state whose param of
     that name is on: an option the author has said their dungeon does not offer is
     not an option, and one state offering it is enough for the whole bot.
+
+    ``required_unless`` is the mirror: required only by a state whose param of that
+    name is off.  The same one-state rule is what keeps Friend Name in a bot with two
+    ``teleport_to_friend`` nodes when only one of them ports to a hooked player.
     """
     out: dict = {}
     for state in config.states:
@@ -311,6 +315,8 @@ def required_option_specs(config, specs=None) -> dict:
             continue
         for req in spec.required_bot_options:
             if req.required_when and not state.params.get(req.required_when):
+                continue
+            if req.required_unless and state.params.get(req.required_unless):
                 continue
             out.setdefault(req.name, req)
     return out
