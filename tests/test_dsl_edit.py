@@ -223,7 +223,7 @@ def test_the_start_of_a_move_waits_for_ctrl_space(qapp, qtbot):
     qtbot.keyClick(edit, Qt.Key.Key_Space, Qt.KeyboardModifier.ControlModifier)
 
     assert edit.completer.popup().isVisible()
-    assert _offered(edit) == ["any<", "pass", "willcast", "draw"]
+    assert _offered(edit) == ["any<", "pass", "willcast", "draw", "discard"]
     assert edit.toPlainText() == "pass | "  # Ctrl+Space types nothing
 
 

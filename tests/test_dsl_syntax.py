@@ -44,9 +44,20 @@ def test_targets_match_the_grammar():
 
 
 def test_move_keywords_match_the_grammar():
-    # ``move_discard`` is declared but no rule reaches it: "discard" parses only as a
-    # spell named "discard", so it is not offered as a move.
-    assert _keywords("move") - {"discard"} == set(ds.MOVE_KEYWORDS)
+    # ``move_discard`` is unreachable in the grammar, but "discard" still works as a move:
+    # it parses as a spell name that the combat code special-cases.
+    assert _keywords("move") == set(ds.MOVE_KEYWORDS)
+
+
+def test_discard_parses_as_the_move_the_combat_code_special_cases():
+    from wizwalker.extensions.wizsprinter.combat_backends.combat_api import TargetType
+
+    from bartlebot.nodes.combat_runner import _str_provider_class
+
+    config = _str_provider_class()("discard @ spell(Tempest, any<aoe>)").config
+    move = config.infinite_rounds[0].priorities[0]
+    assert move.move.card.name == "discard"
+    assert move.target.target_type is TargetType.type_spell
 
 
 def test_condition_words_match_the_grammar():
@@ -79,7 +90,7 @@ def test_member_attributes_are_numeric_reads_on_a_combat_member():
         [f"?({s}.health < 50%) pass" for s in ds.CONDITION_SUBJECTS]
         + [f"?({a}({g}).mana > 1) pass" for a in ds.AGGREGATES for g in ds.AGGREGATE_GROUPS]
         + [f"?(self.{attr} >= 1) pass" for attr in ds.CONDITION_ATTRIBUTES],
-        list(ds.MOVE_KEYWORDS),
+        list(ds.MOVE_KEYWORDS) + ["discard @ spell(Tempest, any<aoe>)"],
     ],
     ids=["spell types", "hanging kinds", "targets", "conditions", "moves"],
 )
@@ -170,6 +181,21 @@ def test_a_pipe_or_an_ampersand_starts_the_next_move():
     assert _spans("Tempest @ aoe & draw")[-1] == ("draw", K)
 
 
+def test_discard_is_a_keyword_and_its_spell_list_colours_like_any_other():
+    assert _spans("discard @ spell(Tempest, any<aoe>)") == [
+        ("discard", K),
+        ("@", P),
+        ("spell", K),
+        ("(", P),
+        (",", P),
+        ("any", K),
+        ("<", P),
+        ("aoe", T),
+        (">", P),
+        (")", P),
+    ]
+
+
 def test_a_hanging_verb_takes_hanging_kinds():
     assert _spans("any<gambit(harmful_charms, 2)> @ enemy")[2:8] == [
         ("gambit", K),
@@ -232,6 +258,20 @@ def test_after_the_at_come_targets():
     assert ds.complete("pass @ select(boss, ").candidates == ds.TARGETS
 
 
+def test_after_discard_the_at_offers_only_spell():
+    completion = ds.complete("discard @ ")
+    assert completion.eager
+    assert completion.candidates == ("spell(",)
+    assert ds.complete("{2} discard @ sp").candidates == ("spell(",)
+    assert ds.complete("discard @ en").candidates == ()
+    assert ds.complete("discard @ spell(").candidates == ("any<",)
+
+
+def test_the_next_move_after_a_discard_offers_ordinary_targets_again():
+    for before in ("discard @ spell(Tempest) | pass @ ", "discard @ spell(Tempest)\npass @ "):
+        assert ds.complete(before).candidates[: len(ds.TARGETS)] == ds.TARGETS, before
+
+
 def test_a_condition_offers_subjects_then_attributes():
     assert ds.complete("?(").candidates == ("self", "boss", "enemy", "ally", "any(", "all(", "avg(")
     assert ds.complete("?(self.").candidates == ds.CONDITION_ATTRIBUTES
@@ -255,7 +295,7 @@ def test_an_index_offers_last():
 def test_the_start_of_a_move_offers_moves_but_is_not_eager():
     for before in ("", "pass | ", "{2} ", "pass @ self\n"):
         completion = ds.complete(before)
-        assert completion.candidates == ("any<", "pass", "willcast", "draw"), before
+        assert completion.candidates == ("any<", "pass", "willcast", "draw", "discard"), before
         assert not completion.eager, before
 
 

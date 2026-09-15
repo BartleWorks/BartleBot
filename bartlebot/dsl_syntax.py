@@ -81,7 +81,10 @@ TARGET_FORMS: tuple[str, ...] = ("select", "spell")
 INDEXED_TARGETS: tuple[str, ...] = ("enemy", "ally")
 
 #: Moves that are not a spell. ``any`` starts a spell type, so it is offered as ``any<``.
-MOVE_KEYWORDS: tuple[str, ...] = ("pass", "willcast", "draw")
+#: ``discard`` throws cards away rather than casting, and names them as its target:
+#: ``discard @ spell(Tempest)``. The grammar's own ``move_discard`` rule is unreachable —
+#: the word parses as a spell name, which ``SprintyCombat.try_get_spell`` special-cases.
+MOVE_KEYWORDS: tuple[str, ...] = ("pass", "willcast", "draw", "discard")
 
 CONDITION_SUBJECTS: tuple[str, ...] = ("self", "boss", "enemy", "ally")
 #: ``any(enemies).health < 50%``.
@@ -125,6 +128,13 @@ class Context(IntEnum):
     SPELL_LIST = 9  # spell(…)
     ENCHANT = 10  # […]
     ROUND = 11  # {…}
+    #: After ``discard @``. Every target still parses here, but only ``spell(…)`` works:
+    #: anything else reaches the card lookup as a combatant and raises mid-fight.
+    DISCARD_TARGET = 12
+
+
+#: The contexts right after ``@``. They colour alike and differ only in what is offered.
+_AFTER_AT = (Context.TARGET, Context.DISCARD_TARGET)
 
 
 class Kind(StrEnum):
@@ -212,10 +222,10 @@ def _classify_word(word: str, top: Context, last: str | None) -> Kind | None:
             return Kind.KEYWORD if lowered in MOVE_KEYWORDS or lowered == "any" else None
         case Context.ENCHANT | Context.SPELL_LIST:
             return Kind.KEYWORD if lowered == "any" else None
-        case Context.TARGET | Context.SELECT:
+        case Context.TARGET | Context.DISCARD_TARGET | Context.SELECT:
             if lowered in TARGETS:
                 return Kind.TARGET
-            return Kind.KEYWORD if top is Context.TARGET and lowered in TARGET_FORMS else None
+            return Kind.KEYWORD if top in _AFTER_AT and lowered in TARGET_FORMS else None
         case Context.SPELL_TYPE:
             if lowered in HANGING_VERBS:
                 return Kind.KEYWORD
@@ -256,7 +266,7 @@ def _apply_punct(text: str, contexts: list[Context], last: str | None) -> None:
         if wanted is None or top is wanted:
             contexts.pop()
     elif text == "@" and len(contexts) == 1:
-        contexts[0] = Context.TARGET
+        contexts[0] = Context.DISCARD_TARGET if word == "discard" else Context.TARGET
     elif text == "&" and len(contexts) == 1:
         contexts[0] = Context.MOVE
     elif text == "|":
@@ -266,11 +276,11 @@ def _apply_punct(text: str, contexts: list[Context], last: str | None) -> None:
 def _paren_context(top: Context, word: str | None) -> Context:
     if top is Context.MOVE and word == "draw":
         return Context.INDEX
-    if top in (Context.TARGET, Context.SELECT, Context.CONDITION) and word in INDEXED_TARGETS:
+    if top in (*_AFTER_AT, Context.SELECT, Context.CONDITION) and word in INDEXED_TARGETS:
         return Context.INDEX
-    if top is Context.TARGET and word == "select":
+    if top in _AFTER_AT and word == "select":
         return Context.SELECT
-    if top is Context.TARGET and word == "spell":
+    if top in _AFTER_AT and word == "spell":
         return Context.SPELL_LIST
     if top is Context.SPELL_TYPE and word in HANGING_VERBS:
         return Context.HANGING
@@ -382,6 +392,8 @@ def _offered(stack: tuple[Context, ...], last: str | None) -> tuple[str, ...]:
             return ("any<",)
         case Context.TARGET if last in ("@", ","):
             return (*TARGETS, "select(", "spell(")
+        case Context.DISCARD_TARGET if last == "@":
+            return ("spell(",)
         case Context.SELECT if last in ("(", ","):
             return TARGETS
         case Context.SPELL_TYPE if last in ("<", "&"):
