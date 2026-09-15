@@ -78,24 +78,36 @@ async def teleport_home_and_verify_dorm(machine, clients: list) -> bool:
     """
     machine.log(f"Unequipping castles for {len(clients)} client(s) so HOME reaches the dorm…", logging.DEBUG)
     castles = await asyncio.gather(*[housing.unequip_castle(c) for c in clients])
-    for c, castle in zip(clients, castles):
-        if castle:
-            machine.log(f"Unequipped {castle!r} for client {getattr(c, 'title', repr(c))}", logging.DEBUG)
+    # Paired now, before anything else is awaited, so the restore below reads the pairing
+    # rather than the client list again. Each player's outcome is logged at INFO: a castle
+    # ending up on the wrong wizard (#15) left nothing in the session log to say which
+    # step did it. Players are named by number and window handle, never by window title,
+    # which carries the account's alias.
+    unequipped = [(player, c, castle) for player, (c, castle) in enumerate(zip(clients, castles), 1)]
+    for player, c, castle in unequipped:
+        outcome = f"unequipped {castle!r}" if castle else "no castle unequipped"
+        machine.log(f"{_describe(player, c)}: {outcome}")
 
     try:
         return await _press_home_until_dorm(machine, clients)
     finally:
-        restorable = [(c, castle) for c, castle in zip(clients, castles) if castle]
+        restorable = [(player, c, castle) for player, c, castle in unequipped if castle]
         if restorable:
-            machine.log(f"Re-equipping {len(restorable)} castle(s)…", logging.DEBUG)
-            restored = await asyncio.gather(*[housing.equip_castle(c, castle) for c, castle in restorable])
-            for (c, castle), ok in zip(restorable, restored):
-                if not ok:
+            restored = await asyncio.gather(*[housing.equip_castle(c, castle) for _, c, castle in restorable])
+            for (player, c, castle), ok in zip(restorable, restored):
+                if ok:
+                    machine.log(f"{_describe(player, c)}: re-equipped {castle!r}")
+                else:
                     machine.log(
-                        f"Could not re-equip castle {castle!r} for client "
-                        f"{getattr(c, 'title', repr(c))} — re-equip it by hand from the housing page (U).",
+                        f"{_describe(player, c)}: could not re-equip castle {castle!r} — "
+                        f"re-equip it by hand from the housing page (U).",
                         logging.WARNING,
                     )
+
+
+def _describe(player: int, client) -> str:
+    """How a castle log line names a client: its player number and window handle."""
+    return f"P{player} (hwnd {client.window_handle})"
 
 
 async def _press_home_until_dorm(machine, clients: list) -> bool:

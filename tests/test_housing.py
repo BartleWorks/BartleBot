@@ -6,6 +6,7 @@ resorted. Both are changes to a real account that no error message would announc
 are the cases pinned hardest.
 """
 
+import logging
 from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.housing as housing
@@ -193,6 +194,17 @@ async def test_set_equipped_is_a_noop_when_already_in_the_wanted_state():
         assert await housing._set_equipped(FakeClient(), 1, True) is True
 
     c.assert_not_awaited()
+
+
+async def test_set_equipped_logs_when_it_skips_the_click(caplog):
+    """The no-op is the one read nothing re-checks, so it has to leave a trace (#15)."""
+    text, visible, enabled, click = _page(_TWO_CASTLES)
+    client = FakeClient()
+
+    with text, visible, enabled, click, caplog.at_level(logging.INFO, logger=housing.logger.name):
+        await housing._set_equipped(client, 1, True)
+
+    assert f"hwnd {client.window_handle}: castle row 1 already reads equipped" in caplog.text
 
 
 async def test_set_equipped_reports_failure_when_the_icon_never_changes():

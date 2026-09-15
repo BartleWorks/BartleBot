@@ -372,6 +372,8 @@ class PlayerCard(CardFrame):
         self._index = index
         self._is_unhooked = unhooked
         self._in_freecam = False
+        # Whether a bot run has the freecam pair locked. See set_bot_running.
+        self._bot_running = False
         self._stripe_key: int | None = None
         self._last_zone = PLACEHOLDER
         self._last_mob_time: float = 0.0
@@ -575,16 +577,27 @@ class PlayerCard(CardFrame):
         self.refresh_theme_styles()
 
     def set_bot_running(self, running: bool) -> None:
-        """Lock the Unhook verb for the length of a run.
+        """Lock the Unhook verb and the drag grip for the length of a run.
 
-        Unhooking mid-run pulls a client out from under the FSM. An unhooked card is not
-        touched: rehooking during a run is how a client that dropped out is brought back.
+        Unhooking mid-run pulls a client out from under the FSM. Reordering mid-run changes
+        which client a node's player index means while that node is running -- a node that
+        remembered something per player before an await would hand it back to the wrong
+        one afterwards. ``ClientManager.reorder_clients`` refuses one too; this is what
+        stops the gesture being offered. An unhooked card is not touched: rehooking during a
+        run is how a client that dropped out is brought back, and it has no grip.
+
+        The freecam pair is locked too. Detaching the camera or teleporting the player moves
+        a client the FSM is driving, underneath whatever node is running.
         """
         if self._is_unhooked:
             return
         button = self.action_button("Unhook")
         if button is not None:
             button.setEnabled(not running)
+        if self.grip is not None:
+            self.grip.set_locked(running, "Players can't be reordered while a bot is running")
+        self._bot_running = running
+        self._sync_freecam_buttons()
 
     # ------------------------------------------------------------------
     # The theme pass
@@ -632,11 +645,29 @@ class PlayerCard(CardFrame):
     # Freecam
     # ------------------------------------------------------------------
 
+    async def exit_freecam(self) -> bool:
+        """Put the camera back on the player without moving them. True if it was detached.
+
+        Public for the run start, which must not hand the FSM a client whose camera is off
+        somewhere else -- and whose Exit Freecam button the run is about to lock. The
+        player stays where they are: this is Exit Freecam, not TP to Freecam.
+
+        A client that cannot be reached keeps its freecam state, since nothing here knows
+        the camera came back.
+        """
+        if not self._in_freecam:
+            return False
+        try:
+            await self._client.camera_elastic()
+        except Exception:
+            return False  # client may have disconnected
+        self._set_freecam(False)
+        return True
+
     async def _toggle_freecam(self) -> None:
         try:
             if self._in_freecam:
-                await self._client.camera_elastic()
-                self._set_freecam(False)
+                await self.exit_freecam()
             else:
                 # Pre-position the free camera at the player's location + 200 Z before
                 # entering freecam — without this the world freezes on entry.
@@ -665,7 +696,22 @@ class PlayerCard(CardFrame):
     def _set_freecam(self, active: bool) -> None:
         self._in_freecam = active
         self._freecam_btn.setText("Exit Freecam" if active else "Enter Freecam")
-        self._tp_btn.setEnabled(active)
+        self._sync_freecam_buttons()
+
+    def _sync_freecam_buttons(self) -> None:
+        """Enable the pair from the two facts that decide it: a run, and a detached camera.
+
+        One place, because both facts change independently -- a run starting must not
+        enable TP for a camera that is not detached, and leaving freecam must not re-enable
+        a button a run has locked.
+        """
+        self._freecam_btn.setEnabled(not self._bot_running)
+        self._tp_btn.setEnabled(self._in_freecam and not self._bot_running)
+
+    @property
+    def freecam_buttons(self) -> tuple[QPushButton, QPushButton]:
+        """The Enter/Exit Freecam toggle and TP to Freecam, for the callers that check their state."""
+        return self._freecam_btn, self._tp_btn
 
     @property
     def in_freecam(self) -> bool:

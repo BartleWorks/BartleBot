@@ -288,6 +288,8 @@ class ClientManager(QObject):
         """
         if idx_a == idx_b:
             return
+        if self._refuse_reorder_mid_run():
+            return
         if idx_a >= len(self._clients) or idx_b >= len(self._clients):
             return
         self._clients[idx_a], self._clients[idx_b] = (self._clients[idx_b], self._clients[idx_a])
@@ -327,6 +329,8 @@ class ClientManager(QObject):
         reordered = apply_order(self._clients, order)
         if reordered is None or order == list(range(len(order))):
             return
+        if self._refuse_reorder_mid_run():
+            return
         self._clients[:] = reordered
         # Keep _client_order in sync so recovery preserves the user's reordering. Positional,
         # exactly as swap_clients is: _clients is hooked-only and contiguous while
@@ -342,6 +346,22 @@ class ClientManager(QObject):
         self._sync_tiles()
         self.clients_changed.emit(self._clients)
         self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
+
+    def _refuse_reorder_mid_run(self) -> bool:
+        """True, and the sidebar redrawn in the order it really is, while a bot is running.
+
+        The Players tab locks its grips for a run, so this is the backstop for a drag that
+        was already under way when the run started. ``_clients`` is the very list the
+        running node was handed, and a reorder rewrites it in place, so the node would see
+        its player indices change under it. The redraw is what puts a dropped card back:
+        the column already shows the order the user dragged to, and nothing else would
+        rebuild it.
+        """
+        if self._machine is None:
+            return False
+        logger.info("Ignoring a player reorder while a bot is running")
+        self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
+        return True
 
     def account_for(self, client) -> str | None:
         """The account username *client* was launched under, or None when unknown.

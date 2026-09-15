@@ -238,6 +238,16 @@ class ClientSection(ThemedMixin, QWidget):
             card.set_bot_running(running)
         self._update_bulk_buttons()
 
+    async def exit_freecam(self) -> int:
+        """Bring every hooked player's camera back to them, without teleporting anyone.
+
+        Returns how many players were in freecam and came back out. Awaited by the run
+        start before the FSM begins, so no node drives a client whose camera is detached.
+        """
+        cards = [card for card in self._cards if not card.is_unhooked and card.in_freecam]
+        results = await asyncio.gather(*[card.exit_freecam() for card in cards])
+        return sum(results)
+
     @property
     def cards(self) -> list[PlayerCard]:
         """Every card on the tab, hooked ones first. Public for the callers that count them."""

@@ -961,9 +961,26 @@ class AppController(QObject):
         either — this runs inside the _start_bot asyncio task, where a modal .exec()
         deadlocks the qasync loop under Python 3.13 (see CLAUDE.md).
         """
+        await self._exit_pre_run_freecam()
         await self._apply_pre_run_decks()
         states = await self._form_pre_run_group()
         await self._survey_pre_run_ports(states)
+
+    async def _exit_pre_run_freecam(self) -> None:
+        """Put every player's camera back on them before anything drives a client.
+
+        First, because every later step and every node assumes the camera follows the
+        player, and because the run locks the Exit Freecam button -- a camera left detached
+        now would stay detached until the run ended. Exit only, never TP to Freecam: the
+        player is where the user left them, and a bot may well depend on that. Never raises.
+        """
+        try:
+            exited = await self._window.right_sidebar.clients.exit_freecam()
+        except Exception:
+            logger.warning("Could not take players out of freecam before the run", exc_info=True)
+            return
+        if exited:
+            logger.info("Exited freecam for %d player(s) before the run", exited)
 
     async def _survey_pre_run_ports(self, states: list | None) -> None:
         """Read who among the clients can port to whom, for zone navigation. See bartlebot.port_map.

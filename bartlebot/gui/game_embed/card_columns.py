@@ -555,6 +555,13 @@ class CardColumn(QWidget):
             return super().eventFilter(obj, event)
         kind = event.type()
         if kind == event.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
+            if not obj.isEnabled():
+                # A locked grip (``GripHandle.set_locked``). Asked of the grip rather than
+                # held here as a flag, so there is one lock and nothing to keep in step with
+                # it. Checked explicitly because event filters run before ``QWidget.event``,
+                # which is where a disabled widget drops its mouse input; only the press
+                # needs it, since every later branch requires a press this one accepted.
+                return super().eventFilter(obj, event)
             if self._settling is not None:
                 # A previous drop is still in the air: its card is out of the layout and
                 # its placeholder still holds a slot, so a second drag started now would

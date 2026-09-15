@@ -30,8 +30,10 @@ class ReorderHarness:
     reorder_clients = ClientManager.reorder_clients
     swap_clients = ClientManager.swap_clients
     account_for = ClientManager.account_for
+    _refuse_reorder_mid_run = ClientManager._refuse_reorder_mid_run
 
     def __init__(self, hwnds: list[int], order: list[str | None] | None = None) -> None:
+        self._machine = None
         self._clients = [FakeClient(h) for h in hwnds]
         self._client_order: list[str | None] = [] if order is None else list(order)
         self._unhooked_clients: list = []
@@ -77,6 +79,39 @@ def test_one_gesture_is_one_update(harness):
     assert harness.all_clients_changed.emit.call_count == 1
     assert harness._drops_widget.reorder_clients.call_count == 1
     harness._drops_widget.reorder_clients.assert_called_once_with([3, 2, 1, 0])
+
+
+def test_a_reorder_is_refused_while_a_bot_is_running(harness):
+    """The running node holds this very list; a reorder would move its players under it."""
+    harness._machine = object()
+
+    harness.reorder_clients([1, 0, 2, 3])
+
+    assert harness.hwnds == [100, 110, 120, 130]
+    assert harness._client_order == ["a", "b", "c", "d"]
+    harness._sync_tiles.assert_not_called()
+    harness.clients_changed.emit.assert_not_called()
+    harness._drops_widget.reorder_clients.assert_not_called()
+
+
+def test_a_refused_reorder_redraws_the_sidebar_in_the_order_it_really_is(harness):
+    """The column already shows the dropped order, and nothing else would put it back."""
+    harness._machine = object()
+
+    harness.reorder_clients([1, 0, 2, 3])
+
+    hooked, unhooked = harness.all_clients_changed.emit.call_args.args
+    assert [c.window_handle for c in hooked] == [100, 110, 120, 130]
+    assert unhooked == []
+
+
+def test_a_swap_is_refused_while_a_bot_is_running(harness):
+    harness._machine = object()
+
+    harness.swap_clients(0, 1)
+
+    assert harness.hwnds == [100, 110, 120, 130]
+    harness._drops_widget.swap_clients.assert_not_called()
 
 
 def test_the_signals_carry_the_new_order(harness):

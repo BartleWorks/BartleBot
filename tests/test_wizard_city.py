@@ -1,5 +1,6 @@
 """Unit tests for the Wizard City travel route shared by handle_potions and go_to_world."""
 
+import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -239,6 +240,44 @@ async def test_only_clients_with_castles_are_restored():
 
     with unequip, equip as e, press:
         await wc.teleport_home_and_verify_dorm(FakeMachine(), [c_castle, c_dorm])
+
+    e.assert_awaited_once_with(c_castle, "Red Barn Farm")
+
+
+async def test_each_players_castle_outcome_is_logged_at_info():
+    """#15 left nothing in the session log saying which player lost or gained a castle."""
+    c_castle = FakeClient()
+    c_dorm = FakeClient()
+    machine = FakeMachine()
+    unequip = patch.object(wc.housing, "unequip_castle", new=AsyncMock(side_effect=["Red Barn Farm", None]))
+    equip = patch.object(wc.housing, "equip_castle", new=AsyncMock(return_value=True))
+    press = patch.object(wc, "_press_home_until_dorm", new=AsyncMock(return_value=True))
+
+    with unequip, equip, press:
+        await wc.teleport_home_and_verify_dorm(machine, [c_castle, c_dorm])
+
+    info = [msg for msg, level in machine.logs if level == logging.INFO]
+    assert f"P1 (hwnd {c_castle.window_handle}): unequipped 'Red Barn Farm'" in info
+    assert f"P2 (hwnd {c_dorm.window_handle}): no castle unequipped" in info
+    assert f"P1 (hwnd {c_castle.window_handle}): re-equipped 'Red Barn Farm'" in info
+
+
+async def test_the_restore_follows_the_player_even_if_the_list_is_reordered_meanwhile():
+    """The pairing is taken before HOME, so an in-place reorder cannot swap two players' castles."""
+    c_dorm = FakeClient()
+    c_castle = FakeClient()
+    clients = [c_dorm, c_castle]
+
+    async def home_while_reordering(machine, cs):
+        cs.reverse()
+        return True
+
+    unequip = patch.object(wc.housing, "unequip_castle", new=AsyncMock(side_effect=[None, "Red Barn Farm"]))
+    equip = patch.object(wc.housing, "equip_castle", new=AsyncMock(return_value=True))
+    press = patch.object(wc, "_press_home_until_dorm", side_effect=home_while_reordering)
+
+    with unequip, equip as e, press:
+        await wc.teleport_home_and_verify_dorm(FakeMachine(), clients)
 
     e.assert_awaited_once_with(c_castle, "Red Barn Farm")
 
