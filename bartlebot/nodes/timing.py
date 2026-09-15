@@ -24,6 +24,19 @@ LOADING_SCREEN_TIMEOUT = 60.0
 # infinite-load crash. Normal Wizard101 loading screens complete in 5–10 s;
 # 60 s provides a generous safety margin.
 
+NETWORK_LINK_POLL_INTERVAL = 1.0
+# Seconds between reads of the HUD's network status icons. Coarser than POLL_INTERVAL: a
+# connection degrades over seconds, and each read walks the HUD's children.
+
+NETWORK_LINK_BAD_TIMEOUT = 15.0
+# Seconds the "bad" network icon may stay up before the client is recovered. The game can
+# climb back out of it, but rarely does; left alone it usually reaches "broken" within
+# 5-10 s, so this waits out one plausible recovery and no more.
+
+NETWORK_LINK_BROKEN_POLLS = 3
+# Consecutive polls showing the "broken" network icon before the client is recovered. That
+# state never recovers on its own, so this only guards against a single misread.
+
 ZONE_SETTLE_GRACE = 5.0
 # Seconds wait_for_zone_with_recovery holds off teleport-to-player recovery for a client
 # that is not in the destination zone and not (yet) on a loading screen. A client whose
