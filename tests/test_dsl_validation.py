@@ -11,7 +11,14 @@ from unittest.mock import patch
 import pytest
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
-from bartlebot.nodes.combat_runner import _lark_parser, _str_provider_class, validate_dsl
+from bartlebot.nodes.combat_runner import (
+    _lark_parser,
+    _str_provider_class,
+    dsl_error,
+    dsl_warning_text,
+    dsl_warnings,
+    validate_dsl,
+)
 
 # Real DSLs taken from strategies/player/*.json.
 _VALID_DSLS = [
@@ -89,7 +96,7 @@ def test_lark_grammar_is_compiled_only_once():
         return real_lark(*args, **kwargs)
 
     _lark_parser.cache_clear()
-    validate_dsl.cache_clear()  # else validate_dsl's own cache answers 4 of the 5
+    dsl_error.cache_clear()  # else validate_dsl's cache answers 4 of the 5
     try:
         with patch("lark.Lark", side_effect=counting_lark):
             for _ in range(5):
@@ -98,7 +105,7 @@ def test_lark_grammar_is_compiled_only_once():
         assert build_count == 1
     finally:
         _lark_parser.cache_clear()
-        validate_dsl.cache_clear()
+        dsl_error.cache_clear()
 
 
 def test_parser_returns_the_same_object_every_time():
@@ -114,25 +121,42 @@ def test_repeated_validation_of_one_dsl_parses_it_once():
     every entry's DSL each time it redraws a card. Without this cache, typing one
     character in the filter box cost seconds (#43)."""
     dsl = "any<blade>[sharp]@ally(2)"
-    validate_dsl.cache_clear()
+    dsl_error.cache_clear()
     try:
         with patch("bartlebot.nodes.combat_runner._str_provider_class", wraps=_str_provider_class) as provider_class:
             for _ in range(10):
                 assert validate_dsl(dsl) is None
+                assert dsl_error(dsl) is None
 
         assert provider_class.call_count == 1
     finally:
-        validate_dsl.cache_clear()
+        dsl_error.cache_clear()
 
 
 def test_the_cache_does_not_confuse_two_dsls():
-    validate_dsl.cache_clear()
+    dsl_error.cache_clear()
     try:
         assert validate_dsl("any<blade>[sharp]@ally(2)") is None
         assert validate_dsl("@@@ not a dsl") is not None
         assert validate_dsl("any<blade>[sharp]@ally(2)") is None
     finally:
-        validate_dsl.cache_clear()
+        dsl_error.cache_clear()
+
+
+def test_a_parse_error_says_where_the_parser_stopped():
+    error = dsl_error("pass @ self\nany<damag> @ enemy")
+
+    assert error is not None
+    assert (error.line, error.column) == (2, 5)
+    assert error.message == validate_dsl("pass @ self\nany<damag> @ enemy")
+
+
+def test_an_error_with_no_position_reports_zero_rather_than_lark_s_minus_one():
+    error = dsl_error("any<blade")
+
+    assert error is not None
+    assert error.line >= 0
+    assert error.column >= 0
 
 
 def test_provider_class_is_cached():
@@ -148,3 +172,96 @@ def test_provider_parses_without_a_client():
 
     assert provider.config is not None
     assert provider.filename == "<inline>"
+
+
+# ---------------------------------------------------------------------------
+# Spell names no card has — against the real snapshot
+# ---------------------------------------------------------------------------
+
+
+def _warned_names(dsl: str) -> list[str]:
+    lines = dsl.split("\n")
+    return [lines[w.line - 1][w.column - 1 : w.column - 1 + w.length] for w in dsl_warnings(dsl)]
+
+
+def test_names_that_find_a_card_are_not_warned_about():
+    dsl = "feint mass | feint[potent]@boss\nTempest | Storm Lord | any<blade>[Sharpened Blade] @ self"
+    assert dsl_warnings(dsl) == ()
+
+
+@pytest.mark.parametrize(
+    ("dsl", "advice"),
+    [
+        # The usual opener: the AoE feint, then a single feint on the boss if needed.
+        ("mass feint | feint[potent]@boss", "so write Feint Mass instead."),
+        ("Incindiate @ aoe", "the card is named Detonate All."),
+        ("Fire Elemental @ self", "the card is named Minion Fire."),
+        ("Strom Lord @ aoe", "Did you mean Storm Lord?"),
+    ],
+)
+def test_the_common_mistakes_are_warned_about_with_what_to_write(dsl, advice):
+    (warning,) = dsl_warnings(dsl)
+    assert warning.message.endswith(advice)
+
+
+def test_a_warning_covers_the_name_where_it_is_written():
+    dsl = "Tempest @ aoe\n  Strom Lord[Epic] @ enemy | pass"
+    (warning,) = dsl_warnings(dsl)
+    assert (warning.line, warning.column, warning.length) == (2, 3, 10)
+
+
+# ---------------------------------------------------------------------------
+# Lines are rounds
+# ---------------------------------------------------------------------------
+
+
+def _rounds(dsl: str) -> list[list[str]]:
+    config = _str_provider_class()(dsl).config
+    lines = [*config.specific_rounds.values(), *config.infinite_rounds]  # {n} lines, then the rest
+    return [[getattr(p.move.card, "name", p.move.card) for p in line.priorities] for line in lines]
+
+
+@pytest.mark.parametrize(
+    "dsl",
+    [
+        "pass\nStorm Lord @ enemy",
+        "{1} pass\n{2} Storm Lord @ enemy",
+        "  pass\n  Storm Lord @ enemy",
+        "pass\n\n\nStorm Lord @ enemy\n",
+    ],
+)
+def test_a_multi_word_spell_on_a_later_line_stays_one_move(dsl):
+    """The grammar once let a line end anywhere, and past the first line it ended one
+    between the words of a spell name: ``Storm Lord`` ran as a round casting Storm and
+    another casting Lord, shifting every round after it."""
+    names = [name for round_ in _rounds(dsl) for name in round_]
+    assert "Storm Lord" in names
+    assert "Storm" not in names and "Lord" not in names
+
+
+def test_moves_on_one_line_need_a_pipe_between_them():
+    # Once two rounds from one line, silently; a newline or a | says which was meant.
+    assert validate_dsl("Tempest @ aoe Storm Lord @ enemy") is not None
+    assert validate_dsl("Tempest @ aoe | Storm Lord @ enemy") is None
+
+
+def test_enchants_and_discard_lists_are_checked_but_combatants_and_keywords_are_not():
+    dsl = "Tempest[Zzyzx] @ Lord Zzyzx | discard @ spell(Incindiate, any<aoe>) | pass"
+    assert _warned_names(dsl) == ["Zzyzx", "Incindiate"]
+
+
+def test_a_number_in_an_unquoted_name_is_warned_about_across_the_whole_name():
+    dsl = "Detonate All 200 @ aoe"
+    (warning,) = dsl_warnings(dsl)
+    assert "read a digit at a time" in warning.message
+    assert _warned_names(dsl) == ["Detonate All 200"]
+
+
+def test_a_dsl_that_does_not_parse_has_no_name_warnings():
+    assert dsl_warnings("Strom Lord @ @") == ()
+
+
+def test_each_warning_message_is_listed_once():
+    warnings = dsl_warnings("Strom Lord @ aoe | Strom Lord @ boss")
+    assert len(warnings) == 2
+    assert dsl_warning_text(warnings) == warnings[0].message

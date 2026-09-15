@@ -59,15 +59,16 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.strategy_models import PlayerAssignment, PlayerCombatStrategy
+from bartlebot.dsl_syntax import DSL_HELP
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
-from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
+from bartlebot.gui.widgets.dsl_edit import DslGrowingTextEdit
 from bartlebot.gui.widgets.player_pills import PlayerPillBar
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.school_combo import SchoolCombo
-from bartlebot.nodes.combat_runner import validate_dsl
+from bartlebot.nodes.combat_runner import dsl_error, dsl_warning_text, dsl_warnings, validate_dsl
 
 #: The two answers in the strategy menu that are not a Player Strategy, and the sentinel
 #: each carries. Module level because the tests name them and because ``choose_strategy``
@@ -90,14 +91,6 @@ REMOVE_VERB = "Remove"
 #: the working set. Named rather than silently reset to the default — resetting would look
 #: like the card was always configured that way, and Save would then make it true.
 MISSING_TITLE = "(missing strategy)"
-
-_DSL_HELP = (
-    "{round} move @ target | move @ target | pass — rounds optional, '|' is priority order.\n"
-    'Moves: "Named Spell" or any<damage|heal|blade|trap|charm|ward|aura|...>[enchant]\n'
-    "Targets: self, enemy, boss, ally, aoe, named:<name>\n"
-    "Pick one out with ally(0) or enemy(1). ally(last) is the last player on the team, you included,\n"
-    "so every client in the group can share the line."
-)
 
 #: Private to this widget, so a drag from anywhere else is ignored outright.
 _ROW_MIME = "application/x-bartlebot-assignment-card"
@@ -242,13 +235,13 @@ class AssignmentCard(CardFrame):
         self._note_edit.textChanged.connect(self._on_note_changed)
         details.addWidget(self._note_edit)
 
-        self._dsl_edit = GrowingTextEdit(parent=self._details)
+        self._dsl_edit = DslGrowingTextEdit(parent=self._details)
         # A QPlainTextEdit accepts drops by default, and leaving that on would carve this
         # card's drop target down to a strip along the top. Dropping text *into* a DSL box
         # is far rarer than dropping a card onto its neighbour.
         self._dsl_edit.setAcceptDrops(False)
         self._dsl_edit.setPlaceholderText("Combat DSL for these players — blank uses the built-in default")
-        self._dsl_edit.setToolTip(_DSL_HELP)
+        self._dsl_edit.setToolTip(DSL_HELP)
         self._dsl_edit.textChanged.connect(self._on_dsl_changed)
         details.addWidget(self._dsl_edit)
 
@@ -267,10 +260,8 @@ class AssignmentCard(CardFrame):
 
     def _verbs(self) -> list[CardVerb]:
         return [
-            CardVerb(CHANGE_VERB, "search", "Choose what these players do", self._open_strategy_menu, on_face=True),
-            CardVerb(
-                EDIT_VERB, "pencil", "School, note and custom DSL for this assignment", self.toggle_expanded, True
-            ),
+            CardVerb(CHANGE_VERB, "search", "Change Player Combat Strategy", self._open_strategy_menu, on_face=True),
+            CardVerb(EDIT_VERB, "pencil", "Edit required school, note, and custom DSL", self.toggle_expanded, True),
             CardVerb(REMOVE_VERB, "dismiss", "Remove this assignment", lambda: self.remove_requested.emit(self), True),
         ]
 
@@ -476,7 +467,7 @@ class AssignmentCard(CardFrame):
             button = self.action_button(EDIT_VERB)
             if button is not None:
                 button.setToolTip(
-                    "Hide this assignment's details" if self._expanded else "School, note and custom DSL for this"
+                    "Hide this assignment's details" if self._expanded else "Edit required school, note, and custom DSL"
                 )
         finally:
             self._suppress = False
@@ -492,7 +483,8 @@ class AssignmentCard(CardFrame):
                 f"color: {THEME.text_muted}; font-size: {THEME.font_card_sub_size}px; background: transparent;"
             )
         self._school_label.setStyleSheet(f"color: {THEME.text_muted}; background: transparent;")
-        self._dsl_error_lbl.setStyleSheet(f"color: {THEME.error}; background: transparent;")
+        label_color = THEME.error if error else THEME.syntax_warning
+        self._dsl_error_lbl.setStyleSheet(f"color: {label_color}; background: transparent;")
         self._dsl_edit.setFont(THEME.font_mono())
         self._dsl_edit.setStyleSheet(
             f"QTextEdit {{ background: {THEME.surface if self._dsl_edit.isReadOnly() else THEME.bg};"
@@ -531,6 +523,10 @@ class AssignmentCard(CardFrame):
     def _on_dsl_changed(self) -> None:
         if self._suppress or not self.is_custom():
             return
+        # The underlines mark columns in the text as it was validated; after an edit they
+        # point at the wrong characters until the debounce re-checks.
+        self._dsl_edit.set_dsl_error(None)
+        self._dsl_edit.set_dsl_warnings(())
         self._assignment.dsl = self._dsl_edit.toPlainText()
         # Follows the text rather than waiting for the next refresh: the first character
         # typed into an empty box is exactly when the offer to name it becomes meaningful.
@@ -555,11 +551,17 @@ class AssignmentCard(CardFrame):
         Same mark and same tooltip as ``StrategyCard``, so a broken thing looks broken
         wherever it is drawn.
         """
-        error = validate_dsl(self._dsl_edit.toPlainText()) if self.is_custom() else None
-        self._dsl_error_lbl.setText(error or "")
-        self._dsl_error_lbl.setVisible(bool(error))
+        dsl = self._dsl_edit.toPlainText()
+        error = dsl_error(dsl) if self.is_custom() else None
+        # Spell names no card has share the line, but not the title's mark: the move still
+        # runs, and the snapshot they are checked against can be older than the game.
+        warnings = dsl_warnings(dsl) if self.is_custom() else ()
+        self._dsl_error_lbl.setText(error.message if error else dsl_warning_text(warnings))
+        self._dsl_error_lbl.setVisible(bool(error or warnings))
         self._title_lbl.setText(f"{self._title}  ⚠" if error else self._title)
-        self._title_lbl.setToolTip(f"Does not parse: {error}" if error else "")
+        self._title_lbl.setToolTip(f"Does not parse: {error.message}" if error else "")
+        self._dsl_edit.set_dsl_error(error)
+        self._dsl_edit.set_dsl_warnings(warnings)
         self._restyle_content()
 
     # ------------------------------------------------------------------

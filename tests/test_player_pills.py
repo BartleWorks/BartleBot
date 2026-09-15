@@ -188,6 +188,65 @@ def test_a_pill_holds_its_slot_not_a_hex_so_a_theme_switch_re_resolves(qapp):
         set_theme("dark")
 
 
+# ---------------------------------------------------------------------------
+# PlayerBadge / PlayerBadgeRow — the read-only pills the Combat tab draws
+# ---------------------------------------------------------------------------
+
+
+def test_an_uncoloured_badge_is_the_neutral_grey_pill(qapp):
+    from bartlebot.gui.widgets.player_pills import PlayerBadge  # noqa: PLC0415
+
+    badge = PlayerBadge(2)
+
+    assert badge.text() == "P2"
+    assert THEME.pill_neutral_bg in badge.styleSheet()
+    assert account_accent(1) not in badge.styleSheet()
+
+
+def test_a_coloured_badge_is_outlined_and_tinted_and_names_the_account_in_its_tooltip(qapp):
+    from bartlebot.gui.widgets.player_pills import PlayerBadge  # noqa: PLC0415
+
+    badge = PlayerBadge(1)
+
+    badge.set_color_key(3)
+    badge.set_account_label("Main")
+
+    assert account_accent(3) in badge.styleSheet()
+    assert account_tint(3) in badge.styleSheet()
+    assert badge.text() == "P1"
+    assert "Main" in badge.toolTip()
+
+
+def test_a_badge_row_hides_surplus_badges_and_separators_rather_than_destroying_them(qapp):
+    from bartlebot.gui.widgets.player_pills import PlayerBadgeRow  # noqa: PLC0415
+
+    row = PlayerBadgeRow("→")
+    first = row._badges[0]
+
+    row.set_players([3, 1])
+
+    assert row.players == [3, 1]
+    assert [b.text() for b in row.badges] == ["P3", "P1"]
+    assert row._badges[2].isHidden() and row._badges[3].isHidden()
+    assert [s.isHidden() for s in row._separators] == [False, True, True]
+
+    row.set_players([])
+
+    assert row._badges[0] is first
+    assert all(b.isHidden() for b in row._badges)
+
+
+def test_a_badge_row_colours_by_slot_and_leaves_unknown_slots_plain(qapp):
+    from bartlebot.gui.widgets.player_pills import PlayerBadgeRow  # noqa: PLC0415
+
+    row = PlayerBadgeRow()
+    row.set_player_colors([2, 5])
+
+    row.set_players([4, 2])
+
+    assert [b.color_key for b in row.badges] == [None, 5]
+
+
 def _left_press():
     """A synthetic left-button press at the pill's origin."""
     from PyQt6.QtCore import QEvent, QPointF, Qt  # noqa: PLC0415

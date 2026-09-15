@@ -43,7 +43,9 @@ styled to look like a search field, two 1pt-smaller muted lines, and a ``⋮`` b
 opening a hand-built ``QMenu``, repeated once per level and once per fight. Verbs are
 data now (``CardVerb``), so which buttons a card has is answered by reading its
 ``_verbs`` rather than its layout, and everything is reachable by right-click whether or
-not it earned a place on the face.
+not it earned a place on the face -- and, on the deck cards, by a kebab button that opens
+the same menu without the mouse having to know right-click is a thing to try (see
+``CardFrame._make_kebab_button``).
 
 Including the fights that opted out of nothing: they are pills on the default card,
 which is a ``StrategyPanel`` in ``PanelRole.DEFAULT`` rather than a widget of its own.
@@ -60,10 +62,11 @@ left on screen to be filled in later. A single fight is still quicker through it
 pill on the default card. The add-card is what pays when several are to share one
 strategy.
 
-One consequence to keep in mind: there is no ``⋮`` button any more, here or on any other
-card in the app. A verb that is not on the face is in the right-click menu, which is the
-convention ``card_frame.py`` sets out and the reason the destructive ones can stay off
-the face at all.
+One consequence to keep in mind: there is no per-card hand-built ``QMenu`` any more,
+here or anywhere else in the app. A verb that is not on the face is in the right-click
+menu ``card_frame.py`` builds from the same ``_verbs`` list every time, which is the
+reason the destructive ones can stay off the face at all -- a ``⋮`` button, where one is
+built at all, opens that same menu rather than one of its own.
 """
 
 from __future__ import annotations
@@ -80,7 +83,6 @@ from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QInputDialog,
-    QLabel,
     QMessageBox,
     QScrollArea,
     QVBoxLayout,
@@ -103,10 +105,11 @@ from bartlebot.combat_grouping import (
 )
 from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.credentials import CredentialStore
+from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
 from bartlebot.gui.deck_content import deck_content_lines
-from bartlebot.gui.sidebar.player_card import account_stripe_keys
+from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
 )
@@ -126,7 +129,9 @@ from bartlebot.gui.widgets.add_card import AddCard
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.elided_label import ElidedLabel
 from bartlebot.gui.widgets.picker_popup import PickerRow, Section
+from bartlebot.gui.widgets.player_pills import PlayerBadge
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
     StrategyKind,
@@ -176,9 +181,9 @@ _DELETE_BCS = "Delete…"
 #: Module-level because the card offers them as verbs and the card body names the one in
 #: force, and those two have to agree on the words.
 _ARCHMASTERY_MODES = (
-    ("Use the app setting", None),
-    ("Always set it", True),
-    ("Never set it", False),
+    ("Use app setting", None),
+    ("Always set", True),
+    ("Never set", False),
 )
 
 #: Verb labels for a deck card, shared with its menu and the tests.
@@ -195,9 +200,11 @@ class _DeckCard(CardFrame):
 
     Was a row of two ``QPushButton``\\s and a ``⋮`` -- eight text buttons across four
     slots, and by some distance the loudest thing on the tab. The verbs are the same
-    verbs; they are icons on the face and labels in the right-click menu now, which is
-    the language every other card in the app speaks and is what the section costs to
-    read rather than what it can do.
+    verbs; Import and Apply are icons on the face, and the rest -- Save, Load, the
+    archmastery override, Clear -- are in a menu reached by right-click or by the kebab
+    button beside them (see ``CardFrame._make_kebab_button``), which is the language
+    every other card in the app speaks and is what the section costs to read rather than
+    what it can do.
 
     A body click unfolds the card list, which is the only non-destructive thing there is
     to do to a deck that is not one of the verbs -- and it is refused outright on a slot
@@ -225,6 +232,9 @@ class _DeckCard(CardFrame):
         self._editable = True
         self._has_client = False
         self._expanded = False
+        # The account in this slot right now, as a palette slot, or None for no stripe --
+        # the same stripe a player card wears, so deck and player are matched by hue.
+        self._color_key: int | None = None
         self._build()
         self.activated.connect(self._toggle_expanded)
         self.refresh_theme_styles()
@@ -235,15 +245,14 @@ class _DeckCard(CardFrame):
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(6)
-        self._name = QLabel(f"P{self._slot}")
-        font = self._name.font()
-        font.setBold(True)
-        self._name.setFont(font)
-        header.addWidget(self._name, 0)
+        # A pill, coloured by the account in this slot, where a bold "P1" used to be (#40).
+        self._name = PlayerBadge(self._slot)
+        header.addWidget(self._name, 0, Qt.AlignmentFlag.AlignVCenter)
         # Elided rather than wrapped, for the reason StrategyPanel's captions are.
         self._summary = ElidedLabel(_NO_DECK)
         header.addWidget(self._summary, 1)
         self._add_face_verbs(header)
+        header.addWidget(self._make_kebab_button("More deck actions"), 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
         # "Archmastery: Fire · always set". Hidden unless the deck names a school, a
@@ -317,6 +326,26 @@ class _DeckCard(CardFrame):
         self._has_client = has_client
         self._reapply_verb_states()
 
+    @property
+    def color_key(self) -> int | None:
+        """The account palette slot this card is striped with, or None for no stripe."""
+        return self._color_key
+
+    def set_player_color(self, key: int | None, account_label: str = "") -> None:
+        """Stripe the card and colour its pill by the account in this slot, or None for neither."""
+        self._name.set_color_key(key)
+        self._name.set_account_label(account_label)
+        if key == self._color_key:
+            return
+        self._color_key = key
+        self.refresh_theme_styles()
+
+    def _frame_extra_qss(self) -> str:
+        """The account stripe down the left edge, exactly as ``PlayerCard`` draws it."""
+        if self._color_key is None:
+            return ""
+        return f" border-left: {STRIPE_WIDTH}px solid {account_accent(self._color_key)};"
+
     # -- folding --------------------------------------------------------
 
     def set_expanded(self, expanded: bool) -> None:
@@ -360,7 +389,7 @@ class _DeckCard(CardFrame):
             for label, value in _ARCHMASTERY_MODES:
                 verbs.append(
                     CardVerb(
-                        f"Archmastery: {label.lower()}",
+                        f"Archmastery: {label}",
                         "",
                         f"When applying this deck, {label.lower()} for {self._deck.archmastery_school}",
                         partial(self.archmastery_mode_changed.emit, value),
@@ -412,10 +441,9 @@ class _DeckCard(CardFrame):
         return not self.has_deck
 
     def _restyle_content(self) -> None:
-        for label, color in ((self._name, THEME.text), (self._summary, THEME.text_muted)):
-            palette = label.palette()
-            palette.setColor(label.foregroundRole(), QColor(color))
-            label.setPalette(palette)
+        palette = self._summary.palette()
+        palette.setColor(self._summary.foregroundRole(), QColor(THEME.text_muted))
+        self._summary.setPalette(palette)
         palette = self._archmastery.palette()
         palette.setColor(self._archmastery.foregroundRole(), QColor(THEME.text_muted))
         self._archmastery.setPalette(palette)
@@ -476,6 +504,15 @@ class _PlayerDecksSection(SidebarSection):
         self._client_count = count
         for card in self._cards:
             card.set_has_client(card.slot <= count)
+
+    def set_player_colors(self, keys: list[int | None], labels: list[str]) -> None:
+        """Per slot, index 0 being P1; shorter lists leave the remaining cards unstriped."""
+        for card in self._cards:
+            index = card.slot - 1
+            card.set_player_color(
+                keys[index] if index < len(keys) else None,
+                labels[index] if index < len(labels) else "",
+            )
 
     def refresh(self, player_decks: dict[int, DeckData]) -> None:
         for card in self._cards:
@@ -672,6 +709,14 @@ class CombatTab(QWidget):
         # Answers "which account is behind each player slot"; installed by AppController,
         # which is what holds the ClientManager. See ``set_player_account_source``.
         self._player_account_source: Callable[[], list[str | None]] | None = None
+        # The last answer pushed to the cards, so a tick that learns nothing new repaints
+        # nothing. See ``refresh_player_colors``.
+        self._player_colors: tuple[list[int | None], list[str]] = ([], [])
+        # Runs only while the tab is on screen -- see showEvent/hideEvent. Parented, so it
+        # dies with the tab rather than firing into it.
+        self._color_timer = QTimer(self)
+        self._color_timer.setInterval(int(PLAYER_COLOR_REFRESH_INTERVAL * 1000))
+        self._color_timer.timeout.connect(self.refresh_player_colors)
 
         # No debounce timer. There was one, at 500ms, because the inline DSL editor
         # emitted ``changed`` on every keystroke and every keystroke would otherwise have
@@ -833,6 +878,7 @@ class CombatTab(QWidget):
 
     def set_client_count(self, count: int) -> None:
         self._decks_section.set_client_count(count)
+        self.refresh_player_colors()
 
     def set_player_account_source(self, source: Callable[[], list[str | None]] | None) -> None:
         """Install what answers *which account is behind each player slot, right now*.
@@ -848,8 +894,32 @@ class CombatTab(QWidget):
         in tests and in a session with nothing running: the dialog's player pills simply
         go uncoloured. See gui/widgets/player_pills.py for why that degrades cleanly
         rather than falling back to a colour.
+
+        The tab's own player pills and deck stripes ask the same source, on a timer while
+        the tab is visible -- see ``refresh_player_colors``.
         """
         self._player_account_source = source
+        self.refresh_player_colors()
+
+    def refresh_player_colors(self) -> None:
+        """Re-ask which account is behind each slot, and recolour the tab if that changed.
+
+        Public because it is what the timer, a client-count change and the tests call.
+        Polled rather than signalled for the reason ``set_player_account_source`` gives:
+        an identity arrives after its client does and nothing announces it. The ask is a
+        dict lookup per client, and nothing repaints unless the answer moved.
+        """
+        colors = self._player_color_keys()
+        if colors == self._player_colors:
+            return
+        self._player_colors = colors
+        keys, labels = colors
+        self._decks_section.set_player_colors(keys, labels)
+        self._default_panel.set_player_colors(keys, labels)
+        for panel in self._group_panels():
+            panel.set_player_colors(keys, labels)
+        if self._pending_panel is not None:
+            self._pending_panel.set_player_colors(keys, labels)
 
     def _player_color_keys(self) -> tuple[list[int | None], list[str]]:
         """A palette slot and a display name per player slot, both possibly empty.
@@ -1167,6 +1237,9 @@ class CombatTab(QWidget):
         panel.load(assignment, self._all_dcs, self._all_pcs)
         panel.set_fight_options(self._fight_sections(exposed), list(assignment.state_ids))
         panel.set_editable(self._editable)
+        # Arrives coloured: the timer only repaints when the answer changes, so a card
+        # built between two identical answers would otherwise stay plain.
+        panel.set_player_colors(*self._player_colors)
         panel.pick_requested.connect(partial(self._on_pick_duel, panel))
         panel.promote_requested.connect(partial(self._on_promote, panel))
         panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
@@ -1477,3 +1550,19 @@ class CombatTab(QWidget):
     # No changeEvent either. Every widget this tab owns now repaints itself on a theme
     # switch -- the cards because CardFrame does, a deck card's content rows because
     # ThemedTextLabel does -- so there is nothing left here for a StyleChange to chase.
+
+    def showEvent(self, event) -> None:  # noqa: N802 - Qt override
+        """Start asking about account colours, and ask once now rather than a second late."""
+        super().showEvent(event)
+        self.refresh_player_colors()
+        self._color_timer.start()
+
+    def hideEvent(self, event) -> None:  # noqa: N802 - Qt override
+        """Stop asking while nobody can see the answer -- Edit mode, or another tab."""
+        self._color_timer.stop()
+        super().hideEvent(event)
+
+    @property
+    def is_polling_player_colors(self) -> bool:
+        """Whether the colour timer is running. Public for the tests."""
+        return self._color_timer.isActive()

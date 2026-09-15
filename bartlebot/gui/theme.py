@@ -189,6 +189,24 @@ class _Theme:
     icon_tint: str = "#404040"
 
     # ------------------------------------------------------------------
+    # Combat DSL syntax (gui/widgets/dsl_edit.py)
+    #
+    # VS Code's Light+ and Dark+ hues, so the colours mean what they mean in the
+    # editor most people already know. The light type and number hues are darkened:
+    # Light+'s own miss 4.5:1 on ``surface``, which a read-only DSL box is drawn on.
+    # ``test_dsl_syntax_colours_are_legible`` holds both themes to that.
+    # ------------------------------------------------------------------
+    syntax_keyword: str = "#0000ff"  # pass, willcast, any, select, gambit
+    syntax_type: str = "#1b6a80"  # spell types, condition attributes, hanging kinds
+    syntax_target: str = "#af00db"  # self, enemy, boss, aoe
+    syntax_number: str = "#0b6e4a"  # rounds, indices, thresholds
+    syntax_string: str = "#a31515"  # "Quoted Spell"
+    syntax_punct: str = "#6b6b6b"  # @ | & < > [ ] ?( )
+    # A spell name no card has: its underline, and the line saying why. Not ``warning``,
+    # which is a pill fill and reads at under 4.5:1 as text on ``surface``.
+    syntax_warning: str = "#8a5a00"
+
+    # ------------------------------------------------------------------
     # Game-embed client tile (helper methods below)
     # ------------------------------------------------------------------
 
@@ -229,14 +247,6 @@ class _Theme:
     def account_color(self, key: int) -> QColor:
         """Return a QColor for the numbered account palette slot (1-8)."""
         return QColor(getattr(self, f"account_{key}"))
-
-    def qcolor_client_pill_bg(self) -> QColor:
-        """Semi-transparent black for the client-tile label pill background."""
-        return QColor(0, 0, 0, 160)
-
-    def qcolor_client_pill_text(self) -> QColor:
-        """Near-opaque white for the client-tile label pill text."""
-        return QColor(255, 255, 255, 230)
 
     # ------------------------------------------------------------------
     # QFont helpers
@@ -583,6 +593,14 @@ DARK = _Theme(
     account_8="#06B6D4",
     # Icon
     icon_tint="#cccccc",
+    # Combat DSL syntax
+    syntax_keyword="#569cd6",
+    syntax_type="#4ec9b0",
+    syntax_target="#c586c0",
+    syntax_number="#b5cea8",
+    syntax_string="#ce9178",
+    syntax_punct="#9e9e9e",
+    syntax_warning="#cca700",
 )
 
 

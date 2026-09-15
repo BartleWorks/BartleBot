@@ -144,6 +144,12 @@ CLIENT_REFRESH_INTERVAL_HIDDEN = 2.0
 # not stop entirely because AppController's zone-dropdown getter reads each
 # widget's cached zone, and a frozen cache would offer zones nobody is in.
 
+PLAYER_COLOR_REFRESH_INTERVAL = 1.0
+# Seconds between the Combat tab re-asking which account is behind each player slot, while
+# the tab is on screen. An identity is learned some time after its client is hooked and
+# nothing announces it, so the tab polls; the ask is a dict lookup per client and the
+# widgets repaint only when the answer changed.
+
 CLIENT_DETECT_INTERVAL = 1.0
 # Seconds between ClientManager detection cycles: notice new game windows, rebuild the
 # slot ordering, re-read wizard names. Hook activation no longer happens inline here, so
@@ -212,8 +218,10 @@ DECK_IMPORT_TIMEOUT = 120.0
 # hovering each slot, so this is generously above the expected duration.
 
 DECK_ITEM_PAGE_SETTLE = 0.3
-# Pause after clicking Prev/NextItemSpells, so the new page is rendered before
-# its slots are clicked.
+# Pause after writing the ItemSpells page (deck_io._set_item_page), so the new
+# page is rendered before its slots are clicked. Kept from the Prev/Next clicks
+# the write replaced and confirmed live after a write; it may be longer than a
+# write needs, but it is paid once per item page.
 
 DECK_ITEM_TOGGLE_SETTLE = 0.15
 # Pause after toggling one item card slot.
@@ -224,13 +232,14 @@ DECK_FUSION_FLYOUT_SETTLE = 0.3
 # so reading immediately can return the previous spell's variants or nothing.
 
 DECK_SPELL_PAGE_SETTLE = 0.1
-# Pause after clicking PageDown in the spellbook, so the new page is rendered
-# before a card on it is clicked. Matches the cadence wizwalker's own page
-# sweep uses.
+# Pause after writing the spellbook page (deck_io._set_spell_page), so the new
+# page is rendered before a card on it is clicked. Kept from the PageDown clicks
+# the write replaced, and confirmed live: a click this long after a write lands
+# on the page written.
 
 DECK_FUSION_CLICK_SETTLE = 0.05
-# Pause between repeat clicks on one fusion variant, matching the cadence
-# wizwalker uses when adding copies of an ordinary card.
+# Pause between repeat clicks on one card -- a direct spellbook card or a fusion
+# variant -- matching the cadence wizwalker used when adding copies.
 
 DECK_CARD_CONFIRM_TIMEOUT = 2.0
 # How long to wait for clicked copies of one card to appear in CardsInDeck

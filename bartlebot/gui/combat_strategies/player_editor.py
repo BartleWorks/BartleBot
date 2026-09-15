@@ -23,26 +23,19 @@ from PyQt6.QtCore import QEvent, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
-    QPlainTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
 from bartlebot.bot.strategy_models import PlayerCombatStrategy
+from bartlebot.dsl_syntax import DSL_HELP
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.dsl_edit import DslPlainTextEdit
 from bartlebot.gui.widgets.school_combo import SchoolCombo
-from bartlebot.nodes.combat_runner import validate_dsl
+from bartlebot.nodes.combat_runner import dsl_error, dsl_warning_text, dsl_warnings, validate_dsl
 
 #: How long after the last keystroke the DSL is re-validated. Not a save delay.
 _VALIDATE_MS = 500
-
-_DSL_HELP = (
-    "{round} move @ target | move @ target | pass — rounds optional, '|' is priority order.\n"
-    'Moves: "Named Spell" or any<damage|heal|blade|trap|charm|ward|aura|...>[enchant]\n'
-    "Targets: self, enemy, boss, ally, aoe, named:<name>\n"
-    "Pick one out with ally(0) or enemy(1). ally(last) is the last player on the team, you included,\n"
-    "so every client in the group can share the line."
-)
 
 
 class PlayerStrategyEditor(QWidget):
@@ -79,11 +72,11 @@ class PlayerStrategyEditor(QWidget):
         layout.addLayout(school_row)
 
         dsl_lbl = QLabel("DSL:")
-        dsl_lbl.setToolTip(_DSL_HELP)
+        dsl_lbl.setToolTip(DSL_HELP)
         layout.addWidget(dsl_lbl)
-        self._dsl_edit = QPlainTextEdit()
+        self._dsl_edit = DslPlainTextEdit()
         self._dsl_edit.setFont(THEME.font_mono())
-        self._dsl_edit.setToolTip(_DSL_HELP)
+        self._dsl_edit.setToolTip(DSL_HELP)
         self._dsl_edit.textChanged.connect(self._on_changed)
         layout.addWidget(self._dsl_edit, 1)
 
@@ -128,16 +121,30 @@ class PlayerStrategyEditor(QWidget):
         if self._suppress or self._strategy is None:
             return
         self._strategy.school = self._school_combo.value()
-        self._strategy.dsl = self._dsl_edit.toPlainText()
+        dsl = self._dsl_edit.toPlainText()
+        if dsl != self._strategy.dsl:
+            # The underlines mark columns in the text as it was validated; after an
+            # edit they point at the wrong characters until the debounce re-checks.
+            self._dsl_edit.set_dsl_error(None)
+            self._dsl_edit.set_dsl_warnings(())
+        self._strategy.dsl = dsl
         self._validate_timer.stop()
         self._validate_timer.start()
         self.changed.emit()
 
     def _update_dsl_validation(self) -> None:
-        """Re-run ``validate_dsl`` and reflect it as a border color plus an error line."""
-        error = validate_dsl(self._dsl_edit.toPlainText())
-        self._dsl_error_lbl.setText(error or "")
-        self._dsl_error_lbl.setVisible(bool(error))
+        """Re-parse the DSL and reflect it as a border colour, a line of text and underlines.
+
+        A parse error takes the line; otherwise it lists the spell names no card has.
+        Only the error colours the border — an unknown name still runs.
+        """
+        dsl = self._dsl_edit.toPlainText()
+        error = dsl_error(dsl)
+        warnings = dsl_warnings(dsl)
+        self._dsl_error_lbl.setText(error.message if error else dsl_warning_text(warnings))
+        self._dsl_error_lbl.setVisible(bool(error or warnings))
+        self._dsl_edit.set_dsl_error(error)
+        self._dsl_edit.set_dsl_warnings(warnings)
         self._apply_style()
 
     def _apply_style(self) -> None:
@@ -147,7 +154,7 @@ class PlayerStrategyEditor(QWidget):
             f"QPlainTextEdit {{ background: {THEME.bg}; color: {THEME.text}; "
             f"border: 1px solid {THEME.border}; border-left: 3px solid {border}; }}"
         )
-        self._dsl_error_lbl.setStyleSheet(f"color: {THEME.error};")
+        self._dsl_error_lbl.setStyleSheet(f"color: {THEME.error if error else THEME.syntax_warning};")
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)

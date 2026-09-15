@@ -268,6 +268,26 @@ def test_a_stripe_that_arrives_late_still_lands(qapp, section):
     assert host
 
 
+def test_the_player_pill_wears_the_stripe_s_colour_and_keeps_its_text(qapp, section):
+    """The same pill the Combat tab's deck card for this slot wears (#40)."""
+    host, clients = section(active=1)
+    SettingsManager.instance().accounts = ACCOUNTS
+    known: dict[int, str] = {}
+    clients.set_account_source(lambda client: known.get(client.window_handle))
+    card = clients.cards[0]
+
+    assert card._pill.color_key is None, "grey until the account is known"
+
+    known[1] = "two@example.com"
+    clients.refresh_account_colors()
+
+    key = account_color_keys(ACCOUNTS)["two@example.com"]
+    assert card._pill.color_key == key == card.color_key
+    assert account_accent(key) in card._pill.styleSheet()
+    assert card.pill_text == "P1"
+    assert host
+
+
 def test_an_unhooked_card_keeps_its_stripe(qapp, section):
     """Greyed, but the stripe names an account rather than a state, so it survives."""
     host, clients = section(active=0, unhooked=1)

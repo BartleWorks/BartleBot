@@ -37,7 +37,7 @@ from bartlebot import port_map, worlds, zone_names, zone_nav
 from bartlebot.nodes import node_helpers, wizard_city
 from bartlebot.nodes.interaction import interact
 from bartlebot.nodes.teleportation import teleport_to_world_hub
-from bartlebot.nodes.timing import POLL_INTERVAL
+from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL
 from bartlebot.nodes.utility import sleep
 from bartlebot.nodes.zone_entry import enter_zone, enter_zone_via_list, enter_zone_via_object, enter_zone_via_ride
 from bartlebot.restricted_zones import check_zone
@@ -200,8 +200,25 @@ async def _teleport_cooldown(clients: list) -> float:
     return max((zone_nav.TELEPORT_COOLDOWN if seconds is None else seconds for seconds in left), default=0.0)
 
 
+class _ZoneUnreadable(Exception):
+    """A client's zone stayed unreadable past LOADING_SCREEN_TIMEOUT."""
+
+
 async def _zones(clients: list) -> list[str]:
-    return list(await asyncio.gather(*[c.zone_name() for c in clients]))
+    """Every client's zone, once every one of them can be read.
+
+    A client between zones has none -- zone_name() is None until the next one is set up -- and
+    a route planned from None means nothing, so that is waited out rather than planned from.
+    """
+    zones: list[str] = []
+
+    async def readable() -> bool:
+        zones[:] = await asyncio.gather(*[c.zone_name() for c in clients])
+        return all(zones)
+
+    if not await node_helpers.poll_until(readable, LOADING_SCREEN_TIMEOUT, POLL_INTERVAL):
+        raise _ZoneUnreadable(f"a client's zone could not be read for {LOADING_SCREEN_TIMEOUT:.0f}s: {zones}")
+    return zones
 
 
 async def navigate(
@@ -223,7 +240,11 @@ async def navigate(
     if world is None or target not in world.zones:
         machine.log(f"FAILURE: {target!r} is not on the navigation map", logging.WARNING)
         return Outcome(False, f"{target!r} is not on the navigation map")
-    return await _Trip(machine, clients, target, nav, include_unverified, avoid).run()
+    trip = _Trip(machine, clients, target, nav, include_unverified, avoid)
+    try:
+        return await trip.run()
+    except _ZoneUnreadable as error:
+        return trip.failed(str(error))
 
 
 class _Trip:

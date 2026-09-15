@@ -85,8 +85,13 @@ destroys the *top-level* widgets that did not exist when it was set up, then flu
 `DeferredDelete` queue by hand. A test does not need to call `deleteLater()` for its own
 widgets — the ones already there are harmless, not load-bearing.
 
-Two rules follow:
+Three rules follow:
 
+- **Popups are freed after their owners.** A `QCompleter`'s popup is a parentless window
+  the completer holds by raw pointer and deletes itself, so freeing the popup first makes
+  the owner free it twice: exit 127, no traceback, and only when `topLevelWidgets()`
+  happens to list the popup first. The fixture frees everything else, flushes, then frees
+  any popup still alive.
 - **Reap per test, never globally.** A blanket sweep over `topLevelWidgets()` frees
   widgets a module- or session-scoped fixture is still holding, and the next
   `processEvents()` touches the corpse: exit 127, no traceback. Being autouse and

@@ -110,6 +110,7 @@ from PyQt6.QtWidgets import (
     QFrame,
     QGraphicsDropShadowEffect,
     QHBoxLayout,
+    QMenu,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -367,6 +368,9 @@ class CardFrame(ThemedMixin, QWidget):
         # ``_hovered`` -- one flag that picks which palette apply_theme_styles uses -- and
         # it is set by CardColumn, which is the only thing that knows a drag is happening.
         self._grip: GripHandle | None = None
+        # A card's optional face button for verbs the face alone does not show -- see
+        # ``_make_kebab_button``. None on every card that has not asked for one.
+        self._kebab_btn: QToolButton | None = None
         self._dragging = False
         self._shadow: QGraphicsDropShadowEffect | None = None
         # Where the left button went down, and whether it has travelled since. A card
@@ -613,6 +617,8 @@ class CardFrame(ThemedMixin, QWidget):
         """
         for button, verb in self._action_btns:
             button.setIcon(svg_icon(verb.icon, size=14))
+        if self._kebab_btn is not None:
+            self._kebab_btn.setIcon(svg_icon("more_vert", size=14))
 
     # ------------------------------------------------------------------
     # Verbs
@@ -693,6 +699,25 @@ class CardFrame(ThemedMixin, QWidget):
                 return button
         return None
 
+    def _build_verbs_menu(self) -> QMenu | None:
+        """Every verb this card has, including the ones not on its face, as one menu.
+
+        Shared by the right-click route (:meth:`contextMenuEvent`) and the click route
+        (:meth:`_open_verbs_menu`, off the kebab button) so the two cannot list different
+        things. Returns None for a card with no verbs, which both callers take as "there
+        is nothing to show".
+        """
+        verbs = self._verbs()
+        if not verbs:
+            return None
+        menu = popup_menu(self)
+        for verb in verbs:
+            action = (
+                menu.addAction(svg_icon(verb.icon, size=14), verb.label) if verb.icon else menu.addAction(verb.label)
+            )
+            action.triggered.connect(verb.run)
+        return menu
+
     def contextMenuEvent(self, event) -> None:
         """Right-click: every verb this card has, including the ones not on its face.
 
@@ -700,23 +725,55 @@ class CardFrame(ThemedMixin, QWidget):
         costly. On the launch screen the card body starts a game client, and a trash icon
         22px from it is a mis-click that costs a stored credential and a character roster
         -- so the destructive verb is the one that takes a deliberate second gesture. It is
-        also the keyboard and discoverability answer to a pencil that only appears on
-        hover.
+        also the keyboard route to a verb that has no button at all.
 
         Offered on a card that is refusing its clicks too, for the same reason the pencil
         is: editing the thing -- lowering its resolution, dropping an account -- is exactly
         what the greyed card is telling the user to do.
         """
-        verbs = self._verbs()
-        if not verbs:
+        menu = self._build_verbs_menu()
+        if menu is None:
             return
-        menu = popup_menu(self)
-        for verb in verbs:
-            action = (
-                menu.addAction(svg_icon(verb.icon, size=14), verb.label) if verb.icon else menu.addAction(verb.label)
-            )
-            action.triggered.connect(verb.run)
         menu.exec(event.globalPos())
+
+    def _make_kebab_button(self, tooltip: str = "More actions") -> QToolButton:
+        """A face button that opens the same menu a right-click does.
+
+        Built for the deck cards in the Combat tab: right-click already reached Save,
+        Load and Clear, but nothing on the card said a menu was there at all, which is
+        the whole finding in issue #46. A dedicated button rather than folding this into
+        ``_make_verb_button`` -- that one runs a single fixed ``CardVerb.run`` on click,
+        and what this button opens depends on state that keeps changing after the button
+        is placed (a deck card's own ``_verbs`` grows a Clear entry only once a deck
+        exists), so it has to rebuild the menu at click time rather than bind one verb at
+        build time.
+
+        A caller wanting one adds it after its own face verbs, the same way it adds any
+        other one: ``header.addWidget(self._make_kebab_button(), ...)``. Not built
+        automatically for every card -- a card whose whole verb list already sits on the
+        face, like the Players tab's, would gain nothing but a fourth button repeating
+        the other three.
+        """
+        button = QToolButton(self)
+        button.setFixedSize(_FACE_BTN_SIZE, _FACE_BTN_SIZE)
+        policy = button.sizePolicy()
+        policy.setRetainSizeWhenHidden(True)
+        button.setSizePolicy(policy)
+        button.setAutoRaise(True)
+        button.setCursor(Qt.CursorShape.PointingHandCursor)
+        button.setToolTip(tooltip)
+        button.setIcon(svg_icon("more_vert", size=14))
+        button.setVisible(self.pins_chrome)
+        button.clicked.connect(lambda: self._open_verbs_menu(button))
+        self._kebab_btn = button
+        return button
+
+    def _open_verbs_menu(self, anchor: QWidget) -> None:
+        """Show the kebab button's menu, dropped from *anchor*'s own bottom-left corner."""
+        menu = self._build_verbs_menu()
+        if menu is None:
+            return
+        menu.exec(anchor.mapToGlobal(anchor.rect().bottomLeft()))
 
     # ------------------------------------------------------------------
     # Hover and activation
@@ -728,6 +785,8 @@ class CardFrame(ThemedMixin, QWidget):
             return
         for button, _verb in self._action_btns:
             button.setVisible(visible)
+        if self._kebab_btn is not None:
+            self._kebab_btn.setVisible(visible)
         if self._grip is not None:
             self._grip.setVisible(visible)
 

@@ -52,6 +52,31 @@ def test_streamer_mode_drops_the_name_and_keeps_the_label():
 # ---------------------------------------------------------------------------
 
 
+def test_an_unknown_account_gets_the_neutral_pill_and_the_accent_focus_border():
+    """No account known means no colour, never a default one (#40)."""
+    from bartlebot.gui.game_embed.client_tile import tile_focus_color, tile_pill_colors  # noqa: PLC0415
+    from bartlebot.gui.theme import THEME  # noqa: PLC0415
+
+    fill, border, text = tile_pill_colors(None)
+
+    # QColor.name() is lowercase hex; the theme spells its tokens either way.
+    assert fill.name() == border.name() == THEME.pill_neutral_bg.lower()
+    assert text.name() == THEME.pill_text.lower()
+    assert tile_focus_color(None).name() == THEME.accent.lower()
+
+
+def test_a_known_account_outlines_and_tints_the_pill_and_colours_the_focus_border():
+    from bartlebot.gui.account_accent import account_accent  # noqa: PLC0415
+    from bartlebot.gui.game_embed.client_tile import tile_focus_color, tile_pill_colors  # noqa: PLC0415
+
+    fill, border, _text = tile_pill_colors(3)
+
+    accent = account_accent(3).lower()  # QColor.name() is lowercase hex
+    assert border.name() == accent
+    assert fill.name() == accent and fill.alpha() < 255, "a tint, not a saturated fill"
+    assert tile_focus_color(3).name() == accent
+
+
 class _FakeTile:
     def __init__(self, name=None):
         self._wizard_name = name

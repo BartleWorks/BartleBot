@@ -70,12 +70,17 @@ class AssignmentLine:
     :func:`format_players`.  A :class:`PlayerCombatStrategy` summary, which has
     no player assignments of its own, uses a single line with ``players=""``
     to carry its DSL preview instead.
+
+    ``slots`` is the same players as numbers, sorted, for a surface that draws one
+    account-coloured pill per slot -- a range like ``P1–P3`` cannot wear three
+    accounts' colours, so the Combat tab needs the members rather than the phrase.
     """
 
     players: str
     label: str  # linked preset name, inline DSL preview, or "(default)"
     is_linked: bool
     note: str = ""
+    slots: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -149,6 +154,10 @@ class StrategySummary:
     lines: list[AssignmentLine] = field(default_factory=list)
     health: Health = field(default_factory=lambda: _OK)
     usage: UsageCount | None = None
+    #: A duel's combat order as slot numbers, empty for simultaneous entry or for any
+    #: other kind. The facet already says it in words; this is for a surface that draws
+    #: the order as coloured pills and has to leave that facet out when it does.
+    combat_order: tuple[int, ...] = ()
 
     def subtitle_line(self) -> str:
         """One line for a compact card: the facets, plus a bare DSL preview if
@@ -187,8 +196,12 @@ def _duel_facets(config: DuelConfig) -> list[str]:
         players = f"{config.min_players} player{'s' if config.min_players != 1 else ''}"
     else:
         players = f"{config.min_players}–{config.max_players} players"
-    order = " → ".join(f"P{p}" for p in config.combat_order) if config.combat_order else "Simultaneous"
-    return [players, order]
+    return [players, format_combat_order(config.combat_order)]
+
+
+def format_combat_order(order: list[int] | tuple[int, ...]) -> str:
+    """'P1 → P2 → P3', or 'Simultaneous' for an empty order -- the combat-order facet."""
+    return " → ".join(f"P{p}" for p in order) if order else "Simultaneous"
 
 
 def _duel_health(config: DuelConfig, pcs_by_id: dict[str, PlayerCombatStrategy]) -> Health:
@@ -225,7 +238,15 @@ def summarize_duel(config: DuelConfig, all_pcs: list[PlayerCombatStrategy], name
         else:
             dsl = _truncate(assignment.dsl, _DSL_PREVIEW_CHARS)
             label = dsl or "(default)"
-        lines.append(AssignmentLine(players=players, label=label, is_linked=assignment.is_linked, note=assignment.note))
+        lines.append(
+            AssignmentLine(
+                players=players,
+                label=label,
+                is_linked=assignment.is_linked,
+                note=assignment.note,
+                slots=tuple(sorted(assignment.players)),
+            )
+        )
     return StrategySummary(
         name=name,
         description=config.description,
@@ -233,6 +254,7 @@ def summarize_duel(config: DuelConfig, all_pcs: list[PlayerCombatStrategy], name
         schools=config.school_requirements(pcs_by_id),
         lines=lines,
         health=_duel_health(config, pcs_by_id),
+        combat_order=tuple(config.combat_order or ()),
     )
 
 

@@ -6,6 +6,7 @@ Extracted so that machine.py does not need to import from a specific node module
 import asyncio
 import logging
 from functools import lru_cache
+from typing import NamedTuple
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.nodes.timing import COMBAT_DROP_MESSAGE_POLL, COMBAT_DROP_MESSAGE_TIMEOUT
@@ -200,9 +201,30 @@ def _str_provider_class():
     return _StrCombatConfigProvider
 
 
-@lru_cache(maxsize=512)
+class DslError(NamedTuple):
+    """Why a DSL does not parse, and where.
+
+    ``line`` and ``column`` are 1-based, and 0 when the failure has no position — an
+    unexpected end of input, or an error raised while transforming a tree that parsed.
+    """
+
+    message: str
+    line: int = 0
+    column: int = 0
+
+
 def validate_dsl(dsl: str) -> str | None:
-    """Return a one-line parse error for ``dsl``, or None if it is valid.
+    """Return a one-line parse error for ``dsl``, or None if it is valid. See :func:`dsl_error`."""
+    error = dsl_error(dsl)
+    return error.message if error else None
+
+
+@lru_cache(maxsize=512)
+def dsl_error(dsl: str) -> DslError | None:
+    """Return why ``dsl`` does not parse, and where, or None if it is valid.
+
+    The position is what the DSL editor underlines; everything else wants only the
+    message, through :func:`validate_dsl`.
 
     An empty or whitespace-only DSL is reported as valid: ``resolve_dsl_for_player``
     returns None for it and ``resolve_combat`` substitutes the built-in default, so
@@ -225,8 +247,89 @@ def validate_dsl(dsl: str) -> str | None:
         _str_provider_class()(dsl)
     except Exception as exc:
         message = str(exc).strip()
-        return message.splitlines()[0] if message else exc.__class__.__name__
+        # Lark's UnexpectedInput carries both; an unexpected end of input sets them to -1.
+        line, column = getattr(exc, "line", 0), getattr(exc, "column", 0)
+        positioned = isinstance(line, int) and isinstance(column, int) and line > 0 and column > 0
+        return DslError(
+            message.splitlines()[0] if message else exc.__class__.__name__,
+            line if positioned else 0,
+            column if positioned else 0,
+        )
     return None
+
+
+class DslWarning(NamedTuple):
+    """A spell name in a DSL that parses, but that no card is named.
+
+    ``line`` and ``column`` are 1-based, as in :class:`DslError`; ``length`` is how many
+    characters of that line the name covers.
+    """
+
+    message: str
+    line: int
+    column: int
+    length: int
+
+
+#: Names ``SprintyCombat.try_get_spell`` answers itself, before it looks for a card.
+_RESERVED_SPELL_NAMES = frozenset({"pass", "none", "willcast", "discard"})
+#: Grammar nodes whose name is a card's: the move, its enchants, and ``spell(…)``'s list.
+#: Not ``target_named`` — that name is a combatant's.
+_CARD_NAME_NODES = frozenset({"spell", "enchant", "second_enchant", "target_spell"})
+
+
+@lru_cache(maxsize=512)
+def dsl_warnings(dsl: str) -> tuple[DslWarning, ...]:
+    """Every spell name in ``dsl`` that will never find a card, in the order written.
+
+    A name that matches nothing is not a parse error: the move just never casts, and the
+    fight moves on to the next one without saying why. ``spell_names.name_problem``
+    decides what counts, against the snapshot of every card name.
+
+    Empty for a DSL that does not parse — :func:`dsl_error` has the one thing to fix.
+
+    Names come from the parse tree rather than the text, because the two differ: the
+    grammar reads a number in an unquoted name a digit at a time, so ``Detonate All 200``
+    reaches the card lookup as ``Detonate All 2 0 0``. Cached for the same reason as
+    :func:`dsl_error`: this is a second parse of the same string.
+    """
+    if not dsl or not dsl.strip() or dsl_error(dsl) is not None:
+        return ()
+    from lark import Token, Tree  # noqa: PLC0415
+    from wizwalker.extensions.wizsprinter.combat_backends.combat_config_parser import (  # noqa: PLC0415
+        TreeToConfig,
+    )
+
+    from bartlebot import spell_names  # noqa: PLC0415
+
+    transformer = TreeToConfig()
+    warnings = []
+    for node in _lark_parser().parse(dsl).iter_subtrees():
+        if node.data not in _CARD_NAME_NODES:
+            continue
+        for child in node.children:
+            if not isinstance(child, Tree) or child.data not in ("words", "string"):
+                continue
+            tokens = list(child.scan_values(lambda value: isinstance(value, Token)))
+            if not tokens:
+                continue
+            literal = child.data == "string"
+            name = transformer.transform(child)
+            name = name[1:-1] if literal else name
+            if name in _RESERVED_SPELL_NAMES:
+                continue
+            problem = spell_names.name_problem(name, literal=literal)
+            if problem is None:
+                continue
+            first, last = tokens[0], tokens[-1]
+            end = last.end_column if last.line == first.line else first.end_column
+            warnings.append(DslWarning(problem, first.line, first.column, end - first.column))
+    return tuple(sorted(warnings, key=lambda warning: (warning.line, warning.column)))
+
+
+def dsl_warning_text(warnings: tuple[DslWarning, ...]) -> str:
+    """The warnings as lines of text for a label, each message once."""
+    return "\n".join(dict.fromkeys(warning.message for warning in warnings))
 
 
 async def _run_combat(client, combat_dsl: str) -> None:

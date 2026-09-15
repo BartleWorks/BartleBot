@@ -177,6 +177,31 @@ async def test_already_there_does_nothing(monkeypatch):
     assert game.calls == []
 
 
+async def test_a_zone_not_readable_yet_is_waited_for_rather_than_planned_from(monkeypatch):
+    game = _Game(monkeypatch, [_HUB])
+    monkeypatch.setattr(zone_navigation, "POLL_INTERVAL", 0.001)
+    client = game.clients[0]
+    reads = iter([None, None, None])
+    client.zone_name = AsyncMock(side_effect=lambda: next(reads, client.where))
+
+    outcome = await _go(game, _nav(_walk(_HUB, _S1)), _S1)
+
+    assert outcome.success
+    assert game.names == ["walk"]
+
+
+async def test_a_zone_that_never_becomes_readable_fails_without_moving(monkeypatch):
+    game = _Game(monkeypatch, [None])
+    monkeypatch.setattr(zone_navigation, "POLL_INTERVAL", 0.001)
+    monkeypatch.setattr(zone_navigation, "LOADING_SCREEN_TIMEOUT", 0.05)
+
+    outcome = await _go(game, _nav(_walk(_HUB, _S1)), _S1)
+
+    assert not outcome.success
+    assert "could not be read" in outcome.reason
+    assert game.calls == []
+
+
 async def test_walks_each_step_with_the_links_coordinates(monkeypatch):
     game = _Game(monkeypatch, [_HUB])
 
