@@ -205,11 +205,44 @@ def test_the_common_mistakes_are_warned_about_with_what_to_write(dsl, advice):
 
 
 def test_a_warning_covers_the_name_where_it_is_written():
-    # One word on the second line: the grammar splits a multi-word name there into lines of
-    # its own, which is a parser bug of its own and not what this is testing.
-    dsl = "Tempest @ aoe\n  Zzyzx[Epic] @ enemy | pass"
+    dsl = "Tempest @ aoe\n  Strom Lord[Epic] @ enemy | pass"
     (warning,) = dsl_warnings(dsl)
-    assert (warning.line, warning.column, warning.length) == (2, 3, 5)
+    assert (warning.line, warning.column, warning.length) == (2, 3, 10)
+
+
+# ---------------------------------------------------------------------------
+# Lines are rounds
+# ---------------------------------------------------------------------------
+
+
+def _rounds(dsl: str) -> list[list[str]]:
+    config = _str_provider_class()(dsl).config
+    lines = [*config.specific_rounds.values(), *config.infinite_rounds]  # {n} lines, then the rest
+    return [[getattr(p.move.card, "name", p.move.card) for p in line.priorities] for line in lines]
+
+
+@pytest.mark.parametrize(
+    "dsl",
+    [
+        "pass\nStorm Lord @ enemy",
+        "{1} pass\n{2} Storm Lord @ enemy",
+        "  pass\n  Storm Lord @ enemy",
+        "pass\n\n\nStorm Lord @ enemy\n",
+    ],
+)
+def test_a_multi_word_spell_on_a_later_line_stays_one_move(dsl):
+    """The grammar once let a line end anywhere, and past the first line it ended one
+    between the words of a spell name: ``Storm Lord`` ran as a round casting Storm and
+    another casting Lord, shifting every round after it."""
+    names = [name for round_ in _rounds(dsl) for name in round_]
+    assert "Storm Lord" in names
+    assert "Storm" not in names and "Lord" not in names
+
+
+def test_moves_on_one_line_need_a_pipe_between_them():
+    # Once two rounds from one line, silently; a newline or a | says which was meant.
+    assert validate_dsl("Tempest @ aoe Storm Lord @ enemy") is not None
+    assert validate_dsl("Tempest @ aoe | Storm Lord @ enemy") is None
 
 
 def test_enchants_and_discard_lists_are_checked_but_combatants_and_keywords_are_not():
