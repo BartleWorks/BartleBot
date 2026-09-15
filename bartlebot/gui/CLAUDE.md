@@ -233,6 +233,40 @@ the launch cards' hover-revealed buttons use — but it only applies to a widget
 is still asked about.)
 
 
+## Card art is optional, and missing is the ordinary case
+
+Spell art is the game's own and is never in this repo: the user extracts it with
+`tools/extract_card_art.py`, and `bartlebot/card_art.py` is the only thing that knows
+where it lands. **Every lookup can return `None`** — most installs never run the
+extractor, a few templates name a texture the game's own files do not contain, and the
+names snapshot can be older than the game. So a surface showing art needs a form that
+works without it, and must never log the absence as an error.
+
+`_DeckCard` is the worked example: the strip is hidden outright when nothing resolves,
+the summary line carries the counts either way, and a single card with no art is
+skipped rather than given a placeholder — a placeholder per missing card turns an
+install with no art at all into a grid of grey squares.
+
+Look art up by the **template name** (`deck_io`'s own key), never the display name: one
+display name covers many templates, and a tiered variant draws its base spell's
+texture, so two identical-looking tiles can be different cards. That is what the tile's
+tooltip names the template for.
+
+## A widget that wraps has to say so in its size policy
+
+`FlowLayout` wraps correctly and the parent still reserves **one row**, because a
+`QBoxLayout` asks the *size policy* whether an item's height depends on its width, and
+a widget that has not said so answers no. The deck card's art strip laid out fourteen
+tiles, drew seven and clipped the rest, in a card exactly as tall as a five-tile one —
+with the layout, the size hints and the geometry all internally consistent about the
+wrong answer, which is why it reads as a painting bug rather than a layout one.
+
+Three things together, or none of them work: a `QSizePolicy` with
+`setHeightForWidth(True)`, a `heightForWidth` that delegates to the layout, and a
+`sizeHint` that answers for the width the widget *has* — `FlowLayout.sizeHint` is one
+row of everything, which is what it would like rather than what it needs.
+`test_the_strip_reports_a_taller_height_when_it_has_to_wrap` is the guard.
+
 ## The first offscreen render costs 150-200ms
 
 A widget with a `QGraphicsEffect` on it, and a `QWidget.grab()` or `render()` for a

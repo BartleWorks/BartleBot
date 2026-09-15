@@ -84,6 +84,7 @@ The snapshots and their tools:
 | `data/spell_names.json` | `dump_spell_names.py` | a spell is added or renamed |
 | `data/realm_names.json` | `dump_realm_names.py` | a realm is added, retired or renamed; also carries the localized Yes/No the Remember Realm option shows |
 | `data/zone_names.json` | `dump_zone_names.py` | a zone is added or renamed in any locale |
+| `data/spell_schools.json` | `dump_spell_schools.py` | a spell is added, or its school changes |
 
 `WorldNames.lang` is worth knowing about on its own, because its key **is** the world
 segment `zone_name()` returns — `WizardCity`, `DragonSpire`, `MooShu` — and its value is
@@ -97,6 +98,23 @@ WorldNames entries and both have GameData wads; nothing separates them. So
 `worlds.SPIRAL_DOOR_WORLDS` is curated by hand, every exclusion is named with its reason,
 and `test_worlds.py` checks each entry against the snapshot. Guessing a rule here got
 Darkmoor wrong once already.
+
+### Art is extracted per machine, and is never a snapshot
+
+Everything above ends as a checked-in file. **Art cannot**: the repo goes public at
+1.0.0 and a committed game texture is the same exposure a committed wizard name is. So
+`tools/extract_card_art.py` writes to `%APPDATA%/Bartleby/BartleBot/art` instead — the
+user's own machine, which the repo cannot reach even by accident — and the app treats
+its absence as the ordinary case rather than as a missing dependency.
+
+It reads each spell's `m_imageName` and pulls that texture from `GUI/SummonedImages`
+(nearly all in `_Shared-WorldData.wad`, a dozen in `Root.wad`), converting DXT3/DXT5 to
+PNG because Qt's build here has no `dds` plugin. One PNG per *image*, not per template:
+18,006 templates share 1,308 images. `Pillow` is a dev dependency for exactly this and
+is not imported at runtime. `bartlebot/card_art.py` is the read side.
+
+Follow the same split for any new asset work: a *name* or an *id* can be snapshotted
+into `bartlebot/data/`, a *texture, model or sound* goes to the machine-local cache.
 
 ### Zone connectivity: `tools/zone_graph/`
 
@@ -148,6 +166,14 @@ obj.get("m_displayName")  # -> b"Spells_00003940", by name, not position
 above — so reach for it whenever a new dump tool needs a specific field off a
 `BINd` object rather than an ordered `<Thing>.xml` / `.lang` pair; save the
 marker-scanning approach for cases `katsuba` genuinely can't cover.
+
+**A spell's WAD path stem is its template name, but a template name is not unique.**
+41 of them exist twice — once under `Spells/CastleMagic/` and once as the real spell,
+so `Banshee` is both `CastleMagic` and `Death`. Both files name the same art, so it is
+one card filed twice rather than two cards. A tool keyed by stem therefore has a
+collision rule whether it writes one down or not, and "last one the archive handed
+over" is not a rule. `dump_spell_schools.py` keeps whichever copy claims a real school,
+because a card in a combat deck is never the castle-magic copy.
 
 ## What neither source answers: window layout
 
