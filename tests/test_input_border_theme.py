@@ -149,14 +149,23 @@ def test_a_text_field_and_a_dropdown_draw_the_same_border(themed_app):
 
 
 def test_a_focused_field_is_still_marked_out(themed_app):
-    """The frame is ours now, so Fusion's focus outline is ours to redraw."""
+    """The frame is ours now, so Fusion's focus outline is ours to redraw.
+
+    ``show()`` only asks Windows to activate the host, and under ``-n auto`` the answer
+    can land after the grab — so ``:focus`` never matched and the frame was the plain
+    border.  ``setActiveWindow`` hands the activation over synchronously, and the focus
+    is asserted so a miss fails as that rather than as a colour.
+    """
     host = QWidget()
     layout = QVBoxLayout(host)
     field = QLineEdit()
     layout.addWidget(field)
     host.show()
+    QApplication.processEvents()
+    QApplication.setActiveWindow(host)
     field.setFocus()
     QApplication.processEvents()
+    assert field.hasFocus()
 
     image = field.grab().toImage().convertToFormat(QImage.Format.Format_RGB32)
     assert _left_edge(image) == themed_app.accent

@@ -24,9 +24,12 @@ from collections import Counter
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
+import pytest
+from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
+
 import bartlebot.nodes.zone_entry.enter_zone as gtz
 from bartlebot.bot.machine import BotMachine
-from bartlebot.bot.schema import BotConfig, BotOptionModel, FlagCondition, StateModel, TransitionModel
+from bartlebot.bot.schema import BotConfig, BotOptionModel, FlagCondition, FlagGroup, StateModel, TransitionModel
 from bartlebot.bot_options import (
     orphaned_flag_options,
     required_option_specs,
@@ -324,6 +327,81 @@ async def test_compound_flag_AND_one_false_falls_through():
     assert ("state_a", "SUCCESS", "state_b") not in seen
 
 
+# Grouped flags are the two-level form the edge editor writes: each group combines its
+# own flags with its op, and the groups are combined with flag_groups_op. They compile to
+# a different registry shape from the flat form above, evaluated by a different branch.
+
+
+def _group(op: str, *options: str) -> FlagGroup:
+    """A FlagGroup over these option names; a leading '!' negates one."""
+    return FlagGroup(op=op, flags=[FlagCondition(option=o.lstrip("!"), negate=o.startswith("!")) for o in options])
+
+
+async def _run_grouped_flag_bot(values: dict[str, bool], groups: list[FlagGroup], groups_op: str) -> list[tuple]:
+    """Run the two-state flag bot with a grouped guard on state_a → state_b; return the transitions taken."""
+    tick = 0
+
+    async def _mock_node(machine, clients, params):
+        nonlocal tick
+        tick += 1
+        if tick >= 2:
+            machine.stop()
+        return "SUCCESS"
+
+    config = BotConfig(
+        id="test-bot",
+        name="flag-group-test",
+        initial="state_a",
+        recovery_state="state_a",
+        options=[BotOptionModel(name=name, type="bool", default=value) for name, value in values.items()],
+        states=[StateModel(id="state_a", node_type="mock"), StateModel(id="state_b", node_type="mock")],
+        transitions=[
+            TransitionModel(
+                trigger="advance",
+                source="state_a",
+                dest="state_b",
+                when="SUCCESS",
+                flag_groups=groups,
+                flag_groups_op=groups_op,
+            ),
+            TransitionModel(trigger="advance", source="state_a", dest="state_a"),
+        ],
+    )
+    seen: list[tuple] = []
+    machine = BotMachine(
+        clients=[],
+        config=config.to_machine_config(),
+        node_registry={"mock": _mock_node},
+        bot_config=config,
+        on_transition=lambda prev, result, nxt: seen.append((prev, result, nxt)),
+    )
+    await machine.run()
+    return seen
+
+
+_A_AND_B_OR_C = [_group("AND", "a", "b"), _group("AND", "c")]
+_A_OR_B_AND_C = [_group("OR", "a", "b"), _group("AND", "c")]
+_A_AND_NOT_B = [_group("AND", "a", "!b")]
+
+
+@pytest.mark.parametrize(
+    ("values", "groups", "groups_op", "fires"),
+    [
+        pytest.param({"a": True, "b": False, "c": True}, _A_AND_B_OR_C, "OR", True, id="(a&b)|c-second-group"),
+        pytest.param({"a": True, "b": True, "c": False}, _A_AND_B_OR_C, "OR", True, id="(a&b)|c-first-group"),
+        pytest.param({"a": True, "b": False, "c": False}, _A_AND_B_OR_C, "OR", False, id="(a&b)|c-neither"),
+        pytest.param({"a": False, "b": True, "c": True}, _A_OR_B_AND_C, "AND", True, id="(a|b)&c-both"),
+        pytest.param({"a": False, "b": True, "c": False}, _A_OR_B_AND_C, "AND", False, id="(a|b)&c-one"),
+        pytest.param({"a": True, "b": False}, _A_AND_NOT_B, "OR", True, id="a&!b-b-false"),
+        pytest.param({"a": True, "b": True}, _A_AND_NOT_B, "OR", False, id="a&!b-b-true"),
+    ],
+)
+async def test_grouped_flags_decide_the_guarded_transition(values, groups, groups_op, fires):
+    seen = await _run_grouped_flag_bot(values, groups, groups_op)
+
+    assert (("state_a", "SUCCESS", "state_b") in seen) is fires
+
+
 # ---------------------------------------------------------------------------
 # Part 4: Real node execution through BotMachine
 # ---------------------------------------------------------------------------
@@ -564,20 +642,29 @@ async def test_stop_while_machine_is_paused_with_real_config():
     assert machine.is_stopped
 
 
-async def test_stop_after_client_error_induced_pause():
-    """stop() exits cleanly when the machine has self-paused after a ClientClosedError.
+@pytest.mark.parametrize(
+    "error",
+    [ClientClosedError(), MemoryReadError(299), ExceptionalTimeout("memory poll timed out")],
+    ids=["client-closed", "memory-read", "exceptional-timeout"],
+)
+async def test_a_dead_client_pauses_the_run_instead_of_failing_the_node(error):
+    """A node that hits a dead client pauses the FSM for recovery rather than returning FAILURE.
 
-    When a node raises ClientClosedError the FSM catches it, calls pause(), and loops
-    back to block on _resume_event.wait() (machine.py lines 252-270). stop() must
-    unblock that wait and exit without resuming execution or advancing state.
+    Treated as a FAILURE, the retry and no-match counters would run out before the client
+    loop noticed the removal. So the node runs once, the machine parks with no transition
+    fired, and stop() still unblocks that parked wait.
+
+    ClientClosedError takes no arguments. This test used to construct it with a message,
+    which raised TypeError instead -- so it passed through the generic FAILURE branch and
+    never reached the one it was named for.
     """
-    from wizwalker.errors import ClientClosedError
-
-    execution_started = asyncio.Event()
+    calls = 0
+    transitions_seen: list[tuple] = []
 
     async def error_node(machine, clients, params):
-        execution_started.set()
-        raise ClientClosedError("simulated client death")
+        nonlocal calls
+        calls += 1
+        raise error
 
     config = BotConfig(
         id="test-bot",
@@ -599,15 +686,16 @@ async def test_stop_after_client_error_induced_pause():
         config=mc,
         node_registry={"error_node": error_node},
         bot_config=config,
+        on_transition=lambda prev, result, nxt: transitions_seen.append((prev, result, nxt)),
     )
 
     task = asyncio.create_task(machine.run())
-    await execution_started.wait()
-    # Yield control so the exception handler can call pause() and re-enter the while loop.
-    await asyncio.sleep(0.05)
+    assert await machine.wait_until_parked(1.0), "the machine should pause itself, not retry the node"
     machine.stop()
     await asyncio.wait_for(task, timeout=1.0)
 
+    assert calls == 1
+    assert transitions_seen == []
     assert machine.is_stopped
     assert machine.state == "state_a"
 

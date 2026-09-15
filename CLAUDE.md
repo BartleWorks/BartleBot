@@ -13,7 +13,8 @@ uv run python bartlebot.py
 ```bash
 uv sync                 # all deps including dev
 uv run pytest           # pytest-asyncio, asyncio_mode = "auto"
-uv run pytest -n auto   # same suite in parallel; what CI runs
+uv run pytest -n auto   # same suite in parallel
+uv run pytest -n auto --cov   # plus a coverage report; what CI runs (reported, not gated)
 uv run ruff check       # lint
 uv run ruff format      # auto-format
 ```

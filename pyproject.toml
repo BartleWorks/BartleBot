@@ -29,6 +29,7 @@ dev = [
     # Supplies the session-scoped `qapp` fixture the GUI tests share.
     "pytest-qt>=4.5.0",
     "katsuba>=0.4.0",
+    "pytest-cov>=6.0",
 ]
 
 # Ours, not upstream: these carry fixes the original projects do not have,
@@ -43,6 +44,13 @@ wizsprinter = { git = "https://github.com/The-World-Tree/wizsprinter.git", rev =
 asyncio_mode = "auto"
 # Stated rather than sniffed, so pytest-qt cannot pick a different binding than the app.
 qt_api = "pyqt6"
+
+[tool.coverage.run]
+source = ["bartlebot"]
+branch = true
+
+[tool.coverage.report]
+skip_empty = true
 
 [tool.ruff]
 # ruff 0.16 formats fenced code blocks inside Markdown. Our .md files use

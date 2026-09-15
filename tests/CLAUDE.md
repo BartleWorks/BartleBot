@@ -85,7 +85,7 @@ destroys the *top-level* widgets that did not exist when it was set up, then flu
 `DeferredDelete` queue by hand. A test does not need to call `deleteLater()` for its own
 widgets — the ones already there are harmless, not load-bearing.
 
-Three rules follow:
+Four rules follow:
 
 - **Popups are freed after their owners.** A `QCompleter`'s popup is a parentless window
   the completer holds by raw pointer and deletes itself, so freeing the popup first makes
@@ -97,6 +97,13 @@ Three rules follow:
   `processEvents()` touches the corpse: exit 127, no traceback. Being autouse and
   function-scoped is what makes the fixture safe — anything a wider-scoped fixture built
   already existed when it was set up, so it survives.
+- **A widget dropped at the end of a test is garbage before it is reaped.** pytest-qt pumps
+  events after the test returns and before fixture teardown, and a dialog held only by a
+  local is a reference cycle the collector can free *during* a paint that pump delivers —
+  taking the widget being painted with it. `pytest_runtest_call` in `conftest.py` pins the
+  test's top-level widgets across that gap. The symptom was an access violation in
+  `_RowWidget._paint_indicator` whose appearance tracked the allocation count, not the
+  test order (#80); `gc.disable()` making it vanish is the tell for this class.
 - **A widget a test stashes somewhere longer-lived than the test will be freed under it.**
   If something genuinely has to outlive a test, it belongs to a module- or session-scoped
   fixture, which is exactly the boundary the reaping respects.

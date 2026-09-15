@@ -18,7 +18,9 @@ import pytest
 import bartlebot.bot.client_health_monitor as health_module
 from bartlebot import restricted_zones
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
+from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig
+from tests.conftest import FakeClient
 
 # ---------------------------------------------------------------------------
 # Rule matching
@@ -425,3 +427,63 @@ async def test_watcher_callback_exception_does_not_escape(fast, caplog):
     with caplog.at_level(logging.ERROR):
         await _run_watcher(monitor)
     assert "on_restricted_zone callback raised" in caplog.text
+
+
+# ---------------------------------------------------------------------------
+# The machine's side: a hit stops the run
+#
+# The watcher only reports. Stopping is BotMachine's, so the FSM halts with no GUI
+# attached -- and before the notification, which tears the hooks out from under a bot
+# that must not still be issuing node actions. These run the real loop end to end.
+# ---------------------------------------------------------------------------
+
+_ARENA = "WizardCity/MB_Arena"
+
+_FARM_CONFIG = {
+    "initial": "farm",
+    "states": [{"id": "farm", "node_type": "farm", "params": {}}],
+    "transitions": [{"trigger": "advance", "source": "farm", "dest": "farm"}],
+}
+
+
+async def _farm_until_stopped(machine, _clients, _params):
+    while not machine.is_stopped:
+        await asyncio.sleep(0.001)
+    return "SUCCESS"
+
+
+def _farming_machine(on_restricted_zone) -> BotMachine:
+    client = FakeClient()
+    client.zone_name.return_value = _ARENA
+    return BotMachine(
+        clients=[client],
+        config=_FARM_CONFIG,
+        node_registry={"farm": _farm_until_stopped},
+        on_restricted_zone=on_restricted_zone,
+        stop_grace_period=0.1,
+    )
+
+
+@pytest.mark.asyncio
+async def test_a_run_in_a_restricted_zone_is_stopped_before_anyone_is_told(fast):
+    notified: list[tuple[str, bool]] = []
+    machine = _farming_machine(lambda text: notified.append((text, machine.is_stopped)))
+
+    await asyncio.wait_for(machine.run(), timeout=2.0)
+
+    assert machine.is_stopped
+    assert notified == [(restricted_zones.check_zone(_ARENA).describe(), True)]
+
+
+@pytest.mark.asyncio
+async def test_a_failing_notification_does_not_keep_the_run_going(fast, caplog):
+    machine = _farming_machine(MagicMock(side_effect=RuntimeError("gui blew up")))
+
+    with caplog.at_level(logging.ERROR, logger="bartlebot.bot.machine"):
+        await asyncio.wait_for(machine.run(), timeout=2.0)
+
+    assert machine.is_stopped
+    assert any(
+        r.name == "bartlebot.bot.machine" and "on_restricted_zone callback raised" in r.getMessage()
+        for r in caplog.records
+    )
