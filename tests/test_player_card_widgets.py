@@ -18,6 +18,9 @@ mouse events on the grip, against real geometry, with the settle waited out.
 
 from __future__ import annotations
 
+import asyncio
+from unittest.mock import AsyncMock
+
 import pytest
 from PyQt6.QtCore import QEvent, QPoint, Qt
 from PyQt6.QtGui import QMouseEvent
@@ -496,6 +499,59 @@ def test_a_run_locks_the_drag_grip(qapp, section):
     assert "bot is running" not in card.grip.toolTip()
     _drag(qapp, clients.column.cards[0], _row_height(clients.column))
     assert seen == [[1, 0]]
+    assert host
+
+
+def test_a_run_locks_both_freecam_buttons(qapp, section):
+    """Detaching the camera or teleporting moves a client the FSM is driving."""
+    host, clients = section(active=1)
+    card = clients.cards[0]
+    toggle, tp = card.freecam_buttons
+
+    clients.set_bot_running(True)
+    assert not toggle.isEnabled()
+    assert not tp.isEnabled()
+
+    card._set_freecam(True)
+    assert not tp.isEnabled(), "entering freecam must not re-enable TP during a run"
+
+    clients.set_bot_running(False)
+    assert toggle.isEnabled()
+    assert tp.isEnabled(), "TP comes back with the camera still detached"
+
+    card._set_freecam(False)
+    assert toggle.isEnabled()
+    assert not tp.isEnabled()
+    assert host
+
+
+def test_exit_freecam_brings_players_back_without_teleporting(qapp, section):
+    """Run start: the camera returns to the player, and the player does not move."""
+    host, clients = section(active=2)
+    in_cam, normal = clients.column.cards
+    for card in (in_cam, normal):
+        card.client.camera_elastic = AsyncMock()
+        card.client.teleport = AsyncMock()
+    in_cam._set_freecam(True)
+
+    assert asyncio.run(clients.exit_freecam()) == 1
+
+    assert not in_cam.in_freecam
+    in_cam.client.camera_elastic.assert_awaited_once()
+    in_cam.client.teleport.assert_not_awaited()
+    normal.client.camera_elastic.assert_not_awaited()
+    assert host
+
+
+def test_a_client_that_cannot_be_reached_stays_in_freecam(qapp, section):
+    """Nothing says the camera came back, so the card must not claim it did."""
+    host, clients = section(active=1)
+    card = clients.cards[0]
+    card.client.camera_elastic = AsyncMock(side_effect=RuntimeError("disconnected"))
+    card._set_freecam(True)
+
+    assert asyncio.run(clients.exit_freecam()) == 0
+    assert card.in_freecam
     assert host
 
 
