@@ -507,6 +507,93 @@ async def test_loading_screen_watcher_resets_when_loading_clears():
 
 
 # ---------------------------------------------------------------------------
+# Client status watcher
+# ---------------------------------------------------------------------------
+
+
+def _status_monitor(client, paused: list, on_disconnected) -> ClientHealthMonitor:
+    return ClientHealthMonitor(
+        clients_ref=lambda: [client],
+        stop_flag=asyncio.Event(),
+        on_pause=lambda: paused.append(True),
+        on_client_disconnected=on_disconnected,
+    )
+
+
+async def _run_status_watcher(monitor: ClientHealthMonitor, duration: float = 0.05) -> None:
+    with patch.object(health_module, "_CLIENT_STATUS_CHECK_INTERVAL", 0.0):
+        task = asyncio.create_task(monitor._client_status_watcher())
+        await asyncio.sleep(duration)
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+
+async def test_client_status_watcher_reports_a_client_that_keeps_failing_once():
+    """A client whose zone_name() keeps failing is reported, then left to the recovery."""
+    client = AsyncMock()
+    client.window_handle = 4242
+    client.zone_name.side_effect = RuntimeError("process gone")
+    paused: list[bool] = []
+    disconnected: list[int] = []
+
+    monitor = _status_monitor(client, paused, disconnected.append)
+    await _run_status_watcher(monitor)
+
+    assert disconnected == [4242]
+    assert paused == [True]
+    assert monitor.is_flagged(4242)
+    # Flagged clients are skipped, so the check stops at the threshold instead of re-firing every tick.
+    assert client.zone_name.await_count == health_module._CLIENT_STATUS_CHECK_FAIL_THRESHOLD
+
+
+async def test_client_status_watcher_needs_the_failures_to_be_consecutive():
+    """A slow client that still answers now and then is not dead."""
+    threshold = health_module._CLIENT_STATUS_CHECK_FAIL_THRESHOLD
+    calls = 0
+
+    async def flaky():
+        nonlocal calls
+        calls += 1
+        if calls % threshold == 0:
+            return "WizardCity/WC_Hub"
+        raise RuntimeError("slow read")
+
+    client = AsyncMock()
+    client.window_handle = 4343
+    client.zone_name.side_effect = flaky
+    paused: list[bool] = []
+    disconnected: list[int] = []
+
+    monitor = _status_monitor(client, paused, disconnected.append)
+    await _run_status_watcher(monitor)
+
+    assert calls > threshold, "enough checks must run for a count that never reset to have tripped"
+    assert disconnected == []
+    assert paused == []
+
+
+async def test_client_status_watcher_survives_a_failing_disconnect_callback(caplog):
+    client = AsyncMock()
+    client.window_handle = 4444
+    client.zone_name.side_effect = RuntimeError("process gone")
+    paused: list[bool] = []
+
+    def explode(_hwnd):
+        raise RuntimeError("gui blew up")
+
+    monitor = _status_monitor(client, paused, explode)
+    with caplog.at_level(logging.ERROR, logger=health_module.__name__):
+        await _run_status_watcher(monitor)
+
+    assert paused == [True]
+    assert monitor.is_flagged(4444)
+    assert "on_client_disconnected callback raised" in caplog.text
+
+
+# ---------------------------------------------------------------------------
 # Silent fall-through / no-match detection
 # ---------------------------------------------------------------------------
 

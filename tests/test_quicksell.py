@@ -275,6 +275,91 @@ async def test_returns_failure_when_quicksell_ui_never_opens():
     assert result == "FAILURE"
 
 
+# ---------------------------------------------------------------------------
+# The sale itself
+#
+# The tests above either find nothing full or stop at a grayed Sell button. These drive
+# the UI the rest of the way, against a screen whose clicks change what is showing, so
+# the real poll_until waits run rather than a patched answer that ignores the order.
+# ---------------------------------------------------------------------------
+
+
+class _SellScreen:
+    """The quicksell window from the Sell button onwards, as the node can see it."""
+
+    def __init__(self, *, confirm_appears: bool = True, post_sell_dialogs: int = 0):
+        self.confirm_appears = confirm_appears
+        self.post_sell_dialogs = post_sell_dialogs
+        self.dialogs_showing = 0
+        self.clicks: list[list[str]] = []
+
+    async def _is_visible(self, _client, path):
+        if path == qs.MESSAGE_BOX_CENTER:
+            return self.dialogs_showing > 0
+        if path == qs.QUICKSELL_CONFIRM_SELL_PATH:
+            return self.confirm_appears and qs.QUICKSELL_SELL_BUTTON_PATH in self.clicks
+        return True
+
+    async def _is_enabled(self, _client, path):
+        # One page of items, and something on it left to sell.
+        return path == qs.QUICKSELL_SELL_BUTTON_PATH
+
+    async def _click(self, _client, path):
+        self.clicks.append(path)
+        if path == qs.QUICKSELL_CONFIRM_SELL_PATH:
+            self.dialogs_showing = self.post_sell_dialogs
+        elif path == qs.MESSAGE_BOX_CENTER and self.dialogs_showing:
+            self.dialogs_showing -= 1
+        return True
+
+    async def sell(self, machine) -> str:
+        with (
+            patch.object(node_helpers, "is_visible_by_path", new=AsyncMock(side_effect=self._is_visible)),
+            patch.object(node_helpers, "is_enabled_by_path", new=AsyncMock(side_effect=self._is_enabled)),
+            patch.object(node_helpers, "click_by_path", new=AsyncMock(side_effect=self._click)),
+            patch.object(node_helpers, "get_text_by_path", new=AsyncMock(return_value="")),
+            patch.object(qs, "_is_jewel_backpack_full", new=AsyncMock(return_value=False)),
+            patch.object(qs, "POLL_INTERVAL", 0),
+        ):
+            return await qs.run(machine, [_full_backpack()], {})
+
+    def clicks_after(self, path) -> list[list[str]]:
+        return self.clicks[self.clicks.index(path) + 1 :]
+
+
+async def test_a_full_backpack_is_sold_and_the_backpack_closed():
+    screen = _SellScreen()
+
+    result = await screen.sell(_machine())
+
+    assert result == "SUCCESS"
+    assert screen.clicks_after(qs.QUICKSELL_SELL_BUTTON_PATH)[0] == qs.QUICKSELL_CONFIRM_SELL_PATH
+    assert screen.clicks_after(qs.QUICKSELL_CONFIRM_SELL_PATH) == [qs.BACKPACK_CLOSE_BUTTON_PATH]
+
+
+async def test_every_post_sell_dialog_is_confirmed_before_the_backpack_closes():
+    """Answering No to any of them cancels the whole sale, so each one gets the centre button."""
+    screen = _SellScreen(post_sell_dialogs=2)
+
+    result = await screen.sell(_machine())
+
+    assert result == "SUCCESS"
+    assert screen.clicks_after(qs.QUICKSELL_CONFIRM_SELL_PATH) == [
+        qs.MESSAGE_BOX_CENTER,
+        qs.MESSAGE_BOX_CENTER,
+        qs.BACKPACK_CLOSE_BUTTON_PATH,
+    ]
+
+
+async def test_a_sale_the_game_never_asks_to_confirm_fails():
+    screen = _SellScreen(confirm_appears=False)
+
+    result = await screen.sell(_machine())
+
+    assert result == "FAILURE"
+    assert screen.clicks[-1] == qs.QUICKSELL_SELL_BUTTON_PATH
+
+
 async def test_handles_multiple_clients():
     """Two clients both have full main backpacks → both are quicksold, SUCCESS."""
     client1 = FakeClient()
