@@ -145,7 +145,9 @@
     "Gear",
     "Spellements",
     "Pets",
-    "Dungeon"
+    "Boss",
+    "Challenge Mode",
+    "Team-Up"
   ],
   "options": [
     {
@@ -222,7 +224,8 @@
           "y": -5557.71,
           "z": -4823.63
         },
-        "offers_challenge_mode": true
+        "offers_challenge_mode": true,
+        "offers_team_up": true
       }
     },
     {

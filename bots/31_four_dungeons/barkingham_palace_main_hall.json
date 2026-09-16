@@ -168,7 +168,9 @@
   "tags": [
     "Gear",
     "Pets",
-    "Dungeon"
+    "Dungeon",
+    "Challenge Mode",
+    "Team-Up"
   ],
   "options": [
     {
@@ -304,7 +306,9 @@
           "x": -16.8,
           "y": -7648.48,
           "z": -4453.28
-        }
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": true
       }
     },
     {

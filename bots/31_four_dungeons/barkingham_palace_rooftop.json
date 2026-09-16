@@ -681,7 +681,8 @@
   "tags": [
     "Gear",
     "Pets",
-    "Dungeon"
+    "Dungeon",
+    "Challenge Mode"
   ],
   "options": [],
   "states": [
@@ -740,7 +741,9 @@
           "x": -2332.8,
           "y": -6534.38,
           "z": -4823.63
-        }
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": false
       }
     },
     {
