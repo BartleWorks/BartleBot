@@ -15,10 +15,12 @@ from bartlebot.gui.widgets.picker_popup import (
     _BOX,
     _PAD_X,
     POPUP_MIN_HEIGHT,
+    SECTION_ICON_PX,
     PickerButton,
     PickerPopup,
     PickerRow,
     _RowWidget,
+    _SectionHeader,
     filter_sections,
     popup_height,
     popup_position,
@@ -511,6 +513,45 @@ def test_the_cursor_drops_when_filtering_hides_its_row(qapp):
     assert popup._cursor_key is None
     _key(popup, Qt.Key.Key_Down)
     assert popup._cursor_key == "kale"
+
+
+# ---------------------------------------------------------------------------
+# Section icons
+# ---------------------------------------------------------------------------
+
+
+def _icon(size: int):
+    from PyQt6.QtGui import QPixmap
+
+    pixmap = QPixmap(size, size)
+    pixmap.fill(Qt.GlobalColor.red)
+    return pixmap
+
+
+def test_a_section_header_is_tall_enough_for_its_icon(qapp):
+    popup = PickerPopup("T", SECTIONS, section_icon=lambda title: _icon(SECTION_ICON_PX))
+
+    headers = popup.findChildren(_SectionHeader)
+
+    assert len(headers) == 2
+    assert all(h.icon is not None and h.height() >= SECTION_ICON_PX for h in headers)
+
+
+def test_a_section_header_without_an_icon_stays_compact(qapp):
+    """Most installs have no extracted art, and must not pay for the icon's height."""
+    popup = PickerPopup("T", SECTIONS)
+
+    assert all(h.icon is None and h.height() < SECTION_ICON_PX for h in popup.findChildren(_SectionHeader))
+
+
+def test_a_resolver_that_raises_leaves_the_caption(qapp):
+    def broken(title):
+        raise RuntimeError("no art today")
+
+    popup = PickerPopup("T", SECTIONS, section_icon=broken)
+
+    assert [h.title for h in popup.findChildren(_SectionHeader)] == ["Fruit", "Veg"]
+    assert len(popup.findChildren(_RowWidget)) == 3
 
 
 # ---------------------------------------------------------------------------

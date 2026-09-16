@@ -416,9 +416,10 @@ class _RowWidget(QWidget):
         super().mousePressEvent(event)
 
 
-#: Side of a section header's icon. Small on purpose: the header is a 10px caption and an
-#: icon taller than its own text turns a heading into a row.
-SECTION_ICON_PX = 16
+#: Side of a section header's icon. The world emblems are detailed 128px vignettes:
+#: unrecognizable at 16px, and 48px was too big in real use. At 32px the header is 38px
+#: tall, not much more than a 26px zone row, so the list stays dense.
+SECTION_ICON_PX = 32
 
 #: Padding around a section header's text, matching the margins the plain QLabel carried.
 _SECTION_PAD_Y = 3
