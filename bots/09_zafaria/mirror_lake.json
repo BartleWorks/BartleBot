@@ -4,8 +4,8 @@
   "description": "Endlessly completes Mirror Lake in Zafaria",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_3",
-  "recovery_state": "state_1",
+  "initial": "state_1",
+  "recovery_state": "state_25",
   "drops": [
     {
       "name": "Absolute Zero Brim"
@@ -1648,12 +1648,6 @@
   ],
   "options": [
     {
-      "name": "Quicksell",
-      "type": "bool",
-      "default": true,
-      "description": "Whether or not to quicksell items"
-    },
-    {
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
       "default": [
@@ -1675,50 +1669,14 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Baobab Crossroads",
+      "node_type": "go_to_zone",
+      "label": "Go to Baobab Crossroads",
       "position": {
-        "x": 0,
-        "y": 0.0
+        "x": 0.0,
+        "y": -90.0
       },
       "params": {
         "zone": "Zafaria/ZF_Z00_Hub"
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "check_zone",
-      "label": "Check if in Baobab Crossroads",
-      "position": {
-        "x": -440.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Zafaria/ZF_Z00_Hub",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "check_zone",
-      "label": "Check if in Zafaria",
-      "position": {
-        "x": -880.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Zafaria/*",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
       }
     },
     {
@@ -2057,9 +2015,21 @@
       "label": "Quicksell",
       "position": {
         "x": 1320.0,
-        "y": 0.0
+        "y": -90.0
       },
       "params": {}
+    },
+    {
+      "id": "state_25",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": []
+      }
     }
   ],
   "transitions": [
@@ -2285,26 +2255,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_4",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_1",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_20",
       "dest": "state_21",
       "when": "SUCCESS",
@@ -2366,8 +2316,8 @@
     {
       "trigger": "advance",
       "source": "state_23",
-      "dest": "state_2",
-      "when": "SUCCESS",
+      "dest": "state_1",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2377,7 +2327,7 @@
       "trigger": "advance",
       "source": "state_23",
       "dest": "state_1",
-      "when": "FAILURE",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2396,7 +2346,7 @@
     {
       "trigger": "advance",
       "source": "state_24",
-      "dest": "state_1",
+      "dest": "state_25",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -2405,9 +2355,19 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_2",
-      "when": "TRUE",
+      "source": "state_25",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_25",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2427,6 +2387,16 @@
       "trigger": "advance",
       "source": "state_4",
       "dest": "state_5",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -2438,46 +2408,6 @@
       "source": "state_5",
       "dest": "state_24",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Quicksell",
-              "negate": false
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Quicksell",
-              "negate": true
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2614,8 +2544,6 @@
       "id": "2e8bae59",
       "label": "Enter Mirror Lake",
       "members": [
-        "state_2",
-        "state_3",
         "state_1",
         "state_4",
         "state_5",
