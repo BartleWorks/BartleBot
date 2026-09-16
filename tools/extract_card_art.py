@@ -52,6 +52,7 @@ from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from bartlebot import badge_categories  # noqa: E402
 from bartlebot.card_art import (  # noqa: E402
     ARCHMASTERY_ICON,
     DUNGEON_ICON,
@@ -59,6 +60,7 @@ from bartlebot.card_art import (  # noqa: E402
     INDEX_FILENAME,
     UNIVERSAL_ICON,
     art_dir,
+    badge_icon_name,
     school_icon_name,
     spells_dir,
     world_icon_name,
@@ -78,14 +80,6 @@ TEXTURE_WADS = ("_Shared-WorldData.wad", "Root.wad")
 #: Where the spell textures sit inside those WADs.
 TEXTURE_GLOB = "GUI/**"
 
-#: Icon key -> the texture basename it comes from, resolved through the same
-#: basename index the spell art uses.
-#:
-#: ``Art_School_`` is the ringed medallion the game's own archmastery picker draws, and
-#: it covers all eleven schools -- seven in ``Root.wad``, and Moon, Star, Sun and Shadow
-#: in ``_Shared-WorldData.wad``. ``Type_Global`` is the game's universal mark, stamped
-#: on card art that belongs to no school; it exists at 32x32 and nowhere larger, which
-#: is the ceiling on how big the GUI may draw these.
 #: Nav-map world key -> the ``Button_World_`` texture stem carrying its emblem.
 #:
 #: Written out rather than derived, and every entry is load-bearing even where it looks
@@ -133,6 +127,25 @@ WORLD_ICON_SOURCES: dict[str, str] = {
     DUNGEON_ICON: DUNGEON_TEXTURE,
 }
 
+#: Icon key -> the game path of its texture, for every badge category the game lists.
+#:
+#: Read from the checked-in snapshot rather than written out, because the game's own table
+#: already pairs each category with its icon and several pairings cannot be guessed: Five
+#: B.O.X.E.S. draws ``Badge_Category_Maestro_Events`` and Special Event draws
+#: ``Badge_Category_Deckathalon``. Every category is extracted, not only the ones the bot
+#: library has a folder for, so a folder added later needs no change here.
+#:
+#: A full path, not a basename: ``index_textures`` holds both, and the path is exact where
+#: a basename is first-archive-wins.
+BADGE_ICON_SOURCES: dict[str, str] = {
+    badge_icon_name(key): texture for key in badge_categories.keys() if (texture := badge_categories.icon_texture(key))
+}
+
+#: Badge categories whose texture is one 128px image rather than a 2x2 state sheet.
+#: Monstrology's is a button drawn once, and Unfiltered's is the help button; cropping
+#: either keeps a quarter of the picture.
+SINGLE_IMAGE_BADGES: frozenset[str] = frozenset({"MonsterMagic", "Unfiltered"})
+
 #: Icon key -> the texture basename it comes from, resolved through the same
 #: basename index the spell art uses.
 #:
@@ -146,16 +159,19 @@ ICON_SOURCES: dict[str, str] = {
     UNIVERSAL_ICON: "Type_Global.dds",
     **{school_icon_name(school): f"Art_School_{school}.dds" for school in SCHOOL_ORDER},
     **WORLD_ICON_SOURCES,
+    **BADGE_ICON_SOURCES,
 }
 
 #: Icon keys whose texture is a 2x2 sheet of button states rather than a single image.
 #:
-#: The world buttons and the badge categories are all 256x256 sheets holding four 128px
-#: quadrants: normal, two hover/pressed variants, and a desaturated one for a world the
-#: player cannot reach. Only the top-left is wanted. Drawn whole, these would render at
+#: The world buttons and nearly all the badge categories are 256x256 sheets holding four
+#: 128px quadrants: normal, two hover/pressed variants, and a desaturated one for a world
+#: the player cannot reach. Only the top-left is wanted. Drawn whole, these would render at
 #: quarter size with three ghosts around them -- which is exactly what a "why is the icon
-#: tiny" bug looks like from the outside.
-STATE_SHEET_ICONS: frozenset[str] = frozenset(WORLD_ICON_SOURCES)
+#: tiny" bug looks like from the outside. ``SINGLE_IMAGE_BADGES`` are the exceptions.
+STATE_SHEET_ICONS: frozenset[str] = frozenset(WORLD_ICON_SOURCES) | frozenset(
+    key for key in BADGE_ICON_SOURCES if key not in {badge_icon_name(b) for b in SINGLE_IMAGE_BADGES}
+)
 
 
 def _decode(value) -> str | None:
@@ -201,10 +217,12 @@ def read_image_names(root_wad: Path, types_path: Path) -> dict[str, str]:
 
 
 def index_textures(game_dir: Path) -> dict[str, tuple[Archive, str]]:
-    """Lowercased texture basename -> the archive holding it and its path inside.
+    """Lowercased texture basename *and* full path -> the archive holding it and its path inside.
 
     By basename because ``m_imageName`` carries no directory, and across both WADs
-    because the spell textures are split between them.
+    because the spell textures are split between them. By full path as well, for the
+    badge icons, whose table names the exact file; a basename never contains a ``/`` and a
+    path always does, so the two kinds of key cannot collide.
     """
     found: dict[str, tuple[Archive, str]] = {}
     for wad_name in TEXTURE_WADS:
@@ -215,6 +233,7 @@ def index_textures(game_dir: Path) -> dict[str, tuple[Archive, str]]:
         archive = Archive.mmap(str(wad_path))
         for entry in archive.iter_glob(TEXTURE_GLOB):
             found.setdefault(PurePosixPath(entry).name.lower(), (archive, entry))
+            found.setdefault(str(entry).lower(), (archive, entry))
     return found
 
 
@@ -346,7 +365,7 @@ def main() -> int:
         for sub in (spells_dir().name, ICONS_DIRNAME):
             size += sum(f.stat().st_size for f in (out_dir / sub).glob("*.png"))
     print(f"{'would write' if args.dry_run else 'wrote'} {index['files']} images for {len(index['images'])} templates")
-    print(f"  {len(index['icons'])} school and archmastery icons")
+    print(f"  {len(index['icons'])} school, archmastery, world and badge icons")
     if size:
         print(f"  {size / 1e6:.1f} MB in {out_dir}")
     if index["missing"]:

@@ -93,6 +93,17 @@ def world_icon_name(world: str) -> str:
     return f"world_{world.casefold()}"
 
 
+def badge_icon_name(key: str) -> str:
+    """The icon key for a badge category, from the game's filter name ("4Dungeons" -> "badge_4dungeons").
+
+    A namespace of its own rather than a reuse of ``world_<key>``: the badge page and the
+    nav map spell the same world differently (``Dragonspyre`` against ``DragonSpire``), and
+    the two sets are extracted from different tables. Case-folded for the reason
+    :func:`world_icon_name` is.
+    """
+    return f"badge_{key.casefold()}"
+
+
 def school_icon_name(school: str) -> str:
     """The icon key for a school, from the name a deck stores ("Fire" -> "school_fire").
 
@@ -197,3 +208,8 @@ def world_icon_path(world: str) -> Path | None:
     drift the first time a dungeon group was added.
     """
     return icon_path(world_icon_name(world))
+
+
+def badge_icon_path(key: str) -> Path | None:
+    """The PNG for a badge category's icon, or None if there is not one on this machine."""
+    return icon_path(badge_icon_name(key))

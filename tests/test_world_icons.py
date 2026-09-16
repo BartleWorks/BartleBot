@@ -73,7 +73,7 @@ def test_the_world_icons_join_the_school_and_archmastery_ones():
 def test_every_world_emblem_is_cropped_and_the_school_icons_are_not():
     """The world buttons and the badge categories are 2x2 state sheets; the school
     medallions are single images. Cropping the wrong set is a quarter-size icon."""
-    assert STATE_SHEET_ICONS == set(WORLD_ICON_SOURCES)
+    assert set(WORLD_ICON_SOURCES) <= STATE_SHEET_ICONS
     assert "archmastery" not in STATE_SHEET_ICONS
     assert world_icon_name("Krokotopia") in STATE_SHEET_ICONS
 

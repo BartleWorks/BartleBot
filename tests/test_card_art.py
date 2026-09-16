@@ -29,6 +29,20 @@ def _write_index(images: dict[str, str], *, files: tuple[str, ...] = ()) -> None
         (card_art.spells_dir() / name).write_bytes(b"not really a png, only its presence is read")
 
 
+def test_a_badge_icon_is_found_under_its_own_namespace(art_home):
+    """``badge_`` and ``world_`` are separate: the badge page spells Dragonspyre the way
+    the nav map does not."""
+    card_art.icons_dir().mkdir(parents=True, exist_ok=True)
+    (card_art.icons_dir() / "badge_4dungeons.png").write_bytes(b"x")
+    card_art.index_path().write_text(
+        json.dumps({"icons": {"badge_4dungeons": "badge_4dungeons.png"}}), encoding="utf-8"
+    )
+
+    assert card_art.badge_icon_name("4Dungeons") == "badge_4dungeons"
+    assert card_art.badge_icon_path("4Dungeons") == card_art.icons_dir() / "badge_4dungeons.png"
+    assert card_art.badge_icon_path("Crafting") is None
+
+
 def test_nothing_extracted_reads_as_no_art(art_home):
     assert not card_art.is_available()
     assert card_art.art_path("Tempest") is None

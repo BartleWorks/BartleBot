@@ -85,6 +85,7 @@ The snapshots and their tools:
 | `data/realm_names.json` | `dump_realm_names.py` | a realm is added, retired or renamed; also carries the localized Yes/No the Remember Realm option shows |
 | `data/zone_names.json` | `dump_zone_names.py` | a zone is added or renamed in any locale |
 | `data/spell_schools.json` | `dump_spell_schools.py` | a spell is added, or its school changes |
+| `data/badge_categories.json` | `dump_badge_categories.py` | a badge category is added, reordered or renamed; the bot library's folders follow its order |
 
 `WorldNames.lang` is worth knowing about on its own, because its key **is** the world
 segment `zone_name()` returns — `WizardCity`, `DragonSpire`, `MooShu` — and its value is
@@ -113,8 +114,9 @@ PNG because Qt's build here has no `dds` plugin. One PNG per *image*, not per te
 18,007 templates share 1,308 images. `Pillow` is a dev dependency for exactly this and
 is not imported at runtime. `bartlebot/card_art.py` is the read side.
 
-The same run also writes 39 UI icons into `art/icons/`, and they are keyed by a
-**logical name** — `archmastery`, `universal`, `school_fire`, `world_krokotopia` — rather
+The same run also writes 117 UI icons into `art/icons/`, and they are keyed by a
+**logical name** — `archmastery`, `universal`, `school_fire`, `world_krokotopia`,
+`badge_4dungeons` — rather
 than by the texture they came from, so neither the extractor's caller nor the GUI ever
 spells a KingsIsle filename. `ICON_SOURCES` is the one place the two meet. What they
 resolve to, and why each was picked over its neighbours:
@@ -126,6 +128,19 @@ resolve to, and why each was picked over its neighbours:
 | `school_<name>` | `GUI/Schools/Art_School_<School>.dds` | the ringed medallion the in-game archmastery picker uses |
 | `world_<key>` | `GUI/Buttons/Button_World_<Stem>.dds` | the floating-island emblem the spiral door and the badges page both draw |
 | `dungeon` | `GUI/BadgeCategory/Badge_Category_Dungeons.dds` | the bare rock-golem badge, for a nav "world" that is a dungeon group |
+| `badge_<key>` | whatever `BadgeFilterDescriptions.xml` names | the icon the badge page draws beside each of its 78 categories; the bot library's folder list |
+
+**The badge icons are the one set not written out by hand.** The game's own
+`BadgeFilterDescriptions.xml` pairs every category with its icon, and several pairings
+cannot be guessed — Five B.O.X.E.S. draws `Badge_Category_Maestro_Events`, Special Event
+draws `Badge_Category_Deckathalon` — so `dump_badge_categories.py` snapshots the paths and
+the extractor reads them by full path, not basename. The badge keys are also not the nav
+map's (`Dragonspyre` against `DragonSpire`), which is why they are a `badge_` namespace
+and not a second route to `world_`.
+
+**Two badge textures are not state sheets.** Monstrology (`Button_Category_Monster_Magic`)
+and Unfiltered (the help button) are single 128px images; every other badge is a 256px
+sheet. `SINGLE_IMAGE_BADGES` names them, and cropping either keeps a quarter of the picture.
 
 **The world emblems are 2×2 state sheets, not icons.** A 256×256 `Button_World_` texture
 holds four 128px quadrants — normal, two hover/pressed variants, and a desaturated one for
