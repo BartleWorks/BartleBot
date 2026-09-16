@@ -114,9 +114,9 @@ PNG because Qt's build here has no `dds` plugin. One PNG per *image*, not per te
 18,007 templates share 1,308 images. `Pillow` is a dev dependency for exactly this and
 is not imported at runtime. `bartlebot/card_art.py` is the read side.
 
-The same run also writes 117 UI icons into `art/icons/`, and they are keyed by a
+The same run also writes 137 UI icons into `art/icons/`, and they are keyed by a
 **logical name** — `archmastery`, `universal`, `school_fire`, `world_krokotopia`,
-`badge_4dungeons` — rather
+`badge_4dungeons`, `tag_team_up` — rather
 than by the texture they came from, so neither the extractor's caller nor the GUI ever
 spells a KingsIsle filename. `ICON_SOURCES` is the one place the two meet. What they
 resolve to, and why each was picked over its neighbours:
@@ -129,6 +129,20 @@ resolve to, and why each was picked over its neighbours:
 | `world_<key>` | `GUI/Buttons/Button_World_<Stem>.dds` | the floating-island emblem the spiral door and the badges page both draw |
 | `dungeon` | `GUI/BadgeCategory/Badge_Category_Dungeons.dds` | the bare rock-golem badge, for a nav "world" that is a dungeon group |
 | `badge_<key>` | whatever `BadgeFilterDescriptions.xml` names | the icon the badge page draws beside each of its 78 categories; the bot library's folder list |
+| `tag_<tag>` | `TAG_TEXTURES`, or built by `TAG_COMPOSITES` | a gold-ringed medallion per Rewards and Activity tag, hand-picked so all twenty match; the Type tags have none |
+
+**The tag medallions are chosen, not found.** Nothing in the game pairs a medallion with
+our tag vocabulary, so `TAG_TEXTURES` is a hand-picked table of full paths, and each pick
+was made by eye from the gold-ring family (`GUI/QuestPage/Art_Quest_*`,
+`GUI/QuestButtons/`, `GUI/NpcPortraits/` hold most of it). Two tags have no single texture
+and are built. **Challenge Mode** is the Dungeon sigil with `Icon_Advanced_Mode` stamped
+where the game's own Challenge Mode button puts it. **Gauntlet** is the Housing Gauntlet
+badge on a green disc inside `Art_Character_Cover`, a bare gold ring from `Root.wad`.
+The constants beside `gauntlet_disc` are the tuned recipe. Two of them are easy to "tidy"
+wrongly: the band between the disc and the gold is **solid**, because a fade to black
+reads as a second, dark-green ring; and the disc is an orange gradient **recoloured** to
+the sigil's hue, because a gradient chosen directly in green read pale. The green groups
+the four activities entered through a four-player sigil.
 
 **The badge icons are the one set not written out by hand.** The game's own
 `BadgeFilterDescriptions.xml` pairs every category with its icon, and several pairings

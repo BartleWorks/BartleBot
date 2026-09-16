@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from PyQt6.QtCore import QEvent, QPoint, QPointF, QRect, QRectF, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen, QPixmap, QPolygonF
@@ -74,6 +74,9 @@ class PickerRow:
     ``dim`` renders the row as present-but-empty. The library uses it for a tag no
     bot carries: dropping the row entirely reads as a bug, while a dimmed row with
     "0 bots" is an answer.
+
+    ``icon`` is drawn where the dot would be, and replaces it: a row with artwork does not
+    also need a colour swatch. Left out of equality and hashing, since a pixmap is neither.
     """
 
     key: str
@@ -82,6 +85,7 @@ class PickerRow:
     meta: str = ""
     accent: str | None = None  # colored dot; None draws no dot
     dim: bool = False
+    icon: QPixmap | None = field(default=None, compare=False)
 
 
 Section = tuple[str, list[PickerRow]]
@@ -339,7 +343,14 @@ class _RowWidget(QWidget):
             self._paint_indicator(painter, box)
             x = box.right() + 1 + _GAP
 
-        if self._row.accent:
+        if self._row.icon is not None:
+            icon = self._row.icon
+            if dim:
+                painter.setOpacity(0.45)
+            painter.drawPixmap(x, (rect.height() - icon.height()) // 2, icon)
+            painter.setOpacity(1.0)
+            x += icon.width() + _GAP
+        elif self._row.accent:
             dot = QRect(x, (rect.height() - _DOT) // 2, _DOT, _DOT)
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QColor(self._row.accent))

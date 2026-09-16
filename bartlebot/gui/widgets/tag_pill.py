@@ -14,6 +14,11 @@ Two shapes, because they do different jobs:
 
 Both take their colour from the same call, so the sizes differ and the hues never do.
 
+Both also wear the tag's game medallion where the user has extracted one (#29), at
+``TAG_ICON_PX``: the pill *becomes* the medallion, with the name moved to its tooltip,
+and the chip puts it ahead of its name. Without extracted art, and always for the Type
+tags, which have none, both are exactly the text forms above.
+
 :class:`NeutralPill` is the odd one out and lives here for the shape rather than the
 palette: a caption that wants to look like a pill without claiming a tag colour.
 :class:`ActionPill` is that one with a click behind it -- same metrics, so a pill that
@@ -31,13 +36,13 @@ as one.
 from __future__ import annotations
 
 from PyQt6.QtCore import QEvent, QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QFontMetrics
+from PyQt6.QtGui import QFontMetrics, QIcon
 from PyQt6.QtWidgets import QLabel, QPushButton, QSizePolicy, QWidget
 
 from bartlebot.bot_tags import tag_group
 from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.tag_picker import group_accent
+from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX, group_accent, tag_icon
 
 #: The inert pill's own metrics, shared with :class:`ActionPill` so a clickable pill and
 #: a descriptive one are the same shape -- which is the whole reason the clickable one
@@ -56,19 +61,39 @@ def pill_style(bg: str, fg: str, *, font_size: int = 9, radius: int = 7, pad: st
 
 
 class TagPill(QLabel):
-    """A small, inert, group-coloured pill naming one tag."""
+    """A small, inert pill naming one tag: its medallion where one was extracted, else its name.
+
+    The medallion form is the icon alone, with the name as its tooltip. The art is
+    distinct enough to scan, and a row of named pills beside a bot's name is the noise
+    the icons were chosen to cut. The text form, group-coloured, is every other case:
+    an install with no extracted art, and the Type tags, which have none.
+    """
 
     def __init__(self, tag: str, parent: QWidget | None = None) -> None:
-        super().__init__(tag, parent)
+        super().__init__(parent)
         self._tag = tag
         self._applying_style = False
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setFixedHeight(14)
+        icon = tag_icon(tag)
+        self._has_icon = icon is not None
+        if icon is None:
+            self.setText(tag)
+            self.setFixedHeight(_PILL_HEIGHT)
+        else:
+            self.setPixmap(icon)
+            self.setFixedSize(TAG_ICON_PX, TAG_ICON_PX)
+            self.setToolTip(tag)
+            self.setAccessibleName(tag)
         self._restyle()
 
     @property
     def tag(self) -> str:
         return self._tag
+
+    @property
+    def has_icon(self) -> bool:
+        """Whether this pill draws the tag's medallion rather than its name."""
+        return self._has_icon
 
     def _restyle(self) -> None:
         # Guard is load-bearing: setStyleSheet delivers StyleChange straight back to
@@ -78,7 +103,11 @@ class TagPill(QLabel):
             return
         self._applying_style = True
         try:
-            self.setStyleSheet(pill_style(group_accent(tag_group(self._tag)), THEME.pill_text))
+            if self._has_icon:
+                # Artwork in its own colours: no fill, no padding, nothing from THEME.
+                self.setStyleSheet("background: transparent; padding: 0px;")
+            else:
+                self.setStyleSheet(pill_style(group_accent(tag_group(self._tag)), THEME.pill_text))
         finally:
             self._applying_style = False
 
@@ -89,7 +118,12 @@ class TagPill(QLabel):
 
 
 class TagChip(QPushButton):
-    """A group-coloured chip that removes its tag when clicked."""
+    """A group-coloured chip that removes its tag when clicked.
+
+    Wears the tag's medallion ahead of its name where one was extracted. The name stays:
+    a chip is something to act on, and a click should not need a hover to know what it
+    removes.
+    """
 
     removed = pyqtSignal(str)
 
@@ -97,6 +131,11 @@ class TagChip(QPushButton):
         super().__init__(f"{tag}  ✕", parent)
         self._tag = tag
         self._applying_style = False
+        icon = tag_icon(tag)
+        self._has_icon = icon is not None
+        if icon is not None:
+            self.setIcon(QIcon(icon))
+            self.setIconSize(QSize(TAG_ICON_PX, TAG_ICON_PX))
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip(tooltip or f"Remove the {tag} tag")
         self._restyle()
@@ -106,14 +145,20 @@ class TagChip(QPushButton):
     def tag(self) -> str:
         return self._tag
 
+    @property
+    def has_icon(self) -> bool:
+        """Whether this chip draws the tag's medallion ahead of its name."""
+        return self._has_icon
+
     def _restyle(self) -> None:
         if self._applying_style:  # see TagPill._restyle
             return
         self._applying_style = True
         try:
-            base = pill_style(
-                group_accent(tag_group(self._tag)), THEME.pill_text, font_size=10, radius=9, pad="2px 9px"
-            )
+            # With a medallion the chip is a capsule around it: a pixel of padding above
+            # and below, and a short left inset so the ring sits just inside the round end.
+            radius, pad = (11, "1px 9px 1px 2px") if self._has_icon else (9, "2px 9px")
+            base = pill_style(group_accent(tag_group(self._tag)), THEME.pill_text, font_size=10, radius=radius, pad=pad)
             self.setStyleSheet(
                 f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}"
             )

@@ -12,11 +12,29 @@ it is a parameter rather than something the widget works out for itself.
 
 from __future__ import annotations
 
+from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QWidget
 
+from bartlebot import card_art
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group  # noqa: F401  (re-exported)
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.card_art_tile import pixmap_for_path
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
+
+#: Side of a tag's medallion wherever it is drawn. 16px was hard to read; the medallions
+#: are 128px (two are 64px) game art, and 20px is the smallest that stays legible.
+TAG_ICON_PX = 20
+
+
+def tag_icon(tag: str) -> QPixmap | None:
+    """A tag's extracted medallion at :data:`TAG_ICON_PX`, or None -- the ordinary case.
+
+    None on every install that has not run the extractor, and always for the Type tags,
+    which have no game art. Every caller keeps its text form for that case.
+    """
+    path = card_art.tag_icon_path(tag)
+    return None if path is None else pixmap_for_path(path, TAG_ICON_PX)
+
 
 #: Dot colour per group. Two hues, so "is this a reward or an activity" is legible
 #: on a single row without reading the section header above it.
@@ -68,6 +86,7 @@ def tag_sections(counts: dict[str, int] | None = None, group: str | None = None)
                 meta=("" if counts is None else count_label(counts.get(tag, 0))),
                 accent=group_accent(name),
                 dim=(counts is not None and counts.get(tag, 0) == 0),
+                icon=tag_icon(tag),
             )
             for tag in tags
         ]

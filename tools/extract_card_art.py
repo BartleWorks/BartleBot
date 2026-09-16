@@ -39,10 +39,13 @@ overwritten; nothing here is incremental, because the whole run costs a few seco
 from __future__ import annotations
 
 import argparse
+import colorsys
 import io
 import json
 import logging
+import math
 import sys
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path, PurePosixPath
 
@@ -63,6 +66,7 @@ from bartlebot.card_art import (  # noqa: E402
     badge_icon_name,
     school_icon_name,
     spells_dir,
+    tag_icon_name,
     world_icon_name,
 )
 from bartlebot.spell_schools import SCHOOL_ORDER  # noqa: E402
@@ -146,6 +150,154 @@ BADGE_ICON_SOURCES: dict[str, str] = {
 #: either keeps a quarter of the picture.
 SINGLE_IMAGE_BADGES: frozenset[str] = frozenset({"MonsterMagic", "Unfiltered"})
 
+#: Bot tag -> the full game path of its medallion, for every tag drawn from one texture.
+#:
+#: Hand-picked, one by one, from the game's gold-ringed medallions so every tag icon is
+#: the same shape: nothing in the game pairs these with our vocabulary, so there is no
+#: table to read them from. Full paths, because several basenames recur across folders.
+#: ``Button_Backpack`` and ``Art_Quest_Max_Gold`` exist only at 64px; the rest are 128px.
+#: The Type tags (Subgraph, Template) have no game art and stay text.
+TAG_TEXTURES: dict[str, str] = {
+    # Rewards
+    "Gear": "GUI/Buttons/Button_Backpack.dds",
+    "Jewels": "GUI/QuestPage/Art_Quest_Jewel.dds",
+    "Reagents": "GUI/QuestPage/Art_Quest_Reagent.dds",
+    "Spellements": "GUI/Buttons/Button_BG_Reward_Spellement02.dds",
+    "Animus": "GUI/Buttons/Button_Monster_Magic.dds",  # the Monstrology tab on the deck page
+    "Treasure Cards": "GUI/QuestPage/Art_Quest_Treasure_Card.dds",
+    "Snacks": "GUI/QuestPage/Art_Quest_PetSnack.dds",
+    "Seeds": "GUI/QuestPage/Art_Quest_Seed.dds",
+    "Mounts": "GUI/QuestPage/Art_Quest_Mount.dds",
+    "Pets": "GUI/QuestPage/Art_Quest_Pet.dds",
+    "Housing": "GUI/QuestPage/Art_Quest_Housing.dds",
+    "Gold": "GUI/QuestPage/Art_Quest_Max_Gold.dds",
+    # Activity
+    "Boss": "GUI/NpcPortraits/Art_Portrait_Wraith.dds",
+    "Mobs": "GUI/NpcPortraits/Art_Portrait_Ghost_Blue.dds",
+    "Dungeon": "GUI/QuestButtons/Use_Sigil_4_Player.dds",
+    "Team-Up": "GUI/QuestButtons/Quest_WC_TeamUpKiosk.dds",
+    "Collecting": "GUI/Icons/Icon_Harvest.dds",
+    "Training Points": "GUI/QuestButtons/Quest_Training_Point.dds",
+}
+
+#: The four-player sigil the Dungeon tag draws, which Challenge Mode builds on.
+SIGIL_TEXTURE = "GUI/QuestButtons/Use_Sigil_4_Player.dds"
+#: The red skull the game's own Challenge Mode button stamps on that sigil (32px).
+CHALLENGE_SKULL_TEXTURE = "GUI/Icons/Icon_Advanced_Mode.dds"
+#: A bare gold ring, transparent inside, that the Gauntlet medallion is framed in. Root.wad.
+RING_FRAME_TEXTURE = "GUI/Art/Art_Character_Cover.dds"
+#: The Housing Gauntlet badge (a 2x2 state sheet) the Gauntlet medallion puts in that ring.
+GAUNTLET_BADGE_TEXTURE = "GUI/BadgeCategory/Badge_Category_Housing_Gauntlets.dds"
+
+#: Where the skull sits on the sigil, as fractions of the medallion's width: its size, and
+#: its centre's offset from the medallion's centre (negative is left and up). No ``.gui``
+#: file references either texture, so these were matched by eye against the game's button,
+#: keeping the skull clear of the gold ring.
+SKULL_SIZE = 0.378
+SKULL_OFFSET = (-0.05, -0.13)
+
+#: The Gauntlet medallion's disc, which is green because Dungeon, Challenge Mode, Team-Up
+#: and Gauntlet are all entered through a four-player sigil. It is an orange radial
+#: gradient recoloured to the sigil's hue rather than a green one painted directly: the
+#: game's medallions are shaded that way, and a gradient chosen in green read pale.
+DISC_CENTRE = (255, 190, 70)
+DISC_EDGE = (170, 70, 10)
+DISC_CURVE = 1.4
+DISC_HUE = colorsys.rgb_to_hls(41 / 255, 243 / 255, 33 / 255)[0]  # the sigil's green
+DISC_LIGHTNESS = (1.15, 1.15 * 0.75)  # centre, and where the band starts
+#: A solid near-black band between the disc and the gold. Solid, not a fade to black: a
+#: fade reads as a second, dark-green ring inside the gold one.
+BAND_PX = 2
+BAND_BLEND_PX = 1.5
+BAND_COLOUR = (6, 20, 6)
+#: The disc overlaps the ring's inner edge by this much, so no gap shows under the gold.
+DISC_OVERLAP_PX = 1.5
+#: How much of the disc's diameter the gauntlet badge fills, and how far down it sits.
+GAUNTLET_FILL = 0.74
+GAUNTLET_DROP = 0.01  # of the frame's width
+
+
+def ring_inner_radius(frame: Image.Image) -> float:
+    """The radius of *frame*'s transparent centre, read along its middle row.
+
+    The first fully transparent pixel after the opaque gold, walking in from the left.
+    """
+    half = frame.width // 2
+    seen_ring = False
+    for x in range(half):
+        alpha = frame.getpixel((x, frame.height // 2))[3]
+        if alpha > 200:
+            seen_ring = True
+        elif seen_ring and alpha == 0:
+            return frame.width / 2 - x
+    raise ValueError("the ring frame has no transparent centre")
+
+
+def challenge_icon(sigil: Image.Image, skull: Image.Image) -> Image.Image:
+    """The Dungeon sigil with the Challenge Mode skull on it, as the game's own button draws it."""
+    icon = sigil.copy()
+    left, top, right, bottom = icon.getbbox()
+    width = right - left
+    cx, cy = (left + right) / 2, (top + bottom) / 2
+    side = round(width * SKULL_SIZE)
+    stamp = skull.resize((side, side), Image.LANCZOS)
+    x = round(cx + SKULL_OFFSET[0] * width - stamp.width / 2)
+    y = round(cy + SKULL_OFFSET[1] * width - stamp.height / 2)
+    icon.alpha_composite(stamp, (x, y))
+    return icon
+
+
+def gauntlet_disc(size: int, inner: float) -> Image.Image:
+    """The Gauntlet medallion's green disc, *size* px square, reaching just past *inner*."""
+    c = (size - 1) / 2
+    outer = inner + DISC_OVERLAP_PX
+    end = outer - BAND_PX  # the gradient and the lightness ramp both finish where the band starts
+    start_l, end_l = DISC_LIGHTNESS
+    band_start = end - BAND_BLEND_PX
+    disc = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    px = disc.load()
+    for y in range(size):
+        for x in range(size):
+            r = math.hypot(x - c, y - c)
+            if r > outer:
+                continue
+            reach = min(1.0, r / end)
+            t = reach**DISC_CURVE
+            red, green, blue = (a + (b - a) * t for a, b in zip(DISC_CENTRE, DISC_EDGE))
+            red, green, blue = (round(v) for v in (red, green, blue))
+            _, light, sat = colorsys.rgb_to_hls(red / 255, green / 255, blue / 255)
+            light = min(1.0, light * (start_l + (end_l - start_l) * reach))
+            rgb = [round(v * 255) for v in colorsys.hls_to_rgb(DISC_HUE, light, sat)]
+            if r > band_start:
+                k = min(1.0, (r - band_start) / BAND_BLEND_PX)
+                rgb = [round(v + (b - v) * k) for v, b in zip(rgb, BAND_COLOUR)]
+            px[x, y] = (*rgb, 255)
+    return disc
+
+
+def gauntlet_icon(frame: Image.Image, badge_sheet: Image.Image) -> Image.Image:
+    """The Housing Gauntlet badge on a green disc, inside the game's plain gold ring."""
+    size = frame.width
+    inner = ring_inner_radius(frame)
+    icon = gauntlet_disc(size, inner)
+    badge = top_left_quadrant(badge_sheet)
+    badge = badge.crop(badge.getbbox())
+    box = round(2 * inner * GAUNTLET_FILL)
+    badge.thumbnail((box, box), Image.LANCZOS)
+    icon.alpha_composite(badge, ((size - badge.width) // 2, (size - badge.height) // 2 + round(size * GAUNTLET_DROP)))
+    icon.alpha_composite(frame)
+    return icon
+
+
+#: Tag icons assembled from several textures: tag -> (the textures, in the order the
+#: builder takes them, and the builder).
+TAG_COMPOSITES: dict[str, tuple[tuple[str, ...], Callable[..., Image.Image]]] = {
+    "Challenge Mode": ((SIGIL_TEXTURE, CHALLENGE_SKULL_TEXTURE), challenge_icon),
+    "Gauntlet": ((RING_FRAME_TEXTURE, GAUNTLET_BADGE_TEXTURE), gauntlet_icon),
+}
+
+TAG_ICON_SOURCES: dict[str, str] = {tag_icon_name(tag): texture for tag, texture in TAG_TEXTURES.items()}
+
 #: Icon key -> the texture basename it comes from, resolved through the same
 #: basename index the spell art uses.
 #:
@@ -160,6 +312,7 @@ ICON_SOURCES: dict[str, str] = {
     **{school_icon_name(school): f"Art_School_{school}.dds" for school in SCHOOL_ORDER},
     **WORLD_ICON_SOURCES,
     **BADGE_ICON_SOURCES,
+    **TAG_ICON_SOURCES,
 }
 
 #: Icon keys whose texture is a 2x2 sheet of button states rather than a single image.
@@ -305,7 +458,7 @@ def _extract_icons(
     missing: dict[str, str],
     failed: dict[str, str],
 ) -> dict[str, str]:
-    """Convert the school and archmastery icons, and return the key -> filename map.
+    """Convert the UI icons, build the composite tag icons, and return the key -> filename map.
 
     Written beside the spell art rather than into it: there are 13 of them against
     1,300 spell images, they are keyed by a logical name rather than a template, and
@@ -331,6 +484,23 @@ def _extract_icons(
                 image.save(icon_dir / filename)
             except Exception as exc:  # noqa: BLE001 - one bad texture must not stop the run
                 failed[key] = f"{texture}: {exc}"
+                continue
+        icons[key] = filename
+
+    for tag, (textures_needed, build) in TAG_COMPOSITES.items():
+        key = tag_icon_name(tag)
+        hits = [textures.get(texture.lower()) for texture in textures_needed]
+        absent = [texture for texture, hit in zip(textures_needed, hits) if hit is None]
+        if absent:
+            missing[key] = ", ".join(absent)
+            continue
+        filename = f"{key}.png"
+        if not dry_run:
+            try:
+                parts = [Image.open(io.BytesIO(archive[entry])).convert("RGBA") for archive, entry in hits]
+                build(*parts).save(icon_dir / filename)
+            except Exception as exc:  # noqa: BLE001 - one bad texture must not stop the run
+                failed[key] = f"{tag}: {exc}"
                 continue
         icons[key] = filename
     return icons
@@ -365,7 +535,7 @@ def main() -> int:
         for sub in (spells_dir().name, ICONS_DIRNAME):
             size += sum(f.stat().st_size for f in (out_dir / sub).glob("*.png"))
     print(f"{'would write' if args.dry_run else 'wrote'} {index['files']} images for {len(index['images'])} templates")
-    print(f"  {len(index['icons'])} school, archmastery, world and badge icons")
+    print(f"  {len(index['icons'])} school, archmastery, world, badge and tag icons")
     if size:
         print(f"  {size / 1e6:.1f} MB in {out_dir}")
     if index["missing"]:

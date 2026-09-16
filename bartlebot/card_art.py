@@ -104,6 +104,16 @@ def badge_icon_name(key: str) -> str:
     return f"badge_{key.casefold()}"
 
 
+def tag_icon_name(tag: str) -> str:
+    """The icon key for a bot tag, from its vocabulary name ("Team-Up" -> "tag_team_up").
+
+    Spaces and hyphens become underscores so the key is also a tidy filename; case-folded
+    for the reason :func:`school_icon_name` is. The tag's text is the key rather than a
+    second table of ids, because ``bot_tags.BOT_TAGS`` is already the one list of them.
+    """
+    return "tag_" + tag.casefold().replace(" ", "_").replace("-", "_")
+
+
 def school_icon_name(school: str) -> str:
     """The icon key for a school, from the name a deck stores ("Fire" -> "school_fire").
 
@@ -213,3 +223,12 @@ def world_icon_path(world: str) -> Path | None:
 def badge_icon_path(key: str) -> Path | None:
     """The PNG for a badge category's icon, or None if there is not one on this machine."""
     return icon_path(badge_icon_name(key))
+
+
+def tag_icon_path(tag: str) -> Path | None:
+    """The PNG for a bot tag's medallion, or None if there is not one on this machine.
+
+    None for the Type tags (Subgraph, Template) on every machine: they have no game art,
+    and keep their text pill.
+    """
+    return icon_path(tag_icon_name(tag))
