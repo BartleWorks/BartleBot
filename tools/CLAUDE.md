@@ -113,17 +113,44 @@ PNG because Qt's build here has no `dds` plugin. One PNG per *image*, not per te
 18,007 templates share 1,308 images. `Pillow` is a dev dependency for exactly this and
 is not imported at runtime. `bartlebot/card_art.py` is the read side.
 
-The same run also writes 13 UI icons into `art/icons/`, and they are keyed by a
-**logical name** — `archmastery`, `universal`, `school_fire` — rather than by the
-texture they came from, so neither the extractor's caller nor the GUI ever spells a
-KingsIsle filename. `ICON_SOURCES` is the one place the two meet. What they resolve to,
-and why each was picked over its neighbours:
+The same run also writes 39 UI icons into `art/icons/`, and they are keyed by a
+**logical name** — `archmastery`, `universal`, `school_fire`, `world_krokotopia` — rather
+than by the texture they came from, so neither the extractor's caller nor the GUI ever
+spells a KingsIsle filename. `ICON_SOURCES` is the one place the two meet. What they
+resolve to, and why each was picked over its neighbours:
 
 | key | texture | why this one |
 |---|---|---|
 | `archmastery` | `GUI/Icons/Icon_Archmastery.dds` | the rainbow spiral meaning *archmastery*, carrying no school |
 | `universal` | `GUI/Icons/Type_Global.dds` | the game's own "any school" mark, as stamped on card art |
 | `school_<name>` | `GUI/Schools/Art_School_<School>.dds` | the ringed medallion the in-game archmastery picker uses |
+| `world_<key>` | `GUI/Buttons/Button_World_<Stem>.dds` | the floating-island emblem the spiral door and the badges page both draw |
+| `dungeon` | `GUI/BadgeCategory/Badge_Category_Dungeons.dds` | the bare rock-golem badge, for a nav "world" that is a dungeon group |
+
+**The world emblems are 2×2 state sheets, not icons.** A 256×256 `Button_World_` texture
+holds four 128px quadrants — normal, two hover/pressed variants, and a desaturated one for
+a world the player cannot reach — and so does every `Badge_Category_`. Only the top-left
+is wanted, which is what `top_left_quadrant` takes and `STATE_SHEET_ICONS` decides. Saved
+whole they render at quarter size with three ghosts around them. The greyed quadrant is a
+free "unavailable" affordance if a surface ever wants one; nothing draws it today.
+
+Three traps in the world table, and all three are why `WORLD_TEXTURES` is written out by
+hand rather than normalized from the world key:
+
+- **The game spells one world three ways.** `DragonSpire` is the nav key, `Dragonspire`
+  the world button, `Dragonspyre` the guild museum door. A case-folding rule is right for
+  twenty worlds and silently wrong here.
+- **Wysteria's texture is named for its school**, `Button_World_Pigswick_Academy`. Nothing
+  derives that.
+- **A world can have art in two families that disagree.** `Mirage`, `Karamelle` and
+  `Catacombs` appear in both `Buttons/` and `BadgeCategory/` as pixel-identical copies —
+  but `Empyrea` does not, so a "resolve by basename, first wad wins" rule would pick a
+  different Empyrea depending on iteration order. World emblems come from `Buttons/` only;
+  `BadgeCategory/` supplies nothing but the dungeon badge.
+
+`tests/test_world_icons.py` is the guard, and the assertion that matters is that every
+world in `zone_nav`'s map has an entry — a world added to the map with no emblem loses its
+icon silently, behind a header that still reads correctly.
 
 Two traps in that table. `Art_School_` is split across archives — seven schools in
 `Root.wad`, and Moon, Star, Sun and Shadow in `_Shared-WorldData.wad` — so a probe that

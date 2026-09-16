@@ -92,6 +92,38 @@ def test_castle_darkmoor_is_not_the_darkmoor_world():
     assert "Darkmoor" in worlds.SPIRAL_DOOR_WORLDS
 
 
+def test_the_dungeon_worlds_are_dungeons_and_not_on_the_door():
+    """These are nav-map "worlds" the game ships no world emblem for, so they take the
+    generic dungeon badge. None of them is a spiral door destination."""
+    assert set(worlds.DUNGEON_WORLDS) == {"G14_DM", "G14_SB", "G14_HS"}
+    assert not set(worlds.DUNGEON_WORLDS) & set(worlds.SPIRAL_DOOR_WORLDS)
+
+
+def test_zigazag_is_labelled_though_the_game_never_names_it():
+    """G14_HS has no WorldNames entry, so without a fallback its picker section read
+    "G14_HS"."""
+    assert worlds.label("G14_HS") == "Zigazag"
+
+
+def test_a_fallback_label_never_reaches_the_door_matching_list():
+    """display_names is matched against the World Gate's own text; the game never shows
+    a fallback name there."""
+    assert worlds.display_names("G14_HS") == []
+
+
+def test_no_fallback_shadows_a_name_the_game_ships():
+    """If the game ever names one of these, the fallback is stale and should go."""
+    snapshot = json.loads(worlds.WORLD_NAMES_PATH.read_text(encoding="utf-8"))["worlds"]
+
+    assert not set(worlds.LABEL_FALLBACKS) & set(snapshot)
+
+
+def test_aquila_is_a_world_with_an_emblem_not_a_dungeon():
+    """It is off the door because it is reached by the Cyclops Lane chariot, which is not
+    the same claim as being a dungeon -- it has a Button_World_ texture of its own."""
+    assert "Aquila" not in worlds.DUNGEON_WORLDS
+
+
 def test_worlds_reached_by_other_means_are_not_on_the_door():
     """Aquila is a chariot ride and Wintertusk is through Grizzleheim, so neither is offered."""
     assert "Aquila" not in worlds.SPIRAL_DOOR_WORLDS

@@ -75,6 +75,24 @@ def icons_dir() -> Path:
     return art_dir() / ICONS_DIRNAME
 
 
+#: Logical name for the generic dungeon badge. Not a world, but it is keyed and stored
+#: beside them, because the surfaces that ask for a world's emblem are the ones that need
+#: a stand-in when a "world" turns out to be a dungeon.
+DUNGEON_ICON = "dungeon"
+
+
+def world_icon_name(world: str) -> str:
+    """The icon key for a world, from the key the nav map uses ("MooShu" -> "world_mooshu").
+
+    Case-folded for the same reason :func:`school_icon_name` is: the caller's key comes
+    from ``zone_nav``'s own world table and the extractor's from a hand-written source
+    map, and keying on exact casing would make the two agree only by luck -- which is a
+    live risk here, since the game spells this world three different ways across its own
+    files (``DragonSpire`` / ``Dragonspire`` / ``Dragonspyre``).
+    """
+    return f"world_{world.casefold()}"
+
+
 def school_icon_name(school: str) -> str:
     """The icon key for a school, from the name a deck stores ("Fire" -> "school_fire").
 
@@ -167,3 +185,15 @@ def icon_path(name: str) -> Path | None:
         return None
     path = icons_dir() / filename
     return path if path.exists() else None
+
+
+def world_icon_path(world: str) -> Path | None:
+    """The PNG for a world's emblem, or None if there is not one on this machine.
+
+    No fallback to the dungeon badge here, and deliberately: which "worlds" are really
+    dungeons is the extractor's table to state (``WORLD_ICON_SOURCES``), which points
+    those keys at the dungeon texture so they resolve like any other. A fallback in the
+    read side would be a second place that decides the same thing, and the two would
+    drift the first time a dungeon group was added.
+    """
+    return icon_path(world_icon_name(world))

@@ -54,14 +54,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from bartlebot.card_art import (  # noqa: E402
     ARCHMASTERY_ICON,
+    DUNGEON_ICON,
     ICONS_DIRNAME,
     INDEX_FILENAME,
     UNIVERSAL_ICON,
     art_dir,
     school_icon_name,
     spells_dir,
+    world_icon_name,
 )
 from bartlebot.spell_schools import SCHOOL_ORDER  # noqa: E402
+from bartlebot.worlds import DUNGEON_WORLDS  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -83,11 +86,76 @@ TEXTURE_GLOB = "GUI/**"
 #: in ``_Shared-WorldData.wad``. ``Type_Global`` is the game's universal mark, stamped
 #: on card art that belongs to no school; it exists at 32x32 and nowhere larger, which
 #: is the ceiling on how big the GUI may draw these.
+#: Nav-map world key -> the ``Button_World_`` texture stem carrying its emblem.
+#:
+#: Written out rather than derived, and every entry is load-bearing even where it looks
+#: like a case fold. The game spells these three different ways across its own files --
+#: the world key is ``DragonSpire``, the world button ``Dragonspire``, the guild museum
+#: door ``Dragonspyre`` -- so a normalizing rule is a rule that is right until it is
+#: silently wrong. ``Wysteria`` is the one that cannot be derived at all: its texture is
+#: named for its school, Pigswick Academy.
+#:
+#: Aquila is here despite not being on the spiral door: it has an emblem of its own, and
+#: the zone picker lists it as a world like any other.
+WORLD_TEXTURES: dict[str, str] = {
+    "Aquila": "Aquila",
+    "Arcanum": "Arcanum",
+    "Avalon": "Avalon",
+    "Azteca": "Azteca",
+    "Celestia": "Celestia",
+    "Darkmoor": "Darkmoor",
+    "DragonSpire": "Dragonspire",
+    "Empyrea": "Empyrea",
+    "Grizzleheim": "Grizzleheim",
+    "Karamelle": "Karamelle",
+    "Khrysalis": "Khrysalis",
+    "Krokotopia": "Krokotopia",
+    "Lemuria": "Lemuria",
+    "Marleybone": "Marleybone",
+    "Mirage": "Mirage",
+    "MooShu": "Mooshu",
+    "Novus": "Novus",
+    "Polaris": "Polaris",
+    "Wallaru": "Wallaru",
+    "WizardCity": "Wizard_City",
+    "Wysteria": "Pigswick_Academy",
+    "Zafaria": "Zafaria",
+}
+
+#: The generic dungeon badge, for the nav worlds that are dungeon groups. All three point
+#: at one texture, the way many spell templates share one image.
+DUNGEON_TEXTURE = "Badge_Category_Dungeons.dds"
+
+#: Icon key -> texture basename, for the worlds and the dungeon stand-in.
+WORLD_ICON_SOURCES: dict[str, str] = {
+    **{world_icon_name(key): f"Button_World_{stem}.dds" for key, stem in WORLD_TEXTURES.items()},
+    **{world_icon_name(key): DUNGEON_TEXTURE for key in DUNGEON_WORLDS},
+    DUNGEON_ICON: DUNGEON_TEXTURE,
+}
+
+#: Icon key -> the texture basename it comes from, resolved through the same
+#: basename index the spell art uses.
+#:
+#: ``Art_School_`` is the ringed medallion the game's own archmastery picker draws, and
+#: it covers all eleven schools -- seven in ``Root.wad``, and Moon, Star, Sun and Shadow
+#: in ``_Shared-WorldData.wad``. ``Type_Global`` is the game's universal mark, stamped
+#: on card art that belongs to no school; it exists at 32x32 and nowhere larger, which
+#: is the ceiling on how big the GUI may draw these.
 ICON_SOURCES: dict[str, str] = {
     ARCHMASTERY_ICON: "Icon_Archmastery.dds",
     UNIVERSAL_ICON: "Type_Global.dds",
     **{school_icon_name(school): f"Art_School_{school}.dds" for school in SCHOOL_ORDER},
+    **WORLD_ICON_SOURCES,
 }
+
+#: Icon keys whose texture is a 2x2 sheet of button states rather than a single image.
+#:
+#: The world buttons and the badge categories are all 256x256 sheets holding four 128px
+#: quadrants: normal, two hover/pressed variants, and a desaturated one for a world the
+#: player cannot reach. Only the top-left is wanted. Drawn whole, these would render at
+#: quarter size with three ghosts around them -- which is exactly what a "why is the icon
+#: tiny" bug looks like from the outside.
+STATE_SHEET_ICONS: frozenset[str] = frozenset(WORLD_ICON_SOURCES)
 
 
 def _decode(value) -> str | None:
@@ -197,6 +265,19 @@ def extract(game_dir: Path, types_path: Path, out_dir: Path, *, dry_run: bool = 
     }
 
 
+def top_left_quadrant(image: Image.Image) -> Image.Image:
+    """The top-left quarter of a 2x2 button-state sheet: the normal, undimmed state.
+
+    The game packs four button states into one texture -- normal, two hover/pressed
+    variants, and a desaturated one for an unavailable world -- so the whole image is four
+    icons, not one. Cropping rather than resizing: the quadrant is already the 128px the
+    GUI wants, so there is no resample and no softening.
+
+    Public so a test can exercise the crop without a WAD.
+    """
+    return image.crop((0, 0, image.width // 2, image.height // 2))
+
+
 def _extract_icons(
     textures: dict[str, tuple[Archive, str]],
     out_dir: Path,
@@ -225,7 +306,10 @@ def _extract_icons(
         if not dry_run:
             archive, entry = hit
             try:
-                Image.open(io.BytesIO(archive[entry])).convert("RGBA").save(icon_dir / filename)
+                image = Image.open(io.BytesIO(archive[entry])).convert("RGBA")
+                if key in STATE_SHEET_ICONS:
+                    image = top_left_quadrant(image)
+                image.save(icon_dir / filename)
             except Exception as exc:  # noqa: BLE001 - one bad texture must not stop the run
                 failed[key] = f"{texture}: {exc}"
                 continue

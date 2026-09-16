@@ -89,6 +89,40 @@ their own GameData wads, so none of them can be filtered out by a rule:
 """
 
 
+DUNGEON_WORLDS: tuple[str, ...] = (
+    "G14_DM",
+    "G14_SB",
+    "G14_HS",
+)
+"""Nav-map worlds that are dungeons rather than worlds, and so have no world emblem.
+
+``zone_nav`` groups zones into 25 "worlds", but four of those are not on the spiral door
+and three of those four are dungeon groups -- Castle Darkmoor, Kembaalung Village, and
+Zigazag. The game ships no ``Button_World_`` texture for any of them, so they take
+the generic dungeon badge instead; see ``WORLD_ICON_SOURCES`` in
+``tools/extract_card_art.py``.
+
+Aquila is the fourth non-door world and is deliberately **not** here: it is a world with
+its own emblem, reached by the Cyclops Lane chariot rather than the door.
+
+This is a display fact and nothing routes on it. A world missing from this tuple loses an
+icon; it cannot send a client anywhere.
+"""
+
+
+LABEL_FALLBACKS: dict[str, str] = {
+    "G14_HS": "Zigazag",
+}
+"""Names for nav-map worlds the game's ``WorldNames.lang`` does not name at all.
+
+Used by :func:`label` only, and only when the snapshot has no entry. Deliberately kept out
+of :func:`display_names`: that is the list matched against the World Gate's own text, and
+none of these is on the door, so a name here would be a claim about text the game never
+shows. ``test_worlds.py`` fails if the game ever adds a real name for one of these, so a
+stale fallback cannot shadow it quietly.
+"""
+
+
 WORLD_GATE_TITLE_KEY = "GUI:00001017"
 """The World Gate list window's title, "Spiral Map" in English. A zone list opens the same
 window, so this title is what tells a World Gate from a zone list without using either."""
@@ -132,10 +166,11 @@ def display_names(world: str) -> list[str]:
 def label(world: str) -> str:
     """The en-US display name, for the editor dropdown and log lines.
 
-    Falls back to the key itself, which is readable enough ("DragonSpire") to be a better
-    answer than an empty combo box entry when the snapshot is stale or unreadable.
+    Falls back to :data:`LABEL_FALLBACKS` for a world the game never names, then to the key
+    itself, which is readable enough ("DragonSpire") to be a better answer than an empty
+    combo box entry when the snapshot is stale or unreadable.
     """
-    return next(iter(display_names(world)), world)
+    return next(iter(display_names(world)), LABEL_FALLBACKS.get(world, world))
 
 
 def world_gate_titles() -> list[str]:
