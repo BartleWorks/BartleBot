@@ -284,7 +284,6 @@ class _BotCard(ThemedMixin, QWidget):
     def __init__(self, meta: "_BotMeta", matched_drops: "list[str] | None" = None, parent=None) -> None:
         super().__init__(parent)
         self._meta = meta
-        self._matched_drops = matched_drops
         self.setObjectName("BotCard")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -296,8 +295,8 @@ class _BotCard(ThemedMixin, QWidget):
         self._hovered = False
         self._desc_lbl: QLabel | None = None
         self._meta_lbl: QLabel | None = None
-        self._match_lbl: QLabel | None = None
         self._build()
+        self.set_matched_drops(matched_drops)
         self.refresh_theme_styles()
 
     def _build(self) -> None:
@@ -343,14 +342,26 @@ class _BotCard(ThemedMixin, QWidget):
             self._meta_lbl = QLabel("  ·  ".join(parts))
             layout.addWidget(self._meta_lbl)
 
-        if self._matched_drops:
-            shown = self._matched_drops[:3]
-            text = ", ".join(shown)
-            if len(self._matched_drops) > 3:
-                text += f" +{len(self._matched_drops) - 3} more"
-            self._match_lbl = QLabel(f"Drops: {text}")
-            self._match_lbl.setWordWrap(True)
-            layout.addWidget(self._match_lbl)
+        # Always built, and hidden while nothing matched: the library keeps its cards
+        # across searches, so this is the one line a new query has to be able to change.
+        self._match_lbl = QLabel()
+        self._match_lbl.setWordWrap(True)
+        layout.addWidget(self._match_lbl)
+
+    def set_matched_drops(self, drops: "list[str] | None") -> None:
+        """Show which drops the current search matched, or nothing when none did."""
+        self._matched_drops = drops
+        if drops:
+            text = ", ".join(drops[:3])
+            if len(drops) > 3:
+                text += f" +{len(drops) - 3} more"
+            self._match_lbl.setText(f"Drops: {text}")
+        self._match_lbl.setVisible(bool(drops))
+
+    @property
+    def matched_drops_text(self) -> str | None:
+        """The "Drops: …" line as shown, or None while it is hidden."""
+        return self._match_lbl.text() if self._matched_drops else None
 
     def apply_theme_styles(self) -> None:
         """Restyle the frame and every label on it.
@@ -425,6 +436,10 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         #: Folder name -> its bots, in folder-name order.
         self._category_map: dict[str, list[_BotMeta]] = {}
         self._recent_metas: list[_BotMeta] = []
+        #: Bot path -> its card, built the first time a filter shows it and kept until the
+        #: next refresh(). Rebuilding every card per keystroke made the search box lag:
+        #: ~200ms a keystroke for a 70-bot library, where reusing them is ~40ms.
+        self._cards: dict[Path, _BotCard] = {}
         # Listed on first show, not here. This is BotCanvas's placeholder, so a canvas
         # that opens a bot straight away hides it before it is ever painted -- and
         # listing costs a read of every file in bots/ plus a card widget for each one
@@ -623,6 +638,13 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         # Recent files
         self._recent_metas = [m for p in recent_paths if (m := _read_bot_meta(Path(p)))]
 
+        # The files were just re-read, so a kept card may describe an old version.
+        # _show_cards below takes them out of the layout.
+        for card in self._cards.values():
+            card.hide()
+            card.deleteLater()
+        self._cards.clear()
+
         self._refresh_tag_counts()
         self._rebuild_chips()
 
@@ -772,14 +794,16 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
     def _show_cards(self, metas: "list[_BotMeta]", matched_drops: "dict | None" = None) -> None:
         layout = self._cards_layout
-        # Remove all widgets, keep the trailing stretch (last item).
-        # hide() is called before deleteLater() so the widget disappears immediately
-        # rather than remaining visible until the next event loop cycle.
+        # Take every widget out, keeping the trailing stretch (last item). Cards are
+        # only hidden -- self._cards keeps them for the next filter -- and the empty
+        # hint is the one thing deleted. hide() comes first so it disappears now rather
+        # than on the next event loop cycle.
         while layout.count() > 1:
             item = layout.takeAt(0)
             if w := item.widget():
                 w.hide()
-                w.deleteLater()
+                if w is self._empty_hint:
+                    w.deleteLater()
         self._empty_hint = None
 
         if not metas:
@@ -794,10 +818,13 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             return
 
         for i, meta in enumerate(metas):
-            drops = (matched_drops or {}).get(meta.path)
-            card = _BotCard(meta, matched_drops=drops)
-            card.open_requested.connect(self.open_recent_requested)
+            card = self._cards.get(meta.path)
+            if card is None:
+                card = self._cards[meta.path] = _BotCard(meta)
+                card.open_requested.connect(self.open_recent_requested)
+            card.set_matched_drops((matched_drops or {}).get(meta.path))
             layout.insertWidget(i, card)
+            card.show()
 
 
 # ---------------------------------------------------------------------------

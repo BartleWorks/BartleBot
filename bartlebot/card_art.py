@@ -165,12 +165,28 @@ def _icons() -> dict[str, str]:
     return _section("icons")
 
 
+_generation = 0
+
+
+def cache_generation() -> int:
+    """A number that changes whenever :func:`forget_cache` runs.
+
+    For a cache built on these lookups in a layer this module cannot import: keying on
+    the generation makes :func:`forget_cache` reach it too. ``tag_picker.tag_icon`` is
+    the case -- the library builds a pill per tag per card, and each lookup here stats
+    the file.
+    """
+    return _generation
+
+
 def forget_cache() -> None:
     """Drop the cached index, so the next lookup re-reads it from disk.
 
     For the extractor finishing inside a running app, and for tests pointing the
     product directory somewhere else.
     """
+    global _generation
+    _generation += 1
     _manifest.cache_clear()
 
 

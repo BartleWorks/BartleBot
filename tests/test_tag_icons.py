@@ -169,6 +169,34 @@ def test_a_tag_with_an_extracted_medallion_resolves(art_home):
     assert card_art.tag_icon_path("Boss") is None
 
 
+def test_a_tag_icon_is_looked_up_once_until_the_cache_is_forgotten(qapp, art_home, monkeypatch):
+    from bartlebot.gui.widgets.tag_picker import tag_icon
+
+    _extract("Gear")
+    calls = []
+    real = card_art.tag_icon_path
+    monkeypatch.setattr(card_art, "tag_icon_path", lambda tag: calls.append(tag) or real(tag))
+
+    assert tag_icon("Gear") is not None
+    assert tag_icon("Gear") is not None
+    assert calls == ["Gear"]
+
+    card_art.forget_cache()
+    tag_icon("Gear")
+    assert calls == ["Gear", "Gear"]
+
+
+def test_forgetting_the_cache_lets_new_art_appear(qapp, art_home):
+    from bartlebot.gui.widgets.tag_picker import tag_icon
+
+    assert tag_icon("Gear") is None
+
+    _extract("Gear")
+    card_art.forget_cache()
+
+    assert tag_icon("Gear") is not None
+
+
 def test_the_pill_is_led_by_the_medallion_and_keeps_its_name(qapp, art_home):
     from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX
     from bartlebot.gui.widgets.tag_pill import TagPill

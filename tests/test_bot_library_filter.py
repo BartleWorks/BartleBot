@@ -349,6 +349,75 @@ def test_loose_files_are_listed_as_other(qapp, library):
 
 
 # ---------------------------------------------------------------------------
+# Cards are kept across filters
+#
+# Rebuilding every card per keystroke made the search box lag once the tag pills
+# carried medallions; the panel now builds a card once per refresh.
+# ---------------------------------------------------------------------------
+
+
+def _listed_panel(metas: list[_BotMeta]) -> _BotLibraryPanel:
+    panel = _BotLibraryPanel()
+    panel._all_metas = list(metas)
+    panel._cat_list.clear()
+    panel.add_category_row(panel._ALL_KEY, panel._ALL)
+    panel._cat_list.setCurrentRow(0)
+    return panel
+
+
+def test_a_search_reuses_the_cards_it_already_built(qapp):
+    panel = _listed_panel(ALL)
+    before = {id(card) for card in _cards(panel)}
+
+    panel._search.setText("jade")
+    assert [card._meta for card in _cards(panel)] == [JADE]
+
+    panel._search.setText("")
+    assert {id(card) for card in _cards(panel)} == before
+
+
+def test_a_kept_card_shows_and_drops_the_matched_drops_line(qapp):
+    panel = _listed_panel(ALL)
+
+    panel._search.setText("amber")
+    (card,) = _cards(panel)
+    assert card.matched_drops_text == "Drops: Amber"
+
+    panel._search.setText("jade oni")
+    assert _cards(panel) == [card]
+    assert card.matched_drops_text is None
+
+
+def test_the_empty_hint_does_not_linger_among_kept_cards(qapp):
+    panel = _listed_panel(ALL)
+
+    panel._search.setText("no bot is called this")
+    assert panel._empty_hint is not None
+
+    panel._search.setText("")
+    assert panel._empty_hint is None
+    assert all(isinstance(w, _BotCard) for w in _cards(panel))
+
+
+def test_a_refresh_builds_new_cards(qapp, library):
+    """The files were re-read, so a kept card may describe a version that is gone."""
+    panel = _BotLibraryPanel()
+    panel.refresh()
+    before = {id(card) for card in panel._cards.values()}
+    assert before
+
+    panel.refresh()
+
+    assert before.isdisjoint(id(card) for card in panel._cards.values())
+
+
+def test_a_card_built_with_matched_drops_shows_them(qapp):
+    card = _BotCard(JADE, matched_drops=["Amber", "Jade Robe", "Jade Hat", "Jade Boots"])
+
+    assert card.matched_drops_text == "Drops: Amber, Jade Robe, Jade Hat +1 more"
+
+
+# ---------------------------------------------------------------------------
 # Card pills
 # ---------------------------------------------------------------------------
 

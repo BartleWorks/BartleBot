@@ -12,6 +12,8 @@ it is a parameter rather than something the widget works out for itself.
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtWidgets import QWidget
 
@@ -31,7 +33,17 @@ def tag_icon(tag: str) -> QPixmap | None:
 
     None on every install that has not run the extractor, and always for the Type tags,
     which have no game art. Every caller keeps its text form for that case.
+
+    Cached per :func:`card_art.cache_generation`, so ``card_art.forget_cache`` is what
+    makes new art visible here too. The lookup stats the file twice, and the library
+    asks once per tag per card -- a few hundred stats a listing, which on Windows was a
+    visible share of a keystroke in the search box.
     """
+    return _tag_icon(tag, card_art.cache_generation())
+
+
+@lru_cache(maxsize=64)
+def _tag_icon(tag: str, _generation: int) -> QPixmap | None:
     path = card_art.tag_icon_path(tag)
     return None if path is None else pixmap_for_path(path, TAG_ICON_PX)
 
