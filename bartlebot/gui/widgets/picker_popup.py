@@ -29,7 +29,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from PyQt6.QtCore import QEvent, QPoint, QPointF, QRect, QRectF, QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen, QPixmap, QPolygonF
+from PyQt6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPen, QPolygonF
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -76,7 +76,8 @@ class PickerRow:
     "0 bots" is an answer.
 
     ``icon`` is drawn where the dot would be, and replaces it: a row with artwork does not
-    also need a colour swatch. Left out of equality and hashing, since a pixmap is neither.
+    also need a colour swatch, and is drawn :data:`ROW_ICON_PX` square. Left out of equality
+    and hashing, since an icon is neither.
     """
 
     key: str
@@ -85,7 +86,7 @@ class PickerRow:
     meta: str = ""
     accent: str | None = None  # colored dot; None draws no dot
     dim: bool = False
-    icon: QPixmap | None = field(default=None, compare=False)
+    icon: QIcon | None = field(default=None, compare=False)
 
 
 Section = tuple[str, list[PickerRow]]
@@ -258,6 +259,9 @@ _BOX = 13  # checkbox indicator, px
 _PAD_X = 10
 _GAP = 7
 _DOT = 9
+#: Side of a row's icon. The tag medallions are what rows carry, and 16 was too small to
+#: read one.
+ROW_ICON_PX = 20
 
 
 class _RowWidget(QWidget):
@@ -347,9 +351,9 @@ class _RowWidget(QWidget):
             icon = self._row.icon
             if dim:
                 painter.setOpacity(0.45)
-            painter.drawPixmap(x, (rect.height() - icon.height()) // 2, icon)
+            icon.paint(painter, QRect(x, (rect.height() - ROW_ICON_PX) // 2, ROW_ICON_PX, ROW_ICON_PX))
             painter.setOpacity(1.0)
-            x += icon.width() + _GAP
+            x += ROW_ICON_PX + _GAP
         elif self._row.accent:
             dot = QRect(x, (rect.height() - _DOT) // 2, _DOT, _DOT)
             painter.setPen(Qt.PenStyle.NoPen)
@@ -450,7 +454,7 @@ class _SectionHeader(QWidget):
     tiles take. The text colour *is* a ``THEME`` value and is read at paint time.
     """
 
-    def __init__(self, title: str, icon: QPixmap | None = None, parent: QWidget | None = None) -> None:
+    def __init__(self, title: str, icon: QIcon | None = None, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._title = title
         self._icon = icon
@@ -468,8 +472,8 @@ class _SectionHeader(QWidget):
         return self._title
 
     @property
-    def icon(self) -> QPixmap | None:
-        """The pixmap drawn ahead of the caption, or None where none resolved."""
+    def icon(self) -> QIcon | None:
+        """The icon drawn ahead of the caption, or None where none resolved."""
         return self._icon
 
     def paintEvent(self, event) -> None:
@@ -480,9 +484,9 @@ class _SectionHeader(QWidget):
 
         x = _PAD_X
         if self._icon is not None:
-            top = (rect.height() - self._icon.height()) // 2
-            painter.drawPixmap(x, top, self._icon)
-            x += self._icon.width() + _GAP
+            top = (rect.height() - SECTION_ICON_PX) // 2
+            self._icon.paint(painter, QRect(x, top, SECTION_ICON_PX, SECTION_ICON_PX))
+            x += SECTION_ICON_PX + _GAP
 
         painter.setFont(self._font)
         painter.setPen(QColor(THEME.text_subtle))
@@ -615,7 +619,7 @@ class PickerPopup(QWidget):
         single_select: bool = False,
         width: int = POPUP_WIDTH,
         broad: bool = False,
-        section_icon: Callable[[str], QPixmap | None] | None = None,
+        section_icon: Callable[[str], QIcon | None] | None = None,
     ) -> None:
         super().__init__(parent, Qt.WindowType.Popup)
         # Resolves a section title to an emblem, or to None -- which is the ordinary
@@ -899,7 +903,7 @@ class PickerButton(QToolButton):
         single_select: bool = False,
         popup_width: int = POPUP_WIDTH,
         broad: bool = False,
-        section_icon: Callable[[str], QPixmap | None] | None = None,
+        section_icon: Callable[[str], QIcon | None] | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)

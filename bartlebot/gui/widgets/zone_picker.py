@@ -15,7 +15,7 @@ art at all, and the header simply draws its text. The suggestions section never 
 "Where players are" spans worlds and an emblem there would claim a single one.
 
 zone_sections(), describe_zone() and world_keys_by_title() are the data half and need no
-QApplication; world_icon_resolver() needs one only once art exists to turn into a pixmap.
+QApplication; world_icon_resolver() needs one only once art exists to turn into an icon.
 """
 
 from __future__ import annotations
@@ -23,12 +23,12 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 
 from PyQt6.QtCore import QSize, pyqtSignal
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
 from bartlebot import card_art, worlds, zone_names, zone_nav
-from bartlebot.gui.widgets.card_art_tile import pixmap_for_path
-from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX, PickerButton, PickerRow, Section
+from bartlebot.gui.widgets.card_art_tile import art_icon
+from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 
 SUGGESTED_TITLE = "Where players are"
 POPUP_WIDTH = 480
@@ -54,26 +54,26 @@ def world_keys_by_title(nav: zone_nav.NavMap) -> dict[str, str]:
     return {worlds.label(world.key): world.key for world in nav.worlds.values()}
 
 
-def world_icon_resolver(nav: zone_nav.NavMap, size: int = SECTION_ICON_PX) -> Callable[[str], QPixmap | None]:
-    """A ``title -> pixmap`` lookup for the picker's section headers.
+def world_icon_resolver(nav: zone_nav.NavMap) -> Callable[[str], QIcon | None]:
+    """A ``title -> icon`` lookup for the picker's section headers.
 
     Returns None for every "no icon" case, and they are all ordinary: a title that is not
     a world (the suggestions section), a world whose emblem this machine has not extracted,
     and an install that has never run the extractor at all -- which is most of them. The
     header draws its caption alone in every one of those.
 
-    The title map is built once per resolver rather than per call; the pixmap itself comes
-    from ``pixmap_for_path``, whose cache is keyed on the file's mtime, so re-running the
+    The title map is built once per resolver rather than per call; the icon itself comes
+    from ``art_icon``, whose cache is keyed on the file's mtime, so re-running the
     extractor while the app is open replaces what is cached.
     """
     titles = world_keys_by_title(nav)
 
-    def resolve(title: str) -> QPixmap | None:
+    def resolve(title: str) -> QIcon | None:
         key = titles.get(title)
         if key is None:
             return None
         path = card_art.world_icon_path(key)
-        return None if path is None else pixmap_for_path(path, size)
+        return None if path is None else art_icon(path)
 
     return resolve
 

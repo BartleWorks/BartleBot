@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QColor, QPixmap
 
 from bartlebot import card_art
@@ -19,7 +20,7 @@ from bartlebot.gui.widgets.card_art_tile import (
     CardArtStrip,
     GroupDivider,
     badge_rect,
-    card_pixmap,
+    card_icon,
     tooltip_for,
 )
 
@@ -99,17 +100,47 @@ def test_the_tooltip_omits_a_count_of_one():
 # -- the strip ---------------------------------------------------------------
 
 
-def test_a_card_with_extracted_art_gets_a_pixmap(art_home, qapp):
+def test_a_card_with_extracted_art_gets_an_icon(art_home, qapp):
     _extract({"Tempest": "Spell_Storm_Tempest.png"}, qapp)
 
-    pixmap = card_pixmap("Tempest", COLLAPSED_TILE)
-
-    assert pixmap is not None
-    assert pixmap.width() == COLLAPSED_TILE
+    assert card_icon("Tempest") is not None
 
 
-def test_a_card_with_no_extracted_art_has_no_pixmap(art_home, qapp):
-    assert card_pixmap("Tempest", COLLAPSED_TILE) is None
+@pytest.mark.parametrize("ratio", [1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0])
+def test_the_art_is_rendered_at_the_screens_own_resolution(art_home, qapp, ratio):
+    """Whatever the display's scaling, the icon hands back an image with a physical
+    pixel per device pixel -- never a 40px one for Qt to stretch over 50, which is what
+    a pixmap scaled in advance to the logical size was."""
+    _extract({"Tempest": "Spell_Storm_Tempest.png"}, qapp)
+
+    pixmap = card_icon("Tempest").pixmap(QSize(COLLAPSED_TILE, COLLAPSED_TILE), ratio)
+
+    assert pixmap.width() == round(COLLAPSED_TILE * ratio)
+    assert pixmap.devicePixelRatio() == pytest.approx(ratio)
+
+
+def test_the_view_paints_at_the_devices_resolution(art_home, qapp):
+    """Painted into a 150% device, a 20pt view fills 30 physical pixels with the art."""
+    from PyQt6.QtGui import QImage, QPainter
+
+    from bartlebot.gui.widgets.card_art_tile import ArtIconView
+
+    _extract({"Tempest": "Spell_Storm_Tempest.png"}, qapp)
+    view = ArtIconView(20)
+    view.set_icon(card_icon("Tempest"))
+    image = QImage(30, 30, QImage.Format.Format_ARGB32)
+    image.setDevicePixelRatio(1.5)
+    image.fill(0)
+    painter = QPainter(image)
+    view.render(painter)
+    painter.end()
+
+    assert image.pixelColor(29, 29) == QColor("red")
+    assert image.pixelColor(0, 0) == QColor("red")
+
+
+def test_a_card_with_no_extracted_art_has_no_icon(art_home, qapp):
+    assert card_icon("Tempest") is None
 
 
 def test_the_strip_tiles_every_card_that_has_art(art_home, qapp):

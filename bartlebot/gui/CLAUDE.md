@@ -294,6 +294,23 @@ card by. A stylesheet cannot do this shape: padding and border-radius will not p
 flush with a rounded end. The Type tags have no art, so they are always text, and a mixed
 row is the normal case.
 
+Drop categories use them in the Category column of both drop tables (Possible Drops and
+the quicksell keep-list picker), through `drop_tree.drop_icon`, drawn at `DROP_ICON_PX` = 20
+for the same reason as the tags. The icon sits beside the category text, never in place of
+it, and an uncategorized row or an install with no art keeps the text alone. A pin row's
+icon depends on its name (`card_art.drop_icon_name`), so pass the item name as well as the
+category.
+
+**Art is a `QIcon` holding the full-size image, painted with `QIcon.paint`** — never a
+`QPixmap` scaled to the logical size in advance. `card_art_tile.art_icon` is the one way to
+load it. Users run any display scaling, and one machine can mix two (125% and 100% here), so
+the resolution has to be chosen as each screen paints: `paint` asks for the logical size
+times that device's pixel ratio and Qt scales down from the original, caching per ratio. A
+20px pixmap is stretched to 25 physical pixels at 125% and drew soft with a jagged ring;
+one pre-scaled for a single ratio is wrong on every other. So lay out by the size constant
+(`TAG_ICON_PX`, `ROW_ICON_PX`, `SECTION_ICON_PX`), not by the image's own size, and where a
+`QLabel` would have held the pixmap use `ArtIconView`.
+
 An icon is artwork in its own colours, so a widget drawing one reads no `THEME` value
 and needs neither `ThemedMixin` nor a `changeEvent` — the guard test agrees, and this is
 the same exemption the card art tiles take.

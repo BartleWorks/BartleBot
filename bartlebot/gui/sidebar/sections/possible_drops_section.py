@@ -20,7 +20,12 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
-from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY, CategoryThenNameTreeItem
+from bartlebot.gui.widgets.drop_tree import (
+    UNCATEGORIZED_DISPLAY,
+    CategoryThenNameTreeItem,
+    drop_icon,
+    show_drop_icons,
+)
 from bartlebot.wiki_drops import match_name_for
 
 if TYPE_CHECKING:
@@ -167,6 +172,7 @@ class _DropsListWidget(QWidget):
         header.setSectionResizeMode(self.COL_NAME, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(self.COL_CATEGORY, QHeaderView.ResizeMode.Fixed)
         self._list.setColumnWidth(self.COL_CATEGORY, 92)
+        show_drop_icons(self._list)
         layout.addWidget(self._list, 1)
 
         # Button row — shown only in edit mode
@@ -214,6 +220,8 @@ class _DropsListWidget(QWidget):
         for entry in entries:
             item = CategoryThenNameTreeItem([entry.name, entry.category or UNCATEGORIZED_DISPLAY])
             item.setData(self.COL_NAME, Qt.ItemDataRole.UserRole, entry)
+            if (icon := drop_icon(entry.category, entry.name)) is not None:
+                item.setIcon(self.COL_CATEGORY, icon)
             self._list.addTopLevelItem(item)
         self._update_button_state()
 

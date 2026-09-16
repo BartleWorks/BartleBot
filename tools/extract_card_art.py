@@ -65,6 +65,8 @@ from bartlebot.card_art import (  # noqa: E402
     UNIVERSAL_ICON,
     art_dir,
     badge_icon_name,
+    drop_icon_name,
+    pin_icon_name,
     school_icon_name,
     spells_dir,
     tag_icon_name,
@@ -299,6 +301,55 @@ TAG_COMPOSITES: dict[str, tuple[tuple[str, ...], Callable[..., Image.Image]]] = 
 
 TAG_ICON_SOURCES: dict[str, str] = {tag_icon_name(tag): texture for tag, texture in TAG_TEXTURES.items()}
 
+#: Drop category -> the full game path of its icon, for every category the wiki import
+#: produces (``quicksell``'s two category sets are that vocabulary).
+#:
+#: Nearly all are the quest page's reward medallions, 128px single images, and which one
+#: goes with which category is the game's own pairing rather than a guess: the outfit slots
+#: draw ``Hat``/``Robe``/``Shoes``/``Weapon``, housing items draw ``Housing`` (pixel-for-pixel
+#: ``Furniture``), battleground reward tables draw ``Seed`` and ``Treasure_Card``.
+#: ``Weapon`` rather than ``Wand``, which is the same wand at 64px. The quest page has no
+#: spellement, so Spellements takes the reward-category one the Spellements tag uses.
+#:
+#: Pins has an icon per kind (``PIN_TEXTURES``); its entry here is only for a pin whose
+#: kind is not recognised, and is the Jewels medallion because quicksell sells pins as
+#: jewels.
+DROP_TEXTURES: dict[str, str] = {
+    "Hats": "GUI/QuestPage/Art_Quest_Hat.dds",
+    "Robes": "GUI/QuestPage/Art_Quest_Robe.dds",
+    "Boots": "GUI/QuestPage/Art_Quest_Shoes.dds",
+    "Wands": "GUI/QuestPage/Art_Quest_Weapon.dds",
+    "Athames": "GUI/QuestPage/Art_Quest_Athame.dds",
+    "Amulets": "GUI/QuestPage/Art_Quest_Amulet.dds",
+    "Rings": "GUI/QuestPage/Art_Quest_Ring.dds",
+    "Decks": "GUI/QuestPage/Art_Quest_Deck.dds",
+    "Pets": "GUI/QuestPage/Art_Quest_Pet.dds",
+    "Mounts": "GUI/QuestPage/Art_Quest_Mount.dds",
+    "Seeds": "GUI/QuestPage/Art_Quest_Seed.dds",
+    "Snacks": "GUI/QuestPage/Art_Quest_PetSnack.dds",
+    "Reagents": "GUI/QuestPage/Art_Quest_Reagent.dds",
+    "Jewels": "GUI/QuestPage/Art_Quest_Jewel.dds",
+    "Pins": "GUI/QuestPage/Art_Quest_Jewel.dds",
+    "Housing Items": "GUI/QuestPage/Art_Quest_Housing.dds",
+    "Treasure Cards": "GUI/QuestPage/Art_Quest_Treasure_Card.dds",
+    "Spellements": "GUI/Buttons/Button_BG_Reward_Spellement02.dds",
+}
+
+#: Pin kind -> the bank and quicksell filter button for it. 2x2 state sheets of 64px
+#: buttons, the one drop icon set that is neither 128px nor a single image.
+PIN_TEXTURES: dict[str, str] = {
+    "power": "GUI/Buttons/Button_Socketing_Pin_Square_Pip.dds",
+    "shield": "GUI/Buttons/Button_Socketing_Pin_Square_Shield.dds",
+    "sword": "GUI/Buttons/Button_Socketing_Pin_Square_Sword.dds",
+}
+
+PIN_ICON_SOURCES: dict[str, str] = {pin_icon_name(kind): texture for kind, texture in PIN_TEXTURES.items()}
+
+DROP_ICON_SOURCES: dict[str, str] = {
+    **{drop_icon_name(category): texture for category, texture in DROP_TEXTURES.items()},
+    **PIN_ICON_SOURCES,
+}
+
 #: Icon key -> the texture basename it comes from, resolved through the same
 #: basename index the spell art uses.
 #:
@@ -317,6 +368,7 @@ ICON_SOURCES: dict[str, str] = {
     **WORLD_ICON_SOURCES,
     **BADGE_ICON_SOURCES,
     **TAG_ICON_SOURCES,
+    **DROP_ICON_SOURCES,
 }
 
 #: Icon keys whose texture is a 2x2 sheet of button states rather than a single image.
@@ -326,8 +378,10 @@ ICON_SOURCES: dict[str, str] = {
 #: the player cannot reach. Only the top-left is wanted. Drawn whole, these would render at
 #: quarter size with three ghosts around them -- which is exactly what a "why is the icon
 #: tiny" bug looks like from the outside. ``SINGLE_IMAGE_BADGES`` are the exceptions.
-STATE_SHEET_ICONS: frozenset[str] = frozenset(WORLD_ICON_SOURCES) | frozenset(
-    key for key in BADGE_ICON_SOURCES if key not in {badge_icon_name(b) for b in SINGLE_IMAGE_BADGES}
+STATE_SHEET_ICONS: frozenset[str] = (
+    frozenset(WORLD_ICON_SOURCES)
+    | frozenset(key for key in BADGE_ICON_SOURCES if key not in {badge_icon_name(b) for b in SINGLE_IMAGE_BADGES})
+    | frozenset(PIN_ICON_SOURCES)
 )
 
 
@@ -539,7 +593,7 @@ def main() -> int:
         for sub in (spells_dir().name, ICONS_DIRNAME):
             size += sum(f.stat().st_size for f in (out_dir / sub).glob("*.png"))
     print(f"{'would write' if args.dry_run else 'wrote'} {index['files']} images for {len(index['images'])} templates")
-    print(f"  {len(index['icons'])} school, archmastery, world, badge and tag icons")
+    print(f"  {len(index['icons'])} school, archmastery, world, badge, tag and drop icons")
     if size:
         print(f"  {size / 1e6:.1f} MB in {out_dir}")
     if index["missing"]:

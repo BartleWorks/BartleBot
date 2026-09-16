@@ -34,6 +34,7 @@ from functools import cache
 from pathlib import Path
 
 from bartlebot.shared.vendor import product_dir
+from bartlebot.wiki_drops import PIN_CATEGORY, pin_kind
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +114,30 @@ def tag_icon_name(tag: str) -> str:
     for the reason :func:`school_icon_name` is. The tag's text is the key rather than a
     second table of ids, because ``bot_tags.BOT_TAGS`` is already the one list of them.
     """
-    return "tag_" + tag.casefold().replace(" ", "_").replace("-", "_")
+    return "tag_" + _slug(tag)
+
+
+def _slug(text: str) -> str:
+    return text.casefold().replace(" ", "_").replace("-", "_")
+
+
+def drop_icon_name(category: str, item_name: str = "") -> str:
+    """The icon key for a drop, from its category and, for a pin, its name.
+
+    ``("Treasure Cards", ...)`` -> ``"drop_treasure_cards"``. A pin is the one category
+    whose icon depends on the item: ``("Pins", "Fire Blocking Pin (150)")`` ->
+    ``"pin_shield"``, the game's own filter button for that kind. A pin whose kind is not
+    recognised keeps ``"drop_pins"``, which the extractor points at the Jewels medallion
+    -- the fallback is its table's to state, as the dungeon stand-in for worlds is.
+    """
+    if category == PIN_CATEGORY and (kind := pin_kind(item_name)):
+        return pin_icon_name(kind)
+    return "drop_" + _slug(category)
+
+
+def pin_icon_name(kind: str) -> str:
+    """The icon key for a pin kind ("shield" -> "pin_shield")."""
+    return f"pin_{kind}"
 
 
 def school_icon_name(school: str) -> str:
@@ -250,3 +274,8 @@ def tag_icon_path(tag: str) -> Path | None:
     and keep their text pill.
     """
     return icon_path(tag_icon_name(tag))
+
+
+def drop_icon_path(category: str, item_name: str = "") -> Path | None:
+    """The PNG for a drop's category icon, or None if there is not one on this machine."""
+    return icon_path(drop_icon_name(category, item_name))

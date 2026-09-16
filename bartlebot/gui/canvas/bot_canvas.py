@@ -64,7 +64,7 @@ from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
-from bartlebot.gui.widgets.card_art_tile import pixmap_for_path
+from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.tag_picker import TagPickerButton
@@ -228,8 +228,7 @@ def _art_icon(path: Path | None) -> QIcon | None:
     Decoration over a caption that already carries the meaning, the same rule the zone
     picker's world headers follow, so every failure to resolve is silent.
     """
-    pixmap = None if path is None else pixmap_for_path(path, SECTION_ICON_PX)
-    return None if pixmap is None else QIcon(pixmap)
+    return None if path is None else art_icon(path)
 
 
 def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple[list[_BotMeta], dict[Path, list[str]]]:

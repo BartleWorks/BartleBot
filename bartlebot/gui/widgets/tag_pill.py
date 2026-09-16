@@ -36,7 +36,7 @@ as one.
 from __future__ import annotations
 
 from PyQt6.QtCore import QEvent, QRect, QRectF, QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPainterPath, QPixmap
+from PyQt6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPainterPath
 from PyQt6.QtWidgets import QLabel, QPushButton, QSizePolicy, QWidget
 
 from bartlebot.bot_tags import tag_group
@@ -80,7 +80,7 @@ def medallion_pill_width(font: QFont, text: str) -> int:
     return TAG_ICON_PX + _MEDALLION_GAP + QFontMetrics(font).horizontalAdvance(text) + _MEDALLION_PAD_R
 
 
-def paint_medallion_pill(painter: QPainter, width: int, icon: QPixmap, text: str, fill: str, fg: str) -> None:
+def paint_medallion_pill(painter: QPainter, width: int, icon: QIcon, text: str, fill: str, fg: str) -> None:
     """A pill whose left end *is* the medallion.
 
     The pill is exactly as tall as the medallion and every medallion fills its square, so
@@ -97,7 +97,7 @@ def paint_medallion_pill(painter: QPainter, width: int, icon: QPixmap, text: str
     body.addRect(QRectF(h / 2, 0, max(width - h, 0), h))
     body.addEllipse(QRectF(width - h, 0, h, h))
     painter.fillPath(body, QColor(fill))
-    painter.drawPixmap((h - icon.width()) // 2, (h - icon.height()) // 2, icon)
+    icon.paint(painter, QRect(0, 0, h, h))
     painter.setPen(QColor(fg))
     text_x = h + _MEDALLION_GAP
     painter.drawText(

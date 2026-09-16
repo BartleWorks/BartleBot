@@ -114,9 +114,9 @@ PNG because Qt's build here has no `dds` plugin. One PNG per *image*, not per te
 18,007 templates share 1,308 images. `Pillow` is a dev dependency for exactly this and
 is not imported at runtime. `bartlebot/card_art.py` is the read side.
 
-The same run also writes 138 UI icons into `art/icons/`, and they are keyed by a
+The same run also writes 159 UI icons into `art/icons/`, and they are keyed by a
 **logical name** — `archmastery`, `universal`, `recent`, `school_fire`, `world_krokotopia`,
-`badge_4dungeons`, `tag_team_up` — rather
+`badge_4dungeons`, `tag_team_up`, `drop_treasure_cards`, `pin_shield` — rather
 than by the texture they came from, so neither the extractor's caller nor the GUI ever
 spells a KingsIsle filename. `ICON_SOURCES` is the one place the two meet. What they
 resolve to, and why each was picked over its neighbours:
@@ -131,6 +131,25 @@ resolve to, and why each was picked over its neighbours:
 | `dungeon` | `GUI/BadgeCategory/Badge_Category_Dungeons.dds` | the bare rock-golem badge, for a nav "world" that is a dungeon group |
 | `badge_<key>` | whatever `BadgeFilterDescriptions.xml` names | the icon the badge page draws beside each of its 78 categories; the bot library's folder list |
 | `tag_<tag>` | `TAG_TEXTURES`, or built by `TAG_COMPOSITES` | a gold-ringed medallion per Rewards and Activity tag, hand-picked so all twenty match; the Type tags have none |
+| `drop_<category>` | `DROP_TEXTURES`, nearly all `GUI/QuestPage/Art_Quest_*` | the quest page's reward medallion for each drop category; see below |
+| `pin_<kind>` | `GUI/Buttons/Button_Socketing_Pin_Square_{Pip,Shield,Sword}.dds` | the bank and quicksell filter buttons for Power, Shield and Sword pins |
+
+**The drop icons are the game's own pairings, not picks.** Each `Art_Quest_` medallion was
+matched to a category by what the game draws it for: the Rate My Stitch outfit slots use
+`Hat`, `Robe`, `Shoes` and `Weapon`, every `COLLECT_HOUSE_*` housing item uses `Housing`,
+the battleground reward tables use `Seed` and `Treasure_Card`. Three easy "tidy-ups" are
+wrong. `Weapon` is the wand, and `Art_Quest_Wand` is the same art at 64px. `Housing` and
+`Furniture` are pixel-identical, but `Deed` (the floating house) is a different thing. And
+the quest page has no spellement, so Spellements draws `Button_BG_Reward_Spellement02`,
+the reward-category icon the Spellements tag also uses.
+
+**A pin's icon comes from its name, not its category.** The game files pins under three
+kinds, one filter button each, and `wiki_drops.PIN_KINDS` maps the type word in a pin's name
+to its kind: Accurate and Conversion are Power; Blocking, Resist and Mending are Shield;
+Punishing, Disabling and Crushing are Sword. The buttons are 2x2 sheets of 64px states, so
+they are cropped and come out at 64px. A pin with no recognised type word gets `drop_pins`,
+which `DROP_TEXTURES` points at the Jewels medallion. The fallback is the table's to state,
+as the dungeon stand-in is for worlds.
 
 **The tag medallions are chosen, not found.** Nothing in the game pairs a medallion with
 our tag vocabulary, so `TAG_TEXTURES` is a hand-picked table of full paths, and each pick

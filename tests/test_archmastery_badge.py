@@ -14,12 +14,12 @@ from __future__ import annotations
 import json
 
 import pytest
-from PyQt6.QtGui import QColor, QPixmap
+from PyQt6.QtGui import QColor, QIcon, QPixmap
 
 from bartlebot import card_art
 from bartlebot.bot.strategy_models import DeckData
 from bartlebot.gui.sidebar.combat_tab import _PlayerDecksSection
-from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge, icon_pixmap, school_icon_for
+from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge, extracted_icon, school_icon_for
 
 #: A colour per icon key, so a pixmap can be identified by reading a pixel out of it.
 COLOURS = {
@@ -49,8 +49,9 @@ def _extract_icons(keys=tuple(COLOURS), *, images: dict[str, str] | None = None)
         assert pixmap.save(str(card_art.icons_dir() / f"{key}.png"), "PNG")
 
 
-def _colour_of(pixmap: QPixmap) -> QColor:
-    return pixmap.toImage().pixelColor(pixmap.width() // 2, pixmap.height() // 2)
+def _colour_of(icon: QIcon) -> QColor:
+    image = icon.pixmap(16).toImage()
+    return image.pixelColor(image.width() // 2, image.height() // 2)
 
 
 # -- which second icon ------------------------------------------------------
@@ -59,10 +60,10 @@ def _colour_of(pixmap: QPixmap) -> QColor:
 def test_the_school_medallion_is_drawn_when_the_school_will_be_set(art_home, qapp):
     _extract_icons()
 
-    pixmap = school_icon_for("Fire", will_set=True)
+    icon = school_icon_for("Fire", will_set=True)
 
-    assert pixmap is not None
-    assert _colour_of(pixmap) == COLOURS["school_fire"]
+    assert icon is not None
+    assert _colour_of(icon) == COLOURS["school_fire"]
 
 
 def test_the_universal_mark_stands_in_when_the_school_will_not_be_set(art_home, qapp):
@@ -70,10 +71,10 @@ def test_the_universal_mark_stands_in_when_the_school_will_not_be_set(art_home, 
     the wizard that the deck does not make."""
     _extract_icons()
 
-    pixmap = school_icon_for("Fire", will_set=False)
+    icon = school_icon_for("Fire", will_set=False)
 
-    assert pixmap is not None
-    assert _colour_of(pixmap) == COLOURS[card_art.UNIVERSAL_ICON]
+    assert icon is not None
+    assert _colour_of(icon) == COLOURS[card_art.UNIVERSAL_ICON]
 
 
 def test_a_school_is_found_whatever_case_the_deck_stored_it_in(art_home, qapp):
@@ -102,8 +103,8 @@ def test_the_badge_draws_both_icons(art_home, qapp):
     badge.set_archmastery("Fire", will_set=True, tooltip="Archmastery: Fire · always set")
 
     assert badge.has_icons()
-    assert _colour_of(badge._mark.pixmap()) == COLOURS[card_art.ARCHMASTERY_ICON]
-    assert _colour_of(badge._school.pixmap()) == COLOURS["school_fire"]
+    assert _colour_of(badge._mark.icon()) == COLOURS[card_art.ARCHMASTERY_ICON]
+    assert _colour_of(badge._school.icon()) == COLOURS["school_fire"]
     assert "always set" in badge.toolTip()
 
 
@@ -124,7 +125,7 @@ def test_the_badge_declines_a_school_its_icon_set_is_missing(art_home, qapp):
     badge.set_archmastery("Fire", will_set=True)
 
     assert not badge.has_icons()
-    assert badge._mark.pixmap().isNull()
+    assert badge._mark.icon() is None
 
 
 def test_a_deck_with_no_school_draws_nothing(art_home, qapp):
@@ -143,7 +144,7 @@ def test_rebuilding_the_badge_clears_what_was_there(art_home, qapp):
 
     badge.set_archmastery(None, will_set=False)
 
-    assert badge._school.pixmap().isNull()
+    assert badge._school.icon() is None
 
 
 # -- on the deck card -------------------------------------------------------
@@ -180,7 +181,7 @@ def test_a_deck_that_will_not_set_its_school_shows_the_universal_mark(art_home, 
 
     badge = section.card(1)._archmastery_icons
     assert badge.has_icons()
-    assert _colour_of(badge._school.pixmap()) == COLOURS[card_art.UNIVERSAL_ICON]
+    assert _colour_of(badge._school.icon()) == COLOURS[card_art.UNIVERSAL_ICON]
 
 
 def test_neither_form_appears_without_a_school(art_home, qapp):
@@ -197,5 +198,5 @@ def test_neither_form_appears_without_a_school(art_home, qapp):
 def test_the_icon_lookup_is_none_for_a_key_that_was_never_extracted(art_home, qapp):
     _extract_icons(keys=(card_art.ARCHMASTERY_ICON,))
 
-    assert icon_pixmap(card_art.ARCHMASTERY_ICON) is not None
-    assert icon_pixmap("school_shadow") is None
+    assert extracted_icon(card_art.ARCHMASTERY_ICON) is not None
+    assert extracted_icon("school_shadow") is None

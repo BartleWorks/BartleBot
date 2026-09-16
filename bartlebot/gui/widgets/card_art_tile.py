@@ -35,8 +35,8 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from PyQt6.QtCore import QRectF, QSize, Qt
-from PyQt6.QtGui import QColor, QFont, QPainter, QPixmap
+from PyQt6.QtCore import QRect, QRectF, QSize, Qt
+from PyQt6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
 from bartlebot import card_art
@@ -56,46 +56,74 @@ DIVIDER_WIDTH = 12
 GROUP_GAP = 8
 
 
-@lru_cache(maxsize=512)
-def _scaled_pixmap(path: str, size: int, stamp: float) -> QPixmap:
-    """The art at *path*, scaled to *size*, cached.
+@lru_cache(maxsize=256)
+def _art_icon(path: str, stamp: float) -> QIcon:
+    """The art at *path* as an icon holding the full-size image, cached.
 
     *stamp* is the file's mtime: it is not read, only keyed on, so that re-running the
     extractor while the app is open replaces what is cached instead of being ignored.
     """
     pixmap = QPixmap(path)
-    if pixmap.isNull():
-        return pixmap
-    return pixmap.scaled(
-        size,
-        size,
-        Qt.AspectRatioMode.KeepAspectRatio,
-        Qt.TransformationMode.SmoothTransformation,
-    )
+    return QIcon() if pixmap.isNull() else QIcon(pixmap)
 
 
-def pixmap_for_path(path: Path, size: int) -> QPixmap | None:
-    """An extracted PNG at *size*, or None if it cannot be read.
+def art_icon(path: Path) -> QIcon | None:
+    """An extracted PNG as an icon, or None if it cannot be read.
 
-    Shared with the archmastery icons, which come out of the same cache and want the
-    same mtime-keyed scaling; only the lookup that finds the path differs.
+    The icon holds the full-size image, never one scaled in advance, and every surface
+    draws it through ``QIcon.paint`` (or hands it to a view that does). That asks for
+    the image at the painted size *times the device pixel ratio of the screen being
+    painted*, which Qt scales down from the original and caches per ratio. A pixmap
+    pre-scaled to the logical size is stretched back up on any display scaled above
+    100%, and drew soft with a jagged ring; one pre-scaled for a single ratio is wrong
+    on every other, including the second monitor of the same machine.
+
+    The images are the extractor's 128px textures (a few 200-256px), so holding the
+    originals costs about 64KB each.
     """
     try:
         stamp = path.stat().st_mtime
     except OSError:
         return None
-    pixmap = _scaled_pixmap(str(path), size, stamp)
-    return None if pixmap.isNull() else pixmap
+    icon = _art_icon(str(path), stamp)
+    return None if icon.isNull() else icon
 
 
-def card_pixmap(template: str, size: int) -> QPixmap | None:
-    """The extracted art for *template* at *size*, or None if there is none.
+def card_icon(template: str) -> QIcon | None:
+    """The extracted art for *template*, or None if there is none.
 
     None is the ordinary answer on an install whose user has never run the extractor,
     and for the handful of cards whose texture the game's own files do not contain.
     """
     path = card_art.art_path(template)
-    return None if path is None else pixmap_for_path(path, size)
+    return None if path is None else art_icon(path)
+
+
+class ArtIconView(QWidget):
+    """One extracted icon, drawn at a fixed logical size for whichever screen it is on.
+
+    Stands in for a ``QLabel`` with a pixmap, which would fix the image's resolution
+    when it is set rather than when it is painted.
+    """
+
+    def __init__(self, size: int, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._icon: QIcon | None = None
+        self.setFixedSize(size, size)
+
+    def icon(self) -> QIcon | None:
+        return self._icon
+
+    def set_icon(self, icon: QIcon | None) -> None:
+        self._icon = icon
+        self.update()
+
+    def paintEvent(self, event) -> None:  # noqa: N802  (Qt override)
+        if self._icon is None:
+            return
+        painter = QPainter(self)
+        self._icon.paint(painter, self.rect())
+        painter.end()
 
 
 def tooltip_for(entry: DeckCardEntry) -> str:
@@ -113,10 +141,10 @@ def tooltip_for(entry: DeckCardEntry) -> str:
 class CardArtTile(QWidget):
     """One card's art, badged with its count when the deck holds more than one."""
 
-    def __init__(self, entry: DeckCardEntry, pixmap: QPixmap, size: int = COLLAPSED_TILE, parent=None) -> None:
+    def __init__(self, entry: DeckCardEntry, icon: QIcon, size: int = COLLAPSED_TILE, parent=None) -> None:
         super().__init__(parent)
         self._entry = entry
-        self._pixmap = pixmap
+        self._icon = icon
         self._size = size
         self.setFixedSize(size, size)
         self.setToolTip(tooltip_for(entry))
@@ -131,11 +159,8 @@ class CardArtTile(QWidget):
     def paintEvent(self, event) -> None:  # noqa: N802  (Qt override)
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-        # Centred: KeepAspectRatio can leave a pixel either way on a non-square source.
-        x = (self.width() - self._pixmap.width()) // 2
-        y = (self.height() - self._pixmap.height()) // 2
-        painter.drawPixmap(x, y, self._pixmap)
+        # Centred, aspect kept: QIcon.paint does both, for a non-square source too.
+        self._icon.paint(painter, QRect(0, 0, self._size, self._size))
         if self._entry.count > 1:
             self._paint_badge(painter)
         painter.end()
@@ -242,9 +267,9 @@ class CardArtStrip(QWidget):
         self._clear()
         for index, group in enumerate(groups):
             tiles = [
-                CardArtTile(entry, pixmap, self._size, self)
+                CardArtTile(entry, icon, self._size, self)
                 for entry in group.entries
-                if (pixmap := card_pixmap(entry.template, self._size)) is not None
+                if (icon := card_icon(entry.template)) is not None
             ]
             if not tiles:
                 continue

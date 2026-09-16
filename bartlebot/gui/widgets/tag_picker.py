@@ -14,13 +14,13 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 
 from bartlebot import card_art
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group  # noqa: F401  (re-exported)
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.card_art_tile import pixmap_for_path
+from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 
 #: Side of a tag's medallion wherever it is drawn. 16px was hard to read; the medallions
@@ -28,7 +28,7 @@ from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 TAG_ICON_PX = 20
 
 
-def tag_icon(tag: str) -> QPixmap | None:
+def tag_icon(tag: str) -> QIcon | None:
     """A tag's extracted medallion at :data:`TAG_ICON_PX`, or None -- the ordinary case.
 
     None on every install that has not run the extractor, and always for the Type tags,
@@ -43,9 +43,9 @@ def tag_icon(tag: str) -> QPixmap | None:
 
 
 @lru_cache(maxsize=64)
-def _tag_icon(tag: str, _generation: int) -> QPixmap | None:
+def _tag_icon(tag: str, _generation: int) -> QIcon | None:
     path = card_art.tag_icon_path(tag)
-    return None if path is None else pixmap_for_path(path, TAG_ICON_PX)
+    return None if path is None else art_icon(path)
 
 
 #: Dot colour per group. Two hues, so "is this a reward or an activity" is legible

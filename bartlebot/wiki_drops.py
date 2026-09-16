@@ -163,3 +163,38 @@ def match_name_for(name: str, category: str | None = None) -> str | None:
     """
     resolved = in_game_name(name, category)
     return None if resolved == name else resolved
+
+
+#: The drop category whose items come in the three pin kinds below.
+PIN_CATEGORY = "Pins"
+
+#: Pin type word -> the kind the game files it under. The bank and quicksell windows
+#: filter pins by these three kinds, one button each (Power, Shield, Sword), and a pin's
+#: kind is the one word in its name that says what it does -- ``Balance Blocking Pin
+#: (150, Death)`` is a Shield pin. Written out because the grouping is the game's and
+#: cannot be derived from the words themselves.
+PIN_KINDS: dict[str, str] = {
+    "Accurate": "power",
+    "Conversion": "power",
+    "Blocking": "shield",
+    "Resist": "shield",
+    "Mending": "shield",
+    "Punishing": "sword",
+    "Disabling": "sword",
+    "Crushing": "sword",
+}
+
+#: The type word must sit directly before "Pin", so a school or a word elsewhere in the
+#: name cannot be mistaken for it.
+_PIN_TYPE = re.compile(rf"\b({'|'.join(PIN_KINDS)})\s+Pin\b")
+
+
+def pin_kind(name: str) -> str | None:
+    """The kind of pin *name* is ("power", "shield" or "sword"), or None if it names none.
+
+    Works on the wiki name and the in-game name alike, since the type word is in both.
+    None for a pin type not in :data:`PIN_KINDS`, which callers treat as "a pin of no
+    known kind" rather than as an error.
+    """
+    match = _PIN_TYPE.search(name)
+    return PIN_KINDS[match.group(1)] if match else None

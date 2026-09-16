@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 
 import pytest
-from PyQt6.QtGui import QColor, QPixmap
+from PyQt6.QtGui import QColor, QIcon, QPixmap
 
 from bartlebot import card_art, deck_io
 from bartlebot.bot.strategy_models import DeckData
@@ -62,8 +62,9 @@ def _extract_icons(keys=tuple(COLOURS)) -> None:
         assert pixmap.save(str(card_art.icons_dir() / f"{key}.png"), "PNG")
 
 
-def _colour_of(pixmap: QPixmap) -> QColor:
-    return pixmap.toImage().pixelColor(pixmap.width() // 2, pixmap.height() // 2)
+def _colour_of(icon: QIcon) -> QColor:
+    image = icon.pixmap(16).toImage()
+    return image.pixelColor(image.width() // 2, image.height() // 2)
 
 
 def _button(editor: ArchmasteryEditor, label: str):
@@ -213,7 +214,7 @@ def test_the_school_medallion_is_drawn_when_the_school_will_be_set(art_home, qap
     editor.load(DeckData(normal={"Test Card": 1}, archmastery_school="Fire", apply_archmastery=True))
 
     assert not editor._icons.isHidden()
-    assert _colour_of(editor._icons._school.pixmap()) == COLOURS["school_fire"]
+    assert _colour_of(editor._icons._school.icon()) == COLOURS["school_fire"]
 
 
 def test_the_medallion_follows_the_mode_the_user_just_picked(art_home, qapp, app_setting):
@@ -225,7 +226,7 @@ def test_the_medallion_follows_the_mode_the_user_just_picked(art_home, qapp, app
 
     _click(editor, "Never set")
 
-    assert _colour_of(editor._icons._school.pixmap()) == COLOURS[card_art.UNIVERSAL_ICON]
+    assert _colour_of(editor._icons._school.icon()) == COLOURS[card_art.UNIVERSAL_ICON]
 
 
 def test_the_school_is_named_in_words_whether_or_not_there_are_icons(art_home, qapp, app_setting):

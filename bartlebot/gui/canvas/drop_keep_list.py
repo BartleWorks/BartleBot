@@ -33,7 +33,12 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY, CaseInsensitiveTreeItem
+from bartlebot.gui.widgets.drop_tree import (
+    UNCATEGORIZED_DISPLAY,
+    CaseInsensitiveTreeItem,
+    drop_icon,
+    show_drop_icons,
+)
 from bartlebot.gui.widgets.flow_layout import FlowLayout
 from bartlebot.gui.widgets.list_text import parse_list_text
 from bartlebot.gui.widgets.search_field import SearchLineEdit
@@ -228,6 +233,7 @@ class DropKeepListWidget(QWidget):
         header.setSectionResizeMode(_COL_CATEGORY, QHeaderView.ResizeMode.Fixed)
         self._tree.setColumnWidth(_COL_KEEP, 42)
         self._tree.setColumnWidth(_COL_CATEGORY, 92)
+        show_drop_icons(self._tree)
         self._tree.itemChanged.connect(self._on_item_changed)
         outer.addWidget(self._tree)
 
@@ -333,6 +339,8 @@ class DropKeepListWidget(QWidget):
             category = entry.category or ""
             row = _DropItem(["", entry.name, category or UNCATEGORIZED_DISPLAY])
             row.setData(_COL_CATEGORY, Qt.ItemDataRole.UserRole, category)
+            if (icon := drop_icon(category, entry.name)) is not None:
+                row.setIcon(_COL_CATEGORY, icon)
             row.setData(_COL_ITEM, Qt.ItemDataRole.UserRole, entry)
             row.setFlags(row.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             row.setCheckState(_COL_KEEP, Qt.CheckState.Unchecked)

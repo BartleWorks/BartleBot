@@ -33,11 +33,11 @@ WHERE IT SITS
 
 from __future__ import annotations
 
-from PyQt6.QtGui import QPixmap
-from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
+from PyQt6.QtGui import QIcon
+from PyQt6.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
 from bartlebot import card_art
-from bartlebot.gui.widgets.card_art_tile import pixmap_for_path
+from bartlebot.gui.widgets.card_art_tile import ArtIconView, art_icon
 
 #: Height of both icons on the deck card. ``Icon_Archmastery`` is a 32px texture and
 #: the game ships nothing larger, so this is the ceiling rather than a preference --
@@ -45,13 +45,13 @@ from bartlebot.gui.widgets.card_art_tile import pixmap_for_path
 ICON_SIZE = 20
 
 
-def icon_pixmap(name: str, size: int = ICON_SIZE) -> QPixmap | None:
+def extracted_icon(name: str) -> QIcon | None:
     """One extracted icon by its key, or None if it is not on this machine."""
     path = card_art.icon_path(name)
-    return None if path is None else pixmap_for_path(path, size)
+    return None if path is None else art_icon(path)
 
 
-def school_icon_for(school: str | None, will_set: bool, size: int = ICON_SIZE) -> QPixmap | None:
+def school_icon_for(school: str | None, will_set: bool) -> QIcon | None:
     """The medallion to draw beside the archmastery mark, or None if it cannot be.
 
     The universal mark whenever the school will not be set -- see the module docstring
@@ -60,8 +60,8 @@ def school_icon_for(school: str | None, will_set: bool, size: int = ICON_SIZE) -
     if not school:
         return None
     if not will_set:
-        return icon_pixmap(card_art.UNIVERSAL_ICON, size)
-    return icon_pixmap(card_art.school_icon_name(school), size)
+        return extracted_icon(card_art.UNIVERSAL_ICON)
+    return extracted_icon(card_art.school_icon_name(school))
 
 
 class ArchmasteryBadge(QWidget):
@@ -74,14 +74,13 @@ class ArchmasteryBadge(QWidget):
 
     def __init__(self, size: int = ICON_SIZE, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._size = size
         self._has_icons = False
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
-        self._mark = QLabel(self)
-        self._school = QLabel(self)
+        self._mark = ArtIconView(size, self)
+        self._school = ArtIconView(size, self)
         layout.addWidget(self._mark, 0)
         layout.addWidget(self._school, 0)
         # No trailing stretch, and Fixed rather than Preferred: this sits inline on the
@@ -105,14 +104,14 @@ class ArchmasteryBadge(QWidget):
         Both icons are set together or neither is: a lone archmastery spiral says only
         that the deck has an opinion, without saying what it is.
         """
-        mark = icon_pixmap(card_art.ARCHMASTERY_ICON, self._size) if school else None
-        medallion = school_icon_for(school, will_set, self._size)
+        mark = extracted_icon(card_art.ARCHMASTERY_ICON) if school else None
+        medallion = school_icon_for(school, will_set)
         self._has_icons = mark is not None and medallion is not None
 
         if self._has_icons:
-            self._mark.setPixmap(mark)
-            self._school.setPixmap(medallion)
+            self._mark.set_icon(mark)
+            self._school.set_icon(medallion)
         else:
-            self._mark.clear()
-            self._school.clear()
+            self._mark.set_icon(None)
+            self._school.set_icon(None)
         self.setToolTip(tooltip)

@@ -29,7 +29,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.bot.strategy_models import DeckData
 from bartlebot.gui.deck_content import DeckCardEntry, deck_groups
-from bartlebot.gui.widgets.card_art_tile import ROW_TILE, CardArtTile, card_pixmap, tooltip_for
+from bartlebot.gui.widgets.card_art_tile import ROW_TILE, CardArtTile, card_icon, tooltip_for
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
 #: A group heading is the row's own text in bold rather than a heading widget: this is a
@@ -112,9 +112,9 @@ class DeckCardList(QWidget):
         layout = QHBoxLayout(row)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
-        pixmap = card_pixmap(entry.template, ROW_TILE)
-        if pixmap is not None:
-            layout.addWidget(CardArtTile(entry, pixmap, ROW_TILE, row), 0)
+        icon = card_icon(entry.template)
+        if icon is not None:
+            layout.addWidget(CardArtTile(entry, icon, ROW_TILE, row), 0)
         layout.addWidget(ThemedTextLabel(f"×{entry.count}", color="text", parent=row), 0)
         # The name takes the slack and wraps; a fixed-width name label and a trailing
         # stretch instead left "Bunyip's Rage (Path A, Tier 5)" clipped mid-word at a
