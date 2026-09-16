@@ -75,8 +75,9 @@ SPIRAL_DOOR_WORLDS: tuple[str, ...] = (
 )
 """Worlds the World Tree spiral door offers, in progression order.
 
-The order matches the numbered folders under ``bots/`` (08 Wysteria, 12 Khrysalis and
-19 Novus have no bots yet, which is why those numbers are missing there).
+This is story order, which is what the door lists. The folders under ``bots/`` follow
+the badge page instead (see ``bartlebot/bot_folders.py``), which puts Wysteria after
+Khrysalis and Arcanum after Empyrea, so the two orders are not interchangeable.
 
 Deliberately excluded, and why -- these all have WorldNames entries, and several have
 their own GameData wads, so none of them can be filtered out by a rule:
