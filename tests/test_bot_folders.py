@@ -22,14 +22,14 @@ from bartlebot.bot_folders import (
     folder_number,
     folder_slug,
 )
-from bartlebot.card_art import badge_icon_name
+from bartlebot.card_art import RECENT_ICON, badge_icon_name
 from bartlebot.gui.canvas.bot_canvas import (
     CATEGORY_FONT_PX,
     CATEGORY_LIST_WIDTH,
     CATEGORY_PAD_X,
 )
 from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
-from tools.extract_card_art import BADGE_ICON_SOURCES, SINGLE_IMAGE_BADGES, STATE_SHEET_ICONS
+from tools.extract_card_art import BADGE_ICON_SOURCES, ICON_SOURCES, SINGLE_IMAGE_BADGES, STATE_SHEET_ICONS
 
 BOTS = Path(__file__).resolve().parent.parent / "bots"
 
@@ -126,6 +126,12 @@ def test_the_extractor_produces_every_icon_the_library_asks_for():
     wanted = {badge_icon_name(key) for key in (*FOLDER_BADGES.values(), ALL_BADGE)}
 
     assert wanted - set(BADGE_ICON_SOURCES) == set()
+
+
+def test_the_recent_row_has_an_uncropped_icon():
+    """The self-timer watch is one 128px picture, not a state sheet."""
+    assert ICON_SOURCES[RECENT_ICON] == "GUI/Buttons/Art_Selfie_Timer.dds"
+    assert RECENT_ICON not in STATE_SHEET_ICONS
 
 
 def test_only_the_single_image_badges_escape_the_crop():

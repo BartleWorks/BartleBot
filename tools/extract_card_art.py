@@ -61,6 +61,7 @@ from bartlebot.card_art import (  # noqa: E402
     DUNGEON_ICON,
     ICONS_DIRNAME,
     INDEX_FILENAME,
+    RECENT_ICON,
     UNIVERSAL_ICON,
     art_dir,
     badge_icon_name,
@@ -305,10 +306,13 @@ TAG_ICON_SOURCES: dict[str, str] = {tag_icon_name(tag): texture for tag, texture
 #: it covers all eleven schools -- seven in ``Root.wad``, and Moon, Star, Sun and Shadow
 #: in ``_Shared-WorldData.wad``. ``Type_Global`` is the game's universal mark, stamped
 #: on card art that belongs to no school; it exists at 32x32 and nowhere larger, which
-#: is the ceiling on how big the GUI may draw these.
+#: is the ceiling on how big the GUI may draw these. ``Art_Selfie_Timer`` is the camera's
+#: self-timer button, a pocket watch in the same gold ring as the badges, and a single
+#: 128px image rather than a state sheet.
 ICON_SOURCES: dict[str, str] = {
     ARCHMASTERY_ICON: "Icon_Archmastery.dds",
     UNIVERSAL_ICON: "Type_Global.dds",
+    RECENT_ICON: "GUI/Buttons/Art_Selfie_Timer.dds",
     **{school_icon_name(school): f"Art_School_{school}.dds" for school in SCHOOL_ORDER},
     **WORLD_ICON_SOURCES,
     **BADGE_ICON_SOURCES,

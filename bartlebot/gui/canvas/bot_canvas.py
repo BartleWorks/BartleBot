@@ -218,14 +218,16 @@ CATEGORY_PAD_Y = 5
 
 
 def _badge_icon(badge: str | None) -> QIcon | None:
-    """The extracted icon for a badge category, or None -- which most installs get for all of them.
+    """The extracted icon for a badge category, or None -- which most installs get for all of them."""
+    return None if badge is None else _art_icon(card_art.badge_icon_path(badge))
+
+
+def _art_icon(path: Path | None) -> QIcon | None:
+    """A category row's icon from an extracted PNG, or None.
 
     Decoration over a caption that already carries the meaning, the same rule the zone
     picker's world headers follow, so every failure to resolve is silent.
     """
-    if badge is None:
-        return None
-    path = card_art.badge_icon_path(badge)
     pixmap = None if path is None else pixmap_for_path(path, SECTION_ICON_PX)
     return None if pixmap is None else QIcon(pixmap)
 
@@ -660,7 +662,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         # Selection is row 0 either way (see refresh), so this ordering *is* the
         # default: Recent when there is one, All on a first run.
         if self._recent_metas:
-            self.add_category_row(self._RECENT_KEY, self._RECENT)
+            self.add_category_row(self._RECENT_KEY, self._RECENT, _art_icon(card_art.icon_path(card_art.RECENT_ICON)))
         self.add_category_row(self._ALL_KEY, self._ALL, _badge_icon(ALL_BADGE))
         for folder in self._category_map:
             if folder == self._OTHER_KEY:

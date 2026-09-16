@@ -50,6 +50,8 @@ ICONS_DIRNAME = "icons"
 #: extractor nor the GUI spells a game texture filename.
 ARCHMASTERY_ICON = "archmastery"
 UNIVERSAL_ICON = "universal"
+#: The pocket watch the bot library's Recent row wears.
+RECENT_ICON = "recent"
 
 #: Maps template name -> PNG filename. Written by the extractor, read here.
 INDEX_FILENAME = "index.json"

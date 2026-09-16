@@ -114,8 +114,8 @@ PNG because Qt's build here has no `dds` plugin. One PNG per *image*, not per te
 18,007 templates share 1,308 images. `Pillow` is a dev dependency for exactly this and
 is not imported at runtime. `bartlebot/card_art.py` is the read side.
 
-The same run also writes 137 UI icons into `art/icons/`, and they are keyed by a
-**logical name** — `archmastery`, `universal`, `school_fire`, `world_krokotopia`,
+The same run also writes 138 UI icons into `art/icons/`, and they are keyed by a
+**logical name** — `archmastery`, `universal`, `recent`, `school_fire`, `world_krokotopia`,
 `badge_4dungeons`, `tag_team_up` — rather
 than by the texture they came from, so neither the extractor's caller nor the GUI ever
 spells a KingsIsle filename. `ICON_SOURCES` is the one place the two meet. What they
@@ -125,6 +125,7 @@ resolve to, and why each was picked over its neighbours:
 |---|---|---|
 | `archmastery` | `GUI/Icons/Icon_Archmastery.dds` | the rainbow spiral meaning *archmastery*, carrying no school |
 | `universal` | `GUI/Icons/Type_Global.dds` | the game's own "any school" mark, as stamped on card art |
+| `recent` | `GUI/Buttons/Art_Selfie_Timer.dds` | the camera self-timer's pocket watch, gold-ringed like the badges beside it; the bot library's Recent row |
 | `school_<name>` | `GUI/Schools/Art_School_<School>.dds` | the ringed medallion the in-game archmastery picker uses |
 | `world_<key>` | `GUI/Buttons/Button_World_<Stem>.dds` | the floating-island emblem the spiral door and the badges page both draw |
 | `dungeon` | `GUI/BadgeCategory/Badge_Category_Dungeons.dds` | the bare rock-golem badge, for a nav "world" that is a dungeon group |
