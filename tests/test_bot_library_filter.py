@@ -4,10 +4,11 @@ The panel itself is a QWidget, so the filtering is a pure module-level function 
 only that is tested here — same convention as tests/test_bot_canvas_paths.py.
 """
 
+import json
 from pathlib import Path
 
 import pytest
-from PyQt6.QtCore import QEvent, QPointF
+from PyQt6.QtCore import QEvent, QPointF, Qt
 from PyQt6.QtGui import QEnterEvent
 from PyQt6.QtWidgets import QLabel
 
@@ -235,10 +236,10 @@ def test_a_category_narrows_what_the_tags_search(qapp):
     """The world is one more facet, so it intersects rather than being overridden."""
     panel = _BotLibraryPanel()
     panel._all_metas = list(ALL)
-    panel._category_map = {"Aquila": [OLYMPUS]}
+    panel._category_map = {"13_aquila": [OLYMPUS]}
     panel._cat_list.clear()
-    panel._cat_list.addItem(panel._ALL)
-    panel._cat_list.addItem("Aquila")
+    panel.add_category_row(panel._ALL_KEY, panel._ALL)
+    panel.add_category_row("13_aquila", "Aquila")
 
     panel._cat_list.setCurrentRow(0)
     assert _names(filter_bot_metas(panel._category_metas(), "", {"Gear"})[0]) == [
@@ -249,6 +250,102 @@ def test_a_category_narrows_what_the_tags_search(qapp):
 
     panel._cat_list.setCurrentRow(1)
     assert _names(filter_bot_metas(panel._category_metas(), "", {"Gear"})[0]) == ["Mt Olympus"]
+
+
+# ---------------------------------------------------------------------------
+# Folder rows: keyed by folder, captioned by the game, icons optional
+# ---------------------------------------------------------------------------
+
+
+def _write_bot(folder: Path, name: str) -> None:
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / f"{name}.json").write_text(f'{{"name": "{name}"}}', encoding="utf-8")
+
+
+@pytest.fixture
+def library(tmp_path):
+    from bartlebot import card_art  # noqa: PLC0415
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
+
+    bots = tmp_path / "bots"
+    _write_bot(bots / "04_mooshu", "Jade Oni")
+    _write_bot(bots / "31_four_dungeons", "Graveyard")
+    _write_bot(bots / "40_my_farms", "Mine")
+    (bots / "26_gardening").mkdir()
+    SettingsManager.instance().set("canvas", "bot_library_path", value=str(bots))
+    card_art.forget_cache()
+    yield bots
+    card_art.forget_cache()
+
+
+def _rows(panel: _BotLibraryPanel) -> list[tuple[str, str]]:
+    items = [panel._cat_list.item(i) for i in range(panel._cat_list.count())]
+    return [(item.data(Qt.ItemDataRole.UserRole), item.text()) for item in items]
+
+
+def test_a_folder_row_is_captioned_by_its_category_and_keyed_by_its_name(qapp, library):
+    """MooShu, not the "Mooshu" a title-cased folder name gave, and the lookup survives
+    the caption differing from the folder."""
+    panel = _BotLibraryPanel()
+    panel.refresh()
+
+    assert _rows(panel)[1:] == [
+        ("04_mooshu", "MooShu"),
+        ("31_four_dungeons", "Four Dungeons"),
+        ("40_my_farms", "My Farms"),
+    ]
+
+    panel._cat_list.setCurrentRow(2)
+    assert _names(panel._category_metas()) == ["Graveyard"]
+
+
+def test_an_empty_folder_is_not_listed(qapp, library):
+    panel = _BotLibraryPanel()
+    panel.refresh()
+
+    assert "26_gardening" not in [key for key, _ in _rows(panel)]
+
+
+def test_with_no_art_extracted_no_row_has_an_icon(qapp, library):
+    """The ordinary case: rows keep their compact height, and nothing is logged."""
+    panel = _BotLibraryPanel()
+    panel.refresh()
+
+    assert all(panel._cat_list.item(i).icon().isNull() for i in range(panel._cat_list.count()))
+
+
+def test_extracted_badges_decorate_all_and_the_known_folders(qapp, library, tmp_path):
+    from PyQt6.QtGui import QColor, QPixmap  # noqa: PLC0415
+
+    from bartlebot import card_art  # noqa: PLC0415
+
+    icons = {"badge_all": "badge_all.png", "badge_4dungeons": "badge_4dungeons.png"}
+    card_art.icons_dir().mkdir(parents=True, exist_ok=True)
+    for filename in icons.values():
+        pixmap = QPixmap(64, 64)
+        pixmap.fill(QColor("red"))
+        pixmap.save(str(card_art.icons_dir() / filename))
+    card_art.index_path().write_text(json.dumps({"icons": icons}), encoding="utf-8")
+    card_art.forget_cache()
+
+    panel = _BotLibraryPanel()
+    panel.refresh()
+    with_icon = {
+        panel._cat_list.item(i).data(Qt.ItemDataRole.UserRole)
+        for i in range(panel._cat_list.count())
+        if not panel._cat_list.item(i).icon().isNull()
+    }
+
+    # MooShu's badge was not extracted and my_farms has none to have.
+    assert with_icon == {panel._ALL_KEY, "31_four_dungeons"}
+
+
+def test_loose_files_are_listed_as_other(qapp, library):
+    (library / "loose.json").write_text('{"name": "Loose"}', encoding="utf-8")
+    panel = _BotLibraryPanel()
+    panel.refresh()
+
+    assert _rows(panel)[-1] == (panel._OTHER_KEY, panel._OTHER)
 
 
 # ---------------------------------------------------------------------------

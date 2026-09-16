@@ -277,6 +277,13 @@ rules it is easy to lose:
   universal mark stands in. That means the badge asks `resolve_apply_archmastery`, not
   `deck.archmastery_school` alone.
 
+The bot library's category list uses these too, under the same rule: each folder under
+`bots/` is a game badge category (`bartlebot/bot_folders.py`), the row wears that
+category's badge when one was extracted, and a row with none is its caption alone — at
+the compact height, since only a row with an icon reserves room for one. Rows are looked
+up by the folder name stored in `Qt.UserRole`, never by the caption, which comes from the
+game's own wording.
+
 An icon is artwork in its own colours, so a widget drawing one reads no `THEME` value
 and needs neither `ThemedMixin` nor a `changeEvent` — the guard test agrees, and this is
 the same exemption the card art tiles take.

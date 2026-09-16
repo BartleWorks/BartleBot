@@ -6,7 +6,6 @@ BotCanvas  — top-level widget; owns the scene, toolbars, and properties panel.
 import enum
 import json
 import logging
-import re
 import time
 from collections import Counter
 from collections.abc import Callable
@@ -18,6 +17,7 @@ from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QColor,
     QCursor,
+    QIcon,
     QKeySequence,
     QShortcut,
 )
@@ -29,6 +29,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidget,
+    QListWidgetItem,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
@@ -39,7 +40,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot import card_art
 from bartlebot.bot.schema import BotConfig, SubgraphDefinition, SubgraphInput, SubgraphInputBinding
+from bartlebot.bot_folders import ALL_BADGE, folder_badge, folder_caption
 from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
 from bartlebot.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
@@ -61,6 +64,8 @@ from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.card_art_tile import pixmap_for_path
+from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.tag_picker import TagPickerButton
 from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
@@ -203,10 +208,26 @@ def _resolve_bots_dir(configured: str, root: Path) -> Path:
     return configured_path if configured_path.is_absolute() else root / configured_path
 
 
-def _format_category(dir_name: str) -> str:
-    """'01_wizard_city' → 'Wizard City'."""
-    name = re.sub(r"^\d+_", "", dir_name)
-    return name.replace("_", " ").title()
+#: The category list's geometry. Wide enough for the longest caption the shipped folders
+#: have ("Housing Gauntlet") beside a 32px badge with the scrollbar showing -- which it
+#: does once icons make every row 42px tall. ``test_bot_folders`` measures it.
+CATEGORY_LIST_WIDTH = 180
+CATEGORY_FONT_PX = 11
+CATEGORY_PAD_X = 10
+CATEGORY_PAD_Y = 5
+
+
+def _badge_icon(badge: str | None) -> QIcon | None:
+    """The extracted icon for a badge category, or None -- which most installs get for all of them.
+
+    Decoration over a caption that already carries the meaning, the same rule the zone
+    picker's world headers follow, so every failure to resolve is silent.
+    """
+    if badge is None:
+        return None
+    path = card_art.badge_icon_path(badge)
+    pixmap = None if path is None else pixmap_for_path(path, SECTION_ICON_PX)
+    return None if pixmap is None else QIcon(pixmap)
 
 
 def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple[list[_BotMeta], dict[Path, list[str]]]:
@@ -377,8 +398,12 @@ class _BotCard(ThemedMixin, QWidget):
 class _BotLibraryPanel(ThemedMixin, QWidget):
     """Bot library panel shown in BotCanvas when no bot file is open.
 
-    Two-panel layout: left category list (Recent + world subdirs from bots/),
+    Two-panel layout: left category list (Recent, All, then the folders under bots/),
     right scrollable bot cards. Search bar filters across all categories.
+
+    Each category row carries its *key* in ``Qt.UserRole`` -- the folder name, or one of
+    the two sentinels below -- and the caption is only what it shows. The caption used to
+    be the key as well, which tied the lookup to wording that now comes from the game.
     """
 
     new_bot_requested = pyqtSignal()
@@ -387,10 +412,17 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
     _RECENT = "Recent"
     _ALL = "All"
+    #: Folder-name keys for the rows that are not folders. A folder can never be named
+    #: with a leading NUL, so these cannot collide with one.
+    _OTHER = "Other"
+    _RECENT_KEY = "\0recent"
+    _ALL_KEY = "\0all"
+    _OTHER_KEY = "\0other"
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._all_metas: list[_BotMeta] = []
+        #: Folder name -> its bots, in folder-name order.
         self._category_map: dict[str, list[_BotMeta]] = {}
         self._recent_metas: list[_BotMeta] = []
         # Listed on first show, not here. This is BotCanvas's placeholder, so a canvas
@@ -484,7 +516,10 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         # Left: category list
         self._cat_list = QListWidget()
-        self._cat_list.setFixedWidth(155)
+        self._cat_list.setFixedWidth(CATEGORY_LIST_WIDTH)
+        # Only rows that have an icon reserve room for one, so an install with no
+        # extracted art keeps its compact rows.
+        self._cat_list.setIconSize(QSize(SECTION_ICON_PX, SECTION_ICON_PX))
         body.addWidget(self._cat_list)
 
         # Right: scrollable bot cards
@@ -539,8 +574,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         self._cat_list.setStyleSheet(
             f"QListWidget {{ background: {THEME.surface}; border: none;"
-            f"  border-right: 1px solid {THEME.border}; font-size: 11px; }}"
-            f"QListWidget::item {{ padding: 5px 10px; color: {THEME.text_muted}; }}"
+            f"  border-right: 1px solid {THEME.border}; font-size: {CATEGORY_FONT_PX}px; }}"
+            f"QListWidget::item {{ padding: {CATEGORY_PAD_Y}px {CATEGORY_PAD_X}px; color: {THEME.text_muted}; }}"
             f"QListWidget::item:selected {{ background: {THEME.node_fill_selected}; color: {THEME.text}; }}"
         )
         self._cards_area.setStyleSheet(f"background: {THEME.bg};")
@@ -571,17 +606,18 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         bots_dir = _resolve_bots_dir(sm.get("canvas", "bot_library_path", default="bots"), project_root())
         if bots_dir.is_dir():
+            # By folder name, so the numbers set the order -- the same order Explorer
+            # shows, which is the game's badge page order (see bot_folders).
             for subdir in sorted(bots_dir.iterdir()):
                 if not subdir.is_dir():
                     continue
-                cat_name = _format_category(subdir.name)
                 metas = [m for f in sorted(subdir.glob("*.json")) if (m := _read_bot_meta(f))]
                 if metas:
-                    self._category_map[cat_name] = metas
+                    self._category_map[subdir.name] = metas
                     self._all_metas.extend(metas)
             root_metas = [m for f in sorted(bots_dir.glob("*.json")) if (m := _read_bot_meta(f))]
             if root_metas:
-                self._category_map.setdefault("Other", []).extend(root_metas)
+                self._category_map[self._OTHER_KEY] = root_metas
                 self._all_metas.extend(root_metas)
 
         # Recent files
@@ -602,10 +638,13 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         # Selection is row 0 either way (see refresh), so this ordering *is* the
         # default: Recent when there is one, All on a first run.
         if self._recent_metas:
-            self._cat_list.addItem(self._RECENT)
-        self._cat_list.addItem(self._ALL)
-        for cat in self._category_map:
-            self._cat_list.addItem(cat)
+            self.add_category_row(self._RECENT_KEY, self._RECENT)
+        self.add_category_row(self._ALL_KEY, self._ALL, _badge_icon(ALL_BADGE))
+        for folder in self._category_map:
+            if folder == self._OTHER_KEY:
+                self.add_category_row(folder, self._OTHER)
+            else:
+                self.add_category_row(folder, folder_caption(folder), _badge_icon(folder_badge(folder)))
         self._cat_list.blockSignals(False)
 
         # Select first category. ``clear()`` above left the current row at -1, so this
@@ -616,6 +655,14 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             self._cat_list.setCurrentRow(0)
         else:
             self._show_cards([])
+
+    def add_category_row(self, key: str, caption: str, icon: QIcon | None = None) -> None:
+        """Append a row to the category list, looked up later by *key* rather than *caption*."""
+        item = QListWidgetItem(caption)
+        item.setData(Qt.ItemDataRole.UserRole, key)
+        if icon is not None:
+            item.setIcon(icon)
+        self._cat_list.addItem(item)
 
     # ------------------------------------------------------------------
     # Internal
@@ -705,12 +752,12 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         row = self._cat_list.currentRow()
         if row < 0:
             return []
-        cat = self._cat_list.item(row).text()
-        if cat == self._ALL:
+        key = self._cat_list.item(row).data(Qt.ItemDataRole.UserRole)
+        if key == self._ALL_KEY:
             return self._all_metas
-        if cat == self._RECENT:
+        if key == self._RECENT_KEY:
             return self._recent_metas
-        return self._category_map.get(cat, [])
+        return self._category_map.get(key, [])
 
     def _apply_filter(self) -> None:
         """The single place cards are chosen.
