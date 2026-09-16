@@ -124,6 +124,9 @@ class _Theme:
     # the blue-grey it borrowed from ``chip_neutral_bg`` read as a third tag colour.
     # 5.3:1 against ``pill_text``.
     pill_neutral_bg: str = "#6b6b6b"
+    # Activity tags. Purple rather than ``warning``: a tag pill is led by a gold-ringed
+    # medallion, and the ring vanished against the gold. 7.4:1 against ``pill_text``.
+    pill_activity_bg: str = "#6a3fa0"
     # error bg → ``error``, warning bg → ``warning``
 
     # ------------------------------------------------------------------
@@ -560,6 +563,7 @@ DARK = _Theme(
     pill_warning_hover="#9a6c00",  # matches warning — gold hues can't lighten and still pass WCAG AA
     pill_text="#ffffff",
     pill_neutral_bg="#757575",  # a step lighter on a dark ground, still 4.6:1 on white
+    pill_activity_bg="#6a3fa0",
     # Node-browser chips (slightly lighter on dark bg for contrast)
     chip_success_bg="#388e3c",
     chip_failure_bg="#c62828",

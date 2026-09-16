@@ -14,10 +14,10 @@ Two shapes, because they do different jobs:
 
 Both take their colour from the same call, so the sizes differ and the hues never do.
 
-Both also wear the tag's game medallion where the user has extracted one (#29), at
-``TAG_ICON_PX``: the pill *becomes* the medallion, with the name moved to its tooltip,
-and the chip puts it ahead of its name. Without extracted art, and always for the Type
-tags, which have none, both are exactly the text forms above.
+Both are also led by the tag's game medallion where the user has extracted one (#29),
+at ``TAG_ICON_PX``: the pill is exactly as tall as the medallion, so the ring forms its
+rounded left end and the coloured body runs on from it, name included. Without extracted
+art, and always for the Type tags, which have none, both are exactly the text forms above.
 
 :class:`NeutralPill` is the odd one out and lives here for the shape rather than the
 palette: a caption that wants to look like a pill without claiming a tag colour.
@@ -35,8 +35,8 @@ as one.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QEvent, QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QFontMetrics, QIcon
+from PyQt6.QtCore import QEvent, QRect, QRectF, QSize, Qt, pyqtSignal
+from PyQt6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPainterPath, QPixmap
 from PyQt6.QtWidgets import QLabel, QPushButton, QSizePolicy, QWidget
 
 from bartlebot.bot_tags import tag_group
@@ -60,30 +60,76 @@ def pill_style(bg: str, fg: str, *, font_size: int = 9, radius: int = 7, pad: st
     )
 
 
-class TagPill(QLabel):
-    """A small, inert pill naming one tag: its medallion where one was extracted, else its name.
+#: The medallion pill's text size, and the space either side of its text. The pill is as
+#: tall as the medallion, so its text can be a size up from the plain pill's.
+_MEDALLION_FONT_PX = 10
+_MEDALLION_GAP = 4  # medallion to text
+_MEDALLION_PAD_R = 8  # text to the round right end
 
-    The medallion form is the icon alone, with the name as its tooltip. The art is
-    distinct enough to scan, and a row of named pills beside a bot's name is the noise
-    the icons were chosen to cut. The text form, group-coloured, is every other case:
-    an install with no extracted art, and the Type tags, which have none.
+
+def medallion_font(base: QFont) -> QFont:
+    """*base* at the medallion pill's size, bold."""
+    font = QFont(base)
+    font.setPixelSize(_MEDALLION_FONT_PX)
+    font.setBold(True)
+    return font
+
+
+def medallion_pill_width(font: QFont, text: str) -> int:
+    """How wide a medallion pill carrying *text* in *font* is."""
+    return TAG_ICON_PX + _MEDALLION_GAP + QFontMetrics(font).horizontalAdvance(text) + _MEDALLION_PAD_R
+
+
+def paint_medallion_pill(painter: QPainter, width: int, icon: QPixmap, text: str, fill: str, fg: str) -> None:
+    """A pill whose left end *is* the medallion.
+
+    The pill is exactly as tall as the medallion and every medallion fills its square, so
+    the ring and the pill's round end are the same circle. The fill starts at the
+    medallion's centre rather than at its edge: a rounded rectangle starting at the edge
+    would curve away under the ring and leave a notch where the top and bottom edges meet
+    it. The right end is a half circle of the same radius.
+    """
+    h = TAG_ICON_PX
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+    body = QPainterPath()
+    body.setFillRule(Qt.FillRule.WindingFill)
+    body.addRect(QRectF(h / 2, 0, max(width - h, 0), h))
+    body.addEllipse(QRectF(width - h, 0, h, h))
+    painter.fillPath(body, QColor(fill))
+    painter.drawPixmap((h - icon.width()) // 2, (h - icon.height()) // 2, icon)
+    painter.setPen(QColor(fg))
+    text_x = h + _MEDALLION_GAP
+    painter.drawText(
+        QRect(text_x, 0, max(width - text_x, 0), h),
+        int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+        text,
+    )
+
+
+class TagPill(QLabel):
+    """A small, inert pill naming one tag, led by its medallion where one was extracted.
+
+    The medallion form is drawn rather than styled (see :func:`paint_medallion_pill`): a
+    stylesheet cannot put an icon flush with a rounded end. The text form, group-coloured,
+    is every other case: an install with no extracted art, and the Type tags, which have
+    none.
+
+    The name stays beside the medallion. The art alone was tried and was not enough to
+    read a card by.
     """
 
     def __init__(self, tag: str, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(tag, parent)
         self._tag = tag
         self._applying_style = False
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        icon = tag_icon(tag)
-        self._has_icon = icon is not None
-        if icon is None:
-            self.setText(tag)
+        self._icon = tag_icon(tag)
+        if self._icon is None:
             self.setFixedHeight(_PILL_HEIGHT)
         else:
-            self.setPixmap(icon)
-            self.setFixedSize(TAG_ICON_PX, TAG_ICON_PX)
-            self.setToolTip(tag)
-            self.setAccessibleName(tag)
+            self.setFont(medallion_font(self.font()))
+            self.setFixedSize(medallion_pill_width(self.font(), tag), TAG_ICON_PX)
         self._restyle()
 
     @property
@@ -92,8 +138,19 @@ class TagPill(QLabel):
 
     @property
     def has_icon(self) -> bool:
-        """Whether this pill draws the tag's medallion rather than its name."""
-        return self._has_icon
+        """Whether this pill is led by the tag's medallion."""
+        return self._icon is not None
+
+    def paintEvent(self, event) -> None:
+        if self._icon is None:
+            super().paintEvent(event)
+            return
+        painter = QPainter(self)
+        painter.setFont(self.font())
+        paint_medallion_pill(
+            painter, self.width(), self._icon, self._tag, group_accent(tag_group(self._tag)), THEME.pill_text
+        )
+        painter.end()
 
     def _restyle(self) -> None:
         # Guard is load-bearing: setStyleSheet delivers StyleChange straight back to
@@ -103,9 +160,10 @@ class TagPill(QLabel):
             return
         self._applying_style = True
         try:
-            if self._has_icon:
-                # Artwork in its own colours: no fill, no padding, nothing from THEME.
-                self.setStyleSheet("background: transparent; padding: 0px;")
+            if self._icon is not None:
+                # paintEvent draws it all, reading THEME at paint time; a stylesheet font
+                # would override the one the width was measured with.
+                self.setStyleSheet("background: transparent;")
             else:
                 self.setStyleSheet(pill_style(group_accent(tag_group(self._tag)), THEME.pill_text))
         finally:
@@ -120,9 +178,8 @@ class TagPill(QLabel):
 class TagChip(QPushButton):
     """A group-coloured chip that removes its tag when clicked.
 
-    Wears the tag's medallion ahead of its name where one was extracted. The name stays:
-    a chip is something to act on, and a click should not need a hover to know what it
-    removes.
+    Led by the tag's medallion where one was extracted, in the same shape as
+    :class:`TagPill`'s, so a tag reads the same in the filter bar as on the cards below it.
     """
 
     removed = pyqtSignal(str)
@@ -131,11 +188,13 @@ class TagChip(QPushButton):
         super().__init__(f"{tag}  ✕", parent)
         self._tag = tag
         self._applying_style = False
-        icon = tag_icon(tag)
-        self._has_icon = icon is not None
-        if icon is not None:
-            self.setIcon(QIcon(icon))
-            self.setIconSize(QSize(TAG_ICON_PX, TAG_ICON_PX))
+        self._icon = tag_icon(tag)
+        if self._icon is not None:
+            # Hover repaints need WA_Hover once the stylesheet no longer draws the chip.
+            self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+            self.setFont(medallion_font(self.font()))
+            self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            self.setFixedSize(medallion_pill_width(self.font(), self.text()), TAG_ICON_PX)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip(tooltip or f"Remove the {tag} tag")
         self._restyle()
@@ -147,18 +206,30 @@ class TagChip(QPushButton):
 
     @property
     def has_icon(self) -> bool:
-        """Whether this chip draws the tag's medallion ahead of its name."""
-        return self._has_icon
+        """Whether this chip is led by the tag's medallion."""
+        return self._icon is not None
+
+    def paintEvent(self, event) -> None:
+        if self._icon is None:
+            super().paintEvent(event)
+            return
+        painter = QPainter(self)
+        painter.setFont(self.font())
+        fill = THEME.edge_selected if self.underMouse() else group_accent(tag_group(self._tag))
+        paint_medallion_pill(painter, self.width(), self._icon, self.text(), fill, THEME.pill_text)
+        painter.end()
 
     def _restyle(self) -> None:
         if self._applying_style:  # see TagPill._restyle
             return
         self._applying_style = True
         try:
-            # With a medallion the chip is a capsule around it: a pixel of padding above
-            # and below, and a short left inset so the ring sits just inside the round end.
-            radius, pad = (11, "1px 9px 1px 2px") if self._has_icon else (9, "2px 9px")
-            base = pill_style(group_accent(tag_group(self._tag)), THEME.pill_text, font_size=10, radius=radius, pad=pad)
+            if self._icon is not None:
+                self.setStyleSheet("QPushButton { border: none; background: transparent; }")
+                return
+            base = pill_style(
+                group_accent(tag_group(self._tag)), THEME.pill_text, font_size=10, radius=9, pad="2px 9px"
+            )
             self.setStyleSheet(
                 f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}"
             )

@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 
 import pytest
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from bartlebot import card_art
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS
@@ -169,7 +169,7 @@ def test_a_tag_with_an_extracted_medallion_resolves(art_home):
     assert card_art.tag_icon_path("Boss") is None
 
 
-def test_the_pill_is_the_medallion_when_there_is_one(qapp, art_home):
+def test_the_pill_is_led_by_the_medallion_and_keeps_its_name(qapp, art_home):
     from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX
     from bartlebot.gui.widgets.tag_pill import TagPill
 
@@ -177,10 +177,38 @@ def test_the_pill_is_the_medallion_when_there_is_one(qapp, art_home):
     pill = TagPill("Gear")
 
     assert pill.has_icon
-    assert pill.text() == ""
-    assert pill.toolTip() == "Gear"
-    assert pill.pixmap().width() == TAG_ICON_PX
-    assert (pill.width(), pill.height()) == (TAG_ICON_PX, TAG_ICON_PX)
+    assert pill.text() == "Gear"
+    assert pill.height() == TAG_ICON_PX
+    assert pill.width() > TAG_ICON_PX + 10
+
+
+def test_the_medallion_is_the_pills_round_end(qapp, art_home):
+    """The ring and the pill's left end are one circle: the corner outside the medallion
+    stays clear, the medallion covers the left, and the body runs on to a round right end."""
+    from PyQt6.QtGui import QColor
+
+    from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX, group_accent
+    from bartlebot.gui.widgets.tag_pill import TagPill
+
+    card_art.icons_dir().mkdir(parents=True, exist_ok=True)
+    disc = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
+    ImageDraw.Draw(disc).ellipse((0, 0, 127, 127), fill=(10, 200, 10, 255))
+    disc.save(card_art.icons_dir() / "tag_gear.png")
+    card_art.index_path().write_text(json.dumps({"icons": {"tag_gear": "tag_gear.png"}}), encoding="utf-8")
+    pill = TagPill("Gear")
+    image = pill.grab().toImage()
+    ratio = image.devicePixelRatio()
+
+    def at(x, y):
+        return image.pixelColor(round(x * ratio), round(y * ratio))
+
+    h = TAG_ICON_PX
+    assert at(0, 0).alpha() == 0, "no fill peeks past the ring's corner"
+    assert at(h / 2, h / 2).green() > 150, "the medallion sits in the left end"
+    fill = QColor(group_accent("Rewards"))
+    body = at(pill.width() - h / 2, 1)
+    assert (body.red(), body.green(), body.blue()) == (fill.red(), fill.green(), fill.blue())
+    assert at(pill.width() - 1, 0).alpha() == 0, "the right end is round"
 
 
 def test_the_pill_keeps_its_name_without_art(qapp, art_home):
@@ -195,17 +223,17 @@ def test_the_pill_keeps_its_name_without_art(qapp, art_home):
     assert group_accent("Type") in pill.styleSheet()
 
 
-def test_the_chip_wears_the_medallion_beside_its_name(qapp, art_home):
+def test_the_chip_takes_the_pills_medallion_shape(qapp, art_home):
     from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX
     from bartlebot.gui.widgets.tag_pill import TagChip
 
     _extract("Boss")
     with_art, without = TagChip("Boss"), TagChip("Mobs")
 
-    assert with_art.has_icon and not with_art.icon().isNull()
-    assert with_art.iconSize().width() == TAG_ICON_PX
+    assert with_art.has_icon
+    assert with_art.height() == TAG_ICON_PX
     assert "Boss" in with_art.text()
-    assert not without.has_icon and without.icon().isNull()
+    assert not without.has_icon
 
 
 def test_picker_rows_carry_the_medallion_where_there_is_one(qapp, art_home):

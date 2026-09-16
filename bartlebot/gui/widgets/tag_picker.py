@@ -37,10 +37,11 @@ def tag_icon(tag: str) -> QPixmap | None:
 
 
 #: Dot colour per group. Two hues, so "is this a reward or an activity" is legible
-#: on a single row without reading the section header above it.
+#: on a single row without reading the section header above it. Activity is not
+#: ``warning``: its gold swallowed the gold ring of the medallion leading each pill.
 GROUP_ACCENT: dict[str, str] = {
     "Rewards": "accent",
-    "Activity": "warning",
+    "Activity": "pill_activity_bg",
 }
 
 

@@ -286,10 +286,13 @@ game's own wording.
 
 Bot tags use them too (`card_art.tag_icon_path`, drawn at `TAG_ICON_PX` = 20 — 16 was
 too small to read). Each surface degrades to what it was before: a picker row shows its
-group dot, a `TagChip` its name alone, and a `TagPill` its group-coloured name. With a
-medallion, the pill is the icon **alone**, with the tag as its tooltip. The chip keeps its
-name beside the icon, because a click should not need a hover to say what it removes. The
-Type tags have no art, so they are always text, and a mixed row is the normal case.
+group dot, and a `TagChip` or `TagPill` its plain text form. With a medallion, both are
+**drawn** by `paint_medallion_pill`: exactly `TAG_ICON_PX` tall, so the medallion *is* the
+rounded left end, and the group-coloured body starts at its centre and carries the name.
+An icon-only pill was tried and dropped, because the art alone was not enough to read a
+card by. A stylesheet cannot do this shape: padding and border-radius will not put an icon
+flush with a rounded end. The Type tags have no art, so they are always text, and a mixed
+row is the normal case.
 
 An icon is artwork in its own colours, so a widget drawing one reads no `THEME` value
 and needs neither `ThemedMixin` nor a `changeEvent` — the guard test agrees, and this is
