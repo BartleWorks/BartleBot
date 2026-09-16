@@ -180,6 +180,31 @@ def node_height(_n_returns: int) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Scene rect
+# ---------------------------------------------------------------------------
+
+
+def set_scene_rect_and_repaint(scene, rect) -> None:
+    """Set the scene rect, repainting every view if it actually moved.
+
+    Changing the scene rect moves the scene->viewport mapping for the whole view,
+    which strands any update queued against the old one: those updates land on the
+    wrong pixels and the ones that needed repainting stay stale.  That is half of
+    #73.  Every caller mutates the scene first — dropping a drag preview, clearing
+    a snap highlight, rerouting paths, moving a node — and corrects the rect only
+    afterwards, so the repaint is what makes the new mapping whole again.
+
+    This is not a blanket cover-up for a lost update: an unchanged rect, which is
+    the common case, returns below and costs nothing.
+    """
+    if rect == scene.sceneRect():
+        return
+    scene.setSceneRect(rect)
+    for view in scene.views():
+        view.viewport().update()
+
+
+# ---------------------------------------------------------------------------
 # NodeItem
 # ---------------------------------------------------------------------------
 
@@ -489,7 +514,9 @@ class NodeItem(QGraphicsItem):
             scene = self.scene()
             if scene is not None:
                 item_rect = self.mapToScene(self.boundingRect()).boundingRect().adjusted(-500, -500, 500, 500)
-                scene.setSceneRect(scene.sceneRect().united(item_rect))
+                # The union keeps this cheap on a drag, where itemsBoundingRect() would
+                # be O(items) on every position change.
+                set_scene_rect_and_repaint(scene, scene.sceneRect().united(item_rect))
         return super().itemChange(change, value)
 
     @staticmethod

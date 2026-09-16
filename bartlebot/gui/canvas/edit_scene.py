@@ -32,7 +32,7 @@ from bartlebot.gui.canvas.edge_item import (
     is_above_routed,
 )
 from bartlebot.gui.canvas.graph_view import GraphView
-from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H, NODE_W, NodeItem
+from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H, NODE_W, NodeItem, set_scene_rect_and_repaint
 from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.menu_utils import popup_menu
@@ -619,8 +619,7 @@ class EditScene(QGraphicsScene):
         # Every linked region reads as linked until the canvas hands over a report.
         self.refresh_region_states(None)
 
-        bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
-        self.setSceneRect(bounds)
+        self._update_scene_rect()
 
     @property
     def config(self) -> BotConfig | None:
@@ -2271,7 +2270,7 @@ class EditScene(QGraphicsScene):
 
     def _update_scene_rect(self) -> None:
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
-        self.setSceneRect(bounds)
+        set_scene_rect_and_repaint(self, bounds)
 
     def _get_tab_order(self) -> list[str]:
         """State IDs in BFS order from initial state, orphans appended at the end."""
