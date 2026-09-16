@@ -590,9 +590,12 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             )
 
         self._cat_list.setStyleSheet(
-            f"QListWidget {{ background: {THEME.surface}; border: none;"
+            # outline: none drops the focus rectangle Qt draws around the clicked
+            # row's text; the selection fill already marks it.
+            f"QListWidget {{ background: {THEME.surface}; border: none; outline: none;"
             f"  border-right: 1px solid {THEME.border}; font-size: {CATEGORY_FONT_PX}px; }}"
-            f"QListWidget::item {{ padding: {CATEGORY_PAD_Y}px {CATEGORY_PAD_X}px; color: {THEME.text_muted}; }}"
+            f"QListWidget::item {{ padding: {CATEGORY_PAD_Y}px {CATEGORY_PAD_X}px; color: {THEME.text_muted};"
+            f"  border-bottom: 1px solid {THEME.border}; }}"
             f"QListWidget::item:selected {{ background: {THEME.node_fill_selected}; color: {THEME.text}; }}"
         )
         self._cards_area.setStyleSheet(f"background: {THEME.bg};")
