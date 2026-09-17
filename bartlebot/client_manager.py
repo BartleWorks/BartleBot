@@ -559,6 +559,7 @@ class ClientManager(QObject):
                         removed_hwnds = {c.window_handle for c in self._clients}
                         self._on_clients_removed(removed_hwnds)
                     self._clients = []
+                    self._forget_closed_windows(handler_hwnds)
                     # Not a return to the launch screen: this branch is also the whole of a
                     # launch, from the first window appearing until the first character is
                     # in game, and those windows have tiles.
@@ -608,6 +609,10 @@ class ClientManager(QObject):
                         self._machine.set_clients(self._clients)
                     self.clients_changed.emit(self._clients)
                     self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
+
+                # Only now that the removals above have been handled, because everything
+                # they report a disconnect with is what this drops.
+                self._forget_closed_windows(handler_hwnds)
 
                 # Windows still logging in or choosing a character reach neither branch
                 # above — they are not clients yet — so they are placed and drawn here.
@@ -800,8 +805,9 @@ class ClientManager(QObject):
             return
 
         # An account already answering for a live window cannot also be another one's.
-        # Checked against live clients rather than the account map, which keeps every
-        # hwnd seen this session including long-closed ones.
+        # Checked against live clients rather than the account map: the map is pruned of
+        # closed windows each tick (see _forget_closed_windows) but still names windows
+        # that are not clients here -- unhooked, or not yet through character select.
         claimed = {
             self._hwnd_account_map[c.window_handle] for c in live_clients if c.window_handle in self._hwnd_account_map
         }
@@ -906,6 +912,41 @@ class ClientManager(QObject):
                     except Exception:
                         pass
                     break
+
+    def _forget_closed_windows(self, live_hwnds: set[int]) -> None:
+        """Drop everything remembered about a window whose game process is gone.
+
+        The account map was written once per window and never unwritten, so an account
+        stayed in ``active_accounts`` for the rest of the session after its window closed
+        — and ``begin_launch`` reads that to reject an account that is "already running".
+        Closing a client and launching it again therefore did nothing but put up a message
+        box saying it was already up, while the tile it was talking about had gone from the
+        grid on the tick the window closed.
+
+        Called from the client loop *after* the removal handling, never before: the
+        username here is the same one ``_on_clients_removed`` needs to queue recovery with,
+        and ``_hwnd_titles`` is what names a lost window in the log once its title can no
+        longer be read. Dropping either first would turn a recoverable disconnect into the
+        unrecoverable one ``_log_unrecoverable_removal`` exists to explain.
+
+        Everything dropped here is re-learned for free if the window turns out to be alive
+        after all: the map is rebuilt from window titles on every tick, and the user id is
+        re-read from the client. So a handler that briefly loses a window costs one tick,
+        not a session.
+        """
+        for hwnd in [h for h in self._hwnd_account_map if h not in live_hwnds]:
+            username = self._hwnd_account_map.pop(hwnd)
+            logger.info(
+                "Window hwnd=%d for account '%s' has closed — the account can be launched again",
+                hwnd,
+                username,
+            )
+        # Both of these are keyed by window too, and a window that never carried an account
+        # leaves an entry in them just the same.
+        for hwnd in [h for h in self._hwnd_titles if h not in live_hwnds]:
+            del self._hwnd_titles[hwnd]
+        for hwnd in [h for h in self._hwnd_user_ids if h not in live_hwnds]:
+            del self._hwnd_user_ids[hwnd]
 
     def _on_clients_removed(self, removed_hwnds: set) -> None:
         """Handle client removal: update _client_order and queue recovery if bot is running."""
@@ -1104,7 +1145,9 @@ class ClientManager(QObject):
         each tick -- hooked, unhooked, and still at character select -- so the map names
         an account from the moment the launcher titles its window until that window
         closes, which is exactly the span during which launching it again would produce a
-        duplicate.
+        duplicate. The closing half of that span is ``_forget_closed_windows``, which the
+        loop runs every tick -- without it this property is the reason an account that has
+        been shut down cannot be launched again.
 
         An adopted window BartleBot has never launched is in here too, once
         ``_refresh_account_identity`` has fingerprinted it. One belonging to an account

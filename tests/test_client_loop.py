@@ -66,6 +66,8 @@ class LoopHarness:
     _start_activation = ClientManager._start_activation
     _build_ordered_clients = ClientManager._build_ordered_clients
     _assign_slot = ClientManager._assign_slot
+    _place_account = ClientManager._place_account
+    _forget_closed_windows = ClientManager._forget_closed_windows
     stop = ClientManager.stop
     has_client_titled = ClientManager.has_client_titled
     client_titled = ClientManager.client_titled
@@ -80,6 +82,8 @@ class LoopHarness:
         self._activation_tasks: set[asyncio.Task] = set()
         self._client_loop_task: asyncio.Task | None = None
         self._hwnd_account_map: dict[int, str] = {}
+        self._hwnd_titles: dict[int, str] = {}
+        self._hwnd_user_ids: dict[int, int] = {}
         self._client_order: list[str | None] = []
         self._pending_recovery: dict[int, str] = {}
         self._vacated_slots: dict[str, int] = {}
@@ -218,6 +222,45 @@ async def test_failed_hwnd_is_forgotten_when_window_closes(harness):
         harness._handler.clients.clear()
         await _tick()
         assert harness._failed_hook_hwnds == set()
+    finally:
+        harness.stop()
+
+
+async def test_a_closed_window_leaves_the_account_map(harness):
+    """Issue #65: nothing unwrote the account map, so a closed window kept its account
+    in active_accounts for the rest of the session and begin_launch refused to relaunch it."""
+    client = FakeHookClient(100)
+    harness._handler.add(client)
+    harness._hwnd_account_map[100] = "alpha"
+    harness.start()
+    try:
+        client.hooks_ready.set_result(None)
+        await _tick()
+        assert harness._hwnd_account_map == {100: "alpha"}
+
+        harness._handler.clients.clear()
+        await _tick()
+        assert harness._hwnd_account_map == {}
+    finally:
+        harness.stop()
+
+
+async def test_a_closed_window_is_still_reported_as_removed_first(harness):
+    """The map is what names the account recovery relaunches, so it is dropped after
+    _on_clients_removed has read it, never before."""
+    client = FakeHookClient(100)
+    harness._handler.add(client)
+    harness._hwnd_account_map[100] = "alpha"
+    harness.start()
+    try:
+        client.hooks_ready.set_result(None)
+        await _tick()
+        seen: list[dict] = []
+        harness._on_clients_removed = lambda hwnds: seen.append(dict(harness._hwnd_account_map))
+
+        harness._handler.clients.clear()
+        await _tick()
+        assert seen == [{100: "alpha"}]
     finally:
         harness.stop()
 

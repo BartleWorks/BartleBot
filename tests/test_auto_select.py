@@ -16,6 +16,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from bartlebot.client_manager import ClientManager
+from bartlebot.launch_tracker import LaunchStage
 from bartlebot.launcher import auto_select
 from bartlebot.launcher.auto_select import (
     _VK_RETURN,
@@ -41,11 +42,13 @@ class KeyRecorder:
 
     def __init__(self, hwnd: int = 4242) -> None:
         self._hwnd = hwnd
+        self._closed = False
         self.posted: list[tuple[int, int, int]] = []
         self.on_key = None
         self.user32 = MagicMock()
         self.user32.FindWindowW.side_effect = lambda _cls, _title: self._hwnd
         self.user32.PostMessageW.side_effect = self._post
+        self.user32.IsWindow.side_effect = lambda _hwnd: 0 if self._closed else 1
 
     def _post(self, hwnd: int, msg: int, vk: int, _extra: int) -> None:
         self.posted.append((hwnd, msg, vk))
@@ -58,6 +61,11 @@ class KeyRecorder:
         return [vk for _hwnd, msg, vk in self.posted if msg == _WM_KEYDOWN]
 
     def window_missing(self) -> None:
+        self._hwnd = 0
+
+    def window_closed(self) -> None:
+        """The user closed the game window: no handle resolves, and none is a window."""
+        self._closed = True
         self._hwnd = 0
 
 
@@ -467,6 +475,48 @@ async def test_driver_borrows_the_pending_client(keys, fast, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# A window that goes away mid-drive (issue #65)
+#
+# The drive's exits were all "not yet" — hooked, at character select, or out of time — so
+# a window the user closed while it was still coming up left the drive pressing keys into
+# a dead handle for the rest of its timeout. That timeout is exactly how long the launch
+# stayed in flight, and an in-flight launch is one of the two things that make an account
+# unlaunchable.
+# ---------------------------------------------------------------------------
+
+
+async def test_a_closed_window_ends_the_sighted_drive(keys, fast, game):
+    keys.on_key = lambda _vk: keys.window_closed()
+
+    started = time.monotonic()
+    reached = await auto_select_character(TITLE, Hooked(None), lambda: game, timeout=10)
+
+    assert reached is False
+    # The ceiling is what a regression would spend; the window is what the drive actually
+    # costs -- a handful of polls -- kept an order of magnitude wider for a loaded runner.
+    assert time.monotonic() - started < 2.0, "the drive waited out its timeout on a closed window"
+
+
+async def test_a_closed_window_ends_the_blind_drive(keys, fast):
+    """The fallback path has the same exit, learning the handle from its first press."""
+    client = FakeGameClient(root_ready=False)
+    keys.on_key = lambda _vk: keys.window_closed()
+
+    started = time.monotonic()
+    reached = await auto_select_character(TITLE, Hooked(None), lambda: client, timeout=10)
+
+    assert reached is False
+    assert time.monotonic() - started < 2.0
+
+
+async def test_a_window_that_is_merely_embedded_does_not_end_the_drive(keys, fast, game):
+    """FindWindowW stops finding a window the moment it is embedded — that is not a close."""
+    keys.window_missing()
+    reached = await auto_select_character(TITLE, HookedWhenInWorld(game), lambda: game)
+    assert reached is True
+
+
+# ---------------------------------------------------------------------------
 # Launcher plumbing
 # ---------------------------------------------------------------------------
 
@@ -502,6 +552,20 @@ async def test_launch_account_without_a_driver_does_not_wait():
     """drive=None is how a caller says 'leave it at character select'."""
     with _stubbed_launch():
         assert await launch_account("user1", "pw", "Alpha") == TITLE
+
+
+async def test_a_drive_that_ends_because_its_window_closed_is_not_a_failure():
+    """A failed attempt keeps its tile, and a tile keeps the account unlaunchable.
+
+    So a window the user closed on purpose must not be filed as one -- that is the
+    "cannot relaunch" bug (issue #65) coming back through the other door.
+    """
+    progress = MagicMock()
+    # _stubbed_launch reports no live wizard handles, which is what a closed window is.
+    with _stubbed_launch():
+        await launch_account("user1", "pw", "Alpha", drive=AsyncMock(return_value=False), progress=progress)
+
+    assert LaunchStage.FAILED not in [call.args[1] for call in progress.call_args_list]
 
 
 async def test_profile_drives_every_account_concurrently():

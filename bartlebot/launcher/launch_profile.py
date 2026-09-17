@@ -62,6 +62,27 @@ def _report(progress: ProgressFn | None, username: str, stage: LaunchStage) -> N
         logger.exception("Launch progress callback raised for '%s'", username)
 
 
+def _report_drive_outcome(progress: ProgressFn | None, username: str, handle: int) -> None:
+    """Report a drive that did not get its client in-game, if that is worth reporting.
+
+    A drive returns False for two different things, and only one of them is a failure.
+    Either it ran out of time or gave up on a window that is still sitting there -- which
+    is FAILED, and the tile says so until the user dismisses it -- or the user closed the
+    window while it was still coming up, which is not a failure and must not leave a tile
+    behind: a terminal attempt keeps the account unlaunchable until it is dismissed, so
+    filing a deliberate close as one is the "cannot relaunch" bug wearing the other hat
+    (issue #65).
+
+    Asked of the handle rather than passed down through the drive: the two callers both
+    have it, and the question -- is the window still there -- is the same one however the
+    drive happened to end.
+    """
+    if handle in get_all_wizard_handles():
+        _report(progress, username, LaunchStage.FAILED)
+        return
+    logger.info("Launch: the window for '%s' was closed before it finished coming up", username)
+
+
 # Spawn anchor position. Distinct grid offsets per instance aren't needed here:
 # every window gets reparented and re-centered by ClientTile (see
 # gui/game_embed/client_tile.py) as soon as it's embedded, so the position it
@@ -394,7 +415,7 @@ async def launch_account(
         # The quiet failure, and the common one: the drive times out rather than raising,
         # so until this was read the window sat wherever it stopped and the launch looked
         # like it had simply finished.
-        _report(progress, username, LaunchStage.FAILED)
+        _report_drive_outcome(progress, username, handle)
     return title
 
 
@@ -459,7 +480,9 @@ async def launch_accounts(
     # overlapping them with the remaining stagger delays is most of the reason a team
     # launch is faster than doing this by hand.
     titles: list[str] = []
-    drives: list[tuple[str, asyncio.Task]] = []
+    # The handle rides along with each drive so the outcome can be read against the window
+    # it was advancing -- see _report_drive_outcome.
+    drives: list[tuple[str, int, asyncio.Task]] = []
     for i, (handle, (username, password, display_name)) in enumerate(zip(handles, accounts)):
         # A window that never reached the login screen is skipped rather than typed into.
         # Its siblings are unaffected — that is the whole reason the wait reports instead
@@ -475,7 +498,7 @@ async def launch_accounts(
         titles.append(title)
         _report(progress, username, LaunchStage.LOADING)
         if drive is not None:
-            drives.append((username, asyncio.create_task(drive(title))))
+            drives.append((username, handle, asyncio.create_task(drive(title))))
         if i < len(accounts) - 1:
             await asyncio.sleep(jitter(LAUNCH_STAGGER_DELAY))
 
@@ -483,13 +506,13 @@ async def launch_accounts(
         # return_exceptions so one drive blowing up does not cancel the report for the
         # others: every account in this batch has a window by now and each is owed an
         # answer about its own.
-        outcomes = await asyncio.gather(*(task for _u, task in drives), return_exceptions=True)
-        for (username, _task), outcome in zip(drives, outcomes):
+        outcomes = await asyncio.gather(*(task for _u, _h, task in drives), return_exceptions=True)
+        for (username, handle, _task), outcome in zip(drives, outcomes):
             if isinstance(outcome, BaseException):
                 logger.error("Auto-select drive for '%s' raised", username, exc_info=outcome)
-                _report(progress, username, LaunchStage.FAILED)
+                _report_drive_outcome(progress, username, handle)
             elif not outcome:
-                _report(progress, username, LaunchStage.FAILED)
+                _report_drive_outcome(progress, username, handle)
     return titles
 
 

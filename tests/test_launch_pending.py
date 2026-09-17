@@ -176,6 +176,61 @@ class TestLaunchGuard:
 
 
 # ---------------------------------------------------------------------------
+# A window that closed -- issue #65
+#
+# The account map was written once per window and never unwritten, so an account stayed in
+# active_accounts for the rest of the session after its window closed. begin_launch reads
+# that to reject an account "already running", so closing a client and launching it again
+# did nothing but put up a message box about a window that was no longer on screen.
+# ---------------------------------------------------------------------------
+
+
+class TestForgettingAClosedWindow:
+    def test_an_account_whose_window_closed_is_launchable_again(self, harness) -> None:
+        """The bug, end to end: close the window, click launch, and it launches."""
+        _window_arrives(harness, "alpha", 100)
+        assert _begin(harness, ["alpha"]) == []
+
+        harness._handler.clients = []
+        harness._forget_closed_windows(set())
+
+        assert harness.active_accounts == []
+        assert _begin(harness, ["alpha"]) == ["alpha"]
+
+    def test_a_window_still_open_is_kept(self, harness) -> None:
+        _window_arrives(harness, "alpha", 100)
+        _window_arrives(harness, "beta", 110)
+
+        harness._forget_closed_windows({100})
+
+        assert harness.active_accounts == ["alpha"]
+
+    def test_the_title_and_user_id_of_a_closed_window_go_too(self, harness) -> None:
+        """Both are keyed by window, and a window with no account leaves an entry just the same."""
+        harness._hwnd_titles[100] = "Wizard101"
+        harness._hwnd_user_ids[100] = 12345
+        harness._hwnd_titles[110] = "[Beta] Wizard101"
+
+        harness._forget_closed_windows({110})
+
+        assert harness._hwnd_titles == {110: "[Beta] Wizard101"}
+        assert harness._hwnd_user_ids == {}
+
+    def test_a_relaunch_reclaims_the_slot_the_closed_window_had(self, harness) -> None:
+        """Forgetting the window must not forget the ordering the user arranged."""
+        _begin(harness, ["alpha", "beta"])
+        _window_arrives(harness, "alpha", 100)
+        _window_arrives(harness, "beta", 110)
+        _end(harness, ["alpha", "beta"])
+
+        harness._handler.clients = [FakeClient(100)]
+        harness._forget_closed_windows({100})
+        _begin(harness, ["beta"])
+
+        assert harness._client_order == ["alpha", "beta"]
+
+
+# ---------------------------------------------------------------------------
 # build_tile_slots -- which accounts get a pending tile
 # ---------------------------------------------------------------------------
 
@@ -656,7 +711,9 @@ class TestLauncherReportsFailure:
         with (
             patch("bartlebot.launcher.launch_profile.patch_open_browser"),
             patch("bartlebot.launcher.launch_profile._patch_window_config"),
-            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+            # The window is still there, which is what makes this a failure rather than a
+            # launch the user closed -- see _report_drive_outcome.
+            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[1]),
             patch("bartlebot.launcher.launch_profile._start_and_claim_handle", AsyncMock(return_value=1)),
             patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock(return_value=True)),
             patch("bartlebot.launcher.launch_profile.instance_login"),
@@ -725,7 +782,9 @@ class TestLauncherReportsFailure:
         with (
             patch("bartlebot.launcher.launch_profile.patch_open_browser"),
             patch("bartlebot.launcher.launch_profile._patch_window_config"),
-            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[]),
+            # Both windows are still there: a drive that raised on a live window is a
+            # failure, unlike one that ended because the window went away.
+            patch("bartlebot.launcher.launch_profile.get_all_wizard_handles", return_value=[1, 2]),
             patch("bartlebot.launcher.launch_profile._wait_for_n_new_handles", AsyncMock(return_value=[1, 2])),
             patch("bartlebot.launcher.launch_profile._wait_for_login_screen", AsyncMock(return_value=True)),
             patch("bartlebot.launcher.launch_profile.start_instance"),
