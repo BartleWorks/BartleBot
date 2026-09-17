@@ -143,7 +143,7 @@ class EntityBrowserDialog(QDialog):
 
         root_layout.addLayout(btn_row)
 
-        # Tree widget: Name | Distance | Location
+        # Tree widget: Name | Display Name | Dist | Location.
         # Object name leads: it is the identity a node's params are written against, and
         # the one Copy Name hands over. The display name reads better but is not unique —
         # four separate templates all display as "Cerberus" — so it informs rather than keys.
