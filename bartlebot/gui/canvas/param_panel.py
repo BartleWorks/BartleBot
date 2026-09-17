@@ -172,16 +172,19 @@ def parse_xyz_text(text: str) -> dict[str, float]:
     return out
 
 
-class _FillButton(QPushButton):
-    """QPushButton that updates its label on hover to reflect fill options.
+class _FillButton(ActionButton):
+    """An ``ActionButton`` that updates its label on hover to reflect fill options.
 
     - 0 players connected  → "Fill current"  (no-op click)
     - 1 player connected   → "Fill current"  (direct fill, no menu)
     - 2+ players connected → "Fill current ▾"  (dropdown)
+
+    ``download`` for the glyph, matching ``_NavZoneField``'s own fill button: both mean
+    "take this from a connected player", and they sit on the same panel.
     """
 
     def __init__(self, get_clients: Callable[[], list], parent=None):
-        super().__init__(parent)
+        super().__init__("download", "", parent=parent)
         self._get_clients = get_clients
         self._refresh_label()
 
@@ -243,9 +246,7 @@ class _ZoneWidget(QWidget):
         outer.addWidget(self._edit)
 
         fill_btn = _FillButton(get_clients)
-        fill_btn.setFixedHeight(22)
         fill_btn.setToolTip("Fill from a connected player's current zone")
-        fill_btn.setStyleSheet(f"QPushButton {{ font-size: {THEME.font_small_px}px; padding: 1px 2px; }}")
         fill_btn.clicked.connect(lambda _: self._show_fill_menu(fill_btn))
         outer.addWidget(fill_btn)
 
@@ -998,30 +999,24 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             btns_row = QHBoxLayout()
             btns_row.setContentsMargins(0, 0, 0, 0)
             btns_row.setSpacing(2)
-            _BTN_H = 22
-            _btn_style = f"QPushButton {{ font-size: {THEME.font_small_px}px; padding: 1px 2px; }}"
-            copy_btn = QPushButton("Copy")
-            copy_btn.setFixedHeight(_BTN_H)
+            # Text alone, apart from the fill button's own glyph: four icons and four
+            # labels do not fit the panel's width, and a row where some buttons carry a
+            # glyph and others do not reads as two kinds of control rather than one.
+            # There is no paste or teleport icon in the set to be consistent *with*.
+            copy_btn = ActionButton("", "Copy")
             copy_btn.setToolTip("Copy XYZ to clipboard as JSON")
-            copy_btn.setStyleSheet(_btn_style)
             copy_btn.clicked.connect(lambda _checked, k=key: self._copy_xyz(k))
             btns_row.addWidget(copy_btn, 1)
-            paste_btn = QPushButton("Paste")
-            paste_btn.setFixedHeight(_BTN_H)
+            paste_btn = ActionButton("", "Paste")
             paste_btn.setToolTip("Paste XYZ from clipboard (JSON or XYZ(x, y, z) format)")
-            paste_btn.setStyleSheet(_btn_style)
             paste_btn.clicked.connect(lambda _checked, k=key: self._paste_xyz(k))
             btns_row.addWidget(paste_btn, 1)
             fill_btn = _FillButton(self._get_clients)
-            fill_btn.setFixedHeight(_BTN_H)
             fill_btn.setToolTip("Fill from a connected player's live position")
-            fill_btn.setStyleSheet(_btn_style)
             fill_btn.clicked.connect(lambda _checked, k=key, b=fill_btn: self._show_fill_menu(k, b))
             btns_row.addWidget(fill_btn, 1)
-            tp_btn = QPushButton("TP")
-            tp_btn.setFixedHeight(_BTN_H)
+            tp_btn = ActionButton("", "TP")
             tp_btn.setToolTip("Teleport all connected players to these coordinates")
-            tp_btn.setStyleSheet(_btn_style)
             tp_btn.clicked.connect(lambda _checked, k=key: asyncio.ensure_future(self._teleport_to_xyz(k)))
             btns_row.addWidget(tp_btn, 1)
             outer_layout.addLayout(btns_row)
@@ -1211,8 +1206,7 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
         outer.addWidget(self._groups_widget)
 
         # Add group button
-        self._add_group_btn = QPushButton("+ Add condition group")
-        self._add_group_btn.setFixedHeight(22)
+        self._add_group_btn = ActionButton("plus", "Add condition group")
         self._add_group_btn.clicked.connect(self._on_add_group)
         outer.addWidget(self._add_group_btn)
 
@@ -1344,9 +1338,7 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
         frame_layout.addWidget(rows_widget)
 
         # Add condition button
-        add_cond_btn = QPushButton("+ Add condition")
-        add_cond_btn.setStyleSheet("QPushButton { border: none; }")
-        add_cond_btn.setFixedHeight(20)
+        add_cond_btn = ActionButton("plus", "Add condition")
         frame_layout.addWidget(add_cond_btn)
 
         row_tuples: list[tuple[QCheckBox, QComboBox, QPushButton]] = []
