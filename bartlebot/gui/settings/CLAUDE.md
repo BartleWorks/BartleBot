@@ -29,6 +29,13 @@ Two rules about the settings dialog itself:
   a reader has to already suspect it is there.
   `test_every_settings_row_explains_itself_on_the_page` checks that a hint
   follows every control, within two rows so a pair sharing one hint is allowed.
+- **A section is a `RuleHeading`, not a bold label.** Every hint is two rows of
+  height, so a tab is long, and on a long page a bold line of text is not enough
+  to stop the eye — the Bot tab's five sections ran together as one column of
+  rows. `widgets/rule_heading.py` is the same heading the detail panes use: the
+  name at the left margin the fields align to, and a hairline out to the right.
+  It carries its own space above, so a section adds the heading and nothing else.
+  `test_every_settings_section_is_a_rule_heading` is the guard.
 
 - **The dialog fits the screen; the tabs do not have to.** A visible hint under
   every row is two rows of height per setting, which grew the dialog taller than a

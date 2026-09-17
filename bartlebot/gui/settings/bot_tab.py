@@ -25,8 +25,9 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot_options import SAFETY_DELAY_DESCRIPTION
-from bartlebot.gui.settings.rows import hint, section_label
+from bartlebot.gui.settings.rows import hint
 from bartlebot.gui.widgets.realm_combo import RealmCombo
+from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -50,7 +51,7 @@ class BotTab(QWidget):
         # ------------------------------------------------------------------
         # Timing
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Timing", top=2))
+        layout.addWidget(RuleHeading("Timing"))
 
         timing_form = QFormLayout()
         timing_form.setSpacing(4)
@@ -98,7 +99,7 @@ class BotTab(QWidget):
         # ------------------------------------------------------------------
         # Players
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Players"))
+        layout.addWidget(RuleHeading("Players"))
 
         players_form = QFormLayout()
         players_form.setSpacing(4)
@@ -156,7 +157,7 @@ class BotTab(QWidget):
         # ------------------------------------------------------------------
         # Realms
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Realms"))
+        layout.addWidget(RuleHeading("Realms"))
 
         realms_form = QFormLayout()
         realms_form.setSpacing(4)
@@ -178,7 +179,7 @@ class BotTab(QWidget):
         # ------------------------------------------------------------------
         # Quicksell
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Quicksell"))
+        layout.addWidget(RuleHeading("Quicksell"))
 
         quicksell_form = QFormLayout()
         quicksell_form.setSpacing(4)
@@ -220,7 +221,7 @@ class BotTab(QWidget):
         # ------------------------------------------------------------------
         # Decks
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Decks"))
+        layout.addWidget(RuleHeading("Decks"))
 
         decks_form = QFormLayout()
         decks_form.setSpacing(4)

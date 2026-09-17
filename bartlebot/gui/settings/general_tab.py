@@ -19,7 +19,8 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.game_sizing import BOTCANVAS_MIN_HEIGHT, LEFT_SIDEBAR_MIN_WIDTH, RIGHT_SIDEBAR_MIN_WIDTH
 from bartlebot.gui import screen_fit
-from bartlebot.gui.settings.rows import hint, section_label
+from bartlebot.gui.settings.rows import hint
+from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -35,7 +36,7 @@ class GeneralTab(QWidget):
         # ------------------------------------------------------------------
         # Log section
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Log", top=0))
+        layout.addWidget(RuleHeading("Log"))
 
         log_form = QFormLayout()
         log_form.setSpacing(4)
@@ -68,7 +69,7 @@ class GeneralTab(QWidget):
         # ------------------------------------------------------------------
         # Layout section
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Layout"))
+        layout.addWidget(RuleHeading("Layout"))
 
         layout_form = QFormLayout()
         layout_form.setSpacing(4)
@@ -131,7 +132,7 @@ class GeneralTab(QWidget):
         # ------------------------------------------------------------------
         # Privacy section
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Privacy"))
+        layout.addWidget(RuleHeading("Privacy"))
 
         privacy_form = QFormLayout()
         privacy_form.setSpacing(4)
@@ -156,7 +157,7 @@ class GeneralTab(QWidget):
         # ------------------------------------------------------------------
         # Auto-save section
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Auto-save"))
+        layout.addWidget(RuleHeading("Auto-save"))
 
         autosave_form = QFormLayout()
         autosave_form.setSpacing(4)

@@ -15,7 +15,7 @@ or the older tests can see:
 from __future__ import annotations
 
 import pytest
-from PyQt6.QtWidgets import QFormLayout
+from PyQt6.QtWidgets import QFormLayout, QLabel
 
 from bartlebot import bot_options
 from bartlebot.gui import screen_fit
@@ -25,6 +25,7 @@ from bartlebot.gui.settings.general_tab import GeneralTab
 from bartlebot.gui.settings.rows import ScrollableTab
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
 from bartlebot.gui.settings.theme_tab import ThemeTab
+from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.settings_manager import _DEFAULTS, _SECTION_MODELS, SettingsManager
@@ -130,6 +131,27 @@ def test_every_settings_row_explains_itself_on_the_page(qapp, tab_cls):
             if not any(isinstance(w, ThemedTextLabel) for w in following):
                 unexplained.append(f"{tab_cls.__name__} row {i}: {widget!r}")
     assert not unexplained, "settings rows with no visible description: " + ", ".join(unexplained)
+
+
+@pytest.mark.parametrize("tab_cls", [GeneralTab, BotTab, ThemeTab])
+def test_every_settings_section_is_a_rule_heading(qapp, tab_cls):
+    """A section is a heading with a rule, not a bold line of text.
+
+    Every row carries a visible description under it, which makes each tab long
+    enough that a bold label alone does not stop the eye -- the Bot tab's five
+    sections read as one unbroken column of rows. A bare bold ``QLabel`` at the
+    left margin of the tab's own layout is what that looked like, so finding one
+    means a section was added the old way.
+    """
+    tab = tab_cls()
+    assert tab.findChildren(RuleHeading), f"{tab_cls.__name__} draws no section headings"
+
+    bold_labels = [
+        lbl.text()
+        for lbl in tab.findChildren(QLabel)
+        if lbl.font().bold() and not isinstance(lbl.parent(), RuleHeading)
+    ]
+    assert not bold_labels, f"{tab_cls.__name__} section headers not using RuleHeading: {bold_labels}"
 
 
 def test_the_safety_delay_setting_and_option_read_the_same(qapp):
