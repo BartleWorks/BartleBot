@@ -105,6 +105,21 @@ async def _press(hwnd: int, vk: int) -> None:
     ctypes.windll.user32.PostMessageW(hwnd, _WM_KEYUP, vk, 0)
 
 
+def _window_exists(hwnd: int) -> bool:
+    """Whether a handle still names a live window.
+
+    The drive's other exit conditions are all "not yet": hooked, at character select, or
+    out of time. A window the user closed mid-launch matches none of them, so without this
+    the drive kept pressing keys into a dead handle until its full timeout -- and the
+    launch it belongs to stayed in flight for that whole time, which is exactly how long
+    the account stayed unlaunchable (issue #65).
+
+    ``IsWindow`` rather than a title lookup: an embedded window is a child and
+    ``FindWindowW`` cannot see it, so a title miss means nothing on its own.
+    """
+    return bool(ctypes.windll.user32.IsWindow(hwnd))
+
+
 def _find_window(title: str) -> int:
     """The window handle for an exact title, or 0. Re-resolved every press.
 
@@ -312,6 +327,9 @@ async def _drive_by_sight(
         if is_hooked():
             logger.info("Auto-select: '%s' is in-game", expected_title)
             return True
+        if not _window_exists(client.window_handle):
+            logger.info("Auto-select: the window for '%s' was closed — abandoning the drive", expected_title)
+            return False
 
         if await at_character_select(client):
             if not select_character:
@@ -359,10 +377,19 @@ async def _drive_blind(
     confirm an unexpected modal, so it runs only when reading the screen has failed.
     """
     loop = asyncio.get_event_loop()
+    # The handle is not known up front here -- the tree never read, so there may be no
+    # client to borrow one from -- so it is learned from the first press that lands and
+    # only then watched. Until one has been seen, a zero press target means "not found
+    # yet", which is the ordinary state at the top of a blind drive.
+    seen_hwnd = 0
     while loop.time() < deadline:
         if is_hooked():
             logger.info("Auto-select: '%s' is in-game", expected_title)
             return True
+        if seen_hwnd and not _window_exists(seen_hwnd):
+            logger.info("Auto-select: the window for '%s' was closed — abandoning the drive", expected_title)
+            return False
+        seen_hwnd = _press_target(expected_title, get_client) or seen_hwnd
         await _try_press(expected_title, _VK_RETURN, get_client)
         await asyncio.sleep(AUTO_SELECT_KEY_INTERVAL)
 

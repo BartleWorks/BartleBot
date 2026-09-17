@@ -38,6 +38,7 @@ class RecoveryHarness:
     # Bind real methods directly — no copying, no duplication.
     _on_clients_removed = ClientManager._on_clients_removed
     _log_unrecoverable_removal = ClientManager._log_unrecoverable_removal
+    _forget_closed_windows = ClientManager._forget_closed_windows
     _run_recovery_queue = ClientManager._run_recovery_queue
     _settle_recovery_batch = ClientManager._settle_recovery_batch
     _reconnect_clients = ClientManager._reconnect_clients
