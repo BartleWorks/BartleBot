@@ -232,7 +232,7 @@ class _Theme:
 
     #: Body text: the application font, and every widget that does not set its own.
     #: 12px is the Qt default this replaced (Segoe UI 9pt at Qt's 96 logical DPI).
-    font_body_px: int = 12
+    font_body_px: int = 14
     #: Text drawn on a node, in scene units, so it scales with the canvas zoom. Not
     #: tied to the body size: the node's geometry is fixed, and text that grew with
     #: the body would outgrow it.

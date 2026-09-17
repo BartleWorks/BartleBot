@@ -25,6 +25,7 @@ which is knowledge the header does not have and should not acquire.
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QSize, Qt, pyqtSignal
@@ -630,11 +631,18 @@ class BotHeader(ThemedMixin, QWidget):
         out of that, which is what makes one number right in both modes: in Edit mode
         the name is a QLineEdit, but its text is the same font box centred in the same
         row, so it sets the same baseline.
+
+        The half-pixel is rounded *away from zero* rather than with ``round``, which
+        rounds a half to even: the shift is exactly 0.5 whenever the two font boxes
+        differ by an odd number of pixels, and ``round`` turned that into no shift at
+        all -- the very pixel this method exists to remove. A half has to land on one
+        side or the other, and the side it is already on is the one that reads as
+        floating.
         """
         name = QFontMetrics(self._name_lbl.font())
         stamp = QFontMetrics(self._file_lbl.font())
         shift = (name.ascent() - stamp.ascent()) - (name.height() - stamp.height()) / 2
-        self._file_lbl.set_baseline_shift(round(shift))
+        self._file_lbl.set_baseline_shift(math.floor(abs(shift) + 0.5) * (1 if shift >= 0 else -1))
 
     def apply_theme_styles(self) -> None:
         self.setStyleSheet(f"BotHeader {{ background: {THEME.surface}; }}")

@@ -411,6 +411,62 @@ def _no_strategy_writes_into_the_repo(_record_baseline_strategy_files):
 
 
 # ---------------------------------------------------------------------------
+# Application font
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="session")
+def qapp_cls():
+    """pytest-qt's hook for *how* the one QApplication per worker is built.
+
+    The font is set in its constructor because the autouse fixture below cannot reach
+    the first GUI test in a worker: that test is what makes pytest-qt build the app, so
+    when the fixture runs there is no app yet to set a font on. It measured at the
+    platform's 9pt and every later test measured at the token, which surfaced as three
+    modules failing under ``-n auto`` and passing alone — a worker-order flake of the
+    kind "One QApplication per worker" in tests/CLAUDE.md is about.
+    """
+    from PyQt6.QtWidgets import QApplication  # noqa: PLC0415 - keeps Qt out of non-GUI runs
+
+    from bartlebot.gui.theme import THEME  # noqa: PLC0415
+
+    class _AppFontApplication(QApplication):
+        def __init__(self, argv):
+            super().__init__(argv)
+            self.setFont(THEME.ui_font())
+
+    return _AppFontApplication
+
+
+@pytest.fixture(autouse=True)
+def _production_app_font():
+    """Measure at the font the app actually runs with.
+
+    ``AppController._apply_theme`` sets the app font to ``THEME.ui_font()``; pytest-qt's
+    ``QApplication`` keeps the platform's own 9pt. The two agreed while the body size was
+    the 12px equivalent of 9pt, and any change to it splits them — every test that
+    measures a font box then measures a size the app never shows, and a baseline or slot
+    that is wrong in the app passes here. ``test_the_filename_sits_on_the_bot_name_s_baseline``
+    failed that way, against a bot name sized from the token beside a filename at 9pt.
+
+    Set rather than restored: it is the same value for every test, so there is nothing
+    to leak. Applied only once — assigning a font, like assigning a stylesheet, is a
+    change event delivered to every live widget, and the guard keeps that off the 3,000
+    tests that never build one. Qt is reached through ``sys.modules`` so a non-GUI run
+    does not import it.
+    """
+    qtwidgets = sys.modules.get("PyQt6.QtWidgets")
+    if qtwidgets is not None:
+        app = qtwidgets.QApplication.instance()
+        if app is not None:
+            from bartlebot.gui.theme import THEME  # noqa: PLC0415 - keeps Qt out of non-GUI runs
+
+            if app.font().pixelSize() != THEME.font_body_px:
+                app.setFont(THEME.ui_font())
+    yield
+
+
+# ---------------------------------------------------------------------------
 # Application stylesheet
 # ---------------------------------------------------------------------------
 

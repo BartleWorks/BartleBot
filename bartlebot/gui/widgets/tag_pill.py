@@ -47,8 +47,20 @@ from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX, group_accent, tag_icon
 #: The inert pill's own metrics, shared with :class:`ActionPill` so a clickable pill and
 #: a descriptive one are the same shape -- which is the whole reason the clickable one
 #: exists rather than a chip.
-_PILL_HEIGHT = 14
 _PILL_PAD_X = 6
+_PILL_PAD_Y = 1  # the vertical half of pill_style's "1px 6px"
+
+
+def pill_height() -> int:
+    """How tall a pill is: its own text, plus the padding above and below.
+
+    Measured rather than fixed, because the two pills have to agree and only one of
+    them is drawn by this module: :class:`NeutralPill` is a ``QLabel``, whose size hint
+    is its text, while :class:`ActionPill` states a hint of its own to keep a
+    ``QPushButton``'s 80px platform minimum out of it. A constant held them together at
+    one font size and split them at the next.
+    """
+    return QFontMetrics(THEME.ui_font(THEME.font_micro_px, bold=True)).height() + 2 * _PILL_PAD_Y
 
 
 def pill_style(bg: str, fg: str, *, font_size: int | None = None, radius: int = 7, pad: str = "1px 6px") -> str:
@@ -125,7 +137,7 @@ class TagPill(QLabel):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._icon = tag_icon(tag)
         if self._icon is None:
-            self.setFixedHeight(_PILL_HEIGHT)
+            self.setFixedHeight(pill_height())
         else:
             self.setFont(medallion_font(self.font()))
             self.setFixedSize(medallion_pill_width(self.font(), tag), TAG_ICON_PX)
@@ -320,7 +332,7 @@ class ActionPill(QPushButton):
         self._key = key
         self._applying_style = False
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setFixedHeight(_PILL_HEIGHT)
+        self.setFixedHeight(pill_height())
         # Sized from the text rather than from the style. A ``QPushButton``'s own size
         # hint carries the platform's minimum button width -- 80px on Windows -- which
         # would make four pills wider than the sidebar they wrap inside.
@@ -346,7 +358,7 @@ class ActionPill(QPushButton):
         self.updateGeometry()
 
     def sizeHint(self) -> QSize:
-        return QSize(QFontMetrics(self.font()).horizontalAdvance(self.text()) + 2 * _PILL_PAD_X, _PILL_HEIGHT)
+        return QSize(QFontMetrics(self.font()).horizontalAdvance(self.text()) + 2 * _PILL_PAD_X, pill_height())
 
     def _restyle(self) -> None:
         if self._applying_style:  # see TagPill._restyle
@@ -390,7 +402,7 @@ class NeutralPill(QLabel):
         super().__init__(text, parent)
         self._applying_style = False
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setFixedHeight(_PILL_HEIGHT)
+        self.setFixedHeight(pill_height())
         self._restyle()
 
     def _restyle(self) -> None:
@@ -428,7 +440,7 @@ class AccentPill(QLabel):
         super().__init__(text, parent)
         self._applying_style = False
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setFixedHeight(_PILL_HEIGHT)
+        self.setFixedHeight(pill_height())
         self._restyle()
 
     def _restyle(self) -> None:

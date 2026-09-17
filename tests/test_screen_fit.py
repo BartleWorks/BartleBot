@@ -257,13 +257,22 @@ def test_a_merely_small_window_refuses_nothing_the_screen_could_carry(screen):
     It is also the state every card is built in, before the window has ever been shown.
     """
     screen(_1080P)
-    assert screen_fit.fit_problem((560, 420), 2, None, (200, 100)) is None
+    # Whatever tier the screen carries, rather than a literal one: which tier that is
+    # comes off the sidebar floors, and those are style and font metrics — see
+    # _sidebar_excess. The subject here is the tiny live area, not the tier.
+    fits_on_screen = screen_fit.largest_fitting_resolution(2)
+    assert fits_on_screen is not None
+    assert screen_fit.fit_problem(fits_on_screen, 2, None, (200, 100)) is None
 
 
 def test_the_hint_grows_with_the_live_area_too(screen):
     screen(_1080P)
-    assert screen_fit.largest_fitting_resolution(2) == (560, 420)
-    assert screen_fit.largest_fitting_resolution(2, None, (1700, 900)) == (800, 600)
+    # Both tiers derived for the reason above: the hint's *growth* is the subject, and a
+    # literal pair would assert this machine's sidebar widths instead.
+    on_screen = screen_fit.largest_fitting_resolution(2)
+    roomier = screen_fit.largest_fitting_resolution(2, None, (1700, 900))
+    assert on_screen is not None and roomier is not None
+    assert roomier > on_screen
 
 
 def test_the_launch_screen_re_judges_its_cards_on_a_resize_without_rebuilding_them(qapp, monkeypatch):
