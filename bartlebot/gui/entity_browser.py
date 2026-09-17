@@ -1,9 +1,10 @@
 """Entity browser dialog.
 
 Opens a resizable dialog showing all entities near a client, sorted by
-distance.  Users can refresh the list on demand and copy an entity name
-or XYZ position to the clipboard.  No continuous polling — the list is
-fetched once on open and again whenever the Refresh button is pressed.
+distance.  Users can refresh the list on demand, copy an entity name
+or XYZ position to the clipboard, and teleport the client to a selected
+entity to look at it.  No continuous polling — the list is fetched once
+on open and again whenever the Refresh button is pressed.
 """
 
 import asyncio
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 _DIST_ROLE = Qt.ItemDataRole.UserRole  # float — raw distance for numeric sort
 _XYZ_ROLE = Qt.ItemDataRole.UserRole + 1  # str  — JSON xyz for clipboard
+_POS_ROLE = Qt.ItemDataRole.UserRole + 2  # tuple — raw (x, y, z) for teleporting
 
 
 class _EntityItem(QTreeWidgetItem):
@@ -49,6 +51,7 @@ class EntityBrowserDialog(QDialog):
         super().__init__(parent)
         self._client = client
         self._load_task: asyncio.Task | None = None
+        self._teleport_task: asyncio.Task | None = None
         self._closed = False
         self._build_ui()
         self._start_load()
@@ -75,6 +78,8 @@ class EntityBrowserDialog(QDialog):
         self._closed = True
         if self._load_task:
             self._load_task.cancel()
+        if self._teleport_task:
+            self._teleport_task.cancel()
         super().closeEvent(event)
 
     # ------------------------------------------------------------------
@@ -121,6 +126,12 @@ class EntityBrowserDialog(QDialog):
         self._copy_xyz_btn.clicked.connect(self._copy_selected_xyz)
         btn_row.addWidget(self._copy_xyz_btn)
 
+        self._teleport_btn = QPushButton("Teleport")
+        self._teleport_btn.setToolTip("Teleport this player to the selected entity")
+        self._teleport_btn.setEnabled(False)
+        self._teleport_btn.clicked.connect(self._on_teleport)
+        btn_row.addWidget(self._teleport_btn)
+
         root_layout.addLayout(btn_row)
 
         # Tree widget: Name | Distance | Location
@@ -147,6 +158,7 @@ class EntityBrowserDialog(QDialog):
         self._tree.clear()
         self._copy_name_btn.setEnabled(False)
         self._copy_xyz_btn.setEnabled(False)
+        self._teleport_btn.setEnabled(False)
         try:
             player_pos = await self._client.body.position()
             entities = await self._client.get_base_entity_list()
@@ -168,6 +180,7 @@ class EntityBrowserDialog(QDialog):
                     item = _EntityItem([name, f"{dist:.1f}", f"{loc.x:.1f}, {loc.y:.1f}, {loc.z:.1f}"])
                     item.setData(1, _DIST_ROLE, dist)
                     item.setData(0, _XYZ_ROLE, xyz_json)
+                    item.setData(0, _POS_ROLE, (loc.x, loc.y, loc.z))
                     self._tree.addTopLevelItem(item)
                 except Exception:
                     continue  # skip unreadable entities
@@ -196,6 +209,7 @@ class EntityBrowserDialog(QDialog):
         has_selection = bool(self._tree.selectedItems())
         self._copy_name_btn.setEnabled(has_selection)
         self._copy_xyz_btn.setEnabled(has_selection)
+        self._teleport_btn.setEnabled(has_selection)
 
     def _on_search_changed(self, text: str) -> None:
         lowered = text.lower()
@@ -213,3 +227,39 @@ class EntityBrowserDialog(QDialog):
         items = self._tree.selectedItems()
         if items:
             pyperclip.copy(items[0].data(0, _XYZ_ROLE) or "")
+
+    def _on_teleport(self) -> None:
+        """Start a teleport to the selected entity, replacing one still in flight.
+
+        The task reference is kept for the same reason the load's is: this writes to
+        the dialog's widgets after its await, and those writes hit a deleted C++
+        object if the teleport outlives the dialog.
+        """
+        items = self._tree.selectedItems()
+        if not items:
+            return
+        pos = items[0].data(0, _POS_ROLE)
+        if not pos:
+            return
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return  # no loop: unit tests drive this dialog directly
+        if self._teleport_task and not self._teleport_task.done():
+            self._teleport_task.cancel()
+        self._teleport_task = asyncio.ensure_future(self._teleport_to(pos))
+
+    async def _teleport_to(self, pos: tuple[float, float, float]) -> None:
+        from wizwalker import XYZ
+
+        self._teleport_btn.setEnabled(False)
+        try:
+            await self._client.teleport(XYZ(*pos), wait_on_inuse=True, purge_on_after_unuser_fixer=True)
+        except Exception:
+            if self._closed:
+                return
+            logger.exception("Failed to teleport to entity")
+            self._status.setText("Teleport failed — see logs")
+        finally:
+            if not self._closed:
+                self._teleport_btn.setEnabled(bool(self._tree.selectedItems()))
