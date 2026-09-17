@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QPointF, QRectF, Qt
-from PyQt6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen
+from PyQt6.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent, QStyleOptionGraphicsItem
 
 from bartlebot.gui.canvas.lod import text_is_legible
@@ -25,7 +25,6 @@ if TYPE_CHECKING:
 _PADDING = 60
 _REGION_RADIUS = 12
 _FILL_ALPHA = 40  # ~16% opacity for the region fill
-_LABEL_FONT_SIZE = 9
 _LABEL_DARKER = 130  # QColor.darker() factor for label text / pill border
 _PILL_H = 20  # pill height in px
 _PILL_PAD_X = 10  # horizontal padding inside pill
@@ -121,8 +120,7 @@ class RegionItem(QGraphicsItem):
         pill_gap = _PILL_GAP * s
 
         label_color = QColor(color).darker(_LABEL_DARKER)
-        font = QFont(THEME.font_ui_family)
-        font.setPointSizeF(max(1.0, _LABEL_FONT_SIZE * s))
+        font = THEME.scaled_ui_font(THEME.font_node_px - 3, s)
         font.setBold(True)
         painter.setFont(font)
         fm = painter.fontMetrics()

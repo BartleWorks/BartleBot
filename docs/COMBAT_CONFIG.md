@@ -35,6 +35,8 @@ The link/inline pair repeats one level down: a `PlayerAssignment` carries either
 
 `DeckData.tc` is legacy and is never read or applied. Treasure cards are deliberately absent from the deck editor; do not add them back without deciding what applying them would mean.
 
+**A deck's cards are captured, its archmastery answer is chosen.** Everything in a `DeckPreset` comes off the wizard at import time — the cards, the card kinds, the archmastery *school* — and none of it is typeable, so the Deck Presets page shows all of it read-only. The exception is `apply_archmastery`, the three-state "should applying this deck set that school", which is a decision and belongs to whoever owns the deck. It is editable in two places, on purpose: the sidebar deck card's menu, for the deck in a player slot, and the Deck Presets page, for one in the library — a preset whose only route to that answer is *load it into a slot first* is a preset that cannot be configured where it lives. Both spell the three modes from `deck_content.ARCHMASTERY_MODES`, and neither resolves the value on load; `resolve_apply_archmastery` runs at apply time, and at display time for the icons.
+
 ## Two roots, and why writes only ever go to one
 
 `strategy_store` resolves against an **ordered pair** of roots:

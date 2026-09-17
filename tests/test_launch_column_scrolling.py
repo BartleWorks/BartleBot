@@ -96,14 +96,17 @@ def _drawn_height(area) -> int:
 
 
 @pytest.mark.parametrize("kind", ["account", "profile"])
-# Tall enough that three greyed cards and the Add card below them still fit -- this test
-# is about a column with room to spare, and each height has to actually be one.
 @pytest.mark.parametrize("count", [1, 2, 3])
-@pytest.mark.parametrize("column_height", [400, 500, 900])
-def test_a_column_with_room_to_spare_shows_no_scroll_bar(qapp, kind, count, column_height):
+# Room to spare *below what the rows draw*, rather than a pinned column height: how tall
+# a card is comes off the font, so a literal that left three greyed cards room at one
+# body size is shorter than they draw at the next -- which is how this test came to fail
+# its own premise instead of its subject. Zero is the interesting one: the bar must hold
+# off right up to the pixel where the rows fill the viewport exactly.
+@pytest.mark.parametrize("slack", [0, 100, 500])
+def test_a_column_with_room_to_spare_shows_no_scroll_bar(qapp, kind, count, slack):
     """The bug itself: greyed cards that fit still raised a bar."""
     cards = _cards(kind, count, REASON)
-    _host, area = _column(qapp, cards, column_height)
+    _host, area = _column_with_slack(qapp, cards, slack)
 
     drawn = _drawn_height(area)
     assert drawn <= area.viewport().height(), "test needs a column its rows fit inside"
@@ -111,6 +114,24 @@ def test_a_column_with_room_to_spare_shows_no_scroll_bar(qapp, kind, count, colu
         f"{count} greyed {kind} cards draw {drawn}px in a {area.viewport().height()}px "
         f"viewport, yet the column asked for {area.widget().height()}px"
     )
+
+
+def _column_with_slack(qapp, cards: list[QWidget], slack: int, width: int = 300):
+    """A column holding *cards* with exactly *slack* px of viewport left under them.
+
+    Built tall, measured, then trimmed to what the rows turned out to need, so the room
+    to spare is the room this test means rather than whatever a pinned height happened to
+    leave. Same return as :func:`_column`, and the host matters for the same reason.
+    """
+    host, area = _column(qapp, cards, _ROOMY)
+    host.resize(host.width(), host.height() - (area.viewport().height() - _drawn_height(area)) + slack)
+    for _ in range(3):
+        qapp.processEvents()
+    return host, area
+
+
+#: Taller than any card set these tests build, so the first pass never clips them.
+_ROOMY = 2000
 
 
 @pytest.mark.parametrize("kind", ["account", "profile"])

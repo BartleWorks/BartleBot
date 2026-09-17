@@ -91,10 +91,6 @@ _DIALOG_MIN_W = 420
 _DESC_MIN_LINES = 2
 _DESC_MAX_LINES = 6
 
-# On the widget, not in the stylesheet: GrowingTextEdit measures its own line
-# height from ``QWidget.font()``, which a stylesheet ``font-size`` never reaches.
-_DESC_FONT_PX = 11
-
 
 # ---------------------------------------------------------------------------
 # Add / Edit dialog
@@ -157,8 +153,10 @@ class _AddOptionDialog(ThemedMixin, QDialog):
 
         # Prose, not a name: see _DESC_* above for what the shipped library needs.
         self._desc_edit = GrowingTextEdit(min_lines=_DESC_MIN_LINES, max_lines=_DESC_MAX_LINES)
+        # On the widget, not in the stylesheet: GrowingTextEdit measures its own line
+        # height from ``QWidget.font()``, which a stylesheet ``font-size`` never reaches.
         desc_font = QFont(self._desc_edit.font())
-        desc_font.setPixelSize(_DESC_FONT_PX)
+        desc_font.setPixelSize(THEME.font_small_px)
         self._desc_edit.setFont(desc_font)
         self._desc_edit.setPlaceholderText("Optional description")
 
@@ -230,7 +228,7 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         self.refresh_theme_styles()
 
     def apply_theme_styles(self) -> None:
-        self._err_lbl.setStyleSheet(f"color: {THEME.error}; font-size: 11px;")
+        self._err_lbl.setStyleSheet(f"color: {THEME.error}; font-size: {THEME.font_small_px}px;")
         # The app stylesheet's input rule covers QLineEdit and QComboBox, not
         # QTextEdit, so this field drew Fusion's own derived frame beside two
         # neighbours drawing the real token.  Same treatment description_section

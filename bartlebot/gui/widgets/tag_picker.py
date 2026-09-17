@@ -12,17 +12,48 @@ it is a parameter rather than something the widget works out for itself.
 
 from __future__ import annotations
 
+from functools import lru_cache
+
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QWidget
 
+from bartlebot import card_art
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group  # noqa: F401  (re-exported)
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 
+#: Side of a tag's medallion wherever it is drawn. 16px was hard to read; the medallions
+#: are 128px (two are 64px) game art, and 20px is the smallest that stays legible.
+TAG_ICON_PX = 20
+
+
+def tag_icon(tag: str) -> QIcon | None:
+    """A tag's extracted medallion at :data:`TAG_ICON_PX`, or None -- the ordinary case.
+
+    None on every install that has not run the extractor, and always for the Type tags,
+    which have no game art. Every caller keeps its text form for that case.
+
+    Cached per :func:`card_art.cache_generation`, so ``card_art.forget_cache`` is what
+    makes new art visible here too. The lookup stats the file twice, and the library
+    asks once per tag per card -- a few hundred stats a listing, which on Windows was a
+    visible share of a keystroke in the search box.
+    """
+    return _tag_icon(tag, card_art.cache_generation())
+
+
+@lru_cache(maxsize=64)
+def _tag_icon(tag: str, _generation: int) -> QIcon | None:
+    path = card_art.tag_icon_path(tag)
+    return None if path is None else art_icon(path)
+
+
 #: Dot colour per group. Two hues, so "is this a reward or an activity" is legible
-#: on a single row without reading the section header above it.
+#: on a single row without reading the section header above it. Activity is not
+#: ``warning``: its gold swallowed the gold ring of the medallion leading each pill.
 GROUP_ACCENT: dict[str, str] = {
     "Rewards": "accent",
-    "Activity": "warning",
+    "Activity": "pill_activity_bg",
 }
 
 
@@ -68,6 +99,7 @@ def tag_sections(counts: dict[str, int] | None = None, group: str | None = None)
                 meta=("" if counts is None else count_label(counts.get(tag, 0))),
                 accent=group_accent(name),
                 dim=(counts is not None and counts.get(tag, 0) == 0),
+                icon=tag_icon(tag),
             )
             for tag in tags
         ]

@@ -39,12 +39,13 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.duel_slot_gem import GEM_PX, DuelSlotGem
+from bartlebot.gui.widgets.tag_pill import pill_height
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
 #: The pill's metrics. Deliberately ``AccountPill``'s, so a slot pill and an account pill
 #: on the same screen are one shape at two sizes of claim rather than two shapes.
 _PILL_HEIGHT = 18
-_PILL_FONT_PX = 9
 _PILL_MIN_WIDTH = 30
 
 
@@ -135,7 +136,7 @@ class PlayerSlotPill(QLabel):
                 fill = "transparent"
                 text = THEME.text_muted
             self.setStyleSheet(
-                f"background: {fill}; color: {text}; font-size: {_PILL_FONT_PX}px;"
+                f"background: {fill}; color: {text}; font-size: {THEME.font_micro_px}px;"
                 f" font-weight: bold; border-radius: {_PILL_HEIGHT // 2}px;"
                 f" border: 1px solid {accent}; padding: 0px 6px;"
             )
@@ -237,9 +238,11 @@ class PlayerPillBar(QWidget):
 # Read-only: naming a slot rather than toggling it
 # ---------------------------------------------------------------------------
 
-#: ``NeutralPill``'s height, not ``PlayerSlotPill``'s. A badge sits inside a caption line
-#: on a sidebar card, where an 18px pill would make the line taller than the text beside it.
-_BADGE_HEIGHT = 14
+#: ``NeutralPill``'s height, not ``PlayerSlotPill``'s: a badge sits inside a caption line
+#: on a sidebar card, where an 18px pill would make the line taller than the text beside
+#: it. Taken from ``pill_height()`` rather than copied as a number -- it was 14 here and
+#: 14 there until the body text moved, and then this one clipped its own text while the
+#: pill it is meant to match grew.
 #: One pixel less than ``NeutralPill``'s padding, because a badge always draws a 1px
 #: border -- in the fill colour when uncoloured -- so the text sits at the same x whether
 #: or not an account is known, and a badge does not change width when one arrives.
@@ -271,7 +274,7 @@ class PlayerBadge(QLabel):
         self._applying_style = False
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setFixedHeight(_BADGE_HEIGHT)
+        self.setFixedHeight(pill_height())
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self._restyle()
 
@@ -317,8 +320,8 @@ class PlayerBadge(QLabel):
             else:
                 fill, border, text = account_tint(self._color_key), account_accent(self._color_key), THEME.text
             self.setStyleSheet(
-                f"background: {fill}; color: {text}; font-size: 9px; font-weight: bold;"
-                f" border-radius: {_BADGE_HEIGHT // 2}px; border: 1px solid {border}; padding: 0px {_BADGE_PAD_X}px;"
+                f"background: {fill}; color: {text}; font-size: {THEME.font_micro_px}px; font-weight: bold;"
+                f" border-radius: {pill_height() // 2}px; border: 1px solid {border}; padding: 0px {_BADGE_PAD_X}px;"
             )
             who = f" — {self._account_label}" if self._account_label else ""
             self.setToolTip(f"Player {self._player}{who}")
@@ -338,16 +341,24 @@ class PlayerBadgeRow(QWidget):
     Combat tab redraws its cards on every pick, and destroying children mid-refresh is how
     that tab used to delete a widget a click was still travelling to.
 
-    Colours are held per *slot*, not per position, so a combat order of ``P3 → P1`` puts
-    slot 3's account colour on the first badge -- the same hue P3 wears everywhere else.
+    Colours are held per *slot*, not per position, so a combat order of ``P1 ← P3`` puts
+    slot 3's account colour on the right-hand badge -- the same hue P3 wears everywhere else.
+
+    ``duel_order`` makes the row a *combat order* rather than a set of players: it is drawn
+    right to left, and each position wears the game's own gem, exactly as
+    :class:`~bartlebot.gui.sidebar.sections.combat_order_widget.CombatOrderWidget` draws the
+    same value where it is edited. Off for the assignment lines, which name a set of players
+    and have no order to mirror. See :mod:`bartlebot.gui.widgets.duel_slot_gem`.
     """
 
-    def __init__(self, separator: str = "", parent: QWidget | None = None) -> None:
+    def __init__(self, separator: str = "", parent: QWidget | None = None, *, duel_order: bool = False) -> None:
         super().__init__(parent)
         row = QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(3)
+        self._duel_order = duel_order
         self._badges: list[PlayerBadge] = []
+        self._gems: list[DuelSlotGem] = []
         self._separators: list[ThemedTextLabel] = []
         self._players: list[int] = []
         self._color_keys: list[int | None] = []
@@ -357,6 +368,11 @@ class PlayerBadgeRow(QWidget):
                 sep = ThemedTextLabel(separator, color="text_muted", parent=self)
                 row.addWidget(sep, 0, Qt.AlignmentFlag.AlignVCenter)
                 self._separators.append(sep)
+            if duel_order:
+                # The gem leads its badge, so "which position" is read before "who".
+                gem = DuelSlotGem(index + 1, GEM_PX, self)
+                row.addWidget(gem, 0, Qt.AlignmentFlag.AlignVCenter)
+                self._gems.append(gem)
             badge = PlayerBadge(index + 1, self)
             row.addWidget(badge, 0, Qt.AlignmentFlag.AlignVCenter)
             self._badges.append(badge)
@@ -374,11 +390,27 @@ class PlayerBadgeRow(QWidget):
         return self._badges[: len(self._players)]
 
     def set_players(self, players: Sequence[int]) -> None:
+        """Show *players*, always given first-to-last however the row draws them.
+
+        A ``duel_order`` row reverses on the way onto the screen and nowhere else, so a
+        caller hands over the same list it would for any other row and never has to know
+        which way this one runs. :attr:`players` reports what is on screen, which for a
+        mirrored row is the reverse of what came in.
+        """
         self._players = list(players)[:_MAX_SLOTS]
+        if self._duel_order:
+            self._players.reverse()
         for index, badge in enumerate(self._badges):
             if index < len(self._players):
                 badge.set_player(self._players[index])
             badge.setVisible(index < len(self._players))
+        for index, gem in enumerate(self._gems):
+            # The i-th badge from the left holds the (len - i)-th player to enter, and the
+            # gem names that *position* -- not the player in it, and not the badge's index.
+            if index < len(self._players):
+                gem.set_slot(len(self._players) - index)
+            else:
+                gem.setVisible(False)
         for index, sep in enumerate(self._separators, start=1):
             sep.setVisible(index < len(self._players))
         self._apply_colors()

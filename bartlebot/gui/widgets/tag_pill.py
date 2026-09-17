@@ -14,6 +14,11 @@ Two shapes, because they do different jobs:
 
 Both take their colour from the same call, so the sizes differ and the hues never do.
 
+Both are also led by the tag's game medallion where the user has extracted one (#29),
+at ``TAG_ICON_PX``: the pill is exactly as tall as the medallion, so the ring forms its
+rounded left end and the coloured body runs on from it, name included. Without extracted
+art, and always for the Type tags, which have none, both are exactly the text forms above.
+
 :class:`NeutralPill` is the odd one out and lives here for the shape rather than the
 palette: a caption that wants to look like a pill without claiming a tag colour.
 :class:`ActionPill` is that one with a click behind it -- same metrics, so a pill that
@@ -30,45 +35,133 @@ as one.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QEvent, QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QFontMetrics
+from PyQt6.QtCore import QEvent, QRect, QRectF, QSize, Qt, pyqtSignal
+from PyQt6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPainterPath
 from PyQt6.QtWidgets import QLabel, QPushButton, QSizePolicy, QWidget
 
 from bartlebot.bot_tags import tag_group
 from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.tag_picker import group_accent
+from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX, group_accent, tag_icon
 
 #: The inert pill's own metrics, shared with :class:`ActionPill` so a clickable pill and
 #: a descriptive one are the same shape -- which is the whole reason the clickable one
 #: exists rather than a chip.
-_PILL_HEIGHT = 14
-_PILL_FONT_PX = 9
 _PILL_PAD_X = 6
+_PILL_PAD_Y = 1  # the vertical half of pill_style's "1px 6px"
 
 
-def pill_style(bg: str, fg: str, *, font_size: int = 9, radius: int = 7, pad: str = "1px 6px") -> str:
+def pill_height() -> int:
+    """How tall a pill is: its own text, plus the padding above and below.
+
+    Measured rather than fixed, because the two pills have to agree and only one of
+    them is drawn by this module: :class:`NeutralPill` is a ``QLabel``, whose size hint
+    is its text, while :class:`ActionPill` states a hint of its own to keep a
+    ``QPushButton``'s 80px platform minimum out of it. A constant held them together at
+    one font size and split them at the next.
+    """
+    return QFontMetrics(THEME.ui_font(THEME.font_micro_px, bold=True)).height() + 2 * _PILL_PAD_Y
+
+
+def pill_style(bg: str, fg: str, *, font_size: int | None = None, radius: int = 7, pad: str = "1px 6px") -> str:
     """The shared pill look, so a caller varies only what it means to vary."""
+    font_size = THEME.font_micro_px if font_size is None else font_size
     return (
         f"background: {bg}; color: {fg}; font-size: {font_size}px;"
         f" font-weight: bold; border-radius: {radius}px; padding: {pad};"
     )
 
 
+#: The space either side of the medallion pill's text. The pill is as tall as the
+#: medallion, so its text is a size up from the plain pill's -- see ``medallion_font``.
+_MEDALLION_GAP = 4  # medallion to text
+_MEDALLION_PAD_R = 8  # text to the round right end
+
+
+def medallion_font(base: QFont) -> QFont:
+    """*base* at the medallion pill's size, bold."""
+    font = QFont(base)
+    font.setPixelSize(THEME.font_subtext_px)
+    font.setBold(True)
+    return font
+
+
+def medallion_pill_width(font: QFont, text: str) -> int:
+    """How wide a medallion pill carrying *text* in *font* is."""
+    return TAG_ICON_PX + _MEDALLION_GAP + QFontMetrics(font).horizontalAdvance(text) + _MEDALLION_PAD_R
+
+
+def paint_medallion_pill(painter: QPainter, width: int, icon: QIcon, text: str, fill: str, fg: str) -> None:
+    """A pill whose left end *is* the medallion.
+
+    The pill is exactly as tall as the medallion and every medallion fills its square, so
+    the ring and the pill's round end are the same circle. The fill starts at the
+    medallion's centre rather than at its edge: a rounded rectangle starting at the edge
+    would curve away under the ring and leave a notch where the top and bottom edges meet
+    it. The right end is a half circle of the same radius.
+    """
+    h = TAG_ICON_PX
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+    body = QPainterPath()
+    body.setFillRule(Qt.FillRule.WindingFill)
+    body.addRect(QRectF(h / 2, 0, max(width - h, 0), h))
+    body.addEllipse(QRectF(width - h, 0, h, h))
+    painter.fillPath(body, QColor(fill))
+    icon.paint(painter, QRect(0, 0, h, h))
+    painter.setPen(QColor(fg))
+    text_x = h + _MEDALLION_GAP
+    painter.drawText(
+        QRect(text_x, 0, max(width - text_x, 0), h),
+        int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+        text,
+    )
+
+
 class TagPill(QLabel):
-    """A small, inert, group-coloured pill naming one tag."""
+    """A small, inert pill naming one tag, led by its medallion where one was extracted.
+
+    The medallion form is drawn rather than styled (see :func:`paint_medallion_pill`): a
+    stylesheet cannot put an icon flush with a rounded end. The text form, group-coloured,
+    is every other case: an install with no extracted art, and the Type tags, which have
+    none.
+
+    The name stays beside the medallion. The art alone was tried and was not enough to
+    read a card by.
+    """
 
     def __init__(self, tag: str, parent: QWidget | None = None) -> None:
         super().__init__(tag, parent)
         self._tag = tag
         self._applying_style = False
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setFixedHeight(14)
+        self._icon = tag_icon(tag)
+        if self._icon is None:
+            self.setFixedHeight(pill_height())
+        else:
+            self.setFont(medallion_font(self.font()))
+            self.setFixedSize(medallion_pill_width(self.font(), tag), TAG_ICON_PX)
         self._restyle()
 
     @property
     def tag(self) -> str:
         return self._tag
+
+    @property
+    def has_icon(self) -> bool:
+        """Whether this pill is led by the tag's medallion."""
+        return self._icon is not None
+
+    def paintEvent(self, event) -> None:
+        if self._icon is None:
+            super().paintEvent(event)
+            return
+        painter = QPainter(self)
+        painter.setFont(self.font())
+        paint_medallion_pill(
+            painter, self.width(), self._icon, self._tag, group_accent(tag_group(self._tag)), THEME.pill_text
+        )
+        painter.end()
 
     def _restyle(self) -> None:
         # Guard is load-bearing: setStyleSheet delivers StyleChange straight back to
@@ -78,7 +171,12 @@ class TagPill(QLabel):
             return
         self._applying_style = True
         try:
-            self.setStyleSheet(pill_style(group_accent(tag_group(self._tag)), THEME.pill_text))
+            if self._icon is not None:
+                # paintEvent draws it all, reading THEME at paint time; a stylesheet font
+                # would override the one the width was measured with.
+                self.setStyleSheet("background: transparent;")
+            else:
+                self.setStyleSheet(pill_style(group_accent(tag_group(self._tag)), THEME.pill_text))
         finally:
             self._applying_style = False
 
@@ -89,7 +187,11 @@ class TagPill(QLabel):
 
 
 class TagChip(QPushButton):
-    """A group-coloured chip that removes its tag when clicked."""
+    """A group-coloured chip that removes its tag when clicked.
+
+    Led by the tag's medallion where one was extracted, in the same shape as
+    :class:`TagPill`'s, so a tag reads the same in the filter bar as on the cards below it.
+    """
 
     removed = pyqtSignal(str)
 
@@ -97,6 +199,13 @@ class TagChip(QPushButton):
         super().__init__(f"{tag}  ✕", parent)
         self._tag = tag
         self._applying_style = False
+        self._icon = tag_icon(tag)
+        if self._icon is not None:
+            # Hover repaints need WA_Hover once the stylesheet no longer draws the chip.
+            self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+            self.setFont(medallion_font(self.font()))
+            self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            self.setFixedSize(medallion_pill_width(self.font(), self.text()), TAG_ICON_PX)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip(tooltip or f"Remove the {tag} tag")
         self._restyle()
@@ -106,13 +215,35 @@ class TagChip(QPushButton):
     def tag(self) -> str:
         return self._tag
 
+    @property
+    def has_icon(self) -> bool:
+        """Whether this chip is led by the tag's medallion."""
+        return self._icon is not None
+
+    def paintEvent(self, event) -> None:
+        if self._icon is None:
+            super().paintEvent(event)
+            return
+        painter = QPainter(self)
+        painter.setFont(self.font())
+        fill = THEME.edge_selected if self.underMouse() else group_accent(tag_group(self._tag))
+        paint_medallion_pill(painter, self.width(), self._icon, self.text(), fill, THEME.pill_text)
+        painter.end()
+
     def _restyle(self) -> None:
         if self._applying_style:  # see TagPill._restyle
             return
         self._applying_style = True
         try:
+            if self._icon is not None:
+                self.setStyleSheet("QPushButton { border: none; background: transparent; }")
+                return
             base = pill_style(
-                group_accent(tag_group(self._tag)), THEME.pill_text, font_size=10, radius=9, pad="2px 9px"
+                group_accent(tag_group(self._tag)),
+                THEME.pill_text,
+                font_size=THEME.font_subtext_px,
+                radius=9,
+                pad="2px 9px",
             )
             self.setStyleSheet(
                 f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}"
@@ -161,7 +292,9 @@ class NeutralChip(QPushButton):
             return
         self._applying_style = True
         try:
-            base = pill_style(THEME.pill_neutral_bg, THEME.pill_text, font_size=10, radius=9, pad="2px 9px")
+            base = pill_style(
+                THEME.pill_neutral_bg, THEME.pill_text, font_size=THEME.font_subtext_px, radius=9, pad="2px 9px"
+            )
             self.setStyleSheet(
                 f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}"
             )
@@ -199,7 +332,7 @@ class ActionPill(QPushButton):
         self._key = key
         self._applying_style = False
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setFixedHeight(_PILL_HEIGHT)
+        self.setFixedHeight(pill_height())
         # Sized from the text rather than from the style. A ``QPushButton``'s own size
         # hint carries the platform's minimum button width -- 80px on Windows -- which
         # would make four pills wider than the sidebar they wrap inside.
@@ -208,7 +341,7 @@ class ActionPill(QPushButton):
         # reaches ``QWidget.font()``, so :meth:`sizeHint` would measure at the base size
         # and leave every pill several pixels too wide.
         font = self.font()
-        font.setPixelSize(_PILL_FONT_PX)
+        font.setPixelSize(THEME.font_micro_px)
         font.setBold(True)
         self.setFont(font)
         self._restyle()
@@ -225,7 +358,7 @@ class ActionPill(QPushButton):
         self.updateGeometry()
 
     def sizeHint(self) -> QSize:
-        return QSize(QFontMetrics(self.font()).horizontalAdvance(self.text()) + 2 * _PILL_PAD_X, _PILL_HEIGHT)
+        return QSize(QFontMetrics(self.font()).horizontalAdvance(self.text()) + 2 * _PILL_PAD_X, pill_height())
 
     def _restyle(self) -> None:
         if self._applying_style:  # see TagPill._restyle
@@ -233,7 +366,7 @@ class ActionPill(QPushButton):
         self._applying_style = True
         try:
             base = pill_style(
-                THEME.pill_neutral_bg, THEME.pill_text, font_size=_PILL_FONT_PX, pad=f"0px {_PILL_PAD_X}px"
+                THEME.pill_neutral_bg, THEME.pill_text, font_size=THEME.font_micro_px, pad=f"0px {_PILL_PAD_X}px"
             )
             self.setStyleSheet(
                 f"QPushButton {{ border: none; {base} }}"
@@ -269,7 +402,7 @@ class NeutralPill(QLabel):
         super().__init__(text, parent)
         self._applying_style = False
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setFixedHeight(_PILL_HEIGHT)
+        self.setFixedHeight(pill_height())
         self._restyle()
 
     def _restyle(self) -> None:
@@ -307,7 +440,7 @@ class AccentPill(QLabel):
         super().__init__(text, parent)
         self._applying_style = False
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self.setFixedHeight(_PILL_HEIGHT)
+        self.setFixedHeight(pill_height())
         self._restyle()
 
     def _restyle(self) -> None:
@@ -319,7 +452,7 @@ class AccentPill(QLabel):
             # x inside this pill as inside the filled ones beside it.
             self.setStyleSheet(
                 f"background: transparent; color: {THEME.accent};"
-                f" font-size: {_PILL_FONT_PX}px; font-weight: bold; border-radius: 7px;"
+                f" font-size: {THEME.font_micro_px}px; font-weight: bold; border-radius: 7px;"
                 f" border: 1px solid {THEME.accent}; padding: 0px {_PILL_PAD_X - 1}px;"
             )
         finally:
@@ -369,7 +502,7 @@ class AccountPill(QLabel):
         try:
             self.setStyleSheet(
                 f"background: {account_tint(self._color_key)}; color: {THEME.text};"
-                f" font-size: 9px; font-weight: bold; border-radius: 8px;"
+                f" font-size: {THEME.font_micro_px}px; font-weight: bold; border-radius: 8px;"
                 f" border: 1px solid {account_accent(self._color_key)}; padding: 0px 6px;"
             )
         finally:

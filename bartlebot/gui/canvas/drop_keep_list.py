@@ -33,7 +33,12 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.drop_tree import UNCATEGORIZED_DISPLAY, CaseInsensitiveTreeItem
+from bartlebot.gui.widgets.drop_tree import (
+    UNCATEGORIZED_DISPLAY,
+    CaseInsensitiveTreeItem,
+    drop_icon,
+    show_drop_icons,
+)
 from bartlebot.gui.widgets.flow_layout import FlowLayout
 from bartlebot.gui.widgets.list_text import parse_list_text
 from bartlebot.gui.widgets.search_field import SearchLineEdit
@@ -228,6 +233,7 @@ class DropKeepListWidget(QWidget):
         header.setSectionResizeMode(_COL_CATEGORY, QHeaderView.ResizeMode.Fixed)
         self._tree.setColumnWidth(_COL_KEEP, 42)
         self._tree.setColumnWidth(_COL_CATEGORY, 92)
+        show_drop_icons(self._tree)
         self._tree.itemChanged.connect(self._on_item_changed)
         outer.addWidget(self._tree)
 
@@ -333,6 +339,8 @@ class DropKeepListWidget(QWidget):
             category = entry.category or ""
             row = _DropItem(["", entry.name, category or UNCATEGORIZED_DISPLAY])
             row.setData(_COL_CATEGORY, Qt.ItemDataRole.UserRole, category)
+            if (icon := drop_icon(category, entry.name)) is not None:
+                row.setIcon(_COL_CATEGORY, icon)
             row.setData(_COL_ITEM, Qt.ItemDataRole.UserRole, entry)
             row.setFlags(row.flags() | Qt.ItemFlag.ItemIsUserCheckable)
             row.setCheckState(_COL_KEEP, Qt.CheckState.Unchecked)
@@ -665,21 +673,21 @@ class DropKeepListWidget(QWidget):
         return f'<b style="color: {THEME.text}">{text}</b>'
 
     def _apply_styles(self) -> None:
-        line = f"color: {THEME.text_muted}; font-size: 10px;"
+        line = f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;"
         self._rule.setStyleSheet(line)
         self._summary.setStyleSheet(line)
         self._empty.setStyleSheet(line)
-        self._warning.setStyleSheet(f"color: {THEME.warning}; font-size: 10px;")
+        self._warning.setStyleSheet(f"color: {THEME.warning}; font-size: {THEME.font_subtext_px}px;")
         self._search.setStyleSheet(
-            f"padding: 2px 6px; border: 1px solid {THEME.border}; border-radius: 4px; font-size: 11px;"
+            f"padding: 2px 6px; border: 1px solid {THEME.border}; border-radius: 4px; font-size: {THEME.font_small_px}px;"
         )
         self._tree.setStyleSheet(
-            f"QTreeWidget {{ border: 1px solid {THEME.border}; font-size: 11px; background: {THEME.bg};"
+            f"QTreeWidget {{ border: 1px solid {THEME.border}; font-size: {THEME.font_small_px}px; background: {THEME.bg};"
             f" alternate-background-color: {THEME.surface}; }}"
             " QTreeWidget::item { padding: 2px 4px; }"
         )
         btn_style = (
-            f"QPushButton {{ color: {THEME.accent}; font-size: 10px; padding: 0; border: none; }}"
+            f"QPushButton {{ color: {THEME.accent}; font-size: {THEME.font_subtext_px}px; padding: 0; border: none; }}"
             f"QPushButton:hover {{ color: {THEME.text}; }}"
         )
         self._btn_check_all.setStyleSheet(btn_style)

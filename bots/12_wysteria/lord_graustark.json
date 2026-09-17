@@ -1,0 +1,928 @@
+{
+  "id": "d6acb28c-da82-48f1-9543-7fc0ac727c93",
+  "name": "Lord Graustark",
+  "description": "Endlessly defeats Lord Graustark in Pegasus Place, Wysteria",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_2",
+  "recovery_state": "state_1",
+  "drops": [
+    {
+      "name": "Accurate",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Add Health Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Animated Canine Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Ape Grapes",
+      "category": "Snacks"
+    },
+    {
+      "name": "Athame of Chivalry",
+      "category": "Athames"
+    },
+    {
+      "name": "Attentive Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Balefrost",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Bandit's Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Banshee",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Bell Pepper",
+      "category": "Seeds"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Boots of the Supreme",
+      "category": "Boots"
+    },
+    {
+      "name": "Cap of Expertise",
+      "category": "Hats"
+    },
+    {
+      "name": "Cap of the Black Mantle",
+      "category": "Hats"
+    },
+    {
+      "name": "Caramel Popcorn",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cat Burglar's Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Cat Burglar's Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Cheese Broccoli",
+      "category": "Snacks"
+    },
+    {
+      "name": "Chipped Damage Opal +4",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Defense Sapphire +13",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Health Opal +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Health Opal +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Health Opal +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Health Opal +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chipped Mana Opal +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Chocolate Strawberry",
+      "category": "Snacks"
+    },
+    {
+      "name": "Conventional Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Conventional Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Copper",
+      "category": "Reagents"
+    },
+    {
+      "name": "Cowl of Diplomacy",
+      "category": "Hats"
+    },
+    {
+      "name": "Cowl of the Exceptional",
+      "category": "Hats"
+    },
+    {
+      "name": "Cracked Accurate Peridot +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracked Accurate Ruby +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracked Damage Onyx +4",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracked Damage Peridot +6",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracked Damage Ruby +6",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracked Defense Onyx +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracked Defense Opal +5",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracked Defense Opal +6",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cracker",
+      "category": "Snacks"
+    },
+    {
+      "name": "Crunch Apple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Dandelion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Dandy Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Darkwind",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Deck of the Black Mantle",
+      "category": "Decks"
+    },
+    {
+      "name": "Delicate Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Desparagus (Seed)",
+      "category": "Seeds"
+    },
+    {
+      "name": "Doctor's Uniform",
+      "category": "Robes"
+    },
+    {
+      "name": "Donate Power",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Doom and Gloom",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Downer Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Drain Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dream Shield Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Elegant Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Evil Snowman",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Exquisite Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Feline Hat of Whimsy",
+      "category": "Hats"
+    },
+    {
+      "name": "Finely Finished Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Finely Finished Slippers",
+      "category": "Boots"
+    },
+    {
+      "name": "Fire Cracker",
+      "category": "Snacks"
+    },
+    {
+      "name": "Flapjacks",
+      "category": "Snacks"
+    },
+    {
+      "name": "Footwraps of Dreamland",
+      "category": "Boots"
+    },
+    {
+      "name": "Footwraps of Superiority",
+      "category": "Boots"
+    },
+    {
+      "name": "Glowing Rock Candy",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Peanut",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Squash",
+      "category": "Snacks"
+    },
+    {
+      "name": "Graceful Stiletto",
+      "category": "Athames"
+    },
+    {
+      "name": "Grapes of Wrath",
+      "category": "Seeds"
+    },
+    {
+      "name": "Green Grapes",
+      "category": "Snacks"
+    },
+    {
+      "name": "Gummy Bloodbat",
+      "category": "Snacks"
+    },
+    {
+      "name": "Gummy Firecat",
+      "category": "Snacks"
+    },
+    {
+      "name": "Headwraps of Superiority",
+      "category": "Hats"
+    },
+    {
+      "name": "Helm of Intolerance",
+      "category": "Hats"
+    },
+    {
+      "name": "Helm of Stasis",
+      "category": "Hats"
+    },
+    {
+      "name": "Honey Sickle",
+      "category": "Seeds"
+    },
+    {
+      "name": "Humongofrog",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Iron",
+      "category": "Reagents"
+    },
+    {
+      "name": "Large Fish",
+      "category": "Snacks"
+    },
+    {
+      "name": "Large Watermelon",
+      "category": "Snacks"
+    },
+    {
+      "name": "Laugh-O-Dil",
+      "category": "Seeds"
+    },
+    {
+      "name": "Masterful Canine Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Meat Soup",
+      "category": "Snacks"
+    },
+    {
+      "name": "Medium Fish",
+      "category": "Snacks"
+    },
+    {
+      "name": "Myth-Boon Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Nettle Root",
+      "category": "Snacks"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Obligatory Shroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Orange Bell Pepper",
+      "category": "Seeds"
+    },
+    {
+      "name": "Pennon Poniard",
+      "category": "Athames"
+    },
+    {
+      "name": "Pest Zapper",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Pyrite",
+      "category": "Reagents"
+    },
+    {
+      "name": "Red Bell Pepper",
+      "category": "Seeds"
+    },
+    {
+      "name": "Remarkable Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Ring of Rejuvenation",
+      "category": "Rings"
+    },
+    {
+      "name": "Savvy Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Shoes of Anxiety",
+      "category": "Boots"
+    },
+    {
+      "name": "Shoes of the Breakneck",
+      "category": "Boots"
+    },
+    {
+      "name": "Shroud of Paramount",
+      "category": "Hats"
+    },
+    {
+      "name": "Slippers of Definition",
+      "category": "Boots"
+    },
+    {
+      "name": "Smooth Spun Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Snow Serpent Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sprite",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Square Root",
+      "category": "Snacks"
+    },
+    {
+      "name": "Square Watermelon",
+      "category": "Snacks"
+    },
+    {
+      "name": "Stinky Cheese",
+      "category": "Snacks"
+    },
+    {
+      "name": "Stone Block",
+      "category": "Reagents"
+    },
+    {
+      "name": "Storm-Proof Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sugar Donut",
+      "category": "Snacks"
+    },
+    {
+      "name": "Tarnished Noble's Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Tasty Biscuit",
+      "category": "Snacks"
+    },
+    {
+      "name": "The Valiant Defender",
+      "category": "Hats"
+    },
+    {
+      "name": "Thinker's Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Tiger Lily (Seed)",
+      "category": "Seeds"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tiny Fish",
+      "category": "Snacks"
+    },
+    {
+      "name": "Tunic of Incineration",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Stasis",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Tragedy",
+      "category": "Robes"
+    },
+    {
+      "name": "Visor of the Beacon",
+      "category": "Hats"
+    },
+    {
+      "name": "Watchman's Athame",
+      "category": "Athames"
+    },
+    {
+      "name": "Watchman's Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Weakness",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Weakness Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wheat Cracker",
+      "category": "Snacks"
+    },
+    {
+      "name": "Winged Circlet",
+      "category": "Rings"
+    },
+    {
+      "name": "Wysteria Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Wysteria Theme 1",
+      "category": "Housing Items"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "The Valiant Defender"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "relog",
+      "label": "Relog all players",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "state_2",
+      "node_type": "go_to_zone",
+      "label": "Go to Pegasus Place",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Wysteria/PA_Z01_Pegasus"
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "change_to_favorite_realm",
+      "label": "Change to favorite realm",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_6",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
+      "position": {
+        "x": 3080.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Wysteria/PA_Hub"
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "go_to_zone",
+      "label": "Go to Pegasus Place",
+      "position": {
+        "x": 3520.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Wysteria/PA_Z01_Pegasus"
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_dungeon",
+      "label": "Enter Crystal Tower",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Wysteria/PA_Z01_Pegasus",
+        "dungeon_zone": "Wysteria/Interiors/PA_Crystal_Tower",
+        "sigil_xyz": {
+          "x": -6618.74,
+          "y": 16309.6,
+          "z": 1262.84
+        },
+        "reset_xyz": {
+          "x": -5973.23,
+          "y": 16550.19,
+          "z": 1263.65
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "handle_combat",
+      "label": "Defeat Lord Graustark",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "PA-Hobgoblin-BOSS-R5",
+        "wiki_page": "Creature:Lord Graustark",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_zone",
+      "label": "Exit Crystal Tower",
+      "position": {
+        "x": 5280.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "Wysteria/Interiors/PA_Crystal_Tower",
+        "to_zone": "Wysteria/PA_Z01_Pegasus",
+        "xyz": {
+          "x": -4.62,
+          "y": 119.66,
+          "z": -24.06
+        },
+        "reset_xyz": {
+          "x": -4.48,
+          "y": -198.11,
+          "z": -34.54
+        },
+        "stagger": false
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_6",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}

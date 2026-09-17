@@ -73,7 +73,9 @@ class EditSubgraphCrumb(ThemedMixin, QWidget):
             f"EditSubgraphCrumb {{ background-color: {THEME.surface}; border: 1px solid {THEME.accent}; "
             f"border-radius: 6px; }}"
         )
-        self._label.setStyleSheet(f"border: none; color: {THEME.text}; font-size: 12px; font-weight: 600; padding: 0;")
+        self._label.setStyleSheet(
+            f"border: none; color: {THEME.text}; font-size: {THEME.font_body_px}px; font-weight: 600; padding: 0;"
+        )
 
 
 class SubgraphMetaDialog(QDialog):

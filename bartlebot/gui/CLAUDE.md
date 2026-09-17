@@ -5,6 +5,37 @@ Conventions for everything under `bartlebot/gui/`. The app-wide rules are in the
 ## GUI theming
 Use `THEME` singleton from `bartlebot/gui/theme.py`. No hardcoded colors in widget code.
 
+### Font sizes come from a token, and are always px
+
+`THEME.font_body_px` is the app font and the one number the rest hang off:
+`font_heading_px`, `font_small_px`, `font_subtext_px` and `font_micro_px` are read
+relative to it, so moving the body size moves all of them. Node text is the exception
+(`font_node_px`, `font_node_sub_px`): it is drawn in scene units against fixed node
+geometry, so it does not follow the body size.
+
+A size no token names is an *offset* from one at the call site —
+`f"font-size: {THEME.font_body_px + 1}px"` — never a literal, and never a
+`_FONT_PX` constant in the module. `tests/test_font_sizes.py` fails the build on any
+of those, on a size in points, and on the two traps below. The sizes lived as literals
+in about eighty places before, which is why they had drifted into six values doing
+four jobs.
+
+- **Never read a size back off a font.** `pointSize()` returns `-1` on a font sized in
+  px, so `font.setPointSize(font.pointSize() + 1)` silently resolves to 0, and a
+  `pointSizeF()` read into a `max(..., 6.0)` floor silently resolves to that floor.
+  Both shipped here. Size from a token: `font.setPixelSize(THEME.font_body_px + 1)`.
+- **A stylesheet `font-size` never reaches `QWidget.font()`.** A widget that measures
+  its own text — anything eliding, sizing a slot, or growing to fit lines — must set
+  the size on the font as well, or it measures at the app font and lays out for the
+  wrong size.
+
+Use `THEME.ui_font(px, bold=...)` to build one. For text drawn at a fractional scale
+(the canvas region labels), `THEME.scaled_ui_font(px, scale)` keeps the fractional
+size that `setPixelSize`'s whole pixels would step between.
+
+There is deliberately **no user setting for font size**, so nothing re-reads these at
+run time: a stylesheet built once in a constructor is fine.
+
 Anything a widget builds from `THEME` is a snapshot of whichever theme was active at
 the time, and Qt never recomputes it: `QApplication.setStyleSheet()` delivers
 `StyleChange` to every widget, but a stylesheet the widget set on *itself* always
@@ -232,6 +263,124 @@ parent it was constructed with. (`setRetainSizeWhenHidden` is the other way, and
 the launch cards' hover-revealed buttons use — but it only applies to a widget the layout
 is still asked about.)
 
+
+## Card art is optional, and missing is the ordinary case
+
+Spell art is the game's own and is never in this repo: the user extracts it with
+`tools/extract_card_art.py`, and `bartlebot/card_art.py` is the only thing that knows
+where it lands. **Every lookup can return `None`** — most installs never run the
+extractor, a few templates name a texture the game's own files do not contain, and the
+names snapshot can be older than the game. So a surface showing art needs a form that
+works without it, and must never log the absence as an error.
+
+`_DeckCard` is the worked example: the strip is hidden outright when nothing resolves,
+the summary line carries the counts either way, and a single card with no art is
+skipped rather than given a placeholder — a placeholder per missing card turns an
+install with no art at all into a grid of grey squares.
+
+**A deck is listed by `DeckCardList` (`widgets/deck_card_list.py`), on both surfaces
+that list one** — the sidebar card's unfolded rows and the dialog's Deck Presets page.
+It was the sidebar's own rows against `QLabel(f"  {name} × {count}")` off the raw dict,
+so the library page listed a deck unsorted, unheaded and unillustrated while the
+sidebar three panels away did all three. The grouping and the order are
+`deck_groups`' on both, never the surface's, and a row whose card has no art is the
+row minus its tile — the count and the name still carry it.
+
+Look art up by the **template name** (`deck_io`'s own key), never the display name: one
+display name covers many templates, and a tiered variant draws its base spell's
+texture, so two identical-looking tiles can be different cards. That is what the tile's
+tooltip names the template for.
+
+The same cache holds the school and archmastery icons, under `card_art.icon_path` and
+logical keys rather than texture names. `ArchmasteryBadge` is the worked example, and
+the fallback is the same shape: the deck card keeps its `Archmastery: Fire · always
+set` line, on a row of its own, for every install that has not extracted them. Two
+rules it is easy to lose:
+
+- **Both icons or neither.** A lone archmastery spiral says the deck has an opinion
+  without saying what it is, so `has_icons()` is false unless the mark *and* the
+  medallion both resolved — which also covers an icon set missing the one school this
+  deck happens to name.
+- **The medallion names the school only when the school will actually be set.** A deck
+  can carry a school it will never apply: the override resolves through an app setting
+  whose shipped default is off. A Fire medallion on a card whose apply leaves
+  archmastery alone is a claim about the wizard that the deck does not make, so the
+  universal mark stands in. That means the badge asks `resolve_apply_archmastery`, not
+  `deck.archmastery_school` alone.
+
+The bot library's category list uses these too, under the same rule: each folder under
+`bots/` is a game badge category (`bartlebot/bot_folders.py`), the row wears that
+category's badge when one was extracted, and a row with none is its caption alone — at
+the compact height, since only a row with an icon reserves room for one. Rows are looked
+up by the folder name stored in `Qt.UserRole`, never by the caption, which comes from the
+game's own wording.
+
+Bot tags use them too (`card_art.tag_icon_path`, drawn at `TAG_ICON_PX` = 20 — 16 was
+too small to read). Each surface degrades to what it was before: a picker row shows its
+group dot, and a `TagChip` or `TagPill` its plain text form. With a medallion, both are
+**drawn** by `paint_medallion_pill`: exactly `TAG_ICON_PX` tall, so the medallion *is* the
+rounded left end, and the group-coloured body starts at its centre and carries the name.
+An icon-only pill was tried and dropped, because the art alone was not enough to read a
+card by. A stylesheet cannot do this shape: padding and border-radius will not put an icon
+flush with a rounded end. The Type tags have no art, so they are always text, and a mixed
+row is the normal case.
+
+Drop categories use them in the Category column of both drop tables (Possible Drops and
+the quicksell keep-list picker), through `drop_tree.drop_icon`, drawn at `DROP_ICON_PX` = 20
+for the same reason as the tags. The icon sits beside the category text, never in place of
+it, and an uncategorized row or an install with no art keeps the text alone. A pin row's
+icon depends on its name (`card_art.drop_icon_name`), so pass the item name as well as the
+category.
+
+**The combat order is drawn right to left, and it is not a style choice.** A duel seats
+four wizards around a circle and turns run clockwise, which puts a team's own players
+right to left: slot 1 is the rightmost, and the game's own "Set Sigil Slot Preference"
+dialog lists 4, 3, 2, 1 in that order with a gold gem on each. `duel_slot_gem.py` holds
+the reasoning and the lookup; `CombatOrderWidget` (where an order is set) and
+`PlayerBadgeRow(duel_order=True)` (where it is summarised) both mirror, and
+`strategy_summary.format_combat_order` mirrors the text with them. **All four have to
+agree** — a half-mirrored app is worse than the unmirrored one, because two surfaces then
+disagree about which end enters first.
+
+Only the *drawing* is mirrored. The value stays an ordinary first-to-last list everywhere
+it is stored, passed or read, and the reversal happens once, at the point of layout. A
+widget that also reversed its value would silently invert every bot file it saved.
+
+Three things follow, and each has already been got wrong once in review. The gem names the
+**position**, not the player in it, so on a reorder the gem stays put and the `P` number
+moves. Hiding slots down to a duel's `max_players` hides them **by slot number**, not by
+layout position — hiding "the last few" cells hides slots 1 and 2, the two a two-player
+duel actually has. And the ordinal text stays beside the gem: the symbols are the *game's*
+vocabulary, nothing on screen teaches them, and most installs have no gem at all.
+
+**Art is a `QIcon` holding the full-size image, painted with `QIcon.paint`** — never a
+`QPixmap` scaled to the logical size in advance. `card_art_tile.art_icon` is the one way to
+load it. Users run any display scaling, and one machine can mix two (125% and 100% here), so
+the resolution has to be chosen as each screen paints: `paint` asks for the logical size
+times that device's pixel ratio and Qt scales down from the original, caching per ratio. A
+20px pixmap is stretched to 25 physical pixels at 125% and drew soft with a jagged ring;
+one pre-scaled for a single ratio is wrong on every other. So lay out by the size constant
+(`TAG_ICON_PX`, `ROW_ICON_PX`, `SECTION_ICON_PX`), not by the image's own size, and where a
+`QLabel` would have held the pixmap use `ArtIconView`.
+
+An icon is artwork in its own colours, so a widget drawing one reads no `THEME` value
+and needs neither `ThemedMixin` nor a `changeEvent` — the guard test agrees, and this is
+the same exemption the card art tiles take.
+
+## A widget that wraps has to say so in its size policy
+
+`FlowLayout` wraps correctly and the parent still reserves **one row**, because a
+`QBoxLayout` asks the *size policy* whether an item's height depends on its width, and
+a widget that has not said so answers no. The deck card's art strip laid out fourteen
+tiles, drew seven and clipped the rest, in a card exactly as tall as a five-tile one —
+with the layout, the size hints and the geometry all internally consistent about the
+wrong answer, which is why it reads as a painting bug rather than a layout one.
+
+Three things together, or none of them work: a `QSizePolicy` with
+`setHeightForWidth(True)`, a `heightForWidth` that delegates to the layout, and a
+`sizeHint` that answers for the width the widget *has* — `FlowLayout.sizeHint` is one
+row of everything, which is what it would like rather than what it needs.
+`test_the_strip_reports_a_taller_height_when_it_has_to_wrap` is the guard.
 
 ## The first offscreen render costs 150-200ms
 

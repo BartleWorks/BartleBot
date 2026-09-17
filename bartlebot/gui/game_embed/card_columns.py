@@ -502,7 +502,7 @@ class CardColumn(QWidget):
         if not cards and self._empty_hint:
             # ThemedTextLabel because the hint is replaced on every rebuild -- there is
             # nothing here to hold a reference on.
-            hint = ThemedTextLabel(self._empty_hint, css="font-size: 11px;")
+            hint = ThemedTextLabel(self._empty_hint, css=f"font-size: {THEME.font_small_px}px;")
             hint.setWordWrap(True)
             hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
             layout.addWidget(hint)

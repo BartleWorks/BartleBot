@@ -105,10 +105,11 @@ from bartlebot.combat_grouping import (
 )
 from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.credentials import CredentialStore
+from bartlebot.deck_io import resolve_apply_archmastery
 from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
-from bartlebot.gui.deck_content import deck_content_lines
+from bartlebot.gui.deck_content import ARCHMASTERY_MODES, archmastery_note, deck_groups
 from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
@@ -126,11 +127,13 @@ from bartlebot.gui.sidebar.strategy_panel import (
 )
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.add_card import AddCard
+from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge
+from bartlebot.gui.widgets.card_art_tile import CardArtStrip
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
+from bartlebot.gui.widgets.deck_card_list import DeckCardList
 from bartlebot.gui.widgets.elided_label import ElidedLabel
 from bartlebot.gui.widgets.picker_popup import PickerRow, Section
 from bartlebot.gui.widgets.player_pills import PlayerBadge
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
@@ -176,15 +179,6 @@ _DELETE_BCS = "Delete…"
 # Player Decks section
 # ---------------------------------------------------------------------------
 
-
-#: Label, and the stored value it means, for a deck's three-state archmastery override.
-#: Module-level because the card offers them as verbs and the card body names the one in
-#: force, and those two have to agree on the words.
-_ARCHMASTERY_MODES = (
-    ("Use app setting", None),
-    ("Always set", True),
-    ("Never set", False),
-)
 
 #: Verb labels for a deck card, shared with its menu and the tests.
 _IMPORT_DECK = "Import from client"
@@ -248,6 +242,12 @@ class _DeckCard(CardFrame):
         # A pill, coloured by the account in this slot, where a bold "P1" used to be (#40).
         self._name = PlayerBadge(self._slot)
         header.addWidget(self._name, 0, Qt.AlignmentFlag.AlignVCenter)
+        # The deck's archmastery as the game's own two icons, beside the pill: the facts
+        # about the deck run left to right from here, and the row's right-hand end stays
+        # entirely things that can be clicked.
+        self._archmastery_icons = ArchmasteryBadge(parent=self)
+        self._archmastery_icons.setVisible(False)
+        header.addWidget(self._archmastery_icons, 0, Qt.AlignmentFlag.AlignVCenter)
         # Elided rather than wrapped, for the reason StrategyPanel's captions are.
         self._summary = ElidedLabel(_NO_DECK)
         header.addWidget(self._summary, 1)
@@ -255,19 +255,31 @@ class _DeckCard(CardFrame):
         header.addWidget(self._make_kebab_button("More deck actions"), 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
 
-        # "Archmastery: Fire · always set". Hidden unless the deck names a school, a
-        # deck without one having nothing for the override to act on.
+        # The other half of the same fact, and exactly one of the two is ever up: the
+        # icons on the header row where they have been extracted, this sentence where
+        # they have not. A row of its own because it is a sentence; both hidden unless
+        # the deck names a school, a deck without one having nothing for the override
+        # to act on.
         self._archmastery = ElidedLabel()
         self._archmastery.setVisible(False)
         layout.addWidget(self._archmastery)
 
-        # The card list. Built once and refilled, never created on first expand, so
-        # toggling is never the first time this widget is shown -- see gui/CLAUDE.md on
-        # showing a widget before it has a parent.
-        self._content = QWidget()
-        self._content_layout = QVBoxLayout(self._content)
-        self._content_layout.setContentsMargins(0, 4, 0, 0)
-        self._content_layout.setSpacing(2)
+        # The collapsed card's card art: one tile per distinct card, wrapping, with a
+        # rotated divider between Normal and Item. Hidden while the card is unfolded,
+        # and on any install whose user has not run tools/extract_card_art.py -- the
+        # summary line above says what is in the deck either way.
+        self._art = CardArtStrip(parent=self)
+        self._art.setVisible(False)
+        layout.addWidget(self._art)
+
+        # The card list -- the same rows, art and all, that the Deck Presets page in the
+        # combat strategy dialog shows at rest. Built once and refilled, never created on
+        # first expand, so toggling is never the first time this widget is shown -- see
+        # gui/CLAUDE.md on showing a widget before it has a parent.
+        #
+        # No empty text: the body refuses to unfold a slot with no deck, so this list is
+        # never reached empty.
+        self._content = DeckCardList(margins=(0, 4, 0, 0), parent=self)
         self._content.setVisible(False)
         layout.addWidget(self._content)
 
@@ -307,13 +319,25 @@ class _DeckCard(CardFrame):
             self.set_expanded(False)
 
         school = deck.archmastery_school if deck is not None else None
+        will_set = False
+        note = ""
         if school:
-            mode = next(label for label, value in _ARCHMASTERY_MODES if value is deck.apply_archmastery)
-            self._archmastery.setText(f"Archmastery: {school} · {mode.lower()}")
-        self._archmastery.setVisible(bool(school))
+            # The wording is ``deck_content``'s, shared with the Deck Presets page, so the
+            # card and the surface that edits this cannot drift apart on what it says.
+            note = archmastery_note(deck)
+            self._archmastery.setText(note)
+            # Resolved rather than stored, because the medallion only names the school
+            # when the apply will actually set it -- see archmastery_badge.py.
+            will_set, _source = resolve_apply_archmastery(deck)
+        self._archmastery_icons.set_archmastery(school, will_set, note)
+        # The icons where they exist, the sentence where they do not, never both.
+        show_icons = bool(school) and self._archmastery_icons.has_icons()
+        self._archmastery_icons.setVisible(show_icons)
+        self._archmastery.setVisible(bool(school) and not show_icons)
 
+        self._rebuild_art()
         if self._expanded:
-            self._rebuild_content()
+            self._content.set_deck(self._deck)
         self._reapply_verb_states()
         self.refresh_theme_styles()
 
@@ -352,25 +376,33 @@ class _DeckCard(CardFrame):
         expanded = expanded and self.has_deck
         self._expanded = expanded
         if expanded:
-            self._rebuild_content()
+            # No archmastery note in the list: the card's own header line already carries
+            # it, and unfolding a card put the same fact on screen twice in two different
+            # wordings.
+            self._content.set_deck(self._deck)
         self._content.setVisible(expanded)
+        # The strip and the list are the same cards, so only one of them is up at a
+        # time: art while folded, names while not.
+        self._art.setVisible(self._art.has_art() and not expanded)
 
     def _toggle_expanded(self) -> None:
         self.set_expanded(not self._expanded)
 
-    def _rebuild_content(self) -> None:
-        while (item := self._content_layout.takeAt(0)) is not None:
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
-        if self._deck is None:
-            return
-        for line in deck_content_lines(self._deck):
-            css = "font-weight: bold;" if line.bold else ""
-            row_lbl = ThemedTextLabel(line.text, color="text", css=css)
-            row_lbl.setWordWrap(True)
-            self._content_layout.addWidget(row_lbl)
-            row_lbl.show()
+    def _rebuild_art(self) -> None:
+        """Refill the collapsed strip, and decide whether it appears at all.
+
+        Hidden while the card is unfolded, because the list below names the same cards,
+        and on an install with no extracted art, where ``set_groups`` finds none and
+        leaves the strip empty. Neither case changes the rest of the card: the summary
+        line carries the counts whether or not there is art to show.
+        """
+        self._art.set_groups(deck_groups(self._deck) if self.has_deck else [])
+        self._art.setVisible(self._art.has_art() and not self._expanded)
+
+    @property
+    def content(self) -> DeckCardList:
+        """The unfolded card list. Public so the tab and the tests can read its rows."""
+        return self._content
 
     # -- verbs ----------------------------------------------------------
 
@@ -386,7 +418,7 @@ class _DeckCard(CardFrame):
             ),
         ]
         if self._deck is not None and self._deck.archmastery_school:
-            for label, value in _ARCHMASTERY_MODES:
+            for label, value in ARCHMASTERY_MODES:
                 verbs.append(
                     CardVerb(
                         f"Archmastery: {label}",

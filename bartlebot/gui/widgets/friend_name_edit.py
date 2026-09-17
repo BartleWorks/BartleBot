@@ -24,12 +24,12 @@ from PyQt6.QtWidgets import (
     QCompleter,
     QLineEdit,
     QMessageBox,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from bartlebot.gui.menu_utils import popup_menu
+from bartlebot.gui.widgets.action_button import ActionButton
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +57,10 @@ class FriendNameEdit(QWidget):
         self._edit.editingFinished.connect(self._on_edited)
         outer.addWidget(self._edit)
 
-        self._pick = QPushButton("Pick from Friends List")
-        self._pick.setFixedHeight(22)
+        # ``download`` for the same reason the fill buttons carry it: this reads the
+        # list off a connected player rather than out of the bot file.
+        self._pick = ActionButton("download", "Pick from Friends List")
         self._pick.setToolTip("Read the online friends list from a connected player")
-        self._pick.setStyleSheet("QPushButton { font-size: 11px; padding: 1px 2px; }")
         self._pick.clicked.connect(lambda _: self._show_pick_menu())
         outer.addWidget(self._pick)
 

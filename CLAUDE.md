@@ -99,6 +99,28 @@ bot. Move it out of the file instead, as `friend_name` was — see "When no
 bot should ever store a value" in `docs/BOT_OPTIONS.md`.
 `test_no_bot_stores_a_friend_name` keeps it out.
 
+### No game assets, either
+
+The same rule, for the same reason, applied to KingsIsle's art: **never commit an
+extracted texture, model or sound**, whatever it is of. History is not rewritten before
+1.0.0, so a texture committed now ships publicly then, and a repo carrying the game's
+own art invites a takedown the way one carrying player data invites a link back to the
+account.
+
+Names and ids are the exception, and the line worth remembering is *text versus
+asset*: `data/spell_names.json`, `data/zone_names.json` and `data/spell_schools.json`
+are all extracted from `Root.wad` and all tracked, because a snapshot of names is what
+lets the app talk about the game without shipping any of it.
+
+Art therefore has no checked-in snapshot and never gets one — not the spell card art,
+and not the school and archmastery icons beside it. The user extracts all of it on
+their own machine with `tools/extract_card_art.py`, into
+`%APPDATA%/Bartleby/BartleBot/art` — outside the repo entirely, so an accidental `git
+add` cannot reach it. `bartlebot/card_art.py` is the read side, and **every lookup
+returning `None` is the ordinary case**: most installs never run the extractor, so any
+surface using art needs a form that works without it. `tools/CLAUDE.md` has the
+extraction details, `bartlebot/gui/CLAUDE.md` the fallback rules.
+
 ### Restricted zones (PvP)
 
 BartleBot does not automate PvP, and there is **no setting, override, or bypass**.

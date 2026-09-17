@@ -1,0 +1,1188 @@
+{
+  "id": "8652dc06-b5af-48fc-a112-90c78a46dab3",
+  "name": "Barkingham Palace - Ransacked Throne Room",
+  "description": "Endlessly completes Ransacked Throne Room in Barkingham Palace, Marleybone",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_11",
+  "recovery_state": "state_1",
+  "drops": [
+    {
+      "name": "6 Royal Brooch",
+      "category": "Reagents"
+    },
+    {
+      "name": "7 Royal Brooch",
+      "category": "Reagents"
+    },
+    {
+      "name": "8 Royal Brooch",
+      "category": "Reagents"
+    },
+    {
+      "name": "Antique Barkingham Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Band of Royal Infallibility",
+      "category": "Rings"
+    },
+    {
+      "name": "Barkingham Band of Virtue",
+      "category": "Rings"
+    },
+    {
+      "name": "Bones Family Signet",
+      "category": "Rings"
+    },
+    {
+      "name": "Catrin's Aria Stone",
+      "category": "Rings"
+    },
+    {
+      "name": "Chief Whip's Hail Stone",
+      "category": "Rings"
+    },
+    {
+      "name": "Clean Sweep",
+      "category": "Spellements"
+    },
+    {
+      "name": "Death Potbelly",
+      "category": "Pets"
+    },
+    {
+      "name": "Duchess' Blazing Seal",
+      "category": "Rings"
+    },
+    {
+      "name": "Duke's Rosy Signet",
+      "category": "Rings"
+    },
+    {
+      "name": "Enfield Circle of Trickery",
+      "category": "Rings"
+    },
+    {
+      "name": "Fallen Palace Guard's Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Grenadier's Blasting Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Jackall & Hound",
+      "category": "Spellements"
+    },
+    {
+      "name": "Jackall's Ring of Duality",
+      "category": "Rings"
+    },
+    {
+      "name": "Jacques Scratches!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Kaninchen Hunter's Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Mark of Meowiarty",
+      "category": "Spellements"
+    },
+    {
+      "name": "Mr. Hound's Ferocious Loop",
+      "category": "Rings"
+    },
+    {
+      "name": "Official Seal of Barkingham",
+      "category": "Rings"
+    },
+    {
+      "name": "Pops' Knuckles",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ratstabber",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ring of Marleybone Fog",
+      "category": "Rings"
+    },
+    {
+      "name": "Ringlet of Mesmerization",
+      "category": "Rings"
+    },
+    {
+      "name": "Scratcher's Fingerband",
+      "category": "Rings"
+    },
+    {
+      "name": "Signet of Royal Ingenuity",
+      "category": "Rings"
+    },
+    {
+      "name": "Signet of the Yeoman Guard",
+      "category": "Rings"
+    },
+    {
+      "name": "Storm Potbelly",
+      "category": "Pets"
+    },
+    {
+      "name": "Warder's Band of Recovery",
+      "category": "Rings"
+    },
+    {
+      "name": "Whiplash",
+      "category": "Spellements"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Spellements",
+    "Pets",
+    "Boss",
+    "Challenge Mode",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Challenge Mode",
+      "type": "bool",
+      "default": true
+    },
+    {
+      "name": "Activate Notes 5-7",
+      "type": "bool",
+      "default": true,
+      "description": "If enabled, activates Notes 5-7, which summon minions at the end of the third round"
+    },
+    {
+      "name": "Sell Pets",
+      "type": "bool",
+      "default": false
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Regent's Square",
+      "position": {
+        "x": 0.0,
+        "y": 270.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Hub"
+      }
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Barkingham Palace",
+      "position": {
+        "x": 440.0,
+        "y": 270.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Hub",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+        "xyz": {
+          "x": 7185.46,
+          "y": 1307.01,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": 6413.62,
+          "y": 1336.23,
+          "z": -0.0
+        }
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Ransacked Throne Room",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+        "dungeon_zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB*",
+        "sigil_xyz": {
+          "x": 2905.41,
+          "y": -6594.68,
+          "z": -4823.63
+        },
+        "reset_xyz": {
+          "x": 2445.19,
+          "y": -5557.71,
+          "z": -4823.63
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "collect_wisps",
+      "label": "Collect mana wisps",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 0.2,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.1,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard"
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "handle_combat",
+      "label": "Defeat The Monster",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "G14-BP-Monster_Katzenstein_A_01",
+        "wiki_page": "Creature:The Monster (Standard)",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "enter_zone",
+      "label": "Exit Ransacked Throne Room",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB*",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+        "xyz": {
+          "x": 9.19,
+          "y": -4875.78,
+          "z": 1.5
+        },
+        "reset_xyz": {
+          "x": -0.71,
+          "y": -4532.09,
+          "z": 1.5
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_9",
+      "node_type": "apply_level_scaling",
+      "label": "Apply level scaling",
+      "position": {
+        "x": 5720.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB",
+        "interact_xyz": {
+          "x": -1118.9,
+          "y": -4145.64,
+          "z": 1.5
+        },
+        "reset_xyz": {
+          "x": -483.61,
+          "y": -4446.71,
+          "z": 1.5
+        }
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "check_level_scaling",
+      "label": "Check level scaling",
+      "position": {
+        "x": 5280.0,
+        "y": 90.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_11",
+      "node_type": "check_zone",
+      "label": "Check if in Marleybone",
+      "position": {
+        "x": -880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/*",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "check_zone",
+      "label": "Check if in Barkingham Palace",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+        "clients_to_check": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "state_13",
+      "node_type": "interact_menu",
+      "label": "Open Collected Notes menu",
+      "position": {
+        "x": 2640.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB*",
+        "interact_xyz": {
+          "x": 104.15,
+          "y": -3864.23,
+          "z": 1.5
+        },
+        "reset_xyz": {
+          "x": 29.33,
+          "y": -4342.0,
+          "z": 1.5
+        },
+        "interact_clients": [
+          1
+        ],
+        "menu_path": [
+          "WorldView",
+          "NPCServicesWin",
+          "ControlSprite",
+          "optionsLayout"
+        ],
+        "menu_timeout": 10.0,
+        "sequential": false
+      }
+    },
+    {
+      "id": "state_14",
+      "node_type": "click_path",
+      "label": "Click Note 5",
+      "position": {
+        "x": 3080.0,
+        "y": 180.0
+      },
+      "params": {
+        "path": [
+          "WorldView",
+          "NPCServicesWin",
+          "ControlSprite",
+          "optionsLayout",
+          "NPCServicesOptionWindow",
+          "OptionButton"
+        ],
+        "click_clients": [
+          1
+        ],
+        "match_text": "",
+        "match_text_exact": false,
+        "match_index": 4,
+        "availability_timeout": 10.0,
+        "confirm_path": [],
+        "confirm_visible": true,
+        "confirm_timeout": 10.0
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "interact_menu",
+      "label": "Open Collected Notes menu",
+      "position": {
+        "x": 3520.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB*",
+        "interact_xyz": {
+          "x": 104.15,
+          "y": -3864.23,
+          "z": 1.5
+        },
+        "reset_xyz": {
+          "x": 29.33,
+          "y": -4342.0,
+          "z": 1.5
+        },
+        "interact_clients": [
+          1
+        ],
+        "menu_path": [
+          "WorldView",
+          "NPCServicesWin",
+          "ControlSprite",
+          "optionsLayout"
+        ],
+        "menu_timeout": 10.0,
+        "sequential": false
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "interact_menu",
+      "label": "Open Collected Notes menu",
+      "position": {
+        "x": 4400.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB*",
+        "interact_xyz": {
+          "x": 104.15,
+          "y": -3864.23,
+          "z": 1.5
+        },
+        "reset_xyz": {
+          "x": 29.33,
+          "y": -4342.0,
+          "z": 1.5
+        },
+        "interact_clients": [
+          1
+        ],
+        "menu_path": [
+          "WorldView",
+          "NPCServicesWin",
+          "ControlSprite",
+          "optionsLayout"
+        ],
+        "menu_timeout": 10.0,
+        "sequential": false
+      }
+    },
+    {
+      "id": "state_17",
+      "node_type": "click_path",
+      "label": "Click Note 6",
+      "position": {
+        "x": 3960.0,
+        "y": 180.0
+      },
+      "params": {
+        "path": [
+          "WorldView",
+          "NPCServicesWin",
+          "ControlSprite",
+          "optionsLayout",
+          "NPCServicesOptionWindow",
+          "OptionButton"
+        ],
+        "click_clients": [
+          1
+        ],
+        "match_text": "",
+        "match_text_exact": false,
+        "match_index": 4,
+        "availability_timeout": 10.0,
+        "confirm_path": [],
+        "confirm_visible": true,
+        "confirm_timeout": 10.0
+      }
+    },
+    {
+      "id": "state_18",
+      "node_type": "click_path",
+      "label": "Click Note 7",
+      "position": {
+        "x": 4840.0,
+        "y": 180.0
+      },
+      "params": {
+        "path": [
+          "WorldView",
+          "NPCServicesWin",
+          "ControlSprite",
+          "optionsLayout",
+          "NPCServicesOptionWindow",
+          "OptionButton"
+        ],
+        "click_clients": [
+          1
+        ],
+        "match_text": "",
+        "match_text_exact": false,
+        "match_index": 4,
+        "availability_timeout": 10.0,
+        "confirm_path": [],
+        "confirm_visible": true,
+        "confirm_timeout": 10.0
+      }
+    },
+    {
+      "id": "state_19",
+      "node_type": "enter_zone",
+      "label": "Exit Ransacked Throne Room",
+      "position": {
+        "x": 880.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+        "xyz": {
+          "x": 9.19,
+          "y": -4875.78,
+          "z": 1.5
+        },
+        "reset_xyz": {
+          "x": -0.71,
+          "y": -4532.09,
+          "z": 1.5
+        }
+      }
+    },
+    {
+      "id": "state_20",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 1760.0,
+        "y": 90.0
+      },
+      "params": {
+        "if_health_below": 0.1,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard"
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_9",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_6",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_4",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_19",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_19",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Challenge Mode",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Challenge Mode",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Activate Notes 5-7",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Challenge Mode",
+              "negate": false
+            },
+            {
+              "option": "Activate Notes 5-7",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Challenge Mode",
+              "negate": true
+            },
+            {
+              "option": "Activate Notes 5-7",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Challenge Mode",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Challenge Mode",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Challenge Mode",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_20",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Challenge Mode",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "8aa7ab92",
+      "label": "Activate Notes 5-7",
+      "members": [
+        "state_18",
+        "state_16",
+        "state_13",
+        "state_14",
+        "state_15",
+        "state_17"
+      ],
+      "color": 2
+    },
+    {
+      "id": "37d38411",
+      "label": "Navigation",
+      "members": [
+        "state_19",
+        "state_11",
+        "state_4",
+        "state_20",
+        "state_2",
+        "state_5",
+        "state_3",
+        "state_1",
+        "state_12"
+      ],
+      "color": 1
+    },
+    {
+      "id": "115df061",
+      "label": "Defeat The Monster",
+      "members": [
+        "state_10",
+        "state_6",
+        "state_7",
+        "state_8",
+        "state_9"
+      ],
+      "color": 3
+    }
+  ]
+}

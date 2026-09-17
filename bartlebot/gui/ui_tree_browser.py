@@ -44,6 +44,7 @@ from PyQt6.QtWidgets import (
 )
 from wizwalker.memory.memory_objects.enums import WindowFlags
 
+from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.node_helpers import strip_html
@@ -398,7 +399,7 @@ class UITreeBrowserDialog(QDialog):
         root_layout.addWidget(self._tree, 1)
 
         # Status bar
-        self._status = ThemedTextLabel("Loading…", css="font-size: 11px;")
+        self._status = ThemedTextLabel("Loading…", css=f"font-size: {THEME.font_small_px}px;")
         root_layout.addWidget(self._status)
 
         self._add_loading_placeholder()

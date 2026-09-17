@@ -44,7 +44,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont, QFontMetrics
+from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -88,12 +88,6 @@ _PLACEHOLDER = "—"
 # with two names.  Every level still has a caption, including the user's own: one
 # that appeared and disappeared would move every row beneath it as a value was typed.
 
-#: Pixel size of the source caption.  Set on the *font* rather than in the style
-#: sheet, because a style sheet's ``font-size`` never reaches ``QWidget.font()`` and
-#: the slot below is measured from the font -- the same trap the run status label in
-#: ``canvas/bot_header.py`` documents.
-_CAPTION_PX = 9
-
 
 def _ordered(options: list) -> list:
     """The composed options, with the table-shaped controls moved to the end.
@@ -124,8 +118,11 @@ class _SourceCaption(ThemedTextLabel):
         self.refresh_theme_styles()
 
     def apply_theme_styles(self) -> None:
-        font = QFont(THEME.font_ui_family)
-        font.setPixelSize(_CAPTION_PX)
+        # The caption's size is set on the *font* rather than in the style sheet,
+        # because a style sheet's ``font-size`` never reaches ``QWidget.font()`` and
+        # the slot below is measured from the font -- the same trap the run status
+        # label in ``canvas/bot_header.py`` documents.
+        font = THEME.ui_font(THEME.font_micro_px)
         self.setFont(font)
         metrics = QFontMetrics(font)
         self.setMinimumWidth(max(metrics.horizontalAdvance(text) for text in bot_options.SOURCE_LEVELS))

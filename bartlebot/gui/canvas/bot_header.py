@@ -25,6 +25,7 @@ which is knowledge the header does not have and should not acquire.
 
 from __future__ import annotations
 
+import math
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import QSize, Qt, pyqtSignal
@@ -57,7 +58,6 @@ _ZERO_ELAPSED = "00:00:00"
 # slot is sized for the widest of them so that the transport buttons do not shuffle
 # sideways when the run state changes; see ``_size_status_slots``.
 _STATUS_WORDS = ("Editing", "Idle", "Running", "Paused")
-_STATUS_FONT_PX = 11
 # QLabel adds a pixel of its own around the text, so a hint of exactly the advance
 # is one pixel short and the label elides a character off text that fits.
 _LABEL_PADDING_PX = 2
@@ -183,7 +183,7 @@ class _ElidedLabel(ThemedMixin, QLabel):
         self.setToolTip(self._full if super().text() != self._full else "")
 
     def apply_theme_styles(self) -> None:
-        self.setStyleSheet(f"color: {getattr(THEME, self._color_token)}; font-size: 11px;")
+        self.setStyleSheet(f"color: {getattr(THEME, self._color_token)}; font-size: {THEME.font_small_px}px;")
 
 
 class _TagsField(QWidget):
@@ -341,7 +341,7 @@ class BotHeader(ThemedMixin, QWidget):
         self._name_lbl = QLabel(_NO_BOT)
         name_font = self._name_lbl.font()
         name_font.setBold(True)
-        name_font.setPointSize(name_font.pointSize() + 1)
+        name_font.setPixelSize(THEME.font_body_px + 1)
         self._name_lbl.setFont(name_font)
 
         self._name_edit = QLineEdit()
@@ -409,7 +409,7 @@ class BotHeader(ThemedMixin, QWidget):
         # Set on the widget rather than through the stylesheet: a stylesheet
         # ``font-size`` never reaches ``QWidget.font()``, so the metrics
         # ``_size_status_slots`` measures with would be the wrong size entirely.
-        status_font.setPixelSize(_STATUS_FONT_PX)
+        status_font.setPixelSize(THEME.font_small_px)
         self._status_lbl.setFont(status_font)
 
         self._status_side = QWidget()
@@ -631,11 +631,18 @@ class BotHeader(ThemedMixin, QWidget):
         out of that, which is what makes one number right in both modes: in Edit mode
         the name is a QLineEdit, but its text is the same font box centred in the same
         row, so it sets the same baseline.
+
+        The half-pixel is rounded *away from zero* rather than with ``round``, which
+        rounds a half to even: the shift is exactly 0.5 whenever the two font boxes
+        differ by an odd number of pixels, and ``round`` turned that into no shift at
+        all -- the very pixel this method exists to remove. A half has to land on one
+        side or the other, and the side it is already on is the one that reads as
+        floating.
         """
         name = QFontMetrics(self._name_lbl.font())
         stamp = QFontMetrics(self._file_lbl.font())
         shift = (name.ascent() - stamp.ascent()) - (name.height() - stamp.height()) / 2
-        self._file_lbl.set_baseline_shift(round(shift))
+        self._file_lbl.set_baseline_shift(math.floor(abs(shift) + 0.5) * (1 if shift >= 0 else -1))
 
     def apply_theme_styles(self) -> None:
         self.setStyleSheet(f"BotHeader {{ background: {THEME.surface}; }}")

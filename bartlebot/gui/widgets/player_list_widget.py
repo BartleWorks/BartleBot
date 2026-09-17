@@ -1,11 +1,10 @@
 """Shared P1–P4 player pickers used in param forms and strategy editors."""
 
 from PyQt6.QtCore import QEvent, pyqtSignal
-from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QPushButton, QRadioButton, QWidget
+from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QRadioButton, QWidget
 
 from bartlebot.gui.theme import THEME
-
-_BTN_STYLE = "QPushButton { font-size: 10px; padding: 1px 4px; }"
+from bartlebot.gui.widgets.action_button import ActionButton
 
 
 class PlayerListWidget(QWidget):
@@ -40,13 +39,11 @@ class PlayerListWidget(QWidget):
             layout.addWidget(chk)
             self._checks.append(chk)
         layout.addStretch()
-        all_btn = QPushButton("All")
-        all_btn.setFixedHeight(20)
-        all_btn.setStyleSheet(_BTN_STYLE)
+        # ``fill=False``: these trail a row of check boxes rather than forming a row of
+        # their own, and an expanding pair would take the width the boxes are using.
+        all_btn = ActionButton("", "All", fill=False)
         all_btn.clicked.connect(self._select_all)
-        none_btn = QPushButton("None")
-        none_btn.setFixedHeight(20)
-        none_btn.setStyleSheet(_BTN_STYLE)
+        none_btn = ActionButton("", "None", fill=False)
         none_btn.clicked.connect(self._deselect_all)
         layout.addWidget(all_btn)
         layout.addWidget(none_btn)

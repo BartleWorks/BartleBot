@@ -3,10 +3,19 @@
 Built on PickerPopup in single-select mode. A zone's world is the section it sits in rather than a
 second control beside it, so typing a world's name narrows the list to that world (the popup's
 broad filter), and the zone id rides along as each row's meta, so a zone can also be found by the
-name the tester and the session log use. The world's section header is also where a world icon
-goes once game art can be extracted (#29).
+name the tester and the session log use.
 
-zone_sections() and describe_zone() are the data half and need no QApplication.
+Each world's section header carries that world's emblem, extracted from the game by
+``tools/extract_card_art.py`` and found through ``card_art.world_icon_path`` (#29). Every one of
+the 25 sections resolves: 22 worlds have a ``Button_World_`` texture of their own, and the three
+that are dungeon groups rather than worlds -- Castle Darkmoor, Kembaalung, Zigazag -- share
+the generic dungeon badge. **The icon is decoration over a caption that already carries the
+meaning**, so every failure to resolve one is silent and ordinary: most installs have extracted no
+art at all, and the header simply draws its text. The suggestions section never gets one, because
+"Where players are" spans worlds and an emblem there would claim a single one.
+
+zone_sections(), describe_zone() and world_keys_by_title() are the data half and need no
+QApplication; world_icon_resolver() needs one only once art exists to turn into an icon.
 """
 
 from __future__ import annotations
@@ -14,9 +23,11 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 
 from PyQt6.QtCore import QSize, pyqtSignal
+from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
-from bartlebot import worlds, zone_names, zone_nav
+from bartlebot import card_art, worlds, zone_names, zone_nav
+from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 
 SUGGESTED_TITLE = "Where players are"
@@ -29,6 +40,42 @@ MINIMUM_WIDTH = 80
 def zone_id(zone: str) -> str:
     """The last segment of a zone path, "KT_EntranceHall": what a row shows as its meta."""
     return zone.rsplit("/", 1)[-1]
+
+
+def world_keys_by_title(nav: zone_nav.NavMap) -> dict[str, str]:
+    """Section title -> the nav world key it was built from.
+
+    The sections are captioned with ``worlds.label``, which is localized and is not the
+    key; this is how a header gets back to the key its icon is stored under. Built from
+    the same ``nav.worlds`` the sections are, so the two cannot disagree about which
+    worlds exist -- and ``SUGGESTED_TITLE`` is deliberately absent, since "Where players
+    are" spans worlds and an emblem there would claim one.
+    """
+    return {worlds.label(world.key): world.key for world in nav.worlds.values()}
+
+
+def world_icon_resolver(nav: zone_nav.NavMap) -> Callable[[str], QIcon | None]:
+    """A ``title -> icon`` lookup for the picker's section headers.
+
+    Returns None for every "no icon" case, and they are all ordinary: a title that is not
+    a world (the suggestions section), a world whose emblem this machine has not extracted,
+    and an install that has never run the extractor at all -- which is most of them. The
+    header draws its caption alone in every one of those.
+
+    The title map is built once per resolver rather than per call; the icon itself comes
+    from ``art_icon``, whose cache is keyed on the file's mtime, so re-running the
+    extractor while the app is open replaces what is cached.
+    """
+    titles = world_keys_by_title(nav)
+
+    def resolve(title: str) -> QIcon | None:
+        key = titles.get(title)
+        if key is None:
+            return None
+        path = card_art.world_icon_path(key)
+        return None if path is None else art_icon(path)
+
+    return resolve
 
 
 def zone_sections(nav: zone_nav.NavMap, suggested: Iterable[str] = ()) -> list[Section]:
@@ -94,6 +141,9 @@ class NavZoneButton(PickerButton):
         nav: zone_nav.NavMap | None = None,
         parent: QWidget | None = None,
     ) -> None:
+        # Resolved before the base class, because the resolver handed to every popup this
+        # button opens is built from it.
+        resolved_nav = zone_nav.load() if nav is None else nav
         super().__init__(
             "Zone",
             placeholder="Choose a zone…",
@@ -101,9 +151,10 @@ class NavZoneButton(PickerButton):
             single_select=True,
             popup_width=POPUP_WIDTH,
             broad=True,
+            section_icon=world_icon_resolver(resolved_nav),
             parent=parent,
         )
-        self.nav = zone_nav.load() if nav is None else nav
+        self.nav = resolved_nav
         self._get_suggested = get_suggested
         # Spans its column; the caption is clipped rather than widening the panel to fit it.
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)

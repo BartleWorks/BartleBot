@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import QMessageBox
 
 from bartlebot import store_roots
 from bartlebot.bot.strategy_models import (
+    DeckData,
     DeckPreset,
     DuelCombatStrategy,
     PlayerAssignment,
@@ -406,17 +407,67 @@ def test_choosing_custom_dsl_opens_the_box_and_offers_to_name_it(qapp, roots):
 # ---------------------------------------------------------------------------
 
 
-def test_the_deck_tab_edits_identity_only(qapp, roots):
+def _deck_page(roots, preset: DeckPreset):
     from bartlebot.strategy_store import save_deck_preset  # noqa: PLC0415
 
-    preset = DeckPreset(name="Storm 60")
     save_deck_preset(preset, roots[0])
     dlg = _dialog(roots, kind=StrategyKind.DECK, current_id=preset.id)
-    page = dlg._pages[StrategyKind.DECK]
+    return dlg, dlg._pages[StrategyKind.DECK]
+
+
+def test_the_deck_tab_edits_the_presets_description(qapp, roots):
+    preset = DeckPreset(name="Storm 60")
+    dlg, page = _deck_page(roots, preset)
 
     page.about._description_edit.setText("for the Storm wizard")
 
     assert dlg._ws.get(StrategyKind.DECK, preset.id).description == "for the Storm wizard"
+
+
+def test_the_deck_tab_lists_the_cards_the_preset_holds(qapp, roots):
+    """The same rows the sidebar's deck card unfolds into — grouped, ordered by school,
+    and art where the user has extracted any. See tests/test_deck_card_list.py."""
+    preset = DeckPreset(name="Storm 60", deck=DeckData(normal={"Test Card": 3}, item={"Test Item": 1}))
+    _dlg, page = _deck_page(roots, preset)
+
+    assert page._editor.cards.row_texts() == ["Normal Cards", "×3 Test Card", "Item Cards", "×1 Test Item"]
+
+
+def test_the_deck_tab_edits_the_archmastery_override(qapp, roots):
+    """The control the library page was missing: a preset's archmastery answer was
+    reachable only by loading it into a player slot first."""
+    preset = DeckPreset(name="Storm 60", deck=DeckData(normal={"Test Card": 1}, archmastery_school="Storm"))
+    dlg, page = _deck_page(roots, preset)
+
+    next(b for b, value in page._editor.archmastery._buttons if value is True).click()
+
+    assert dlg._ws.get(StrategyKind.DECK, preset.id).deck.apply_archmastery is True
+
+
+def test_an_archmastery_edit_is_a_change_the_dialog_can_save_or_discard(qapp, roots):
+    preset = DeckPreset(name="Storm 60", deck=DeckData(normal={"Test Card": 1}, archmastery_school="Storm"))
+    dlg, page = _deck_page(roots, preset)
+    assert not dlg._ws.is_dirty
+
+    next(b for b, value in page._editor.archmastery._buttons if value is False).click()
+
+    assert dlg._ws.changes().modified == [preset.id]
+
+
+def test_an_archmastery_edit_reaches_disk_only_on_save(qapp, roots):
+    from bartlebot.strategy_store import list_deck_presets  # noqa: PLC0415
+
+    preset = DeckPreset(name="Storm 60", deck=DeckData(normal={"Test Card": 1}, archmastery_school="Storm"))
+    dlg, page = _deck_page(roots, preset)
+    next(b for b, value in page._editor.archmastery._buttons if value is True).click()
+
+    stored = next(p for p in list_deck_presets(*roots) if p.id == preset.id)
+    assert stored.deck.apply_archmastery is None, "nothing below the dialog writes"
+
+    dlg._on_commit()
+
+    saved = next(p for p in list_deck_presets(*roots) if p.id == preset.id)
+    assert saved.deck.apply_archmastery is True
 
 
 def test_every_kind_gets_a_page(qapp, roots):

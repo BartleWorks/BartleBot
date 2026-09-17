@@ -84,6 +84,8 @@ The snapshots and their tools:
 | `data/spell_names.json` | `dump_spell_names.py` | a spell is added or renamed |
 | `data/realm_names.json` | `dump_realm_names.py` | a realm is added, retired or renamed; also carries the localized Yes/No the Remember Realm option shows |
 | `data/zone_names.json` | `dump_zone_names.py` | a zone is added or renamed in any locale |
+| `data/spell_schools.json` | `dump_spell_schools.py` | a spell is added, or its school changes |
+| `data/badge_categories.json` | `dump_badge_categories.py` | a badge category is added, reordered or renamed; the bot library's folders follow its order |
 
 `WorldNames.lang` is worth knowing about on its own, because its key **is** the world
 segment `zone_name()` returns — `WizardCity`, `DragonSpire`, `MooShu` — and its value is
@@ -97,6 +99,138 @@ WorldNames entries and both have GameData wads; nothing separates them. So
 `worlds.SPIRAL_DOOR_WORLDS` is curated by hand, every exclusion is named with its reason,
 and `test_worlds.py` checks each entry against the snapshot. Guessing a rule here got
 Darkmoor wrong once already.
+
+### Art is extracted per machine, and is never a snapshot
+
+Everything above ends as a checked-in file. **Art cannot**: the repo goes public at
+1.0.0 and a committed game texture is the same exposure a committed wizard name is. So
+`tools/extract_card_art.py` writes to `%APPDATA%/Bartleby/BartleBot/art` instead — the
+user's own machine, which the repo cannot reach even by accident — and the app treats
+its absence as the ordinary case rather than as a missing dependency.
+
+It reads each spell's `m_imageName` and pulls that texture from `GUI/SummonedImages`
+(nearly all in `_Shared-WorldData.wad`, a dozen in `Root.wad`), converting DXT3/DXT5 to
+PNG because Qt's build here has no `dds` plugin. One PNG per *image*, not per template:
+18,007 templates share 1,308 images. `Pillow` is a dev dependency for exactly this and
+is not imported at runtime. `bartlebot/card_art.py` is the read side.
+
+The same run also writes 163 UI icons into `art/icons/`, and they are keyed by a
+**logical name** — `archmastery`, `universal`, `recent`, `school_fire`, `world_krokotopia`,
+`badge_4dungeons`, `tag_team_up`, `drop_treasure_cards`, `pin_shield`, `duel_slot_1` — rather
+than by the texture they came from, so neither the extractor's caller nor the GUI ever
+spells a KingsIsle filename. `ICON_SOURCES` is the one place the two meet. What they
+resolve to, and why each was picked over its neighbours:
+
+| key | texture | why this one |
+|---|---|---|
+| `archmastery` | `GUI/Icons/Icon_Archmastery.dds` | the rainbow spiral meaning *archmastery*, carrying no school |
+| `universal` | `GUI/Icons/Type_Global.dds` | the game's own "any school" mark, as stamped on card art |
+| `recent` | `GUI/Buttons/Art_Selfie_Timer.dds` | the camera self-timer's pocket watch, gold-ringed like the badges beside it; the bot library's Recent row |
+| `school_<name>` | `GUI/Schools/Art_School_<School>.dds` | the ringed medallion the in-game archmastery picker uses |
+| `world_<key>` | `GUI/Buttons/Button_World_<Stem>.dds` | the floating-island emblem the spiral door and the badges page both draw |
+| `dungeon` | `GUI/BadgeCategory/Badge_Category_Dungeons.dds` | the bare rock-golem badge, for a nav "world" that is a dungeon group |
+| `badge_<key>` | whatever `BadgeFilterDescriptions.xml` names | the icon the badge page draws beside each of its 78 categories; the bot library's folder list |
+| `tag_<tag>` | `TAG_TEXTURES`, or built by `TAG_COMPOSITES` | a gold-ringed medallion per Rewards and Activity tag, hand-picked so all twenty match; the Type tags have none |
+| `drop_<category>` | `DROP_TEXTURES`, nearly all `GUI/QuestPage/Art_Quest_*` | the quest page's reward medallion for each drop category; see below |
+| `pin_<kind>` | `GUI/Buttons/Button_Socketing_Pin_Square_{Pip,Shield,Sword}.dds` | the bank and quicksell filter buttons for Power, Shield and Sword pins |
+| `duel_slot_<n>` | `GUI/Art/Art_Target_{Sun,Eye,Star,Moon}.dds` | the gold diamond the game marks each duel position with; see below |
+
+**The drop icons are the game's own pairings, not picks.** Each `Art_Quest_` medallion was
+matched to a category by what the game draws it for: the Rate My Stitch outfit slots use
+`Hat`, `Robe`, `Shoes` and `Weapon`, every `COLLECT_HOUSE_*` housing item uses `Housing`,
+the battleground reward tables use `Seed` and `Treasure_Card`. Three easy "tidy-ups" are
+wrong. `Weapon` is the wand, and `Art_Quest_Wand` is the same art at 64px. `Housing` and
+`Furniture` are pixel-identical, but `Deed` (the floating house) is a different thing. And
+the quest page has no spellement, so Spellements draws `Button_BG_Reward_Spellement02`,
+the reward-category icon the Spellements tag also uses.
+
+**The duel slot gems are keyed by position, not by symbol.** A duel seats four wizards
+around a circle and turns run clockwise, which puts a team's own players **right to left**:
+slot 1 is the rightmost. The game's "Set Sigil Slot Preference" dialog lists them that way
+and marks each with a gold diamond — Sun, Eye, Star, Moon, first position to last. The key
+is the number (`duel_slot_1`) because a combat order is a list of positions, and
+`DUEL_SLOT_TEXTURES` owns the pairing, exactly as `WORLD_ICON_SOURCES` owns world → emblem.
+
+That indirection is load-bearing rather than tidy. **Sun, Star and Moon are also three real
+schools**, with their own `school_` medallions that look nothing like these; a caller
+reaching for `school_sun` to draw slot 1 gets the archmastery picker's ringed medallion, and
+it looks plausible. `test_duel_slot_icons.py` is the guard, and it also checks the run-time
+symbol names in `card_art.DUEL_SLOT_SYMBOLS` against the texture table — those names are read
+for tooltips on the majority of machines, which never ran the extractor, so they cannot be
+derived from a texture that is not there. `Art_Target_Sun` is the one of the four in
+`Root.wad`; a probe listing only `_Shared-WorldData.wad` concludes there are three gems.
+
+**A pin's icon comes from its name, not its category.** The game files pins under three
+kinds, one filter button each, and `wiki_drops.PIN_KINDS` maps the type word in a pin's name
+to its kind: Accurate and Conversion are Power; Blocking, Resist and Mending are Shield;
+Punishing, Disabling and Crushing are Sword. The buttons are 2x2 sheets of 64px states, so
+they are cropped and come out at 64px. A pin with no recognised type word gets `drop_pins`,
+which `DROP_TEXTURES` points at the Jewels medallion. The fallback is the table's to state,
+as the dungeon stand-in is for worlds.
+
+**The tag medallions are chosen, not found.** Nothing in the game pairs a medallion with
+our tag vocabulary, so `TAG_TEXTURES` is a hand-picked table of full paths, and each pick
+was made by eye from the gold-ring family (`GUI/QuestPage/Art_Quest_*`,
+`GUI/QuestButtons/`, `GUI/NpcPortraits/` hold most of it). Two tags have no single texture
+and are built. **Challenge Mode** is the Dungeon sigil with `Icon_Advanced_Mode` stamped
+where the game's own Challenge Mode button puts it. **Gauntlet** is the Housing Gauntlet
+badge on a green disc inside `Art_Character_Cover`, a bare gold ring from `Root.wad`.
+The constants beside `gauntlet_disc` are the tuned recipe. Two of them are easy to "tidy"
+wrongly: the band between the disc and the gold is **solid**, because a fade to black
+reads as a second, dark-green ring; and the disc is an orange gradient **recoloured** to
+the sigil's hue, because a gradient chosen directly in green read pale. The green groups
+the four activities entered through a four-player sigil.
+
+**The badge icons are the one set not written out by hand.** The game's own
+`BadgeFilterDescriptions.xml` pairs every category with its icon, and several pairings
+cannot be guessed — Five B.O.X.E.S. draws `Badge_Category_Maestro_Events`, Special Event
+draws `Badge_Category_Deckathalon` — so `dump_badge_categories.py` snapshots the paths and
+the extractor reads them by full path, not basename. The badge keys are also not the nav
+map's (`Dragonspyre` against `DragonSpire`), which is why they are a `badge_` namespace
+and not a second route to `world_`.
+
+**Two badge textures are not state sheets.** Monstrology (`Button_Category_Monster_Magic`)
+and Unfiltered (the help button) are single 128px images; every other badge is a 256px
+sheet. `SINGLE_IMAGE_BADGES` names them, and cropping either keeps a quarter of the picture.
+
+**The world emblems are 2×2 state sheets, not icons.** A 256×256 `Button_World_` texture
+holds four 128px quadrants — normal, two hover/pressed variants, and a desaturated one for
+a world the player cannot reach — and so does every `Badge_Category_`. Only the top-left
+is wanted, which is what `top_left_quadrant` takes and `STATE_SHEET_ICONS` decides. Saved
+whole they render at quarter size with three ghosts around them. The greyed quadrant is a
+free "unavailable" affordance if a surface ever wants one; nothing draws it today.
+
+Three traps in the world table, and all three are why `WORLD_TEXTURES` is written out by
+hand rather than normalized from the world key:
+
+- **The game spells one world three ways.** `DragonSpire` is the nav key, `Dragonspire`
+  the world button, `Dragonspyre` the guild museum door. A case-folding rule is right for
+  twenty worlds and silently wrong here.
+- **Wysteria's texture is named for its school**, `Button_World_Pigswick_Academy`. Nothing
+  derives that.
+- **A world can have art in two families that disagree.** `Mirage`, `Karamelle` and
+  `Catacombs` appear in both `Buttons/` and `BadgeCategory/` as pixel-identical copies —
+  but `Empyrea` does not, so a "resolve by basename, first wad wins" rule would pick a
+  different Empyrea depending on iteration order. World emblems come from `Buttons/` only;
+  `BadgeCategory/` supplies nothing but the dungeon badge.
+
+`tests/test_world_icons.py` is the guard, and the assertion that matters is that every
+world in `zone_nav`'s map has an entry — a world added to the map with no emblem loses its
+icon silently, behind a header that still reads correctly.
+
+Two traps in that table. `Art_School_` is split across archives — seven schools in
+`Root.wad`, and Moon, Star, Sun and Shadow in `_Shared-WorldData.wad` — so a probe that
+lists only one wad concludes it covers seven schools and stops looking; it covers all
+eleven. And `Type_Global` exists at 32×32 **and nowhere larger**, its `.tga` twin being
+smaller still, so 32px is a hard ceiling on how big any surface may draw it rather than
+a default to raise later.
+
+Searching for these is its own trap: a name-matching probe keyed on the school names
+cannot find a texture called *Universal* or *Global*, and one that caps its per-match
+output silently hides whatever sorts last. Both happened here.
+
+Follow the same split for any new asset work: a *name* or an *id* can be snapshotted
+into `bartlebot/data/`, a *texture, model or sound* goes to the machine-local cache.
 
 ### Zone connectivity: `tools/zone_graph/`
 
@@ -148,6 +282,14 @@ obj.get("m_displayName")  # -> b"Spells_00003940", by name, not position
 above — so reach for it whenever a new dump tool needs a specific field off a
 `BINd` object rather than an ordered `<Thing>.xml` / `.lang` pair; save the
 marker-scanning approach for cases `katsuba` genuinely can't cover.
+
+**A spell's WAD path stem is its template name, but a template name is not unique.**
+41 of them exist twice — once under `Spells/CastleMagic/` and once as the real spell,
+so `Banshee` is both `CastleMagic` and `Death`. Both files name the same art, so it is
+one card filed twice rather than two cards. A tool keyed by stem therefore has a
+collision rule whether it writes one down or not, and "last one the archive handed
+over" is not a rule. `dump_spell_schools.py` keeps whichever copy claims a real school,
+because a card in a combat deck is never the castle-magic copy.
 
 ## What neither source answers: window layout
 

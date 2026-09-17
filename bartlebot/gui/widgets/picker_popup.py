@@ -25,10 +25,11 @@ one line unless a caller has something to say that the name does not.
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
 
 from PyQt6.QtCore import QEvent, QPoint, QPointF, QRect, QRectF, QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QFont, QPainter, QPen, QPolygonF
+from PyQt6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPen, QPolygonF
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -73,6 +74,10 @@ class PickerRow:
     ``dim`` renders the row as present-but-empty. The library uses it for a tag no
     bot carries: dropping the row entirely reads as a bug, while a dimmed row with
     "0 bots" is an answer.
+
+    ``icon`` is drawn where the dot would be, and replaces it: a row with artwork does not
+    also need a colour swatch, and is drawn :data:`ROW_ICON_PX` square. Left out of equality
+    and hashing, since an icon is neither.
     """
 
     key: str
@@ -81,6 +86,7 @@ class PickerRow:
     meta: str = ""
     accent: str | None = None  # colored dot; None draws no dot
     dim: bool = False
+    icon: QIcon | None = field(default=None, compare=False)
 
 
 Section = tuple[str, list[PickerRow]]
@@ -253,6 +259,9 @@ _BOX = 13  # checkbox indicator, px
 _PAD_X = 10
 _GAP = 7
 _DOT = 9
+#: Side of a row's icon. The tag medallions are what rows carry, and 16 was too small to
+#: read one.
+ROW_ICON_PX = 20
 
 
 class _RowWidget(QWidget):
@@ -338,7 +347,14 @@ class _RowWidget(QWidget):
             self._paint_indicator(painter, box)
             x = box.right() + 1 + _GAP
 
-        if self._row.accent:
+        if self._row.icon is not None:
+            icon = self._row.icon
+            if dim:
+                painter.setOpacity(0.45)
+            icon.paint(painter, QRect(x, (rect.height() - ROW_ICON_PX) // 2, ROW_ICON_PX, ROW_ICON_PX))
+            painter.setOpacity(1.0)
+            x += ROW_ICON_PX + _GAP
+        elif self._row.accent:
             dot = QRect(x, (rect.height() - _DOT) // 2, _DOT, _DOT)
             painter.setPen(Qt.PenStyle.NoPen)
             painter.setBrush(QColor(self._row.accent))
@@ -348,7 +364,7 @@ class _RowWidget(QWidget):
         meta_w = 0
         if self._row.meta:
             meta_font = QFont(self.font())
-            meta_font.setPointSizeF(max(self.font().pointSizeF() - 1.0, 6.0))
+            meta_font.setPixelSize(THEME.font_small_px)
             painter.setFont(meta_font)
             meta_w = painter.fontMetrics().horizontalAdvance(self._row.meta) + _PAD_X
             painter.setPen(QColor(THEME.text_disabled if dim else THEME.text_subtle))
@@ -415,6 +431,74 @@ class _RowWidget(QWidget):
         super().mousePressEvent(event)
 
 
+#: Side of a section header's icon. The world emblems are detailed 128px vignettes:
+#: unrecognizable at 16px, and 48px was too big in real use. At 32px the header is 38px
+#: tall, not much more than a 26px zone row, so the list stays dense.
+SECTION_ICON_PX = 32
+
+#: Padding around a section header's text, matching the margins the plain QLabel carried.
+_SECTION_PAD_Y = 3
+
+
+class _SectionHeader(QWidget):
+    """A section's caption, optionally with an icon ahead of it.
+
+    Painted rather than a ``QLabel``, for the reason the rows and the title bar are: a
+    label's frame is the style's to draw, and under fractional scaling it lands as a
+    hairline along the bottom edge -- which under a *section* heading reads as a divider
+    the design did not ask for. It also means the icon and the text are one widget rather
+    than a layout of two, so nothing can wrap or drift between them.
+
+    An icon is artwork in its own colours, so this reads no ``THEME`` value for it and
+    needs neither ``ThemedMixin`` nor a ``changeEvent`` -- the same exemption the card art
+    tiles take. The text colour *is* a ``THEME`` value and is read at paint time.
+    """
+
+    def __init__(self, title: str, icon: QIcon | None = None, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._title = title
+        self._icon = icon
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        font = QFont(self.font())
+        font.setBold(True)
+        font.setPixelSize(THEME.font_small_px)
+        self._font = font
+        text_h = QFontMetrics(font).height()
+        self.setFixedHeight(max(text_h, SECTION_ICON_PX if icon else 0) + _SECTION_PAD_Y * 2)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+    @property
+    def title(self) -> str:
+        return self._title
+
+    @property
+    def icon(self) -> QIcon | None:
+        """The icon drawn ahead of the caption, or None where none resolved."""
+        return self._icon
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        rect = self.rect()
+        painter.fillRect(rect, QColor(THEME.surface))
+
+        x = _PAD_X
+        if self._icon is not None:
+            top = (rect.height() - SECTION_ICON_PX) // 2
+            self._icon.paint(painter, QRect(x, top, SECTION_ICON_PX, SECTION_ICON_PX))
+            x += SECTION_ICON_PX + _GAP
+
+        painter.setFont(self._font)
+        painter.setPen(QColor(THEME.text_subtle))
+        text_rect = QRect(x, 0, max(rect.width() - x - _PAD_X, 0), rect.height())
+        painter.drawText(
+            text_rect,
+            int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+            painter.fontMetrics().elidedText(self._title, Qt.TextElideMode.ElideRight, text_rect.width()),
+        )
+        painter.end()
+
+
 HEADER_HEIGHT = 28
 
 
@@ -459,7 +543,7 @@ class _HeaderBar(QWidget):
         right = rect.width() - _PAD_X
         self._clear_rect = QRect()
         small = QFont(self.font())
-        small.setPointSizeF(max(self.font().pointSizeF() - 1.0, 6.0))
+        small.setPixelSize(THEME.font_small_px)
 
         if self._show_clear:
             painter.setFont(small)
@@ -535,8 +619,12 @@ class PickerPopup(QWidget):
         single_select: bool = False,
         width: int = POPUP_WIDTH,
         broad: bool = False,
+        section_icon: Callable[[str], QIcon | None] | None = None,
     ) -> None:
         super().__init__(parent, Qt.WindowType.Popup)
+        # Resolves a section title to an emblem, or to None -- which is the ordinary
+        # answer, and the only one on an install that has extracted no art.
+        self._section_icon = section_icon
         self._sections = sections
         self._selected: set[str] = set(selected or [])
         self._applying_style = False
@@ -700,21 +788,22 @@ class PickerPopup(QWidget):
             empty = QLabel("No matches.")
             empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
             empty.setContentsMargins(0, 14, 0, 14)
-            empty.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+            empty.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
             self._body_layout.insertWidget(0, empty)
             self._refresh_header()
             return
 
         at = 0
         for title, rows in visible:
-            header = QLabel(title)
-            header.setObjectName("PickerSection")
-            header.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-            header.setContentsMargins(10, 3, 10, 3)
-            header.setStyleSheet(
-                f"#PickerSection {{ background: {THEME.surface}; color: {THEME.text_subtle};"
-                f"  font-size: 10px; font-weight: bold; border: none; }}"
-            )
+            icon = None
+            if self._section_icon is not None:
+                # A resolver that raises must not take the popup down with it: the icon is
+                # decoration over a caption that already carries the meaning.
+                try:
+                    icon = self._section_icon(title)
+                except Exception:
+                    icon = None
+            header = _SectionHeader(title, icon)
             self._body_layout.insertWidget(at, header)
             at += 1
             for row in rows:
@@ -814,6 +903,7 @@ class PickerButton(QToolButton):
         single_select: bool = False,
         popup_width: int = POPUP_WIDTH,
         broad: bool = False,
+        section_icon: Callable[[str], QIcon | None] | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -821,7 +911,12 @@ class PickerButton(QToolButton):
         self._placeholder = placeholder
         self._search_placeholder = search_placeholder
         # Handed to every popup this opens; see PickerPopup.
-        self._popup_options = {"single_select": single_select, "width": popup_width, "broad": broad}
+        self._popup_options = {
+            "single_select": single_select,
+            "width": popup_width,
+            "broad": broad,
+            "section_icon": section_icon,
+        }
         self._sections: list[Section] = []
         self._selected: list[str] = []
         self._applying_style = False

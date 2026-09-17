@@ -104,31 +104,44 @@ BOTCANVAS_MIN_HEIGHT = 180
 # squeezing or scrolling to them -- what a 220px sidebar was doing in the report.
 #
 # Both constants are the floor *at the reference metrics* (16px text under
-# ``windowsvista``), and ``left_sidebar_floor``/``right_sidebar_floor`` scale them, never
-# below the reference. Pinning a pixel count would mean choosing between clipping a
-# machine with larger system text and charging every other one for it -- on a 1080p
-# screen an extra 80px of sidebar costs a whole rung of the ladder.
+# ``windowsvista``), and ``left_sidebar_floor``/``right_sidebar_floor`` re-derive them
+# from what the panel measures here, never below the reference. Pinning a pixel count
+# would mean choosing between clipping a machine with larger system text and charging
+# every other one for it -- on a 1080p screen an extra 80px of sidebar costs a whole rung
+# of the ladder.
+#
+# A floor is **the forcing row plus the chrome around it**, and only the row is measured.
+# Both floors used to be the whole reference width scaled by a ratio, the larger of a
+# text-height term and the row's own -- which charged the font's growth against the
+# scroll bar, the frame, the margins and the pinned control widths as well, none of which
+# a font moves. It over-charged by roughly half: raising the body text 12px -> 14px grew
+# the left row 11% and its floor 19%, and grew the right floor 19% against content that
+# had not moved at all. That is 129px of sidebar between them, and on a 1080p screen it
+# took away three- and four-client launches outright. Measure the row, add the chrome.
 LEFT_SIDEBAR_MIN_WIDTH = 390  # rounds up a measured 378: the filter row plus the gutter,
 # the scroll content margins, the scroll area's frame and its vertical scrollbar.
 RIGHT_SIDEBAR_MIN_WIDTH = 300
-REFERENCE_TEXT_HEIGHT_PX = 16  # QFontMetrics(...).height() for Segoe UI 9pt at 100%
-# The tool row is three buttons, and a QPushButton is never narrower than the *style's*
-# minimum -- which is not a font metric and does not move with the text size: 75px under
-# ``windowsvista``, 80 under Fusion, 81 under ``windows11``. Scaling on the text height
-# alone therefore missed a whole class of machine, and the panel that fits its card in
-# 288px here needs 303 on a runner that resolves a different style. So the button's own
-# size hint is the second reference, and the floor takes whichever scale is larger.
-REFERENCE_BUTTON_WIDTH_PX = 75  # QPushButton("Unhook").sizeHint().width(), same reference
-# Same reasoning, one row rather than one button: there is no single "widest control" on
-# the left to carry the style's number, so the second reference is the filter row's width
-# as a whole. Not the row's ``sizeHint``, though, and not its ``minimumSizeHint`` either:
-# the combobox and the checkbox are what must not be squeezed, so they are taken at their
+# Not the row's ``sizeHint``, though, and not its ``minimumSizeHint`` either: the
+# combobox and the checkbox are what must not be squeezed, so they are taken at their
 # *natural* width, while the search field beside them is the one holding the layout's
 # stretch and is taken at its own minimum -- it is designed to be the part that gives.
 # ``minimumSizeHint`` on the row would take the combobox down with it (a QComboBox elides
 # its own text and reports far less than it needs), which is the clipped state.
 # 293 is that sum at the reference metrics; see ``left_sidebar_floor``.
 REFERENCE_FILTER_ROW_PX = 293
+# The right sidebar's forcing row is the Log tab's header: the "Min level:" caption, the
+# level combo, Export and Clear. The tool row this floor was first measured from is gone
+# -- the player card carries icon verbs and elided rows now -- and a button's width was
+# standing in for a row that no longer existed. ``log_panel.header_row_floor`` measures
+# this one, and it is mostly pinned widths, so it barely moves with the font: 281px at
+# the reference, 289 at 14px body text.
+REFERENCE_LOG_ROW_PX = 281
+# What each panel spends *around* its forcing row -- margins, frames, the scroll bar, the
+# gutter. Style metrics and fixed spacings, not text, so they are added rather than
+# scaled. Each is the difference between the panel's reference floor and its reference
+# row, which keeps both floors exactly at the references above at the reference metrics.
+LEFT_SIDEBAR_CHROME_PX = LEFT_SIDEBAR_MIN_WIDTH - REFERENCE_FILTER_ROW_PX  # 97
+RIGHT_SIDEBAR_CHROME_PX = RIGHT_SIDEBAR_MIN_WIDTH - REFERENCE_LOG_ROW_PX  # 19
 # Shared: the height must stay under the shortest tile any offered resolution produces,
 # or a sidebar rather than the game view becomes the top row's floor.
 SIDEBAR_MIN_HEIGHT = 240
@@ -393,60 +406,53 @@ def required_game_area(resolution: tuple[int, int], client_count: int, dpr: floa
     return cols * tile_w, rows * tile_h
 
 
-def right_sidebar_floor(text_height_px: float | None = None, button_width_px: float | None = None) -> int:
-    """``RIGHT_SIDEBAR_MIN_WIDTH`` scaled to the metrics *this machine* reports.
+def right_sidebar_floor(log_row_px: float | None = None) -> int:
+    """How wide the right sidebar has to be for the widest row it cannot shrink.
 
-    Two of them, because two different things set the card's width and neither implies the
-    other. *text_height_px* covers everything that grows with the system text size; the
-    labelled rows, the margins, the tab bar. *button_width_px* covers the tool row, whose
-    three buttons sit at the style's own minimum width and so move with the *style* rather
-    than the font -- 75px under ``windowsvista``, 81 under ``windows11``, at the same 16px
-    text height. The larger of the two scales wins, and neither ever narrows the floor: a
-    smaller font does not make the tab bar or the scrollbar narrower.
+    *log_row_px* is the Log tab's header row, measured at this machine's font and style
+    by ``gui/sidebar/log_panel.header_row_floor``: the caption, the level combo, Export
+    and Clear, none of which wrap or elide. ``RIGHT_SIDEBAR_CHROME_PX`` is everything
+    around it, added rather than scaled because a font does not widen a frame, a margin
+    or a scroll bar.
 
-    Linear in each, which is an approximation -- a button is text plus padding, and only
-    the text part truly scales -- but one that errs wide, and being a little generous at
-    150% is the harmless direction.
+    The row carries both the font *and* the style, which is what the old two-term scale
+    was reaching for: a ``QPushButton`` is never narrower than the style's own minimum --
+    75px under ``windowsvista``, 80 under Fusion, 81 under ``windows11`` -- and measuring
+    a row built from real widgets picks that up wherever it lands, including on a style
+    no Windows version here has yet.
 
-    ``None`` for both means "not measured" and returns the reference, which is what the
-    pure arithmetic and its tests use. Everything inside the running app must instead go
+    Never below the reference: a smaller font does not make the tab bar or the scroll bar
+    narrower, and a floor that tracked one downwards would clip the panel it protects.
+
+    ``None`` means "not measured" and returns the reference, which is what the pure
+    arithmetic and its tests use. Everything inside the running app must instead go
     through ``gui/screen_fit.right_sidebar_floor``, so that the width the widget enforces
     and the width the fit is computed against cannot come from two different measurements.
     """
-    scale = max(
-        1.0,
-        (text_height_px or 0) / REFERENCE_TEXT_HEIGHT_PX,
-        (button_width_px or 0) / REFERENCE_BUTTON_WIDTH_PX,
-    )
-    return round(RIGHT_SIDEBAR_MIN_WIDTH * scale)
+    if log_row_px is None:
+        return RIGHT_SIDEBAR_MIN_WIDTH
+    return max(RIGHT_SIDEBAR_MIN_WIDTH, round(log_row_px + RIGHT_SIDEBAR_CHROME_PX))
 
 
-def left_sidebar_floor(text_height_px: float | None = None, filter_row_px: float | None = None) -> int:
-    """``LEFT_SIDEBAR_MIN_WIDTH`` scaled to the metrics *this machine* reports.
+def left_sidebar_floor(filter_row_px: float | None = None) -> int:
+    """How wide the left sidebar has to be for the widest row it cannot shrink.
 
-    Same shape as ``right_sidebar_floor``, and for the same reason: the forcing content
-    is not the whole panel, it is one row that does not wrap or elide -- the quicksell
-    keep-list picker's search field, category combobox and "Kept only" checkbox.
-    *text_height_px* is the general term everything else on the surface would need if it
-    ever stopped eliding; *filter_row_px* is that row's own floor, composed as
-    ``REFERENCE_FILTER_ROW_PX`` describes, which carries both the font and the style at
-    once the way a ``QPushButton``'s minimum width does for the right sidebar. The larger
-    of the two scales wins.
+    Same shape as ``right_sidebar_floor``: the forcing content is not the whole panel, it
+    is one row that neither wraps nor elides -- the quicksell keep-list picker's search
+    field, category combobox and "Kept only" checkbox, composed as
+    ``REFERENCE_FILTER_ROW_PX`` describes and measured by
+    ``gui/screen_fit.left_sidebar_floor``. ``LEFT_SIDEBAR_CHROME_PX`` is the gutter, the
+    scroll content margins, the frame and the scroll bar, added rather than scaled.
 
-    Linear in each, which is an approximation but one that errs wide -- see
-    ``right_sidebar_floor`` for why that is the harmless direction.
+    Everything else on this surface elides or wraps by design, so it sets no floor. That
+    is why there is no text-height term any more: it was a proxy for content that gives
+    way, applied to chrome that does not move.
 
-    ``None`` for both means "not measured" and returns the reference, which is what the
-    pure arithmetic and its tests use. Everything inside the running app must instead go
-    through ``gui/screen_fit.left_sidebar_floor``, so that the width the widget enforces
-    and the width the fit is computed against cannot come from two different measurements.
+    ``None`` means "not measured" and returns the reference, as on the right.
     """
-    scale = max(
-        1.0,
-        (text_height_px or 0) / REFERENCE_TEXT_HEIGHT_PX,
-        (filter_row_px or 0) / REFERENCE_FILTER_ROW_PX,
-    )
-    return round(LEFT_SIDEBAR_MIN_WIDTH * scale)
+    if filter_row_px is None:
+        return LEFT_SIDEBAR_MIN_WIDTH
+    return max(LEFT_SIDEBAR_MIN_WIDTH, round(filter_row_px + LEFT_SIDEBAR_CHROME_PX))
 
 
 def required_window_size(

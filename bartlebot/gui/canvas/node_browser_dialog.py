@@ -17,7 +17,7 @@ from __future__ import annotations
 from typing import Literal
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QColor, QFont, QIcon
+from PyQt6.QtGui import QColor, QIcon
 from PyQt6.QtWidgets import (
     QAbstractItemView,
     QDialog,
@@ -115,7 +115,7 @@ class _Chip(QLabel):
     def __init__(self, text: str, bg: str, fg: str, parent: QWidget | None = None) -> None:
         super().__init__(text, parent)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setFont(QFont(THEME.font_ui_family, 8, QFont.Weight.Bold))
+        self.setFont(THEME.ui_font(THEME.font_small_px, bold=True))
         self.setStyleSheet(f"background: {bg}; color: {fg}; border-radius: 4px; padding: 1px 4px;")
         self.setFixedHeight(20)
 
@@ -179,7 +179,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         if self._shown is None:
             placeholder = QLabel("Select a node to view its documentation.")
             placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            placeholder.setStyleSheet(f"color: {THEME.text_muted}; font-size: 13px;")
+            placeholder.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_body_px + 1}px;")
             self.setWidget(placeholder)
             return
         offset = self.verticalScrollBar().value()
@@ -245,7 +245,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
 
         title_row = QHBoxLayout()
         title_label = QLabel(defn.name)
-        title_label.setFont(QFont(THEME.font_ui_family, 16, QFont.Weight.Bold))
+        title_label.setFont(THEME.ui_font(THEME.font_body_px + 9, bold=True))
         title_label.setStyleSheet(f"color: {THEME.text};")
         title_row.addWidget(title_label, 1)
         title_row.addWidget(_Chip("Subgraph", THEME.accent, THEME.chip_text))
@@ -253,13 +253,13 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         layout.addLayout(title_row)
 
         key_label = QLabel(f"{defn.id} \u00b7 version {defn.version}")
-        key_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+        key_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
         layout.addWidget(key_label)
 
         if defn.description:
             desc = QLabel(defn.description)
             desc.setWordWrap(True)
-            desc.setStyleSheet(f"color: {THEME.text}; font-size: 11px;")
+            desc.setStyleSheet(f"color: {THEME.text}; font-size: {THEME.font_small_px}px;")
             layout.addWidget(desc)
 
         n = len(defn.states)
@@ -267,12 +267,12 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         summary = QLabel(
             f"{n} state{'s' if n != 1 else ''}, {len(defn.transitions)} internal transitions \u00b7 {used}"
         )
-        summary.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+        summary.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
         layout.addWidget(summary)
 
         layout.addWidget(_make_separator())
         inputs_hdr = QLabel("Inputs")
-        inputs_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+        inputs_hdr.setFont(THEME.ui_font(THEME.font_heading_px, bold=True))
         inputs_hdr.setStyleSheet(f"color: {THEME.text};")
         layout.addWidget(inputs_hdr)
         if defn.inputs:
@@ -283,17 +283,17 @@ class _DetailPanel(ThemedMixin, QScrollArea):
             layout.addWidget(self._build_params_table(fields))
         else:
             none = QLabel("This subgraph declares no inputs; it works as shipped.")
-            none.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+            none.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
             layout.addWidget(none)
 
         layout.addWidget(_make_separator())
         members_hdr = QLabel("States")
-        members_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+        members_hdr.setFont(THEME.ui_font(THEME.font_heading_px, bold=True))
         members_hdr.setStyleSheet(f"color: {THEME.text};")
         layout.addWidget(members_hdr)
         for st in defn.states:
             row = QLabel(f"{st.label or st.id} \u2014 {_humanize(st.node_type)}")
-            row.setStyleSheet(f"color: {THEME.text}; font-size: 10px;")
+            row.setStyleSheet(f"color: {THEME.text}; font-size: {THEME.font_subtext_px}px;")
             layout.addWidget(row)
         layout.addStretch()
 
@@ -314,7 +314,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         # ── Title row ──────────────────────────────────────────────
         title_row = QHBoxLayout()
         title_label = QLabel(_humanize(node_type))
-        title_font = QFont(THEME.font_ui_family, 16, QFont.Weight.Bold)
+        title_font = THEME.ui_font(THEME.font_body_px + 9, bold=True)
         title_label.setFont(title_font)
         title_label.setStyleSheet(f"color: {THEME.text};")
         title_row.addWidget(title_label, 1)
@@ -351,14 +351,14 @@ class _DetailPanel(ThemedMixin, QScrollArea):
 
         # ── Node type key (muted) ───────────────────────────────────
         key_label = QLabel(node_type)
-        key_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+        key_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
         self._layout.addWidget(key_label)
 
         # ── Description ────────────────────────────────────────────
         if spec.description:
             desc = QLabel(spec.description)
             desc.setWordWrap(True)
-            desc.setStyleSheet(f"color: {THEME.text}; font-size: 11px;")
+            desc.setStyleSheet(f"color: {THEME.text}; font-size: {THEME.font_small_px}px;")
             self._layout.addWidget(desc)
 
         # ── Max retries note ───────────────────────────────────────
@@ -367,7 +367,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
                 f"⚠ The bot will stop after {spec.max_consecutive_retries} consecutive failures on this node."
             )
             retries_label.setWordWrap(True)
-            retries_label.setStyleSheet(f"color: {THEME.warning}; font-size: 10px;")
+            retries_label.setStyleSheet(f"color: {THEME.warning}; font-size: {THEME.font_subtext_px}px;")
             self._layout.addWidget(retries_label)
 
         # ── Separator ──────────────────────────────────────────────
@@ -376,7 +376,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         # ── Parameters ─────────────────────────────────────────────
         if spec.params:
             params_hdr = QLabel("Parameters")
-            params_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+            params_hdr.setFont(THEME.ui_font(THEME.font_heading_px, bold=True))
             params_hdr.setStyleSheet(f"color: {THEME.text};")
             self._layout.addWidget(params_hdr)
 
@@ -384,14 +384,14 @@ class _DetailPanel(ThemedMixin, QScrollArea):
             self._layout.addWidget(table)
         else:
             no_params = QLabel("This node has no parameters.")
-            no_params.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+            no_params.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
             self._layout.addWidget(no_params)
 
         # ── Returns ────────────────────────────────────────────────
         if spec.returns:
             self._layout.addWidget(_make_separator())
             returns_hdr = QLabel("Returns")
-            returns_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+            returns_hdr.setFont(THEME.ui_font(THEME.font_heading_px, bold=True))
             returns_hdr.setStyleSheet(f"color: {THEME.text};")
             self._layout.addWidget(returns_hdr)
 
@@ -405,7 +405,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
                 if ret.description:
                     desc_lbl = QLabel(ret.description)
                     desc_lbl.setWordWrap(True)
-                    desc_lbl.setStyleSheet(f"color: {THEME.text}; font-size: 10px;")
+                    desc_lbl.setStyleSheet(f"color: {THEME.text}; font-size: {THEME.font_subtext_px}px;")
                     row.addWidget(desc_lbl, 1)
                 row.addStretch()
                 self._layout.addLayout(row)
@@ -414,7 +414,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         if spec.required_bot_options:
             self._layout.addWidget(_make_separator())
             opts_hdr = QLabel("Required Bot Options")
-            opts_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+            opts_hdr.setFont(THEME.ui_font(THEME.font_heading_px, bold=True))
             opts_hdr.setStyleSheet(f"color: {THEME.text};")
             self._layout.addWidget(opts_hdr)
 
@@ -422,7 +422,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
                 "Adding this node to a bot automatically injects the following options into the Bot Options panel."
             )
             opts_note.setWordWrap(True)
-            opts_note.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+            opts_note.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
             self._layout.addWidget(opts_note)
 
             for opt in spec.required_bot_options:
@@ -441,7 +441,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
                 if opt.description:
                     opt_desc = QLabel(opt.description)
                     opt_desc.setWordWrap(True)
-                    opt_desc.setStyleSheet(f"color: {THEME.text}; font-size: 10px;")
+                    opt_desc.setStyleSheet(f"color: {THEME.text}; font-size: {THEME.font_subtext_px}px;")
                     row.addWidget(opt_desc, 1)
                 row.addStretch()
                 self._layout.addLayout(row)
@@ -450,20 +450,20 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         if spec.usage_notes:
             self._layout.addWidget(_make_separator())
             notes_hdr = QLabel("Usage Notes")
-            notes_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+            notes_hdr.setFont(THEME.ui_font(THEME.font_heading_px, bold=True))
             notes_hdr.setStyleSheet(f"color: {THEME.text};")
             self._layout.addWidget(notes_hdr)
 
             notes_lbl = QLabel(spec.usage_notes)
             notes_lbl.setWordWrap(True)
-            notes_lbl.setStyleSheet(f"color: {THEME.text}; font-size: 10px;")
+            notes_lbl.setStyleSheet(f"color: {THEME.text}; font-size: {THEME.font_subtext_px}px;")
             self._layout.addWidget(notes_lbl)
 
         # ── See also ───────────────────────────────────────────────
         if spec.see_also:
             self._layout.addWidget(_make_separator())
             see_hdr = QLabel("See Also")
-            see_hdr.setFont(QFont(THEME.font_ui_family, 11, QFont.Weight.Bold))
+            see_hdr.setFont(THEME.ui_font(THEME.font_heading_px, bold=True))
             see_hdr.setStyleSheet(f"color: {THEME.text};")
             self._layout.addWidget(see_hdr)
 
@@ -472,7 +472,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
                 btn = QPushButton(_humanize(related_type))
                 btn.setStyleSheet(
                     f"color: {THEME.accent}; background: transparent; border: none; "
-                    f"text-decoration: underline; font-size: 10px; padding: 0;"
+                    f"text-decoration: underline; font-size: {THEME.font_subtext_px}px; padding: 0;"
                 )
                 btn.setCursor(Qt.CursorShape.PointingHandCursor)
                 if on_see_also:
@@ -502,12 +502,12 @@ class _DetailPanel(ThemedMixin, QScrollArea):
                 background: {THEME.bg};
                 alternate-background-color: {THEME.surface};
                 border: 1px solid {THEME.border};
-                font-size: 10px;
+                font-size: {THEME.font_subtext_px}px;
             }}
             QHeaderView::section {{
                 background: {THEME.surface};
                 color: {THEME.text_muted};
-                font-size: 9px;
+                font-size: {THEME.font_micro_px}px;
                 font-weight: bold;
                 padding: 3px 6px;
                 border: none;
@@ -759,13 +759,13 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         Qt delivers StyleChange to it directly.
         """
         self._search.setStyleSheet(
-            f"padding: 4px 8px; border: 1px solid {THEME.border}; border-radius: 4px; font-size: 11px;"
+            f"padding: 4px 8px; border: 1px solid {THEME.border}; border-radius: 4px; font-size: {THEME.font_small_px}px;"
         )
         self._list.setStyleSheet(
             f"""
             QListWidget {{
                 border: 1px solid {THEME.border};
-                font-size: 11px;
+                font-size: {THEME.font_small_px}px;
                 background: {THEME.bg};
                 alternate-background-color: {THEME.surface};
             }}
@@ -778,7 +778,7 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
             }}
             """
         )
-        self._empty_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        self._empty_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
         if self._add_btn is not None:
             self._add_btn.setStyleSheet(
                 f"background: {THEME.accent}; color: #ffffff; padding: 5px 18px; border-radius: 4px; font-weight: bold;"

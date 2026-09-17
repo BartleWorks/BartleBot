@@ -6,7 +6,6 @@ BotCanvas  — top-level widget; owns the scene, toolbars, and properties panel.
 import enum
 import json
 import logging
-import re
 import time
 from collections import Counter
 from collections.abc import Callable
@@ -18,6 +17,7 @@ from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QColor,
     QCursor,
+    QIcon,
     QKeySequence,
     QShortcut,
 )
@@ -29,6 +29,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QListWidget,
+    QListWidgetItem,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
@@ -39,7 +40,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot import card_art
 from bartlebot.bot.schema import BotConfig, SubgraphDefinition, SubgraphInput, SubgraphInputBinding
+from bartlebot.bot_folders import ALL_BADGE, folder_badge, folder_caption
 from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
 from bartlebot.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
@@ -61,6 +64,8 @@ from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.card_art_tile import art_icon
+from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.tag_picker import TagPickerButton
 from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
@@ -203,10 +208,26 @@ def _resolve_bots_dir(configured: str, root: Path) -> Path:
     return configured_path if configured_path.is_absolute() else root / configured_path
 
 
-def _format_category(dir_name: str) -> str:
-    """'01_wizard_city' → 'Wizard City'."""
-    name = re.sub(r"^\d+_", "", dir_name)
-    return name.replace("_", " ").title()
+#: The category list's geometry. Wide enough for the longest caption the shipped folders
+#: have ("Housing Gauntlet") beside a 32px badge with the scrollbar showing -- which it
+#: does once icons make every row 42px tall. ``test_bot_folders`` measures it.
+CATEGORY_LIST_WIDTH = 180
+CATEGORY_PAD_X = 10
+CATEGORY_PAD_Y = 5
+
+
+def _badge_icon(badge: str | None) -> QIcon | None:
+    """The extracted icon for a badge category, or None -- which most installs get for all of them."""
+    return None if badge is None else _art_icon(card_art.badge_icon_path(badge))
+
+
+def _art_icon(path: Path | None) -> QIcon | None:
+    """A category row's icon from an extracted PNG, or None.
+
+    Decoration over a caption that already carries the meaning, the same rule the zone
+    picker's world headers follow, so every failure to resolve is silent.
+    """
+    return None if path is None else art_icon(path)
 
 
 def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple[list[_BotMeta], dict[Path, list[str]]]:
@@ -263,7 +284,6 @@ class _BotCard(ThemedMixin, QWidget):
     def __init__(self, meta: "_BotMeta", matched_drops: "list[str] | None" = None, parent=None) -> None:
         super().__init__(parent)
         self._meta = meta
-        self._matched_drops = matched_drops
         self.setObjectName("BotCard")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -275,8 +295,8 @@ class _BotCard(ThemedMixin, QWidget):
         self._hovered = False
         self._desc_lbl: QLabel | None = None
         self._meta_lbl: QLabel | None = None
-        self._match_lbl: QLabel | None = None
         self._build()
+        self.set_matched_drops(matched_drops)
         self.refresh_theme_styles()
 
     def _build(self) -> None:
@@ -322,14 +342,26 @@ class _BotCard(ThemedMixin, QWidget):
             self._meta_lbl = QLabel("  ·  ".join(parts))
             layout.addWidget(self._meta_lbl)
 
-        if self._matched_drops:
-            shown = self._matched_drops[:3]
-            text = ", ".join(shown)
-            if len(self._matched_drops) > 3:
-                text += f" +{len(self._matched_drops) - 3} more"
-            self._match_lbl = QLabel(f"Drops: {text}")
-            self._match_lbl.setWordWrap(True)
-            layout.addWidget(self._match_lbl)
+        # Always built, and hidden while nothing matched: the library keeps its cards
+        # across searches, so this is the one line a new query has to be able to change.
+        self._match_lbl = QLabel()
+        self._match_lbl.setWordWrap(True)
+        layout.addWidget(self._match_lbl)
+
+    def set_matched_drops(self, drops: "list[str] | None") -> None:
+        """Show which drops the current search matched, or nothing when none did."""
+        self._matched_drops = drops
+        if drops:
+            text = ", ".join(drops[:3])
+            if len(drops) > 3:
+                text += f" +{len(drops) - 3} more"
+            self._match_lbl.setText(f"Drops: {text}")
+        self._match_lbl.setVisible(bool(drops))
+
+    @property
+    def matched_drops_text(self) -> str | None:
+        """The "Drops: …" line as shown, or None while it is hidden."""
+        return self._match_lbl.text() if self._matched_drops else None
 
     def apply_theme_styles(self) -> None:
         """Restyle the frame and every label on it.
@@ -352,7 +384,7 @@ class _BotCard(ThemedMixin, QWidget):
             (self._match_lbl, THEME.accent),
         ):
             if lbl is not None:
-                lbl.setStyleSheet(f"color: {color}; font-size: 10px; background: transparent;")
+                lbl.setStyleSheet(f"color: {color}; font-size: {THEME.font_subtext_px}px; background: transparent;")
 
     def enterEvent(self, event) -> None:
         self._hovered = True
@@ -377,8 +409,12 @@ class _BotCard(ThemedMixin, QWidget):
 class _BotLibraryPanel(ThemedMixin, QWidget):
     """Bot library panel shown in BotCanvas when no bot file is open.
 
-    Two-panel layout: left category list (Recent + world subdirs from bots/),
+    Two-panel layout: left category list (Recent, All, then the folders under bots/),
     right scrollable bot cards. Search bar filters across all categories.
+
+    Each category row carries its *key* in ``Qt.UserRole`` -- the folder name, or one of
+    the two sentinels below -- and the caption is only what it shows. The caption used to
+    be the key as well, which tied the lookup to wording that now comes from the game.
     """
 
     new_bot_requested = pyqtSignal()
@@ -387,12 +423,23 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
     _RECENT = "Recent"
     _ALL = "All"
+    #: Folder-name keys for the rows that are not folders. A folder can never be named
+    #: with a leading NUL, so these cannot collide with one.
+    _OTHER = "Other"
+    _RECENT_KEY = "\0recent"
+    _ALL_KEY = "\0all"
+    _OTHER_KEY = "\0other"
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._all_metas: list[_BotMeta] = []
+        #: Folder name -> its bots, in folder-name order.
         self._category_map: dict[str, list[_BotMeta]] = {}
         self._recent_metas: list[_BotMeta] = []
+        #: Bot path -> its card, built the first time a filter shows it and kept until the
+        #: next refresh(). Rebuilding every card per keystroke made the search box lag:
+        #: ~200ms a keystroke for a 70-bot library, where reusing them is ~40ms.
+        self._cards: dict[Path, _BotCard] = {}
         # Listed on first show, not here. This is BotCanvas's placeholder, so a canvas
         # that opens a bot straight away hides it before it is ever painted -- and
         # listing costs a read of every file in bots/ plus a card widget for each one
@@ -484,7 +531,10 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         # Left: category list
         self._cat_list = QListWidget()
-        self._cat_list.setFixedWidth(155)
+        self._cat_list.setFixedWidth(CATEGORY_LIST_WIDTH)
+        # Only rows that have an icon reserve room for one, so an install with no
+        # extracted art keeps its compact rows.
+        self._cat_list.setIconSize(QSize(SECTION_ICON_PX, SECTION_ICON_PX))
         body.addWidget(self._cat_list)
 
         # Right: scrollable bot cards
@@ -538,9 +588,12 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             )
 
         self._cat_list.setStyleSheet(
-            f"QListWidget {{ background: {THEME.surface}; border: none;"
-            f"  border-right: 1px solid {THEME.border}; font-size: 11px; }}"
-            f"QListWidget::item {{ padding: 5px 10px; color: {THEME.text_muted}; }}"
+            # outline: none drops the focus rectangle Qt draws around the clicked
+            # row's text; the selection fill already marks it.
+            f"QListWidget {{ background: {THEME.surface}; border: none; outline: none;"
+            f"  border-right: 1px solid {THEME.border}; font-size: {THEME.font_small_px}px; }}"
+            f"QListWidget::item {{ padding: {CATEGORY_PAD_Y}px {CATEGORY_PAD_X}px; color: {THEME.text_muted};"
+            f"  border-bottom: 1px solid {THEME.border}; }}"
             f"QListWidget::item:selected {{ background: {THEME.node_fill_selected}; color: {THEME.text}; }}"
         )
         self._cards_area.setStyleSheet(f"background: {THEME.bg};")
@@ -549,11 +602,11 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         if self._clear_btn is not None:
             self._clear_btn.setStyleSheet(
                 f"QPushButton {{ color: {THEME.text_muted}; border: none;"
-                f"  padding: 2px 6px; font-size: 10px; }}"
+                f"  padding: 2px 6px; font-size: {THEME.font_subtext_px}px; }}"
                 f"QPushButton:hover {{ color: {THEME.text}; }}"
             )
         if self._empty_hint is not None:
-            self._empty_hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+            self._empty_hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
 
     # ------------------------------------------------------------------
     # Public API
@@ -571,21 +624,29 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         bots_dir = _resolve_bots_dir(sm.get("canvas", "bot_library_path", default="bots"), project_root())
         if bots_dir.is_dir():
+            # By folder name, so the numbers set the order -- the same order Explorer
+            # shows, which is the game's badge page order (see bot_folders).
             for subdir in sorted(bots_dir.iterdir()):
                 if not subdir.is_dir():
                     continue
-                cat_name = _format_category(subdir.name)
                 metas = [m for f in sorted(subdir.glob("*.json")) if (m := _read_bot_meta(f))]
                 if metas:
-                    self._category_map[cat_name] = metas
+                    self._category_map[subdir.name] = metas
                     self._all_metas.extend(metas)
             root_metas = [m for f in sorted(bots_dir.glob("*.json")) if (m := _read_bot_meta(f))]
             if root_metas:
-                self._category_map.setdefault("Other", []).extend(root_metas)
+                self._category_map[self._OTHER_KEY] = root_metas
                 self._all_metas.extend(root_metas)
 
         # Recent files
         self._recent_metas = [m for p in recent_paths if (m := _read_bot_meta(Path(p)))]
+
+        # The files were just re-read, so a kept card may describe an old version.
+        # _show_cards below takes them out of the layout.
+        for card in self._cards.values():
+            card.hide()
+            card.deleteLater()
+        self._cards.clear()
 
         self._refresh_tag_counts()
         self._rebuild_chips()
@@ -602,10 +663,13 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         # Selection is row 0 either way (see refresh), so this ordering *is* the
         # default: Recent when there is one, All on a first run.
         if self._recent_metas:
-            self._cat_list.addItem(self._RECENT)
-        self._cat_list.addItem(self._ALL)
-        for cat in self._category_map:
-            self._cat_list.addItem(cat)
+            self.add_category_row(self._RECENT_KEY, self._RECENT, _art_icon(card_art.icon_path(card_art.RECENT_ICON)))
+        self.add_category_row(self._ALL_KEY, self._ALL, _badge_icon(ALL_BADGE))
+        for folder in self._category_map:
+            if folder == self._OTHER_KEY:
+                self.add_category_row(folder, self._OTHER)
+            else:
+                self.add_category_row(folder, folder_caption(folder), _badge_icon(folder_badge(folder)))
         self._cat_list.blockSignals(False)
 
         # Select first category. ``clear()`` above left the current row at -1, so this
@@ -616,6 +680,14 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             self._cat_list.setCurrentRow(0)
         else:
             self._show_cards([])
+
+    def add_category_row(self, key: str, caption: str, icon: QIcon | None = None) -> None:
+        """Append a row to the category list, looked up later by *key* rather than *caption*."""
+        item = QListWidgetItem(caption)
+        item.setData(Qt.ItemDataRole.UserRole, key)
+        if icon is not None:
+            item.setIcon(icon)
+        self._cat_list.addItem(item)
 
     # ------------------------------------------------------------------
     # Internal
@@ -705,12 +777,12 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         row = self._cat_list.currentRow()
         if row < 0:
             return []
-        cat = self._cat_list.item(row).text()
-        if cat == self._ALL:
+        key = self._cat_list.item(row).data(Qt.ItemDataRole.UserRole)
+        if key == self._ALL_KEY:
             return self._all_metas
-        if cat == self._RECENT:
+        if key == self._RECENT_KEY:
             return self._recent_metas
-        return self._category_map.get(cat, [])
+        return self._category_map.get(key, [])
 
     def _apply_filter(self) -> None:
         """The single place cards are chosen.
@@ -725,14 +797,16 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
     def _show_cards(self, metas: "list[_BotMeta]", matched_drops: "dict | None" = None) -> None:
         layout = self._cards_layout
-        # Remove all widgets, keep the trailing stretch (last item).
-        # hide() is called before deleteLater() so the widget disappears immediately
-        # rather than remaining visible until the next event loop cycle.
+        # Take every widget out, keeping the trailing stretch (last item). Cards are
+        # only hidden -- self._cards keeps them for the next filter -- and the empty
+        # hint is the one thing deleted. hide() comes first so it disappears now rather
+        # than on the next event loop cycle.
         while layout.count() > 1:
             item = layout.takeAt(0)
             if w := item.widget():
                 w.hide()
-                w.deleteLater()
+                if w is self._empty_hint:
+                    w.deleteLater()
         self._empty_hint = None
 
         if not metas:
@@ -747,10 +821,13 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             return
 
         for i, meta in enumerate(metas):
-            drops = (matched_drops or {}).get(meta.path)
-            card = _BotCard(meta, matched_drops=drops)
-            card.open_requested.connect(self.open_recent_requested)
+            card = self._cards.get(meta.path)
+            if card is None:
+                card = self._cards[meta.path] = _BotCard(meta)
+                card.open_requested.connect(self.open_recent_requested)
+            card.set_matched_drops((matched_drops or {}).get(meta.path))
             layout.insertWidget(i, card)
+            card.show()
 
 
 # ---------------------------------------------------------------------------
@@ -799,10 +876,10 @@ class _SearchBar(ThemedMixin, QWidget):
         """
         self.setStyleSheet(
             f"QWidget {{ background-color: {THEME.surface}; border: 1px solid {THEME.border}; border-radius: 6px; }}"
-            f"QLineEdit {{ border: none; background: transparent; color: {THEME.text}; font-size: 13px; }}"
-            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: 14px; }}"
+            f"QLineEdit {{ border: none; background: transparent; color: {THEME.text}; font-size: {THEME.font_body_px + 1}px; }}"
+            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: {THEME.font_body_px + 2}px; }}"
             f"QPushButton:hover {{ color: {THEME.text}; }}"
-            f"QLabel {{ border: none; color: {THEME.text_muted}; font-size: 11px; }}"
+            f"QLabel {{ border: none; color: {THEME.text_muted}; font-size: {THEME.font_small_px}px; }}"
         )
 
     def set_count(self, current: int, total: int) -> None:
@@ -1106,8 +1183,8 @@ class BotCanvas(QWidget):
         self._focus_crumb.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._focus_crumb.setStyleSheet(
             f"QWidget {{ background-color: {THEME.surface}; border: 1px solid {THEME.border}; border-radius: 6px; }}"
-            f"QLabel {{ border: none; color: {THEME.text}; font-size: 12px; padding: 0; }}"
-            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: 14px; }}"
+            f"QLabel {{ border: none; color: {THEME.text}; font-size: {THEME.font_body_px}px; padding: 0; }}"
+            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: {THEME.font_body_px + 2}px; }}"
             f"QPushButton:hover {{ color: {THEME.text}; }}"
         )
         self._focus_crumb_label = QLabel("Focus Mode")
@@ -1701,12 +1778,12 @@ class BotCanvas(QWidget):
         )
         self._focus_crumb.setStyleSheet(
             f"QWidget {{ background-color: {name}; border: 1px solid {name}; border-radius: 6px; }}"
-            "QLabel { border: none; color: #ffffff; font-size: 12px; font-weight: 600; padding: 0; }"
-            "QPushButton { border: none; background: transparent; color: #ffffff; font-size: 14px; }"
+            f"QLabel {{ border: none; color: #ffffff; font-size: {THEME.font_body_px}px; font-weight: 600; padding: 0; }}"
+            f"QPushButton {{ border: none; background: transparent; color: #ffffff; font-size: {THEME.font_body_px + 2}px; }}"
             "QPushButton:hover { color: #000000; }"
         )
         self._focus_hint_label.setStyleSheet(
-            "border: none; color: rgba(255, 255, 255, 190); font-size: 11px; font-weight: 400; padding: 0;"
+            f"border: none; color: rgba(255, 255, 255, 190); font-size: {THEME.font_small_px}px; font-weight: 400; padding: 0;"
         )
 
     @property

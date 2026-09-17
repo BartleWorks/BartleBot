@@ -1,0 +1,3088 @@
+{
+  "id": "2286b605-efb3-4339-9efd-86c9779d6c0e",
+  "name": "Mirror Lake",
+  "description": "Endlessly completes Mirror Lake in Zafaria",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_25",
+  "drops": [
+    {
+      "name": "Absolute Zero Brim",
+      "category": "Hats"
+    },
+    {
+      "name": "Accelerated Learner Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Accurate Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Accurate Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Add Health Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Adroit Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Adventurer's Shillelagh",
+      "category": "Wands"
+    },
+    {
+      "name": "Amahle's Striped Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Amber Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ananse's Dark Rangers",
+      "category": "Boots"
+    },
+    {
+      "name": "Aryanah's Golden Loop",
+      "category": "Rings"
+    },
+    {
+      "name": "Availing Hands",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Baby Carrots",
+      "category": "Seeds"
+    },
+    {
+      "name": "Balance-Boon Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Balance-Eye Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Balance-Off Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Balanceblade Talent Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bananas! Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Baton of the Cottontail",
+      "category": "Wands"
+    },
+    {
+      "name": "Baxby's Noble Outfit",
+      "category": "Robes"
+    },
+    {
+      "name": "Baxby's Noble Trackers",
+      "category": "Boots"
+    },
+    {
+      "name": "Berserker's Rage Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Big Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Big Holiday Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Big Hurry Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Big Rally Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Big Recovery Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Big Sky Outfit",
+      "category": "Robes"
+    },
+    {
+      "name": "Big Sky Striders",
+      "category": "Boots"
+    },
+    {
+      "name": "Blade of Fire Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blade of Ice Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blight Hound",
+      "category": "Spellements"
+    },
+    {
+      "name": "Blizzard Lizard Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blue Holiday Ornament",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Bombardier Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Boo Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Boon Tree",
+      "category": "Seeds"
+    },
+    {
+      "name": "Boots of Fire Dancing",
+      "category": "Boots"
+    },
+    {
+      "name": "Boots of Sincerity",
+      "category": "Boots"
+    },
+    {
+      "name": "Boss Toad Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Branded Chapeau",
+      "category": "Hats"
+    },
+    {
+      "name": "Brass",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bronze",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bummer Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Bundle of Ananse's Stories",
+      "category": "Decks"
+    },
+    {
+      "name": "Bundle of Eternal Flame",
+      "category": "Decks"
+    },
+    {
+      "name": "Burning Pixie",
+      "category": "Pets"
+    },
+    {
+      "name": "Burning Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Bushfire Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Buttered Bread",
+      "category": "Snacks"
+    },
+    {
+      "name": "Calculating Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Carol of the Bells Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Cat Bandit Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Catch Leader Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Catch Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cauliflowers",
+      "category": "Snacks"
+    },
+    {
+      "name": "Centaur",
+      "category": "Spellements"
+    },
+    {
+      "name": "Chieftain's Smiling Deck",
+      "category": "Decks"
+    },
+    {
+      "name": "Christmas Elf",
+      "category": "Pets"
+    },
+    {
+      "name": "Cloak of Conformity",
+      "category": "Robes"
+    },
+    {
+      "name": "Cloak of Dreaming Medicine",
+      "category": "Robes"
+    },
+    {
+      "name": "Clock Spider Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clover of Prosperity",
+      "category": "Wands"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
+      "name": "Cold At Night Cover",
+      "category": "Hats"
+    },
+    {
+      "name": "Cold Chieftain's Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Cold Snap Scepter",
+      "category": "Wands"
+    },
+    {
+      "name": "Color Light Strand",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Colossus",
+      "category": "Spellements"
+    },
+    {
+      "name": "Conviction Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cool Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Cornbread Fruit Bush",
+      "category": "Seeds"
+    },
+    {
+      "name": "Council of Light's Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Courageous Grower's Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Cowl of Thornwood",
+      "category": "Hats"
+    },
+    {
+      "name": "Cupig",
+      "category": "Pets"
+    },
+    {
+      "name": "Cyclops Minion",
+      "category": "Spellements"
+    },
+    {
+      "name": "Cyclops Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Dancing Queen Dancers",
+      "category": "Boots"
+    },
+    {
+      "name": "Darajani Havoc Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Deadly Fly Trap",
+      "category": "Seeds"
+    },
+    {
+      "name": "Deadly Helephant Ears",
+      "category": "Seeds"
+    },
+    {
+      "name": "Death-Away Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Death-Boon Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Death-Eye Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Death-Proof Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Death-Shot Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Deck the Halls Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Decorous Brim",
+      "category": "Hats"
+    },
+    {
+      "name": "Delicious Cookie",
+      "category": "Snacks"
+    },
+    {
+      "name": "Deplete Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Disarmament Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Doctor's Firestorm Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Dr. Jalapeno",
+      "category": "Snacks"
+    },
+    {
+      "name": "Draconian Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Piercing Opal +1%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Earth Walker",
+      "category": "Spellements"
+    },
+    {
+      "name": "Eat My Dust Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ectoplasm",
+      "category": "Reagents"
+    },
+    {
+      "name": "Effervescent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Efreet",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Electrifyin' Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Elemental Defuse",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Elephant Graveyard Shroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Elissa's Chill Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Empower",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Enfeeble (-3)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Espirit Chapeau",
+      "category": "Hats"
+    },
+    {
+      "name": "Evil Snow Peas",
+      "category": "Seeds"
+    },
+    {
+      "name": "Expert's Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Face of Baobab",
+      "category": "Hats"
+    },
+    {
+      "name": "Fickle Pickle",
+      "category": "Seeds"
+    },
+    {
+      "name": "Fire Dragon",
+      "category": "Spellements"
+    },
+    {
+      "name": "Fire Dragon Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fire Lion's Storm Wraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Fire Quenching Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Fire Valley Outfit",
+      "category": "Robes"
+    },
+    {
+      "name": "Fire-Away Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Fire-Feather Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Fire-Giver Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flameborn Sidhe Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Flameborn Sidhe Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Flameborn Sidhe Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Flaming Soup",
+      "category": "Snacks"
+    },
+    {
+      "name": "Flapjacks",
+      "category": "Snacks"
+    },
+    {
+      "name": "Forest Lord",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Forlorn Chapeau",
+      "category": "Hats"
+    },
+    {
+      "name": "Frost Giant",
+      "category": "Spellements"
+    },
+    {
+      "name": "Frost Giant Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Frostborn Sidhe Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Frostborn Sidhe Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Frostborn Sidhe Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Frostman",
+      "category": "Pets"
+    },
+    {
+      "name": "Frozen Armor",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Fuel",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Gargantuan",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Gargantuan Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ghastly Gourd Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Ghost Dragon",
+      "category": "Pets"
+    },
+    {
+      "name": "Ghostgrass Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Giant Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Giggling Gourd Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Gingerbread House",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Glowing Dragon Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Glowing Star Fruit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Glowing Taffy",
+      "category": "Snacks"
+    },
+    {
+      "name": "Go Humongo Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Goat Cheese",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Apple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Goose",
+      "category": "Pets"
+    },
+    {
+      "name": "Golden Grapes",
+      "category": "Snacks"
+    },
+    {
+      "name": "Goofy Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Graveyard Shift",
+      "category": "Robes"
+    },
+    {
+      "name": "Graveyard Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Great Ape's Tooth",
+      "category": "Athames"
+    },
+    {
+      "name": "Green Holiday Ornament",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Grieving Gourd Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Griot's Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Gummy Humongofrog",
+      "category": "Snacks"
+    },
+    {
+      "name": "Hallowe'en Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Hallowe'en Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Hallowe'en Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Halt Leader Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Hand-Chased Box of Destiny",
+      "category": "Decks"
+    },
+    {
+      "name": "Hand-Chased Box of Thunder",
+      "category": "Decks"
+    },
+    {
+      "name": "Hand-Chased Box of Winter",
+      "category": "Decks"
+    },
+    {
+      "name": "Happy Holidaisy",
+      "category": "Seeds"
+    },
+    {
+      "name": "Happy Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Hat of the Old Kings",
+      "category": "Hats"
+    },
+    {
+      "name": "Headdress",
+      "category": "Hats"
+    },
+    {
+      "name": "Helephant",
+      "category": "Spellements"
+    },
+    {
+      "name": "Helephant Ears",
+      "category": "Seeds"
+    },
+    {
+      "name": "Hexster Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Holiday Fireplace",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Holiday Wreath",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Hood of Chieftain's Honor",
+      "category": "Hats"
+    },
+    {
+      "name": "Hood of the Forgotten",
+      "category": "Hats"
+    },
+    {
+      "name": "Hot and Cold Crushers",
+      "category": "Boots"
+    },
+    {
+      "name": "Hot and Cold Rangers",
+      "category": "Boots"
+    },
+    {
+      "name": "Hot-Tempered Chieftain's Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Huge Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Huge Rally Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Hunter Prey Jacket",
+      "category": "Robes"
+    },
+    {
+      "name": "Hunter Prey Rangers",
+      "category": "Boots"
+    },
+    {
+      "name": "Hunter's Kin Garb",
+      "category": "Robes"
+    },
+    {
+      "name": "Hydra",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ice Wyvern",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ice-Boon Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice-Eye Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice-Proof Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice-Shot Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Immolate",
+      "category": "Spellements"
+    },
+    {
+      "name": "Immunity Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Infallible",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Infallible Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Infector Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Insane Bolt",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Inyanga's Baobab Loop",
+      "category": "Rings"
+    },
+    {
+      "name": "Jacket of No Worries",
+      "category": "Robes"
+    },
+    {
+      "name": "Jelly Baby",
+      "category": "Snacks"
+    },
+    {
+      "name": "Jingle Bells Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Kallah's Dread Stone",
+      "category": "Rings"
+    },
+    {
+      "name": "Key Limes",
+      "category": "Seeds"
+    },
+    {
+      "name": "Kimba's Fang",
+      "category": "Athames"
+    },
+    {
+      "name": "King Banana",
+      "category": "Snacks"
+    },
+    {
+      "name": "King Parsley",
+      "category": "Seeds"
+    },
+    {
+      "name": "Kitty Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Koko's Smoky Circle",
+      "category": "Rings"
+    },
+    {
+      "name": "Kola Nuts",
+      "category": "Snacks"
+    },
+    {
+      "name": "Kraken",
+      "category": "Spellements"
+    },
+    {
+      "name": "Krokopatra Exalted Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Krokopatra Master Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Large Snowflake",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Leather Straps",
+      "category": "Reagents"
+    },
+    {
+      "name": "Legion Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Leopard",
+      "category": "Pets"
+    },
+    {
+      "name": "Leviathan",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Life-Boon Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Life-Eye Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Life-Proof Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Lion King's Balanced Pads",
+      "category": "Boots"
+    },
+    {
+      "name": "Long Night's Mandible",
+      "category": "Athames"
+    },
+    {
+      "name": "Long-Eared Bunny Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Lost Outsider Gear",
+      "category": "Robes"
+    },
+    {
+      "name": "Lovely Ladybug",
+      "category": "Pets"
+    },
+    {
+      "name": "Lovely Leopard",
+      "category": "Pets"
+    },
+    {
+      "name": "Lovestruck Stave",
+      "category": "Wands"
+    },
+    {
+      "name": "Lucas' Tunic of the Wars",
+      "category": "Robes"
+    },
+    {
+      "name": "Lucky Leprechaun",
+      "category": "Pets"
+    },
+    {
+      "name": "Lump of Coal",
+      "category": "Pets"
+    },
+    {
+      "name": "Mandisa's Star Stone",
+      "category": "Rings"
+    },
+    {
+      "name": "Mansa's Dream Stone",
+      "category": "Rings"
+    },
+    {
+      "name": "Mantle of the Grasslands",
+      "category": "Hats"
+    },
+    {
+      "name": "Maple Moose",
+      "category": "Pets"
+    },
+    {
+      "name": "Mask of Mirror Lake",
+      "category": "Hats"
+    },
+    {
+      "name": "Mask of the Great Patapon",
+      "category": "Hats"
+    },
+    {
+      "name": "Medusa",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Mega Hurry Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mega-Leech Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mega-Upset Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mend Minion Talent Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mend Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Meowiarty Archmage Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Meowiarty Exalted Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Merle's Whisker",
+      "category": "Reagents"
+    },
+    {
+      "name": "Milk and Cookies",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Minotaur",
+      "category": "Spellements"
+    },
+    {
+      "name": "Mint Standee",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mint Swirl",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mischievous Brim",
+      "category": "Hats"
+    },
+    {
+      "name": "Mummy Costume Bodywraps",
+      "category": "Robes"
+    },
+    {
+      "name": "Mummy Costume Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Mummy Costume Headwraps",
+      "category": "Hats"
+    },
+    {
+      "name": "Muscled Cat",
+      "category": "Pets"
+    },
+    {
+      "name": "Myth-Giver Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Nemean Rock Climbers",
+      "category": "Boots"
+    },
+    {
+      "name": "Nergal's Burning Brand",
+      "category": "Rings"
+    },
+    {
+      "name": "Nganga's Strong Muti Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Nightmare",
+      "category": "Pets"
+    },
+    {
+      "name": "Ninja Pig Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Ninja Pig Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "No Pain, No Gain Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "No Worries Footgear",
+      "category": "Boots"
+    },
+    {
+      "name": "Nutcracker",
+      "category": "Pets"
+    },
+    {
+      "name": "Olyphant's Balanced Jacket",
+      "category": "Robes"
+    },
+    {
+      "name": "Opaque Accurate Amethyst +8%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Accurate Citrine +8%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Accurate Jade +8%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Accurate Onyx +8%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Accurate Opal +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Accurate Peridot +8%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Accurate Ruby +8%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Accurate Sapphire +8%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Blocking Citrine +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Blocking Jade +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Blocking Onyx +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Blocking Peridot +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Blocking Ruby +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Blocking Sapphire +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Amethyst +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Amethyst +8",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Citrine +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Citrine +8",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Jade +8",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Onyx +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Onyx +8",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Opal +4",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Peridot +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Ruby +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Ruby +8",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Sapphire +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Critical Sapphire +8",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Defense Amethyst +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Defense Citrine +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Defense Jade +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Defense Onyx +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Defense Opal +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Defense Opal +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Defense Ruby +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Defense Sapphire +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Health Opal +67",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Health Opal +68",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Piercing Amethyst +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Piercing Citrine +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Piercing Jade +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Piercing Onyx +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Piercing Peridot +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Piercing Ruby +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Opaque Piercing Sapphire +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Orange Bell Pepper",
+      "category": "Seeds"
+    },
+    {
+      "name": "Orange Dandelion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Orthrus",
+      "category": "Spellements"
+    },
+    {
+      "name": "Orthrus Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Pet Egg",
+      "category": "Pets"
+    },
+    {
+      "name": "Phoenix",
+      "category": "Spellements"
+    },
+    {
+      "name": "Piercemonger Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Pilgrim Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Pilgrim Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Pilgrim Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Pink Jellyfish",
+      "category": "Pets"
+    },
+    {
+      "name": "Pipe Down! Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Pirate Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Plain Damage Citrine +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plain Damage Jade +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plain Damage Onyx +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plain Damage Peridot +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plain Damage Sapphire +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plain Defense Amethyst +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plain Defense Citrine +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plain Defense Jade +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plain Defense Onyx +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plain Defense Peridot +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plain Defense Ruby +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Plain Defense Sapphire +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polka Dot Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Polka Dot Wrapped Long Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Polymorph Colossus",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Polymorph Elemental (Fire)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Polymorph Elemental (Storm)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Polymorph Treant",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Power Link",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Power Nova",
+      "category": "Spellements"
+    },
+    {
+      "name": "Power Nova Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Pride's Maul",
+      "category": "Athames"
+    },
+    {
+      "name": "Primal Wildclaw",
+      "category": "Pets"
+    },
+    {
+      "name": "Quagga Blade",
+      "category": "Wands"
+    },
+    {
+      "name": "Quick Stepping Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Ra",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Radiant Star Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Rattlebones Exalted Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Rattlebones Master Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Razzle Dazzle Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Rebirth",
+      "category": "Spellements"
+    },
+    {
+      "name": "Rebirth Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Red Bell Pepper",
+      "category": "Seeds"
+    },
+    {
+      "name": "Red Holiday Ornament",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Rescue Rover",
+      "category": "Pets"
+    },
+    {
+      "name": "Restless Boots of Oblivion",
+      "category": "Boots"
+    },
+    {
+      "name": "Restless Cloak of Oblivion",
+      "category": "Robes"
+    },
+    {
+      "name": "Restless Cowl of Oblivion",
+      "category": "Hats"
+    },
+    {
+      "name": "Restorative Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "River Captain's Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Robes of the Cold Night",
+      "category": "Robes"
+    },
+    {
+      "name": "Rugged Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sacred Heart Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Salmonberry",
+      "category": "Snacks"
+    },
+    {
+      "name": "Santa Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Santa Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Santa Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Scarecrow",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scarecrow Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Scary Pumpkin Mask",
+      "category": "Hats"
+    },
+    {
+      "name": "Scepter of the Ardent Vow",
+      "category": "Wands"
+    },
+    {
+      "name": "Scimitar of Substance",
+      "category": "Athames"
+    },
+    {
+      "name": "Scintillating Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Seraph",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shaka's Lightning Loop",
+      "category": "Rings"
+    },
+    {
+      "name": "Shaman's Cold River Wraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Shaman's Mythic Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Shaman's Winter Protection",
+      "category": "Robes"
+    },
+    {
+      "name": "Sharp Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shatter (2 Pip)",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Shh! Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Shiny Tomato",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sidhe Boots of Attunement",
+      "category": "Boots"
+    },
+    {
+      "name": "Sidhe Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Sidhe Cloak of Attunement",
+      "category": "Robes"
+    },
+    {
+      "name": "Sidhe Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Sidhe Cowl of Attunement",
+      "category": "Hats"
+    },
+    {
+      "name": "Sidhe Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Sidhe Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Sinister Juju Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Sinister Medicine Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Skeletal Dragon",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Skeletal Knight",
+      "category": "Pets"
+    },
+    {
+      "name": "Skeletal Pirate",
+      "category": "Spellements"
+    },
+    {
+      "name": "Skink",
+      "category": "Pets"
+    },
+    {
+      "name": "Sky Walking Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Slick-N-Slide Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Small Color Light Strand",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Small Snowflake",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Sniper Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Snow Angel",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Snowball",
+      "category": "Pets"
+    },
+    {
+      "name": "Snowbank Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Snowflake Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Snowglobe",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Snowman",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Snowman Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Soul Stepping Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Spear of the Trade Winds",
+      "category": "Wands"
+    },
+    {
+      "name": "Spectral Blast",
+      "category": "Spellements"
+    },
+    {
+      "name": "Spellbinder's Scepter",
+      "category": "Wands"
+    },
+    {
+      "name": "Spicy Drumstick",
+      "category": "Snacks"
+    },
+    {
+      "name": "Spider Shadow's Stone",
+      "category": "Rings"
+    },
+    {
+      "name": "Spider Silk",
+      "category": "Reagents"
+    },
+    {
+      "name": "Spider's Storied Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Spider's Storied Wraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Spiral Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Spirit Defuse",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Spirit Drummer's Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Splendid Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Splendid Chapeau",
+      "category": "Hats"
+    },
+    {
+      "name": "Splendid Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Spooky Bob",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Squamish Boots of the Sidhe",
+      "category": "Boots"
+    },
+    {
+      "name": "Squamish Cloak of the Sidhe",
+      "category": "Robes"
+    },
+    {
+      "name": "Squamish Cowl of the Sidhe",
+      "category": "Hats"
+    },
+    {
+      "name": "Staff of Corn Utopia",
+      "category": "Wands"
+    },
+    {
+      "name": "Staff of Gracious Fortune",
+      "category": "Wands"
+    },
+    {
+      "name": "Staff of Shadow and Light",
+      "category": "Wands"
+    },
+    {
+      "name": "Staff of Solomon",
+      "category": "Wands"
+    },
+    {
+      "name": "Star Shard Charm",
+      "category": "Amulets"
+    },
+    {
+      "name": "Star Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Starburst Spider",
+      "category": "Pets"
+    },
+    {
+      "name": "Steadfast Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Steel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Stone Colossus",
+      "category": "Spellements"
+    },
+    {
+      "name": "Stone Town Storm Trackers",
+      "category": "Boots"
+    },
+    {
+      "name": "Stone Town Topper",
+      "category": "Hats"
+    },
+    {
+      "name": "Stop Leader Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Storied Amber Shield Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Storm Caller's Outfit",
+      "category": "Robes"
+    },
+    {
+      "name": "Storm Chaser's Outfit",
+      "category": "Robes"
+    },
+    {
+      "name": "Storm Lord",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm Lord Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Storm-Eye Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Storm-Giver Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Storm-Proof Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Stormrider Hare",
+      "category": "Mounts"
+    },
+    {
+      "name": "Stormzilla",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storyborn Boots of Mist",
+      "category": "Boots"
+    },
+    {
+      "name": "Storyborn Cloak of Mist",
+      "category": "Robes"
+    },
+    {
+      "name": "Storyborn Cowl of Mist",
+      "category": "Hats"
+    },
+    {
+      "name": "Strawberry Cupcake",
+      "category": "Snacks"
+    },
+    {
+      "name": "Stun Block",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Stupefy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sturdy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Submarine Sandwich",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sun's Circle Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Sun's Light Spear",
+      "category": "Wands"
+    },
+    {
+      "name": "Super-Lock Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Supercharge",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Supercharge Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Talos",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tanei's Ghost Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "The Deer Knight Rises Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "The Old Tusk-Tusk-Trunk",
+      "category": "Athames"
+    },
+    {
+      "name": "Thornwood Stalkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "Tower Shield",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tower Shield Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Tree Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Triton",
+      "category": "Spellements"
+    },
+    {
+      "name": "Trumpet Vine",
+      "category": "Seeds"
+    },
+    {
+      "name": "Tunic of Darajani Honor",
+      "category": "Robes"
+    },
+    {
+      "name": "Tunic of Long Memory",
+      "category": "Robes"
+    },
+    {
+      "name": "Tunic of Sudden Grief",
+      "category": "Robes"
+    },
+    {
+      "name": "Tunic of the Paragon",
+      "category": "Robes"
+    },
+    {
+      "name": "Turban of the Olyphants",
+      "category": "Hats"
+    },
+    {
+      "name": "Turkey Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Twilight of the Year Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Ultra Charge Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ultra Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ultra Exhaustion Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unbalancer Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Unbroken Spiral Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Uni-Corn",
+      "category": "Snacks"
+    },
+    {
+      "name": "Unicorn",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Unstoppable",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Valentine Pig",
+      "category": "Pets"
+    },
+    {
+      "name": "Vampire",
+      "category": "Spellements"
+    },
+    {
+      "name": "Vampire Costume Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Vampire Costume Coat",
+      "category": "Robes"
+    },
+    {
+      "name": "Vampire Costume Wig",
+      "category": "Hats"
+    },
+    {
+      "name": "Venus Fly Trap",
+      "category": "Seeds"
+    },
+    {
+      "name": "Vestment of the Thornwood",
+      "category": "Robes"
+    },
+    {
+      "name": "Vir's Zafarite Stone",
+      "category": "Rings"
+    },
+    {
+      "name": "Waltzing Nutcracker Stave",
+      "category": "Wands"
+    },
+    {
+      "name": "Wand of Fascination",
+      "category": "Wands"
+    },
+    {
+      "name": "Wand of Rapt Joy",
+      "category": "Wands"
+    },
+    {
+      "name": "Wand of the Egg Hunter",
+      "category": "Wands"
+    },
+    {
+      "name": "Wand of the Gingersnapper",
+      "category": "Wands"
+    },
+    {
+      "name": "Wand of the Nestling",
+      "category": "Wands"
+    },
+    {
+      "name": "War Olyphant's Wrap",
+      "category": "Hats"
+    },
+    {
+      "name": "White Desparagus",
+      "category": "Seeds"
+    },
+    {
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
+    },
+    {
+      "name": "White Tiger Lily",
+      "category": "Seeds"
+    },
+    {
+      "name": "Whiteblind Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Wicked Cold Clothes",
+      "category": "Robes"
+    },
+    {
+      "name": "Wild Monsoon Brim",
+      "category": "Hats"
+    },
+    {
+      "name": "Winged Deliverance",
+      "category": "Wands"
+    },
+    {
+      "name": "Wipeout Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wise Hunter's Helmet",
+      "category": "Hats"
+    },
+    {
+      "name": "Witch Doctor's Juju Pendant",
+      "category": "Amulets"
+    },
+    {
+      "name": "Witch's Dirty Tricks Stick",
+      "category": "Wands"
+    },
+    {
+      "name": "Wraith",
+      "category": "Spellements"
+    },
+    {
+      "name": "Yellow Holiday Ornament",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Yuletide Lg. Keeper Aquarium",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Yuletide Lg. Small Fry Aquarium",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Yuletide Reg. Keeper Aquarium",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Yuletide Reg. Small Fry Aquarium",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Yuletide Reg. Whopper Aquarium",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Yuletide Spirit",
+      "category": "Pets"
+    },
+    {
+      "name": "Yuletide Tall Keeper Aquarium",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Yuletide Tall Small Fry Aquarium",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Zafaria Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Zafaria Main Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Zafaria Stone Town Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Zafaria Tour Jacket",
+      "category": "Robes"
+    },
+    {
+      "name": "Zafaria Waterfront Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Zafaria Zamunda Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Zafarite Amulet",
+      "category": "Amulets"
+    },
+    {
+      "name": "Zanga's Blade",
+      "category": "Athames"
+    },
+    {
+      "name": "Zebra's Hoof",
+      "category": "Athames"
+    },
+    {
+      "name": "Zeus Exalted Duel",
+      "category": "Housing Items"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Snacks",
+    "Dungeon"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Sidhe Staff",
+        "Boots of Fire Dancing",
+        "Attunement",
+        "Oblivion",
+        "Flameborn",
+        "Frostborn",
+        "Storyborn",
+        "Squamish",
+        "Espirit Chapeau",
+        "Scintillating Tunic",
+        "Quick Stepping Boots",
+        "Splendid"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "go_to_zone",
+      "label": "Go to Baobab Crossroads",
+      "position": {
+        "x": 0.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z00_Hub"
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 440.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true,
+        "timeout": 10.0
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 880.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_dungeon",
+      "label": "Enter Mirror Lake",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Zafaria/ZF_Z00_Hub",
+        "dungeon_zone": "Zafaria/ZF_Z11_Mirror_Lake",
+        "sigil_xyz": {
+          "x": 2954.12,
+          "y": 2855.28,
+          "z": -956.42
+        },
+        "reset_xyz": {
+          "x": 3136.11,
+          "y": 2325.59,
+          "z": -1026.06
+        }
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger dialogue",
+      "position": {
+        "x": 2200.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z11_Mirror_Lake",
+        "xyz": {
+          "x": 74.79,
+          "y": -448.09,
+          "z": -1514.03
+        }
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 2640.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "interact",
+      "label": "Talk to Tse-Tse Snaketail",
+      "position": {
+        "x": 3080.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z11_Mirror_Lake",
+        "interact_xyz": {
+          "x": 73.75,
+          "y": 244.08,
+          "z": -1615.29
+        },
+        "reset_xyz": {
+          "x": 81.52,
+          "y": -295.87,
+          "z": -1560.49
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "handle_combat",
+      "label": "Defeat Tse-Tse Snaketail",
+      "position": {
+        "x": 3520.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "ZF-TseTse-Main-R11-Boss",
+        "wiki_page": "Creature:Tse-Tse Snaketail",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 3960.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "enter_zone",
+      "label": "Go to Mountain Path",
+      "position": {
+        "x": 4400.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Zafaria/ZF_Z11_Mirror_Lake",
+        "to_zone": "Zafaria/ZF_Z12_Shining_Mountain",
+        "xyz": {
+          "x": -4045.08,
+          "y": 3977.49,
+          "z": -1121.72
+        },
+        "reset_xyz": {
+          "x": -3814.83,
+          "y": 3131.55,
+          "z": -1133.37
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_13",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger dialogue",
+      "position": {
+        "x": 4840.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z12_Shining_Mountain",
+        "xyz": {
+          "x": -4.91,
+          "y": 11672.53,
+          "z": 285.84
+        }
+      }
+    },
+    {
+      "id": "state_14",
+      "node_type": "handle_combat",
+      "label": "Defeat Spectral Guardians",
+      "position": {
+        "x": 5280.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "ZF-Elephant-Spectral-Guardian-R11",
+        "wiki_page": "Creature:Elephant Spectral Guardian",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "teleport_to_coordinates",
+      "label": "Stop Morganthe",
+      "position": {
+        "x": 5720.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z12_Shining_Mountain",
+        "xyz": {
+          "x": 112.85,
+          "y": 9009.3,
+          "z": 285.84
+        }
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 6160.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      }
+    },
+    {
+      "id": "state_17",
+      "node_type": "enter_zone",
+      "label": "Follow Morganthe",
+      "position": {
+        "x": 6600.0,
+        "y": -90.0
+      },
+      "params": {
+        "from_zone": "Zafaria/ZF_Z12_Shining_Mountain",
+        "to_zone": "Zafaria/ZF_Z13_Mirror_Lake_Drained",
+        "xyz": {
+          "x": 132.54,
+          "y": 8154.58,
+          "z": 383.4
+        },
+        "reset_xyz": {
+          "x": 112.85,
+          "y": 9009.3,
+          "z": 285.84
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_18",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to bottom of the lake",
+      "position": {
+        "x": 7040.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z13_Mirror_Lake_Drained",
+        "xyz": {
+          "x": 114.57,
+          "y": -354.29,
+          "z": -1540.21
+        }
+      }
+    },
+    {
+      "id": "state_19",
+      "node_type": "handle_combat",
+      "label": "Defeat Goliath Bruisers",
+      "position": {
+        "x": 7480.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "ZF-Goliath-R11-Boss-03",
+        "wiki_page": "Creature:Goliath Bruiser",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "state_20",
+      "node_type": "teleport_to_coordinates",
+      "label": "Enter Raised Tower",
+      "position": {
+        "x": 7920.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "Zafaria/ZF_Z13_Mirror_Lake_Drained",
+        "xyz": {
+          "x": 14.99,
+          "y": 3907.46,
+          "z": -1615.3
+        }
+      }
+    },
+    {
+      "id": "state_21",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 8360.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      }
+    },
+    {
+      "id": "state_22",
+      "node_type": "handle_combat",
+      "label": "Defeat Starburst Spiders",
+      "position": {
+        "x": 8800.0,
+        "y": -90.0
+      },
+      "params": {
+        "enemy": "ZF-Spider-Model-Starburst-R11",
+        "wiki_page": "Creature:Starburst Spider",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "state_23",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 9240.0,
+        "y": -90.0
+      },
+      "params": {
+        "timeout": 60.0
+      }
+    },
+    {
+      "id": "state_24",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320.0,
+        "y": -90.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_25",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": []
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_25",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_25",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "914324fc",
+      "label": "Starburst Spiders",
+      "members": [
+        "state_21",
+        "state_23",
+        "state_20",
+        "state_22"
+      ],
+      "color": 3
+    },
+    {
+      "id": "3a4cfbfc",
+      "label": "Goliath Bruisers",
+      "members": [
+        "state_18",
+        "state_19"
+      ],
+      "color": 5
+    },
+    {
+      "id": "3116048b",
+      "label": "Spectral Guardians",
+      "members": [
+        "state_15",
+        "state_13",
+        "state_16",
+        "state_17",
+        "state_14"
+      ],
+      "color": 1
+    },
+    {
+      "id": "e281da2e",
+      "label": "Tse-Tse Snaketail",
+      "members": [
+        "state_10",
+        "state_9",
+        "state_12",
+        "state_11",
+        "state_8",
+        "state_7"
+      ],
+      "color": 2
+    },
+    {
+      "id": "2e8bae59",
+      "label": "Enter Mirror Lake",
+      "members": [
+        "state_1",
+        "state_4",
+        "state_5",
+        "state_24",
+        "state_6"
+      ],
+      "color": 4
+    }
+  ]
+}

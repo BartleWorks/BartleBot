@@ -1647,8 +1647,14 @@ def test_binding_descriptions_match_the_card_wording(qapp, store):
 
 
 def _content_texts(card) -> list[str]:
-    layout = card._content_layout
-    return [layout.itemAt(i).widget().text() for i in range(layout.count())]
+    """Each row of the unfolded list, as one string per row.
+
+    A card row is a composite -- art tile, count, display name, and the template name
+    where it differs -- so its text is gathered from the labels inside it. That gather
+    belongs to the list widget itself now, because the Deck Presets page shows the same
+    rows; see ``tests/test_deck_card_list.py``.
+    """
+    return card.content.row_texts()
 
 
 # The section is never shown in these tests (no top-level window under it), so
@@ -1677,7 +1683,7 @@ def test_a_body_click_unfolds_the_card_list(qapp):
 
     assert card.is_expanded
     assert not card._content.isHidden()
-    assert "Test Card × 4" in _content_texts(card)
+    assert "×4 Test Card" in _content_texts(card)
 
 
 def test_a_second_body_click_folds_it_again(qapp):
@@ -1712,7 +1718,7 @@ def test_refresh_updates_an_unfolded_cards_list(qapp):
 
     section.refresh({1: DeckData(normal={"Test Card": 4, "Second Card": 1})})
 
-    assert "Second Card × 1" in _content_texts(section.card(1))
+    assert "×1 Second Card" in _content_texts(section.card(1))
 
 
 def test_refresh_folds_a_card_whose_deck_became_empty(qapp):
@@ -1979,9 +1985,10 @@ def test_the_combat_order_is_drawn_as_pills_in_order(qapp):
     panel = StrategyPanel()
     panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
 
-    assert panel._order_badges.players == [2, 1]
+    # Drawn right to left, as the duel seats them: P2 enters first and sits on the right.
+    assert panel._order_badges.players == [1, 2]
     assert panel._meta.full_text() == "2 players ·"
-    assert "P2 → P1" in panel._meta.toolTip()
+    assert "P1 ← P2" in panel._meta.toolTip()
 
 
 def test_a_simultaneous_duel_keeps_the_word_and_draws_no_order_pills(qapp):
@@ -1994,7 +2001,8 @@ def test_a_simultaneous_duel_keeps_the_word_and_draws_no_order_pills(qapp):
 
 
 def test_pills_are_coloured_by_slot_not_by_position(qapp):
-    """P2 leads a 2 → 1 order, so the first order pill wears slot 2's colour."""
+    """P2 leads a 2, 1 order, so the *rightmost* order pill wears slot 2's colour -- the
+    row being mirrored moves which pill it is, and must not change which colour it takes."""
     dcs = DuelCombatStrategy(
         name="Ordered",
         min_players=2,
@@ -2007,7 +2015,7 @@ def test_pills_are_coloured_by_slot_not_by_position(qapp):
 
     panel.set_player_colors([3, 4], ["Main", "Alt"])
 
-    assert [b.color_key for b in panel._order_badges.badges] == [4, 3]
+    assert [b.color_key for b in panel._order_badges.badges] == [3, 4]
     assert [b.color_key for b in panel._assignment_badges[0].badges] == [4]
 
 

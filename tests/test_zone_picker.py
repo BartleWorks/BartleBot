@@ -3,12 +3,18 @@
 No QApplication: zone_sections, describe_zone and filter_sections are plain functions.
 """
 
-from bartlebot import zone_nav
+import json
+
+import pytest
+
+from bartlebot import card_art, zone_nav
 from bartlebot.gui.widgets.picker_popup import PickerRow, filter_sections
 from bartlebot.gui.widgets.zone_picker import (
     SUGGESTED_TITLE,
     describe_zone,
     is_destination,
+    world_icon_resolver,
+    world_keys_by_title,
     zone_id,
     zone_sections,
 )
@@ -85,6 +91,53 @@ def test_the_shipped_map_keeps_pass_through_zones_out_of_the_list():
     ):
         assert zone in nav.world_of(zone).zones
         assert not is_destination(nav, zone)
+
+
+# -- section emblems ---------------------------------------------------------
+
+
+@pytest.fixture
+def art_home(tmp_path, monkeypatch):
+    monkeypatch.setenv("APPDATA", str(tmp_path))
+    card_art.forget_cache()
+    yield tmp_path
+    card_art.forget_cache()
+
+
+def test_every_section_title_maps_back_to_its_world_key():
+    """The sections are captioned with the localized display name; this is how a header
+    gets back to the key its emblem is stored under."""
+    assert world_keys_by_title(_nav()) == {"Wizard City": "WizardCity", "Krokotopia": "Krokotopia"}
+
+
+def test_the_suggestions_section_is_not_a_world():
+    """ "Where players are" spans worlds, so an emblem there would claim one."""
+    assert SUGGESTED_TITLE not in world_keys_by_title(_nav())
+
+
+def test_every_world_on_the_shipped_map_has_a_title_that_resolves():
+    """A world whose label collided with another's would silently lose its emblem."""
+    nav = zone_nav.load()
+
+    titles = world_keys_by_title(nav)
+
+    assert len(titles) == len(nav.worlds), "two worlds share a display name"
+    assert set(titles.values()) == set(nav.worlds)
+
+
+def test_nothing_extracted_resolves_every_section_to_no_icon(art_home):
+    """The ordinary install: the header draws its caption alone."""
+    resolve = world_icon_resolver(_nav())
+
+    assert resolve("Krokotopia") is None
+    assert resolve(SUGGESTED_TITLE) is None
+
+
+def test_a_title_that_is_not_a_world_never_looks_up_an_icon(art_home):
+    card_art.icons_dir().mkdir(parents=True, exist_ok=True)
+    card_art.index_path().write_text(json.dumps({"icons": {"world_krokotopia": "k.png"}}), encoding="utf-8")
+
+    assert world_icon_resolver(_nav())("Not A World") is None
 
 
 _ROWS_K = [PickerRow("k1", "Entrance Hall", meta="KT_EntranceHall"), PickerRow("k2", "The Oasis", meta="KT_Hub")]

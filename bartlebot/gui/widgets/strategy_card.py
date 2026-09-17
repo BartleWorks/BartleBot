@@ -54,7 +54,7 @@ class StrategyCard(QWidget):
         self._name_lbl = name_row
 
         # Every line under the name is the same kind of thing — a muted caption at
-        # THEME.font_card_sub_size — so they are held as one list rather than as three
+        # THEME.font_subtext_px — so they are held as one list rather than as three
         # named attributes each restyled by its own line of _apply_style. The three
         # copies were identical apart from the attribute they wrote to, and one of them
         # had already been given a colour the other two lacked.
@@ -125,7 +125,7 @@ class StrategyCard(QWidget):
             self._name_lbl.setStyleSheet(f"color: {name_color}; background: transparent;")
             for label in self._sub_lbls:
                 label.setStyleSheet(
-                    f"color: {THEME.text_muted}; font-size: {THEME.font_card_sub_size}px; background: transparent;"
+                    f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px; background: transparent;"
                 )
         finally:
             self._applying_style = False

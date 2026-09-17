@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import math
+
 from PyQt6.QtCore import QEvent, Qt, pyqtSignal
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QFontMetricsF, QPixmap
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -214,7 +216,7 @@ def field_label(text: str) -> QLabel:
     policy is what holds the label column at a consistent width in ``PlayerCard``'s
     rows, whose value labels are added with stretch.
     """
-    lbl = ThemedTextLabel(text + ":", css="font-size: 11px; font-weight: 600;")
+    lbl = ThemedTextLabel(text + ":", css=f"font-size: {THEME.font_small_px}px; font-weight: 600;")
     lbl.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
     return lbl
 
@@ -248,9 +250,26 @@ def value_edit() -> QLineEdit:
 
 
 def value_edit_multi(lines: int = 3) -> QPlainTextEdit:
-    """Read-only multi-line value field with a fixed pixel height."""
+    """Read-only multi-line value field, exactly *lines* of its own text tall.
+
+    Measured rather than a pixel count per line. ``18 * lines + 10`` was the body font's
+    line spacing when this was written, so the field went on claiming 18px a line after
+    the body text moved and cut the last line off.
+
+    Three things the arithmetic needs, and none of them is ``QFontMetrics.lineSpacing()``
+    on its own:
+
+    * The **ceiling** of the fractional spacing. ``QFontMetrics`` rounds it down -- 21 for
+      a line the document lays out at 21.28 -- and a pixel a line is the last line gone by
+      the fourth.
+    * The document's **margin**, which ``QPlainTextEdit`` puts inside the frame at both
+      ends, and the **frame** itself, which carries a style sheet's border and padding.
+    * One pixel over, which is what the document layout takes beyond its own text.
+    """
     w = QPlainTextEdit()
     w.setReadOnly(True)
     w.setPlaceholderText(_PLACEHOLDER)
-    w.setFixedHeight(18 * lines + 10)
+    line_px = math.ceil(QFontMetricsF(w.font()).lineSpacing())
+    chrome = int(2 * w.document().documentMargin()) + 2 * w.frameWidth() + 1
+    w.setFixedHeight(line_px * lines + chrome)
     return w

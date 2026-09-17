@@ -100,7 +100,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         title = ThemedTextLabel("Quick Launch")
         title_font = title.font()
         title_font.setBold(True)
-        title_font.setPointSize(title_font.pointSize() + 2)
+        title_font.setPixelSize(THEME.font_heading_px)
         title.setFont(title_font)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         outer.addWidget(title)

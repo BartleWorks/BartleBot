@@ -1279,6 +1279,10 @@ class AppController(QObject):
         else:
             set_theme(theme_mode)
         self._app.setPalette(THEME.build_palette())
+        # The app font, so every widget that does not set its own size is the body
+        # size in px rather than the platform's own 9pt. Passed without a class name,
+        # which is what clears the per-class fonts Windows gives menus and tooltips.
+        self._app.setFont(THEME.ui_font())
         self._app.setStyleSheet(THEME.global_stylesheet())
 
     def _reconfigure_autosave_timer(self) -> None:

@@ -33,6 +33,7 @@ from __future__ import annotations
 import ast
 import functools
 import pathlib
+import re
 
 GUI_ROOT = pathlib.Path(__file__).resolve().parent.parent / "bartlebot" / "gui"
 
@@ -47,6 +48,13 @@ THEME_MARKERS = (
     "account_accent(",
     "account_tint(",
 )
+
+# Font sizes are tokens too, and they are *not* what this guard is about: every theme
+# carries the same ones, so a stylesheet that bakes in ``THEME.font_small_px`` shows
+# the right size after a switch — there is nothing to re-derive. Stripped before the
+# markers are matched, so a widget is blamed for a colour and not for a size.
+# ``test_font_sizes.test_no_font_token_varies_by_theme`` is what keeps that true.
+FONT_TOKEN = re.compile(r"THEME\.font_\w+")
 
 # Inheriting this is accepted in place of a hand-written changeEvent.
 THEMED_MIXIN = "ThemedMixin"
@@ -82,7 +90,7 @@ def _direct_themed(node: ast.AST) -> str | None:
     f = node.func
     name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
 
-    if name == "setStyleSheet" and any(m in ast.unparse(node) for m in THEME_MARKERS):
+    if name == "setStyleSheet" and any(m in FONT_TOKEN.sub("", ast.unparse(node)) for m in THEME_MARKERS):
         return "setStyleSheet(THEME...)"
 
     if name == "svg_icon":

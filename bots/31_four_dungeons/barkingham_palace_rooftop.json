@@ -1,0 +1,1537 @@
+{
+  "id": "6bde91cf-e9e9-45ea-b32c-dad28e9954a2",
+  "name": "Barkingham Palace - Rooftop",
+  "description": "Endlessly completes Rooftop in Barkingham Palace, Marleybone",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_1",
+  "recovery_state": "state_1",
+  "drops": [
+    {
+      "name": "Azoth"
+    },
+    {
+      "name": "Balefrost"
+    },
+    {
+      "name": "Band of Royal Infallibility"
+    },
+    {
+      "name": "Banshee Onyx"
+    },
+    {
+      "name": "Barkingham Band of Virtue"
+    },
+    {
+      "name": "Barkingham Blade of Blight"
+    },
+    {
+      "name": "Barkingham Bombin of Brio"
+    },
+    {
+      "name": "Barkingham Boots of Brio"
+    },
+    {
+      "name": "Barkingham Cinder Shoes"
+    },
+    {
+      "name": "Barkingham Cinder Smock"
+    },
+    {
+      "name": "Barkingham Clogs of Repose"
+    },
+    {
+      "name": "Barkingham Derby of Cinders"
+    },
+    {
+      "name": "Barkingham Derby of Repose"
+    },
+    {
+      "name": "Barkingham Fog Bowler"
+    },
+    {
+      "name": "Barkingham Fog Coat"
+    },
+    {
+      "name": "Barkingham Fog Walkers"
+    },
+    {
+      "name": "Barkingham Frost Cover"
+    },
+    {
+      "name": "Barkingham Frost Striders"
+    },
+    {
+      "name": "Barkingham Frostbreaker"
+    },
+    {
+      "name": "Barkingham Robe of Repose"
+    },
+    {
+      "name": "Barkingham Shoes of Wit"
+    },
+    {
+      "name": "Barkingham Steel Splinter"
+    },
+    {
+      "name": "Barkingham Wand of Largess"
+    },
+    {
+      "name": "Barkingham's Mace of Sleet"
+    },
+    {
+      "name": "Baton of the Just Monarchy"
+    },
+    {
+      "name": "Baton of the Radiant Queen"
+    },
+    {
+      "name": "Baton of the Royal Flame"
+    },
+    {
+      "name": "Big Downer Opal"
+    },
+    {
+      "name": "Black Mantle"
+    },
+    {
+      "name": "Black Spider"
+    },
+    {
+      "name": "Bladestorm"
+    },
+    {
+      "name": "Blue Ghost"
+    },
+    {
+      "name": "Blustering Scamp"
+    },
+    {
+      "name": "Bomber Opal"
+    },
+    {
+      "name": "Bone"
+    },
+    {
+      "name": "Boots of the Forlorn Watch"
+    },
+    {
+      "name": "Buttered Bread"
+    },
+    {
+      "name": "Cat Tail"
+    },
+    {
+      "name": "Cat Thug"
+    },
+    {
+      "name": "Cauliflowers"
+    },
+    {
+      "name": "Ceremonial Array of Triumph"
+    },
+    {
+      "name": "Ceremonial Boots of Triumph"
+    },
+    {
+      "name": "Ceremonial Helm of Triumph"
+    },
+    {
+      "name": "Chief Whip's Hail Stone"
+    },
+    {
+      "name": "Chipped Damage Citrine +7"
+    },
+    {
+      "name": "Chipped Damage Peridot +7"
+    },
+    {
+      "name": "Chipped Damage Ruby +7"
+    },
+    {
+      "name": "Chipped Defense Amethyst +14"
+    },
+    {
+      "name": "Chipped Defense Onyx +14"
+    },
+    {
+      "name": "Chipped Defense Opal +8"
+    },
+    {
+      "name": "Chipped Defense Peridot +14"
+    },
+    {
+      "name": "Chipped Defense Ruby +14"
+    },
+    {
+      "name": "Chipped Defense Sapphire +14"
+    },
+    {
+      "name": "Chipped Health Opal +21"
+    },
+    {
+      "name": "Chipped Health Opal +23"
+    },
+    {
+      "name": "Cleanse Ward"
+    },
+    {
+      "name": "Clockwork"
+    },
+    {
+      "name": "Clockwork Spider"
+    },
+    {
+      "name": "Clouds of Barkingham Baton"
+    },
+    {
+      "name": "Copper"
+    },
+    {
+      "name": "Crabling"
+    },
+    {
+      "name": "Cracked Damage Opal +3"
+    },
+    {
+      "name": "Cyclops Peridot"
+    },
+    {
+      "name": "Dark Sprite"
+    },
+    {
+      "name": "Darkwind"
+    },
+    {
+      "name": "Deadly Fly Trap"
+    },
+    {
+      "name": "Deadly Scratcher"
+    },
+    {
+      "name": "Deer Knight Onyx"
+    },
+    {
+      "name": "Delicious Cookie"
+    },
+    {
+      "name": "Dependable Opal"
+    },
+    {
+      "name": "Doom and Gloom"
+    },
+    {
+      "name": "Dr. Jalapeno"
+    },
+    {
+      "name": "Dragonflies"
+    },
+    {
+      "name": "Dread Mace of Barkingham"
+    },
+    {
+      "name": "Dryad"
+    },
+    {
+      "name": "Duke's Rosy Signet"
+    },
+    {
+      "name": "Ectoplasm"
+    },
+    {
+      "name": "Enfield Circle of Trickery"
+    },
+    {
+      "name": "Evil Snowman Sapphire"
+    },
+    {
+      "name": "Fiery Boom Shroom"
+    },
+    {
+      "name": "Fire-Giver Ruby"
+    },
+    {
+      "name": "Flaming Soup"
+    },
+    {
+      "name": "Flapjacks"
+    },
+    {
+      "name": "Flawed Accurate Opal +2%"
+    },
+    {
+      "name": "Flawed Damage Jade +10"
+    },
+    {
+      "name": "Flawed Damage Opal +5"
+    },
+    {
+      "name": "Flawed Defense Citrine +17"
+    },
+    {
+      "name": "Flawed Defense Opal +9"
+    },
+    {
+      "name": "Flawed Healing Opal +2%"
+    },
+    {
+      "name": "Flawed Health Opal +29"
+    },
+    {
+      "name": "Flawed Mending Opal +2%"
+    },
+    {
+      "name": "Flawed Resilient Opal +2%"
+    },
+    {
+      "name": "Glowing Star Fruit"
+    },
+    {
+      "name": "Glowing Taffy"
+    },
+    {
+      "name": "Goat Cheese"
+    },
+    {
+      "name": "Golden Grapes"
+    },
+    {
+      "name": "Grenadier's Blasting Ring"
+    },
+    {
+      "name": "Guidance"
+    },
+    {
+      "name": "Gummy Humongofrog"
+    },
+    {
+      "name": "Hat of the Forlorn Watch"
+    },
+    {
+      "name": "Helmet of the Royal Flame"
+    },
+    {
+      "name": "Hex"
+    },
+    {
+      "name": "Humongofrog"
+    },
+    {
+      "name": "Ice Wyvern"
+    },
+    {
+      "name": "Ice-Away Sapphire"
+    },
+    {
+      "name": "Ice-Eye Sapphire"
+    },
+    {
+      "name": "Iron"
+    },
+    {
+      "name": "Iron Golem"
+    },
+    {
+      "name": "Jackall's Ring of Duality"
+    },
+    {
+      "name": "Jelly Baby"
+    },
+    {
+      "name": "King Banana"
+    },
+    {
+      "name": "Kola Nuts"
+    },
+    {
+      "name": "Kraken"
+    },
+    {
+      "name": "Lead"
+    },
+    {
+      "name": "Leather Straps"
+    },
+    {
+      "name": "Leprechaun"
+    },
+    {
+      "name": "Life-Eye Jade"
+    },
+    {
+      "name": "Locust Swarm Citrine"
+    },
+    {
+      "name": "Mace of Noble Conquest"
+    },
+    {
+      "name": "Mace of the Endless Reign"
+    },
+    {
+      "name": "Maelstrom Snap Dragon"
+    },
+    {
+      "name": "Meteor Strike"
+    },
+    {
+      "name": "Minotaur"
+    },
+    {
+      "name": "Mote of Beauty"
+    },
+    {
+      "name": "Mute Opal"
+    },
+    {
+      "name": "Myth-Away Peridot"
+    },
+    {
+      "name": "Myth-Boon Peridot"
+    },
+    {
+      "name": "Nickel"
+    },
+    {
+      "name": "Ninja Fig"
+    },
+    {
+      "name": "Noble Trophy of Equality"
+    },
+    {
+      "name": "Orange Dandelion"
+    },
+    {
+      "name": "Palace Guard's Firewalkers"
+    },
+    {
+      "name": "Palace Guard's Rain Topper"
+    },
+    {
+      "name": "Palace Guard's Rain Waders"
+    },
+    {
+      "name": "Palace Guard's Stovepipe"
+    },
+    {
+      "name": "Pest Zapper"
+    },
+    {
+      "name": "Phoenix"
+    },
+    {
+      "name": "Pierce"
+    },
+    {
+      "name": "Pink Dandelion"
+    },
+    {
+      "name": "Pink Laugh-O-Dil"
+    },
+    {
+      "name": "Plague"
+    },
+    {
+      "name": "Power Play"
+    },
+    {
+      "name": "Pyrite"
+    },
+    {
+      "name": "Raiment of the Royal Flame"
+    },
+    {
+      "name": "Rangers of the Royal Flame"
+    },
+    {
+      "name": "Recovery Opal"
+    },
+    {
+      "name": "Red Ghost"
+    },
+    {
+      "name": "Regal Token of Luminosity"
+    },
+    {
+      "name": "Regenerate"
+    },
+    {
+      "name": "Regent's Baton of Ethos"
+    },
+    {
+      "name": "Relic of Imperial Perpetuum"
+    },
+    {
+      "name": "Relic of the Reign of Ice"
+    },
+    {
+      "name": "Ring of Marleybone Fog"
+    },
+    {
+      "name": "Royal Barbut of Whirlwind"
+    },
+    {
+      "name": "Royal Bascinet of Charisma"
+    },
+    {
+      "name": "Royal Bequest of Eidolon"
+    },
+    {
+      "name": "Royal Boots of Alliance"
+    },
+    {
+      "name": "Royal Boots of Whirlwind"
+    },
+    {
+      "name": "Royal Cap of Alliance"
+    },
+    {
+      "name": "Royal Ceremonial Snowcover"
+    },
+    {
+      "name": "Royal Ceremonial Snowgear"
+    },
+    {
+      "name": "Royal Ceremonial Snowshoes"
+    },
+    {
+      "name": "Royal Coat of Alliance"
+    },
+    {
+      "name": "Royal Coat of Wit"
+    },
+    {
+      "name": "Royal Conical of Accord"
+    },
+    {
+      "name": "Royal Cutlass of Efficacy"
+    },
+    {
+      "name": "Royal Footgear of Charisma"
+    },
+    {
+      "name": "Royal Footguards of Accord"
+    },
+    {
+      "name": "Royal Helm of Remembrance"
+    },
+    {
+      "name": "Royal Outfit of Remembrance"
+    },
+    {
+      "name": "Royal Shoes of Remembrance"
+    },
+    {
+      "name": "Royal Uniform of Accord"
+    },
+    {
+      "name": "Royal Uniform of Whirlwind"
+    },
+    {
+      "name": "Royal Vestment of Charisma"
+    },
+    {
+      "name": "Salmonberry"
+    },
+    {
+      "name": "Sanctuary"
+    },
+    {
+      "name": "Sandstorm"
+    },
+    {
+      "name": "Satyr Jade"
+    },
+    {
+      "name": "Scepter of Royal Triumph"
+    },
+    {
+      "name": "Scrap Iron"
+    },
+    {
+      "name": "Seraph"
+    },
+    {
+      "name": "Shiny Tomato"
+    },
+    {
+      "name": "Signet of Royal Ingenuity"
+    },
+    {
+      "name": "Siphonizer Opal"
+    },
+    {
+      "name": "Smock of Barkingham Brio"
+    },
+    {
+      "name": "Smoke Screen"
+    },
+    {
+      "name": "Solemn Kingdom Heirloom"
+    },
+    {
+      "name": "Spicy Drumstick"
+    },
+    {
+      "name": "Spider Silk"
+    },
+    {
+      "name": "Sprite Jade"
+    },
+    {
+      "name": "Staff of the Royal Paragon"
+    },
+    {
+      "name": "Stall Opal"
+    },
+    {
+      "name": "Storm Shark Amethyst"
+    },
+    {
+      "name": "Storm-Boon Amethyst"
+    },
+    {
+      "name": "Stormzilla"
+    },
+    {
+      "name": "Strawberry Cupcake"
+    },
+    {
+      "name": "Street Sweeper"
+    },
+    {
+      "name": "Submarine Sandwich"
+    },
+    {
+      "name": "Sunbird Ruby"
+    },
+    {
+      "name": "Super-Stall Opal"
+    },
+    {
+      "name": "The Queen's Crystal Scepter"
+    },
+    {
+      "name": "Time of Legend"
+    },
+    {
+      "name": "Tin"
+    },
+    {
+      "name": "Topper of Royal Wit"
+    },
+    {
+      "name": "Triage"
+    },
+    {
+      "name": "Trophy of the Raucous Court"
+    },
+    {
+      "name": "Uni-Corn"
+    },
+    {
+      "name": "Vampire"
+    },
+    {
+      "name": "Venus Fly Trap"
+    },
+    {
+      "name": "Wand of the Royal Paragon"
+    },
+    {
+      "name": "White Laugh-O-Dil"
+    },
+    {
+      "name": "Wooden Skeleton Key"
+    },
+    {
+      "name": "Wyldfire"
+    },
+    {
+      "name": "Wyldfire Ruby"
+    },
+    {
+      "name": "Yeoman's Boots of Reverie"
+    },
+    {
+      "name": "Yeoman's Cap of Bounty"
+    },
+    {
+      "name": "Yeoman's Cloak of Reverie"
+    },
+    {
+      "name": "Yeoman's Shoes of Bounty"
+    },
+    {
+      "name": "Yeoman's Top Hat of Reverie"
+    },
+    {
+      "name": "Yeoman's Topper of Unity"
+    },
+    {
+      "name": "Yeoman's Walkers of Unity"
+    },
+    {
+      "name": "Yeoman's Winter Boots"
+    },
+    {
+      "name": "Yeoman's Winter Top"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Pets",
+    "Dungeon",
+    "Challenge Mode"
+  ],
+  "options": [],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Regent's Square",
+      "position": {
+        "x": 0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_Hub"
+      }
+    },
+    {
+      "id": "state_2",
+      "node_type": "enter_zone",
+      "label": "Enter Barkingham Palace",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_Hub",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+        "xyz": {
+          "x": 7185.46,
+          "y": 1307.01,
+          "z": -0.0
+        },
+        "reset_xyz": {
+          "x": 6413.62,
+          "y": 1336.23,
+          "z": -0.0
+        }
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Rooftop",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+        "dungeon_zone": "Marleybone/G14_Gauntlet/MB_Z06_Rooftop",
+        "sigil_xyz": {
+          "x": -2852.08,
+          "y": -6434.02,
+          "z": -4822.8
+        },
+        "reset_xyz": {
+          "x": -2332.8,
+          "y": -6534.38,
+          "z": -4823.63
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": false
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "collect_wisps",
+      "label": "Collect mana wisps",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true,
+        "timeout": 10.0
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "teleport_to_coordinates",
+      "label": "Trigger dialogue",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_Z06_Rooftop",
+        "xyz": {
+          "x": -13.09,
+          "y": -1352.26,
+          "z": 0.62
+        }
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "handle_combat",
+      "label": "Defeat Margherita Vizzini",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "G14-BP-Unicorn_Fencer_Boss",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "enter_zone",
+      "label": "Enter Airship Cargo",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_Z06_Rooftop",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z13_Dirigible_Cargo_02",
+        "xyz": {
+          "x": 10.06,
+          "y": 2550.03,
+          "z": -170.36
+        },
+        "reset_xyz": {
+          "x": 32.91,
+          "y": 1767.96,
+          "z": -23.64
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "handle_combat",
+      "label": "Defeat Mister Utterson and Mister Poole",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "state_13",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0
+      }
+    },
+    {
+      "id": "state_14",
+      "node_type": "enter_zone",
+      "label": "Enter puzzle room",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_Z13_Dirigible_Cargo_02",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z07_Dirigible_Cargo",
+        "xyz": {
+          "x": -12.15,
+          "y": 1778.72,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": -11.22,
+          "y": 1408.52,
+          "z": 0.2
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "interact",
+      "label": "Pull lever",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_Z07_Dirigible_Cargo",
+        "interact_xyz": {
+          "x": 546.87,
+          "y": -980.35,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 550.14,
+          "y": -1484.32,
+          "z": 0.2
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "interact",
+      "label": "Pull lever",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_Z07_Dirigible_Cargo",
+        "interact_xyz": {
+          "x": -800.5,
+          "y": 176.89,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": -1079.67,
+          "y": -177.51,
+          "z": 0.2
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true
+      }
+    },
+    {
+      "id": "state_17",
+      "node_type": "collect_wisps",
+      "label": "Collect health wisps",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true,
+        "timeout": 10.0
+      }
+    },
+    {
+      "id": "state_18",
+      "node_type": "enter_zone",
+      "label": "Enter Airship Cabin",
+      "position": {
+        "x": 7480.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/G14_Gauntlet/MB_Z07_Dirigible_Cargo",
+        "to_zone": "Marleybone/G14_Gauntlet/MB_Z08_Dirigible_Main",
+        "xyz": {
+          "x": -24.82,
+          "y": 2839.67,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": -6.8,
+          "y": 2169.71,
+          "z": 0.2
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_19",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0
+      }
+    },
+    {
+      "id": "state_20",
+      "node_type": "handle_combat",
+      "label": "Defeat Doctor Jackall",
+      "position": {
+        "x": 8360.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "G14-BP-Dr_Jackall",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "state_21",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 8800.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "49a9cfb4",
+      "label": "Enter Rooftop",
+      "members": [
+        "state_3",
+        "state_1",
+        "state_2",
+        "state_4",
+        "state_5"
+      ],
+      "color": 1
+    },
+    {
+      "id": "1e9a49e5",
+      "label": "Margherita Vizzini",
+      "members": [
+        "state_6",
+        "state_7",
+        "state_8",
+        "state_9"
+      ],
+      "color": 2
+    },
+    {
+      "id": "d25af148",
+      "label": "Mr Utterson and Mr Poole",
+      "members": [
+        "state_12",
+        "state_13",
+        "state_10",
+        "state_11"
+      ],
+      "color": 3
+    },
+    {
+      "id": "15e2f2c2",
+      "label": "Puzzle",
+      "members": [
+        "state_16",
+        "state_17",
+        "state_14",
+        "state_15"
+      ],
+      "color": 4
+    },
+    {
+      "id": "7ffa2a42",
+      "label": "Doctor Jackall",
+      "members": [
+        "state_20",
+        "state_21",
+        "state_18",
+        "state_19"
+      ],
+      "color": 5
+    }
+  ]
+}
