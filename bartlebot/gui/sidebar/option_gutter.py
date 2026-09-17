@@ -112,7 +112,7 @@ class HelpToggle(ThemedMixin, QPushButton):
         # over, so it is the same shape and the same accent, only smaller.
         self.setStyleSheet(
             f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-            f"border-radius: 3px; color: {THEME.accent}; font-weight: bold; font-size: 11px; padding: 0; }}"
+            f"border-radius: 3px; color: {THEME.accent}; font-weight: bold; font-size: {THEME.font_small_px}px; padding: 0; }}"
             f"QPushButton:hover, QPushButton:checked {{ background: {THEME.accent}; color: #ffffff; }}"
         )
 
@@ -217,10 +217,6 @@ class DescriptionSwitches(QWidget):
     learn that eight identical links all go to the same page.
     """
 
-    #: Matched to ``LinkButton``'s own default so the dot sits on the links'
-    #: baseline rather than above it.
-    SEPARATOR_FONT_PX = 10
-
     def __init__(
         self,
         on_toggled,
@@ -246,7 +242,9 @@ class DescriptionSwitches(QWidget):
         hide.setToolTip("Fold every option's description away")
         hide.clicked.connect(lambda: on_toggled(False))
         row.addWidget(show, 0)
-        row.addWidget(ThemedTextLabel(" · ", css=f"font-size: {self.SEPARATOR_FONT_PX}px;"), 0)
+        # ``LinkButton``'s own default size, so the dot sits on the links' baseline
+        # rather than above it.
+        row.addWidget(ThemedTextLabel(" · ", css=f"font-size: {THEME.font_subtext_px}px;"), 0)
         row.addWidget(hide, 0)
         row.addStretch(1)
         if trailing is not None:

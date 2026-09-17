@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot import bot_options, option_values
+from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.nodes.teleportation import teleport_to_friend
 from bartlebot.nodes.utility import quicksell
@@ -314,7 +315,7 @@ class SafetyWarningDialog(QDialog):
         header = QLabel("Review before running")
         font = header.font()
         font.setBold(True)
-        font.setPointSize(font.pointSize() + 1)
+        font.setPixelSize(THEME.font_body_px + 1)
         header.setFont(font)
         layout.addWidget(header)
 

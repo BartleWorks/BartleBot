@@ -44,7 +44,6 @@ from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 #: The pill's metrics. Deliberately ``AccountPill``'s, so a slot pill and an account pill
 #: on the same screen are one shape at two sizes of claim rather than two shapes.
 _PILL_HEIGHT = 18
-_PILL_FONT_PX = 9
 _PILL_MIN_WIDTH = 30
 
 
@@ -135,7 +134,7 @@ class PlayerSlotPill(QLabel):
                 fill = "transparent"
                 text = THEME.text_muted
             self.setStyleSheet(
-                f"background: {fill}; color: {text}; font-size: {_PILL_FONT_PX}px;"
+                f"background: {fill}; color: {text}; font-size: {THEME.font_micro_px}px;"
                 f" font-weight: bold; border-radius: {_PILL_HEIGHT // 2}px;"
                 f" border: 1px solid {accent}; padding: 0px 6px;"
             )
@@ -317,7 +316,7 @@ class PlayerBadge(QLabel):
             else:
                 fill, border, text = account_tint(self._color_key), account_accent(self._color_key), THEME.text
             self.setStyleSheet(
-                f"background: {fill}; color: {text}; font-size: 9px; font-weight: bold;"
+                f"background: {fill}; color: {text}; font-size: {THEME.font_micro_px}px; font-weight: bold;"
                 f" border-radius: {_BADGE_HEIGHT // 2}px; border: 1px solid {border}; padding: 0px {_BADGE_PAD_X}px;"
             )
             who = f" — {self._account_label}" if self._account_label else ""

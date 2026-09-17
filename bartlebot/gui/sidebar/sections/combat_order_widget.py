@@ -74,7 +74,9 @@ class _PlayerChip(QFrame):
             else:
                 border, border_width = THEME.border, "1px"
         self.setStyleSheet(f"QFrame {{ background: {bg}; border: {border_width} solid {border}; border-radius: 4px; }}")
-        self._label.setStyleSheet(f"color: {text_color}; font-size: 11px; font-weight: 600; border: none;")
+        self._label.setStyleSheet(
+            f"color: {text_color}; font-size: {THEME.font_small_px}px; font-weight: 600; border: none;"
+        )
 
     def set_enabled_visual(self, enabled: bool) -> None:
         self._enabled_visual = enabled
@@ -194,7 +196,7 @@ class CombatOrderWidget(QWidget):
         for i in range(1, max_players + 1):
             lbl = QLabel(_ordinal(i))
             lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+            lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
             header_layout.addWidget(lbl, 1)
             self._header_labels.append(lbl)
         outer.addWidget(self._header_row)
@@ -338,6 +340,6 @@ class CombatOrderWidget(QWidget):
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
             for lbl in self._header_labels:
-                lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px;")
+                lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
             for chip in self._chips:
                 chip._refresh_style()

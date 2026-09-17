@@ -30,6 +30,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.menu_utils import popup_menu
+from bartlebot.gui.theme import THEME
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +61,7 @@ class FriendNameEdit(QWidget):
         self._pick = QPushButton("Pick from Friends List")
         self._pick.setFixedHeight(22)
         self._pick.setToolTip("Read the online friends list from a connected player")
-        self._pick.setStyleSheet("QPushButton { font-size: 11px; padding: 1px 2px; }")
+        self._pick.setStyleSheet(f"QPushButton {{ font-size: {THEME.font_small_px}px; padding: 1px 2px; }}")
         self._pick.clicked.connect(lambda _: self._show_pick_menu())
         outer.addWidget(self._pick)
 

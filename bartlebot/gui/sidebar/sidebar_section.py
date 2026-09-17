@@ -214,7 +214,7 @@ def field_label(text: str) -> QLabel:
     policy is what holds the label column at a consistent width in ``PlayerCard``'s
     rows, whose value labels are added with stretch.
     """
-    lbl = ThemedTextLabel(text + ":", css="font-size: 11px; font-weight: 600;")
+    lbl = ThemedTextLabel(text + ":", css=f"font-size: {THEME.font_small_px}px; font-weight: 600;")
     lbl.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
     return lbl
 

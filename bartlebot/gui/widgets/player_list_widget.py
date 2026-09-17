@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import QCheckBox, QHBoxLayout, QPushButton, QRadioButton, Q
 
 from bartlebot.gui.theme import THEME
 
-_BTN_STYLE = "QPushButton { font-size: 10px; padding: 1px 4px; }"
+_BTN_STYLE = f"QPushButton {{ font-size: {THEME.font_subtext_px}px; padding: 1px 4px; }}"
 
 
 class PlayerListWidget(QWidget):

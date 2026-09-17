@@ -5,6 +5,37 @@ Conventions for everything under `bartlebot/gui/`. The app-wide rules are in the
 ## GUI theming
 Use `THEME` singleton from `bartlebot/gui/theme.py`. No hardcoded colors in widget code.
 
+### Font sizes come from a token, and are always px
+
+`THEME.font_body_px` is the app font and the one number the rest hang off:
+`font_heading_px`, `font_small_px`, `font_subtext_px` and `font_micro_px` are read
+relative to it, so moving the body size moves all of them. Node text is the exception
+(`font_node_px`, `font_node_sub_px`): it is drawn in scene units against fixed node
+geometry, so it does not follow the body size.
+
+A size no token names is an *offset* from one at the call site —
+`f"font-size: {THEME.font_body_px + 1}px"` — never a literal, and never a
+`_FONT_PX` constant in the module. `tests/test_font_sizes.py` fails the build on any
+of those, on a size in points, and on the two traps below. The sizes lived as literals
+in about eighty places before, which is why they had drifted into six values doing
+four jobs.
+
+- **Never read a size back off a font.** `pointSize()` returns `-1` on a font sized in
+  px, so `font.setPointSize(font.pointSize() + 1)` silently resolves to 0, and a
+  `pointSizeF()` read into a `max(..., 6.0)` floor silently resolves to that floor.
+  Both shipped here. Size from a token: `font.setPixelSize(THEME.font_body_px + 1)`.
+- **A stylesheet `font-size` never reaches `QWidget.font()`.** A widget that measures
+  its own text — anything eliding, sizing a slot, or growing to fit lines — must set
+  the size on the font as well, or it measures at the app font and lays out for the
+  wrong size.
+
+Use `THEME.ui_font(px, bold=...)` to build one. For text drawn at a fractional scale
+(the canvas region labels), `THEME.scaled_ui_font(px, scale)` keeps the fractional
+size that `setPixelSize`'s whole pixels would step between.
+
+There is deliberately **no user setting for font size**, so nothing re-reads these at
+run time: a stylesheet built once in a constructor is fine.
+
 Anything a widget builds from `THEME` is a snapshot of whichever theme was active at
 the time, and Qt never recomputes it: `QApplication.setStyleSheet()` delivers
 `StyleChange` to every widget, but a stylesheet the widget set on *itself* always

@@ -48,21 +48,20 @@ from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX, group_accent, tag_icon
 #: a descriptive one are the same shape -- which is the whole reason the clickable one
 #: exists rather than a chip.
 _PILL_HEIGHT = 14
-_PILL_FONT_PX = 9
 _PILL_PAD_X = 6
 
 
-def pill_style(bg: str, fg: str, *, font_size: int = 9, radius: int = 7, pad: str = "1px 6px") -> str:
+def pill_style(bg: str, fg: str, *, font_size: int | None = None, radius: int = 7, pad: str = "1px 6px") -> str:
     """The shared pill look, so a caller varies only what it means to vary."""
+    font_size = THEME.font_micro_px if font_size is None else font_size
     return (
         f"background: {bg}; color: {fg}; font-size: {font_size}px;"
         f" font-weight: bold; border-radius: {radius}px; padding: {pad};"
     )
 
 
-#: The medallion pill's text size, and the space either side of its text. The pill is as
-#: tall as the medallion, so its text can be a size up from the plain pill's.
-_MEDALLION_FONT_PX = 10
+#: The space either side of the medallion pill's text. The pill is as tall as the
+#: medallion, so its text is a size up from the plain pill's -- see ``medallion_font``.
 _MEDALLION_GAP = 4  # medallion to text
 _MEDALLION_PAD_R = 8  # text to the round right end
 
@@ -70,7 +69,7 @@ _MEDALLION_PAD_R = 8  # text to the round right end
 def medallion_font(base: QFont) -> QFont:
     """*base* at the medallion pill's size, bold."""
     font = QFont(base)
-    font.setPixelSize(_MEDALLION_FONT_PX)
+    font.setPixelSize(THEME.font_subtext_px)
     font.setBold(True)
     return font
 
@@ -228,7 +227,11 @@ class TagChip(QPushButton):
                 self.setStyleSheet("QPushButton { border: none; background: transparent; }")
                 return
             base = pill_style(
-                group_accent(tag_group(self._tag)), THEME.pill_text, font_size=10, radius=9, pad="2px 9px"
+                group_accent(tag_group(self._tag)),
+                THEME.pill_text,
+                font_size=THEME.font_subtext_px,
+                radius=9,
+                pad="2px 9px",
             )
             self.setStyleSheet(
                 f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}"
@@ -277,7 +280,9 @@ class NeutralChip(QPushButton):
             return
         self._applying_style = True
         try:
-            base = pill_style(THEME.pill_neutral_bg, THEME.pill_text, font_size=10, radius=9, pad="2px 9px")
+            base = pill_style(
+                THEME.pill_neutral_bg, THEME.pill_text, font_size=THEME.font_subtext_px, radius=9, pad="2px 9px"
+            )
             self.setStyleSheet(
                 f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}"
             )
@@ -324,7 +329,7 @@ class ActionPill(QPushButton):
         # reaches ``QWidget.font()``, so :meth:`sizeHint` would measure at the base size
         # and leave every pill several pixels too wide.
         font = self.font()
-        font.setPixelSize(_PILL_FONT_PX)
+        font.setPixelSize(THEME.font_micro_px)
         font.setBold(True)
         self.setFont(font)
         self._restyle()
@@ -349,7 +354,7 @@ class ActionPill(QPushButton):
         self._applying_style = True
         try:
             base = pill_style(
-                THEME.pill_neutral_bg, THEME.pill_text, font_size=_PILL_FONT_PX, pad=f"0px {_PILL_PAD_X}px"
+                THEME.pill_neutral_bg, THEME.pill_text, font_size=THEME.font_micro_px, pad=f"0px {_PILL_PAD_X}px"
             )
             self.setStyleSheet(
                 f"QPushButton {{ border: none; {base} }}"
@@ -435,7 +440,7 @@ class AccentPill(QLabel):
             # x inside this pill as inside the filled ones beside it.
             self.setStyleSheet(
                 f"background: transparent; color: {THEME.accent};"
-                f" font-size: {_PILL_FONT_PX}px; font-weight: bold; border-radius: 7px;"
+                f" font-size: {THEME.font_micro_px}px; font-weight: bold; border-radius: 7px;"
                 f" border: 1px solid {THEME.accent}; padding: 0px {_PILL_PAD_X - 1}px;"
             )
         finally:
@@ -485,7 +490,7 @@ class AccountPill(QLabel):
         try:
             self.setStyleSheet(
                 f"background: {account_tint(self._color_key)}; color: {THEME.text};"
-                f" font-size: 9px; font-weight: bold; border-radius: 8px;"
+                f" font-size: {THEME.font_micro_px}px; font-weight: bold; border-radius: 8px;"
                 f" border: 1px solid {account_accent(self._color_key)}; padding: 0px 6px;"
             )
         finally:

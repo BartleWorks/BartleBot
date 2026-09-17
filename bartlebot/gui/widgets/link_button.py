@@ -25,9 +25,9 @@ from bartlebot.gui.themed import ThemedMixin
 class LinkButton(ThemedMixin, QPushButton):
     """A flat, accent-coloured button sized to its own text."""
 
-    def __init__(self, text: str = "", *, font_size: int = 10, parent: QWidget | None = None) -> None:
+    def __init__(self, text: str = "", *, font_size: int | None = None, parent: QWidget | None = None) -> None:
         super().__init__(text, parent)
-        self._font_size = font_size
+        self._font_size = THEME.font_subtext_px if font_size is None else font_size
         self.setFlat(True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)

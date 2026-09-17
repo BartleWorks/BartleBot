@@ -79,7 +79,7 @@ class _SlotButton(ThemedMixin, QPushButton):
         self.setStyleSheet(
             f"QPushButton {{ background: {bg}; color: {text_color}; "
             f"border: {border_width} solid {border_color}; "
-            f"border-radius: 4px; padding: 1px 6px; font-size: 11px; text-align: left; }}"
+            f"border-radius: 4px; padding: 1px 6px; font-size: {THEME.font_small_px}px; text-align: left; }}"
             f"QPushButton:hover {{ background: {THEME.node_fill_hover}; }}"
             f"QPushButton:pressed {{ background: {THEME.node_fill_selected}; }}"
         )

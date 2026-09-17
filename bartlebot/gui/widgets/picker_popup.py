@@ -364,7 +364,7 @@ class _RowWidget(QWidget):
         meta_w = 0
         if self._row.meta:
             meta_font = QFont(self.font())
-            meta_font.setPointSizeF(max(self.font().pointSizeF() - 1.0, 6.0))
+            meta_font.setPixelSize(THEME.font_small_px)
             painter.setFont(meta_font)
             meta_w = painter.fontMetrics().horizontalAdvance(self._row.meta) + _PAD_X
             painter.setPen(QColor(THEME.text_disabled if dim else THEME.text_subtle))
@@ -461,7 +461,7 @@ class _SectionHeader(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         font = QFont(self.font())
         font.setBold(True)
-        font.setPointSizeF(max(self.font().pointSizeF() - 1.0, 6.0))
+        font.setPixelSize(THEME.font_small_px)
         self._font = font
         text_h = QFontMetrics(font).height()
         self.setFixedHeight(max(text_h, SECTION_ICON_PX if icon else 0) + _SECTION_PAD_Y * 2)
@@ -543,7 +543,7 @@ class _HeaderBar(QWidget):
         right = rect.width() - _PAD_X
         self._clear_rect = QRect()
         small = QFont(self.font())
-        small.setPointSizeF(max(self.font().pointSizeF() - 1.0, 6.0))
+        small.setPixelSize(THEME.font_small_px)
 
         if self._show_clear:
             painter.setFont(small)
@@ -788,7 +788,7 @@ class PickerPopup(QWidget):
             empty = QLabel("No matches.")
             empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
             empty.setContentsMargins(0, 14, 0, 14)
-            empty.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+            empty.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
             self._body_layout.insertWidget(0, empty)
             self._refresh_header()
             return

@@ -86,6 +86,7 @@ from bartlebot.gui import screen_fit
 from bartlebot.gui.account_accent import account_accent, account_color_keys
 from bartlebot.gui.game_embed.card_columns import CardColumn, apply_order
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
+from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.picker_popup import PickerPopup, PickerRow, Section, should_open
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
@@ -305,7 +306,7 @@ class ProfileDialog(QDialog):
         res_form.addRow("Resolution:", self._res_combo)
         side.addLayout(res_form)
 
-        self._res_hint = ThemedTextLabel("", css="font-size: 11px;")
+        self._res_hint = ThemedTextLabel("", css=f"font-size: {THEME.font_small_px}px;")
         self._res_hint.setWordWrap(True)
         side.addWidget(self._res_hint)
         side.addStretch(1)

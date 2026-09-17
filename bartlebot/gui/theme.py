@@ -215,20 +215,53 @@ class _Theme:
 
     # ------------------------------------------------------------------
     # Font tokens
+    #
+    # Every size is in px, and one number sets them: ``font_body_px``. The other UI
+    # sizes are properties read relative to it, so moving it moves the whole app
+    # together. A size no token names is an offset from one at the call site
+    # (``THEME.font_body_px + 1``), never a literal -- ``test_font_sizes`` holds that.
+    #
+    # Two rules that keep px honest. Never read a size back off a font
+    # (``pointSize()`` is -1 on a font sized in px, and the arithmetic built on it
+    # goes silently wrong); set it from a token. And a stylesheet ``font-size``
+    # never reaches ``QWidget.font()``, so a widget that measures its own text sets
+    # the size on the font as well.
     # ------------------------------------------------------------------
     font_ui_family: str = "Segoe UI"
     font_mono_family: str = "Consolas"
 
-    font_mono_size: int = 9
-    font_node_main_size: int = 11
-    font_node_sub_size: int = 8
-    font_node_hdr_size: int = 7
-    #: The muted lines under a card's name — a launch card's detail and quiet lines, a
-    #: strategy card's description, facets and assignments. Every card in the app had
-    #: this number written into its own stylesheet as ``font-size: 10px``, which is a
-    #: shared decision kept in four places; it is one token now so the cards cannot
-    #: drift apart, and so a custom theme can move all of them together.
-    font_card_sub_size: int = 10
+    #: Body text: the application font, and every widget that does not set its own.
+    #: 12px is the Qt default this replaced (Segoe UI 9pt at Qt's 96 logical DPI).
+    font_body_px: int = 12
+    #: Text drawn on a node, in scene units, so it scales with the canvas zoom. Not
+    #: tied to the body size: the node's geometry is fixed, and text that grew with
+    #: the body would outgrow it.
+    font_node_px: int = 15
+
+    @property
+    def font_heading_px(self) -> int:
+        """A section heading inside a panel or dialog."""
+        return self.font_body_px + 3
+
+    @property
+    def font_small_px(self) -> int:
+        """Secondary text: field labels, hints, status lines, compact buttons."""
+        return self.font_body_px - 1
+
+    @property
+    def font_subtext_px(self) -> int:
+        """The muted lines under a name: a card's detail, a description, a link."""
+        return self.font_body_px - 2
+
+    @property
+    def font_micro_px(self) -> int:
+        """Pills, badges and captions: text sized to fit a shape."""
+        return self.font_body_px - 3
+
+    @property
+    def font_node_sub_px(self) -> int:
+        """A node's type line, under its label."""
+        return self.font_node_px - 4
 
     # ------------------------------------------------------------------
     # QColor helpers
@@ -255,17 +288,34 @@ class _Theme:
     # QFont helpers
     # ------------------------------------------------------------------
 
+    def ui_font(self, px: int | None = None, *, bold: bool = False) -> QFont:
+        """The UI family at *px* (the body size when omitted)."""
+        font = QFont(self.font_ui_family)
+        font.setPixelSize(self.font_body_px if px is None else px)
+        font.setBold(bold)
+        return font
+
+    def scaled_ui_font(self, px: int, scale: float) -> QFont:
+        """The UI family at *px* times *scale*, for text drawn at a fractional scale.
+
+        ``setPixelSize`` takes only whole pixels, so a label scaled continuously would
+        step between sizes as the scale moved. Points take a float, and Qt converts
+        them at 96 logical DPI whatever the display scaling, so 0.75pt is 1px exactly.
+        """
+        font = QFont(self.font_ui_family)
+        font.setPointSizeF(max(1.0, px * scale * 0.75))
+        return font
+
     def font_mono(self) -> QFont:
-        return QFont(self.font_mono_family, self.font_mono_size)
+        font = QFont(self.font_mono_family)
+        font.setPixelSize(self.font_body_px)
+        return font
 
     def font_node_main(self) -> QFont:
-        return QFont(self.font_ui_family, self.font_node_main_size)
+        return self.ui_font(self.font_node_px)
 
     def font_node_sub(self) -> QFont:
-        return QFont(self.font_ui_family, self.font_node_sub_size)
-
-    def font_node_hdr(self) -> QFont:
-        return QFont(self.font_ui_family, self.font_node_hdr_size)
+        return self.ui_font(self.font_node_sub_px)
 
     # ------------------------------------------------------------------
     # QPalette builder
@@ -710,11 +760,8 @@ _COLOR_TOKENS: list[str] = [
     not in {
         "font_ui_family",
         "font_mono_family",
-        "font_mono_size",
-        "font_node_main_size",
-        "font_node_sub_size",
-        "font_node_hdr_size",
-        "font_card_sub_size",
+        "font_body_px",
+        "font_node_px",
         "REGION_PALETTE",
         # rgba() strings that QColorDialog cannot round-trip
         "minimap_bg",

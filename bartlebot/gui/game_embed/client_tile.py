@@ -295,9 +295,7 @@ class ClientTile(QWidget):
         # window, so it is never obscured by the Win32 child surface.
         # Layout: [8px pad] [label text] [_ICON_GAP] [detach icon] [8px pad]
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        font = QFont()
-        font.setPointSize(9)
-        font.setBold(True)
+        font = THEME.ui_font(bold=True)
         painter.setFont(font)
         metrics = painter.fontMetrics()
         text = pill_text(self._label, self._wizard_name)
@@ -424,8 +422,7 @@ class _WindowlessTile(QWidget):
         """Draw the explanatory line in the space a game window would occupy."""
         body_top = LABEL_RESERVE
         painter.setPen(THEME.qcolor("text_muted"))
-        body_font = QFont()
-        body_font.setPointSize(9)
+        body_font = THEME.ui_font()
         painter.setFont(body_font)
         painter.drawText(
             QRect(0, body_top, self.width(), self.height() - body_top),
@@ -436,9 +433,7 @@ class _WindowlessTile(QWidget):
     def _paint_pill(self, painter: QPainter) -> None:
         """Draw the caption pill, where ClientTile draws its own."""
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        pill_font = QFont()
-        pill_font.setPointSize(9)
-        pill_font.setBold(True)
+        pill_font = THEME.ui_font(bold=True)
         painter.setFont(pill_font)
         metrics = painter.fontMetrics()
         text = pill_text(self._label, self._wizard_name)
@@ -501,9 +496,7 @@ def _body_font() -> QFont:
     the partial-repaint rect off the ring it is meant to cover, and the arc then leaves a
     sliver of the previous frame behind as it turns.
     """
-    font = QFont()
-    font.setPointSize(9)
-    return font
+    return THEME.ui_font()
 
 
 # Busy indicator geometry and motion. One revolution every _SPINNER_PERIOD_MS, repainted
@@ -684,8 +677,7 @@ class PendingTile(_WindowlessTile):
         if self._failed:
             # The caption alone says what happened; this says what to do about it, and is
             # the reason a failed tile is not simply removed on the user's behalf.
-            hint_font = QFont()
-            hint_font.setPointSize(8)
+            hint_font = THEME.ui_font(THEME.font_small_px)
             painter.setFont(hint_font)
             painter.drawText(
                 QRect(0, top + 2 * _SPINNER_RADIUS + _SPINNER_CAPTION_GAP + text_h + 4, self.width(), text_h),

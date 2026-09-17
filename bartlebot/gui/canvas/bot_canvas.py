@@ -212,7 +212,6 @@ def _resolve_bots_dir(configured: str, root: Path) -> Path:
 #: have ("Housing Gauntlet") beside a 32px badge with the scrollbar showing -- which it
 #: does once icons make every row 42px tall. ``test_bot_folders`` measures it.
 CATEGORY_LIST_WIDTH = 180
-CATEGORY_FONT_PX = 11
 CATEGORY_PAD_X = 10
 CATEGORY_PAD_Y = 5
 
@@ -385,7 +384,7 @@ class _BotCard(ThemedMixin, QWidget):
             (self._match_lbl, THEME.accent),
         ):
             if lbl is not None:
-                lbl.setStyleSheet(f"color: {color}; font-size: 10px; background: transparent;")
+                lbl.setStyleSheet(f"color: {color}; font-size: {THEME.font_subtext_px}px; background: transparent;")
 
     def enterEvent(self, event) -> None:
         self._hovered = True
@@ -592,7 +591,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             # outline: none drops the focus rectangle Qt draws around the clicked
             # row's text; the selection fill already marks it.
             f"QListWidget {{ background: {THEME.surface}; border: none; outline: none;"
-            f"  border-right: 1px solid {THEME.border}; font-size: {CATEGORY_FONT_PX}px; }}"
+            f"  border-right: 1px solid {THEME.border}; font-size: {THEME.font_small_px}px; }}"
             f"QListWidget::item {{ padding: {CATEGORY_PAD_Y}px {CATEGORY_PAD_X}px; color: {THEME.text_muted};"
             f"  border-bottom: 1px solid {THEME.border}; }}"
             f"QListWidget::item:selected {{ background: {THEME.node_fill_selected}; color: {THEME.text}; }}"
@@ -603,11 +602,11 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         if self._clear_btn is not None:
             self._clear_btn.setStyleSheet(
                 f"QPushButton {{ color: {THEME.text_muted}; border: none;"
-                f"  padding: 2px 6px; font-size: 10px; }}"
+                f"  padding: 2px 6px; font-size: {THEME.font_subtext_px}px; }}"
                 f"QPushButton:hover {{ color: {THEME.text}; }}"
             )
         if self._empty_hint is not None:
-            self._empty_hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+            self._empty_hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
 
     # ------------------------------------------------------------------
     # Public API
@@ -877,10 +876,10 @@ class _SearchBar(ThemedMixin, QWidget):
         """
         self.setStyleSheet(
             f"QWidget {{ background-color: {THEME.surface}; border: 1px solid {THEME.border}; border-radius: 6px; }}"
-            f"QLineEdit {{ border: none; background: transparent; color: {THEME.text}; font-size: 13px; }}"
-            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: 14px; }}"
+            f"QLineEdit {{ border: none; background: transparent; color: {THEME.text}; font-size: {THEME.font_body_px + 1}px; }}"
+            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: {THEME.font_body_px + 2}px; }}"
             f"QPushButton:hover {{ color: {THEME.text}; }}"
-            f"QLabel {{ border: none; color: {THEME.text_muted}; font-size: 11px; }}"
+            f"QLabel {{ border: none; color: {THEME.text_muted}; font-size: {THEME.font_small_px}px; }}"
         )
 
     def set_count(self, current: int, total: int) -> None:
@@ -1184,8 +1183,8 @@ class BotCanvas(QWidget):
         self._focus_crumb.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._focus_crumb.setStyleSheet(
             f"QWidget {{ background-color: {THEME.surface}; border: 1px solid {THEME.border}; border-radius: 6px; }}"
-            f"QLabel {{ border: none; color: {THEME.text}; font-size: 12px; padding: 0; }}"
-            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: 14px; }}"
+            f"QLabel {{ border: none; color: {THEME.text}; font-size: {THEME.font_body_px}px; padding: 0; }}"
+            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: {THEME.font_body_px + 2}px; }}"
             f"QPushButton:hover {{ color: {THEME.text}; }}"
         )
         self._focus_crumb_label = QLabel("Focus Mode")
@@ -1779,12 +1778,12 @@ class BotCanvas(QWidget):
         )
         self._focus_crumb.setStyleSheet(
             f"QWidget {{ background-color: {name}; border: 1px solid {name}; border-radius: 6px; }}"
-            "QLabel { border: none; color: #ffffff; font-size: 12px; font-weight: 600; padding: 0; }"
-            "QPushButton { border: none; background: transparent; color: #ffffff; font-size: 14px; }"
+            f"QLabel {{ border: none; color: #ffffff; font-size: {THEME.font_body_px}px; font-weight: 600; padding: 0; }}"
+            f"QPushButton {{ border: none; background: transparent; color: #ffffff; font-size: {THEME.font_body_px + 2}px; }}"
             "QPushButton:hover { color: #000000; }"
         )
         self._focus_hint_label.setStyleSheet(
-            "border: none; color: rgba(255, 255, 255, 190); font-size: 11px; font-weight: 400; padding: 0;"
+            f"border: none; color: rgba(255, 255, 255, 190); font-size: {THEME.font_small_px}px; font-weight: 400; padding: 0;"
         )
 
     @property

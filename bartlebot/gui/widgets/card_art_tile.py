@@ -173,7 +173,7 @@ class CardArtTile(QWidget):
 
         font = QFont(self.font())
         font.setBold(True)
-        font.setPixelSize(max(9, int(rect.height() * 0.72)))
+        font.setPixelSize(max(THEME.font_micro_px, int(rect.height() * 0.72)))
         painter.setFont(font)
         painter.setPen(QColor(THEME.bg))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, str(self._entry.count))
@@ -216,7 +216,7 @@ class GroupDivider(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         font = QFont(self.font())
-        font.setPixelSize(9)
+        font.setPixelSize(THEME.font_micro_px)
         font.setCapitalization(QFont.Capitalization.AllUppercase)
         painter.setFont(font)
         painter.setPen(QColor(THEME.text_muted))

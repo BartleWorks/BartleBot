@@ -6,7 +6,6 @@ from PyQt6.QtCore import QEasingCurve, QPointF, QRectF, QSequentialAnimationGrou
 from PyQt6.QtGui import (
     QBrush,
     QColor,
-    QFont,
     QPainter,
     QPen,
 )
@@ -32,7 +31,6 @@ PORT_R = 6  # radius of connection-port circles
 _PORT_HIT_R = 16  # hit-test radius for port cursor feedback
 _BADGE_R = 8  # radius of corner-overlap role badges (initial / terminal)
 _BADGE_GAP = 4  # gap between adjacent badge circles
-_BADGE_FONT_PT = 6  # point size for text glyphs drawn inside badges
 _BADGE_ICON_PAD = 3  # inset padding when rendering SVG icons inside badge circles
 _LOCK_W = 12  # width of the subgraph lock glyph beside the type sub-label
 
@@ -620,7 +618,7 @@ class NodeItem(QGraphicsItem):
 
         _lod_threshold = SettingsManager.instance().get("canvas", "lod_compact_threshold", default=0.6)
         if lod < _lod_threshold:
-            compact_font = QFont(THEME.font_ui_family, 14)
+            compact_font = THEME.ui_font(THEME.font_node_px + 4)
             painter.setFont(compact_font)
             # Below a couple of device pixels the label renders to nothing and
             # Qt's glyph buffer collapses to a null QImage — see canvas.lod.
@@ -649,7 +647,7 @@ class NodeItem(QGraphicsItem):
                 if isinstance(icon, QSvgRenderer):
                     icon.render(painter, icon_rect)
                 else:
-                    painter.setFont(QFont(THEME.font_ui_family, _BADGE_FONT_PT))
+                    painter.setFont(THEME.ui_font(THEME.font_node_px - 7))
                     if text_is_legible(painter.fontMetrics().height(), lod):
                         painter.setPen(Qt.GlobalColor.white)
                         painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, icon)
@@ -734,7 +732,7 @@ class NodeItem(QGraphicsItem):
                 if isinstance(icon, QSvgRenderer):
                     icon.render(painter, icon_rect)
                 else:
-                    painter.setFont(QFont(THEME.font_ui_family, _BADGE_FONT_PT))
+                    painter.setFont(THEME.ui_font(THEME.font_node_px - 7))
                     painter.setPen(Qt.GlobalColor.white)
                     painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, icon)
                 painter.restore()

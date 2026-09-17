@@ -268,7 +268,7 @@ class _AccountDialog(QDialog):
         hint = ThemedTextLabel(
             "Shown on this account's card and on the profile pills that name it. "
             "A dot marks a colour another account already uses.",
-            css="font-size: 11px;",
+            css=f"font-size: {THEME.font_small_px}px;",
         )
         hint.setWordWrap(True)
         form.addRow("", hint)
@@ -665,7 +665,7 @@ class AccountsTab(QWidget):
             "windowed, and at smaller sizes scales the game's own "
             "UI down to match while it runs, putting it back when the client closes. "
             "Widescreen sizes keep a larger UI than 4:3 ones of the same height.",
-            css="font-size: 11px;",
+            css=f"font-size: {THEME.font_small_px}px;",
         )
         hint.setWordWrap(True)
         layout.addWidget(hint)

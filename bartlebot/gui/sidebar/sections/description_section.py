@@ -61,10 +61,6 @@ _TOOLTIP = "What this bot does, and anything the user has to set up before runni
 _MIN_LINES = 2
 _MAX_LINES = 8
 
-# On the widget, not in the stylesheet: a stylesheet ``font-size`` never reaches
-# ``QWidget.font()``, and the editor measures its own line height from that font.
-_FONT_PX = 11
-
 
 class DescriptionSection(ThemedMixin, SidebarSection):
     """Collapsible ``Description`` section: a label, or an editor in Edit mode."""
@@ -84,15 +80,18 @@ class DescriptionSection(ThemedMixin, SidebarSection):
 
         if editable:
             self._edit = GrowingTextEdit(min_lines=_MIN_LINES, max_lines=_MAX_LINES)
+            # On the widget, not in the stylesheet: a stylesheet ``font-size`` never
+            # reaches ``QWidget.font()``, and the editor measures its own line height
+            # from that font.
             font = QFont(self._edit.font())
-            font.setPixelSize(_FONT_PX)
+            font.setPixelSize(THEME.font_small_px)
             self._edit.setFont(font)
             self._edit.setPlaceholderText(_PROMPT)
             self._edit.setToolTip(_TOOLTIP)
             self._edit.textChanged.connect(self._on_text_changed)
             vbox.addWidget(self._edit)
         else:
-            self._label = ThemedTextLabel("", color="text_muted", css="font-size: 11px;")
+            self._label = ThemedTextLabel("", color="text_muted", css=f"font-size: {THEME.font_small_px}px;")
             self._label.setWordWrap(True)
             vbox.addWidget(self._label)
 

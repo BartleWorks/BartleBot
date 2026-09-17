@@ -245,12 +245,12 @@ class _ZoneWidget(QWidget):
         fill_btn = _FillButton(get_clients)
         fill_btn.setFixedHeight(22)
         fill_btn.setToolTip("Fill from a connected player's current zone")
-        fill_btn.setStyleSheet("QPushButton { font-size: 11px; padding: 1px 2px; }")
+        fill_btn.setStyleSheet(f"QPushButton {{ font-size: {THEME.font_small_px}px; padding: 1px 2px; }}")
         fill_btn.clicked.connect(lambda _: self._show_fill_menu(fill_btn))
         outer.addWidget(fill_btn)
 
         hint = QLabel("Glob patterns supported: * matches any sequence, ? matches one character")
-        hint.setStyleSheet("font-size: 10px; color: gray;")
+        hint.setStyleSheet(f"font-size: {THEME.font_subtext_px}px; color: gray;")
         hint.setWordWrap(True)
         outer.addWidget(hint)
 
@@ -354,7 +354,7 @@ class _NavZoneField(QWidget):
         outer.addLayout(btns_row)
 
         # Why the last fill was refused; cleared by the next pick or fill.
-        self.notice = ThemedTextLabel(color="error", css="font-size: 11px;")
+        self.notice = ThemedTextLabel(color="error", css=f"font-size: {THEME.font_small_px}px;")
         self.notice.setWordWrap(True)
         outer.addWidget(self.notice)
         self.notice.setVisible(False)
@@ -794,7 +794,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         if field.required:
             text += f" <span style='color:{THEME.error}'>*</span>"
         label.setText(text)
-        muted = f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600;"
+        muted = f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px; font-weight: 600;"
         label.setStyleSheet(muted + (" margin-top: 8px;" if spaced else ""))
 
     def apply_theme_styles(self) -> None:
@@ -999,7 +999,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             btns_row.setContentsMargins(0, 0, 0, 0)
             btns_row.setSpacing(2)
             _BTN_H = 22
-            _btn_style = "QPushButton { font-size: 11px; padding: 1px 2px; }"
+            _btn_style = f"QPushButton {{ font-size: {THEME.font_small_px}px; padding: 1px 2px; }}"
             copy_btn = QPushButton("Copy")
             copy_btn.setFixedHeight(_BTN_H)
             copy_btn.setToolTip("Copy XYZ to clipboard as JSON")
@@ -1234,7 +1234,7 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
         sheet, with no bookkeeping to forget.
         """
         self.setStyleSheet(
-            f"#FlagMutedBold {{ color: {THEME.text_muted}; font-size: 11px;"
+            f"#FlagMutedBold {{ color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;"
             f"  font-weight: 600; border: none; }}"
             f"#FlagSep {{ color: {THEME.border}; }}"
             f"#FlagGroupFrame {{ border: 1px solid {THEME.border}; border-radius: 4px; }}"
@@ -1635,7 +1635,7 @@ class _ParamPanel(ThemedMixin, QWidget):
             _header.setSelectable(False)
             _font = _header.font()
             _font.setBold(True)
-            _font.setPointSize(max(1, _font.pointSize() - 1))
+            _font.setPixelSize(THEME.font_small_px)
             _header.setFont(_font)
             _model.appendRow(_header)
             self._node_type_headers.append(_header)
@@ -1939,22 +1939,24 @@ class _ParamPanel(ThemedMixin, QWidget):
             header.setForeground(QColor(THEME.text_muted))
         self._node_help_btn.setStyleSheet(
             f"QPushButton {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-            f"border-radius: 4px; color: {THEME.accent}; font-weight: bold; font-size: 11px; }}"
+            f"border-radius: 4px; color: {THEME.accent}; font-weight: bold; font-size: {THEME.font_small_px}px; }}"
             f"QPushButton:hover {{ background: {THEME.accent}; color: #ffffff; }}"
         )
         section_title = f"font-weight: bold; color: {THEME.text_subtle};"
         self._returns_title.setStyleSheet(section_title)
         self._notes_title.setStyleSheet(section_title)
-        self._record_status_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+        self._record_status_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
         self._notes_edit.setStyleSheet(
             f"QPlainTextEdit {{ background: {THEME.surface}; border: 1px solid {THEME.border}; "
-            f"border-radius: 4px; color: {THEME.text}; font-size: 11px; padding: 3px; }}"
+            f"border-radius: 4px; color: {THEME.text}; font-size: {THEME.font_small_px}px; padding: 3px; }}"
         )
         self._conn_toggle_btn.setStyleSheet(
             f"QPushButton {{ text-align: left; font-weight: bold; color: {THEME.text_subtle};"
-            " border: none; padding: 0; font-size: 11px; background: transparent; }"
+            f" border: none; padding: 0; font-size: {THEME.font_small_px}px; background: transparent; }}"
         )
-        self._flags_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px; font-weight: 600; margin-top: 4px;")
+        self._flags_lbl.setStyleSheet(
+            f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px; font-weight: 600; margin-top: 4px;"
+        )
         # Connection rows are built per selection and hold four THEME colours each
         # (chip background, accent link, hover surface), so replaying the build is
         # both shorter and more complete than holding a reference to every label.
@@ -2742,7 +2744,7 @@ class _ParamPanel(ThemedMixin, QWidget):
                 else:
                     lbl = QLabel(f"<b>{ret.name}</b>")
                 lbl.setWordWrap(True)
-                lbl.setStyleSheet("font-size: 11px;")
+                lbl.setStyleSheet(f"font-size: {THEME.font_small_px}px;")
                 self._returns_body_layout.addWidget(lbl)
             self._returns_section.setVisible(True)
         else:
@@ -2773,7 +2775,7 @@ class _ParamPanel(ThemedMixin, QWidget):
 
         if not outgoing and not incoming:
             placeholder = QLabel("No connections")
-            placeholder.setStyleSheet(f"color: {THEME.text_muted}; font-size: 11px;")
+            placeholder.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
             self._conn_body_layout.addWidget(placeholder)
             self._connections_section.setVisible(True)
             return
@@ -2783,7 +2785,7 @@ class _ParamPanel(ThemedMixin, QWidget):
 
         if outgoing:
             out_lbl = QLabel("Outgoing:")
-            out_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: 10px; font-weight: 600;")
+            out_lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px; font-weight: 600;")
             self._conn_body_layout.addWidget(out_lbl)
             for priority, t in enumerate(outgoing, 1):
                 row = self._make_conn_row(
@@ -2799,7 +2801,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         if incoming:
             in_lbl = QLabel("Incoming:")
             in_lbl.setStyleSheet(
-                f"color: {THEME.text_muted}; font-size: 10px; font-weight: 600;{'margin-top: 4px;' if outgoing else ''}"
+                f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px; font-weight: 600;{'margin-top: 4px;' if outgoing else ''}"
             )
             self._conn_body_layout.addWidget(in_lbl)
             for t in incoming:
@@ -2837,7 +2839,7 @@ class _ParamPanel(ThemedMixin, QWidget):
             badge = QLabel(badge_text)
             badge.setFixedWidth(18)
             badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            badge.setStyleSheet(f"color: {THEME.text_muted}; font-size: 9px; font-weight: 600;")
+            badge.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_micro_px}px; font-weight: 600;")
             layout.addWidget(badge)
 
         # Condition chip
@@ -2857,12 +2859,12 @@ class _ParamPanel(ThemedMixin, QWidget):
         chip = QLabel(chip_text)
         chip.setStyleSheet(
             f"background: {chip_bg}; color: {chip_fg}; border-radius: 3px;"
-            " font-size: 10px; font-weight: 600; padding: 1px 5px;"
+            f" font-size: {THEME.font_subtext_px}px; font-weight: 600; padding: 1px 5px;"
         )
 
         # Node name link
         name_lbl = QLabel(node_label)
-        name_lbl.setStyleSheet(f"color: {THEME.accent}; font-size: 11px;")
+        name_lbl.setStyleSheet(f"color: {THEME.accent}; font-size: {THEME.font_small_px}px;")
         name_lbl.setCursor(Qt.CursorShape.PointingHandCursor)
         name_lbl.setToolTip(f"Navigate to: {node_label}")
 

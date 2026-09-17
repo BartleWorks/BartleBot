@@ -27,12 +27,13 @@ from __future__ import annotations
 
 from PyQt6.QtWidgets import QLabel, QScrollArea, QWidget
 
+from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
 
 def hint(text: str) -> QLabel:
     """The dimmed explanation printed under a settings row."""
-    lbl = ThemedTextLabel(text, css="font-size: 11px; padding-bottom: 6px;")
+    lbl = ThemedTextLabel(text, css=f"font-size: {THEME.font_small_px}px; padding-bottom: 6px;")
     lbl.setWordWrap(True)
     return lbl
 
@@ -42,7 +43,7 @@ def section_label(title: str, *, top: int = 8, bottom: int = 4) -> QLabel:
     lbl = QLabel(title)
     font = lbl.font()
     font.setBold(True)
-    font.setPointSize(font.pointSize() + 1)
+    font.setPixelSize(THEME.font_body_px + 1)
     lbl.setFont(font)
     lbl.setContentsMargins(0, top, 0, bottom)
     return lbl

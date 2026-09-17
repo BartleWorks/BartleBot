@@ -57,7 +57,6 @@ _ZERO_ELAPSED = "00:00:00"
 # slot is sized for the widest of them so that the transport buttons do not shuffle
 # sideways when the run state changes; see ``_size_status_slots``.
 _STATUS_WORDS = ("Editing", "Idle", "Running", "Paused")
-_STATUS_FONT_PX = 11
 # QLabel adds a pixel of its own around the text, so a hint of exactly the advance
 # is one pixel short and the label elides a character off text that fits.
 _LABEL_PADDING_PX = 2
@@ -183,7 +182,7 @@ class _ElidedLabel(ThemedMixin, QLabel):
         self.setToolTip(self._full if super().text() != self._full else "")
 
     def apply_theme_styles(self) -> None:
-        self.setStyleSheet(f"color: {getattr(THEME, self._color_token)}; font-size: 11px;")
+        self.setStyleSheet(f"color: {getattr(THEME, self._color_token)}; font-size: {THEME.font_small_px}px;")
 
 
 class _TagsField(QWidget):
@@ -341,7 +340,7 @@ class BotHeader(ThemedMixin, QWidget):
         self._name_lbl = QLabel(_NO_BOT)
         name_font = self._name_lbl.font()
         name_font.setBold(True)
-        name_font.setPointSize(name_font.pointSize() + 1)
+        name_font.setPixelSize(THEME.font_body_px + 1)
         self._name_lbl.setFont(name_font)
 
         self._name_edit = QLineEdit()
@@ -409,7 +408,7 @@ class BotHeader(ThemedMixin, QWidget):
         # Set on the widget rather than through the stylesheet: a stylesheet
         # ``font-size`` never reaches ``QWidget.font()``, so the metrics
         # ``_size_status_slots`` measures with would be the wrong size entirely.
-        status_font.setPixelSize(_STATUS_FONT_PX)
+        status_font.setPixelSize(THEME.font_small_px)
         self._status_lbl.setFont(status_font)
 
         self._status_side = QWidget()

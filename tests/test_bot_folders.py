@@ -24,10 +24,10 @@ from bartlebot.bot_folders import (
 )
 from bartlebot.card_art import RECENT_ICON, badge_icon_name
 from bartlebot.gui.canvas.bot_canvas import (
-    CATEGORY_FONT_PX,
     CATEGORY_LIST_WIDTH,
     CATEGORY_PAD_X,
 )
+from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
 from tools.extract_card_art import BADGE_ICON_SOURCES, ICON_SOURCES, SINGLE_IMAGE_BADGES, STATE_SHEET_ICONS
 
@@ -157,7 +157,7 @@ def test_the_longest_caption_fits_beside_its_icon(qapp):
     a dev box and a CI runner. The icon-to-text gap is not a pixel metric Qt exposes, so
     a generous allowance stands in for it."""
     font = QFont(qapp.font())
-    font.setPixelSize(CATEGORY_FONT_PX)
+    font.setPixelSize(THEME.font_small_px)
     metrics = QFontMetrics(font)
     widest = max(metrics.horizontalAdvance(folder_caption(slug)) for slug in FOLDER_BADGES)
     scrollbar = qapp.style().pixelMetric(QStyle.PixelMetric.PM_ScrollBarExtent)

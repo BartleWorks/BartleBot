@@ -220,7 +220,7 @@ class WikiImportDialog(ThemedMixin, QDialog):
 
         # URL row
         url_row = QHBoxLayout()
-        url_lbl = ThemedTextLabel("Wiki URL:", css="font-size: 11px; font-weight: 600;")
+        url_lbl = ThemedTextLabel("Wiki URL:", css=f"font-size: {THEME.font_small_px}px; font-weight: 600;")
 
         self._url_edit = QLineEdit()
         self._url_edit.setPlaceholderText(f"{_WIKI_PREFIX}Creature:YourCreature")
@@ -447,9 +447,9 @@ class WikiImportDialog(ThemedMixin, QDialog):
 
     def apply_theme_styles(self) -> None:
         color = THEME.error if self._status_error else THEME.text_muted
-        self._status_lbl.setStyleSheet(f"color: {color}; font-size: 10px;")
+        self._status_lbl.setStyleSheet(f"color: {color}; font-size: {THEME.font_subtext_px}px;")
         for b in (self._btn_all, self._btn_none):
             b.setStyleSheet(
-                f"QPushButton {{ color: {THEME.accent}; font-size: 10px; padding: 0; border: none; }}"
+                f"QPushButton {{ color: {THEME.accent}; font-size: {THEME.font_subtext_px}px; padding: 0; border: none; }}"
                 f"QPushButton:hover {{ color: {THEME.text}; }}"
             )

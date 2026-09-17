@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
 )
 
+from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
@@ -105,7 +106,7 @@ class EntityBrowserDialog(QDialog):
         # Button row: copy buttons (right-aligned) + status label
         btn_row = QHBoxLayout()
 
-        self._status = ThemedTextLabel("Loading…", css="font-size: 11px;")
+        self._status = ThemedTextLabel("Loading…", css=f"font-size: {THEME.font_small_px}px;")
         btn_row.addWidget(self._status, 1)
 
         self._copy_name_btn = QPushButton("Copy Name")

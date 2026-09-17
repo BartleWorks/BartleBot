@@ -480,7 +480,7 @@ class AssignmentCard(CardFrame):
         self._title_lbl.setStyleSheet(f"color: {title_color}; background: transparent;")
         for label in (self._desc_lbl, self._dsl_lbl):
             label.setStyleSheet(
-                f"color: {THEME.text_muted}; font-size: {THEME.font_card_sub_size}px; background: transparent;"
+                f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px; background: transparent;"
             )
         self._school_label.setStyleSheet(f"color: {THEME.text_muted}; background: transparent;")
         label_color = THEME.error if error else THEME.syntax_warning
