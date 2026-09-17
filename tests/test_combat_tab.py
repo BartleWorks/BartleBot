@@ -1985,9 +1985,10 @@ def test_the_combat_order_is_drawn_as_pills_in_order(qapp):
     panel = StrategyPanel()
     panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
 
-    assert panel._order_badges.players == [2, 1]
+    # Drawn right to left, as the duel seats them: P2 enters first and sits on the right.
+    assert panel._order_badges.players == [1, 2]
     assert panel._meta.full_text() == "2 players ·"
-    assert "P2 → P1" in panel._meta.toolTip()
+    assert "P1 ← P2" in panel._meta.toolTip()
 
 
 def test_a_simultaneous_duel_keeps_the_word_and_draws_no_order_pills(qapp):
@@ -2000,7 +2001,8 @@ def test_a_simultaneous_duel_keeps_the_word_and_draws_no_order_pills(qapp):
 
 
 def test_pills_are_coloured_by_slot_not_by_position(qapp):
-    """P2 leads a 2 → 1 order, so the first order pill wears slot 2's colour."""
+    """P2 leads a 2, 1 order, so the *rightmost* order pill wears slot 2's colour -- the
+    row being mirrored moves which pill it is, and must not change which colour it takes."""
     dcs = DuelCombatStrategy(
         name="Ordered",
         min_players=2,
@@ -2013,7 +2015,7 @@ def test_pills_are_coloured_by_slot_not_by_position(qapp):
 
     panel.set_player_colors([3, 4], ["Main", "Alt"])
 
-    assert [b.color_key for b in panel._order_badges.badges] == [4, 3]
+    assert [b.color_key for b in panel._order_badges.badges] == [3, 4]
     assert [b.color_key for b in panel._assignment_badges[0].badges] == [4]
 
 

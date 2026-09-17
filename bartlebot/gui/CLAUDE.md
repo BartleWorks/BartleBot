@@ -332,6 +332,27 @@ it, and an uncategorized row or an install with no art keeps the text alone. A p
 icon depends on its name (`card_art.drop_icon_name`), so pass the item name as well as the
 category.
 
+**The combat order is drawn right to left, and it is not a style choice.** A duel seats
+four wizards around a circle and turns run clockwise, which puts a team's own players
+right to left: slot 1 is the rightmost, and the game's own "Set Sigil Slot Preference"
+dialog lists 4, 3, 2, 1 in that order with a gold gem on each. `duel_slot_gem.py` holds
+the reasoning and the lookup; `CombatOrderWidget` (where an order is set) and
+`PlayerBadgeRow(duel_order=True)` (where it is summarised) both mirror, and
+`strategy_summary.format_combat_order` mirrors the text with them. **All four have to
+agree** — a half-mirrored app is worse than the unmirrored one, because two surfaces then
+disagree about which end enters first.
+
+Only the *drawing* is mirrored. The value stays an ordinary first-to-last list everywhere
+it is stored, passed or read, and the reversal happens once, at the point of layout. A
+widget that also reversed its value would silently invert every bot file it saved.
+
+Three things follow, and each has already been got wrong once in review. The gem names the
+**position**, not the player in it, so on a reorder the gem stays put and the `P` number
+moves. Hiding slots down to a duel's `max_players` hides them **by slot number**, not by
+layout position — hiding "the last few" cells hides slots 1 and 2, the two a two-player
+duel actually has. And the ordinal text stays beside the gem: the symbols are the *game's*
+vocabulary, nothing on screen teaches them, and most installs have no gem at all.
+
 **Art is a `QIcon` holding the full-size image, painted with `QIcon.paint`** — never a
 `QPixmap` scaled to the logical size in advance. `card_art_tile.art_icon` is the one way to
 load it. Users run any display scaling, and one machine can mix two (125% and 100% here), so

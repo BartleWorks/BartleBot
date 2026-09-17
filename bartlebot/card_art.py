@@ -140,6 +140,46 @@ def pin_icon_name(kind: str) -> str:
     return f"pin_{kind}"
 
 
+#: How many players a duel seats, and so how many slot gems there are.
+DUEL_SLOTS = 4
+
+#: Duel slot -> the symbol the game marks it with, first position to last.
+#:
+#: The game's own vocabulary, and the only name a user has for these: the "Set Sigil Slot
+#: Preference" dialog draws the gem and nothing else, so a tooltip saying "Sun" is what
+#: connects this app's slot 1 to the diamond they picked in-game. Here rather than in the
+#: extractor because it is read at run time, for tooltips, on machines that never ran one;
+#: ``test_duel_slot_icons`` checks it against the extractor's texture table.
+DUEL_SLOT_SYMBOLS: dict[int, str] = {1: "Sun", 2: "Eye", 3: "Star", 4: "Moon"}
+
+
+def duel_slot_symbol(slot: int) -> str:
+    """The symbol name for a duel slot ("Sun"), or "" for a slot the game does not seat."""
+    return DUEL_SLOT_SYMBOLS.get(slot, "")
+
+
+def duel_slot_icon_name(slot: int) -> str:
+    """The icon key for a duel slot's gem (1 -> "duel_slot_1").
+
+    Keyed by the slot *number* rather than by the symbol on the gem, because the number
+    is what every caller has: a combat order is a list of positions. Which symbol goes
+    with which position is the extractor's table to state (``DUEL_SLOT_TEXTURES``), the
+    same way ``WORLD_ICON_SOURCES`` owns the world -> emblem pairing.
+
+    That indirection is load-bearing here and not merely tidy. Three of the four gems are
+    named Sun, Star and Moon -- which are also three real schools, with their own
+    ``school_`` medallions that look nothing like these. A caller that reached for
+    ``school_sun`` to draw slot 1 would get the archmastery picker's ringed medallion
+    instead of the gold diamond the duel screen draws, and it would look plausible.
+    """
+    return f"duel_slot_{slot}"
+
+
+def duel_slot_icon_path(slot: int) -> Path | None:
+    """The PNG for a duel slot's gem, or None if there is not one on this machine."""
+    return icon_path(duel_slot_icon_name(slot))
+
+
 def school_icon_name(school: str) -> str:
     """The icon key for a school, from the name a deck stores ("Fire" -> "school_fire").
 

@@ -369,11 +369,18 @@ class StrategyPanel(CardFrame):
             self._scope.setToolTip(DEFAULT_SCOPE_META)
             self._scope.setVisible(True)
 
-        # The facets -- "4 players ·" then the combat order as P1 → P2 → P3 → P4 pills -- or,
+        # The facets -- "4 players ·" then the combat order as P4 ← P3 ← P2 ← P1 pills -- or,
         # when nothing is configured, the sentence naming what this binding falls through
         # to instead. The order is pills rather than text so each slot wears its account's
         # colour (#40); "Simultaneous" has no slots and stays a word.
-        self._meta_row, self._meta, self._order_badges = self._badge_line(layout, separator="→", badges_first=False)
+        #
+        # ``duel_order`` mirrors the row and gems each position, so this summary and the
+        # editor that sets the value are laid out the same way round (#29). The arrow turns
+        # with the row and keeps meaning "then": it runs from each player to the one who
+        # enters after them, which once the row is mirrored is leftwards.
+        self._meta_row, self._meta, self._order_badges = self._badge_line(
+            layout, separator="←", badges_first=False, duel_order=True
+        )
 
         # One line per player assignment, built to the maximum a duel config can hold and
         # then hidden down to what it has. Reused rather than created per refresh: the
@@ -406,7 +413,7 @@ class StrategyPanel(CardFrame):
         return label
 
     def _badge_line(
-        self, layout: QVBoxLayout, *, separator: str = "", badges_first: bool = True
+        self, layout: QVBoxLayout, *, separator: str = "", badges_first: bool = True, duel_order: bool = False
     ) -> tuple[QWidget, ElidedLabel, PlayerBadgeRow]:
         """A caption line with a row of player pills in it, hidden until it is filled.
 
@@ -420,7 +427,7 @@ class StrategyPanel(CardFrame):
         row_layout.setContentsMargins(0, 0, 0, 0)
         row_layout.setSpacing(4)
         label = ElidedLabel()
-        badges = PlayerBadgeRow(separator)
+        badges = PlayerBadgeRow(separator, duel_order=duel_order)
         if badges_first:
             row_layout.addWidget(badges, 0, Qt.AlignmentFlag.AlignVCenter)
             row_layout.addWidget(label, 1)

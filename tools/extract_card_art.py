@@ -66,6 +66,7 @@ from bartlebot.card_art import (  # noqa: E402
     art_dir,
     badge_icon_name,
     drop_icon_name,
+    duel_slot_icon_name,
     pin_icon_name,
     school_icon_name,
     spells_dir,
@@ -181,6 +182,32 @@ TAG_TEXTURES: dict[str, str] = {
     "Team-Up": "GUI/QuestButtons/Quest_WC_TeamUpKiosk.dds",
     "Collecting": "GUI/Icons/Icon_Harvest.dds",
     "Training Points": "GUI/QuestButtons/Quest_Training_Point.dds",
+}
+
+#: Duel slot -> the full game path of the gem the game marks that position with.
+#:
+#: A duel seats four wizards around a circle and turns go clockwise, which puts a team's
+#: own players right to left: slot 1 is the rightmost. The game's "Set Sigil Slot
+#: Preference" dialog lists them that way, and marks each with one of these gold diamonds
+#: -- Sun, Eye, Star, Moon, first to last. ``Art_Target_`` because the same four mark a
+#: target in the duel itself.
+#:
+#: Full paths, and worth keeping full: ``Art_Target_Sun`` is the one of the four that
+#: lives in ``Root.wad`` rather than ``_Shared-WorldData.wad``, so a probe listing only
+#: one archive concludes there are three gems. They are single 64px images, not state
+#: sheets.
+#:
+#: Sun, Star and Moon are also real schools. These are *not* those medallions -- see
+#: :func:`~bartlebot.card_art.duel_slot_icon_name` for why the slot number is the key.
+DUEL_SLOT_TEXTURES: dict[int, str] = {
+    1: "GUI/Art/Art_Target_Sun.dds",
+    2: "GUI/Art/Art_Target_Eye.dds",
+    3: "GUI/Art/Art_Target_Star.dds",
+    4: "GUI/Art/Art_Target_Moon.dds",
+}
+
+DUEL_SLOT_ICON_SOURCES: dict[str, str] = {
+    duel_slot_icon_name(slot): texture for slot, texture in DUEL_SLOT_TEXTURES.items()
 }
 
 #: The four-player sigil the Dungeon tag draws, which Challenge Mode builds on.
@@ -369,6 +396,7 @@ ICON_SOURCES: dict[str, str] = {
     **BADGE_ICON_SOURCES,
     **TAG_ICON_SOURCES,
     **DROP_ICON_SOURCES,
+    **DUEL_SLOT_ICON_SOURCES,
 }
 
 #: Icon keys whose texture is a 2x2 sheet of button states rather than a single image.
@@ -593,7 +621,7 @@ def main() -> int:
         for sub in (spells_dir().name, ICONS_DIRNAME):
             size += sum(f.stat().st_size for f in (out_dir / sub).glob("*.png"))
     print(f"{'would write' if args.dry_run else 'wrote'} {index['files']} images for {len(index['images'])} templates")
-    print(f"  {len(index['icons'])} school, archmastery, world, badge, tag and drop icons")
+    print(f"  {len(index['icons'])} school, archmastery, world, badge, tag, drop and duel-slot icons")
     if size:
         print(f"  {size / 1e6:.1f} MB in {out_dir}")
     if index["missing"]:

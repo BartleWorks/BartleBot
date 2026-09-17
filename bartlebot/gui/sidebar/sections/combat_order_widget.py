@@ -1,4 +1,11 @@
-"""CombatOrderWidget — drag-and-drop combat entry order selector."""
+"""CombatOrderWidget — drag-and-drop combat entry order selector.
+
+The row runs **right to left**, and each position wears the game's own gem beside its
+ordinal. :mod:`bartlebot.gui.widgets.duel_slot_gem` has the why, and is the one place
+that reasoning is written down; what matters here is that ``_order[0]`` is the player who
+enters *first* and is drawn *rightmost*, so every loop that builds a row reverses and
+every loop that reads or writes the value does not.
+"""
 
 from __future__ import annotations
 
@@ -16,9 +23,14 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.duel_slot_gem import DuelSlotGem, duel_slot_tooltip
 
 _CHIP_MIME = "application/x-bartlebot-combat-order-chip"
 _ORDINALS = ["1st", "2nd", "3rd", "4th"]
+
+#: How many positions a duel has. A Wizard101 team is four wizards, and the header row is
+#: built to all four and hidden down -- see the header build in ``__init__``.
+_MAX_SLOTS = 4
 
 
 def _ordinal(n: int) -> str:
@@ -145,12 +157,17 @@ class _PlayerChip(QFrame):
 
 
 class CombatOrderWidget(QWidget):
-    """Two-row slot widget for specifying combat entry order.
+    """Two-row slot widget for specifying combat entry order, laid out as the duel is.
 
-    Top row: ordinal slot labels ("1st", "2nd", ...).
+    Top row: one cell per position -- the game's gem and its ordinal ("1st", "2nd", ...).
     Bottom row: draggable P-chips reorderable by drag-and-drop.
     A checkbox above the grid represents the empty-order state
     (simultaneous entry or inherit-from-profile, depending on context).
+
+    **Both rows run right to left**, so the player who enters first sits at the right-hand
+    end under the Sun gem, which is where the duel itself puts them. See
+    :mod:`bartlebot.gui.widgets.duel_slot_gem`. Only the *drawing* is mirrored: the value
+    is still an ordinary first-to-last list, so nothing outside this widget changes.
 
     get_value() returns [] when the checkbox is checked (empty order).
     set_value([]) checks the checkbox; any non-empty list unchecks it and
@@ -187,18 +204,27 @@ class CombatOrderWidget(QWidget):
         self._header_layout.addStretch(1)
         outer.addLayout(self._header_layout)
 
-        # Row 2: ordinal header labels
+        # Row 2: one header cell per position -- the duel's gem, then the ordinal.
+        #
+        # Built for all four slots and hidden down to ``max_players``, rather than built
+        # to the current maximum: the cells are laid out reversed, so growing the row
+        # would otherwise have to insert at the *front* to keep slot 1 on the right, and
+        # an insert index computed from a reversed layout is the kind of arithmetic that
+        # is right until the first two-player duel.
         self._header_row = QWidget()
         header_layout = QHBoxLayout(self._header_row)
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setSpacing(4)
+        self._header_cells: list[QWidget] = []
         self._header_labels: list[QLabel] = []
-        for i in range(1, max_players + 1):
-            lbl = QLabel(_ordinal(i))
-            lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            lbl.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
-            header_layout.addWidget(lbl, 1)
-            self._header_labels.append(lbl)
+        for slot in reversed(range(1, _MAX_SLOTS + 1)):
+            cell, label = self._build_header_cell(slot)
+            header_layout.addWidget(cell, 1)
+            # Indexed by slot, not by layout position, so every other method can say
+            # ``self._header_labels[slot - 1]`` and mean it.
+            self._header_cells.insert(0, cell)
+            self._header_labels.insert(0, label)
+        self._sync_header_visibility()
         outer.addWidget(self._header_row)
 
         # Row 3: draggable chip row
@@ -214,6 +240,37 @@ class CombatOrderWidget(QWidget):
         outer.addWidget(self._chip_row)
 
         self._rebuild_chips()
+
+    def _sync_header_visibility(self) -> None:
+        """Show one header cell per seat this duel has.
+
+        By slot rather than by layout position. The cells are laid out reversed, so
+        hiding "the last few" would hide slots 1 and 2 -- the two a two-player duel
+        actually has -- and leave Star and Moon standing over nothing.
+        """
+        for slot, cell in enumerate(self._header_cells, start=1):
+            cell.setVisible(slot <= self._max_players)
+
+    def _build_header_cell(self, slot: int) -> tuple[QWidget, QLabel]:
+        """One position's header: its gem and its ordinal, centred over the chip below.
+
+        The ordinal stays beside the gem rather than being replaced by it. The gems are
+        the *game's* vocabulary — nothing on this screen teaches a user who has never
+        opened the sigil dialog that a purple moon means "last" — and on the majority of
+        installs, which have never run the extractor, the gem is not there at all.
+        """
+        cell = QWidget(self._header_row)
+        row = QHBoxLayout(cell)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(3)
+        row.addStretch(1)
+        row.addWidget(DuelSlotGem(slot, parent=cell), 0, Qt.AlignmentFlag.AlignVCenter)
+        label = QLabel(_ordinal(slot), cell)
+        label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
+        row.addWidget(label, 0, Qt.AlignmentFlag.AlignVCenter)
+        row.addStretch(1)
+        cell.setToolTip(duel_slot_tooltip(slot))
+        return cell, label
 
     # ------------------------------------------------------------------
     # Public API
@@ -280,8 +337,10 @@ class CombatOrderWidget(QWidget):
         if n == self._max_players:
             return
         self._max_players = n
-        for i, lbl in enumerate(self._header_labels):
-            lbl.setVisible(i < n)
+        # By slot rather than by layout position. The cells are laid out reversed, so
+        # hiding "the last few" would hide slots 1 and 2 -- the two a two-player duel
+        # actually has -- and leave Star and Moon standing.
+        self._sync_header_visibility()
         self._order = [p for p in self._order if p <= n]
         missing = [p for p in range(1, n + 1) if p not in self._order]
         self._order = self._order + missing
@@ -310,7 +369,10 @@ class CombatOrderWidget(QWidget):
             chip.deleteLater()
         self._chips.clear()
         enabled = self._drag_enabled
-        for player_num in self._order:
+        # Reversed: ``_order[0]`` enters first and so belongs at the *right-hand* end,
+        # under the Sun gem. ``_chips`` keeps the layout's order, which is what makes
+        # ``_chips[i]`` the chip under ``_header_cells``' i-th visible cell.
+        for player_num in reversed(self._order):
             chip = _PlayerChip(player_num, self, self._color_key_for(player_num))
             chip.set_enabled_visual(enabled)
             self._chip_layout.addWidget(chip, 1)

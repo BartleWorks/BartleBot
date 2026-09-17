@@ -114,9 +114,9 @@ PNG because Qt's build here has no `dds` plugin. One PNG per *image*, not per te
 18,007 templates share 1,308 images. `Pillow` is a dev dependency for exactly this and
 is not imported at runtime. `bartlebot/card_art.py` is the read side.
 
-The same run also writes 159 UI icons into `art/icons/`, and they are keyed by a
+The same run also writes 163 UI icons into `art/icons/`, and they are keyed by a
 **logical name** — `archmastery`, `universal`, `recent`, `school_fire`, `world_krokotopia`,
-`badge_4dungeons`, `tag_team_up`, `drop_treasure_cards`, `pin_shield` — rather
+`badge_4dungeons`, `tag_team_up`, `drop_treasure_cards`, `pin_shield`, `duel_slot_1` — rather
 than by the texture they came from, so neither the extractor's caller nor the GUI ever
 spells a KingsIsle filename. `ICON_SOURCES` is the one place the two meet. What they
 resolve to, and why each was picked over its neighbours:
@@ -133,6 +133,7 @@ resolve to, and why each was picked over its neighbours:
 | `tag_<tag>` | `TAG_TEXTURES`, or built by `TAG_COMPOSITES` | a gold-ringed medallion per Rewards and Activity tag, hand-picked so all twenty match; the Type tags have none |
 | `drop_<category>` | `DROP_TEXTURES`, nearly all `GUI/QuestPage/Art_Quest_*` | the quest page's reward medallion for each drop category; see below |
 | `pin_<kind>` | `GUI/Buttons/Button_Socketing_Pin_Square_{Pip,Shield,Sword}.dds` | the bank and quicksell filter buttons for Power, Shield and Sword pins |
+| `duel_slot_<n>` | `GUI/Art/Art_Target_{Sun,Eye,Star,Moon}.dds` | the gold diamond the game marks each duel position with; see below |
 
 **The drop icons are the game's own pairings, not picks.** Each `Art_Quest_` medallion was
 matched to a category by what the game draws it for: the Rate My Stitch outfit slots use
@@ -142,6 +143,22 @@ wrong. `Weapon` is the wand, and `Art_Quest_Wand` is the same art at 64px. `Hous
 `Furniture` are pixel-identical, but `Deed` (the floating house) is a different thing. And
 the quest page has no spellement, so Spellements draws `Button_BG_Reward_Spellement02`,
 the reward-category icon the Spellements tag also uses.
+
+**The duel slot gems are keyed by position, not by symbol.** A duel seats four wizards
+around a circle and turns run clockwise, which puts a team's own players **right to left**:
+slot 1 is the rightmost. The game's "Set Sigil Slot Preference" dialog lists them that way
+and marks each with a gold diamond — Sun, Eye, Star, Moon, first position to last. The key
+is the number (`duel_slot_1`) because a combat order is a list of positions, and
+`DUEL_SLOT_TEXTURES` owns the pairing, exactly as `WORLD_ICON_SOURCES` owns world → emblem.
+
+That indirection is load-bearing rather than tidy. **Sun, Star and Moon are also three real
+schools**, with their own `school_` medallions that look nothing like these; a caller
+reaching for `school_sun` to draw slot 1 gets the archmastery picker's ringed medallion, and
+it looks plausible. `test_duel_slot_icons.py` is the guard, and it also checks the run-time
+symbol names in `card_art.DUEL_SLOT_SYMBOLS` against the texture table — those names are read
+for tooltips on the majority of machines, which never ran the extractor, so they cannot be
+derived from a texture that is not there. `Art_Target_Sun` is the one of the four in
+`Root.wad`; a probe listing only `_Shared-WorldData.wad` concludes there are three gems.
 
 **A pin's icon comes from its name, not its category.** The game files pins under three
 kinds, one filter button each, and `wiki_drops.PIN_KINDS` maps the type word in a pin's name

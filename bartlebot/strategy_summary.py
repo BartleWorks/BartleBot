@@ -200,8 +200,18 @@ def _duel_facets(config: DuelConfig) -> list[str]:
 
 
 def format_combat_order(order: list[int] | tuple[int, ...]) -> str:
-    """'P1 → P2 → P3', or 'Simultaneous' for an empty order -- the combat-order facet."""
-    return " → ".join(f"P{p}" for p in order) if order else "Simultaneous"
+    """'P3 ← P2 ← P1', or 'Simultaneous' for an empty order -- the combat-order facet.
+
+    Right to left, because that is the order a duel seats a team in: slot 1 is the
+    rightmost wizard and turns run clockwise from there. Every surface that shows a combat
+    order is mirrored the same way -- the editor, the summary pills, and this text, which
+    is what the pills' tooltip says (#29). The arrow keeps meaning "then" and turns with
+    the row, so its head is on whoever enters *after*.
+
+    *order* is first-to-last, as it is stored and as every caller has it; the reversal
+    happens here and only here.
+    """
+    return " ← ".join(f"P{p}" for p in reversed(order)) if order else "Simultaneous"
 
 
 def _duel_health(config: DuelConfig, pcs_by_id: dict[str, PlayerCombatStrategy]) -> Health:

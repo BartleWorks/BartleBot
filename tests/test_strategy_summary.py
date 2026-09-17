@@ -84,7 +84,7 @@ def test_summarize_duel_with_inline_assignments():
     summary = summarize_duel(config, [])
 
     assert summary.description == "Boss fight — P1 tanks, P2 heals"
-    assert summary.facets == ["2 players", "P1 → P2"]
+    assert summary.facets == ["2 players", "P2 ← P1"]
     assert summary.schools == {"Storm": 1, "Life": 1}
     assert summary.health.status is HealthStatus.OK
     assert [line.players for line in summary.lines] == ["P1", "P2"]
@@ -312,7 +312,8 @@ def test_a_duel_summary_carries_its_combat_order():
     summary = summarize_duel(config, [])
 
     assert summary.combat_order == (2, 1)
-    assert summary.facets[-1] == "P2 → P1"
+    # Stored first-to-last; the facet reads right to left, as the duel is laid out.
+    assert summary.facets[-1] == "P1 ← P2"
 
 
 def test_a_simultaneous_duel_has_no_combat_order():
