@@ -4,7 +4,7 @@
   "description": "Endlessly completes Waterworks in Crab Alley, Wizard City",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_16",
+  "initial": "state_1",
   "recovery_state": "state_1",
   "drops": [
     {
@@ -627,83 +627,14 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to the Commons",
+      "node_type": "go_to_zone",
+      "label": "Go to Crab Alley",
       "position": {
-        "x": -440.0,
-        "y": 0.0
+        "x": 1320.0,
+        "y": -90.0
       },
       "params": {
-        "zone": "WizardCity/WC_Hub"
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "enter_zone",
-      "label": "Enter Shopping District",
-      "position": {
-        "x": 880,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_Hub",
-        "to_zone": "WizardCity/WC_Shop_Area",
-        "xyz": {
-          "x": 1373.34,
-          "y": -3590.64,
-          "z": -27.99
-        },
-        "reset_xyz": {
-          "x": 1311.11,
-          "y": -2802.26,
-          "z": -27.99
-        }
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "enter_zone",
-      "label": "Enter Olde Town",
-      "position": {
-        "x": 1320,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_Shop_Area",
-        "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
-        "xyz": {
-          "x": -6054.32,
-          "y": -3302.17,
-          "z": -29.36
-        },
-        "reset_xyz": {
-          "x": -5251.57,
-          "y": -3295.22,
-          "z": -29.36
-        }
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "enter_zone",
-      "label": "Enter Triton Avenue",
-      "position": {
-        "x": 1760,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
-        "to_zone": "WizardCity/WC_Streets/WC_Triton",
-        "xyz": {
-          "x": -7423.81,
-          "y": -422.95,
-          "z": -1397.84
-        },
-        "reset_xyz": {
-          "x": -6662.58,
-          "y": -616.32,
-          "z": -1397.84
-        }
+        "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater"
       }
     },
     {
@@ -711,55 +642,14 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 440,
-        "y": 0.0
+        "x": 2200.0,
+        "y": -90.0
       },
       "params": {
         "if_health_below": 0.8,
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "enter_zone_via_object",
-      "label": "Enter Crab Alley",
-      "position": {
-        "x": 2200.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_Streets/WC_Triton",
-        "to_zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
-        "interact_xyz": {
-          "x": -12571.79,
-          "y": -3277.93,
-          "z": -1394.23
-        },
-        "reset_xyz": {
-          "x": -12473.75,
-          "y": -2767.04,
-          "z": -1394.23
-        }
-      }
-    },
-    {
-      "id": "state_16",
-      "node_type": "check_zone",
-      "label": "Check starting zone",
-      "position": {
-        "x": -880.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
       }
     },
     {
@@ -1772,23 +1662,6 @@
       "params": {}
     },
     {
-      "id": "state_55",
-      "node_type": "collect_wisps",
-      "label": "Collect mana wisps",
-      "position": {
-        "x": 0.0,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
-      }
-    },
-    {
       "id": "state_56",
       "node_type": "enter_zone",
       "label": "Enter room 1A",
@@ -1850,6 +1723,16 @@
         "refill_potions": true,
         "mark_zone": ""
       }
+    },
+    {
+      "id": "state_59",
+      "node_type": "change_to_favorite_realm",
+      "label": "Change to favorite realm",
+      "position": {
+        "x": 1760.0,
+        "y": -90.0
+      },
+      "params": {}
     }
   ],
   "transitions": [
@@ -1858,16 +1741,6 @@
       "source": "state_1",
       "dest": "state_1",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_55",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2015,26 +1888,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_1",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_6",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_17",
       "dest": "state_18",
       "when": "SUCCESS",
@@ -2088,26 +1941,6 @@
       "source": "state_19",
       "dest": "state_20",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2308,26 +2141,6 @@
       "source": "state_29",
       "dest": "state_31",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2555,26 +2368,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_40",
       "dest": "state_41",
       "when": "SUCCESS",
@@ -2775,26 +2568,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_50",
       "dest": "state_51",
       "when": "SUCCESS",
@@ -2925,26 +2698,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_55",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_55",
-      "dest": "state_8",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_56",
       "dest": "state_57",
       "when": "SUCCESS",
@@ -3046,16 +2799,6 @@
     {
       "trigger": "advance",
       "source": "state_8",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
       "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
@@ -3082,6 +2825,46 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_59",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_59",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_59",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": [
@@ -3089,11 +2872,7 @@
       "id": "af7a2f79",
       "label": "Go to Crab Alley",
       "members": [
-        "state_2",
-        "state_3",
         "state_1",
-        "state_4",
-        "state_5",
         "state_8"
       ],
       "color": 3
