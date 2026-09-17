@@ -39,6 +39,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.tag_pill import pill_height
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
 #: The pill's metrics. Deliberately ``AccountPill``'s, so a slot pill and an account pill
@@ -236,9 +237,11 @@ class PlayerPillBar(QWidget):
 # Read-only: naming a slot rather than toggling it
 # ---------------------------------------------------------------------------
 
-#: ``NeutralPill``'s height, not ``PlayerSlotPill``'s. A badge sits inside a caption line
-#: on a sidebar card, where an 18px pill would make the line taller than the text beside it.
-_BADGE_HEIGHT = 14
+#: ``NeutralPill``'s height, not ``PlayerSlotPill``'s: a badge sits inside a caption line
+#: on a sidebar card, where an 18px pill would make the line taller than the text beside
+#: it. Taken from ``pill_height()`` rather than copied as a number -- it was 14 here and
+#: 14 there until the body text moved, and then this one clipped its own text while the
+#: pill it is meant to match grew.
 #: One pixel less than ``NeutralPill``'s padding, because a badge always draws a 1px
 #: border -- in the fill colour when uncoloured -- so the text sits at the same x whether
 #: or not an account is known, and a badge does not change width when one arrives.
@@ -270,7 +273,7 @@ class PlayerBadge(QLabel):
         self._applying_style = False
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setFixedHeight(_BADGE_HEIGHT)
+        self.setFixedHeight(pill_height())
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self._restyle()
 
@@ -317,7 +320,7 @@ class PlayerBadge(QLabel):
                 fill, border, text = account_tint(self._color_key), account_accent(self._color_key), THEME.text
             self.setStyleSheet(
                 f"background: {fill}; color: {text}; font-size: {THEME.font_micro_px}px; font-weight: bold;"
-                f" border-radius: {_BADGE_HEIGHT // 2}px; border: 1px solid {border}; padding: 0px {_BADGE_PAD_X}px;"
+                f" border-radius: {pill_height() // 2}px; border: 1px solid {border}; padding: 0px {_BADGE_PAD_X}px;"
             )
             who = f" — {self._account_label}" if self._account_label else ""
             self.setToolTip(f"Player {self._player}{who}")
