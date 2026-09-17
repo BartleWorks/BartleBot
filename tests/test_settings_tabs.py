@@ -15,16 +15,18 @@ or the older tests can see:
 from __future__ import annotations
 
 import pytest
-from PyQt6.QtWidgets import QFormLayout
+from PyQt6.QtWidgets import QFormLayout, QLabel
 
 from bartlebot import bot_options
 from bartlebot.gui import screen_fit
+from bartlebot.gui.settings.accounts_tab import AccountsTab
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.canvas_tab import CanvasTab
 from bartlebot.gui.settings.general_tab import GeneralTab
 from bartlebot.gui.settings.rows import ScrollableTab
 from bartlebot.gui.settings.settings_dialog import SettingsDialog
 from bartlebot.gui.settings.theme_tab import ThemeTab
+from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.settings_manager import _DEFAULTS, _SECTION_MODELS, SettingsManager
@@ -76,6 +78,45 @@ def test_the_bot_tab_writes_what_it_was_given(qapp):
     # Stripped, and remembered for the autocomplete list.
     assert sm.default_friend_name == "Spare Idler"
     assert "Spare Idler" in sm.recent_friend_names
+
+
+def test_the_launch_options_are_on_the_game_tab(qapp):
+    """A setting the app applies while a client starts is not a Bot tab row.
+
+    Neither of these is a level of any bot option's resolution, and both happen
+    to every launched client whether or not a bot is ever run -- which is what
+    the Bot tab is for. The recovery message that tells a user where to turn
+    auto-select on names the tab, so a move that misses it sends them nowhere.
+    """
+    tab = AccountsTab()
+    assert _field(tab, "Automatically select a character:") is not None
+    assert _field(tab, "Disable quick friend teleport:") is not None
+
+    with pytest.raises(AssertionError):
+        _field(BotTab(), "Automatically select a character:")
+    with pytest.raises(AssertionError):
+        _field(BotTab(), "Disable quick friend teleport:")
+
+
+def test_the_game_tab_applies_its_launch_options(qapp):
+    """The rest of the tab persists eagerly; these two wait for OK like any row.
+
+    ``apply`` was a documented no-op for as long as the tab held nothing but
+    cards, so a form row added to it without touching ``apply`` would be typed
+    into and silently discarded.
+    """
+    sm = SettingsManager.instance()
+    sm.auto_select_character = True
+    sm.disable_quick_friend_teleport = True
+
+    tab = AccountsTab()
+    _field(tab, "Automatically select a character:").setChecked(False)
+    _field(tab, "Disable quick friend teleport:").setChecked(False)
+
+    tab.apply()
+
+    assert sm.auto_select_character is False
+    assert sm.disable_quick_friend_teleport is False
 
 
 # ---------------------------------------------------------------------------
@@ -130,6 +171,27 @@ def test_every_settings_row_explains_itself_on_the_page(qapp, tab_cls):
             if not any(isinstance(w, ThemedTextLabel) for w in following):
                 unexplained.append(f"{tab_cls.__name__} row {i}: {widget!r}")
     assert not unexplained, "settings rows with no visible description: " + ", ".join(unexplained)
+
+
+@pytest.mark.parametrize("tab_cls", [GeneralTab, BotTab, ThemeTab])
+def test_every_settings_section_is_a_rule_heading(qapp, tab_cls):
+    """A section is a heading with a rule, not a bold line of text.
+
+    Every row carries a visible description under it, which makes each tab long
+    enough that a bold label alone does not stop the eye -- the Bot tab's five
+    sections read as one unbroken column of rows. A bare bold ``QLabel`` at the
+    left margin of the tab's own layout is what that looked like, so finding one
+    means a section was added the old way.
+    """
+    tab = tab_cls()
+    assert tab.findChildren(RuleHeading), f"{tab_cls.__name__} draws no section headings"
+
+    bold_labels = [
+        lbl.text()
+        for lbl in tab.findChildren(QLabel)
+        if lbl.font().bold() and not isinstance(lbl.parent(), RuleHeading)
+    ]
+    assert not bold_labels, f"{tab_cls.__name__} section headers not using RuleHeading: {bold_labels}"
 
 
 def test_the_safety_delay_setting_and_option_read_the_same(qapp):

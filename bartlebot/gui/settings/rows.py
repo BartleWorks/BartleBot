@@ -1,9 +1,13 @@
-"""The two row-building helpers every settings tab uses.
+"""The hint row every settings tab uses, and the scroll wrapper three of them need.
 
-Both were written three times over -- ``_section_label`` in ``general_tab`` and
-``theme_tab``, ``_hint`` in ``canvas_tab`` -- and the copies had already drifted
-apart in their margins, so two tabs open beside each other set their headers at
-different heights.
+``hint`` was written three times over -- ``_hint`` in ``canvas_tab``, and again in
+two tabs beside it -- and the copies had already drifted apart in their margins.
+The section header that used to live here went the same way in the end: it was a
+bold ``QLabel`` and nothing more, which is exactly what made a tab of eight
+sections hard to scan, so the tabs draw
+:class:`~bartlebot.gui.widgets.rule_heading.RuleHeading` now -- the same heading
+the detail panes use, with a hairline out to the right margin that gives the eye
+a place to stop.
 
 The rule the hint exists to state, because it is the one that is easy to get
 wrong: **a hint is a** ``ThemedTextLabel``, **not a styled** ``QLabel``. A factory
@@ -35,17 +39,6 @@ def hint(text: str) -> QLabel:
     """The dimmed explanation printed under a settings row."""
     lbl = ThemedTextLabel(text, css=f"font-size: {THEME.font_small_px}px; padding-bottom: 6px;")
     lbl.setWordWrap(True)
-    return lbl
-
-
-def section_label(title: str, *, top: int = 8, bottom: int = 4) -> QLabel:
-    """A bold section header, matching ``_SectionHeader`` in ``sidebar_section.py``."""
-    lbl = QLabel(title)
-    font = lbl.font()
-    font.setBold(True)
-    font.setPixelSize(THEME.font_body_px + 1)
-    lbl.setFont(font)
-    lbl.setContentsMargins(0, top, 0, bottom)
     return lbl
 
 

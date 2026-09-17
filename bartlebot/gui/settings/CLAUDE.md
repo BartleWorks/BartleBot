@@ -29,6 +29,13 @@ Two rules about the settings dialog itself:
   a reader has to already suspect it is there.
   `test_every_settings_row_explains_itself_on_the_page` checks that a hint
   follows every control, within two rows so a pair sharing one hint is allowed.
+- **A section is a `RuleHeading`, not a bold label.** Every hint is two rows of
+  height, so a tab is long, and on a long page a bold line of text is not enough
+  to stop the eye — the Bot tab's five sections ran together as one column of
+  rows. `widgets/rule_heading.py` is the same heading the detail panes use: the
+  name at the left margin the fields align to, and a hairline out to the right.
+  It carries its own space above, so a section adds the heading and nothing else.
+  `test_every_settings_section_is_a_rule_heading` is the guard.
 
 - **The dialog fits the screen; the tabs do not have to.** A visible hint under
   every row is two rows of height per setting, which grew the dialog taller than a
@@ -80,8 +87,12 @@ every profile that launched it. That is why it is a function and not a button ha
 `SettingsDialog.apply_all` iterates the tab bar rather than naming four tabs.
 A hand-written list is one line to forget when a tab is added, and forgetting it
 discards everything the user typed into the new tab with no error anywhere;
-`AccountsTab.apply` is a documented no-op (it persists eagerly), which is what
-makes iterating safe.
+Everything on the Game tab that a card action writes persists eagerly, so
+`AccountsTab.apply` writes only its own two form rows — the launch options under
+*On launch*, which wait for OK like every other row in the dialog. Two ways to
+persist on one tab is not an oversight: a card on the launch screen has no
+Settings dialog behind it to press OK on, and a check box in this dialog that
+ignored Cancel would be the odd one out.
 
 ## The Bot tab
 
@@ -90,6 +101,12 @@ so the disclaimer that a bot or a Setup value outranks it is stated once at the
 top of the tab rather than repeated into eight tooltips. That is why it is a tab
 and not a section of General: it is one idea, and General's other five sections
 are not levels of anything.
+
+That is also the test for whether a row belongs here at all: **a setting the app
+applies to a client while it is starting is a Game tab row, not a Bot tab one.**
+Character selection and quick friend teleport both sat here and both moved —
+neither is a level of any option's resolution, and both happen to every launched
+client whether or not a bot is ever run.
 
 `Safety Delay`'s description lives in `bot_options.SAFETY_DELAY_DESCRIPTION`,
 because the app setting and the *option* are the same value and one value

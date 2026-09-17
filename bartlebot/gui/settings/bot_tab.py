@@ -8,9 +8,11 @@ does an author who declared an answer their dungeon needs. That is one idea, and
 it now has one page to say it on -- the note at the top of the tab, rather than
 the same disclaimer repeated into eight tooltips.
 
-The three rows with no option behind them -- automatic grouping, character
-selection, and the relog interval -- are here rather than in General because they
-describe what a *run* does, which is what a reader opens this tab to find.
+The two rows with no option behind them -- automatic grouping and the relog
+interval -- are here rather than in General because they describe what a *run*
+does, which is what a reader opens this tab to find. That is also the line that
+sent character selection and quick friend teleport to the Game tab: both are done
+to a client while it is starting, and happen whether or not a bot is ever run.
 """
 
 from __future__ import annotations
@@ -25,8 +27,9 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot_options import SAFETY_DELAY_DESCRIPTION
-from bartlebot.gui.settings.rows import hint, section_label
+from bartlebot.gui.settings.rows import hint
 from bartlebot.gui.widgets.realm_combo import RealmCombo
+from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -50,7 +53,7 @@ class BotTab(QWidget):
         # ------------------------------------------------------------------
         # Timing
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Timing", top=2))
+        layout.addWidget(RuleHeading("Timing"))
 
         timing_form = QFormLayout()
         timing_form.setSpacing(4)
@@ -98,7 +101,7 @@ class BotTab(QWidget):
         # ------------------------------------------------------------------
         # Players
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Players"))
+        layout.addWidget(RuleHeading("Players"))
 
         players_form = QFormLayout()
         players_form.setSpacing(4)
@@ -112,30 +115,6 @@ class BotTab(QWidget):
                 "one crashes or is closed. Group members get wisps after combat and take the "
                 "first turn in battle, and crashing drops a player out of the group. Requires "
                 "every account to be on the others' friends lists in-game."
-            )
-        )
-
-        self._auto_select_cb = QCheckBox()
-        self._auto_select_cb.setChecked(sm.auto_select_character)
-        self._auto_select_cb.setToolTip("Also used to bring a player back after it crashes mid-run.")
-        players_form.addRow("Automatically select a character:", self._auto_select_cb)
-        players_form.addRow(
-            hint(
-                "After a launched client logs in, press Play on the most recently played "
-                "character. With this off every launched window still arrives at its "
-                "character-select screen, embedded in the game view, waiting for you to pick."
-            )
-        )
-
-        self._quick_tp_cb = QCheckBox()
-        self._quick_tp_cb.setChecked(sm.disable_quick_friend_teleport)
-        players_form.addRow("Disable quick friend teleport:", self._quick_tp_cb)
-        players_form.addRow(
-            hint(
-                "Turn the game's quick friend teleport option off in every client this app "
-                "launches. With it on, nodes that double-click a Friends List name to open a "
-                "profile teleport instead. The game reads this at startup, so it does not reach "
-                "a client that is already running."
             )
         )
 
@@ -156,7 +135,7 @@ class BotTab(QWidget):
         # ------------------------------------------------------------------
         # Realms
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Realms"))
+        layout.addWidget(RuleHeading("Realms"))
 
         realms_form = QFormLayout()
         realms_form.setSpacing(4)
@@ -178,7 +157,7 @@ class BotTab(QWidget):
         # ------------------------------------------------------------------
         # Quicksell
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Quicksell"))
+        layout.addWidget(RuleHeading("Quicksell"))
 
         quicksell_form = QFormLayout()
         quicksell_form.setSpacing(4)
@@ -220,7 +199,7 @@ class BotTab(QWidget):
         # ------------------------------------------------------------------
         # Decks
         # ------------------------------------------------------------------
-        layout.addWidget(section_label("Decks"))
+        layout.addWidget(RuleHeading("Decks"))
 
         decks_form = QFormLayout()
         decks_form.setSpacing(4)
@@ -245,8 +224,6 @@ class BotTab(QWidget):
         sm.default_safety_delay = self._safety_delay_sb.value()
         sm.relog_interval_hours = self._relog_interval_sb.value()
         sm.auto_group_players = self._auto_group_cb.isChecked()
-        sm.auto_select_character = self._auto_select_cb.isChecked()
-        sm.disable_quick_friend_teleport = self._quick_tp_cb.isChecked()
         friend_name = self._friend_name_edit.text().strip()
         if friend_name != sm.default_friend_name:
             sm.default_friend_name = friend_name

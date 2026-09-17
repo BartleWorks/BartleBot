@@ -22,8 +22,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.gui.settings.rows import hint, section_label
+from bartlebot.gui.settings.rows import hint
 from bartlebot.gui.theme import _COLOR_TOKENS, DARK, LIGHT, _detect_system_dark_mode, _Theme
+from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.settings_manager import SettingsManager
 
 logger = logging.getLogger(__name__)
@@ -258,7 +259,7 @@ class ThemeTab(QWidget):
 
         grid_row = 0
         for section_title, tokens in _SECTIONS:
-            hdr = section_label(section_title, top=10, bottom=2)
+            hdr = RuleHeading(section_title)
             grid.addWidget(hdr, grid_row, 0, 1, 2)
             grid_row += 1
 
