@@ -37,7 +37,7 @@ class _StubClient:
 
 def _select_an_entity(dlg, pos=(1.0, 2.0, 3.0)):
     """Put one selected row in the tree, as a finished load would have."""
-    item = QTreeWidgetItem(["Ratbeard", "0.0", "1.0, 2.0, 3.0"])
+    item = QTreeWidgetItem(["AQ-Cerberus-A", "Cerberus", "0.0", "1.0, 2.0, 3.0"])
     item.setData(0, _POS_ROLE, pos)
     dlg._tree.addTopLevelItem(item)
     item.setSelected(True)
