@@ -30,8 +30,7 @@ showing one at a time takes the whole sentence.
 
 from __future__ import annotations
 
-from PyQt6.QtGui import QFontMetrics
-from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QPushButton, QWidget
+from PyQt6.QtWidgets import QApplication, QCheckBox, QComboBox, QWidget
 
 from bartlebot import game_sizing
 from bartlebot.gui.widgets.search_field import SearchLineEdit
@@ -62,7 +61,7 @@ def screen_metrics(widget: QWidget | None = None) -> tuple[tuple[int, int], floa
 
 
 def right_sidebar_floor() -> int:
-    """How wide the right sidebar has to be *on this machine* for its player card to fit.
+    """How wide the right sidebar has to be *on this machine* for its widest row to fit.
 
     Always measured from the application font, never from a particular widget's, because
     two numbers derived here have to be the same number: the width ``RightSidebar``
@@ -70,31 +69,31 @@ def right_sidebar_floor() -> int:
     A floor the arithmetic does not know about is the whole failure this guards against
     -- see "The floor is only a floor if the panes honour it" in docs/WINDOW_SIZING.md.
 
-    Measured rather than a constant because the card is buttons and a scrollbar, which
-    grow with the system text size. A user at 125% needs 375px for the row that fits in
-    300 at 100%, and charging every 1080p user that 75px would cost them a rung of the
-    ladder for a screen they are not on.
+    Measured rather than a constant because the row is a caption beside controls, and
+    both the font and the resolved style move it: the same layout wants 281px here and
+    more on a machine with larger system text or a wider button style.
 
-    Two measurements, because the text size is only half of it: the three tool buttons sit
-    at the *style's* minimum width, which is not a font metric — the same 16px text needs
-    288px of panel under ``windowsvista`` and 303 under ``windows11``. A throwaway button
-    carrying the widest of the three labels reports that minimum for whatever style is in
-    force, including one no Windows version here has yet.
+    The row measured is the Log tab's header — ``log_panel.header_row_floor``, built from
+    the panel's own widgets so the two cannot drift. It is the widest thing in the panel
+    that neither elides nor wraps, which the player card's tool row used to be: that row
+    is gone, and until this was rewritten the floor was still a button's width scaled
+    over the whole panel, charging a font's growth against content that had not moved.
+
+    The probe is parentless and never shown. "Never shown" is load-bearing, not
+    incidental — a parentless QWidget *is* a top-level window, so anything that made it
+    visible (a setVisible, a show(), a style that needs it realised) would put a
+    row-sized window on the user's screen for as long as this function runs. That is
+    exactly the flash the launch cards had: see _make_quiet_label in
+    gui/game_embed/launch_cards.py. ``minimumSizeHint()`` alone does not realise it —
+    verified: WA_WState_Created stays False, with and without the app stylesheet. If the
+    probe ever has to be shown or realised, give it a parent.
     """
     app = QApplication.instance()
     if app is None:
         return game_sizing.RIGHT_SIDEBAR_MIN_WIDTH
-    # Parentless and never shown: it exists only to be asked what a tool button costs.
-    # "Never shown" is load-bearing, not incidental — a parentless QWidget *is* a
-    # top-level window, so anything here that made it visible (a setVisible, a show(), a
-    # style that needs it realised) would put a button-sized window on the user's screen
-    # for as long as this function runs. That is exactly the flash the launch cards had:
-    # see _make_quiet_label in gui/game_embed/launch_cards.py. sizeHint() alone does not
-    # realise it — verified: WA_WState_Created stays False, with and without the app
-    # stylesheet. If this probe ever has to be shown or realised, give it a parent.
-    probe = QPushButton("Unhook")
-    probe.setFont(app.font())
-    return game_sizing.right_sidebar_floor(QFontMetrics(app.font()).height(), probe.sizeHint().width())
+    from bartlebot.gui.sidebar.log_panel import header_row_floor  # noqa: PLC0415 - import cycle at module scope
+
+    return game_sizing.right_sidebar_floor(header_row_floor(app.font()))
 
 
 #: Spacing between the three widgets of the filter row, from ``_build_filter_row``.
@@ -142,7 +141,7 @@ def left_sidebar_floor() -> int:
         + check.sizeHint().width()
         + 2 * _FILTER_ROW_SPACING_PX
     )
-    return game_sizing.left_sidebar_floor(QFontMetrics(font).height(), row)
+    return game_sizing.left_sidebar_floor(row)
 
 
 # Left clear of the screen edges when a window is fitted to it, so the frame and the

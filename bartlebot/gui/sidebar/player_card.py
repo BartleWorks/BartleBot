@@ -37,14 +37,15 @@ mean it.
 
 THE SIDEBAR FLOOR IS NOT TOUCHED
 
-``screen_fit.right_sidebar_floor`` measures a throwaway ``QPushButton`` carrying the
-widest of the old tool-row labels, and that number feeds ``layout_budget`` and through it
-the resolution ladder in docs/WINDOW_SIZING.md. This card only ever needs *less* than the
-one it replaces -- three 22px icon buttons where there were three labelled ones, and
-elided rows where there were labelled rows each closed by a 48px ``Copy``. So the floor
-stays exactly where it was, as a conservative bound rather than a tight one. Lowering it
-to match is a window-sizing change, which is the thing the Players tab card rework asked this issue not to
-quietly become.
+This card needs *less* than the one it replaced -- three 22px icon buttons where there
+were three labelled ones, and elided rows where there were labelled rows each closed by a
+48px ``Copy``. The floor it left behind was measured from that old tool row, and stayed
+as a conservative bound until the window-sizing change it was waiting for arrived: the
+right sidebar's floor is now measured from the Log tab's header row, the widest row the
+panel still has, and the card sets no floor of its own at all. See
+``screen_fit.right_sidebar_floor`` and "The sidebar floors are measured, not fixed" in
+docs/WINDOW_SIZING.md. ``test_the_player_card_fits_the_right_sidebar_under_every_available_style``
+is what holds this card under that floor.
 
 THE REFRESH CONTRACT
 

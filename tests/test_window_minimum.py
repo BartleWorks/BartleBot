@@ -31,6 +31,7 @@ from bartlebot.gui.canvas.bot_canvas import BotCanvas
 from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
+from bartlebot.gui.sidebar.log_panel import LogPanel
 from bartlebot.gui.sidebar.option_gutter import BAR_WIDTH_PX, GUTTER_BTN_PX, GUTTER_GAP_PX, GUTTER_TO_BODY_PX
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
@@ -302,6 +303,41 @@ def test_the_keep_list_filter_row_fits_the_left_sidebar_under_every_available_st
         qapp.setStyle(QStyleFactory.create(original))
 
 
+def test_the_log_header_row_fits_the_right_sidebar_at_its_floor(qapp):
+    """The row that *is* the right sidebar's floor now, so this is the tight one.
+
+    The player card below only has to stay under the floor; this row sets it. A caption,
+    a fixed-width combo and two fixed-width buttons, none of which elide or wrap -- so if
+    the chrome allowance were short, the Clear button would run off the panel exactly as
+    ``Unhook`` did before any of this was measured.
+    """
+    assert LogPanel().minimumSizeHint().width() <= screen_fit.right_sidebar_floor()
+
+
+def test_the_log_header_row_fits_the_right_sidebar_under_every_available_style(qapp):
+    """The same assertion, asked of the styles this machine can build.
+
+    The row is mostly pinned widths, so the font barely moves it -- but a combo box's
+    frame and a push button's padding are the *style's*, and a style that spends more on
+    them is exactly the machine the reference metrics do not describe. Same sweep, same
+    reason, as the two rows either side of this one.
+
+    The style is process-global, like the font — see "One QApplication per worker" in
+    tests/CLAUDE.md — so it goes back.
+    """
+    original = qapp.style().objectName()
+    try:
+        for name in QStyleFactory.keys():
+            style = QStyleFactory.create(name)
+            if style is None:  # pragma: no cover - a key that will not build
+                continue
+            qapp.setStyle(style)
+
+            assert LogPanel().minimumSizeHint().width() <= screen_fit.right_sidebar_floor(), f"{name} style"
+    finally:
+        qapp.setStyle(QStyleFactory.create(original))
+
+
 def test_the_player_card_fits_the_right_sidebar_at_its_floor(qapp):
     """A floor is only worth having at a width the panel is still usable at.
 
@@ -390,92 +426,62 @@ def test_a_sidebar_never_becomes_the_top_row_s_floor():
 
 
 @pytest.mark.parametrize(
-    ("text_height", "expected"),
+    ("log_row", "expected"),
     [
         (None, gs.RIGHT_SIDEBAR_MIN_WIDTH),  # not measured: the reference
-        (16, gs.RIGHT_SIDEBAR_MIN_WIDTH),  # the reference height itself
-        (20, 375),  # 125% system text
-        (24, 450),  # 150%
-        (8, gs.RIGHT_SIDEBAR_MIN_WIDTH),  # smaller text does not narrow the scrollbar
+        (gs.REFERENCE_LOG_ROW_PX, gs.RIGHT_SIDEBAR_MIN_WIDTH),  # the reference row itself
+        (289, 308),  # the row at 14px body text
+        (298, 317),  # at 16px
+        (240, gs.RIGHT_SIDEBAR_MIN_WIDTH),  # a narrower row does not narrow the scroll bar
     ],
 )
-def test_the_floor_grows_with_the_system_text_size(text_height, expected):
+def test_the_right_floor_follows_its_forcing_row(log_row, expected):
     """Which is the point of measuring it: a pixel count would have to choose.
 
-    Pinned at 300 it clips the machine at 125%; pinned at 375 it charges a 1080p screen a
-    rung of the ladder for a text size it is not using.
+    Pinned at 300 it clips the machine at 125% system text; pinned at 375 it charges a
+    1080p screen a rung of the ladder for a text size it is not using. The row carries
+    the style as well as the font -- a ``QPushButton`` is never narrower than its style's
+    own minimum, and that is not a font metric -- so one measurement answers both.
     """
-    assert gs.right_sidebar_floor(text_height) == expected
-
-
-@pytest.mark.parametrize(
-    ("button_width", "expected"),
-    [
-        (None, gs.RIGHT_SIDEBAR_MIN_WIDTH),  # not measured: the reference
-        (75, gs.RIGHT_SIDEBAR_MIN_WIDTH),  # windowsvista, the reference style
-        (80, 320),  # Fusion
-        (81, 324),  # windows11 — the style CI resolves, and the one that broke it
-        (60, gs.RIGHT_SIDEBAR_MIN_WIDTH),  # a narrower button does not narrow the panel
-    ],
-)
-def test_the_floor_grows_with_the_style_s_button_minimum(button_width, expected):
-    """The half of the card's width that the text height does not predict.
-
-    A ``QPushButton`` is never narrower than its style's minimum, and that number is not a
-    font metric: at one unchanged 16px text height the same three-button row wants 288px
-    of panel under ``windowsvista`` and 303 under ``windows11``. Scaling on the text alone
-    left the second machine 3px short of a floor it was told it had.
-    """
-    assert gs.right_sidebar_floor(button_width_px=button_width) == expected
-
-
-def test_the_floor_takes_whichever_measurement_asks_for_more():
-    """They move independently, so neither alone is the floor.
-
-    Large text under a narrow-button style is the 150% case; reference text under a
-    wide-button style is the CI one. Each has to survive the other being unremarkable.
-    """
-    assert gs.right_sidebar_floor(24, 75) == 450  # text wins
-    assert gs.right_sidebar_floor(16, 81) == 324  # the style wins
-
-
-@pytest.mark.parametrize(
-    ("text_height", "expected"),
-    [
-        (None, gs.LEFT_SIDEBAR_MIN_WIDTH),  # not measured: the reference
-        (16, gs.LEFT_SIDEBAR_MIN_WIDTH),  # the reference height itself
-        (20, 488),  # 125% system text
-        (24, 585),  # 150%
-        (8, gs.LEFT_SIDEBAR_MIN_WIDTH),  # smaller text does not narrow the scrollbar
-    ],
-)
-def test_the_left_floor_grows_with_the_system_text_size(text_height, expected):
-    """Everything in the filter row is text-sized, so all of it moves with the setting."""
-    assert gs.left_sidebar_floor(text_height) == expected
+    assert gs.right_sidebar_floor(log_row) == expected
 
 
 @pytest.mark.parametrize(
     ("filter_row", "expected"),
     [
         (None, gs.LEFT_SIDEBAR_MIN_WIDTH),  # not measured: the reference
-        (293, gs.LEFT_SIDEBAR_MIN_WIDTH),  # windowsvista, the reference style
-        (301, 401),  # windows11 — wider comboboxes and checkboxes at the same text height
+        (gs.REFERENCE_FILTER_ROW_PX, gs.LEFT_SIDEBAR_MIN_WIDTH),  # windowsvista, the reference style
+        (301, 398),  # windows11 — wider comboboxes and checkboxes at the same text height
+        (324, 421),  # the row at 14px body text
         (274, gs.LEFT_SIDEBAR_MIN_WIDTH),  # Fusion, narrower: it does not narrow the panel
     ],
 )
-def test_the_left_floor_grows_with_the_style_s_control_widths(filter_row, expected):
-    """The half of the row's width that the text height does not predict.
+def test_the_left_floor_follows_its_forcing_row(filter_row, expected):
+    """The same shape on the left, from a combobox and a checkbox instead of a button."""
+    assert gs.left_sidebar_floor(filter_row) == expected
 
-    The same argument as the right sidebar's button minimum, arriving from a combobox and
-    a checkbox instead: at one unchanged text height the row wants 293px under
-    ``windowsvista`` and 301 under ``windows11``.
+
+@pytest.mark.parametrize(
+    ("floor", "reference_row", "reference_floor"),
+    [
+        (gs.left_sidebar_floor, gs.REFERENCE_FILTER_ROW_PX, gs.LEFT_SIDEBAR_MIN_WIDTH),
+        (gs.right_sidebar_floor, gs.REFERENCE_LOG_ROW_PX, gs.RIGHT_SIDEBAR_MIN_WIDTH),
+    ],
+    ids=["left", "right"],
+)
+def test_a_wider_row_costs_its_own_width_and_no_more(floor, reference_row, reference_floor):
+    """The chrome is added, never scaled -- the bug this model replaced.
+
+    Both floors used to be the whole reference width times the larger of two ratios, so a
+    row that grew 11% grew the floor 19%: the font's growth was charged against the scroll
+    bar, the frame, the margins and the pinned control widths too, none of which a font
+    moves. Between the two panels that was 129px of sidebar at 14px body text, which on a
+    1080p screen took three- and four-client launches away entirely.
+
+    A row 30px wider therefore costs exactly 30px of panel.
     """
-    assert gs.left_sidebar_floor(filter_row_px=filter_row) == expected
-
-
-def test_the_left_floor_takes_whichever_measurement_asks_for_more():
-    assert gs.left_sidebar_floor(24, 293) == 585  # text wins
-    assert gs.left_sidebar_floor(16, 301) == 401  # the style wins
+    for grew_by in (1, 30, 80):
+        assert floor(reference_row + grew_by) == reference_floor + grew_by
 
 
 def test_the_floor_the_widget_holds_is_the_floor_the_budget_subtracts(qapp):

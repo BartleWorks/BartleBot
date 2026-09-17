@@ -378,25 +378,48 @@ a scaled display, which is how this came up; pinned high it charges every 1080p 
 of sidebar for a text size they are not running, and 75px there is a whole rung of the
 ladder — 1280x720 solo becomes 960x540.
 
-So `RIGHT_SIDEBAR_MIN_WIDTH` is the floor **at the reference metrics** (16px text and a
-75px button, Segoe UI 9pt at 100% under `windowsvista`), and
-`game_sizing.right_sidebar_floor(text_height, button_width)` scales it, never below the
-reference. 300 rounds up a measured 288 and is deliberately the old default sidebar width,
-so a machine at the reference sees no change at all.
+So `RIGHT_SIDEBAR_MIN_WIDTH` is the floor **at the reference metrics** (Segoe UI 9pt at
+100% under `windowsvista`), and `game_sizing.right_sidebar_floor(log_row)` re-derives it
+from what the panel measures here, never below the reference. 300 is deliberately the old
+default sidebar width, so a machine at the reference sees no change at all.
 
-**The text height is only half of it.** A `QPushButton` is never narrower than its style's
-own minimum width, and that number is not a font metric: 75px under `windowsvista`, 80
-under Fusion, 81 under `windows11`, all at the same 16px text. So the same card wants 288px
-of panel on a developer box and 303 on CI, which resolves `windows11` — three pixels over a
-floor scaled on the text alone, and the reason this takes two measurements rather than one.
-The larger scale wins.
+**A floor is the forcing row plus the chrome around it**, and only the row is measured:
+
+```
+right_sidebar_floor = measured_log_header_row + RIGHT_SIDEBAR_CHROME_PX   # 19
+left_sidebar_floor  = measured_filter_row     + LEFT_SIDEBAR_CHROME_PX    # 97
+```
+
+The chrome — margins, frames, the scroll bar, the gutter, the pinned control widths — is
+**added, never scaled**, because a font does not widen any of it. Both floors used to be
+the whole reference width multiplied by the larger of a text-height ratio and the row's
+own, which charged the font's growth against all of that as well. It over-charged by
+roughly half: raising the body text from 12px to 14px grew the left row 11% and its floor
+19%, and grew the right floor 19% against content that had not moved a pixel. That was
+129px of sidebar between the two panels, and on a 1080p screen it took three- and
+four-client launches away outright.
+
+**The row carries the style as well as the font**, which is what the old text-height term
+was reaching for. A `QPushButton` is never narrower than its style's own minimum width,
+and that is not a font metric: 75px under `windowsvista`, 80 under Fusion, 81 under
+`windows11`. Measuring a row built from real widgets picks that up wherever it lands,
+including on a style no Windows version here has yet — so one measurement answers both
+questions and the two-term scale is gone.
+
+**The right sidebar's forcing row is the Log tab's header**: the `Min level:` caption, the
+level combo, `Export` and `Clear`. It used to be the player card's tool row, and that row
+no longer exists — the card carries icon verbs and elided rows now — so the floor was a
+button's width standing in for a row that had been gone for a while.
+`gui/sidebar/log_panel.header_row_floor()` measures it, built from the panel's own widgets
+so the two cannot drift. Mostly pinned widths, so it barely moves with the font: 281px at
+the reference, 289 at 14px body text.
 
 Everything inside the running app takes those numbers from **`gui/screen_fit.right_sidebar_floor()`**,
-which measures `QApplication.font()` — never a particular widget's — and a throwaway
-`QPushButton` carrying the widest tool label. The width the sidebar enforces and the width
-`layout_budget` subtracts have to be the same number, and two call sites measuring two
-different fonts is the same class of bug one level down. `RightSidebar` re-measures on
-`FontChange`, because the theme is applied to the application after the widget is built.
+which measures `QApplication.font()` — never a particular widget's. The width the sidebar
+enforces and the width `layout_budget` subtracts have to be the same number, and two call
+sites measuring two different fonts is the same class of bug one level down. `RightSidebar`
+re-measures on `FontChange`, because the theme is applied to the application after the
+widget is built.
 
 `test_the_player_card_fits_the_right_sidebar_under_every_available_style` sweeps
 `QStyleFactory.keys()` so the question CI was asking gets asked locally too.
@@ -406,10 +429,12 @@ scrolls — which is what its old 220px constant was justified by — but the qu
 keep-list picker's filter row does not: a search field, a category `QComboBox` and a
 `Kept only` `QCheckBox` side by side, and the last two carry a `Minimum` size policy,
 which has no shrink flag. At 220px the checkbox was drawn over the dropdown. So
-`LEFT_SIDEBAR_MIN_WIDTH` is 390 — the row's 293px at the reference metrics plus the option
-gutter, the scroll content margins, the scroll area's frame and its scrollbar — and
-`game_sizing.left_sidebar_floor(text_height, filter_row)` scales it the same way, from
-`gui/screen_fit.left_sidebar_floor()`.
+`LEFT_SIDEBAR_MIN_WIDTH` is 390 — the row's 293px at the reference metrics plus the 97px of
+option gutter, scroll content margins, scroll area frame and scrollbar that
+`LEFT_SIDEBAR_CHROME_PX` holds — and `game_sizing.left_sidebar_floor(filter_row)` adds the
+two the same way, from `gui/screen_fit.left_sidebar_floor()`. Everything else on that
+surface elides or wraps by design, so it sets no floor; that is why there is no
+text-height term.
 
 Its probe is built from the *real* widget types, including the actual `SearchLineEdit`
 with its clear button and the widest label the combobox can carry. That is not fussiness:

@@ -48,15 +48,15 @@ class RightSidebar(QTabWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         # The arithmetic's term, set explicitly so it is the floor Qt enforces -- see the
-        # same call in LeftSidebar, and "The panel floors" in game_sizing.py. Wider than
-        # the left one, and *measured* rather than fixed because how wide it needs to be is
-        # font and style metrics: a labelled tool button wants 300px of panel at 100%
-        # system text and 375 at 125%.
+        # same call in LeftSidebar, and "The panel floors" in game_sizing.py. Measured
+        # rather than fixed because how wide it needs to be is font and style metrics.
         #
-        # The row it was measured from is gone -- the Players tab card rework's player card carries icon verbs and
-        # elided rows in its place -- and the measurement stays exactly as it was, now a
-        # conservative bound rather than a tight one. Lowering it to match would move the
-        # resolution ladder in docs/WINDOW_SIZING.md, which is a different change.
+        # Measured from the Log tab's header row, which is the widest row here that
+        # neither elides nor wraps. It was the player card's tool row until that card was
+        # reworked into icon verbs and elided rows; the floor went on being a button's
+        # width scaled over the whole panel long after the row was gone, which charged
+        # every larger font against content that had not moved. See
+        # ``screen_fit.right_sidebar_floor``.
         self._apply_width_floor()
 
         self.clients = ClientSection()

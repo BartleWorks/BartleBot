@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from PyQt6.QtGui import QColor, QTextCharFormat, QTextCursor
+from PyQt6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor
 from PyQt6.QtWidgets import (
     QComboBox,
     QFileDialog,
@@ -25,6 +25,63 @@ _NAME_TO_LEVEL: dict[str, int] = {
     "WARNING": logging.WARNING,
     "ERROR": logging.ERROR,
 }
+
+
+#: The header row's fixed control widths, and the caption beside them. Held here as
+#: constants because ``header_row_floor`` measures this row on the right sidebar's
+#: behalf: the row is what that panel's width floor is *made of*, so the two have to
+#: read the same numbers or the floor drifts from the thing it is protecting.
+_LEVEL_CAPTION = "Min level:"
+_LEVEL_COMBO_W = 90
+_EXPORT_BTN_W = 62
+_CLEAR_BTN_W = 52
+_HEADER_MARGINS = (4, 2, 4, 2)
+
+
+def _build_header_row() -> tuple[QWidget, QComboBox, QPushButton, QPushButton]:
+    """The Log tab's header row, unwired: caption, level combo, Export, Clear.
+
+    Built by a function rather than inline so that :func:`header_row_floor` measures the
+    row the panel actually shows, rather than a second copy of it written out in
+    ``gui/screen_fit`` that a change here would silently leave behind.
+    """
+    combo = QComboBox()
+    combo.addItems(list(_NAME_TO_LEVEL))
+    combo.setCurrentText("INFO")
+    combo.setFixedWidth(_LEVEL_COMBO_W)
+
+    export_btn = QPushButton("Export")
+    export_btn.setFixedWidth(_EXPORT_BTN_W)
+    clear_btn = QPushButton("Clear")
+    clear_btn.setFixedWidth(_CLEAR_BTN_W)
+
+    header = QWidget()
+    row = QHBoxLayout(header)
+    row.setContentsMargins(*_HEADER_MARGINS)
+    row.addWidget(QLabel(_LEVEL_CAPTION))
+    row.addWidget(combo)
+    row.addStretch()
+    row.addWidget(export_btn)
+    row.addWidget(clear_btn)
+    return header, combo, export_btn, clear_btn
+
+
+def header_row_floor(font: QFont) -> int:
+    """How wide this row has to be at *font* -- the right sidebar's width floor.
+
+    The widest thing in that panel which neither elides nor wraps, so it is what the
+    floor is measured from, exactly as the keep-list filter row is on the left. Most of
+    the row is fixed: three controls at pinned widths that a larger font does not move.
+    Only the caption and the controls' own text padding grow, which is why measuring
+    beats scaling the whole panel by a text ratio -- see ``game_sizing.right_sidebar_floor``.
+
+    The probe is parentless and never shown; see the identical note in
+    ``gui/screen_fit.right_sidebar_floor`` for why "never shown" is load-bearing.
+    """
+    header, *_ = _build_header_row()
+    for widget in [header, *header.findChildren(QWidget)]:
+        widget.setFont(font)
+    return header.minimumSizeHint().width()
 
 
 def _log_color(level: int) -> str:
@@ -49,27 +106,9 @@ class LogPanel(QWidget):
         self._log.setFont(THEME.font_mono())
         self._log.setMaximumBlockCount(SettingsManager.instance().get_general("log_max_lines", default=5000))
 
-        self._log_level_combo = QComboBox()
-        self._log_level_combo.addItems(["DEBUG", "INFO", "WARNING", "ERROR"])
-        self._log_level_combo.setCurrentText("INFO")
-        self._log_level_combo.setFixedWidth(90)
-
-        _export_btn = QPushButton("Export")
-        _export_btn.setFixedWidth(62)
+        header, self._log_level_combo, _export_btn, _clear_btn = _build_header_row()
         _export_btn.clicked.connect(self._export_log)
-
-        _clear_btn = QPushButton("Clear")
-        _clear_btn.setFixedWidth(52)
         _clear_btn.clicked.connect(self._log.clear)
-
-        header = QWidget()
-        header_row = QHBoxLayout(header)
-        header_row.setContentsMargins(4, 2, 4, 2)
-        header_row.addWidget(QLabel("Min level:"))
-        header_row.addWidget(self._log_level_combo)
-        header_row.addStretch()
-        header_row.addWidget(_export_btn)
-        header_row.addWidget(_clear_btn)
 
         vbox = QVBoxLayout(self)
         vbox.setContentsMargins(0, 0, 0, 0)
