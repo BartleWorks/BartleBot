@@ -86,6 +86,17 @@ The snapshots and their tools:
 | `data/zone_names.json` | `dump_zone_names.py` | a zone is added or renamed in any locale |
 | `data/spell_schools.json` | `dump_spell_schools.py` | a spell is added, or its school changes |
 | `data/badge_categories.json` | `dump_badge_categories.py` | a badge category is added, reordered or renamed; the bot library's folders follow its order |
+| `data/entity_names.json` | `dump_entity_names.py` | an NPC, mob or world object is added or renamed |
+
+`entity_names.json` is the one snapshot taken to *avoid* a library call rather than to
+replace a probe. WizWalker's `ClientObject.display_name()` answers the same question, but it
+resolves the langcode by opening `Root.wad` per lookup, which is the run-time WAD read the
+rule above forbids. The langcode is also readable straight out of memory — but the object
+name is just as good a key and is already in hand, so the snapshot joins on that instead and
+costs no extra read. Its selection rule is worth knowing: `GameObjectTemplate` and its
+subclasses *minus* the `ItemTemplate` branch. That branch is 76k of the 105k templates, it
+is inventory rather than anything `get_base_entity_list()` can return, and including it
+quadruples the file for rows no surface can show.
 
 `WorldNames.lang` is worth knowing about on its own, because its key **is** the world
 segment `zone_name()` returns — `WizardCity`, `DragonSpire`, `MooShu` — and its value is
