@@ -36,8 +36,8 @@ class DropSection(QWidget):
     """Per-client drop tables with search and CSV export.
 
     Added straight to RightSidebar's Drops tab rather than wrapped in a scroll
-    area — the tables scroll internally — so this widget owns the padding inside
-    the tab pane.
+    area — the tables scroll internally.  The padding inside the tab pane is the
+    page's, shared with Possible Drops above, so this layout has none of its own.
     """
 
     def __init__(self, parent=None):
@@ -51,7 +51,7 @@ class DropSection(QWidget):
         self._flush_scheduled = False
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
         self._search = SearchLineEdit("Search items…")

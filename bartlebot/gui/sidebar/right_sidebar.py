@@ -79,10 +79,14 @@ class RightSidebar(QTabWidget):
         # DropSection goes in unwrapped: its tables scroll internally, and a second
         # scroll area around them would produce two competing scrollbars.  The
         # possible-drops list is collapsible and sits above it.
+        #
+        # The page owns the gutter for both, as the Players tab does -- Possible Drops
+        # is a SidebarSection and carries no side padding of its own, so leaving it to
+        # the children put its table flush against the sidebar's edges.
         drops_page = QWidget()
         drops_vbox = QVBoxLayout(drops_page)
-        drops_vbox.setContentsMargins(0, 0, 0, 0)
-        drops_vbox.setSpacing(0)
+        drops_vbox.setContentsMargins(8, 8, 8, 8)
+        drops_vbox.setSpacing(4)
         drops_vbox.addWidget(self.possible_drops)
         drops_vbox.addWidget(self.drops, 1)
 
