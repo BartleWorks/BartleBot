@@ -18,7 +18,6 @@ from __future__ import annotations
 from PyQt6.QtCore import QEvent, Qt
 from PyQt6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QListWidget,
     QListWidgetItem,
     QVBoxLayout,
@@ -26,6 +25,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.strategy_models import BotCombatStrategy
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.strategy_card import StrategyCard
 from bartlebot.strategy_summary import StrategySummary, summarize_bot
@@ -74,10 +74,7 @@ class BotStrategyPicker(QDialog):
 
         self._rebuild_list()
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self._on_accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        layout.addLayout(dialog_footer(self, on_commit=self._on_accept).layout)
 
         self._apply_list_style()
 

@@ -71,7 +71,6 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
     QLineEdit,
@@ -87,6 +86,7 @@ from bartlebot.gui.account_accent import account_accent, account_color_keys
 from bartlebot.gui.game_embed.card_columns import CardColumn, apply_order
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.picker_popup import PickerPopup, PickerRow, Section, should_open
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
@@ -286,7 +286,9 @@ class ProfileDialog(QDialog):
         self._add_button.setCursor(Qt.CursorShape.PointingHandCursor)
         # Not the dialog's default button: Qt hands that to the first ``autoDefault``
         # button built, which would otherwise be this one rather than OK, and Enter is
-        # supposed to accept the dialog, not open a popup on top of it.
+        # supposed to accept the dialog, not open a popup on top of it. ``dialog_footer``
+        # sweeps for exactly this below; the call stays because it says at the button
+        # what the trap is, and this button is the reason the sweep exists.
         self._add_button.setAutoDefault(False)
         self._add_button.clicked.connect(self.open_account_picker)
         side.addWidget(self._add_button)
@@ -314,10 +316,7 @@ class ProfileDialog(QDialog):
 
         layout.addLayout(content, 1)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        layout.addLayout(dialog_footer(self).layout)
 
         self._apply_order(self._order)
 

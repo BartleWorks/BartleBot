@@ -9,7 +9,6 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QCheckBox,
     QDialog,
-    QDialogButtonBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -18,6 +17,9 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from bartlebot.gui.widgets.action_button import ActionStyle
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
 
 
 class RecoveryDialog(QDialog):
@@ -84,13 +86,18 @@ class RecoveryDialog(QDialog):
 
         layout.addWidget(table)
 
-        buttons = QDialogButtonBox()
-        ok_btn = buttons.addButton(QDialogButtonBox.StandardButton.Ok)
-        discard_btn = buttons.addButton("Discard All", QDialogButtonBox.ButtonRole.RejectRole)
-        ok_btn.setDefault(True)
-        buttons.accepted.connect(self.accept)
-        discard_btn.clicked.connect(self._discard_all)
-        layout.addWidget(buttons)
+        # Discard All takes the reject slot but not its weight: ``_discard_all`` unchecks
+        # every candidate and rejects, which permanently drops every recovered unsaved bot
+        # file. That is the most destructive button in the app, and it must not render as
+        # the quietest thing on the screen.
+        footer = dialog_footer(
+            self,
+            cancel_text="Discard All",
+            cancel_icon="trash",
+            cancel_style=ActionStyle.CAUTION,
+            on_cancel=self._discard_all,
+        )
+        layout.addLayout(footer.layout)
 
     def selected_candidates(self) -> list[dict]:
         """Return only the candidates the user checked for restoration."""

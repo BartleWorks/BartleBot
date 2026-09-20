@@ -2317,7 +2317,9 @@ class _ColorPickerDialog(QWidget):
     """Minimal six-swatch palette dialog for region color selection."""
 
     def __init__(self, current_key: int, parent=None) -> None:
-        from PyQt6.QtWidgets import QDialog, QDialogButtonBox, QHBoxLayout, QVBoxLayout
+        from PyQt6.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout
+
+        from bartlebot.gui.widgets.dialog_footer import dialog_footer
 
         # Re-parent as QDialog so exec() works
         self._dialog = QDialog(parent)
@@ -2339,13 +2341,14 @@ class _ColorPickerDialog(QWidget):
             self._swatch_btns[key] = btn
             swatch_row.addWidget(btn)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self._dialog.accept)
-        buttons.rejected.connect(self._dialog.reject)
+        # The swatches are the six ``QPushButton``s above, and the footer's sweep clears
+        # ``autoDefault`` on every one of them — without it the first swatch built would
+        # hold Enter, and picking a colour with the keyboard would never close the dialog.
+        footer = dialog_footer(self._dialog)
 
         layout = QVBoxLayout(self._dialog)
         layout.addLayout(swatch_row)
-        layout.addWidget(buttons)
+        layout.addLayout(footer.layout)
         self._dialog.setLayout(layout)
         self._highlight(current_key)
 

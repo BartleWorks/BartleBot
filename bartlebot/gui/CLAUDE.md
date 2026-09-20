@@ -164,6 +164,32 @@ Five rules that are easy to get wrong:
 
 Issue #47 is the rollout; `combat_strategies/dialog.py` is the worked example.
 
+### A dialog's footer comes from `dialog_footer()`
+
+Never lay a `[Cancel] [Save]` row out by hand, and never reach for `QDialogButtonBox` —
+none is left under `gui/`. `dialog_footer()` (`widgets/dialog_footer.py`) builds
+`[extras…] <stretch> [Cancel] [Commit]` and returns the buttons, so a dialog that
+disables or retitles its commit still can.
+
+What it is really for is the keyboard. `QDialogButtonBox` owned the platform button
+order, the Esc wiring and the default button, and the last of those is a trap: Qt hands
+"default" to the first `autoDefault` button *constructed*, and a button acquires
+`autoDefault` when it is reparented into a dialog. So the helper sweeps every other
+button in the dialog **on show**, not at build time — at build time most of a dialog's
+widgets are still parentless, sitting in layouts nobody has installed yet.
+
+Two things follow:
+
+- **The reject slot is "the button that does not commit", not "the quiet one."**
+  `recovery_dialog`'s Discard All takes that slot at `CAUTION`, because it permanently
+  drops every recovered unsaved bot file.
+- **`safety_warning_dialog`'s Run Bot is `TERTIARY` on purpose**, the one commit in the
+  app that declines the accent: that dialog exists to make the user hesitate, and
+  filling the button that dismisses a safety warning argues with its own purpose. It is
+  still the default button — Enter runs. Raise it on issue #89 before changing it.
+
+`tests/test_dialog_footer.py` presses Enter and Esc on every converted dialog.
+
 ### What is *not* an `ActionButton`
 
 `ActionButton` is specifically *a labelled verb that expands to share a row*. Roughly a

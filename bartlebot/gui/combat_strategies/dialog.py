@@ -73,6 +73,7 @@ from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.elided_label import apply_muted_color
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.search_field import SearchLineEdit
@@ -693,33 +694,27 @@ class CombatStrategyDialog(QDialog):
     # -- buttons --------------------------------------------------------
 
     def _build_buttons(self) -> QHBoxLayout:
-        row = QHBoxLayout()
-        row.setSpacing(6)
-        # ``ActionButton``s rather than Fusion's default chrome, and weighted: the commit
-        # is what this dialog exists to reach, so it is the one PRIMARY on the screen;
-        # falling back to the built-in default is a real alternative to it and takes the
-        # outline; Cancel is neither. See issue #47 and ``ActionStyle``.
+        # This footer was the worked example the shared helper was drawn from, and it is
+        # built through it now so there is exactly one implementation. The weights are
+        # unchanged: the commit is what this dialog exists to reach, so it is the one
+        # PRIMARY on the screen; falling back to the built-in default is a real
+        # alternative to it and takes the outline; Cancel is neither. See issues #47/#89.
+        extras: list[ActionButton] = []
         if self._mode is DialogMode.PICK and self._allow_none:
             self._none_btn = ActionButton("revert", f"Use {self._none_label}", style=ActionStyle.SECONDARY, fill=False)
             self._none_btn.setToolTip("Fight with BartleBot's built-in DSL instead of a saved strategy")
             self._none_btn.clicked.connect(self._on_use_none)
-            row.addWidget(self._none_btn)
-        row.addStretch()
-        cancel = ActionButton("dismiss", "Cancel", fill=False)
-        cancel.clicked.connect(self.reject)
-        row.addWidget(cancel)
+            extras.append(self._none_btn)
         # Both spellings of the same act: commit the working set. Use also
         # returns the selection — see the module docstring.
-        self._commit_btn = ActionButton(
-            "checkmark",
-            "Use this" if self._mode is DialogMode.PICK else "Save",
-            style=ActionStyle.PRIMARY,
-            fill=False,
+        footer = dialog_footer(
+            self,
+            commit_text="Use this" if self._mode is DialogMode.PICK else "Save",
+            on_commit=self._on_commit,
+            extras=extras,
         )
-        self._commit_btn.setDefault(True)
-        self._commit_btn.clicked.connect(self._on_commit)
-        row.addWidget(self._commit_btn)
-        return row
+        self._commit_btn = footer.commit
+        return footer.layout
 
     def _on_use_none(self) -> None:
         self._used_none = True
