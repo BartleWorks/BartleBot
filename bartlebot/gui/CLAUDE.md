@@ -135,7 +135,7 @@ different weights:
 | style | look | for |
 |---|---|---|
 | `PRIMARY` | filled with `accent` | the one thing the surface expects you to do |
-| `SECONDARY` | outlined in `accent` over a faint wash of it | a real alternative to it |
+| `SECONDARY` | outlined in `accent` over a faint wash of it | a way forward that is not the commit |
 | `TERTIARY` | no accent — **the default** | everything else |
 | `CAUTION` | filled with `error` | a verb that costs something to undo |
 
@@ -144,7 +144,10 @@ Five rules that are easy to get wrong:
 - **`TERTIARY` is the default, and a style is opted into.** Most rows here are
   equal-weight verbs beside a destructive one (`+ New` / `Duplicate` / `Delete`), and
   nothing in such a row should look more important than the dangerous button next to
-  it. At most one `PRIMARY` per surface.
+  it. At most one `PRIMARY` per surface — but a `SECONDARY` does not imply a `PRIMARY`.
+  Most of them sit on surfaces that have no commit at all (`assignment_card`'s *Save as
+  Player Strategy…*, the toolbar's *New Bot*): the weight means "worth reaching for, but
+  not the default thing to do here", which needs nothing beside it to be true.
 - **A weight varies colour and nothing else.** Every style shares the padding, the
   radius, the height and one disabled look. A style that also changed the shape would
   stop being a weight. That rule is why `SECONDARY` carries a wash rather than a 2px
@@ -163,6 +166,12 @@ Five rules that are easy to get wrong:
   expanding button there eats the stretch and spreads the pair across the whole footer.
 
 Issue #47 is the rollout; `combat_strategies/dialog.py` is the worked example.
+
+`tests/test_button_guard.py` is what keeps it from eroding: it fails on a bare
+`QPushButton` that is not on its allowlist, on a second `PRIMARY` in one module, and on
+QSS that targets a compound widget's subcontrols. Every allowlist entry carries the
+reason it is exempt, and the failure prints it — so adding one is writing down a
+decision, not silencing a check.
 
 ### A dialog's footer comes from `dialog_footer()`
 

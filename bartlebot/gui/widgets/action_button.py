@@ -15,8 +15,8 @@ FOUR STYLES, AND WHY THE DEFAULT IS THE QUIET ONE
 :class:`ActionStyle` follows the model Bootstrap settled on, for the reason it settled
 on it: a row of buttons is a row of *choices*, and the only way a surface can say which
 one it expects is to draw them at different weights. Four is enough to say everything
-this app needs to say — one commit, one alternative, everything else, and one that
-costs something.
+this app needs to say — one commit, one other way forward, everything else, and one
+that costs something.
 
 ``TERTIARY`` is the default, and that is deliberate rather than incidental. Most rows
 here are equal-weight verbs sitting beside one another (``+ New`` / ``Duplicate`` /
@@ -58,10 +58,22 @@ class ActionStyle(Enum):
     """How much weight a button carries — see the module docstring.
 
     ``PRIMARY`` is the one thing a surface expects you to do: filled with the accent.
-    ``SECONDARY`` is a real alternative to it: outlined in the accent over a faint wash
-    of it. The wash is not decoration — drawn unfilled, the outline alone was a thin blue
-    line and blue text on a near-white field, which read as a tinted ``TERTIARY`` rather
-    than as a rung of its own.
+    At most one per surface — ``tests/test_button_guard.py`` holds that line.
+
+    ``SECONDARY`` is a way forward that is not the surface's commit: outlined in the
+    accent over a faint wash of it. The wash is not decoration — drawn unfilled, the
+    outline alone was a thin blue line and blue text on a near-white field, which read
+    as a tinted ``TERTIARY`` rather than as a rung of its own.
+
+    **A ``SECONDARY`` does not imply a ``PRIMARY``**, and the phrasing above is why: it
+    was once "a real alternative to it", which made every use on a surface with no
+    commit of its own a misuse. Most uses are that — ``assignment_card``'s *Save as
+    Player Strategy…* inside an expanded card, the canvas toolbar's *New Bot*. They are
+    offered next steps, not alternatives to anything, and the accent is right on them
+    because a ``TERTIARY`` there would read as one of the card's own quiet verbs. What
+    ``SECONDARY`` actually says is "worth reaching for, but not the default thing to do
+    here", which is as true beside a commit as it is with no commit in sight.
+
     ``TERTIARY`` is everything else, and the default: no accent at all.
     ``CAUTION`` is a verb that costs something to undo: filled with the error colour.
     """
