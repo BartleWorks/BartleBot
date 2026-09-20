@@ -24,6 +24,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.settings.rows import hint
 from bartlebot.gui.theme import _COLOR_TOKENS, DARK, LIGHT, _detect_system_dark_mode, _Theme
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.settings_manager import SettingsManager
 
@@ -232,11 +233,14 @@ class ThemeTab(QWidget):
         self._reset_btn.clicked.connect(self._on_reset)
         toolbar.addWidget(self._reset_btn)
 
-        self._import_btn = QPushButton("Import…")
+        # The two beside it are ordinary ActionButtons, and the contrast is the point:
+        # the escape hatch above keeps its literal styling, everything else on this tab
+        # is drawn by the theme it edits.
+        self._import_btn = ActionButton("download", "Import…", fill=False)
         self._import_btn.clicked.connect(self._on_import)
         toolbar.addWidget(self._import_btn)
 
-        self._export_btn = QPushButton("Export…")
+        self._export_btn = ActionButton("upload", "Export…", fill=False)
         self._export_btn.clicked.connect(self._on_export)
         toolbar.addWidget(self._export_btn)
 

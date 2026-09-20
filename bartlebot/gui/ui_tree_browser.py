@@ -35,7 +35,6 @@ from PyQt6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QHeaderView,
-    QPushButton,
     QStyledItemDelegate,
     QTreeWidget,
     QTreeWidgetItem,
@@ -45,6 +44,7 @@ from PyQt6.QtWidgets import (
 from wizwalker.memory.memory_objects.enums import WindowFlags
 
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.node_helpers import strip_html
@@ -323,34 +323,40 @@ class UITreeBrowserDialog(QDialog):
         self._hide_invisible.toggled.connect(self._on_filter_changed)
         top_row.addWidget(self._hide_invisible)
 
-        expand_btn = QPushButton("Expand All")
+        expand_btn = ActionButton("arrow_down", "Expand All", fill=False)
         expand_btn.setToolTip("Expand all tree nodes")
         expand_btn.clicked.connect(self._tree_expand_all)
         top_row.addWidget(expand_btn)
 
-        collapse_btn = QPushButton("Collapse All")
+        collapse_btn = ActionButton("arrow_right", "Collapse All", fill=False)
         collapse_btn.setToolTip("Collapse all tree nodes")
         collapse_btn.clicked.connect(self._tree_collapse_all)
         top_row.addWidget(collapse_btn)
 
-        self._refresh_btn = QPushButton("Refresh")
+        self._refresh_btn = ActionButton("revert", "Refresh", fill=False)
         self._refresh_btn.setToolTip("Re-fetch the UI tree from the game")
         self._refresh_btn.clicked.connect(self._on_refresh)
         top_row.addWidget(self._refresh_btn)
 
         root_layout.addLayout(top_row)
 
-        # Second row: clipboard buttons (right-aligned)
+        # Second row: clipboard buttons (right-aligned). Every button on this surface is
+        # TERTIARY and fill=False: an inspector has no single expected verb — these are
+        # four equal reads on whatever is selected — and they sit after a stretch, which
+        # an expanding button would eat. See gui/CLAUDE.md.
+        #
+        # Most of them start disabled, and a disabled ActionButton is borderless, so this
+        # row is where that reads most strongly: nothing is outlined until a row is picked.
         btn_row = QHBoxLayout()
         btn_row.addStretch(1)
 
-        self._copy_path_btn = QPushButton("Copy Path")
+        self._copy_path_btn = ActionButton("copy", "Copy Path", fill=False)
         self._copy_path_btn.setToolTip("Copy selected element's path list to clipboard")
         self._copy_path_btn.setEnabled(False)
         self._copy_path_btn.clicked.connect(self._copy_path)
         btn_row.addWidget(self._copy_path_btn)
 
-        self._load_text_btn = QPushButton("Load Text")
+        self._load_text_btn = ActionButton("download", "Load Text", fill=False)
         self._load_text_btn.setToolTip(
             "Read the displayed text of the selected element and everything inside it.\n"
             "Text is not loaded with the tree because reading it for every window\n"
@@ -361,7 +367,7 @@ class UITreeBrowserDialog(QDialog):
         self._load_text_btn.clicked.connect(self._on_load_text)
         btn_row.addWidget(self._load_text_btn)
 
-        self._copy_text_btn = QPushButton("Copy Text")
+        self._copy_text_btn = ActionButton("copy", "Copy Text", fill=False)
         self._copy_text_btn.setToolTip(
             "Copy the selected element's displayed text to clipboard.\n"
             "Paste it into click_path's Match Text to pick this row out of\n"
@@ -371,7 +377,7 @@ class UITreeBrowserDialog(QDialog):
         self._copy_text_btn.clicked.connect(self._copy_text)
         btn_row.addWidget(self._copy_text_btn)
 
-        self._copy_all_btn = QPushButton("Copy All")
+        self._copy_all_btn = ActionButton("copy", "Copy All", fill=False)
         self._copy_all_btn.setToolTip("Copy the entire tree as indented text to clipboard")
         self._copy_all_btn.setEnabled(False)
         self._copy_all_btn.clicked.connect(self._copy_all)

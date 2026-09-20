@@ -14,7 +14,6 @@ from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -28,6 +27,7 @@ from bartlebot.bot.schema import SubgraphInput
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
 
 #: The combo entry that means "declare a new input" rather than bind to one.
 NEW_INPUT = "— New input —"
@@ -92,16 +92,13 @@ class SubgraphMetaDialog(QDialog):
         form = QFormLayout()
         form.addRow("Name", self._name)
         form.addRow("Description", self._description)
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        self._ok = buttons.button(QDialogButtonBox.StandardButton.Ok)
-        self._ok.setText("Save")
+        footer = dialog_footer(self, commit_text="Save")
+        self._ok = footer.commit
         self._name.textChanged.connect(lambda t: self._ok.setEnabled(bool(t.strip())))
         self._ok.setEnabled(bool(name.strip()))
         layout = QVBoxLayout(self)
         layout.addLayout(form)
-        layout.addWidget(buttons)
+        layout.addLayout(footer.layout)
         self.resize(420, self.sizeHint().height())
 
     @property
@@ -159,13 +156,11 @@ class ExposeInputDialog(QDialog):
         form.addRow("Name", self._name)
         form.addRow("Label", self._label)
         form.addRow("Help", self._help)
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self._on_accept)
-        buttons.rejected.connect(self.reject)
-        self._ok = buttons.button(QDialogButtonBox.StandardButton.Ok)
+        footer = dialog_footer(self, on_commit=self._on_accept)
+        self._ok = footer.commit
         layout = QVBoxLayout(self)
         layout.addLayout(form)
-        layout.addWidget(buttons)
+        layout.addLayout(footer.layout)
         self._combo.currentIndexChanged.connect(self._on_choice_changed)
         self._name.textChanged.connect(self._validate)
         self._combo.setCurrentIndex(self._combo.count() - 1 if not self._compatible else 0)

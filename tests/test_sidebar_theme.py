@@ -195,10 +195,10 @@ def test_the_link_button_recolours(qapp, theme):
 def test_the_revert_button_re_renders_its_icon(qapp, theme):
     """A bare ``svg_icon`` bakes ``THEME.icon_tint`` in at render time, so an icon
     set once and kept goes stale with no stylesheet anywhere to grep for."""
-    from bartlebot.gui.widgets.icon_button import ThemedIconButton
+    from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 
     theme("light")
-    btn = ThemedIconButton("revert", accent_when_enabled=True)
+    btn = IconButton("revert", tooltip="Discard this value", tint=IconTint.ACCENT_WHEN_ENABLED)
     light = btn.icon().pixmap(16, 16).toImage()
 
     _switch(qapp, btn, theme, "dark")
@@ -208,10 +208,10 @@ def test_the_revert_button_re_renders_its_icon(qapp, theme):
 
 def test_the_revert_button_spends_the_accent_only_while_it_can_act(qapp, theme):
     """Its being enabled is one of the two marks saying the value is the user's."""
-    from bartlebot.gui.widgets.icon_button import ThemedIconButton
+    from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 
     theme("light")
-    btn = ThemedIconButton("revert", accent_when_enabled=True)
+    btn = IconButton("revert", tooltip="Discard this value", tint=IconTint.ACCENT_WHEN_ENABLED)
     enabled = btn.icon().pixmap(16, 16).toImage()
 
     btn.setEnabled(False)

@@ -48,13 +48,12 @@ import asyncio
 import logging
 
 from PyQt6.QtCore import QSize, pyqtSignal
-from PyQt6.QtWidgets import QHBoxLayout, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.gui.game_embed.card_columns import CardColumn
-from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.sidebar.player_card import PlayerCard, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
-from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.nodes.timing import (
     CLIENT_REFRESH_INTERVAL_HIDDEN,
     CLIENT_REFRESH_INTERVAL_IDLE,
@@ -80,12 +79,15 @@ def client_refresh_interval(bot_running: bool, players_visible: bool) -> float:
     return CLIENT_REFRESH_INTERVAL_RUN if bot_running else CLIENT_REFRESH_INTERVAL_IDLE
 
 
-class ClientSection(ThemedMixin, QWidget):
+class ClientSection(QWidget):
     """The Players tab's contents: the hooked column, the unhooked section, the bulk row.
 
     Lives in ``RightSidebar``'s Players tab, which supplies the margins and nothing else
     -- the scrolling is the column's own now. This widget draws no header of its own since
     the tab label already names it.
+
+    No ``ThemedMixin``: the only thing it ever re-derived from ``THEME`` was the two
+    glyphs on the bulk row, and those are the buttons' own to re-derive now.
     """
 
     #: The cards' previous indices in the order they are in now, straight from
@@ -129,8 +131,6 @@ class ClientSection(ThemedMixin, QWidget):
         self._unhooked_section.setVisible(False)
         layout.addWidget(self._unhooked_section)
 
-        self.refresh_theme_styles()
-
     def _build_bulk_row(self) -> QWidget:
         """Row of Unhook All / Rehook All buttons pinned above both buckets."""
         row = QWidget()
@@ -138,25 +138,22 @@ class ClientSection(ThemedMixin, QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
-        self._unhook_all_btn = QPushButton("Unhook All")
+        # Two halves of the same bulk verb, so neither outranks the other. The glyphs are
+        # the button's own now — ``ActionButton`` re-derives them on a theme pass, which is
+        # what the hand-written ``apply_theme_styles`` here used to be for.
+        self._unhook_all_btn = ActionButton("unhook", "Unhook All", icon_size=self._BULK_ICON_SIZE.width())
         self._unhook_all_btn.setToolTip("Unhook every client (leaves all game windows open)")
-        self._unhook_all_btn.setIconSize(self._BULK_ICON_SIZE)
         self._unhook_all_btn.setEnabled(False)
         self._unhook_all_btn.clicked.connect(self.unhook_all_requested)
         layout.addWidget(self._unhook_all_btn)
 
-        self._rehook_all_btn = QPushButton("Rehook All")
+        self._rehook_all_btn = ActionButton("hook", "Rehook All", icon_size=self._BULK_ICON_SIZE.width())
         self._rehook_all_btn.setToolTip("Re-hook every unhooked client into BartleBot")
-        self._rehook_all_btn.setIconSize(self._BULK_ICON_SIZE)
         self._rehook_all_btn.setEnabled(False)
         self._rehook_all_btn.clicked.connect(self.rehook_all_requested)
         layout.addWidget(self._rehook_all_btn)
 
         return row
-
-    def apply_theme_styles(self) -> None:
-        self._unhook_all_btn.setIcon(svg_icon("unhook", self._BULK_ICON_SIZE.width()))
-        self._rehook_all_btn.setIcon(svg_icon("hook", self._BULK_ICON_SIZE.width()))
 
     # ------------------------------------------------------------------
     # Public API

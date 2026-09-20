@@ -150,8 +150,11 @@ def test_the_flag_widget_recolours(qapp, theme):
     _switch(qapp, w, theme, "dark")
 
     assert w.styleSheet() != before
-    assert THEME.error in w.styleSheet()
+    # The remove ✕ used to be an ``#FlagRemove`` rule in this sheet; it is an
+    # ``IconButton`` now and carries its own red, so the sheet holds only the
+    # chrome the widget still draws itself.
     assert THEME.border in w.styleSheet()
+    assert THEME.error not in w.styleSheet()
 
 
 def test_a_group_added_after_a_switch_is_still_styled(qapp, theme):

@@ -44,7 +44,7 @@ from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
-from bartlebot.gui.widgets.icon_button import ThemedIconButton
+from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
 from bartlebot.gui.widgets.rule_heading import RuleHeading
@@ -1232,7 +1232,6 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
             f"  font-weight: 600; border: none; }}"
             f"#FlagSep {{ color: {THEME.border}; }}"
             f"#FlagGroupFrame {{ border: 1px solid {THEME.border}; border-radius: 4px; }}"
-            f"#FlagRemove {{ color: {THEME.error}; font-weight: bold; border: none; padding: 0; }}"
         )
 
     # ------------------------------------------------------------------
@@ -1319,9 +1318,9 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
         inner_op_idx = inner_op.findText(op)
         inner_op.setCurrentIndex(inner_op_idx if inner_op_idx >= 0 else 0)
 
-        rem_group_btn = QPushButton("✕")
-        rem_group_btn.setFixedWidth(self._REM_W)
-        rem_group_btn.setObjectName("FlagRemove")
+        rem_group_btn = IconButton(
+            "dismiss", tooltip="Remove this group", size=self._REM_W, icon_size=12, tint=IconTint.DANGER
+        )
 
         h_layout.addWidget(op_lbl)
         h_layout.addWidget(inner_op)
@@ -1380,9 +1379,9 @@ class _FlagConditionsWidget(ThemedMixin, QWidget):
         if option:
             opt_combo.setCurrentText(option)
 
-        rem_btn = QPushButton("✕")
-        rem_btn.setFixedWidth(self._REM_W)
-        rem_btn.setObjectName("FlagRemove")
+        rem_btn = IconButton(
+            "dismiss", tooltip="Remove this condition", size=self._REM_W, icon_size=12, tint=IconTint.DANGER
+        )
 
         row_layout.addWidget(not_cb)
         row_layout.addWidget(opt_combo, 1)
@@ -1637,9 +1636,7 @@ class _ParamPanel(ThemedMixin, QWidget):
                 _model.appendRow(_item)
         self._node_type_combo.setModel(_model)
         self._node_type_combo.setItemDelegate(_NodeTypeDelegate(self._node_type_combo))
-        self._node_help_btn = QPushButton("?")
-        self._node_help_btn.setFixedSize(22, 22)
-        self._node_help_btn.setToolTip("View node documentation")
+        self._node_help_btn = IconButton("help", tooltip="View node documentation", size=22, icon_size=14)
         self._node_help_btn.clicked.connect(self._on_node_help)
 
         _node_type_row = QWidget()
@@ -1698,7 +1695,9 @@ class _ParamPanel(ThemedMixin, QWidget):
         _rr_layout = QHBoxLayout(self._record_row)
         _rr_layout.setContentsMargins(6, 0, 6, 4)
         _rr_layout.setSpacing(6)
-        self._record_btn = QPushButton("Record")
+        # Glyphless and fill=False: pinned to 70px with a status label beside it, which
+        # leaves no room for a 16px icon and no space for the button to grow into.
+        self._record_btn = ActionButton("", "Record", fill=False)
         self._record_btn.setFixedWidth(70)
         self._record_status_lbl = QLabel("")
         _rr_layout.addWidget(self._record_btn)
@@ -1711,7 +1710,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         _wi_layout = QHBoxLayout(self._wiki_import_row)
         _wi_layout.setContentsMargins(6, 0, 6, 4)
         _wi_layout.setSpacing(6)
-        self._wiki_import_btn = QPushButton("Import drops from wiki…")
+        self._wiki_import_btn = ActionButton("download", "Import drops from wiki…")
         self._wiki_import_btn.setToolTip(
             "Fetch drop data from a Wizard101 wiki creature page and add selected items to the bot's drop list."
         )
@@ -2186,8 +2185,7 @@ class _ParamPanel(ThemedMixin, QWidget):
             h.setSpacing(6)
             lbl = QLabel(text)
             lbl.setWordWrap(True)
-            reset = ThemedIconButton("revert", size=20, icon_size=14)
-            reset.setToolTip("Reset to the subgraph's value")
+            reset = IconButton("revert", tooltip="Reset to the subgraph's value", size=20, icon_size=14)
             reset.clicked.connect(on_reset)
             h.addWidget(lbl, 1)
             h.addWidget(reset)
@@ -2226,8 +2224,12 @@ class _ParamPanel(ThemedMixin, QWidget):
             h.setSpacing(6)
             title = QLabel(f"<b>{inp.label or inp.name}</b> ({inp.name}) \u00b7 {inp.type}")
             title.setToolTip(inp.help or "")
-            remove = ThemedIconButton("trash", size=20, icon_size=14)
-            remove.setToolTip("Remove this input; its bound params keep their current values")
+            remove = IconButton(
+                "trash",
+                tooltip="Remove this input; its bound params keep their current values",
+                size=20,
+                icon_size=14,
+            )
             remove.clicked.connect(lambda _=None, name=inp.name: self._remove_input(name))
             h.addWidget(title, 1)
             h.addWidget(remove)
@@ -2239,8 +2241,7 @@ class _ParamPanel(ThemedMixin, QWidget):
                 rh.setSpacing(6)
                 state_id = member_id(self._region.id, b.state)
                 text = ThemedTextLabel(f"{member_labels.get(state_id, b.state)} \u00b7 {b.param}", color="text_muted")
-                unbind = ThemedIconButton("dismiss", size=18, icon_size=12)
-                unbind.setToolTip("Unbind this param from the input")
+                unbind = IconButton("dismiss", tooltip="Unbind this param from the input", size=18, icon_size=12)
                 unbind.clicked.connect(
                     lambda _=None, name=inp.name, st=b.state, k=b.param: self._remove_binding(name, st, k)
                 )

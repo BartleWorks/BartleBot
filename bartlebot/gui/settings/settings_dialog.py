@@ -5,7 +5,6 @@ from __future__ import annotations
 from PyQt6.QtGui import QGuiApplication
 from PyQt6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QTabWidget,
     QVBoxLayout,
 )
@@ -17,6 +16,7 @@ from bartlebot.gui.settings.canvas_tab import CanvasTab
 from bartlebot.gui.settings.general_tab import GeneralTab
 from bartlebot.gui.settings.rows import ScrollableTab
 from bartlebot.gui.settings.theme_tab import ThemeTab
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.settings_manager import SettingsManager
 
 # The size the dialog opens at when the screen has room for it. The height clears the
@@ -77,13 +77,11 @@ class SettingsDialog(QDialog):
         self._accounts_tab = AccountsTab(live_game_area=live_game_area)
         self._tabs.addTab(self._accounts_tab, "Game")
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self._on_accept)
-        buttons.rejected.connect(self.reject)
+        footer = dialog_footer(self, on_commit=self._on_accept)
 
         layout = QVBoxLayout(self)
         layout.addWidget(self._tabs, 1)
-        layout.addWidget(buttons)
+        layout.addLayout(footer.layout)
 
         self.resize(*_PREFERRED_SIZE)
         self._fit_to_screen()

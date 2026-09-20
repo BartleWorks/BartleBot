@@ -135,24 +135,111 @@ different weights:
 | style | look | for |
 |---|---|---|
 | `PRIMARY` | filled with `accent` | the one thing the surface expects you to do |
-| `SECONDARY` | outlined in `accent`, unfilled | a real alternative to it |
+| `SECONDARY` | outlined in `accent` over a faint wash of it | a way forward that is not the commit |
 | `TERTIARY` | no accent — **the default** | everything else |
 | `CAUTION` | filled with `error` | a verb that costs something to undo |
 
-Three rules that are easy to get wrong:
+Five rules that are easy to get wrong:
 
 - **`TERTIARY` is the default, and a style is opted into.** Most rows here are
   equal-weight verbs beside a destructive one (`+ New` / `Duplicate` / `Delete`), and
   nothing in such a row should look more important than the dangerous button next to
-  it. At most one `PRIMARY` per surface.
+  it. At most one `PRIMARY` per surface — but a `SECONDARY` does not imply a `PRIMARY`.
+  Most of them sit on surfaces that have no commit at all (`assignment_card`'s *Save as
+  Player Strategy…*, the toolbar's *New Bot*): the weight means "worth reaching for, but
+  not the default thing to do here", which needs nothing beside it to be true.
 - **A weight varies colour and nothing else.** Every style shares the padding, the
   radius, the height and one disabled look. A style that also changed the shape would
-  stop being a weight.
+  stop being a weight. That rule is why `SECONDARY` carries a wash rather than a 2px
+  outline: drawn unfilled it read as a tinted `TERTIARY` on the light theme's near-white
+  field, and thickening the border to fix it would have been a shape change.
+- **A disabled button has no outline.** Its border is drawn in `surface_disabled`, the
+  same colour as its fill, because an enabled `TERTIARY` (`surface`) sits only ~3% off
+  that fill — losing the outline is what actually separates off from on. It matters most
+  on the inspector surfaces, where most buttons start disabled.
+- **Derive, never hardcode.** `SECONDARY`'s wash is mixed from `THEME.accent` over
+  `THEME.bg` at style time, and how much of it shows through is read off `bg`'s own
+  lightness. A custom light theme is not required to be `#ffffff`, so a literal
+  comparison there would silently give it the dark theme's wash.
 - **`fill=False` for a trailing pair.** These expand by default so a row of them splits
   its width evenly. A dialog's `[Cancel] [Save]` sits *after* a stretch, and an
   expanding button there eats the stretch and spreads the pair across the whole footer.
 
 Issue #47 is the rollout; `combat_strategies/dialog.py` is the worked example.
+
+`tests/test_button_guard.py` is what keeps it from eroding: it fails on a bare
+`QPushButton` that is not on its allowlist, on a second `PRIMARY` in one module, and on
+QSS that targets a compound widget's subcontrols. Every allowlist entry carries the
+reason it is exempt, and the failure prints it — so adding one is writing down a
+decision, not silencing a check.
+
+### A dialog's footer comes from `dialog_footer()`
+
+Never lay a `[Cancel] [Save]` row out by hand, and never reach for `QDialogButtonBox` —
+none is left under `gui/`. `dialog_footer()` (`widgets/dialog_footer.py`) builds
+`[extras…] <stretch> [Cancel] [Commit]` and returns the buttons, so a dialog that
+disables or retitles its commit still can.
+
+What it is really for is the keyboard. `QDialogButtonBox` owned the platform button
+order, the Esc wiring and the default button, and the last of those is a trap: Qt hands
+"default" to the first `autoDefault` button *constructed*, and a button acquires
+`autoDefault` when it is reparented into a dialog. So the helper sweeps every other
+button in the dialog **on show**, not at build time — at build time most of a dialog's
+widgets are still parentless, sitting in layouts nobody has installed yet.
+
+Two things follow:
+
+- **The reject slot is "the button that does not commit", not "the quiet one."**
+  `recovery_dialog`'s Discard All takes that slot at `CAUTION`, because it permanently
+  drops every recovered unsaved bot file.
+- **`safety_warning_dialog`'s Run Bot is `TERTIARY` on purpose**, the one commit in the
+  app that declines the accent: that dialog exists to make the user hesitate, and
+  filling the button that dismisses a safety warning argues with its own purpose. It is
+  still the default button — Enter runs. Raise it on issue #89 before changing it.
+
+`tests/test_dialog_footer.py` presses Enter and Esc on every converted dialog.
+
+### What is *not* an `ActionButton`
+
+`ActionButton` is specifically *a labelled verb that expands to share a row*. Roughly a
+seventh of this app's buttons are none of those, and forcing one into the action
+vocabulary stretches a 22px affordance across a toolbar. Two other named classes cover
+them, and both follow the same conventions — `ThemedMixin` first in the base list, all
+`THEME` work in `apply_theme_styles()`:
+
+| widget | look | for |
+|---|---|---|
+| `IconButton` (`widgets/icon_button.py`) | fixed square, glyph, no label | a remove `✕`, a close `×`, a help `?`, a favourite star |
+| `LinkButton` (`widgets/link_button.py`) | accent text, no frame, underline on hover | a control sitting inline in prose or under a card |
+
+Three things about them:
+
+- **An `IconButton`'s tooltip is a required keyword argument.** It carries no label, so
+  without one it is unusable to anyone who does not already recognise the glyph, and
+  making it required is what stops that being an oversight rather than a decision.
+- **`IconTint` varies colour and nothing else**, the same rule the four weights follow:
+  the size is the caller's to choose, because a toolbar's 32px and a flag row's 24px are
+  both right. `DANGER` is what makes a remove read as one; `ACCENT_WHEN_ENABLED` is the
+  Setup gutter's revert, where *being* enabled is the signal.
+- **A `LinkButton` underlines on hover, not always.** The accent alone says "clickable"
+  while the pointer is elsewhere.
+
+Four `QPushButton`s stay bare on purpose, and the reason is the same for all of them:
+**their background is the data they display.** Any shared class writes `background`,
+which paints over the one thing they exist to show. Those are the colour swatches in
+`settings/theme_tab.py`, `canvas/param_panel.py` and `canvas/edit_scene.py`, and
+`bot_canvas`'s `_warning_pill` — a status pill that happens to be clickable.
+
+The `▾ Connections` disclosure in `param_panel.py` stays bare for a different reason: a
+disclosure is not an action at all. It belongs to the section-heading vocabulary below,
+not to the button vocabulary.
+
+**`theme_tab.py`'s "Reset to System Default" is the last one, and it is the sharpest
+case**: it keeps a hardcoded stylesheet so that it stays legible *whatever* the user has
+done to the running theme. It is the escape hatch from a custom theme that has made the
+app unreadable, and `ActionButton` derives everything from `THEME` — which is precisely
+what would break it. Leave the literal colours and the comment above them alone;
+`tests/test_surface_button_weights.py` says so too.
 
 ## Section headings
 

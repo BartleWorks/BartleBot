@@ -24,7 +24,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
-    QPushButton,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -33,6 +32,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.drop_tree import (
     UNCATEGORIZED_DISPLAY,
     CaseInsensitiveTreeItem,
@@ -270,10 +270,12 @@ class DropKeepListWidget(QWidget):
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(8)
-        self._btn_check_all = QPushButton("Check all shown")
-        self._btn_uncheck_all = QPushButton("Uncheck all shown")
+        # The pair reads on whatever the filter is currently showing, so neither outranks
+        # the other: both TERTIARY, and fill=False so they stay sized to their own text
+        # rather than splitting the row with the stretch after them.
+        self._btn_check_all = ActionButton("checkmark", "Check all shown", fill=False)
+        self._btn_uncheck_all = ActionButton("dismiss", "Uncheck all shown", fill=False)
         for btn in (self._btn_check_all, self._btn_uncheck_all):
-            btn.setFlat(True)
             row.addWidget(btn)
         self._btn_check_all.clicked.connect(lambda: self._on_bulk(keep=True))
         self._btn_uncheck_all.clicked.connect(lambda: self._on_bulk(keep=False))
@@ -686,12 +688,6 @@ class DropKeepListWidget(QWidget):
             f" alternate-background-color: {THEME.surface}; }}"
             " QTreeWidget::item { padding: 2px 4px; }"
         )
-        btn_style = (
-            f"QPushButton {{ color: {THEME.accent}; font-size: {THEME.font_subtext_px}px; padding: 0; border: none; }}"
-            f"QPushButton:hover {{ color: {THEME.text}; }}"
-        )
-        self._btn_check_all.setStyleSheet(btn_style)
-        self._btn_uncheck_all.setStyleSheet(btn_style)
         self._rule.setText(f"Checked drops are {self._emphasis('kept')}, unchecked drops are {self._emphasis('sold')}")
 
     def changeEvent(self, event: QEvent) -> None:

@@ -61,10 +61,11 @@ from bartlebot.gui.canvas.node_item import NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.canvas.subgraph_widgets import EditSubgraphCrumb, ExposeInputDialog, SubgraphMetaDialog
 from bartlebot.gui.canvas.undo_manager import UndoManager
-from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.card_art_tile import art_icon
+from bartlebot.gui.widgets.icon_button import IconButton
 from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.tag_picker import TagPickerButton
@@ -130,14 +131,14 @@ _GROUP_GAP = 10
 _PAIR_WIDTH = _BTN_SIZE.width() * 2 + _BTN_GAP
 
 
-def _icon_btn(icon_name: str, tooltip: str) -> QPushButton:
-    """Create a fixed-size icon-only toolbar button."""
-    btn = QPushButton()
-    btn.setIcon(svg_icon(icon_name))
-    btn.setIconSize(_ICON_SIZE)
-    btn.setFixedSize(_BTN_SIZE)
-    btn.setToolTip(tooltip)
-    return btn
+def _icon_btn(icon_name: str, tooltip: str) -> IconButton:
+    """One toolbar button, at the toolbar's size.
+
+    Still a factory rather than a subclass: the only thing it adds to ``IconButton``
+    is the pair of sizes every button on this row shares, and those are facts about
+    the toolbar rather than about a kind of button.
+    """
+    return IconButton(icon_name, tooltip=tooltip, size=_BTN_SIZE.width(), icon_size=_ICON_SIZE.width())
 
 
 class BotMode(enum.Enum):
@@ -493,22 +494,22 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         # Same shape and height as the pickers, so the bar looks like one set of
         # controls — but New Bot keeps the accent, because a bar with four identical
-        # buttons has undone the grouping the separator just drew.
-        # (button, is_primary) — apply_theme_styles needs to know which is which on
-        # every restyle, not only on the first.
-        self._action_btns: list[tuple[QPushButton, bool]] = []
-        for label, signal_name, primary in (
-            ("New Bot", "new_bot_requested", True),
+        # buttons has undone the grouping the separator just drew. That accent outline
+        # is SECONDARY exactly, so the weight it already had is the weight it keeps: no
+        # PRIMARY on this surface, since what the panel expects is that you open one of
+        # the bots it is showing you.
+        self._action_btns: list[ActionButton] = []
+        for label, signal_name, icon, style in (
+            ("New Bot", "new_bot_requested", "plus", ActionStyle.SECONDARY),
             # Not "Open…": in this panel every card already opens a bot, so the name
             # has to say what is different about this one, which is that it takes a
             # file from anywhere rather than an entry in the library.
-            ("Open Bot File…", "open_bot_requested", False),
+            ("Open Bot File…", "open_bot_requested", "upload", ActionStyle.TERTIARY),
         ):
-            btn = QPushButton(label)
-            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn = ActionButton(icon, label, style=style, fill=False)
             btn.clicked.connect(getattr(self, signal_name))
             top_layout.addWidget(btn)
-            self._action_btns.append((btn, primary))
+            self._action_btns.append(btn)
 
         root.addWidget(top)
 
@@ -560,7 +561,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         # Both are rebuilt on filter changes and absent much of the time, but have to
         # follow a theme switch whenever they exist.
-        self._clear_btn: QPushButton | None = None
+        self._clear_btn: ActionButton | None = None
         self._empty_hint: QLabel | None = None
         self.refresh_theme_styles()
 
@@ -576,17 +577,6 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         self._chip_bar.setStyleSheet(panel)
         self._sep.setStyleSheet(f"color: {THEME.border};")
 
-        for btn, primary in self._action_btns:
-            # New Bot keeps the accent: a bar of identical buttons would undo the
-            # grouping the separator just drew.
-            border = THEME.accent if primary else THEME.border
-            color = THEME.accent if primary else THEME.text
-            btn.setStyleSheet(
-                f"QPushButton {{ background: {THEME.surface}; color: {color};"
-                f"  border: 1px solid {border}; border-radius: 3px; padding: 3px 8px; }}"
-                f"QPushButton:hover {{ border-color: {THEME.accent}; color: {THEME.accent}; }}"
-            )
-
         self._cat_list.setStyleSheet(
             # outline: none drops the focus rectangle Qt draws around the clicked
             # row's text; the selection fill already marks it.
@@ -599,12 +589,6 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         self._cards_area.setStyleSheet(f"background: {THEME.bg};")
         self._cards_container.setStyleSheet(f"background: {THEME.bg};")
 
-        if self._clear_btn is not None:
-            self._clear_btn.setStyleSheet(
-                f"QPushButton {{ color: {THEME.text_muted}; border: none;"
-                f"  padding: 2px 6px; font-size: {THEME.font_subtext_px}px; }}"
-                f"QPushButton:hover {{ color: {THEME.text}; }}"
-            )
         if self._empty_hint is not None:
             self._empty_hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
 
@@ -723,9 +707,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         self._clear_btn = None
         if selected:
-            self._clear_btn = clear = QPushButton("Clear")
-            clear.setCursor(Qt.CursorShape.PointingHandCursor)
-            clear.setFlat(True)
+            # Sized to its own text at the end of the chip row, so fill=False.
+            self._clear_btn = clear = ActionButton("dismiss", "Clear", fill=False)
             clear.clicked.connect(lambda: self._set_tag_selection([]))
             self._chip_layout.insertWidget(self._chip_layout.count() - 1, clear)
         self.refresh_theme_styles()
@@ -854,8 +837,7 @@ class _SearchBar(ThemedMixin, QWidget):
 
         self._count_lbl = QLabel()
 
-        close_btn = QPushButton("×")
-        close_btn.setFixedSize(22, 22)
+        close_btn = IconButton("dismiss", tooltip="Close the search bar", size=22, icon_size=12)
         close_btn.clicked.connect(self.closed)
 
         row = QHBoxLayout(self)
@@ -1027,20 +1009,6 @@ class BotCanvas(QWidget):
         self._save_done_btn = _icon_btn("save_done", "Save to disk and return to Run mode")
         self._save_done_btn.clicked.connect(self._on_save_done_clicked)
 
-        # Track (button → current icon name) so changeEvent can re-tint on theme switch.
-        # _run_pause_btn entry is updated by _set_run_icon() whenever the icon changes.
-        self._btn_icons: dict[QPushButton, str] = {
-            self._run_pause_btn: "play",
-            self.stop_button: "stop",
-            self._edit_btn: "pencil",
-            self._fit_btn: "fit",
-            self._failure_edges_btn: "failure_edges",
-            self._add_state_btn: "plus",
-            self._layout_btn: "layout",
-            self._done_btn: "checkmark",
-            self._save_done_btn: "save_done",
-        }
-
         # ── Centre zone: the transport, in Edit mode as well ─────────
         # A transport is a landmark: people aim at it without looking, so it stays put
         # and is *disabled* when it cannot be used rather than swapped for something
@@ -1189,8 +1157,7 @@ class BotCanvas(QWidget):
         )
         self._focus_crumb_label = QLabel("Focus Mode")
         self._focus_hint_label = QLabel("Esc to exit")
-        _close_focus_btn = QPushButton("×")
-        _close_focus_btn.setFixedSize(22, 22)
+        _close_focus_btn = IconButton("dismiss", tooltip="Exit Focus Mode", size=22, icon_size=12)
         _close_focus_btn.clicked.connect(self.exit_focus_mode)
         _crumb_row = QHBoxLayout(self._focus_crumb)
         _crumb_row.setContentsMargins(8, 4, 6, 4)
@@ -1588,8 +1555,6 @@ class BotCanvas(QWidget):
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
-            for btn, icon_name in self._btn_icons.items():
-                btn.setIcon(svg_icon(icon_name))
             self._apply_pill_stylesheets()
             # The dot's colour is resolved here, not in the header, so a theme
             # switch has to hand it over again.
@@ -1600,9 +1565,13 @@ class BotCanvas(QWidget):
                     self._apply_focus_styles(THEME.region_color(region.color))
 
     def _set_run_icon(self, icon_name: str) -> None:
-        """Set the run/pause button icon and record it for live theme updates."""
-        self._btn_icons[self._run_pause_btn] = icon_name
-        self._run_pause_btn.setIcon(svg_icon(icon_name))
+        """Set the run/pause button icon.
+
+        Kept as a named method although it is now one call: four call sites say
+        "the transport shows play again", and none of them should have to know
+        that re-tinting on a theme switch is the button's own business.
+        """
+        self._run_pause_btn.set_icon_name(icon_name)
 
     def set_running(self) -> None:
         self._run_state = _RUNNING

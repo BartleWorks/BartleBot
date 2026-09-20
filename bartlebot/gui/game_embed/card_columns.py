@@ -69,7 +69,6 @@ from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import (
     QApplication,
     QFrame,
-    QPushButton,
     QScrollArea,
     QSizePolicy,
     QVBoxLayout,
@@ -81,7 +80,7 @@ from bartlebot.gui import screen_fit
 from bartlebot.gui.game_embed.launch_cards import AddCard, ProfileCard
 from bartlebot.gui.offscreen_warmup import warm_offscreen_render
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 
@@ -172,7 +171,7 @@ def profile_banner_text(problems: list[FitProblem], total: int) -> str:
     )
 
 
-class _FitBanner(ThemedMixin, QWidget):
+class _FitBanner(QWidget):
     """One column's "these will not fit" notice, and the way out of it.
 
     A fit refusal has a half that belongs to the entry -- how much room this profile
@@ -217,20 +216,16 @@ class _FitBanner(ThemedMixin, QWidget):
         # so setVisible(True) on one puts a button-sized window on the screen for the
         # frame between here and addWidget reparenting it: a flash in the corner of the
         # display, twice, every time the launch screen is built.
-        self._link = QPushButton("Change resolution", self)
-        self._link.setFlat(True)
-        self._link.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._link = LinkButton("Change resolution", parent=self)
         self._link.clicked.connect(self.settings_requested)
         self._link.setVisible(show_link)
         layout.addWidget(self._link, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.setVisible(False)
-        self.refresh_theme_styles()
 
-    def apply_theme_styles(self) -> None:
-        self._link.setStyleSheet(
-            f"color: {THEME.accent}; text-decoration: underline; border: none; padding: 0px; text-align: left;"
-        )
+    # No ``apply_theme_styles``: the banner holds no colour of its own any more. Both of
+    # its children re-derive their own on a theme switch, which is the whole point of
+    # them being ``ThemedTextLabel`` and ``LinkButton`` rather than styled in here.
 
     @property
     def text(self) -> str:

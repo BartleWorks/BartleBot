@@ -37,6 +37,11 @@ class LinkButton(ThemedMixin, QPushButton):
     def apply_theme_styles(self) -> None:
         self.setStyleSheet(
             f"QPushButton {{ color: {THEME.accent}; font-size: {self._font_size}px;"
-            " background: transparent; border: none; padding: 0; text-align: left; }"
-            f"QPushButton:hover {{ color: {THEME.text}; }}"
+            " background: transparent; border: none; padding: 0; text-align: left;"
+            " text-decoration: none; }"
+            # Underlined on hover rather than always: three of these sat in prose or under
+            # a card drawing a permanent underline, which reads as one more rule on a
+            # surface already full of them. The accent alone says "clickable" while the
+            # pointer is elsewhere; the underline is the confirmation once it arrives.
+            f"QPushButton:hover {{ color: {THEME.text}; text-decoration: underline; }}"
         )

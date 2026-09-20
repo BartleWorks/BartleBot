@@ -64,7 +64,7 @@ from bartlebot.gui.sidebar.option_gutter import (
 )
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.icon_button import ThemedIconButton
+from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.option_widgets import (
     TALL_TYPES,
     connect_widget,
@@ -129,7 +129,7 @@ class _SourceCaption(ThemedTextLabel):
         super().apply_theme_styles()
 
 
-class _RevertButton(ThemedIconButton):
+class _RevertButton(IconButton):
     """Discards the user's value for one row, putting the inherited one back.
 
     Icon-only, and less discoverable than the word "Reset" it replaces -- the two
@@ -143,9 +143,10 @@ class _RevertButton(ThemedIconButton):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(
             "revert",
+            tooltip="Discard this value",
             size=GUTTER_BTN_PX,
             icon_size=16,
-            accent_when_enabled=True,
+            tint=IconTint.ACCENT_WHEN_ENABLED,
             parent=parent,
         )
 

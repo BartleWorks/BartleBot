@@ -10,7 +10,6 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QFrame,
     QHBoxLayout,
@@ -23,6 +22,8 @@ from PyQt6.QtWidgets import (
 
 from bartlebot import bot_options, option_values
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.action_button import ActionStyle
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.nodes.teleportation import teleport_to_friend
 from bartlebot.nodes.utility import quicksell
@@ -373,10 +374,15 @@ class SafetyWarningDialog(QDialog):
                 layout.addWidget(edit_container)
                 self._edits.append((setting_key, edit))
 
-        buttons = QDialogButtonBox()
-        run_btn = buttons.addButton("Run Bot", QDialogButtonBox.ButtonRole.AcceptRole)
-        run_btn.setDefault(True)
-        buttons.addButton(QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        # The one place in the app where the commit deliberately does not take the accent.
+        # This dialog exists to make the user stop and read before a run; filling the
+        # button that dismisses a safety warning puts the chrome in argument with the
+        # dialog's own purpose. Run Bot is still the default button — Enter runs — it just
+        # does not advertise itself. See issue #89 before promoting it to PRIMARY.
+        footer = dialog_footer(
+            self,
+            commit_text="Run Bot",
+            commit_icon="play",
+            commit_style=ActionStyle.TERTIARY,
+        )
+        layout.addLayout(footer.layout)

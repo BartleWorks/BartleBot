@@ -7,11 +7,9 @@ import logging
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
-    QDialogButtonBox,
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
     QSizePolicy,
     QTreeWidget,
     QTreeWidgetItem,
@@ -21,6 +19,8 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.wiki_drops import match_name_for
 from bartlebot.wiki_pages import WIKI_HOST as _WIKI_HOST
@@ -224,8 +224,11 @@ class WikiImportDialog(ThemedMixin, QDialog):
 
         self._url_edit = QLineEdit()
         self._url_edit.setPlaceholderText(f"{_WIKI_PREFIX}Creature:YourCreature")
-        self._btn_fetch = QPushButton("Fetch")
-        self._btn_fetch.setDefault(False)
+        # A real second way forward rather than the commit — the commit is "Add N items"
+        # below — so Fetch is the one SECONDARY on this dialog. The bare ``setDefault(False)``
+        # this replaces said the same thing by negation. Not in the footer, so it is built
+        # here rather than handed over as an extra.
+        self._btn_fetch = ActionButton("download", "Fetch", style=ActionStyle.SECONDARY, fill=False)
         url_row.addWidget(url_lbl)
         url_row.addWidget(self._url_edit, 1)
         url_row.addWidget(self._btn_fetch)
@@ -248,21 +251,21 @@ class WikiImportDialog(ThemedMixin, QDialog):
 
         # Select all / none
         sel_row = QHBoxLayout()
-        self._btn_all = QPushButton("Select All")
-        self._btn_none = QPushButton("Select None")
-        for b in (self._btn_all, self._btn_none):
-            b.setFlat(True)
+        # A pair of equal reads on the tree below, so neither takes a weight, and both
+        # stay sized to their own text at the left of the row.
+        self._btn_all = ActionButton("checkmark", "Select All", fill=False)
+        self._btn_none = ActionButton("dismiss", "Select None", fill=False)
         sel_row.addWidget(self._btn_all)
         sel_row.addWidget(self._btn_none)
         sel_row.addStretch()
         layout.addLayout(sel_row)
 
-        # Dialog buttons
-        self._btn_box = QDialogButtonBox()
-        self._ok_btn = self._btn_box.addButton("Add 0 items", QDialogButtonBox.ButtonRole.AcceptRole)
-        self._btn_box.addButton(QDialogButtonBox.StandardButton.Cancel)
+        # Dialog buttons. The commit counts what is checked, so it starts disabled on
+        # "Add 0 items" and is retitled by _on_item_changed.
+        footer = dialog_footer(self, commit_text="Add 0 items", commit_icon="plus", on_commit=self._on_accept)
+        self._ok_btn = footer.commit
         self._ok_btn.setEnabled(False)
-        layout.addWidget(self._btn_box)
+        layout.addLayout(footer.layout)
 
         # Connections
         self._url_edit.returnPressed.connect(self._on_fetch)
@@ -270,8 +273,6 @@ class WikiImportDialog(ThemedMixin, QDialog):
         self._btn_all.clicked.connect(self._select_all)
         self._btn_none.clicked.connect(self._select_none)
         self._tree.itemChanged.connect(self._on_item_changed)
-        self._btn_box.accepted.connect(self._on_accept)
-        self._btn_box.rejected.connect(self.reject)
 
         self.refresh_theme_styles()
 
@@ -448,8 +449,3 @@ class WikiImportDialog(ThemedMixin, QDialog):
     def apply_theme_styles(self) -> None:
         color = THEME.error if self._status_error else THEME.text_muted
         self._status_lbl.setStyleSheet(f"color: {color}; font-size: {THEME.font_subtext_px}px;")
-        for b in (self._btn_all, self._btn_none):
-            b.setStyleSheet(
-                f"QPushButton {{ color: {THEME.accent}; font-size: {THEME.font_subtext_px}px; padding: 0; border: none; }}"
-                f"QPushButton:hover {{ color: {THEME.text}; }}"
-            )

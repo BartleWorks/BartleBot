@@ -40,7 +40,6 @@ from PyQt6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -66,6 +65,7 @@ from bartlebot.gui.settings.profile_editor import ProfileDialog, mark_unfittable
 from bartlebot.gui.settings.rows import hint
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
@@ -276,13 +276,11 @@ class _AccountDialog(QDialog):
         colour_hint.setWordWrap(True)
         form.addRow("", colour_hint)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
+        footer = dialog_footer(self)
 
         layout = QVBoxLayout(self)
         layout.addLayout(form)
-        layout.addWidget(buttons)
+        layout.addLayout(footer.layout)
 
     @property
     def username(self) -> str:

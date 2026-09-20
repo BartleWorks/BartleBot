@@ -971,7 +971,7 @@ class AppController(QObject):
 
         First, because every later step and every node assumes the camera follows the
         player, and because the run locks the Exit Freecam button -- a camera left detached
-        now would stay detached until the run ended. Exit only, never TP to Freecam: the
+        now would stay detached until the run ended. Exit only, never TP to Camera: the
         player is where the user left them, and a bot may well depend on that. Never raises.
         """
         try:

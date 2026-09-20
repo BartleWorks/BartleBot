@@ -1,4 +1,11 @@
-"""A small, flat, icon-only button that re-tints itself when the theme changes.
+"""``IconButton`` — a fixed-square, icon-only button that re-tints itself.
+
+The counterpart to ``ActionButton``, and the reason both exist: an ``ActionButton``
+is *a labelled verb that expands to share a row*, so it sets ``Expanding``, a minimum
+height and a text label. Roughly a seventh of this app's buttons are none of those —
+a remove ``✕``, a close ``×``, a help ``?``, a favourite star. Forcing them into the
+action vocabulary would stretch a 22px affordance across a toolbar; leaving them bare
+leaves every one of them a bespoke ``setFixedSize`` plus an inline stylesheet.
 
 ``svg_icon``'s tint defaults to ``THEME.icon_tint``, so an icon rendered once and
 handed to ``setIcon`` is a snapshot of whichever theme was active then -- stale
@@ -11,9 +18,15 @@ is disabled on most rows and its being enabled is one of the two marks saying
 accent is spent on the enabled state and the icon falls back to the ordinary
 tint when there is nothing to revert -- which means the icon has to be re-rendered
 on ``setEnabled`` as well as on a theme switch.
+
+A tooltip is required rather than optional. An icon-only control carries no label,
+so without one it is unusable to anyone who does not already recognise the glyph;
+making it a keyword argument with no default is what stops that being an oversight.
 """
 
 from __future__ import annotations
+
+from enum import Enum
 
 from PyQt6.QtCore import QSize, Qt
 from PyQt6.QtWidgets import QPushButton, QWidget
@@ -23,31 +36,66 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 
 
-class ThemedIconButton(ThemedMixin, QPushButton):
-    """An icon-only button whose glyph follows the theme and its own enabled state.
+class IconTint(Enum):
+    """What colour the glyph is drawn in — the only thing an ``IconButton`` varies.
 
-    *accent_when_enabled* spends ``THEME.accent`` on the enabled icon; leave it off
-    for a button whose being enabled carries no meaning of its own.
+    The same rule ``ActionStyle`` follows: a variant changes colour and nothing else,
+    because the size is the caller's to choose and everything else is shared.
+
+    ``DEFAULT`` is ordinary chrome. ``ACCENT`` is a button whose glyph is the state it
+    reports (the node browser's favourite star). ``ACCENT_WHEN_ENABLED`` spends the
+    accent only while the button can act, for a row where *being* enabled is the
+    signal. ``DANGER`` is a remove — the red is what separates it from the controls it
+    sits beside in a flag row.
+    """
+
+    DEFAULT = "default"
+    ACCENT = "accent"
+    ACCENT_WHEN_ENABLED = "accent_when_enabled"
+    DANGER = "danger"
+
+
+class IconButton(ThemedMixin, QPushButton):
+    """A fixed-size, icon-only button whose glyph follows the theme.
+
+    Pass *checked_icon_name* for a toggle: the button becomes checkable and swaps
+    glyphs on state change, which is what the favourite star needs. For a swap that
+    is not a toggle — one driven by something other than this button's own checked
+    state — use :meth:`set_icon_name`, as ``ActionButton`` does.
     """
 
     def __init__(
         self,
         icon_name: str,
         *,
+        tooltip: str,
         size: int = 20,
         icon_size: int = 16,
-        accent_when_enabled: bool = False,
+        tint: IconTint = IconTint.DEFAULT,
+        checked_icon_name: str | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self._icon_name = icon_name
+        self._checked_icon_name = checked_icon_name
         self._icon_px = icon_size
-        self._accent_when_enabled = accent_when_enabled
+        self._tint = tint
+        self.setToolTip(tooltip)
         self.setFixedSize(size, size)
         self.setIconSize(QSize(icon_size, icon_size))
         self.setFlat(True)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
+        if checked_icon_name is not None:
+            self.setCheckable(True)
+            self.toggled.connect(self._on_toggled)
+        self.refresh_theme_styles()
+
+    def set_icon_name(self, icon_name: str) -> None:
+        """Swap the glyph — e.g. a play button that has become a pause button."""
+        if icon_name == self._icon_name:
+            return
+        self._icon_name = icon_name
         self.refresh_theme_styles()
 
     def setEnabled(self, enabled: bool) -> None:  # noqa: N802 - Qt override
@@ -56,9 +104,25 @@ class ThemedIconButton(ThemedMixin, QPushButton):
         if enabled != was:
             self.refresh_theme_styles()
 
+    def _on_toggled(self, _checked: bool) -> None:
+        self.refresh_theme_styles()
+
+    def _glyph(self) -> str:
+        if self._checked_icon_name is not None and self.isChecked():
+            return self._checked_icon_name
+        return self._icon_name
+
+    def _tint_color(self) -> str:
+        if self._tint is IconTint.DANGER:
+            return THEME.error
+        if self._tint is IconTint.ACCENT:
+            return THEME.accent
+        if self._tint is IconTint.ACCENT_WHEN_ENABLED and self.isEnabled():
+            return THEME.accent
+        return THEME.icon_tint
+
     def apply_theme_styles(self) -> None:
-        tint = THEME.accent if (self._accent_when_enabled and self.isEnabled()) else THEME.icon_tint
-        self.setIcon(svg_icon(self._icon_name, self._icon_px, tint=tint))
+        self.setIcon(svg_icon(self._glyph(), self._icon_px, tint=self._tint_color()))
         self.setStyleSheet(
             "QPushButton { background: transparent; border: none; padding: 0; }"
             f"QPushButton:hover:enabled {{ background: {THEME.surface_disabled}; border-radius: 3px; }}"
