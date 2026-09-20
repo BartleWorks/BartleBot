@@ -425,9 +425,17 @@ class PlayerCard(CardFrame):
         # camera is not what this card expects you to do. Glyphless because none of the
         # shipped icons is a camera, and an icon name that does not resolve is worse than
         # no glyph -- see gui/CLAUDE.md.
+        #
+        # "TP to Camera", not "TP to Freecam", and the reason is width rather than
+        # wording: this pair is the card's widest row, and an ``ActionButton`` is ~14px
+        # wider than the bare button it replaced -- enough to push the card past the
+        # sidebar's own floor under ``windowsvista``, which is the failure
+        # ``test_the_player_card_fits_the_right_sidebar_under_every_available_style``
+        # exists to catch. The shorter label buys back 5px and says the same thing.
+        # Anything added to this row has to be measured against that test.
         self._freecam_btn = ActionButton("", "Enter Freecam", parent=self)
         self._freecam_btn.clicked.connect(lambda: asyncio.ensure_future(self._toggle_freecam()))
-        self._tp_btn = ActionButton("", "TP to Freecam", parent=self)
+        self._tp_btn = ActionButton("", "TP to Camera", parent=self)
         self._tp_btn.setEnabled(False)
         self._tp_btn.clicked.connect(lambda: asyncio.ensure_future(self._tp_to_freecam()))
 
@@ -657,7 +665,7 @@ class PlayerCard(CardFrame):
 
         Public for the run start, which must not hand the FSM a client whose camera is off
         somewhere else -- and whose Exit Freecam button the run is about to lock. The
-        player stays where they are: this is Exit Freecam, not TP to Freecam.
+        player stays where they are: this is Exit Freecam, not TP to Camera.
 
         A client that cannot be reached keeps its freecam state, since nothing here knows
         the camera came back.
@@ -717,7 +725,7 @@ class PlayerCard(CardFrame):
 
     @property
     def freecam_buttons(self) -> tuple[ActionButton, ActionButton]:
-        """The Enter/Exit Freecam toggle and TP to Freecam, for the callers that check their state."""
+        """The Enter/Exit Freecam toggle and TP to Camera, for the callers that check their state."""
         return self._freecam_btn, self._tp_btn
 
     @property
