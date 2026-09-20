@@ -14,7 +14,6 @@ from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLayout,
-    QPushButton,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -33,6 +32,7 @@ from bartlebot.gui.game_embed.launch_cards import AccountCard, ProfileCard
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.tile_slots import TileKey, TileSlot, plan_tile_changes
@@ -135,9 +135,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
 
         center.addStretch(1)
 
-        self._manage_btn = QPushButton("Game settings")
-        self._manage_btn.setFlat(True)
-        self._manage_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._manage_btn = LinkButton("Game settings")
         self._manage_btn.clicked.connect(self.manage_accounts_requested)
         center.addWidget(self._manage_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
 
@@ -165,11 +163,8 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         return self._profiles_col
 
     def apply_theme_styles(self) -> None:
-        """The two pieces that are not labels -- the rest own their own colour."""
+        """The one piece that is not a label -- the rest own their own colour."""
         self._logo.setStyleSheet(f"QFrame {{ border: 2px solid {THEME.border}; border-radius: {_LOGO_SIZE // 2}px; }}")
-        self._manage_btn.setStyleSheet(
-            f"color: {THEME.text_muted}; text-decoration: underline; border: none; padding: 2px;"
-        )
 
     def set_roster_source(self, source) -> None:
         """Supply the callable that answers ``characters_for(username)``.

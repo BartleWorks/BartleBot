@@ -54,7 +54,7 @@ from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
-from bartlebot.gui.widgets.icon_button import ThemedIconButton
+from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.option_widgets import (
     OPTION_TYPES,
     TYPE_LABELS,
@@ -312,7 +312,7 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         self._err_lbl.setVisible(True)
 
 
-class _EditButton(ThemedIconButton):
+class _EditButton(IconButton):
     """Opens the declaration dialog for one hand-added option.
 
     It takes the slot Setup gives revert, which is what keeps the two surfaces'
@@ -325,7 +325,14 @@ class _EditButton(ThemedIconButton):
     """
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__("pencil", size=GUTTER_BTN_PX, icon_size=14, accent_when_enabled=True, parent=parent)
+        super().__init__(
+            "pencil",
+            tooltip="Edit this option's declaration",
+            size=GUTTER_BTN_PX,
+            icon_size=14,
+            tint=IconTint.ACCENT_WHEN_ENABLED,
+            parent=parent,
+        )
 
 
 @dataclass

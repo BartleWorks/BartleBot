@@ -17,7 +17,7 @@ from __future__ import annotations
 from typing import Literal
 
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QColor, QIcon
+from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QAbstractItemView,
     QDialog,
@@ -38,9 +38,10 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import SubgraphDefinition
-from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.icon_button import IconButton, IconTint
+from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_CATEGORY
@@ -328,18 +329,22 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         # ── Favorite star button ────────────────────────────────────
         sm = SettingsManager.instance()
         is_fav = sm.is_favorite_node(node_type)
-        star_btn = QPushButton()
-        star_btn.setFixedSize(28, 28)
-        star_btn.setFlat(True)
-        star_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        star_btn.setStyleSheet("background: transparent; border: none; padding: 0;")
-        star_btn.setToolTip("Remove from favorites" if is_fav else "Add to favorites")
-        star_btn.setIcon(QIcon(svg_pixmap("star_filled" if is_fav else "star_outline", 18, tint=THEME.accent)))
+        star_btn = IconButton(
+            "star_outline",
+            checked_icon_name="star_filled",
+            tooltip="Remove from favorites" if is_fav else "Add to favorites",
+            size=28,
+            icon_size=18,
+            tint=IconTint.ACCENT,
+        )
+        star_btn.setChecked(is_fav)
 
         def _on_star_clicked() -> None:
+            # The settings store is the truth, not the button: ``clicked`` has already
+            # flipped the checked state, so setChecked here is what puts it back if the
+            # toggle did not take.
             new_is_fav = SettingsManager.instance().toggle_favorite_node(node_type)
-            icon_name = "star_filled" if new_is_fav else "star_outline"
-            star_btn.setIcon(QIcon(svg_pixmap(icon_name, 18, tint=THEME.accent)))
+            star_btn.setChecked(new_is_fav)
             star_btn.setToolTip("Remove from favorites" if new_is_fav else "Add to favorites")
             if on_favorite_toggled:
                 on_favorite_toggled(node_type, new_is_fav)
@@ -469,12 +474,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
 
             see_row = QHBoxLayout()
             for related_type in spec.see_also:
-                btn = QPushButton(_humanize(related_type))
-                btn.setStyleSheet(
-                    f"color: {THEME.accent}; background: transparent; border: none; "
-                    f"text-decoration: underline; font-size: {THEME.font_subtext_px}px; padding: 0;"
-                )
-                btn.setCursor(Qt.CursorShape.PointingHandCursor)
+                btn = LinkButton(_humanize(related_type))
                 if on_see_also:
                     btn.clicked.connect(lambda _checked, t=related_type: on_see_also(t))
                 see_row.addWidget(btn)

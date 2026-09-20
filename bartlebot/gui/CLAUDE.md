@@ -164,6 +164,41 @@ Five rules that are easy to get wrong:
 
 Issue #47 is the rollout; `combat_strategies/dialog.py` is the worked example.
 
+### What is *not* an `ActionButton`
+
+`ActionButton` is specifically *a labelled verb that expands to share a row*. Roughly a
+seventh of this app's buttons are none of those, and forcing one into the action
+vocabulary stretches a 22px affordance across a toolbar. Two other named classes cover
+them, and both follow the same conventions — `ThemedMixin` first in the base list, all
+`THEME` work in `apply_theme_styles()`:
+
+| widget | look | for |
+|---|---|---|
+| `IconButton` (`widgets/icon_button.py`) | fixed square, glyph, no label | a remove `✕`, a close `×`, a help `?`, a favourite star |
+| `LinkButton` (`widgets/link_button.py`) | accent text, no frame, underline on hover | a control sitting inline in prose or under a card |
+
+Three things about them:
+
+- **An `IconButton`'s tooltip is a required keyword argument.** It carries no label, so
+  without one it is unusable to anyone who does not already recognise the glyph, and
+  making it required is what stops that being an oversight rather than a decision.
+- **`IconTint` varies colour and nothing else**, the same rule the four weights follow:
+  the size is the caller's to choose, because a toolbar's 32px and a flag row's 24px are
+  both right. `DANGER` is what makes a remove read as one; `ACCENT_WHEN_ENABLED` is the
+  Setup gutter's revert, where *being* enabled is the signal.
+- **A `LinkButton` underlines on hover, not always.** The accent alone says "clickable"
+  while the pointer is elsewhere.
+
+Four `QPushButton`s stay bare on purpose, and the reason is the same for all of them:
+**their background is the data they display.** Any shared class writes `background`,
+which paints over the one thing they exist to show. Those are the colour swatches in
+`settings/theme_tab.py`, `canvas/param_panel.py` and `canvas/edit_scene.py`, and
+`bot_canvas`'s `_warning_pill` — a status pill that happens to be clickable.
+
+The `▾ Connections` disclosure in `param_panel.py` stays bare for a different reason: a
+disclosure is not an action at all. It belongs to the section-heading vocabulary below,
+not to the button vocabulary.
+
 ## Section headings
 
 Three, and they are not interchangeable:

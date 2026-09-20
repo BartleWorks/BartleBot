@@ -61,10 +61,10 @@ from bartlebot.gui.canvas.node_item import NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel
 from bartlebot.gui.canvas.subgraph_widgets import EditSubgraphCrumb, ExposeInputDialog, SubgraphMetaDialog
 from bartlebot.gui.canvas.undo_manager import UndoManager
-from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.card_art_tile import art_icon
+from bartlebot.gui.widgets.icon_button import IconButton
 from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.tag_picker import TagPickerButton
@@ -130,14 +130,14 @@ _GROUP_GAP = 10
 _PAIR_WIDTH = _BTN_SIZE.width() * 2 + _BTN_GAP
 
 
-def _icon_btn(icon_name: str, tooltip: str) -> QPushButton:
-    """Create a fixed-size icon-only toolbar button."""
-    btn = QPushButton()
-    btn.setIcon(svg_icon(icon_name))
-    btn.setIconSize(_ICON_SIZE)
-    btn.setFixedSize(_BTN_SIZE)
-    btn.setToolTip(tooltip)
-    return btn
+def _icon_btn(icon_name: str, tooltip: str) -> IconButton:
+    """One toolbar button, at the toolbar's size.
+
+    Still a factory rather than a subclass: the only thing it adds to ``IconButton``
+    is the pair of sizes every button on this row shares, and those are facts about
+    the toolbar rather than about a kind of button.
+    """
+    return IconButton(icon_name, tooltip=tooltip, size=_BTN_SIZE.width(), icon_size=_ICON_SIZE.width())
 
 
 class BotMode(enum.Enum):
@@ -854,8 +854,7 @@ class _SearchBar(ThemedMixin, QWidget):
 
         self._count_lbl = QLabel()
 
-        close_btn = QPushButton("×")
-        close_btn.setFixedSize(22, 22)
+        close_btn = IconButton("dismiss", tooltip="Close the search bar", size=22, icon_size=12)
         close_btn.clicked.connect(self.closed)
 
         row = QHBoxLayout(self)
@@ -1027,20 +1026,6 @@ class BotCanvas(QWidget):
         self._save_done_btn = _icon_btn("save_done", "Save to disk and return to Run mode")
         self._save_done_btn.clicked.connect(self._on_save_done_clicked)
 
-        # Track (button → current icon name) so changeEvent can re-tint on theme switch.
-        # _run_pause_btn entry is updated by _set_run_icon() whenever the icon changes.
-        self._btn_icons: dict[QPushButton, str] = {
-            self._run_pause_btn: "play",
-            self.stop_button: "stop",
-            self._edit_btn: "pencil",
-            self._fit_btn: "fit",
-            self._failure_edges_btn: "failure_edges",
-            self._add_state_btn: "plus",
-            self._layout_btn: "layout",
-            self._done_btn: "checkmark",
-            self._save_done_btn: "save_done",
-        }
-
         # ── Centre zone: the transport, in Edit mode as well ─────────
         # A transport is a landmark: people aim at it without looking, so it stays put
         # and is *disabled* when it cannot be used rather than swapped for something
@@ -1189,8 +1174,7 @@ class BotCanvas(QWidget):
         )
         self._focus_crumb_label = QLabel("Focus Mode")
         self._focus_hint_label = QLabel("Esc to exit")
-        _close_focus_btn = QPushButton("×")
-        _close_focus_btn.setFixedSize(22, 22)
+        _close_focus_btn = IconButton("dismiss", tooltip="Exit Focus Mode", size=22, icon_size=12)
         _close_focus_btn.clicked.connect(self.exit_focus_mode)
         _crumb_row = QHBoxLayout(self._focus_crumb)
         _crumb_row.setContentsMargins(8, 4, 6, 4)
@@ -1588,8 +1572,6 @@ class BotCanvas(QWidget):
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
-            for btn, icon_name in self._btn_icons.items():
-                btn.setIcon(svg_icon(icon_name))
             self._apply_pill_stylesheets()
             # The dot's colour is resolved here, not in the header, so a theme
             # switch has to hand it over again.
@@ -1600,9 +1582,13 @@ class BotCanvas(QWidget):
                     self._apply_focus_styles(THEME.region_color(region.color))
 
     def _set_run_icon(self, icon_name: str) -> None:
-        """Set the run/pause button icon and record it for live theme updates."""
-        self._btn_icons[self._run_pause_btn] = icon_name
-        self._run_pause_btn.setIcon(svg_icon(icon_name))
+        """Set the run/pause button icon.
+
+        Kept as a named method although it is now one call: four call sites say
+        "the transport shows play again", and none of them should have to know
+        that re-tinting on a theme switch is the button's own business.
+        """
+        self._run_pause_btn.set_icon_name(icon_name)
 
     def set_running(self) -> None:
         self._run_state = _RUNNING
