@@ -69,15 +69,18 @@ def test_a_normal_status_stays_muted_after_a_switch(qapp, theme):
 
 
 def test_the_select_buttons_recolour(qapp, theme):
+    """They are ``ActionButton``s now (#90), so they restyle *themselves* rather than
+    being restyled by the dialog. That is a broadcast to every widget rather than one
+    event delivered to this dialog, which is what an app-wide switch actually is."""
     theme("light")
     dlg = WikiImportDialog()
-    light_accent = THEME.accent
+    light_surface = THEME.surface
 
-    _switch(qapp, dlg, theme, "dark")
+    _switch_app(qapp, theme, "dark")
 
     for btn in (dlg._btn_all, dlg._btn_none):
-        assert THEME.accent in btn.styleSheet()
-        assert light_accent not in btn.styleSheet()
+        assert THEME.surface in btn.styleSheet()
+        assert light_surface not in btn.styleSheet()
     dlg.deleteLater()
 
 

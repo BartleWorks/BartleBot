@@ -1695,7 +1695,9 @@ class _ParamPanel(ThemedMixin, QWidget):
         _rr_layout = QHBoxLayout(self._record_row)
         _rr_layout.setContentsMargins(6, 0, 6, 4)
         _rr_layout.setSpacing(6)
-        self._record_btn = QPushButton("Record")
+        # Glyphless and fill=False: pinned to 70px with a status label beside it, which
+        # leaves no room for a 16px icon and no space for the button to grow into.
+        self._record_btn = ActionButton("", "Record", fill=False)
         self._record_btn.setFixedWidth(70)
         self._record_status_lbl = QLabel("")
         _rr_layout.addWidget(self._record_btn)
@@ -1708,7 +1710,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         _wi_layout = QHBoxLayout(self._wiki_import_row)
         _wi_layout.setContentsMargins(6, 0, 6, 4)
         _wi_layout.setSpacing(6)
-        self._wiki_import_btn = QPushButton("Import drops from wiki…")
+        self._wiki_import_btn = ActionButton("download", "Import drops from wiki…")
         self._wiki_import_btn.setToolTip(
             "Fetch drop data from a Wizard101 wiki creature page and add selected items to the bot's drop list."
         )

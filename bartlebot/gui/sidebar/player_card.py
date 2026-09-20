@@ -70,7 +70,7 @@ import time
 
 import pyperclip
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from wizwalker import XYZ
 
 from bartlebot import streamer_mode, wizard_names
@@ -79,6 +79,7 @@ from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.sidebar.sidebar_section import field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.elided_label import ElidedLabel
 from bartlebot.gui.widgets.player_pills import PlayerBadge
@@ -415,13 +416,18 @@ class PlayerCard(CardFrame):
         self._mob = self._data_row(layout, "Enemy", "Click to copy the closest enemy's name")
         self._xyz.set_value(XYZ_PLACEHOLDER, PLACEHOLDER)
 
-        # The freecam pair stays two ordinary buttons. They are a stateful toggle and a
+        # The freecam pair stays two buttons on the face. They are a stateful toggle and a
         # thing that acts on the *camera* rather than on the card, so neither is a verb in
         # the sense ``_verbs`` means -- a menu entry reading "Enter Freecam" that says
         # "Exit Freecam" half the time is a verb list that has to be rebuilt to be read.
-        self._freecam_btn = QPushButton("Enter Freecam", self)
+        #
+        # Both TERTIARY: they are sequential steps, not alternatives, and detaching the
+        # camera is not what this card expects you to do. Glyphless because none of the
+        # shipped icons is a camera, and an icon name that does not resolve is worse than
+        # no glyph -- see gui/CLAUDE.md.
+        self._freecam_btn = ActionButton("", "Enter Freecam", parent=self)
         self._freecam_btn.clicked.connect(lambda: asyncio.ensure_future(self._toggle_freecam()))
-        self._tp_btn = QPushButton("TP to Freecam", self)
+        self._tp_btn = ActionButton("", "TP to Freecam", parent=self)
         self._tp_btn.setEnabled(False)
         self._tp_btn.clicked.connect(lambda: asyncio.ensure_future(self._tp_to_freecam()))
 
@@ -710,7 +716,7 @@ class PlayerCard(CardFrame):
         self._tp_btn.setEnabled(self._in_freecam and not self._bot_running)
 
     @property
-    def freecam_buttons(self) -> tuple[QPushButton, QPushButton]:
+    def freecam_buttons(self) -> tuple[ActionButton, ActionButton]:
         """The Enter/Exit Freecam toggle and TP to Freecam, for the callers that check their state."""
         return self._freecam_btn, self._tp_btn
 

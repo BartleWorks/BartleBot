@@ -10,7 +10,6 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
     QSizePolicy,
     QTreeWidget,
     QTreeWidgetItem,
@@ -252,10 +251,10 @@ class WikiImportDialog(ThemedMixin, QDialog):
 
         # Select all / none
         sel_row = QHBoxLayout()
-        self._btn_all = QPushButton("Select All")
-        self._btn_none = QPushButton("Select None")
-        for b in (self._btn_all, self._btn_none):
-            b.setFlat(True)
+        # A pair of equal reads on the tree below, so neither takes a weight, and both
+        # stay sized to their own text at the left of the row.
+        self._btn_all = ActionButton("checkmark", "Select All", fill=False)
+        self._btn_none = ActionButton("dismiss", "Select None", fill=False)
         sel_row.addWidget(self._btn_all)
         sel_row.addWidget(self._btn_none)
         sel_row.addStretch()
@@ -450,8 +449,3 @@ class WikiImportDialog(ThemedMixin, QDialog):
     def apply_theme_styles(self) -> None:
         color = THEME.error if self._status_error else THEME.text_muted
         self._status_lbl.setStyleSheet(f"color: {color}; font-size: {THEME.font_subtext_px}px;")
-        for b in (self._btn_all, self._btn_none):
-            b.setStyleSheet(
-                f"QPushButton {{ color: {THEME.accent}; font-size: {THEME.font_subtext_px}px; padding: 0; border: none; }}"
-                f"QPushButton:hover {{ color: {THEME.text}; }}"
-            )

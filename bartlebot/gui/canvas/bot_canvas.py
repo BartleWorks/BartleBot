@@ -63,6 +63,7 @@ from bartlebot.gui.canvas.subgraph_widgets import EditSubgraphCrumb, ExposeInput
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.icon_button import IconButton
 from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
@@ -493,22 +494,22 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         # Same shape and height as the pickers, so the bar looks like one set of
         # controls — but New Bot keeps the accent, because a bar with four identical
-        # buttons has undone the grouping the separator just drew.
-        # (button, is_primary) — apply_theme_styles needs to know which is which on
-        # every restyle, not only on the first.
-        self._action_btns: list[tuple[QPushButton, bool]] = []
-        for label, signal_name, primary in (
-            ("New Bot", "new_bot_requested", True),
+        # buttons has undone the grouping the separator just drew. That accent outline
+        # is SECONDARY exactly, so the weight it already had is the weight it keeps: no
+        # PRIMARY on this surface, since what the panel expects is that you open one of
+        # the bots it is showing you.
+        self._action_btns: list[ActionButton] = []
+        for label, signal_name, icon, style in (
+            ("New Bot", "new_bot_requested", "plus", ActionStyle.SECONDARY),
             # Not "Open…": in this panel every card already opens a bot, so the name
             # has to say what is different about this one, which is that it takes a
             # file from anywhere rather than an entry in the library.
-            ("Open Bot File…", "open_bot_requested", False),
+            ("Open Bot File…", "open_bot_requested", "upload", ActionStyle.TERTIARY),
         ):
-            btn = QPushButton(label)
-            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn = ActionButton(icon, label, style=style, fill=False)
             btn.clicked.connect(getattr(self, signal_name))
             top_layout.addWidget(btn)
-            self._action_btns.append((btn, primary))
+            self._action_btns.append(btn)
 
         root.addWidget(top)
 
@@ -560,7 +561,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         # Both are rebuilt on filter changes and absent much of the time, but have to
         # follow a theme switch whenever they exist.
-        self._clear_btn: QPushButton | None = None
+        self._clear_btn: ActionButton | None = None
         self._empty_hint: QLabel | None = None
         self.refresh_theme_styles()
 
@@ -576,17 +577,6 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         self._chip_bar.setStyleSheet(panel)
         self._sep.setStyleSheet(f"color: {THEME.border};")
 
-        for btn, primary in self._action_btns:
-            # New Bot keeps the accent: a bar of identical buttons would undo the
-            # grouping the separator just drew.
-            border = THEME.accent if primary else THEME.border
-            color = THEME.accent if primary else THEME.text
-            btn.setStyleSheet(
-                f"QPushButton {{ background: {THEME.surface}; color: {color};"
-                f"  border: 1px solid {border}; border-radius: 3px; padding: 3px 8px; }}"
-                f"QPushButton:hover {{ border-color: {THEME.accent}; color: {THEME.accent}; }}"
-            )
-
         self._cat_list.setStyleSheet(
             # outline: none drops the focus rectangle Qt draws around the clicked
             # row's text; the selection fill already marks it.
@@ -599,12 +589,6 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         self._cards_area.setStyleSheet(f"background: {THEME.bg};")
         self._cards_container.setStyleSheet(f"background: {THEME.bg};")
 
-        if self._clear_btn is not None:
-            self._clear_btn.setStyleSheet(
-                f"QPushButton {{ color: {THEME.text_muted}; border: none;"
-                f"  padding: 2px 6px; font-size: {THEME.font_subtext_px}px; }}"
-                f"QPushButton:hover {{ color: {THEME.text}; }}"
-            )
         if self._empty_hint is not None:
             self._empty_hint.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
 
@@ -723,9 +707,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         self._clear_btn = None
         if selected:
-            self._clear_btn = clear = QPushButton("Clear")
-            clear.setCursor(Qt.CursorShape.PointingHandCursor)
-            clear.setFlat(True)
+            # Sized to its own text at the end of the chip row, so fill=False.
+            self._clear_btn = clear = ActionButton("dismiss", "Clear", fill=False)
             clear.clicked.connect(lambda: self._set_tag_selection([]))
             self._chip_layout.insertWidget(self._chip_layout.count() - 1, clear)
         self.refresh_theme_styles()

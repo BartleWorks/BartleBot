@@ -26,7 +26,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
     QScrollArea,
     QSplitter,
     QStackedWidget,
@@ -40,6 +39,8 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import SubgraphDefinition
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.search_field import SearchLineEdit
@@ -697,23 +698,17 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
         splitter.setCollapsible(1, False)
 
         # ── Button row ────────────────────────────────────────────
-        # Only built in "add" mode, so apply_theme_styles has to tolerate its absence.
-        self._add_btn: QPushButton | None = None
+        # Only built in "add" mode, so the callers that reach for it tolerate its absence.
+        self._add_btn: ActionButton | None = None
         if mode == "add":
-            self._add_btn = QPushButton("Add")
-            self._add_btn.setDefault(True)
+            footer = dialog_footer(self, commit_text="Add", commit_icon="plus", on_commit=self._on_add)
+            self._add_btn = footer.commit
             self._add_btn.setEnabled(False)
-            self._add_btn.clicked.connect(self._on_add)
-
-            cancel_btn = QPushButton("Cancel")
-            cancel_btn.clicked.connect(self.reject)
-
-            btn_row = QHBoxLayout()
-            btn_row.addStretch()
-            btn_row.addWidget(cancel_btn)
-            btn_row.addWidget(self._add_btn)
+            btn_row = footer.layout
         else:
-            close_btn = QPushButton("Close")
+            # Browse mode has one button, and it is the way out rather than a choice
+            # between two — so no footer, and Close carries the weight on its own.
+            close_btn = ActionButton("checkmark", "Close", style=ActionStyle.PRIMARY, fill=False)
             close_btn.setDefault(True)
             close_btn.clicked.connect(self.accept)
 
@@ -779,10 +774,6 @@ class NodeBrowserDialog(ThemedMixin, QDialog):
             """
         )
         self._empty_label.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
-        if self._add_btn is not None:
-            self._add_btn.setStyleSheet(
-                f"background: {THEME.accent}; color: #ffffff; padding: 5px 18px; border-radius: 4px; font-weight: bold;"
-            )
 
     # ------------------------------------------------------------------
     # Public API

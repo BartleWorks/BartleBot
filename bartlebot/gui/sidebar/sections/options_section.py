@@ -34,7 +34,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
-    QPushButton,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -53,6 +52,8 @@ from bartlebot.gui.sidebar.option_gutter import (
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.option_widgets import (
@@ -138,7 +139,7 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         # never *creates* one; it only declines to destroy one it was handed.
         self._was_null = edit_mode and existing_option.default is None
         self._default_touched = False
-        self._delete_btn: QPushButton | None = None
+        self._delete_btn: ActionButton | None = None
         self._deleted = False
 
         form = QFormLayout()
@@ -187,22 +188,21 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         self._err_lbl.setWordWrap(True)
         self._err_lbl.setVisible(False)
 
-        btn_row = QHBoxLayout()
-        ok_btn = QPushButton("Save" if edit_mode else "Add")
-        ok_btn.setDefault(True)
-        ok_btn.clicked.connect(self._on_ok)
-        cancel_btn = QPushButton("Cancel")
-        cancel_btn.clicked.connect(self.reject)
         # Left of the stretch, away from Save: the destructive action does not sit
-        # next to the one the Return key presses.
+        # next to the one the Return key presses. CAUTION says the same thing in colour —
+        # deleting an option takes every bot file's value for it with it.
+        extras = []
         if edit_mode:
-            self._delete_btn = QPushButton("Delete")
+            self._delete_btn = ActionButton("trash", "Delete", style=ActionStyle.CAUTION, fill=False)
             self._delete_btn.setToolTip(f"Remove the option '{existing_option.name}' from this bot")
             self._delete_btn.clicked.connect(self._on_delete)
-            btn_row.addWidget(self._delete_btn)
-        btn_row.addStretch()
-        btn_row.addWidget(cancel_btn)
-        btn_row.addWidget(ok_btn)
+            extras.append(self._delete_btn)
+        btn_row = dialog_footer(
+            self,
+            commit_text="Save" if edit_mode else "Add",
+            on_commit=self._on_ok,
+            extras=extras,
+        ).layout
 
         outer = QVBoxLayout(self)
         outer.setSpacing(8)
@@ -390,7 +390,7 @@ class OptionsSection(SidebarSection):
         self._no_options_lbl.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self._options_layout.addWidget(self._no_options_lbl)
 
-        self._add_option_btn = QPushButton("+ Add Option")
+        self._add_option_btn = ActionButton("plus", "Add Option")
         self._add_option_btn.setVisible(False)
         self._add_option_btn.clicked.connect(self._on_add_option)
 

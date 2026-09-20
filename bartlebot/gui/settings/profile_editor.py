@@ -74,7 +74,6 @@ from PyQt6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLineEdit,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -86,6 +85,7 @@ from bartlebot.gui.account_accent import account_accent, account_color_keys
 from bartlebot.gui.game_embed.card_columns import CardColumn, apply_order
 from bartlebot.gui.game_embed.launch_cards import AccountCard, CardMode
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.picker_popup import PickerPopup, PickerRow, Section, should_open
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
@@ -282,8 +282,7 @@ class ProfileDialog(QDialog):
         content.addWidget(self._column, 1)
 
         side = QVBoxLayout()
-        self._add_button = QPushButton(ADD_BUTTON_TEXT)
-        self._add_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._add_button = ActionButton("plus", ADD_BUTTON_TEXT)
         # Not the dialog's default button: Qt hands that to the first ``autoDefault``
         # button built, which would otherwise be this one rather than OK, and Enter is
         # supposed to accept the dialog, not open a popup on top of it. ``dialog_footer``
@@ -459,7 +458,7 @@ class ProfileDialog(QDialog):
         return self._picker
 
     @property
-    def add_button(self) -> QPushButton:
+    def add_button(self) -> ActionButton:
         """The button that opens the account picker. Public so a test can drive it."""
         return self._add_button
 

@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 from PyQt6.QtWidgets import (
     QLabel,
     QMessageBox,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from bartlebot.gui import screen_fit
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -40,7 +40,9 @@ class LauncherPopup(QWidget):
 
         for profile in profiles:
             name = profile.get("name", "Unnamed")
-            btn = QPushButton(name)
+            # One profile is not more expected than another, so none of them takes a
+            # weight. A glyph would repeat on every row and say nothing the row does not.
+            btn = ActionButton("", name)
             btn.clicked.connect(lambda _checked, n=name: self._launch(n))
             # Disabled with the reason on it, never dropped from the list. This popup and
             # the Quick Launch cards show the same profiles and have to agree about which

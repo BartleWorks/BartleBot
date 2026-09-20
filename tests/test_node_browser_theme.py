@@ -32,6 +32,16 @@ def _switch(qapp, widget, theme, mode: str) -> None:
         qapp.processEvents()
 
 
+def _switch_app(qapp, theme, mode: str) -> None:
+    """The app-wide broadcast, which is what a real theme switch is.
+
+    An ``ActionButton`` restyles itself off its own ``StyleChange``, so an event sent to
+    its dialog alone never reaches it — see gui/widgets/action_button.py.
+    """
+    theme(mode)
+    qapp.setStyleSheet(THEME.global_stylesheet())
+
+
 def _a_node() -> tuple[str, object]:
     node_type = next(iter(NODE_SPECS))
     return node_type, NODE_SPECS[node_type]
@@ -111,7 +121,7 @@ def test_the_dialog_chrome_recolours(qapp, theme):
     dlg = NodeBrowserDialog(mode="add")
     before = (dlg._search.styleSheet(), dlg._list.styleSheet(), dlg._add_btn.styleSheet())
 
-    _switch(qapp, dlg, theme, "dark")
+    _switch_app(qapp, theme, "dark")
 
     after = (dlg._search.styleSheet(), dlg._list.styleSheet(), dlg._add_btn.styleSheet())
     assert all(a != b for a, b in zip(before, after))

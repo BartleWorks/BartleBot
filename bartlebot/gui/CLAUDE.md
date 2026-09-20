@@ -225,6 +225,13 @@ The `▾ Connections` disclosure in `param_panel.py` stays bare for a different 
 disclosure is not an action at all. It belongs to the section-heading vocabulary below,
 not to the button vocabulary.
 
+**`theme_tab.py`'s "Reset to System Default" is the last one, and it is the sharpest
+case**: it keeps a hardcoded stylesheet so that it stays legible *whatever* the user has
+done to the running theme. It is the escape hatch from a custom theme that has made the
+app unreadable, and `ActionButton` derives everything from `THEME` — which is precisely
+what would break it. Leave the literal colours and the comment above them alone;
+`tests/test_surface_button_weights.py` says so too.
+
 ## Section headings
 
 Three, and they are not interchangeable:
