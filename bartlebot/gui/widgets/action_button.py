@@ -47,12 +47,21 @@ from bartlebot.gui.themed import ThemedMixin
 _HOVER_SHIFT = 118
 _PRESS_SHIFT = 88
 
+#: How much ``accent`` shows through ``SECONDARY``'s background, as a fraction of the way
+#: from the page colour to the accent. A dark page needs more of it: the same 10% that
+#: reads as a tint against white is all but invisible against ``#1e1e1e``.
+_WASH_ON_LIGHT = 0.10
+_WASH_ON_DARK = 0.18
+
 
 class ActionStyle(Enum):
     """How much weight a button carries — see the module docstring.
 
     ``PRIMARY`` is the one thing a surface expects you to do: filled with the accent.
-    ``SECONDARY`` is a real alternative to it: outlined in the accent, unfilled.
+    ``SECONDARY`` is a real alternative to it: outlined in the accent over a faint wash
+    of it. The wash is not decoration — drawn unfilled, the outline alone was a thin blue
+    line and blue text on a near-white field, which read as a tinted ``TERTIARY`` rather
+    than as a rung of its own.
     ``TERTIARY`` is everything else, and the default: no accent at all.
     ``CAUTION`` is a verb that costs something to undo: filled with the error colour.
     """
@@ -70,6 +79,21 @@ def _shift(color: str, percent: int) -> str:
     so a single helper covers the hover and the press without the caller choosing.
     """
     return QColor(color).lighter(percent).name()
+
+
+def _mix(base: str, over: str, amount: float) -> str:
+    """*base* blended *amount* of the way toward *over*, as a hex string.
+
+    Kept beside :func:`_shift` and used for the same reason: a derived colour follows
+    whatever a custom theme sets its tokens to, where a stored one is a second thing to
+    keep in step.
+    """
+    a, b = QColor(base), QColor(over)
+    return QColor(
+        round(a.red() + (b.red() - a.red()) * amount),
+        round(a.green() + (b.green() - a.green()) * amount),
+        round(a.blue() + (b.blue() - a.blue()) * amount),
+    ).name()
 
 
 class ActionButton(ThemedMixin, QPushButton):
@@ -142,10 +166,22 @@ class ActionButton(ThemedMixin, QPushButton):
             fill = THEME.error
             return fill, THEME.pill_text, fill, _shift(fill, _HOVER_SHIFT), _shift(fill, _PRESS_SHIFT)
         if self._style is ActionStyle.SECONDARY:
-            # Unfilled, so the hover has to come from somewhere other than the outline:
-            # ``node_fill`` is the same "this is live" wash every card and list row in the
-            # app takes on hover, which is what keeps the outlined button in that family.
-            return "transparent", THEME.accent, THEME.accent, THEME.node_fill, THEME.node_fill_selected
+            # A faint wash of the accent over the page colour rather than a stored tint,
+            # so a theme that changes ``accent`` moves the wash with it. How much of it
+            # shows through is read off ``bg``'s own lightness, not off a comparison with
+            # a literal — a custom light theme is not required to be ``#ffffff``.
+            wash = _WASH_ON_LIGHT if QColor(THEME.bg).lightnessF() > 0.5 else _WASH_ON_DARK
+            # The wash is faint enough that the hover still has to come from somewhere
+            # other than the outline: ``node_fill`` is the same "this is live" tint every
+            # card and list row in the app takes on hover, which is what keeps the
+            # outlined button in that family.
+            return (
+                _mix(THEME.bg, THEME.accent, wash),
+                THEME.accent,
+                THEME.accent,
+                THEME.node_fill,
+                THEME.node_fill_selected,
+            )
         return THEME.surface, THEME.text, THEME.border, THEME.surface_disabled, THEME.border
 
     def apply_theme_styles(self) -> None:
@@ -168,6 +204,9 @@ class ActionButton(ThemedMixin, QPushButton):
             f"QPushButton:pressed:enabled {{ background: {pressed}; }}"
             # One disabled look for all four: a disabled button is not a weaker version of
             # its style, it is the same "off" every disabled control on the screen wears.
+            # The border is the fill colour, i.e. no visible outline at all — an enabled
+            # ``TERTIARY`` sits only ~3% off ``surface_disabled`` in the light theme, so
+            # losing the outline is what actually separates off from on.
             f"QPushButton:disabled {{ color: {THEME.text_disabled}; background: {THEME.surface_disabled};"
-            f" border-color: {THEME.border}; }}"
+            f" border-color: {THEME.surface_disabled}; }}"
         )

@@ -135,11 +135,11 @@ different weights:
 | style | look | for |
 |---|---|---|
 | `PRIMARY` | filled with `accent` | the one thing the surface expects you to do |
-| `SECONDARY` | outlined in `accent`, unfilled | a real alternative to it |
+| `SECONDARY` | outlined in `accent` over a faint wash of it | a real alternative to it |
 | `TERTIARY` | no accent — **the default** | everything else |
 | `CAUTION` | filled with `error` | a verb that costs something to undo |
 
-Three rules that are easy to get wrong:
+Five rules that are easy to get wrong:
 
 - **`TERTIARY` is the default, and a style is opted into.** Most rows here are
   equal-weight verbs beside a destructive one (`+ New` / `Duplicate` / `Delete`), and
@@ -147,7 +147,17 @@ Three rules that are easy to get wrong:
   it. At most one `PRIMARY` per surface.
 - **A weight varies colour and nothing else.** Every style shares the padding, the
   radius, the height and one disabled look. A style that also changed the shape would
-  stop being a weight.
+  stop being a weight. That rule is why `SECONDARY` carries a wash rather than a 2px
+  outline: drawn unfilled it read as a tinted `TERTIARY` on the light theme's near-white
+  field, and thickening the border to fix it would have been a shape change.
+- **A disabled button has no outline.** Its border is drawn in `surface_disabled`, the
+  same colour as its fill, because an enabled `TERTIARY` (`surface`) sits only ~3% off
+  that fill — losing the outline is what actually separates off from on. It matters most
+  on the inspector surfaces, where most buttons start disabled.
+- **Derive, never hardcode.** `SECONDARY`'s wash is mixed from `THEME.accent` over
+  `THEME.bg` at style time, and how much of it shows through is read off `bg`'s own
+  lightness. A custom light theme is not required to be `#ffffff`, so a literal
+  comparison there would silently give it the dark theme's wash.
 - **`fill=False` for a trailing pair.** These expand by default so a row of them splits
   its width evenly. A dialog's `[Cancel] [Save]` sits *after* a stretch, and an
   expanding button there eats the stretch and spreads the pair across the whole footer.
