@@ -10,7 +10,6 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QInputDialog,
-    QPushButton,
     QSizePolicy,
     QTreeWidget,
     QTreeWidgetItem,
@@ -20,6 +19,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.drop_tree import (
     UNCATEGORIZED_DISPLAY,
     CategoryThenNameTreeItem,
@@ -207,8 +207,15 @@ class _DropsListWidget(QWidget):
         self._update_button_state()
 
     @staticmethod
-    def _make_btn(text: str) -> QPushButton:
-        return QPushButton(text)
+    def _make_btn(text: str) -> ActionButton:
+        """One weight for the whole row, no glyphs, and sized to its own text.
+
+        No ``PRIMARY``: five verbs on a selection, none of which the section expects more
+        than the others. No icons either, and that is the sidebar's doing rather than a
+        preference — this row is five buttons wide inside a 300px column, and a 16px glyph
+        on each is 80px this row does not have.
+        """
+        return ActionButton("", text, fill=False)
 
     def set_editable(self, editable: bool) -> None:
         self._editable = editable

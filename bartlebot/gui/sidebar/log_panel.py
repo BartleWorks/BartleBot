@@ -11,12 +11,12 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPlainTextEdit,
-    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.settings_manager import SettingsManager
 
 _NAME_TO_LEVEL: dict[str, int] = {
@@ -38,7 +38,7 @@ _CLEAR_BTN_W = 52
 _HEADER_MARGINS = (4, 2, 4, 2)
 
 
-def _build_header_row() -> tuple[QWidget, QComboBox, QPushButton, QPushButton]:
+def _build_header_row() -> tuple[QWidget, QComboBox, ActionButton, ActionButton]:
     """The Log tab's header row, unwired: caption, level combo, Export, Clear.
 
     Built by a function rather than inline so that :func:`header_row_floor` measures the
@@ -50,9 +50,13 @@ def _build_header_row() -> tuple[QWidget, QComboBox, QPushButton, QPushButton]:
     combo.setCurrentText("INFO")
     combo.setFixedWidth(_LEVEL_COMBO_W)
 
-    export_btn = QPushButton("Export")
+    # fill=False because both are pinned to a fixed width, and glyphless because that
+    # width is what the right sidebar's floor is measured from: a 16px icon inside a 62px
+    # button leaves nothing for the label, and widening them to fit one would raise the
+    # floor of the panel they sit in. A glyph is optional; the floor is not.
+    export_btn = ActionButton("", "Export", fill=False)
     export_btn.setFixedWidth(_EXPORT_BTN_W)
-    clear_btn = QPushButton("Clear")
+    clear_btn = ActionButton("", "Clear", fill=False)
     clear_btn.setFixedWidth(_CLEAR_BTN_W)
 
     header = QWidget()

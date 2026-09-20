@@ -23,7 +23,6 @@ from PyQt6.QtWidgets import (
     QDialog,
     QHBoxLayout,
     QHeaderView,
-    QPushButton,
     QTreeWidget,
     QTreeWidgetItem,
     QVBoxLayout,
@@ -31,6 +30,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot import entity_names
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
@@ -110,32 +110,35 @@ class EntityBrowserDialog(QDialog):
         self._search.textChanged.connect(self._on_search_changed)
         top_row.addWidget(self._search, 1)
 
-        self._refresh_btn = QPushButton("Refresh")
+        self._refresh_btn = ActionButton("revert", "Refresh", fill=False)
         self._refresh_btn.setToolTip("Re-fetch entities from the game")
         self._refresh_btn.clicked.connect(self._on_refresh)
         top_row.addWidget(self._refresh_btn)
 
         root_layout.addLayout(top_row)
 
-        # Button row: copy buttons (right-aligned) + status label
+        # Button row: copy buttons (right-aligned) + status label. All TERTIARY, Teleport
+        # included: these are four equal reads on one selection, and the most *interesting*
+        # verb in a row is not the same thing as the one the surface expects. Nothing in an
+        # equal-weight row outranks its neighbours — see gui/CLAUDE.md.
         btn_row = QHBoxLayout()
 
         self._status = ThemedTextLabel("Loading…", css=f"font-size: {THEME.font_small_px}px;")
         btn_row.addWidget(self._status, 1)
 
-        self._copy_name_btn = QPushButton("Copy Name")
+        self._copy_name_btn = ActionButton("copy", "Copy Name", fill=False)
         self._copy_name_btn.setToolTip("Copy the selected entity's name to clipboard")
         self._copy_name_btn.setEnabled(False)
         self._copy_name_btn.clicked.connect(self._copy_selected_name)
         btn_row.addWidget(self._copy_name_btn)
 
-        self._copy_xyz_btn = QPushButton("Copy XYZ")
+        self._copy_xyz_btn = ActionButton("copy", "Copy XYZ", fill=False)
         self._copy_xyz_btn.setToolTip("Copy the selected entity's XYZ as a JSON object")
         self._copy_xyz_btn.setEnabled(False)
         self._copy_xyz_btn.clicked.connect(self._copy_selected_xyz)
         btn_row.addWidget(self._copy_xyz_btn)
 
-        self._teleport_btn = QPushButton("Teleport")
+        self._teleport_btn = ActionButton("arrow_right", "Teleport", fill=False)
         self._teleport_btn.setToolTip("Teleport this player to the selected entity")
         self._teleport_btn.setEnabled(False)
         self._teleport_btn.clicked.connect(self._on_teleport)

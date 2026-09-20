@@ -6,7 +6,6 @@ from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
     QFileDialog,
     QHeaderView,
-    QPushButton,
     QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
@@ -15,6 +14,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 
 
@@ -64,7 +64,7 @@ class DropSection(QWidget):
         self._tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self._tabs, 1)
 
-        export_btn = QPushButton("Export CSV")
+        export_btn = ActionButton("upload", "Export CSV")
         export_btn.clicked.connect(self._export_csv)
         layout.addWidget(export_btn)
 
