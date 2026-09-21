@@ -154,7 +154,7 @@ def test_no_button_is_clipped_by_the_slot_it_sits_in(canvas, edit_mode):
 def _header_height(canvas) -> int:
     """The height the bar is actually drawn at, once the canvas's layout has run."""
     QApplication.processEvents()
-    return canvas._toolbar.height()
+    return canvas.header.height()
 
 
 def test_the_bar_is_the_same_height_in_both_modes(canvas):
@@ -162,7 +162,7 @@ def test_the_bar_is_the_same_height_in_both_modes(canvas):
 
     canvas.enter_edit_mode()
     edit = _header_height(canvas)
-    canvas._on_done_clicked()
+    canvas.exit_edit_mode()
     back = _header_height(canvas)
 
     assert edit == run, "the bar changed height on the way into Edit mode"
@@ -182,7 +182,7 @@ def test_the_bar_does_not_drift_over_repeated_mode_switches(canvas):
     for _ in range(4):
         canvas.enter_edit_mode()
         seen.append(_header_height(canvas))
-        canvas._on_done_clicked()
+        canvas.exit_edit_mode()
         seen.append(_header_height(canvas))
 
     assert set(seen) == {run}, f"the bar visited {sorted(set(seen))} across four switches, starting from {run}"

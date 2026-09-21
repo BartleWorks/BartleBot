@@ -98,7 +98,7 @@ def _scenario_mode(canvas, app, tracer, args, snapshots, target):
         snapshots.append(size_snapshot(target, f"{i}: edit settled"))
 
         tracer.mark(f"{i}: to run")
-        canvas._on_done_clicked()
+        canvas.exit_edit_mode()
         snapshots.append(size_snapshot(target, f"{i}: run sync"))
         app.processEvents()
         snapshots.append(size_snapshot(target, f"{i}: run settled"))
@@ -108,7 +108,7 @@ def _scenario_paints(canvas, app, tracer, args, snapshots, target):
     """Resize and scroll the graph, which is what #73's stale pixels follow."""
     from bartlebot.qt_layout_debug import size_snapshot
 
-    view = canvas._view
+    view = canvas.view
     snapshots.append(size_snapshot(target, "before"))
     for i in range(args.cycles):
         tracer.mark(f"{i}: resize")
@@ -152,7 +152,7 @@ def main(argv: list[str] | None = None) -> int:
     # Attached after setup, so the trace holds the interaction and not the construction.
     tracer = LayoutTracer(events=tuple(EVENT_NAMES))
     traced = tracer.watch(canvas)
-    target = canvas._toolbar
+    target = canvas.header
     snapshots: list = []
 
     tracer.start("begin")

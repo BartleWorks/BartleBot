@@ -1654,12 +1654,23 @@ class BotCanvas(QWidget):
     def _on_edit_clicked(self) -> None:
         self.enter_edit_mode()
 
-    def _on_done_clicked(self) -> None:
+    def exit_edit_mode(self) -> bool:
+        """Switch back to Run mode, as the Done button does.
+
+        Returns False, having changed nothing, when an unresolved subgraph edit holds
+        the canvas in Edit mode. The counterpart to :meth:`enter_edit_mode`, so that a
+        caller outside the canvas can drive a round trip -- the layout probe and the
+        height tests both do -- without reaching for the button's own slot.
+        """
         if not self.resolve_subgraph_edit():
-            return
+            return False
         self._apply_mode(BotMode.RUN)
         self.mode_changed.emit(BotMode.RUN)
         self.config_changed.emit()
+        return True
+
+    def _on_done_clicked(self) -> None:
+        self.exit_edit_mode()
 
     def _on_save_done_clicked(self) -> None:
         if not self.resolve_subgraph_edit():
@@ -1784,6 +1795,13 @@ class BotCanvas(QWidget):
     def view(self) -> QWidget:
         """The graph view. Exposed for camera assertions and viewport geometry."""
         return self._view
+
+    @property
+    def header(self) -> QWidget:
+        """Bar B. Exposed for height assertions: the bar's height is resolved by this
+        canvas's layout, so a measurement that means anything has to be taken here
+        rather than off the header in isolation."""
+        return self._toolbar
 
     def enter_focus_mode(self, region_id: str) -> None:
         """Isolate a region's nodes in the view; hide everything else."""
