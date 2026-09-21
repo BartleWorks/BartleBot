@@ -747,6 +747,15 @@ can be read without closing Setup.
   a drop's *name* cannot silently strip it. Uncategorized is an entry rather than the
   absence of one, and name and category go through one `edit_drop` because `match_name`
   depends on both.
+- **The live tables filter to the keep list**, which is what a user actually wants off a
+  finished run: not every drop, but whether anything they said to keep came out of it.
+  The rule is `quicksell.matching_keyword`, so a row shown is a row the node would spare,
+  and the list is the *effective* one — a socket wrench kept by a `sell_*` bool shows up
+  beside what was typed. The checkbox is disabled, not hidden, for a bot that never sells
+  (no quicksell node, or Enable Quicksell off): there the filter can only hide everything,
+  and a control that appears for some bots is one nobody finds. The keep list is a bot
+  option edited over in Setup and nothing reports here, so `DropSection.refresh_keep_list`
+  re-resolves it when the Drops tab comes forward.
 
 ## Two surfaces: Setup edits values, Options edits declarations
 
