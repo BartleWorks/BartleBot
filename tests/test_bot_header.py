@@ -58,10 +58,10 @@ def header(qapp) -> BotHeader:
 # ---------------------------------------------------------------------------
 
 
-def test_an_empty_canvas_says_so_and_shows_no_byline(header):
-    """The library panel is what fills the canvas then; a byline for nothing is noise."""
+def test_an_empty_canvas_says_so_and_shows_no_tag_row(header):
+    """The library panel is what fills the canvas then; a tag row for nothing is noise."""
     assert header.name_text == "No bot loaded"
-    assert not header._byline.isVisibleTo(header)
+    assert not header._tag_row.isVisibleTo(header)
 
 
 def test_loading_a_bot_fills_both_lines(header):
@@ -216,7 +216,22 @@ def test_the_run_controls_sit_between_the_metadata_and_the_view_tools(header):
 def test_both_rows_of_the_metadata_are_in_the_metadata_column(header):
     grid = header.layout()
 
-    assert grid.getItemPosition(grid.indexOf(header._byline))[:2] == (1, 0)
+    assert grid.getItemPosition(grid.indexOf(header._tag_row))[:2] == (1, 0)
+
+
+def test_the_author_shares_line_1_and_the_tags_get_line_2_to_themselves(header):
+    """Line 2 is the only thing in the bar that grows with the bot, so it gets the
+    width to itself.
+
+    Measured against the 87 shipped bots at 1600px, 83 of them wrapped their tag row
+    in Edit mode with the author sharing it and 13 without; at 1400 it is 86 against
+    35.  The author is a fixed 180px field that never grows, so line 1 -- where
+    everything else either has a fixed width or elides -- is where it costs nothing.
+    """
+    title = header._name_slot.parentWidget()
+
+    assert header._authors_slot.parentWidget() is title
+    assert header._tags_field.parentWidget() is header._tag_row
 
 
 def test_the_two_button_clusters_are_level_with_each_other(header):
@@ -268,7 +283,7 @@ def test_a_longer_status_word_does_not_move_the_run_buttons(qapp):
 
 
 def test_a_long_caption_shortens_rather_than_shoving_the_run_button_off_centre(qapp):
-    """The filename and the byline both use this; between them they are what would
+    """The filename and the author both use this; between them they are what would
     otherwise set the width of the whole left column."""
     label = _ElidedLabel("a_very_long_bot_filename_that_will_not_fit_in_the_bar.json")
     wide = label.sizeHint().width()
@@ -291,9 +306,8 @@ def test_an_elided_label_grows_back_when_the_room_returns(qapp):
     assert label.sizeHint().width() == wide
 
 
-def test_the_tags_share_the_byline_rather_than_taking_a_row_of_their_own(header, qapp):
-    """Line 2 is `by Author  <pills>`; two pills stacking is the bug that made the
-    bar taller than it needed to be."""
+def test_the_tags_stay_on_one_line_rather_than_stacking(header, qapp):
+    """Two pills stacking is the bug that made the bar taller than it needed to be."""
     header.set_config(_config(tags=["Gear", "Boss"]))
     header.resize(1400, 60)
     header.layout().activate()
@@ -319,11 +333,11 @@ def _tall_header(px: int) -> BotHeader:
     return BotHeader(cluster(), cluster())
 
 
-def test_the_byline_centres_in_its_row_however_tall_the_row_gets(qapp):
+def test_the_tag_row_centres_in_its_row_however_tall_the_row_gets(qapp):
     """``FlowLayout`` lays its rows from the top of whatever space it is handed.
 
     A box layout stretches a child to the full row by default, so once the spanning
-    button clusters made the grid row taller than the byline itself, the tag pills
+    button clusters made the grid row taller than the tag row itself, the tag pills
     sat against the row's ceiling with all the slack underneath.
     """
     header = _tall_header(70)
@@ -340,10 +354,15 @@ def test_the_byline_centres_in_its_row_however_tall_the_row_gets(qapp):
     assert abs((top + tags.height() / 2) - (row.y() + row.height() / 2)) <= 1
 
 
-def test_the_filename_sits_on_the_bot_name_s_baseline(qapp):
+def test_the_filename_and_author_sit_on_the_bot_name_s_baseline(qapp):
     """Centring matches the boxes, and a font box is mostly ascent -- so the smaller
     of two texts centred in one row carries its baseline a pixel above the other's.
-    The eye compares baselines, so that reads as a filename floating off the line."""
+    The eye compares baselines, so that reads as a filename floating off the line.
+
+    The author is the same size as the filename, so those two out of line with *each
+    other* is the more jarring of the two: nothing about them says they should sit
+    differently.  It read a pixel high because it is centred inside a ``_Swappable``
+    rather than in the row, which the original shift missed."""
     from PyQt6.QtGui import QFontMetrics
 
     header = _tall_header(32)
@@ -360,3 +379,160 @@ def test_the_filename_sits_on_the_bot_name_s_baseline(qapp):
         return widget.mapTo(header, widget.rect().topLeft()).y() + pad + centred + metrics.ascent()
 
     assert baseline(header._file_lbl) == baseline(header._name_lbl)
+    assert baseline(header._authors_lbl) == baseline(header._name_lbl)
+
+
+# ---------------------------------------------------------------------------
+# The bar's height does not move with the mode  (#83)
+#
+# The toolbar flickered on every Run/Edit switch.  Measured, the bar passed through
+# four heights per round trip and did not always come back: an untagged bot went
+# 38 -> 53 -> 56 and *stayed* 56, eighteen pixels too tall, until an unrelated
+# resize put it right.  Two causes, both fixed by making the height constant rather
+# than by re-measuring after the fact.
+#
+# The bar's height across a mode switch is measured in ``test_canvas_toolbar_layout``:
+# it only goes wrong through the canvas, whose layout is what reads the stale hint.
+# ---------------------------------------------------------------------------
+
+
+def test_the_tag_field_reserves_the_height_of_its_editable_form(header):
+    """The "Add…" buttons are taller than the pills they replace.
+
+    Left unreserved, that difference made the whole bar a pixel taller in Edit mode —
+    and because the canvas reads the bar's height one event-loop pass stale, that pixel
+    stuck on the way back out.
+    """
+    header.set_config(_config(tags=[]))
+    tags = header._tags_field
+
+    header.set_editable(False)
+    run = tags.sizeHint().height()
+    header.set_editable(True)
+    edit = tags.sizeHint().height()
+
+    assert run == edit
+    assert tags.minimumHeight() >= tags._buttons.sizeHint().height()
+
+
+def test_typing_a_version_does_not_bring_the_pill_up_beside_the_field(header):
+    """The pill and its editor are two states of one slot, never both at once.
+
+    ``_apply_version`` showed the pill whenever the version was non-empty, which in
+    Edit mode meant the read-only pill appeared next to the field being typed into —
+    and grew the bar by its height while it was there.
+    """
+    header.set_config(_config(version=""))
+    header.set_editable(True)
+
+    header._version_edit.setText("3.0")
+
+    assert header._version_edit.isVisibleTo(header)
+    assert not header._version_pill.isVisibleTo(header)
+
+
+def test_a_slot_is_only_as_wide_as_the_field_it_is_showing(header):
+    """The stack must not claim the width of the editor it is not showing.
+
+    A ``QStackedLayout`` reports the widest of *every* page, showing or not — unlike a
+    box layout, which skips a hidden child.  Left alone, Run mode sized each slot to its
+    editor: the name's 240px minimum and the author field's fixed 180 pushed the version
+    pill and the tag pills right by that much, and stretched the version pill across a
+    slot several times its own text.  Height comes from both pages; width must not.
+    """
+    header.set_config(_config())
+    header.set_editable(False)
+
+    assert header._version_slot.sizeHint().width() == header._version_pill.sizeHint().width()
+    assert header._authors_slot.sizeHint().width() == header._authors_lbl.sizeHint().width()
+
+    header.set_editable(True)
+
+    # Each page's own explicit bounds still apply: the version field is a fixed 60px and
+    # the name field has a 240px minimum, and reporting a page's width upward must not
+    # drop either the way an unclamped hint did.
+    assert header._version_slot.sizeHint().width() == 60
+    assert header._name_slot.sizeHint().width() >= header._name_edit.minimumWidth()
+
+
+def test_a_slot_is_as_tall_as_its_taller_half_in_both_modes(header):
+    """The other half of the same split, and the reason the stack is there at all."""
+    header.set_config(_config())
+
+    header.set_editable(False)
+    run = header._authors_slot.sizeHint().height()
+    header.set_editable(True)
+    edit = header._authors_slot.sizeHint().height()
+
+    assert run == edit
+    assert run >= header._authors_edit.sizeHint().height()
+
+
+def test_the_tag_pills_centre_in_their_row_in_run_mode(header):
+    """The floor that keeps the bar's height constant must not leave the pills high.
+
+    The tag field reserves the height of its editable form in both modes, so in Run mode
+    the pills are shorter than the rect they are handed — and a flow lays its rows from
+    the top of that rect unless told otherwise.  The spare pixels all landed below the
+    pills, putting them above the centre of the row they are given.
+    """
+    header.set_config(_config(tags=["Gear"]))
+    header.set_editable(False)
+    header.resize(1200, header.sizeHint().height())
+    header.show()
+    header.layout().activate()
+
+    field = header._tags_field
+    pills = field._pill_host.findChildren(TagPill)
+    assert pills, "no pills to measure"
+    pill = pills[0]
+
+    pill_centre = pill.mapTo(field, pill.rect().center()).y()
+    assert abs(pill_centre - field.rect().center().y()) <= 1
+
+
+def test_a_typical_bot_keeps_its_tags_on_one_line_in_edit_mode(header):
+    """The width the author used to take off this row, stated as the thing it buys.
+
+    Four tags is the 94th percentile of the 87 shipped bots, and the widest four-tag
+    row among them (``the_great_spyre``) is the case measured here.  With the author
+    sharing this row it wrapped at 1600px and above; the guard is Edit mode because
+    that is where the three "Add..." buttons join the flow and the row is widest.
+
+    A single line means ``height() == _floor()``: the floor is one row of the editable
+    form, and wrapping is the only thing that takes the field past it.
+    """
+    header.set_config(_config(tags=["Gear", "Reagents", "Spellements", "Dungeon"]))
+    header.set_editable(True)
+    header.resize(1920, header.sizeHint().height())
+    header.show()
+    header.layout().activate()
+
+    field = header._tags_field
+    assert field.height() == field._floor(), "the tag row wrapped at 1920px with four tags"
+
+
+def test_the_version_pill_centres_against_the_bot_name(header):
+    """A slot taller than the field it is showing must centre it, not hang it from the top.
+
+    The slot is as tall as the *editor* it is not showing — that is what keeps the bar's
+    height off the mode — so in Run mode the 13px pill sits in a 22px cell.
+    ``QStackedLayout`` has no alignment of its own and parks a short page at the top,
+    which left the pill four and a half pixels above the name beside it.
+    """
+    header.set_config(_config())
+    header.set_editable(False)
+    header.resize(1200, header.sizeHint().height())
+    header.show()
+    header.layout().activate()
+
+    title = header._name_slot.parentWidget()
+    pill = header._version_pill
+    pill_centre = pill.mapTo(title, pill.rect().center()).y()
+    name_centre = header._name_lbl.mapTo(title, header._name_lbl.rect().center()).y()
+
+    # Both halves, because each fails a different way.  Stretched to fill the cell, the
+    # pill lands near the right centre but reads as a tall grey smudge rather than a
+    # pill; kept to its own height but hung from the top, it reads as misaligned.
+    assert pill.height() == pill.sizeHint().height(), "the pill was stretched to fill its slot"
+    assert abs(pill_centre - name_centre) <= 1, "the pill did not centre against the name"

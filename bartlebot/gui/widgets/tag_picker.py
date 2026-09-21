@@ -31,8 +31,8 @@ TAG_ICON_PX = 20
 def tag_icon(tag: str) -> QIcon | None:
     """A tag's extracted medallion at :data:`TAG_ICON_PX`, or None -- the ordinary case.
 
-    None on every install that has not run the extractor, and always for the Type tags,
-    which have no game art. Every caller keeps its text form for that case.
+    None on every install that has not run the extractor, which is most of them. Every
+    caller keeps its text form for that case.
 
     Cached per :func:`card_art.cache_generation`, so ``card_art.forget_cache`` is what
     makes new art visible here too. The lookup stats the file twice, and the library
@@ -114,8 +114,8 @@ class TagPickerButton(PickerButton):
 
     *caption* pins the button's text. A filter button says what is selected, because
     the selection *is* the filter and there is nowhere else to read it. An editor
-    button sits above chips that already show the selection, so its text is free to
-    say what pressing it does instead — "Add Rewards…" rather than "Rewards (2)".
+    button sits beside chips that already show the selection, so it can stay the bare
+    group name — "Rewards" rather than "Rewards (2)".
     """
 
     #: Class-level default so ``PickerButton.__init__`` can call ``format_text``

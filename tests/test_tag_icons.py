@@ -14,7 +14,7 @@ import pytest
 from PIL import Image, ImageDraw
 
 from bartlebot import card_art
-from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS
+from bartlebot.bot_tags import BOT_TAGS
 from bartlebot.card_art import tag_icon_name
 from tools.extract_card_art import (
     BAND_COLOUR,
@@ -45,19 +45,11 @@ def test_no_two_tags_share_a_key():
 # -- the extractor's table ---------------------------------------------------------------
 
 
-def test_every_reward_and_activity_tag_has_exactly_one_source():
+def test_every_tag_has_exactly_one_source():
     """A tag added to the vocabulary with no medallion keeps its text pill silently;
-    this is where that gap shows. Type tags have no game art on purpose."""
-    wanted = set(TAG_GROUPS["Rewards"]) | set(TAG_GROUPS["Activity"])
-
-    assert set(TAG_TEXTURES) | set(TAG_COMPOSITES) == wanted
+    this is where that gap shows."""
+    assert set(TAG_TEXTURES) | set(TAG_COMPOSITES) == set(BOT_TAGS)
     assert not set(TAG_TEXTURES) & set(TAG_COMPOSITES)
-
-
-def test_the_type_tags_stay_text():
-    for tag in TAG_GROUPS["Type"]:
-        assert tag not in TAG_TEXTURES
-        assert tag not in TAG_COMPOSITES
 
 
 def test_tag_sources_are_full_paths_and_join_the_icons_map():
@@ -244,11 +236,11 @@ def test_the_pill_keeps_its_name_without_art(qapp, art_home):
     from bartlebot.gui.widgets.tag_pill import TagPill
 
     _extract("Gear")
-    pill = TagPill("Template")  # a Type tag: never has art
+    pill = TagPill("Boss")  # has a source, but this install extracted only Gear
 
     assert not pill.has_icon
-    assert pill.text() == "Template"
-    assert group_accent("Type") in pill.styleSheet()
+    assert pill.text() == "Boss"
+    assert group_accent("Activity") in pill.styleSheet()
 
 
 def test_the_chip_takes_the_pills_medallion_shape(qapp, art_home):

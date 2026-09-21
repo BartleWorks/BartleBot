@@ -17,7 +17,7 @@ Both take their colour from the same call, so the sizes differ and the hues neve
 Both are also led by the tag's game medallion where the user has extracted one (#29),
 at ``TAG_ICON_PX``: the pill is exactly as tall as the medallion, so the ring forms its
 rounded left end and the coloured body runs on from it, name included. Without extracted
-art, and always for the Type tags, which have none, both are exactly the text forms above.
+art, which is most installs, both are exactly the text forms above.
 
 :class:`NeutralPill` is the odd one out and lives here for the shape rather than the
 palette: a caption that wants to look like a pill without claiming a tag colour.
@@ -123,8 +123,7 @@ class TagPill(QLabel):
 
     The medallion form is drawn rather than styled (see :func:`paint_medallion_pill`): a
     stylesheet cannot put an icon flush with a rounded end. The text form, group-coloured,
-    is every other case: an install with no extracted art, and the Type tags, which have
-    none.
+    is every other case: an install with no extracted art.
 
     The name stays beside the medallion. The art alone was tried and was not enough to
     read a card by.

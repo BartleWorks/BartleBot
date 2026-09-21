@@ -160,7 +160,7 @@ SINGLE_IMAGE_BADGES: frozenset[str] = frozenset({"MonsterMagic", "Unfiltered"})
 #: the same shape: nothing in the game pairs these with our vocabulary, so there is no
 #: table to read them from. Full paths, because several basenames recur across folders.
 #: ``Button_Backpack`` and ``Art_Quest_Max_Gold`` exist only at 64px; the rest are 128px.
-#: The Type tags (Subgraph, Template) have no game art and stay text.
+#: Every tag in the vocabulary has a source here or in ``TAG_COMPOSITES``.
 TAG_TEXTURES: dict[str, str] = {
     # Rewards
     "Gear": "GUI/Buttons/Button_Backpack.dds",

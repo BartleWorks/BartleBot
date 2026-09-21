@@ -6,7 +6,7 @@ windows and owns the *clients*.  Name and status used to live in Bar A essential
 by accident, which meant they vanished with the game view.
 
 The metadata rows are the ones ``BotInfoSection`` used to hold, lifted rather than
-rewritten: ``_swappable`` and ``_TagsField`` are that section's mechanism, moved
+rewritten: ``_Swappable`` and ``_TagsField`` are that section's mechanism, moved
 here whole.  Everything else the old Bot tab carried is gone —
 
 * **Start** (``start_location``) was never read by the engine, and ``go_to_world``
@@ -36,6 +36,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QLineEdit,
     QSizePolicy,
+    QStackedLayout,
     QVBoxLayout,
     QWidget,
 )
@@ -68,20 +69,124 @@ _COL_RUN = 1
 _COL_TOOLS = 2
 
 
-def _swappable(label_w: QWidget, edit_w: QWidget) -> QWidget:
-    """Container that shows either *label_w* or *edit_w* (not both).
+def _centred(w: QWidget) -> QWidget:
+    """*w* in a host that centres it vertically and lets it fill horizontally.
 
-    The label is shown by default.  Call ``setVisible`` on each child to switch
-    modes; the layout collapses the hidden widget to zero.
+    ``QStackedLayout`` has no alignment of its own -- it ignores both
+    ``setAlignment`` overloads -- and gives a page its natural height at the *top* of
+    the cell.  That is invisible for a page as tall as the cell, and wrong for one that
+    is not: the version pill is 13px in a 22px slot (the slot being as tall as the
+    editor it is not showing, which is what keeps the bar's height off the mode), so it
+    sat four and a half pixels above the bot name beside it.
+
+    A one-child box layout is the alignment the stack will not do.
     """
-    w = QWidget()
-    lay = QVBoxLayout(w)
+    host = QWidget()
+    lay = QVBoxLayout(host)
     lay.setContentsMargins(0, 0, 0, 0)
     lay.setSpacing(0)
-    lay.addWidget(label_w)
-    lay.addWidget(edit_w)
-    edit_w.setVisible(False)
-    return w
+    lay.addWidget(w, 0, Qt.AlignmentFlag.AlignVCenter)
+    return host
+
+
+def _clamped_width(widget: QWidget, width: int) -> int:
+    """*width* held to whatever explicit bounds *widget* carries.
+
+    A hint is only ever advisory, and normally it is the parent layout that holds it to
+    the widget's own minimum and maximum.  Reporting a page's width up through
+    :class:`_Swappable` steps over that layout, so the clamping has to be done here or
+    the bounds are silently dropped: the bot name's 240px minimum stopped applying, and
+    the version field's ``setFixedWidth(60)`` lost to a ``QLineEdit``'s generous 210px
+    natural hint.
+    """
+    return max(widget.minimumWidth(), min(width, widget.maximumWidth()))
+
+
+class _Swappable(QWidget):
+    """Container showing its label, its editor, or neither -- at one fixed height.
+
+    A ``QStackedLayout`` rather than a box holding both, which is the whole point:
+    a stack reserves ``max(label, editor)`` in *every* state, so swapping one for
+    the other cannot change the header's height, and a mode switch cannot move the
+    bar.  A ``QVBoxLayout`` could only collapse the hidden child to zero, which
+    made the bar a different height in each mode -- and worse, a *third* height
+    while the swap was half done, because ``setVisible`` on two children is two
+    steps and the container asked for the sum of both in between.  The canvas laid
+    the bar out at that intermediate height, and painted it there; leaving Edit with
+    no tags it then stayed 18px too tall until an unrelated resize.  See
+    ``_set_label_mode``.
+
+    The cost is a Run-mode bar as tall as the editors it is not showing.  That is
+    the trade: a bar that is 14px taller than it needs to be reads as deliberate,
+    and a bar that changes height twice on the way between two modes does not.
+
+    Three states, not two, because the version pill is hidden outright when the bot
+    has no version -- a stack has no "neither" of its own, so the container hides.
+    """
+
+    def __init__(self, label_w: QWidget, edit_w: QWidget, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._label_w = label_w
+        self._edit_w = edit_w
+        self._showing_label = True
+        lay = QStackedLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        self._label_page = _centred(label_w)
+        self._edit_page = _centred(edit_w)
+        lay.addWidget(self._label_page)
+        lay.addWidget(self._edit_page)
+        self._stack = lay
+        # Not ``show_label``: this widget has no parent yet, and ``setVisible(True)``
+        # on a parentless widget shows it as a top-level window.  The layout it is
+        # about to be added to is what makes it visible.
+        lay.setCurrentWidget(self._label_page)
+
+    def show_label(self) -> None:
+        """Show the read-only label, and be visible."""
+        self._showing_label = True
+        self._stack.setCurrentWidget(self._label_page)
+        self.setVisible(True)
+        self.updateGeometry()
+
+    def show_editor(self) -> None:
+        """Show the editor, and be visible."""
+        self._showing_label = False
+        self._stack.setCurrentWidget(self._edit_page)
+        self.setVisible(True)
+        self.updateGeometry()
+
+    def hide_both(self) -> None:
+        """Take no space at all.  For the version pill on a bot with no version."""
+        self.setVisible(False)
+
+    def sizeHint(self) -> QSize:  # noqa: N802 - Qt override
+        """As wide as the page on show, and as tall as the taller of the two.
+
+        The height is the whole reason this is a stack, and it has to come from both
+        pages or the bar moves with the mode.  The *width* must not, and a plain
+        ``QStackedLayout`` gives no way to ask for one without the other: unlike a box
+        layout, which skips a hidden child, a stack reports the widest of *every* page
+        whether or not it is showing.  So in Run mode each slot claimed the width of the
+        editor it was not showing -- the name's 240px minimum, the author field's fixed
+        180 -- which pushed the version pill and the tag pills right by that much and
+        stretched the pill itself across a slot far wider than its text.
+        """
+        current = self._label_w if self._showing_label else self._edit_w
+        width = _clamped_width(current, current.sizeHint().width())
+        height = max(self._label_w.sizeHint().height(), self._edit_w.sizeHint().height())
+        return QSize(width, height)
+
+    def minimumSizeHint(self) -> QSize:  # noqa: N802 - Qt override
+        """The same split as ``sizeHint``: width from the page on show, height from both.
+
+        Needed as well as the hint, because a minimum is what a layout honours when it
+        is short of room -- and the stack's own minimum carries the hidden page's width
+        for exactly the same reason.
+        """
+        current = self._label_w if self._showing_label else self._edit_w
+        width = _clamped_width(current, current.minimumSizeHint().width())
+        height = max(self._label_w.minimumSizeHint().height(), self._edit_w.minimumSizeHint().height())
+        return QSize(width, height)
 
 
 def _let_shrink(w: QWidget) -> None:
@@ -91,7 +196,7 @@ def _let_shrink(w: QWidget) -> None:
     the two side columns -- but a stretch factor only divides what is *left over*
     after every column's minimum, and a column's minimum is its contents'.  In Edit
     mode the metadata grows two things that cannot shrink at all: the author field
-    is a fixed-width ``QLineEdit``, and the two Add-tag buttons are one atomic item
+    is a fixed-width ``QLineEdit``, and the tag picker buttons are one atomic item
     in the pill flow.  Together they claimed about 440px, which is more than half of
     a bar under ~1030px wide -- so on a narrow bar the metadata pushed the centre
     column, and the transport moved right by the overflow when the mode changed.
@@ -111,10 +216,10 @@ def _let_shrink(w: QWidget) -> None:
 class _ElidedLabel(ThemedMixin, QLabel):
     """A one-line label that shortens its text rather than widening the bar.
 
-    The byline shares line 2 with the tag pills, and an author list long enough to
-    push them off the end would make the whole header claim a minimum width the
-    canvas has to honour.  ``QLabel`` has no elide mode of its own, so the text is
-    elided against the width Qt actually gave us, on every resize.
+    The author and the filename share line 1 with the bot name, and either of them
+    long enough to push the rest off the end would make the whole header claim a
+    minimum width the canvas has to honour.  ``QLabel`` has no elide mode of its own,
+    so the text is elided against the width Qt actually gave us, on every resize.
     """
 
     def __init__(self, text: str = "", *, color: str = "text_subtle", parent: QWidget | None = None) -> None:
@@ -123,7 +228,7 @@ class _ElidedLabel(ThemedMixin, QLabel):
         self._color_token = color
         # Maximum, not Ignored: the label asks for the width its full text wants and
         # settles for less. Ignored asks for nothing, which in a row of stretch-0
-        # widgets is exactly what it gets -- the byline vanished that way.
+        # widgets is exactly what it gets -- the author line vanished that way.
         self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
         self.refresh_theme_styles()
         self._apply_elide()
@@ -187,17 +292,18 @@ class _ElidedLabel(ThemedMixin, QLabel):
 
 
 class _TagsField(QWidget):
-    """The bot's tags as pills, and two buttons that add more.
+    """The bot's tags as pills, led in Edit mode by one picker button per group.
 
     Unlike the other fields this is not a label swapped for an editor. The pills are
     the value in both modes — what changes is whether they carry a ✕ and whether the
-    Add buttons are shown — because a tag list reads the same either way and building
+    picker buttons are shown — because a tag list reads the same either way and building
     a second, differently-shaped view of it just to be read-only is how the two drift.
 
-    The buttons are captioned "Add Rewards…" / "Add Activity…" rather than the
-    library's "Rewards" / "Activity": there, the button *is* the filter and its text
-    has to report the selection; here the chips beside them already do that, so the
-    text is free to say what pressing it does.
+    The buttons are captioned "Rewards" / "Activity" with no count, unlike the
+    library's, where the button *is* the filter and its text has to report the
+    selection.  Here the chips beside them already do that.  Nor "Add Rewards…": the
+    popup toggles, so the same button takes a tag off again, and a caption saying
+    "Add" mislabels half of what it does.
     """
 
     tags_changed = pyqtSignal(list)
@@ -215,21 +321,32 @@ class _TagsField(QWidget):
         self._empty_lbl.setText(_PLACEHOLDER)
         root.addWidget(self._empty_lbl)
 
-        self._pill_host, self._pill_layout = flow_container()
+        # Centred, because the field reserves the editable form's height in both modes
+        # -- that is what keeps the bar's height off the mode -- so in Run mode the
+        # pills are shorter than the rect they are handed, and the grid row is taller
+        # still while the button clusters span it.  A flow hangs its rows from the top
+        # of what it was given, which put the pills above the row's own centre.
+        self._pill_host, self._pill_layout = flow_container(centre_rows=True)
         root.addWidget(self._pill_host)
 
-        # The Add buttons ride *inside* the pill flow, as one item, rather than in a
+        # The picker buttons ride *inside* the pill flow, as one item, rather than in a
         # flow of their own beside it.  Two flows side by side each wrap on their own
-        # share of the width, so a byline short of a hundred pixels came back two rows
+        # share of the width, so a row short of a hundred pixels came back two rows
         # of chips *and* two rows of buttons; one flow wraps once, and the buttons
         # move down whole rather than splitting.
+        #
+        # They lead the flow rather than trail it, so that their position is fixed.
+        # Trailing, every chip added or removed shifted both buttons sideways by that
+        # chip's width -- and removing one is a click on the chip's own ✕, which lands
+        # the pointer where the buttons are about to arrive.  Leading, the chips grow
+        # away from a stationary target instead.
         self._buttons = QWidget()
         button_layout = QHBoxLayout(self._buttons)
         button_layout.setContentsMargins(0, 0, 0, 0)
         button_layout.setSpacing(4)
         self._pickers: dict[str, TagPickerButton] = {}
         for group in TAG_GROUPS:
-            btn = TagPickerButton(title=group, group=group, caption=f"Add {group}…")
+            btn = TagPickerButton(title=group, group=group, caption=group)
             btn.setToolTip(f"Choose which {group.lower()} tags this bot carries")
             btn.selection_changed.connect(self._on_picker_changed)
             self._pickers[group] = btn
@@ -255,7 +372,46 @@ class _TagsField(QWidget):
         self._editable = editable
         self._rebuild()
 
+    def sizeHint(self) -> QSize:  # noqa: N802 - Qt override
+        """As tall as the editable form, whichever form is actually on show.
+
+        The picker buttons are a pixel taller than the pills and the placeholder
+        they replace, so without this floor the whole bar was a pixel taller in Edit
+        mode -- and the canvas resolves the bar's height from a hint that is one
+        event-loop pass stale, its own ``LayoutRequest`` arriving before the bar's.  So
+        it measured the mode being *left*, and the bar's later re-measure never
+        propagated back up: returning from Edit left the bar a pixel too tall and the
+        graph a pixel low until an unrelated resize.
+
+        A constant height is the fix rather than a re-measure after the fact -- a
+        height that never changes cannot be read at the wrong moment, and forcing the
+        re-measure was not even reliable, landing on the right pixel only some of the
+        time.
+
+        The floor is declared twice, here and as a ``setMinimumHeight`` in ``_rebuild``,
+        and both are load-bearing.  ``QWidgetItem`` answers ``heightForWidth`` from this
+        widget's *layout* rather than from the widget, and the pill flow inside reports
+        height-for-width -- so a parent sizing the field reads straight past this hint,
+        and only the minimum reaches it.  The hint is what keeps ``height()`` and
+        ``sizeHint()`` in agreement, which is how the tag row tells a field it should
+        *centre* from one it should stretch.
+
+        Wrapping still grows the field past this floor, which is the one height change
+        Edit mode genuinely makes: the picker buttons join the flow and a heavily
+        tagged bot's tag row takes a second line.
+        """
+        base = super().sizeHint()
+        return QSize(base.width(), max(base.height(), self._floor()))
+
     # -- internals -----------------------------------------------------
+
+    def _floor(self) -> int:
+        """The height the editable form needs, reserved in both modes.
+
+        Read live rather than cached at construction: the buttons are sized by the
+        theme's font, and a theme switch changes it.
+        """
+        return self._buttons.sizeHint().height()
 
     def _on_picker_changed(self, _keys: list) -> None:
         self._tags = [t for t in BOT_TAGS if any(t in p.tags() for p in self._pickers.values())]
@@ -267,14 +423,15 @@ class _TagsField(QWidget):
         self.tags_changed.emit(list(self._tags))
 
     def _rebuild(self) -> None:
-        # The Add buttons live in this layout too and are long-lived, so they come out
-        # before the sweep and go back in after it, always last.
+        # The picker buttons live in this layout too and are long-lived, so they come out
+        # before the sweep and go back in after it, always first.
         self._pill_layout.removeWidget(self._buttons)
         while (item := self._pill_layout.takeAt(0)) is not None:
             if w := item.widget():
                 w.hide()
                 w.deleteLater()
 
+        self._pill_layout.addWidget(self._buttons)
         for tag in self._tags:
             if self._editable:
                 chip = TagChip(tag)
@@ -282,14 +439,21 @@ class _TagsField(QWidget):
                 self._pill_layout.addWidget(chip)
             else:
                 self._pill_layout.addWidget(TagPill(tag))
-        self._pill_layout.addWidget(self._buttons)
 
-        # The placeholder stands in for the pills, not for the whole row: with the Add
-        # buttons showing, an untagged bot already reads as untagged.
+        # The placeholder stands in for the pills, not for the whole row: with the
+        # picker buttons showing, an untagged bot already reads as untagged.
         self._empty_lbl.setVisible(not self._tags and not self._editable)
         self._pill_host.setVisible(bool(self._tags) or self._editable)
         self._buttons.setVisible(self._editable)
         self._pill_host.updateGeometry()
+        # Both halves of the floor ``sizeHint`` documents.  ``minimumHeight`` is the one
+        # a wrapping widget's parent actually honours: the pill flow reports
+        # height-for-width, and ``QWidgetItem`` answers that from this widget's *layout*
+        # rather than from the widget, so the hint alone was read straight past.  Set
+        # here rather than once in ``__init__`` because the buttons are sized by the
+        # theme's font, and this runs on every rebuild.
+        self.setMinimumHeight(self._floor())
+        self.updateGeometry()
 
 
 class BotHeader(ThemedMixin, QWidget):
@@ -330,6 +494,9 @@ class BotHeader(ThemedMixin, QWidget):
         super().__init__(parent)
         self._config: BotConfig | None = None
         self._suppress = False
+        # Which half of every metadata slot is on show.  Run mode is the label side,
+        # and the header starts there with no bot loaded.
+        self._label_mode = True
         # Last status handed to set_status, replayed on a theme switch: the dot's
         # colour is a THEME value the caller resolved, so this widget cannot
         # re-derive it without being told again.
@@ -337,7 +504,7 @@ class BotHeader(ThemedMixin, QWidget):
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-        # -- Left column, row 1: name, version, file ------------------
+        # -- Left column, row 1: name, version, file, author ----------
         self._name_lbl = QLabel(_NO_BOT)
         name_font = self._name_lbl.font()
         name_font.setBold(True)
@@ -348,7 +515,7 @@ class BotHeader(ThemedMixin, QWidget):
         self._name_edit.setPlaceholderText("Bot name")
         self._name_edit.setFont(name_font)
         # Sized for a name, not for the label it stands in for: a QLineEdit inside a
-        # _swappable takes the container's width, and the container is as wide as
+        # _Swappable takes the container's width, and the container is as wide as
         # whichever of the pair is bigger.
         self._name_edit.setMinimumWidth(240)
 
@@ -365,36 +532,51 @@ class BotHeader(ThemedMixin, QWidget):
         title_row = QHBoxLayout(title)
         title_row.setContentsMargins(0, 0, 0, 0)
         title_row.setSpacing(6)
-        title_row.addWidget(_swappable(self._name_lbl, self._name_edit), 0, Qt.AlignmentFlag.AlignVCenter)
-        title_row.addWidget(_swappable(self._version_pill, self._version_edit), 0, Qt.AlignmentFlag.AlignVCenter)
-        title_row.addWidget(self._file_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
-        title_row.addStretch(1)
-        _let_shrink(title)
-
-        # -- Left column, row 2: byline and tags ----------------------
+        self._name_slot = _Swappable(self._name_lbl, self._name_edit)
+        self._version_slot = _Swappable(self._version_pill, self._version_edit)
+        title_row.addWidget(self._name_slot, 0, Qt.AlignmentFlag.AlignVCenter)
+        title_row.addWidget(self._version_slot, 0, Qt.AlignmentFlag.AlignVCenter)
         self._authors_lbl = _ElidedLabel()
         self._authors_edit = QLineEdit()
         self._authors_edit.setPlaceholderText("Author(s)")
         self._authors_edit.setFixedWidth(180)
 
+        # The author rides up here rather than beside the tags, and the reason is the
+        # width it takes off the row below.  Measured against the 87 shipped bots at
+        # 1600px -- an ordinary window, not a narrow one -- 83 of them wrapped their tag
+        # row in Edit mode with the author in it, and 13 without.  At 1400 it is 86
+        # against 35, and Run-mode wrapping goes away entirely above 1200.  The tag row
+        # is the one that wraps because it is the only thing in the bar that grows with
+        # the bot; everything else is fixed or elides, so the author is exactly the
+        # 190px the tags were short of.
+        #
+        # The cost is that this row is now the crowded one: below about 1300px in Edit
+        # mode the name field starts shrinking (218px at 1200, 124px at 900) where it
+        # held its 240 before.  That is the right way round -- a name field with room
+        # for twenty characters instead of thirty still reads, and a bar that grows a
+        # row every time you open the editor does not.
+        self._authors_slot = _Swappable(self._authors_lbl, self._authors_edit)
+
+        title_row.addWidget(self._file_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
+        title_row.addWidget(self._authors_slot, 0, Qt.AlignmentFlag.AlignVCenter)
+        title_row.addStretch(1)
+        _let_shrink(title)
+
+        # -- Left column, row 2: tags ---------------------------------
         self._tags_field = _TagsField()
 
-        self._byline = QWidget()
-        byline_row = QHBoxLayout(self._byline)
-        byline_row.setContentsMargins(0, 0, 0, 0)
-        byline_row.setSpacing(6)
-        # Centred rather than stretched, both of them.  A box layout hands a
-        # stretched child the whole row, and ``FlowLayout`` then lays its rows from
-        # the top of what it was given -- so whenever the grid row is taller than the
-        # byline itself (the spanning button clusters are what make it so), the pills
-        # sat against the row's ceiling with the slack all underneath.  The byline is
-        # a row of things of different heights; centring each keeps them on one line
-        # however tall the row around them gets.
-        byline_row.addWidget(_swappable(self._authors_lbl, self._authors_edit), 0, Qt.AlignmentFlag.AlignVCenter)
-        byline_row.addSpacing(4)
-        byline_row.addWidget(self._tags_field, 0, Qt.AlignmentFlag.AlignVCenter)
-        byline_row.addStretch(1)
-        _let_shrink(self._byline)
+        self._tag_row = QWidget()
+        tag_row = QHBoxLayout(self._tag_row)
+        tag_row.setContentsMargins(0, 0, 0, 0)
+        tag_row.setSpacing(6)
+        # Centred rather than stretched.  A box layout hands a stretched child the
+        # whole row, and ``FlowLayout`` then lays its rows from the top of what it was
+        # given -- so whenever the grid row is taller than the byline itself (the
+        # spanning button clusters are what make it so), the pills sat against the
+        # row's ceiling with the slack all underneath.
+        tag_row.addWidget(self._tags_field, 0, Qt.AlignmentFlag.AlignVCenter)
+        tag_row.addStretch(1)
+        _let_shrink(self._tag_row)
 
         # -- Centre column: clock, transport, status — one row --------
         # Always shown, and zeroed rather than hidden while idle.  A clock that
@@ -435,7 +617,7 @@ class BotHeader(ThemedMixin, QWidget):
         grid.setHorizontalSpacing(8)
         grid.setVerticalSpacing(0)
         grid.addWidget(title, 0, _COL_META)
-        grid.addWidget(self._byline, 1, _COL_META)
+        grid.addWidget(self._tag_row, 1, _COL_META)
         # Both control clusters span the two metadata rows, which is what puts them on
         # the bar's own vertical centre rather than on the centre of row 1.  Nothing is
         # stacked in either column any more, so they are level with each other -- which
@@ -449,7 +631,7 @@ class BotHeader(ThemedMixin, QWidget):
         # column's minimum -- which is why both metadata rows went through
         # ``_let_shrink`` above.  The cost is that the metadata is capped at half the
         # bar however much of it there is -- so a long filename elides, and in Edit
-        # mode a heavily tagged bot wraps its byline.  Both degrade quietly; a Run
+        # mode a heavily tagged bot wraps its tag row.  Both degrade quietly; a Run
         # button that drifts with the length of the bot's name does not.
         grid.setColumnStretch(_COL_META, 1)
         grid.setColumnStretch(_COL_TOOLS, 1)
@@ -477,8 +659,8 @@ class BotHeader(ThemedMixin, QWidget):
             self._authors_lbl.setText("")
             self._tags_field.set_tags([])
             self._version_pill.setText("")
-            self._version_pill.setVisible(False)
-            self._byline.setVisible(False)
+            self._apply_version_slot()
+            self._tag_row.setVisible(False)
             self._set_label_mode(True)
         else:
             self._name_lbl.setText(config.name or _PLACEHOLDER)
@@ -488,7 +670,7 @@ class BotHeader(ThemedMixin, QWidget):
             self._authors_lbl.setText(f"by {config.authors}" if config.authors else "")
             self._tags_field.set_tags(config.tags)
             self._apply_version(config.version)
-            self._byline.setVisible(True)
+            self._tag_row.setVisible(True)
         self._suppress = False
 
     def set_file(self, filename: str | None) -> None:
@@ -570,20 +752,40 @@ class BotHeader(ThemedMixin, QWidget):
     def _apply_version(self, version: str | None) -> None:
         """Show the version pill, or hide it — an empty pill is a grey smudge."""
         self._version_pill.setText(f"v{version}" if version else "")
-        self._version_pill.setVisible(bool(version))
+        self._apply_version_slot()
 
     def _set_label_mode(self, label_mode: bool) -> None:
-        for lbl, edit in (
-            (self._name_lbl, self._name_edit),
-            (self._version_pill, self._version_edit),
-            (self._authors_lbl, self._authors_edit),
-        ):
-            # The version pill is hidden outright when there is no version; do not
-            # let a mode switch bring an empty one back.
-            wanted = label_mode and (lbl is not self._version_pill or bool(self._version_pill.text()))
-            lbl.setVisible(wanted)
-            edit.setVisible(not label_mode)
+        """Swap every metadata field between its label and its editor.
+
+        Recorded on the instance because ``_apply_version`` has to know which of the
+        two the version slot should settle on: it is called while the user types into
+        the version field, and a slot that read the text and switched to the pill
+        would take the field out from under them.
+        """
+        self._label_mode = label_mode
+        for slot in (self._name_slot, self._authors_slot):
+            if label_mode:
+                slot.show_label()
+            else:
+                slot.show_editor()
+        self._apply_version_slot()
         self._tags_field.set_editable(not label_mode)
+
+    def _apply_version_slot(self) -> None:
+        """Put the version slot in the state the mode and the version together call for.
+
+        The pill is hidden outright when there is no version, and a mode switch must
+        not bring an empty one back -- but the *editor* is shown whether or not there
+        is a version to edit, because an empty field is how a version gets typed.
+        Before this was routed through the slot, typing a version in Edit mode brought
+        the pill back *beside* the field it was being typed into.
+        """
+        if not self._label_mode:
+            self._version_slot.show_editor()
+        elif self._version_pill.text():
+            self._version_slot.show_label()
+        else:
+            self._version_slot.hide_both()
 
     def _apply_status(self) -> None:
         color, status, elapsed = self._status
@@ -618,13 +820,20 @@ class BotHeader(ThemedMixin, QWidget):
         self._elapsed_lbl.setMinimumWidth(slot)
         self._status_side.setMinimumWidth(slot)
 
-    def _align_file_baseline(self) -> None:
-        """Sit the filename on the bot name's baseline rather than on the row's centre.
+    def _align_meta_baselines(self) -> None:
+        """Sit the filename and the author on the bot name's baseline, not the row's centre.
 
         Two texts of different sizes centred in the same row do not share a baseline.
         Centring matches the *boxes*, and a font box is mostly ascent -- so the smaller
         of the two carries its baseline higher, and the filename read as a pixel above
         the line the name sets.  The eye compares baselines, not boxes.
+
+        The author is the same font as the filename and needs the same shift.  It was
+        left out when this was written because it sits inside a :class:`_Swappable`
+        rather than in the row -- which centres it just the same, so it read a pixel
+        high beside a filename that had been corrected.  Two texts of *identical* size
+        out of line with each other is the more jarring of the two, since nothing about
+        them says they should sit differently.
 
         The shift is the difference between the two fonts' ascents, less the
         difference their box heights already account for.  The row's height cancels
@@ -640,9 +849,10 @@ class BotHeader(ThemedMixin, QWidget):
         floating.
         """
         name = QFontMetrics(self._name_lbl.font())
-        stamp = QFontMetrics(self._file_lbl.font())
-        shift = (name.ascent() - stamp.ascent()) - (name.height() - stamp.height()) / 2
-        self._file_lbl.set_baseline_shift(math.floor(abs(shift) + 0.5) * (1 if shift >= 0 else -1))
+        for label in (self._file_lbl, self._authors_lbl):
+            stamp = QFontMetrics(label.font())
+            shift = (name.ascent() - stamp.ascent()) - (name.height() - stamp.height()) / 2
+            label.set_baseline_shift(math.floor(abs(shift) + 0.5) * (1 if shift >= 0 else -1))
 
     def apply_theme_styles(self) -> None:
         self.setStyleSheet(f"BotHeader {{ background: {THEME.surface}; }}")
@@ -652,5 +862,5 @@ class BotHeader(ThemedMixin, QWidget):
         self._size_status_slots()
         # After the labels above have their own styles: the shift is measured from the
         # fonts a stylesheet may just have changed.
-        self._align_file_baseline()
+        self._align_meta_baselines()
         self._apply_status()

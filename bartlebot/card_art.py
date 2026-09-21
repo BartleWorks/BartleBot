@@ -310,8 +310,8 @@ def badge_icon_path(key: str) -> Path | None:
 def tag_icon_path(tag: str) -> Path | None:
     """The PNG for a bot tag's medallion, or None if there is not one on this machine.
 
-    None for the Type tags (Subgraph, Template) on every machine: they have no game art,
-    and keep their text pill.
+    Every tag in the vocabulary has a source, so None here means the extractor has not
+    been run — the ordinary case. The caller keeps its text pill for that.
     """
     return icon_path(tag_icon_name(tag))
 

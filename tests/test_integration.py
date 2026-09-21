@@ -1023,8 +1023,17 @@ def test_every_shipped_bot_has_at_least_one_tag():
     jewels, so a rule keyed on drops[].category would tag everything with everything.
     The table lives in scripts/migrate_bot_tags.py; this is what keeps it applied
     when a bot is added.
+
+    ``subgraphs/`` is out, because the vocabulary has nothing honest to say about a
+    building block: every tag names a reward a run yields or an activity it does, and
+    a subgraph is neither — it is a fragment of one. Its folder is how it is found,
+    which is the same reason the "Type" group was dropped.
     """
-    untagged = [p.relative_to(_BOTS_DIR).as_posix() for p in _shipped_bot_files() if not _load_raw(p).get("tags")]
+    untagged = [
+        p.relative_to(_BOTS_DIR).as_posix()
+        for p in _shipped_bot_files()
+        if not _load_raw(p).get("tags") and p.parent.name != "subgraphs"
+    ]
 
     assert not untagged, f"bot files with no tags: {untagged}"
 

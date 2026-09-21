@@ -315,3 +315,56 @@ So the rule above inverts for anything shaped like "what is this control called"
 go straight to a live client. Either the in-app **UI Tree Browser**, or a probe
 that dumps the subtree and diffs it across a change the user makes by hand —
 `tools/probe_archmastery_ui.py` is the worked example of the second.
+
+# Our own widgets: measure before theorising
+
+`tools/probe_layout.py` is the equivalent of the rule above for BartleBot's *own* GUI.
+It builds a real `BotCanvas` offscreen, drives a scripted interaction, and prints what
+Qt did: each widget's height at every step, the event stream, and each paint's damage
+rect. No game client, so it is cheap to re-run.
+
+```bash
+uv run python tools/probe_layout.py mode            # Run/Edit switches
+uv run python tools/probe_layout.py mode --tags 6   # a heavily tagged bot, whose tags wrap
+uv run python tools/probe_layout.py paints --show   # paint damage; --show to really paint
+```
+
+`bartlebot/qt_layout_debug.py` is the reusable half — `LayoutTracer` and
+`size_snapshot` — so the same instrumentation can be attached to the live app when a bug
+only reproduces there. It is installed nowhere by default and hooks nothing.
+
+**Widths measured offscreen are not the app's widths.** The offscreen platform resolves
+`fusion`, and the app resolves `windows11`; fusion's controls are much wider at the same
+font metrics — a "Gear" tag pill is 80px there and 59px in the app, a ~35% error that
+compounds across a row. Heights are close enough to reason about, widths are not. So
+**anything about wrapping, eliding or how much room a row needs must be measured with
+`--show`**, which uses the real platform and therefore the real style. This is the same
+trap `tests/CLAUDE.md` describes for CI, arriving through a different door: there the
+runner has the wrong style, here the probe does.
+
+**Reach for it before forming a theory about a layout or repaint bug.** #83's toolbar
+flicker took four wrong guesses — deferred `deleteLater`, height-for-width propagation,
+`setUpdatesEnabled`, a forced re-layout — each of which sounded right and measured as
+having no effect. One run of this printed the answer: Bar B was given six different
+heights per Run/Edit round trip, four of them heights no mode had asked for, and it ended
+18px taller than its own size hint said it should be.
+
+Two readings carry most of the diagnostic weight:
+
+- **Geometry that disagrees with the widget's own `sizeHint` after the event loop has
+  turned** means a parent laid the widget out from a hint that has since changed, and
+  nothing is coming to correct it. Qt delivers `LayoutRequest` as a *posted* event, so a
+  parent whose request is served before its child's measures the state the child is
+  leaving. Fix it by removing the dependence — a height that never changes cannot be read
+  at the wrong moment — not by forcing a re-measure afterwards, which in #83 landed on the
+  right pixel for two cycles and then stopped.
+- **A height the widget passed through that no resting state asked for** is a frame that
+  was painted. That is what a flicker *is*, and counting them is the difference between a
+  bar that is legitimately taller in Edit mode and one that overshoots on the way there.
+
+One Qt trap the tool was built around, worth knowing before reading a trace:
+**`QWidgetItem` answers `heightForWidth` from the widget's *layout*, never from the
+widget's own override.** So a wrapping widget — anything holding a `FlowLayout` — cannot
+floor its height by overriding `sizeHint` or `heightForWidth`; the parent reads straight
+past both. `setMinimumHeight` is the floor a parent honours. `_TagsField` in
+`bartlebot/gui/canvas/bot_header.py` sets both, and the comment there says why.
