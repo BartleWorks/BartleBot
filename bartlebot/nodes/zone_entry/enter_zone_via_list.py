@@ -1,4 +1,15 @@
-"""Node: interact with a zone-selection list object and teleport to the chosen zone."""
+"""Use a zone-selection list object -- a Streamportal, a Nanavator, a World Gate -- and teleport.
+
+Not a node in the library: it is how a planned ``list`` or ``gate`` step is run
+(``nodes/zone_navigation.step_call``) and how ``go_to_world`` works the spiral door. Callers
+hand over a row already resolved -- the text to match in every locale it might read, and where
+to stand -- because only they know what the row is: ``zone_lists.resolve`` for a zone list,
+``worlds.display_names`` for a gate, whose rows are worlds rather than zones.
+
+Go To Zone is what a bot author reaches for instead. A list object only ever stands in a zone
+the navigation map declares, so there is nothing this could be pointed at that Go To Zone
+cannot already plan a route to -- which is why it was retired as a node (#36).
+"""
 
 import asyncio
 import difflib
@@ -7,164 +18,15 @@ from collections.abc import Callable
 
 from wizwalker import XYZ, Keycode
 
-from bartlebot import dialog_captions, zone_lists, zone_nav
+from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     UNIVERSE_CANCEL_BUTTON,
     UNIVERSE_NEXT_PAGE,
     UNIVERSE_TELEPORT_BUTTON,
     universe_zone_option_path,
 )
-from bartlebot.nodes.timing import MAX_RETRIES, OBJECT_USE_DELAY, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
-
-PARAM_SCHEMA: list[ParamField] = [
-    ParamField(
-        key="zone",
-        type="nav_zone",
-        label="Zone",
-        help=(
-            "Zone all players must currently be in when this node executes, and where the "
-            "list object stands. Only a zone whose list object is on the navigation map can "
-            "be used: the map is what says where to stand and what the list calls each "
-            "destination."
-        ),
-        default="",
-        required=True,
-    ),
-    ParamField(
-        key="to_zone",
-        type="list_zone",
-        label="Destination",
-        help=(
-            "The zone to pick from the list. The choices are whatever the list object in Zone "
-            "offers, so pick the Zone first.\n\n"
-            "The row's text is never stored — it is worked out from the destination when the "
-            "bot runs, in whatever language the game is running. That is what lets a bot "
-            "authored in English run in any of the other six languages."
-        ),
-        default="",
-        required=True,
-    ),
-    ParamField(
-        key="override_xyz",
-        type="bool",
-        label="Override Coordinates",
-        help=(
-            "Use this node's own Interact and Reset XYZ instead of the points recorded for "
-            "this list object on the navigation map.\n\n"
-            "The map's points have been used in a real run, and a fix to them reaches every "
-            "bot at once, so leave this off unless this particular bot needs to approach the "
-            "object from somewhere else."
-        ),
-        default=False,
-        default_hint="Uses the points recorded for this list object.",
-        required=False,
-    ),
-    ParamField(
-        key="interact_xyz",
-        type="xyz",
-        label="Interact XYZ",
-        help="Coordinates where the interact prompt appears for the zone-list object.",
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
-        enabled_by="override_xyz",
-        required=False,
-    ),
-    ParamField(
-        key="reset_xyz",
-        type="xyz",
-        label="Reset XYZ",
-        help=(
-            "Coordinates where the interact prompt does NOT appear. "
-            "Used to clear stale prompts and reset between retry attempts."
-        ),
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
-        enabled_by="override_xyz",
-        required=False,
-    ),
-    ParamField(
-        key="sequential",
-        type="bool",
-        label="Sequential Interaction",
-        help=(
-            "Have players use the list object one at a time instead of together. Some list "
-            "objects only serve one player at a time, and a second player interacting while "
-            "the first has the list open has their keypress swallowed. Each player waits at "
-            "Reset XYZ, then opens the list, finds the entry and clicks Teleport before the "
-            "next player starts. All players are still confirmed in the destination zone "
-            "together at the end."
-        ),
-        default=False,
-        default_hint="All players interact at once.",
-        required=False,
-    ),
-    ParamField(
-        key="object_use_delay",
-        type="float",
-        label="Delay Between Object Uses (s)",
-        help=(
-            "Seconds to leave between one player finishing at the list object and the next player "
-            "starting on it, in Sequential Interaction. The object becoming free again has no "
-            "readable signal, so this is the only cover for it — raise it for a list object that "
-            "takes several seconds to become usable again. Ignored unless Sequential Interaction is "
-            "on."
-        ),
-        default=OBJECT_USE_DELAY,
-        minimum=0.0,
-        default_hint=f"{OBJECT_USE_DELAY}s between uses.",
-        required=False,
-    ),
-]
-
-NODE_SPEC = NodeSpec(
-    description=(
-        "Interacts with a zone-selection list object — a Streamportal, a Nanavator, a Telepad, a "
-        "Traveler's Truck, a Tamed Deimox — navigates its pages to find the row for the chosen "
-        "destination, selects it, and teleports all players there."
-    ),
-    params=PARAM_SCHEMA,
-    returns=[
-        ReturnSpec(
-            "SUCCESS",
-            "Zone entry selected, teleport button clicked, and all players confirmed in the destination zone.",
-        ),
-        ReturnSpec(
-            "FAILURE",
-            "No list object on the map joins Zone to Destination; players not in the expected zone; "
-            "interact prompt never appeared; zone list UI never opened; the destination's row was not "
-            "found on any page; or the zone change timed out.",
-        ),
-    ],
-    required_bot_options=[
-        BotOptionSpec(
-            name="Safety Delay",
-            type="float",
-            default=3.0,
-            minimum=0.0,
-            suffix=" s",
-            description=(
-                "Seconds to allow for game-server responses when waiting for prompts or menus. "
-                "Increase on high-latency connections."
-            ),
-        ),
-    ],
-    max_consecutive_retries=10,
-    usage_notes=(
-        "The list object, where to stand at it and what its rows read all come from the navigation "
-        "map (bartlebot/data/zone_nav.json), so a list this node cannot reach is one that has not "
-        "been recorded yet — record it with tools/zone_nav_tester rather than working around it here.\n\n"
-        "Go To Zone does all of this and plans the rest of the trip too. Reach for this node when a "
-        "bot has to use one particular list object at one particular moment, and Go To Zone when it "
-        "just has to end up somewhere.\n\n"
-        "Turn on Sequential Interaction when the list object only serves one player at a time — "
-        "the symptom is that one player's list opens and the others' X press does nothing, "
-        "intermittently rather than every run.\n\n"
-        "If some but not all players reach to_zone, the node first tries teleporting the "
-        "stragglers to whichever player did arrive — the same recovery Teleport To Player "
-        "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
-        "every player to already be mutual in-game friends."
-    ),
-)
+from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 _MAX_PAGES = 20  # Safety cap — must exceed the total page count of any zone list
 _FUZZY_THRESHOLD = 0.75  # Minimum SequenceMatcher ratio for a fuzzy match
@@ -376,47 +238,17 @@ async def _use_list_sequentially(
     return None
 
 
-def _plan(machine, params: dict) -> tuple[XYZ, XYZ, str, list[str]] | None:
-    """Where to stand and what to look for, or None with the reason logged.
-
-    Two ways in. A bot file names two zones and nothing else: the row's text is worked out
-    here, from the map, on the client that is about to run it — which is the whole point, since
-    the text differs per locale and the author only ever saw one of them. The navigator instead
-    hands over a row it has already resolved, because a World Gate's rows are worlds rather than
-    zones and no pick of a destination zone describes one.
-
-    Coordinates follow the same map unless the author took them over: the recorded points have
-    been used in a real client, and a correction to them should reach every bot at once.
-    """
-    if resolved_entry := params.get("zone_list_entry"):
-        return (
-            XYZ(**params["interact_xyz"]),
-            XYZ(**params["reset_xyz"]),
-            resolved_entry,
-            params.get("zone_list_aliases") or [],
-        )
-
-    resolved = zone_lists.resolve_zones(zone_nav.load(), params["zone"], params["to_zone"])
-    if isinstance(resolved, str):
-        machine.log(f"FAILURE: {resolved}", logging.WARNING)
-        return None
-    if params.get("override_xyz"):
-        interact, reset = XYZ(**params["interact_xyz"]), XYZ(**params["reset_xyz"])
-        machine.log(f"Using this node's own coordinates rather than the map's: {interact}", logging.DEBUG)
-    else:
-        interact, reset = XYZ(**resolved.interact_xyz), XYZ(**resolved.reset_xyz)
-    return interact, reset, resolved.entry, resolved.aliases
-
-
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: client.zone_name(), client.teleport(XYZ), client.is_in_npc_range(),
           client.send_key(Keycode.X), node_helpers.is_visible_by_path(),
           node_helpers.get_text_by_path(), node_helpers.click_by_path()
 
+    Params are whatever the caller resolved: the two zones, the object's coordinates, and
+    zone_list_entry plus zone_list_aliases -- every text the row might read, the first of them
+    tried first.
+
     Flow:
-      0. Resolve the destination into the row's text and the object's coordinates (_plan).
-         Return FAILURE if no list object on the map joins the two zones.
       1. Verify all clients are in zone. Return FAILURE if not.
       2s. If sequential, _use_list_sequentially runs one client's whole turn — open the list,
          find the entry, click Teleport, answer the prompt — before the next client starts,
@@ -440,15 +272,15 @@ async def run(machine, clients: list, params: dict) -> str:
          Return FAILURE if timed out.
       9. Return SUCCESS.
 
-    FAILURE: no list object joins zone to to_zone; clients not in zone; interact prompt never
-    appeared after MAX_RETRIES; zone list UI never opened; the destination's row not found on
-    any page; zone change timed out.
+    FAILURE: clients not in zone; interact prompt never appeared after MAX_RETRIES; zone list
+    UI never opened; the row not found on any page; zone change timed out.
     """
     zone: str = params["zone"]
     to_zone: str = params["to_zone"]
-    if (plan := _plan(machine, params)) is None:
-        return "FAILURE"
-    interact, reset, zone_list_entry, aliases = plan
+    interact = XYZ(**params["interact_xyz"])
+    reset = XYZ(**params["reset_xyz"])
+    zone_list_entry: str = params["zone_list_entry"]
+    aliases: list[str] = params.get("zone_list_aliases") or []
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
 
     machine.log(

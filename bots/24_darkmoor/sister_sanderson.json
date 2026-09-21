@@ -747,15 +747,14 @@
     },
     {
       "id": "state_11",
-      "node_type": "enter_zone_via_list",
+      "node_type": "go_to_zone",
       "label": "Take Demox to Graveholm",
       "position": {
         "x": 440,
         "y": 0.0
       },
       "params": {
-        "zone": "Darkmoor/DM_Z00_OutsidersCamp",
-        "to_zone": "Darkmoor/DM_Z01_Graveholm"
+        "zone": "Darkmoor/DM_Z01_Graveholm"
       }
     },
     {

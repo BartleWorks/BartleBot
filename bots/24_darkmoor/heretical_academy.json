@@ -93,15 +93,14 @@
     },
     {
       "id": "state_5",
-      "node_type": "enter_zone_via_list",
+      "node_type": "go_to_zone",
       "label": "Take Demox to Scholomance",
       "position": {
         "x": 1320.0,
         "y": 0.0
       },
       "params": {
-        "zone": "Darkmoor/DM_Z00_OutsidersCamp",
-        "to_zone": "Darkmoor/DM_Z05_ScholomanceEntrance"
+        "zone": "Darkmoor/DM_Z05_ScholomanceEntrance"
       }
     },
     {

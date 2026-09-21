@@ -53,13 +53,13 @@ positions, so the file stores one network — each member zone and where its obj
 the loader generates a `list` link for every ordered pair. List objects serve players in
 parallel.
 
-The map is also what the **Enter Zone Via List** node reads. Its author picks a Zone and a
-Destination and stores nothing else: where to stand and what the row reads are resolved from
-the network when the bot runs, through `bartlebot/zone_lists.py`, which the navigator uses for
-the step it planned. So a list the map does not have is a list no bot can use — record the
-object with the tester rather than working around it in one bot. A World Gate is the exception
-and stays the navigator's: its rows are worlds, which no destination zone names, so a gate step
-hands the node a row it resolved itself.
+`enter_zone_via_list` is not a node a bot author places (#36). A list object only ever stands
+in a zone the map declares — a network naming an undeclared zone is a load error, and the
+tester refuses to record one it cannot place in a network — so there is nowhere it could be
+pointed that Go To Zone cannot already plan a route to. It survives as the step runner behind a
+planned `list` or `gate` step, and its caller hands it a row it resolved itself:
+`zone_lists.resolve` for a zone list, `worlds.display_names` for a gate, whose rows are worlds
+rather than zones. That is also why no bot file holds a row's text.
 
 A list entry's text is the destination zone's display name. That is assumed rather than
 confirmed for every world; it means the entry can be matched in all seven locales from the

@@ -842,30 +842,26 @@ def test_no_bot_stores_a_friend_name():
     assert not offenders, f"bot states storing a character name: {offenders}"
 
 
-def test_no_bot_stores_a_zone_lists_row_text():
-    """A row's text is one locale's answer, and a bot file has no business freezing it.
+def test_no_bot_uses_the_retired_zone_list_node():
+    """enter_zone_via_list is not a node any more (#36) -- Go To Zone is.
 
-    The list object, where to stand at it and what each row reads all come from the
-    navigation map, worked out on the client that runs the bot. A file carrying
-    zone_list_entry was written before that and names an English row, which is not the
-    row on any of the other six locales -- and a file carrying its own coordinates keeps
-    using them after the map's have been corrected.
+    A list object only ever stands in a zone the navigation map declares, so there is nowhere
+    it could be pointed that Go To Zone cannot already plan a route to. The module survives as
+    the step runner behind a planned list or gate step; what is gone is authoring one by hand,
+    with a zone and a destination that had to be kept agreeing with each other and a row's text
+    that was one locale's answer frozen into the file.
+
+    A file naming it would fail to load as an unknown node type, which is a worse way to find
+    out than this.
     """
-    offenders: list[str] = []
-    for path in _all_bot_files():
-        for state in _load_raw(path).get("states") or []:
-            if state.get("node_type") != "enter_zone_via_list":
-                continue
-            params = state.get("params") or {}
-            # Coordinates are allowed only when the bot says it is taking them over.
-            stale = ["zone_list_entry", "zone_list_aliases"]
-            if not params.get("override_xyz"):
-                stale += ["interact_xyz", "reset_xyz"]
-            offenders += [
-                f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')} → {key}" for key in stale if key in params
-            ]
+    offenders = [
+        f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')}"
+        for path in _all_bot_files()
+        for state in _load_raw(path).get("states") or []
+        if state.get("node_type") == "enter_zone_via_list"
+    ]
 
-    assert not offenders, f"bot states storing what the map already knows: {offenders}"
+    assert not offenders, f"bot states using the retired node: {offenders}"
 
 
 def test_no_bot_declares_a_user_owned_option():

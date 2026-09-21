@@ -15,7 +15,6 @@ import asyncio
 from collections.abc import Callable
 from typing import Any
 
-from bartlebot import zone_lists, zone_nav
 from bartlebot.nodes.timing import RECORDING_POLL_INTERVAL
 
 # ---------------------------------------------------------------------------
@@ -348,54 +347,6 @@ async def _record_enter_zone_interact(client, param_form, on_status, on_btn, try
         on_btn("Record")
 
 
-async def _record_enter_zone_via_list(client, param_form, on_status, on_btn, try_set_label) -> None:
-    """Record a list use as the pair of zones it went between, and nothing else.
-
-    Where to stand and what the row reads both come from the navigation map, so there is
-    nothing here to capture: the player uses the list as they normally would and the two
-    zones are what the node needs. A list the map does not have is a gap in the map rather
-    than something to work around per bot, so it is reported as one.
-    """
-    on_btn("Stop")
-    on_status("Starting…")
-    try:
-        nav = zone_nav.load()
-        zone = await client.zone_name()
-        param_form.set_str("zone", zone)
-
-        if not zone_lists.destinations(nav, zone):
-            on_status(f"No list object recorded in {_zone_display(zone)} — map it with the zone nav tester")
-            on_btn("Record")
-            return
-
-        on_status("Use the list object: press X, pick a zone, click Teleport…")
-        while not await client.is_loading():
-            await asyncio.sleep(RECORDING_POLL_INTERVAL)
-
-        on_status("Loading…")
-        while await client.is_loading():
-            await asyncio.sleep(RECORDING_POLL_INTERVAL)
-
-        to_zone = await _wait_for_zone_name(client, RECORDING_POLL_INTERVAL)
-        if to_zone not in zone_lists.destinations(nav, zone):
-            # Whatever just happened was not this list: a walk through a gate, a hub button.
-            on_status(f"{_zone_display(to_zone)} is not on the list in {_zone_display(zone)}")
-            on_btn("Record")
-            return
-
-        param_form.set_str("to_zone", to_zone)
-        try_set_label(f"{_zone_display(zone)} → {_zone_display(to_zone)}")
-        on_status(f"Done — {_zone_display(to_zone)}")
-        on_btn("Record")
-
-    except asyncio.CancelledError:
-        on_status("")
-        on_btn("Record")
-    except Exception as e:
-        on_status(f"Error: {e}")
-        on_btn("Record")
-
-
 async def _record_mark_location(client, param_form, on_status, on_btn, try_set_label) -> None:
     try:
         zone = await client.zone_name()
@@ -444,7 +395,6 @@ _REGISTRY: dict[str, Any] = {
     "interact_menu": _record_interact_menu,
     "apply_level_scaling": _record_apply_level_scaling,
     "enter_zone_via_object": _record_enter_zone_interact,
-    "enter_zone_via_list": _record_enter_zone_via_list,
     "mark_location": _record_mark_location,
     "teleport_to_marked_location": _record_teleport_to_marked_location,
 }

@@ -49,7 +49,7 @@ from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.gui.widgets.zone_picker import ListZoneButton, NavZoneButton, is_destination
+from bartlebot.gui.widgets.zone_picker import NavZoneButton, is_destination
 from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
@@ -651,18 +651,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                     controller.checkStateChanged.connect(
                         lambda state, w=display_w, ok=ok: w.setEnabled(ok and state == Qt.CheckState.Checked)
                     )
-        # Wire a list_zone to the zone its choices come from: a destination left over from the
-        # zone before is one no list object reaches, so the picker drops it when the zone moves.
-        for field in schema:
-            if field.type != "list_zone":
-                continue
-            picker = self._widgets.get(field.key)
-            source = self._widgets.get("zone")
-            if isinstance(picker, ListZoneButton) and isinstance(source, _NavZoneField):
-                source.changed.connect(lambda _zone, w=picker: w.refresh())
-                # Again now that the whole form exists: the picker was built before it could
-                # see the zone field if the schema happens to list it first.
-                picker.refresh(prune=False)
         self._suppress = False
         # load_schema *is* this widget's construction — everything above was just
         # built, so this is where its styling is first applied. It also covers
@@ -862,7 +850,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                     result[key] = 0
             elif isinstance(w, _StrChoiceComboBox):
                 result[key] = w.get_value()
-            elif isinstance(w, _NavZoneField | ListZoneButton):
+            elif isinstance(w, _NavZoneField):
                 result[key] = w.value()
             elif isinstance(w, QCheckBox):
                 result[key] = w.isChecked()
@@ -1040,15 +1028,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 w.setToolTip(help_text)
             w.changed.connect(self._emit_changed)
             return w
-        if field_type == "list_zone":
-            # Its choices come from whatever zone the form's `zone` field holds right now, so it
-            # is handed a way to read that field rather than a list of items. See ListZoneButton.
-            w = ListZoneButton(lambda: self.current_text("zone"))
-            w.set_value(str(val) if val else "")
-            if help_text:
-                w.setToolTip(help_text)
-            w.changed.connect(self._emit_changed)
-            return w
         if field_type == "str_choice":
             w = _StrChoiceComboBox()
             w.add_choices(choices or [])
@@ -1147,24 +1126,11 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         except Exception:
             pass
 
-    def current_text(self, key: str) -> str:
-        """What a text-ish field holds right now, or "" for anything else.
-
-        Read live rather than from the saved params, because a field whose choices depend on
-        another one is asked as the user opens it, before anything has been saved.
-        """
-        widget = self._widgets.get(key)
-        if isinstance(widget, _NavZoneField | ListZoneButton):
-            return widget.value()
-        if isinstance(widget, _ZoneWidget | QLineEdit):
-            return widget.text()
-        return ""
-
     def set_str(self, key: str, value: str) -> None:
         """Programmatically set a 'str' field by key. The zone pickers count: their value is a zone path."""
         widget = self._widgets.get(key)
         self._suppress = True
-        if isinstance(widget, _NavZoneField | ListZoneButton):
+        if isinstance(widget, _NavZoneField):
             widget.set_value(value)
         elif isinstance(widget, _ZoneWidget | QLineEdit):
             widget.setText(value)

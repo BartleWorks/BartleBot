@@ -11,10 +11,8 @@ from bartlebot import card_art, zone_nav
 from bartlebot.gui.widgets.picker_popup import PickerRow, filter_sections
 from bartlebot.gui.widgets.zone_picker import (
     SUGGESTED_TITLE,
-    ListZoneButton,
     describe_zone,
     is_destination,
-    list_destination_sections,
     world_icon_resolver,
     world_keys_by_title,
     zone_id,
@@ -162,107 +160,3 @@ def test_a_zone_id_finds_its_row():
 def test_the_default_filter_still_ignores_section_titles_and_meta():
     assert filter_sections(_SECTIONS, "celestia") == []
     assert filter_sections(_SECTIONS, "kt_hub") == []
-
-
-# ── The list-destination picker ────────────────────────────────────────────────
-
-_LIST_HUB, _LIST_A, _LIST_B = "Krokotopia/KT_Hub", "Krokotopia/KT_A", "Krokotopia/KT_B"
-_WC_HUB = "WizardCity/WC_Hub"
-
-
-def _list_nav() -> zone_nav.NavMap:
-    """Two lists: Krokotopia's, with an object in its hub and in A and B a destination only, and
-    Wizard City's, which shares no zone with it."""
-    spot = {"interact_xyz": {"x": 1.0, "y": 0.0, "z": 0.0}, "reset_xyz": {"x": 2.0, "y": 0.0, "z": 0.0}}
-    return zone_nav.parse(
-        {
-            "worlds": {
-                "Krokotopia": {
-                    "hub": _LIST_HUB,
-                    "zones": {_LIST_HUB: {}, _LIST_A: {}, _LIST_B: {}, _DOJO: {"destination": False}},
-                    "list_networks": [
-                        {"zones": {_LIST_HUB: spot, _LIST_A: spot, _LIST_B: {}}, "verified": True, "source": "code"}
-                    ],
-                },
-                "WizardCity": {
-                    "hub": _WC_HUB,
-                    "zones": {_WC_HUB: {}, _SHOPS: {}},
-                    "list_networks": [{"zones": {_WC_HUB: spot, _SHOPS: spot}, "verified": True, "source": "code"}],
-                },
-            }
-        }
-    )
-
-
-def test_the_destinations_are_one_section_titled_by_the_world():
-    [(title, rows)] = list_destination_sections(_list_nav(), _LIST_HUB)
-
-    assert title == "Krokotopia"
-    assert {row.key for row in rows} == {_LIST_A, _LIST_B}
-    assert {row.meta for row in rows} == {"KT_A", "KT_B"}
-
-
-def test_a_zone_with_no_list_object_has_no_destinations_to_offer():
-    assert list_destination_sections(_list_nav(), _LIST_B) == []
-    assert list_destination_sections(_list_nav(), _DOJO) == []
-
-
-def test_the_button_says_which_field_to_fill_in_first(qapp):
-    button = ListZoneButton(lambda: "", nav=_list_nav())
-
-    assert button.text() == "Pick a Zone first"
-
-
-def test_the_button_names_the_destination_it_holds(qapp):
-    button = ListZoneButton(lambda: _LIST_HUB, nav=_list_nav())
-    button.set_value(_LIST_A)
-    button.refresh()
-
-    assert "KT_A" in button.text()
-
-
-def test_moving_the_zone_to_another_list_drops_a_destination_it_does_not_reach(qapp):
-    """B's row would otherwise stay showing, and go into the bot file, for a list that cannot reach it."""
-    source = _LIST_HUB
-    button = ListZoneButton(lambda: source, nav=_list_nav())
-    button.set_value(_LIST_B)
-
-    source = _WC_HUB
-    button.refresh()
-
-    assert button.value() == ""
-
-
-def test_moving_the_zone_to_one_with_no_list_at_all_drops_the_destination(qapp):
-    source = _LIST_HUB
-    button = ListZoneButton(lambda: source, nav=_list_nav())
-    button.set_value(_LIST_B)
-
-    source = _DOJO
-    button.refresh()
-
-    assert button.value() == ""
-
-
-def test_moving_the_zone_keeps_a_destination_the_new_list_still_reaches(qapp):
-    source = _LIST_HUB
-    button = ListZoneButton(lambda: source, nav=_list_nav())
-    button.set_value(_LIST_B)
-
-    source = _LIST_HUB
-    button.refresh()
-
-    assert button.value() == _LIST_B
-
-
-def test_rebuilding_without_pruning_keeps_a_stale_destination(qapp):
-    """A file whose destination has gone stale says so by failing when it runs, not by being
-    quietly emptied the moment it is opened."""
-    source = _LIST_HUB
-    button = ListZoneButton(lambda: source, nav=_list_nav())
-    button.set_value(_LIST_B)
-
-    source = _DOJO
-    button.refresh(prune=False)
-
-    assert button.value() == _LIST_B
