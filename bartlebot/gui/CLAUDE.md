@@ -712,8 +712,9 @@ Two consequences worth knowing before touching a wrapping widget:
   and `_TagsField` sets it on every rebuild because the buttons are sized by the theme's
   font.
 - **A pill or chip flow is the one thing that legitimately changes the bar's height**, when
-  a tagged bot's byline wraps to a second row in Edit mode. That is a content change, not a
-  layout bug, and a fix that suppressed it would be worse than the flicker.
+  a heavily tagged bot's tag row wraps in Edit mode. That is a content change, not a layout
+  bug, and a fix that suppressed it would be worse than the flicker. Give it the width
+  instead — see "the tag row gets line 2 to itself" below.
 - **`QStackedLayout` has no alignment of its own** — it ignores both `setAlignment`
   overloads — and gives a page its natural height at the *top* of the cell. Invisible for
   a page as tall as the cell, wrong for one that is not: a slot sized to the editor it is
@@ -723,8 +724,9 @@ Two consequences worth knowing before touching a wrapping widget:
   handed more height than its rows need leaves the slack underneath. That is the right
   default — a keyword list or a card grid in a tall panel belongs at the top of it — so
   centring is opt-in, via `flow_container(centre_rows=True)`. Reach for it only where the
-  flow shares a row with something it has to line up against, as the byline's tag pills do
-  against the author text.
+  rect is taller than the rows for a reason of its own, as Bar B's tag row is: the field
+  reserves the editable form's height in both modes, and the spanning button clusters make
+  the grid row taller still.
 
 `tools/probe_layout.py` measures all of this — reach for it before theorising about a
 layout or repaint bug; `tools/CLAUDE.md` has how to read a trace.
@@ -736,9 +738,21 @@ off its right-hand end. `tests/test_canvas_toolbar_layout.py` checks that no but
 overruns the slot it sits in, in either mode.
 
 The two side columns take **equal stretch**, which is what keeps the centre column
-near mid-bar. The cost is that the metadata is capped at roughly half the bar, so a
-long filename elides and a heavily tagged bot wraps its byline in Edit mode. Both
-degrade quietly; a Run button that drifts with the length of the bot's name does not.
+near mid-bar. That equality *is* the centring — it is not a stretch factor to retune, and
+any weight that favours the metadata moves the transport off centre by half the
+difference. The cost is that the metadata is capped at roughly half the bar, so a long
+filename elides and a heavily tagged bot wraps its tag row in Edit mode. Both degrade
+quietly; a Run button that drifts with the length of the bot's name does not.
+
+**The tag row gets line 2 to itself**, and the author rides on line 1 beside the name,
+version and filename. The tag row is the only thing in the bar that grows with the bot —
+everything else is a fixed width or elides — so it gets the width, and the author's fixed
+180px field costs nothing on a line where the filename absorbs the slack. Measured against
+the 87 shipped bots at 1600px, an ordinary window: 83 of them wrapped with the author on
+line 2, and 13 without. At 1400 it is 86 against 35, and Run-mode wrapping goes away
+entirely above 1200. The cost is that line 1 is now the crowded one — below about 1300px
+in Edit mode the name field shrinks below its 240px — which is the right way round.
+**Do not move the author back down to save line 1 a few pixels.**
 
 The clock is **zeroed, not hidden**, while idle, and the clock and the status
 **reserve equal, fixed widths** either side of the transport (`_size_status_slots`).

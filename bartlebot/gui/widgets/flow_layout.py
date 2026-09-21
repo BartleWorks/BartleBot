@@ -37,7 +37,7 @@ def flow_geometry(
     absent from it, and the alternative is an item that never places at all.
 
     Items shorter than their row are **centred** in it rather than hung from its top.
-    The bot header's byline is the case: an 18px tag chip beside a 27px "Add Rewards…"
+    The bot header's tag row is the case: an 18px tag chip beside a 27px "Add Rewards…"
     button sat four pixels high, which reads as a misalignment rather than as a row of
     two different things.  That is also why the rows are collected before any position
     is assigned — a row's height is only known once the row is complete.
@@ -76,14 +76,15 @@ def block_offset(content_height: int, available_height: int, *, centre: bool) ->
 
     Top is the right default and most callers want it: a keyword list or a card grid
     handed a panel taller than it needs should stay at the top of it, not float in the
-    middle.  Centring is for a flow that shares a row with something else and has to line
-    up against it.  The bot header's byline is that case -- its tag field reserves the
-    height of its *editable* form in both modes so the bar does not change height when
-    the mode does, and in Run mode the pills are shorter than that floor.  The three
-    spare pixels all landed below them, leaving the pill a pixel and a half above the
-    author text beside it, which reads as a misalignment rather than as a row of two
-    different things.  That is the same reasoning as the per-row centring in
-    :func:`flow_geometry`, one level up.
+    middle.  Centring is for a flow whose rect is taller than its rows for a reason of
+    its own, and which therefore has to find the rect's centre rather than its top.  The
+    bot header's tag row is that case -- its tag field reserves the height of its
+    *editable* form in both modes so the bar does not change height when the mode does,
+    and the grid row is taller still while the button clusters span it, so in Run mode
+    the pills sit in a rect several pixels deeper than they need.  All of that slack
+    landed below them, which reads as pills pinned to the row's ceiling rather than as a
+    row.  That is the same reasoning as the per-row centring in :func:`flow_geometry`,
+    one level up.
 
     Never negative: a block taller than its rect is clipped at the bottom, which is
     visible, rather than pulled up off the top, which hides the first row entirely.

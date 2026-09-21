@@ -216,10 +216,10 @@ def _let_shrink(w: QWidget) -> None:
 class _ElidedLabel(ThemedMixin, QLabel):
     """A one-line label that shortens its text rather than widening the bar.
 
-    The byline shares line 2 with the tag pills, and an author list long enough to
-    push them off the end would make the whole header claim a minimum width the
-    canvas has to honour.  ``QLabel`` has no elide mode of its own, so the text is
-    elided against the width Qt actually gave us, on every resize.
+    The author and the filename share line 1 with the bot name, and either of them
+    long enough to push the rest off the end would make the whole header claim a
+    minimum width the canvas has to honour.  ``QLabel`` has no elide mode of its own,
+    so the text is elided against the width Qt actually gave us, on every resize.
     """
 
     def __init__(self, text: str = "", *, color: str = "text_subtle", parent: QWidget | None = None) -> None:
@@ -228,7 +228,7 @@ class _ElidedLabel(ThemedMixin, QLabel):
         self._color_token = color
         # Maximum, not Ignored: the label asks for the width its full text wants and
         # settles for less. Ignored asks for nothing, which in a row of stretch-0
-        # widgets is exactly what it gets -- the byline vanished that way.
+        # widgets is exactly what it gets -- the author line vanished that way.
         self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
         self.refresh_theme_styles()
         self._apply_elide()
@@ -320,15 +320,17 @@ class _TagsField(QWidget):
         self._empty_lbl.setText(_PLACEHOLDER)
         root.addWidget(self._empty_lbl)
 
-        # Centred, because this flow shares the byline with the author text and has to
-        # line up against it: the field reserves the editable form's height in both
-        # modes, so in Run mode the pills are shorter than the rect they are given.
+        # Centred, because the field reserves the editable form's height in both modes
+        # -- that is what keeps the bar's height off the mode -- so in Run mode the
+        # pills are shorter than the rect they are handed, and the grid row is taller
+        # still while the button clusters span it.  A flow hangs its rows from the top
+        # of what it was given, which put the pills above the row's own centre.
         self._pill_host, self._pill_layout = flow_container(centre_rows=True)
         root.addWidget(self._pill_host)
 
         # The Add buttons ride *inside* the pill flow, as one item, rather than in a
         # flow of their own beside it.  Two flows side by side each wrap on their own
-        # share of the width, so a byline short of a hundred pixels came back two rows
+        # share of the width, so a row short of a hundred pixels came back two rows
         # of chips *and* two rows of buttons; one flow wraps once, and the buttons
         # move down whole rather than splitting.
         self._buttons = QWidget()
@@ -384,12 +386,12 @@ class _TagsField(QWidget):
         widget's *layout* rather than from the widget, and the pill flow inside reports
         height-for-width -- so a parent sizing the field reads straight past this hint,
         and only the minimum reaches it.  The hint is what keeps ``height()`` and
-        ``sizeHint()`` in agreement, which is how the byline row tells a field it should
+        ``sizeHint()`` in agreement, which is how the tag row tells a field it should
         *centre* from one it should stretch.
 
         Wrapping still grows the field past this floor, which is the one height change
         Edit mode genuinely makes: the three "Add..." buttons join the flow and a
-        tagged bot's byline takes a second row.
+        heavily tagged bot's tag row takes a second line.
         """
         base = super().sizeHint()
         return QSize(base.width(), max(base.height(), self._floor()))
@@ -495,7 +497,7 @@ class BotHeader(ThemedMixin, QWidget):
 
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 
-        # -- Left column, row 1: name, version, file ------------------
+        # -- Left column, row 1: name, version, file, author ----------
         self._name_lbl = QLabel(_NO_BOT)
         name_font = self._name_lbl.font()
         name_font.setBold(True)
@@ -527,35 +529,47 @@ class BotHeader(ThemedMixin, QWidget):
         self._version_slot = _Swappable(self._version_pill, self._version_edit)
         title_row.addWidget(self._name_slot, 0, Qt.AlignmentFlag.AlignVCenter)
         title_row.addWidget(self._version_slot, 0, Qt.AlignmentFlag.AlignVCenter)
-        title_row.addWidget(self._file_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
-        title_row.addStretch(1)
-        _let_shrink(title)
-
-        # -- Left column, row 2: byline and tags ----------------------
         self._authors_lbl = _ElidedLabel()
         self._authors_edit = QLineEdit()
         self._authors_edit.setPlaceholderText("Author(s)")
         self._authors_edit.setFixedWidth(180)
 
+        # The author rides up here rather than beside the tags, and the reason is the
+        # width it takes off the row below.  Measured against the 87 shipped bots at
+        # 1600px -- an ordinary window, not a narrow one -- 83 of them wrapped their tag
+        # row in Edit mode with the author in it, and 13 without.  At 1400 it is 86
+        # against 35, and Run-mode wrapping goes away entirely above 1200.  The tag row
+        # is the one that wraps because it is the only thing in the bar that grows with
+        # the bot; everything else is fixed or elides, so the author is exactly the
+        # 190px the tags were short of.
+        #
+        # The cost is that this row is now the crowded one: below about 1300px in Edit
+        # mode the name field starts shrinking (218px at 1200, 124px at 900) where it
+        # held its 240 before.  That is the right way round -- a name field with room
+        # for twenty characters instead of thirty still reads, and a bar that grows a
+        # row every time you open the editor does not.
+        self._authors_slot = _Swappable(self._authors_lbl, self._authors_edit)
+
+        title_row.addWidget(self._file_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
+        title_row.addWidget(self._authors_slot, 0, Qt.AlignmentFlag.AlignVCenter)
+        title_row.addStretch(1)
+        _let_shrink(title)
+
+        # -- Left column, row 2: tags ---------------------------------
         self._tags_field = _TagsField()
 
-        self._byline = QWidget()
-        byline_row = QHBoxLayout(self._byline)
-        byline_row.setContentsMargins(0, 0, 0, 0)
-        byline_row.setSpacing(6)
-        # Centred rather than stretched, both of them.  A box layout hands a
-        # stretched child the whole row, and ``FlowLayout`` then lays its rows from
-        # the top of what it was given -- so whenever the grid row is taller than the
-        # byline itself (the spanning button clusters are what make it so), the pills
-        # sat against the row's ceiling with the slack all underneath.  The byline is
-        # a row of things of different heights; centring each keeps them on one line
-        # however tall the row around them gets.
-        self._authors_slot = _Swappable(self._authors_lbl, self._authors_edit)
-        byline_row.addWidget(self._authors_slot, 0, Qt.AlignmentFlag.AlignVCenter)
-        byline_row.addSpacing(4)
-        byline_row.addWidget(self._tags_field, 0, Qt.AlignmentFlag.AlignVCenter)
-        byline_row.addStretch(1)
-        _let_shrink(self._byline)
+        self._tag_row = QWidget()
+        tag_row = QHBoxLayout(self._tag_row)
+        tag_row.setContentsMargins(0, 0, 0, 0)
+        tag_row.setSpacing(6)
+        # Centred rather than stretched.  A box layout hands a stretched child the
+        # whole row, and ``FlowLayout`` then lays its rows from the top of what it was
+        # given -- so whenever the grid row is taller than the byline itself (the
+        # spanning button clusters are what make it so), the pills sat against the
+        # row's ceiling with the slack all underneath.
+        tag_row.addWidget(self._tags_field, 0, Qt.AlignmentFlag.AlignVCenter)
+        tag_row.addStretch(1)
+        _let_shrink(self._tag_row)
 
         # -- Centre column: clock, transport, status — one row --------
         # Always shown, and zeroed rather than hidden while idle.  A clock that
@@ -596,7 +610,7 @@ class BotHeader(ThemedMixin, QWidget):
         grid.setHorizontalSpacing(8)
         grid.setVerticalSpacing(0)
         grid.addWidget(title, 0, _COL_META)
-        grid.addWidget(self._byline, 1, _COL_META)
+        grid.addWidget(self._tag_row, 1, _COL_META)
         # Both control clusters span the two metadata rows, which is what puts them on
         # the bar's own vertical centre rather than on the centre of row 1.  Nothing is
         # stacked in either column any more, so they are level with each other -- which
@@ -610,7 +624,7 @@ class BotHeader(ThemedMixin, QWidget):
         # column's minimum -- which is why both metadata rows went through
         # ``_let_shrink`` above.  The cost is that the metadata is capped at half the
         # bar however much of it there is -- so a long filename elides, and in Edit
-        # mode a heavily tagged bot wraps its byline.  Both degrade quietly; a Run
+        # mode a heavily tagged bot wraps its tag row.  Both degrade quietly; a Run
         # button that drifts with the length of the bot's name does not.
         grid.setColumnStretch(_COL_META, 1)
         grid.setColumnStretch(_COL_TOOLS, 1)
@@ -639,7 +653,7 @@ class BotHeader(ThemedMixin, QWidget):
             self._tags_field.set_tags([])
             self._version_pill.setText("")
             self._apply_version_slot()
-            self._byline.setVisible(False)
+            self._tag_row.setVisible(False)
             self._set_label_mode(True)
         else:
             self._name_lbl.setText(config.name or _PLACEHOLDER)
@@ -649,7 +663,7 @@ class BotHeader(ThemedMixin, QWidget):
             self._authors_lbl.setText(f"by {config.authors}" if config.authors else "")
             self._tags_field.set_tags(config.tags)
             self._apply_version(config.version)
-            self._byline.setVisible(True)
+            self._tag_row.setVisible(True)
         self._suppress = False
 
     def set_file(self, filename: str | None) -> None:
