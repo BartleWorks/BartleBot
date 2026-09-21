@@ -354,10 +354,15 @@ def test_the_tag_row_centres_in_its_row_however_tall_the_row_gets(qapp):
     assert abs((top + tags.height() / 2) - (row.y() + row.height() / 2)) <= 1
 
 
-def test_the_filename_sits_on_the_bot_name_s_baseline(qapp):
+def test_the_filename_and_author_sit_on_the_bot_name_s_baseline(qapp):
     """Centring matches the boxes, and a font box is mostly ascent -- so the smaller
     of two texts centred in one row carries its baseline a pixel above the other's.
-    The eye compares baselines, so that reads as a filename floating off the line."""
+    The eye compares baselines, so that reads as a filename floating off the line.
+
+    The author is the same size as the filename, so those two out of line with *each
+    other* is the more jarring of the two: nothing about them says they should sit
+    differently.  It read a pixel high because it is centred inside a ``_Swappable``
+    rather than in the row, which the original shift missed."""
     from PyQt6.QtGui import QFontMetrics
 
     header = _tall_header(32)
@@ -374,6 +379,7 @@ def test_the_filename_sits_on_the_bot_name_s_baseline(qapp):
         return widget.mapTo(header, widget.rect().topLeft()).y() + pad + centred + metrics.ascent()
 
     assert baseline(header._file_lbl) == baseline(header._name_lbl)
+    assert baseline(header._authors_lbl) == baseline(header._name_lbl)
 
 
 # ---------------------------------------------------------------------------

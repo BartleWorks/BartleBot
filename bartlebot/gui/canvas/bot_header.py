@@ -814,13 +814,20 @@ class BotHeader(ThemedMixin, QWidget):
         self._elapsed_lbl.setMinimumWidth(slot)
         self._status_side.setMinimumWidth(slot)
 
-    def _align_file_baseline(self) -> None:
-        """Sit the filename on the bot name's baseline rather than on the row's centre.
+    def _align_meta_baselines(self) -> None:
+        """Sit the filename and the author on the bot name's baseline, not the row's centre.
 
         Two texts of different sizes centred in the same row do not share a baseline.
         Centring matches the *boxes*, and a font box is mostly ascent -- so the smaller
         of the two carries its baseline higher, and the filename read as a pixel above
         the line the name sets.  The eye compares baselines, not boxes.
+
+        The author is the same font as the filename and needs the same shift.  It was
+        left out when this was written because it sits inside a :class:`_Swappable`
+        rather than in the row -- which centres it just the same, so it read a pixel
+        high beside a filename that had been corrected.  Two texts of *identical* size
+        out of line with each other is the more jarring of the two, since nothing about
+        them says they should sit differently.
 
         The shift is the difference between the two fonts' ascents, less the
         difference their box heights already account for.  The row's height cancels
@@ -836,9 +843,10 @@ class BotHeader(ThemedMixin, QWidget):
         floating.
         """
         name = QFontMetrics(self._name_lbl.font())
-        stamp = QFontMetrics(self._file_lbl.font())
-        shift = (name.ascent() - stamp.ascent()) - (name.height() - stamp.height()) / 2
-        self._file_lbl.set_baseline_shift(math.floor(abs(shift) + 0.5) * (1 if shift >= 0 else -1))
+        for label in (self._file_lbl, self._authors_lbl):
+            stamp = QFontMetrics(label.font())
+            shift = (name.ascent() - stamp.ascent()) - (name.height() - stamp.height()) / 2
+            label.set_baseline_shift(math.floor(abs(shift) + 0.5) * (1 if shift >= 0 else -1))
 
     def apply_theme_styles(self) -> None:
         self.setStyleSheet(f"BotHeader {{ background: {THEME.surface}; }}")
@@ -848,5 +856,5 @@ class BotHeader(ThemedMixin, QWidget):
         self._size_status_slots()
         # After the labels above have their own styles: the shift is measured from the
         # fonts a stylesheet may just have changed.
-        self._align_file_baseline()
+        self._align_meta_baselines()
         self._apply_status()

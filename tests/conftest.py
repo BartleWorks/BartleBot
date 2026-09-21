@@ -446,7 +446,7 @@ def _production_app_font():
     ``QApplication`` keeps the platform's own 9pt. The two agreed while the body size was
     the 12px equivalent of 9pt, and any change to it splits them — every test that
     measures a font box then measures a size the app never shows, and a baseline or slot
-    that is wrong in the app passes here. ``test_the_filename_sits_on_the_bot_name_s_baseline``
+    that is wrong in the app passes here. ``test_the_filename_and_author_sit_on_the_bot_name_s_baseline``
     failed that way, against a bot name sized from the token beside a filename at 9pt.
 
     Set rather than restored: it is the same value for every test, so there is nothing
