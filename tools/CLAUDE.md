@@ -325,13 +325,22 @@ rect. No game client, so it is cheap to re-run.
 
 ```bash
 uv run python tools/probe_layout.py mode            # Run/Edit switches
-uv run python tools/probe_layout.py mode --tags 2   # a tagged bot, whose byline wraps
+uv run python tools/probe_layout.py mode --tags 6   # a heavily tagged bot, whose tags wrap
 uv run python tools/probe_layout.py paints --show   # paint damage; --show to really paint
 ```
 
 `bartlebot/qt_layout_debug.py` is the reusable half — `LayoutTracer` and
 `size_snapshot` — so the same instrumentation can be attached to the live app when a bug
 only reproduces there. It is installed nowhere by default and hooks nothing.
+
+**Widths measured offscreen are not the app's widths.** The offscreen platform resolves
+`fusion`, and the app resolves `windows11`; fusion's controls are much wider at the same
+font metrics — a "Gear" tag pill is 80px there and 59px in the app, a ~35% error that
+compounds across a row. Heights are close enough to reason about, widths are not. So
+**anything about wrapping, eliding or how much room a row needs must be measured with
+`--show`**, which uses the real platform and therefore the real style. This is the same
+trap `tests/CLAUDE.md` describes for CI, arriving through a different door: there the
+runner has the wrong style, here the probe does.
 
 **Reach for it before forming a theory about a layout or repaint bug.** #83's toolbar
 flicker took four wrong guesses — deferred `deleteLater`, height-for-width propagation,

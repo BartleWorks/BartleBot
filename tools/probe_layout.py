@@ -24,9 +24,14 @@ Usage::
     uv run python tools/probe_layout.py mode --watch FavoritesBar
 
 ``--watch`` names the widget class the height timeline is reported for; the default is
-``BotHeader``, which is Bar B.  Add ``--show`` to run on a real screen rather than
-offscreen -- the geometry is the same, but a real backend actually paints, so the paint
-records are only meaningful with it.
+``BotHeader``, which is Bar B.
+
+``--show`` runs on a real screen rather than offscreen, and it is needed for more than the
+paint records.  The offscreen platform resolves the ``fusion`` style where the app resolves
+``windows11``, and fusion's controls are much wider at the same font metrics -- a tag pill
+is 80px against 59px.  Heights come out close; **widths do not, so anything about wrapping
+or eliding has to be measured with ``--show``**.  Paint records need it too: only a real
+backend actually paints.
 """
 
 from __future__ import annotations
