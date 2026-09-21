@@ -1,4 +1,15 @@
-"""Node: interact with a zone-selection list object and teleport to the chosen zone."""
+"""Use a zone-selection list object -- a Streamportal, a Nanavator, a World Gate -- and teleport.
+
+Not a node in the library: it is how a planned ``list`` or ``gate`` step is run
+(``nodes/zone_navigation.step_call``) and how ``go_to_world`` works the spiral door. Callers
+hand over a row already resolved -- the text to match in every locale it might read, and where
+to stand -- because only they know what the row is: ``zone_lists.resolve`` for a zone list,
+``worlds.display_names`` for a gate, whose rows are worlds rather than zones.
+
+Go To Zone is what a bot author reaches for instead. A list object only ever stands in a zone
+the navigation map declares, so there is nothing this could be pointed at that Go To Zone
+cannot already plan a route to -- which is why it was retired as a node (#36).
+"""
 
 import asyncio
 import difflib
@@ -9,151 +20,13 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     UNIVERSE_CANCEL_BUTTON,
     UNIVERSE_NEXT_PAGE,
     UNIVERSE_TELEPORT_BUTTON,
     universe_zone_option_path,
 )
-from bartlebot.nodes.timing import MAX_RETRIES, OBJECT_USE_DELAY, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
-
-PARAM_SCHEMA: list[ParamField] = [
-    ParamField(
-        key="zone",
-        type="str",
-        label="Zone",
-        help="Zone name all players must currently be in when this node executes.",
-        default="",
-        required=True,
-    ),
-    ParamField(
-        key="to_zone",
-        type="str",
-        label="Destination Zone",
-        help="Zone name players should be in after the teleport completes. Used to verify the zone change succeeded.",
-        default="",
-        required=True,
-    ),
-    ParamField(
-        key="interact_xyz",
-        type="xyz",
-        label="Interact XYZ",
-        help="Coordinates where the interact prompt appears for the zone-list object.",
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
-        required=True,
-    ),
-    ParamField(
-        key="reset_xyz",
-        type="xyz",
-        label="Reset XYZ",
-        help=(
-            "Coordinates where the interact prompt does NOT appear. "
-            "Used to clear stale prompts and reset between retry attempts."
-        ),
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
-        required=True,
-    ),
-    ParamField(
-        key="zone_list_entry",
-        type="str",
-        label="Zone List Entry",
-        help=(
-            "The display text of the zone to select from the list (case-insensitive). "
-            "The node pages through all available entries until a match is found."
-        ),
-        default="",
-        required=True,
-    ),
-    ParamField(
-        key="zone_list_aliases",
-        type="str_list",
-        label="Zone List Aliases",
-        help=(
-            "Additional display texts that mean the same entry, matched the same way as "
-            "Zone List Entry. The game resolves list text into its own display language "
-            "before it reaches memory, so an entry named in English is not found on a "
-            "game running in any of the other six locales. Add the other spellings here."
-        ),
-        default=[],
-        default_hint="Only Zone List Entry is matched.",
-        required=False,
-    ),
-    ParamField(
-        key="sequential",
-        type="bool",
-        label="Sequential Interaction",
-        help=(
-            "Have players use the list object one at a time instead of together. Some list "
-            "objects only serve one player at a time, and a second player interacting while "
-            "the first has the list open has their keypress swallowed. Each player waits at "
-            "Reset XYZ, then opens the list, finds the entry and clicks Teleport before the "
-            "next player starts. All players are still confirmed in the destination zone "
-            "together at the end."
-        ),
-        default=False,
-        default_hint="All players interact at once.",
-        required=False,
-    ),
-    ParamField(
-        key="object_use_delay",
-        type="float",
-        label="Delay Between Object Uses (s)",
-        help=(
-            "Seconds to leave between one player finishing at the list object and the next player "
-            "starting on it, in Sequential Interaction. The object becoming free again has no "
-            "readable signal, so this is the only cover for it — raise it for a list object that "
-            "takes several seconds to become usable again. Ignored unless Sequential Interaction is "
-            "on."
-        ),
-        default=OBJECT_USE_DELAY,
-        minimum=0.0,
-        default_hint=f"{OBJECT_USE_DELAY}s between uses.",
-        required=False,
-    ),
-]
-
-NODE_SPEC = NodeSpec(
-    description=(
-        "Interacts with a zone-selection list object, navigates its pages to find the specified "
-        "zone entry, selects it, and teleports all players to that zone."
-    ),
-    params=PARAM_SCHEMA,
-    returns=[
-        ReturnSpec(
-            "SUCCESS",
-            "Zone entry selected, teleport button clicked, and all players confirmed in the destination zone.",
-        ),
-        ReturnSpec(
-            "FAILURE",
-            "Players not in the expected zone; interact prompt never appeared; zone list UI never opened; "
-            "zone entry not found on any page; or zone change timed out.",
-        ),
-    ],
-    required_bot_options=[
-        BotOptionSpec(
-            name="Safety Delay",
-            type="float",
-            default=3.0,
-            minimum=0.0,
-            suffix=" s",
-            description=(
-                "Seconds to allow for game-server responses when waiting for prompts or menus. "
-                "Increase on high-latency connections."
-            ),
-        ),
-    ],
-    max_consecutive_retries=10,
-    usage_notes=(
-        "Turn on Sequential Interaction when the list object only serves one player at a time — "
-        "the symptom is that one player's list opens and the others' X press does nothing, "
-        "intermittently rather than every run.\n\n"
-        "If some but not all players reach to_zone, the node first tries teleporting the "
-        "stragglers to whichever player did arrive — the same recovery Teleport To Player "
-        "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
-        "every player to already be mutual in-game friends."
-    ),
-)
+from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEOUT
 
 _MAX_PAGES = 20  # Safety cap — must exceed the total page count of any zone list
 _FUZZY_THRESHOLD = 0.75  # Minimum SequenceMatcher ratio for a fuzzy match
@@ -371,6 +244,10 @@ async def run(machine, clients: list, params: dict) -> str:
           client.send_key(Keycode.X), node_helpers.is_visible_by_path(),
           node_helpers.get_text_by_path(), node_helpers.click_by_path()
 
+    Params are whatever the caller resolved: the two zones, the object's coordinates, and
+    zone_list_entry plus zone_list_aliases -- every text the row might read, the first of them
+    tried first.
+
     Flow:
       1. Verify all clients are in zone. Return FAILURE if not.
       2s. If sequential, _use_list_sequentially runs one client's whole turn — open the list,
@@ -395,8 +272,8 @@ async def run(machine, clients: list, params: dict) -> str:
          Return FAILURE if timed out.
       9. Return SUCCESS.
 
-    FAILURE: clients not in zone; interact prompt never appeared after MAX_RETRIES;
-    zone list UI never opened; zone_list_entry not found on any page; zone change timed out.
+    FAILURE: clients not in zone; interact prompt never appeared after MAX_RETRIES; zone list
+    UI never opened; the row not found on any page; zone change timed out.
     """
     zone: str = params["zone"]
     to_zone: str = params["to_zone"]

@@ -777,26 +777,14 @@
     },
     {
       "id": "state_2",
-      "node_type": "enter_zone_via_list",
+      "node_type": "go_to_zone",
       "label": "Take Traveler's Truck to Billabong Resort",
       "position": {
         "x": 440.0,
         "y": 0.0
       },
       "params": {
-        "zone": "Wallaru/WL_Z01_Hub",
-        "to_zone": "Wallaru/WL_Z08_BillabongResort",
-        "interact_xyz": {
-          "x": 2836.12,
-          "y": 15605.94,
-          "z": 2.0
-        },
-        "reset_xyz": {
-          "x": 2624.98,
-          "y": 15009.7,
-          "z": 2.0
-        },
-        "zone_list_entry": "Billabong Resort"
+        "zone": "Wallaru/WL_Z08_BillabongResort"
       }
     },
     {

@@ -1127,12 +1127,16 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             pass
 
     def set_str(self, key: str, value: str) -> None:
-        """Programmatically set a 'str' field by key."""
+        """Programmatically set a 'str' field by key. The zone pickers count: their value is a zone path."""
         widget = self._widgets.get(key)
-        if not isinstance(widget, (_ZoneWidget, QLineEdit)):
-            return
         self._suppress = True
-        widget.setText(value)
+        if isinstance(widget, _NavZoneField):
+            widget.set_value(value)
+        elif isinstance(widget, _ZoneWidget | QLineEdit):
+            widget.setText(value)
+        else:
+            self._suppress = False
+            return
         self._suppress = False
         self._emit_changed()
 

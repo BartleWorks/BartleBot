@@ -1,4 +1,8 @@
-"""Unit tests for the enter_zone_via_list node."""
+"""Unit tests for enter_zone_via_list: the step runner behind a planned list or gate step.
+
+Not a node in the library since #36 -- every caller hands it a row it resolved itself, which
+is what these params are.
+"""
 
 from unittest.mock import AsyncMock, patch
 

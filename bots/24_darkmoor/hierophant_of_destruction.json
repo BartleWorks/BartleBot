@@ -854,26 +854,14 @@
     },
     {
       "id": "state_4",
-      "node_type": "enter_zone_via_list",
+      "node_type": "go_to_zone",
       "label": "Take Demox to Black Lagoon",
       "position": {
         "x": 880.0,
         "y": 0.0
       },
       "params": {
-        "zone": "Darkmoor/DM_Z00_OutsidersCamp",
-        "to_zone": "Darkmoor/DM_Z04_BlackLagoon",
-        "interact_xyz": {
-          "x": 1867.76,
-          "y": 1481.14,
-          "z": 0.3
-        },
-        "reset_xyz": {
-          "x": 1375.88,
-          "y": 1525.97,
-          "z": 0.3
-        },
-        "zone_list_entry": "Black Lagoon"
+        "zone": "Darkmoor/DM_Z04_BlackLagoon"
       }
     },
     {

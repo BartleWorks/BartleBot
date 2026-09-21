@@ -63,8 +63,6 @@ from bartlebot.nodes.zone_entry.enter_gauntlet import NODE_SPEC as _enter_gauntl
 from bartlebot.nodes.zone_entry.enter_gauntlet import run as enter_gauntlet_run
 from bartlebot.nodes.zone_entry.enter_zone import NODE_SPEC as _enter_zone_spec
 from bartlebot.nodes.zone_entry.enter_zone import run as enter_zone_run
-from bartlebot.nodes.zone_entry.enter_zone_via_list import NODE_SPEC as _enter_zone_via_list_spec
-from bartlebot.nodes.zone_entry.enter_zone_via_list import run as enter_zone_via_list_run
 from bartlebot.nodes.zone_entry.enter_zone_via_object import NODE_SPEC as _enter_zone_via_object_spec
 from bartlebot.nodes.zone_entry.enter_zone_via_object import run as enter_zone_via_object_run
 from bartlebot.nodes.zone_entry.enter_zone_via_ride import NODE_SPEC as _enter_zone_via_ride_spec
@@ -83,7 +81,6 @@ NODE_REGISTRY: dict = {
     "teleport_to_coordinates": teleport_to_coordinates_run,
     "enter_dungeon": enter_dungeon_run,
     "enter_gauntlet": enter_gauntlet_run,
-    "enter_zone_via_list": enter_zone_via_list_run,
     "interact": interact_run,
     "interact_menu": interact_menu_run,
     "quicksell": quicksell_run,
@@ -121,7 +118,6 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "teleport_to_coordinates": _teleport_to_coordinates_spec,
     "enter_dungeon": _enter_dungeon_spec,
     "enter_gauntlet": _enter_gauntlet_spec,
-    "enter_zone_via_list": _enter_zone_via_list_spec,
     "interact": _interact_spec,
     "interact_menu": _interact_menu_spec,
     "quicksell": _quicksell_spec,
@@ -158,7 +154,6 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "enter_dungeon",
             "enter_gauntlet",
             "enter_zone",
-            "enter_zone_via_list",
             "enter_zone_via_object",
             "enter_zone_via_ride",
         ],

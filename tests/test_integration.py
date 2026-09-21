@@ -842,6 +842,28 @@ def test_no_bot_stores_a_friend_name():
     assert not offenders, f"bot states storing a character name: {offenders}"
 
 
+def test_no_bot_uses_the_retired_zone_list_node():
+    """enter_zone_via_list is not a node any more (#36) -- Go To Zone is.
+
+    A list object only ever stands in a zone the navigation map declares, so there is nowhere
+    it could be pointed that Go To Zone cannot already plan a route to. The module survives as
+    the step runner behind a planned list or gate step; what is gone is authoring one by hand,
+    with a zone and a destination that had to be kept agreeing with each other and a row's text
+    that was one locale's answer frozen into the file.
+
+    A file naming it would fail to load as an unknown node type, which is a worse way to find
+    out than this.
+    """
+    offenders = [
+        f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')}"
+        for path in _all_bot_files()
+        for state in _load_raw(path).get("states") or []
+        if state.get("node_type") == "enter_zone_via_list"
+    ]
+
+    assert not offenders, f"bot states using the retired node: {offenders}"
+
+
 def test_no_bot_declares_a_user_owned_option():
     """Some values are the user's whatever the dungeon is, and a declaration of one
     outranks the app setting they set it in.

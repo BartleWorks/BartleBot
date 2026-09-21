@@ -1161,26 +1161,14 @@
     },
     {
       "id": "state_10",
-      "node_type": "enter_zone_via_list",
+      "node_type": "go_to_zone",
       "label": "Take Nanavator to Gutenstadt",
       "position": {
         "x": 3960.0,
         "y": 0.0
       },
       "params": {
-        "zone": "Karamelle/KM_Z00_HUB",
-        "to_zone": "Karamelle/KM_Z07_Gutenstadt",
-        "interact_xyz": {
-          "x": 179.25,
-          "y": -10574.64,
-          "z": -355.88
-        },
-        "reset_xyz": {
-          "x": 1327.68,
-          "y": -10390.28,
-          "z": -628.05
-        },
-        "zone_list_entry": "Gutenstadt"
+        "zone": "Karamelle/KM_Z07_Gutenstadt"
       }
     },
     {

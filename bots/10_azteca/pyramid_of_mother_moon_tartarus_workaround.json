@@ -950,27 +950,14 @@
     },
     {
       "id": "state_21",
-      "node_type": "enter_zone_via_list",
+      "node_type": "go_to_zone",
       "label": "Go to Wizard City",
       "position": {
         "x": 3960.0,
         "y": 0.0
       },
       "params": {
-        "zone": "Azteca/AZ_Z00_Zocalo",
-        "to_zone": "WizardCity/WC_Ravenwood_Teleporter",
-        "interact_xyz": {
-          "x": 4449.2,
-          "y": -10280.64,
-          "z": 177.05
-        },
-        "reset_xyz": {
-          "x": 3998.98,
-          "y": -10075.49,
-          "z": 131.52
-        },
-        "zone_list_entry": "Wizard City",
-        "sequential": false
+        "zone": "WizardCity/WC_Ravenwood_Teleporter"
       }
     },
     {
