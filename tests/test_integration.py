@@ -842,6 +842,32 @@ def test_no_bot_stores_a_friend_name():
     assert not offenders, f"bot states storing a character name: {offenders}"
 
 
+def test_no_bot_stores_a_zone_lists_row_text():
+    """A row's text is one locale's answer, and a bot file has no business freezing it.
+
+    The list object, where to stand at it and what each row reads all come from the
+    navigation map, worked out on the client that runs the bot. A file carrying
+    zone_list_entry was written before that and names an English row, which is not the
+    row on any of the other six locales -- and a file carrying its own coordinates keeps
+    using them after the map's have been corrected.
+    """
+    offenders: list[str] = []
+    for path in _all_bot_files():
+        for state in _load_raw(path).get("states") or []:
+            if state.get("node_type") != "enter_zone_via_list":
+                continue
+            params = state.get("params") or {}
+            # Coordinates are allowed only when the bot says it is taking them over.
+            stale = ["zone_list_entry", "zone_list_aliases"]
+            if not params.get("override_xyz"):
+                stale += ["interact_xyz", "reset_xyz"]
+            offenders += [
+                f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')} → {key}" for key in stale if key in params
+            ]
+
+    assert not offenders, f"bot states storing what the map already knows: {offenders}"
+
+
 def test_no_bot_declares_a_user_owned_option():
     """Some values are the user's whatever the dungeon is, and a declaration of one
     outranks the app setting they set it in.

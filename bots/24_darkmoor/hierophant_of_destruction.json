@@ -862,18 +862,7 @@
       },
       "params": {
         "zone": "Darkmoor/DM_Z00_OutsidersCamp",
-        "to_zone": "Darkmoor/DM_Z04_BlackLagoon",
-        "interact_xyz": {
-          "x": 1867.76,
-          "y": 1481.14,
-          "z": 0.3
-        },
-        "reset_xyz": {
-          "x": 1375.88,
-          "y": 1525.97,
-          "z": 0.3
-        },
-        "zone_list_entry": "Black Lagoon"
+        "to_zone": "Darkmoor/DM_Z04_BlackLagoon"
       }
     },
     {

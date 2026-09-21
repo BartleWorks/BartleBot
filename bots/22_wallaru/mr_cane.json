@@ -785,18 +785,7 @@
       },
       "params": {
         "zone": "Wallaru/WL_Z01_Hub",
-        "to_zone": "Wallaru/WL_Z08_BillabongResort",
-        "interact_xyz": {
-          "x": 2836.12,
-          "y": 15605.94,
-          "z": 2.0
-        },
-        "reset_xyz": {
-          "x": 2624.98,
-          "y": 15009.7,
-          "z": 2.0
-        },
-        "zone_list_entry": "Billabong Resort"
+        "to_zone": "Wallaru/WL_Z08_BillabongResort"
       }
     },
     {

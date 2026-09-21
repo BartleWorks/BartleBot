@@ -755,18 +755,7 @@
       },
       "params": {
         "zone": "Darkmoor/DM_Z00_OutsidersCamp",
-        "to_zone": "Darkmoor/DM_Z01_Graveholm",
-        "interact_xyz": {
-          "x": 1887.52,
-          "y": 1506.81,
-          "z": 0.3
-        },
-        "reset_xyz": {
-          "x": 1380.0,
-          "y": 1456.0,
-          "z": 0.3
-        },
-        "zone_list_entry": "Graveholm"
+        "to_zone": "Darkmoor/DM_Z01_Graveholm"
       }
     },
     {

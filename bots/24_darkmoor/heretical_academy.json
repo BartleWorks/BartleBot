@@ -101,18 +101,7 @@
       },
       "params": {
         "zone": "Darkmoor/DM_Z00_OutsidersCamp",
-        "to_zone": "Darkmoor/DM_Z05_ScholomanceEntrance",
-        "interact_xyz": {
-          "x": 1840.02,
-          "y": 1458.57,
-          "z": 0.3
-        },
-        "reset_xyz": {
-          "x": 1345.34,
-          "y": 1295.4,
-          "z": 0.3
-        },
-        "zone_list_entry": "Scholomance"
+        "to_zone": "Darkmoor/DM_Z05_ScholomanceEntrance"
       }
     },
     {

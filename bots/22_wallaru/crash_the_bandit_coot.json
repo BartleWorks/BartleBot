@@ -57,18 +57,7 @@
       },
       "params": {
         "zone": "Wallaru/WL_Z01_Hub",
-        "to_zone": "Wallaru/WL_Z05_Wobbegong_JT",
-        "interact_xyz": {
-          "x": 2931.6,
-          "y": 15619.29,
-          "z": 2.0
-        },
-        "reset_xyz": {
-          "x": 3000.0,
-          "y": 14820.0,
-          "z": 2.0
-        },
-        "zone_list_entry": "Wobbegong"
+        "to_zone": "Wallaru/WL_Z05_Wobbegong_JT"
       }
     },
     {
