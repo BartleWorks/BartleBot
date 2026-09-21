@@ -114,8 +114,8 @@ class TagPickerButton(PickerButton):
 
     *caption* pins the button's text. A filter button says what is selected, because
     the selection *is* the filter and there is nowhere else to read it. An editor
-    button sits above chips that already show the selection, so its text is free to
-    say what pressing it does instead — "Add Rewards…" rather than "Rewards (2)".
+    button sits beside chips that already show the selection, so it can stay the bare
+    group name — "Rewards" rather than "Rewards (2)".
     """
 
     #: Class-level default so ``PickerButton.__init__`` can call ``format_text``

@@ -196,7 +196,7 @@ def _let_shrink(w: QWidget) -> None:
     the two side columns -- but a stretch factor only divides what is *left over*
     after every column's minimum, and a column's minimum is its contents'.  In Edit
     mode the metadata grows two things that cannot shrink at all: the author field
-    is a fixed-width ``QLineEdit``, and the two Add-tag buttons are one atomic item
+    is a fixed-width ``QLineEdit``, and the tag picker buttons are one atomic item
     in the pill flow.  Together they claimed about 440px, which is more than half of
     a bar under ~1030px wide -- so on a narrow bar the metadata pushed the centre
     column, and the transport moved right by the overflow when the mode changed.
@@ -292,17 +292,18 @@ class _ElidedLabel(ThemedMixin, QLabel):
 
 
 class _TagsField(QWidget):
-    """The bot's tags as pills, and two buttons that add more.
+    """The bot's tags as pills, and one button per group that edits them.
 
     Unlike the other fields this is not a label swapped for an editor. The pills are
     the value in both modes — what changes is whether they carry a ✕ and whether the
-    Add buttons are shown — because a tag list reads the same either way and building
+    picker buttons are shown — because a tag list reads the same either way and building
     a second, differently-shaped view of it just to be read-only is how the two drift.
 
-    The buttons are captioned "Add Rewards…" / "Add Activity…" rather than the
-    library's "Rewards" / "Activity": there, the button *is* the filter and its text
-    has to report the selection; here the chips beside them already do that, so the
-    text is free to say what pressing it does.
+    The buttons are captioned "Rewards" / "Activity" with no count, unlike the
+    library's, where the button *is* the filter and its text has to report the
+    selection.  Here the chips beside them already do that.  Nor "Add Rewards…": the
+    popup toggles, so the same button takes a tag off again, and a caption saying
+    "Add" mislabels half of what it does.
     """
 
     tags_changed = pyqtSignal(list)
@@ -328,7 +329,7 @@ class _TagsField(QWidget):
         self._pill_host, self._pill_layout = flow_container(centre_rows=True)
         root.addWidget(self._pill_host)
 
-        # The Add buttons ride *inside* the pill flow, as one item, rather than in a
+        # The picker buttons ride *inside* the pill flow, as one item, rather than in a
         # flow of their own beside it.  Two flows side by side each wrap on their own
         # share of the width, so a row short of a hundred pixels came back two rows
         # of chips *and* two rows of buttons; one flow wraps once, and the buttons
@@ -339,7 +340,7 @@ class _TagsField(QWidget):
         button_layout.setSpacing(4)
         self._pickers: dict[str, TagPickerButton] = {}
         for group in TAG_GROUPS:
-            btn = TagPickerButton(title=group, group=group, caption=f"Add {group}…")
+            btn = TagPickerButton(title=group, group=group, caption=group)
             btn.setToolTip(f"Choose which {group.lower()} tags this bot carries")
             btn.selection_changed.connect(self._on_picker_changed)
             self._pickers[group] = btn
@@ -368,7 +369,7 @@ class _TagsField(QWidget):
     def sizeHint(self) -> QSize:  # noqa: N802 - Qt override
         """As tall as the editable form, whichever form is actually on show.
 
-        The "Add..." buttons are a pixel taller than the pills and the placeholder
+        The picker buttons are a pixel taller than the pills and the placeholder
         they replace, so without this floor the whole bar was a pixel taller in Edit
         mode -- and the canvas resolves the bar's height from a hint that is one
         event-loop pass stale, its own ``LayoutRequest`` arriving before the bar's.  So
@@ -390,8 +391,8 @@ class _TagsField(QWidget):
         *centre* from one it should stretch.
 
         Wrapping still grows the field past this floor, which is the one height change
-        Edit mode genuinely makes: the three "Add..." buttons join the flow and a
-        heavily tagged bot's tag row takes a second line.
+        Edit mode genuinely makes: the picker buttons join the flow and a heavily
+        tagged bot's tag row takes a second line.
         """
         base = super().sizeHint()
         return QSize(base.width(), max(base.height(), self._floor()))
@@ -416,7 +417,7 @@ class _TagsField(QWidget):
         self.tags_changed.emit(list(self._tags))
 
     def _rebuild(self) -> None:
-        # The Add buttons live in this layout too and are long-lived, so they come out
+        # The picker buttons live in this layout too and are long-lived, so they come out
         # before the sweep and go back in after it, always last.
         self._pill_layout.removeWidget(self._buttons)
         while (item := self._pill_layout.takeAt(0)) is not None:

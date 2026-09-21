@@ -42,7 +42,7 @@ def test_the_row_height_is_the_tallest_item_in_it():
 
 
 def test_a_short_item_is_centred_in_a_row_a_taller_one_set_the_height_of():
-    """The byline puts 18px tag chips beside a 27px "Add Rewards…" button.  Hung from
+    """The byline puts 18px tag chips beside a 27px "Rewards" button.  Hung from
     the top of the row the chips read as misaligned rather than as a row of two
     different things."""
     positions, height = flow_geometry([QSize(40, 14), QSize(40, 22)], 300)

@@ -37,7 +37,7 @@ def flow_geometry(
     absent from it, and the alternative is an item that never places at all.
 
     Items shorter than their row are **centred** in it rather than hung from its top.
-    The bot header's tag row is the case: an 18px tag chip beside a 27px "Add Rewards…"
+    The bot header's tag row is the case: an 18px tag chip beside a 27px "Rewards"
     button sat four pixels high, which reads as a misalignment rather than as a row of
     two different things.  That is also why the rows are collected before any position
     is assigned — a row's height is only known once the row is complete.

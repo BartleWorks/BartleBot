@@ -255,7 +255,7 @@ def test_the_tags_field_shows_pills_in_run_mode_and_chips_in_edit_mode(qapp):
     assert not edit.findChildren(TagPill)
 
 
-def test_the_add_buttons_are_hidden_until_the_bot_is_editable(qapp):
+def test_the_picker_buttons_are_hidden_until_the_bot_is_editable(qapp):
     field, _section = _field(["Gear"], editable=False)
     assert not field._buttons.isVisibleTo(field)
 
@@ -263,18 +263,19 @@ def test_the_add_buttons_are_hidden_until_the_bot_is_editable(qapp):
     assert field._buttons.isVisibleTo(field)
 
 
-def test_the_add_buttons_name_the_group_they_add(qapp):
-    """Unlike the library's, these say what pressing them does — the chips below
-    already report the selection, so the caption is free to be a call to action."""
+def test_the_picker_buttons_name_their_group_and_nothing_else(qapp):
+    """Bare group names, not "Add Rewards…": the popup toggles, so the same button
+    takes a tag off again.  No count either — the chips below already report the
+    selection, which is the library's reason for carrying one."""
     field, _section = _field([], editable=True)
 
-    assert [b.text() for b in field._pickers.values()] == ["Add Rewards…", "Add Activity…"]
+    assert [b.text() for b in field._pickers.values()] == ["Rewards", "Activity"]
 
 
-def test_an_add_button_keeps_its_caption_once_something_is_selected(qapp):
+def test_a_picker_button_keeps_its_caption_once_something_is_selected(qapp):
     field, _section = _field(["Gear", "Jewels"], editable=True)
 
-    assert field._pickers["Rewards"].text() == "Add Rewards…"
+    assert field._pickers["Rewards"].text() == "Rewards"
 
 
 def test_removing_a_chip_writes_the_shorter_list_back(qapp):
