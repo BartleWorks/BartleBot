@@ -272,6 +272,24 @@ def test_the_picker_buttons_name_their_group_and_nothing_else(qapp):
     assert [b.text() for b in field._pickers.values()] == ["Rewards", "Activity"]
 
 
+def test_the_picker_buttons_lead_the_flow_and_do_not_move_with_the_chips(qapp):
+    """Trailing the chips, both buttons slid sideways by the width of every tag added
+    or removed -- and removing one is a click on that chip's own ✕, which leaves the
+    pointer where the buttons are about to arrive.  Leading, the chips grow away from
+    a target that stays put."""
+    field, _section = _field(["Gear"], editable=True)
+    field.resize(600, field.sizeHint().height())
+    field.show()
+    field.layout().activate()
+    before = field._buttons.mapTo(field, field._buttons.rect().topLeft())
+
+    field.set_tags(["Gear", "Jewels", "Boss"])
+    field.layout().activate()
+
+    assert field._pill_layout.itemAt(0).widget() is field._buttons
+    assert field._buttons.mapTo(field, field._buttons.rect().topLeft()) == before
+
+
 def test_a_picker_button_keeps_its_caption_once_something_is_selected(qapp):
     field, _section = _field(["Gear", "Jewels"], editable=True)
 

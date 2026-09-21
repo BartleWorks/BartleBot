@@ -292,7 +292,7 @@ class _ElidedLabel(ThemedMixin, QLabel):
 
 
 class _TagsField(QWidget):
-    """The bot's tags as pills, and one button per group that edits them.
+    """The bot's tags as pills, led in Edit mode by one picker button per group.
 
     Unlike the other fields this is not a label swapped for an editor. The pills are
     the value in both modes — what changes is whether they carry a ✕ and whether the
@@ -334,6 +334,12 @@ class _TagsField(QWidget):
         # share of the width, so a row short of a hundred pixels came back two rows
         # of chips *and* two rows of buttons; one flow wraps once, and the buttons
         # move down whole rather than splitting.
+        #
+        # They lead the flow rather than trail it, so that their position is fixed.
+        # Trailing, every chip added or removed shifted both buttons sideways by that
+        # chip's width -- and removing one is a click on the chip's own ✕, which lands
+        # the pointer where the buttons are about to arrive.  Leading, the chips grow
+        # away from a stationary target instead.
         self._buttons = QWidget()
         button_layout = QHBoxLayout(self._buttons)
         button_layout.setContentsMargins(0, 0, 0, 0)
@@ -418,13 +424,14 @@ class _TagsField(QWidget):
 
     def _rebuild(self) -> None:
         # The picker buttons live in this layout too and are long-lived, so they come out
-        # before the sweep and go back in after it, always last.
+        # before the sweep and go back in after it, always first.
         self._pill_layout.removeWidget(self._buttons)
         while (item := self._pill_layout.takeAt(0)) is not None:
             if w := item.widget():
                 w.hide()
                 w.deleteLater()
 
+        self._pill_layout.addWidget(self._buttons)
         for tag in self._tags:
             if self._editable:
                 chip = TagChip(tag)
@@ -432,10 +439,9 @@ class _TagsField(QWidget):
                 self._pill_layout.addWidget(chip)
             else:
                 self._pill_layout.addWidget(TagPill(tag))
-        self._pill_layout.addWidget(self._buttons)
 
-        # The placeholder stands in for the pills, not for the whole row: with the Add
-        # buttons showing, an untagged bot already reads as untagged.
+        # The placeholder stands in for the pills, not for the whole row: with the
+        # picker buttons showing, an untagged bot already reads as untagged.
         self._empty_lbl.setVisible(not self._tags and not self._editable)
         self._pill_host.setVisible(bool(self._tags) or self._editable)
         self._buttons.setVisible(self._editable)
