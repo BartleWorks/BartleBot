@@ -253,3 +253,16 @@ def test_moving_the_zone_keeps_a_destination_the_new_list_still_reaches(qapp):
     button.refresh()
 
     assert button.value() == _LIST_B
+
+
+def test_rebuilding_without_pruning_keeps_a_stale_destination(qapp):
+    """A file whose destination has gone stale says so by failing when it runs, not by being
+    quietly emptied the moment it is opened."""
+    source = _LIST_HUB
+    button = ListZoneButton(lambda: source, nav=_list_nav())
+    button.set_value(_LIST_B)
+
+    source = _DOJO
+    button.refresh(prune=False)
+
+    assert button.value() == _LIST_B

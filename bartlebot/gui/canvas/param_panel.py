@@ -660,6 +660,9 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             source = self._widgets.get("zone")
             if isinstance(picker, ListZoneButton) and isinstance(source, _NavZoneField):
                 source.changed.connect(lambda _zone, w=picker: w.refresh())
+                # Again now that the whole form exists: the picker was built before it could
+                # see the zone field if the schema happens to list it first.
+                picker.refresh(prune=False)
         self._suppress = False
         # load_schema *is* this widget's construction — everything above was just
         # built, so this is where its styling is first applied. It also covers

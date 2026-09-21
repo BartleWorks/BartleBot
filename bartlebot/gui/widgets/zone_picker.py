@@ -262,16 +262,20 @@ class ListZoneButton(PickerButton):
             return "Choose a destination…"
         return f"{zone_names.label(zone)} ({zone_id(zone)})"
 
-    def refresh(self) -> None:
-        """Rebuild the choices from the source zone, dropping a destination it no longer offers.
+    def refresh(self, *, prune: bool = True) -> None:
+        """Rebuild the choices from the source zone, dropping one it no longer offers.
 
         Called as the button goes down, and again whenever the source zone changes: a
         destination left over from the zone before it is one no list object can reach, and
         leaving it showing would put that in the bot file.
+
+        ``prune=False`` rebuilds without dropping anything, for the rebuild that happens once
+        the form is fully built. A file whose destination has gone stale should say so by
+        failing when it runs, not by being quietly emptied the moment it is opened.
         """
         source = self._source()
         self.set_sections(list_destination_sections(self.nav, source))
-        if (zone := self.value()) and zone not in zone_lists.destinations(self.nav, source):
+        if prune and (zone := self.value()) and zone not in zone_lists.destinations(self.nav, source):
             self.set_value("")
             self.changed.emit("")
 
