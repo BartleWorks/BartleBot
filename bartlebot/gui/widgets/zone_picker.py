@@ -26,7 +26,7 @@ from PyQt6.QtCore import QSize, pyqtSignal
 from PyQt6.QtGui import QIcon
 from PyQt6.QtWidgets import QSizePolicy, QWidget
 
-from bartlebot import card_art, worlds, zone_names, zone_nav
+from bartlebot import card_art, worlds, zone_lists, zone_names, zone_nav
 from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 
@@ -188,3 +188,95 @@ class NavZoneButton(PickerButton):
         except Exception:
             suggested = []
         self.set_sections(zone_sections(self.nav, suggested))
+
+
+def list_destination_sections(nav: zone_nav.NavMap, from_zone: str) -> list[Section]:
+    """The destinations the list object standing in `from_zone` offers, as one section.
+
+    One section rather than one per world, because a list object only ever serves zones of
+    its own world; its title names that world anyway, so the popup still says where these
+    zones are. Empty when the zone has no list object, which is what the button's caption
+    then explains.
+    """
+    zones = zone_lists.destinations(nav, from_zone)
+    if not zones:
+        return []
+    world = nav.world_of(from_zone)
+    title = worlds.label(world.key) if world is not None else SUGGESTED_TITLE
+    rows = [PickerRow(key=zone, label=zone_names.label(zone), meta=zone_id(zone), description=zone) for zone in zones]
+    return [(title, rows)]
+
+
+class ListZoneButton(PickerButton):
+    """The control for a 'list_zone' param: where the list object in another field's zone can send players.
+
+    Its choices depend on that other field, so they are worked out as the button goes down
+    rather than fixed when the form is built -- the source zone may well be picked after this
+    field exists, or changed afterwards. A picker can do that; a combo box full of items
+    cannot, which is why this is not a ``str_choice``.
+    """
+
+    changed = pyqtSignal(str)
+
+    def __init__(
+        self,
+        get_source: Callable[[], str] = str,
+        nav: zone_nav.NavMap | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
+        resolved_nav = zone_nav.load() if nav is None else nav
+        super().__init__(
+            "Destination",
+            placeholder="Choose a destination…",
+            search_placeholder="Zone or zone id…",
+            single_select=True,
+            popup_width=POPUP_WIDTH,
+            broad=True,
+            section_icon=world_icon_resolver(resolved_nav),
+            parent=parent,
+        )
+        self.nav = resolved_nav
+        self._get_source = get_source
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.pressed.connect(self.refresh)
+        self.selection_changed.connect(lambda keys: self.changed.emit(keys[0] if keys else ""))
+        self.refresh()
+
+    def value(self) -> str:
+        return next(iter(self.selection()), "")
+
+    def set_value(self, zone: str) -> None:
+        """Set the destination without emitting ``changed``."""
+        self.set_selection([zone] if zone else [])
+
+    def minimumSizeHint(self) -> QSize:  # noqa: N802 - Qt override
+        return QSize(MINIMUM_WIDTH, super().minimumSizeHint().height())
+
+    def format_text(self, labels: list[str]) -> str:
+        nav = getattr(self, "nav", None)  # the base class draws its text before __init__ gets here
+        if nav is None:
+            return "Choose a destination…"
+        if not self._source():
+            return "Pick a Zone first"
+        if not (zone := self.value()):
+            return "Choose a destination…"
+        return f"{zone_names.label(zone)} ({zone_id(zone)})"
+
+    def refresh(self) -> None:
+        """Rebuild the choices from the source zone, dropping a destination it no longer offers.
+
+        Called as the button goes down, and again whenever the source zone changes: a
+        destination left over from the zone before it is one no list object can reach, and
+        leaving it showing would put that in the bot file.
+        """
+        source = self._source()
+        self.set_sections(list_destination_sections(self.nav, source))
+        if (zone := self.value()) and zone not in zone_lists.destinations(self.nav, source):
+            self.set_value("")
+            self.changed.emit("")
+
+    def _source(self) -> str:
+        try:
+            return self._get_source() or ""
+        except Exception:
+            return ""

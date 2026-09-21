@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.zone_entry.enter_zone_via_list as evl
+from bartlebot import zone_lists, zone_nav
 from tests.conftest import FakeClient, FakeMachine
 
 _PARAMS = {
@@ -544,3 +545,77 @@ async def test_no_aliases_behaves_exactly_as_before():
         result = await evl.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
+
+
+# ── Resolving an authored destination ──────────────────────────────────────────
+#
+# A bot file names two zones and nothing else; _plan works the rest out from the map.
+# The navigator's own params go down the other branch, which every test above uses.
+
+_EMPYREA_HUB = "Empyrea/EM_Z00_Aeriel_HUB"
+_ZANADU = "Empyrea/EM_Z02_Zanadu"
+
+
+def _authored(**extra) -> dict:
+    return {"zone": _EMPYREA_HUB, "to_zone": _ZANADU, **extra}
+
+
+def test_plan_works_the_row_out_from_the_destination():
+    """Nothing in the file says "Zanadu" -- the locale names come from the shipped snapshot."""
+    interact, reset, entry, aliases = evl._plan(FakeMachine(), _authored())
+
+    assert entry == "Zanadu"
+    assert aliases, "the other six locales should be matched too"
+    spot = zone_lists.step_for(zone_nav.load(), _EMPYREA_HUB, _ZANADU).params
+    assert (interact.x, interact.y, interact.z) == tuple(spot["interact_xyz"][axis] for axis in "xyz")
+    assert (reset.x, reset.y, reset.z) == tuple(spot["reset_xyz"][axis] for axis in "xyz")
+
+
+def test_plan_takes_the_nodes_own_coordinates_when_told_to():
+    interact, reset, _entry, _aliases = evl._plan(
+        FakeMachine(),
+        _authored(
+            override_xyz=True,
+            interact_xyz={"x": 11.0, "y": 22.0, "z": 33.0},
+            reset_xyz={"x": 44.0, "y": 55.0, "z": 66.0},
+        ),
+    )
+
+    assert (interact.x, interact.y, interact.z) == (11.0, 22.0, 33.0)
+    assert (reset.x, reset.y, reset.z) == (44.0, 55.0, 66.0)
+
+
+def test_plan_ignores_stale_coordinates_while_the_override_is_off():
+    """The fields keep whatever was last typed in them; off means off."""
+    interact, _reset, _entry, _aliases = evl._plan(
+        FakeMachine(), _authored(interact_xyz={"x": 11.0, "y": 22.0, "z": 33.0})
+    )
+
+    assert (interact.x, interact.y, interact.z) != (11.0, 22.0, 33.0)
+
+
+def test_plan_prefers_a_row_the_navigator_already_resolved():
+    """A World Gate's rows are worlds, which no destination zone describes."""
+    _interact, _reset, entry, aliases = evl._plan(
+        FakeMachine(),
+        {
+            "zone": _EMPYREA_HUB,
+            "to_zone": "Krokotopia/*",
+            "interact_xyz": {"x": 1.0, "y": 2.0, "z": 3.0},
+            "reset_xyz": {"x": 4.0, "y": 5.0, "z": 6.0},
+            "zone_list_entry": "Krokotopia",
+            "zone_list_aliases": ["Krokotopie"],
+        },
+    )
+
+    assert (entry, aliases) == ("Krokotopia", ["Krokotopie"])
+
+
+async def test_a_pair_no_list_joins_fails_before_touching_a_client():
+    client = FakeClient()
+
+    result = await evl.run(FakeMachine(), [client], _authored(to_zone="Karamelle/KM_Z00_HUB"))
+
+    assert result == "FAILURE"
+    client.zone_name.assert_not_called()
+    client.teleport.assert_not_called()
