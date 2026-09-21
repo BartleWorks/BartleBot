@@ -360,3 +360,138 @@ def test_the_filename_sits_on_the_bot_name_s_baseline(qapp):
         return widget.mapTo(header, widget.rect().topLeft()).y() + pad + centred + metrics.ascent()
 
     assert baseline(header._file_lbl) == baseline(header._name_lbl)
+
+
+# ---------------------------------------------------------------------------
+# The bar's height does not move with the mode  (#83)
+#
+# The toolbar flickered on every Run/Edit switch.  Measured, the bar passed through
+# four heights per round trip and did not always come back: an untagged bot went
+# 38 -> 53 -> 56 and *stayed* 56, eighteen pixels too tall, until an unrelated
+# resize put it right.  Two causes, both fixed by making the height constant rather
+# than by re-measuring after the fact.
+#
+# The bar's height across a mode switch is measured in ``test_canvas_toolbar_layout``:
+# it only goes wrong through the canvas, whose layout is what reads the stale hint.
+# ---------------------------------------------------------------------------
+
+
+def test_the_tag_field_reserves_the_height_of_its_editable_form(header):
+    """The "Add…" buttons are taller than the pills they replace.
+
+    Left unreserved, that difference made the whole bar a pixel taller in Edit mode —
+    and because the canvas reads the bar's height one event-loop pass stale, that pixel
+    stuck on the way back out.
+    """
+    header.set_config(_config(tags=[]))
+    tags = header._tags_field
+
+    header.set_editable(False)
+    run = tags.sizeHint().height()
+    header.set_editable(True)
+    edit = tags.sizeHint().height()
+
+    assert run == edit
+    assert tags.minimumHeight() >= tags._buttons.sizeHint().height()
+
+
+def test_typing_a_version_does_not_bring_the_pill_up_beside_the_field(header):
+    """The pill and its editor are two states of one slot, never both at once.
+
+    ``_apply_version`` showed the pill whenever the version was non-empty, which in
+    Edit mode meant the read-only pill appeared next to the field being typed into —
+    and grew the bar by its height while it was there.
+    """
+    header.set_config(_config(version=""))
+    header.set_editable(True)
+
+    header._version_edit.setText("3.0")
+
+    assert header._version_edit.isVisibleTo(header)
+    assert not header._version_pill.isVisibleTo(header)
+
+
+def test_a_slot_is_only_as_wide_as_the_field_it_is_showing(header):
+    """The stack must not claim the width of the editor it is not showing.
+
+    A ``QStackedLayout`` reports the widest of *every* page, showing or not — unlike a
+    box layout, which skips a hidden child.  Left alone, Run mode sized each slot to its
+    editor: the name's 240px minimum and the author field's fixed 180 pushed the version
+    pill and the tag pills right by that much, and stretched the version pill across a
+    slot several times its own text.  Height comes from both pages; width must not.
+    """
+    header.set_config(_config())
+    header.set_editable(False)
+
+    assert header._version_slot.sizeHint().width() == header._version_pill.sizeHint().width()
+    assert header._authors_slot.sizeHint().width() == header._authors_lbl.sizeHint().width()
+
+    header.set_editable(True)
+
+    # Each page's own explicit bounds still apply: the version field is a fixed 60px and
+    # the name field has a 240px minimum, and reporting a page's width upward must not
+    # drop either the way an unclamped hint did.
+    assert header._version_slot.sizeHint().width() == 60
+    assert header._name_slot.sizeHint().width() >= header._name_edit.minimumWidth()
+
+
+def test_a_slot_is_as_tall_as_its_taller_half_in_both_modes(header):
+    """The other half of the same split, and the reason the stack is there at all."""
+    header.set_config(_config())
+
+    header.set_editable(False)
+    run = header._authors_slot.sizeHint().height()
+    header.set_editable(True)
+    edit = header._authors_slot.sizeHint().height()
+
+    assert run == edit
+    assert run >= header._authors_edit.sizeHint().height()
+
+
+def test_the_tag_pills_centre_against_the_author_text_in_run_mode(header):
+    """The floor that keeps the bar's height constant must not leave the pills high.
+
+    The tag field reserves the height of its editable form in both modes, so in Run mode
+    the pills are shorter than the rect they are handed — and a flow lays its rows from
+    the top of that rect unless told otherwise.  The spare pixels all landed below the
+    pills, putting them above the byline they share a row with.
+    """
+    header.set_config(_config(tags=["Gear"]))
+    header.set_editable(False)
+    header.resize(1200, header.sizeHint().height())
+    header.show()
+    header.layout().activate()
+
+    field = header._tags_field
+    pills = field._pill_host.findChildren(TagPill)
+    assert pills, "no pills to measure"
+    pill = pills[0]
+
+    pill_centre = pill.mapTo(field, pill.rect().center()).y()
+    assert abs(pill_centre - field.rect().center().y()) <= 1
+
+
+def test_the_version_pill_centres_against_the_bot_name(header):
+    """A slot taller than the field it is showing must centre it, not hang it from the top.
+
+    The slot is as tall as the *editor* it is not showing — that is what keeps the bar's
+    height off the mode — so in Run mode the 13px pill sits in a 22px cell.
+    ``QStackedLayout`` has no alignment of its own and parks a short page at the top,
+    which left the pill four and a half pixels above the name beside it.
+    """
+    header.set_config(_config())
+    header.set_editable(False)
+    header.resize(1200, header.sizeHint().height())
+    header.show()
+    header.layout().activate()
+
+    title = header._name_slot.parentWidget()
+    pill = header._version_pill
+    pill_centre = pill.mapTo(title, pill.rect().center()).y()
+    name_centre = header._name_lbl.mapTo(title, header._name_lbl.rect().center()).y()
+
+    # Both halves, because each fails a different way.  Stretched to fill the cell, the
+    # pill lands near the right centre but reads as a tall grey smudge rather than a
+    # pill; kept to its own height but hung from the top, it reads as misaligned.
+    assert pill.height() == pill.sizeHint().height(), "the pill was stretched to fill its slot"
+    assert abs(pill_centre - name_centre) <= 1, "the pill did not centre against the name"

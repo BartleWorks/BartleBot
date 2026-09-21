@@ -132,3 +132,57 @@ def test_no_button_is_clipped_by_the_slot_it_sits_in(canvas, edit_mode):
         page = stack.currentWidget()
         for child in page.findChildren(type(canvas._fit_btn)):
             assert child.geometry().right() <= page.rect().right()
+
+
+# ---------------------------------------------------------------------------
+# The bar's height does not move with the mode  (#83)
+#
+# The toolbar flickered on every Run/Edit switch.  Measured through the canvas, an
+# untagged bot's bar went 38 -> 53 -> 56 across one round trip and *stayed* at 56 —
+# eighteen pixels too tall, with the graph that far too low — until an unrelated
+# resize put it right.  Two causes.  Edit mode swapped each label for a taller editor
+# laid out beneath it, so a half-finished swap asked for the sum of both; and the
+# canvas resolves the bar's height from a hint one event-loop pass stale, its own
+# layout request being served before the bar's, so the intermediate height is the one
+# it read and painted.  The fix is a height that does not depend on the mode at all,
+# which is why these measure the canvas rather than the header: in isolation the
+# header's hint was always right, and the wrong number only ever reached the screen
+# through the parent that asked too early.
+# ---------------------------------------------------------------------------
+
+
+def _header_height(canvas) -> int:
+    """The height the bar is actually drawn at, once the canvas's layout has run."""
+    QApplication.processEvents()
+    return canvas._toolbar.height()
+
+
+def test_the_bar_is_the_same_height_in_both_modes(canvas):
+    run = _header_height(canvas)
+
+    canvas.enter_edit_mode()
+    edit = _header_height(canvas)
+    canvas._on_done_clicked()
+    back = _header_height(canvas)
+
+    assert edit == run, "the bar changed height on the way into Edit mode"
+    assert back == run, "the bar did not come back to the height it started at"
+
+
+def test_the_bar_does_not_drift_over_repeated_mode_switches(canvas):
+    """The stuck 18px did not accumulate, but it also never cleared.
+
+    Four round trips rather than one: the first version of the fix was a forced
+    re-measure, which landed on the right pixel for a cycle or two and then stopped —
+    the kind of thing one switch cannot tell apart from a fix.
+    """
+    run = _header_height(canvas)
+
+    seen = []
+    for _ in range(4):
+        canvas.enter_edit_mode()
+        seen.append(_header_height(canvas))
+        canvas._on_done_clicked()
+        seen.append(_header_height(canvas))
+
+    assert set(seen) == {run}, f"the bar visited {sorted(set(seen))} across four switches, starting from {run}"

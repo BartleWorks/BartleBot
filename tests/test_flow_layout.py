@@ -11,7 +11,7 @@ tests of their own at the bottom.
 from PyQt6.QtCore import QSize
 from PyQt6.QtWidgets import QWidget
 
-from bartlebot.gui.widgets.flow_layout import flow_container, flow_geometry
+from bartlebot.gui.widgets.flow_layout import block_offset, flow_container, flow_geometry
 
 
 def _sizes(*widths: int, height: int = 14) -> list[QSize]:
@@ -169,3 +169,59 @@ def test_an_inserted_widget_is_reparented_like_an_added_one(qapp):
     layout.insertWidget(0, pill)
 
     assert pill.parent() is host
+
+
+# ---------------------------------------------------------------------------
+# Where the block sits when the rect is taller than the rows need
+# ---------------------------------------------------------------------------
+
+
+def test_rows_stay_at_the_top_by_default():
+    """A keyword list or a card grid handed a tall panel belongs at the top of it."""
+    assert block_offset(40, 100, centre=False) == 0
+
+
+def test_rows_centre_in_the_slack_when_asked():
+    assert block_offset(40, 100, centre=True) == 30
+
+
+def test_a_block_that_exactly_fills_its_rect_is_not_moved():
+    """Which is the normal case: ``flow_container`` sizes the widget to its own wrapped
+    height, so the offset only ever comes up where a parent deliberately gave it more."""
+    assert block_offset(40, 40, centre=True) == 0
+
+
+def test_a_block_taller_than_its_rect_is_never_pulled_up_off_the_top():
+    """Clipping the last row is visible; hiding the first one is not."""
+    assert block_offset(100, 40, centre=True) == 0
+
+
+def test_a_centred_flow_puts_its_single_row_on_the_rect_s_centre(qapp):
+    """The bot header's byline: pills a few pixels shorter than the rect they are given.
+
+    Three spare pixels all landing below them left the pill above the author text beside
+    it, which reads as a misalignment rather than as a row of two different things.
+    """
+    host, layout = flow_container(centre_rows=True)
+    for _ in range(2):
+        child = QWidget()
+        child.setFixedSize(40, 20)
+        layout.addWidget(child)
+    host.resize(200, 30)
+    layout.setGeometry(host.rect())
+
+    tops = {layout.itemAt(i).widget().y() for i in range(layout.count())}
+    assert tops == {5}
+
+
+def test_the_same_flow_left_uncentred_hangs_from_the_top(qapp):
+    host, layout = flow_container()
+    for _ in range(2):
+        child = QWidget()
+        child.setFixedSize(40, 20)
+        layout.addWidget(child)
+    host.resize(200, 30)
+    layout.setGeometry(host.rect())
+
+    tops = {layout.itemAt(i).widget().y() for i in range(layout.count())}
+    assert tops == {0}

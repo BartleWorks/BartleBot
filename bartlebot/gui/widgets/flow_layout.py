@@ -67,13 +67,49 @@ def flow_geometry(
     return positions, max(y - v_spacing, 0)
 
 
+def block_offset(content_height: int, available_height: int, *, centre: bool) -> int:
+    """How far down to push a block of rows in the space it was given.
+
+    Zero unless *centre*, and zero anyway whenever the flow got exactly the height its
+    rows came to -- which is the normal case, because :func:`flow_container` sizes the
+    widget to its own wrapped height.
+
+    Top is the right default and most callers want it: a keyword list or a card grid
+    handed a panel taller than it needs should stay at the top of it, not float in the
+    middle.  Centring is for a flow that shares a row with something else and has to line
+    up against it.  The bot header's byline is that case -- its tag field reserves the
+    height of its *editable* form in both modes so the bar does not change height when
+    the mode does, and in Run mode the pills are shorter than that floor.  The three
+    spare pixels all landed below them, leaving the pill a pixel and a half above the
+    author text beside it, which reads as a misalignment rather than as a row of two
+    different things.  That is the same reasoning as the per-row centring in
+    :func:`flow_geometry`, one level up.
+
+    Never negative: a block taller than its rect is clipped at the bottom, which is
+    visible, rather than pulled up off the top, which hides the first row entirely.
+    """
+    if not centre:
+        return 0
+    return max((available_height - content_height) // 2, 0)
+
+
 class FlowLayout(QLayout):
     """Left-to-right layout that wraps onto a new row when it runs out of width."""
 
-    def __init__(self, parent: QWidget | None = None, *, margin: int = 0, spacing: int = 4) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        *,
+        margin: int = 0,
+        spacing: int = 4,
+        centre_rows: bool = False,
+    ) -> None:
         super().__init__(parent)
         self._items: list[QLayoutItem] = []
         self._spacing = spacing
+        #: Centre the rows in a rect taller than they need, rather than hanging them from
+        #: its top.  Off by default -- see :func:`block_offset` for which case wants it.
+        self._centre_rows = centre_rows
         self.setContentsMargins(margin, margin, margin, margin)
 
     # -- QLayout plumbing ----------------------------------------------
@@ -117,10 +153,13 @@ class FlowLayout(QLayout):
     def setGeometry(self, rect: QRect) -> None:  # noqa: N802  (Qt override)
         super().setGeometry(rect)
         left, top, right, bottom = self.getContentsMargins()
-        positions, _ = self._geometry(rect.width() - left - right)
+        positions, height = self._geometry(rect.width() - left - right)
+        offset = block_offset(height + top + bottom, rect.height(), centre=self._centre_rows)
         for item, pos in zip(self._live(), positions):
             size = item.sizeHint()
-            item.setGeometry(QRect(rect.x() + left + pos.x(), rect.y() + top + pos.y(), size.width(), size.height()))
+            item.setGeometry(
+                QRect(rect.x() + left + pos.x(), rect.y() + top + offset + pos.y(), size.width(), size.height())
+            )
 
     def sizeHint(self) -> QSize:  # noqa: N802  (Qt override)
         """One row of everything -- what this would *like*, not what it needs.
@@ -169,7 +208,7 @@ class FlowLayout(QLayout):
         )
 
 
-def flow_container(spacing: int = 4) -> tuple[QWidget, FlowLayout]:
+def flow_container(spacing: int = 4, *, centre_rows: bool = False) -> tuple[QWidget, FlowLayout]:
     """A widget whose height follows its :class:`FlowLayout`'s wrapping.
 
     ``heightForWidth`` alone is not enough inside a ``QVBoxLayout``: the parent asks
@@ -178,7 +217,7 @@ def flow_container(spacing: int = 4) -> tuple[QWidget, FlowLayout]:
     ask again once the width is settled.
     """
     w = QWidget()
-    layout = FlowLayout(w, spacing=spacing)
+    layout = FlowLayout(w, spacing=spacing, centre_rows=centre_rows)
     policy = w.sizePolicy()
     policy.setHeightForWidth(True)
     policy.setVerticalPolicy(QSizePolicy.Policy.Minimum)

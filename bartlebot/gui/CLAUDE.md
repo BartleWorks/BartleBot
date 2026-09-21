@@ -686,6 +686,49 @@ tools' Run-mode page is deliberately *empty*, so nothing there moves when the mo
 changes; the mode toggle right-aligns inside its own slot and stays anchored to the
 margin whether it holds one button or two.
 
+**Bar B's height must not depend on the mode**, and each metadata field is a
+`_Swappable` — a `QStackedLayout` holding its label and its editor — for exactly that
+reason. A stack reserves the taller of the pair in every state, so the Run/Edit swap
+cannot move the bar. Laying the two out one above the other and toggling `setVisible`
+instead is what caused #83's toolbar flicker: `setVisible` on two children is two steps,
+so a half-finished swap asked for the *sum* of both, and the canvas laid the bar out at
+that intermediate height and painted it there. The bar being ~14px taller than Run mode
+strictly needs is the price, and it is the right way round.
+
+That is the general rule for anything the canvas lays out: **remove the dependence rather
+than re-measure afterwards.** A parent resolves a child's height from a `sizeHint` that is
+one event-loop pass stale — `LayoutRequest` is a *posted* event, and the parent's is served
+before the child's — so an intermediate height is the one that reaches the screen, and the
+child's later re-measure is never propagated back up. Leaving Edit mode with no tags left
+Bar B 18px too tall until an unrelated resize. Forcing the re-measure was tried and was not
+even reliable: it landed on the right pixel for two cycles and then stopped.
+
+Two consequences worth knowing before touching a wrapping widget:
+
+- **`QWidgetItem` answers `heightForWidth` from the widget's *layout*, never from the
+  widget's own override.** So a widget holding a `FlowLayout` — `_TagsField`, any pill or
+  chip flow — cannot floor its height through `sizeHint` or a `heightForWidth` override;
+  the parent reads straight past both. `setMinimumHeight` is the floor a parent honours,
+  and `_TagsField` sets it on every rebuild because the buttons are sized by the theme's
+  font.
+- **A pill or chip flow is the one thing that legitimately changes the bar's height**, when
+  a tagged bot's byline wraps to a second row in Edit mode. That is a content change, not a
+  layout bug, and a fix that suppressed it would be worse than the flicker.
+- **`QStackedLayout` has no alignment of its own** — it ignores both `setAlignment`
+  overloads — and gives a page its natural height at the *top* of the cell. Invisible for
+  a page as tall as the cell, wrong for one that is not: a slot sized to the editor it is
+  not showing left the 13px version pill four and a half pixels above the bot name. A
+  one-child box layout (`_centred`) is the alignment the stack will not do.
+- **A `FlowLayout` hangs its rows from the top of whatever rect it is given**, so a flow
+  handed more height than its rows need leaves the slack underneath. That is the right
+  default — a keyword list or a card grid in a tall panel belongs at the top of it — so
+  centring is opt-in, via `flow_container(centre_rows=True)`. Reach for it only where the
+  flow shares a row with something it has to line up against, as the byline's tag pills do
+  against the author text.
+
+`tools/probe_layout.py` measures all of this — reach for it before theorising about a
+layout or repaint bug; `tools/CLAUDE.md` has how to read a trace.
+
 **Set the spacing on every toolbar row explicitly** (`_BTN_GAP` within a cluster,
 `_GROUP_GAP` between). The style's default is 6px on Windows, so a row that only
 called `addSpacing(4)` came to 80px inside a 68px slot and clipped the Save button
