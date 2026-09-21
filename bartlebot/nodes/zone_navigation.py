@@ -33,7 +33,7 @@ from collections.abc import Collection
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from bartlebot import port_map, worlds, zone_names, zone_nav
+from bartlebot import port_map, worlds, zone_lists, zone_nav
 from bartlebot.nodes import node_helpers, wizard_city
 from bartlebot.nodes.interaction import interact
 from bartlebot.nodes.teleportation import teleport_to_world_hub
@@ -118,31 +118,18 @@ def _zone_entry_call(step: zone_nav.Step, zones: dict) -> tuple[Runs, dict] | st
             params["object_use_delay"] = p["object_use_delay"]
         return enter_zone_via_object, params
     if step.kind == zone_nav.LIST:
-        if p.get("list_aliases_only"):
-            # The list's real text for this member doesn't just omit the zone's own display
-            # name (Nimbus Hanger's "Nimbus") -- that text belongs to a different real zone
-            # that also happens to be on this list, so trying it would click that zone's row
-            # instead. list_aliases is the only safe candidate set here.
-            primary, *aliases = p["list_aliases"]
-        else:
-            # The list shows the game's own name in the client's language, so match every locale.
-            names = zone_names.display_names(step.to_zone)
-            if not names:
-                return (
-                    f"no display name is known for {step.to_zone!r}, so its list entry cannot be found; "
-                    f"regenerate bartlebot/data/zone_names.json with tools/dump_zone_names.py"
-                )
-            primary, *aliases = names
-            # The map's own list_aliases cover text the list shows that isn't a locale name at
-            # all -- Nimbus Hanger's hub list truncates it to "Nimbus".
-            aliases = [*aliases, *p.get("list_aliases", [])]
+        # Resolved here rather than left to the node: the node resolves the destination its
+        # author picked, and a planned step has no author. Both go through zone_lists.
+        resolved = zone_lists.resolve(step)
+        if isinstance(resolved, str):
+            return resolved
         return enter_zone_via_list, {
             "zone": step.from_zone,
             "to_zone": step.to_zone,
-            "interact_xyz": p["interact_xyz"],
-            "reset_xyz": p["reset_xyz"],
-            "zone_list_entry": primary,
-            "zone_list_aliases": aliases,
+            "interact_xyz": resolved.interact_xyz,
+            "reset_xyz": resolved.reset_xyz,
+            "zone_list_entry": resolved.entry,
+            "zone_list_aliases": resolved.aliases,
         }
     if step.kind == zone_nav.RIDE:
         # A ride finished from inside its cutscene zone still names the zone it is boarded in.
