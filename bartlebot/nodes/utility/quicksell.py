@@ -254,6 +254,20 @@ QUICKSELLABLE_CATEGORIES: frozenset[str] = frozenset(
     }
 )
 
+# Every category the wiki import produces, as one ordered vocabulary. Derived from
+# the two sets above rather than written out again: those are what the extractor's
+# icon table and ``tools/drop_categories.py`` already treat as the whole list, and a
+# third hand-maintained copy would be the one that drifts.
+#
+# This is what the Possible Drops editor offers when a drop's category is set by
+# hand. Hand-editing is the only route for a drop no wiki page lists -- a reagent a
+# user added themselves -- and the list is closed on purpose: a typed category is a
+# category no icon, no sellability classification and no picker filter knows, which
+# reads as a bug rather than as a new vocabulary word. A genuinely new category is
+# added here by classifying it above, which is the same step
+# ``tools/drop_categories.py`` already demands.
+DROP_CATEGORIES: tuple[str, ...] = tuple(sorted(QUICKSELLABLE_CATEGORIES | set(NEVER_QUICKSOLD_CATEGORIES)))
+
 
 def resolve_options(get_option) -> dict:
     """Collapse the five quicksell options into the plain dict everything else reads.

@@ -737,6 +737,26 @@ yield and what it has. It is the only authorial thing over there, which is what
 `RightSidebar.config_changed` exists for. **Log** is the third tab there, so it
 can be read without closing Setup.
 
+- **A drop's category is a closed dropdown, never typed.** `_DropEditDialog` offers
+  `quicksell.DROP_CATEGORIES` — derived from that node's two classification sets, which
+  are already the vocabulary the wiki import produces and the art extractor has icons
+  for. A typed category is one no icon, no sellability rule and no picker filter knows,
+  so it reads as a broken row rather than as a new word; a genuinely new one is added by
+  classifying it in `quicksell.py`, which `tools/drop_categories.py` already demands. A
+  category a bot file carries that the list does not is offered anyway, so editing such
+  a drop's *name* cannot silently strip it. Uncategorized is an entry rather than the
+  absence of one, and name and category go through one `edit_drop` because `match_name`
+  depends on both.
+- **The live tables filter to the keep list**, which is what a user actually wants off a
+  finished run: not every drop, but whether anything they said to keep came out of it.
+  The rule is `quicksell.matching_keyword`, so a row shown is a row the node would spare,
+  and the list is the *effective* one — a socket wrench kept by a `sell_*` bool shows up
+  beside what was typed. The checkbox is disabled, not hidden, for a bot that never sells
+  (no quicksell node, or Enable Quicksell off): there the filter can only hide everything,
+  and a control that appears for some bots is one nobody finds. The keep list is a bot
+  option edited over in Setup and nothing reports here, so `DropSection.refresh_keep_list`
+  re-resolves it when the Drops tab comes forward.
+
 ## Two surfaces: Setup edits values, Options edits declarations
 
 They are separate tabs of the left sidebar, and edit mode decides which pair is

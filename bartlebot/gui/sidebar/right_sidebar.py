@@ -131,6 +131,8 @@ class RightSidebar(QTabWidget):
 
     def set_config(self, config: BotConfig | None) -> None:
         self.possible_drops.set_config(config)
+        # The live tables need it too, for the keep-list filter over this bot's drops.
+        self.drops.set_config(config)
 
     def sync_config(self, config: BotConfig | None) -> None:
         """Rebind Possible Drops if *config* is a different object than it holds.
@@ -151,3 +153,8 @@ class RightSidebar(QTabWidget):
     def _on_tab_changed(self, index: int) -> None:
         # Let the client section back its polling off while it is off screen.
         self.clients.set_players_visible(index == _PLAYERS_TAB)
+        if index == _DROPS_TAB:
+            # The keep list is a bot option edited over in Setup, which does not report
+            # here. Coming forward is the moment the filter has to be right, so it is
+            # the moment to re-resolve it.
+            self.drops.refresh_keep_list()

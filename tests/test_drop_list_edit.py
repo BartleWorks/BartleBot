@@ -1,7 +1,14 @@
-"""Tests for the Possible Drops rename, merge, and header helpers."""
+"""Tests for the Possible Drops edit, merge, and header helpers."""
 
 from bartlebot.bot.schema import DropModel
-from bartlebot.gui.sidebar.sections.possible_drops_section import drops_header_text, merge_drops, rename_drop
+from bartlebot.gui.sidebar.sections.possible_drops_section import (
+    _DropEditDialog,
+    drops_header_text,
+    edit_drop,
+    merge_drops,
+)
+from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.nodes.utility.quicksell import DROP_CATEGORIES
 
 
 def _drops(*specs) -> list[DropModel]:
@@ -10,49 +17,71 @@ def _drops(*specs) -> list[DropModel]:
 
 
 # ---------------------------------------------------------------------------
-# rename_drop
+# edit_drop
 # ---------------------------------------------------------------------------
 
 
 def test_renames_entry_in_place():
-    result = rename_drop(_drops("Amber", "Boots", "Cloak"), 1, "Bracers")
+    result = edit_drop(_drops("Amber", "Boots", "Cloak"), 1, "Bracers", None)
     assert [d.name for d in result] == ["Amber", "Bracers", "Cloak"]
 
 
-def test_rename_keeps_the_category():
-    result = rename_drop(_drops(("Amber", "Reagents")), 0, "Ambers")
+def test_passing_the_entrys_own_category_keeps_it():
+    result = edit_drop(_drops(("Amber", "Reagents")), 0, "Ambers", "Reagents")
     assert result == [DropModel(name="Ambers", category="Reagents")]
 
 
+def test_sets_a_category_on_an_uncategorized_drop():
+    result = edit_drop(_drops("Amber"), 0, "Amber", "Reagents")
+    assert result == [DropModel(name="Amber", category="Reagents")]
+
+
+def test_clears_a_category_back_to_none():
+    result = edit_drop(_drops(("Amber", "Reagents")), 0, "Amber", None)
+    assert result == [DropModel(name="Amber", category=None)]
+
+
+def test_gaining_a_category_re_derives_the_in_game_name():
+    # The school suffix on a jewel is only strippable once we know it is a jewel.
+    result = edit_drop(_drops("Fire Trap Opal (Star)"), 0, "Fire Trap Opal (Star)", "Jewels")
+    assert result[0].match_name == "Fire Trap Opal"
+
+
+def test_losing_a_category_re_derives_the_in_game_name():
+    entries = [DropModel(name="Fire Trap Opal (Star)", category="Jewels", match_name="Fire Trap Opal")]
+    result = edit_drop(entries, 0, "Fire Trap Opal (Star)", None)
+    assert result[0].match_name is None
+
+
 def test_strips_surrounding_whitespace():
-    assert rename_drop(_drops("Amber"), 0, "  Sunstone  ") == _drops("Sunstone")
+    assert edit_drop(_drops("Amber"), 0, "  Sunstone  ", None) == _drops("Sunstone")
 
 
 def test_blank_text_leaves_list_unchanged():
     entries = _drops("Amber", "Boots")
-    assert rename_drop(entries, 0, "   ") == entries
+    assert edit_drop(entries, 0, "   ", "Reagents") == entries
 
 
 def test_out_of_range_index_leaves_list_unchanged():
     entries = _drops("Amber", "Boots")
-    assert rename_drop(entries, 5, "Cloak") == entries
-    assert rename_drop(entries, -1, "Cloak") == entries
-    assert rename_drop([], 0, "Cloak") == []
+    assert edit_drop(entries, 5, "Cloak", None) == entries
+    assert edit_drop(entries, -1, "Cloak", None) == entries
+    assert edit_drop([], 0, "Cloak", None) == []
 
 
 def test_rename_onto_existing_name_collapses_duplicates():
-    result = rename_drop(_drops("Amber", "Boots", "Cloak"), 2, "Amber")
+    result = edit_drop(_drops("Amber", "Boots", "Cloak"), 2, "Amber", None)
     assert [d.name for d in result] == ["Amber", "Boots"]
 
 
 def test_collapse_keeps_the_first_entry_and_its_category():
-    result = rename_drop(_drops(("Amber", "Reagents"), ("Cloak", "Robes")), 1, "Amber")
+    result = edit_drop(_drops(("Amber", "Reagents"), ("Cloak", "Robes")), 1, "Amber", "Robes")
     assert result == [DropModel(name="Amber", category="Reagents")]
 
 
 def test_returns_a_copy_not_the_original_list():
     entries = _drops("Amber")
-    assert rename_drop(entries, 0, "") is not entries
+    assert edit_drop(entries, 0, "", None) is not entries
 
 
 # ---------------------------------------------------------------------------
@@ -117,3 +146,59 @@ def test_header_reports_a_fully_uncategorized_bot():
 
 def test_header_treats_a_blank_category_as_missing():
     assert drops_header_text([DropModel(name="Amber", category="")]) == "Possible Drops (1 · 1 uncategorized)"
+
+
+# ---------------------------------------------------------------------------
+# The Add / Edit dialog's category dropdown
+#
+# Real widget tests: what is under test is the vocabulary the dropdown offers and
+# which entry it opens on, which is the whole of #61 that logic cannot cover.
+# ---------------------------------------------------------------------------
+
+
+def _entries(dialog):
+    return [dialog._category.itemData(i) for i in range(dialog._category.count())]
+
+
+def test_the_dropdown_offers_every_category_plus_uncategorized(qapp):
+    dialog = _DropEditDialog()
+
+    assert _entries(dialog) == [None, *DROP_CATEGORIES]
+
+
+def test_it_opens_on_the_drops_own_category(qapp):
+    dialog = _DropEditDialog(name="Amber", category="Reagents")
+
+    assert dialog.category == "Reagents"
+
+
+def test_an_uncategorized_drop_opens_on_the_uncategorized_entry(qapp):
+    dialog = _DropEditDialog(name="Amber")
+
+    assert dialog.category is None
+
+
+def test_a_category_the_vocabulary_does_not_know_is_still_offered(qapp):
+    """A wiki import can produce a heading nobody has classified yet. Editing such a
+    drop's name must not silently strip the category off it."""
+    dialog = _DropEditDialog(name="Curio", category="Curios")
+
+    assert _entries(dialog) == [None, *DROP_CATEGORIES, "Curios"]
+    assert dialog.category == "Curios"
+
+
+def test_the_name_is_stripped(qapp):
+    dialog = _DropEditDialog(name="  Amber  ")
+
+    assert dialog.drop_name == "Amber"
+
+
+def test_save_is_off_until_the_item_has_a_name(qapp):
+    dialog = _DropEditDialog()
+    save = next(b for b in dialog.findChildren(ActionButton) if b.text() == "Save")
+
+    assert not save.isEnabled()
+
+    dialog._name.setText("Amber")
+
+    assert save.isEnabled()
