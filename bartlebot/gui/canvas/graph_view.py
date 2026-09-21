@@ -5,8 +5,8 @@ _MinimapView — small thumbnail overlay driven by the same scene.
 """
 
 from PyQt6.QtCore import QEasingCurve, QEvent, QPointF, QPropertyAnimation, QRectF, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QBrush, QColor, QKeyEvent, QPainter, QPen, QTransform, QWheelEvent
-from PyQt6.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView
+from PyQt6.QtGui import QBrush, QColor, QCursor, QKeyEvent, QMouseEvent, QPainter, QPen, QTransform, QWheelEvent
+from PyQt6.QtWidgets import QApplication, QGraphicsItem, QGraphicsScene, QGraphicsView
 
 from bartlebot.gui.theme import THEME
 from bartlebot.settings_manager import SettingsManager
@@ -14,6 +14,53 @@ from bartlebot.settings_manager import SettingsManager
 # ---------------------------------------------------------------------------
 # GraphView — reusable zoomable/pannable view
 # ---------------------------------------------------------------------------
+
+
+def prime_last_mouse_event(view: QGraphicsView) -> None:
+    """Populate Qt's cached last-mouse-event for *view*, once it is on screen.
+
+    Works around an upstream Qt bug (present in qtbase 6.8 through dev):
+    ``QGraphicsViewPrivate::_q_unsetViewportCursor()`` reads
+    ``lastMouseEvent->position()`` without the ``useLastMouseEvent`` guard that every
+    other reader of that member has.  ``lastMouseEvent`` is absent from the private
+    class's initialiser list, so on a view that has never received a mouse event it
+    holds uninitialised storage and ``QEventPoint::position()`` dereferences garbage.
+
+    ``QGraphicsItem::unsetCursor()`` reaches that function whenever the view is under
+    the mouse and the item being unset is the one under the pointer -- which is exactly
+    what leaving Edit mode does to every node.  A window shown under a stationary
+    pointer gets Enter without a mouse move, and the process dies with an access
+    violation inside Qt6Gui.
+
+    One synthetic move fixes it for good: Leave clears the ``useLastMouseEvent`` flag
+    but never the storage, and the unguarded reader only looks at the storage.
+
+    The position has to be the real pointer, not the viewport centre.  This falls
+    through to ``QGraphicsView::mouseMoveEvent``, which dispatches hover into the scene
+    and applies the hovered item's cursor, so a centre point would leave a node showing
+    its hover highlight and grab cursor with the pointer somewhere else entirely.
+    """
+    vp = view.viewport()
+    local = QPointF(vp.mapFromGlobal(QCursor.pos()))
+    event = QMouseEvent(
+        QEvent.Type.MouseMove,
+        local,
+        QPointF(vp.mapToGlobal(local.toPoint())),
+        Qt.MouseButton.NoButton,
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    # QApplication::notify throws away a button-less move to a viewport that is not
+    # tracking the mouse, and a canvas shown before any bot is loaded is exactly that:
+    # nothing in the scene has a cursor yet, so Qt has not turned tracking on.  The
+    # priming would be silently dropped and never retried.  Qt turns tracking back on
+    # itself the moment an item takes a cursor, so borrowing it here changes nothing.
+    tracking = vp.hasMouseTracking()
+    vp.setMouseTracking(True)
+    try:
+        QApplication.sendEvent(vp, event)
+    finally:
+        vp.setMouseTracking(tracking)
 
 
 class GraphView(QGraphicsView):
@@ -35,6 +82,7 @@ class GraphView(QGraphicsView):
         self._pan_origin: QPointF | None = None
         self._space_held: bool = False
         self._fitting: bool = False
+        self._primed_mouse: bool = False
 
         if interactive:
             self.setInteractive(True)
@@ -42,6 +90,12 @@ class GraphView(QGraphicsView):
         else:
             self.setInteractive(False)
             self.setDragMode(QGraphicsView.DragMode.NoDrag)
+
+    def showEvent(self, event) -> None:  # noqa: ANN001
+        super().showEvent(event)
+        if not self._primed_mouse:
+            self._primed_mouse = True
+            prime_last_mouse_event(self)
 
     @staticmethod
     def _scene_fit_bounds(scene: QGraphicsScene) -> "QRectF":
@@ -253,6 +307,7 @@ class _MinimapView(QGraphicsView):
     def __init__(self, scene: QGraphicsScene, main_view: GraphView, parent=None):
         super().__init__(scene, parent)
         self._main_view = main_view
+        self._primed_mouse = False
 
         self.setFixedSize(self._W, self._H)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -266,6 +321,14 @@ class _MinimapView(QGraphicsView):
         main_view.horizontalScrollBar().valueChanged.connect(self.viewport().update)
         main_view.verticalScrollBar().valueChanged.connect(self.viewport().update)
         main_view.view_changed.connect(self.viewport().update)
+
+    def showEvent(self, event) -> None:  # noqa: ANN001
+        # Second view on the same scene, so an equally unprimed trigger for the Qt bug
+        # prime_last_mouse_event describes -- unsetCursor() walks every attached view.
+        super().showEvent(event)
+        if not self._primed_mouse:
+            self._primed_mouse = True
+            prime_last_mouse_event(self)
 
     def _apply_stylesheet(self) -> None:
         css = (

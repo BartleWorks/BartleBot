@@ -397,6 +397,11 @@ class NodeItem(QGraphicsItem):
         self.update()
 
     @property
+    def is_hovered(self) -> bool:
+        """Whether the pointer is currently over this node."""
+        return self._hovered
+
+    @property
     def is_initial(self) -> bool:
         """Whether this node currently draws the FSM initial-state badge."""
         return self._is_initial
