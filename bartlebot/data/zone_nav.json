@@ -6100,7 +6100,10 @@
               "interact_xyz": {"x": 0.55, "y": -3016.22, "z": -664.03},
               "reset_xyz": {"x": 0.55, "y": -2542.27, "z": -726.95}
             },
-            "Lemuria/LM_Z02_UrsaiVillage": {},
+            "Lemuria/LM_Z02_UrsaiVillage": {
+              "interact_xyz": {"x": -965.11, "y": -371.82, "z": 74.27},
+              "reset_xyz": {"x": -497.05, "y": -347.39, "z": 47.99}
+            },
             "Lemuria/LM_Z03_NightForest": {
               "interact_xyz": {"x": -5144.61, "y": -5377.24, "z": -339.69},
               "reset_xyz": {"x": -5611.32, "y": -5322.2, "z": -346.44}
@@ -6553,7 +6556,10 @@
       "list_networks": [
         {
           "zones": {
-            "Darkmoor/DM_Z00_OutsidersCamp": {},
+            "Darkmoor/DM_Z00_OutsidersCamp": {
+              "interact_xyz": {"x": 1887.52, "y": 1506.81, "z": 0.3},
+              "reset_xyz": {"x": 1380.0, "y": 1456.0, "z": 0.3}
+            },
             "Darkmoor/DM_Z01_Graveholm": {
               "interact_xyz": {"x": 10309.72, "y": -5677.21, "z": 2.0},
               "reset_xyz": {"x": 10096.4, "y": -5619.7, "z": 2.0}
