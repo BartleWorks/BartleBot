@@ -4,8 +4,8 @@
   "description": "Endlessly farms Sister Sanderson in Graveholm, Darkmoor",
   "version": "2.0",
   "clients": "all",
-  "initial": "state_7",
-  "recovery_state": "state_10",
+  "initial": "state_11",
+  "recovery_state": "state_12",
   "drops": [
     {
       "name": "2 Outsider Relic",
@@ -734,58 +734,27 @@
       "params": {}
     },
     {
-      "id": "state_10",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Outsiders Camp",
-      "position": {
-        "x": 0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Darkmoor/DM_Z00_OutsidersCamp"
-      }
-    },
-    {
       "id": "state_11",
       "node_type": "go_to_zone",
-      "label": "Take Demox to Graveholm",
+      "label": "Go to Graveholm",
       "position": {
-        "x": 440,
-        "y": 0.0
+        "x": 440.0,
+        "y": -90.0
       },
       "params": {
         "zone": "Darkmoor/DM_Z01_Graveholm"
       }
     },
     {
-      "id": "state_1",
-      "node_type": "check_zone",
-      "label": "Check zone",
+      "id": "state_12",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": -440.0,
-        "y": -90.0
+        "x": 0.0,
+        "y": 0.0
       },
       "params": {
-        "zone": "Darkmoor/DM_Z01_Graveholm",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_7",
-      "node_type": "check_zone",
-      "label": "Check world",
-      "position": {
-        "x": -880.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Darkmoor/*",
-        "clients_to_check": [
+        "relog_clients": [
           1,
           2,
           3,
@@ -795,56 +764,6 @@
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_10",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_6",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_10",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_10",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
     {
       "trigger": "advance",
       "source": "state_11",
@@ -867,16 +786,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_10",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_3",
       "dest": "state_4",
       "when": "SUCCESS",
@@ -887,16 +796,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_10",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_4",
       "dest": "state_5",
       "when": "SUCCESS",
@@ -909,16 +808,6 @@
       "trigger": "advance",
       "source": "state_4",
       "dest": "state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_10",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -957,26 +846,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_1",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_10",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_8",
       "dest": "state_9",
       "when": "SUCCESS",
@@ -988,7 +857,67 @@
     {
       "trigger": "advance",
       "source": "state_9",
-      "dest": "state_10",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_12",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_12",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_12",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -998,8 +927,18 @@
     {
       "trigger": "advance",
       "source": "state_9",
-      "dest": "state_2",
-      "when": "SUCCESS",
+      "dest": "state_12",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_12",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],

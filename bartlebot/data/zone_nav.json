@@ -5530,8 +5530,8 @@
               "reset_xyz": {"x": -578.16, "y": 167.74, "z": -8.2}
             },
             "Empyrea/EM_Z06_NimbusHanger": {
-              "interact_xyz": {"x": -2280.0, "y": 5.2, "z": 2.0},
-              "reset_xyz": {"x": -1992.0, "y": 5.2, "z": 2.0},
+              "interact_xyz": {"x": -2121.23, "y": -125.11, "z": 2.0},
+              "reset_xyz": {"x": -1934.75, "y": -206.03, "z": 2.0},
               "list_aliases": ["Nimbus"]
             },
             "Empyrea/EM_Z15_Nexus": {
@@ -6101,8 +6101,8 @@
               "reset_xyz": {"x": 0.55, "y": -2542.27, "z": -726.95}
             },
             "Lemuria/LM_Z02_UrsaiVillage": {
-              "interact_xyz": {"x": -965.11, "y": -371.82, "z": 74.27},
-              "reset_xyz": {"x": -497.05, "y": -347.39, "z": 47.99}
+              "interact_xyz": {"x": -960.58, "y": -359.13, "z": 74.44},
+              "reset_xyz": {"x": -750.89, "y": -347.72, "z": 61.88}
             },
             "Lemuria/LM_Z03_NightForest": {
               "interact_xyz": {"x": -5144.61, "y": -5377.24, "z": -339.69},
@@ -6557,8 +6557,8 @@
         {
           "zones": {
             "Darkmoor/DM_Z00_OutsidersCamp": {
-              "interact_xyz": {"x": 1887.52, "y": 1506.81, "z": 0.3},
-              "reset_xyz": {"x": 1380.0, "y": 1456.0, "z": 0.3}
+              "interact_xyz": {"x": 1726.75, "y": 1449.35, "z": 0.3},
+              "reset_xyz": {"x": 1549.6, "y": 1431.16, "z": 0.3}
             },
             "Darkmoor/DM_Z01_Graveholm": {
               "interact_xyz": {"x": 10309.72, "y": -5677.21, "z": 2.0},
