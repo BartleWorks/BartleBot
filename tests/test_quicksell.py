@@ -583,3 +583,26 @@ def test_a_users_keep_list_replaces_the_authors_rather_than_adding_to_it():
 def test_enable_quicksell_defaults_to_on():
     """Every bot sold before this option existed, and none of them opted in."""
     assert qs.resolve_options_for(_bot())["enabled"] is True
+
+
+# ---------------------------------------------------------------------------
+# The category vocabulary
+#
+# DROP_CATEGORIES is what the Possible Drops editor offers when a category is set
+# by hand, and it is derived from the two classification sets rather than written
+# out again. These pin down that it stays derived: a third hand-maintained copy
+# would be the one that drifts, and a category missing from it is one a user
+# cannot choose.
+# ---------------------------------------------------------------------------
+
+
+def test_the_vocabulary_is_both_classification_sets():
+    assert set(qs.DROP_CATEGORIES) == qs.QUICKSELLABLE_CATEGORIES | set(qs.NEVER_QUICKSOLD_CATEGORIES)
+
+
+def test_no_category_is_classified_both_ways():
+    assert not qs.QUICKSELLABLE_CATEGORIES & set(qs.NEVER_QUICKSOLD_CATEGORIES)
+
+
+def test_the_vocabulary_is_ordered_for_a_dropdown():
+    assert list(qs.DROP_CATEGORIES) == sorted(qs.DROP_CATEGORIES)

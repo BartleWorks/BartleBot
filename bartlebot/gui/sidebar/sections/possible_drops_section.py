@@ -4,12 +4,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import QSize, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QAbstractItemView,
+    QComboBox,
+    QDialog,
+    QFormLayout,
     QHBoxLayout,
     QHeaderView,
-    QInputDialog,
+    QLineEdit,
     QSizePolicy,
     QTreeWidget,
     QTreeWidgetItem,
@@ -20,12 +23,15 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import DropModel
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.drop_tree import (
+    DROP_ICON_PX,
     UNCATEGORIZED_DISPLAY,
     CategoryThenNameTreeItem,
     drop_icon,
     show_drop_icons,
 )
+from bartlebot.nodes.utility.quicksell import DROP_CATEGORIES
 from bartlebot.wiki_drops import match_name_for
 
 if TYPE_CHECKING:
@@ -35,8 +41,9 @@ _BASE_TITLE = "Possible Drops"
 
 
 _UNCATEGORIZED_HINT = (
-    "Drops imported before categories existed have none. Re-import this bot from the wiki to add them — "
-    "categories let the quicksell keep-list picker group drops and leave out the ones it can never sell."
+    "Drops imported before categories existed have none. Re-import this bot from the wiki to add them, or set "
+    "one by hand with Edit — categories let the quicksell keep-list picker group drops and leave out the ones "
+    "it can never sell."
 )
 
 
@@ -54,16 +61,20 @@ def drops_header_text(entries: list[DropModel]) -> str:
     return f"{_BASE_TITLE} ({len(entries)} · {uncategorized} uncategorized)"
 
 
-def rename_drop(entries: list[DropModel], index: int, new_text: str) -> list[DropModel]:
-    """Return *entries* with the drop at *index* renamed to *new_text*.
+def edit_drop(entries: list[DropModel], index: int, new_text: str, category: str | None) -> list[DropModel]:
+    """Return *entries* with the drop at *index* renamed to *new_text* under *category*.
 
-    The drop keeps its category — renaming "Amber" to "Ambers" does not make it
-    uncategorized. Its in-game name is re-derived from the new text rather than
-    carried over, since the old one described the old name. Blank text or an
-    out-of-range index leaves the list unchanged. If the new name already appears
-    elsewhere the two entries collapse into one, matching the dedup behaviour of
-    adding a drop that is already listed; the first of the two in list order is the
-    one kept, along with its category.
+    The one edit both the name and the category go through, because the two are not
+    independent: what the game calls an item depends on which category it is in (the
+    school suffix on a jewel is only strippable once we know it is a jewel), so
+    ``match_name`` is re-derived from the pair rather than carried over from either.
+    *category* is None for uncategorized, which is a value a user can choose and not
+    merely the absence of one.
+
+    Blank text or an out-of-range index leaves the list unchanged. If the new name
+    already appears elsewhere the two entries collapse into one, matching the dedup
+    behaviour of adding a drop that is already listed; the first of the two in list
+    order is the one kept, along with its category.
     """
     new_text = new_text.strip()
     if not new_text or not 0 <= index < len(entries):
@@ -74,8 +85,8 @@ def rename_drop(entries: list[DropModel], index: int, new_text: str) -> list[Dro
         candidate = (
             DropModel(
                 name=new_text,
-                category=entry.category,
-                match_name=match_name_for(new_text, entry.category),
+                category=category,
+                match_name=match_name_for(new_text, category),
             )
             if i == index
             else entry
@@ -122,6 +133,81 @@ def merge_drops(existing: list[DropModel], incoming: list[DropModel]) -> list[Dr
             seen.add(entry.name)
             result.append(entry)
     return result
+
+
+class _DropEditDialog(QDialog):
+    """Name and category for one drop, added or edited by hand.
+
+    The category is a closed dropdown rather than a text field. Its vocabulary is
+    the wiki import's own (``quicksell.DROP_CATEGORIES``), and a category outside
+    it is one no icon, no sellability classification and no keep-list filter
+    knows — a typo here would read as a broken row rather than as a new word. The
+    one exception is a category the bot file already carries that the list does
+    not: that is offered too, so editing such a drop's *name* cannot silently
+    strip its category.
+
+    Uncategorized is an entry, not the absence of one, so a drop the wiki got
+    wrong can be put back to having none.
+    """
+
+    #: The uncategorized entry's label: the em dash the tables show, said in words
+    #: as well, since a dash alone in a dropdown reads as a separator.
+    NO_CATEGORY_LABEL = f"{UNCATEGORIZED_DISPLAY}  (none)"
+
+    def __init__(
+        self,
+        parent: QWidget | None = None,
+        *,
+        title: str = "Edit Drop",
+        name: str = "",
+        category: str | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(title)
+
+        self._name = QLineEdit(name)
+        self._name.setPlaceholderText("Item name, as the wiki spells it")
+
+        self._category = QComboBox()
+        self._category.setIconSize(QSize(DROP_ICON_PX, DROP_ICON_PX))
+        self._category.addItem(self.NO_CATEGORY_LABEL, None)
+        for value in self._offered_categories(category):
+            icon = drop_icon(value)
+            if icon is None:
+                self._category.addItem(value, value)
+            else:
+                self._category.addItem(icon, value, value)
+        selected = self._category.findData(category)
+        self._category.setCurrentIndex(selected if selected >= 0 else 0)
+
+        form = QFormLayout()
+        form.addRow("Item", self._name)
+        form.addRow("Category", self._category)
+
+        footer = dialog_footer(self, commit_text="Save")
+        commit = footer.commit
+        commit.setEnabled(bool(name.strip()))
+        self._name.textChanged.connect(lambda text: commit.setEnabled(bool(text.strip())))
+
+        layout = QVBoxLayout(self)
+        layout.addLayout(form)
+        layout.addLayout(footer.layout)
+        self.resize(360, self.sizeHint().height())
+
+    @staticmethod
+    def _offered_categories(current: str | None) -> list[str]:
+        """The vocabulary, plus *current* when the bot file carries one nobody classified."""
+        if current and current not in DROP_CATEGORIES:
+            return [*DROP_CATEGORIES, current]
+        return list(DROP_CATEGORIES)
+
+    @property
+    def drop_name(self) -> str:
+        return self._name.text().strip()
+
+    @property
+    def category(self) -> str | None:
+        return self._category.currentData()
 
 
 class _DropsListWidget(QWidget):
@@ -279,10 +365,14 @@ class _DropsListWidget(QWidget):
         self.changed.emit(self.get_items())
 
     def _on_add(self) -> None:
-        text, ok = QInputDialog.getText(self, "Add Drop", "Item name:")
-        if ok and text.strip():
-            name = text.strip()
-            self.add_items([DropModel(name=name, match_name=match_name_for(name))])
+        dialog = _DropEditDialog(self.window(), title="Add Drop")
+        if not dialog.exec():
+            return
+        name = dialog.drop_name
+        if not name:
+            return
+        category = dialog.category
+        self.add_items([DropModel(name=name, category=category, match_name=match_name_for(name, category))])
 
     def _on_edit(self) -> None:
         items = self._list.selectedItems()
@@ -300,11 +390,13 @@ class _DropsListWidget(QWidget):
         # Index into get_items(), not the view: the two differ whenever the user
         # has sorted by category. Names are unique, so this is well defined.
         row = next((i for i, entry in enumerate(entries) if entry.name == name), -1)
-        text, ok = QInputDialog.getText(self, "Edit Drop", "Item name:", text=name)
-        if not ok:
+        if row < 0:
             return
-        updated = rename_drop(entries, row, text)
-        if updated == self.get_items():
+        dialog = _DropEditDialog(self.window(), name=name, category=entries[row].category)
+        if not dialog.exec():
+            return
+        updated = edit_drop(entries, row, dialog.drop_name, dialog.category)
+        if updated == entries:
             return
         self.set_items(updated)
         self.changed.emit(self.get_items())
