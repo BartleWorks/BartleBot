@@ -6488,8 +6488,7 @@
             },
             "Wallaru/WL_Z05_Wobbegong_JT": {
               "interact_xyz": {"x": 5104.99, "y": -7635.67, "z": 193.37},
-              "reset_xyz": {"x": 5413.27, "y": -8100.79, "z": 191.56},
-              "list_aliases": ["Wobbegong"]
+              "reset_xyz": {"x": 5413.27, "y": -8100.79, "z": 191.56}
             },
             "Wallaru/WL_Z01_Hub": {
               "interact_xyz": {"x": 2983.97, "y": 15496.87, "z": 2.0},
