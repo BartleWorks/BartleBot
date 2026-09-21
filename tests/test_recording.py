@@ -785,79 +785,77 @@ async def test_enter_zone_interact_exception(zero_poll):
 
 
 # ---------------------------------------------------------------------------
-# _record_enter_zone_via_list  (NPC-range + interact-until-loading + zone capture)
+# _record_enter_zone_via_list  (the pair of zones, and nothing else)
 # ---------------------------------------------------------------------------
+
+_LIST_ZONE = "Empyrea/EM_Z00_Aeriel_HUB"
+_LIST_DEST = "Empyrea/EM_Z02_Zanadu"
+"""A real pair off the shipped map: the Streamportal in Empyrea's hub, and Zanadu on its list."""
 
 
 async def test_enter_zone_via_list_happy_path(zero_poll):
     client = FakeClient()
-    client.zone_name.side_effect = ["Zone/List", "Dst/World"]
-    client.body.position.side_effect = [
-        XYZ(0.0, 0.0, 0.0),  # reset_xyz
-        XYZ(3.0, 3.0, 0.0),  # interact_xyz (captured during interact-loop body)
-    ]
-    client.is_in_npc_range.side_effect = [True]  # already in range immediately
-    client.is_loading.side_effect = [False, True, False]  # one interact-loop body, then loading
+    client.zone_name.side_effect = [_LIST_ZONE, _LIST_DEST]
+    client.is_loading.side_effect = [False, True, False]
 
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
     await run_recording("enter_zone_via_list", client, form, on_status, on_btn, try_set_label)
 
-    assert form.str_fields["zone"] == "Zone/List"
-    assert form.str_fields["to_zone"] == "Dst/World"
-    assert "interact_xyz" in form.xyz_fields
-    assert "zone_list_entry" in form.str_fields
+    assert form.str_fields["zone"] == _LIST_ZONE
+    assert form.str_fields["to_zone"] == _LIST_DEST
     try_set_label.assert_called_once()
-    last_status = on_status.call_args_list[-1][0][0]
-    assert "Zone List Entry" in last_status
+    assert on_status.call_args_list[-1][0][0].startswith("Done")
 
 
-async def test_enter_zone_via_list_interact_xyz_is_pre_loading_position(zero_poll):
-    """interact_xyz must be the position captured BEFORE is_loading() returned True."""
+async def test_enter_zone_via_list_records_no_coordinates_and_no_row_text(zero_poll):
+    """Both come from the map at run time, so recording them would only freeze one client's answer."""
     client = FakeClient()
-    client.zone_name.side_effect = ["Zone/List", "Dst/World"]
-    client.body.position.side_effect = [
-        XYZ(0.0, 0.0, 0.0),  # reset_xyz
-        XYZ(1.0, 0.0, 0.0),  # interact-loop iteration 1 (not loading yet)
-        XYZ(2.0, 0.0, 0.0),  # interact-loop iteration 2 (loading fires after this)
-    ]
-    client.is_in_npc_range.side_effect = [True]
-    # is_loading: first two calls False (during interact loop), then True, then False
-    client.is_loading.side_effect = [False, False, True, False]
+    client.zone_name.side_effect = [_LIST_ZONE, _LIST_DEST]
+    client.is_loading.side_effect = [False, True, False]
 
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
     await run_recording("enter_zone_via_list", client, form, on_status, on_btn, try_set_label)
 
-    # The last position set before loading fired
-    assert form.xyz_fields["interact_xyz"] == (2.0, 0.0, 0.0)
+    assert form.xyz_fields == {}
+    assert "zone_list_entry" not in form.str_fields
 
 
-async def test_enter_zone_via_list_cancellation_during_npc_wait(zero_poll):
+async def test_enter_zone_via_list_reports_a_zone_with_no_list_object(zero_poll):
+    """A list the map does not have is a gap in the map, not something to work around per bot."""
     client = FakeClient()
-    client.zone_name.return_value = "Zone/List"
-    client.body.position.return_value = XYZ(0.0, 0.0, 0.0)
-    client.is_in_npc_range.return_value = False
+    client.zone_name.return_value = "WizardCity/WC_Hub"
 
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    task = asyncio.create_task(run_recording("enter_zone_via_list", client, form, on_status, on_btn, try_set_label))
-    await asyncio.sleep(0)
-    task.cancel()
-    await task  # coroutine catches CancelledError internally; task completes normally
+    await run_recording("enter_zone_via_list", client, form, on_status, on_btn, try_set_label)
 
-    on_status.assert_called_with("")
+    assert "to_zone" not in form.str_fields
+    assert "No list object recorded" in on_status.call_args_list[-1][0][0]
     on_btn.assert_called_with("Record")
 
 
-async def test_enter_zone_via_list_cancellation_during_interact_loop(zero_poll):
+async def test_enter_zone_via_list_reports_a_zone_change_that_was_not_the_list(zero_poll):
     client = FakeClient()
-    client.zone_name.return_value = "Zone/List"
-    client.body.position.return_value = XYZ(0.0, 0.0, 0.0)
-    client.is_in_npc_range.return_value = True  # already in range
+    client.zone_name.side_effect = [_LIST_ZONE, "WizardCity/WC_Hub"]
+    client.is_loading.side_effect = [False, True, False]
+
+    form = FakeParamForm()
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("enter_zone_via_list", client, form, on_status, on_btn, try_set_label)
+
+    assert "to_zone" not in form.str_fields
+    assert "not on the list" in on_status.call_args_list[-1][0][0]
+
+
+async def test_enter_zone_via_list_cancellation_while_waiting_for_the_list(zero_poll):
+    client = FakeClient()
+    client.zone_name.return_value = _LIST_ZONE
     client.is_loading.return_value = False  # never loads
 
     form = FakeParamForm()
@@ -874,8 +872,7 @@ async def test_enter_zone_via_list_cancellation_during_interact_loop(zero_poll):
 
 async def test_enter_zone_via_list_exception(zero_poll):
     client = FakeClient()
-    client.zone_name.return_value = "Zone/List"
-    client.body.position.side_effect = RuntimeError("read error")
+    client.zone_name.side_effect = RuntimeError("read error")
 
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
