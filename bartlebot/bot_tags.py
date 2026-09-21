@@ -49,10 +49,6 @@ TAG_GROUPS: dict[str, tuple[str, ...]] = {
         "Collecting",  # a reagent-node route with no combat, unlike a boss that drops reagents
         "Training Points",  # a bot that completes training point quests
     ),
-    "Type": (
-        "Subgraph",  # a reusable building block meant to be called, not run on its own
-        "Template",  # a starting point meant to be copied and filled in, not run as-is
-    ),
 }
 
 #: Every valid tag, in the order they are written to a bot file and shown in the UI.

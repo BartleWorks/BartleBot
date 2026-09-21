@@ -31,8 +31,8 @@ TAG_ICON_PX = 20
 def tag_icon(tag: str) -> QIcon | None:
     """A tag's extracted medallion at :data:`TAG_ICON_PX`, or None -- the ordinary case.
 
-    None on every install that has not run the extractor, and always for the Type tags,
-    which have no game art. Every caller keeps its text form for that case.
+    None on every install that has not run the extractor, which is most of them. Every
+    caller keeps its text form for that case.
 
     Cached per :func:`card_art.cache_generation`, so ``card_art.forget_cache`` is what
     makes new art visible here too. The lookup stats the file twice, and the library
