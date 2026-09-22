@@ -34,6 +34,13 @@ _BADGE_GAP = 4  # gap between adjacent badge circles
 _BADGE_ICON_PAD = 3  # inset padding when rendering SVG icons inside badge circles
 _LOCK_W = 12  # width of the subgraph lock glyph beside the type sub-label
 
+# What a port with no edge on it does anyway. A marked port is drawn as a filled
+# badge in place of the plain dot, reusing the node-badge colour and glyph of
+# whatever it stands for, so the two ends of an undrawn route carry one symbol.
+PORT_MARK_RECOVERY = "recovery"
+PORT_MARK_STOP = "stop"
+_PORT_MARK_ICON_PAD = 2  # inset when rendering a glyph inside a port-sized badge
+
 _PLAY_RENDERER: QSvgRenderer | None = None
 _STOP_RENDERER: QSvgRenderer | None = None
 _RECOVERY_RENDERER: QSvgRenderer | None = None
@@ -262,6 +269,7 @@ class NodeItem(QGraphicsItem):
         self._is_error = is_error
         self._is_warning = is_warning
         self._returns: list[str] = list(returns) if returns else []
+        self._port_marks: dict[str, str] = {}
         self._edges: list = []
         self._is_search_match: bool = False
         self._is_search_current: bool = False
@@ -293,7 +301,10 @@ class NodeItem(QGraphicsItem):
         return self.mapRectToScene(self._node_rect())
 
     def boundingRect(self) -> QRectF:
-        margin = PORT_R + 1 if self._interactive else 0
+        # Port marks are drawn whether or not the node is interactive -- an undrawn
+        # route still has to be visible while the bot is running -- so they need the
+        # port margin even when the plain dots are not being painted.
+        margin = PORT_R + 1 if (self._interactive or self._port_marks) else 0
         if self._is_search_match:
             margin = max(margin, 8)
         nr = self._node_rect()
@@ -379,6 +390,25 @@ class NodeItem(QGraphicsItem):
         """Update named output ports and redraw."""
         self._returns = list(returns)
         self.prepareGeometryChange()
+        self.update()
+
+    @property
+    def port_marks(self) -> dict[str, str]:
+        """Return name -> PORT_MARK_* for every port that acts without an edge."""
+        return dict(self._port_marks)
+
+    def set_port_marks(self, marks: dict[str, str]) -> None:
+        """Set which output ports draw a mark instead of a plain connection dot.
+
+        Keys are return names, values PORT_MARK_RECOVERY or PORT_MARK_STOP. A port
+        not named here draws the ordinary dot.
+        """
+        if marks == self._port_marks:
+            return
+        had_any = bool(self._port_marks)
+        self._port_marks = dict(marks)
+        if had_any != bool(self._port_marks):
+            self.prepareGeometryChange()  # the mark margin appears or goes away
         self.update()
 
     def set_interactive(self, interactive: bool) -> None:
@@ -521,6 +551,32 @@ class NodeItem(QGraphicsItem):
                 # be O(items) on every position change.
                 set_scene_rect_and_repaint(scene, scene.sceneRect().united(item_rect))
         return super().itemChange(change, value)
+
+    def _paint_port_mark(self, painter: QPainter, center: QPointF, mark: str, lod: float) -> None:
+        """Draw a port that routes without an edge, as a badge in place of the dot.
+
+        Same colour and glyph as the node badge for the thing it stands for: the
+        amber recovery arrow for a failure that falls through to the recovery node,
+        the red stop square for a return the author marked fatal. Reading the pair
+        as one route is the whole point of not drawing the edge.
+        """
+        if mark == PORT_MARK_STOP:
+            color, icon = _badge_terminal(), _stop_badge_renderer()
+        else:
+            color, icon = _badge_recovery(), _recovery_badge_renderer()
+        rect = QRectF(center.x() - PORT_R, center.y() - PORT_R, PORT_R * 2, PORT_R * 2)
+        painter.save()
+        painter.setPen(QPen(color.darker(140), 1.0))
+        painter.setBrush(QBrush(color))
+        painter.drawEllipse(center, float(PORT_R), float(PORT_R))
+        # Below a couple of device pixels the glyph is mush; the coloured disc still
+        # distinguishes the two marks, so it is dropped rather than drawn illegibly.
+        if lod >= 0.75:
+            icon.render(
+                painter,
+                rect.adjusted(_PORT_MARK_ICON_PAD, _PORT_MARK_ICON_PAD, -_PORT_MARK_ICON_PAD, -_PORT_MARK_ICON_PAD),
+            )
+        painter.restore()
 
     @staticmethod
     def _paint_lock(painter: QPainter, rect: QRectF, color: QColor) -> None:
@@ -706,7 +762,10 @@ class NodeItem(QGraphicsItem):
                         Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
                         elided_name,
                     )
-                    if self._interactive:
+                    mark = self._port_marks.get(name)
+                    if mark is not None:
+                        self._paint_port_mark(painter, QPointF(float(NODE_W), py), mark, lod)
+                    elif self._interactive:
                         painter.setPen(QPen(_port_color(), 1.5))
                         painter.setBrush(QBrush(_port_color()))
                         painter.drawEllipse(QPointF(float(NODE_W), py), PORT_R, PORT_R)
