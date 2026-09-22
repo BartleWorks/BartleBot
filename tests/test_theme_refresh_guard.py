@@ -90,8 +90,14 @@ def _direct_themed(node: ast.AST) -> str | None:
     f = node.func
     name = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", None)
 
-    if name == "setStyleSheet" and any(m in FONT_TOKEN.sub("", ast.unparse(node)) for m in THEME_MARKERS):
-        return "setStyleSheet(THEME...)"
+    # ``set_style_sheet(w, sheet)`` is ``w.setStyleSheet(sheet)`` behind a
+    # skip-if-unchanged check, so it bakes in a THEME value exactly the same way. It
+    # has to be named here or the rename silently empties this guard: the helper's own
+    # body mentions no THEME marker, so ``_themed_helpers`` cannot infer it either.
+    if name in ("setStyleSheet", "set_style_sheet") and any(
+        m in FONT_TOKEN.sub("", ast.unparse(node)) for m in THEME_MARKERS
+    ):
+        return f"{name}(THEME...)"
 
     if name == "svg_icon":
         tint = next((k.value for k in node.keywords if k.arg == "tint"), None)

@@ -42,6 +42,7 @@ from PyQt6.QtWidgets import QLabel, QPushButton, QSizePolicy, QWidget
 from bartlebot.bot_tags import tag_group
 from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import set_style_sheet
 from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX, group_accent, tag_icon
 
 #: The inert pill's own metrics, shared with :class:`ActionPill` so a clickable pill and
@@ -173,9 +174,9 @@ class TagPill(QLabel):
             if self._icon is not None:
                 # paintEvent draws it all, reading THEME at paint time; a stylesheet font
                 # would override the one the width was measured with.
-                self.setStyleSheet("background: transparent;")
+                set_style_sheet(self, "background: transparent;")
             else:
-                self.setStyleSheet(pill_style(group_accent(tag_group(self._tag)), THEME.pill_text))
+                set_style_sheet(self, pill_style(group_accent(tag_group(self._tag)), THEME.pill_text))
         finally:
             self._applying_style = False
 
@@ -235,7 +236,7 @@ class TagChip(QPushButton):
         self._applying_style = True
         try:
             if self._icon is not None:
-                self.setStyleSheet("QPushButton { border: none; background: transparent; }")
+                set_style_sheet(self, "QPushButton { border: none; background: transparent; }")
                 return
             base = pill_style(
                 group_accent(tag_group(self._tag)),
@@ -244,8 +245,9 @@ class TagChip(QPushButton):
                 radius=9,
                 pad="2px 9px",
             )
-            self.setStyleSheet(
-                f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}"
+            set_style_sheet(
+                self,
+                f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}",
             )
         finally:
             self._applying_style = False
@@ -294,8 +296,9 @@ class NeutralChip(QPushButton):
             base = pill_style(
                 THEME.pill_neutral_bg, THEME.pill_text, font_size=THEME.font_subtext_px, radius=9, pad="2px 9px"
             )
-            self.setStyleSheet(
-                f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}"
+            set_style_sheet(
+                self,
+                f"QPushButton {{ border: none; {base} }}QPushButton:hover {{ background: {THEME.edge_selected}; }}",
             )
         finally:
             self._applying_style = False
@@ -367,10 +370,11 @@ class ActionPill(QPushButton):
             base = pill_style(
                 THEME.pill_neutral_bg, THEME.pill_text, font_size=THEME.font_micro_px, pad=f"0px {_PILL_PAD_X}px"
             )
-            self.setStyleSheet(
+            set_style_sheet(
+                self,
                 f"QPushButton {{ border: none; {base} }}"
                 f"QPushButton:hover:enabled {{ background: {THEME.edge_selected}; }}"
-                f"QPushButton:disabled {{ color: {THEME.text_subtle}; }}"
+                f"QPushButton:disabled {{ color: {THEME.text_subtle}; }}",
             )
         finally:
             self._applying_style = False
@@ -409,7 +413,7 @@ class NeutralPill(QLabel):
             return
         self._applying_style = True
         try:
-            self.setStyleSheet(pill_style(THEME.pill_neutral_bg, THEME.pill_text))
+            set_style_sheet(self, pill_style(THEME.pill_neutral_bg, THEME.pill_text))
         finally:
             self._applying_style = False
 
@@ -449,10 +453,11 @@ class AccentPill(QLabel):
         try:
             # One pixel of the padding goes to the border, so the text sits at the same
             # x inside this pill as inside the filled ones beside it.
-            self.setStyleSheet(
+            set_style_sheet(
+                self,
                 f"background: transparent; color: {THEME.accent};"
                 f" font-size: {THEME.font_micro_px}px; font-weight: bold; border-radius: 7px;"
-                f" border: 1px solid {THEME.accent}; padding: 0px {_PILL_PAD_X - 1}px;"
+                f" border: 1px solid {THEME.accent}; padding: 0px {_PILL_PAD_X - 1}px;",
             )
         finally:
             self._applying_style = False
@@ -499,10 +504,11 @@ class AccountPill(QLabel):
             return
         self._applying_style = True
         try:
-            self.setStyleSheet(
+            set_style_sheet(
+                self,
                 f"background: {account_tint(self._color_key)}; color: {THEME.text};"
                 f" font-size: {THEME.font_micro_px}px; font-weight: bold; border-radius: 8px;"
-                f" border: 1px solid {account_accent(self._color_key)}; padding: 0px 6px;"
+                f" border: 1px solid {account_accent(self._color_key)}; padding: 0px 6px;",
             )
         finally:
             self._applying_style = False

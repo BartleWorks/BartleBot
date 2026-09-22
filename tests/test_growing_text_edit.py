@@ -109,6 +109,8 @@ def _shown_page(qapp) -> tuple[QScrollArea, GrowingTextEdit]:
     the test fails having exercised nothing.  ``setActiveWindow`` hands the
     activation over synchronously instead, which is the whole reason it is called
     here: the widget's rule is focus, and the test has to be able to state it.
+
+    Arranging activation is not the same as *keeping* it -- see ``_grown_page``.
     """
     area = QScrollArea()
     page = QWidget()
@@ -125,11 +127,24 @@ def _shown_page(qapp) -> tuple[QScrollArea, GrowingTextEdit]:
     return area, edit
 
 
-class TestCaretVisibility:
-    def test_growing_scrolls_an_enclosing_page_to_the_caret(self, qapp) -> None:
-        """Growth is top-anchored, so the line being typed moves down and out."""
-        area, edit = _shown_page(qapp)
+def _grown_page(qapp) -> tuple[QScrollArea, GrowingTextEdit]:
+    """A page whose editor has grown eight lines while holding focus throughout.
 
+    Activation is arranged, never owned.  Any other process putting a window up takes
+    the foreground, and Windows answers ours with a deactivation that Qt turns into a
+    cleared focus widget -- so if that lands between the growth and the scroll, which
+    is a window the pump itself delivers, ``GrowingTextEdit`` correctly declines to
+    scroll a field it believes unfocused and the test fails ``assert 0 > 0`` having
+    exercised nothing.  Under ``-n auto`` the other process is one of the fifteen
+    other workers, which is why this flaked only in parallel (#94).
+
+    A test cannot promise the foreground, so it re-runs the arrangement instead: a
+    round that lost focus proves nothing and is discarded rather than failed.  The
+    ``hasFocus`` assertion is what stops a run of steals passing as a page that simply
+    never grew -- it is the precondition the widget reads, asserted at both ends.
+    """
+    for _ in range(5):
+        area, edit = _shown_page(qapp)
         edit.setFocus()
         assert edit.hasFocus()
         # Typed, not assigned: setPlainText leaves the caret at the *top*, where
@@ -139,6 +154,17 @@ class TestCaretVisibility:
             edit.insertPlainText(f"line {i}\n")
         for _ in range(4):  # document relayout, the resize it is granted, the scroll
             qapp.processEvents()
+        if edit.hasFocus():
+            return area, edit
+        area.close()
+
+    raise AssertionError("the foreground was taken on every attempt")
+
+
+class TestCaretVisibility:
+    def test_growing_scrolls_an_enclosing_page_to_the_caret(self, qapp) -> None:
+        """Growth is top-anchored, so the line being typed moves down and out."""
+        area, _edit = _grown_page(qapp)
 
         assert area.verticalScrollBar().value() > 0
         area.close()

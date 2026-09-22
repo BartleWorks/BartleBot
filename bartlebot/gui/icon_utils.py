@@ -1,5 +1,6 @@
 """Utility for loading SVG files from bartlebot/gui/icons/ into QIcon objects."""
 
+from functools import cache
 from pathlib import Path
 
 from PyQt6.QtCore import QStandardPaths, Qt
@@ -39,7 +40,28 @@ def svg_pixmap(name: str, size: int, tint: str | None = None, opacity: float = 1
     non-transparent pixel — useful for rendering icons on dark backgrounds.
     Pass *opacity* below 1.0 to fade the result, which is how the disabled
     variant in :func:`svg_icon` is produced.
+
+    Memoised, because a render is a file read, an XML parse and up to three
+    off-screen paints, and the arguments repeat relentlessly: a themed widget
+    re-derives its icons on every theme pass, and the app draws the same dozen
+    marks at the same two or three sizes everywhere. The suite renders 11,649 of
+    them in one test module alone, at about 0.28 ms each.
+
+    Returning the cached pixmap rather than a copy is safe only while nothing
+    paints on one. Every caller hands it straight to ``setPixmap``, ``QIcon`` or
+    ``drawPixmap`` — a caller that wants to draw *into* the result must
+    ``.copy()`` it first, or it edits the cache for everyone.
+
+    The keying is on the arguments as passed, so the tint must be resolved by the
+    caller; :func:`svg_icon` already does that. Unbounded is deliberate: the key
+    space is the icon set times a handful of sizes and theme colours, and a bound
+    would evict exactly the marks a repaint is about to ask for again.
     """
+    return _svg_pixmap_cached(name, size, tint, opacity)
+
+
+@cache
+def _svg_pixmap_cached(name: str, size: int, tint: str | None, opacity: float) -> QPixmap:
     renderer = QSvgRenderer(str(_ICONS_DIR / f"{name}.svg"))
     pm = QPixmap(size, size)
     pm.fill(Qt.GlobalColor.transparent)

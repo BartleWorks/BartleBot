@@ -50,6 +50,31 @@ def view(qapp, scene):
     v.close()
 
 
+@pytest.fixture
+def pinned_pointer(monkeypatch):
+    """Freeze the pointer the priming reads, for the one test that asserts on it.
+
+    ``prime_last_mouse_event`` samples ``QCursor.pos()``, and an assertion that reads
+    it again is comparing two samples taken at different instants -- so moving the
+    physical mouse in between, which is what using the machine while the suite runs
+    looks like, fails the test.  Patching the name the module under test calls pins
+    both ends to one value and leaves the user's pointer where it is, which
+    ``QCursor.setPos`` would not.  The value is the live pointer, so the point being
+    mapped is still a real one on a real screen.
+    """
+    from bartlebot.gui.canvas import graph_view
+
+    where = QCursor.pos()
+
+    class _PinnedCursor:
+        @staticmethod
+        def pos():
+            return where
+
+    monkeypatch.setattr(graph_view, "QCursor", _PinnedCursor)
+    return where
+
+
 def _recorded(widget):
     rec = _MoveRecorder()
     widget.viewport().installEventFilter(rec)
@@ -74,7 +99,7 @@ def test_the_primed_move_carries_no_buttons(view):
     assert buttons == Qt.MouseButton.NoButton
 
 
-def test_the_primed_move_lands_on_the_real_pointer(view):
+def test_the_primed_move_lands_on_the_real_pointer(view, pinned_pointer):
     """The failure path this guards: a viewport-centre point hovers whatever is there.
 
     ``GraphView.mouseMoveEvent`` falls through to ``QGraphicsView``'s, which dispatches
@@ -86,7 +111,7 @@ def test_the_primed_move_lands_on_the_real_pointer(view):
     view.show()
 
     pos, _buttons = rec.moves[0]
-    assert pos == view.viewport().mapFromGlobal(QCursor.pos())
+    assert pos == view.viewport().mapFromGlobal(pinned_pointer)
 
 
 def test_a_view_with_no_mouse_tracking_is_still_primed(view):

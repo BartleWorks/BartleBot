@@ -20,6 +20,16 @@ Two things make this less obvious than it looks:
   session fixture `_fine_grained_timers` in `conftest.py` calls `timeBeginPeriod(1)` to
   drop the tick to ~1 ms, which is what makes short intervals worth compressing at all.
   Don't remove it: it was worth ~7 s across the suite on its own.
+- **An autouse fixture is paid 5,000 times, so what it asks for matters.** `tmp_path`
+  is the trap: it is a real `mkdir`, about 4.8 ms of it on Windows, plus the matching
+  `rmdir` when pytest drains the previous run's basetemp. `isolated_settings` wanted
+  only a `%APPDATA%` that is not the developer's, and every consumer already copes
+  with the path being absent -- `load()` falls back to the defaults, `save()` makes
+  its own parents -- so it now *names* a directory under a session-scoped root instead
+  of creating one. That was 25 s of the suite's CPU for a directory a few dozen tests
+  ever wanted. Before adding an autouse fixture, price what it requests; a
+  session-scoped fixture that hands out a value costs nothing per test, a
+  function-scoped one that touches the filesystem costs the whole suite.
 - **Compress cadences, never ceilings.** A poll interval can go as low as the tick allows,
   because the fakes it drives count iterations rather than seconds. A *ceiling* — a
   `timeout=`, a `wait_for`, a Safety Delay — is what the code races against, and cutting
@@ -165,6 +175,26 @@ synchronously and is the fix; pumping harder is not, since there is nothing pend
 pump. Then **assert the focus you arranged** — `_shown_page` in
 `test_growing_text_edit.py` is the pattern, and it matters at both ends: a test asserting
 that an *unfocused* widget stays put passes for free on a window that had no focus to give.
+
+**Arranging activation is not owning it.** `setActiveWindow` answers for the WM once; it
+does not stop the WM changing its mind. Any other process putting a window up takes the
+foreground, and Windows answers ours with a deactivation that Qt turns into a cleared
+focus widget — so a `hasFocus()` branch that was live when the test arranged it can be
+dead by the time the pump delivers the event it was waiting for. Under `-n auto` that
+other process is one of the fifteen other workers, so the same test passes a thousand
+times on an idle box and fails twice in three parallel runs on a machine someone is
+using. A test cannot promise the foreground, so it re-runs the arrangement rather than
+asserting through it: `_grown_page` in `test_growing_text_edit.py` discards a round that
+lost focus instead of failing it, and still asserts the focus at both ends so a run of
+steals cannot pass as a page that never grew.
+
+**A test that reads a live input device is racing the person at the keyboard.** Sampling
+`QCursor.pos()` in the assertion *and* in the code under test compares two reads taken at
+different instants, and moving the real mouse between them fails the test — on an idle
+machine never, on one in use intermittently. `-n auto` is not implicated and running it
+alone proves nothing. Pin the device by patching the name the module under test calls,
+as `pinned_pointer` in `test_graph_view_cursor_priming.py` does; `QCursor.setPos` would
+also work and is worse, because it moves the user's pointer.
 
 `--dist loadfile` would hide this class of bug by making the accident stable. Order
 independence is a property worth keeping, so CI stays on `load`.

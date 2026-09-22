@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.card_frame import GRIP_GUTTER
 
 # Border width of the Add card's dashed outline. Two, not one, because Qt scales a dash
@@ -104,10 +104,11 @@ class AddCard(ThemedMixin, QWidget):
         # them. The hover is where it takes a fill, because that is a hit target
         # confirming itself.
         bg = THEME.node_fill if self._hovered else "transparent"
-        self.setStyleSheet(
-            f"#AddCard {{ background: {bg}; border: {ADD_CARD_BORDER_WIDTH}px dashed {border}; border-radius: 4px; }}"
+        set_style_sheet(
+            self,
+            f"#AddCard {{ background: {bg}; border: {ADD_CARD_BORDER_WIDTH}px dashed {border}; border-radius: 4px; }}",
         )
-        self._name_lbl.setStyleSheet(f"color: {color}; background: transparent;")
+        set_style_sheet(self._name_lbl, f"color: {color}; background: transparent;")
         # svg_icon bakes the tint in at render time, so the pixmap is rebuilt on every
         # pass rather than set once in _build -- see ProfileCard.apply_theme_styles.
         self._icon_lbl.setPixmap(svg_pixmap("plus", 12, tint=color))

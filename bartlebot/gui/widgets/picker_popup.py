@@ -42,6 +42,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import set_style_sheet
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 
 POPUP_WIDTH = 400
@@ -788,7 +789,7 @@ class PickerPopup(QWidget):
             empty = QLabel("No matches.")
             empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
             empty.setContentsMargins(0, 14, 0, 14)
-            empty.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
+            set_style_sheet(empty, f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px;")
             self._body_layout.insertWidget(0, empty)
             self._refresh_header()
             return
@@ -836,7 +837,8 @@ class PickerPopup(QWidget):
             return
         self._applying_style = True
         try:
-            self.setStyleSheet(
+            set_style_sheet(
+                self,
                 f"#PickerPopup {{ background: {THEME.bg}; border: 1px solid {THEME.border};"
                 f"  border-radius: 6px; }}"
                 # Painted explicitly rather than inherited from the app palette: the
@@ -861,7 +863,7 @@ class PickerPopup(QWidget):
                 f'QFrame[frameShape="4"] {{ color: {THEME.border}; }}'
                 f"QLineEdit {{ background: {THEME.bg}; color: {THEME.text};"
                 f"  border: 1px solid {THEME.border}; border-radius: 4px; padding: 3px 6px; }}"
-                f"QLineEdit:focus {{ border-color: {THEME.accent}; }}"
+                f"QLineEdit:focus {{ border-color: {THEME.accent}; }}",
             )
         finally:
             self._applying_style = False
@@ -998,11 +1000,12 @@ class PickerButton(QToolButton):
             return
         self._applying_style = True
         try:
-            self.setStyleSheet(
+            set_style_sheet(
+                self,
                 f"QToolButton {{ background: {THEME.surface}; color: {THEME.text};"
                 f"  border: 1px solid {THEME.border}; border-radius: 3px;"
                 f"  padding: 3px {6 + CARET_W + CARET_PAD}px 3px 6px; text-align: left; }}"
-                f"QToolButton:hover {{ border-color: {THEME.accent}; }}"
+                f"QToolButton:hover {{ border-color: {THEME.accent}; }}",
             )
         finally:
             self._applying_style = False

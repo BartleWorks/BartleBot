@@ -1,6 +1,7 @@
 """Shared test doubles for node unit tests."""
 
 import ctypes
+import itertools
 import logging
 import os
 import sys
@@ -247,8 +248,17 @@ class FakeParamForm:
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(scope="session")
+def _appdata_root(tmp_path_factory):
+    """The parent of every test's private ``%APPDATA%``, made once per worker."""
+    return tmp_path_factory.getbasetemp() / "appdata"
+
+
+_APPDATA_SERIAL = itertools.count()
+
+
 @pytest.fixture(autouse=True)
-def isolated_settings(tmp_path, monkeypatch):
+def isolated_settings(_appdata_root, monkeypatch):
     """Point the SettingsManager singleton at a per-test directory.
 
     Code that resolves a value against the app settings — quicksell's three-state
@@ -259,10 +269,21 @@ def isolated_settings(tmp_path, monkeypatch):
 
     Tests that build their own SettingsManager against tmp_path are unaffected:
     they get a second, private instance as before.
+
+    The directory is *named*, not created. This fixture is autouse, so it runs for all
+    5,000-odd tests, and ``tmp_path`` — which is what it used to ask for — pays a real
+    ``mkdir`` under every one of them: ~4.8 ms each on Windows, around 25 s of the
+    suite's CPU, for a directory that only the few dozen tests reaching ``save()`` ever
+    want. Everything downstream already copes with the path being absent: ``load()``
+    checks ``exists()`` and falls back to the defaults, ``save()`` creates its own
+    parents, and ``_adopt_legacy_appdata`` looks for a sibling that is equally not
+    there. The counter is what keeps a test that *does* write from being read by the
+    next one — it only has to be unique within a worker, since each xdist worker gets
+    its own basetemp.
     """
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — keeps node tests import-light
 
-    monkeypatch.setenv("APPDATA", str(tmp_path))
+    monkeypatch.setenv("APPDATA", str(_appdata_root / f"t{next(_APPDATA_SERIAL)}"))
     monkeypatch.setattr(SettingsManager, "_instance", None)
 
 
