@@ -20,6 +20,16 @@ Two things make this less obvious than it looks:
   session fixture `_fine_grained_timers` in `conftest.py` calls `timeBeginPeriod(1)` to
   drop the tick to ~1 ms, which is what makes short intervals worth compressing at all.
   Don't remove it: it was worth ~7 s across the suite on its own.
+- **An autouse fixture is paid 5,000 times, so what it asks for matters.** `tmp_path`
+  is the trap: it is a real `mkdir`, about 4.8 ms of it on Windows, plus the matching
+  `rmdir` when pytest drains the previous run's basetemp. `isolated_settings` wanted
+  only a `%APPDATA%` that is not the developer's, and every consumer already copes
+  with the path being absent -- `load()` falls back to the defaults, `save()` makes
+  its own parents -- so it now *names* a directory under a session-scoped root instead
+  of creating one. That was 25 s of the suite's CPU for a directory a few dozen tests
+  ever wanted. Before adding an autouse fixture, price what it requests; a
+  session-scoped fixture that hands out a value costs nothing per test, a
+  function-scoped one that touches the filesystem costs the whole suite.
 - **Compress cadences, never ceilings.** A poll interval can go as low as the tick allows,
   because the fakes it drives count iterations rather than seconds. A *ceiling* — a
   `timeout=`, a `wait_for`, a Safety Delay — is what the code races against, and cutting

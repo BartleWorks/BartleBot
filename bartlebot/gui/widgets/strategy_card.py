@@ -17,6 +17,7 @@ from PyQt6.QtCore import QEvent, QSize, Qt
 from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import set_style_sheet
 from bartlebot.strategy_summary import HealthStatus, StrategySummary
 
 
@@ -44,7 +45,7 @@ class StrategyCard(QWidget):
         f = name_row.font()
         f.setBold(True)
         name_row.setFont(f)
-        name_row.setStyleSheet("background: transparent;")
+        set_style_sheet(name_row, "background: transparent;")
         if self._invalid:
             name_row.setText(f"{summary.name}  ⚠")
             name_row.setToolTip(f"Does not parse: {summary.health.reason}")
@@ -120,12 +121,14 @@ class StrategyCard(QWidget):
         try:
             border = THEME.accent if self._selected else THEME.border
             bg = THEME.node_fill if (self._selected or self._hovered) else THEME.surface
-            self.setStyleSheet(f"#StrategyCard {{ background: {bg}; border: 1px solid {border}; border-radius: 4px; }}")
+            set_style_sheet(
+                self, f"#StrategyCard {{ background: {bg}; border: 1px solid {border}; border-radius: 4px; }}"
+            )
             name_color = THEME.error if self._invalid else THEME.text
-            self._name_lbl.setStyleSheet(f"color: {name_color}; background: transparent;")
+            set_style_sheet(self._name_lbl, f"color: {name_color}; background: transparent;")
             for label in self._sub_lbls:
-                label.setStyleSheet(
-                    f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px; background: transparent;"
+                set_style_sheet(
+                    label, f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px; background: transparent;"
                 )
         finally:
             self._applying_style = False

@@ -21,7 +21,7 @@ from __future__ import annotations
 from PyQt6.QtWidgets import QLabel, QWidget
 
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 
 
 class ThemedTextLabel(ThemedMixin, QLabel):
@@ -42,4 +42,4 @@ class ThemedTextLabel(ThemedMixin, QLabel):
         self.refresh_theme_styles()
 
     def apply_theme_styles(self) -> None:
-        self.setStyleSheet(f"color: {getattr(THEME, self._color_token)}; {self._css}")
+        set_style_sheet(self, f"color: {getattr(THEME, self._color_token)}; {self._css}")

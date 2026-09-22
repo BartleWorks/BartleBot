@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import QLabel, QPushButton, QWidget
 
 import bartlebot.gui.theme as theme_mod
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 
 
 @pytest.fixture
@@ -224,3 +224,57 @@ def test_the_guard_is_released_after_a_swallowed_failure(qapp):
     w.fail = False
     _switch(qapp, w)
     assert _Flaky.calls == 2
+
+
+class TestSetStyleSheet:
+    """``set_style_sheet`` — the skip that keeps a theme pass from going quadratic."""
+
+    def test_a_new_sheet_is_written(self, qapp):
+        w = QWidget()
+        assert set_style_sheet(w, "color: red;") is True
+        assert w.styleSheet() == "color: red;"
+
+    def test_a_changed_sheet_is_written(self, qapp):
+        w = QWidget()
+        set_style_sheet(w, "color: red;")
+        assert set_style_sheet(w, "color: blue;") is True
+        assert w.styleSheet() == "color: blue;"
+
+    def test_an_unchanged_sheet_is_not_written(self, qapp):
+        """The point of the helper: an identical rule must not be re-assigned."""
+        w = QWidget()
+        set_style_sheet(w, "color: red;")
+        assert set_style_sheet(w, "color: red;") is False
+        assert w.styleSheet() == "color: red;"
+
+    def test_skipping_sends_no_style_change(self, qapp):
+        """Why the skip matters -- a re-assignment broadcasts to the whole subtree.
+
+        Each StyleChange a themed child answers re-derives *its* rule and sets it,
+        which broadcasts again. That is the cascade the helper exists to cut, so the
+        absence of the event is the behaviour under test, not an implementation detail.
+        """
+        seen: list[int] = []
+
+        class _Counting(QWidget):
+            def changeEvent(self, event):
+                super().changeEvent(event)
+                if event.type() == QEvent.Type.StyleChange:
+                    seen.append(1)
+
+        parent = QWidget()
+        _Counting(parent)  # parented, so `parent` owns it
+        set_style_sheet(parent, "color: red;")
+        first = len(seen)
+        assert first, "a genuine change must still reach the subtree"
+
+        set_style_sheet(parent, "color: red;")
+        assert len(seen) == first, "an unchanged sheet must not re-broadcast"
+
+    def test_a_theme_switch_still_gets_through(self, qapp):
+        """The skip must not defeat the thing it is guarding: a real switch writes."""
+        w = QWidget()
+        set_style_sheet(w, f"color: {THEME.text};")
+        before = w.styleSheet()
+        assert set_style_sheet(w, "color: #123456;") is True
+        assert w.styleSheet() != before

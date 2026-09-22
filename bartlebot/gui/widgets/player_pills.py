@@ -39,6 +39,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QSizePolicy, QWidget
 
 from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import set_style_sheet
 from bartlebot.gui.widgets.duel_slot_gem import GEM_PX, DuelSlotGem
 from bartlebot.gui.widgets.tag_pill import pill_height
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
@@ -135,10 +136,11 @@ class PlayerSlotPill(QLabel):
                 accent = THEME.border
                 fill = "transparent"
                 text = THEME.text_muted
-            self.setStyleSheet(
+            set_style_sheet(
+                self,
                 f"background: {fill}; color: {text}; font-size: {THEME.font_micro_px}px;"
                 f" font-weight: bold; border-radius: {_PILL_HEIGHT // 2}px;"
-                f" border: 1px solid {accent}; padding: 0px 6px;"
+                f" border: 1px solid {accent}; padding: 0px 6px;",
             )
             self.setCursor(Qt.CursorShape.PointingHandCursor if self._editable else Qt.CursorShape.ArrowCursor)
             self.setToolTip(self._tooltip())
@@ -319,9 +321,10 @@ class PlayerBadge(QLabel):
                 text = THEME.pill_text
             else:
                 fill, border, text = account_tint(self._color_key), account_accent(self._color_key), THEME.text
-            self.setStyleSheet(
+            set_style_sheet(
+                self,
                 f"background: {fill}; color: {text}; font-size: {THEME.font_micro_px}px; font-weight: bold;"
-                f" border-radius: {pill_height() // 2}px; border: 1px solid {border}; padding: 0px {_BADGE_PAD_X}px;"
+                f" border-radius: {pill_height() // 2}px; border: 1px solid {border}; padding: 0px {_BADGE_PAD_X}px;",
             )
             who = f" — {self._account_label}" if self._account_label else ""
             self.setToolTip(f"Player {self._player}{who}")

@@ -119,7 +119,7 @@ from PyQt6.QtWidgets import (
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 
 _FACE_BTN_SIZE = 22
 
@@ -588,9 +588,10 @@ class CardFrame(ThemedMixin, QWidget):
         card would lose the addition with nothing in the stylesheet looking wrong.
         """
         addition = self._frame_extra_qss() if extra is None else extra
-        self.setStyleSheet(
+        set_style_sheet(
+            self,
             f"#{self.FRAME_NAME} {{ background: {background}; "
-            f"border: 1px solid {border}; border-radius: 4px;{addition} }}"
+            f"border: 1px solid {border}; border-radius: 4px;{addition} }}",
         )
 
     def _apply_dragging_styles(self) -> None:

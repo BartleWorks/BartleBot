@@ -57,7 +57,7 @@ class MyPanel(ThemedMixin, QWidget):          # mixin FIRST — see below
         self._label.setStyleSheet(f"color: {THEME.text};")
 ```
 
-Four things that are not obvious:
+Five things that are not obvious:
 
 - **`refresh_theme_styles()` is what you call; `apply_theme_styles()` is what you
   write.** The first carries a re-entrancy guard, and `setStyleSheet` on `self`
@@ -70,6 +70,17 @@ Four things that are not obvious:
 - **A bare `svg_icon(name)` is themed.** Its `tint` defaults to `THEME.icon_tint`, so
   an icon set once and kept goes stale with no stylesheet anywhere to grep for. Pass
   `tint=""` for an icon that should keep its own colours.
+- **Write the rule through `set_style_sheet(widget, sheet)`, not `setStyleSheet`.**
+  A re-assignment is never local: Qt re-parses the rule and delivers `StyleChange` to
+  the whole subtree, every themed child answers by re-deriving *its* rule and setting
+  it, and that broadcasts again. The re-entrancy guards stop it recursing forever;
+  they do not stop it being quadratic in the depth of a card. Re-deriving from `THEME`
+  almost always reproduces the string already there, so the helper compares first and
+  writes only on a real change — 132 tests in `test_combat_tab.py` were paying 40,151
+  `setStyleSheet` and 288,522 `changeEvent` calls for it. A genuine theme switch does
+  change the string, so the cascade still runs the one time it has to. The guard test
+  knows both spellings; if you add a third, teach `_direct_themed` about it or the
+  rename silently empties the guard.
 - **A factory cannot restyle what it returns.** `field_label(text)` hands a label to a
   caller that has nothing to re-apply, so the staleness lands on the *caller* — which
   is why the guard blames a themed helper's callers. Return a

@@ -127,3 +127,31 @@ class ThemedMixin:
             self.refresh_theme_styles()
         except Exception:
             logger.exception("apply_theme_styles raised for %s", type(self).__name__)
+
+
+def set_style_sheet(widget, sheet: str) -> bool:
+    """Assign *sheet* to *widget*, unless that is what it already says.
+
+    ``setStyleSheet`` is never free and never local: Qt re-parses the rule, re-polishes
+    the widget, and delivers a ``StyleChange`` to the whole subtree beneath it. Every
+    themed widget in that subtree answers a ``StyleChange`` by re-deriving its own rule
+    and setting it — which broadcasts again, to *its* subtree. The re-entrancy guards
+    stop that recursing forever; they do not stop it being quadratic in the depth of a
+    card.
+
+    Re-deriving a rule from ``THEME`` almost always reproduces the string already
+    there, so comparing first turns the whole cascade into one string compare per
+    widget. It cost 132 tests in ``test_combat_tab.py`` 40,151 ``setStyleSheet`` calls
+    and 288,522 ``changeEvent`` calls before this existed.
+
+    Returns whether anything was written, for a caller that has follow-up work to skip.
+
+    This is safe because ``styleSheet()`` returns verbatim what was last set, so an
+    equal string means an identical rule. It is *not* a substitute for the guards: a
+    genuine theme switch changes the string, so the cascade still runs then — which is
+    the one time it has to.
+    """
+    if widget.styleSheet() == sheet:
+        return False
+    widget.setStyleSheet(sheet)
+    return True
