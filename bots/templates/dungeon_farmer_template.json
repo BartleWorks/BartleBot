@@ -1,0 +1,198 @@
+{
+  "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+  "name": "Dungeon Farmer Template",
+  "description": "Template bot file for a dungeon farming bot. To use this template to create your own bot, follow these steps:\n\n1) Change the zone in \"Go to dungeon entrance zone\" to the zone containing the dungeon entrance. If the correct zone is not on the list, choose the nearest major zone and add navigation nodes to get to the dungeon entrance zone from the major zone.\n\n2) Edit the \"Enter dungeon\" node and record yourself entering the dungeon.\n\n3) Add nodes between \"Enter dungeon\" and \"Exit dungeon\" to complete the dungeon as needed.\n\n4) For any fights in the dungeon, populate the drop list for the fight by clicking \"Import drops from wiki\" and pasting the Wizard101 wiki page URL for the boss or primary enemy.\n\n5) Edit the \"Exit dungeon\" node and record yourself exiting the dungeon.\n\n6) Edit the \"Quicksell\" node to keep relevant drops.\n\n7) In the left side of the toolbar above the bot canvas, update the bot name/author and add tags to the bot by clicking \"Rewards\" and \"Activities\"",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "state_2",
+  "recovery_state": "state_1",
+  "drops": [],
+  "authors": "BartleBot",
+  "tags": [
+    "Dungeon"
+  ],
+  "options": [],
+  "states": [
+    {
+      "id": "state_1",
+      "node_type": "relog",
+      "label": "Relog all players",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "state_2",
+      "node_type": "go_to_zone",
+      "label": "Go to dungeon entrance zone",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": ""
+      }
+    },
+    {
+      "id": "state_3",
+      "node_type": "change_to_favorite_realm",
+      "label": "Change to favorite realm",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_4",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_dungeon",
+      "label": "Enter dungeon",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "",
+        "dungeon_zone": "",
+        "sigil_xyz": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "reset_xyz": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "",
+        "to_zone": "",
+        "xyz": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "stagger": false
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_1",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": []
+}
