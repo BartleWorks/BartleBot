@@ -176,6 +176,18 @@ pump. Then **assert the focus you arranged** — `_shown_page` in
 `test_growing_text_edit.py` is the pattern, and it matters at both ends: a test asserting
 that an *unfocused* widget stays put passes for free on a window that had no focus to give.
 
+**Arranging activation is not owning it.** `setActiveWindow` answers for the WM once; it
+does not stop the WM changing its mind. Any other process putting a window up takes the
+foreground, and Windows answers ours with a deactivation that Qt turns into a cleared
+focus widget — so a `hasFocus()` branch that was live when the test arranged it can be
+dead by the time the pump delivers the event it was waiting for. Under `-n auto` that
+other process is one of the fifteen other workers, so the same test passes a thousand
+times on an idle box and fails twice in three parallel runs on a machine someone is
+using. A test cannot promise the foreground, so it re-runs the arrangement rather than
+asserting through it: `_grown_page` in `test_growing_text_edit.py` discards a round that
+lost focus instead of failing it, and still asserts the focus at both ends so a run of
+steals cannot pass as a page that never grew.
+
 **A test that reads a live input device is racing the person at the keyboard.** Sampling
 `QCursor.pos()` in the assertion *and* in the code under test compares two reads taken at
 different instants, and moving the real mouse between them fails the test — on an idle
