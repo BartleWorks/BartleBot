@@ -5,7 +5,7 @@
   "version": "1.0",
   "clients": "all",
   "initial": "state_2",
-  "recovery_state": "state_2",
+  "recovery_state": "state_1",
   "drops": [],
   "authors": "BartleBot",
   "tags": [
@@ -141,7 +141,7 @@
       "label": "Exit dungeon",
       "position": {
         "x": 4400.0,
-        "y": 90.0
+        "y": 0.0
       },
       "params": {
         "from_zone": "",
@@ -228,16 +228,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_11",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_1",
       "dest": "state_1",
       "when": "FAILURE",
@@ -271,36 +261,6 @@
       "source": "state_3",
       "dest": "state_4",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
