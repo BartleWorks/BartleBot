@@ -11,6 +11,7 @@ from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadEr
 
 from bartlebot import bot_options, option_values, restricted_zones
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
+from bartlebot.bot.schema import FALLTHROUGH_RETURNS
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,7 @@ class BotMachine:
         max_consecutive_same_state: int | None = None,
         on_client_disconnected: Callable[[int], None] | None = None,
         on_restricted_zone: Callable[[str], None] | None = None,
+        on_explicit_stop: Callable[[str, str, str], None] | None = None,
         stop_grace_period: float = 1.0,
     ) -> None:
         self.clients = clients
@@ -67,6 +69,7 @@ class BotMachine:
         self._on_drop = on_drop
         self._on_client_disconnected = on_client_disconnected
         self._on_restricted_zone = on_restricted_zone
+        self._on_explicit_stop = on_explicit_stop
         self._stop_flag = asyncio.Event()
         self._stop_grace_period = stop_grace_period
         self._current_node_task: asyncio.Task | None = None
@@ -106,6 +109,9 @@ class BotMachine:
         self._option_specs: dict | None = None
 
         self._state_map = {s["id"]: s for s in config["states"]}
+        # Where an unrouted FALLTHROUGH_RETURNS port goes. Absent only for a config
+        # hand-built in a test; the fall-through is then simply off.
+        self._recovery_state: str | None = config.get("recovery_state")
         # Compiled compound flag expressions from to_machine_config().
         # Keys are _flag_compound_<idx> strings; values are {"flags": [...], "op": "AND"|"OR"}.
         self._conditions_registry: dict[str, dict] = config.get("conditions_registry", {})
@@ -500,6 +506,13 @@ class BotMachine:
 
                 if not self._stop_flag.is_set():
                     prev_state = state_id
+                    # Before anything else: an author-marked stop is deliberate, and
+                    # outranks both the terminal-state check and any edge that would
+                    # otherwise carry this result onward.
+                    stop_reason = self._explicit_stop_reason(state_id, self.last_result)
+                    if stop_reason is not None:
+                        self._handle_explicit_stop(state_id, self.last_result or "", stop_reason)
+                        continue
                     # A state with no outgoing transitions is a terminal state — stop cleanly.
                     has_exit = any(t["source"] == state_id for t in self._config["transitions"])
                     if not has_exit:
@@ -509,7 +522,26 @@ class BotMachine:
                         self.stop()
                     else:
                         fired = await self.advance()
-                        if not fired:
+                        recovery_dest = None if fired else self._fallthrough_dest(state_id, self.last_result)
+                        if fired:
+                            self._no_match_count = 0
+                            self._log_machine(
+                                f"Transition: {self._fmt_state(prev_state)} --{self.last_result}--> {self._fmt_state(self.state)}",
+                                logging.INFO,
+                            )
+                        elif recovery_dest is not None:
+                            # force_state, not a synthesised transition: there is no
+                            # TransitionModel behind this edge, and inventing one would
+                            # put it in the file the next time the graph is saved.
+                            # It clears the no-match counter for us.
+                            self.force_state(
+                                recovery_dest,
+                                reason=(
+                                    f"Unrouted {self.last_result} in state {self._fmt_state(state_id)}"
+                                    f" — recovering to {self._fmt_state(recovery_dest)}"
+                                ),
+                            )
+                        else:
                             self._no_match_count += 1
                             self._log_machine(
                                 f"No transition matched for result {self.last_result!r} in state"
@@ -523,12 +555,6 @@ class BotMachine:
                                     logging.ERROR,
                                 )
                                 self.stop()
-                        else:
-                            self._no_match_count = 0
-                            self._log_machine(
-                                f"Transition: {self._fmt_state(prev_state)} --{self.last_result}--> {self._fmt_state(self.state)}",
-                                logging.INFO,
-                            )
                         if self._on_transition:
                             try:
                                 self._on_transition(prev_state, self.last_result or "", self.state)
@@ -703,6 +729,54 @@ class BotMachine:
                     self.resume()
                     self._log_machine("Ambient combat: FSM resumed", logging.INFO)
 
+    # --- Unrouted return values ---
+
+    def _explicit_stop_reason(self, state_id: str, result: str | None) -> str | None:
+        """The author's reason for stopping the run on *result*, or None if it does not stop.
+
+        An empty string means "stop, no reason given", so this is tested against
+        None -- see :meth:`StateModel.stop_reason`, whose contract this mirrors on
+        the flat dict ``to_machine_config`` produces.
+        """
+        if result is None:
+            return None
+        stops = self._state_map.get(state_id, {}).get("stops") or {}
+        return stops.get(result)
+
+    def _handle_explicit_stop(self, state_id: str, result: str, reason: str) -> None:
+        """End the run because the author marked this return value as fatal.
+
+        Stopping happens here rather than in the GUI for the same reason the
+        restricted-zone stop does: the FSM has to halt with no GUI attached, and
+        before the callback, which is free to put a dialog in front of the user.
+        """
+        detail = reason.strip()
+        self._log_machine(
+            f"Bot stopped at {self._fmt_state(state_id)}: {result} is marked as a deliberate stop."
+            + (f" {detail}" if detail else ""),
+            logging.WARNING,
+        )
+        self.stop()
+        if self._on_explicit_stop:
+            try:
+                self._on_explicit_stop(detail, self._fmt_state(state_id), result)
+            except Exception:
+                logger.exception("on_explicit_stop callback raised")
+
+    def _fallthrough_dest(self, state_id: str, result: str | None) -> str | None:
+        """The recovery state an unrouted *result* falls through to, or None.
+
+        None for anything but FALLTHROUGH_RETURNS, and for the recovery state's own
+        failure: defaulting that one loops it onto itself, which the same-state idle
+        limit would only ever turn into a stop several minutes later.
+        """
+        if result not in FALLTHROUGH_RETURNS:
+            return None
+        dest = self._recovery_state
+        if dest is None or dest == state_id or dest not in self._state_map:
+            return None
+        return dest
+
     def _handle_restricted_zone(self, hit: "restricted_zones.Restriction") -> None:
         """Stop the run because a client is somewhere it must not be automated.
 
@@ -779,9 +853,17 @@ class BotMachine:
         for hwnd in hwnds:
             self._health_monitor.unflag(hwnd)
 
-    def force_state(self, state_id: str) -> None:
-        """Force the FSM into a specific state for recovery. Bypasses normal entry callbacks."""
+    def force_state(self, state_id: str, reason: str | None = None) -> None:
+        """Force the FSM into a specific state for recovery. Bypasses normal entry callbacks.
+
+        *reason* replaces the default log line, so a caller that has a better account
+        of why the jump happened does not have to file a second record beside this
+        one for the same event.
+        """
         self.machine.set_state(state_id)  # sets self.state via the transitions machine
         self._consecutive_same_state_count = 0
         self._no_match_count = 0
-        logger.info("FSM state forced to %s (recovery)", self._fmt_state(state_id))
+        if reason is None:
+            logger.info("FSM state forced to %s (recovery)", self._fmt_state(state_id))
+        else:
+            logger.info("%s", reason)

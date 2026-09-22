@@ -919,6 +919,7 @@ class AppController(QObject):
             on_drop=self._on_machine_drop,
             on_client_disconnected=self._on_machine_client_disconnected,
             on_restricted_zone=self._on_machine_restricted_zone,
+            on_explicit_stop=self._on_machine_explicit_stop,
         )
         self._current_machine = machine
         self._client_manager.set_machine(machine)
@@ -1145,6 +1146,22 @@ class AppController(QObject):
         task = asyncio.create_task(self._close_dead_client(hwnd))
         self._close_tasks.add(task)
         task.add_done_callback(self._close_tasks.discard)
+
+    def _on_machine_explicit_stop(self, reason: str, state_label: str, result: str) -> None:
+        """Called when a node returns a value its author marked as a deliberate stop.
+
+        The machine has already stopped itself. What is left is telling the user why,
+        which is the whole point of the feature -- the case it was built for is
+        check_zone finding the wrong world, where a run that merely ends is
+        indistinguishable from one that crashed.
+
+        Deferred through the event loop for the Python 3.13 re-entrancy trap in
+        CLAUDE.md, exactly as the restricted-zone explanation is.
+        """
+        body = f"The bot stopped at {state_label}, which returned {result}."
+        if reason:
+            body += "\n\n" + reason
+        QTimer.singleShot(0, lambda: QMessageBox.information(self._window, "Bot Stopped", body))
 
     def _on_machine_restricted_zone(self, description: str) -> None:
         """Called by the health monitor when a client reaches a restricted zone.

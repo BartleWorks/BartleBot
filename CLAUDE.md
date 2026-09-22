@@ -47,6 +47,7 @@ read on purpose.
 | `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value |
 | `docs/COMBAT_CONFIG.md` | the five strategy levels, the two storage roots, the pick/assemble/author split, and the Save/Cancel boundary |
 | `docs/SUBGRAPHS.md` | reusable subgraphs: definition vs. instance, derived member ids, follow-latest with snapshot fallback, the three param levels, instance-owned layout, the authoring verbs |
+| `docs/RETURN_ROUTING.md` | the default failure edge, the explicit stop, why neither is drawn, and the three-mode failure-edge toggle |
 | `docs/RELOGGING.md` | why a client slows down, and the two ways to clear it |
 | `docs/RESTRICTED_ZONES.md` | the PvP policy and its three enforcement points |
 | `docs/ZONE_NAVIGATION.md` | the zone navigation map: link kinds, list networks, doors and side worlds, and routes costed in seconds |

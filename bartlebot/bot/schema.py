@@ -9,6 +9,14 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 
 from bartlebot.bot_tags import normalize_tags
 
+#: Return values that fall through to the bot's recovery state when a node's port
+#: for them is left unrouted. Almost every failure in a graph ends up back at the
+#: recovery node, so requiring the edge was per-node busywork that also put a
+#: quarter of the library's edges on the canvas -- see docs/RETURN_ROUTING.md.
+#: Deliberately only the two conventional failure names: an unrouted SUCCESS
+#: landing on recovery would be nonsense, not a convenience.
+FALLTHROUGH_RETURNS = ("FAILURE", "FALSE")
+
 
 class XYZModel(BaseModel):
     x: float
@@ -97,6 +105,23 @@ class StateModel(BaseModel):
     position: dict | None = None  # {"x": float, "y": float} — GUI canvas layout only
     params: dict = Field(default_factory=dict)
     notes: str | None = None  # User-authored documentation shown in the Properties sidebar
+    # Return values that deliberately end the run, mapped to the reason shown to the
+    # user when they do. The counterweight to FALLTHROUGH_RETURNS: once an unrouted
+    # failure means "recover", an author needs a way to say "no, this one is fatal"
+    # -- check_zone finding the wrong world is the case that motivated it.
+    # ``None`` rather than an empty dict so exclude_none keeps the key out of every
+    # state in every bot file; read it through :meth:`stop_reason`.
+    stops: dict[str, str] | None = None
+
+    def stop_reason(self, return_name: str | None) -> str | None:
+        """The author's reason for stopping on *return_name*, or None if it does not stop.
+
+        An empty string is a real answer -- the port stops, the author just gave no
+        reason -- so callers must test against None, not truthiness.
+        """
+        if return_name is None or not self.stops:
+            return None
+        return self.stops.get(return_name)
 
 
 class BotOptionModel(BaseModel):
@@ -336,6 +361,9 @@ class BotConfig(BaseModel):
             states.append(sd)
         return {
             "initial": self.initial,
+            # Carried so BotMachine can resolve an unrouted FALLTHROUGH_RETURNS port
+            # without a BotConfig -- it is optional there, but the fall-through is not.
+            "recovery_state": self.recovery_state,
             "states": states,
             "transitions": trans_list,
             "conditions_registry": conditions_registry,
