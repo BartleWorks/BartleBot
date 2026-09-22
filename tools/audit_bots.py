@@ -11,12 +11,12 @@ from __future__ import annotations
 
 import json
 import sys
-from collections import deque
 from pathlib import Path
 
 from pydantic import ValidationError
 
 from bartlebot.bot.schema import BotConfig
+from bartlebot.gui.canvas.edit_scene import _reachable_states
 from bartlebot.gui.canvas.layout import auto_layout
 from bartlebot.gui.canvas.node_item import GRID_W
 
@@ -62,21 +62,14 @@ def _missing_when(config: BotConfig) -> list[str]:
 
 
 def _unreachable_states(config: BotConfig) -> list[str]:
-    adj: dict[str, list[str]] = {s.id: [] for s in config.states}
-    for t in config.transitions:
-        if t.source in adj:
-            adj[t.source].append(t.dest)
-    visited: set[str] = set()
-    queue: deque[str] = deque([config.initial])
-    while queue:
-        node = queue.popleft()
-        if node in visited:
-            continue
-        visited.add(node)
-        for dest in adj.get(node, []):
-            if dest not in visited:
-                queue.append(dest)
-    return sorted({s.id for s in config.states} - visited)
+    """States the run can never get to.
+
+    Delegates to the editor's walk rather than keeping a second one: an unrouted
+    failure port is an edge the engine takes and the file does not record, and a
+    copy of the walk that did not know that reported every recovery node in the
+    library as unreachable.
+    """
+    return sorted({s.id for s in config.states} - _reachable_states(config))
 
 
 def _dead_ends(config: BotConfig) -> list[str]:

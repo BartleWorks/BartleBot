@@ -2877,16 +2877,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_24",
-      "dest": "state_25",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_25",
       "dest": "state_1",
       "when": "SUCCESS",
