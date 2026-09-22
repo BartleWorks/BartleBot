@@ -915,7 +915,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         if field_type == "wiki_page":
             w = _WikiPageLineEdit()
             w.setText(str(val) if val else "")
-            w.setPlaceholderText("Creature:Luska Charmbeak")
+            w.setPlaceholderText("Creature:Lost Soul")
             if help_text:
                 w.setToolTip(help_text)
             w.editingFinished.connect(w.normalise)

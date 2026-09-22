@@ -32,7 +32,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="wiki_page",
         label="Wiki Page",
         help=(
-            "Wizard101 Central page for the boss this node fights, e.g. 'Creature:Luska Charmbeak'. "
+            "Wizard101 Central page for the boss this node fights, e.g. 'Creature:Lost Soul'. "
             "Paste the page's URL and it will be stored as the title. Records where the bot's drop "
             "table came from so it can be refreshed later — a dungeon with two bosses records one "
             "page per fight. Leave empty for mob fights, which have no single page. "
