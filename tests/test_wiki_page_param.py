@@ -56,8 +56,8 @@ def test_an_absent_param_reads_as_empty(qapp):
 
 
 def test_an_existing_title_loads(qapp):
-    form = _form({WIKI_PAGE_PARAM: "Creature:Luska Charmbeak"})
-    assert form.get_params()[WIKI_PAGE_PARAM] == "Creature:Luska Charmbeak"
+    form = _form({WIKI_PAGE_PARAM: "Creature:Lost Soul"})
+    assert form.get_params()[WIKI_PAGE_PARAM] == "Creature:Lost Soul"
 
 
 def test_a_pasted_url_is_stored_as_a_title(qapp):
@@ -65,9 +65,9 @@ def test_a_pasted_url_is_stored_as_a_title(qapp):
     # never a host of its own.
     form = _form()
     w = _widget(form)
-    w.setText(f"https://{WIKI_HOST}/wiki/Creature:Luska_Charmbeak")
+    w.setText(f"https://{WIKI_HOST}/wiki/Creature:Lost_Soul")
     w.normalise()
-    assert form.get_params()[WIKI_PAGE_PARAM] == "Creature:Luska Charmbeak"
+    assert form.get_params()[WIKI_PAGE_PARAM] == "Creature:Lost Soul"
 
 
 def test_an_offsite_url_is_left_for_the_user_to_see_and_fix(qapp):
@@ -88,7 +88,7 @@ def test_a_blank_value_is_usable(qapp):
 
 
 def test_a_title_is_usable(qapp):
-    form = _form({WIKI_PAGE_PARAM: "Creature:Sylster Glowstorm"})
+    form = _form({WIKI_PAGE_PARAM: "Creature:Lord Nightshade"})
     assert _widget(form).is_usable()
 
 
@@ -99,33 +99,33 @@ def test_a_title_is_usable(qapp):
 
 def test_set_param_value_fills_the_field(qapp):
     form = _form()
-    form.set_param_value(WIKI_PAGE_PARAM, "Creature:Luska Charmbeak")
-    assert form.get_params()[WIKI_PAGE_PARAM] == "Creature:Luska Charmbeak"
+    form.set_param_value(WIKI_PAGE_PARAM, "Creature:Lost Soul")
+    assert form.get_params()[WIKI_PAGE_PARAM] == "Creature:Lost Soul"
 
 
 def test_setting_the_same_page_again_changes_nothing(qapp):
     # Re-importing the same page should not dirty the bot.
-    form = _form({WIKI_PAGE_PARAM: "Creature:Luska Charmbeak"})
+    form = _form({WIKI_PAGE_PARAM: "Creature:Lost Soul"})
     changes = []
     form.changed.connect(lambda: changes.append(1))
-    form.set_param_value(WIKI_PAGE_PARAM, "Creature:Luska Charmbeak")
+    form.set_param_value(WIKI_PAGE_PARAM, "Creature:Lost Soul")
     assert changes == []
 
 
 def test_setting_a_different_page_emits_changed(qapp):
-    form = _form({WIKI_PAGE_PARAM: "Creature:Luska Charmbeak"})
+    form = _form({WIKI_PAGE_PARAM: "Creature:Lost Soul"})
     changes = []
     form.changed.connect(lambda: changes.append(1))
-    form.set_param_value(WIKI_PAGE_PARAM, "Creature:Sylster Glowstorm")
+    form.set_param_value(WIKI_PAGE_PARAM, "Creature:Lord Nightshade")
     assert changes
-    assert form.get_params()[WIKI_PAGE_PARAM] == "Creature:Sylster Glowstorm"
+    assert form.get_params()[WIKI_PAGE_PARAM] == "Creature:Lord Nightshade"
 
 
 def test_the_recorded_page_resolves_back_to_a_url(qapp):
     form = _form()
-    form.set_param_value(WIKI_PAGE_PARAM, "Creature:Luska Charmbeak")
+    form.set_param_value(WIKI_PAGE_PARAM, "Creature:Lost Soul")
     url = resolve_wiki_page(form.get_params())
-    assert url == f"https://{WIKI_HOST}/wiki/Creature:Luska%20Charmbeak"
+    assert url == f"https://{WIKI_HOST}/wiki/Creature:Lost%20Soul"
 
 
 # ---------------------------------------------------------------------------
@@ -167,8 +167,8 @@ def test_no_page_before_a_fetch(qapp):
 
 
 def test_the_fetched_page_is_reported_as_a_title(qapp, monkeypatch):
-    dlg = _dialog(qapp, monkeypatch, f"https://{WIKI_HOST}/wiki/Creature:Luska_Charmbeak")
-    assert dlg.selected_page() == "Creature:Luska Charmbeak"
+    dlg = _dialog(qapp, monkeypatch, f"https://{WIKI_HOST}/wiki/Creature:Lost_Soul")
+    assert dlg.selected_page() == "Creature:Lost Soul"
 
 
 def test_a_rejected_url_never_becomes_a_page(qapp, monkeypatch):
@@ -244,11 +244,11 @@ def test_importing_on_a_locked_member_overrides_the_page(combat_canvas):
     assert panel.is_locked
     assert not panel.param_form.override_button(WIKI_PAGE_PARAM).isChecked()
 
-    panel.apply_wiki_import([], "Creature:Luska Charmbeak")
+    panel.apply_wiki_import([], "Creature:Lost Soul")
 
     region = next(r for r in canvas.scene.config.regions if r.id == region_id)
-    assert region.source.param_overrides == {"fight": {WIKI_PAGE_PARAM: "Creature:Luska Charmbeak"}}
-    assert panel.shown_state.params[WIKI_PAGE_PARAM] == "Creature:Luska Charmbeak"
+    assert region.source.param_overrides == {"fight": {WIKI_PAGE_PARAM: "Creature:Lost Soul"}}
+    assert panel.shown_state.params[WIKI_PAGE_PARAM] == "Creature:Lost Soul"
     assert panel.param_form.override_button(WIKI_PAGE_PARAM).isChecked()
 
 

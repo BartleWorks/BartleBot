@@ -1,7 +1,7 @@
 """References to Wizard101 Central pages, and turning them back into URLs.
 
 A bot records where its drops came from so the table can be refreshed later. What
-it records is a **page title** — ``Creature:Luska Charmbeak`` — never a URL. The
+it records is a **page title** — ``Creature:Lost Soul`` — never a URL. The
 scheme and host come from :data:`WIKI_HOST` in this file, so a bot file cannot
 express a different host at all.
 
@@ -101,7 +101,7 @@ def is_valid_title(title: str) -> bool:
 def page_title(value: str) -> str | None:
     """Normalise *value* to a bare page title, or None if it is not usable.
 
-    Accepts either a title already (``Creature:Luska Charmbeak``) or a full wiki
+    Accepts either a title already (``Creature:Lost Soul``) or a full wiki
     URL, so a user can paste whatever the browser gave them and the stored form is
     the same either way.
     """

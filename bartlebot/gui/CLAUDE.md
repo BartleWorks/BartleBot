@@ -697,6 +697,14 @@ tools' Run-mode page is deliberately *empty*, so nothing there moves when the mo
 changes; the mode toggle right-aligns inside its own slot and stays anchored to the
 margin whether it holds one button or two.
 
+**The failure-edge eye is a three-state cycle, not a toggle**, and the glyph is the
+only thing reporting which state it is in — a clear eye, an eye behind a broken slash,
+an eye behind a solid one. So it is deliberately not `setCheckable`: a checked look
+cannot tell two of the three apart, and the button carries no label to do it instead.
+`IconButton.set_icon_name` is the swap, which is exactly the "not driven by this
+button's own checked state" case it exists for. `docs/RETURN_ROUTING.md` says what the
+middle state hides and why.
+
 **Bar B's height must not depend on the mode**, and each metadata field is a
 `_Swappable` — a `QStackedLayout` holding its label and its editor — for exactly that
 reason. A stack reserves the taller of the pair in every state, so the Run/Edit swap

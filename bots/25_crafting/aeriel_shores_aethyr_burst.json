@@ -8,10 +8,12 @@
   "recovery_state": "state_29",
   "drops": [
     {
-      "name": "Shocked Key"
+      "name": "Shocked Key",
+      "category": "Reagents"
     },
     {
-      "name": "Silver Chest"
+      "name": "Silver Chest",
+      "category": "Reagents"
     }
   ],
   "authors": "BartleBot",

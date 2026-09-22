@@ -10,6 +10,12 @@ Conventions for everything under `bartlebot/nodes/`, plus the two game-facing pr
 4. Action nodes return `"SUCCESS"` / `"FAILURE"`; condition nodes return `"TRUE"` / `"FALSE"`
 5. The GUI auto-generates parameter forms and tooltips from `NODE_SPEC`
 
+Use those four names and no others unless the node genuinely has a third outcome. The
+failure pair is `schema.FALLTHROUGH_RETURNS`: a graph that routes neither of them sends
+the run to the bot's recovery state, so a node inventing `"ERROR"` gets no default and
+spins to the no-match limit instead. `docs/RETURN_ROUTING.md` has the rest, including how
+an author marks a return value fatal.
+
 ## Multi-client coordination
 Use `poll_each_until_seen()` from `bartlebot/nodes/node_helpers.py` for operations that must complete across all clients (zone changes, prompts, loading screens).
 

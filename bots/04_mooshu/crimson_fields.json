@@ -2011,16 +2011,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_46",
       "dest": "state_1",
       "when": "SUCCESS",
@@ -2131,16 +2121,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_4",
       "dest": "state_4",
       "when": "FAILURE",
@@ -2203,36 +2183,6 @@
       "trigger": "advance",
       "source": "state_22",
       "dest": "state_22",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_23",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_24",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_26",
-      "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -2383,26 +2333,6 @@
       "trigger": "advance",
       "source": "state_42",
       "dest": "state_42",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_40",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_46",
-      "dest": "state_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",

@@ -229,16 +229,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_26",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_13",
       "dest": "state_19",
       "when": "SUCCESS",
@@ -249,29 +239,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_26",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_19",
       "dest": "state_25",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_26",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -329,16 +299,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_24",
-      "dest": "state_26",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_25",
       "dest": "state_22",
       "when": "SUCCESS",
@@ -389,29 +349,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_26",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_9",
       "dest": "state_11",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_26",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],

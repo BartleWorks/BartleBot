@@ -82,7 +82,7 @@ def test_blank_input_is_rejected():
 
 @pytest.mark.parametrize(
     "title",
-    ["Creature:Luska Charmbeak", "Item:Amber", "Creature:Sylster Glowstorm", "NPC:O'Leary", "Item:Boots (Level 90+)"],
+    ["Creature:Lost Soul", "Item:Amber", "Creature:Lord Nightshade", "NPC:O'Leary", "Item:Boots (Level 90+)"],
 )
 def test_real_titles_are_valid(title):
     assert is_valid_title(title)
@@ -117,17 +117,17 @@ def test_unusable_titles_are_refused(title):
 
 
 def test_a_title_passes_through():
-    assert page_title("Creature:Luska Charmbeak") == "Creature:Luska Charmbeak"
+    assert page_title("Creature:Lost Soul") == "Creature:Lost Soul"
 
 
 def test_a_pasted_url_becomes_a_title():
-    url = f"https://{WIKI_HOST}/wiki/Creature:Luska_Charmbeak"
-    assert page_title(url) == "Creature:Luska Charmbeak"
+    url = f"https://{WIKI_HOST}/wiki/Creature:Lost_Soul"
+    assert page_title(url) == "Creature:Lost Soul"
 
 
 def test_a_percent_encoded_url_becomes_a_title():
-    url = f"https://{WIKI_HOST}/wiki/Creature:Luska%20Charmbeak"
-    assert page_title(url) == "Creature:Luska Charmbeak"
+    url = f"https://{WIKI_HOST}/wiki/Creature:Lost%20Soul"
+    assert page_title(url) == "Creature:Lost Soul"
 
 
 def test_a_pasted_offsite_url_yields_nothing():
@@ -135,7 +135,7 @@ def test_a_pasted_offsite_url_yields_nothing():
 
 
 def test_page_url_uses_the_constant_host():
-    url = page_url("Creature:Luska Charmbeak")
+    url = page_url("Creature:Lost Soul")
     assert url.startswith(f"https://{WIKI_HOST}/wiki/")
 
 
@@ -144,7 +144,7 @@ def test_page_url_refuses_an_unusable_title():
 
 
 def test_title_and_url_round_trip():
-    title = "Creature:Sylster Glowstorm"
+    title = "Creature:Lord Nightshade"
     assert page_title(page_url(title)) == title
 
 
@@ -154,8 +154,8 @@ def test_title_and_url_round_trip():
 
 
 def test_a_recorded_title_resolves_to_a_url():
-    params = {"wiki_page": "Creature:Luska Charmbeak"}
-    assert resolve_wiki_page(params) == f"https://{WIKI_HOST}/wiki/Creature:Luska%20Charmbeak"
+    params = {"wiki_page": "Creature:Lost Soul"}
+    assert resolve_wiki_page(params) == f"https://{WIKI_HOST}/wiki/Creature:Lost%20Soul"
 
 
 def test_no_page_recorded_resolves_to_nothing():

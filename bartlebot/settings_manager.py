@@ -73,7 +73,8 @@ class _CanvasSettings(BaseModel):
     auto_layout_on_load: bool = True
     lod_compact_threshold: float = 0.6
     snap_to_grid: bool = False
-    show_failure_edges: bool = True
+    show_failure_edges: bool = True  # superseded by failure_edge_mode; kept so an older build still reads one
+    failure_edge_mode: str = "all"  # "all" | "hide_recovery" | "none" -- see canvas.bot_canvas
     zoom_step: float = 1.15  # wheel zoom multiplier per step (1.05–1.30)
     pan_animation_ms: int = 300  # smooth-pan duration in ms; 0 = instant
     grid_style: str = "dots"  # "dots" | "lines" | "none"
@@ -133,6 +134,7 @@ _DEFAULTS: dict[str, Any] = {
         "lod_compact_threshold": 0.6,
         "snap_to_grid": False,
         "show_failure_edges": True,
+        "failure_edge_mode": "all",
         "zoom_step": 1.15,
         "pan_animation_ms": 300,
         "grid_style": "dots",

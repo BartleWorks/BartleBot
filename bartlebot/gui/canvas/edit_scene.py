@@ -19,12 +19,22 @@ from PyQt6.QtWidgets import (
     QGraphicsItem,
     QGraphicsLineItem,
     QGraphicsScene,
+    QInputDialog,
+    QLineEdit,
     QMessageBox,
     QPushButton,
     QWidget,
 )
 
-from bartlebot.bot.schema import BotConfig, RegionModel, StateModel, SubgraphDefinition, SubgraphSource, TransitionModel
+from bartlebot.bot.schema import (
+    FALLTHROUGH_RETURNS,
+    BotConfig,
+    RegionModel,
+    StateModel,
+    SubgraphDefinition,
+    SubgraphSource,
+    TransitionModel,
+)
 from bartlebot.gui.canvas.edge_item import (
     EdgeItem,
     bridge_y_above,
@@ -32,7 +42,16 @@ from bartlebot.gui.canvas.edge_item import (
     is_above_routed,
 )
 from bartlebot.gui.canvas.graph_view import GraphView
-from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H, NODE_W, NodeItem, set_scene_rect_and_repaint
+from bartlebot.gui.canvas.node_item import (
+    GRID_H,
+    GRID_W,
+    NODE_H,
+    NODE_W,
+    PORT_MARK_RECOVERY,
+    PORT_MARK_STOP,
+    NodeItem,
+    set_scene_rect_and_repaint,
+)
 from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.menu_utils import popup_menu
@@ -188,6 +207,38 @@ def _required_field_empty(field, params: dict) -> bool:
     return False  # int, float, bool, xyz always have a value
 
 
+def port_marks_for(state: StateModel, config: BotConfig) -> dict[str, str]:
+    """Which of *state*'s output ports act without an edge, and as what.
+
+    Return name -> ``PORT_MARK_STOP`` for one the author marked fatal, or
+    ``PORT_MARK_RECOVERY`` for an unrouted failure the engine will send to the
+    recovery node. Mirrors BotMachine: a state with no outgoing transitions at all
+    is terminal and stops there, so none of its ports is marked.
+    """
+    outgoing = [t for t in config.transitions if t.source == state.id]
+    marks: dict[str, str] = {}
+    for name in _node_returns(state.node_type):
+        if state.stop_reason(name) is not None:
+            marks[name] = PORT_MARK_STOP
+        elif outgoing and not any(t.when == name or t.when is None for t in outgoing):
+            if name in FALLTHROUGH_RETURNS and state.id != config.recovery_state:
+                marks[name] = PORT_MARK_RECOVERY
+    return marks
+
+
+def _return_is_handled_without_an_edge(state, config, return_name: str) -> bool:
+    """Whether *return_name* has somewhere to go despite having no outgoing edge.
+
+    Two ways: the author marked it an explicit stop, or it is one of
+    FALLTHROUGH_RETURNS and the engine will send it to the recovery state. The
+    recovery state's own failure is excluded, matching BotMachine._fallthrough_dest
+    -- defaulting that one would loop it onto itself, so it is still worth a warning.
+    """
+    if state.stop_reason(return_name) is not None:
+        return True
+    return return_name in FALLTHROUGH_RETURNS and state.id != config.recovery_state
+
+
 def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bool, bool, list[str], list[str]]:
     """Return (is_error, is_warning, error_reasons, warning_reasons) for a state.
 
@@ -222,7 +273,11 @@ def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bo
         if spec and spec.returns:
             outgoing_whens = {t.when for t in outgoing}
             if None not in outgoing_whens:
-                uncovered = [r.name for r in spec.returns if r.name not in outgoing_whens]
+                uncovered = [
+                    r.name
+                    for r in spec.returns
+                    if r.name not in outgoing_whens and not _return_is_handled_without_an_edge(state, config, r.name)
+                ]
                 if uncovered:
                     label = "return value" if len(uncovered) == 1 else "return values"
                     warning_reasons.append(f"Uncovered {label}: {', '.join(repr(r) for r in uncovered)}")
@@ -236,8 +291,17 @@ def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bo
 
 
 def _reachable_states(config: BotConfig) -> set[str]:
+    """Every state the run can get to from the initial one.
+
+    An unrouted failure port is an edge the engine takes and the file does not
+    record, so the walk has to follow those too. Without it the recovery node of a
+    bot whose failures all default is unreachable by transitions alone -- which
+    would warn on the one node in the graph that is reachable from everywhere, and
+    put it on ``_cleanup_orphans``' deletion list.
+    """
     if not config.initial:
         return set()
+    by_id = {s.id: s for s in config.states}
     reachable: set[str] = set()
     queue = [config.initial]
     while queue:
@@ -248,6 +312,9 @@ def _reachable_states(config: BotConfig) -> set[str]:
         for t in config.transitions:
             if t.source == sid:
                 queue.append(t.dest)
+        state = by_id.get(sid)
+        if state is not None and PORT_MARK_RECOVERY in port_marks_for(state, config).values():
+            queue.append(config.recovery_state)
     return reachable
 
 
@@ -525,6 +592,7 @@ class EditScene(QGraphicsScene):
             )
             node.set_error(is_error, reasons)
             node.set_warning(is_warning, reasons)
+            node.set_port_marks(port_marks_for(state, config))
             node.set_snap_enabled(self._snap_enabled)
             node.setPos(x, y)
             self.addItem(node)
@@ -678,6 +746,24 @@ class EditScene(QGraphicsScene):
         """Update the recovery-state amber badge across all nodes."""
         for node_id, node in self._node_items.items():
             node.set_recovery(node_id == recovery_state_id)
+        # Moving the role moves every mark that points at it, including the one the
+        # new recovery node loses on its own failure port.
+        self.refresh_port_marks()
+
+    def refresh_port_marks(self) -> None:
+        """Redraw the ports that route without an edge on them.
+
+        Recomputed from the config rather than tracked incrementally: a mark depends
+        on what edges a port *lacks*, so every edge added, deleted or rerouted
+        anywhere can change one, and a missed update leaves a port claiming a route
+        the engine will not take.
+        """
+        if self._config is None:
+            return
+        for state in self._config.states:
+            node = self._node_items.get(state.id)
+            if node is not None:
+                node.set_port_marks(port_marks_for(state, self._config))
 
     def refresh_errors(self) -> None:
         """Recompute and apply error/warning indicators for all nodes."""
@@ -1256,6 +1342,8 @@ class EditScene(QGraphicsScene):
                     lambda _=None, s=port_node.state_id, r=port_return: self._prompt_insert_at_output_port(s, r)
                 )
                 menu.addAction(act_port)
+            self._add_stop_actions(menu, port_node.state_id, port_return)
+            if not menu.isEmpty():
                 menu.addSeparator()
         elif port_in_hit is not None:
             if not self._port_carries_internal_edge(port_in_hit.state_id, None, incoming=True):
@@ -1317,6 +1405,69 @@ class EditScene(QGraphicsScene):
                     )
                     menu.addAction(act_rem)
         self._add_create_region_action(menu)
+
+    def _add_stop_actions(self, menu, state_id: str, return_name: str | None) -> None:
+        """Offer to make this output port end the run, or to undo that.
+
+        Only on a port with no edge on it. A stop outranks every transition the
+        engine might otherwise fire, so offering it on a routed port would be a way
+        to disable an edge that is still drawn -- the confusion this whole feature
+        exists to remove.
+        """
+        if self._config is None or return_name is None or self.is_locked(state_id):
+            return
+        state = next((st for st in self._config.states if st.id == state_id), None)
+        if state is None:
+            return
+        if state.stop_reason(return_name) is not None:
+            act_clear = QAction(f"Clear Stop on {return_name} Port", menu)
+            act_clear.triggered.connect(lambda _=None: self._set_port_stop(state_id, return_name, None))
+            menu.addAction(act_clear)
+            return
+        if any(t.source == state_id and (t.when == return_name or t.when is None) for t in self._config.transitions):
+            return
+        act_stop = QAction(f"Stop Bot on {return_name}…", menu)
+        act_stop.triggered.connect(lambda _=None: self._prompt_port_stop(state_id, return_name))
+        menu.addAction(act_stop)
+
+    def _prompt_port_stop(self, state_id: str, return_name: str) -> None:
+        """Ask for the reason shown to the user, then mark the port a stop.
+
+        Cancel means cancel; an empty reason is accepted, since a port can be fatal
+        for a reason too obvious to write down and refusing the OK would only teach
+        authors to type a space.
+        """
+        parent = self.views()[0] if self.views() else None
+        reason, ok = QInputDialog.getText(
+            parent,
+            "Stop Bot",
+            f"Why does {return_name} end the run?\nThis is shown to the user when it does.",
+            QLineEdit.EchoMode.Normal,
+            "",
+        )
+        if not ok:
+            return
+        self._set_port_stop(state_id, return_name, reason.strip())
+
+    def _set_port_stop(self, state_id: str, return_name: str, reason: str | None) -> None:
+        """Add or remove *return_name* from a state's stops. None removes it."""
+        if self._config is None:
+            return
+        state = next((st for st in self._config.states if st.id == state_id), None)
+        if state is None:
+            return
+        self._pre_edit("Clear Stop" if reason is None else "Set Stop")
+        stops = dict(state.stops or {})
+        if reason is None:
+            stops.pop(return_name, None)
+        else:
+            stops[return_name] = reason
+        # Back to None when empty so the key stays out of the saved file, matching
+        # what StateModel.stops documents.
+        state.stops = stops or None
+        self.refresh_port_marks()
+        self.refresh_errors()
+        self.graph_changed.emit()
 
     def _build_region_menu(self, menu, item: RegionItem, scene_pos: QPointF) -> None:
         rid = item.region_id
@@ -1461,6 +1612,7 @@ class EditScene(QGraphicsScene):
         self._recompute_offsets()
         self._update_scene_rect()
         self.refresh_terminal()
+        self.refresh_port_marks()
         self.refresh_errors()
         self.graph_changed.emit()
 
@@ -1576,6 +1728,7 @@ class EditScene(QGraphicsScene):
 
         # Ensure terminal/error badges are correct even with no internal transitions
         self.refresh_terminal()
+        self.refresh_port_marks()
         self.refresh_errors()
 
         # Select the pasted nodes
@@ -1857,6 +2010,7 @@ class EditScene(QGraphicsScene):
         if state_id in self._node_items:
             self.removeItem(self._node_items.pop(state_id))
         self.refresh_terminal()
+        self.refresh_port_marks()
         self.refresh_errors()
         self._region_manager.flush_regions()
         self._in_structural_edit = prev_in_structural
@@ -1904,6 +2058,7 @@ class EditScene(QGraphicsScene):
         self._edge_items = remaining
         self._recompute_offsets()
         self.refresh_terminal()
+        self.refresh_port_marks()
         self.refresh_errors()
         self.graph_changed.emit()
         return True
@@ -2009,6 +2164,7 @@ class EditScene(QGraphicsScene):
 
         self._update_scene_rect()
         self.refresh_terminal()
+        self.refresh_port_marks()
         self.refresh_errors()
         self.graph_changed.emit()
 

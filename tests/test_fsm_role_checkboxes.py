@@ -179,6 +179,10 @@ def test_moving_the_initial_state_revalidates(canvas):
     """The orphan warnings have to move with the role, not just the badge."""
     assert not any("Unreachable" in w for w in canvas.validation_warnings())
 
+    # The recovery role has to move off "a" too. An unrouted failure falls through
+    # to the recovery state, so while "a" holds that role every node in the graph
+    # reaches it and no rearrangement of the initial role can orphan it.
+    _show(canvas, "c").request_recovery_role()
     _show(canvas, "b").request_initial_role()
 
     assert "a: Unreachable from initial state" in canvas.validation_warnings()

@@ -41,7 +41,13 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot import card_art
-from bartlebot.bot.schema import BotConfig, SubgraphDefinition, SubgraphInput, SubgraphInputBinding
+from bartlebot.bot.schema import (
+    FALLTHROUGH_RETURNS,
+    BotConfig,
+    SubgraphDefinition,
+    SubgraphInput,
+    SubgraphInputBinding,
+)
 from bartlebot.bot_folders import ALL_BADGE, folder_badge, folder_caption
 from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
@@ -129,6 +135,42 @@ _BTN_SIZE = QSize(32, 32)
 _BTN_GAP = 4
 _GROUP_GAP = 10
 _PAIR_WIDTH = _BTN_SIZE.width() * 2 + _BTN_GAP
+
+
+# What the failure-edge toggle cycles through. Three rather than two because a
+# failure edge that merely goes to the recovery node is the one an author almost
+# never needs to look at -- 28% of every edge in the shipped library before the
+# default made them implicit -- while one going anywhere else is a real branch.
+# See docs/RETURN_ROUTING.md.
+FAILURE_EDGES_ALL = "all"
+FAILURE_EDGES_HIDE_RECOVERY = "hide_recovery"
+FAILURE_EDGES_NONE = "none"
+_FAILURE_EDGE_CYCLE = (FAILURE_EDGES_ALL, FAILURE_EDGES_HIDE_RECOVERY, FAILURE_EDGES_NONE)
+# The glyph carries the state, since the button has no label: a clear eye, an eye
+# behind a broken slash, an eye behind a solid one.
+_FAILURE_EDGE_ICONS = {
+    FAILURE_EDGES_ALL: "failure_edges",
+    FAILURE_EDGES_HIDE_RECOVERY: "failure_edges_some",
+    FAILURE_EDGES_NONE: "failure_edges_none",
+}
+_FAILURE_EDGE_TOOLTIPS = {
+    FAILURE_EDGES_ALL: "Failure/False edges: all shown (F)",
+    FAILURE_EDGES_HIDE_RECOVERY: "Failure/False edges: recovery edges hidden (F)",
+    FAILURE_EDGES_NONE: "Failure/False edges: all hidden (F)",
+}
+
+
+def _stored_failure_edge_mode(sm) -> str:
+    """The saved mode, falling back to the bool this setting used to be.
+
+    A settings.json written before the third state existed carries only
+    ``show_failure_edges``, and reading it is the difference between honouring a
+    user's hidden edges and silently turning them back on.
+    """
+    mode = sm.get("canvas", "failure_edge_mode", default=None)
+    if mode in _FAILURE_EDGE_ICONS:
+        return mode
+    return FAILURE_EDGES_ALL if sm.get("canvas", "show_failure_edges", default=True) else FAILURE_EDGES_NONE
 
 
 def _icon_btn(icon_name: str, tooltip: str) -> IconButton:
@@ -992,10 +1034,11 @@ class BotCanvas(QWidget):
         self._fit_btn = _icon_btn("fit", "Fit to Canvas (Ctrl+0)")
         self._fit_btn.clicked.connect(self._view.fit_scene)
 
-        self._failure_edges_btn = _icon_btn("failure_edges", "Toggle Failure/False Edges")
-        self._failure_edges_btn.setCheckable(True)
-        self._failure_edges_btn.setChecked(True)
-        self._failure_edges_btn.toggled.connect(self._on_failure_edges_toggled)
+        # Not checkable: three states, and the glyph rather than a checked look is
+        # what reports which one -- see _FAILURE_EDGE_ICONS.
+        self._failure_edge_mode = FAILURE_EDGES_ALL
+        self._failure_edges_btn = _icon_btn("failure_edges", _FAILURE_EDGE_TOOLTIPS[FAILURE_EDGES_ALL])
+        self._failure_edges_btn.clicked.connect(self._cycle_failure_edge_mode)
 
         self._add_state_btn = _icon_btn("plus", "Add State")
         self._add_state_btn.clicked.connect(self._on_add_state)
@@ -1124,7 +1167,7 @@ class BotCanvas(QWidget):
         # ── Minimap overlay — bottom-right corner of the graph view ──────
         self._minimap = _MinimapView(self._scene, self._view, parent=self._view)
         self._minimap.setVisible(SettingsManager.instance().get("canvas", "minimap_visible", default=True))
-        self._failure_edges_btn.setChecked(SettingsManager.instance().get("canvas", "show_failure_edges", default=True))
+        self._set_failure_edge_mode(_stored_failure_edge_mode(SettingsManager.instance()), persist=False)
 
         # ── Favorites bar — shown only in Edit mode ───────────────────
         self._favorites_bar = FavoritesBar()
@@ -1183,9 +1226,7 @@ class BotCanvas(QWidget):
 
         failure_edges_shortcut = QShortcut(QKeySequence("F"), self._view)
         failure_edges_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
-        failure_edges_shortcut.activated.connect(
-            lambda: self._failure_edges_btn.setChecked(not self._failure_edges_btn.isChecked())
-        )
+        failure_edges_shortcut.activated.connect(self._cycle_failure_edge_mode)
 
         record_shortcut = QShortcut(QKeySequence("Ctrl+R"), self)
         record_shortcut.activated.connect(self._param_panel.toggle_record)
@@ -1254,8 +1295,7 @@ class BotCanvas(QWidget):
         self._view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         sm = SettingsManager.instance()
         self._minimap.setVisible(sm.get("canvas", "minimap_visible", default=True))
-        show_failure = sm.get("canvas", "show_failure_edges", default=True)
-        self._failure_edges_btn.setChecked(show_failure)
+        self._set_failure_edge_mode(_stored_failure_edge_mode(sm), persist=False)
         self.exit_focus_mode()
         self._close_search()
         self._end_subgraph_edit()
@@ -1276,7 +1316,7 @@ class BotCanvas(QWidget):
         _sm = SettingsManager.instance()
         self._scene.set_snap_enabled(_sm.get("canvas", "snap_to_grid", default=False))
         self._scene.set_grid_style(_sm.get("canvas", "grid_style", default="dots"))
-        self._apply_failure_edge_visibility(self._failure_edges_btn.isChecked())
+        self._apply_failure_edge_visibility()
         self._param_panel.show_idle()
         self._view.fit_scene()
         self._minimap.fit_to_scene()
@@ -1465,19 +1505,51 @@ class BotCanvas(QWidget):
         self._minimap.setVisible(sm.get("canvas", "minimap_visible", default=True))
         self._scene.set_snap_enabled(sm.get("canvas", "snap_to_grid", default=False))
         self._scene.set_grid_style(sm.get("canvas", "grid_style", default="dots"))
-        show_failure = sm.get("canvas", "show_failure_edges", default=True)
-        self._failure_edges_btn.setChecked(show_failure)
-        self._apply_failure_edge_visibility(show_failure)
+        self._set_failure_edge_mode(_stored_failure_edge_mode(sm), persist=False)
         self._reposition_banner()
 
-    def _apply_failure_edge_visibility(self, visible: bool) -> None:
-        for item in self._scene.items():
-            if isinstance(item, EdgeItem) and item.when in ("FAILURE", "FALSE"):
-                item.setVisible(visible)
+    def _apply_failure_edge_visibility(self) -> None:
+        """Show or hide each failure edge according to the current mode.
 
-    def _on_failure_edges_toggled(self, checked: bool) -> None:
-        SettingsManager.instance().set("canvas", "show_failure_edges", value=checked)
-        self._apply_failure_edge_visibility(checked)
+        The middle mode asks where the edge *goes*, not what it is: an explicit
+        failure edge into the recovery node says exactly what the default already
+        does, so hiding it leaves a graph that reads like one written after the
+        default existed. Every other failure edge is a real branch and stays.
+        """
+        mode = self._failure_edge_mode
+        recovery = self._config.recovery_state if self._config else None
+        by_item = {ei: d for _s, _w, d, ei in self._scene.edge_items}
+        for item in self._scene.items():
+            if not isinstance(item, EdgeItem) or item.when not in FALLTHROUGH_RETURNS:
+                continue
+            if mode == FAILURE_EDGES_NONE:
+                visible = False
+            elif mode == FAILURE_EDGES_HIDE_RECOVERY:
+                visible = by_item.get(item) != recovery
+            else:
+                visible = True
+            item.setVisible(visible)
+
+    @property
+    def failure_edge_mode(self) -> str:
+        """Which failure edges the canvas is currently drawing."""
+        return self._failure_edge_mode
+
+    def _cycle_failure_edge_mode(self) -> None:
+        idx = _FAILURE_EDGE_CYCLE.index(self._failure_edge_mode)
+        self._set_failure_edge_mode(_FAILURE_EDGE_CYCLE[(idx + 1) % len(_FAILURE_EDGE_CYCLE)])
+
+    def _set_failure_edge_mode(self, mode: str, *, persist: bool = True) -> None:
+        self._failure_edge_mode = mode if mode in _FAILURE_EDGE_ICONS else FAILURE_EDGES_ALL
+        self._failure_edges_btn.set_icon_name(_FAILURE_EDGE_ICONS[self._failure_edge_mode])
+        self._failure_edges_btn.setToolTip(_FAILURE_EDGE_TOOLTIPS[self._failure_edge_mode])
+        if persist:
+            sm = SettingsManager.instance()
+            sm.set("canvas", "failure_edge_mode", value=self._failure_edge_mode)
+            # Kept in step so a downgrade to a build that only knows the bool still
+            # gets the closer of the two answers.
+            sm.set("canvas", "show_failure_edges", value=self._failure_edge_mode != FAILURE_EDGES_NONE)
+        self._apply_failure_edge_visibility()
 
     def _active_state_label(self) -> str:
         """Return the display label for the current active state, falling back to its id."""
@@ -1735,7 +1807,7 @@ class BotCanvas(QWidget):
         _sm = SettingsManager.instance()
         self._scene.set_snap_enabled(_sm.get("canvas", "snap_to_grid", default=False))
         self._scene.set_grid_style(_sm.get("canvas", "grid_style", default="dots"))
-        self._apply_failure_edge_visibility(self._failure_edges_btn.isChecked())
+        self._apply_failure_edge_visibility()
         self._view.fit_scene()
         self._minimap.fit_to_scene()
         self.config_changed.emit()
@@ -2600,7 +2672,7 @@ class BotCanvas(QWidget):
         self._toolbar.set_config(config)
         self._toolbar.set_editable(self._mode == BotMode.EDIT)
         self._scene.setup(config)
-        self._apply_failure_edge_visibility(self._failure_edges_btn.isChecked())
+        self._apply_failure_edge_visibility()
         self._param_panel.show_idle()
         self._on_scene_changed()
 
