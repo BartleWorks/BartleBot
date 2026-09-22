@@ -92,7 +92,7 @@ _LABELS: dict[str, str] = {
     "status_paused": "Paused",
     "pill_warning_hover": "Warning pill (hover)",
     "pill_neutral_bg": "Neutral pill",
-    "pill_activity_bg": "Activity tag pill",
+    "pill_activity_bg": "Activities tag pill",
     "pill_text": "Pill text",
     "search_match_current": "Current match",
     "search_match_other": "Other matches",

@@ -175,7 +175,7 @@ TAG_TEXTURES: dict[str, str] = {
     "Pets": "GUI/QuestPage/Art_Quest_Pet.dds",
     "Housing": "GUI/QuestPage/Art_Quest_Housing.dds",
     "Gold": "GUI/QuestPage/Art_Quest_Max_Gold.dds",
-    # Activity
+    # Activities
     "Boss": "GUI/NpcPortraits/Art_Portrait_Wraith.dds",
     "Mobs": "GUI/NpcPortraits/Art_Portrait_Ghost_Blue.dds",
     "Dungeon": "GUI/QuestButtons/Use_Sigil_4_Player.dds",

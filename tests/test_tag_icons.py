@@ -240,7 +240,7 @@ def test_the_pill_keeps_its_name_without_art(qapp, art_home):
 
     assert not pill.has_icon
     assert pill.text() == "Boss"
-    assert group_accent("Activity") in pill.styleSheet()
+    assert group_accent("Activities") in pill.styleSheet()
 
 
 def test_the_chip_takes_the_pills_medallion_shape(qapp, art_home):

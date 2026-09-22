@@ -65,12 +65,12 @@ def test_nothing_is_dimmed_when_counts_are_unknown():
 
 
 def test_the_two_groups_get_different_dots():
-    assert group_accent("Rewards") != group_accent("Activity")
+    assert group_accent("Rewards") != group_accent("Activities")
 
 
 def test_tag_group_finds_the_owning_group():
     assert tag_group("Gear") == "Rewards"
-    assert tag_group("Dungeon") == "Activity"
+    assert tag_group("Dungeon") == "Activities"
     assert tag_group("Nonsense") == ""
 
 
@@ -169,7 +169,7 @@ def test_the_editor_offers_no_counts(qapp):
     """Counts describe the library, which the editor knows nothing about."""
     section = _header()
     section.set_config(_bot())
-    picker = section._tags_field._pickers["Activity"]
+    picker = section._tags_field._pickers["Activities"]
     picker._open()
 
     assert all(w._row.meta == "" for w in picker._popup.findChildren(_RowWidget))
@@ -182,10 +182,10 @@ def test_the_editor_offers_no_counts(qapp):
 
 
 def test_a_grouped_button_offers_only_its_own_group(qapp):
-    btn = TagPickerButton(group="Activity")
+    btn = TagPickerButton(group="Activities")
     btn._open()
 
-    assert len(btn._popup.findChildren(_RowWidget)) == len(TAG_GROUPS["Activity"])
+    assert len(btn._popup.findChildren(_RowWidget)) == len(TAG_GROUPS["Activities"])
     btn._popup.close()
 
 
@@ -218,9 +218,9 @@ def test_an_ungrouped_button_still_lists_its_selection(qapp):
 
 
 def test_tag_sections_for_a_group_drops_the_others():
-    sections = tag_sections(group="Activity")
+    sections = tag_sections(group="Activities")
 
-    assert [name for name, _ in sections] == ["Activity"]
+    assert [name for name, _ in sections] == ["Activities"]
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +269,7 @@ def test_the_picker_buttons_name_their_group_and_nothing_else(qapp):
     selection, which is the library's reason for carrying one."""
     field, _section = _field([], editable=True)
 
-    assert [b.text() for b in field._pickers.values()] == ["Rewards", "Activity"]
+    assert [b.text() for b in field._pickers.values()] == ["Rewards", "Activities"]
 
 
 def test_the_picker_buttons_lead_the_flow_and_do_not_move_with_the_chips(qapp):
@@ -323,7 +323,7 @@ def test_tags_from_both_pickers_come_back_in_vocabulary_order(qapp):
     section.set_config(config)
     section.set_editable(True)
 
-    for group, tag in (("Activity", "Boss"), ("Rewards", "Jewels"), ("Rewards", "Gear")):
+    for group, tag in (("Activities", "Boss"), ("Rewards", "Jewels"), ("Rewards", "Gear")):
         picker = section._tags_field._pickers[group]
         picker._open()
         picker._popup._on_row_toggled(tag, True)
@@ -338,4 +338,4 @@ def test_a_chip_is_coloured_by_its_group(qapp):
     styles = " ".join(c.styleSheet() for c in field.findChildren(TagChip))
 
     assert group_accent("Rewards") in styles
-    assert group_accent("Activity") in styles
+    assert group_accent("Activities") in styles
