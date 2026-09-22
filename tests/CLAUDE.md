@@ -176,5 +176,13 @@ pump. Then **assert the focus you arranged** — `_shown_page` in
 `test_growing_text_edit.py` is the pattern, and it matters at both ends: a test asserting
 that an *unfocused* widget stays put passes for free on a window that had no focus to give.
 
+**A test that reads a live input device is racing the person at the keyboard.** Sampling
+`QCursor.pos()` in the assertion *and* in the code under test compares two reads taken at
+different instants, and moving the real mouse between them fails the test — on an idle
+machine never, on one in use intermittently. `-n auto` is not implicated and running it
+alone proves nothing. Pin the device by patching the name the module under test calls,
+as `pinned_pointer` in `test_graph_view_cursor_priming.py` does; `QCursor.setPos` would
+also work and is worse, because it moves the user's pointer.
+
 `--dist loadfile` would hide this class of bug by making the accident stable. Order
 independence is a property worth keeping, so CI stays on `load`.
