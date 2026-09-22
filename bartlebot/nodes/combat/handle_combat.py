@@ -62,7 +62,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "exceeds this many seconds, exit early with FAILURE. "
             "0 = no limit."
         ),
-        default=0.0,
+        default=600.0,
     ),
 ]
 
@@ -77,7 +77,7 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("SUCCESS", "All players have exited combat successfully."),
         ReturnSpec(
             "FAILURE",
-            "No valid target found, or players failed to enter combat within the timeout.",
+            "No valid target found, or players failed to enter and complete combat within the timeout.",
         ),
     ],
     required_bot_options=[],
@@ -219,7 +219,21 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log("All clients in combat — running SprintyCombat")
 
     # 5. Run SprintyCombat in parallel using the per-client DSL resolved earlier.
-    await asyncio.gather(*[_run_combat(c, dsl) for c, dsl in zip(clients, per_client_dsl)])
+    # Enforced against max_duration too: a fight running long is exactly the case
+    # the timeout is supposed to catch, not just the wait to enter it.
+    combat_awaitable = asyncio.gather(*[_run_combat(c, dsl) for c, dsl in zip(clients, per_client_dsl)])
+    if max_duration > 0:
+        remaining = max_duration - (time.monotonic() - _node_start)
+        try:
+            await asyncio.wait_for(combat_awaitable, timeout=max(remaining, 0))
+        except TimeoutError:
+            machine.log(
+                f"FAILURE: max_duration {max_duration:.0f}s exceeded during SprintyCombat",
+                logging.WARNING,
+            )
+            return "FAILURE"
+    else:
+        await combat_awaitable
 
     machine.log("SprintyCombat finished for all clients", logging.DEBUG)
 

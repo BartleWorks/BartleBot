@@ -1,5 +1,6 @@
 """Unit tests for the handle_combat node."""
 
+import asyncio
 from unittest.mock import AsyncMock, call, patch
 
 import pytest
@@ -139,6 +140,29 @@ async def test_timeout_entering_combat_fails():
         patch.object(hc, "POLL_INTERVAL", 0),
     ):
         result = await hc.run(FakeMachine(), [client], _DEFAULT_PARAMS)
+
+    assert result == "FAILURE"
+
+
+async def test_timeout_during_sprinty_combat_fails():
+    """Players enter combat but SprintyCombat itself outlasts max_duration → FAILURE."""
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = True
+
+    async def _hang_combat(_client, _dsl):
+        await asyncio.sleep(10)
+
+    with (
+        patch("bartlebot.nodes.combat.handle_combat._run_combat", new=AsyncMock(side_effect=_hang_combat)),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
+        result = await hc.run(
+            FakeMachine(),
+            [client],
+            {"enemy": "", "use_default_strategy": True, "max_duration": 0.05},
+        )
 
     assert result == "FAILURE"
 
