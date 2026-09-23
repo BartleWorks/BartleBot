@@ -75,6 +75,9 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     required_bot_options=[_SAFETY_DELAY_OPTION, _LEVEL_SCALING_CLIENTS_OPTION],
+    # Each tick already retries every player up to MAX_RETRIES rounds, so a FAILURE that
+    # survives a few more ticks is not going to clear by itself.
+    max_consecutive_retries=3,
 )
 
 from bartlebot.nodes.timing import LEVEL_SCALING_STAGGER_DELAY, MAX_RETRIES, POLL_INTERVAL
