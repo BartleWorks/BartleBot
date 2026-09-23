@@ -4,6 +4,10 @@ Where all 82 shipped bots stand against the four core templates, what each one c
 migrate, and what the templates and subgraphs have to cover to absorb them. Measured over
 `bots/` on 2026-09-22; regenerate rather than hand-edit if the corpus moves.
 
+`docs/SUBGRAPH_CALLS.md` Stage 2 has since landed, so the counts, tiers and per-bot rows below
+are the pre-Stage-2 measurement: they still name node types that were merged or removed, and
+still count the outliers Stage 2 cleared. The prose sections record what landed.
+
 Scope is the four core categories for 1.0.0 — boss, dungeon, spellement, reagent. Mob and
 gauntlet have templates and are listed at the end; the activity types with no template
 (raids, boss rematches, lost pages, special events, monstrology, gardening, skeleton keys)
@@ -23,6 +27,9 @@ the split is the whole point — only the third is a blocker:
 | **nav to fold** | `teleport_to_world_hub`, `go_to_world`, `enter_zone_via_object`, `check_zone`, `teleport_to_friend`, `teleport_to_player_if_in_zone`, `change_to_next_realm` | mechanical — `go_to_zone` plans all of it |
 | **slot** | the bot's own content: combats, interacts, coordinate teleports, room-to-room `enter_zone`, extra reagent spawns | irreducible; it is what the template's slot is for |
 | **outlier** | a node no template can express | a design decision, per node |
+
+Two of those types are gone since the measurement: `teleport_to_player_if_in_zone` was removed
+and `change_to_next_realm` merged into `change_realm`. Both were nav either way.
 
 `teleport_to_coordinates` is deliberately *not* nav: `go_to_zone`'s own usage note says
 players "arrive wherever the last zone change puts them", so a bot that needs a position
@@ -66,31 +73,45 @@ The measurement that decided it: **four of the five bots using it have no `handl
 node at all.** The node is not competing with potions in those bots; it is standing in for
 potion handling the bot never got.
 
-| bot | potion handling | verdict |
-|---|---|---|
-| `spiral_cup_gauntlet` | none — housing gauntlet, cannot mark to refill | **legitimate, keep** |
-| `queen_calypso` | none | add `handle_potions`, drop the wait |
-| `secret_tunnel` | none | add `handle_potions`, drop the wait |
-| `valerik_brightsword` | `mark_zone` empty, so refill cannot work | fix `mark_zone`, drop the wait |
-| `monkey_spiders` | valid interior `mark_zone` | potions already work; the wait is redundant |
+| bot | potion handling | verdict | landed |
+|---|---|---|---|
+| `spiral_cup_gauntlet` | none — housing gauntlet, cannot mark to refill | **legitimate, keep** | kept, retry capped at 5 |
+| `queen_calypso` | none | add `handle_potions`, drop the wait | wait dropped; no `handle_potions` yet |
+| `secret_tunnel` | none | add `handle_potions`, drop the wait | as planned |
+| `valerik_brightsword` | `mark_zone` empty | drop the wait | wait dropped; `mark_zone` stays empty |
+| `monkey_spiders` | valid interior `mark_zone` | potions already work; the wait is redundant | as planned |
+
+`valerik_brightsword`'s verdict was first "fix `mark_zone`", on the belief that an empty one
+stops the refill. It does not: with no `mark_zone`, `handle_potions` marks wherever the players
+stand and refuses only a transit zone (Dorm, Ravenwood). The field only enforces an origin zone,
+so leaving it empty is valid, and the wait was as redundant there as in `monkey_spiders`.
+
+`queen_calypso` lost its wait in Part A, when it was rebuilt around `relog → go_to_zone →
+change_realm`, and did not gain `handle_potions` then. It is a boss bot, so the farming loop's
+top-up phase gives it one in the Stage 9 rewrite.
 
 So the node's real contract is **"for zones where `handle_potions` cannot refill"** — housing
-gauntlets today, boss rematches later, both entered through a housing item. That is worth
-recording in its module docstring, because it is the fact that stops the next author reaching
-for it as a general-purpose health check.
+gauntlets today, boss rematches later, both entered through a housing item. It is recorded in
+the module docstring and usage notes, because it is the fact that stops the next author
+reaching for it as a general-purpose health check.
 
 Keeping it with one live consumer is better than either alternative: a zero-use node is never
 exercised by the suite or the corpus, and a deleted node has to be rebuilt from scratch when
 the gauntlet bots land.
 
-The one use that stays has a `FAILURE` self-loop on an uncapped node, which spins forever. That
-is tracked with the other self-loop in *Stage 2 work* below.
+The one use that stays had a `FAILURE` self-loop on an uncapped node, which spun forever. The
+node now carries `max_consecutive_retries=5`; see *Stage 2 work* below.
 
-### `check_stat(stat, threshold)` — merge and keep
+### `check_health_and_mana` — merge and keep
 
-`check_health` and `check_mana` stay, merged. The case is narrow but real: a boss that drops no
-wisps, with wisps nearby, where collecting is free and instant and potions cost gold. Three
-consumers: `praetor_mako`, `copy_qhat`, `pyramid_of_mother_moon_tartarus_workaround`.
+`check_health` and `check_mana` stay, merged. Planned as `check_stat(stat, threshold)`, it
+landed as `check_health_and_mana(health_threshold, mana_threshold)`: a threshold per stat, so a
+bot that cares about both needs one node rather than a chain, and a threshold of 0 switches
+that stat off unread. The old two are removed. The case is narrow but real: a boss that drops no
+wisps, with wisps nearby, where collecting is free and instant and potions cost gold. It had
+three consumers — `praetor_mako`, `copy_qhat`, `pyramid_of_mother_moon_tartarus_workaround` —
+and now has none: Stage 2 dropped all three detours, and the opt-in wisp subgraph brings the
+node back in Stage 8.
 
 The useful finding is *where* they sit. In both `praetor_mako` and `copy_qhat` the detour is in
 the identical position — after the loop's exit or quicksell, before re-entry — which is the
@@ -128,7 +149,9 @@ is the wrong trade. Both nodes stay as they are.
 - **`change_to_next_realm.start_realm_page` / `end_realm_page` — delete.** One value across all
   12 reagent bots, never changed, and not something an author should be changing. Removing them
   is what makes the `change_realm` merge cheap: the merged node has no mode-dependent params
-  left to gate, so it needs no `enabled_by` / `disabled_by` work at all.
+  left to gate, so it needs no `enabled_by` / `disabled_by` work at all. Landed: the range is
+  now the constants 3–5, and every one of the 22 realm states in the library is
+  `change_realm`.
 - **`handle_combat`** combat fields live in the strategy store keyed by state id, not in the
   template signature.
 
@@ -169,6 +192,12 @@ and the GDI ceiling.
 
 ### Deleted and deferred
 
+- **`teleport_to_player_if_in_zone` is removed**, not retired as first planned. Retiring it
+  would have kept it as a step for `foulgaze`, its only consumer; once `foulgaze` opened with
+  `go_to_zone` there was no step left for it to be. Its target-picking helper,
+  `find_target_in_zone`, moved to `node_helpers`, where zone-arrival recovery uses it.
+  `form_group` is removed too; `enter_zone_via_ride` is retired from the browser and kept as a
+  `zone_navigation` step. `docs/SUBGRAPH_CALLS.md` Stage 2 has all three.
 - **`skeleton_key_boss_farmer_template.json` is deleted.** It did not run: 5 of its 10 states
   were unreachable and `enter_dungeon` had no outgoing transitions, making it a terminal state
   that stopped the run after entering the dungeon. Nothing referenced it — templates are
@@ -205,10 +234,16 @@ Across 205 self-loop transitions in the corpus, exactly two land on an uncapped 
 | `spiral_cup_gauntlet` | `state_10` | `wait_for_health` | `FAILURE` | 120 s timeout, retried forever — an unbounded sequence of two-minute waits |
 | `the_great_spyre` | `state_8` | `apply_level_scaling` | `FAILURE` | unbounded retry |
 
-Two ways to close it, and the choice is open: give those two nodes a
-`max_consecutive_retries`, matching how the other 25 do it and keeping the bound a property of
-the node; or give `BotMachine` a non-`None` default, which also protects the remaining 7
-uncapped nodes from a future author drawing the same edge.
+Two ways to close it: give those two nodes a `max_consecutive_retries`, matching how the other
+25 do it and keeping the bound a property of the node; or give `BotMachine` a non-`None`
+default, which also protects the remaining 7 uncapped nodes from a future author drawing the
+same edge.
+
+**Landed: per-node caps** — `wait_for_health` 5 (about ten minutes at the default timeout),
+`apply_level_scaling` 3, since each tick already retries every player. The default's argument
+is covered by `test_every_self_loop_lands_on_a_node_with_a_retry_cap`, which fails the suite
+the next time a shipped self-loop is drawn on an uncapped node. A `timeout` of 0 still waits
+forever within one tick, which no retry cap reaches.
 
 For contrast, `relog`'s `--FAILURE-->` self-loop in all six templates is **correct and needs no
 change**: the node carries `max_consecutive_retries=2`, the machine calls `stop()` on reaching
@@ -218,26 +253,28 @@ genuinely dead client is force-closed and relaunched by the watchers on its own.
 
 ### The nine outlier bots
 
-| bot | change |
-|---|---|
-| `queen_calypso` | add `handle_potions`; drop `wait_for_health` |
-| `secret_tunnel` | add `handle_potions`; drop `wait_for_health` |
-| `valerik_brightsword` | fix the empty `handle_potions.mark_zone`; drop `wait_for_health` |
-| `monkey_spiders` | drop `wait_for_health` — the existing interior `mark_zone` already works |
-| `spiral_cup_gauntlet` | **keep** `wait_for_health`; cap the retry so the self-loop terminates |
-| `praetor_mako` | drop the `check_health`/`check_mana` wisp detour |
-| `copy_qhat` | drop the `check_health`/`check_mana` wisp detour |
-| `pyramid_of_mother_moon_tartarus_workaround` | drop the `check_mana` detour |
-| `the_great_spyre` | cap the `apply_level_scaling` retry |
+All nine are done.
+
+| bot | change | landed |
+|---|---|---|
+| `queen_calypso` | add `handle_potions`; drop `wait_for_health` | wait dropped with its hand-rolled navigation, for `relog → go_to_zone → change_realm`; `handle_potions` left to Stage 9 |
+| `secret_tunnel` | add `handle_potions`; drop `wait_for_health` | as planned, opening with `relog → go_to_zone → change_realm` |
+| `valerik_brightsword` | drop `wait_for_health` | as planned, same opening; `mark_zone` stays empty, which is valid (see *Decisions taken*) |
+| `monkey_spiders` | drop `wait_for_health` — the existing interior `mark_zone` already works | as planned |
+| `spiral_cup_gauntlet` | **keep** `wait_for_health`; cap the retry so the self-loop terminates | capped at 5 on the node |
+| `praetor_mako` | drop the `check_health`/`check_mana` wisp detour | as planned |
+| `copy_qhat` | drop the `check_health`/`check_mana` wisp detour | as planned |
+| `pyramid_of_mother_moon_tartarus_workaround` | drop the `check_mana` detour | as planned |
+| `the_great_spyre` | cap the `apply_level_scaling` retry | capped at 3 on the node |
 
 The three detours are not simply deleted at the bot level — they are what the opt-in wisp
 subgraph re-expresses, so a bot that genuinely needs one gets it back by inserting that
 subgraph. `docs/SUBGRAPH_CALLS.md` Stage 8 has its shape.
 
-While editing `wait_for_health`, record its real contract in the module docstring: **for zones
-where `handle_potions` cannot refill** — housing gauntlets today, boss rematches later, both
-entered through a housing item. That sentence is what stops the next author reaching for it as
-a general health check, which is how four of its five current uses happened.
+`wait_for_health`'s module docstring now records its real contract: **for zones where
+`handle_potions` cannot refill** — housing gauntlets today, boss rematches later, both entered
+through a housing item. That sentence is what stops the next author reaching for it as a
+general health check, which is how four of its five former uses happened.
 
 ## What this does to the subgraph port requirement
 

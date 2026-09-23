@@ -18,7 +18,7 @@ breakdown and the decisions already taken on individual nodes live in
 |---|---|---|---|
 | 0 | — | this document, the Epic decomposition, rewritten #59 and #67 bodies | — |
 | 1 | — | one copy of a definition: shipped root, dev redirect, resolution test | done |
-| 2 | — | the node audit, the retry-cap fixes, and the nine outlier bots | — |
+| 2 | — | the node audit, the retry-cap fixes, and the nine outlier bots | done |
 | 3 | — | ports and the signature — schema, composition, validation; no UI | — |
 | 4 | — | the param model collapses to a binary | — |
 | 5 | #67 | the call node: collapsed rendering, run highlight, expand in place | — |
@@ -182,7 +182,7 @@ Measured over `bots/` (82 bots, 31 of 34 registered types in use).
 | into | from | uses | why |
 |---|---|---|---|
 | `change_realm(use_favorite_realm, …)` | `change_to_favorite_realm`, `change_to_next_realm` | 13 + 9 | Two node types for one act, and node type is the one thing neither an input nor an override can bridge. It is what lets the 12 reagent bots and the other 67 share **one** Player Sync instead of two near-identical definitions. |
-| `check_stat(stat, threshold)` | `check_health`, `check_mana` | 2 + 3 | Identical shape — one threshold, TRUE/FALSE — and they appear adjacent in the two bots that use them. Its surviving job is narrow and real; see below. |
+| `check_health_and_mana(health_threshold, mana_threshold)` | `check_health`, `check_mana` | 2 + 3 | Identical shape — one threshold, TRUE/FALSE — and they appear adjacent in the two bots that use them. Planned as `check_stat(stat, threshold)`; it landed with a threshold per stat instead, so a bot that cares about both needs one node rather than a chain, and a threshold of 0 switches that stat off. Its surviving job is narrow and real; see below. |
 
 **`change_realm` needs no schema work.** An earlier draft worried that a three-way "mode"
 choice would need `ParamField.enabled_by` extended, since that only gates on a bool. It does
@@ -191,10 +191,10 @@ across all 12 reagent bots**, have never been changed, and are not something an 
 be changing — so they are deleted outright. With them gone the merged node has no
 mode-dependent params left to gate, and `use_favorite_realm` can be a plain bool.
 
-**`check_stat`'s justification is the wisp detour, not its three current uses.** `collect_wisps`
+**`check_health_and_mana`'s justification is the wisp detour, not its three former uses.** `collect_wisps`
 already finds and teleports to the nearest wisp anywhere in the loaded zone, and returns
 instantly when there is none — so "collect wisps before entering" needs no check node and no
-coordinate. What `check_stat` earns its keep on is gating the *teleport* in the opt-in wisp
+coordinate. What `check_health_and_mana` earns its keep on is gating the *teleport* in the opt-in wisp
 subgraph (Stage 8): porting ~1,500–4,000 units away and back is worth avoiding while the
 players are already healthy. That is a genuine branch rather than a convenience.
 
@@ -316,10 +316,11 @@ because Stage 9 will re-author both bots and the defect would survive the rewrit
 ### The nine outlier bots
 
 The only bots this stage edits, and they are edited so the vocabulary is final before the
-templates are rebuilt. `docs/LIBRARY_MIGRATION.md` lists them per bot: four `wait_for_health`
-uses removed (`queen_calypso` and `secret_tunnel` gain `handle_potions`,
-`valerik_brightsword` has its empty `mark_zone` fixed, `monkey_spiders` is simply redundant),
-three `check_health`/`check_mana` detours resolved, and the two self-loops above.
+templates are rebuilt. `docs/LIBRARY_MIGRATION.md` lists them per bot, with what landed: four
+`wait_for_health` uses removed, three `check_health`/`check_mana` detours dropped, and the two
+self-loops above capped. The self-loops went to per-node caps — `wait_for_health` 5,
+`apply_level_scaling` 3 — with `test_every_self_loop_lands_on_a_node_with_a_retry_cap` catching
+the next one drawn on an uncapped node, rather than to a `BotMachine` default.
 
 ## Stage 3 — ports and the signature
 
@@ -479,7 +480,7 @@ What replaces it is two things that are not a shared definition:
   zero cost: the node scans the client's entity list, teleports to the nearest wisp anywhere in
   the loaded zone, and breaks immediately when there is none, so the no-wisp case costs one
   scan rather than the timeout.
-- **An opt-in wisp-detour subgraph** — `check_stat → teleport_to_coordinates → sleep →
+- **An opt-in wisp-detour subgraph** — `check_health_and_mana → teleport_to_coordinates → sleep →
   collect_wisps`, one entry, one exit, an internal bypass — for the minority of bots where the
   wisps are too far to be loaded. Both bots that need it teleport 1,500–4,000 units inside
   their own zone, and both label the following sleep "wait for wisps to load", which is what
