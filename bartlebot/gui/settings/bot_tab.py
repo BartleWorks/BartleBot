@@ -145,7 +145,7 @@ class BotTab(QWidget):
         realms_form.addRow("Favorite realm:", self._favorite_realm_combo)
         realms_form.addRow(
             hint(
-                "The realm change_to_favorite_realm switches every player to. Yours rather than the "
+                "The realm Change Realm switches every player to. Yours rather than the "
                 "bot's: a realm in a shared bot file would send everyone who runs it to the same "
                 "place. With one set, every launched player also has the game's Remember Realm "
                 "option turned on, so a relogged player comes back to the realm it left."

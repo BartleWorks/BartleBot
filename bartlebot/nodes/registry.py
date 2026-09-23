@@ -1,5 +1,7 @@
 from bartlebot.nodes.combat.check_health import NODE_SPEC as _check_health_spec
 from bartlebot.nodes.combat.check_health import run as check_health_run
+from bartlebot.nodes.combat.check_health_and_mana import NODE_SPEC as _check_health_and_mana_spec
+from bartlebot.nodes.combat.check_health_and_mana import run as check_health_and_mana_run
 from bartlebot.nodes.combat.check_mana import NODE_SPEC as _check_mana_spec
 from bartlebot.nodes.combat.check_mana import run as check_mana_run
 from bartlebot.nodes.combat.collect_wisps import NODE_SPEC as _collect_wisps_spec
@@ -39,6 +41,8 @@ from bartlebot.nodes.teleportation.teleport_to_world_hub import NODE_SPEC as _te
 from bartlebot.nodes.teleportation.teleport_to_world_hub import run as teleport_to_world_hub_run
 from bartlebot.nodes.utility.apply_level_scaling import NODE_SPEC as _apply_level_scaling_spec
 from bartlebot.nodes.utility.apply_level_scaling import run as apply_level_scaling_run
+from bartlebot.nodes.utility.change_realm import NODE_SPEC as _change_realm_spec
+from bartlebot.nodes.utility.change_realm import run as change_realm_run
 from bartlebot.nodes.utility.change_to_favorite_realm import NODE_SPEC as _change_to_favorite_realm_spec
 from bartlebot.nodes.utility.change_to_favorite_realm import run as change_to_favorite_realm_run
 from bartlebot.nodes.utility.change_to_next_realm import NODE_SPEC as _change_to_next_realm_spec
@@ -70,6 +74,7 @@ from bartlebot.nodes.zone_entry.enter_zone_via_ride import run as enter_zone_via
 
 NODE_REGISTRY: dict = {
     "apply_level_scaling": apply_level_scaling_run,
+    "change_realm": change_realm_run,
     "change_to_favorite_realm": change_to_favorite_realm_run,
     "change_to_next_realm": change_to_next_realm_run,
     "click_path": click_path_run,
@@ -89,6 +94,7 @@ NODE_REGISTRY: dict = {
     "handle_combat": handle_combat_run,
     "collect_reagent": collect_reagent_run,
     "check_health": check_health_run,
+    "check_health_and_mana": check_health_and_mana_run,
     "check_mana": check_mana_run,
     "collect_wisps": collect_wisps_run,
     "mark_location": mark_location_run,
@@ -107,6 +113,7 @@ NODE_REGISTRY: dict = {
 
 NODE_SPECS: dict[str, NodeSpec] = {
     "apply_level_scaling": _apply_level_scaling_spec,
+    "change_realm": _change_realm_spec,
     "change_to_favorite_realm": _change_to_favorite_realm_spec,
     "change_to_next_realm": _change_to_next_realm_spec,
     "click_path": _click_path_spec,
@@ -126,6 +133,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "handle_combat": _handle_combat_spec,
     "collect_reagent": _collect_reagent_spec,
     "check_health": _check_health_spec,
+    "check_health_and_mana": _check_health_and_mana_spec,
     "check_mana": _check_mana_spec,
     "collect_wisps": _collect_wisps_spec,
     "mark_location": _mark_location_spec,
@@ -175,6 +183,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         "Combat",
         [
             "check_health",
+            "check_health_and_mana",
             "check_mana",
             "collect_wisps",
             "handle_combat",
@@ -196,6 +205,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         "Utility",
         [
             "apply_level_scaling",
+            "change_realm",
             "change_to_favorite_realm",
             "change_to_next_realm",
             "check_if_dropped",

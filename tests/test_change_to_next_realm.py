@@ -198,18 +198,3 @@ async def test_dungeon_reset_warning_is_confirmed_and_the_hop_proceeds():
 
     assert result == "SUCCESS"
     assert clicked[-1] == MESSAGE_BOX_CENTER
-
-
-# ---------------------------------------------------------------------------
-# The rename
-# ---------------------------------------------------------------------------
-
-
-def test_the_old_node_type_is_gone_and_the_library_uses_the_new_one():
-    """A bot file still saying change_realm would load as an unknown node type."""
-    from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
-
-    assert "change_realm" not in NODE_REGISTRY
-    assert "change_realm" not in NODE_SPECS
-    assert "change_to_next_realm" in NODE_REGISTRY
-    assert "change_to_favorite_realm" in NODE_REGISTRY
