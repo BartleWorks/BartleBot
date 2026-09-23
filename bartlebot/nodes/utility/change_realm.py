@@ -1,9 +1,9 @@
 """Node: change every player's realm, to the favourite or to the next one.
 
-Merged from ``change_to_favorite_realm`` and ``change_to_next_realm`` (both removed once
-``scripts/migrate_change_realm.py`` had moved every bot off them): two node types for
-one act, and a node type is the one thing neither a subgraph input nor an override can
-bridge. One type is what lets every template share a single Player Sync. The mode is the
+Merged from ``change_to_favorite_realm`` and ``change_to_next_realm`` (both since
+removed, once every bot had been migrated off them): two node types for one act, and a
+node type is the one thing neither a subgraph input nor an override can bridge. One type
+is what lets every template share a single Player Sync. The mode is the
 ``use_favorite_realm`` param; the UI plumbing both modes share is
 :mod:`bartlebot.nodes.utility.realm_list`.
 
