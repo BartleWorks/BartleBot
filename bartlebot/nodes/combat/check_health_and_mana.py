@@ -1,7 +1,7 @@
 """Node: check whether every player is at or above a health and a mana ratio.
 
-Merged from ``check_health`` and ``check_mana``, which had the same shape -- one
-threshold, TRUE/FALSE -- and needed chaining whenever a bot cared about both.
+Merged from ``check_health`` and ``check_mana`` (both since removed), which had the same
+shape -- one threshold, TRUE/FALSE -- and needed chaining whenever a bot cared about both.
 
 A threshold of 0 switches that stat off: no ratio is below 0, so the check always
 passes, and the stat is not read at all. That is also why detecting an *empty* player

@@ -1,9 +1,5 @@
-from bartlebot.nodes.combat.check_health import NODE_SPEC as _check_health_spec
-from bartlebot.nodes.combat.check_health import run as check_health_run
 from bartlebot.nodes.combat.check_health_and_mana import NODE_SPEC as _check_health_and_mana_spec
 from bartlebot.nodes.combat.check_health_and_mana import run as check_health_and_mana_run
-from bartlebot.nodes.combat.check_mana import NODE_SPEC as _check_mana_spec
-from bartlebot.nodes.combat.check_mana import run as check_mana_run
 from bartlebot.nodes.combat.collect_wisps import NODE_SPEC as _collect_wisps_spec
 from bartlebot.nodes.combat.collect_wisps import run as collect_wisps_run
 from bartlebot.nodes.combat.handle_combat import NODE_SPEC as _handle_combat_spec
@@ -41,10 +37,6 @@ from bartlebot.nodes.utility.apply_level_scaling import NODE_SPEC as _apply_leve
 from bartlebot.nodes.utility.apply_level_scaling import run as apply_level_scaling_run
 from bartlebot.nodes.utility.change_realm import NODE_SPEC as _change_realm_spec
 from bartlebot.nodes.utility.change_realm import run as change_realm_run
-from bartlebot.nodes.utility.change_to_favorite_realm import NODE_SPEC as _change_to_favorite_realm_spec
-from bartlebot.nodes.utility.change_to_favorite_realm import run as change_to_favorite_realm_run
-from bartlebot.nodes.utility.change_to_next_realm import NODE_SPEC as _change_to_next_realm_spec
-from bartlebot.nodes.utility.change_to_next_realm import run as change_to_next_realm_run
 from bartlebot.nodes.utility.check_if_dropped import NODE_SPEC as _check_if_dropped_spec
 from bartlebot.nodes.utility.check_if_dropped import run as check_if_dropped_run
 from bartlebot.nodes.utility.check_level_scaling import NODE_SPEC as _check_level_scaling_spec
@@ -69,8 +61,6 @@ from bartlebot.nodes.zone_entry.enter_zone_via_object import run as enter_zone_v
 NODE_REGISTRY: dict = {
     "apply_level_scaling": apply_level_scaling_run,
     "change_realm": change_realm_run,
-    "change_to_favorite_realm": change_to_favorite_realm_run,
-    "change_to_next_realm": change_to_next_realm_run,
     "click_path": click_path_run,
     "enter_zone": enter_zone_run,
     "handle_potions": handle_potions_run,
@@ -86,9 +76,7 @@ NODE_REGISTRY: dict = {
     "enter_zone_via_object": enter_zone_via_object_run,
     "handle_combat": handle_combat_run,
     "collect_reagent": collect_reagent_run,
-    "check_health": check_health_run,
     "check_health_and_mana": check_health_and_mana_run,
-    "check_mana": check_mana_run,
     "collect_wisps": collect_wisps_run,
     "mark_location": mark_location_run,
     "teleport_to_marked_location": teleport_to_marked_location_run,
@@ -105,8 +93,6 @@ NODE_REGISTRY: dict = {
 NODE_SPECS: dict[str, NodeSpec] = {
     "apply_level_scaling": _apply_level_scaling_spec,
     "change_realm": _change_realm_spec,
-    "change_to_favorite_realm": _change_to_favorite_realm_spec,
-    "change_to_next_realm": _change_to_next_realm_spec,
     "click_path": _click_path_spec,
     "enter_zone": _enter_zone_spec,
     "handle_potions": _handle_potions_spec,
@@ -122,9 +108,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "enter_zone_via_object": _enter_zone_via_object_spec,
     "handle_combat": _handle_combat_spec,
     "collect_reagent": _collect_reagent_spec,
-    "check_health": _check_health_spec,
     "check_health_and_mana": _check_health_and_mana_spec,
-    "check_mana": _check_mana_spec,
     "collect_wisps": _collect_wisps_spec,
     "mark_location": _mark_location_spec,
     "teleport_to_marked_location": _teleport_to_marked_location_spec,
@@ -168,9 +152,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
     (
         "Combat",
         [
-            "check_health",
             "check_health_and_mana",
-            "check_mana",
             "collect_wisps",
             "handle_combat",
             "handle_potions",
@@ -192,8 +174,6 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         [
             "apply_level_scaling",
             "change_realm",
-            "change_to_favorite_realm",
-            "change_to_next_realm",
             "check_if_dropped",
             "check_level_scaling",
             "check_zone",

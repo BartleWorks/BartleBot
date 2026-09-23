@@ -65,15 +65,14 @@
     },
     {
       "id": "state_3",
-      "node_type": "change_to_next_realm",
+      "node_type": "change_realm",
       "label": "Change realm",
       "position": {
         "x": 880.0,
         "y": 0.0
       },
       "params": {
-        "start_realm_page": 3,
-        "end_realm_page": 5
+        "use_favorite_realm": false
       }
     },
     {

@@ -1726,13 +1726,15 @@
     },
     {
       "id": "state_59",
-      "node_type": "change_to_favorite_realm",
+      "node_type": "change_realm",
       "label": "Change to favorite realm",
       "position": {
         "x": 1760.0,
         "y": -90.0
       },
-      "params": {}
+      "params": {
+        "use_favorite_realm": true
+      }
     }
   ],
   "transitions": [

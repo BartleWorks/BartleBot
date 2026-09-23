@@ -22,7 +22,7 @@ from bartlebot.gui.canvas.drop_keep_list import _COL_ITEM
 from bartlebot.nodes.utility import quicksell as qs
 
 
-def _config(node_type="change_to_next_realm"):
+def _config(node_type="change_realm"):
     return BotConfig(
         id="test-bot",
         name="t",
@@ -102,7 +102,7 @@ class _Harness:
     def undo_an_edit(self):
         """Make an undoable graph edit and undo it, so the canvas swaps in a new config."""
         self.canvas.scene.about_to_change.emit("add a state")
-        self.canvas.config.states.append(StateModel(id="c", node_type="change_to_next_realm", params={}))
+        self.canvas.config.states.append(StateModel(id="c", node_type="change_realm", params={}))
         self.canvas.scene.graph_changed.emit()
         self.canvas.undo()
 

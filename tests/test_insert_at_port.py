@@ -25,8 +25,7 @@ def _config(transitions=None, states=None):
         name="t",
         initial="a",
         recovery_state="a",
-        states=states
-        or [StateModel(id=sid, node_type="change_to_next_realm", params={}) for sid in ("a", "b", "c", "target")],
+        states=states or [StateModel(id=sid, node_type="change_realm", params={}) for sid in ("a", "b", "c", "target")],
         transitions=transitions
         if transitions is not None
         else [
@@ -226,7 +225,7 @@ def test_output_port_refuses_a_node_that_cannot_produce_the_return(canvas):
     c = canvas(_out_config())
     before = list(c.config.transitions)
 
-    result = c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health")
+    result = c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health_and_mana")
 
     assert result is None
     assert c.config.transitions == before
@@ -236,7 +235,7 @@ def test_the_refused_insert_creates_no_state(canvas):
     c = canvas(_out_config())
     before = {s.id for s in c.config.states}
 
-    c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health")
+    c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health_and_mana")
 
     assert {s.id for s in c.config.states} == before
 
@@ -244,9 +243,9 @@ def test_the_refused_insert_creates_no_state(canvas):
 def test_output_port_accepts_a_condition_node_on_a_condition_port(canvas):
     config = _config(
         states=[
-            StateModel(id="cond", node_type="check_health", params={}),
-            StateModel(id="b", node_type="change_to_next_realm", params={}),
-            StateModel(id="a", node_type="change_to_next_realm", params={}),
+            StateModel(id="cond", node_type="check_health_and_mana", params={}),
+            StateModel(id="b", node_type="change_realm", params={}),
+            StateModel(id="a", node_type="change_realm", params={}),
         ],
         transitions=[TransitionModel(trigger="advance", source="cond", dest="b", when="TRUE")],
     )
@@ -254,7 +253,7 @@ def test_output_port_accepts_a_condition_node_on_a_condition_port(canvas):
     config.recovery_state = "a"
     c = canvas(config)
 
-    new_id = c.scene.insert_state_at_output_port("cond", "TRUE", "check_mana")
+    new_id = c.scene.insert_state_at_output_port("cond", "TRUE", "check_health_and_mana")
 
     assert new_id is not None
     assert _t(c.config, new_id, "b").when == "TRUE"
@@ -277,7 +276,7 @@ def test_the_onward_edge_is_not_unconditional(canvas):
 def test_the_onward_edge_uses_the_happy_path_return(canvas):
     c = canvas()
 
-    new_id = c.scene.insert_state_at_input_port("target", "change_to_next_realm")
+    new_id = c.scene.insert_state_at_input_port("target", "change_realm")
 
     assert _t(c.config, new_id, "target").when == "SUCCESS"
 
@@ -285,7 +284,7 @@ def test_the_onward_edge_uses_the_happy_path_return(canvas):
 def test_the_onward_edge_uses_true_for_a_condition_node(canvas):
     c = canvas()
 
-    new_id = c.scene.insert_state_at_input_port("target", "check_health")
+    new_id = c.scene.insert_state_at_input_port("target", "check_health_and_mana")
 
     assert _t(c.config, new_id, "target").when == "TRUE"
 
@@ -345,9 +344,9 @@ def test_the_browser_offers_only_the_allowed_types(qapp):
     """Tabs and search both funnel through _populate_list, so one filter covers both."""
     from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
 
-    dlg = NodeBrowserDialog(None, mode="add", allowed_node_types={"sleep", "change_to_next_realm"})
+    dlg = NodeBrowserDialog(None, mode="add", allowed_node_types={"sleep", "change_realm"})
     try:
-        assert set(dlg.offered_node_types) == {"sleep", "change_to_next_realm"}
+        assert set(dlg.offered_node_types) == {"sleep", "change_realm"}
     finally:
         dlg.deleteLater()
 
@@ -373,7 +372,7 @@ def test_a_success_port_offers_sleep():
 def test_a_success_port_excludes_condition_nodes():
     from bartlebot.gui.canvas.edit_scene import node_types_producing
 
-    assert "check_health" not in node_types_producing("SUCCESS")
+    assert "check_health_and_mana" not in node_types_producing("SUCCESS")
 
 
 def test_a_true_port_offers_only_condition_nodes():
@@ -413,10 +412,10 @@ def _grid_config():
     from bartlebot.gui.canvas.node_item import GRID_W
 
     states = [
-        StateModel(id="a", node_type="change_to_next_realm", params={}, position={"x": 0.0, "y": 0.0}),
-        StateModel(id="b", node_type="change_to_next_realm", params={}, position={"x": 0.0, "y": 90.0}),
-        StateModel(id="c", node_type="change_to_next_realm", params={}, position={"x": 0.0, "y": 180.0}),
-        StateModel(id="target", node_type="change_to_next_realm", params={}, position={"x": float(GRID_W), "y": 90.0}),
+        StateModel(id="a", node_type="change_realm", params={}, position={"x": 0.0, "y": 0.0}),
+        StateModel(id="b", node_type="change_realm", params={}, position={"x": 0.0, "y": 90.0}),
+        StateModel(id="c", node_type="change_realm", params={}, position={"x": 0.0, "y": 180.0}),
+        StateModel(id="target", node_type="change_realm", params={}, position={"x": float(GRID_W), "y": 90.0}),
     ]
     return _config(states=states)
 
