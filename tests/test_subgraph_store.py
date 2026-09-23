@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from bartlebot.bot.schema import StateModel, SubgraphDefinition
+from bartlebot.paths import project_root
 from bartlebot.store_roots import Origin
 from bartlebot.subgraph_store import (
     SubgraphLibrary,
+    count_subgraph_uses,
     delete_subgraph,
     list_subgraphs,
     load_subgraph,
@@ -94,3 +96,21 @@ def test_a_fixed_file_clears_its_error(tmp_path):
     lib.reload()
     assert lib.error_for("sg-a") is None
     assert lib.get("sg-a") is not None
+
+
+def test_every_linked_bot_resolves_under_the_shipped_root_alone():
+    """The guard against authoring into a copy the repo never sees.
+
+    A definition saved to ``%APPDATA%`` shadows the repo's, so the app composes from
+    the private copy, everything looks right, and the tracked one goes stale — or,
+    as happened to ``foulgaze``, never exists at all. Resolving against the project
+    root with no user root is what a clone or CI sees. Author with ``BARTLEBOT_DEV``
+    set and the definition lands where this test looks.
+    """
+    shipped = project_root()
+    library = SubgraphLibrary(shipped, shipped)
+    uses = count_subgraph_uses(shipped / "bots")
+    assert uses, "no bot links a subgraph, so this guard checks nothing"
+
+    unresolved = sorted(sid for sid in uses if library.get(sid) is None)
+    assert not unresolved, f"linked from bots/ but not loadable from subgraphs/: {unresolved}"

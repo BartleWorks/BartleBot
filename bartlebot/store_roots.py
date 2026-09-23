@@ -17,11 +17,18 @@ resolution rather than a copy of each. Every store function takes an optional
 ``root``, which sets the shipped root and, unless ``user_root`` is also given,
 doubles as the user root — so a single sandbox directory in a test behaves like
 one flat store. Pass ``user_root`` explicitly to exercise the shadowing.
+
+Developer mode (``BARTLEBOT_DEV`` set) points the default user root at the project
+root, so the two roots are one directory. Authoring a shipped definition or
+strategy then writes straight into the repo, where it can be diffed and committed,
+instead of into an ``%APPDATA%`` copy that shadows the repo's and lets it go stale.
+It only changes the default: a caller passing ``root`` or ``user_root`` is unaffected.
 """
 
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import Callable
 from enum import Enum
 from pathlib import Path
@@ -30,6 +37,14 @@ from bartlebot.paths import project_root
 from bartlebot.shared.vendor import product_dir
 
 logger = logging.getLogger(__name__)
+
+#: Set to anything but empty or ``0`` to author shipped content in place; see the module docstring.
+DEV_ENV_VAR = "BARTLEBOT_DEV"
+
+
+def dev_mode() -> bool:
+    """Whether the default user root is redirected to the project root."""
+    return os.environ.get(DEV_ENV_VAR, "") not in ("", "0")
 
 
 class Origin(Enum):
@@ -58,6 +73,8 @@ def resolve_roots(root: str | Path | None, user_root: str | Path | None) -> tupl
         user = Path(user_root)
     elif root is not None:
         user = Path(root)
+    elif dev_mode():
+        user = project_root()
     else:
         user = product_dir()
     return shipped, user

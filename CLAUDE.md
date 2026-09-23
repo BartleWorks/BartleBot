@@ -8,6 +8,13 @@ Wizard101 bot automation app. Python 3.13+, PyQt6, qasync, transitions FSM.
 uv run python bartlebot.py
 ```
 
+To author shipped subgraphs or combat strategies, run with `BARTLEBOT_DEV=1`. That
+points the store's user root at the repo, so a save lands in `subgraphs/` or
+`strategies/` where git sees it, instead of in an `%APPDATA%` copy that silently
+shadows the repo's. `bartlebot/store_roots.py` has the detail. The suite clears it,
+and `test_every_linked_bot_resolves_under_the_shipped_root_alone` catches a
+definition that only exists on your machine.
+
 ## Build / Test / Lint
 
 ```bash
@@ -47,6 +54,8 @@ read on purpose.
 | `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value |
 | `docs/COMBAT_CONFIG.md` | the five strategy levels, the two storage roots, the pick/assemble/author split, and the Save/Cancel boundary |
 | `docs/SUBGRAPHS.md` | reusable subgraphs: definition vs. instance, derived member ids, follow-latest with snapshot fallback, the three param levels, instance-owned layout, the authoring verbs |
+| `docs/SUBGRAPH_CALLS.md` | the successor epic to #37: subgraph calls, the node audit, ports, the collapsed call node, and the library rewrite — read it before any subgraph work, it supersedes three of `SUBGRAPHS.md`'s decisions |
+| `docs/LIBRARY_MIGRATION.md` | where all 82 bots stand against the four core templates: per-bot tier and divergence, the template input signature, the outlier bots |
 | `docs/RETURN_ROUTING.md` | the default failure edge, the explicit stop, why neither is drawn, and the three-mode failure-edge toggle |
 | `docs/RELOGGING.md` | why a client slows down, and the two ways to clear it |
 | `docs/RESTRICTED_ZONES.md` | the PvP policy and its three enforcement points |
