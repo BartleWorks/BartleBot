@@ -213,7 +213,7 @@ _DETAIL_BUILDERS = {
 #: NodeSpec field cannot answer because it is a question about the bot's options -- and
 #: for ``enter_dungeon``, about how many clients are hooked. Quicksell has an option that
 #: switches the node off wholesale, and ``enter_dungeon`` warns about one of its two ways
-#: in rather than about itself; ``relog``, ``form_group``, ``collect_reagent`` and
+#: in rather than about itself; ``relog``, ``collect_reagent`` and
 #: ``teleport_to_friend`` all act whenever they are reached, so a warning naming one is
 #: always earned.
 _MESSAGE_BUILDERS = {

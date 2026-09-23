@@ -44,7 +44,7 @@ def canvas(qapp, library):
 def _free_definition():
     """The fixture definition with one free param, and two inputs a fresh instance's page builds widgets for."""
     defn = sync_players_definition()
-    defn.free_params = {"tp_b": ["target_zone"]}
+    defn.free_params = {"tp_b": ["zone"]}
     defn.inputs.append(
         SubgraphInput(
             name="spiral_world",
@@ -180,7 +180,7 @@ def test_input_change_re_resolves_bound_params(canvas):
     canvas.param_panel.region_inputs_form.widget("world").setText("Mooshu")
     assert _state(canvas, m("go_to_world")).params["world"] == "Mooshu"
     assert _state(canvas, m("hub")).params["zone"] == "Mooshu"
-    assert _state(canvas, m("tp_b")).params["target_zone"] == "WizardCity/Hub", "not bound; unchanged"
+    assert _state(canvas, m("tp_b")).params["zone"] == "WizardCity/Hub", "not bound; unchanged"
 
 
 def test_an_override_beats_an_input_on_the_region_page(canvas):
@@ -248,16 +248,16 @@ def test_a_free_param_is_editable_without_a_toggle_and_records_an_override(free_
     c = free_canvas
     c.select_state(m("tp_b"))
     form = c.param_panel.param_form
-    assert form.widget("target_zone").isEnabled() and form.override_button("target_zone") is None
-    form.widget("target_zone").setText("MooShu/Hub")
-    assert _state(c, m("tp_b")).params["target_zone"] == "MooShu/Hub"
-    assert _region(c).source.param_overrides == {"tp_b": {"target_zone": "MooShu/Hub"}}
-    form.widget("target_zone").setText("WizardCity/Hub")
+    assert form.widget("zone").isEnabled() and form.override_button("zone") is None
+    form.widget("zone").setText("MooShu/Hub")
+    assert _state(c, m("tp_b")).params["zone"] == "MooShu/Hub"
+    assert _region(c).source.param_overrides == {"tp_b": {"zone": "MooShu/Hub"}}
+    form.widget("zone").setText("WizardCity/Hub")
     assert _region(c).source.param_overrides == {}, "back at the subgraph's value: nothing to override"
     # A param that is not free stays locked, and offers its override toggle instead.
-    c.select_state(m("form_group"))
-    assert not form.widget("require_all").isEnabled()
-    assert form.override_button("require_all") is not None
+    c.select_state(m("gather"))
+    assert not form.widget("target_hooked_player").isEnabled()
+    assert form.override_button("target_hooked_player") is not None
 
 
 def test_lock_toggle_reads_locked_then_overridden(canvas):

@@ -6,6 +6,7 @@ import logging
 import math
 import re
 from collections.abc import Collection
+from dataclasses import dataclass
 from typing import NamedTuple
 
 from wizwalker import Keycode, MemoryReadError
@@ -13,7 +14,7 @@ from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 logger = logging.getLogger(__name__)
 
-from bartlebot import dialog_captions
+from bartlebot import dialog_captions, wizard_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
@@ -853,8 +854,8 @@ async def wait_for_zone_with_recovery(
     Some clients failing a zone transition while others land fine is usually not a crash —
     it means the stragglers have not unlocked the destination, or missed the transition
     trigger. As soon as at least one client is seen in `zone` and at least one is not, the
-    stragglers are ported to it via the same mechanics teleport_to_player_if_in_zone offers
-    as a standalone node — cheaper than retrying the whole transition from a world hub. All
+    stragglers are ported to whichever client arrived first (find_target_in_zone) — cheaper
+    than retrying the whole transition from a world hub. All
     clients must already be mutual in-game friends for this to have anything to work with.
 
     Waiting out the *whole* of `timeout` before even attempting recovery (the original
@@ -909,6 +910,45 @@ async def wait_for_zone_with_recovery(
         await asyncio.sleep(poll_interval)
 
 
+@dataclass(frozen=True)
+class ZoneTarget:
+    """Which hooked client to port everyone else to, or why there isn't one.
+
+    Mirrors teleport_to_friend's TargetResolution -- same shape, different resolution rule:
+    the first client already in the zone, by player order, rather than a configured name or
+    slot. It outlived the teleport_to_player_if_in_zone node it was written for, removed
+    once go_to_zone superseded it; zone-arrival recovery is its one caller now.
+    """
+
+    index: int | None = None
+    name: str = ""
+    error: str = ""
+
+
+async def find_target_in_zone(clients: list, target_zone: str, zones: list[str] | None = None) -> ZoneTarget:
+    """Pick the first hooked client (in player order) already in target_zone as the target.
+
+    `zones` lets a caller that already read every client's zone_name() pass it in rather than
+    have this read it again -- the recovery path always has a fresh one on hand.
+
+    .error is set when no client is in target_zone, or the one found there has no cached
+    wizard name yet (ClientManager fills this; a client just connected may not have it yet).
+    """
+    if zones is None:
+        zones = list(await asyncio.gather(*[c.zone_name() for c in clients]))
+
+    in_zone_indices = [i for i, z in enumerate(zones) if zone_matches(z, target_zone)]
+    if not in_zone_indices:
+        return ZoneTarget(error=f"no hooked client is currently in {target_zone!r}")
+
+    target_index = in_zone_indices[0]
+    target_name = wizard_names.cached_name(clients[target_index])
+    if not target_name:
+        return ZoneTarget(error=f"P{target_index + 1}'s wizard name has not been detected yet")
+
+    return ZoneTarget(index=target_index, name=target_name)
+
+
 async def _attempt_zone_recovery(
     machine, clients: list, zone: str, zones: list[str], poll_interval: float = POLL_INTERVAL
 ) -> None:
@@ -920,9 +960,7 @@ async def _attempt_zone_recovery(
     A recovery that cannot even get started (no client's name cached yet, no friends online,
     the friend-busy dialog, …) is logged and left for the caller's normal timeout to report.
     """
-    from bartlebot.nodes.teleportation import teleport_to_player_if_in_zone  # noqa: PLC0415 — avoid a circular import
-
-    target = await teleport_to_player_if_in_zone.find_target_in_zone(clients, zone, zones=zones)
+    target = await find_target_in_zone(clients, zone, zones=zones)
     if target.error:
         machine.log(f"Recovery not possible: {target.error}", logging.DEBUG)
         return
@@ -1317,8 +1355,8 @@ async def port_to_friend(
     """Teleport clients_to_move to friend_name_lower via the friends list, and wait for each
     to enter a loading screen.
 
-    The mechanics shared by every node that ports players to a friend — teleport_to_friend,
-    teleport_to_player_if_in_zone, and node_helpers' own zone-arrival recovery: initiate,
+    The mechanics shared by everything that ports players to a friend — teleport_to_friend
+    and node_helpers' own zone-arrival recovery: initiate,
     watch for whatever modal a not-yet-loading client is showing (a dungeon exit or
     cross-realm warning is confirmed so the port proceeds; a friend-busy dialog is a refusal),
     retry a straggler once trigger_timeout's grace period has passed, and cap the whole wait
@@ -1456,7 +1494,7 @@ async def gather_at_player(
 ) -> bool:
     """Port every client but `clients[target_index]` onto that player, and confirm they are with it.
 
-    The hooked-player half of teleport_to_friend and the whole of teleport_to_player_if_in_zone.
+    The hooked-player half of teleport_to_friend.
     Because the target is one of ours, its zone and position are readable, which makes this
     exact where porting to a friend by name is not:
 

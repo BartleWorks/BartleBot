@@ -1,4 +1,33 @@
-"""Node: board a ride -- a boat, an airship, a dragon -- and skip it to where it goes."""
+"""Board a ride -- a boat, an airship, a dragon -- and press X to skip it to where it goes.
+
+Not a node in the library: it is how a planned ``ride`` step is run
+(``nodes/zone_navigation.step_call``), which resolves every param below from the navigation
+map. Go To Zone is what a bot author reaches for instead. A ride only ever stands in a zone
+the map declares, so there is nothing this could be pointed at that Go To Zone cannot
+already plan a route to -- the same reason ``enter_zone_via_list`` was retired as a node
+(#36). This one was retired in the node audit, with no bot left using it.
+
+Params, as ``step_call`` passes them:
+
+- ``from_zone`` -- where players must be at the start. A player already on the ride, in
+  ``ride_zone``, or already in ``to_zone``, is accepted too.
+- ``to_zone`` -- where the ride goes.
+- ``board`` -- ``BOARD_OBJECT`` to interact with the ride (the Krokotopia boats, the
+  Dragonspyre dragon) or ``BOARD_WALK`` to walk into a gate (the Marleybone airships).
+- ``board_xyz`` -- where the interact prompt shows, or a point inside the gate's trigger.
+- ``reset_xyz`` -- optional; a spot off the prompt. When set, a player whose boarding did
+  not take is sent here and tries again, up to ``MAX_RETRIES`` times.
+- ``ride_zone`` -- the zone the ride loads, when it loads one (the dragon's
+  ``DS_A3_FlightPath``). Empty when the ride happens in ``from_zone`` itself; required when
+  walking into a gate.
+
+Once a player is aboard it is never teleported: the ride is carrying it, and a teleport
+would pull it off, so retries happen only before boarding. A ride that stays in
+``from_zone`` has no loading screen to say it was boarded, so a player counts as aboard
+once, within the Safety Delay of pressing X, it has been moved off ``board_xyz``. Players
+that do not all reach ``to_zone`` get the zone-arrival recovery (a port to one that did)
+before the step fails.
+"""
 
 import asyncio
 import logging
@@ -7,7 +36,6 @@ import math
 from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import (
     LOADING_SCREEN_TIMEOUT,
     MAX_RETRIES,
@@ -21,120 +49,6 @@ BOARD_OBJECT = "object"
 BOARD_WALK = "walk"
 BOARDED_DISTANCE = 150.0
 """How far off Board XYZ a player must be, after X, to count as carried away by a ride that stays in its zone."""
-
-PARAM_SCHEMA: list[ParamField] = [
-    ParamField(
-        key="from_zone",
-        type="str",
-        label="From Zone",
-        help=(
-            "Zone name players must currently be in when this node executes. A player already "
-            "on the ride, in Ride Zone, is accepted too and finishes it without boarding again."
-        ),
-        default="",
-        required=True,
-    ),
-    ParamField(
-        key="to_zone",
-        type="str",
-        label="To Zone",
-        help="Zone name players must be in after this node completes: where the ride goes.",
-        default="",
-        required=True,
-    ),
-    ParamField(
-        key="board",
-        type="str_choice",
-        label="Board By",
-        help=(
-            "How the ride is boarded: by interacting with it, as with the Krokotopia boats and the "
-            "Dragonspyre dragon, or by walking into a gate, as with the Marleybone airships."
-        ),
-        choices=[(BOARD_OBJECT, "Interacting"), (BOARD_WALK, "Walking into a gate")],
-        default=BOARD_OBJECT,
-        required=False,
-    ),
-    ParamField(
-        key="board_xyz",
-        type="xyz",
-        label="Board XYZ",
-        help=(
-            "Where the ride is boarded. When interacting, the interact prompt should appear when "
-            "standing here; when walking, a point inside the gate's transition bounding box."
-        ),
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
-        required=True,
-    ),
-    ParamField(
-        key="reset_xyz",
-        type="xyz",
-        label="Reset XYZ",
-        help=(
-            "Optional. A spot away from Board XYZ, where the interact prompt does NOT appear. When "
-            "set, a player whose boarding did not take is sent here and tries again, up to 3 times."
-        ),
-        default=None,
-        default_hint="not set — boarding is attempted once, no retry",
-        required=False,
-    ),
-    ParamField(
-        key="ride_zone",
-        type="str",
-        label="Ride Zone",
-        help=(
-            "The zone the ride takes place in, when boarding loads one: the dragon's "
-            "DS_A3_FlightPath, an airship's MB_FlightToHydePark. Leave empty when the ride happens "
-            "in From Zone itself, as the Krokotopia boats do. Required when walking into a gate."
-        ),
-        default="",
-        default_hint="the ride stays in From Zone",
-        required=False,
-    ),
-]
-
-NODE_SPEC = NodeSpec(
-    description=(
-        "Boards a ride — a boat, an airship, a dragon — and presses X on its skip prompt, so "
-        "players arrive where it goes without sitting through it. A player whose skip does not "
-        "land still arrives when the ride ends on its own."
-    ),
-    params=PARAM_SCHEMA,
-    returns=[
-        ReturnSpec("SUCCESS", "All players are now in to_zone."),
-        ReturnSpec(
-            "FAILURE",
-            "Players were not in from_zone (or already on the ride) at the start, no player "
-            "managed to board after retries, or not all players arrived in to_zone (see usage "
-            "notes — a player that did not still gets a recovery attempt first).",
-        ),
-    ],
-    required_bot_options=[
-        BotOptionSpec(
-            name="Safety Delay",
-            type="float",
-            default=3.0,
-            minimum=0.0,
-            suffix=" s",
-            description=(
-                "Seconds to allow for game-server responses when waiting for prompts or menus. "
-                "Increase on high-latency connections."
-            ),
-        ),
-    ],
-    max_consecutive_retries=10,
-    usage_notes=(
-        "Once a player is aboard it is never teleported: the ride is carrying it, and a teleport "
-        "would pull it off. Retries happen only before boarding.\n\n"
-        "A ride that stays in From Zone has no loading screen to say it was boarded, so a player "
-        "counts as aboard once, within the Safety Delay of pressing X, it has been moved off Board "
-        "XYZ — nothing teleports it then, so that is the boat carrying it. Its skip prompt comes up "
-        "a moment later, and X is pressed whenever it shows, until the player is on its way.\n\n"
-        "If some but not all players reach to_zone, the node first tries teleporting the "
-        "stragglers to whichever player did arrive — the same recovery Teleport To Player "
-        "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
-        "every player to already be mutual in-game friends."
-    ),
-)
 
 
 async def _on_its_way(client, ride_zone: str, to_zone: str) -> bool:

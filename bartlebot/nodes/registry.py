@@ -35,8 +35,6 @@ from bartlebot.nodes.teleportation.teleport_to_friend import NODE_SPEC as _telep
 from bartlebot.nodes.teleportation.teleport_to_friend import run as teleport_to_friend_run
 from bartlebot.nodes.teleportation.teleport_to_marked_location import NODE_SPEC as _teleport_to_marked_location_spec
 from bartlebot.nodes.teleportation.teleport_to_marked_location import run as teleport_to_marked_location_run
-from bartlebot.nodes.teleportation.teleport_to_player_if_in_zone import NODE_SPEC as _teleport_to_player_if_in_zone_spec
-from bartlebot.nodes.teleportation.teleport_to_player_if_in_zone import run as teleport_to_player_if_in_zone_run
 from bartlebot.nodes.teleportation.teleport_to_world_hub import NODE_SPEC as _teleport_to_world_hub_spec
 from bartlebot.nodes.teleportation.teleport_to_world_hub import run as teleport_to_world_hub_run
 from bartlebot.nodes.utility.apply_level_scaling import NODE_SPEC as _apply_level_scaling_spec
@@ -53,8 +51,6 @@ from bartlebot.nodes.utility.check_level_scaling import NODE_SPEC as _check_leve
 from bartlebot.nodes.utility.check_level_scaling import run as check_level_scaling_run
 from bartlebot.nodes.utility.check_zone import NODE_SPEC as _check_zone_spec
 from bartlebot.nodes.utility.check_zone import run as check_zone_run
-from bartlebot.nodes.utility.form_group import NODE_SPEC as _form_group_spec
-from bartlebot.nodes.utility.form_group import run as form_group_run
 from bartlebot.nodes.utility.quicksell import NODE_SPEC as _quicksell_spec
 from bartlebot.nodes.utility.quicksell import run as quicksell_run
 from bartlebot.nodes.utility.relog import NODE_SPEC as _relog_spec
@@ -69,8 +65,6 @@ from bartlebot.nodes.zone_entry.enter_zone import NODE_SPEC as _enter_zone_spec
 from bartlebot.nodes.zone_entry.enter_zone import run as enter_zone_run
 from bartlebot.nodes.zone_entry.enter_zone_via_object import NODE_SPEC as _enter_zone_via_object_spec
 from bartlebot.nodes.zone_entry.enter_zone_via_object import run as enter_zone_via_object_run
-from bartlebot.nodes.zone_entry.enter_zone_via_ride import NODE_SPEC as _enter_zone_via_ride_spec
-from bartlebot.nodes.zone_entry.enter_zone_via_ride import run as enter_zone_via_ride_run
 
 NODE_REGISTRY: dict = {
     "apply_level_scaling": apply_level_scaling_run,
@@ -90,7 +84,6 @@ NODE_REGISTRY: dict = {
     "interact_menu": interact_menu_run,
     "quicksell": quicksell_run,
     "enter_zone_via_object": enter_zone_via_object_run,
-    "enter_zone_via_ride": enter_zone_via_ride_run,
     "handle_combat": handle_combat_run,
     "collect_reagent": collect_reagent_run,
     "check_health": check_health_run,
@@ -100,14 +93,12 @@ NODE_REGISTRY: dict = {
     "mark_location": mark_location_run,
     "teleport_to_marked_location": teleport_to_marked_location_run,
     "teleport_to_friend": teleport_to_friend_run,
-    "teleport_to_player_if_in_zone": teleport_to_player_if_in_zone_run,
     "sleep": sleep_run,
     "wait_for_dialogue": wait_for_dialogue_run,
     "wait_for_health": wait_for_health_run,
     "check_if_dropped": check_if_dropped_run,
     "check_level_scaling": check_level_scaling_run,
     "check_zone": check_zone_run,
-    "form_group": form_group_run,
     "relog": relog_run,
 }
 
@@ -129,7 +120,6 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "interact_menu": _interact_menu_spec,
     "quicksell": _quicksell_spec,
     "enter_zone_via_object": _enter_zone_via_object_spec,
-    "enter_zone_via_ride": _enter_zone_via_ride_spec,
     "handle_combat": _handle_combat_spec,
     "collect_reagent": _collect_reagent_spec,
     "check_health": _check_health_spec,
@@ -139,14 +129,12 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "mark_location": _mark_location_spec,
     "teleport_to_marked_location": _teleport_to_marked_location_spec,
     "teleport_to_friend": _teleport_to_friend_spec,
-    "teleport_to_player_if_in_zone": _teleport_to_player_if_in_zone_spec,
     "sleep": _sleep_spec,
     "wait_for_dialogue": _wait_for_dialogue_spec,
     "wait_for_health": _wait_for_health_spec,
     "check_if_dropped": _check_if_dropped_spec,
     "check_level_scaling": _check_level_scaling_spec,
     "check_zone": _check_zone_spec,
-    "form_group": _form_group_spec,
     "relog": _relog_spec,
 }
 
@@ -163,7 +151,6 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "enter_gauntlet",
             "enter_zone",
             "enter_zone_via_object",
-            "enter_zone_via_ride",
         ],
     ),
     (
@@ -175,7 +162,6 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "teleport_to_coordinates",
             "teleport_to_friend",
             "teleport_to_marked_location",
-            "teleport_to_player_if_in_zone",
             "teleport_to_world_hub",
         ],
     ),
@@ -211,7 +197,6 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "check_if_dropped",
             "check_level_scaling",
             "check_zone",
-            "form_group",
             "quicksell",
             "relog",
             "sleep",

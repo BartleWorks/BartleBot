@@ -51,8 +51,7 @@ NODE_SPEC = NodeSpec(
     max_consecutive_retries=5,
     usage_notes=(
         "If some but not all players end up in the expected zone, the node first tries "
-        "teleporting the stragglers to whichever player did arrive — the same recovery "
-        "Teleport To Player If In Zone offers as a standalone node — before reporting "
+        "teleporting the stragglers to whichever player did arrive before reporting "
         "FAILURE. That needs every player to already be mutual in-game friends."
     ),
 )

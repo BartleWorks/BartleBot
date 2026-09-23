@@ -219,8 +219,8 @@ entry mechanism is not the same act, and a merged node would be two behaviours b
 name.
 
 **`teleport_to_player_if_in_zone` was not merged into `teleport_to_friend`**, and the reason is
-worth keeping even though the node is being retired for a different reason. The two share an
-implementation — both end in `node_helpers.gather_at_player`, and `ZoneTarget`'s docstring says
+worth keeping even though the node was removed for a different reason. The two shared an
+implementation — both ended in `node_helpers.gather_at_player`, and `ZoneTarget`'s docstring says
 it "mirrors teleport_to_friend's TargetResolution — same shape, different resolution rule".
 What they do not share is a **contract**: its FAILURE means "nobody is in that zone, try the
 next rung", routine and expected, while `teleport_to_friend`'s means something broke. Merging
@@ -242,9 +242,15 @@ is the model for how to record a retirement.
 | node | uses | why |
 |---|---|---|
 | `enter_zone_via_ride` | 0 | Registered as a node, but `zone_navigation` already imports and drives it. Exactly the `enter_zone_via_list` situation, one step behind. |
-| `teleport_to_player_if_in_zone` | 2 (1 bot) | Superseded by `go_to_zone`, and its only consumer is `foulgaze`, which Stage 9 rewrites. It reaches zero uses on its own. |
 
-`foulgaze` uses it as the head of a hand-rolled route plan written before the navigation map
+### Remove
+
+| node | uses | why |
+|---|---|---|
+| `form_group` | 0 | Obsolete. Nothing calls it, no bot uses it, and the sync chain #59's body claims for it is not the chain the templates use. `group_manager.form_group` stays: relog, pre-run setup and recovery all call it. |
+| `teleport_to_player_if_in_zone` | 0 | Superseded by `go_to_zone`. Planned as a retirement while `foulgaze` still used it; once `foulgaze` opened with `go_to_zone` there was no step left for it to be, so it was removed outright. Its target-picking helper, `find_target_in_zone`, moved to `node_helpers`, where zone-arrival recovery uses it. |
+
+`foulgaze` used it as the head of a hand-rolled route plan written before the navigation map
 existed:
 
 ```
@@ -259,12 +265,6 @@ World Gates, the hub button and HOME" from wherever the players are, another wor
 players already in the zone are left where they are, "so this is cheap at the top of a bot";
 and the port-to-a-player short-circuit the ladder is hand-rolling is what it already does
 internally. The whole ladder is one `go_to_zone`.
-
-### Remove
-
-| node | uses | why |
-|---|---|---|
-| `form_group` | 0 | Obsolete. Nothing calls it, no bot uses it, and the sync chain #59's body claims for it is not the chain the templates use. |
 
 ### Keep
 
@@ -497,7 +497,7 @@ Plus a library-wide test that every shipped bot composes to itself with an empty
 
 This is a **smaller #59 than its issue body describes**: it names `relog → form_group →
 teleport_to_player_if_in_zone` as the repeated chain, which is not the chain the templates use,
-and `form_group` is being removed in Stage 2. The body gets rewritten in Stage 0.
+and `form_group` was removed in Stage 2. The body gets rewritten in Stage 0.
 
 `skeleton_key_boss_farmer_template.json` is **deleted** rather than rebuilt. It did not run: 5
 of its 10 states were unreachable and `enter_dungeon` had no outgoing transitions, making it a
