@@ -32,7 +32,7 @@ def _config():
         name="t",
         initial="a",
         recovery_state="a",
-        states=[StateModel(id=sid, node_type="change_to_next_realm", params={}) for sid in ("a", "b", "c")],
+        states=[StateModel(id=sid, node_type="change_realm", params={}) for sid in ("a", "b", "c")],
         transitions=[
             TransitionModel(trigger="advance", source="a", dest="b", when="SUCCESS"),
             TransitionModel(trigger="advance", source="b", dest="c", when="SUCCESS"),

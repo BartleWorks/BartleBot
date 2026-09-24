@@ -49,11 +49,11 @@ def _tag_icon(tag: str, _generation: int) -> QIcon | None:
 
 
 #: Dot colour per group. Two hues, so "is this a reward or an activity" is legible
-#: on a single row without reading the section header above it. Activity is not
+#: on a single row without reading the section header above it. Activities is not
 #: ``warning``: its gold swallowed the gold ring of the medallion leading each pill.
 GROUP_ACCENT: dict[str, str] = {
     "Rewards": "accent",
-    "Activity": "pill_activity_bg",
+    "Activities": "pill_activity_bg",
 }
 
 
@@ -84,7 +84,7 @@ def tag_sections(counts: dict[str, int] | None = None, group: str | None = None)
     will actually read it.
 
     *group* narrows the popup to one group's tags. The library opens one button per
-    group, so that each is labelled with the facet it filters — "Rewards", "Activity"
+    group, so that each is labelled with the facet it filters — "Rewards", "Activities"
     — and the vocabulary is legible without opening anything. Bot Info passes None
     and gets the whole thing, because tagging a bot is one decision across both.
     """

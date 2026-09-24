@@ -2161,13 +2161,15 @@
     },
     {
       "id": "state_55",
-      "node_type": "change_to_favorite_realm",
+      "node_type": "change_realm",
       "label": "Change to favorite realm",
       "position": {
         "x": 2200.0,
         "y": -90.0
       },
-      "params": {}
+      "params": {
+        "use_favorite_realm": true
+      }
     }
   ],
   "transitions": [

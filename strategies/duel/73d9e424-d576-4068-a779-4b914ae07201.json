@@ -22,7 +22,7 @@
       "player_combat_strategy_id": "f0b1a45f-4b97-4b7e-aae8-e334307185ce"
     }
   ],
-  "description": "Default duel strategy for a 2-4 player team boss duel. Uses Feints first, then blades the last player (P1), then traps.",
+  "description": "Default duel strategy for a 2-4 player team boss duel where Feints are not allowed.",
   "id": "73d9e424-d576-4068-a779-4b914ae07201",
   "name": "Default Team Boss Duel (No Feints)"
 }

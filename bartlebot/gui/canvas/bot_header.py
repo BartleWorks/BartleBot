@@ -299,7 +299,7 @@ class _TagsField(QWidget):
     picker buttons are shown — because a tag list reads the same either way and building
     a second, differently-shaped view of it just to be read-only is how the two drift.
 
-    The buttons are captioned "Rewards" / "Activity" with no count, unlike the
+    The buttons are captioned "Rewards" / "Activities" with no count, unlike the
     library's, where the button *is* the filter and its text has to report the
     selection.  Here the chips beside them already do that.  Nor "Add Rewards…": the
     popup toggles, so the same button takes a tag off again, and a caption saying

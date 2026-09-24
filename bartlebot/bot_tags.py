@@ -21,7 +21,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Ordered groups. "Rewards" is what a run yields, "Activity" is what it does, and a
+# Ordered groups. "Rewards" is what a run yields, "Activities" is what it does, and a
 # bot normally carries at least one of each. Validation is against the flat BOT_TAGS
 # below — the grouping decides presentation order and nothing else.
 TAG_GROUPS: dict[str, tuple[str, ...]] = {
@@ -39,7 +39,7 @@ TAG_GROUPS: dict[str, tuple[str, ...]] = {
         "Housing",
         "Gold",  # only where the gold alone is worth the run
     ),
-    "Activity": (
+    "Activities": (
         "Boss",  # one named boss, repeated
         "Mobs",  # a non-boss mob fight; replaces Boss rather than joining it
         "Dungeon",  # a full dungeon (more than just a single fight)

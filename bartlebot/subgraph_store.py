@@ -3,6 +3,8 @@
   shipped — ``subgraphs/`` under the project root, read-only, what the repo ships.
   user    — ``subgraphs/`` under ``%APPDATA%/Bartleby/BartleBot``, where every
             app-initiated write lands; a user file shadows a shipped one of the same id.
+            With ``BARTLEBOT_DEV`` set it is the project root, so a shipped definition
+            is authored in place — see :mod:`bartlebot.store_roots`.
 
 Files are named ``{id}.json``. The root argument convention, :class:`Origin` and the
 shadowing rule are :mod:`bartlebot.store_roots`; this module mirrors

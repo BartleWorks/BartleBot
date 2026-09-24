@@ -1130,7 +1130,7 @@ async def test_friends_list_is_closed_once_for_the_whole_regroup(ui):
 # Concurrency
 #
 # Two form_group calls can overlap in production: machine.pause() only suspends the FSM
-# after the current node finishes, so a form_group node keeps running while recovery
+# after the current node finishes, so a relog node keeps regrouping while recovery
 # regroups; and set_machine() precedes pre-run setup, so a crash during deck apply queues
 # recovery alongside pre-run grouping. With different leader_index values each call would
 # elect a different leader and build a SEPARATE group — a split the UI cannot detect,
@@ -1152,7 +1152,7 @@ async def test_concurrent_calls_do_not_create_two_groups(ui):
     with ExitStack() as stack:
         for p in ui.patches():
             stack.enter_context(p)
-        # Different leaders, as a form_group node with leader_index=2 racing the
+        # Different leaders, as tools/form_group.py --leader 2 racing the
         # recovery hook's default of 0 would produce.
         await asyncio.gather(
             gm.form_group(clients, names, leader_index=0),

@@ -284,6 +284,9 @@ def isolated_settings(_appdata_root, monkeypatch):
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — keeps node tests import-light
 
     monkeypatch.setenv("APPDATA", str(_appdata_root / f"t{next(_APPDATA_SERIAL)}"))
+    # A developer's shell with BARTLEBOT_DEV set would otherwise send every store write
+    # that takes the default roots into the working tree — see store_roots.
+    monkeypatch.delenv("BARTLEBOT_DEV", raising=False)
     monkeypatch.setattr(SettingsManager, "_instance", None)
 
 

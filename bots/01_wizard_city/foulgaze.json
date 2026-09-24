@@ -4,8 +4,8 @@
   "description": "Endlessly farms Foulgaze in Olde Town. Ideal for low-level monstrology farming.",
   "version": "1.0",
   "clients": "all",
-  "initial": "sync_players_1_state_2",
-  "recovery_state": "sync_players_1_state_1",
+  "initial": "state_8",
+  "recovery_state": "state_7",
   "drops": [
     {
       "name": "Adventurer's Helm",
@@ -433,127 +433,6 @@
   "options": [],
   "states": [
     {
-      "id": "state_2",
-      "node_type": "enter_zone",
-      "label": "Enter the Shopping District",
-      "position": {
-        "x": 440.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_Hub",
-        "to_zone": "WizardCity/WC_Shop_Area",
-        "xyz": {
-          "x": 1341.02,
-          "y": -3551.32,
-          "z": -27.99
-        },
-        "reset_xyz": {
-          "x": 1332.84,
-          "y": -3038.14,
-          "z": -27.99
-        }
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "enter_zone",
-      "label": "Enter Olde Town",
-      "position": {
-        "x": 880.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_Shop_Area",
-        "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
-        "xyz": {
-          "x": -6094.02,
-          "y": -3308.97,
-          "z": -29.36
-        },
-        "reset_xyz": {
-          "x": -5175.8,
-          "y": -3255.2,
-          "z": -29.36
-        }
-      }
-    },
-    {
-      "id": "sync_players_1_state_1",
-      "node_type": "relog",
-      "label": "Relog",
-      "position": {
-        "x": -2200.0,
-        "y": 90.0
-      },
-      "params": {
-        "relog_clients": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "sync_players_1_state_2",
-      "node_type": "teleport_to_player_if_in_zone",
-      "label": "Try teleport to Olde Town",
-      "position": {
-        "x": -1760.0,
-        "y": -90.0
-      },
-      "params": {
-        "target_zone": "WizardCity/WC_Streets/WC_OldeTown"
-      }
-    },
-    {
-      "id": "sync_players_1_state_3",
-      "node_type": "teleport_to_player_if_in_zone",
-      "label": "Try teleport to Wizard City",
-      "position": {
-        "x": -1320.0,
-        "y": 0.0
-      },
-      "params": {
-        "target_zone": "WizardCity/*"
-      }
-    },
-    {
-      "id": "sync_players_1_state_4",
-      "node_type": "go_to_world",
-      "label": "Go to Wizard City",
-      "position": {
-        "x": -880.0,
-        "y": 90.0
-      },
-      "params": {
-        "world": "WizardCity"
-      }
-    },
-    {
-      "id": "sync_players_1_state_5",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to The Commons",
-      "position": {
-        "x": 0.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_Hub"
-      }
-    },
-    {
-      "id": "sync_players_1_state_7",
-      "node_type": "change_to_favorite_realm",
-      "label": "Change to favorite realm",
-      "position": {
-        "x": -440.0,
-        "y": 90.0
-      },
-      "params": {}
-    },
-    {
       "id": "defeat_boss_1_state_1",
       "node_type": "handle_potions",
       "label": "Handle potions",
@@ -641,7 +520,7 @@
       "label": "Exit dungeon",
       "position": {
         "x": 3520.0,
-        "y": 0.0
+        "y": -90.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/Interiors/WC_OldeTown_T2",
@@ -658,149 +537,45 @@
         },
         "stagger": false
       }
+    },
+    {
+      "id": "state_7",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.0,
+        "y": -90.0
+      },
+      "params": {
+        "relog_clients": []
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "go_to_zone",
+      "label": "Go to Olde Town",
+      "position": {
+        "x": 440.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_OldeTown"
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "change_realm",
+      "label": "Change to favorite realm",
+      "position": {
+        "x": 880.0,
+        "y": -90.0
+      },
+      "params": {
+        "use_favorite_realm": true
+      }
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_3",
-      "dest": "sync_players_1_state_4",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_4",
-      "dest": "sync_players_1_state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_2",
-      "dest": "sync_players_1_state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_3",
-      "dest": "sync_players_1_state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_1",
-      "dest": "sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_1",
-      "dest": "sync_players_1_state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_5",
-      "dest": "sync_players_1_state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_4",
-      "dest": "sync_players_1_state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_7",
-      "dest": "sync_players_1_state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_7",
-      "dest": "sync_players_1_state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_5",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
     {
       "trigger": "advance",
       "source": "defeat_boss_1_state_3",
@@ -816,16 +591,6 @@
       "source": "defeat_boss_1_state_4",
       "dest": "defeat_boss_1_state_5",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "defeat_boss_1_state_4",
-      "dest": "defeat_boss_1_state_6",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -883,8 +648,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "defeat_boss_1_state_1",
+      "source": "state_7",
+      "dest": "state_8",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -893,8 +658,18 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_2",
-      "dest": "defeat_boss_1_state_1",
+      "source": "state_7",
+      "dest": "state_7",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -903,39 +678,9 @@
     },
     {
       "trigger": "advance",
-      "source": "defeat_boss_1_state_1",
-      "dest": "sync_players_1_state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "defeat_boss_1_state_2",
-      "dest": "sync_players_1_state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "defeat_boss_1_state_3",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "defeat_boss_1_state_6",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
+      "source": "state_9",
+      "dest": "defeat_boss_1_state_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -943,45 +688,6 @@
     }
   ],
   "regions": [
-    {
-      "id": "sync_players_1",
-      "label": "Sync players",
-      "members": [
-        "sync_players_1_state_1",
-        "sync_players_1_state_2",
-        "sync_players_1_state_3",
-        "sync_players_1_state_4",
-        "sync_players_1_state_5",
-        "sync_players_1_state_7"
-      ],
-      "color": 1,
-      "source": {
-        "subgraph_id": "24556de8-5917-4f4e-8760-177b0be20c3d",
-        "version": 3,
-        "inputs": {},
-        "param_overrides": {
-          "state_2": {
-            "target_zone": "WizardCity/WC_Streets/WC_OldeTown"
-          },
-          "state_5": {
-            "zone": "WizardCity/WC_Hub"
-          },
-          "state_3": {
-            "target_zone": "WizardCity/*"
-          }
-        },
-        "label_overrides": {
-          "state_5": "Teleport to The Commons",
-          "state_2": "Try teleport to Olde Town",
-          "state_3": "Try teleport to Wizard City",
-          "state_4": "Go to Wizard City"
-        },
-        "anchor": {
-          "x": -2200.000260805283,
-          "y": -90.000026773967
-        }
-      }
-    },
     {
       "id": "defeat_boss_1",
       "label": "Defeat boss",
@@ -993,21 +699,7 @@
         "defeat_boss_1_state_5",
         "defeat_boss_1_state_6"
       ],
-      "color": 2,
-      "source": {
-        "subgraph_id": "201b8a96-4afc-47fb-9bd3-1ef6af46026f",
-        "version": 3,
-        "inputs": {
-          "dungeon_entrance_zone": "WizardCity/WC_Streets/WC_OldeTown",
-          "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_OldeTown_T2"
-        },
-        "param_overrides": {},
-        "label_overrides": {},
-        "anchor": {
-          "x": 1319.9995990743525,
-          "y": -89.99978889180018
-        }
-      }
+      "color": 2
     }
   ]
 }

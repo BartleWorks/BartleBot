@@ -283,7 +283,7 @@ def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple
     Tags **OR within a group and AND across groups**: "Gear or Jewels, *and* Dungeon".
     That is the faceted model two labelled buttons imply, and it is the only one that
     stays useful — the groups answer different questions (:mod:`bartlebot.bot_tags`:
-    Rewards is what a run yields, Activity is what it does), so ANDing across them
+    Rewards is what a run yields, Activities is what it does), so ANDing across them
     narrows, while ANDing *within* one asks for a bot that drops both Gear and Jewels
     and usually returns nothing. Cross-group pairs like "Dungeon + Spellements" behave
     exactly as they did when every tag ANDed.

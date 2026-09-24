@@ -1,7 +1,7 @@
 """Tests for bartlebot.subgraphs — composing instances into a bot and extracting them back out.
 
 The fixture definition is a synthetic seven-node "sync players" chain shaped like the
-boss template's region (relog → form_group → two teleports → go_to_world → hub →
+boss template's region (relog → gather → two teleports → go_to_world → hub →
 wisps). Ids, zones and worlds are invented; nothing here is a real character.
 """
 
@@ -88,22 +88,22 @@ def sync_players_definition(version: int = 1, world: str = "WizardCity") -> Subg
         states=[
             StateModel(id="relog", node_type="relog", position={"x": 0.0, "y": 180.0}, params={"relog_clients": []}),
             StateModel(
-                id="form_group",
-                node_type="form_group",
+                id="gather",
+                node_type="teleport_to_friend",
                 position={"x": 440.0, "y": 180.0},
-                params={"leader_index": 0, "require_all": True},
+                params={"target_hooked_player": True, "target_player": 0, "to_zone": ""},
             ),
             StateModel(
                 id="tp_a",
-                node_type="teleport_to_player_if_in_zone",
+                node_type="teleport_to_world_hub",
                 position={"x": 880.0, "y": 0.0},
-                params={"target_zone": "DragonSpyre/DS_Hub"},
+                params={"zone": "DragonSpyre/DS_Hub"},
             ),
             StateModel(
                 id="tp_b",
-                node_type="teleport_to_player_if_in_zone",
+                node_type="teleport_to_world_hub",
                 position={"x": 1320.0, "y": 0.0},
-                params={"target_zone": f"{world}/Hub"},
+                params={"zone": f"{world}/Hub"},
             ),
             StateModel(
                 id="go_to_world", node_type="go_to_world", position={"x": 1760.0, "y": 90.0}, params={"world": world}
@@ -123,9 +123,9 @@ def sync_players_definition(version: int = 1, world: str = "WizardCity") -> Subg
         ],
         transitions=[
             _t("relog", "relog", "FAILURE"),
-            _t("relog", "form_group"),
-            _t("form_group", "relog", "FAILURE"),
-            _t("form_group", "tp_a"),
+            _t("relog", "gather"),
+            _t("gather", "relog", "FAILURE"),
+            _t("gather", "tp_a"),
             _t("tp_a", "tp_b", "FAILURE"),
             _t("tp_b", "go_to_world", "FAILURE"),
             _t("tp_b", "hub"),
@@ -337,7 +337,7 @@ def test_a_set_input_reaches_every_bound_member(library):
     by_id = {s.id: s for s in bot.states}
     assert by_id[m("go_to_world")].params["world"] == "Marleybone"
     assert by_id[m("hub")].params["zone"] == "Marleybone"
-    assert by_id[m("tp_b")].params["target_zone"] == "WizardCity/Hub"  # not bound; definition value
+    assert by_id[m("tp_b")].params["zone"] == "WizardCity/Hub"  # not bound; definition value
 
 
 # ---------------------------------------------------------------------------
@@ -412,7 +412,7 @@ def test_compose_held_when_external_edge_endpoint_would_vanish(bot, library):
     defn = sync_players_definition(version=2)
     defn.states = [s for s in defn.states if s.id != "tp_a"]
     defn.transitions = [t for t in defn.transitions if "tp_a" not in (t.source, t.dest)]
-    defn.transitions.append(_t("form_group", "tp_b"))
+    defn.transitions.append(_t("gather", "tp_b"))
     library.save(defn)
 
     composed, report = compose_bot(bot, library)
@@ -610,7 +610,10 @@ def plain_bot() -> BotConfig:
         states=[
             StateModel(id="state_1", node_type="relog", position={"x": 100.0, "y": 50.0}, params={"relog_clients": []}),
             StateModel(
-                id="state_2", node_type="form_group", position={"x": 540.0, "y": 20.0}, params={"leader_index": 0}
+                id="state_2",
+                node_type="teleport_to_friend",
+                position={"x": 540.0, "y": 20.0},
+                params={"target_player": 0},
             ),
             StateModel(id="state_3", node_type="enter_zone", position={"x": 980.0, "y": 20.0}, params={}),
         ],
@@ -768,7 +771,7 @@ def test_reresolve_member_params_applies_inputs_and_overrides_in_place(bot, libr
     by_id = {s.id: s for s in bot.states}
     assert by_id[m("go_to_world")].params["world"] == "Mooshu"
     assert by_id[m("hub")].params["zone"] == "Elsewhere/Hub"
-    assert by_id[m("tp_b")].params["target_zone"] == "WizardCity/Hub"
+    assert by_id[m("tp_b")].params["zone"] == "WizardCity/Hub"
     assert by_id["state_1"].params == {"to_zone": "X/Y"}, "an external state is not the instance's"
 
 
@@ -816,7 +819,9 @@ def test_seed_free_params_frees_defaults_and_keeps_author_choices():
     seeded = seed_free_params(defn.states, NODE_PARAM_SCHEMAS)
     assert seeded["relog"] == ["relog_clients"]
     assert "tp_a" not in seeded and "hub" not in seeded, "a zone that is set is the author's"
-    assert seeded["form_group"] == ["leader_index", "require_all"], "explicitly at the default still counts"
+    assert seeded["gather"] == ["target_hooked_player", "target_player", "to_zone"], (
+        "explicitly at the default still counts"
+    )
     assert "timeout" not in seeded["wisps"] and "only_safe" in seeded["wisps"]
 
     previous = defn.model_copy(update={"free_params": {"hub": ["zone", "gone"]}})
@@ -834,18 +839,21 @@ def test_extract_seeds_free_params_and_push_carries_them():
 
     bot = plain_bot()
     defn, source = extract_definition(bot, "r1", new_id="startup", name="Startup", schemas=NODE_PARAM_SCHEMAS)
-    assert defn.free_params == {"state_1": ["relog_clients"], "state_2": ["leader_index", "require_all"]}
+    assert defn.free_params == {
+        "state_1": ["relog_clients"],
+        "state_2": ["target_hooked_player", "target_player", "to_zone"],
+    }
     unseeded, _ = extract_definition(plain_bot(), "r1", new_id="s", name="S")
     assert unseeded.free_params == {}
     convert_region_to_instance(bot, "r1", defn, source, instance_id="startup_1")
     # the author locks one while editing, and adds a state whose value is set
-    defn.free_params["state_2"] = ["require_all"]
+    defn.free_params["state_2"] = ["to_zone"]
     bot.states.append(
         StateModel(id="state_9", node_type="relog", position={"x": 0.0, "y": 0.0}, params={"relog_clients": [1]})
     )
     bot.regions[0].members.append("state_9")
     pushed, _ = push_back(bot, "startup_1", defn, schemas=NODE_PARAM_SCHEMAS)
-    assert pushed.free_params == {"state_1": ["relog_clients"], "state_2": ["require_all"]}
+    assert pushed.free_params == {"state_1": ["relog_clients"], "state_2": ["to_zone"]}
 
 
 def test_free_params_must_name_a_state():

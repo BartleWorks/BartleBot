@@ -31,7 +31,7 @@ to a player who is already in a group, so form_group dissolves every group excep
 largest one (see leave_group and _dissolve_other_groups) and then invites the freed
 clients into it — the same invite path any ungrouped client takes.
 
-Deliberately free of Qt and FSM dependencies so that the form_group node, AppController
+Deliberately free of Qt and FSM dependencies so that the relog node, AppController
 and ClientManager can all call it, and so it can be tested without either.
 
 Requires every account to be mutually friended in-game — a one-time manual setup.
@@ -75,7 +75,7 @@ from bartlebot.nodes.timing import (
 
 logger = logging.getLogger(__name__)
 
-# Serialises form_group across its three callers: the form_group node, pre-run setup, and
+# Serialises form_group across its three callers: the relog node, pre-run setup, and
 # post-recovery regrouping.
 #
 # Without this, two calls can overlap and each elect a different leader, producing two
@@ -84,7 +84,7 @@ logger = logging.getLogger(__name__)
 #
 # Two overlaps are reachable today:
 #   * machine.pause() suspends the FSM only AFTER the current node finishes, so a
-#     form_group node keeps running while recovery starts regrouping;
+#     relog node keeps regrouping while recovery starts regrouping too;
 #   * ClientManager.set_machine() is called before pre-run setup, so a client that dies
 #     during deck apply or pre-run grouping queues recovery alongside it.
 #

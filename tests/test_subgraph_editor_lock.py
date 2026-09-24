@@ -23,7 +23,7 @@ from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import ComposeReport, RegionStatus, linked_regions, local_id
 from tests.test_subgraphs import REGION, SYNC_ID, linked_bot, m, sync_players_definition
 
-LOCALS = ("relog", "form_group", "tp_a", "tp_b", "go_to_world", "hub", "wisps")
+LOCALS = ("relog", "gather", "tp_a", "tp_b", "go_to_world", "hub", "wisps")
 
 
 @pytest.fixture

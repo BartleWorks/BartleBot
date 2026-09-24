@@ -276,8 +276,8 @@ def test_expose_as_input_binds_and_survives_push(linked, library):
     assert linked.begin_subgraph_edit(REGION)
     defn = linked.editing_definition
     assert linked.expose_input(m("wisps"), "timeout", new_input=SubgraphInput(name="wisp_timeout", type="int"))
-    assert linked.expose_input(m("tp_a"), "target_zone", existing="world")
-    assert linked.expose_input(m("tp_a"), "target_zone", existing="world"), "binding twice is a no-op"
+    assert linked.expose_input(m("tp_a"), "zone", existing="world")
+    assert linked.expose_input(m("tp_a"), "zone", existing="world"), "binding twice is a no-op"
     assert linked.expose_input(m("hub"), "zone", new_input=SubgraphInput(name="world", type="str")) is False
     assert [i.name for i in defn.inputs] == ["world", "wisp_timeout"]
     assert defn.inputs[1].bindings == [SubgraphInputBinding(state="wisps", param="timeout")]
@@ -461,22 +461,22 @@ def test_free_toggle_while_editing_reaches_the_pushed_definition(linked, library
     assert linked.begin_subgraph_edit(REGION)
     linked.select_state(m("tp_b"))
     form = linked.param_panel.param_form
-    assert form.override_button("target_zone") is None, "the author's page has no override toggle"
-    assert form.free_button("target_zone") is not None and not form.free_button("target_zone").isChecked()
-    assert form.expose_button("target_zone") is not None and form.expose_button("target_zone").isEnabled()
-    form.free_button("target_zone").setChecked(True)
-    assert linked.editing_definition.free_params == {"tp_b": ["target_zone"]}
+    assert form.override_button("zone") is None, "the author's page has no override toggle"
+    assert form.free_button("zone") is not None and not form.free_button("zone").isChecked()
+    assert form.expose_button("zone") is not None and form.expose_button("zone").isEnabled()
+    form.free_button("zone").setChecked(True)
+    assert linked.editing_definition.free_params == {"tp_b": ["zone"]}
     # a param an input owns (hub.zone is bound to "world") has no lock, and Expose is off
     linked.select_state(m("hub"))
     assert form.free_button("zone") is None
     assert form.expose_button("zone") is not None and not form.expose_button("zone").isEnabled()
 
     assert linked.save_subgraph_to_library()
-    assert library.get(SYNC_ID).free_params == {"tp_b": ["target_zone"]}
+    assert library.get(SYNC_ID).free_params == {"tp_b": ["zone"]}
     linked.select_state(m("tp_b"))
-    assert form.widget("target_zone").isEnabled() and form.override_button("target_zone") is None, "free now"
-    linked.select_state(m("form_group"))
-    assert not form.widget("require_all").isEnabled(), "still the subgraph's"
+    assert form.widget("zone").isEnabled() and form.override_button("zone") is None, "free now"
+    linked.select_state(m("gather"))
+    assert not form.widget("target_hooked_player").isEnabled(), "still the subgraph's"
 
 
 def test_set_param_free_is_refused_outside_an_edit(linked):
@@ -486,4 +486,7 @@ def test_set_param_free_is_refused_outside_an_edit(linked):
 def test_save_region_seeds_free_params(plain, library):
     assert plain.save_region_as_subgraph("r1", name="Startup")
     defn = library.get(_region(plain, "startup_1").source.subgraph_id)
-    assert defn.free_params == {"state_1": ["relog_clients"], "state_2": ["leader_index", "require_all"]}
+    assert defn.free_params == {
+        "state_1": ["relog_clients"],
+        "state_2": ["target_hooked_player", "target_player", "to_zone"],
+    }

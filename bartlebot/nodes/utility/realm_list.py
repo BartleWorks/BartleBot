@@ -1,10 +1,10 @@
 """The in-game realm list: opening it, paging it, and hopping to a row.
 
-Shared by the two realm nodes. ``change_to_next_realm`` walks a page range and picks
-the row after the current one; ``change_to_favorite_realm`` walks every page looking
-for one name. Everything between -- the spellbook, the Preferences tab, the Realms tab,
-the render wait, the page arrows, the cooldown on Go To Realm, the two modals that can
-interrupt it -- is the same in both and lives here once.
+Shared by ``change_realm``'s two modes. Next-realm mode walks a page range and picks
+the row after the current one; favourite mode walks every page looking for one name.
+Everything between -- the spellbook, the Preferences tab, the Realms tab, the render
+wait, the page arrows, the cooldown on Go To Realm, the two modals that can interrupt
+it -- is the same in both and lives here once.
 
 Nothing here decides *which* realm. A function takes a row on the page currently
 showing, and the caller is responsible for having navigated to it.

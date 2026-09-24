@@ -87,7 +87,7 @@ def test_a_single_tag_filters_with_no_query():
 
 
 def test_tags_from_different_groups_and_together():
-    """Rewards and Activity answer different questions, so combining them narrows."""
+    """Rewards and Activities answer different questions, so combining them narrows."""
     results, _ = filter_bot_metas(ALL, "", {"Spellements", "Dungeon"})
 
     assert _names(results) == ["Mt Olympus"]
@@ -429,12 +429,12 @@ def _pill_styles(card: _BotCard) -> str:
 def test_a_tag_pill_is_coloured_by_its_group(qapp):
     """One palette for a tag everywhere: picker dot, filter chip, card pill.
 
-    JADE carries Gear (Rewards) and Boss (Activity), so both hues appear.
+    JADE carries Gear (Rewards) and Boss (Activities), so both hues appear.
     """
     styles = _pill_styles(_BotCard(JADE))
 
     assert group_accent("Rewards") in styles
-    assert group_accent("Activity") in styles
+    assert group_accent("Activities") in styles
 
 
 def test_the_version_pill_is_neutral_rather_than_the_accent(qapp):

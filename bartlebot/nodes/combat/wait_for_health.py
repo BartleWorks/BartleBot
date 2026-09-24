@@ -1,4 +1,14 @@
-"""Node: block until all clients' health is at or above a threshold."""
+"""Node: block until all clients' health is at or above a threshold.
+
+For zones where ``handle_potions`` cannot refill: housing gauntlets today, boss rematches
+later, both entered through a housing item, where there is no spot to mark and come back
+to. Anywhere else, ``handle_potions`` is the answer, and this is not a general-purpose
+health check -- four of its first five uses were standing in for potion handling their
+bots never got (see docs/LIBRARY_MIGRATION.md).
+
+The cap on consecutive retries is what bounds a ``FAILURE`` self-loop: at the default
+timeout, five two-minute waits and the bot stops rather than waiting forever.
+"""
 
 import asyncio
 import logging
@@ -37,7 +47,13 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("SUCCESS", "All players met the health threshold before the timeout."),
         ReturnSpec("FAILURE", "The timeout expired before all players met the health threshold."),
     ],
-    max_consecutive_retries=None,
+    max_consecutive_retries=5,
+    usage_notes=(
+        "Only for zones where Handle Potions cannot refill — a housing gauntlet, entered through "
+        "a housing item, has no spot to mark and come back to. Anywhere else use Handle Potions: "
+        "this waits on natural regeneration, and is not a general-purpose health check."
+    ),
+    see_also=["handle_potions"],
 )
 
 

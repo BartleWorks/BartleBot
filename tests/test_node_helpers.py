@@ -1184,8 +1184,6 @@ async def test_poll_each_until_seen_default_behavior_unaffected_by_stop_fn():
 # wait_for_zone_with_recovery
 # ---------------------------------------------------------------------------
 
-import bartlebot.nodes.teleportation.teleport_to_player_if_in_zone as tpz  # noqa: E402
-
 
 async def test_wait_for_zone_with_recovery_returns_none_on_plain_success():
     """No recovery needed: everyone is already in zone on the first check."""
@@ -1380,11 +1378,11 @@ async def test_attempt_zone_recovery_ports_only_the_actual_stragglers():
     zones = ["Dst", "Dst", "Elsewhere"]
     machine = FakeMachine()
 
-    find_target = AsyncMock(return_value=tpz.ZoneTarget(index=0, name="Luke SkullHunter"))
+    find_target = AsyncMock(return_value=nh.ZoneTarget(index=0, name="Luke SkullHunter"))
     port = AsyncMock(return_value=nh.PortToFriendResult(seen_loading={0}))
 
     with (
-        patch.object(tpz, "find_target_in_zone", find_target),
+        patch.object(nh, "find_target_in_zone", find_target),
         patch.object(nh, "port_to_friend", port),
         patch.object(nh, "none_loading", new=AsyncMock(return_value=True)),
     ):
@@ -1396,6 +1394,38 @@ async def test_attempt_zone_recovery_ports_only_the_actual_stragglers():
     assert port.await_args[0][1] == "luke skullhunter"
 
 
+async def test_find_target_in_zone_picks_the_first_client_there_by_player_order():
+    from bartlebot import wizard_names  # noqa: PLC0415
+
+    clients = [FakeClient(), FakeClient(), FakeClient()]
+    try:
+        wizard_names.remember(clients[1], "Luke SkullHunter")
+        wizard_names.remember(clients[2], "Other Name")
+        target = await nh.find_target_in_zone(clients, "Dst", zones=["Elsewhere", "Dst", "Dst"])
+    finally:
+        wizard_names.clear_cache()
+
+    assert (target.index, target.name, target.error) == (1, "Luke SkullHunter", "")
+
+
+async def test_find_target_in_zone_reports_nobody_there():
+    clients = [FakeClient(), FakeClient()]
+    target = await nh.find_target_in_zone(clients, "Dst", zones=["Elsewhere", "Elsewhere"])
+
+    assert target.index is None
+    assert "no hooked client" in target.error
+
+
+async def test_find_target_in_zone_reports_a_target_whose_name_is_not_known_yet():
+    clients = [FakeClient(), FakeClient()]
+    for c, z in zip(clients, ("Dst", "Elsewhere")):
+        c.zone_name.return_value = z
+    target = await nh.find_target_in_zone(clients, "Dst")
+
+    assert target.index is None
+    assert "P1" in target.error and "not been detected" in target.error
+
+
 async def test_attempt_zone_recovery_gives_up_quietly_when_no_target_found():
     """Nobody is in the target zone at all — there is nothing to port anyone to, and this
     must not attempt a teleport or raise."""
@@ -1403,10 +1433,10 @@ async def test_attempt_zone_recovery_gives_up_quietly_when_no_target_found():
     clients = [FakeClient(), FakeClient()]
     zones = ["Elsewhere", "Elsewhere"]
 
-    find_target = AsyncMock(return_value=tpz.ZoneTarget(error="no hooked client is currently in 'Dst'"))
+    find_target = AsyncMock(return_value=nh.ZoneTarget(error="no hooked client is currently in 'Dst'"))
     port = AsyncMock()
 
-    with patch.object(tpz, "find_target_in_zone", find_target), patch.object(nh, "port_to_friend", port):
+    with patch.object(nh, "find_target_in_zone", find_target), patch.object(nh, "port_to_friend", port):
         await nh._attempt_zone_recovery(machine, clients, "Dst", zones, 0)
 
     port.assert_not_called()
@@ -1421,8 +1451,8 @@ async def test_attempt_zone_recovery_swallows_a_value_error():
     zones = ["Dst", "Elsewhere"]
     machine = FakeMachine()
 
-    find_target = AsyncMock(return_value=tpz.ZoneTarget(index=0, name="Luke SkullHunter"))
+    find_target = AsyncMock(return_value=nh.ZoneTarget(index=0, name="Luke SkullHunter"))
     port = AsyncMock(side_effect=ValueError("Could not find friend"))
 
-    with patch.object(tpz, "find_target_in_zone", find_target), patch.object(nh, "port_to_friend", port):
+    with patch.object(nh, "find_target_in_zone", find_target), patch.object(nh, "port_to_friend", port):
         await nh._attempt_zone_recovery(machine, clients, "Dst", zones, 0)  # must not raise

@@ -20,7 +20,7 @@ from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.sidebar.sections.setup_section import SetupSection
 from bartlebot.gui.widgets.option_widgets import NODE_ONLY_TYPES, OPTION_TYPES, make_option_widget, widget_value
 from bartlebot.gui.widgets.realm_combo import NOT_SET_TEXT, RealmCombo
-from bartlebot.nodes.utility import change_to_favorite_realm as cf
+from bartlebot.nodes.utility import change_realm as cf
 from bartlebot.settings_manager import SettingsManager
 
 _OPTION = cf.OPTION_FAVORITE_REALM
@@ -38,7 +38,7 @@ def _config() -> BotConfig:
         name="Realm Bot",
         initial="a",
         recovery_state="a",
-        states=[StateModel(id="a", node_type="change_to_favorite_realm", params={})],
+        states=[StateModel(id="a", node_type="change_realm", params={"use_favorite_realm": True})],
         transitions=[],
     )
 

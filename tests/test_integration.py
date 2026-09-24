@@ -813,6 +813,30 @@ def test_no_bot_declares_a_quicksell_flag_it_does_not_mean_to():
     assert not offenders, f"bots declaring a quicksell flag that changes nothing: {offenders}"
 
 
+def test_every_self_loop_lands_on_a_node_with_a_retry_cap():
+    """A self-loop on an uncapped node spins forever: nothing else ever stops it.
+
+    AppController passes no machine-wide ``max_consecutive_same_state``, so the only bound
+    on a state re-entering itself is its node's own ``max_consecutive_retries``. Two bots
+    had one on a node without it -- a wait_for_health retried in two-minute waits forever,
+    and an unbounded apply_level_scaling -- and both nodes carry a cap now.
+    """
+    from bartlebot.nodes.registry import NODE_SPECS  # noqa: PLC0415
+
+    offenders: list[str] = []
+    for path in _all_bot_files():
+        raw = _load_raw(path)
+        node_types = {s.get("id"): s.get("node_type") for s in raw.get("states") or []}
+        for t in raw.get("transitions") or []:
+            if t.get("source") != t.get("dest"):
+                continue
+            node_type = node_types.get(t.get("source"))
+            spec = NODE_SPECS.get(node_type)
+            if spec is not None and spec.max_consecutive_retries is None:
+                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{t.get('source')} ({node_type})")
+    assert not offenders, f"self-loops on a node with no retry cap: {offenders}"
+
+
 def test_no_bot_stores_a_friend_name():
     """A character name in a bot file is both a privacy leak and a portability bug.
 

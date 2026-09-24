@@ -28,8 +28,10 @@ from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_siz
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
 from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
+from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.vendor import PRODUCT, VENDOR
+from bartlebot.store_roots import DEV_ENV_VAR, dev_mode
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import ComposeReport, compose_bot
 from bartlebot.utils.window_kill import force_close_client
@@ -82,6 +84,12 @@ class AppController(QObject):
         # One view of the subgraph library for the session, reloaded on every open and
         # before every run so a definition edited on disk reaches the bot that links it.
         self._subgraph_library = SubgraphLibrary()
+        if dev_mode():
+            logger.warning(
+                "%s is set: subgraphs and combat strategies are read from and saved to %s",
+                DEV_ENV_VAR,
+                project_root(),
+            )
 
         # Long-lived asyncio task — held here to prevent GC (event loop keeps weak refs only).
         self._bot_task: asyncio.Task | None = None

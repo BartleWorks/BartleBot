@@ -4,6 +4,15 @@ What a subgraph definition and an instance are, how an instance follows its defi
 where the three levels of a member's params come from, and what each authoring verb does.
 The editor surfaces are documented with the rest of the canvas in `bartlebot/gui/CLAUDE.md`.
 
+> **Partly superseded.** `docs/SUBGRAPH_CALLS.md` links the successor epic's plan, which
+> overrides these sections: the composite-node rejection (*An instance is a region*), the
+> three-level param model (*A member's params come from three levels*; an instance now sets
+> inputs and nothing else), authoring in place (*Authoring is edit in place*; a definition is
+> now its own document), instance locking and the member pages (*The properties panel on an
+> instance*), and instance-owned member layout (*Layout is instance-owned*). Derived ids,
+> follow-latest with snapshot fallback, the two roots, nesting and cycles still hold. Read both
+> before any subgraph work.
+
 Designed for #37. Each stage is its own sub-issue and lands on `master` alone; a section
 below says which stage implements it, and the table is updated as they merge.
 
@@ -238,6 +247,12 @@ write and shadows a shipped file of the same id. `bartlebot/subgraph_store.py` m
 `strategy_store.py` function for function, and the `Origin` enum (`SHIPPED`,
 `SHIPPED_OVERRIDE`, `USER`, `MISSING`) is the one from the strategy store, not a copy,
 so the region page can say honestly whether removing a definition deletes or reverts it.
+
+A shipped definition is authored with `BARTLEBOT_DEV` set, which makes the project root
+the user root as well: one copy, written where git sees it. Authoring without it is how
+the first shipped definitions were lost — saved to `%APPDATA%`, where they shadowed the
+repo and never reached it. `test_every_linked_bot_resolves_under_the_shipped_root_alone`
+is the guard.
 
 `SubgraphLibrary` is the session's view of the two roots: one per app session, reloaded
 on open and before run, cached between. Pure functions receive it; tests build one on a

@@ -21,7 +21,7 @@ def _config(transitions=None):
         name="t",
         initial="a",
         recovery_state="a",
-        states=[StateModel(id=sid, node_type="change_to_next_realm", params={}) for sid in ("a", "b", "c")],
+        states=[StateModel(id=sid, node_type="change_realm", params={}) for sid in ("a", "b", "c")],
         transitions=transitions
         if transitions is not None
         else [
@@ -74,7 +74,7 @@ def test_changing_node_type_updates_the_output_ports(qapp):
     config = scene.config
 
     panel.show_state(config.states[0], all_states=config.states, all_transitions=config.transitions)
-    idx = panel.node_type_combo.findData("check_health", Qt.ItemDataRole.UserRole)
+    idx = panel.node_type_combo.findData("check_health_and_mana", Qt.ItemDataRole.UserRole)
     if idx < 0:  # condition nodes are the only ones with non-SUCCESS/FAILURE returns
         pytest.skip("no condition node registered to switch to")
     panel.node_type_combo.setCurrentIndex(idx)
@@ -125,7 +125,7 @@ def test_rewiring_an_edge_can_be_undone(qapp):
 def test_changing_the_source_reloads_the_when_choices(qapp):
     """The When list belongs to the source node, so a rewire has to repopulate it."""
     config = _config()
-    config.states[1].node_type = "check_health"
+    config.states[1].node_type = "check_health_and_mana"
     canvas = _canvas(qapp, config)
     panel = canvas.param_panel
 
@@ -149,7 +149,7 @@ def test_changing_the_source_reloads_the_when_choices(qapp):
 def test_changing_the_when_condition_reroutes_the_edge(qapp):
     """`when` picks the source port, so the model change alone leaves the old path."""
     config = _config()
-    config.states[0].node_type = "check_health"
+    config.states[0].node_type = "check_health_and_mana"
     config.transitions[0].when = "TRUE"
     canvas = _canvas(qapp, config)
     scene = canvas.scene
@@ -174,7 +174,7 @@ def test_changing_the_when_condition_reroutes_the_edge(qapp):
 def test_changing_the_when_condition_rekeys_the_edge_record(qapp):
     """`when` is part of the edge's identity — a stale key makes later lookups miss."""
     config = _config()
-    config.states[0].node_type = "check_health"
+    config.states[0].node_type = "check_health_and_mana"
     config.transitions[0].when = "TRUE"
     canvas = _canvas(qapp, config)
     scene = canvas.scene
@@ -205,7 +205,7 @@ def test_a_duplicate_when_condition_is_refused(qapp, monkeypatch):
             TransitionModel(trigger="advance", source="a", dest="b", when="FALSE"),
         ]
     )
-    config.states[0].node_type = "check_health"
+    config.states[0].node_type = "check_health_and_mana"
     canvas = _canvas(qapp, config)
     panel = canvas.param_panel
 
@@ -228,7 +228,7 @@ def test_a_duplicate_when_condition_is_refused(qapp, monkeypatch):
 
 def test_changing_the_when_condition_can_be_undone(qapp):
     config = _config()
-    config.states[0].node_type = "check_health"
+    config.states[0].node_type = "check_health_and_mana"
     config.transitions[0].when = "TRUE"
     canvas = _canvas(qapp, config)
     panel = canvas.param_panel
