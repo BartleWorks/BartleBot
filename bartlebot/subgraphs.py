@@ -1,36 +1,33 @@
 """Composing subgraph instances into a bot, and extracting them back out. Pure.
 
-A subgraph *definition* (``SubgraphDefinition``) holds states with local ids and
-positions relative to ``(0, 0)``. An *instance* is an ordinary ``RegionModel`` whose
-``source`` names the definition; its members are ordinary states the engine sees
-as any other. Everything here is a function over Pydantic models with no Qt, no
-settings and no file access beyond the :class:`SubgraphLibrary` it is handed, so
-the whole policy is testable on a ``tmp_path``. docs/SUBGRAPHS.md has the design.
+A subgraph *definition* (``SubgraphDefinition``) is a user-made node type: its inputs
+are its params, its Entry and Exit nodes are its ports, and its body holds states with
+local ids and positions relative to ``(0, 0)``. An *instance* is an ordinary
+``RegionModel`` whose ``source`` names the definition; its members are ordinary states
+the engine sees as any other, and the editor draws the whole instance as one call node.
+Everything here is a function over Pydantic models with no Qt, no settings and no file
+access beyond the :class:`SubgraphLibrary` it is handed, so the whole policy is
+testable on a ``tmp_path``. The plan is linked from docs/SUBGRAPH_CALLS.md.
 
 The rules this module owns:
 
 - **Member ids are derived**: ``<region id>_<local id>``, deterministic, so a
   definition update lands on the same ids that combat assignments and roles key on.
   A linked region's id is minted as ``<slug of the definition name>_<n>`` with ``n``
-  above every number that slug has carried in the bot (:func:`mint_instance_id`), so
-  the third state of the first "Sync players" instance is ``sync_players_1_state_3``.
-  A nested instance prefixes again: the inner definition composes to local ids like
-  ``<inner region>_<local>`` and the outer instance prefixes every one of them.
+  above every number that slug has carried in the bot (:func:`mint_instance_id`).
+  A nested instance prefixes again.
 - **Nesting is membership**: an instance is inside another when every member of it
-  is a member of the other. Ids are never parsed to find that out, so two definitions
-  whose slugs share a prefix ("Farm" and "Farm 2") cannot be mistaken for nested.
-- **Params resolve in three levels**: an instance's ``param_overrides`` beat an
-  input the instance has *set* (non-``None``), which beats the definition's value.
-  The definition also says which params are *free* (``free_params``): a consumer
-  sets those on the node without ceremony, and the edit is stored as an override
-  (:func:`sync_free_overrides`). A member's label is always the consumer's, kept
-  in ``label_overrides``.
-- **Layout is instance-owned**: a member the instance already has keeps its stored
-  position; a member new to it is placed at ``anchor + definition position``.
+  is a member of the other. Ids are never parsed to find that out.
+- **Port nodes are never composed.** The bot stores members as plain states and
+  edges wired straight to members. What records which port each crossing uses is
+  ``source.ports``, so a later definition change moves the bot's edges and roles
+  with the port (:func:`compose_bot`).
+- **An instance sets inputs and nothing else**: a member param is the bound input's
+  value when the instance set one, and the definition's otherwise.
+- **Layout is the definition's**: members sit at ``anchor + definition position``.
 - **Composition never leaves a bot unloadable**: when the definition is missing,
-  invalid, cyclic, or would remove a member holding ``initial``/``recovery_state``
-  or the endpoint of an external edge, the stored snapshot is kept and the region
-  is flagged in the :class:`ComposeReport`.
+  invalid, cyclic, or removes a port this instance uses, the stored snapshot is kept
+  and the region is flagged in the :class:`ComposeReport`.
 """
 
 from __future__ import annotations
@@ -41,13 +38,19 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from bartlebot.bot.schema import (
+    PORT_NODE_TYPES,
+    SUBGRAPH_ENTRY,
+    SUBGRAPH_EXIT,
     SUBGRAPH_LOCAL_ID,
     BotConfig,
+    DefinitionMeta,
     RegionModel,
     StateModel,
     SubgraphDefinition,
+    SubgraphPort,
     SubgraphSource,
     TransitionModel,
+    definition_structure_errors,
 )
 from bartlebot.store_roots import Origin
 from bartlebot.subgraph_store import SubgraphLibrary
@@ -55,6 +58,10 @@ from bartlebot.subgraph_store import SubgraphLibrary
 #: Nesting depth past which composition refuses. A cycle is caught by id before this
 #: is reached; the limit is the second guard, against a chain that is merely absurd.
 MAX_DEPTH = 8
+
+#: How far a port node sits from the member it crosses at, when one is placed for the
+#: author: one grid column, the editor's ``GRID_W``, so it lands where a node would.
+PORT_COLUMN = 440.0
 
 RegionKind = Literal["linked", "held", "missing", "cycle", "invalid"]
 
@@ -125,9 +132,28 @@ def is_nested_in(inner: RegionModel, outer: RegionModel) -> bool:
     return inner is not outer and bool(inner.members) and set(inner.members) <= set(outer.members)
 
 
+def linked_regions(config: BotConfig) -> list[RegionModel]:
+    return [r for r in config.regions if r.source is not None]
+
+
+def outermost_linked_regions(regions: Sequence[RegionModel]) -> list[RegionModel]:
+    """The linked regions not composed through another one, in file order: one call node each."""
+    linked = [r for r in regions if r.source is not None]
+    return [r for r in linked if not any(is_nested_in(r, o) for o in linked)]
+
+
 def nested_regions(config: BotConfig, region: RegionModel) -> list[RegionModel]:
     """The linked regions composed through ``region``, in file order."""
     return [r for r in linked_regions(config) if is_nested_in(r, region)]
+
+
+def linked_region_of(config: BotConfig, state_id: str) -> RegionModel | None:
+    """The *outermost* linked region ``state_id`` belongs to -- the call node it is drawn as -- or ``None``."""
+    holders = [r for r in linked_regions(config) if state_id in r.members]
+    for r in holders:
+        if not any(is_nested_in(r, o) for o in holders):
+            return r
+    return None
 
 
 def _pos_add(a: dict | None, b: dict | None) -> dict | None:
@@ -143,15 +169,86 @@ def _pos_sub(a: dict | None, b: dict | None) -> dict | None:
 
 
 # ---------------------------------------------------------------------------
+# Ports
+# ---------------------------------------------------------------------------
+
+
+def is_port_node(state: StateModel) -> bool:
+    return state.node_type in PORT_NODE_TYPES
+
+
+def entry_nodes(defn: SubgraphDefinition | BotConfig) -> list[StateModel]:
+    """The definition's Entry nodes, in file order: the call node's entry ports, top to bottom."""
+    return [s for s in defn.states if s.node_type == SUBGRAPH_ENTRY]
+
+
+def exit_nodes(defn: SubgraphDefinition | BotConfig) -> list[StateModel]:
+    """The definition's Exit nodes, in file order: the call node's exit ports, top to bottom."""
+    return [s for s in defn.states if s.node_type == SUBGRAPH_EXIT]
+
+
+def port_name(state: StateModel) -> str:
+    """A port's name is its node's label, so renaming one changes nothing structural."""
+    return state.label or state.id
+
+
+def ports_of(states: Sequence[StateModel], transitions: Sequence[TransitionModel]) -> dict[str, SubgraphPort]:
+    """``{port id: where it crosses}`` for a definition's graph, in local ids.
+
+    An entry's member is where its one edge goes. An exit's feeds are the
+    ``(member, outcome)`` pairs of the edges into it, in file order.
+    """
+    ports: dict[str, SubgraphPort] = {}
+    for s in states:
+        if s.node_type == SUBGRAPH_ENTRY:
+            out = next((t.dest for t in transitions if t.source == s.id), None)
+            ports[s.id] = SubgraphPort(member=out)
+        elif s.node_type == SUBGRAPH_EXIT:
+            ports[s.id] = SubgraphPort(from_=[(t.source, t.when) for t in transitions if t.dest == s.id])
+    return ports
+
+
+def definition_ports(defn: SubgraphDefinition) -> dict[str, SubgraphPort]:
+    return ports_of(defn.states, defn.transitions)
+
+
+def entry_port_of(source: SubgraphSource, region_id: str, member: str) -> str | None:
+    """The entry port whose member is the bot-level ``member`` of this instance, or None."""
+    for pid, port in source.ports.items():
+        if port.member is not None and member_id(region_id, port.member) == member:
+            return pid
+    return None
+
+
+def exit_port_of(source: SubgraphSource, region_id: str, member: str, when: str | None) -> str | None:
+    """The exit port the bot-level ``(member, when)`` feeds, or None."""
+    for pid, port in source.ports.items():
+        for m, w in port.from_ or ():
+            if member_id(region_id, m) == member and w == when:
+                return pid
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Params
 # ---------------------------------------------------------------------------
 
 
-def resolve_member_params(defn: SubgraphDefinition, def_state: StateModel, source: SubgraphSource) -> dict:
-    """``param_override > bound input (if set) > definition value`` for one member.
+def exposed_key(member: str, key: str) -> str:
+    """Where an exposed node's param is valued in ``SubgraphSource.inputs``: ``<member>.<key>``."""
+    return f"{member}.{key}"
 
-    An input whose instance value is ``None`` is unset and leaves the definition's
-    value in place; a stored empty value is a choice and applies.
+
+def node_panels(defn: SubgraphDefinition | DefinitionMeta):
+    return [p for p in defn.panels if p.kind == "node"]
+
+
+def resolve_member_params(defn: SubgraphDefinition, def_state: StateModel, source: SubgraphSource) -> dict:
+    """``bound input (if set) > definition value`` for one member.
+
+    An input -- or an exposed node's param -- whose instance value is ``None`` is unset
+    and leaves the definition's value in place; a stored empty value is a choice and
+    applies. An exposed param's value also fans out to the other members bound to it.
     """
     params = dict(def_state.params)
     for inp in defn.inputs:
@@ -161,86 +258,21 @@ def resolve_member_params(defn: SubgraphDefinition, def_state: StateModel, sourc
         for b in inp.bindings:
             if b.state == def_state.id:
                 params[b.param] = value
-    params.update(source.param_overrides.get(def_state.id, {}))
+    for panel in node_panels(defn):
+        member = panel.member or ""
+        prefix = exposed_key(member, "")
+        if member == def_state.id:
+            for key, value in source.inputs.items():
+                if key.startswith(prefix) and value is not None:
+                    params[key[len(prefix) :]] = value
+        for key, extra in panel.bindings.items():
+            value = source.inputs.get(exposed_key(member, key))
+            if value is None:
+                continue
+            for b in extra:
+                if b.state == def_state.id:
+                    params[b.param] = value
     return params
-
-
-def free_keys(defn: SubgraphDefinition, local: str) -> frozenset[str]:
-    """The params of definition-local state ``local`` that its author left for the consumer."""
-    return frozenset(defn.free_params.get(local, ()))
-
-
-def is_default_param(field: object, value: object) -> bool:
-    """Whether ``value`` is what a fresh node carries for ``field``: unset, its default, empty, or zero.
-
-    ``field`` is a ``ParamField`` (duck-typed: ``default`` and ``type`` are read).
-    An all-zero XYZ and a bare 0 on a number with no declared default count as
-    default too -- "non-empty zones and non-zero XYZs are the author's" is the
-    rule :func:`seed_free_params` applies.
-    """
-    default = getattr(field, "default", None)
-    if value is None or value == default:
-        return True
-    empties: tuple[object, ...] = ("", [], {})
-    if value in empties and default in (None, *empties):
-        return True
-    if getattr(field, "type", "") == "xyz" and isinstance(value, dict):
-        try:
-            return all(float(value.get(k) or 0.0) == 0.0 for k in ("x", "y", "z"))
-        except (TypeError, ValueError):
-            return False
-    if default is None and isinstance(value, int | float) and not isinstance(value, bool) and value == 0:
-        return True
-    return False
-
-
-def seed_free_params(
-    states: list[StateModel], schemas: Mapping[str, Sequence[object]] | None, previous: SubgraphDefinition | None = None
-) -> dict[str, list[str]]:
-    """Which params of ``states`` are free: a state's author-decided set if ``previous`` has the state, else its defaults.
-
-    ``schemas`` maps node type to its ``ParamField``s (the registry's
-    ``NODE_PARAM_SCHEMAS``; passed in so this module stays registry-free). A
-    state ``previous`` already holds keeps its entry there -- the heuristic is a
-    seed, not a live rule, or an author's choices would flip whenever a value
-    changed -- trimmed to the params the node still declares. A new state is
-    seeded: a param still at its default is free, everything set is locked.
-    Without ``schemas`` a new state has no free params.
-    """
-    out: dict[str, list[str]] = {}
-    kept = {s.id for s in previous.states} if previous is not None else set()
-    for s in states:
-        fields = list(schemas.get(s.node_type, [])) if schemas is not None else []
-        keys = {getattr(f, "key", None) for f in fields}
-        if previous is not None and s.id in kept:
-            free = [k for k in previous.free_params.get(s.id, []) if not keys or k in keys]
-        else:
-            free = [f.key for f in fields if is_default_param(f, s.params.get(f.key))]  # type: ignore[attr-defined]
-        if free:
-            out[s.id] = free
-    return out
-
-
-def _stale_overrides(states: list[StateModel], source: SubgraphSource) -> list[str]:
-    """Overrides naming a state or param the definition no longer has. Kept, never pruned.
-
-    ``states`` is the definition-local view *before* overrides are applied, so a
-    param that exists only because the override put it there still reads as stale.
-    """
-    by_id = {s.id: s for s in states}
-    reasons: list[str] = []
-    for state_id, params in source.param_overrides.items():
-        state = by_id.get(state_id)
-        if state is None:
-            reasons.append(f"override on '{state_id}' names a state the subgraph no longer has")
-            continue
-        for key in params:
-            if key not in state.params:
-                reasons.append(f"override '{key}' on '{state_id}' names a param the subgraph no longer sets")
-    for state_id in source.label_overrides:
-        if state_id not in by_id:
-            reasons.append(f"label override on '{state_id}' names a state the subgraph no longer has")
-    return reasons
 
 
 # ---------------------------------------------------------------------------
@@ -250,12 +282,17 @@ def _stale_overrides(states: list[StateModel], source: SubgraphSource) -> list[s
 
 @dataclass
 class Materialized:
-    """What one instance composes to, in bot-level ids. Regions are the *nested* ones only."""
+    """What one instance composes to, in bot-level ids. Regions are the *nested* linked ones only.
+
+    ``ports`` is the definition's port map, in the definition's local ids -- what the
+    instance's ``source.ports`` becomes once these members are in the bot.
+    """
 
     states: list[StateModel]
     transitions: list[TransitionModel]
     regions: list[RegionModel]
-    #: Stale overrides found at any level. The instance keeps them; the report lists them.
+    ports: dict[str, SubgraphPort] = field(default_factory=dict)
+    #: A nested instance held on its stored snapshot, at any level.
     warnings: list[str] = field(default_factory=list)
 
     @property
@@ -263,56 +300,52 @@ class Materialized:
         return [s.id for s in self.states]
 
 
+@dataclass
+class _Graph:
+    """The parts of a bot -- or of a definition -- that composition rewrites."""
+
+    states: list[StateModel]
+    transitions: list[TransitionModel]
+    regions: list[RegionModel]
+    initial: str | None = None
+    recovery_state: str | None = None
+
+
 def _materialize_local(
     defn: SubgraphDefinition, source: SubgraphSource, library: SubgraphLibrary, stack: tuple[str, ...]
 ) -> Materialized:
-    """Compose ``defn`` into definition-local ids, nested instances already expanded.
+    """Compose ``defn`` into definition-local ids, nested instances recomposed from the library.
 
-    Positions come out relative to ``defn``'s origin. Params are resolved for this
-    level only: the caller (an outer instance) applies its own inputs and overrides
-    on top, keyed by whatever local id the state has at that level.
+    A nested instance is stored in the definition as a snapshot, the way a bot stores
+    one, and recomposed here by the same rules a bot's is; held, it keeps the
+    definition's snapshot and says so. Port nodes and the edges touching them are
+    dropped once the port map has been read off the result. Plain regions are the
+    definition's own layout and are not composed.
     """
-    if defn.id in stack:
-        raise SubgraphCycleError([*stack, defn.id])
-    if len(stack) >= MAX_DEPTH:
+    if defn.id in stack or len(stack) >= MAX_DEPTH:
         raise SubgraphCycleError([*stack, defn.id])
     stack = (*stack, defn.id)
 
-    states = [StateModel(**s.model_dump()) for s in defn.states]
-    transitions = [TransitionModel(**t.model_dump()) for t in defn.transitions]
-    regions: list[RegionModel] = []
+    graph = _Graph(
+        states=[s.model_copy(deep=True) for s in defn.states],
+        transitions=[t.model_copy(deep=True) for t in defn.transitions],
+        regions=[r.model_copy(deep=True) for r in defn.regions if r.source is not None],
+    )
     warnings: list[str] = []
+    for inner in outermost_linked_regions(graph.regions):
+        status = _recompose(graph, inner, library, stack, nested=True)
+        if status.kind in ("missing", "invalid"):
+            raise LookupError(f"nested subgraph '{inner.source.subgraph_id}' is missing")  # type: ignore[union-attr]
+        if status.kind == "held":
+            warnings.extend(f"nested '{inner.label}': {r}" for r in status.reasons)
 
-    for inner in defn.regions:
-        inner_src = inner.source
-        assert inner_src is not None  # the schema refuses a definition region without one
-        inner_defn = library.get(inner_src.subgraph_id)
-        if inner_defn is None:
-            raise LookupError(f"nested subgraph '{inner_src.subgraph_id}' is missing")
-        inner_mat = _materialize_local(inner_defn, inner_src, library, stack)
-        prefixed = _prefix(inner_mat, inner.id, inner_src.anchor)
-        states.extend(prefixed.states)
-        transitions.extend(prefixed.transitions)
-        warnings.extend(prefixed.warnings)
-        regions.append(
-            RegionModel(
-                id=inner.id,
-                label=inner.label,
-                members=prefixed.member_ids,
-                color=inner.color,
-                source=inner_src.model_copy(update={"version": inner_defn.version}),
-            )
-        )
-        regions.extend(prefixed.regions)
-
-    # This level's inputs and overrides, over every local id it can see -- a
-    # nested member's local id at this level is its inner-prefixed one.
-    warnings.extend(_stale_overrides(states, source))
+    ports = ports_of(graph.states, graph.transitions)
+    port_ids = {s.id for s in graph.states if is_port_node(s)}
+    states = [s for s in graph.states if s.id not in port_ids]
+    transitions = [t for t in graph.transitions if t.source not in port_ids and t.dest not in port_ids]
     for s in states:
         s.params = resolve_member_params(defn, s, source)
-        if s.id in source.label_overrides:
-            s.label = source.label_overrides[s.id] or None
-    return Materialized(states, transitions, regions, warnings)
+    return Materialized(states, transitions, graph.regions, ports, warnings)
 
 
 def _prefix(mat: Materialized, region_id: str, anchor: dict | None) -> Materialized:
@@ -327,15 +360,14 @@ def _prefix(mat: Materialized, region_id: str, anchor: dict | None) -> Materiali
             r.model_copy(
                 update={
                     "id": member_id(region_id, r.id),
-                    "members": [ids[m] for m in r.members],
+                    "members": [ids[m] for m in r.members if m in ids],
                     # A nested anchor is relative to its definition's origin; once
-                    # prefixed it is in the enclosing frame, and in the bot it is
-                    # absolute -- which is what extract/push_back subtract from.
+                    # prefixed it is in the enclosing frame, and in the bot absolute.
                     "source": r.source.model_copy(update={"anchor": _pos_add(r.source.anchor, anchor)}),
                 }
             )
         )
-    return Materialized(states, transitions, regions, list(mat.warnings))
+    return Materialized(states, transitions, regions, dict(mat.ports), list(mat.warnings))
 
 
 def materialize_region(
@@ -343,24 +375,15 @@ def materialize_region(
     source: SubgraphSource,
     defn: SubgraphDefinition,
     library: SubgraphLibrary,
-    *,
-    existing_positions: dict[str, dict | None] | None = None,
+    stack: tuple[str, ...] = (),
 ) -> Materialized:
     """Compose the instance ``region_id`` of ``defn`` into bot-level states, transitions and nested regions.
 
-    ``existing_positions`` maps a bot-level member id to the position the instance
-    already stores for it; a member found there keeps that position, and one that
-    is not is placed at ``anchor + definition position``.
-
-    Raises :class:`SubgraphCycleError` on a cycle or past :data:`MAX_DEPTH`, and
+    Members land at ``anchor + definition position``. Raises
+    :class:`SubgraphCycleError` on a cycle or past :data:`MAX_DEPTH`, and
     ``LookupError`` when a nested definition is missing from the library.
     """
-    mat = _prefix(_materialize_local(defn, source, library, ()), region_id, source.anchor)
-    if existing_positions:
-        for s in mat.states:
-            if s.id in existing_positions:
-                s.position = existing_positions[s.id]
-    return mat
+    return _prefix(_materialize_local(defn, source, library, stack), region_id, source.anchor)
 
 
 # ---------------------------------------------------------------------------
@@ -387,30 +410,193 @@ class ComposeReport:
         return any(s.kind == "cycle" for s in self.regions.values())
 
 
-def linked_regions(config: BotConfig) -> list[RegionModel]:
-    return [r for r in config.regions if r.source is not None]
+def external_edges(config: BotConfig | _Graph, region: RegionModel) -> list[TransitionModel]:
+    """Transitions with exactly one endpoint inside ``region``."""
+    members = set(region.members)
+    return [t for t in config.transitions if (t.source in members) != (t.dest in members)]
 
 
-def linked_region_of(config: BotConfig, state_id: str) -> RegionModel | None:
-    """The *outermost* linked region ``state_id`` belongs to, or ``None``.
+def _recompose(
+    graph: _Graph, region: RegionModel, library: SubgraphLibrary, stack: tuple[str, ...], *, nested: bool = False
+) -> RegionStatus:
+    """Recompose one outermost linked region of ``graph`` in place, and say how it went.
 
-    A member of a nested instance is inside two linked regions; the outer one is
-    the unit the editor locks and drags, because the inner is composed through it.
+    Every crossing into the region is found on the instance's stored port map and
+    moved with its port: an edge or role on an entry follows the entry to its new
+    member, and the flat edges an exit stands for are regenerated from its new
+    ``(member, outcome)`` feeds. A crossing on no port keeps its member if the update
+    still has it. The update is *held* -- the snapshot kept -- only when it removes a
+    port this instance uses, leaves a used exit with nothing feeding it, or removes
+    the member an off-port crossing names.
     """
-    holders = [r for r in linked_regions(config) if state_id in r.members]
-    for r in holders:
-        if not any(is_nested_in(r, o) for o in holders):
-            return r
-    return None
+    source = region.source
+    assert source is not None
+    origin = library.origin(source.subgraph_id)
+    defn = library.get(source.subgraph_id)
+    if defn is None:
+        error = library.error_for(source.subgraph_id)
+        if error is not None:
+            return RegionStatus(origin, "invalid", [error])
+        return RegionStatus(origin, "missing", ["subgraph definition not found"])
+    try:
+        mat = materialize_region(region.id, source, defn, library, stack)
+    except SubgraphCycleError as exc:
+        if nested:
+            raise  # a cycle has no snapshot worth keeping at any level: the outermost reports it
+        return RegionStatus(origin, "cycle", [str(exc)], defn.version)
+    except LookupError as exc:
+        return RegionStatus(origin, "missing", [str(exc)], defn.version)
+
+    rid = region.id
+    members = set(region.members)
+    new_members = set(mat.member_ids)
+    new_ports = mat.ports
+    reasons: list[str] = []
+
+    def retarget(member: str, what: str) -> str | None:
+        pid = entry_port_of(source, rid, member)
+        if pid is not None:
+            port = new_ports.get(pid)
+            if port is None or port.member is None:
+                reasons.append(f"the update removes entry '{pid}', which {what} uses")
+                return None
+            return member_id(rid, port.member)
+        if member in new_members:
+            return member
+        reasons.append(f"the update removes '{member}', which {what} leads into")
+        return None
+
+    new_initial = graph.initial
+    new_recovery = graph.recovery_state
+    if graph.initial in members:
+        new_initial = retarget(graph.initial, "the initial state")
+    if graph.recovery_state in members:
+        new_recovery = retarget(graph.recovery_state, "the recovery state")
+
+    incoming: dict[int, str | None] = {}
+    exit_groups: dict[tuple[str, str], list[TransitionModel]] = {}
+    for i, t in enumerate(graph.transitions):
+        inside_src, inside_dst = t.source in members, t.dest in members
+        if inside_dst and not inside_src:
+            incoming[i] = retarget(t.dest, "an edge from the rest of the bot")
+        elif inside_src and not inside_dst:
+            pid = exit_port_of(source, rid, t.source, t.when)
+            if pid is None:
+                if t.source not in new_members:
+                    reasons.append(f"the update removes '{t.source}', which has an edge to the rest of the bot")
+                continue
+            exit_groups.setdefault((pid, t.dest), []).append(t)
+    for pid, _dest in exit_groups:
+        port = new_ports.get(pid)
+        if port is None or port.from_ is None:
+            reasons.append(f"the update removes exit '{pid}', which has an edge to the rest of the bot")
+        elif not port.from_:
+            reasons.append(f"the update leaves exit '{pid}' with nothing leading into it")
+    if reasons:
+        return RegionStatus(origin, "held", sorted(set(reasons)), defn.version)
+
+    # Each exit's edges are regenerated where the first of them stood, so an update
+    # that changes nothing leaves the file's order -- and so the file -- as it was.
+    regenerated: dict[int, list[TransitionModel]] = {}
+    grouped: set[int] = set()
+    for (pid, dest), group in exit_groups.items():
+        port = new_ports[pid]
+        seen: set[tuple[str, str | None]] = set()
+        out: list[TransitionModel] = []
+        for m, w in port.from_ or ():
+            key = (member_id(rid, m), w)
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(group[0].model_copy(update={"source": key[0], "when": w, "dest": dest}, deep=True))
+        regenerated[id(group[0])] = out
+        grouped.update(id(t) for t in group)
+    kept: list[TransitionModel] = []
+    for i, t in enumerate(graph.transitions):
+        if id(t) in regenerated:
+            kept.extend(regenerated[id(t)])
+        elif id(t) in grouped:
+            continue
+        elif i in incoming:
+            kept.append(t.model_copy(update={"dest": incoming[i]}))
+        else:
+            kept.append(t)
+    graph.transitions = kept
+    graph.initial, graph.recovery_state = new_initial, new_recovery
+    _replace_members(graph, region, mat)
+    source.ports = {pid: p.model_copy(deep=True) for pid, p in new_ports.items()}
+    source.version = defn.version
+    return RegionStatus(origin, "linked", list(mat.warnings), defn.version)
+
+
+def _replace_members(graph: _Graph, region: RegionModel, mat: Materialized) -> None:
+    old = set(region.members)
+    nested = [r for r in graph.regions if r.source is not None and is_nested_in(r, region)]
+
+    first_index = next((i for i, s in enumerate(graph.states) if s.id in old), len(graph.states))
+    kept_states = [s for s in graph.states if s.id not in old]
+    insert_at = sum(1 for s in graph.states[:first_index] if s.id not in old)
+    graph.states = kept_states[:insert_at] + mat.states + kept_states[insert_at:]
+
+    first_t = next(
+        (i for i, t in enumerate(graph.transitions) if t.source in old and t.dest in old), len(graph.transitions)
+    )
+    kept_t = [t for t in graph.transitions if not (t.source in old and t.dest in old)]
+    insert_t = sum(1 for t in graph.transitions[:first_t] if not (t.source in old and t.dest in old))
+    graph.transitions = kept_t[:insert_t] + mat.transitions + kept_t[insert_t:]
+
+    kept_r = [r for r in graph.regions if not any(r is n for n in nested)]
+    at = next(i for i, r in enumerate(kept_r) if r is region) + 1
+    graph.regions = kept_r[:at] + mat.regions + kept_r[at:]
+    region.members = list(mat.member_ids)
+    # A plain region holding the old members follows the instance to its new ones.
+    for r in graph.regions:
+        if r is region or r.source is not None or not (old & set(r.members)):
+            continue
+        r.members = [m for m in r.members if m not in old] + [m for m in mat.member_ids if m not in r.members]
+
+
+def compose_bot(config: BotConfig, library: SubgraphLibrary) -> tuple[BotConfig, ComposeReport]:
+    """Recompose every linked region of ``config`` from ``library``.
+
+    Returns **the same object** and an empty report when the bot has no linked
+    region — the common case, and what keeps every existing caller's identity
+    checks true. Otherwise works on a deep copy and never mutates the input.
+
+    Per outermost linked region, in file order, the outcome is one :class:`RegionStatus`:
+
+    - ``missing``: no definition in the library; the snapshot is kept.
+    - ``invalid``: the definition's file exists but failed to load; snapshot kept.
+    - ``cycle``: the definition contains itself; snapshot kept, and the report's
+      :attr:`ComposeReport.has_errors` is set — the caller refuses to run.
+    - ``held``: the update removes a port this instance uses (see :func:`_recompose`);
+      snapshot kept, one reason per offender.
+    - ``linked``: members, internal transitions and nested regions replaced from
+      the definition, crossings moved with their ports, ``source`` updated. A nested
+      instance held inside the definition is listed in ``reasons``.
+    """
+    if not linked_regions(config):
+        return config, ComposeReport()
+
+    result = config.model_copy(deep=True)
+    graph = _Graph(result.states, result.transitions, result.regions, result.initial, result.recovery_state)
+    report = ComposeReport()
+    for region in outermost_linked_regions(graph.regions):
+        report.regions[region.id] = _recompose(graph, region, library, ())
+    result.states, result.transitions, result.regions = graph.states, graph.transitions, graph.regions
+    result.initial = graph.initial or result.initial
+    result.recovery_state = graph.recovery_state or result.recovery_state
+    # A failure here is a bug in this module, not a library problem: raise.
+    return BotConfig.model_validate(result.model_dump()), report
 
 
 def reresolve_member_params(config: BotConfig, region: RegionModel, defn: SubgraphDefinition) -> None:
-    """Rewrite every direct member's params from ``defn`` and the instance's inputs and overrides. In place.
+    """Rewrite every direct member's params from ``defn`` and the instance's inputs. In place.
 
-    What an input or override edit on the region page needs, without a full
-    recompose: the members stay, only their params move. A member with no state
-    of that local id in ``defn`` (one from a nested instance, or one the
-    definition no longer has) is left alone.
+    What an input edit on the call node's page needs, without a full recompose: the
+    members stay, only their params move. A member with no state of that local id in
+    ``defn`` (one from a nested instance, or one the definition no longer has) is
+    left alone.
     """
     source = region.source
     if source is None:
@@ -425,162 +611,8 @@ def reresolve_member_params(config: BotConfig, region: RegionModel, defn: Subgra
             state.params = resolve_member_params(defn, def_state, source)
 
 
-def set_param_override(source: SubgraphSource, local: str, key: str, value: object) -> None:
-    source.param_overrides.setdefault(local, {})[key] = value
-
-
-def clear_param_override(source: SubgraphSource, local: str, key: str) -> None:
-    """Drop one override, and the state's entry once it is empty, so nothing stale is written."""
-    params = source.param_overrides.get(local)
-    if params is None:
-        return
-    params.pop(key, None)
-    if not params:
-        del source.param_overrides[local]
-
-
-def set_label_override(source: SubgraphSource, local: str, label: str | None) -> None:
-    source.label_overrides[local] = label or ""
-
-
-def clear_label_override(source: SubgraphSource, local: str) -> None:
-    source.label_overrides.pop(local, None)
-
-
-def sync_free_overrides(region: RegionModel, defn: SubgraphDefinition, state: StateModel) -> None:
-    """Record a consumer's edit to a free param, or to the label, of member ``state`` as an override. In place.
-
-    A free param is edited on the node like any other; what makes it survive the
-    next compose is the override this writes. It is written only while the value
-    differs from what the subgraph would give (definition value, or the bound
-    input the instance set), and dropped once it is back, so the override list
-    on the region page shows divergence and nothing else. The label is treated
-    the same, against the definition's label.
-    """
-    source = region.source
-    local = local_id(region.id, state.id)
-    def_state = next((s for s in defn.states if s.id == local), None) if local is not None else None
-    if source is None or local is None or def_state is None:
-        return
-    base = resolve_member_params(defn, def_state, source.model_copy(update={"param_overrides": {}}))
-    for key in free_keys(defn, local):
-        if key in state.params and state.params[key] != base.get(key):
-            set_param_override(source, local, key, state.params[key])
-        else:
-            clear_param_override(source, local, key)
-    if (state.label or None) != (def_state.label or None):
-        set_label_override(source, local, state.label)
-    else:
-        clear_label_override(source, local)
-
-
-def external_edges(config: BotConfig, region: RegionModel) -> list[TransitionModel]:
-    """Transitions with exactly one endpoint inside ``region``."""
-    members = set(region.members)
-    return [t for t in config.transitions if (t.source in members) != (t.dest in members)]
-
-
-def compose_bot(config: BotConfig, library: SubgraphLibrary) -> tuple[BotConfig, ComposeReport]:
-    """Recompose every linked region of ``config`` from ``library``.
-
-    Returns **the same object** and an empty report when the bot has no linked
-    region — the common case, and what keeps every existing caller's identity
-    checks true. Otherwise works on a deep copy and never mutates the input.
-
-    Per linked region, in file order, the outcome is one :class:`RegionStatus`:
-
-    - ``missing``: no definition in the library; the snapshot is kept.
-    - ``invalid``: the definition's file exists but failed to load; snapshot kept.
-    - ``cycle``: the definition contains itself; snapshot kept, and the report's
-      :attr:`ComposeReport.has_errors` is set — the caller refuses to run.
-    - ``held``: the current definition would remove the member holding ``initial``
-      or ``recovery_state``, or the endpoint of an external edge; snapshot kept,
-      one reason per offender.
-    - ``linked``: members, internal transitions and nested regions replaced from
-      the definition; ``source.version`` updated. A stale ``param_override`` is
-      kept and listed in ``reasons``.
-    """
-    if not linked_regions(config):
-        return config, ComposeReport()
-
-    result = config.model_copy(deep=True)
-    report = ComposeReport()
-
-    # Nested instances are recomposed by their outer region, so only the outermost
-    # linked regions drive the loop: a region whose members all belong to another
-    # linked region is inside it.
-    all_linked = linked_regions(result)
-    for region in list(all_linked):
-        if any(is_nested_in(region, o) for o in all_linked):
-            continue
-        source = region.source
-        assert source is not None
-        origin = library.origin(source.subgraph_id)
-        defn = library.get(source.subgraph_id)
-        if defn is None:
-            error = library.error_for(source.subgraph_id)
-            if error is not None:
-                report.regions[region.id] = RegionStatus(origin, "invalid", [error])
-            else:
-                report.regions[region.id] = RegionStatus(origin, "missing", ["subgraph definition not found"])
-            continue
-
-        existing = {s.id: s.position for s in result.states if s.id in set(region.members)}
-        try:
-            mat = materialize_region(region.id, source, defn, library, existing_positions=existing)
-        except SubgraphCycleError as exc:
-            report.regions[region.id] = RegionStatus(origin, "cycle", [str(exc)], defn.version)
-            continue
-        except LookupError as exc:
-            report.regions[region.id] = RegionStatus(origin, "missing", [str(exc)], defn.version)
-            continue
-
-        removed = set(region.members) - set(mat.member_ids)
-        reasons: list[str] = []
-        if result.initial in removed:
-            reasons.append(f"the update removes '{result.initial}', which is the initial state")
-        if result.recovery_state in removed:
-            reasons.append(f"the update removes '{result.recovery_state}', which is the recovery state")
-        for t in external_edges(result, region):
-            inside = t.source if t.source in set(region.members) else t.dest
-            if inside in removed:
-                reasons.append(f"the update removes '{inside}', which has an edge to the rest of the bot")
-        if reasons:
-            report.regions[region.id] = RegionStatus(origin, "held", reasons, defn.version)
-            continue
-
-        _replace_members(result, region, mat)
-        source.version = defn.version
-        report.regions[region.id] = RegionStatus(origin, "linked", list(mat.warnings), defn.version)
-
-    # A failure here is a bug in this module, not a library problem: raise.
-    return BotConfig.model_validate(result.model_dump()), report
-
-
-def _replace_members(config: BotConfig, region: RegionModel, mat: Materialized) -> None:
-    old = set(region.members)
-    nested = nested_regions(config, region)
-
-    first_index = next((i for i, s in enumerate(config.states) if s.id in old), len(config.states))
-    kept_states = [s for s in config.states if s.id not in old]
-    insert_at = sum(1 for s in config.states[:first_index] if s.id not in old)
-    config.states = kept_states[:insert_at] + mat.states + kept_states[insert_at:]
-
-    first_t = next(
-        (i for i, t in enumerate(config.transitions) if t.source in old and t.dest in old), len(config.transitions)
-    )
-    kept_t = [t for t in config.transitions if not (t.source in old and t.dest in old)]
-    insert_t = sum(1 for t in config.transitions[:first_t] if not (t.source in old and t.dest in old))
-    config.transitions = kept_t[:insert_t] + mat.transitions + kept_t[insert_t:]
-
-    kept_r = [r for r in config.regions if not any(r is n for n in nested)]
-    at = next(i for i, r in enumerate(kept_r) if r is region) + 1
-    config.regions = kept_r[:at] + mat.regions + kept_r[at:]
-    region.members = list(mat.member_ids)
-
-
 # ---------------------------------------------------------------------------
-# Extracting, converting, pushing back, detaching
+# Extracting, converting, detaching
 # ---------------------------------------------------------------------------
 
 
@@ -603,25 +635,38 @@ def extraction_locals(config: BotConfig, region_id: str) -> dict[str, str]:
 
     A definition starts life with clean local ids rather than whatever numbers the
     bot had reached, so the same subgraph reads the same in every bot it lands in.
-    A member of a nested instance keeps its local id *inside* that instance
-    (``<inner region>_<inner local>``), since the inner definition owns it.
+    A member of a nested instance keeps its id *inside* that instance, relative to
+    the instance (``<inner region>_<inner local>``), since the inner definition owns it.
     Shared by :func:`extract_definition` and :func:`convert_region_to_instance` so
     the two cannot disagree.
     """
     region = _region_by_id(config, region_id)
     members = set(region.members)
-    nested_member_ids = {m for r in nested_regions(config, region) for m in r.members}
+    nested = [
+        r for r in nested_regions(config, region) if not any(is_nested_in(r, o) for o in nested_regions(config, region))
+    ]
+    nested_of = {m: r for r in nested for m in r.members}
     locals_: dict[str, str] = {}
     n = 0
     for s in config.states:
         if s.id not in members:
             continue
-        if s.id in nested_member_ids:
+        inner = nested_of.get(s.id)
+        if inner is not None:
             locals_[s.id] = s.id
             continue
         n += 1
         locals_[s.id] = f"state_{n}"
     return locals_
+
+
+def _unique_port_id(base: str, taken: set[str]) -> str:
+    candidate, n = base, 2
+    while candidate in taken:
+        candidate = f"{base}_{n}"
+        n += 1
+    taken.add(candidate)
+    return candidate
 
 
 def extract_definition(
@@ -631,18 +676,22 @@ def extract_definition(
     new_id: str,
     name: str,
     description: str | None = None,
-    schemas: Mapping[str, Sequence[object]] | None = None,
 ) -> tuple[SubgraphDefinition, SubgraphSource]:
     """Turn an ordinary region into a definition, and return the source that would link it.
 
     Local ids are renumbered ``state_1..N`` in file order (:func:`extraction_locals`);
     the conversion that follows (:func:`convert_region_to_instance`) applies the same
     map to the bot. The anchor is the members' top-left; definition positions are
-    relative to it. Only internal transitions are carried. A linked region wholly
-    inside the members becomes a nested instance. No inputs — those are declared
-    while editing. With ``schemas`` (the registry's param schemas), ``free_params``
-    is seeded from which values are still at their defaults (:func:`seed_free_params`).
+    relative to it. Only internal transitions are carried, plus the ports:
 
+    - an **Entry** per distinct member that an outside edge or a role targets --
+      named *Start* for the initial state's, *Recover* for the recovery state's --
+      or one into the first member when nothing outside reaches in;
+    - an **Exit** per distinct outside destination, fed by the ``(member, outcome)``
+      pairs that reach it -- *Done* when there is only one.
+
+    A linked region wholly inside the members becomes a nested instance, its members
+    kept as the definition's snapshot of it. No inputs — those are the author's to add.
     Raises ``ValueError`` if a member id cannot be a local id.
     """
     region = _region_by_id(config, region_id)
@@ -653,9 +702,11 @@ def extract_definition(
         if not SUBGRAPH_LOCAL_ID.match(locals_[s.id]):
             raise ValueError(f"state id {s.id!r} cannot be a subgraph-local id")
     anchor = _anchor_of(states)
+    by_id = {s.id: s for s in states}
 
     nested: list[RegionModel] = []
     for r in nested_regions(config, region):
+        assert r.source is not None
         src = r.source.model_copy(deep=True)
         src.anchor = _pos_sub(src.anchor, anchor) or {"x": 0.0, "y": 0.0}
         nested.append(
@@ -665,21 +716,74 @@ def extract_definition(
     local_states = [
         s.model_copy(update={"id": locals_[s.id], "position": _pos_sub(s.position, anchor)}, deep=True) for s in states
     ]
+    transitions = [
+        t.model_copy(update={"source": locals_[t.source], "dest": locals_[t.dest]}, deep=True)
+        for t in config.transitions
+        if t.source in members and t.dest in members
+    ]
+
+    taken: set[str] = set(locals_.values())
+    port_states: list[StateModel] = []
+    port_edges: list[TransitionModel] = []
+
+    def place(member: str, dx: float) -> dict | None:
+        pos = by_id[member].position
+        return _pos_sub({"x": float(pos["x"]) + dx, "y": float(pos["y"])}, anchor) if pos is not None else None
+
+    targets: list[tuple[str, str]] = []  # (member, entry name), first reason wins
+    if config.initial in members:
+        targets.append((config.initial, "Start"))
+    if config.recovery_state in members:
+        targets.append((config.recovery_state, "Recover"))
+    for t in config.transitions:
+        if t.dest in members and t.source not in members:
+            targets.append((t.dest, by_id[t.dest].label or "Entry"))
+    if not targets:
+        first = next(s.id for s in config.states if s.id in members)
+        targets.append((first, "Start"))
+    entry_for: dict[str, str] = {}
+    for member, entry_name in targets:
+        if member in entry_for:
+            continue
+        pid = _unique_port_id(f"entry_{instance_slug(entry_name)}", taken)
+        entry_for[member] = pid
+        port_states.append(
+            StateModel(id=pid, node_type=SUBGRAPH_ENTRY, label=entry_name, position=place(member, -PORT_COLUMN))
+        )
+        port_edges.append(TransitionModel(trigger="advance", source=pid, dest=locals_[member]))
+
+    outgoing = [t for t in config.transitions if t.source in members and t.dest not in members]
+    dests = list(dict.fromkeys(t.dest for t in outgoing))
+    labels = {s.id: s.label or s.id for s in config.states}
+    for dest in dests:
+        exit_name = "Done" if len(dests) == 1 else f"To {labels.get(dest, dest)}"
+        pid = _unique_port_id(f"exit_{instance_slug(exit_name)}", taken)
+        feeders = [t for t in outgoing if t.dest == dest]
+        rightmost = max(feeders, key=lambda t: float((by_id[t.source].position or {"x": 0})["x"])).source
+        port_states.append(
+            StateModel(id=pid, node_type=SUBGRAPH_EXIT, label=exit_name, position=place(rightmost, PORT_COLUMN))
+        )
+        seen_pairs: set[tuple[str, str | None]] = set()
+        for t in feeders:
+            pair = (locals_[t.source], t.when)
+            if pair in seen_pairs:
+                continue
+            seen_pairs.add(pair)
+            port_edges.append(TransitionModel(trigger="advance", source=pair[0], dest=pid, when=t.when))
+
+    all_states = local_states + port_states
+    all_transitions = transitions + port_edges
     defn = SubgraphDefinition(
         id=new_id,
         name=name,
         description=description,
         version=1,
-        free_params=seed_free_params(local_states, schemas),
-        states=local_states,
-        transitions=[
-            t.model_copy(update={"source": locals_[t.source], "dest": locals_[t.dest]}, deep=True)
-            for t in config.transitions
-            if t.source in members and t.dest in members
-        ],
+        states=all_states,
+        transitions=all_transitions,
         regions=nested,
     )
-    return defn, SubgraphSource(subgraph_id=new_id, version=1, anchor=anchor)
+    source = SubgraphSource(subgraph_id=new_id, version=1, ports=definition_ports(defn), anchor=anchor)
+    return defn, source
 
 
 def convert_region_to_instance(
@@ -725,20 +829,10 @@ def rename_states(config: BotConfig, id_map: dict[str, str]) -> None:
         r.members = [id_map.get(m, m) for m in r.members]
 
 
-def added_member_ids(region: RegionModel) -> dict[str, str]:
-    """``{plain id: derived id}`` for members added while editing, which do not yet carry the region's prefix.
-
-    Saving to the library rewrites them to the derived form first, so the compose
-    that follows finds them in place -- an external edge to a new member would
-    otherwise read as the update removing it, and hold the region.
-    """
-    return {m: member_id(region.id, m) for m in region.members if local_id(region.id, m) is None}
-
-
 def contains_subgraph(defn: SubgraphDefinition, subgraph_id: str, library: SubgraphLibrary) -> bool:
     """Whether ``defn`` nests ``subgraph_id``, transitively through the library.
 
-    The check a push makes before writing: a definition that contains its own id
+    The check a save makes before writing: a definition that contains its own id
     would compose forever, and the library must never hold one.
     """
     seen: set[str] = set()
@@ -746,7 +840,8 @@ def contains_subgraph(defn: SubgraphDefinition, subgraph_id: str, library: Subgr
     while stack:
         d = stack.pop()
         for r in d.regions:
-            assert r.source is not None
+            if r.source is None:
+                continue
             inner_id = r.source.subgraph_id
             if inner_id == subgraph_id:
                 return True
@@ -757,25 +852,6 @@ def contains_subgraph(defn: SubgraphDefinition, subgraph_id: str, library: Subgr
             if inner is not None:
                 stack.append(inner)
     return False
-
-
-def definition_values(config: BotConfig, region: RegionModel, defn: SubgraphDefinition) -> None:
-    """Rewrite every direct member's params to the definition's own values. In place.
-
-    Editing shows what gets pushed: inputs and overrides are the *instance's*, so
-    while the region is being edited they are set aside and the definition's
-    values are what the user sees and changes. They are re-applied by the compose
-    that follows a save or a discard.
-    """
-    def_states = {s.id: s for s in defn.states}
-    for state in config.states:
-        if state.id not in region.members:
-            continue
-        local = local_id(region.id, state.id)
-        def_state = def_states.get(local) if local is not None else None
-        if def_state is not None:
-            state.params = dict(def_state.params)
-            state.label = def_state.label
 
 
 def reassign_orphaned_roles(config: BotConfig) -> None:
@@ -799,80 +875,137 @@ def drop_states(config: BotConfig, state_ids: set[str]) -> None:
     reassign_orphaned_roles(config)
 
 
-def push_back(
-    config: BotConfig,
-    region_id: str,
-    previous: SubgraphDefinition,
-    schemas: Mapping[str, Sequence[object]] | None = None,
-) -> tuple[SubgraphDefinition, list[str]]:
-    """The instance ``region_id`` as a new definition version, after in-place editing.
+def detach(config: BotConfig, region_id: str) -> None:
+    """Drop the link. Members and their ids stay exactly as they are, as ordinary states. In place.
 
-    A member whose id derives from this region maps back to its local id; a
-    state added while editing (a plain ``state_N``) keeps its id as the local id,
-    and gets the derived form on the next compose. Inputs and ``free_params`` are
-    carried from ``previous``; a binding whose state no longer exists is dropped
-    and returned as a warning, and a state new to the definition has its free
-    params seeded from ``schemas`` (:func:`seed_free_params`). ``version`` is
-    ``previous.version + 1``.
+    Nested instances inside it stay linked: they are whole instances of their own.
     """
-    region = _region_by_id(config, region_id)
-    members = set(region.members)
-    anchor = region.source.anchor if region.source is not None else {"x": 0.0, "y": 0.0}
-    by_id = {s.id: s for s in config.states}
-    local = {m: (local_id(region_id, m) or m) for m in region.members}
-    for m, loc in local.items():
-        if not SUBGRAPH_LOCAL_ID.match(loc):
-            raise ValueError(f"state id {m!r} cannot be a subgraph-local id")
+    _region_by_id(config, region_id).source = None
 
-    nested: list[RegionModel] = []
-    for r in nested_regions(config, region):
-        src = r.source.model_copy(deep=True)
-        src.anchor = _pos_sub(src.anchor, anchor) or {"x": 0.0, "y": 0.0}
-        nested.append(
-            RegionModel(
-                id=local_id(region_id, r.id) or r.id,
-                label=r.label,
-                members=[local[m] for m in r.members],
-                color=r.color,
-                source=src,
-            )
+
+# ---------------------------------------------------------------------------
+# A definition as a document
+# ---------------------------------------------------------------------------
+
+
+def definition_to_config(defn: SubgraphDefinition) -> BotConfig:
+    """The in-memory ``BotConfig`` a definition is edited as.
+
+    The canvas, scene and undo read almost nothing but states, transitions, regions
+    and the two roles, so a definition opens as a config whose roles both sit on the
+    first Entry -- the validator is satisfied, and "reachable" means reachable from an
+    entry. ``definition`` carries the rest of it (identity and signature) through
+    undo and autosave; :func:`config_to_definition` is the way back.
+    """
+    first = entry_nodes(defn)
+    role = first[0].id if first else defn.states[0].id
+    return BotConfig(
+        id=defn.id,
+        name=defn.name,
+        description=defn.description,
+        initial=role,
+        recovery_state=role,
+        states=[s.model_copy(deep=True) for s in defn.states],
+        transitions=[t.model_copy(deep=True) for t in defn.transitions],
+        regions=[r.model_copy(deep=True) for r in defn.regions],
+        definition=DefinitionMeta(
+            id=defn.id,
+            version=defn.version,
+            inputs=[i.model_copy(deep=True) for i in defn.inputs],
+            panels=[p.model_copy(deep=True) for p in defn.panels],
+        ),
+    )
+
+
+def config_to_definition(config: BotConfig, *, version: int | None = None) -> SubgraphDefinition:
+    """The definition a document holds. Raises ``ValueError`` when its structure is not a valid one.
+
+    ``version`` defaults to the document's own; a save passes the next one.
+    """
+    meta = config.definition
+    if meta is None:
+        raise ValueError("this document is a bot, not a subgraph definition")
+    return SubgraphDefinition(
+        id=meta.id,
+        name=config.name,
+        description=config.description,
+        version=version if version is not None else meta.version,
+        inputs=[i.model_copy(deep=True) for i in meta.inputs],
+        panels=[p.model_copy(deep=True) for p in meta.panels],
+        states=[s.model_copy(deep=True) for s in config.states],
+        transitions=[t.model_copy(deep=True) for t in config.transitions],
+        regions=[r.model_copy(deep=True) for r in config.regions],
+    )
+
+
+def definition_problems(
+    config: BotConfig,
+    schemas: Mapping[str, Sequence[object]],
+    library: SubgraphLibrary | None = None,
+) -> tuple[list[str], list[str]]:
+    """``(errors, warnings)`` for a definition document; an error blocks saving it.
+
+    Errors: the structural rules (:func:`~bartlebot.bot.schema.definition_structure_errors`),
+    a binding whose type is incompatible with the others it shares a value with, and
+    a definition that would contain itself. Warnings: an Exit nothing leads into.
+    ``schemas`` maps node type to its ``ParamField``s (the registry's
+    ``NODE_PARAM_SCHEMAS``; passed in so this module stays registry-free). A required
+    param left empty is the node's own error, checked with the rest of node validation.
+    """
+    from bartlebot.nodes.param_schema import narrowest_type  # noqa: PLC0415 - registry-free at import
+
+    meta = config.definition
+    if meta is None:
+        return [], []
+    errors = definition_structure_errors(config.states, config.transitions, config.regions, meta.inputs, meta.panels)
+    by_id = {s.id: s for s in config.states}
+
+    def field_type(state_id: str, key: str) -> str | None:
+        state = by_id.get(state_id)
+        if state is None:
+            return None
+        return next(
+            (getattr(f, "type", None) for f in schemas.get(state.node_type, []) if getattr(f, "key", None) == key), None
         )
 
-    states = [
-        by_id[m].model_copy(update={"id": local[m], "position": _pos_sub(by_id[m].position, anchor)}, deep=True)
-        for m in region.members
-        if m in by_id
+    for inp in meta.inputs:
+        types = [t for b in inp.bindings if (t := field_type(b.state, b.param)) is not None]
+        if types and narrowest_type(types) is None:
+            errors.append(f"input '{inp.label or inp.name}' binds params of incompatible types ({', '.join(types)})")
+    for panel in node_panels(meta):
+        for key, extra in panel.bindings.items():
+            own = field_type(panel.member or "", key)
+            types = [t for t in [own, *(field_type(b.state, b.param) for b in extra)] if t is not None]
+            if types and narrowest_type(types) is None:
+                errors.append(f"the exposed '{key}' of '{panel.member}' is shared with a param of an incompatible type")
+
+    if library is not None:
+        try:
+            defn = config_to_definition(config)
+        except ValueError:
+            defn = None
+        if defn is not None and contains_subgraph(defn, defn.id, library):
+            errors.append(f"'{config.name}' would contain itself, which can never finish composing")
+
+    warnings = [
+        f"Exit '{port_name(x)}' has nothing leading into it"
+        for x in exit_nodes(config)
+        if not any(t.dest == x.id for t in config.transitions)
     ]
-    transitions = [
-        t.model_copy(update={"source": local[t.source], "dest": local[t.dest]}, deep=True)
-        for t in config.transitions
-        if t.source in members and t.dest in members
-    ]
-
-    local_ids = {s.id for s in states}
-    warnings: list[str] = []
-    inputs = []
-    for inp in previous.inputs:
-        kept = [b for b in inp.bindings if b.state in local_ids]
-        for b in inp.bindings:
-            if b.state not in local_ids:
-                warnings.append(f"input '{inp.name}' lost its binding to '{b.state}', which no longer exists")
-        inputs.append(inp.model_copy(update={"bindings": kept}, deep=True))
-
-    defn = SubgraphDefinition(
-        id=previous.id,
-        name=previous.name,
-        description=previous.description,
-        version=previous.version + 1,
-        inputs=inputs,
-        free_params=seed_free_params(states, schemas, previous=previous),
-        states=states,
-        transitions=transitions,
-        regions=nested,
-    )
-    return defn, warnings
+    return errors, warnings
 
 
-def detach(config: BotConfig, region_id: str) -> None:
-    """Drop the link. Members and their ids stay exactly as they are. In place."""
-    _region_by_id(config, region_id).source = None
+def binding_type(defn: SubgraphDefinition | BotConfig, bindings, schemas: Mapping[str, Sequence[object]]) -> str | None:
+    """The narrowest of the bound params' types -- the type an input over ``bindings`` must have."""
+    from bartlebot.nodes.param_schema import narrowest_type  # noqa: PLC0415
+
+    by_id = {s.id: s for s in defn.states}
+    types = []
+    for b in bindings:
+        state = by_id.get(b.state)
+        if state is None:
+            continue
+        for f in schemas.get(state.node_type, []):
+            if getattr(f, "key", None) == b.param:
+                types.append(getattr(f, "type", ""))
+    return narrowest_type(types)

@@ -2,13 +2,22 @@
   "id": "5fbc7799-354a-437e-b5f1-8ff664ca7c19",
   "name": "Sync players",
   "description": "Syncs all players in the same zone and realm.",
-  "version": 1,
-  "inputs": [],
-  "free_params": {
-    "state_2": [
-      "zone"
-    ]
-  },
+  "version": 2,
+  "inputs": [
+    {
+      "name": "zone",
+      "label": "Zone",
+      "type": "nav_zone",
+      "help": "Where every player gathers before the run starts.",
+      "bindings": [
+        {
+          "state": "state_2",
+          "param": "zone"
+        }
+      ]
+    }
+  ],
+  "panels": [],
   "states": [
     {
       "id": "state_1",
@@ -50,6 +59,36 @@
       "params": {
         "use_favorite_realm": true
       }
+    },
+    {
+      "id": "entry_start",
+      "node_type": "subgraph_entry",
+      "label": "Start",
+      "position": {
+        "x": 0.0,
+        "y": 90.0
+      },
+      "params": {}
+    },
+    {
+      "id": "entry_recover",
+      "node_type": "subgraph_entry",
+      "label": "Recover",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "exit_done",
+      "node_type": "subgraph_exit",
+      "label": "Done",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {}
     }
   ],
   "transitions": [
@@ -77,6 +116,34 @@
       "trigger": "advance",
       "source": "state_2",
       "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "entry_start",
+      "dest": "state_2",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "entry_recover",
+      "dest": "state_1",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_3",
+      "dest": "exit_done",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
