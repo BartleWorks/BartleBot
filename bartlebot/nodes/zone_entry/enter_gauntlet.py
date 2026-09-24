@@ -12,7 +12,7 @@ from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, Re
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="dungeon_zone",
-        type="str",
+        type="zone",
         label="Dungeon Zone",
         help="Zone name all players must be in after successfully entering the gauntlet.",
         default="",

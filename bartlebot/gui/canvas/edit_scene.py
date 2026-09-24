@@ -199,8 +199,8 @@ def _required_field_empty(field, params: dict) -> bool:
     if field.key not in params:
         return True
     val = params[field.key]
-    if field.type in ("str", "text", "nav_zone"):
-        # The zone picker stores a zone path, and an unpicked one is the empty string.
+    if field.type in ("str", "text", "zone", "nav_zone"):
+        # Both zone widgets store a zone path, and an unset one is the empty string.
         return not str(val).strip()
     if field.type in ("str_list", "drop_keep_list", "player_list"):
         return not val  # empty list — for player_list, no player selected is a no-op

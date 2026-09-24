@@ -12,7 +12,7 @@ from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="zone",
-        type="str",
+        type="zone",
         label="Zone",
         help="Zone name all players must currently be in when this node executes.",
         default="",

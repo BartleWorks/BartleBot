@@ -54,7 +54,7 @@ def _free_definition():
         )
     )
     defn.inputs.append(
-        SubgraphInput(name="hub_zone", type="str", bindings=[SubgraphInputBinding(state="hub", param="zone")])
+        SubgraphInput(name="hub_zone", type="zone", bindings=[SubgraphInputBinding(state="hub", param="zone")])
     )
     return defn
 

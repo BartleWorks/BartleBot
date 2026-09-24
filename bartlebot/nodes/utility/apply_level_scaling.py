@@ -12,7 +12,7 @@ from bartlebot.nodes.paths import LEVEL_SCALING_ELIXIR_PATH, LEVEL_SCALING_OPTIO
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="zone",
-        type="str",
+        type="zone",
         label="Zone",
         help="Zone name all players must be in when this node executes (the level-scaling dungeon).",
         default="",

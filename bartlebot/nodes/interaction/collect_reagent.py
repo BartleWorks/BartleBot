@@ -12,7 +12,7 @@ from bartlebot.nodes.timing import POLL_INTERVAL, REAGENT_DROP_MESSAGE_POLL, REA
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="zone",
-        type="str",
+        type="zone",
         label="Zone",
         help="Zone name all players must currently be in when this node executes.",
         default="",

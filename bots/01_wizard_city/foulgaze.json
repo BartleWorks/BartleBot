@@ -460,7 +460,7 @@
     {
       "id": "defeat_boss_1_state_3",
       "node_type": "enter_dungeon",
-      "label": "Enter dungeon",
+      "label": "Enter Sapphyra's Tower",
       "position": {
         "x": 2200.0,
         "y": -90.0
@@ -469,14 +469,14 @@
         "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
         "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_OldeTown_T2",
         "sigil_xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
+          "x": -9580.06,
+          "y": -5382.17,
+          "z": -2159.26
         },
         "reset_xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
+          "x": -9152.67,
+          "y": -4769.29,
+          "z": -2198.22
         },
         "offers_challenge_mode": false,
         "offers_team_up": false
@@ -517,7 +517,7 @@
     {
       "id": "defeat_boss_1_state_6",
       "node_type": "enter_zone",
-      "label": "Exit dungeon",
+      "label": "Exit Sapphyra's Tower",
       "position": {
         "x": 3520.0,
         "y": -90.0
@@ -526,14 +526,14 @@
         "from_zone": "WizardCity/WC_Streets/Interiors/WC_OldeTown_T2",
         "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
         "xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
+          "x": -58.67,
+          "y": -1204.13,
+          "z": 1.62
         },
         "reset_xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
+          "x": -38.87,
+          "y": -981.81,
+          "z": 1.61
         },
         "stagger": false
       }

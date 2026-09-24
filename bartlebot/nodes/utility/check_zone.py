@@ -6,7 +6,7 @@ from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="zone",
-        type="str",
+        type="zone",
         label="Zone Name",
         help="Zone name to check (e.g. 'WizardCity/WC_Ravenwood').",
         default="",

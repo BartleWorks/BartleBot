@@ -10,6 +10,7 @@ import pytest
 from bartlebot import card_art, zone_nav
 from bartlebot.gui.widgets.picker_popup import PickerRow, filter_sections
 from bartlebot.gui.widgets.zone_picker import (
+    SUGGESTED_LIMIT,
     SUGGESTED_TITLE,
     describe_zone,
     is_destination,
@@ -64,6 +65,16 @@ def test_zones_the_players_are_in_come_first_when_they_are_destinations():
     assert rows[0].meta == "Wizard City"
 
 
+def test_the_suggestions_stop_at_the_limit_counting_only_destinations():
+    zones = {f"WizardCity/WC_Zone{i}": {} for i in range(SUGGESTED_LIMIT + 3)}
+    nav = zone_nav.parse({"worlds": {"WizardCity": {"hub": "WizardCity/WC_Zone0", "zones": zones}}})
+
+    title, rows = zone_sections(nav, ["Housing/Castle", *zones])[0]
+
+    assert title == SUGGESTED_TITLE
+    assert [row.key for row in rows] == list(zones)[:SUGGESTED_LIMIT]
+
+
 def test_no_suggestions_means_no_suggestion_section():
     assert SUGGESTED_TITLE not in dict(zone_sections(_nav()))
 
@@ -111,7 +122,7 @@ def test_every_section_title_maps_back_to_its_world_key():
 
 
 def test_the_suggestions_section_is_not_a_world():
-    """ "Where players are" spans worlds, so an emblem there would claim one."""
+    """ "Recent Zones" spans worlds, so an emblem there would claim one."""
     assert SUGGESTED_TITLE not in world_keys_by_title(_nav())
 
 

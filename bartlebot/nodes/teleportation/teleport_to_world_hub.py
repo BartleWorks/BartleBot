@@ -12,7 +12,7 @@ from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, TRIG
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="zone",
-        type="str",
+        type="zone",
         label="Hub Zone",
         help="The hub zone name players must be in when this node completes. "
         "If all players are already in this zone, the node returns SUCCESS immediately.",

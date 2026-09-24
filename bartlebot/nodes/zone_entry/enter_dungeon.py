@@ -28,7 +28,7 @@ PARAM_OFFERS_TEAM_UP = "offers_team_up"
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="from_zone",
-        type="str",
+        type="zone",
         label="From Zone",
         help="Zone name players must currently be in when this node executes.",
         default="",
@@ -36,7 +36,7 @@ PARAM_SCHEMA: list[ParamField] = [
     ),
     ParamField(
         key="dungeon_zone",
-        type="str",
+        type="zone",
         label="Dungeon Zone",
         help="Zone name all players must be in after successfully entering the dungeon.",
         default="",
