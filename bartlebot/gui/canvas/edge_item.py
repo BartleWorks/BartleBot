@@ -98,10 +98,14 @@ class EdgeItem(QGraphicsPathItem):
         when: str | None = None,
         bridge_y_override: float | None = None,
         has_flags: bool = False,
+        dst_port: str | None = None,
     ):
         super().__init__()
         self._src = src_node
         self._dst = dst_node
+        # Which of the destination's input ports the edge lands on: a call node has
+        # one per entry, every other node just the one (None).
+        self._dst_port = dst_port
         self._offset = offset
         self._when = when
         self._is_self_loop = src_node is dst_node
@@ -119,6 +123,27 @@ class EdgeItem(QGraphicsPathItem):
     @property
     def when(self) -> str | None:
         return self._when
+
+    @property
+    def src_node(self) -> NodeItem:
+        return self._src
+
+    @property
+    def dst_node(self) -> NodeItem:
+        return self._dst
+
+    @property
+    def dst_port(self) -> str | None:
+        """The destination's input port this edge lands on; None for an ordinary node's one."""
+        return self._dst_port
+
+    def set_endpoints(self, src_node: NodeItem, dst_node: NodeItem, dst_port: str | None = None) -> None:
+        """Re-point the edge at other nodes (the caller re-registers it with them)."""
+        self._src, self._dst, self._dst_port = src_node, dst_node, dst_port
+        self._is_self_loop = src_node is dst_node
+
+    def _dst_point(self) -> QPointF:
+        return self._dst.port_in_at(self._dst_port)
 
     def set_when(self, when: str | None) -> None:
         """Change the return value this edge fires on and reroute it.
@@ -214,7 +239,7 @@ class EdgeItem(QGraphicsPathItem):
 
     def _build_edge(self, path: QPainterPath) -> None:
         src_pt = self._src.port_out_for(self._when)
-        dst_pt = self._dst.port_in()
+        dst_pt = self._dst_point()
         if math.hypot(dst_pt.x() - src_pt.x(), dst_pt.y() - src_pt.y()) < 1:
             return
         if dst_pt.x() > src_pt.x():
@@ -306,7 +331,7 @@ class EdgeItem(QGraphicsPathItem):
         """Orthogonal path departing from the output port, routing above or below
         the node (based on port position), and arriving at the input port."""
         src_pt = self._src.port_out_for(self._when)
-        dst_pt = self._src.port_in()
+        dst_pt = self._src.port_in_at(self._dst_port)
         node_top = self._src.scenePos().y()
         src_h = self._src._height
         src_center_y = node_top + src_h / 2

@@ -1,11 +1,11 @@
 """The small widgets subgraph authoring adds to the canvas.
 
-``EditSubgraphCrumb`` is the overlay pill shown while a linked region is being
-edited in place, with the two verbs that end the edit. ``SubgraphMetaDialog``
-asks for a name and description when a region becomes a definition.
-``ExposeInputDialog`` binds one member param to an existing input of the same
-type, or to a new one. All three are plain Qt; the policy they drive lives in
-``BotCanvas`` (see docs/SUBGRAPHS.md, *Authoring is edit in place, then push*).
+``DefinitionCrumb`` is the overlay shown while a definition is open as a document: the
+path back to where it was opened from, and the verbs that end the visit.
+``SubgraphMetaDialog`` asks for a name and description when a region becomes a
+definition. ``PromoteInputDialog`` binds one member param to an existing input of a
+compatible type, or to a new one. All three are plain Qt; the policy they drive lives
+in ``BotCanvas`` and the controller's document stack.
 """
 
 from __future__ import annotations
@@ -25,65 +25,92 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import SubgraphInput
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
+from bartlebot.gui.widgets.icon_button import IconButton
+from bartlebot.nodes.param_schema import narrowest_type
 
 #: The combo entry that means "declare a new input" rather than bind to one.
 NEW_INPUT = "— New input —"
 
 
-class EditSubgraphCrumb(ThemedMixin, QWidget):
-    """``Editing subgraph <name>`` with Save to library and Discard, pinned over the view.
+class DefinitionCrumb(ThemedMixin, QWidget):
+    """``<bot> › <definition>`` with *Save to library* and a way back, pinned over the view.
 
-    Save is the one thing this surface expects (``PRIMARY``); Discard is the quiet
-    alternative. Built like the focus crumb, but themed through the mixin because
-    the canvas cannot re-derive a child it built inline.
+    Save is the one thing this surface expects (``PRIMARY``). The path's first segment
+    is the document the definition was opened from, and clicking it goes back, as the
+    close button does -- both ask Save / Discard / Cancel first when there are unsaved
+    changes. The frame round the view is the double line a call node's side bars
+    echo, so "double means shared" holds on both.
     """
 
     save_requested = pyqtSignal()
-    discard_requested = pyqtSignal()
+    back_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self._label = QLabel("Editing subgraph")
+        self._parent_lbl = QLabel()
+        self._parent_lbl.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._parent_lbl.mousePressEvent = lambda _ev: self.back_requested.emit()  # type: ignore[method-assign]
+        self._sep = QLabel("›")
+        self._name_lbl = QLabel()
+        self._hint_lbl = QLabel()
         self._save_btn = ActionButton("upload", "Save to library", style=ActionStyle.PRIMARY, fill=False)
-        self._discard_btn = ActionButton("dismiss", "Discard", fill=False)
+        self._close_btn = IconButton("dismiss", tooltip="Close the definition and go back", size=22, icon_size=12)
         self._save_btn.clicked.connect(self.save_requested)
-        self._discard_btn.clicked.connect(self.discard_requested)
+        self._close_btn.clicked.connect(self.back_requested)
         row = QHBoxLayout(self)
-        row.setContentsMargins(10, 6, 6, 6)
+        row.setContentsMargins(10, 5, 6, 5)
         row.setSpacing(8)
-        row.addWidget(self._label)
+        row.addWidget(self._parent_lbl)
+        row.addWidget(self._sep)
+        row.addWidget(self._name_lbl)
+        row.addWidget(self._hint_lbl)
         row.addWidget(self._save_btn)
-        row.addWidget(self._discard_btn)
+        row.addWidget(self._close_btn)
         self.refresh_theme_styles()
 
-    def set_subgraph_name(self, name: str) -> None:
-        self._label.setText(f"Editing subgraph — {name}")
+    def set_path(self, parent: str | None, name: str, hint: str = "") -> None:
+        """``parent`` is the document the definition was opened from, or None when it was opened on its own."""
+        self._parent_lbl.setText(parent or "")
+        self._parent_lbl.setVisible(bool(parent))
+        self._parent_lbl.setToolTip(f"Back to {parent}" if parent else "")
+        self._sep.setVisible(bool(parent))
+        self._name_lbl.setText(name)
+        self._hint_lbl.setText(hint)
+        self._hint_lbl.setVisible(bool(hint))
         self.adjustSize()
 
     @property
     def text(self) -> str:
-        return self._label.text()
+        return " › ".join(p for p in (self._parent_lbl.text(), self._name_lbl.text()) if p)
+
+    @property
+    def save_button(self) -> ActionButton:
+        return self._save_btn
 
     def apply_theme_styles(self) -> None:
-        self.setStyleSheet(
-            f"EditSubgraphCrumb {{ background-color: {THEME.surface}; border: 1px solid {THEME.accent}; "
-            f"border-radius: 6px; }}"
+        set_style_sheet(
+            self,
+            f"DefinitionCrumb {{ background-color: {THEME.accent}; border: 1px solid {THEME.accent}; border-radius: 6px; }}",
         )
-        self._label.setStyleSheet(
-            f"border: none; color: {THEME.text}; font-size: {THEME.font_body_px}px; font-weight: 600; padding: 0;"
-        )
+        text = f"border: none; color: {THEME.pill_text}; font-size: {THEME.font_body_px}px; padding: 0;"
+        set_style_sheet(self._name_lbl, text + " font-weight: 600;")
+        set_style_sheet(self._parent_lbl, text + " text-decoration: underline;")
+        set_style_sheet(self._sep, text)
+        set_style_sheet(self._hint_lbl, f"border: none; color: {THEME.pill_text}; font-size: {THEME.font_small_px}px;")
 
 
 class SubgraphMetaDialog(QDialog):
     """Name and description for a definition about to be created from a region."""
 
-    def __init__(self, parent: QWidget | None = None, *, name: str = "", description: str = "") -> None:
+    def __init__(
+        self, parent: QWidget | None = None, *, name: str = "", description: str = "", title: str | None = None
+    ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Save Region as Reusable Subgraph")
+        self.setWindowTitle(title or "Save Region as Reusable Subgraph")
         self._name = QLineEdit(name)
         self._name.setPlaceholderText("What this subgraph does, in a few words")
         self._description = QPlainTextEdit(description)
@@ -111,12 +138,18 @@ class SubgraphMetaDialog(QDialog):
         return text or None
 
 
-class ExposeInputDialog(QDialog):
-    """Bind one member param to an input of the definition being edited.
+def compatible_inputs(inputs: list[SubgraphInput], param_type: str) -> list[SubgraphInput]:
+    """The inputs a param of ``param_type`` can share a value with: one type narrows the other."""
+    return [i for i in inputs if narrowest_type([i.type, param_type]) is not None]
 
-    Offers the existing inputs whose ``type`` matches the param's, plus *New input*,
-    which asks for a name, label and help; the param's current value becomes the
-    new input's default. The dialog only collects the choice -- ``choice`` names an
+
+class PromoteInputDialog(QDialog):
+    """Promote one member param to an input of the definition being edited.
+
+    Offers the existing inputs whose type is compatible with the param's (one narrows
+    the other, so a ``zone`` and a ``nav_zone`` can share), plus *New input*, which
+    asks for a name, label and help; the param's current value becomes the new
+    input's default. The dialog only collects the choice -- ``choice`` names an
     existing input, or ``new_input()`` builds the declared one -- and the canvas
     applies it, so the same code path serves a test that never opens a dialog.
     """
@@ -125,25 +158,28 @@ class ExposeInputDialog(QDialog):
         self,
         inputs: list[SubgraphInput],
         *,
-        state_local_id: str,
         param_key: str,
         param_type: str,
         param_label: str,
         current_value: object,
+        shared: list[tuple[str, str, str]] | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Expose as Input")
+        self.setWindowTitle("Promote to Input")
         self._inputs = inputs
-        self._state = state_local_id
         self._key = param_key
         self._type = param_type
         self._value = current_value
-        self._compatible = [i for i in inputs if i.type == param_type]
+        self._compatible = compatible_inputs(inputs, param_type)
 
         self._combo = QComboBox()
         for inp in self._compatible:
-            self._combo.addItem(f"{inp.label or inp.name} ({inp.name})", inp.name)
+            self._combo.addItem(f"{inp.label or inp.name} ({inp.type})", ("input", inp.name))
+        # An exposed node's params can be shared too: (label, panel id, key), already
+        # filtered to the compatible ones by the caller.
+        for label, panel_id, key in shared or []:
+            self._combo.addItem(f"{label} (exposed)", ("shared", panel_id, key))
         self._combo.addItem(NEW_INPUT, None)
         self._name = QLineEdit(param_key)
         self._label = QLineEdit(param_label)
@@ -151,25 +187,39 @@ class ExposeInputDialog(QDialog):
         self._help.setPlaceholderText("Shown as the input's tooltip (optional)")
 
         form = QFormLayout()
-        form.addRow(QLabel(f"Bind <b>{param_label}</b> ({param_type}) to:"))
+        form.addRow(QLabel(f"Set <b>{param_label}</b> ({param_type}) from:"))
         form.addRow("Input", self._combo)
         form.addRow("Name", self._name)
         form.addRow("Label", self._label)
         form.addRow("Help", self._help)
-        footer = dialog_footer(self, on_commit=self._on_accept)
+        footer = dialog_footer(self, on_commit=self.accept)
         self._ok = footer.commit
         layout = QVBoxLayout(self)
         layout.addLayout(form)
         layout.addLayout(footer.layout)
         self._combo.currentIndexChanged.connect(self._on_choice_changed)
         self._name.textChanged.connect(self._validate)
-        self._combo.setCurrentIndex(self._combo.count() - 1 if not self._compatible else 0)
+        self._combo.setCurrentIndex(0)
         self._on_choice_changed(self._combo.currentIndex())
 
     @property
     def choice(self) -> str | None:
-        """The existing input's name, or None for a new one."""
-        return self._combo.currentData()
+        """The existing input's name, or None for a new one or a shared exposed param."""
+        data = self._combo.currentData()
+        return data[1] if data and data[0] == "input" else None
+
+    @property
+    def shared_choice(self) -> tuple[str, str] | None:
+        """``(panel id, key)`` of the exposed param chosen to share, or None."""
+        data = self._combo.currentData()
+        return (data[1], data[2]) if data and data[0] == "shared" else None
+
+    def select(self, text_prefix: str) -> None:
+        """Pick the first entry whose text starts with *text_prefix* -- for tests."""
+        for i in range(self._combo.count()):
+            if self._combo.itemText(i).startswith(text_prefix):
+                self._combo.setCurrentIndex(i)
+                return
 
     def select_new(self) -> None:
         self._combo.setCurrentIndex(self._combo.count() - 1)
@@ -181,18 +231,18 @@ class ExposeInputDialog(QDialog):
         self._help.setText(help_text)
 
     def _on_choice_changed(self, _index: int) -> None:
-        new = self.choice is None
+        new = self._combo.currentData() is None
         for w in (self._name, self._label, self._help):
             w.setEnabled(new)
         self._validate()
 
     def _validate(self, *_args) -> None:
-        if self.choice is not None:
+        if self._combo.currentData() is not None:
             self._ok.setEnabled(True)
             return
         name = self._name.text().strip()
         taken = {i.name for i in self._inputs}
-        self._ok.setEnabled(bool(name) and name not in taken)
+        self._ok.setEnabled(bool(name) and name not in taken and "." not in name)
 
     def new_input(self) -> SubgraphInput:
         """The input the *New input* fields describe, unbound; the param's value is its default."""
@@ -203,6 +253,3 @@ class ExposeInputDialog(QDialog):
             help=self._help.text().strip() or None,
             default=self._value,
         )
-
-    def _on_accept(self) -> None:
-        self.accept()

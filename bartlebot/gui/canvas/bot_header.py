@@ -669,13 +669,26 @@ class BotHeader(ThemedMixin, QWidget):
             self._authors_edit.setText(config.authors or "")
             self._authors_lbl.setText(f"by {config.authors}" if config.authors else "")
             self._tags_field.set_tags(config.tags)
-            self._apply_version(config.version)
-            self._tag_row.setVisible(True)
+            if config.definition is not None:
+                # A definition's version is an integer the library bumps on every
+                # save, never typed: the pill is all there is, in both modes.
+                self._version_pill.setText(f"v{config.definition.version}")
+                self._apply_version_slot()
+            else:
+                self._apply_version(config.version)
+            # Tags and authors describe a bot in the library; a definition has neither.
+            self._tag_row.setVisible(config.definition is None)
+            self._authors_slot.setVisible(config.definition is None)
         self._suppress = False
 
     def set_file(self, filename: str | None) -> None:
         """Name the file the bot came from, shown beside the version."""
         self._file_lbl.setText(f"· {filename}" if filename else "")
+
+    def set_definition_info(self, origin: str, used_by: int) -> None:
+        """For a definition document: where it comes from and how many bots link it, beside the version."""
+        uses = f"Used by {used_by} bot{'s' if used_by != 1 else ''}"
+        self._file_lbl.setText(" · ".join(["· subgraph", *([origin] if origin else []), uses]))
 
     def set_editable(self, editable: bool) -> None:
         if self._config is None:
@@ -780,7 +793,9 @@ class BotHeader(ThemedMixin, QWidget):
         Before this was routed through the slot, typing a version in Edit mode brought
         the pill back *beside* the field it was being typed into.
         """
-        if not self._label_mode:
+        if self._config is not None and self._config.definition is not None:
+            self._version_slot.show_label()
+        elif not self._label_mode:
             self._version_slot.show_editor()
         elif self._version_pill.text():
             self._version_slot.show_label()

@@ -36,7 +36,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.schema import SubgraphDefinition
+from bartlebot.bot.schema import PORT_NODE_TYPES, SubgraphDefinition
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
@@ -50,6 +50,7 @@ from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import Origin
 from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, count_subgraph_uses
+from bartlebot.subgraphs import entry_nodes, exit_nodes, port_name
 
 _ORIGIN_CHIP = {
     Origin.SHIPPED: "Shipped",
@@ -264,13 +265,21 @@ class _DetailPanel(ThemedMixin, QScrollArea):
             desc.setStyleSheet(f"color: {THEME.text}; font-size: {THEME.font_small_px}px;")
             layout.addWidget(desc)
 
-        n = len(defn.states)
+        # The Entries and Exits are its signature, not states it runs: counted and
+        # listed on their own, as the call node draws them.
+        ports = {st.id for st in defn.states if st.node_type in PORT_NODE_TYPES}
+        n = len(defn.states) - len(ports)
+        internal = sum(1 for t in defn.transitions if t.source not in ports and t.dest not in ports)
         used = f"Used by {used_by} bot{'s' if used_by != 1 else ''}"
-        summary = QLabel(
-            f"{n} state{'s' if n != 1 else ''}, {len(defn.transitions)} internal transitions \u00b7 {used}"
-        )
+        summary = QLabel(f"{n} state{'s' if n != 1 else ''}, {internal} internal transitions \u00b7 {used}")
         summary.setStyleSheet(f"color: {THEME.text_muted}; font-size: {THEME.font_subtext_px}px;")
         layout.addWidget(summary)
+        entries = ", ".join(port_name(st) for st in entry_nodes(defn)) or "none"
+        exits = ", ".join(port_name(st) for st in exit_nodes(defn)) or "none"
+        ports_lbl = QLabel(f"Entries: {entries} \u00b7 Exits: {exits}")
+        ports_lbl.setWordWrap(True)
+        ports_lbl.setStyleSheet(f"color: {THEME.text}; font-size: {THEME.font_subtext_px}px;")
+        layout.addWidget(ports_lbl)
 
         layout.addWidget(_make_separator())
         inputs_hdr = QLabel("Inputs")
@@ -294,6 +303,8 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         members_hdr.setStyleSheet(f"color: {THEME.text};")
         layout.addWidget(members_hdr)
         for st in defn.states:
+            if st.id in ports:
+                continue
             row = QLabel(f"{st.label or st.id} \u2014 {_humanize(st.node_type)}")
             row.setStyleSheet(f"color: {THEME.text}; font-size: {THEME.font_subtext_px}px;")
             layout.addWidget(row)

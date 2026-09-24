@@ -197,13 +197,12 @@ def _subgraph_meta_dialog():
     return SubgraphMetaDialog(name="Regroup at the hub")
 
 
-def _expose_input_dialog():
+def _promote_input_dialog():
     from bartlebot.bot.schema import SubgraphInput
-    from bartlebot.gui.canvas.subgraph_widgets import ExposeInputDialog
+    from bartlebot.gui.canvas.subgraph_widgets import PromoteInputDialog
 
-    return ExposeInputDialog(
+    return PromoteInputDialog(
         [SubgraphInput(name="world", type="str")],
-        state_local_id="hub",
         param_key="zone",
         param_type="str",
         param_label="Zone",
@@ -244,7 +243,7 @@ CONVERTED = [
     ("profile", _profile_dialog, "OK"),
     ("bot_strategy_picker", _bot_strategy_picker, "OK"),
     ("subgraph_meta", _subgraph_meta_dialog, "Save"),
-    ("expose_input", _expose_input_dialog, "OK"),
+    ("promote_input", _promote_input_dialog, "OK"),
     ("region_color", _color_picker_dialog, "OK"),
     ("recovery", _recovery_dialog, "OK"),
     ("safety_warning", _safety_warning_dialog, "Run Bot"),

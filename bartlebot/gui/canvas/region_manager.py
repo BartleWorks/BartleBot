@@ -57,8 +57,14 @@ class RegionManager:
         return self._region_items
 
     def setup(self, interactive: bool) -> None:
-        """Build RegionItems from config and connect scene.changed."""
+        """Build RegionItems from config and connect scene.changed.
+
+        A linked region gets none: a subgraph instance is drawn as its call node, and a
+        region nested inside one is part of what the call node stands for.
+        """
         for region in self._config.regions:
+            if region.source is not None:
+                continue
             ri = RegionItem(region, self._node_items)
             ri.set_interactive(interactive)
             self._scene.addItem(ri)

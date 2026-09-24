@@ -44,12 +44,23 @@ class ControllerHarness:
             "_on_run_requested",
             "_check_restricted_zones",
             "_start_enabled",
+            "_autosave_stem",
+            "_close_definitions",
+            "_open_definition",
+            "_push_current",
+            "_show_definition",
+            "_refresh_definition_context",
+            "_on_definition_save_requested",
+            "_save_definition",
+            "_definition_back",
+            "_leave_definition",
         ):
             setattr(self, name, getattr(cls, name).__get__(self))
         self._subgraph_library = library
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
         self._has_unsaved_changes = False
+        self._doc_stack = []
         self._current_machine = None
         self._bot_task = None
         self._client_manager = MagicMock(clients=[])
@@ -105,7 +116,8 @@ def test_open_composes_linked_region_from_library(harness, library, bot_file):
     assert config.regions[0].source.version == 2
     assert m("rest") in config.regions[0].members
     assert {s.id: s for s in config.states}[m("go_to_world")].params["world"] == "Mooshu"
-    assert harness._window.bot_canvas.scene.node_items[m("rest")] is not None
+    # Drawn as its call node, like every member.
+    assert harness._window.bot_canvas.scene.call_node_of(m("rest")) is not None
     assert harness._window.bot_canvas.compose_report.regions[REGION].kind == "linked"
     assert not harness._has_unsaved_changes, "an open is never an edit"
 
@@ -142,19 +154,21 @@ def test_missing_definition_keeps_snapshot_and_warns(harness, library, bot_file)
     assert not any("Region Sync players" in line for line in canvas.validation_errors())
 
 
-def test_held_region_when_initial_would_vanish(harness, library, bot_file):
+def test_held_region_when_a_used_port_would_vanish(harness, library, bot_file):
+    # The bot wires state_1's FAILURE into the Hub entry; version 2 drops that entry.
     defn = sync_players_definition(version=2)
-    defn.states = [s for s in defn.states if s.id != "relog"]
-    defn.transitions = [t for t in defn.transitions if "relog" not in (t.source, t.dest)]
+    defn.states = [s for s in defn.states if s.id != "entry_hub"]
+    defn.transitions = [t for t in defn.transitions if t.source != "entry_hub"]
     library.save(defn)
     harness._open_bot(str(bot_file))
 
     canvas = harness._window.bot_canvas
     assert canvas.compose_report.regions[REGION].kind == "held"
     assert canvas.config.regions[0].source.version == 1
-    assert m("relog") in canvas.scene.node_items
+    assert canvas.scene.call_node_of(m("hub")) is not None
+    assert canvas.scene.call_nodes()[REGION].link_state == "outdated"
     warnings = canvas.validation_warnings()
-    assert any("initial state" in line and line.startswith("Region Sync players: needs attention") for line in warnings)
+    assert any(line.startswith("Region Sync players: needs attention") for line in warnings)
 
 
 def _cycle_bot(library: SubgraphLibrary) -> BotConfig:
@@ -294,7 +308,7 @@ def test_undo_after_replace_config_restores_previous_graph(harness, library, bot
     library.reload()
     composed, _ = compose_bot(canvas.config, library)
     canvas.replace_config(composed, "Update subgraphs")
-    assert m("rest") in canvas.scene.node_items
+    assert any(st.id == m("rest") for st in canvas.config.states)
     assert canvas.can_undo()
 
     canvas.undo()

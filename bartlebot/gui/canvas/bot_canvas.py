@@ -43,16 +43,19 @@ from PyQt6.QtWidgets import (
 from bartlebot import card_art
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
+    PORT_NODE_TYPES,
     BotConfig,
     SubgraphDefinition,
     SubgraphInput,
     SubgraphInputBinding,
+    SubgraphPanel,
 )
 from bartlebot.bot_folders import ALL_BADGE, folder_badge, folder_caption
 from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
 from bartlebot.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
 from bartlebot.gui.canvas.bot_header import BotHeader
+from bartlebot.gui.canvas.call_node_item import CallNodeItem, PortNodeItem
 from bartlebot.gui.canvas.edge_item import EdgeItem
 from bartlebot.gui.canvas.edit_scene import (
     EditScene,
@@ -60,12 +63,13 @@ from bartlebot.gui.canvas.edit_scene import (
     _node_returns,
     _reachable_states,
     _validate_node,
+    member_warnings,
 )
 from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel
-from bartlebot.gui.canvas.subgraph_widgets import EditSubgraphCrumb, ExposeInputDialog, SubgraphMetaDialog
+from bartlebot.gui.canvas.subgraph_widgets import DefinitionCrumb, PromoteInputDialog, SubgraphMetaDialog
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
@@ -77,6 +81,7 @@ from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.tag_picker import TagPickerButton
 from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
 from bartlebot.logging_setup import GUI_ONLY
+from bartlebot.nodes.param_schema import narrowest_type
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
@@ -84,23 +89,13 @@ from bartlebot.strategy_store import rekey_bot_strategy_states
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import (
     ComposeReport,
-    added_member_ids,
-    clear_label_override,
-    clear_param_override,
     compose_bot,
-    contains_subgraph,
     convert_region_to_instance,
-    definition_values,
-    drop_states,
+    definition_problems,
     extract_definition,
-    free_keys,
-    local_id,
     mint_instance_id,
-    push_back,
-    rename_states,
+    node_panels,
     reresolve_member_params,
-    set_param_override,
-    sync_free_overrides,
     taken_ids,
 )
 
@@ -188,6 +183,22 @@ class BotMode(enum.Enum):
     EDIT = "edit"
 
 
+@dataclass
+class CanvasDocument:
+    """What the canvas holds for one open document, set aside while another is on top of it.
+
+    A definition opened from a bot is a document of its own, with its own undo history;
+    going back puts the bot's exactly as it was, camera included. ``take_document`` and
+    ``restore_document`` are the handoff, and the controller's document stack holds these.
+    """
+
+    config: BotConfig
+    undo: UndoManager
+    camera: tuple | None
+    report: ComposeReport
+    mode: BotMode
+
+
 # ---------------------------------------------------------------------------
 # Bot library helpers — used by _BotLibraryPanel
 # ---------------------------------------------------------------------------
@@ -202,6 +213,8 @@ class _BotMeta:
     tags: list[str]
     version: str
     path: Path
+    #: Set on a card for a subgraph definition, which opens as a document rather than a file.
+    subgraph_id: str | None = None
 
 
 def _drop_names(raw: object) -> list[str]:
@@ -440,7 +453,7 @@ class _BotCard(ThemedMixin, QWidget):
         super().leaveEvent(event)
 
     def mousePressEvent(self, event) -> None:
-        self.open_requested.emit(str(self._meta.path.resolve()))
+        self.open_requested.emit(self._meta.subgraph_id or str(self._meta.path.resolve()))
         super().mousePressEvent(event)
 
 
@@ -463,9 +476,14 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     new_bot_requested = pyqtSignal()
     open_bot_requested = pyqtSignal()
     open_recent_requested = pyqtSignal(str)  # path
+    open_subgraph_requested = pyqtSignal(str)  # subgraph id
 
     _RECENT = "Recent"
     _ALL = "All"
+    #: Definitions from the subgraph library, listed after the folders. Not in All,
+    #: which is the bots: a definition opens as a document to edit, never to run.
+    _SUBGRAPHS = "Subgraphs"
+    _SUBGRAPHS_KEY = "\0subgraphs"
     #: Folder-name keys for the rows that are not folders. A folder can never be named
     #: with a leading NUL, so these cannot collide with one.
     _OTHER = "Other"
@@ -479,6 +497,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         #: Folder name -> its bots, in folder-name order.
         self._category_map: dict[str, list[_BotMeta]] = {}
         self._recent_metas: list[_BotMeta] = []
+        self._subgraph_metas: list[_BotMeta] = []
+        self._subgraph_library: SubgraphLibrary | None = None
         #: Bot path -> its card, built the first time a filter shows it and kept until the
         #: next refresh(). Rebuilding every card per keystroke made the search box lag:
         #: ~200ms a keystroke for a 70-bot library, where reusing them is ~40ms.
@@ -638,6 +658,12 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
     # Public API
     # ------------------------------------------------------------------
 
+    def set_subgraph_library(self, library: SubgraphLibrary | None) -> None:
+        """The library the Subgraphs folder lists. Read at the next refresh."""
+        self._subgraph_library = library
+        if self._listed:
+            self.refresh()
+
     def refresh(self) -> None:
         """Rescan recent files and bots/ directory, rebuild UI."""
         self._listed = True
@@ -666,6 +692,26 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         # Recent files
         self._recent_metas = [m for p in recent_paths if (m := _read_bot_meta(Path(p)))]
+
+        self._subgraph_metas = []
+        if self._subgraph_library is not None:
+            defns = sorted(
+                (d for sid in self._subgraph_library.ids() if (d := self._subgraph_library.get(sid)) is not None),
+                key=lambda d: d.name.casefold(),
+            )
+            self._subgraph_metas = [
+                _BotMeta(
+                    name=d.name,
+                    description=d.description or "",
+                    authors="",
+                    drops=[],
+                    tags=[],
+                    version=str(d.version),
+                    path=Path(f"{d.id}.json"),
+                    subgraph_id=d.id,
+                )
+                for d in defns
+            ]
 
         # The files were just re-read, so a kept card may describe an old version.
         # _show_cards below takes them out of the layout.
@@ -696,6 +742,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
                 self.add_category_row(folder, self._OTHER)
             else:
                 self.add_category_row(folder, folder_caption(folder), _badge_icon(folder_badge(folder)))
+        if self._subgraph_metas:
+            self.add_category_row(self._SUBGRAPHS_KEY, self._SUBGRAPHS)
         self._cat_list.blockSignals(False)
 
         # Select first category. ``clear()`` above left the current row at -1, so this
@@ -807,6 +855,8 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             return self._all_metas
         if key == self._RECENT_KEY:
             return self._recent_metas
+        if key == self._SUBGRAPHS_KEY:
+            return self._subgraph_metas
         return self._category_map.get(key, [])
 
     def _apply_filter(self) -> None:
@@ -849,7 +899,9 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             card = self._cards.get(meta.path)
             if card is None:
                 card = self._cards[meta.path] = _BotCard(meta)
-                card.open_requested.connect(self.open_recent_requested)
+                card.open_requested.connect(
+                    self.open_subgraph_requested if meta.subgraph_id else self.open_recent_requested
+                )
             card.set_matched_drops((matched_drops or {}).get(meta.path))
             layout.insertWidget(i, card)
             card.show()
@@ -960,6 +1012,12 @@ class BotCanvas(QWidget):
     new_bot_requested = pyqtSignal()
     open_bot_requested = pyqtSignal()
     open_recent_requested = pyqtSignal(str)
+    # (subgraph id): open a definition as a document -- from a call node, or from the
+    # Subgraphs folder of the library. The controller owns the document stack.
+    open_definition_requested = pyqtSignal(str)
+    # A definition document's way out, and its save: (then go back).
+    definition_back_requested = pyqtSignal()
+    definition_save_requested = pyqtSignal(bool)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -979,13 +1037,12 @@ class BotCanvas(QWidget):
         # setup() and again before a run. Empty for a bot with no linked regions.
         self._compose_report = ComposeReport()
         # The session's subgraph library, handed in by the controller. Read for the
-        # region page and for re-resolving a member's params; never written here.
+        # call node's page and for re-resolving a member's params; written only by
+        # Save Region as Subgraph.
         self._subgraph_library: SubgraphLibrary | None = None
-        # The linked region being edited in place, and the working copy of its
-        # definition that Expose-as-input writes into. Neither is in the bot config,
-        # so neither is undoable -- docs/SUBGRAPHS.md, *Authoring*.
-        self._editing_region_id: str | None = None
-        self._editing_defn: SubgraphDefinition | None = None
+        # The flat transitions behind the edge on the properties panel, when it is a
+        # call node's: a flag edit on the first is copied to the rest.
+        self._shown_edge_models: list = []
 
         self._tick_timer = QTimer(self)
         self._tick_timer.setInterval(1000)
@@ -1211,11 +1268,11 @@ class BotCanvas(QWidget):
         self._focus_crumb.adjustSize()
         self._focus_crumb.setVisible(False)
 
-        # ── Editing-subgraph crumb — below the focus crumb when both show ────
-        self._edit_crumb = EditSubgraphCrumb(self._view)
-        self._edit_crumb.save_requested.connect(self.save_subgraph_to_library)
-        self._edit_crumb.discard_requested.connect(self.discard_subgraph_edit)
-        self._edit_crumb.setVisible(False)
+        # ── Definition crumb — the way back out of a definition document ─
+        self._definition_crumb = DefinitionCrumb(self._view)
+        self._definition_crumb.save_requested.connect(lambda: self.definition_save_requested.emit(False))
+        self._definition_crumb.back_requested.connect(self.definition_back_requested)
+        self._definition_crumb.setVisible(False)
 
         # ── Keyboard shortcuts ────────────────────────────────────────
         fit_shortcut = QShortcut(QKeySequence("Ctrl+0"), self)
@@ -1257,17 +1314,18 @@ class BotCanvas(QWidget):
         self._param_panel.select_state_requested.connect(self._on_select_state_requested)
         self._param_panel.initial_state_requested.connect(self._on_initial_state_requested)
         self._param_panel.recovery_state_requested.connect(self._on_recovery_state_requested)
-        self._param_panel.override_toggled.connect(self._on_override_toggled)
         self._param_panel.region_property_changed.connect(self._on_region_property_changed)
         self._param_panel.detach_requested.connect(self._on_detach_requested)
-        self._param_panel.edit_subgraph_requested.connect(self.begin_subgraph_edit)
-        self._param_panel.expose_input_requested.connect(self._on_expose_input_requested)
-        self._param_panel.free_toggled.connect(self.set_param_free)
-        self._param_panel.label_override_reset.connect(self._on_label_override_reset)
+        self._param_panel.open_definition_requested.connect(self.open_definition_of)
+        self._param_panel.role_requested.connect(self._on_role_requested)
+        self._param_panel.promote_input_requested.connect(self._on_promote_requested)
+        self._param_panel.unbind_input_requested.connect(self.unbind_param)
+        self._param_panel.expose_node_requested.connect(self.set_node_exposed)
         self._param_panel.definition_changed.connect(self._on_definition_changed)
+        self._param_panel.add_port_requested.connect(self._on_add_port_requested)
+        self._param_panel.delete_port_requested.connect(self._on_delete_port_requested)
         self._scene.save_region_as_subgraph_requested.connect(self.save_region_as_subgraph)
-        self._scene.edit_subgraph_requested.connect(self.begin_subgraph_edit)
-        self._scene.expose_input_requested.connect(self._on_expose_input_requested)
+        self._scene.open_definition_requested.connect(self.open_definition_of)
         self._scene.selectionChanged.connect(self._on_selection_changed)
         self._scene.focus_region_requested.connect(self.enter_focus_mode)
 
@@ -1276,6 +1334,7 @@ class BotCanvas(QWidget):
         self._placeholder.new_bot_requested.connect(self.new_bot_requested)
         self._placeholder.open_bot_requested.connect(self.open_bot_requested)
         self._placeholder.open_recent_requested.connect(self.open_recent_requested)
+        self._placeholder.open_subgraph_requested.connect(self.open_definition_requested)
         self._placeholder.show()
         # Bar B is the *bot's* header, so with no bot there is nothing for it to say
         # and nothing its buttons can act on. Shown anyway it read as a second strip
@@ -1288,22 +1347,8 @@ class BotCanvas(QWidget):
     # ------------------------------------------------------------------
 
     def setup(self, config: BotConfig) -> None:
-        """Load a BotConfig. Enters RUN mode with the graph ready."""
+        """Load a BotConfig -- a bot, or a definition document. Enters RUN mode with the graph ready."""
         self._undo_mgr.clear()
-        self._placeholder.setVisible(False)
-        self._toolbar.setVisible(True)
-        self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self._view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        sm = SettingsManager.instance()
-        self._minimap.setVisible(sm.get("canvas", "minimap_visible", default=True))
-        self._set_failure_edge_mode(_stored_failure_edge_mode(sm), persist=False)
-        self.exit_focus_mode()
-        self._close_search()
-        self._end_subgraph_edit()
-        self._tab_idx = 0
-        self._config = config
-        self._compose_report = ComposeReport()
-        self._toolbar.set_config(config)
         # Auto-layout when no positions are saved and the setting is enabled
         if (
             config.states
@@ -1313,19 +1358,106 @@ class BotCanvas(QWidget):
             from bartlebot.gui.canvas.layout import auto_layout
 
             auto_layout(config)
-        self._scene.setup(config)
-        _sm = SettingsManager.instance()
-        self._scene.set_snap_enabled(_sm.get("canvas", "snap_to_grid", default=False))
-        self._scene.set_grid_style(_sm.get("canvas", "grid_style", default="dots"))
-        self._apply_failure_edge_visibility()
-        self._param_panel.show_idle()
+        self._load(config, ComposeReport())
         self._view.fit_scene()
         self._minimap.fit_to_scene()
-        self._reposition_banner()
         self._apply_mode(BotMode.RUN)
+        self.mode_changed.emit(BotMode.RUN)
+
+    def _load(self, config: BotConfig, report: ComposeReport) -> None:
+        """Bind every surface to ``config``: what ``setup`` and ``restore_document`` share."""
+        self._placeholder.setVisible(False)
+        self._toolbar.setVisible(True)
+        self._view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self._view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        sm = SettingsManager.instance()
+        self._minimap.setVisible(sm.get("canvas", "minimap_visible", default=True))
+        self._set_failure_edge_mode(_stored_failure_edge_mode(sm), persist=False)
+        self.exit_focus_mode()
+        self._close_search()
+        self._tab_idx = 0
+        self._config = config
+        self._compose_report = report
+        self._toolbar.set_config(config)
+        self._scene.setup(config)
+        self._scene.set_snap_enabled(sm.get("canvas", "snap_to_grid", default=False))
+        self._scene.set_grid_style(sm.get("canvas", "grid_style", default="dots"))
+        self._scene.refresh_region_states(report)
+        self._apply_failure_edge_visibility()
+        self._definition_crumb.setVisible(config.is_definition)
+        if not config.is_definition:
+            self._definition_crumb.set_path(None, "")
+        self._show_default_page()
+        self._reposition_banner()
         self._edit_btn.setEnabled(True)
         self._update_validation_badge()
-        self.mode_changed.emit(BotMode.RUN)
+
+    # ------------------------------------------------------------------
+    # Documents: a definition opened on top of a bot
+    # ------------------------------------------------------------------
+
+    @property
+    def is_definition(self) -> bool:
+        """Whether the open document is a subgraph definition rather than a bot."""
+        return self._config is not None and self._config.is_definition
+
+    def take_document(self) -> CanvasDocument | None:
+        """Set the open document aside, with its undo history and camera. The canvas is left to be ``setup`` again."""
+        if self._config is None:
+            return None
+        self._undo_mgr.flush_debounce()
+        self._scene.flush_positions()
+        doc = CanvasDocument(
+            config=self._config,
+            undo=self._undo_mgr,
+            camera=self._view.camera_state(),
+            report=self._compose_report,
+            mode=self._mode,
+        )
+        self._undo_mgr = UndoManager()
+        return doc
+
+    def restore_document(self, doc: CanvasDocument) -> None:
+        """Put a document set aside by ``take_document`` back exactly as it was."""
+        self._undo_mgr.cancel_debounce()
+        self._undo_mgr = doc.undo
+        self._load(doc.config, doc.report)
+        if doc.camera is not None:
+            self._view.restore_camera(doc.camera)
+        self._minimap.fit_to_scene()
+        self._apply_mode(doc.mode)
+        self.mode_changed.emit(doc.mode)
+
+    def set_definition_context(self, parent: str | None, *, origin: str = "", used_by: int = 0) -> None:
+        """Name where the open definition was opened from, and what the header says about it."""
+        if self._config is None or not self._config.is_definition:
+            return
+        self._definition_crumb.set_path(parent, self._config.name, "")
+        # Re-read, since a save moved the version the header's pill shows.
+        self._toolbar.set_config(self._config)
+        self._toolbar.set_editable(self._mode == BotMode.EDIT)
+        self._toolbar.set_definition_info(origin, used_by)
+        self._reposition_banner()
+
+    @property
+    def definition_crumb(self) -> DefinitionCrumb:
+        return self._definition_crumb
+
+    def open_definition_of(self, region_id: str) -> None:
+        """Ask for the definition a call node links to be opened as a document."""
+        config = self._scene.config
+        region = next((r for r in config.regions if r.id == region_id), None) if config is not None else None
+        if region is None or region.source is None:
+            return
+        if self._definition_for(region) is None:
+            QMessageBox.warning(
+                self,
+                "Open Definition",
+                "The library has no definition for this subgraph, so there is nothing to open.\n\n"
+                "Detach it from the library to make its states your own.",
+            )
+            return
+        self.open_definition_requested.emit(region.source.subgraph_id)
 
     def close_bot(self) -> None:
         """Unload the current bot and return to the placeholder."""
@@ -1333,7 +1465,7 @@ class BotCanvas(QWidget):
         self._refresh_undo_actions()
         self.exit_focus_mode()
         self._close_search()
-        self._end_subgraph_edit()
+        self._definition_crumb.setVisible(False)
         self._scene.teardown()
         self._compose_report = ComposeReport()
         self._update_validation_badge()
@@ -1367,6 +1499,7 @@ class BotCanvas(QWidget):
         """The library the region page reads definitions from and a pasted instance composes from."""
         self._subgraph_library = library
         self._scene.set_subgraph_library(library)
+        self._placeholder.set_subgraph_library(library)
 
     def _definition_for(self, region) -> SubgraphDefinition | None:
         if self._subgraph_library is None or region is None or region.source is None:
@@ -1412,6 +1545,9 @@ class BotCanvas(QWidget):
         lay = QVBoxLayout(dlg)
         lay.setContentsMargins(0, 0, 0, 0)
         panel = _BotLibraryPanel(dlg)
+        panel.set_subgraph_library(self._subgraph_library)
+        panel.open_subgraph_requested.connect(dlg.accept)
+        panel.open_subgraph_requested.connect(self.open_definition_requested)
         panel.new_bot_requested.connect(dlg.reject)
         panel.new_bot_requested.connect(self.new_bot_requested)
         panel.open_bot_requested.connect(dlg.reject)
@@ -1449,7 +1585,10 @@ class BotCanvas(QWidget):
         """Sync Run button enabled/tooltip from external readiness + validation errors."""
         if self._run_state != _IDLE or self._mode != BotMode.RUN:
             return
-        if self._n_validation_errors > 0:
+        if self.is_definition:
+            self._run_pause_btn.setEnabled(False)
+            self._run_pause_btn.setToolTip("A subgraph runs inside a bot: go back to run it")
+        elif self._n_validation_errors > 0:
             self._run_pause_btn.setEnabled(False)
             noun = "error" if self._n_validation_errors == 1 else "errors"
             self._run_pause_btn.setToolTip(f"Cannot run: fix {self._n_validation_errors} {noun} first")
@@ -1493,10 +1632,10 @@ class BotCanvas(QWidget):
         if hasattr(self, "_focus_crumb"):
             self._focus_crumb.adjustSize()
             self._focus_crumb.move(vx + 8, vy + 8)
-        if hasattr(self, "_edit_crumb"):
-            self._edit_crumb.adjustSize()
+        if hasattr(self, "_definition_crumb"):
+            self._definition_crumb.adjustSize()
             below = self._focus_crumb.height() + 6 if self._focus_crumb.isVisible() else 0
-            self._edit_crumb.move(vx + 8, vy + 8 + below)
+            self._definition_crumb.move(vx + 8, vy + 8 + below)
         if hasattr(self, "_focus_frame"):
             self._focus_frame.setGeometry(vx, vy, vw, vh)
 
@@ -1519,14 +1658,15 @@ class BotCanvas(QWidget):
         """
         mode = self._failure_edge_mode
         recovery = self._config.recovery_state if self._config else None
-        by_item = {ei: d for _s, _w, d, ei in self._scene.edge_items}
         for item in self._scene.items():
+            # A call node's exit edge carries its port id as ``when``, so it is never
+            # one of these: an exit is a named way out, not a failure fallthrough.
             if not isinstance(item, EdgeItem) or item.when not in FALLTHROUGH_RETURNS:
                 continue
             if mode == FAILURE_EDGES_NONE:
                 visible = False
             elif mode == FAILURE_EDGES_HIDE_RECOVERY:
-                visible = by_item.get(item) != recovery
+                visible = any(t.dest != recovery for t in self._scene.transitions_of(item))
             else:
                 visible = True
             item.setVisible(visible)
@@ -1672,20 +1812,31 @@ class BotCanvas(QWidget):
         self.stop_button.setEnabled(False)
         self._edit_btn.setEnabled(self._config is not None)
         self._tick_timer.stop()
-        if self._active_state and self._active_state in self._scene._node_items:
-            self._scene._node_items[self._active_state].set_active(False)
+        self._set_node_active(self._active_state, False)
         self._active_state = None
         self._emit_bot_status()
         logger.info("=== Bot stopped ===")
 
+    def _set_node_active(self, state_id: str | None, active: bool):
+        """Light or dim the item ``state_id`` is drawn as. A member lights its call node, titled with its name."""
+        if not state_id:
+            return None
+        node = self._scene.node_items.get(state_id)
+        if node is None:
+            node = self._scene.call_node_of(state_id)
+            if node is not None:
+                state = next((s for s in self._config.states if s.id == state_id), None) if self._config else None
+                node.set_active_member((state.label or state.id) if active and state is not None else None)
+        if node is not None:
+            node.set_active(active)
+        return node
+
     def set_state(self, state_id: str) -> None:
-        """Highlight the active FSM state node."""
-        if self._active_state and self._active_state in self._scene._node_items:
-            self._scene._node_items[self._active_state].set_active(False)
+        """Highlight the active FSM state node -- or, for a member of an instance, its call node."""
+        self._set_node_active(self._active_state, False)
         self._active_state = state_id
-        if state_id in self._scene._node_items:
-            node = self._scene._node_items[state_id]
-            node.set_active(True)
+        node = self._set_node_active(state_id, True)
+        if node is not None:
             self._view.smooth_center_on(node)
         self._emit_bot_status()
         # GUI_ONLY: BotMachine logs the same transition, in more detail, a moment
@@ -1730,12 +1881,13 @@ class BotCanvas(QWidget):
     def exit_edit_mode(self) -> bool:
         """Switch back to Run mode, as the Done button does.
 
-        Returns False, having changed nothing, when an unresolved subgraph edit holds
-        the canvas in Edit mode. The counterpart to :meth:`enter_edit_mode`, so that a
-        caller outside the canvas can drive a round trip -- the layout probe and the
-        height tests both do -- without reaching for the button's own slot.
+        Returns False, having changed nothing, in a definition document, which has no
+        Run mode: its way out is back to the document it was opened from. The
+        counterpart to :meth:`enter_edit_mode`, so that a caller outside the canvas can
+        drive a round trip -- the layout probe and the height tests both do -- without
+        reaching for the button's own slot.
         """
-        if not self.resolve_subgraph_edit():
+        if self.is_definition:
             return False
         self._apply_mode(BotMode.RUN)
         self.mode_changed.emit(BotMode.RUN)
@@ -1743,10 +1895,14 @@ class BotCanvas(QWidget):
         return True
 
     def _on_done_clicked(self) -> None:
+        if self.is_definition:
+            self.definition_back_requested.emit()
+            return
         self.exit_edit_mode()
 
     def _on_save_done_clicked(self) -> None:
-        if not self.resolve_subgraph_edit():
+        if self.is_definition:
+            self.definition_save_requested.emit(True)
             return
         self._apply_mode(BotMode.RUN)
         self.mode_changed.emit(BotMode.RUN)
@@ -1779,7 +1935,7 @@ class BotCanvas(QWidget):
         focused = QApplication.focusWidget()
         if isinstance(focused, (QLineEdit, QTextEdit, QPlainTextEdit, QAbstractSpinBox)):
             return
-        if self._mode != BotMode.EDIT or self._scene._config is None:
+        if self._mode != BotMode.EDIT or self._scene.config is None:
             return
         node_type = SettingsManager.instance().favorited_hotkey_nodes[slot]
         if not node_type:
@@ -1790,7 +1946,7 @@ class BotCanvas(QWidget):
 
     def _add_node_at_viewport_center(self, node_type: str) -> None:
         """Add a node of the given type near the canvas origin, avoiding occupied grid cells."""
-        if self._mode != BotMode.EDIT or self._scene._config is None:
+        if self._mode != BotMode.EDIT or self._scene.config is None:
             return
         pos = self._scene.find_empty_grid_cell(self._canvas_origin())
         self._scene.create_state_at(node_type, pos)
@@ -1801,7 +1957,7 @@ class BotCanvas(QWidget):
             return
         from bartlebot.gui.canvas.layout import auto_layout
 
-        self._scene._flush_positions()
+        self._scene.flush_positions()
         self._undo_mgr.push(self._config, "Auto Layout")
         auto_layout(self._config)
         self._scene.setup(self._config)
@@ -1885,11 +2041,12 @@ class BotCanvas(QWidget):
             return
         self.exit_focus_mode()  # clean up any existing focus first
         self._focus_region_id = region_id
-        member_set = set(region.members)
+        # Display ids: an instance inside the region is its call node.
+        member_set = {self._scene.display_id(m) for m in region.members}
 
-        for sid, node in self._scene._node_items.items():
+        for sid, node in self._scene.node_items.items():
             node.setVisible(sid in member_set)
-        for s, _, d, edge in self._scene._edge_items:
+        for s, _, d, edge in self._scene.edge_items:
             edge.setVisible(s in member_set and d in member_set)
         for rid, ri in self._scene.region_items.items():
             ri.setVisible(rid == region_id)
@@ -1914,9 +2071,9 @@ class BotCanvas(QWidget):
         if self._focus_region_id is None:
             return
         self._focus_region_id = None
-        for node in self._scene._node_items.values():
+        for node in self._scene.node_items.values():
             node.setVisible(True)
-        for *_, edge in self._scene._edge_items:
+        for *_, edge in self._scene.edge_items:
             edge.setVisible(True)
         for ri in self._scene.region_items.values():
             ri.setVisible(True)
@@ -1934,7 +2091,7 @@ class BotCanvas(QWidget):
 
     def _tab_navigate(self, direction: int) -> None:
         """Cycle node selection by BFS order and center the view on the node."""
-        order = self._scene._get_tab_order()
+        order = self._scene.tab_order()
         if not order:
             return
         selected = [item for item in self._scene.selectedItems() if isinstance(item, NodeItem)]
@@ -1944,7 +2101,7 @@ class BotCanvas(QWidget):
             cur_idx = self._tab_idx - direction  # step will land on _tab_idx
         next_idx = (cur_idx + direction) % len(order)
         self._tab_idx = next_idx
-        node = self._scene._node_items.get(order[next_idx])
+        node = self._scene.node_items.get(order[next_idx])
         if node:
             self._scene.clearSelection()
             if self._mode == BotMode.EDIT:
@@ -1966,11 +2123,11 @@ class BotCanvas(QWidget):
             self._search_bar.setVisible(False)
         self._search_matches.clear()
         self._search_match_idx = 0
-        for node in self._scene._node_items.values():
+        for node in self._scene.node_items.values():
             node.set_search_match(False)
 
     def _on_search_text_changed(self, text: str) -> None:
-        config = self._scene._config
+        config = self._scene.config
         if not config:
             self._search_matches.clear()
             self._search_bar.set_count(0, 0)
@@ -1980,14 +2137,21 @@ class BotCanvas(QWidget):
         if q:
             for state in config.states:
                 if q in (state.label or "").lower() or q in state.id.lower() or q in state.node_type.lower():
-                    matches.append(state.id)
+                    # A member is found as the call node it is drawn as.
+                    did = self._scene.display_id(state.id)
+                    if did not in matches:
+                        matches.append(did)
+            for region in config.regions:
+                if region.source is not None and region.id in self._scene.node_items and q in region.label.lower():
+                    if region.id not in matches:
+                        matches.append(region.id)
         self._search_matches = matches
         self._search_match_idx = 0
         # Apply highlights
-        for sid, node in self._scene._node_items.items():
+        for sid, node in self._scene.node_items.items():
             node.set_search_match(sid in matches, is_current=(bool(matches) and sid == matches[0]))
         if matches:
-            first = self._scene._node_items.get(matches[0])
+            first = self._scene.node_items.get(matches[0])
             if first:
                 self._view.centerOn(first)
         self._search_bar.set_count(1 if matches else 0, len(matches))
@@ -2000,10 +2164,10 @@ class BotCanvas(QWidget):
         self._search_match_idx = (self._search_match_idx + 1) % len(self._search_matches)
         new = self._search_matches[self._search_match_idx]
         if old != new:
-            old_node = self._scene._node_items.get(old)
+            old_node = self._scene.node_items.get(old)
             if old_node:
                 old_node.set_search_match(True, is_current=False)
-        new_node = self._scene._node_items.get(new)
+        new_node = self._scene.node_items.get(new)
         if new_node:
             new_node.set_search_match(True, is_current=True)
             self._view.centerOn(new_node)
@@ -2017,10 +2181,10 @@ class BotCanvas(QWidget):
         self._search_match_idx = (self._search_match_idx - 1) % len(self._search_matches)
         new = self._search_matches[self._search_match_idx]
         if old != new:
-            old_node = self._scene._node_items.get(old)
+            old_node = self._scene.node_items.get(old)
             if old_node:
                 old_node.set_search_match(True, is_current=False)
-        new_node = self._scene._node_items.get(new)
+        new_node = self._scene.node_items.get(new)
         if new_node:
             new_node.set_search_match(True, is_current=True)
             self._view.centerOn(new_node)
@@ -2040,7 +2204,7 @@ class BotCanvas(QWidget):
             self._right_stack.setCurrentIndex(_TB_RUN)
             self._favorites_bar.setVisible(False)
             self._scene.set_interactive(False)
-            self._param_panel.show_idle()
+            self._show_default_page()
             self._undo_mgr.set_enabled(False)
             self._undo_mgr.cancel_debounce()
             # The transport is on show in both modes now, so returning from Edit has to
@@ -2059,6 +2223,8 @@ class BotCanvas(QWidget):
             self._run_pause_btn.setEnabled(False)
             self._run_pause_btn.setToolTip("Finish editing to run")
             self.stop_button.setEnabled(False)
+            if not self._scene.selectedItems():
+                self._show_default_page()
             self._emit_bot_status()
         self._refresh_undo_actions()
 
@@ -2121,6 +2287,13 @@ class BotCanvas(QWidget):
         # The role moved off some other node; if that node is the one on screen, its
         # tick has to come off too.
         self._param_panel.refresh_role_checks(config.initial, config.recovery_state)
+        if self._param_panel.showing_call:
+            self._param_panel.call_page.refresh_roles()
+
+    def _on_role_requested(self, field: str, state_id: str) -> None:
+        """The call node's page moved a role onto the member one of its entry ports leads to."""
+        desc = "Change initial state" if field == "initial" else "Change recovery state"
+        self._set_fsm_role(field, state_id, desc)
 
     def _on_about_to_change(self, desc: str) -> None:
         if self._config is not None and self._mode == BotMode.EDIT:
@@ -2141,10 +2314,10 @@ class BotCanvas(QWidget):
         self._on_scene_changed()
 
     def _on_node_label_committed(self) -> None:
-        state = self._param_panel._state
+        state = self._param_panel.shown_state
         if state is None:
             return
-        node = self._scene._node_items.get(state.id)
+        node = self._scene.node_items.get(state.id)
         if node is not None:
             node.set_label(state.label)
 
@@ -2154,11 +2327,18 @@ class BotCanvas(QWidget):
             self._undo_mgr.begin_debounce(self._config, desc)
 
     def _on_param_changed(self) -> None:
-        if self._param_panel.is_locked:
-            self._sync_overrides_from_shown_state()
         # Refresh the dotted-pen flag indicator on the selected edge when flags change.
-        if self._param_panel._transition is not None:
-            self._scene.refresh_edge_flags(self._param_panel._transition)
+        shown = self._param_panel.shown_transition
+        if shown is not None:
+            # A call node's edge stands for several transitions and shows the first:
+            # its conditions are the edge's, so the rest take the same ones.
+            for sibling in self._shown_edge_models:
+                if sibling is not shown:
+                    sibling.flags = [f.model_copy() for f in shown.flags]
+                    sibling.flag_op = shown.flag_op
+                    sibling.flag_groups = [g.model_copy(deep=True) for g in shown.flag_groups]
+                    sibling.flag_groups_op = shown.flag_groups_op
+            self._scene.refresh_edge_flags(shown)
             self._config.sort_transitions()
         # Emit config change immediately for autosave/other consumers, but defer the
         # expensive full validation pass (O(n²) with large graphs) until typing pauses.
@@ -2166,100 +2346,23 @@ class BotCanvas(QWidget):
         self._refresh_undo_actions()
         self._validation_timer.start()
 
-    def _sync_overrides_from_shown_state(self) -> None:
-        """Copy an edited override, free param or label of a locked member into its instance's ``source``.
-
-        The panel writes ``state.params`` and ``state.label`` as for any node; on
-        a locked member the editable rows are the overridden and free ones and
-        the label, and their values also have to land in ``source`` or the next
-        compose would put the definition's back. A free param or label is
-        recorded only while it differs from the subgraph's (``sync_free_overrides``).
-        """
-        state = self._param_panel.shown_state
-        region = self._scene.linked_region_of(state.id) if state is not None else None
-        if state is None or region is None or region.source is None:
-            return
-        local = local_id(region.id, state.id)
-        if local is None:
-            return
-        defn = self._definition_for(region)
-        free = free_keys(defn, local) if defn is not None else frozenset()
-        for key in list(region.source.param_overrides.get(local, {})):
-            if key in state.params and key not in free:
-                set_param_override(region.source, local, key, state.params[key])
-        if defn is not None:
-            sync_free_overrides(region, defn, state)
-
-    def _on_label_override_reset(self, state_id: str) -> None:
-        """Drop a member's label override and show the definition's label again. One undo step."""
-        config = self._scene.config
-        region = self._scene.linked_region_of(state_id)
-        if config is None or region is None or region.source is None:
-            return
-        local = local_id(region.id, state_id)
-        state = next((st for st in config.states if st.id == state_id), None)
-        defn = self._definition_for(region)
-        def_state = next((s for s in defn.states if s.id == local), None) if defn is not None else None
-        if local is None or state is None:
-            return
-        self._undo_mgr.cancel_debounce()
-        self._on_about_to_change("Reset label")
-        clear_label_override(region.source, local)
-        if def_state is not None:
-            state.label = def_state.label
-            node = self._scene.node_items.get(state_id)
-            if node is not None:
-                node.set_label(state.label)
-        self._on_scene_changed()
-        if self._param_panel.shown_region is region:
-            self._show_region_page(region)
-        elif self._param_panel.shown_state is state:
-            self._show_state_page(state)
-
-    def _on_override_toggled(self, state_id: str, key: str, active: bool) -> None:
-        """Start or drop a per-instance override of one member param.
-
-        Starting one records the member's current (definition) value, so nothing
-        visible changes until the user edits the now-unlocked field. Dropping one
-        re-resolves the member from the library so the definition's value shows
-        again; without the library the value stays until the next compose.
-        """
-        config = self._scene.config
-        region = self._scene.linked_region_of(state_id)
-        if config is None or region is None or region.source is None:
-            return
-        local = local_id(region.id, state_id)
-        state = next((st for st in config.states if st.id == state_id), None)
-        if local is None or state is None:
-            return
-        self._undo_mgr.cancel_debounce()
-        self._on_about_to_change("Override param" if active else "Reset param")
-        if active:
-            set_param_override(region.source, local, key, state.params.get(key))
-        else:
-            clear_param_override(region.source, local, key)
-            defn = self._definition_for(region)
-            if defn is not None:
-                reresolve_member_params(config, region, defn)
-        self._on_scene_changed()
-        if self._param_panel.shown_state is state:
-            self._show_state_page(state)
-        elif self._param_panel.shown_region is region:
-            self._show_region_page(region)
-
     def _on_region_property_changed(self) -> None:
-        """The region page wrote label, colour or inputs into the shown region."""
+        """The region or call node page wrote into the shown region: label, colour, or an instance's inputs."""
         region = self._param_panel.shown_region
         config = self._scene.config
         if region is None or config is None:
             return
-        ri = self._scene.region_items.get(region.id)
-        if ri is not None:
-            ri.set_label(region.label)
-            ri.set_color(region.color)
-        defn = self._definition_for(region)
-        if defn is not None:
-            reresolve_member_params(config, region, defn)
+        if region.source is None:
+            ri = self._scene.region_items.get(region.id)
+            if ri is not None:
+                ri.set_label(region.label)
+                ri.set_color(region.color)
+        else:
+            defn = self._definition_for(region)
+            if defn is not None:
+                reresolve_member_params(config, region, defn)
+            self._scene.refresh_call_nodes()
+            self._scene.refresh_errors()
         self.config_changed.emit()
         self._refresh_undo_actions()
         self._validation_timer.start()
@@ -2270,30 +2373,18 @@ class BotCanvas(QWidget):
         self._on_selection_changed()
 
     # ------------------------------------------------------------------
-    # Subgraph authoring: save-as, edit in place, push, discard, expose
+    # Subgraph authoring: save a region as one; a definition's signature
     # ------------------------------------------------------------------
 
-    @property
-    def editing_region_id(self) -> str | None:
-        """The linked region being edited in place, or None."""
-        return self._editing_region_id
-
-    @property
-    def editing_definition(self) -> SubgraphDefinition | None:
-        """The working copy of the definition being edited (inputs and metadata), or None."""
-        return self._editing_defn
-
-    @property
-    def edit_crumb_text(self) -> str:
-        return self._edit_crumb.text
-
     def save_region_as_subgraph(self, region_id: str, *, name: str | None = None, description: str | None = None):
-        """Extract an ordinary region into the user library and link the region to it.
+        """Extract an ordinary region into the user library, link the region to it, and open the definition.
 
         Asks for a name and description unless given. The region's members are
         renamed to the derived form and every combat assignment of this bot that
         keyed on an old id is re-keyed through the strategy store, so nothing the
-        user configured against those states falls silent. One undo step.
+        user configured against those states falls silent. One undo step. The new
+        definition opens as a document on top of the bot, since a region just made
+        reusable usually wants its inputs promoted next.
         """
         config = self._scene.config
         library = self._subgraph_library
@@ -2309,9 +2400,7 @@ class BotCanvas(QWidget):
             name, description = dlg.name, dlg.description
         work = config.model_copy(deep=True)
         try:
-            defn, source = extract_definition(
-                work, region_id, new_id=str(uuid4()), name=name, description=description, schemas=NODE_PARAM_SCHEMAS
-            )
+            defn, source = extract_definition(work, region_id, new_id=str(uuid4()), name=name, description=description)
         except ValueError as exc:
             QMessageBox.critical(self, "Save Region as Subgraph", str(exc))
             return False
@@ -2330,274 +2419,231 @@ class BotCanvas(QWidget):
         logger.info(
             "Saved region '%s' to the library as subgraph %s; %d combat strategies re-keyed", name, defn.id, rekeyed
         )
+        self.open_definition_requested.emit(defn.id)
         return True
 
-    def begin_subgraph_edit(self, region_id: str) -> bool:
-        """Unlock one instance for editing in place, showing the definition's own values.
-
-        Inputs and overrides are the instance's, so they are set aside for the edit
-        and the members show what will be pushed; the compose after Save or Discard
-        puts them back. The rewrite is one undo step; the editing state itself is
-        not in the config and is not undoable.
-        """
+    def _definition_state(self, state_id: str):
         config = self._scene.config
-        if config is None or self._mode != BotMode.EDIT:
-            return False
-        if self._editing_region_id is not None and not self.resolve_subgraph_edit():
-            return False
-        region = next((r for r in config.regions if r.id == region_id), None)
-        if region is None or region.source is None:
-            return False
-        defn = self._definition_for(region)
-        if defn is None:
-            QMessageBox.warning(
-                self,
-                "Edit Subgraph",
-                "The library has no definition for this instance, so there is nothing to edit.\n\n"
-                "Detach it from the library to make its states your own.",
-            )
-            return False
-        self._undo_mgr.cancel_debounce()
-        self._on_about_to_change("Edit subgraph")
-        definition_values(config, region, defn)
-        self._editing_region_id = region_id
-        self._editing_defn = defn.model_copy(deep=True)
-        self._scene.set_editing_region(region_id)
-        self._edit_crumb.set_subgraph_name(defn.name)
-        self._edit_crumb.setVisible(True)
-        self._reposition_banner()
-        self._on_scene_changed()
-        self._on_selection_changed()
-        return True
+        if config is None or config.definition is None:
+            return None
+        return next((s for s in config.states if s.id == state_id), None)
 
-    def save_subgraph_to_library(self) -> bool:
-        """Push the edited region back as the next version, then recompose every instance of it here.
-
-        A member added while editing is renamed to the derived form first, so the
-        compose that follows finds it in place rather than reading its external
-        edges as an update that removes it. A definition that would contain itself
-        is refused before anything is written. One undo step.
-        """
-        config = self._scene.config
-        library = self._subgraph_library
-        rid = self._editing_region_id
-        previous = self._editing_defn
-        if config is None or library is None or rid is None or previous is None:
-            return False
-        work = config.model_copy(deep=True)
-        region = next((r for r in work.regions if r.id == rid), None)
-        if region is None:
-            self._end_subgraph_edit()
-            return False
-        rename_states(work, added_member_ids(region))
-        try:
-            pushed, warnings = push_back(work, rid, previous, schemas=NODE_PARAM_SCHEMAS)
-        except ValueError as exc:
-            QMessageBox.critical(self, "Save to Library", str(exc))
-            return False
-        if contains_subgraph(pushed, pushed.id, library):
-            QMessageBox.critical(
-                self,
-                "Save to Library",
-                f"Subgraph '{pushed.name}' would contain itself, which can never finish composing. "
-                "Remove the nested instance of it first.",
-            )
-            return False
-        for warning in warnings:
-            logger.warning("Saving subgraph '%s': %s", pushed.name, warning)
-        library.save(pushed)
-        self._end_subgraph_edit()
-        composed, report = compose_bot(work, library)
-        self._undo_mgr.cancel_debounce()
-        self.replace_config(composed, "Save subgraph to library")
-        self.set_compose_report(report)
-        logger.info("Saved subgraph '%s' version %d to the library", pushed.name, pushed.version)
-        return True
-
-    def discard_subgraph_edit(self) -> None:
-        """Drop the in-place edit: members added go, and the region recomposes from the library."""
-        config = self._scene.config
-        library = self._subgraph_library
-        rid = self._editing_region_id
-        if config is None or library is None or rid is None:
-            self._end_subgraph_edit()
-            return
-        work = config.model_copy(deep=True)
-        region = next((r for r in work.regions if r.id == rid), None)
-        if region is not None:
-            drop_states(work, set(added_member_ids(region)))
-        self._end_subgraph_edit()
-        composed, report = compose_bot(work, library)
-        self._undo_mgr.cancel_debounce()
-        self.replace_config(composed, "Discard subgraph edit")
-        self.set_compose_report(report)
-
-    def resolve_subgraph_edit(self) -> bool:
-        """Settle an open edit with Save / Discard / Cancel. False means the user cancelled.
-
-        Synchronous, for the same reason the run slot's dialogs are: every caller
-        is a Qt slot, never an asyncio task.
-        """
-        if self._editing_region_id is None:
-            return True
-        name = self._editing_defn.name if self._editing_defn is not None else "subgraph"
-        reply = QMessageBox.question(
-            self,
-            "Editing Subgraph",
-            f"Save your changes to subgraph '{name}' to the library?",
-            QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Save,
-        )
-        if reply == QMessageBox.StandardButton.Cancel:
-            return False
-        if reply == QMessageBox.StandardButton.Save:
-            return self.save_subgraph_to_library()
-        self.discard_subgraph_edit()
-        return True
-
-    def _end_subgraph_edit(self) -> None:
-        """Clear the editing state without touching the config. The callers decide what the config does."""
-        self._editing_region_id = None
-        self._editing_defn = None
-        if hasattr(self, "_edit_crumb"):
-            self._edit_crumb.setVisible(False)
-        self._scene.set_editing_region(None)
-
-    def expose_input(
+    def promote_param(
         self,
         state_id: str,
         key: str,
         *,
         existing: str | None = None,
         new_input: SubgraphInput | None = None,
+        shared: tuple[str, str] | None = None,
     ) -> bool:
-        """Bind a member param of the region being edited to an input of the working definition.
+        """Let the call node set one param of a definition's node. One undo step.
 
-        ``existing`` names an input already declared; otherwise ``new_input`` is
-        appended. The binding's state is the member's local id -- a state added
-        while editing keeps its plain id as its local id, as push_back does.
+        ``existing`` names an input already declared, ``shared`` is ``(panel id, key)``
+        of an exposed node's param to share a value with, and otherwise ``new_input``
+        is declared with this one binding.
         """
-        defn = self._editing_defn
-        rid = self._editing_region_id
-        if defn is None or rid is None or state_id not in self._scene.editing_members():
+        state = self._definition_state(state_id)
+        if state is None:
             return False
-        local = local_id(rid, state_id) or state_id
-        binding = SubgraphInputBinding(state=local, param=key)
+        meta = self._scene.config.definition
+        binding = SubgraphInputBinding(state=state_id, param=key)
         if existing is not None:
-            target = next((i for i in defn.inputs if i.name == existing), None)
+            target = next((i for i in meta.inputs if i.name == existing), None)
             if target is None:
                 return False
-            if not any(b.state == local and b.param == key for b in target.bindings):
+            self._begin_definition_edit("Promote to input")
+            if not any(b.state == state_id and b.param == key for b in target.bindings):
                 target.bindings.append(binding)
-        elif new_input is not None:
-            if any(i.name == new_input.name for i in defn.inputs):
+        elif shared is not None:
+            panel = next((pn for pn in node_panels(meta) if pn.id == shared[0]), None)
+            if panel is None:
                 return False
-            defn.inputs.append(new_input.model_copy(update={"bindings": [binding]}))
+            self._begin_definition_edit("Share exposed param")
+            extra = panel.bindings.setdefault(shared[1], [])
+            if not any(b.state == state_id and b.param == key for b in extra):
+                extra.append(binding)
+        elif new_input is not None:
+            if any(i.name == new_input.name for i in meta.inputs):
+                return False
+            self._begin_definition_edit("Promote to input")
+            meta.inputs.append(new_input.model_copy(update={"bindings": [binding]}))
         else:
             return False
-        self._on_definition_changed()
+        self._end_definition_edit(state)
         return True
 
-    def set_param_free(self, state_id: str, key: str, free: bool) -> bool:
-        """Mark one param of a member of the region being edited as free (consumers set it) or locked.
+    def unbind_param(self, state_id: str, key: str) -> bool:
+        """Stop an input, or a shared exposed param, setting one param. The input itself stays. One undo step."""
+        state = self._definition_state(state_id)
+        if state is None:
+            return False
+        meta = self._scene.config.definition
 
-        Written to the working definition, like Expose; it reaches the library
-        with the push. False when no edit is open or ``state_id`` is not a member.
+        def bound(b) -> bool:
+            return b.state == state_id and b.param == key
+
+        if not any(bound(b) for i in meta.inputs for b in i.bindings) and not any(
+            bound(b) for pn in node_panels(meta) for extra in pn.bindings.values() for b in extra
+        ):
+            return False
+        self._begin_definition_edit("Unbind param")
+        for inp in meta.inputs:
+            inp.bindings = [b for b in inp.bindings if not bound(b)]
+        for panel in node_panels(meta):
+            panel.bindings = {k: kept for k, v in panel.bindings.items() if (kept := [b for b in v if not bound(b)])}
+        self._end_definition_edit(state)
+        return True
+
+    def set_node_exposed(self, state_id: str, exposed: bool) -> bool:
+        """Expose a definition's node whole on the call node, as a panel of its own -- or stop. One undo step.
+
+        An exposed node's params are all the call node's, so any input binding one of
+        them goes: a param is driven from one place only.
         """
-        defn = self._editing_defn
-        rid = self._editing_region_id
-        if defn is None or rid is None or state_id not in self._scene.editing_members():
+        state = self._definition_state(state_id)
+        if state is None:
             return False
-        local = local_id(rid, state_id) or state_id
-        keys = [k for k in defn.free_params.get(local, []) if k != key]
-        if free:
-            keys.append(key)
-        if keys:
-            defn.free_params[local] = keys
+        meta = self._scene.config.definition
+        current = next((pn for pn in node_panels(meta) if pn.member == state_id), None)
+        if exposed == (current is not None):
+            return False
+        if exposed:
+            self._begin_definition_edit("Expose on call node")
+            for inp in meta.inputs:
+                inp.bindings = [b for b in inp.bindings if b.state != state_id]
+            for panel in node_panels(meta):
+                panel.bindings = {
+                    k: kept for k, v in panel.bindings.items() if (kept := [b for b in v if b.state != state_id])
+                }
+            taken = {pn.id for pn in meta.panels}
+            pid, n = f"node_{state_id}", 2
+            while pid in taken:
+                pid, n = f"node_{state_id}_{n}", n + 1
+            label = state.label or state.node_type.replace("_", " ").title()
+            meta.panels.append(SubgraphPanel(id=pid, kind="node", label=label, member=state_id))
         else:
-            defn.free_params.pop(local, None)
+            self._begin_definition_edit("Stop exposing")
+            meta.panels = [pn for pn in meta.panels if pn is not current]
+            for inp in meta.inputs:
+                if inp.panel == current.id:
+                    inp.panel = None
+        self._end_definition_edit(state)
         return True
 
-    def _on_expose_input_requested(self, state_id: str, key: str) -> None:
+    def _begin_definition_edit(self, desc: str) -> None:
+        self._undo_mgr.cancel_debounce()
+        self._on_about_to_change(desc)
+
+    def _end_definition_edit(self, state=None) -> None:
+        self._on_scene_changed()
+        if state is not None and self._param_panel.shown_state is state:
+            self._show_state_page(state)
+
+    def _shareable_params(self, state_id: str, param_type: str) -> list[tuple[str, str, str]]:
+        """``(label, panel id, key)`` of every exposed param a ``param_type`` param can share a value with."""
         config = self._scene.config
-        defn = self._editing_defn
-        if config is None or defn is None or state_id not in self._scene.editing_members():
-            return
-        state = next((st for st in config.states if st.id == state_id), None)
+        if config is None or config.definition is None:
+            return []
+        by_id = {s.id: s for s in config.states}
+        out = []
+        for panel in node_panels(config.definition):
+            member = by_id.get(panel.member or "")
+            if member is None or member.id == state_id:
+                continue
+            for field in NODE_PARAM_SCHEMAS.get(member.node_type, []):
+                if narrowest_type([field.type, param_type]) is not None:
+                    out.append(
+                        (f"{panel.label or member.label or member.id} \u203a {field.label}", panel.id, field.key)
+                    )
+        return out
+
+    def _on_promote_requested(self, state_id: str, key: str) -> None:
+        state = self._definition_state(state_id)
         if state is None:
             return
         field = next((f for f in NODE_PARAM_SCHEMAS.get(state.node_type, []) if f.key == key), None)
         if field is None:
             return
-        dlg = ExposeInputDialog(
-            defn.inputs,
-            state_local_id=local_id(self._editing_region_id or "", state_id) or state_id,
+        dlg = PromoteInputDialog(
+            self._scene.config.definition.inputs,
             param_key=key,
             param_type=field.type,
             param_label=field.label,
             current_value=state.params.get(key, field.default),
+            shared=self._shareable_params(state_id, field.type),
             parent=self,
         )
         if not dlg.exec():
             return
         if dlg.choice is not None:
-            self.expose_input(state_id, key, existing=dlg.choice)
+            self.promote_param(state_id, key, existing=dlg.choice)
+        elif dlg.shared_choice is not None:
+            self.promote_param(state_id, key, shared=dlg.shared_choice)
         else:
-            self.expose_input(state_id, key, new_input=dlg.new_input())
+            self.promote_param(state_id, key, new_input=dlg.new_input())
 
     def _on_definition_changed(self) -> None:
-        """The working definition's inputs changed: the region page, if up, shows the new list."""
-        region = self._param_panel.shown_region
-        if region is not None and region.id == self._editing_region_id:
-            self._show_region_page(region)
+        """The signature page wrote into the document: a port renamed, an input or panel changed."""
+        self._on_scene_changed()
+
+    def _on_add_port_requested(self, node_type: str) -> None:
+        self._undo_mgr.cancel_debounce()
+        pid = self._scene.add_port_node(node_type, self._scene.find_empty_grid_cell(self._canvas_origin()))
+        if pid is not None and self._param_panel.showing_signature and self._config is not None:
+            self._param_panel.show_signature(self._config)
+
+    def _on_delete_port_requested(self, state_id: str) -> None:
+        self._undo_mgr.cancel_debounce()
+        # Undoable, and asked for by name on the signature page: no second confirmation.
+        if (
+            self._scene.delete_state(state_id, confirm=False)
+            and self._config is not None
+            and self._param_panel.showing_signature
+        ):
+            self._param_panel.show_signature(self._config)
+
+    def _show_default_page(self) -> None:
+        """What the panel shows with nothing selected: a definition's signature, or nothing."""
+        if self._config is not None and self._config.is_definition and self._mode == BotMode.EDIT:
+            self._param_panel.show_signature(self._config)
+        else:
+            self._param_panel.show_idle()
 
     def _show_state_page(self, state) -> None:
         config = self._scene.config
         if config is None:
             return
-        region = self._scene.linked_region_of(state.id)
-        locked = self._scene.is_locked(state.id)
-        exposable = state.id in self._scene.editing_members()
-        override_keys: frozenset = frozenset()
-        free: frozenset = frozenset()
+        meta = config.definition
         bound: dict[str, str] = {}
-        name = None
-        if locked and region is not None and region.source is not None:
-            local = local_id(region.id, state.id)
-            override_keys = frozenset(region.source.param_overrides.get(local, {})) if local else frozenset()
-            defn = self._definition_for(region)
-            name = defn.name if defn is not None else region.label
-            if defn is not None and local is not None:
-                free = free_keys(defn, local)
-        elif exposable and self._editing_defn is not None and self._editing_region_id is not None:
-            local = local_id(self._editing_region_id, state.id) or state.id
-            free = free_keys(self._editing_defn, local)
-            bound = {b.param: i.name for i in self._editing_defn.inputs for b in i.bindings if b.state == local}
+        exposed = False
+        if meta is not None:
+            labels = {s.id: (s.label or s.id) for s in config.states}
+            bound = {b.param: (i.label or i.name) for i in meta.inputs for b in i.bindings if b.state == state.id}
+            for panel in node_panels(meta):
+                if panel.member == state.id:
+                    exposed = True
+                for key, extra in panel.bindings.items():
+                    for b in extra:
+                        if b.state == state.id:
+                            bound[b.param] = f"{panel.label or labels.get(panel.member or '', '')} \u203a {key}"
         self._param_panel.show_state(
             state,
             all_states=list(config.states),
             all_transitions=config.transitions,
             initial_id=config.initial,
             recovery_id=config.recovery_state,
-            locked=locked,
-            override_keys=override_keys,
-            subgraph_name=name,
-            exposable=exposable,
-            free_keys=free,
+            in_definition=meta is not None,
             bound_inputs=bound,
+            exposed=exposed,
         )
 
-    def _show_region_page(self, region) -> None:
+    def _show_call_page(self, region) -> None:
         config = self._scene.config
         if config is None:
             return
-        editing = region.id == self._editing_region_id and self._editing_defn is not None
-        self._param_panel.show_region(
-            region,
-            self._editing_defn if editing else self._definition_for(region),
-            self._compose_report.regions.get(region.id),
-            {st.id: (st.label or st.id) for st in config.states},
-            editing=editing,
+        self._param_panel.show_call(
+            region, self._definition_for(region), self._compose_report.regions.get(region.id), config
         )
 
     def _deferred_validation(self) -> None:
@@ -2608,11 +2654,10 @@ class BotCanvas(QWidget):
     def _on_select_edge_requested(self, transition) -> None:
         """Select the edge on the canvas that corresponds to *transition* and centre it."""
         self._scene.clearSelection()
-        for s, w, d, edge in self._scene._edge_items:
-            if s == transition.source and d == transition.dest and w == transition.when:
-                edge.setSelected(True)
-                self._view.centerOn(edge)
-                break
+        edge = self._scene.edge_for(transition)
+        if edge is not None:
+            edge.setSelected(True)
+            self._view.centerOn(edge)
 
     def select_state(self, state_id: str) -> None:
         """Select the node for *state_id* and centre the view on it.
@@ -2621,7 +2666,7 @@ class BotCanvas(QWidget):
         ``_on_selection_changed``.
         """
         self._scene.clearSelection()
-        node = self._scene._node_items.get(state_id)
+        node = self._scene.node_items.get(state_id) or self._scene.call_node_of(state_id)
         if node is not None:
             node.setSelected(True)
             self._view.centerOn(node)
@@ -2676,7 +2721,7 @@ class BotCanvas(QWidget):
         self._toolbar.set_editable(self._mode == BotMode.EDIT)
         self._scene.setup(config)
         self._apply_failure_edge_visibility()
-        self._param_panel.show_idle()
+        self._show_default_page()
         self._on_scene_changed()
 
     def prepare_for_shutdown(self) -> None:
@@ -2733,20 +2778,30 @@ class BotCanvas(QWidget):
         for state in config.states:
             name = state.label or state.id
             _, _, err_reasons, warn_reasons = _validate_node(state, config, reachable)
+            call = self._scene.call_node_of(state.id)
+            if call is not None:
+                # Named through the call node it is drawn as, and without what is the
+                # definition's business rather than this bot's -- see member_warnings.
+                name = f"{call.label} \u203a {name}"
+                warn_reasons = member_warnings(warn_reasons)
             error_lines.extend(f"{name}: {r}" for r in err_reasons)
             warning_lines.extend(f"{name}: {r}" for r in warn_reasons)
         warning_lines.extend(self._orphan_flag_lines(config))
         sg_errors, sg_warnings = self._subgraph_lines(config)
         error_lines.extend(sg_errors)
         warning_lines.extend(sg_warnings)
+        if config.is_definition:
+            def_errors, def_warnings = definition_problems(config, NODE_PARAM_SCHEMAS, self._subgraph_library)
+            error_lines.extend(def_errors)
+            warning_lines.extend(def_warnings)
         return error_lines, warning_lines
 
     def _subgraph_lines(self, config: BotConfig) -> tuple[list[str], list[str]]:
         """One line per linked region the last compose could not simply link.
 
         A ``cycle`` is an error (nothing runnable exists for it); ``held``, ``missing``
-        and ``invalid`` are warnings, since the snapshot in the file still runs; a
-        stale override on a ``linked`` region is a warning too. A region deleted since
+        and ``invalid`` are warnings, since the snapshot in the file still runs; any
+        other reason on a ``linked`` region is a warning too. A region deleted since
         the report was taken is skipped rather than reported on.
         """
         labels = {r.id: (r.label or r.id) for r in config.regions if r.source is not None}
@@ -2828,105 +2883,128 @@ class BotCanvas(QWidget):
         self._apply_run_btn_state()
 
     def _refresh_initial(self) -> None:
-        if self._scene._config is None:
+        if self._scene.config is None:
             return
-        self._scene.refresh_initial(self._scene._config.initial)
+        self._scene.refresh_initial(self._scene.config.initial)
 
     def _refresh_terminal(self) -> None:
         self._scene.refresh_terminal()
 
     def _refresh_recovery(self) -> None:
-        if self._scene._config is not None:
-            self._scene.refresh_recovery(self._scene._config.recovery_state)
+        if self._scene.config is not None:
+            self._scene.refresh_recovery(self._scene.config.recovery_state)
 
     def _refresh_errors(self) -> None:
         self._scene.refresh_errors()
 
     def _refresh_node_labels(self) -> None:
-        if self._scene._config is None:
+        if self._scene.config is None:
             return
-        for state in self._scene._config.states:
-            node = self._scene._node_items.get(state.id)
-            if node:
+        for state in self._scene.config.states:
+            node = self._scene.node_items.get(state.id)
+            if isinstance(node, PortNodeItem):
+                node.set_label(state.label)
+            elif node and not isinstance(node, CallNodeItem):
                 node.set_label(state.label)
                 node.set_node_type(state.node_type)
+        self._scene.refresh_call_nodes()
 
     def _refresh_node_returns(self) -> None:
-        if self._scene._config is None:
+        if self._scene.config is None:
             return
-        for state in self._scene._config.states:
-            node = self._scene._node_items.get(state.id)
-            if node:
+        for state in self._scene.config.states:
+            node = self._scene.node_items.get(state.id)
+            if node and not isinstance(node, (CallNodeItem, PortNodeItem)):
                 returns = _node_returns(state.node_type)
                 if node._returns != returns:
                     node.set_returns(returns)
-                    for s, _w, _d, edge in self._scene._edge_items:
+                    for s, _w, _d, edge in self._scene.edge_items:
                         if s == state.id:
                             edge._rebuild()
 
     def _cleanup_orphans(self) -> None:
-        config = self._scene._config
+        config = self._scene.config
         if config is None:
             return
         reachable = _reachable_states(config)
-        orphan_ids = [s.id for s in config.states if s.id not in reachable]
+        # A member is the definition's to keep or not, and reached through its call
+        # node; a port is part of a definition's signature. Neither is an orphan.
+        orphan_ids = [
+            s.id
+            for s in config.states
+            if s.id not in reachable and self._scene.call_node_of(s.id) is None and s.node_type not in PORT_NODE_TYPES
+        ]
         for sid in orphan_ids:
             self._scene.delete_state(sid, confirm=False)
 
     def _on_selection_changed(self) -> None:
         self._undo_mgr.cancel_debounce()
+        self._shown_edge_models = []
         try:
             selected = self._scene.selectedItems()
         except RuntimeError:
             return
         if not selected:
-            self._param_panel.show_idle()
+            self._show_default_page()
             return
         item = selected[0]
         config = self._scene.config
-        # A whole region's members and nothing else: the region page, unless the
-        # press landed on one member of a locked instance, whose own page it is.
-        if config is not None and all(isinstance(i, NodeItem) for i in selected):
-            selected_ids = {i.state_id for i in selected}
-            region = next((r for r in config.regions if r.members and set(r.members) == selected_ids), None)
+        if config is None:
+            self._param_panel.show_idle()
+            return
+        nodes = [i for i in selected if isinstance(i, NodeItem)]
+        # A whole plain region's members and nothing else: the region page. One call
+        # node on its own is the instance's page, even where a region holds only it.
+        if nodes and len(nodes) == len(selected) and not (len(nodes) == 1 and isinstance(item, CallNodeItem)):
+            selected_ids = set(self._scene.state_ids_of(n.state_id for n in nodes))
+            region = next(
+                (r for r in config.regions if r.source is None and r.members and set(r.members) == selected_ids),
+                None,
+            )
             if region is not None:
-                pressed = self._scene.pressed_member_id
-                pressed_state = next((st for st in config.states if st.id == pressed), None) if pressed else None
-                if pressed_state is not None and pressed in selected_ids and self._scene.is_locked(pressed):
-                    self._show_state_page(pressed_state)
-                else:
-                    self._show_region_page(region)
+                self._param_panel.show_region(region)
                 self.tab_switch.emit("properties")
                 return
-        if isinstance(item, NodeItem) and config is not None:
+        if isinstance(item, CallNodeItem):
+            region = next((r for r in config.regions if r.id == item.state_id), None)
+            if region is not None:
+                self._show_call_page(region)
+                self.tab_switch.emit("properties")
+        elif isinstance(item, PortNodeItem):
+            # A port is the signature's: its page is where it is named and ordered.
+            self._param_panel.show_signature(config)
+            self.tab_switch.emit("properties")
+        elif isinstance(item, NodeItem):
             state = next((s for s in config.states if s.id == item.state_id), None)
             if state:
                 self._show_state_page(state)
                 self.tab_switch.emit("properties")
-        elif isinstance(item, EdgeItem) and self._scene._config:
-            for s, w, d, ei in self._scene._edge_items:
-                if ei is item:
-                    trans = next(
-                        (t for t in self._scene._config.transitions if t.source == s and t.dest == d and t.when == w),
-                        None,
-                    )
-                    if trans:
-                        src_state = next((st for st in self._scene._config.states if st.id == s), None)
-                        src_returns: list[str] = []
-                        if src_state:
-                            spec = NODE_SPECS.get(src_state.node_type)
-                            if spec:
-                                src_returns = [r.name for r in spec.returns]
-                        option_names = [opt.name for opt in compose_options(self._scene._config) if opt.type == "bool"]
-                        self._param_panel.show_transition(
-                            trans,
-                            src_returns,
-                            option_names,
-                            states=list(self._scene._config.states),
-                            all_transitions=self._scene._config.transitions,
-                        )
-                        self.tab_switch.emit("properties")
-                    break
+        elif isinstance(item, EdgeItem):
+            models = self._scene.transitions_of(item)
+            if not models:
+                self._param_panel.show_idle()
+                return
+            trans = models[0]
+            src_state = next((st for st in config.states if st.id == trans.source), None)
+            src_returns: list[str] = []
+            if src_state:
+                spec = NODE_SPECS.get(src_state.node_type)
+                if spec:
+                    src_returns = [r.name for r in spec.returns]
+            option_names = [opt.name for opt in compose_options(config) if opt.type == "bool"]
+            # An edge on a call node is rewired on the canvas, where its port is: the
+            # dropdowns name states, and its ends are a member and a port.
+            on_call = isinstance(item.src_node, CallNodeItem) or isinstance(item.dst_node, CallNodeItem)
+            self._shown_edge_models = models
+            self._param_panel.show_transition(
+                trans,
+                src_returns,
+                option_names,
+                states=list(config.states),
+                all_transitions=config.transitions,
+                rewire=not on_call,
+            )
+            self.tab_switch.emit("properties")
         else:
             self._param_panel.show_idle()
 

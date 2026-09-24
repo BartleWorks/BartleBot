@@ -25,22 +25,35 @@ def auto_layout(config: BotConfig) -> None:
     vertically aligned with the branch they belong to rather than centering
     every layer independently at y=0.
 
+    A subgraph instance is laid out as the one node it is drawn as: its call node is
+    placed, and the anchor and every member move with it, since members sit at
+    ``anchor + definition position``.
+
     Modifies state.position in-place. Caller must call scene.setup(config)
     to rebuild the canvas.
     """
     if not config.states:
         return
 
-    state_ids = [s.id for s in config.states]
+    from bartlebot.subgraphs import nested_regions, outermost_linked_regions  # noqa: PLC0415
+
+    instances = outermost_linked_regions(config.regions)
+    call_of = {m: r.id for r in instances for m in r.members}
+
+    def display(sid: str) -> str:
+        return call_of.get(sid, sid)
+
+    state_ids = list(dict.fromkeys(display(s.id) for s in config.states))
 
     # Build adjacency list (de-duplicated)
     adj: dict[str, list[str]] = {sid: [] for sid in state_ids}
     for t in config.transitions:
-        if t.source in adj and t.dest in adj:
-            if t.dest not in adj[t.source]:
-                adj[t.source].append(t.dest)
+        src, dst = display(t.source), display(t.dest)
+        if src in adj and dst in adj and src != dst:
+            if dst not in adj[src]:
+                adj[src].append(dst)
 
-    layer, discovery = _longest_path_layers(state_ids, adj, config.initial)
+    layer, discovery = _longest_path_layers(state_ids, adj, display(config.initial))
 
     # Build predecessor map from adj for barycenter computation.
     # Back-edges are excluded naturally below: their sources have higher layer
@@ -73,7 +86,21 @@ def auto_layout(config: BotConfig) -> None:
 
     for state in config.states:
         sid = state.id
+        if sid in call_of:
+            continue
         state.position = {"x": layer[sid] * H_SPACING, "y": y_pos.get(sid, 0.0)}
+    for region in instances:
+        assert region.source is not None
+        old = region.source.anchor or {"x": 0.0, "y": 0.0}
+        dx = layer[region.id] * H_SPACING - float(old["x"])
+        dy = y_pos.get(region.id, 0.0) - float(old["y"])
+        for r in [region, *nested_regions(config, region)]:
+            a = r.source.anchor or {"x": 0.0, "y": 0.0}
+            r.source.anchor = {"x": float(a["x"]) + dx, "y": float(a["y"]) + dy}
+        members = set(region.members)
+        for state in config.states:
+            if state.id in members and state.position is not None:
+                state.position = {"x": float(state.position["x"]) + dx, "y": float(state.position["y"]) + dy}
 
 
 def _longest_path_layers(
