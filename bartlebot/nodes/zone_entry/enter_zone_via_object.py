@@ -38,7 +38,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="xyz",
         label="Interact XYZ",
         help=("Coordinates of the object to interact with. The interact prompt should appear when standing here."),
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
+        default=None,
         required=True,
     ),
     ParamField(
@@ -49,7 +49,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "Coordinates used to dismiss the interact prompt and reset state. "
             "The prompt must NOT appear when standing here."
         ),
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
+        default=None,
         required=True,
     ),
     ParamField(

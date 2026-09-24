@@ -307,3 +307,32 @@ def test_region_inputs_form_shares_the_client_and_zone_getters(free_canvas):
     form = c.param_panel.region_inputs_form
     assert form._get_clients() == ["one"]
     assert form._get_zone_suggestions() == ["WizardCity/Hub"]
+
+
+@pytest.fixture
+def xyz_canvas(qapp, tmp_path):
+    """The fixture definition plus an unbound coordinate input, so the region page builds an xyz field."""
+    from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
+
+    defn = sync_players_definition()
+    defn.inputs.append(SubgraphInput(name="spot", type="xyz"))
+    lib = SubgraphLibrary(tmp_path / "xyz")
+    lib.save(defn)
+    c = BotCanvas()
+    c.set_subgraph_library(lib)
+    c.setup(linked_bot(lib.get(SYNC_ID), lib))
+    c.enter_edit_mode()
+    yield c
+    c.prepare_for_shutdown()
+
+
+def test_a_cleared_coordinate_input_is_unset_again(xyz_canvas):
+    """A blank coordinate is absent from the form rather than empty, so clearing one has to unset it."""
+    _select_region(xyz_canvas)
+    form = xyz_canvas.param_panel.region_inputs_form
+    form.set_xyz("spot", 1.0, 2.0, 3.0)
+    assert _region(xyz_canvas).source.inputs["spot"] == {"x": 1.0, "y": 2.0, "z": 3.0}
+
+    form.widget("spot").axis_edit("x").setText("")
+
+    assert _region(xyz_canvas).source.inputs["spot"] is None

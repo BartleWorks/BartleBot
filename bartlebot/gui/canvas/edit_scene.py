@@ -204,7 +204,15 @@ def _required_field_empty(field, params: dict) -> bool:
         return not str(val).strip()
     if field.type in ("str_list", "drop_keep_list", "player_list"):
         return not val  # empty list — for player_list, no player selected is a no-op
-    return False  # int, float, bool, xyz always have a value
+    if field.type == "xyz":
+        # All-zero counts as empty: it is what an unset coordinate was saved as before the
+        # field could be blank, and a node would teleport to the zone's origin on it.
+        try:
+            axes = [float(val[axis]) for axis in ("x", "y", "z")]
+        except (KeyError, TypeError, ValueError):
+            return True
+        return not any(axes)
+    return False  # int, float, bool always have a value
 
 
 def port_marks_for(state: StateModel, config: BotConfig) -> dict[str, str]:

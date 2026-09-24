@@ -32,7 +32,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "A point inside the destination zone's transition bounding box. "
             "Teleporting players here triggers the automatic zone change."
         ),
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
+        default=None,
         required=True,
     ),
     ParamField(

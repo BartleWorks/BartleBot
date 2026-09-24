@@ -1248,6 +1248,7 @@ class BotCanvas(QWidget):
         self._scene.node_type_chosen.connect(self._on_node_type_chosen)
         self._param_panel.structural_property_changed.connect(self._on_about_to_change)
         self._param_panel.structural_property_applied.connect(self._on_structural_property_applied)
+        self._param_panel.edit_starting.connect(self._on_panel_edit_starting)
         self._param_panel.properties_changed.connect(self._on_param_changed)
         self._param_panel.label_committed.connect(self._on_node_label_committed)
         self._param_panel.edge_endpoints_changed.connect(self._scene.change_edge_endpoints)
@@ -2147,10 +2148,12 @@ class BotCanvas(QWidget):
         if node is not None:
             node.set_label(state.label)
 
-    def _on_param_changed(self) -> None:
+    def _on_panel_edit_starting(self, desc: str) -> None:
+        """Open the debounced undo step for a typed edit, before it lands in the model."""
         if self._config is not None and self._mode == BotMode.EDIT:
-            desc = "Edit transition" if self._param_panel._transition is not None else "Edit params"
             self._undo_mgr.begin_debounce(self._config, desc)
+
+    def _on_param_changed(self) -> None:
         if self._param_panel.is_locked:
             self._sync_overrides_from_shown_state()
         # Refresh the dotted-pen flag indicator on the selected edge when flags change.
@@ -2244,14 +2247,12 @@ class BotCanvas(QWidget):
         elif self._param_panel.shown_region is region:
             self._show_region_page(region)
 
-    def _on_region_property_changed(self, debounced: bool) -> None:
+    def _on_region_property_changed(self) -> None:
         """The region page wrote label, colour or inputs into the shown region."""
         region = self._param_panel.shown_region
         config = self._scene.config
         if region is None or config is None:
             return
-        if debounced and self._config is not None and self._mode == BotMode.EDIT:
-            self._undo_mgr.begin_debounce(self._config, "Edit region")
         ri = self._scene.region_items.get(region.id)
         if ri is not None:
             ri.set_label(region.label)
@@ -2640,7 +2641,8 @@ class BotCanvas(QWidget):
     def _on_undo(self) -> None:
         if self._config is None or self._mode != BotMode.EDIT:
             return
-        self._undo_mgr.cancel_debounce()
+        # Commit, never cancel: an edit made under 500ms ago is the step to undo, not one to drop.
+        self._undo_mgr.flush_debounce()
         self._undo_mgr.set_enabled(False)
         try:
             restored = self._undo_mgr.pop_undo(self._config)
@@ -2654,7 +2656,8 @@ class BotCanvas(QWidget):
     def _on_redo(self) -> None:
         if self._config is None or self._mode != BotMode.EDIT:
             return
-        self._undo_mgr.cancel_debounce()
+        # Commit, never cancel: an edit made under 500ms ago is the step to undo, not one to drop.
+        self._undo_mgr.flush_debounce()
         self._undo_mgr.set_enabled(False)
         try:
             restored = self._undo_mgr.pop_redo(self._config)

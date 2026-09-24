@@ -47,7 +47,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="xyz",
         label="Sigil XYZ",
         help=("Coordinates of the dungeon sigil. Standing here should trigger the dungeon entrance prompt."),
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
+        default=None,
         required=True,
     ),
     ParamField(
@@ -58,7 +58,7 @@ PARAM_SCHEMA: list[ParamField] = [
             "Coordinates used to dismiss the entrance prompt and reset state. "
             "The prompt must NOT appear when standing here."
         ),
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
+        default=None,
         required=True,
     ),
     ParamField(
