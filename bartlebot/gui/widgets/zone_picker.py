@@ -12,7 +12,7 @@ that are dungeon groups rather than worlds -- Castle Darkmoor, Kembaalung, Zigaz
 the generic dungeon badge. **The icon is decoration over a caption that already carries the
 meaning**, so every failure to resolve one is silent and ordinary: most installs have extracted no
 art at all, and the header simply draws its text. The suggestions section never gets one, because
-"Where players are" spans worlds and an emblem there would claim a single one.
+"Recent Zones" spans worlds and an emblem there would claim a single one.
 
 zone_sections(), describe_zone() and world_keys_by_title() are the data half and need no
 QApplication; world_icon_resolver() needs one only once art exists to turn into an icon.
@@ -30,7 +30,7 @@ from bartlebot import card_art, worlds, zone_names, zone_nav
 from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 
-SUGGESTED_TITLE = "Where players are"
+SUGGESTED_TITLE = "Recent Zones"
 POPUP_WIDTH = 480
 """Wider than the tag pickers: a row carries a zone name and a zone id of up to 29 characters."""
 MINIMUM_WIDTH = 80

@@ -111,7 +111,7 @@ def test_every_section_title_maps_back_to_its_world_key():
 
 
 def test_the_suggestions_section_is_not_a_world():
-    """ "Where players are" spans worlds, so an emblem there would claim one."""
+    """ "Recent Zones" spans worlds, so an emblem there would claim one."""
     assert SUGGESTED_TITLE not in world_keys_by_title(_nav())
 
 
