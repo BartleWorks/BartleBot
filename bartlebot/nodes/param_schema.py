@@ -1,5 +1,6 @@
 """Parameter schema types used to describe node parameters for the GUI editor."""
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -78,10 +79,15 @@ class ParamField:
         key:          JSON key used in the params dict.
         type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" |
                       "str_list" | "int_choice" | "str_choice" | "player_list" | "player_slot" |
-                      "wiki_page" | "nav_zone".
+                      "wiki_page" | "zone" | "nav_zone".
+                      "zone" is a zone path, or a glob over zone paths ("WizardCity/*"), matched
+                      by node_helpers.zone_matches. It gets the zone widget: autocomplete from
+                      visited zones, and Fill from a player's current zone. The widget is chosen
+                      by type alone; a "str" whose key happens to say "zone" is a plain field.
                       "nav_zone" is a zone on the navigation map, picked from a list grouped by
                       world (bartlebot/gui/widgets/zone_picker.py). Only the zone path is stored:
-                      the map already says which world it is in.
+                      the map already says which world it is in. It is a narrower "zone" -- see
+                      narrowest_type.
                       "text" renders as a multi-line QPlainTextEdit.
                       "player_slot" is the single-select sibling of "player_list": one 1-based client
                       index, or 0 for none.
@@ -135,6 +141,41 @@ class ParamField:
     the bot file stores differs from what the user should read — go_to_world stores the
     world's zone prefix ("DragonSpire") and shows its display name ("Dragonspyre").
     """
+
+
+PARAM_SUPERTYPES: dict[str, str] = {"nav_zone": "zone"}
+"""Each param type narrower than another, mapped to the type it narrows.
+
+A value of the narrower type is always a valid value of the wider one: every zone on the
+navigation map is a literal zone path, so it is also a ``zone`` (which additionally accepts
+globs and zones the map does not know). ``test_every_nav_zone_is_a_valid_zone_value`` holds
+the map to that.
+"""
+
+
+def _widenings(param_type: str) -> list[str]:
+    """*param_type*, then each type it narrows, widest last."""
+    chain = [param_type]
+    while chain[-1] in PARAM_SUPERTYPES:
+        chain.append(PARAM_SUPERTYPES[chain[-1]])
+    return chain
+
+
+def narrowest_type(types: Iterable[str]) -> str | None:
+    """The narrowest of *types*, or None if they are incompatible or there are none.
+
+    One value can feed params of all of *types* only if it is valid for the narrowest, so
+    that is the type such a value must have: ``zone`` and ``nav_zone`` give ``nav_zone``.
+    Two types neither of which narrows the other -- ``zone`` and ``int``, or two siblings --
+    have no common value, and give None.
+    """
+    narrowest: str | None = None
+    for t in types:
+        if narrowest is None or narrowest in _widenings(t):
+            narrowest = t
+        elif t not in _widenings(narrowest):
+            return None
+    return narrowest
 
 
 @dataclass

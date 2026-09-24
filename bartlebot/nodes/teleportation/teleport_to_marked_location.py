@@ -15,7 +15,7 @@ from bartlebot.nodes.timing import COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL, TRIG
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="zone",
-        type="str",
+        type="zone",
         label="Zone",
         help="Zone name all players must be in after this node completes.",
         default="",

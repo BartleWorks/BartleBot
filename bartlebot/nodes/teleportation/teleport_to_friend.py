@@ -47,7 +47,7 @@ PARAM_SCHEMA: list[ParamField] = [
     ),
     ParamField(
         key="to_zone",
-        type="str",
+        type="zone",
         label="Destination Zone",
         help=(
             "Optional. Where the target is expected to be. With a hooked player, the node fails before "

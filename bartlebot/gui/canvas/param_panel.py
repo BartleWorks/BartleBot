@@ -797,7 +797,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 field.type,
                 val,
                 field.help,
-                field.key,
                 getattr(field, "choices", []),
                 getattr(field, "placeholder", ""),
                 minimum=getattr(field, "minimum", None),
@@ -1096,7 +1095,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         field_type: str,
         val: Any,
         help_text: str,
-        key: str = "",
         choices: list | None = None,
         placeholder: str = "",
         minimum: float | None = None,
@@ -1118,14 +1116,14 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 w.setToolTip(help_text)
             w.textChanged.connect(self._emit_changed)
             return w
+        if field_type == "zone":
+            w: QWidget = _ZoneWidget(self._get_zone_suggestions, self._get_clients)
+            w.setText(str(val) if val is not None else "")
+            if help_text:
+                w.setToolTip(help_text)
+            w.textChanged.connect(self._emit_changed)
+            return w
         if field_type == "str":
-            if "zone" in key.lower():
-                w: QWidget = _ZoneWidget(self._get_zone_suggestions, self._get_clients)
-                w.setText(str(val) if val is not None else "")
-                if help_text:
-                    w.setToolTip(help_text)
-                w.textChanged.connect(self._emit_changed)
-                return w
             plain = QLineEdit()
             plain.setText(str(val) if val is not None else "")
             if help_text:
@@ -1246,7 +1244,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             self.changed.emit()
 
     def set_str(self, key: str, value: str) -> None:
-        """Programmatically set a 'str' field by key. The zone pickers count: their value is a zone path."""
+        """Programmatically set a 'str' or zone field by key: both zone widgets hold a zone path."""
         widget = self._widgets.get(key)
         self._suppress = True
         if isinstance(widget, _NavZoneField):

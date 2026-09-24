@@ -19,7 +19,7 @@ from bartlebot.nodes.timing import (
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="from_zone",
-        type="str",
+        type="zone",
         label="From Zone",
         help="Zone name players must currently be in when this node executes.",
         default="",
@@ -27,7 +27,7 @@ PARAM_SCHEMA: list[ParamField] = [
     ),
     ParamField(
         key="to_zone",
-        type="str",
+        type="zone",
         label="To Zone",
         help="Zone name players must be in after this node completes.",
         default="",

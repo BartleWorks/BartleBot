@@ -77,7 +77,7 @@ PARAM_SCHEMA: list[ParamField] = [
     ),
     ParamField(
         key="mark_zone",
-        type="str",
+        type="zone",
         label="Mark Zone",
         help=(
             "Optional. If provided, all players that need to buy potions must already "
