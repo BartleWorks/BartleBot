@@ -69,7 +69,7 @@ from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel
-from bartlebot.gui.canvas.subgraph_widgets import DefinitionCrumb, PromoteInputDialog, SubgraphMetaDialog
+from bartlebot.gui.canvas.subgraph_widgets import DefinitionCrumb, LinkInputDialog, SubgraphMetaDialog
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
@@ -96,6 +96,7 @@ from bartlebot.subgraphs import (
     mint_instance_id,
     node_panels,
     reresolve_member_params,
+    sync_linked_values,
     taken_ids,
 )
 
@@ -1318,9 +1319,9 @@ class BotCanvas(QWidget):
         self._param_panel.detach_requested.connect(self._on_detach_requested)
         self._param_panel.open_definition_requested.connect(self.open_definition_of)
         self._param_panel.role_requested.connect(self._on_role_requested)
-        self._param_panel.promote_input_requested.connect(self._on_promote_requested)
-        self._param_panel.unbind_input_requested.connect(self.unbind_param)
-        self._param_panel.expose_node_requested.connect(self.set_node_exposed)
+        self._param_panel.link_input_requested.connect(self._on_link_requested)
+        self._param_panel.unlink_input_requested.connect(self.unlink_param)
+        self._param_panel.promote_node_requested.connect(self._on_promote_node_requested)
         self._param_panel.definition_changed.connect(self._on_definition_changed)
         self._param_panel.add_port_requested.connect(self._on_add_port_requested)
         self._param_panel.delete_port_requested.connect(self._on_delete_port_requested)
@@ -2327,6 +2328,11 @@ class BotCanvas(QWidget):
             self._undo_mgr.begin_debounce(self._config, desc)
 
     def _on_param_changed(self) -> None:
+        # In a definition a linked param is its input's default: an edit to one is an
+        # edit to the input, and to every other param linked to it.
+        shown_state = self._param_panel.shown_state
+        if shown_state is not None and self._config is not None and self._config.is_definition:
+            sync_linked_values(self._config, edited_state=shown_state.id)
         # Refresh the dotted-pen flag indicator on the selected edge when flags change.
         shown = self._param_panel.shown_transition
         if shown is not None:
@@ -2384,7 +2390,7 @@ class BotCanvas(QWidget):
         keyed on an old id is re-keyed through the strategy store, so nothing the
         user configured against those states falls silent. One undo step. The new
         definition opens as a document on top of the bot, since a region just made
-        reusable usually wants its inputs promoted next.
+        reusable usually wants its params linked to inputs next.
         """
         config = self._scene.config
         library = self._subgraph_library
@@ -2428,7 +2434,7 @@ class BotCanvas(QWidget):
             return None
         return next((s for s in config.states if s.id == state_id), None)
 
-    def promote_param(
+    def link_param(
         self,
         state_id: str,
         key: str,
@@ -2437,79 +2443,102 @@ class BotCanvas(QWidget):
         new_input: SubgraphInput | None = None,
         shared: tuple[str, str] | None = None,
     ) -> bool:
-        """Let the call node set one param of a definition's node. One undo step.
+        """Link one param of a definition's node to a subgraph input. One undo step.
 
-        ``existing`` names an input already declared, ``shared`` is ``(panel id, key)``
-        of an exposed node's param to share a value with, and otherwise ``new_input``
-        is declared with this one binding.
+        ``existing`` names an input already declared, ``shared`` is ``(group id, key)``
+        of a promoted node's param, and otherwise ``new_input`` is declared with this
+        one link. A linked param *is* its input's default, so the param takes the
+        input's value -- or, for an input with no default yet, gives it its own.
         """
         state = self._definition_state(state_id)
         if state is None:
             return False
         meta = self._scene.config.definition
+        if any(pn.member == state_id for pn in node_panels(meta)):
+            return False  # a promoted node's params are its input group's already
         binding = SubgraphInputBinding(state=state_id, param=key)
         if existing is not None:
             target = next((i for i in meta.inputs if i.name == existing), None)
             if target is None:
                 return False
-            self._begin_definition_edit("Promote to subgraph input")
+            self._begin_definition_edit("Link to subgraph input")
             if not any(b.state == state_id and b.param == key for b in target.bindings):
                 target.bindings.append(binding)
+            if target.default is not None:
+                state.params[key] = target.default
         elif shared is not None:
             panel = next((pn for pn in node_panels(meta) if pn.id == shared[0]), None)
             if panel is None:
                 return False
-            self._begin_definition_edit("Share exposed param")
+            self._begin_definition_edit("Link to subgraph input")
             extra = panel.bindings.setdefault(shared[1], [])
             if not any(b.state == state_id and b.param == key for b in extra):
                 extra.append(binding)
         elif new_input is not None:
             if any(i.name == new_input.name for i in meta.inputs):
                 return False
-            self._begin_definition_edit("Promote to subgraph input")
+            self._begin_definition_edit("Link to subgraph input")
             meta.inputs.append(new_input.model_copy(update={"bindings": [binding]}))
         else:
             return False
+        sync_linked_values(self._scene.config)
         self._end_definition_edit(state)
         return True
 
-    def unbind_param(self, state_id: str, key: str) -> bool:
-        """Stop an input, or a shared exposed param, setting one param. The input itself stays. One undo step."""
+    def unlink_param(self, state_id: str, key: str) -> bool:
+        """Unlink one param from its input or promoted param. The input itself stays. One undo step.
+
+        A promoted node's own params cannot be unlinked one by one: they are its input
+        group's, and demoting the node is how they let go.
+        """
         state = self._definition_state(state_id)
         if state is None:
             return False
         meta = self._scene.config.definition
 
-        def bound(b) -> bool:
+        def linked(b) -> bool:
             return b.state == state_id and b.param == key
 
-        if not any(bound(b) for i in meta.inputs for b in i.bindings) and not any(
-            bound(b) for pn in node_panels(meta) for extra in pn.bindings.values() for b in extra
+        if not any(linked(b) for i in meta.inputs for b in i.bindings) and not any(
+            linked(b) for pn in node_panels(meta) for extra in pn.bindings.values() for b in extra
         ):
             return False
-        self._begin_definition_edit("Unbind param")
+        self._begin_definition_edit("Unlink param")
         for inp in meta.inputs:
-            inp.bindings = [b for b in inp.bindings if not bound(b)]
+            inp.bindings = [b for b in inp.bindings if not linked(b)]
         for panel in node_panels(meta):
-            panel.bindings = {k: kept for k, v in panel.bindings.items() if (kept := [b for b in v if not bound(b)])}
+            panel.bindings = {k: kept for k, v in panel.bindings.items() if (kept := [b for b in v if not linked(b)])}
         self._end_definition_edit(state)
         return True
 
-    def set_node_exposed(self, state_id: str, exposed: bool) -> bool:
-        """Expose a definition's node whole on the call node, as a panel of its own -- or stop. One undo step.
+    def linked_inputs_of(self, state_id: str) -> list[str]:
+        """What the node's params are linked to, by label: what promoting it would replace."""
+        config = self._scene.config
+        if config is None or config.definition is None:
+            return []
+        meta = config.definition
+        names = [i.label or i.name for i in meta.inputs if any(b.state == state_id for b in i.bindings)]
+        for panel in node_panels(meta):
+            if any(b.state == state_id for extra in panel.bindings.values() for b in extra):
+                names.append(panel.label or panel.id)
+        return list(dict.fromkeys(names))
 
-        An exposed node's params are all the call node's, so any input binding one of
-        them goes: a param is driven from one place only.
+    def set_node_promoted(self, state_id: str, promoted: bool) -> bool:
+        """Promote a definition's node whole to an input group on the subgraph node, or demote it. One undo step.
+
+        A promoted node's params are all its input group's, so any link one of them had
+        goes: a param is set from one place only. The caller asks first (see
+        ``_on_promote_node_requested``).
         """
         state = self._definition_state(state_id)
         if state is None:
             return False
         meta = self._scene.config.definition
         current = next((pn for pn in node_panels(meta) if pn.member == state_id), None)
-        if exposed == (current is not None):
+        if promoted == (current is not None):
             return False
-        if exposed:
-            self._begin_definition_edit("Expose on subgraph node")
+        if promoted:
+            self._begin_definition_edit("Promote to input group")
             for inp in meta.inputs:
                 inp.bindings = [b for b in inp.bindings if b.state != state_id]
             for panel in node_panels(meta):
@@ -2523,13 +2552,33 @@ class BotCanvas(QWidget):
             label = state.label or state.node_type.replace("_", " ").title()
             meta.panels.append(SubgraphPanel(id=pid, kind="node", label=label, member=state_id))
         else:
-            self._begin_definition_edit("Stop exposing")
+            self._begin_definition_edit("Demote")
             meta.panels = [pn for pn in meta.panels if pn is not current]
             for inp in meta.inputs:
                 if inp.panel == current.id:
                     inp.panel = None
         self._end_definition_edit(state)
         return True
+
+    def _on_promote_node_requested(self, state_id: str, promoted: bool) -> None:
+        if promoted:
+            linked = self.linked_inputs_of(state_id)
+            if linked:
+                reply = QMessageBox.question(
+                    self,
+                    "Promote to Input Group",
+                    "Some of this node's params are linked already: "
+                    f"{', '.join(linked)}.\n\nPromoting the node replaces those links with its own input group. "
+                    "The inputs themselves stay.",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                    QMessageBox.StandardButton.Cancel,
+                )
+                if reply != QMessageBox.StandardButton.Yes:
+                    state = self._definition_state(state_id)
+                    if state is not None and self._param_panel.shown_state is state:
+                        self._show_state_page(state)
+                    return
+        self.set_node_promoted(state_id, promoted)
 
     def _begin_definition_edit(self, desc: str) -> None:
         self._undo_mgr.cancel_debounce()
@@ -2541,7 +2590,7 @@ class BotCanvas(QWidget):
             self._show_state_page(state)
 
     def _shareable_params(self, state_id: str, param_type: str) -> list[tuple[str, str, str]]:
-        """``(label, panel id, key)`` of every exposed param a ``param_type`` param can share a value with."""
+        """``(label, group id, key)`` of every promoted node's param a ``param_type`` param can link to."""
         config = self._scene.config
         if config is None or config.definition is None:
             return []
@@ -2558,14 +2607,14 @@ class BotCanvas(QWidget):
                     )
         return out
 
-    def _on_promote_requested(self, state_id: str, key: str) -> None:
+    def _on_link_requested(self, state_id: str, key: str) -> None:
         state = self._definition_state(state_id)
         if state is None:
             return
         field = next((f for f in NODE_PARAM_SCHEMAS.get(state.node_type, []) if f.key == key), None)
         if field is None:
             return
-        dlg = PromoteInputDialog(
+        dlg = LinkInputDialog(
             self._scene.config.definition.inputs,
             param_key=key,
             param_type=field.type,
@@ -2578,14 +2627,20 @@ class BotCanvas(QWidget):
         if not dlg.exec():
             return
         if dlg.choice is not None:
-            self.promote_param(state_id, key, existing=dlg.choice)
+            self.link_param(state_id, key, existing=dlg.choice)
         elif dlg.shared_choice is not None:
-            self.promote_param(state_id, key, shared=dlg.shared_choice)
+            self.link_param(state_id, key, shared=dlg.shared_choice)
         else:
-            self.promote_param(state_id, key, new_input=dlg.new_input())
+            self.link_param(state_id, key, new_input=dlg.new_input())
 
     def _on_definition_changed(self) -> None:
-        """The signature page wrote into the document: a port renamed, an input or panel changed."""
+        """The signature page wrote into the document: a port renamed, an input or group changed.
+
+        An input's default is every param linked to it, so a default edited there is
+        written through to them.
+        """
+        if self._scene.config is not None:
+            sync_linked_values(self._scene.config)
         self._on_scene_changed()
 
     def _on_add_port_requested(self, node_type: str) -> None:
@@ -2616,18 +2671,19 @@ class BotCanvas(QWidget):
         if config is None:
             return
         meta = config.definition
-        bound: dict[str, str] = {}
-        exposed = False
+        links: dict[str, str] = {}
+        group: str | None = None
         if meta is not None:
             labels = {s.id: (s.label or s.id) for s in config.states}
-            bound = {b.param: (i.label or i.name) for i in meta.inputs for b in i.bindings if b.state == state.id}
+            links = {b.param: (i.label or i.name) for i in meta.inputs for b in i.bindings if b.state == state.id}
             for panel in node_panels(meta):
+                name = panel.label or labels.get(panel.member or "", "")
                 if panel.member == state.id:
-                    exposed = True
+                    group = name
                 for key, extra in panel.bindings.items():
                     for b in extra:
                         if b.state == state.id:
-                            bound[b.param] = f"{panel.label or labels.get(panel.member or '', '')} \u203a {key}"
+                            links[b.param] = f"{name} \u203a {key}"
         self._param_panel.show_state(
             state,
             all_states=list(config.states),
@@ -2635,8 +2691,8 @@ class BotCanvas(QWidget):
             initial_id=config.initial,
             recovery_id=config.recovery_state,
             in_definition=meta is not None,
-            bound_inputs=bound,
-            exposed=exposed,
+            links=links,
+            promoted_group=group,
         )
 
     def _show_call_page(self, region) -> None:

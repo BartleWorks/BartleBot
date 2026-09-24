@@ -220,3 +220,25 @@ def test_a_call_edge_shows_its_first_transition_without_rewiring(canvas):
     assert not panel.edge_src_combo.isEnabled()
     _select(canvas, _edge(canvas, "state_1", "SUCCESS", "state_2"))
     assert panel.edge_src_combo.isEnabled()
+
+
+def test_a_changed_input_can_be_reset_to_the_default(canvas):
+    _select(canvas, canvas.scene.node_items[REGION])
+    page = canvas.param_panel.call_page
+    page.form(None).set_str("hub", "Mooshu/Hub")
+    _select(canvas, canvas.scene.node_items["state_1"])
+    _select(canvas, canvas.scene.node_items[REGION])
+    reset = page.form(None).reset_button("hub")
+    assert reset is not None
+    reset.click()
+    region = canvas.config.regions[0]
+    assert "hub" not in region.source.inputs
+    hub = next(s for s in canvas.config.states if s.id == m("hub"))
+    assert hub.params["zone"] == "WizardCity/Hub"
+    assert page.form(None).reset_button("hub") is None
+
+
+def test_a_new_subgraph_node_follows_the_definitions_defaults(canvas):
+    rid = canvas.scene.insert_subgraph_instance(SYNC_ID, QPointF(0, 600))
+    region = next(r for r in canvas.config.regions if r.id == rid)
+    assert region.source.inputs == {}

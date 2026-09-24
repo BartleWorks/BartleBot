@@ -3,8 +3,8 @@
 ``DefinitionCrumb`` is the overlay shown while a definition is open as a document: the
 path back to where it was opened from, and the verbs that end the visit.
 ``SubgraphMetaDialog`` asks for a name and description when a region becomes a
-definition. ``PromoteInputDialog`` binds one member param to an existing input of a
-compatible type, or to a new one. All three are plain Qt; the policy they drive lives
+definition. ``LinkInputDialog`` links one node param to an existing input of a
+compatible type, a promoted node's param, or a new input. All three are plain Qt; the policy they drive lives
 in ``BotCanvas`` and the controller's document stack.
 """
 
@@ -143,8 +143,8 @@ def compatible_inputs(inputs: list[SubgraphInput], param_type: str) -> list[Subg
     return [i for i in inputs if narrowest_type([i.type, param_type]) is not None]
 
 
-class PromoteInputDialog(QDialog):
-    """Promote one member param to an input of the definition being edited.
+class LinkInputDialog(QDialog):
+    """Link one node param to a subgraph input of the definition being edited.
 
     Offers the existing inputs whose type is compatible with the param's (one narrows
     the other, so a ``zone`` and a ``nav_zone`` can share), plus *New input*, which
@@ -167,7 +167,7 @@ class PromoteInputDialog(QDialog):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Promote to Subgraph Input")
+        self.setWindowTitle("Link to Subgraph Input")
         self._inputs = inputs
         self._key = param_key
         self._type = param_type
@@ -177,10 +177,10 @@ class PromoteInputDialog(QDialog):
         self._combo = QComboBox()
         for inp in self._compatible:
             self._combo.addItem(f"{inp.label or inp.name} ({inp.type})", ("input", inp.name))
-        # An exposed node's params can be shared too: (label, panel id, key), already
+        # A promoted node's params can be linked to too: (label, group id, key), already
         # filtered to the compatible ones by the caller.
         for label, panel_id, key in shared or []:
-            self._combo.addItem(f"{label} (exposed)", ("shared", panel_id, key))
+            self._combo.addItem(f"{label} (input group)", ("shared", panel_id, key))
         self._combo.addItem(NEW_INPUT, None)
         self._name = QLineEdit(param_key)
         self._label = QLineEdit(param_label)
@@ -193,7 +193,7 @@ class PromoteInputDialog(QDialog):
             self._group.addItem(glabel, gid)
 
         form = QFormLayout()
-        form.addRow(QLabel(f"Set <b>{param_label}</b> ({param_type}) from:"))
+        form.addRow(QLabel(f"Link <b>{param_label}</b> ({param_type}) to:"))
         form.addRow("Input", self._combo)
         form.addRow("Name", self._name)
         form.addRow("Label", self._label)
@@ -208,16 +208,18 @@ class PromoteInputDialog(QDialog):
         self._name.textChanged.connect(self._validate)
         self._combo.setCurrentIndex(0)
         self._on_choice_changed(self._combo.currentIndex())
+        # Room for an input's label and help without the fields scrolling sideways.
+        self.resize(max(self.sizeHint().width(), 520), self.sizeHint().height())
 
     @property
     def choice(self) -> str | None:
-        """The existing input's name, or None for a new one or a shared exposed param."""
+        """The existing input's name, or None for a new one or a promoted node's param."""
         data = self._combo.currentData()
         return data[1] if data and data[0] == "input" else None
 
     @property
     def shared_choice(self) -> tuple[str, str] | None:
-        """``(panel id, key)`` of the exposed param chosen to share, or None."""
+        """``(group id, key)`` of the promoted node's param chosen, or None."""
         data = self._combo.currentData()
         return (data[1], data[2]) if data and data[0] == "shared" else None
 

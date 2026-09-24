@@ -1084,3 +1084,29 @@ def test_a_zone_and_a_nav_zone_can_share_an_input():
     defn = _panel_definition()
     bindings = [SubgraphInputBinding(state="go", param="zone"), SubgraphInputBinding(state="enter", param="from_zone")]
     assert binding_type(defn, bindings, NODE_PARAM_SCHEMAS) == "nav_zone"
+
+
+def test_an_unset_input_follows_its_default():
+    defn = sync_players_definition()
+    world = next(i for i in defn.inputs if i.name == "world")
+    world.default = "Mooshu"
+    state = next(s for s in defn.states if s.id == "go_to_world")
+    source = SubgraphSource(subgraph_id=defn.id, version=1)
+    assert resolve_member_params(defn, state, source)["world"] == "Mooshu"
+    source.inputs["world"] = "Krokotopia"
+    assert resolve_member_params(defn, state, source)["world"] == "Krokotopia"
+
+
+def test_sync_linked_values_keeps_linked_params_equal_to_their_input():
+    from bartlebot.subgraphs import sync_linked_values  # noqa: PLC0415
+
+    config = definition_to_config(sync_players_definition())
+    by_id = {s.id: s for s in config.states}
+    by_id["tp_b"].params["zone"] = "Mooshu/Hub"
+    sync_linked_values(config, edited_state="tp_b")
+    hub = next(i for i in config.definition.inputs if i.name == "hub")
+    assert hub.default == "Mooshu/Hub"
+    assert by_id["hub"].params["zone"] == "Mooshu/Hub"
+    hub.default = "Krokotopia/Hub"
+    sync_linked_values(config)
+    assert by_id["tp_b"].params["zone"] == by_id["hub"].params["zone"] == "Krokotopia/Hub"

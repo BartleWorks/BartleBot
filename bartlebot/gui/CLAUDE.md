@@ -680,7 +680,13 @@ edge, a plain *region* (reached by selecting a whole region's members, the pill 
 a *call node* (`canvas/call_page.py`: label, roles by entry port, inputs and node panels
 with Record, Open definition, Detach), or in a definition document with nothing selected
 the *signature* (`canvas/signature_page.py`: ports, inputs, panels). A definition's node
-page adds Promote to subgraph input and Expose on subgraph node. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Built-in / Built-in (modified) / User" (`subgraph_store.source_label`); the code keeps `CallNodeItem` and `SubgraphPanel`. The **definition crumb**
+page links a param to a subgraph input (**Link**, one param) or puts the whole node on the
+subgraph node (**Promote to input group** / **Demote**). A linked param *is* its input's
+default: `subgraphs.sync_linked_values` keeps them equal both ways, and a subgraph node
+follows the default until its own page changes the value (Reset goes back). A row shows
+status and action in one control: an unlinked row's Link button appears only on hover or
+focus, and a linked row's chip reads as the link and turns into Unlink under the pointer --
+except on a promoted node, whose chips are locked. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Built-in / Built-in (modified) / User" (`subgraph_store.source_label`); the code keeps `CallNodeItem` and `SubgraphPanel`. The **definition crumb**
 (`canvas/subgraph_widgets.DefinitionCrumb`) is the canvas's, pinned under the focus
 crumb; its Save to library and its way back are the definition document's only exits,
 along with Bar B's Done and Save & Done, which mean the same there. In a definition, Bar

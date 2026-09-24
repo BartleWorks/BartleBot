@@ -147,6 +147,7 @@ class CallNodePage(ThemedMixin, QWidget):
         self._get_clients: Callable[[], list] = lambda: []
         self._get_zones: Callable[[], list[str]] = lambda: []
         self._record_status: dict[str, QLabel] = {}
+        self._status: RegionStatus | None = None
 
         self._name_lbl = QLabel()
         self._sub_lbl = ThemedTextLabel("", color="text_muted")
@@ -266,6 +267,7 @@ class CallNodePage(ThemedMixin, QWidget):
 
         recording.cancel_active_recording()
         self._region, self._defn, self._config = region, defn, config
+        self._status = status
         source = region.source
         assert source is not None
         self._suppress = True
@@ -308,17 +310,26 @@ class CallNodePage(ThemedMixin, QWidget):
                 f.set_zone_suggestions_getter(self._get_zones)
                 return f
 
+            # What this instance set. An unset input follows the definition's default, so
+            # the form shows that (the field's default) and offers no Reset.
+            chosen = {k: v for k, v in source.inputs.items() if v is not None}
             top = [i for i in inputs if i.panel is None or not any(p.id == i.panel for p in panels)]
             if top:
                 form = make_form()
-                form.load_schema([input_param_field(defn, i) for i in top], dict(source.inputs))
+                form.load_schema(
+                    [input_param_field(defn, i) for i in top], chosen, resettable={i.name for i in top} & set(chosen)
+                )
                 self._add_form(None, form)
                 self._inputs_layout.addWidget(form)
             for panel in panels:
                 if panel.kind == "inputs":
                     members = [i for i in inputs if i.panel == panel.id]
                     form = make_form()
-                    form.load_schema([input_param_field(defn, i) for i in members], dict(source.inputs))
+                    form.load_schema(
+                        [input_param_field(defn, i) for i in members],
+                        chosen,
+                        resettable={i.name for i in members} & set(chosen),
+                    )
                     self._add_form(panel.id, form)
                     section = PanelSection(panel.label or panel.id, form, closed=panel.default_closed)
                 else:
@@ -351,6 +362,7 @@ class CallNodePage(ThemedMixin, QWidget):
         self._forms[key] = form
         self._initial_values[key] = form.get_params()
         form.changed.connect(lambda k=key: self._on_form_changed(k))
+        form.reset_requested.connect(lambda field_key, k=key: self.reset_value(k, field_key))
 
     def _node_panel(self, panel: SubgraphPanel, make_form):
         """A member exposed whole: its own fields, keyed by its own keys, valued from ``source.inputs``."""
@@ -363,7 +375,11 @@ class CallNodePage(ThemedMixin, QWidget):
         # What the member runs with is what the form shows: its composed params,
         # which already carry any value this instance set.
         form = make_form()
-        form.load_schema(schema, dict(state.params))
+        prefix = exposed_key(panel.member or "", "")
+        changed = {
+            k[len(prefix) :] for k, v in self._region.source.inputs.items() if k.startswith(prefix) and v is not None
+        }
+        form.load_schema(schema, dict(state.params), resettable=changed)
         self._add_form(panel.id, form)
         record = None
         if state.node_type in recording.RECORDABLE_NODES:
@@ -498,6 +514,20 @@ class CallNodePage(ThemedMixin, QWidget):
                 source.inputs[prefix + k] = None
         self._refresh_panel_errors()
         self.changed.emit()
+
+    def reset_value(self, panel_id: str | None, key: str) -> None:
+        """Forget this instance's value for one field, so it follows the definition's default again."""
+        if self._region is None or self._region.source is None or self._config is None:
+            return
+        panel = next((p for p in (self._defn.panels if self._defn else []) if p.id == panel_id), None)
+        name = exposed_key(panel.member or "", key) if panel is not None and panel.kind == "node" else key
+        if name not in self._region.source.inputs:
+            return
+        self.structural_change.emit("Reset to default")
+        del self._region.source.inputs[name]
+        self.changed.emit()
+        # The canvas has re-resolved the members; show what they now run with.
+        self.show_call(self._region, self._defn, self._status, self._config)
 
     def apply_theme_styles(self) -> None:
         font = self._name_lbl.font()

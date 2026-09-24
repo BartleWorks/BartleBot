@@ -12,7 +12,7 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from PyQt6.QtCore import QLocale, QSize, QStringListModel, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, QLocale, QSize, QStringListModel, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor, QDoubleValidator, QKeySequence, QPen, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
     QApplication,
@@ -22,6 +22,7 @@ from PyQt6.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
     QFrame,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -699,17 +700,126 @@ class _StrChoiceComboBox(QComboBox):
 
 
 # ---------------------------------------------------------------------------
+# Link controls on a definition's param rows
+# ---------------------------------------------------------------------------
+
+
+class _LinkChip(ThemedMixin, QToolButton):
+    """A linked param's status, which turns into its Unlink action under the pointer.
+
+    At rest it reads as a status -- a chain and what the param is linked to, in the
+    accent colour. Hovered or focused it becomes the action: a broken chain in the
+    warning colour, "Unlink". A *locked* chip (a param of a promoted node) never
+    turns: its node's input group owns it, and the tooltip says how to let go.
+    """
+
+    def __init__(self, text: str, *, locked: bool, tooltip: str, parent=None) -> None:
+        super().__init__(parent)
+        self._text = text
+        self._locked = locked
+        self._armed = False
+        self.setAutoRaise(True)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.setIconSize(QSize(12, 12))
+        self.setToolTip(tooltip)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus if locked else Qt.FocusPolicy.TabFocus)
+        self.setCursor(Qt.CursorShape.ArrowCursor if locked else Qt.CursorShape.PointingHandCursor)
+        self.refresh_theme_styles()
+
+    @property
+    def locked(self) -> bool:
+        return self._locked
+
+    @property
+    def armed(self) -> bool:
+        """Whether it is showing its Unlink action rather than its status."""
+        return self._armed
+
+    def _arm(self, armed: bool) -> None:
+        armed = armed and not self._locked
+        if armed != self._armed:
+            self._armed = armed
+            self.refresh_theme_styles()
+
+    def enterEvent(self, event) -> None:
+        self._arm(True)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self._arm(self.hasFocus())
+        super().leaveEvent(event)
+
+    def focusInEvent(self, event) -> None:
+        self._arm(True)
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event) -> None:
+        self._arm(self.underMouse())
+        super().focusOutEvent(event)
+
+    def apply_theme_styles(self) -> None:
+        color = THEME.warning if self._armed else THEME.accent
+        self.setText("Unlink" if self._armed else self._text)
+        self.setIcon(svg_icon("unhook" if self._armed else "hook", 12, tint=color))
+        set_style_sheet(
+            self,
+            f"QToolButton {{ color: {color}; font-size: {THEME.font_small_px}px; font-weight: 600;"
+            f" border: 1px solid {color}; border-radius: 3px; padding: 0 4px; }}",
+        )
+
+
+class _HoverRow(QWidget):
+    """A param row whose Link button shows only while the row is hovered or the button focused.
+
+    Faded rather than hidden, so the row never reflows and Tab still reaches it.
+    """
+
+    def __init__(self, button: QToolButton | None = None, parent=None) -> None:
+        super().__init__(parent)
+        self._button = button
+        self._effect = None
+        if button is not None:
+            self._effect = QGraphicsOpacityEffect(button)
+            self._effect.setOpacity(0.0)
+            button.setGraphicsEffect(self._effect)
+            button.installEventFilter(self)
+
+    def _show(self, shown: bool) -> None:
+        if self._effect is not None:
+            self._effect.setOpacity(1.0 if shown else 0.0)
+
+    @property
+    def link_shown(self) -> bool:
+        return self._effect is not None and self._effect.opacity() > 0
+
+    def enterEvent(self, event) -> None:
+        self._show(True)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self._show(self._button is not None and self._button.hasFocus())
+        super().leaveEvent(event)
+
+    def eventFilter(self, obj, event) -> bool:
+        if obj is self._button and event.type() in (QEvent.Type.FocusIn, QEvent.Type.FocusOut):
+            self._show(event.type() == QEvent.Type.FocusIn or self.underMouse())
+        return super().eventFilter(obj, event)
+
+
+# ---------------------------------------------------------------------------
 # _DynamicParamForm
 # ---------------------------------------------------------------------------
 
 
 class _DynamicParamForm(ThemedMixin, QWidget):
     changed = pyqtSignal()
-    # (param key) from a row's Promote button, on a node shown in a definition
-    # document. The form only reports; the canvas binds the param and reloads.
-    promote_requested = pyqtSignal(str)
-    # (param key) from the dismiss beside a bound param's chip: stop the input setting it.
-    unbind_requested = pyqtSignal(str)
+    # (param key) from a row's Link button, on a node shown in a definition document.
+    # The form only reports; the canvas links the param and reloads.
+    link_requested = pyqtSignal(str)
+    # (param key) from a linked row's chip, clicked while it reads "Unlink".
+    unlink_requested = pyqtSignal(str)
+    # (param key) from a row's Reset, on a subgraph node's form: follow the definition again.
+    reset_requested = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -719,11 +829,13 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._form.addStretch()
         self._widgets: dict[str, Any] = {}
         self._required_widgets: dict[str, Any] = {}
-        # A definition's per-row controls: a Promote button, or for a param an input
-        # already sets, a chip naming the input and a dismiss. All carry THEME colours.
-        self._promote_btns: list[QToolButton] = []
-        self._unbind_btns: list[QToolButton] = []
-        self._bound_chips: dict[str, QLabel] = {}
+        # Per-row controls, all THEME-coloured: in a definition, a Link button that
+        # shows on hover, or for a linked param its chip; on a subgraph node, a Reset
+        # for a value changed from the definition's.
+        self._link_btns: dict[str, QToolButton] = {}
+        self._link_chips: dict[str, _LinkChip] = {}
+        self._reset_btns: dict[str, QToolButton] = {}
+        self._hover_rows: dict[str, _HoverRow] = {}
         self._schema: list = []
         # Every label load_schema builds that carries a THEME colour, cleared and
         # refilled alongside _widgets. Field labels keep their ParamField because the
@@ -748,16 +860,18 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         schema: list,
         params: dict,
         *,
-        promotable: bool = False,
-        bound: dict[str, str] | None = None,
-        exposed: bool = False,
+        linkable: bool = False,
+        links: dict[str, str] | None = None,
+        promoted_group: str | None = None,
+        resettable: set[str] | frozenset[str] = frozenset(),
     ) -> None:
         """Rebuild the form for *schema* showing *params*.
 
-        On a node in a definition document, *promotable* gives each row a Promote
-        button, and a row *bound* to an input (key -> the input's label) a chip naming
-        it instead, with a dismiss that unbinds. A node *exposed* whole on the call node
-        marks every row exposed and offers neither: its panel owns them all. The
+        On a node in a definition document, *linkable* gives each row a Link button
+        that shows while the row is hovered; a row in *links* (key -> what it is linked
+        to) shows a chip instead, which turns into Unlink on hover. On a node promoted to
+        an input group, every row is linked to *promoted_group* and its chip is locked.
+        On a subgraph node's form, a key in *resettable* has a Reset beside it. The
         controls wrap the row rather than the widget ``_make_widget`` returns, so every
         widget type gets them without knowing.
         """
@@ -771,11 +885,12 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._required_widgets.clear()
         self._field_labels.clear()
         self._muted_labels.clear()
-        self._promote_btns.clear()
-        self._unbind_btns.clear()
-        self._bound_chips.clear()
+        self._link_btns.clear()
+        self._link_chips.clear()
+        self._reset_btns.clear()
+        self._hover_rows.clear()
         self._schema = list(schema)
-        bound = bound or {}
+        links = links or {}
         insert_idx = 0
         for field in schema:
             label_w = QLabel()
@@ -800,30 +915,33 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 self._required_widgets[field.key] = widget
             display_w = widget
             row_btns: list[QWidget] = []
-            if exposed:
-                tag = QLabel("exposed")
-                tag.setToolTip("This node is exposed whole: the subgraph node sets this")
-                self._bound_chips[field.key] = tag
-                row_btns.append(tag)
-            elif field.key in bound:
-                chip = QLabel(f"\u2190 {bound[field.key]}")
-                chip.setToolTip(
-                    f"Set by the input '{bound[field.key]}' on the subgraph node; this value is its fallback"
+            link_btn: QToolButton | None = None
+            if promoted_group is not None:
+                chip = _LinkChip(
+                    promoted_group,
+                    locked=True,
+                    tooltip=f"Part of the {promoted_group} input group. Demote the node to unlink.",
                 )
-                self._bound_chips[field.key] = chip
+                self._link_chips[field.key] = chip
                 row_btns.append(chip)
-                unbind = QToolButton()
-                unbind.setAutoRaise(True)
-                unbind.setIconSize(QSize(12, 12))
-                unbind.setToolTip("Stop the input setting this param")
-                unbind.setProperty("param_key", field.key)
-                unbind.clicked.connect(lambda _=None, k=field.key: self.unbind_requested.emit(k))
-                self._unbind_btns.append(unbind)
-                row_btns.append(unbind)
-            elif promotable:
-                row_btns.append(self._make_promote_button(field.key))
+            elif field.key in links:
+                chip = _LinkChip(
+                    links[field.key],
+                    locked=False,
+                    tooltip=f"Linked to {links[field.key]}: this value is its default. Click to unlink.",
+                )
+                chip.clicked.connect(lambda _=False, k=field.key: self.unlink_requested.emit(k))
+                self._link_chips[field.key] = chip
+                row_btns.append(chip)
+            elif linkable:
+                link_btn = self._make_link_button(field.key)
+                row_btns.append(link_btn)
+            if field.key in resettable:
+                row_btns.append(self._make_reset_button(field.key))
             if field.type == "bool":
-                container = QWidget()
+                container = _HoverRow(link_btn)
+                if link_btn is not None:
+                    self._hover_rows[field.key] = container
                 row = QHBoxLayout(container)
                 row.setContentsMargins(0, 0, 0, 0)
                 row.setSpacing(8)
@@ -835,7 +953,14 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 self._form.insertWidget(insert_idx, container)
                 insert_idx += 1
             else:
-                if row_btns:
+                if link_btn is not None:
+                    # Label and widget in one hover target, so pointing at the field
+                    # itself shows its Link button, not only pointing at its label.
+                    block = _HoverRow(link_btn)
+                    self._hover_rows[field.key] = block
+                    block_col = QVBoxLayout(block)
+                    block_col.setContentsMargins(0, 0, 0, 0)
+                    block_col.setSpacing(4)
                     head = QWidget()
                     head_row = QHBoxLayout(head)
                     head_row.setContentsMargins(0, 0, 0, 0)
@@ -844,11 +969,25 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                     head_row.addStretch()
                     for row_btn in row_btns:
                         head_row.addWidget(row_btn)
-                    self._form.insertWidget(insert_idx, head)
+                    block_col.addWidget(head)
+                    block_col.addWidget(display_w)
+                    self._form.insertWidget(insert_idx, block)
+                    insert_idx += 1
                 else:
-                    self._form.insertWidget(insert_idx, label_w)
-                self._form.insertWidget(insert_idx + 1, display_w)
-                insert_idx += 2
+                    if row_btns:
+                        head = QWidget()
+                        head_row = QHBoxLayout(head)
+                        head_row.setContentsMargins(0, 0, 0, 0)
+                        head_row.setSpacing(8)
+                        head_row.addWidget(label_w)
+                        head_row.addStretch()
+                        for row_btn in row_btns:
+                            head_row.addWidget(row_btn)
+                        self._form.insertWidget(insert_idx, head)
+                    else:
+                        self._form.insertWidget(insert_idx, label_w)
+                    self._form.insertWidget(insert_idx + 1, display_w)
+                    insert_idx += 2
             if field.default_hint and not field.required:
                 hint_lbl = QLabel(f"Default: {field.default_hint}")
                 self._muted_labels.append(hint_lbl)
@@ -896,27 +1035,38 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         # _validate_required_fields, which apply_theme_styles re-runs.
         self.refresh_theme_styles()
 
-    def _make_promote_button(self, key: str) -> QToolButton:
+    def _make_link_button(self, key: str) -> QToolButton:
         btn = QToolButton()
         btn.setAutoRaise(True)
         btn.setIconSize(QSize(14, 14))
-        btn.setProperty("param_key", key)
-        btn.setToolTip("Promote to subgraph input: let the subgraph node set this")
-        btn.clicked.connect(lambda _=None, k=key: self.promote_requested.emit(k))
-        self._promote_btns.append(btn)
+        btn.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+        btn.setToolTip("Link to subgraph input\u2026")
+        btn.clicked.connect(lambda _=None, k=key: self.link_requested.emit(k))
+        self._link_btns[key] = btn
         return btn
 
-    def promote_button(self, key: str) -> QToolButton | None:
-        """The Promote button for one row, or None."""
-        return next((b for b in self._promote_btns if b.property("param_key") == key), None)
+    def _make_reset_button(self, key: str) -> QToolButton:
+        btn = QToolButton()
+        btn.setAutoRaise(True)
+        btn.setIconSize(QSize(12, 12))
+        btn.setToolTip("Changed here. Reset to follow the subgraph's default")
+        btn.clicked.connect(lambda _=None, k=key: self.reset_requested.emit(k))
+        self._reset_btns[key] = btn
+        return btn
 
-    def unbind_button(self, key: str) -> QToolButton | None:
-        """The dismiss beside a bound row's chip, or None."""
-        return next((b for b in self._unbind_btns if b.property("param_key") == key), None)
+    def link_button(self, key: str) -> QToolButton | None:
+        """One row's Link button, shown on hover, or None."""
+        return self._link_btns.get(key)
 
-    def bound_chip(self, key: str) -> QLabel | None:
-        """The chip naming the input that sets one row (or marking it exposed), or None."""
-        return self._bound_chips.get(key)
+    def link_chip(self, key: str) -> _LinkChip | None:
+        """One linked row's chip, or None."""
+        return self._link_chips.get(key)
+
+    def reset_button(self, key: str) -> QToolButton | None:
+        return self._reset_btns.get(key)
+
+    def hover_row(self, key: str) -> _HoverRow | None:
+        return self._hover_rows.get(key)
 
     def required_fields(self) -> list:
         """The required ``ParamField``s the form was last built from."""
@@ -980,15 +1130,10 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             self._style_field_label(label, field, spaced)
         for label in self._muted_labels:
             label.setStyleSheet(f"color: {THEME.text_muted};")
-        for btn in self._promote_btns:
-            btn.setIcon(svg_icon("attach", 14))
-        for btn in self._unbind_btns:
-            btn.setIcon(svg_icon("dismiss", 12))
-        for chip in self._bound_chips.values():
-            chip.setStyleSheet(
-                f"color: {THEME.accent}; font-size: {THEME.font_small_px}px; font-weight: 600;"
-                f" border: 1px solid {THEME.accent}; border-radius: 3px; padding: 0 4px;"
-            )
+        for btn in self._link_btns.values():
+            btn.setIcon(svg_icon("hook", 14))
+        for btn in self._reset_btns.values():
+            btn.setIcon(svg_icon("revert", 12))
         # The red border on an empty required field is THEME.error, and is applied
         # outside load_schema — re-running the check is what re-derives it.
         self._validate_required_fields()
@@ -1626,11 +1771,11 @@ class _ParamPanel(ThemedMixin, QWidget):
     # (role field, state id): the call node's page moved a bot role onto the member
     # the chosen entry port leads to.
     role_requested = pyqtSignal(str, str)
-    # (state id, param key): Promote to input, and its undo, on a definition member's page.
-    promote_input_requested = pyqtSignal(str, str)
-    unbind_input_requested = pyqtSignal(str, str)
-    # (state id, exposed): the member page's Expose on call node toggle.
-    expose_node_requested = pyqtSignal(str, bool)
+    # (state id, param key): Link to subgraph input, and Unlink, on a definition node's page.
+    link_input_requested = pyqtSignal(str, str)
+    unlink_input_requested = pyqtSignal(str, str)
+    # (state id, promoted): the node page's Promote to input group / Demote button.
+    promote_node_requested = pyqtSignal(str, bool)
     # The signature page wrote into the definition document's signature.
     definition_changed = pyqtSignal()
     add_port_requested = pyqtSignal(str)  # SUBGRAPH_ENTRY / SUBGRAPH_EXIT
@@ -1814,29 +1959,27 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._conn_toggle_btn.clicked.connect(self._toggle_connections)
         self._connections_section.setVisible(False)
 
-        # Definition documents only: expose this node whole on the call node.
-        self._expose_row = QWidget()
-        _ex_layout = QHBoxLayout(self._expose_row)
-        _ex_layout.setContentsMargins(6, 4, 6, 0)
-        _ex_layout.setSpacing(6)
-        self._expose_btn = ActionButton("attach", "Expose on subgraph node", fill=False)
-        self._expose_btn.setCheckable(True)
-        self._expose_btn.setToolTip(
-            "Put every param of this node on the subgraph node, with its Record button. "
-            "Other nodes' params can then share its values."
-        )
-        self._expose_note = ThemedTextLabel("", color="text_muted")
-        self._expose_note.setWordWrap(True)
-        _ex_layout.addWidget(self._expose_btn)
-        _ex_layout.addWidget(self._expose_note, 1)
-        self._expose_row.setVisible(False)
-        self._expose_btn.clicked.connect(self._on_expose_clicked)
+        # Definition documents only: promote this node whole to an input group on the
+        # subgraph node, or demote it. A text button, so it is named for what a click
+        # does; the status is the note beside it.
+        self._promote_row = QWidget()
+        _pr_layout = QHBoxLayout(self._promote_row)
+        _pr_layout.setContentsMargins(6, 4, 6, 0)
+        _pr_layout.setSpacing(6)
+        self._promote_btn = ActionButton("chevrons_up", "Promote to input group", fill=False)
+        self._promote_note = ThemedTextLabel("", color="text_muted")
+        self._promote_note.setWordWrap(True)
+        _pr_layout.addWidget(self._promote_btn)
+        _pr_layout.addWidget(self._promote_note, 1)
+        self._promote_row.setVisible(False)
+        self._node_promoted = False
+        self._promote_btn.clicked.connect(self._on_promote_clicked)
 
         node_outer = QWidget()
         node_vbox = QVBoxLayout(node_outer)
         node_vbox.setContentsMargins(0, 0, 0, 0)
         node_vbox.setSpacing(0)
-        node_vbox.addWidget(self._expose_row)
+        node_vbox.addWidget(self._promote_row)
         node_vbox.addWidget(node_w)
         node_vbox.addWidget(self._record_row)
         node_vbox.addWidget(scroll, 1)
@@ -1944,8 +2087,8 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._edge_src_combo.currentTextChanged.connect(self._on_edge_src_changed)
         self._edge_dst_combo.currentTextChanged.connect(self._on_edge_dst_changed)
         self._flag_conditions_widget.changed.connect(self._on_flag_conditions_changed)
-        self._param_form.promote_requested.connect(self._on_form_promote_requested)
-        self._param_form.unbind_requested.connect(self._on_form_unbind_requested)
+        self._param_form.link_requested.connect(self._on_form_link_requested)
+        self._param_form.unlink_requested.connect(self._on_form_unlink_requested)
         self._region_label_edit.textChanged.connect(self._on_region_label_changed)
         self._region_color_row.changed.connect(self._on_region_color_changed)
 
@@ -2082,9 +2225,9 @@ class _ParamPanel(ThemedMixin, QWidget):
         return self._signature_page
 
     @property
-    def expose_button(self) -> ActionButton:
-        """The node page's Expose on call node toggle, shown in a definition document."""
-        return self._expose_btn
+    def promote_button(self) -> ActionButton:
+        """The node page's Promote to input group / Demote button, shown in a definition document."""
+        return self._promote_btn
 
     def show_state(
         self,
@@ -2095,15 +2238,15 @@ class _ParamPanel(ThemedMixin, QWidget):
         recovery_id: str | None = None,
         *,
         in_definition: bool = False,
-        bound_inputs: dict[str, str] | None = None,
-        exposed: bool = False,
+        links: dict[str, str] | None = None,
+        promoted_group: str | None = None,
     ) -> None:
         """Show *state*. *in_definition* is a node of a definition document open for editing.
 
-        There, each param row carries *Promote to input* -- or, for one an input
-        already sets (*bound_inputs*, key -> the input's label), a chip naming it --
-        and the page offers *Expose on call node* for the whole node. An *exposed*
-        node's rows say so and offer neither, since its panel owns them all.
+        There, each param row can be linked to a subgraph input -- its Link button shows
+        on hover -- and a row already linked (*links*, key -> what it is linked to) shows
+        a chip that unlinks it. The page offers *Promote to input group* for the whole
+        node; a node promoted to *promoted_group* has every row linked to it, locked.
         """
         self._cancel_record()
         self._state = state
@@ -2121,20 +2264,30 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._param_form.load_schema(
             schema,
             state.params or {},
-            promotable=in_definition,
-            bound=bound_inputs,
-            exposed=exposed,
+            linkable=in_definition,
+            links=links,
+            promoted_group=promoted_group,
         )
         self._rebuild_returns(state.node_type)
         self._rebuild_connections(state.id)
         self._notes_edit.blockSignals(True)
         self._notes_edit.setPlainText(state.notes or "")
         self._notes_edit.blockSignals(False)
-        self._expose_row.setVisible(in_definition and bool(schema))
-        self._expose_btn.setChecked(exposed)
-        # Named for what a click does next, so an exposed node's button says how to stop.
-        self._expose_btn.setText("Stop exposing" if exposed else "Expose on subgraph node")
-        self._expose_note.setText("Every param is on the subgraph node, with its Record button." if exposed else "")
+        self._promote_row.setVisible(in_definition and bool(schema))
+        self._node_promoted = promoted_group is not None
+        if self._node_promoted:
+            self._promote_btn.set_icon_name("chevrons_down")
+            self._promote_btn.setText("Demote")
+            self._promote_btn.setToolTip("Take this node's input group off the subgraph node")
+            self._promote_note.setText("Promoted: every param is on the subgraph node, with Record.")
+        else:
+            self._promote_btn.set_icon_name("chevrons_up")
+            self._promote_btn.setText("Promote to input group")
+            self._promote_btn.setToolTip(
+                "Put every param of this node on the subgraph node as an input group, with its Record "
+                "button. It follows the node: a param added to the node type later appears there too."
+            )
+            self._promote_note.setText("")
         self._suppress = False
         self._set_role_checks(state.id, initial_id, recovery_id)
         # A definition's roles are a formality -- every Entry is a way in -- so there
@@ -2184,18 +2337,18 @@ class _ParamPanel(ThemedMixin, QWidget):
     def showing_signature(self) -> bool:
         return self._stack.currentIndex() == _PAGE_SIGNATURE
 
-    def _on_form_promote_requested(self, key: str) -> None:
+    def _on_form_link_requested(self, key: str) -> None:
         if self._state is not None:
-            self.promote_input_requested.emit(self._state.id, key)
+            self.link_input_requested.emit(self._state.id, key)
 
-    def _on_form_unbind_requested(self, key: str) -> None:
+    def _on_form_unlink_requested(self, key: str) -> None:
         if self._state is not None:
-            self.unbind_input_requested.emit(self._state.id, key)
+            self.unlink_input_requested.emit(self._state.id, key)
 
-    def _on_expose_clicked(self, checked: bool) -> None:
+    def _on_promote_clicked(self) -> None:
         if self._suppress or self._state is None:
             return
-        self.expose_node_requested.emit(self._state.id, checked)
+        self.promote_node_requested.emit(self._state.id, not self._node_promoted)
 
     def _on_region_label_changed(self, text: str) -> None:
         if self._suppress or self._region is None:

@@ -244,15 +244,19 @@ def node_panels(defn: SubgraphDefinition | DefinitionMeta):
 
 
 def resolve_member_params(defn: SubgraphDefinition, def_state: StateModel, source: SubgraphSource) -> dict:
-    """``bound input (if set) > definition value`` for one member.
+    """``instance value (if set) > input default > definition value`` for one member.
 
-    An input -- or an exposed node's param -- whose instance value is ``None`` is unset
-    and leaves the definition's value in place; a stored empty value is a choice and
-    applies. An exposed param's value also fans out to the other members bound to it.
+    An input -- or a promoted node's param -- whose instance value is ``None`` is unset,
+    and follows the definition: the input's default, which the definition document keeps
+    equal to every param linked to it (:func:`sync_linked_values`), or for a promoted
+    node the node's own value. A stored empty value is a choice and applies. A promoted
+    param's value also fans out to the other members linked to it.
     """
     params = dict(def_state.params)
     for inp in defn.inputs:
         value = source.inputs.get(inp.name)
+        if value is None:
+            value = inp.default
         if value is None:
             continue
         for b in inp.bindings:
@@ -588,6 +592,53 @@ def compose_bot(config: BotConfig, library: SubgraphLibrary) -> tuple[BotConfig,
     result.recovery_state = graph.recovery_state or result.recovery_state
     # A failure here is a bug in this module, not a library problem: raise.
     return BotConfig.model_validate(result.model_dump()), report
+
+
+def sync_linked_values(config: BotConfig, *, edited_state: str | None = None) -> None:
+    """Keep every linked param equal to what it is linked to, in a definition document. In place.
+
+    A linked param *is* its input's default: edit either and the other follows, and so
+    does every other param linked to the same input. A param linked to a promoted node's
+    param follows that param the same way. ``edited_state`` names the node whose params
+    were just edited, and they win; otherwise (a default edited on the signature page, a
+    new link) the defaults win. An input with no default takes the first linked value.
+    """
+    meta = config.definition
+    if meta is None:
+        return
+    by_id = {s.id: s for s in config.states}
+
+    def value_of(state_id: str, key: str):
+        state = by_id.get(state_id)
+        return state.params.get(key) if state is not None else None
+
+    def spread(targets, value) -> None:
+        for b in targets:
+            state = by_id.get(b.state)
+            if state is not None and state.params.get(b.param) != value:
+                state.params[b.param] = value
+
+    for inp in meta.inputs:
+        if not inp.bindings:
+            continue
+        edited = [b for b in inp.bindings if b.state == edited_state]
+        if edited:
+            inp.default = value_of(edited[0].state, edited[0].param)
+        elif inp.default is None:
+            inp.default = value_of(inp.bindings[0].state, inp.bindings[0].param)
+        spread(inp.bindings, inp.default)
+    for panel in node_panels(meta):
+        member = panel.member or ""
+        for key, extra in panel.bindings.items():
+            edited = [b for b in extra if b.state == edited_state]
+            if edited and edited_state != member:
+                value = value_of(edited[0].state, edited[0].param)
+                state = by_id.get(member)
+                if state is not None:
+                    state.params[key] = value
+            else:
+                value = value_of(member, key)
+            spread(extra, value)
 
 
 def reresolve_member_params(config: BotConfig, region: RegionModel, defn: SubgraphDefinition) -> None:

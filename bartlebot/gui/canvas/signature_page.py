@@ -4,7 +4,7 @@ Everything a call node shows is authored here -- the Entry and Exit ports, the
 inputs and their defaults, the panels they are grouped under, and the nodes exposed
 whole. A port *is* its node on the canvas, so adding one places a node and deleting
 one deletes the node; its name is the node's label, so renaming changes nothing
-structural. An input is added from a node's own page (*Promote to subgraph input*); this page
+structural. An input is added from a node's own page (a param's *Link* button); this page
 renames, re-describes, sets the default, reorders, groups and deletes.
 """
 
@@ -69,7 +69,7 @@ class SignaturePage(ThemedMixin, QWidget):
         self._title = QLabel("Signature")
         self._intro = ThemedTextLabel(
             "What every subgraph node of this subgraph shows: its ports, its inputs and how they are grouped. "
-            "Promote a node's param on its own page to add a subgraph input.",
+            "To add a subgraph input, hover a param on a node's page and click its link button.",
             color="text_muted",
         )
         self._intro.setWordWrap(True)
@@ -215,8 +215,8 @@ class SignaturePage(ThemedMixin, QWidget):
             default.setContentsMargins(10, 0, 0, 0)
             layout.addWidget(default)
             for b in inp.bindings:
-                text = ThemedTextLabel(f"sets {labels.get(b.state, b.state)} · {b.param}", color="text_muted")
-                unbind = _icon("dismiss", "Stop this input setting that param")
+                text = ThemedTextLabel(f"linked to {labels.get(b.state, b.state)} · {b.param}", color="text_muted")
+                unbind = _icon("unhook", "Unlink that param from this input")
                 unbind.clicked.connect(lambda _=False, n=inp.name, st=b.state, k=b.param: self._unbind(n, st, k))
                 layout.addWidget(self._row(text, unbind, indent=16))
 
@@ -229,7 +229,7 @@ class SignaturePage(ThemedMixin, QWidget):
         for i, panel in enumerate(meta.panels):
             if panel.kind == "node":
                 title: QWidget = ThemedTextLabel(
-                    f"⧉ {labels.get(panel.member or '', panel.member)} (node, exposed whole)", color="text"
+                    f"⧉ {labels.get(panel.member or '', panel.member)} (promoted node)", color="text"
                 )
                 title.setToolTip("Every param of this node is on the subgraph node, with its Record button")
             else:
@@ -246,7 +246,7 @@ class SignaturePage(ThemedMixin, QWidget):
             up.clicked.connect(lambda _=False, p=panel.id: self._move_panel(p, -1))
             down.clicked.connect(lambda _=False, p=panel.id: self._move_panel(p, 1))
             if panel.kind == "node":
-                remove = _icon("dismiss", "Stop exposing this node on the subgraph node")
+                remove = _icon("chevrons_down", "Demote this node: take its input group off the subgraph node")
             else:
                 remove = _icon("trash", "Delete this group; its inputs stay, in no group", danger=True)
             remove.clicked.connect(lambda _=False, p=panel.id: self._delete_panel(p))
@@ -256,7 +256,7 @@ class SignaturePage(ThemedMixin, QWidget):
             for key, extra in panel.bindings.items():
                 for b in extra:
                     text = ThemedTextLabel(
-                        f"its {key} also sets {labels.get(b.state, b.state)} · {b.param}", color="text_muted"
+                        f"its {key} is linked to {labels.get(b.state, b.state)} · {b.param}", color="text_muted"
                     )
                     unbind = _icon("dismiss", "Stop sharing this value")
                     unbind.clicked.connect(
@@ -283,7 +283,7 @@ class SignaturePage(ThemedMixin, QWidget):
         add.setToolTip(
             "Move an input into this group"
             if others
-            else "Every input is in this group already; promote a param to add one"
+            else "Every input is in this group already; link a param to add one"
         )
         add.clicked.connect(lambda _=False, p=panel.id, b=add: self._offer_inputs(p, b))
         layout.addWidget(self._row(add, indent=16, stretch_first=False))

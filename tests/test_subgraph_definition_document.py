@@ -1,7 +1,7 @@
 """Stage 5 of the subgraph-calls plan: a definition is edited as a document of its own.
 
-The canvas half: a definition document's signature page, Promote to input, Expose on
-call node, its ports, and the handoff that sets a document aside and puts it back.
+The canvas half: a definition document's signature page, Link to subgraph input, Promote to
+input group, its ports, and the handoff that sets a document aside and puts it back.
 The controller half: the document stack -- open a definition from a bot, save it to
 the library as its next version, and go back to a bot recomposed from it. Built on
 the synthetic "sync players" fixture from ``test_subgraphs`` and the controller
@@ -76,7 +76,7 @@ def test_a_port_shows_the_signature_and_a_node_shows_its_page(doc):
     assert doc.param_panel.showing_signature
     doc.select_state("wisps")
     assert doc.param_panel.shown_state.id == "wisps"
-    assert doc.param_panel.expose_button.isVisibleTo(doc.param_panel)
+    assert doc.param_panel.promote_button.isVisibleTo(doc.param_panel)
 
 
 def test_a_definition_cannot_run_or_leave_edit_mode(doc):
@@ -95,44 +95,50 @@ def test_done_goes_back_and_save_and_done_saves_then_goes_back(doc):
     assert saved == [True, False]
 
 
-def test_promote_to_a_new_input_binds_it_and_undoes(doc):
-    assert doc.promote_param("wisps", "timeout", new_input=SubgraphInput(name="wait", type="float", default=30.0))
+def test_linking_to_a_new_input_and_undoing_it(doc):
+    assert doc.link_param("wisps", "timeout", new_input=SubgraphInput(name="wait", type="float", default=30.0))
     wait = _input(doc, "wait")
     assert [(b.state, b.param) for b in wait.bindings] == [("wisps", "timeout")]
     doc.select_state("wisps")
-    assert doc.param_panel.param_form.bound_chip("timeout") is not None
+    assert doc.param_panel.param_form.link_chip("timeout") is not None
+    assert doc.param_panel.param_form.link_button("timeout") is None
     doc.undo()
     assert not any(i.name == "wait" for i in _meta(doc).inputs)
 
 
-def test_promote_to_an_existing_input(doc):
-    assert doc.promote_param("tp_a", "zone", existing="hub")
+def test_linking_to_an_existing_input_takes_its_default(doc):
+    _input(doc, "hub").default = "Mooshu/Hub"
+    assert doc.link_param("tp_a", "zone", existing="hub")
     assert ("tp_a", "zone") in {(b.state, b.param) for b in _input(doc, "hub").bindings}
+    assert next(s for s in doc.config.states if s.id == "tp_a").params["zone"] == "Mooshu/Hub"
 
 
-def test_unbind_stops_the_input_setting_the_param(doc):
-    assert doc.unbind_param("tp_b", "zone")
+def test_unlink_stops_the_input_setting_the_param(doc):
+    assert doc.unlink_param("tp_b", "zone")
     assert ("tp_b", "zone") not in {(b.state, b.param) for b in _input(doc, "hub").bindings}
-    assert not doc.unbind_param("tp_b", "zone"), "nothing left to unbind"
+    assert not doc.unlink_param("tp_b", "zone"), "nothing left to unlink"
 
 
-def test_exposing_a_node_makes_a_panel_and_takes_its_params_off_inputs(doc):
-    assert doc.set_node_exposed("hub", True)
+def test_promoting_a_node_makes_an_input_group_and_locks_its_links(doc):
+    assert doc.set_node_promoted("hub", True)
     panel = next(p for p in _meta(doc).panels if p.kind == "node")
     assert panel.member == "hub"
     assert ("hub", "zone") not in {(b.state, b.param) for b in _input(doc, "hub").bindings}
     doc.select_state("hub")
-    assert doc.param_panel.param_form.bound_chip("zone").text() == "exposed"
-    assert doc.set_node_exposed("hub", False)
+    chip = doc.param_panel.param_form.link_chip("zone")
+    assert chip.locked and chip.text() == panel.label
+    assert not doc.unlink_param("hub", "zone"), "a promoted node's param is its group's"
+    assert not doc.link_param("hub", "zone", existing="world")
+    assert doc.set_node_promoted("hub", False)
     assert not [p for p in _meta(doc).panels if p.kind == "node"]
 
 
-def test_another_param_can_share_an_exposed_value(doc):
-    doc.set_node_exposed("hub", True)
+def test_another_param_can_link_to_a_promoted_nodes_param(doc):
+    doc.set_node_promoted("hub", True)
     panel = next(p for p in _meta(doc).panels if p.kind == "node")
     offered = doc._shareable_params("tp_a", "zone")
     assert (panel.id, "zone") in {(pid, key) for _label, pid, key in offered}
-    assert doc.promote_param("tp_a", "zone", shared=(panel.id, "zone"))
+    assert doc.link_param("tp_a", "zone", shared=(panel.id, "zone"))
     assert [(b.state, b.param) for b in panel.bindings["zone"]] == [("tp_a", "zone")]
 
 
@@ -154,7 +160,7 @@ def test_a_broken_signature_is_an_error(doc):
 def test_take_and_restore_keep_the_document_and_its_undo(doc, qapp):
     from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
 
-    doc.promote_param("tp_a", "zone", existing="hub")
+    doc.link_param("tp_a", "zone", existing="hub")
     before = doc.config
     taken = doc.take_document()
     assert not doc.can_undo(), "the next document starts a history of its own"
@@ -241,7 +247,7 @@ def test_back_with_unsaved_changes_can_discard(harness, library, monkeypatch):
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Discard)
     canvas = _canvas(harness)
     canvas.open_definition_of(REGION)
-    canvas.promote_param("tp_a", "zone", existing="hub")
+    canvas.link_param("tp_a", "zone", existing="hub")
     assert harness._has_unsaved_changes
     canvas._done_btn.click()
     assert not canvas.is_definition
@@ -253,7 +259,7 @@ def test_back_can_be_cancelled(harness, monkeypatch):
     monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Cancel)
     canvas = _canvas(harness)
     canvas.open_definition_of(REGION)
-    canvas.promote_param("tp_a", "zone", existing="hub")
+    canvas.link_param("tp_a", "zone", existing="hub")
     assert not harness._definition_back()
     assert canvas.is_definition
 
@@ -309,19 +315,21 @@ def test_the_library_lists_subgraphs_and_opens_one(qapp, library):
 
 def test_undo_keeps_the_node_selected(doc):
     doc.select_state("wisps")
-    doc.promote_param("wisps", "timeout", new_input=SubgraphInput(name="wait", type="float"))
+    doc.link_param("wisps", "timeout", new_input=SubgraphInput(name="wait", type="float"))
     doc.undo()
     assert doc.param_panel.shown_state is not None and doc.param_panel.shown_state.id == "wisps"
     doc.redo()
     assert doc.param_panel.shown_state is not None and doc.param_panel.shown_state.id == "wisps"
 
 
-def test_the_expose_button_says_how_to_stop(doc):
+def test_the_promote_button_turns_into_demote(doc):
     doc.select_state("hub")
-    button = doc.param_panel.expose_button
-    assert button.text() == "Expose on subgraph node"
-    doc.set_node_exposed("hub", True)
-    assert button.text() == "Stop exposing"
+    button = doc.param_panel.promote_button
+    assert button.text() == "Promote to input group"
+    doc.set_node_promoted("hub", True)
+    assert button.text() == "Demote"
+    button.click()
+    assert not [p for p in _meta(doc).panels if p.kind == "node"]
 
 
 def test_an_input_moves_into_and_out_of_a_group(doc):
@@ -338,9 +346,9 @@ def test_an_input_moves_into_and_out_of_a_group(doc):
 
 
 def test_a_new_input_can_be_promoted_straight_into_a_group(qapp):
-    from bartlebot.gui.canvas.subgraph_widgets import PromoteInputDialog  # noqa: PLC0415
+    from bartlebot.gui.canvas.subgraph_widgets import LinkInputDialog  # noqa: PLC0415
 
-    dlg = PromoteInputDialog(
+    dlg = LinkInputDialog(
         [], param_key="timeout", param_type="float", param_label="Timeout", current_value=30.0, groups=[("g1", "Waits")]
     )
     dlg.set_new_input("wait")
@@ -367,3 +375,59 @@ def test_deleting_a_node_takes_the_inputs_only_it_set(doc):
     doc.undo()
     doc.undo()
     assert _input(doc, "world").bindings
+
+
+def test_promoting_over_existing_links_asks_first(doc, monkeypatch):
+    answers = [QMessageBox.StandardButton.Cancel, QMessageBox.StandardButton.Yes]
+    asked = []
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: asked.append(a) or answers.pop(0))
+    doc.select_state("hub")
+    doc.param_panel.promote_button.click()
+    assert len(asked) == 1 and "Hub" in asked[0][2]
+    assert not [p for p in _meta(doc).panels if p.kind == "node"]
+    doc.param_panel.promote_button.click()
+    assert [p.member for p in _meta(doc).panels if p.kind == "node"] == ["hub"]
+
+
+def test_the_link_button_shows_only_on_hover(doc, qapp):
+    from PyQt6.QtCore import QEvent  # noqa: PLC0415
+
+    doc.select_state("wisps")
+    form = doc.param_panel.param_form
+    row = form.hover_row("timeout")
+    assert not row.link_shown
+    qapp.sendEvent(row, QEvent(QEvent.Type.Enter))
+    assert row.link_shown
+    qapp.sendEvent(row, QEvent(QEvent.Type.Leave))
+    assert not row.link_shown
+
+
+def test_a_linked_chip_turns_into_unlink_on_hover_but_a_promoted_one_does_not(doc, qapp):
+    from PyQt6.QtCore import QEvent  # noqa: PLC0415
+
+    doc.select_state("tp_b")
+    chip = doc.param_panel.param_form.link_chip("zone")
+    assert chip.text() == "Hub"
+    qapp.sendEvent(chip, QEvent(QEvent.Type.Enter))
+    assert chip.armed and chip.text() == "Unlink"
+    chip.click()
+    assert ("tp_b", "zone") not in {(b.state, b.param) for b in _input(doc, "hub").bindings}
+
+    doc.set_node_promoted("go_to_world", True)
+    doc.select_state("go_to_world")
+    locked = doc.param_panel.param_form.link_chip("world")
+    qapp.sendEvent(locked, QEvent(QEvent.Type.Enter))
+    assert not locked.armed
+
+
+def test_editing_a_linked_param_edits_its_input_and_the_other_linked_params(doc):
+    doc.select_state("tp_b")
+    doc.param_panel.param_form.set_str("zone", "Mooshu/Hub")
+    assert _input(doc, "hub").default == "Mooshu/Hub"
+    assert next(s for s in doc.config.states if s.id == "hub").params["zone"] == "Mooshu/Hub"
+
+
+def test_editing_an_inputs_default_edits_every_linked_param(doc):
+    _input(doc, "world").default = "Krokotopia"
+    doc._on_definition_changed()
+    assert next(s for s in doc.config.states if s.id == "go_to_world").params["world"] == "Krokotopia"

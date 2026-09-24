@@ -978,7 +978,7 @@ class EditScene(QGraphicsScene):
 
         ``pos`` is the item position the other insert paths use (top-left of a node),
         so the anchor is stored in the model convention: left edge, vertical centre.
-        Inputs are prefilled from their defaults. With ``into_region`` the members also
+        Inputs start unset, following the definition's defaults. With ``into_region`` the members also
         join that (plain) region.
 
         The scene is rebuilt from the config, as paste does, since a call node and its
@@ -995,7 +995,8 @@ class EditScene(QGraphicsScene):
         source = SubgraphSource(
             subgraph_id=subgraph_id,
             version=defn.version,
-            inputs={i.name: i.default for i in defn.inputs if i.default is not None},
+            # Nothing set: every input follows the definition's default until changed here.
+            inputs={},
             anchor={"x": pos.x(), "y": pos.y() + NODE_H / 2},
         )
         try:
