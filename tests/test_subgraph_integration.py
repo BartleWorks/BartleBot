@@ -54,6 +54,11 @@ class ControllerHarness:
             "_save_definition",
             "_definition_back",
             "_leave_definition",
+            "_refused_for_errors",
+            "_save_definition_as",
+            "_revert_definition",
+            "_reshow_definition",
+            "_back_to_document",
         ):
             setattr(self, name, getattr(cls, name).__get__(self))
         self._subgraph_library = library

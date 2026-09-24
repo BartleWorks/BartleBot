@@ -686,12 +686,41 @@ default: `subgraphs.sync_linked_values` keeps them equal both ways, and a subgra
 follows the default until its own page changes the value (Reset goes back). A row shows
 status and action in one control: an unlinked row's Link button appears only on hover or
 focus, and a linked row's chip reads as the link and turns into Unlink under the pointer --
-except on a promoted node, whose chips are locked. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Built-in / Built-in (modified) / User" (`subgraph_store.source_label`); the code keeps `CallNodeItem` and `SubgraphPanel`. The **definition crumb**
-(`canvas/subgraph_widgets.DefinitionCrumb`) is the canvas's, pinned under the focus
-crumb; its Save to library and its way back are the definition document's only exits,
-along with Bar B's Done and Save & Done, which mean the same there. In a definition, Bar
-B shows the version read-only, where it comes from and how many bots use it, and no tags.
+except on a promoted node, whose chips are locked. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Built-in / Built-in (modified) / User" (`subgraph_store.source_label`); the code keeps `CallNodeItem` and `SubgraphPanel`. In a definition, Bar B shows the
+version read-only, where it comes from and how many bots use it, and no tags.
 `docs/SUBGRAPHS.md` has the flow.
+
+## One crumb bar, and the levels behind it
+
+`canvas/subgraph_widgets.CrumbBar` is the one overlay that says where the canvas is, in
+three states (`CrumbMode`): **Focus Mode** on a region of a bot (the region's colour, a
+single-line `ViewFrame`, "Focus Mode — <region>"), a subgraph node's **body viewed in Run
+mode** (read-only), and a **definition** open as a document. The last two are a path in
+the accent with the link glyph and a double-line frame, which the call node's side bars
+echo: double means shared. The path is the documents under this one (the controller
+hands them over in `set_definition_context`), this one, then each *level* in.
+
+`BotCanvas._levels` is those levels: a region focused (either mode) or an instance
+opened (Run mode only). Opening one sets `EditScene.set_expanded`, which draws that
+instance's members as nodes of their own at their composed positions; everything else
+is Focus Mode's visibility filter over them, and the run highlight lands on them by id
+with nothing added. Every scene rebuild goes through `_after_scene_rebuild`, which prunes
+levels an undo or a recompose took away and re-applies the filter — a rebuild that
+skips it leaves hidden items visible under a crumb that says otherwise.
+
+Stepping out: the close button and Alt+Left go one level, out of a definition when
+nothing is focused. **Esc dismisses before it leaves** — the search bar, then a level,
+then the selection, and only then the definition — so a stray Esc never lands on the
+Save / Discard prompt. An earlier segment steps straight back to it, prompting at each
+definition closed on the way (`AppController._back_to_document`).
+
+A definition's crumb carries **Save**, **Save as…** and, only for a Built-in
+(modified), **Revert**. The labels are short on purpose: the bar sits over the graph.
+Save is `PRIMARY` with `on_accent=True`, which swaps its fill and text, because an
+accent-filled button on an accent bar drew weaker than the tertiary ones beside it.
+Save as makes the document the copy, at a new id and version 1, and Revert deletes the
+user copy; both reopen the document rather than editing it, since its undo history
+belongs to a definition with a different id or content.
 
 Bar B is a three-column grid grouped by *subject*: everything about the bot on the
 left, the run controls in the middle with the clock and the run state either side of

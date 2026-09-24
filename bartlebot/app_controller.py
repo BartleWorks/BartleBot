@@ -227,6 +227,9 @@ class AppController(QObject):
         w.bot_canvas.open_definition_requested.connect(self._open_definition)
         w.bot_canvas.definition_back_requested.connect(self._definition_back)
         w.bot_canvas.definition_save_requested.connect(self._on_definition_save_requested)
+        w.bot_canvas.definition_save_as_requested.connect(lambda: self._save_definition_as())
+        w.bot_canvas.definition_revert_requested.connect(lambda: self._revert_definition())
+        w.bot_canvas.document_back_requested.connect(self._back_to_document)
         w.bot_canvas.set_clients_getter(lambda: self._client_manager.clients)
         w.bot_canvas.set_subgraph_library(self._subgraph_library)
         w.left_sidebar.set_clients_getter(lambda: self._client_manager.clients)
@@ -667,7 +670,7 @@ class AppController(QObject):
             )
             return False
         self._push_current()
-        self._show_definition(definition_to_config(defn), parent=None, unsaved=False)
+        self._show_definition(definition_to_config(defn), unsaved=False)
         logger.info("Opened subgraph '%s' v%d as a document", defn.name, defn.version)
         return True
 
@@ -682,7 +685,7 @@ class AppController(QObject):
         if doc is not None:
             self._doc_stack.append(_DocumentFrame(doc, self._last_save_path, self._has_unsaved_changes))
 
-    def _show_definition(self, config: BotConfig, *, parent: str | None, unsaved: bool) -> None:
+    def _show_definition(self, config: BotConfig, *, unsaved: bool) -> None:
         canvas = self._window.bot_canvas
         config, report = self._compose(config)
         self._loaded_config = config
@@ -691,7 +694,7 @@ class AppController(QObject):
         canvas.setup(config)
         canvas.set_compose_report(report)
         canvas.enter_edit_mode()
-        self._refresh_definition_context(parent)
+        self._refresh_definition_context()
         # The sidebars describe a bot: its options, combat, drops. A definition has none.
         self._window.left_sidebar.set_config(None)
         self._window.right_sidebar.set_config(None)
@@ -700,17 +703,19 @@ class AppController(QObject):
         self._window.set_close_enabled(True)
         self._window.set_start_enabled(False)
 
-    def _refresh_definition_context(self, parent: str | None = None) -> None:
+    def _refresh_definition_context(self) -> None:
+        """Hand the canvas the crumb's path -- every document under this one -- and what its header says."""
         config = self._loaded_config
         if config is None or config.definition is None:
             return
-        if parent is None and self._doc_stack:
-            parent = self._doc_stack[-1].doc.config.name
+        path = [frame.doc.config.name for frame in self._doc_stack]
         origin = self._subgraph_library.origin(config.definition.id)
         sm = SettingsManager.instance()
         bots_dir = _resolve_bots_dir(sm.get("canvas", "bot_library_path", default="bots"), project_root())
         used_by = count_subgraph_uses(bots_dir).get(config.definition.id, 0)
-        self._window.bot_canvas.set_definition_context(parent, origin=source_label(origin), used_by=used_by)
+        self._window.bot_canvas.set_definition_context(
+            path, origin=source_label(origin), used_by=used_by, can_revert=origin == Origin.SHIPPED_OVERRIDE
+        )
 
     def _on_definition_save_requested(self, then_back: bool) -> None:
         if self._save_definition() and then_back:
@@ -727,14 +732,7 @@ class AppController(QObject):
         config = self._loaded_config
         if config is None or config.definition is None:
             return False
-        canvas = self._window.bot_canvas
-        errors = canvas.validation_errors()
-        if errors:
-            listed = "\n".join(f"\u2022 {e}" for e in errors[:12])
-            more = f"\n\u2026and {len(errors) - 12} more" if len(errors) > 12 else ""
-            QMessageBox.critical(
-                self._window, "Save to Library", f"Fix these before saving '{config.name}':\n\n{listed}{more}"
-            )
+        if self._refused_for_errors(config, "Save to Library"):
             return False
         library = self._subgraph_library
         library.reload()
@@ -768,6 +766,113 @@ class AppController(QObject):
         self._delete_autosave(stem=self._autosave_stem())
         self._refresh_definition_context()
         logger.info("Saved subgraph '%s' version %d to the library", defn.name, version)
+        return True
+
+    def _refused_for_errors(self, config: BotConfig, title: str) -> bool:
+        """Say what blocks saving the open definition, if anything does. True when it is refused."""
+        errors = self._window.bot_canvas.validation_errors()
+        if not errors:
+            return False
+        listed = "\n".join(f"\u2022 {e}" for e in errors[:12])
+        more = f"\n\u2026and {len(errors) - 12} more" if len(errors) > 12 else ""
+        QMessageBox.critical(self._window, title, f"Fix these before saving '{config.name}':\n\n{listed}{more}")
+        return True
+
+    def _save_definition_as(self, name: str | None = None, description: str | None = None) -> bool:
+        """Save the open definition as a new one, and go on editing the new one. False when refused or cancelled.
+
+        Save As, as for a file: the copy gets its own id at version 1, and the
+        document becomes the copy. The bots linking the original -- the one this was
+        opened from included -- keep linking it, since the copy is a new thing nothing
+        uses yet. Asks for a name and description unless given.
+        """
+        config = self._loaded_config
+        if config is None or config.definition is None:
+            return False
+        if self._refused_for_errors(config, "Save as New Subgraph"):
+            return False
+        if name is None:
+            from bartlebot.gui.canvas.subgraph_widgets import SubgraphMetaDialog  # noqa: PLC0415
+
+            dlg = SubgraphMetaDialog(
+                self._window,
+                name=f"{config.name} (copy)",
+                description=config.description or "",
+                title="Save as New Subgraph",
+            )
+            if not dlg.exec():
+                return False
+            name, description = dlg.name, dlg.description
+        try:
+            defn = config_to_definition(config, version=1)
+        except ValueError as exc:
+            QMessageBox.critical(self._window, "Save as New Subgraph", str(exc))
+            return False
+        defn = defn.model_copy(update={"id": str(uuid4()), "name": name, "description": description})
+        try:
+            self._subgraph_library.save(defn)
+        except Exception as exc:
+            QMessageBox.critical(self._window, "Save as New Subgraph", f"Could not save '{name}':\n\n{exc}")
+            return False
+        # The unsaved edits went into the copy; the original's recovery file has nothing left to recover.
+        self._delete_autosave(stem=self._autosave_stem())
+        self._reshow_definition(defn)
+        logger.info("Saved subgraph '%s' as a new subgraph", defn.name)
+        return True
+
+    def _revert_definition(self) -> bool:
+        """Discard the user's copy of a built-in definition, and show the built-in one. False when cancelled.
+
+        Deleting the user copy is the revert (:mod:`bartlebot.store_roots`). Every bot
+        linking it follows the built-in one from its next compose, and unsaved edits
+        in the document go with the copy, so it asks first.
+        """
+        config = self._loaded_config
+        if config is None or config.definition is None:
+            return False
+        sid = config.definition.id
+        library = self._subgraph_library
+        if library.origin(sid) != Origin.SHIPPED_OVERRIDE:
+            return False
+        reply = QMessageBox.question(
+            self._window,
+            "Revert to Built-in",
+            f"Discard your modified copy of '{config.name}' and go back to the built-in one?\n\n"
+            "Every bot linking it uses the built-in one from now on, and this can't be undone.",
+            QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        if reply != QMessageBox.StandardButton.Discard:
+            return False
+        library.delete(sid)
+        shipped = library.get(sid)
+        if shipped is None:
+            QMessageBox.critical(
+                self._window, "Revert to Built-in", f"The built-in '{config.name}' could not be loaded."
+            )
+            return False
+        self._delete_autosave(stem=self._autosave_stem())
+        self._reshow_definition(shipped)
+        logger.info("Reverted subgraph '%s' to the built-in version %d", shipped.name, shipped.version)
+        return True
+
+    def _reshow_definition(self, defn) -> None:
+        """Put ``defn`` in place of the open definition, saved, keeping the camera.
+
+        A fresh document rather than an edit to this one: its undo history belongs to
+        a definition with a different id or content, and undoing into it would save
+        over the wrong file.
+        """
+        canvas = self._window.bot_canvas
+        camera = canvas.view.camera_state()
+        self._show_definition(definition_to_config(defn), unsaved=False)
+        canvas.view.restore_camera(camera)
+
+    def _back_to_document(self, depth: int) -> bool:
+        """Close definitions until ``depth`` documents sit under the open one, asking at each. False if one was cancelled."""
+        while len(self._doc_stack) > depth and self._loaded_config is not None and self._loaded_config.is_definition:
+            if not self._definition_back():
+                return False
         return True
 
     def _definition_back(self) -> bool:
@@ -1687,7 +1792,7 @@ class AppController(QObject):
                 continue
             if config.is_definition:
                 self._push_current()
-                self._show_definition(config, parent=None, unsaved=True)
+                self._show_definition(config, unsaved=True)
                 continue
             config, report = self._compose(config)
             self._loaded_config = config

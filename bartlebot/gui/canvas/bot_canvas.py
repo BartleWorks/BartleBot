@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
 
-from PyQt6.QtCore import QEvent, QSize, Qt, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, QRectF, QSize, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import (
     QColor,
     QCursor,
@@ -69,7 +69,14 @@ from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel
-from bartlebot.gui.canvas.subgraph_widgets import DefinitionCrumb, LinkInputDialog, SubgraphMetaDialog
+from bartlebot.gui.canvas.subgraph_widgets import (
+    Crumb,
+    CrumbBar,
+    CrumbMode,
+    LinkInputDialog,
+    SubgraphMetaDialog,
+    ViewFrame,
+)
 from bartlebot.gui.canvas.undo_manager import UndoManager
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
@@ -200,6 +207,19 @@ class CanvasDocument:
     camera: tuple | None
     report: ComposeReport
     mode: BotMode
+
+
+@dataclass
+class _ViewLevel:
+    """One step in from the open document: a region focused, or a subgraph node's body viewed.
+
+    ``kind`` is ``"region"`` (Focus Mode, either mode) or ``"instance"`` (Run mode
+    only). ``camera`` is where the view was before this step, put back on the way out.
+    """
+
+    kind: str
+    region_id: str
+    camera: tuple
 
 
 # ---------------------------------------------------------------------------
@@ -1021,6 +1041,12 @@ class BotCanvas(QWidget):
     # A definition document's way out, and its save: (then go back).
     definition_back_requested = pyqtSignal()
     definition_save_requested = pyqtSignal(bool)
+    # A crumb segment naming a document further down: (how many documents stay under it).
+    document_back_requested = pyqtSignal(int)
+    # The definition document's other two verbs: save a copy as a new definition, and
+    # discard a modified built-in for the shipped one.
+    definition_save_as_requested = pyqtSignal()
+    definition_revert_requested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1059,11 +1085,16 @@ class BotCanvas(QWidget):
         self._tab_idx: int = 0
         self._search_matches: list[str] = []
         self._search_match_idx: int = 0
-        self._focus_region_id: str | None = None
-        # Camera to put back when focus mode exits; None when not focused.
-        self._focus_camera: tuple | None = None
-        # Region colour the focus overlays are currently painted in, so a theme change
-        # can repaint them without the caller having to know which region is focused.
+        # Each step in from the open document, innermost last: a region focused, or in
+        # Run mode a subgraph node's body. The crumb bar's path is these, after the
+        # documents under this one.
+        self._levels: list[_ViewLevel] = []
+        # The names of the documents under this one, outermost first: a definition
+        # opened from a bot has the bot's. Handed in by the controller.
+        self._doc_path: list[str] = []
+        # Whether the open definition is a modified built-in, which the crumb offers to revert.
+        self._can_revert = False
+        # Region colour the focus overlays are painted in, or None if never focused.
         self._focus_color: QColor | None = None
 
         self._undo_mgr = UndoManager()
@@ -1210,9 +1241,15 @@ class BotCanvas(QWidget):
         # pill only exists where the user happens to be looking; a frame is in
         # peripheral vision wherever they look and however far they scroll, which is
         # what the pill on its own failed to do.
-        self._focus_frame = QWidget(self._view)
-        self._focus_frame.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        self._focus_frame.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        #
+        # A subgraph -- its body viewed in Run mode, or its definition open -- gets the
+        # double line instead, in the accent: the call node's side bars echo it, so
+        # "double means shared" holds everywhere. A region focused inside a definition
+        # draws its single line just inside the double one.
+        self._shared_frame = ViewFrame(self._view)
+        self._shared_frame.set_shared()
+        self._shared_frame.setVisible(False)
+        self._focus_frame = ViewFrame(self._view)
         self._focus_frame.setVisible(False)
 
         self._validation_banner = QWidget(self._view)
@@ -1249,33 +1286,16 @@ class BotCanvas(QWidget):
         self._search_bar.prev_match.connect(self._on_search_prev)
         self._search_bar.closed.connect(self._close_search)
 
-        # ── Focus breadcrumb overlay — top-left of the graph view ────
-        self._focus_crumb = QWidget(self._view)
-        self._focus_crumb.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self._focus_crumb.setStyleSheet(
-            f"QWidget {{ background-color: {THEME.surface}; border: 1px solid {THEME.border}; border-radius: 6px; }}"
-            f"QLabel {{ border: none; color: {THEME.text}; font-size: {THEME.font_body_px}px; padding: 0; }}"
-            f"QPushButton {{ border: none; background: transparent; color: {THEME.text_muted}; font-size: {THEME.font_body_px + 2}px; }}"
-            f"QPushButton:hover {{ color: {THEME.text}; }}"
-        )
-        self._focus_crumb_label = QLabel("Focus Mode")
-        self._focus_hint_label = QLabel("Esc to exit")
-        _close_focus_btn = IconButton("dismiss", tooltip="Exit Focus Mode", size=22, icon_size=12)
-        _close_focus_btn.clicked.connect(self.exit_focus_mode)
-        _crumb_row = QHBoxLayout(self._focus_crumb)
-        _crumb_row.setContentsMargins(8, 4, 6, 4)
-        _crumb_row.setSpacing(6)
-        _crumb_row.addWidget(self._focus_crumb_label)
-        _crumb_row.addWidget(self._focus_hint_label)
-        _crumb_row.addWidget(_close_focus_btn)
-        self._focus_crumb.adjustSize()
-        self._focus_crumb.setVisible(False)
-
-        # ── Definition crumb — the way back out of a definition document ─
-        self._definition_crumb = DefinitionCrumb(self._view)
-        self._definition_crumb.save_requested.connect(lambda: self.definition_save_requested.emit(False))
-        self._definition_crumb.back_requested.connect(self.definition_back_requested)
-        self._definition_crumb.setVisible(False)
+        # ── Crumb bar — top-left of the graph view ───────────────────
+        # Where the canvas is, and the way back out: Focus Mode on a region, a
+        # subgraph node's body in Run mode, or a definition open as a document.
+        self._crumb = CrumbBar(self._view)
+        self._crumb.segment_clicked.connect(self._on_crumb_segment_clicked)
+        self._crumb.close_requested.connect(self.step_back)
+        self._crumb.save_requested.connect(lambda: self.definition_save_requested.emit(False))
+        self._crumb.save_as_requested.connect(self.definition_save_as_requested)
+        self._crumb.revert_requested.connect(self.definition_revert_requested)
+        self._crumb.setVisible(False)
 
         # ── Keyboard shortcuts ────────────────────────────────────────
         fit_shortcut = QShortcut(QKeySequence("Ctrl+0"), self)
@@ -1283,6 +1303,12 @@ class BotCanvas(QWidget):
 
         search_shortcut = QShortcut(QKeySequence("Ctrl+F"), self)
         search_shortcut.activated.connect(self._show_search_bar)
+
+        # Alt+Left steps out one level, as a browser's Back does: out of a focused
+        # region or a subgraph node's body, else out of a definition document.
+        back_shortcut = QShortcut(QKeySequence("Alt+Left"), self)
+        back_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
+        back_shortcut.activated.connect(self.step_back)
 
         failure_edges_shortcut = QShortcut(QKeySequence("F"), self._view)
         failure_edges_shortcut.setContext(Qt.ShortcutContext.WidgetWithChildrenShortcut)
@@ -1331,6 +1357,7 @@ class BotCanvas(QWidget):
         self._scene.open_definition_requested.connect(self.open_definition_of)
         self._scene.selectionChanged.connect(self._on_selection_changed)
         self._scene.focus_region_requested.connect(self.enter_focus_mode)
+        self._scene.view_instance_requested.connect(self.view_instance)
 
         # ── Placeholder — shown until the first bot is loaded ────────
         self._placeholder = _BotLibraryPanel(self)
@@ -1387,9 +1414,10 @@ class BotCanvas(QWidget):
         self._scene.set_grid_style(sm.get("canvas", "grid_style", default="dots"))
         self._scene.refresh_region_states(report)
         self._apply_failure_edge_visibility()
-        self._definition_crumb.setVisible(config.is_definition)
         if not config.is_definition:
-            self._definition_crumb.set_path(None, "")
+            self._doc_path = []
+            self._can_revert = False
+        self._refresh_crumb()
         self._show_default_page()
         self._reposition_banner()
         self._edit_btn.setEnabled(True)
@@ -1408,6 +1436,8 @@ class BotCanvas(QWidget):
         """Set the open document aside, with its undo history and camera. The canvas is left to be ``setup`` again."""
         if self._config is None:
             return None
+        # A focused region is not kept: the camera set aside is the one from before it.
+        self.exit_focus_mode()
         self._undo_mgr.flush_debounce()
         self._scene.flush_positions()
         doc = CanvasDocument(
@@ -1431,11 +1461,20 @@ class BotCanvas(QWidget):
         self._apply_mode(doc.mode)
         self.mode_changed.emit(doc.mode)
 
-    def set_definition_context(self, parent: str | None, *, origin: str = "", used_by: int = 0) -> None:
-        """Name where the open definition was opened from, and what the header says about it."""
+    def set_definition_context(
+        self, path: list[str], *, origin: str = "", used_by: int = 0, can_revert: bool = False
+    ) -> None:
+        """Name the documents under the open definition, and what the header says about it.
+
+        ``path`` is their names, outermost first -- the crumb's segments before this
+        one. ``can_revert`` says it is a modified built-in, which the crumb offers to
+        put back.
+        """
         if self._config is None or not self._config.is_definition:
             return
-        self._definition_crumb.set_path(parent, self._config.name, "")
+        self._doc_path = list(path)
+        self._can_revert = can_revert
+        self._refresh_crumb()
         # Re-read, since a save moved the version the header's pill shows.
         self._toolbar.set_config(self._config)
         self._toolbar.set_editable(self._mode == BotMode.EDIT)
@@ -1443,8 +1482,8 @@ class BotCanvas(QWidget):
         self._reposition_banner()
 
     @property
-    def definition_crumb(self) -> DefinitionCrumb:
-        return self._definition_crumb
+    def crumb_bar(self) -> CrumbBar:
+        return self._crumb
 
     def open_definition_of(self, region_id: str) -> None:
         """Ask for the definition a call node links to be opened as a document."""
@@ -1468,11 +1507,12 @@ class BotCanvas(QWidget):
         self._refresh_undo_actions()
         self.exit_focus_mode()
         self._close_search()
-        self._definition_crumb.setVisible(False)
+        self._doc_path = []
         self._scene.teardown()
         self._compose_report = ComposeReport()
         self._update_validation_badge()
         self._config = None
+        self._refresh_crumb()
         self._toolbar.set_config(None)
         self._active_state = None
         self._edit_btn.setEnabled(False)
@@ -1611,8 +1651,7 @@ class BotCanvas(QWidget):
             elif event.type() == QEvent.Type.KeyPress:
                 key = event.key()
                 mods = event.modifiers()
-                if key == Qt.Key.Key_Escape and self._focus_region_id is not None:
-                    self.exit_focus_mode()
+                if key == Qt.Key.Key_Escape and not mods and self._on_escape():
                     return True
                 if key == Qt.Key.Key_Tab and not (mods & Qt.KeyboardModifier.ShiftModifier):
                     self._tab_navigate(1)
@@ -1632,15 +1671,15 @@ class BotCanvas(QWidget):
         if hasattr(self, "_search_bar"):
             self._search_bar.adjustSize()
             self._search_bar.move(vx + (vw - self._search_bar.width()) // 2, vy + 8)
-        if hasattr(self, "_focus_crumb"):
-            self._focus_crumb.adjustSize()
-            self._focus_crumb.move(vx + 8, vy + 8)
-        if hasattr(self, "_definition_crumb"):
-            self._definition_crumb.adjustSize()
-            below = self._focus_crumb.height() + 6 if self._focus_crumb.isVisible() else 0
-            self._definition_crumb.move(vx + 8, vy + 8 + below)
-        if hasattr(self, "_focus_frame"):
-            self._focus_frame.setGeometry(vx, vy, vw, vh)
+        if hasattr(self, "_crumb"):
+            self._crumb.adjustSize()
+            self._crumb.move(vx + 10, vy + 10)
+        if hasattr(self, "_shared_frame"):
+            self._shared_frame.setGeometry(vx, vy, vw, vh)
+            # Inside the double line when both show, so a focused region reads as a
+            # filter over the definition rather than in place of it.
+            inset = 7 if self._shared_frame.isVisibleTo(self) else 0
+            self._focus_frame.setGeometry(vx + inset, vy + inset, vw - 2 * inset, vh - 2 * inset)
 
     def _apply_canvas_settings(self) -> None:
         """Re-read canvas settings and update live widgets. Called after Settings dialog OK."""
@@ -1661,6 +1700,8 @@ class BotCanvas(QWidget):
         """
         mode = self._failure_edge_mode
         recovery = self._config.recovery_state if self._config else None
+        shown = self._shown_ids()
+        ends = {e: (src, dst) for src, _, dst, e in self._scene.edge_items} if shown is not None else {}
         for item in self._scene.items():
             # A call node's exit edge carries its port id as ``when``, so it is never
             # one of these: an exit is a named way out, not a failure fallthrough.
@@ -1672,6 +1713,9 @@ class BotCanvas(QWidget):
                 visible = any(t.dest != recovery for t in self._scene.transitions_of(item))
             else:
                 visible = True
+            if shown is not None:
+                src, dst = ends.get(item, (None, None))
+                visible = visible and src in shown and dst in shown
             item.setVisible(visible)
 
     @property
@@ -1775,10 +1819,8 @@ class BotCanvas(QWidget):
             # The dot's colour is resolved here, not in the header, so a theme
             # switch has to hand it over again.
             self._emit_bot_status()
-            if self._focus_region_id is not None and self._config is not None:
-                region = next((r for r in self._config.regions if r.id == self._focus_region_id), None)
-                if region is not None:
-                    self._apply_focus_styles(THEME.region_color(region.color))
+            if self.focus_region_id is not None:
+                self._focus_color = self._focus_frame.color()
 
     def _set_run_icon(self, icon_name: str) -> None:
         """Set the run/pause button icon.
@@ -1839,7 +1881,9 @@ class BotCanvas(QWidget):
         self._set_node_active(self._active_state, False)
         self._active_state = state_id
         node = self._set_node_active(state_id, True)
-        if node is not None:
+        # Only a node on show: in a subgraph node's body this follows the run from
+        # member to member, and a run that leaves the body is not chased out of it.
+        if node is not None and node.isVisible():
             self._view.smooth_center_on(node)
         self._emit_bot_status()
         # GUI_ONLY: BotMachine logs the same transition, in more detail, a moment
@@ -1956,7 +2000,7 @@ class BotCanvas(QWidget):
         SettingsManager.instance().add_recently_used_node(node_type)
 
     def _on_layout_clicked(self) -> None:
-        if self._config is None or self._focus_region_id is not None:
+        if self._config is None or self._levels:
             return
         from bartlebot.gui.canvas.layout import auto_layout
 
@@ -1973,45 +2017,34 @@ class BotCanvas(QWidget):
         self.config_changed.emit()
 
     # ------------------------------------------------------------------
-    # Focus Mode
+    # Stepping in and out: Focus Mode, a subgraph node's body, the crumb bar
     # ------------------------------------------------------------------
-
-    def _apply_focus_styles(self, color: QColor) -> None:
-        """Paint the focus overlays in *color*, the focused region's own palette slot.
-
-        Held as state and re-applied from changeEvent, because these are built from
-        THEME tokens and Qt does not refresh a stylesheet set earlier when the theme
-        changes underneath it.
-        """
-        self._focus_color = color
-        name = color.name()
-        self._focus_frame.setStyleSheet(
-            f"QWidget {{ border: 3px solid {name}; border-radius: 2px; background: transparent; }}"
-        )
-        self._focus_crumb.setStyleSheet(
-            f"QWidget {{ background-color: {name}; border: 1px solid {name}; border-radius: 6px; }}"
-            f"QLabel {{ border: none; color: #ffffff; font-size: {THEME.font_body_px}px; font-weight: 600; padding: 0; }}"
-            f"QPushButton {{ border: none; background: transparent; color: #ffffff; font-size: {THEME.font_body_px + 2}px; }}"
-            "QPushButton:hover { color: #000000; }"
-        )
-        self._focus_hint_label.setStyleSheet(
-            f"border: none; color: rgba(255, 255, 255, 190); font-size: {THEME.font_small_px}px; font-weight: 400; padding: 0;"
-        )
 
     @property
     def focus_region_id(self) -> str | None:
         """The region currently focused, or None when not in focus mode."""
-        return self._focus_region_id
+        top = self._levels[-1] if self._levels else None
+        return top.region_id if top is not None and top.kind == "region" else None
+
+    @property
+    def viewed_instances(self) -> list[str]:
+        """The subgraph nodes whose body is on show in Run mode, outermost first."""
+        return [lv.region_id for lv in self._levels if lv.kind == "instance"]
+
+    @property
+    def level_depth(self) -> int:
+        """How many steps in from the open document the view is."""
+        return len(self._levels)
 
     @property
     def focus_crumb_text(self) -> str:
-        """Text on the focus-mode pill."""
-        return self._focus_crumb_label.text()
+        """The crumb bar's path, as one string."""
+        return self._crumb.text
 
     @property
     def focus_hint_text(self) -> str:
-        """The pill's how-to-leave hint."""
-        return self._focus_hint_label.text()
+        """The crumb bar's how-to-leave hint."""
+        return self._crumb.hint_text
 
     @property
     def focus_color(self) -> QColor | None:
@@ -2020,8 +2053,13 @@ class BotCanvas(QWidget):
 
     @property
     def focus_frame(self) -> QWidget:
-        """The border overlay drawn round the viewport while focused."""
+        """The single-line border drawn round the viewport while a region is focused."""
         return self._focus_frame
+
+    @property
+    def shared_frame(self) -> ViewFrame:
+        """The double-line border drawn round the viewport in a subgraph: its body, or its definition."""
+        return self._shared_frame
 
     @property
     def view(self) -> QWidget:
@@ -2035,58 +2073,202 @@ class BotCanvas(QWidget):
         rather than off the header in isolation."""
         return self._toolbar
 
+    def _region(self, region_id: str):
+        if self._config is None:
+            return None
+        return next((r for r in self._config.regions if r.id == region_id), None)
+
     def enter_focus_mode(self, region_id: str) -> None:
-        """Isolate a region's nodes in the view; hide everything else."""
+        """Isolate a region's nodes in the view; hide everything else.
+
+        Focusing a second region replaces the first rather than nesting in it, and
+        keeps the camera from before the first, so stepping out lands where the
+        user started.
+        """
         if self._config is None:
             return
-        region = next((r for r in self._config.regions if r.id == region_id), None)
-        if region is None:
+        region = self._region(region_id)
+        if region is None or region.source is not None:
             return
-        self.exit_focus_mode()  # clean up any existing focus first
-        self._focus_region_id = region_id
-        # Display ids: an instance inside the region is its call node.
-        member_set = {self._scene.display_id(m) for m in region.members}
-
-        for sid, node in self._scene.node_items.items():
-            node.setVisible(sid in member_set)
-        for s, _, d, edge in self._scene.edge_items:
-            edge.setVisible(s in member_set and d in member_set)
-        for rid, ri in self._scene.region_items.items():
-            ri.setVisible(rid == region_id)
-
-        self._focus_crumb_label.setText(f"Focus Mode — {region.label}")
-        self._apply_focus_styles(THEME.region_color(region.color))
-        self._focus_crumb.setVisible(True)
-        self._focus_frame.setVisible(True)
-        self._reposition_banner()
-
+        if self._levels and self._levels[-1].kind == "region":
+            camera = self._levels.pop().camera
+        else:
+            camera = self._view.camera_state()
+        self._levels.append(_ViewLevel("region", region_id, camera))
+        self._apply_levels()
         # Frame the region. Hiding everything else is what made the canvas look empty
         # without explanation: the camera never moved, so a region that was small
         # or off to one side stayed small and off to one side while the rest vanished.
         # Moving the camera is also the clearest signal that anything happened at all.
         region_item = self._scene.region_items.get(region_id)
         if region_item is not None:
-            self._focus_camera = self._view.camera_state()
             self._view.fit_rect(region_item.scene_bounds)
 
-    def exit_focus_mode(self) -> None:
-        """Restore all nodes/edges/regions to visible; hide the breadcrumb."""
-        if self._focus_region_id is None:
+    def view_instance(self, region_id: str) -> None:
+        """Show a subgraph node's body, read-only: Run mode's way in.
+
+        A running bot's config is already composed, so the members are real states:
+        the scene draws them at their definition positions, and this is Focus Mode
+        over them. The run highlight lands on them by id with nothing added. In Edit
+        mode the way in is the definition document instead (``open_definition_of``).
+        """
+        if self._config is None or self._mode != BotMode.RUN or not self._scene.is_call_node(region_id):
             return
-        self._focus_region_id = None
-        for node in self._scene.node_items.values():
-            node.setVisible(True)
-        for *_, edge in self._scene.edge_items:
-            edge.setVisible(True)
-        for ri in self._scene.region_items.values():
-            ri.setVisible(True)
-        if hasattr(self, "_focus_crumb"):
-            self._focus_crumb.setVisible(False)
-        if hasattr(self, "_focus_frame"):
+        self._levels.append(_ViewLevel("instance", region_id, self._view.camera_state()))
+        self._scene.set_expanded(self.viewed_instances)
+        self._after_scene_rebuild()
+        rect = QRectF()
+        for did in self._scene.members_shown_for(region_id):
+            rect = rect.united(self._scene.node_items[did].sceneBoundingRect())
+        if not rect.isNull():
+            self._view.fit_rect(rect)
+
+    def step_out(self) -> bool:
+        """Leave the innermost focused region or subgraph body, camera and all. False when there is none."""
+        if not self._levels:
+            return False
+        level = self._levels.pop()
+        if level.kind == "instance":
+            self._scene.set_expanded(self.viewed_instances)
+            self._after_scene_rebuild()
+        else:
+            self._apply_levels()
+        self._view.restore_camera(level.camera)
+        return True
+
+    def step_out_to(self, depth: int) -> None:
+        """Step out until ``depth`` levels are left: 0 is the open document itself."""
+        while len(self._levels) > max(depth, 0):
+            self.step_out()
+
+    def exit_focus_mode(self) -> None:
+        """Leave every focused region and subgraph body, back to the whole document."""
+        if hasattr(self, "_crumb"):
+            self.step_out_to(0)
+
+    def step_back(self) -> None:
+        """One level out: the crumb's close button and Alt+Left. Out of a definition when nothing is focused."""
+        if self.step_out():
+            return
+        if self.is_definition:
+            self.definition_back_requested.emit()
+
+    def _on_escape(self) -> bool:
+        """Esc dismisses what is open before it leaves anything. True when it did something.
+
+        The search bar first, then a focused region or subgraph body, then the
+        selection, and only then the definition document -- so a stray Esc never
+        lands on the Save / Discard prompt.
+        """
+        if self._search_bar.isVisibleTo(self):
+            self._close_search()
+            return True
+        if self.step_out():
+            return True
+        if self._mode == BotMode.EDIT and self._scene.selectedItems():
+            self._scene.clearSelection()
+            return True
+        if self.is_definition:
+            self.definition_back_requested.emit()
+            return True
+        return False
+
+    def _on_crumb_segment_clicked(self, index: int) -> None:
+        """An earlier segment: a document further down, the open one, or a level inside it."""
+        n_docs = len(self._doc_path)
+        if index < n_docs:
+            self.document_back_requested.emit(index)
+            return
+        self.step_out_to(index - n_docs)
+
+    def _after_scene_rebuild(self) -> None:
+        """Put back what a rebuilt scene forgot: the levels' filter, failure edges, badges, and the run highlight."""
+        linked = {r.id for r in self._config.regions if r.source is not None} if self._config else set()
+        kept: list[_ViewLevel] = []
+        for lv in self._levels:
+            region = self._region(lv.region_id)
+            if region is None or (lv.kind == "instance" and lv.region_id not in linked):
+                break  # gone with an undo or a recompose: so is everything inside it
+            kept.append(lv)
+        self._levels = kept
+        if self._scene.expanded != self.viewed_instances:
+            self._scene.set_expanded(self.viewed_instances)
+        self._scene.refresh_region_states(self._compose_report)
+        if self._active_state:
+            self._set_node_active(self._active_state, True)
+        self._apply_levels()
+
+    def _shown_ids(self) -> set[str] | None:
+        """The display ids the innermost level keeps on show, or None when nothing is filtered."""
+        top = self._levels[-1] if self._levels else None
+        if top is None:
+            return None
+        if top.kind == "instance":
+            return self._scene.members_shown_for(top.region_id)
+        region = self._region(top.region_id)
+        return {self._scene.display_id(m) for m in region.members} if region is not None else set()
+
+    def _apply_levels(self) -> None:
+        """Show what the innermost level keeps, and redraw the crumb and frames to match."""
+        shown = self._shown_ids()
+        top = self._levels[-1] if self._levels else None
+        for sid, node in self._scene.node_items.items():
+            node.setVisible(shown is None or sid in shown)
+        for s, _, d, edge in self._scene.edge_items:
+            edge.setVisible(shown is None or (s in shown and d in shown))
+        for rid, ri in self._scene.region_items.items():
+            ri.setVisible(shown is None or (top is not None and top.kind == "region" and rid == top.region_id))
+        # The failure-edge toggle hides some of what the filter shows.
+        self._apply_failure_edge_visibility()
+        self._refresh_crumb()
+
+    def _refresh_crumb(self) -> None:
+        """Draw the crumb bar and the frames for where the canvas is now.
+
+        A bot with one region focused keeps Focus Mode's own look -- its colour, a
+        single line, "Focus Mode — <region>". Anything involving a subgraph is a path
+        in the accent with the double line: the documents under this one, this one,
+        then each level in, a focused region's segment wearing its colour.
+        """
+        if not hasattr(self, "_crumb"):
+            return
+        top = self._levels[-1] if self._levels else None
+        top_region = self._region(top.region_id) if top is not None and top.kind == "region" else None
+        definition = self.is_definition
+        if self._config is None or (not definition and not self._levels):
+            self._crumb.setVisible(False)
+            self._shared_frame.setVisible(False)
             self._focus_frame.setVisible(False)
-        if self._focus_camera is not None:
-            self._view.restore_camera(self._focus_camera)
-            self._focus_camera = None
+            return
+        if not definition and not self.viewed_instances and top_region is not None:
+            self._crumb.show_state(
+                CrumbMode.FOCUS,
+                [Crumb(f"Focus Mode — {top_region.label}")],
+                hint="Esc to exit",
+                color_slot=top_region.color,
+                close_tip="Exit Focus Mode",
+            )
+            self._shared_frame.setVisible(False)
+        else:
+            segments = [Crumb(name) for name in self._doc_path] + [Crumb(self._config.name)]
+            for lv in self._levels:
+                region = self._region(lv.region_id)
+                label = region.label if region is not None else lv.region_id
+                segments.append(Crumb(label, region.color if lv is top and top_region is not None else None))
+            if definition:
+                mode, hint = CrumbMode.DEFINITION, ""
+                close_tip = "Exit Focus Mode" if self._levels else "Close the definition and go back"
+            else:
+                mode, hint, close_tip = CrumbMode.VIEW, "read-only · Esc to exit", "Step out"
+            self._crumb.show_state(mode, segments, hint=hint, can_revert=self._can_revert, close_tip=close_tip)
+            self._shared_frame.setVisible(True)
+        if top_region is not None:
+            self._focus_frame.set_region(top_region.color)
+            self._focus_color = self._focus_frame.color()
+        self._focus_frame.setVisible(top_region is not None)
+        self._crumb.setVisible(True)
+        self._crumb.raise_()
+        self._reposition_banner()
 
     # ------------------------------------------------------------------
     # Tab navigation
@@ -2807,7 +2989,7 @@ class BotCanvas(QWidget):
         except RuntimeError:
             keep = []
         self._scene.setup(config)
-        self._apply_failure_edge_visibility()
+        self._after_scene_rebuild()
         self._show_default_page()
         self._on_scene_changed()
         for sid in keep:

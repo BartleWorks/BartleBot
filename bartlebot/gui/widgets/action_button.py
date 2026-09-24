@@ -124,12 +124,16 @@ class ActionButton(ThemedMixin, QPushButton):
         icon_size: int = 16,
         style: ActionStyle = ActionStyle.TERTIARY,
         fill: bool = True,
+        on_accent: bool = False,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(text, parent)
         self._icon_name = icon_name
         self._icon_px = icon_size
         self._style = style
+        # Sitting on a ground that is itself the accent (the canvas crumb bar), where a
+        # PRIMARY filled with the accent would vanish into it: the fill and text swap.
+        self._on_accent = on_accent
         self.setFlat(True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setIconSize(QSize(icon_size, icon_size))
@@ -171,6 +175,11 @@ class ActionButton(ThemedMixin, QPushButton):
         between them is colour: every style shares the same metrics, and a style that
         also changed the padding would stop being a weight and start being a shape.
         """
+        if self._style is ActionStyle.PRIMARY and self._on_accent:
+            # Still the heaviest thing on its ground, which is what PRIMARY means: the
+            # accent-on-accent fill would have drawn it weaker than a TERTIARY beside it.
+            fill = THEME.pill_text
+            return fill, THEME.accent, fill, _shift(fill, _PRESS_SHIFT), _shift(fill, _PRESS_SHIFT - 10)
         if self._style is ActionStyle.PRIMARY:
             fill = THEME.accent
             return fill, THEME.pill_text, fill, _shift(fill, _HOVER_SHIFT), _shift(fill, _PRESS_SHIFT)

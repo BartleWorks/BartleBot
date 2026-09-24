@@ -317,6 +317,11 @@ class NodeItem(QGraphicsItem):
     # State setters
     # ------------------------------------------------------------------
 
+    @property
+    def is_active(self) -> bool:
+        """Whether this node carries the run highlight."""
+        return self._active
+
     def set_active(self, active: bool) -> None:
         self._active = active
         if active:
