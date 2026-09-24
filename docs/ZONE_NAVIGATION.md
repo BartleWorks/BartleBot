@@ -220,7 +220,7 @@ and avoiding `home` keeps a route to the gates it can reach without pressing HOM
 | `arrivals` | zone | `{from zone: xyz}`: where a player lands coming from that zone. A walk from here to there with no `reset_xyz` uses it |
 | `kind`, `from`, `to` | link | one direction of one zone change |
 | `board` | ride | `object` (the default) or `walk`: how the ride is boarded, which decides its coordinates |
-| `xyz`, `reset_xyz` | walk, ride boarded on foot | as `enter_zone`; `reset_xyz` optional |
+| `xyz`, `reset_xyz` | walk, ride boarded on foot | as `enter_zone`; `reset_xyz` optional: without it the zone's `arrivals` entry for the reverse walk, else each player's position when the step starts |
 | `unlock` | walk | `{"objects": [{interact_xyz, reset_xyz}, …], "opens_after": seconds}`: a gate those objects open |
 | `interact_xyz`, `reset_xyz` | object, ride boarded by interacting | as `enter_zone_via_object` |
 | `sequential`, `object_use_delay` | object | as `enter_zone_via_object` |

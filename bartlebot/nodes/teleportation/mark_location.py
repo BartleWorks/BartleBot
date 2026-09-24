@@ -31,7 +31,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="xyz",
         label="Mark XYZ",
         help="Coordinates to teleport players to before marking, if not already there.",
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
+        default=None,
         required=True,
     ),
 ]

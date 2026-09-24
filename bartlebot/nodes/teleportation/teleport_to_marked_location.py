@@ -26,7 +26,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="xyz",
         label="Mark XYZ",
         help="Expected XYZ coordinates after recalling. Used to verify arrival.",
-        default={"x": 0.0, "y": 0.0, "z": 0.0},
+        default=None,
         required=True,
     ),
 ]

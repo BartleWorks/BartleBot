@@ -245,3 +245,71 @@ def test_changing_the_when_condition_can_be_undone(qapp):
 
     canvas.undo()
     assert canvas.config.transitions[0].when == "TRUE"
+
+
+# ---------------------------------------------------------------------------
+# Typed edits can be undone
+#
+# The debounced undo step used to open on properties_changed, which the panel
+# emits after writing the edit into the model -- so its "before" snapshot already
+# held the edit and undo restored it. Undo pressed inside the 500ms debounce also
+# discarded the pending step and undid the one before it.
+# ---------------------------------------------------------------------------
+
+_XYZ = {"x": 1.0, "y": 2.0, "z": 3.0}
+
+
+def _coord_canvas(qapp):
+    config = BotConfig(
+        id="test-bot",
+        name="t",
+        initial="a",
+        recovery_state="a",
+        states=[StateModel(id="a", node_type="teleport_to_coordinates", params={"zone": "Z/One", "xyz": dict(_XYZ)})],
+        transitions=[],
+    )
+    canvas = _canvas(qapp, config)
+    canvas.scene.node_items["a"].setSelected(True)
+    return canvas
+
+
+def test_a_param_edit_can_be_undone(qapp):
+    canvas = _coord_canvas(qapp)
+    canvas.param_panel.param_form.widget("zone").setText("Z/Two")
+
+    canvas.undo()
+
+    assert canvas.config.states[0].params["zone"] == "Z/One"
+
+
+def test_a_cleared_coordinate_box_can_be_undone(qapp):
+    """Clearing one box drops the whole coordinate, so losing it to a slip has to be recoverable."""
+    canvas = _coord_canvas(qapp)
+    canvas.param_panel.param_form.widget("xyz").axis_edit("y").setText("")
+    assert "xyz" not in canvas.config.states[0].params
+
+    canvas.undo()
+
+    assert canvas.config.states[0].params["xyz"] == _XYZ
+
+
+def test_a_node_label_edit_can_be_undone(qapp):
+    canvas = _coord_canvas(qapp)
+    canvas.param_panel.node_label_edit.setText("Go there")
+
+    canvas.undo()
+
+    assert canvas.config.states[0].label is None
+
+
+def test_undo_takes_back_the_whole_typing_burst_and_redo_restores_it(qapp):
+    canvas = _coord_canvas(qapp)
+    edit = canvas.param_panel.param_form.widget("zone")
+    for text in ("Z/T", "Z/Tw", "Z/Two"):
+        edit.setText(text)
+
+    canvas.undo()
+    assert canvas.config.states[0].params["zone"] == "Z/One"
+
+    canvas.redo()
+    assert canvas.config.states[0].params["zone"] == "Z/Two"

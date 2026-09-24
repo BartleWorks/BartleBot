@@ -12,8 +12,8 @@ import re
 from collections.abc import Callable
 from typing import Any
 
-from PyQt6.QtCore import QSize, QStringListModel, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QPen, QStandardItem, QStandardItemModel
+from PyQt6.QtCore import QLocale, QSize, QStringListModel, Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import QColor, QDoubleValidator, QKeySequence, QPen, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -42,7 +42,7 @@ from bartlebot.gui.canvas import recording
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
@@ -131,32 +131,36 @@ class _StrListLineEdit(QLineEdit):
 # Clipboard XYZ parsing
 # ---------------------------------------------------------------------------
 
+_AXES = ("x", "y", "z")
 _NUM = r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?"
 _XYZ_CALL_RE = re.compile(
     rf"XYZ\s*\(\s*({_NUM})\s*,\s*({_NUM})\s*,\s*({_NUM})\s*\)",
     re.IGNORECASE,
 )
+_XYZ_BARE_RE = re.compile(rf"\(?\s*({_NUM})\s*,\s*({_NUM})\s*,\s*({_NUM})\s*\)?")
 
 
 def parse_xyz_text(text: str) -> dict[str, float]:
     """Parse clipboard text into whichever of the x/y/z axes it defines.
 
-    Two formats are accepted:
+    Three formats are accepted:
 
     * ``XYZ(x, y, z)`` — the form used by Deimos scripts, so a line lifted
       straight out of one (``mass tp XYZ(1, 2, 3)``) pastes as-is.  Only the
       first such call on the line is read.
+    * a bare ``x, y, z``, optionally in parentheses — the whole text, not a
+      part of it.
     * a JSON object with any of ``x``/``y``/``z`` — what the Copy button
       writes.  Missing or non-numeric axes are simply left out, so a partial
       object updates only the axes it names.
 
-    Returns an empty dict when nothing parses; the caller leaves the spin
-    boxes untouched in that case.
+    Returns an empty dict when nothing parses; the caller leaves the boxes
+    untouched in that case.
     """
     text = text.strip()
-    match = _XYZ_CALL_RE.search(text)
+    match = _XYZ_CALL_RE.search(text) or _XYZ_BARE_RE.fullmatch(text)
     if match:
-        return {axis: float(match.group(i)) for i, axis in enumerate(("x", "y", "z"), start=1)}
+        return {axis: float(match.group(i)) for i, axis in enumerate(_AXES, start=1)}
     try:
         data = json.loads(text)
     except (json.JSONDecodeError, TypeError):
@@ -164,7 +168,7 @@ def parse_xyz_text(text: str) -> dict[str, float]:
     if not isinstance(data, dict):
         return {}
     out: dict[str, float] = {}
-    for axis in ("x", "y", "z"):
+    for axis in _AXES:
         try:
             out[axis] = float(data[axis])
         except (KeyError, TypeError, ValueError):
@@ -195,6 +199,240 @@ class _FillButton(ActionButton):
     def _refresh_label(self) -> None:
         n = len(self._get_clients())
         self.setText("Fill current" if n == 1 else "Fill current ▾")
+
+
+def _format_axis(value: Any) -> str:
+    """One axis as its box shows it: at most two decimals, no trailing zeros. Blank if not a number."""
+    try:
+        text = f"{round(float(value), 2) + 0.0:.2f}"  # + 0.0 turns a rounded -0.0 into 0.0
+    except (TypeError, ValueError):
+        return ""
+    return text.rstrip("0").rstrip(".")
+
+
+class _AxisEdit(QLineEdit):
+    """One box of an ``_XyzField``: a number with at most two decimals, or blank.
+
+    Ctrl+V of a whole coordinate -- anything ``parse_xyz_text`` reads all three axes
+    from -- fills all three boxes, where the validator would otherwise refuse it.
+    """
+
+    coordinate_pasted = pyqtSignal(dict)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        validator = QDoubleValidator(-999_999.0, 999_999.0, 2, self)
+        validator.setNotation(QDoubleValidator.Notation.StandardNotation)
+        # The C locale, so the decimal point is "." whatever the Windows region says,
+        # and no group separator, which float() would not read back.
+        locale = QLocale.c()
+        locale.setNumberOptions(QLocale.NumberOption.RejectGroupSeparator)
+        validator.setLocale(locale)
+        self.setValidator(validator)
+
+    def keyPressEvent(self, event) -> None:  # type: ignore[override]
+        if event.matches(QKeySequence.StandardKey.Paste):
+            clipboard = QApplication.clipboard()
+            values = parse_xyz_text(clipboard.text()) if clipboard else {}
+            if len(values) == len(_AXES):
+                self.coordinate_pasted.emit(values)
+                return
+        super().keyPressEvent(event)
+
+    def number(self) -> float | None:
+        """The box's value, or None while it is blank or holds an unfinished number such as "-"."""
+        if not self.hasAcceptableInput():
+            return None
+        try:
+            return float(self.text())
+        except ValueError:
+            return None
+
+
+class _XyzField(ThemedMixin, QWidget):
+    """An 'xyz' param: X, Y and Z boxes over the Copy / Paste / Fill current / TP row.
+
+    Unlike the spinboxes it replaced, it can be blank, which is how a coordinate nobody
+    has filled in looks and is stored: ``value()`` is None and ``get_params`` writes
+    nothing for it. Partly filled, or holding an unfinished number, it is invalid: the
+    offending boxes are marked and ``value()`` is None too, so a half-typed coordinate
+    is never saved. A required field is also marked while blank or all-zero -- (0, 0, 0)
+    is what an unset coordinate was saved as before this, never a real position.
+
+    A field nobody has edited hands back exactly the dict it loaded, so opening and
+    saving a bot rewrites no coordinate.
+    """
+
+    changed = pyqtSignal()
+
+    def __init__(
+        self, value: Any, *, required: bool, get_clients: Callable[[], list], help_text: str = "", parent=None
+    ):
+        super().__init__(parent)
+        self._required = required
+        self._get_clients = get_clients
+        self._loaded = value if isinstance(value, dict) else None
+        self._quiet = False
+        if help_text:
+            self.setToolTip(help_text)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(2)
+        boxes_row = QHBoxLayout()
+        boxes_row.setContentsMargins(0, 0, 0, 0)
+        boxes_row.setSpacing(4)
+        self._edits: dict[str, _AxisEdit] = {}
+        for axis in _AXES:
+            lbl = QLabel(axis.upper())
+            lbl.setFixedWidth(12)
+            edit = _AxisEdit()
+            edit.setText(_format_axis(self._loaded.get(axis)) if self._loaded else "")
+            edit.textChanged.connect(self._on_text_changed)
+            edit.coordinate_pasted.connect(self.set_coordinate)
+            boxes_row.addWidget(lbl)
+            boxes_row.addWidget(edit, 1)
+            self._edits[axis] = edit
+        outer.addLayout(boxes_row)
+        self._loaded_texts = self._texts()
+        # Full-width segmented action bar — all buttons equal width, uniform height.
+        # Text alone, apart from the fill button's own glyph: four icons and four
+        # labels do not fit the panel's width, and a row where some buttons carry a
+        # glyph and others do not reads as two kinds of control rather than one.
+        # There is no paste or teleport icon in the set to be consistent *with*.
+        btns_row = QHBoxLayout()
+        btns_row.setContentsMargins(0, 0, 0, 0)
+        btns_row.setSpacing(2)
+        self._copy_btn = ActionButton("", "Copy")
+        self._copy_btn.setToolTip("Copy XYZ to clipboard as JSON")
+        self._copy_btn.clicked.connect(self._copy)
+        btns_row.addWidget(self._copy_btn, 1)
+        paste_btn = ActionButton("", "Paste")
+        paste_btn.setToolTip("Paste XYZ from clipboard (JSON, x, y, z or XYZ(x, y, z) format)")
+        paste_btn.clicked.connect(self._paste)
+        btns_row.addWidget(paste_btn, 1)
+        fill_btn = _FillButton(self._get_clients)
+        fill_btn.setToolTip("Fill from a connected player's live position")
+        fill_btn.clicked.connect(lambda _checked, b=fill_btn: self._show_fill_menu(b))
+        btns_row.addWidget(fill_btn, 1)
+        self._tp_btn = ActionButton("", "TP")
+        self._tp_btn.setToolTip("Teleport all connected players to these coordinates")
+        self._tp_btn.clicked.connect(lambda _checked: asyncio.ensure_future(self._teleport()))
+        btns_row.addWidget(self._tp_btn, 1)
+        outer.addLayout(btns_row)
+        self._update_buttons()
+        self.refresh_theme_styles()
+
+    def axis_edit(self, axis: str) -> QLineEdit:
+        """The box for one axis ("x", "y" or "z")."""
+        return self._edits[axis]
+
+    @property
+    def copy_button(self) -> QPushButton:
+        return self._copy_btn
+
+    @property
+    def teleport_button(self) -> QPushButton:
+        return self._tp_btn
+
+    def value(self) -> dict | None:
+        """The coordinate to store, or None when there is none: blank, or invalid."""
+        if self._loaded is not None and self._texts() == self._loaded_texts:
+            return dict(self._loaded)
+        numbers = [self._edits[axis].number() for axis in _AXES]
+        if any(n is None for n in numbers):
+            return None
+        return dict(zip(_AXES, numbers))
+
+    def marked_axes(self) -> set[str]:
+        """The axes whose box carries the error border."""
+        filled = {axis for axis, edit in self._edits.items() if edit.text().strip()}
+        if not filled:
+            return set(_AXES) if self._required else set()
+        marked = {axis for axis in filled if self._edits[axis].number() is None}
+        marked |= set(_AXES) - filled
+        if not marked and self._required and not any(self._edits[axis].number() for axis in _AXES):
+            return set(_AXES)
+        return marked
+
+    def set_coordinate(self, values: dict) -> None:
+        """Set the axes *values* names, rounded to two decimals; the others keep their boxes."""
+        self._quiet = True
+        try:
+            for axis in _AXES:
+                if axis in values:
+                    self._edits[axis].setText(_format_axis(values[axis]))
+        finally:
+            self._quiet = False
+        self._on_text_changed()
+
+    def apply_theme_styles(self) -> None:
+        marked = self.marked_axes()
+        for axis, edit in self._edits.items():
+            set_style_sheet(edit, f"border: 1px solid {THEME.error};" if axis in marked else "")
+
+    def _texts(self) -> tuple[str, ...]:
+        return tuple(self._edits[axis].text() for axis in _AXES)
+
+    def _on_text_changed(self, *_) -> None:
+        if self._quiet:
+            return
+        self.apply_theme_styles()
+        self._update_buttons()
+        self.changed.emit()
+
+    def _update_buttons(self) -> None:
+        complete = self.value() is not None
+        self._copy_btn.setEnabled(complete)
+        self._tp_btn.setEnabled(complete)
+
+    def _copy(self) -> None:
+        value = self.value()
+        if value is not None:
+            QApplication.clipboard().setText(json.dumps(value))
+
+    def _paste(self) -> None:
+        clipboard = QApplication.clipboard()
+        values = parse_xyz_text(clipboard.text()) if clipboard else {}
+        if values:
+            self.set_coordinate(values)
+
+    def _show_fill_menu(self, btn: QPushButton) -> None:
+        clients = self._get_clients()
+        if not clients:
+            return
+        if len(clients) == 1:
+            asyncio.ensure_future(self._fill_from_player(0))
+            return
+        menu = popup_menu(btn)
+        for i in range(len(clients)):
+            action = menu.addAction(f"Fill from Player {i + 1}")
+            action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._fill_from_player(idx)))
+        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+
+    async def _fill_from_player(self, idx: int) -> None:
+        clients = self._get_clients()
+        if idx >= len(clients):
+            return
+        try:
+            pos = await clients[idx].body.position()
+            self.set_coordinate({"x": pos.x, "y": pos.y, "z": pos.z})
+        except Exception:
+            pass
+
+    async def _teleport(self) -> None:
+        from wizwalker import XYZ
+
+        clients = self._get_clients()
+        value = self.value()
+        if not clients or value is None:
+            return
+        target = XYZ(value["x"], value["y"], value["z"])
+        try:
+            await asyncio.gather(
+                *[c.teleport(target, wait_on_inuse=True, purge_on_after_unuser_fixer=True) for c in clients]
+            )
+        except Exception:
+            pass
 
 
 class _ZoneLineEdit(QLineEdit):
@@ -564,11 +802,12 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 getattr(field, "placeholder", ""),
                 minimum=getattr(field, "minimum", None),
                 maximum=getattr(field, "maximum", None),
+                required=field.required,
             )
             self._widgets[field.key] = widget
             if field.required:
                 self._required_widgets[field.key] = widget
-            display_w = widget if not isinstance(widget, tuple) else widget[3]
+            display_w = widget
             row_btns: list[QToolButton] = []
             if locked:
                 if field.key not in free:
@@ -626,8 +865,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         for field in schema:
             if field.disabled_by and field.disabled_by in self._widgets:
                 controller = self._widgets[field.disabled_by]
-                controlled = self._widgets[field.key]
-                display_w = controlled if not isinstance(controlled, tuple) else controlled[3]
+                display_w = self._widgets[field.key]
                 ok = editable[field.key]
                 if isinstance(controller, QCheckBox):
                     display_w.setEnabled(ok and not controller.isChecked())
@@ -643,8 +881,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         for field in schema:
             if field.enabled_by and field.enabled_by in self._widgets:
                 controller = self._widgets[field.enabled_by]
-                controlled = self._widgets[field.key]
-                display_w = controlled if not isinstance(controlled, tuple) else controlled[3]
+                display_w = self._widgets[field.key]
                 ok = editable[field.key]
                 if isinstance(controller, QCheckBox):
                     display_w.setEnabled(ok and controller.isChecked())
@@ -689,8 +926,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
     def _on_override_toggled(self, key: str, checked: bool) -> None:
         if self._suppress:
             return
-        w = self._widgets.get(key)
-        display_w = w if not isinstance(w, tuple) else w[3]
+        display_w = self._widgets.get(key)
         if display_w is not None:
             display_w.setEnabled(checked)
         btn = self.override_button(key)
@@ -757,11 +993,9 @@ class _DynamicParamForm(ThemedMixin, QWidget):
     def _validate_required_fields(self) -> None:
         """Apply or clear a red border on required input widgets based on whether they are empty."""
         for widget in self._required_widgets.values():
-            if isinstance(widget, tuple):
-                # xyz — cannot be meaningfully empty
-                display_w = widget[3]
-                empty = False
-            elif isinstance(widget, QPlainTextEdit):
+            if isinstance(widget, _XyzField):
+                continue  # marks its own boxes, including a partly filled optional one
+            if isinstance(widget, QPlainTextEdit):
                 display_w = widget
                 empty = not widget.toPlainText().strip()
             elif isinstance(widget, _ZoneWidget):
@@ -816,17 +1050,18 @@ class _DynamicParamForm(ThemedMixin, QWidget):
     def widget(self, key: str):
         """The input widget for one param key, or None.
 
-        For callers that need to inspect or drive a single field — the xyz fields hand
-        back their (x, y, z, container) tuple, everything else a plain widget.
+        For callers that need to inspect or drive a single field — an xyz field is an
+        ``_XyzField``.
         """
         return self._widgets.get(key)
 
     def get_params(self) -> dict:
         result: dict[str, Any] = {}
         for key, w in self._widgets.items():
-            if isinstance(w, tuple):
-                x_s, y_s, z_s, _ = w
-                result[key] = {"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}
+            if isinstance(w, _XyzField):
+                # Blank or invalid is absent, not (0, 0, 0): the nodes read an optional one with get().
+                if (xyz := w.value()) is not None:
+                    result[key] = xyz
             elif isinstance(w, QPlainTextEdit):
                 result[key] = w.toPlainText()
             elif isinstance(w, PlayerListWidget | PlayerSlotWidget):
@@ -866,6 +1101,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         placeholder: str = "",
         minimum: float | None = None,
         maximum: float | None = None,
+        required: bool = False,
     ) -> Any:
         """Build the control for one param field.
 
@@ -967,60 +1203,9 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             w.checkStateChanged.connect(self._emit_changed)
             return w
         if field_type == "xyz":
-            xyz = val if isinstance(val, dict) else {}
-            outer = QWidget()
-            if help_text:
-                outer.setToolTip(help_text)
-            outer_layout = QVBoxLayout(outer)
-            outer_layout.setContentsMargins(0, 0, 0, 0)
-            outer_layout.setSpacing(2)
-            # Row 1: X/Y/Z spinboxes
-            spins_row = QHBoxLayout()
-            spins_row.setContentsMargins(0, 0, 0, 0)
-            spins_row.setSpacing(4)
-            spins = []
-            for axis, axis_key in [("X", "x"), ("Y", "y"), ("Z", "z")]:
-                lbl = QLabel(axis)
-                lbl.setFixedWidth(12)
-                spin = QDoubleSpinBox()
-                spin.setRange(-999_999.0, 999_999.0)
-                spin.setDecimals(2)
-                spin.setSingleStep(1.0)
-                try:
-                    spin.setValue(float(xyz.get(axis_key, 0.0)))
-                except (TypeError, ValueError):
-                    spin.setValue(0.0)
-                spin.valueChanged.connect(self._emit_changed)
-                spins_row.addWidget(lbl)
-                spins_row.addWidget(spin, 1)
-                spins.append(spin)
-            outer_layout.addLayout(spins_row)
-            # Row 2: full-width segmented action bar — all buttons equal width, uniform height
-            btns_row = QHBoxLayout()
-            btns_row.setContentsMargins(0, 0, 0, 0)
-            btns_row.setSpacing(2)
-            # Text alone, apart from the fill button's own glyph: four icons and four
-            # labels do not fit the panel's width, and a row where some buttons carry a
-            # glyph and others do not reads as two kinds of control rather than one.
-            # There is no paste or teleport icon in the set to be consistent *with*.
-            copy_btn = ActionButton("", "Copy")
-            copy_btn.setToolTip("Copy XYZ to clipboard as JSON")
-            copy_btn.clicked.connect(lambda _checked, k=key: self._copy_xyz(k))
-            btns_row.addWidget(copy_btn, 1)
-            paste_btn = ActionButton("", "Paste")
-            paste_btn.setToolTip("Paste XYZ from clipboard (JSON or XYZ(x, y, z) format)")
-            paste_btn.clicked.connect(lambda _checked, k=key: self._paste_xyz(k))
-            btns_row.addWidget(paste_btn, 1)
-            fill_btn = _FillButton(self._get_clients)
-            fill_btn.setToolTip("Fill from a connected player's live position")
-            fill_btn.clicked.connect(lambda _checked, k=key, b=fill_btn: self._show_fill_menu(k, b))
-            btns_row.addWidget(fill_btn, 1)
-            tp_btn = ActionButton("", "TP")
-            tp_btn.setToolTip("Teleport all connected players to these coordinates")
-            tp_btn.clicked.connect(lambda _checked, k=key: asyncio.ensure_future(self._teleport_to_xyz(k)))
-            btns_row.addWidget(tp_btn, 1)
-            outer_layout.addLayout(btns_row)
-            return (spins[0], spins[1], spins[2], outer)
+            w = _XyzField(val, required=required, get_clients=lambda: self._get_clients(), help_text=help_text)
+            w.changed.connect(self._emit_changed)
+            return w
         if field_type == "nav_zone":
             w = _NavZoneField(self._get_zone_suggestions, self._get_clients)
             w.set_value(str(val) if val else "")
@@ -1060,72 +1245,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             self._validate_required_fields()
             self.changed.emit()
 
-    def _paste_xyz(self, key: str) -> None:
-        clipboard = QApplication.clipboard()
-        values = parse_xyz_text(clipboard.text()) if clipboard else {}
-        if not values:
-            return
-        widgets = self._widgets.get(key)
-        if not isinstance(widgets, tuple):
-            return
-        x_s, y_s, z_s, _ = widgets
-        self._suppress = True
-        for axis, spin in (("x", x_s), ("y", y_s), ("z", z_s)):
-            if axis in values:
-                spin.setValue(values[axis])
-        self._suppress = False
-        self._emit_changed()
-
-    def _copy_xyz(self, key: str) -> None:
-        widgets = self._widgets.get(key)
-        if not isinstance(widgets, tuple):
-            return
-        x_s, y_s, z_s, _ = widgets
-        QApplication.clipboard().setText(json.dumps({"x": x_s.value(), "y": y_s.value(), "z": z_s.value()}))
-
-    def _show_fill_menu(self, key: str, btn: QPushButton) -> None:
-        clients = self._get_clients()
-        if not clients:
-            return
-        if len(clients) == 1:
-            asyncio.ensure_future(self._fill_xyz_from_player(key, 0))
-            return
-        menu = popup_menu(btn)
-        for i in range(len(clients)):
-            action = menu.addAction(f"Fill from Player {i + 1}")
-            action.triggered.connect(
-                lambda _checked, k=key, idx=i: asyncio.ensure_future(self._fill_xyz_from_player(k, idx))
-            )
-        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
-
-    async def _fill_xyz_from_player(self, key: str, idx: int) -> None:
-        clients = self._get_clients()
-        if idx >= len(clients):
-            return
-        try:
-            pos = await clients[idx].body.position()
-            self.set_xyz(key, pos.x, pos.y, pos.z)
-        except Exception:
-            pass
-
-    async def _teleport_to_xyz(self, key: str) -> None:
-        from wizwalker import XYZ
-
-        clients = self._get_clients()
-        if not clients:
-            return
-        widgets = self._widgets.get(key)
-        if not isinstance(widgets, tuple):
-            return
-        x_s, y_s, z_s, _ = widgets
-        target = XYZ(x_s.value(), y_s.value(), z_s.value())
-        try:
-            await asyncio.gather(
-                *[c.teleport(target, wait_on_inuse=True, purge_on_after_unuser_fixer=True) for c in clients]
-            )
-        except Exception:
-            pass
-
     def set_str(self, key: str, value: str) -> None:
         """Programmatically set a 'str' field by key. The zone pickers count: their value is a zone path."""
         widget = self._widgets.get(key)
@@ -1141,17 +1260,10 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._emit_changed()
 
     def set_xyz(self, key: str, x: float, y: float, z: float) -> None:
-        """Programmatically set an 'xyz' field by key."""
-        widgets = self._widgets.get(key)
-        if not isinstance(widgets, tuple):
-            return
-        x_s, y_s, z_s, _ = widgets
-        self._suppress = True
-        x_s.setValue(x)
-        y_s.setValue(y)
-        z_s.setValue(z)
-        self._suppress = False
-        self._emit_changed()
+        """Programmatically set an 'xyz' field by key, rounded to two decimals as the field shows it."""
+        widget = self._widgets.get(key)
+        if isinstance(widget, _XyzField):
+            widget.set_coordinate({"x": x, "y": y, "z": z})
 
 
 # ---------------------------------------------------------------------------
@@ -1527,6 +1639,12 @@ class _NodeTypeDelegate(QStyledItemDelegate):
 
 
 class _ParamPanel(ThemedMixin, QWidget):
+    # Emitted BEFORE a typed edit mutates the model -- a param, label, notes, flag
+    # conditions, or a region's label or inputs -- carrying the undo description.
+    # The canvas opens its debounced undo step here, which captures a before-snapshot
+    # only on the first edit of a burst; opened from properties_changed instead, that
+    # snapshot already held the edit and undo restored it.
+    edit_starting = pyqtSignal(str)
     properties_changed = pyqtSignal()
     label_committed = pyqtSignal()
     # Emitted for discrete structural property changes (node type switch, edge
@@ -1563,10 +1681,9 @@ class _ParamPanel(ThemedMixin, QWidget):
     # (state id, param key, active). The canvas owns the instance's overrides.
     override_toggled = pyqtSignal(str, str, bool)
     # The region page wrote into the shown RegionModel (label, colour, inputs).
-    # The bool says whether the edit is typing (True: the canvas opens a debounced
-    # undo step) or discrete (False: structural_property_changed already pushed
-    # one, as a node-type switch does).
-    region_property_changed = pyqtSignal(bool)
+    # Its undo step is already open: a typed edit announced itself with
+    # edit_starting, a discrete one pushed through structural_property_changed.
+    region_property_changed = pyqtSignal()
     detach_requested = pyqtSignal(str)  # region ID
     edit_subgraph_requested = pyqtSignal(str)  # region ID
     # (state id, param key): a row's Expose button, on a member of the region being edited.
@@ -2298,15 +2415,16 @@ class _ParamPanel(ThemedMixin, QWidget):
         label = text.strip()
         if not label:
             return
+        self.edit_starting.emit("Edit region")
         self._region.label = label
-        self.region_property_changed.emit(True)
+        self.region_property_changed.emit()
 
     def _on_region_color_changed(self, key: int) -> None:
         if self._suppress or self._region is None:
             return
         self.structural_property_changed.emit("Change Region Color")
         self._region.color = key
-        self.region_property_changed.emit(False)
+        self.region_property_changed.emit()
 
     def _on_region_inputs_changed(self) -> None:
         """Write the inputs the user has touched into ``source.inputs``.
@@ -2320,10 +2438,15 @@ class _ParamPanel(ThemedMixin, QWidget):
             return
         source = self._region.source
         current = self._region_inputs_form.get_params()
+        self.edit_starting.emit("Edit region")
         for key, value in current.items():
             if key in source.inputs or value != self._region_inputs_initial.get(key):
                 source.inputs[key] = value
-        self.region_property_changed.emit(True)
+        # A blank coordinate is absent from the form's params rather than empty; clearing one unsets it.
+        for key in source.inputs.keys() - current.keys():
+            if self._region_inputs_form.widget(key) is not None:
+                source.inputs[key] = None
+        self.region_property_changed.emit()
 
     def _on_detach_clicked(self) -> None:
         if self._region is not None:
@@ -2503,6 +2626,7 @@ class _ParamPanel(ThemedMixin, QWidget):
     def _on_node_label_changed(self, text: str) -> None:
         if self._suppress or self._state is None:
             return
+        self.edit_starting.emit("Edit params")
         self._state.label = text or None
         self.properties_changed.emit()
 
@@ -2540,6 +2664,7 @@ class _ParamPanel(ThemedMixin, QWidget):
     def _on_param_form_changed(self) -> None:
         if self._state is None:
             return
+        self.edit_starting.emit("Edit params")
         self._state.params = self._param_form.get_params()
         self.properties_changed.emit()
 
@@ -2547,6 +2672,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         if self._suppress or self._state is None:
             return
         text = self._notes_edit.toPlainText().strip()
+        self.edit_starting.emit("Edit params")
         self._state.notes = text if text else None
         self.properties_changed.emit()
 
@@ -2645,6 +2771,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         if self._suppress or self._transition is None:
             return
         flag_groups, flag_groups_op = self._flag_conditions_widget.get_flag_groups()
+        self.edit_starting.emit("Edit transition")
         self._transition.flag_groups = flag_groups
         self._transition.flag_groups_op = flag_groups_op
         # Clear legacy flat fields — the grouped format takes precedence in to_machine_config()
@@ -2722,6 +2849,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         """Auto-populate the node label if it is currently empty."""
         if self._state is None or (self._state.label or "").strip():
             return
+        self.edit_starting.emit("Edit params")
         self._state.label = label
         self._suppress = True
         self._node_label_edit.setText(label)

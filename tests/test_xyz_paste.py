@@ -56,3 +56,19 @@ def test_empty_clipboard_returns_empty():
 
 def test_json_non_object_returns_empty():
     assert parse_xyz_text("[1, 2, 3]") == {}
+
+
+def test_parses_a_bare_triple():
+    assert parse_xyz_text("1, -2.5, 3") == {"x": 1.0, "y": -2.5, "z": 3.0}
+
+
+def test_parses_a_bare_triple_in_parentheses():
+    assert parse_xyz_text(" (1,2,3) ") == {"x": 1.0, "y": 2.0, "z": 3.0}
+
+
+def test_a_bare_triple_must_be_the_whole_text():
+    assert parse_xyz_text("go to 1, 2, 3 now") == {}
+
+
+def test_a_bare_pair_is_rejected():
+    assert parse_xyz_text("1, 2") == {}

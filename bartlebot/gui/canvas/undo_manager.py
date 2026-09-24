@@ -28,7 +28,10 @@ class UndoManager:
     """Manages undo/redo history for the canvas editor using config snapshots.
 
     Call push() BEFORE a structural edit mutates the config.
-    Call begin_debounce() on each keystroke in a param edit sequence.
+    Call begin_debounce() on each keystroke in a param edit sequence, also BEFORE
+    the keystroke's edit lands: its first call is the burst's before-snapshot.
+    Call flush_debounce() before undo or redo, so an edit made moments ago is the
+    step they act on.
     Call cancel_debounce() when selection changes away.
     """
 
@@ -77,6 +80,11 @@ class UndoManager:
             self._redo.clear()
             logger.debug("Undo commit debounce: %s (depth=%d)", self._pending.desc, len(self._undo))
             self._pending = None
+
+    def flush_debounce(self) -> None:
+        """Commit the pending debounce snapshot now, without waiting for the timer."""
+        self._timer.stop()
+        self._commit_debounce()
 
     def cancel_debounce(self) -> None:
         """Discard the pending debounce snapshot without committing it."""
