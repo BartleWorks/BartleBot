@@ -1,28 +1,24 @@
 {
-  "id": "5fbc7799-354a-437e-b5f1-8ff664ca7c19",
+  "id": "45419e29-77a2-4923-b779-a0ab2d948878",
   "name": "Sync players",
-  "description": "Syncs all players in the same zone and realm.",
-  "version": 2,
-  "inputs": [
+  "description": "Syncs players in the same zone and realm, guaranteed. Most bots should start with this subgraph.",
+  "version": 3,
+  "inputs": [],
+  "panels": [
     {
-      "name": "zone",
-      "label": "Zone",
-      "type": "nav_zone",
-      "help": "Where every player gathers before the run starts.",
-      "bindings": [
-        {
-          "state": "state_2",
-          "param": "zone"
-        }
-      ]
+      "id": "node_state_2",
+      "kind": "node",
+      "label": "Go to zone",
+      "default_closed": false,
+      "member": "state_2",
+      "bindings": {}
     }
   ],
-  "panels": [],
   "states": [
     {
       "id": "state_1",
       "node_type": "relog",
-      "label": "Relog all players",
+      "label": "Relog",
       "position": {
         "x": 0.0,
         "y": 0.0
@@ -39,10 +35,10 @@
     {
       "id": "state_2",
       "node_type": "go_to_zone",
-      "label": "Go to target zone",
+      "label": "Go to zone",
       "position": {
         "x": 440.0,
-        "y": 0.0
+        "y": 90.0
       },
       "params": {
         "zone": ""
@@ -66,7 +62,7 @@
       "label": "Start",
       "position": {
         "x": 0.0,
-        "y": 90.0
+        "y": 180.0
       },
       "params": {}
     },
@@ -81,9 +77,9 @@
       "params": {}
     },
     {
-      "id": "exit_done",
+      "id": "exit_1",
       "node_type": "subgraph_exit",
-      "label": "Done",
+      "label": "Exit",
       "position": {
         "x": 1320.0,
         "y": 0.0
@@ -94,9 +90,17 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
+      "source": "entry_start",
+      "dest": "state_2",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "entry_recover",
       "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -124,26 +128,8 @@
     },
     {
       "trigger": "advance",
-      "source": "entry_start",
-      "dest": "state_2",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "entry_recover",
-      "dest": "state_1",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_3",
-      "dest": "exit_done",
+      "dest": "exit_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
