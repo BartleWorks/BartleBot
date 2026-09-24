@@ -431,3 +431,14 @@ def test_editing_an_inputs_default_edits_every_linked_param(doc):
     _input(doc, "world").default = "Krokotopia"
     doc._on_definition_changed()
     assert next(s for s in doc.config.states if s.id == "go_to_world").params["world"] == "Krokotopia"
+
+
+def test_promoting_a_node_drops_the_inputs_only_it_was_linked_to(doc):
+    # "world" is linked to go_to_world alone; "hub" also to tp_b.
+    assert doc.set_node_promoted("go_to_world", True)
+    assert not any(i.name == "world" for i in _meta(doc).inputs)
+    assert doc.set_node_promoted("hub", True)
+    assert [(b.state, b.param) for b in _input(doc, "hub").bindings] == [("tp_b", "zone")]
+    doc.undo()
+    doc.undo()
+    assert _input(doc, "world").bindings

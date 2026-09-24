@@ -256,7 +256,7 @@ class SignaturePage(ThemedMixin, QWidget):
             for key, extra in panel.bindings.items():
                 for b in extra:
                     text = ThemedTextLabel(
-                        f"its {key} is linked to {labels.get(b.state, b.state)} · {b.param}", color="text_muted"
+                        f"{key} is linked to {labels.get(b.state, b.state)} · {b.param}", color="text_muted"
                     )
                     unbind = _icon("dismiss", "Stop sharing this value")
                     unbind.clicked.connect(

@@ -2539,8 +2539,15 @@ class BotCanvas(QWidget):
             return False
         if promoted:
             self._begin_definition_edit("Promote to input group")
+            # As on a delete: an input only this node's params were linked to would sit
+            # on every subgraph node setting nothing, so it goes; one linked elsewhere stays.
+            emptied = set()
             for inp in meta.inputs:
-                inp.bindings = [b for b in inp.bindings if b.state != state_id]
+                kept = [b for b in inp.bindings if b.state != state_id]
+                if inp.bindings and not kept:
+                    emptied.add(inp.name)
+                inp.bindings = kept
+            meta.inputs = [i for i in meta.inputs if i.name not in emptied]
             for panel in node_panels(meta):
                 panel.bindings = {
                     k: kept for k, v in panel.bindings.items() if (kept := [b for b in v if b.state != state_id])
@@ -2569,7 +2576,7 @@ class BotCanvas(QWidget):
                     "Promote to Input Group",
                     "Some of this node's params are linked already: "
                     f"{', '.join(linked)}.\n\nPromoting the node replaces those links with its own input group. "
-                    "The inputs themselves stay.",
+                    "An input linked only to this node is removed; one linked elsewhere too stays.",
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
                     QMessageBox.StandardButton.Cancel,
                 )
