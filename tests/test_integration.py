@@ -19,6 +19,7 @@ What is NOT tested here (by design):
 """
 
 import asyncio
+import itertools
 import json
 from collections import Counter
 from pathlib import Path
@@ -416,15 +417,15 @@ _SAFETY_DELAY_ZERO = BotOptionModel(name="Safety Delay", type="float", default=0
 def _make_enter_zone_gateway_client_success():
     """FakeClient that simulates a successful Src → Dst zone transition.
 
-    zone_name sequence matches the enter_zone call pattern:
-      call 1 – pre-condition check           → "Src"
-      call 2 – poll_each_until_seen iter 1   → "Src" (still leaving; reteleport)
-      call 3 – poll_each_until_seen iter 2   → "Dst" (left zone; seen)
-      call 4 – wait_for_zone post-check      → "Dst" (in destination)
+    It reads "Src" for the pre-condition check and the first leave-poll, then "Dst"
+    for good. Not a fixed-length script: how often enter_zone reads the zone depends
+    on how many trigger attempts it takes, and a script it outruns raises inside the
+    node -- which the machine routes back to the same state, forever, so the test
+    hangs rather than failing.
     """
     client = FakeClient()
     client.window_handle = 99999  # required by _client_status_watcher
-    client.zone_name.side_effect = ["Src", "Src", "Dst", "Dst"]
+    client.zone_name.side_effect = itertools.chain(["Src", "Src"], itertools.repeat("Dst"))
     return client
 
 

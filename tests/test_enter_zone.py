@@ -4,6 +4,8 @@ import asyncio
 import itertools
 from unittest.mock import AsyncMock, patch
 
+from wizwalker import XYZ
+
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.zone_entry.enter_zone as gtz
 from bartlebot.nodes.paths import MESSAGE_BOX_CENTER
@@ -298,3 +300,81 @@ async def test_stagger_lead_failure_short_circuits():
     assert result == "FAILURE"
     for c in rest:
         c.teleport.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Every call retries (#101)
+#
+# reset_xyz used to be optional, and a node without one tried the trigger once.
+# A bot now has to set it; a caller in code that does not resets each client
+# to where it stood when the node started, which is clear of the trigger.
+# ---------------------------------------------------------------------------
+
+
+def _stuck_client(start):
+    client = FakeClient()
+    client.zone_name = AsyncMock(return_value="Src")  # the trigger never fires
+    client.body.position = AsyncMock(return_value=start)
+    return client
+
+
+async def _run_stuck(clients, params):
+    with (
+        patch.object(gtz, "POLL_INTERVAL", 0),
+        patch.object(nh, "wait_for_zone_with_recovery", new=AsyncMock(return_value=None)),
+    ):
+        return await gtz.run(FakeMachine(), clients, params)
+
+
+def _teleport_targets(client):
+    """Where the client was teleported, as tuples: XYZ has no __eq__, so two equal points compare unequal."""
+    return [tuple(call.args[0]) for call in client.teleport.call_args_list]
+
+
+async def test_without_a_reset_each_client_retries_from_where_it_started():
+    a = _stuck_client(XYZ(10.0, 20.0, 30.0))
+    b = _stuck_client(XYZ(-5.0, 6.0, 7.0))
+
+    await _run_stuck([a, b], _PARAMS)
+
+    assert (10.0, 20.0, 30.0) in _teleport_targets(a)
+    assert (-5.0, 6.0, 7.0) in _teleport_targets(b)
+    assert (10.0, 20.0, 30.0) not in _teleport_targets(b)
+
+
+async def test_a_trigger_is_retried_up_to_max_retries_without_a_reset():
+    """The single-attempt path is gone: no reset used to mean one try and no retry."""
+    client = _stuck_client(XYZ(10.0, 20.0, 30.0))
+
+    await _run_stuck([client], _PARAMS)
+
+    assert _teleport_targets(client).count((10.0, 20.0, 30.0)) == gtz.MAX_RETRIES - 1
+
+
+async def test_a_configured_reset_is_used_for_every_client():
+    a = _stuck_client(XYZ(10.0, 20.0, 30.0))
+    b = _stuck_client(XYZ(-5.0, 6.0, 7.0))
+
+    await _run_stuck([a, b], {**_PARAMS, "reset_xyz": {"x": 1.0, "y": 2.0, "z": 3.0}})
+
+    for client in (a, b):
+        assert (1.0, 2.0, 3.0) in _teleport_targets(client)
+    assert (10.0, 20.0, 30.0) not in _teleport_targets(a)
+
+
+async def test_an_all_zero_reset_is_never_teleported_to():
+    """A reset stored as (0, 0, 0) is an unset one, not the zone's origin."""
+    client = _stuck_client(XYZ(10.0, 20.0, 30.0))
+    params = {**_PARAMS, "xyz": {"x": 4.0, "y": 5.0, "z": 6.0}, "reset_xyz": {"x": 0.0, "y": 0.0, "z": 0.0}}
+
+    await _run_stuck([client], params)
+
+    assert (0.0, 0.0, 0.0) not in _teleport_targets(client)
+    assert (10.0, 20.0, 30.0) in _teleport_targets(client)
+
+
+def test_reset_xyz_is_required_in_the_editor():
+    field = next(f for f in gtz.PARAM_SCHEMA if f.key == "reset_xyz")
+
+    assert field.required
+    assert field.default is None
