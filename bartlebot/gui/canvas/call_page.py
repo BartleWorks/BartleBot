@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
+from dataclasses import replace
 
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import QComboBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QVBoxLayout, QWidget
@@ -36,7 +37,7 @@ from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 from bartlebot.subgraph_store import source_label
-from bartlebot.subgraphs import RegionStatus, exposed_key, local_id, member_id, port_name
+from bartlebot.subgraphs import RegionStatus, exposed_key, local_id, member_id, port_name, promoted_param_type
 
 #: How the page names where a definition comes from.
 
@@ -375,6 +376,13 @@ class CallNodePage(ThemedMixin, QWidget):
         # What the member runs with is what the form shows: its composed params,
         # which already carry any value this instance set.
         form = make_form()
+        if self._defn is not None:
+            schema = [
+                replace(f, type=t)
+                if (t := promoted_param_type(self._defn, panel, f.key, NODE_PARAM_SCHEMAS)) not in (None, f.type)
+                else f
+                for f in schema
+            ]
         prefix = exposed_key(panel.member or "", "")
         changed = {
             k[len(prefix) :] for k, v in self._region.source.inputs.items() if k.startswith(prefix) and v is not None

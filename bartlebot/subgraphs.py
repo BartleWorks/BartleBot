@@ -1057,3 +1057,41 @@ def binding_type(defn: SubgraphDefinition | BotConfig, bindings, schemas: Mappin
             if getattr(f, "key", None) == b.param:
                 types.append(getattr(f, "type", ""))
     return narrowest_type(types)
+
+
+def promoted_param_type(
+    defn: SubgraphDefinition | BotConfig, panel, key: str, schemas: Mapping[str, Sequence[object]]
+) -> str | None:
+    """The type a promoted node's param has on the subgraph node: its own, narrowed by the params linked to it.
+
+    A ``zone`` param linked to by a ``nav_zone`` one takes the stricter ``nav_zone``, so
+    the one value both run with is one both can use.
+    """
+    from bartlebot.nodes.param_schema import narrowest_type  # noqa: PLC0415
+
+    by_id = {s.id: s for s in defn.states}
+    member = by_id.get(panel.member or "")
+    own = next(
+        (getattr(f, "type", None) for f in schemas.get(member.node_type, []) if getattr(f, "key", None) == key)
+        if member is not None
+        else [],
+        None,
+    )
+    linked = binding_type(defn, panel.bindings.get(key, []), schemas)
+    types = [t for t in (own, linked) if t is not None]
+    return narrowest_type(types) if types else None
+
+
+def normalize_input_types(config: BotConfig, schemas: Mapping[str, Sequence[object]]) -> None:
+    """Give each linked input the strictest type among its params. In place.
+
+    An input keeps the type of the param it was made from until another links to it;
+    a ``nav_zone`` param joining a ``zone`` input makes it ``nav_zone``, and unlinking
+    that param loosens it again. An input with no links keeps the type it has.
+    """
+    meta = config.definition
+    if meta is None:
+        return
+    for inp in meta.inputs:
+        if inp.bindings and (t := binding_type(config, inp.bindings, schemas)) is not None:
+            inp.type = t

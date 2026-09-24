@@ -26,6 +26,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot import zone_nav
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -59,6 +60,7 @@ from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.zone_picker import is_destination
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, source_label
 from bartlebot.subgraphs import (
@@ -242,6 +244,18 @@ def _required_field_empty(field, params: dict) -> bool:
     return False  # int, float, bool always have a value
 
 
+def _nav_zone_reachable(value) -> bool:
+    """Whether a ``nav_zone`` value is somewhere Go To Zone can go. An empty one, or an unloadable map, passes.
+
+    The picker offers only destinations, but a value can arrive another way: a file,
+    or Record writing a zone param a ``nav_zone`` one is linked to.
+    """
+    if not value or not isinstance(value, str):
+        return True
+    nav = zone_nav.load()
+    return not nav.worlds or is_destination(nav, value)
+
+
 def port_marks_for(state: StateModel, config: BotConfig) -> dict[str, str]:
     """Which of *state*'s output ports act without an edge, and as what.
 
@@ -311,6 +325,8 @@ def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bo
             continue
         if field.required and _required_field_empty(field, state.params):
             error_reasons.append(f"Required param '{field.key}' is empty")
+        elif field.type == "nav_zone" and not _nav_zone_reachable(state.params.get(field.key)):
+            error_reasons.append(f"'{field.key}' is not a destination on the zone map")
 
     state_ids = {s.id for s in config.states}
     outgoing = [t for t in config.transitions if t.source == state.id]

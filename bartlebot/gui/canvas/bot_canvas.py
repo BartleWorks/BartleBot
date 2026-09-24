@@ -95,6 +95,8 @@ from bartlebot.subgraphs import (
     extract_definition,
     mint_instance_id,
     node_panels,
+    normalize_input_types,
+    promoted_param_type,
     reresolve_member_params,
     sync_linked_values,
     taken_ids,
@@ -2248,6 +2250,12 @@ class BotCanvas(QWidget):
         self._scene.refresh_all_edge_flags()
 
     def _on_scene_changed(self) -> None:
+        config = self._scene.config
+        if config is not None and config.is_definition:
+            # Links may have moved: each input takes its params' strictest type, and
+            # every linked param its input's value.
+            normalize_input_types(config, NODE_PARAM_SCHEMAS)
+            sync_linked_values(config)
         self._refresh_node_labels()
         self._refresh_node_returns()
         self._refresh_initial()
@@ -2644,10 +2652,8 @@ class BotCanvas(QWidget):
         """The signature page wrote into the document: a port renamed, an input or group changed.
 
         An input's default is every param linked to it, so a default edited there is
-        written through to them.
+        written through to them -- which ``_on_scene_changed`` does.
         """
-        if self._scene.config is not None:
-            sync_linked_values(self._scene.config)
         self._on_scene_changed()
 
     def _on_add_port_requested(self, node_type: str) -> None:
@@ -2679,18 +2685,28 @@ class BotCanvas(QWidget):
             return
         meta = config.definition
         links: dict[str, str] = {}
+        types: dict[str, str] = {}
         group: str | None = None
         if meta is not None:
             labels = {s.id: (s.label or s.id) for s in config.states}
-            links = {b.param: (i.label or i.name) for i in meta.inputs for b in i.bindings if b.state == state.id}
+            for inp in meta.inputs:
+                for b in inp.bindings:
+                    if b.state == state.id:
+                        links[b.param] = inp.label or inp.name
+                        types[b.param] = inp.type
             for panel in node_panels(meta):
                 name = panel.label or labels.get(panel.member or "", "")
                 if panel.member == state.id:
                     group = name
+                    for f in NODE_PARAM_SCHEMAS.get(state.node_type, []):
+                        if (t := promoted_param_type(config, panel, f.key, NODE_PARAM_SCHEMAS)) is not None:
+                            types[f.key] = t
                 for key, extra in panel.bindings.items():
                     for b in extra:
                         if b.state == state.id:
                             links[b.param] = f"{name} \u203a {key}"
+                            if (t := promoted_param_type(config, panel, key, NODE_PARAM_SCHEMAS)) is not None:
+                                types[b.param] = t
         self._param_panel.show_state(
             state,
             all_states=list(config.states),
@@ -2700,6 +2716,7 @@ class BotCanvas(QWidget):
             in_definition=meta is not None,
             links=links,
             promoted_group=group,
+            field_types=types,
         )
 
     def _show_call_page(self, region) -> None:

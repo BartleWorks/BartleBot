@@ -10,6 +10,7 @@ import json
 import logging
 import re
 from collections.abc import Callable
+from dataclasses import replace
 from typing import Any
 
 from PyQt6.QtCore import QEvent, QLocale, QSize, QStringListModel, Qt, QTimer, pyqtSignal
@@ -54,6 +55,7 @@ from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.subgraphs import binding_type
 from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
 
 
@@ -69,6 +71,8 @@ def input_param_field(defn, inp) -> ParamField:
     a definition document's config.
     """
     by_id = {s.id: s for s in defn.states}
+    # The strictest type of what the input is linked to, whatever an older file stored.
+    inp_type = binding_type(defn, inp.bindings, NODE_PARAM_SCHEMAS) or inp.type
     bound = [
         f
         for b in inp.bindings
@@ -76,10 +80,10 @@ def input_param_field(defn, inp) -> ParamField:
         for f in NODE_PARAM_SCHEMAS.get(st.node_type, [])
         if f.key == b.param
     ]
-    first = next((f for f in bound if f.type == inp.type), bound[0] if bound else None)
+    first = next((f for f in bound if f.type == inp_type), bound[0] if bound else None)
     return ParamField(
         key=inp.name,
-        type=inp.type,
+        type=inp_type,
         label=inp.label or inp.name,
         help=inp.help or "",
         default=inp.default,
@@ -704,6 +708,10 @@ class _StrChoiceComboBox(QComboBox):
 # ---------------------------------------------------------------------------
 
 
+#: The widest a link chip grows; a longer name is elided, and the tooltip has it whole.
+_LINK_CHIP_MAX_W = 180
+
+
 class _LinkChip(ThemedMixin, QToolButton):
     """A linked param's status, which turns into its Unlink action under the pointer.
 
@@ -716,6 +724,7 @@ class _LinkChip(ThemedMixin, QToolButton):
     def __init__(self, text: str, *, locked: bool, tooltip: str, parent=None) -> None:
         super().__init__(parent)
         self._text = text
+        self._shown_name = text
         self._locked = locked
         self._armed = False
         self.setAutoRaise(True)
@@ -759,13 +768,38 @@ class _LinkChip(ThemedMixin, QToolButton):
 
     def apply_theme_styles(self) -> None:
         color = THEME.warning if self._armed else THEME.accent
-        self.setText("Unlink" if self._armed else self._text)
-        self.setIcon(svg_icon("unhook" if self._armed else "hook", 12, tint=color))
-        set_style_sheet(
-            self,
-            f"QToolButton {{ color: {color}; font-size: {THEME.font_small_px}px; font-weight: 600;"
-            f" border: 1px solid {color}; border-radius: 3px; padding: 0 4px; }}",
+        # Hover is styled explicitly, so the style's own hover frame never draws over ours.
+        rule = (
+            f"color: {color}; font-size: {THEME.font_small_px}px; font-weight: 600;"
+            f" border: 1px solid {color}; border-radius: 3px; padding: 0 4px; background: transparent;"
         )
+        set_style_sheet(self, f"QToolButton {{ {rule} }} QToolButton:hover {{ {rule} }}")
+        self.setIcon(svg_icon("unhook" if self._armed else "hook", 12, tint=color))
+        self._fix_width()
+        self.setText("Unlink" if self._armed else self._shown_name)
+
+    def _fix_width(self) -> None:
+        """One width for both states: the wider of the two, capped, with a long name elided.
+
+        The chip turning into Unlink must not change its size -- shrinking under the
+        pointer is what made it flicker at its edge and left its old outline behind.
+        """
+        self.ensurePolished()
+        self.setMinimumWidth(0)
+        self.setMaximumWidth(16777215)
+        widths = {}
+        for text in ("Unlink", self._text):
+            self.setText(text)
+            widths[text] = self.sizeHint().width()
+        self._shown_name = self._text
+        if widths[self._text] > _LINK_CHIP_MAX_W:
+            chrome = widths[self._text] - self.fontMetrics().horizontalAdvance(self._text)
+            self._shown_name = self.fontMetrics().elidedText(
+                self._text, Qt.TextElideMode.ElideRight, _LINK_CHIP_MAX_W - chrome
+            )
+            self.setText(self._shown_name)
+            widths[self._text] = self.sizeHint().width()
+        self.setFixedWidth(min(max(widths.values()), _LINK_CHIP_MAX_W))
 
 
 class _HoverRow(QWidget):
@@ -864,6 +898,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         links: dict[str, str] | None = None,
         promoted_group: str | None = None,
         resettable: set[str] | frozenset[str] = frozenset(),
+        field_types: dict[str, str] | None = None,
     ) -> None:
         """Rebuild the form for *schema* showing *params*.
 
@@ -871,7 +906,10 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         that shows while the row is hovered; a row in *links* (key -> what it is linked
         to) shows a chip instead, which turns into Unlink on hover. On a node promoted to
         an input group, every row is linked to *promoted_group* and its chip is locked.
-        On a subgraph node's form, a key in *resettable* has a Reset beside it. The
+        On a subgraph node's form, a key in *resettable* has a Reset beside it. A key in
+        *field_types* is drawn as that type rather than its own: a linked param takes
+        the strictest type of what it is linked with, so a ``zone`` linked to a
+        ``nav_zone`` gets the destination picker. The
         controls wrap the row rather than the widget ``_make_widget`` returns, so every
         widget type gets them without knowing.
         """
@@ -891,8 +929,11 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._hover_rows.clear()
         self._schema = list(schema)
         links = links or {}
+        field_types = field_types or {}
         insert_idx = 0
         for field in schema:
+            if field_types.get(field.key, field.type) != field.type:
+                field = replace(field, type=field_types[field.key])
             label_w = QLabel()
             label_w.setTextFormat(Qt.TextFormat.RichText)
             self._field_labels.append((label_w, field, insert_idx > 0))
@@ -1340,7 +1381,14 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         widget = self._widgets.get(key)
         self._suppress = True
         if isinstance(widget, _NavZoneField):
+            # Written whatever it is -- Record must never be refused -- but a zone Go To
+            # Zone cannot reach is said so here, and validation marks the node.
             widget.set_value(value)
+            reachable = not value or not widget.picker.nav.worlds or is_destination(widget.picker.nav, value)
+            widget.notice.setText(
+                "" if reachable else f"{value} is not a destination on the zone map: pick the nearest major zone."
+            )
+            widget.notice.setVisible(not reachable)
         elif isinstance(widget, _ZoneWidget | QLineEdit):
             widget.setText(value)
         else:
@@ -2240,6 +2288,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         in_definition: bool = False,
         links: dict[str, str] | None = None,
         promoted_group: str | None = None,
+        field_types: dict[str, str] | None = None,
     ) -> None:
         """Show *state*. *in_definition* is a node of a definition document open for editing.
 
@@ -2267,6 +2316,7 @@ class _ParamPanel(ThemedMixin, QWidget):
             linkable=in_definition,
             links=links,
             promoted_group=promoted_group,
+            field_types=field_types,
         )
         self._rebuild_returns(state.node_type)
         self._rebuild_connections(state.id)

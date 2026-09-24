@@ -15,7 +15,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtTest import QTest
 from PyQt6.QtWidgets import QMessageBox
 
-from bartlebot.bot.schema import SUBGRAPH_EXIT, SubgraphInput
+from bartlebot.bot.schema import SUBGRAPH_EXIT, StateModel, SubgraphInput
 from bartlebot.gui.canvas.bot_canvas import BotMode
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import definition_to_config
@@ -442,3 +442,86 @@ def test_promoting_a_node_drops_the_inputs_only_it_was_linked_to(doc):
     doc.undo()
     doc.undo()
     assert _input(doc, "world").bindings
+
+
+# ---------------------------------------------------------------------------
+# A zone linked with a nav_zone takes the stricter type
+# ---------------------------------------------------------------------------
+
+
+def _add_go_to_zone(doc, zone="WizardCity/WC_Hub"):
+    doc.config.states.append(StateModel(id="nav", node_type="go_to_zone", params={"zone": zone}))
+    doc.scene.setup(doc.config)
+
+
+def test_a_zone_input_linked_with_a_nav_zone_becomes_a_nav_zone(doc):
+    _add_go_to_zone(doc)
+    assert _input(doc, "hub").type == "zone"
+    assert doc.link_param("nav", "zone", existing="hub")
+    assert _input(doc, "hub").type == "nav_zone"
+    doc.select_state("tp_b")
+    widget = doc.param_panel.param_form.widget("zone")
+    assert type(widget).__name__ == "_NavZoneField", "a linked zone row edits through the destination picker"
+    assert doc.unlink_param("nav", "zone")
+    assert _input(doc, "hub").type == "zone", "unlinking loosens it again"
+
+
+def test_a_promoted_zone_linked_by_a_nav_zone_keeps_its_record_button(doc):
+    from bartlebot.gui.canvas import recording  # noqa: PLC0415
+    from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS  # noqa: PLC0415
+    from bartlebot.subgraphs import promoted_param_type  # noqa: PLC0415
+
+    doc.config.states.append(StateModel(id="mark", node_type="mark_location", params={"zone": ""}))
+    _add_go_to_zone(doc)
+    assert "mark_location" in recording.RECORDABLE_NODES
+    assert doc.set_node_promoted("mark", True)
+    panel = next(p for p in _meta(doc).panels if p.member == "mark")
+    assert doc.link_param("nav", "zone", shared=(panel.id, "zone"))
+    assert promoted_param_type(doc.config, panel, "zone", NODE_PARAM_SCHEMAS) == "nav_zone"
+    doc.select_state("mark")
+    assert doc.param_panel._record_row.isVisibleTo(doc.param_panel)
+
+
+def test_record_into_a_destination_picker_is_never_refused(qapp):
+    from bartlebot.gui.canvas.param_panel import _DynamicParamForm  # noqa: PLC0415
+    from bartlebot.nodes.param_schema import ParamField  # noqa: PLC0415
+
+    form = _DynamicParamForm()
+    form.load_schema([ParamField(key="zone", type="nav_zone", label="Zone")], {"zone": ""})
+    form.set_str("zone", "Nowhere/Somewhere")
+    widget = form.widget("zone")
+    assert widget.value() == "Nowhere/Somewhere"
+    assert widget.notice.isVisibleTo(form)
+    form.set_str("zone", "WizardCity/WC_Hub")
+    assert not widget.notice.isVisibleTo(form)
+    form.deleteLater()
+
+
+def test_a_nav_zone_that_is_not_a_destination_is_an_error(doc):
+    _add_go_to_zone(doc, "Nowhere/Somewhere")
+    assert any("not a destination on the zone map" in e for e in doc.validation_errors())
+
+
+# ---------------------------------------------------------------------------
+# The link chip keeps one size
+# ---------------------------------------------------------------------------
+
+
+def test_the_link_chip_is_one_width_in_both_states(doc, qapp):
+    from PyQt6.QtCore import QEvent  # noqa: PLC0415
+
+    doc.select_state("go_to_world")
+    chip = doc.param_panel.param_form.link_chip("world")
+    width = chip.width()
+    qapp.sendEvent(chip, QEvent(QEvent.Type.Enter))
+    assert chip.text() == "Unlink" and chip.width() == width
+
+
+def test_a_long_linked_name_is_elided_within_the_cap(doc):
+    from bartlebot.gui.canvas.param_panel import _LINK_CHIP_MAX_W  # noqa: PLC0415
+
+    _input(doc, "world").label = "A world name far too long to fit on any chip at all"
+    doc.select_state("go_to_world")
+    chip = doc.param_panel.param_form.link_chip("world")
+    assert chip.width() <= _LINK_CHIP_MAX_W
+    assert chip.text().endswith("…")
