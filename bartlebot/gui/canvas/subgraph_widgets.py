@@ -1,16 +1,22 @@
 """The small widgets subgraph authoring adds to the canvas.
 
-``DefinitionCrumb`` is the overlay shown while a definition is open as a document: the
-path back to where it was opened from, and the verbs that end the visit.
-``SubgraphMetaDialog`` asks for a name and description when a region becomes a
-definition. ``LinkInputDialog`` links one node param to an existing input of a
-compatible type, a promoted node's param, or a new input. All three are plain Qt; the policy they drive lives
-in ``BotCanvas`` and the controller's document stack.
+``CrumbBar`` is the overlay that says where the canvas is -- Focus Mode on a region, a
+subgraph node's body viewed in Run mode, or a definition open as a document -- with the
+path back out, and in a definition the verbs that save it. ``ViewFrame`` is the border
+round the viewport that goes with it. ``SubgraphMetaDialog`` asks for a name and
+description when a region becomes a definition, or a definition is saved as a new one.
+``LinkInputDialog`` links one node param to an existing input of a compatible type, a
+promoted node's param, or a new input. All plain Qt; the policy they drive lives in
+``BotCanvas`` and the controller's document stack.
 """
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from dataclasses import dataclass
+from enum import Enum
+
+from PyQt6.QtCore import QRectF, Qt, pyqtSignal
+from PyQt6.QtGui import QColor, QPainter, QPen
 from PyQt6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -24,83 +30,311 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import SubgraphInput
+from bartlebot.gui.canvas.call_node_item import canvas_edge_color
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.icon_button import IconButton
+from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.nodes.param_schema import narrowest_type
 
 #: The combo entry that means "declare a new input" rather than bind to one.
 NEW_INPUT = "— New input —"
 
+#: The crumb bar's link glyph, the two squares of a subgraph node's badge.
+_GLYPH_PX = 14
 
-class DefinitionCrumb(ThemedMixin, QWidget):
-    """``<bot> › <definition>`` with *Save to library* and a way back, pinned over the view.
 
-    Save is the one thing this surface expects (``PRIMARY``). The path's first segment
-    is the document the definition was opened from, and clicking it goes back, as the
-    close button does -- both ask Save / Discard / Cancel first when there are unsaved
-    changes. The frame round the view is the double line a call node's side bars
-    echo, so "double means shared" holds on both.
+@dataclass(frozen=True)
+class Crumb:
+    """One segment of the crumb bar's path. ``region_color`` is a palette slot: a focused region's segment wears it."""
+
+    text: str
+    region_color: int | None = None
+
+
+class CrumbMode(Enum):
+    """The three things the crumb bar can be saying.
+
+    ``FOCUS`` is Focus Mode on a region of a bot: a view filter, in the region's own
+    colour, with a single-line frame. ``VIEW`` is a subgraph node's body in Run mode,
+    read-only. ``DEFINITION`` is a definition open as a document, with the verbs that
+    end the visit. The last two wear the accent, the link glyph and a double-line
+    frame, which the call node's double side bars echo: double means shared.
     """
 
+    FOCUS = "focus"
+    VIEW = "view"
+    DEFINITION = "definition"
+
+
+class _LinkGlyph(QWidget):
+    """The two overlapping squares of a subgraph node's link badge, in the crumb's text colour.
+
+    Read from THEME at paint time, so it holds nothing a theme switch could stale.
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setFixedSize(_GLYPH_PX, _GLYPH_PX)
+
+    def paintEvent(self, _event) -> None:
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        sq = _GLYPH_PX * 0.62
+        p.setPen(QPen(THEME.qcolor("pill_text"), 1.5))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawRoundedRect(QRectF(1, _GLYPH_PX - sq - 1, sq, sq), 2, 2)
+        p.drawRoundedRect(QRectF(_GLYPH_PX - sq - 1, 1, sq, sq), 2, 2)
+        p.end()
+
+
+class _Segment(QLabel):
+    """A path segment; an earlier one is a way back to it."""
+
+    clicked = pyqtSignal()
+
+    def mousePressEvent(self, event) -> None:
+        if self.cursor().shape() == Qt.CursorShape.PointingHandCursor:
+            self.clicked.emit()
+            return
+        super().mousePressEvent(event)
+
+
+class CrumbBar(ThemedMixin, QWidget):
+    """The one overlay that says where the canvas is, and the way back out, pinned over the view.
+
+    A path of segments -- the documents under the open one, the open one, then any
+    subgraph node opened or region focused inside it -- and any earlier segment can be
+    clicked to step back to it (``segment_clicked`` carries its index). The close
+    button steps out one level. In a definition it carries the three verbs that save
+    it: *Save* is the one this surface expects (``PRIMARY``), *Save as…* and, for a
+    modified built-in, *Revert*. Their labels are short on purpose, since the bar sits
+    over the canvas and every character it grows by hides the graph.
+
+    The bar only draws; which segments, and what a click does, is ``BotCanvas``'s.
+    """
+
+    segment_clicked = pyqtSignal(int)
+    close_requested = pyqtSignal()
     save_requested = pyqtSignal()
-    back_requested = pyqtSignal()
+    save_as_requested = pyqtSignal()
+    revert_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self._parent_lbl = QLabel()
-        self._parent_lbl.setCursor(Qt.CursorShape.PointingHandCursor)
-        self._parent_lbl.mousePressEvent = lambda _ev: self.back_requested.emit()  # type: ignore[method-assign]
-        self._sep = QLabel("›")
-        self._name_lbl = QLabel()
+        self._mode = CrumbMode.FOCUS
+        self._color_slot: int | None = None
+        self._segments: list[Crumb] = []
+        self._segment_labels: list[_Segment] = []
+        self._seps: list[QLabel] = []
+
+        self._glyph = _LinkGlyph()
+        self._path = QWidget()
+        self._path.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self._path_row = QHBoxLayout(self._path)
+        self._path_row.setContentsMargins(0, 0, 0, 0)
+        self._path_row.setSpacing(6)
         self._hint_lbl = QLabel()
-        self._save_btn = ActionButton("upload", "Save to library", style=ActionStyle.PRIMARY, fill=False)
-        self._close_btn = IconButton("dismiss", tooltip="Close the definition and go back", size=22, icon_size=12)
+        self._save_btn = ActionButton("save_done", "Save", style=ActionStyle.PRIMARY, fill=False, on_accent=True)
+        self._save_btn.setToolTip("Save this subgraph to the library")
+        self._save_as_btn = ActionButton("save_as", "Save as…", fill=False)
+        self._save_as_btn.setToolTip("Save a copy as a new subgraph, and go on editing the copy")
+        self._revert_btn = ActionButton("revert", "Revert", fill=False)
+        self._revert_btn.setToolTip("Discard your modified copy and go back to the built-in subgraph")
+        self._close_btn = IconButton("dismiss", tooltip="Step out", size=22, icon_size=12, tint=IconTint.ON_ACCENT)
         self._save_btn.clicked.connect(self.save_requested)
-        self._close_btn.clicked.connect(self.back_requested)
+        self._save_as_btn.clicked.connect(self.save_as_requested)
+        self._revert_btn.clicked.connect(self.revert_requested)
+        self._close_btn.clicked.connect(self.close_requested)
+
         row = QHBoxLayout(self)
         row.setContentsMargins(10, 5, 6, 5)
         row.setSpacing(8)
-        row.addWidget(self._parent_lbl)
-        row.addWidget(self._sep)
-        row.addWidget(self._name_lbl)
+        row.addWidget(self._glyph)
+        row.addWidget(self._path)
         row.addWidget(self._hint_lbl)
         row.addWidget(self._save_btn)
+        row.addWidget(self._save_as_btn)
+        row.addWidget(self._revert_btn)
         row.addWidget(self._close_btn)
-        self.refresh_theme_styles()
+        self.show_state(CrumbMode.FOCUS, [])
 
-    def set_path(self, parent: str | None, name: str, hint: str = "") -> None:
-        """``parent`` is the document the definition was opened from, or None when it was opened on its own."""
-        self._parent_lbl.setText(parent or "")
-        self._parent_lbl.setVisible(bool(parent))
-        self._parent_lbl.setToolTip(f"Back to {parent}" if parent else "")
-        self._sep.setVisible(bool(parent))
-        self._name_lbl.setText(name)
+    def show_state(
+        self,
+        mode: CrumbMode,
+        segments: list[Crumb],
+        *,
+        hint: str = "",
+        color_slot: int | None = None,
+        can_revert: bool = False,
+        close_tip: str = "Step out",
+    ) -> None:
+        """Draw ``segments`` in ``mode``. ``color_slot`` is the region colour a ``FOCUS`` bar is painted in."""
+        self._mode = mode
+        self._color_slot = color_slot if mode == CrumbMode.FOCUS else None
+        self._segments = list(segments)
+        self._rebuild_path()
+        self._glyph.setVisible(mode != CrumbMode.FOCUS)
         self._hint_lbl.setText(hint)
         self._hint_lbl.setVisible(bool(hint))
+        editing = mode == CrumbMode.DEFINITION
+        self._save_btn.setVisible(editing)
+        self._save_as_btn.setVisible(editing)
+        self._revert_btn.setVisible(editing and can_revert)
+        self._close_btn.setToolTip(close_tip)
+        self.refresh_theme_styles()
         self.adjustSize()
+
+    def _rebuild_path(self) -> None:
+        while self._path_row.count():
+            item = self._path_row.takeAt(0)
+            if item.widget() is not None:
+                # Hidden first: deleteLater leaves it painting until the loop comes round.
+                item.widget().hide()
+                item.widget().deleteLater()
+        self._segment_labels = []
+        self._seps = []
+        last = len(self._segments) - 1
+        for i, crumb in enumerate(self._segments):
+            if i:
+                sep = QLabel("›", self._path)
+                self._path_row.addWidget(sep)
+                # Shown by hand: a layout shows a new child of a visible parent only on
+                # a queued event, after this bar has measured itself without it.
+                sep.show()
+                self._seps.append(sep)
+            seg = _Segment(crumb.text, self._path)
+            if i < last:
+                seg.setCursor(Qt.CursorShape.PointingHandCursor)
+                seg.setToolTip(f"Back to {crumb.text}")
+                seg.clicked.connect(lambda i=i: self.segment_clicked.emit(i))
+            self._path_row.addWidget(seg)
+            seg.show()
+            self._segment_labels.append(seg)
+
+    @property
+    def mode(self) -> CrumbMode:
+        return self._mode
 
     @property
     def text(self) -> str:
-        return " › ".join(p for p in (self._parent_lbl.text(), self._name_lbl.text()) if p)
+        """The path as one string, ``A › B › C``."""
+        return " › ".join(c.text for c in self._segments)
+
+    @property
+    def hint_text(self) -> str:
+        return self._hint_lbl.text()
+
+    @property
+    def segment_labels(self) -> list[QLabel]:
+        return list(self._segment_labels)
+
+    @property
+    def glyph_visible(self) -> bool:
+        return self._glyph.isVisibleTo(self)
 
     @property
     def save_button(self) -> ActionButton:
         return self._save_btn
 
+    @property
+    def save_as_button(self) -> ActionButton:
+        return self._save_as_btn
+
+    @property
+    def revert_button(self) -> ActionButton:
+        return self._revert_btn
+
+    @property
+    def close_button(self) -> IconButton:
+        return self._close_btn
+
+    def background(self) -> QColor:
+        """The bar's own colour: the focused region's, or the accent for a subgraph."""
+        if self._color_slot is not None:
+            return THEME.region_color(self._color_slot)
+        return THEME.qcolor("accent")
+
     def apply_theme_styles(self) -> None:
+        bg = self.background()
+        # An edge in the canvas's own text colour, not a self-coloured one: the bar floats
+        # over the graph, and an Entry/Exit pill in the same accent otherwise merges into it.
+        edge = canvas_edge_color()
+        edge_rgba = f"rgba({edge.red()}, {edge.green()}, {edge.blue()}, {edge.alpha()})"
         set_style_sheet(
-            self,
-            f"DefinitionCrumb {{ background-color: {THEME.accent}; border: 1px solid {THEME.accent}; border-radius: 6px; }}",
+            self, f"CrumbBar {{ background-color: {bg.name()}; border: 1px solid {edge_rgba}; border-radius: 6px; }}"
         )
-        text = f"border: none; color: {THEME.pill_text}; font-size: {THEME.font_body_px}px; padding: 0;"
-        set_style_sheet(self._name_lbl, text + " font-weight: 600;")
-        set_style_sheet(self._parent_lbl, text + " text-decoration: underline;")
-        set_style_sheet(self._sep, text)
-        set_style_sheet(self._hint_lbl, f"border: none; color: {THEME.pill_text}; font-size: {THEME.font_small_px}px;")
+        set_style_sheet(self._path, "background: transparent;")
+        text = (
+            f"border: none; background: transparent; color: {THEME.pill_text};"
+            f" font-size: {THEME.font_body_px}px; padding: 0;"
+        )
+        faint = QColor(THEME.pill_text)
+        faint.setAlpha(190)
+        faint_rgba = f"rgba({faint.red()}, {faint.green()}, {faint.blue()}, {faint.alpha()})"
+        last = len(self._segment_labels) - 1
+        for i, seg in enumerate(self._segment_labels):
+            slot = self._segments[i].region_color
+            if slot is not None and self._mode != CrumbMode.FOCUS:
+                # A region focused inside a subgraph: its segment wears the region's
+                # colour, the one thing on the bar that says a filter is on as well.
+                region = THEME.region_color(slot).name()
+                set_style_sheet(
+                    seg,
+                    f"border: none; color: {THEME.pill_text}; font-size: {THEME.font_body_px}px; font-weight: 600;"
+                    f" background-color: {region}; border-radius: 4px; padding: 1px 6px;",
+                )
+            elif i < last:
+                set_style_sheet(seg, text + " font-weight: 500; text-decoration: underline;")
+            else:
+                set_style_sheet(seg, text + " font-weight: 600;")
+        for sep in self._seps:
+            set_style_sheet(
+                sep, f"border: none; background: transparent; color: {faint_rgba}; font-size: {THEME.font_body_px}px;"
+            )
+        set_style_sheet(
+            self._hint_lbl,
+            f"border: none; background: transparent; color: {faint_rgba}; font-size: {THEME.font_small_px}px;",
+        )
+
+
+class ViewFrame(ThemedMixin, QWidget):
+    """The border round the whole viewport while the canvas is anywhere but the plain bot.
+
+    Single, in a region's colour, for Focus Mode; double, in the accent, for a
+    subgraph -- its body viewed in Run mode, or its definition open. Transparent to
+    the mouse, so it never eats a click on the canvas. It holds the palette slot, not
+    the colour, so a theme switch repaints it.
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        self._slot: int | None = None
+        self._double = False
+        self.refresh_theme_styles()
+
+    def set_region(self, slot: int) -> None:
+        self._slot, self._double = slot, False
+        self.refresh_theme_styles()
+
+    def set_shared(self) -> None:
+        self._slot, self._double = None, True
+        self.refresh_theme_styles()
+
+    @property
+    def is_double(self) -> bool:
+        return self._double
+
+    def color(self) -> QColor:
+        return THEME.region_color(self._slot) if self._slot is not None else THEME.qcolor("accent")
+
+    def apply_theme_styles(self) -> None:
+        border = f"6px double {self.color().name()}" if self._double else f"3px solid {self.color().name()}"
+        set_style_sheet(self, f"ViewFrame {{ border: {border}; border-radius: 2px; background: transparent; }}")
 
 
 class SubgraphMetaDialog(QDialog):

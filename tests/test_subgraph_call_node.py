@@ -242,3 +242,59 @@ def test_a_new_subgraph_node_follows_the_definitions_defaults(canvas):
     rid = canvas.scene.insert_subgraph_instance(SYNC_ID, QPointF(0, 600))
     region = next(r for r in canvas.config.regions if r.id == rid)
     assert region.source.inputs == {}
+
+
+# ---------------------------------------------------------------------------
+# Geometry
+# ---------------------------------------------------------------------------
+
+
+def test_snapping_centres_a_call_node_on_the_grid_row(canvas):
+    from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H  # noqa: PLC0415
+
+    node = canvas.scene.node_items[REGION]
+    assert node.body_height > NODE_H  # or this proves nothing
+    node.set_snap_enabled(True)
+    # Centre 17px below row 3: a snap by NODE_H/2 would land it a row out.
+    node.setPos(QPointF(GRID_W * 2 + 30, GRID_H * 3 + 17 - node.body_height / 2))
+    assert node.pos().x() == GRID_W * 2
+    assert node.pos().y() + node.body_height / 2 == pytest.approx(GRID_H * 3)
+
+
+def test_role_badges_paint_inside_the_bounding_rect(canvas):
+    """Whatever paints outside boundingRect is never erased when it moves: #73's kind of stale pixel."""
+    from PyQt6.QtGui import QPainter, QPicture  # noqa: PLC0415
+    from PyQt6.QtWidgets import QStyleOptionGraphicsItem  # noqa: PLC0415
+
+    node = canvas.scene.node_items[REGION]
+    for roles in (("entry_start", None), ("entry_start", "entry_hub"), (None, "entry_start"), ("entry_hub",) * 2):
+        node.set_role_ports(*roles)
+        pic = QPicture()
+        painter = QPainter(pic)
+        node.paint(painter, QStyleOptionGraphicsItem())
+        painter.end()
+        assert node.boundingRect().contains(pic.boundingRect().toRectF()), roles
+
+
+@pytest.mark.parametrize(
+    "roles", [("entry_start", None), (None, "entry_hub"), ("entry_start", "entry_hub"), ("entry_hub", "entry_hub")]
+)
+def test_role_badges_sit_inside_the_body_where_no_edge_reaches(qapp, roles):
+    """Run mode draws no port dots, so everything painted but the outline is a badge or text."""
+    from PyQt6.QtGui import QPainter, QPicture  # noqa: PLC0415
+    from PyQt6.QtWidgets import QStyleOptionGraphicsItem  # noqa: PLC0415
+
+    node = CallNodeItem(
+        "r",
+        "Sync players",
+        subline="subgraph",
+        entries=[("entry_start", "Start"), ("entry_hub", "Hub")],
+        exits=[("exit_done", "Done")],
+    )
+    node.set_role_ports(*roles)
+    pic = QPicture()
+    painter = QPainter(pic)
+    node.paint(painter, QStyleOptionGraphicsItem())
+    painter.end()
+    body = node.body_scene_rect().adjusted(-2, -2, 2, 2)  # the outline's own stroke
+    assert body.contains(pic.boundingRect().toRectF())

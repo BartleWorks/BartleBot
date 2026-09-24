@@ -68,7 +68,7 @@ def _input(canvas, name):
 def test_nothing_selected_shows_the_signature(doc):
     assert doc.is_definition
     assert doc.param_panel.showing_signature
-    assert doc.definition_crumb.isVisibleTo(doc)
+    assert doc.crumb_bar.isVisibleTo(doc)
 
 
 def test_a_port_shows_the_signature_and_a_node_shows_its_page(doc):
@@ -90,7 +90,7 @@ def test_done_goes_back_and_save_and_done_saves_then_goes_back(doc):
     doc.definition_save_requested.connect(saved.append)
     doc._done_btn.click()
     doc._save_done_btn.click()
-    doc.definition_crumb.save_button.click()
+    doc.crumb_bar.save_button.click()
     assert back == [True]
     assert saved == [True, False]
 
@@ -208,7 +208,7 @@ def test_opening_a_definition_sets_the_bot_aside(harness):
     assert canvas.is_definition
     assert len(harness._doc_stack) == 1
     assert harness._doc_stack[0].doc.config is bot
-    assert canvas.definition_crumb.text == "Linked › Sync players"
+    assert canvas.crumb_bar.text == "Linked › Sync players"
 
 
 def test_save_bumps_the_version_and_back_recomposes_the_bot(harness, library):

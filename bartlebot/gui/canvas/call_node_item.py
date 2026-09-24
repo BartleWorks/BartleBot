@@ -41,8 +41,23 @@ _FOOT_PAD = 6
 _BAR_INSET = 10  # the double side bars sit this far in from each edge
 _CALL_RADIUS = 4
 _GLYPH = 14  # link badge size
+_EDGE_ALPHA = 200  # how strongly an accent pill's edge shows against the canvas
 _PORT_HIT_R = 16
 _ROLE_BADGE_R = 7
+_ROLE_BADGE_GAP = 3  # between two badges on one port, and before its name
+
+
+def canvas_edge_color() -> QColor:
+    """The edge of an accent-filled shape over the canvas: the Entry/Exit pills and the crumb bar.
+
+    It is the canvas's own text colour, so it stands off the canvas in either theme (light in
+    the dark one, dark in the light one) and between two accent fills that touch, which a
+    darker accent did against neither.
+    """
+    color = THEME.qcolor("text")
+    color.setAlpha(_EDGE_ALPHA)
+    return color
+
 
 #: Link badge states -- see :func:`paint_link_glyph`.
 LINK_STATES = ("linked", "outdated", "missing", "open")
@@ -118,8 +133,8 @@ class CallNodeItem(NodeItem):
         return QRectF(0, 0, NODE_W, self._height)
 
     def boundingRect(self) -> QRectF:
-        margin = max(PORT_R + 1, _ROLE_BADGE_R * 2 + 6) if (self._initial_port or self._recovery_port) else PORT_R + 1
-        top = 8 if self._is_search_match else PORT_R + 1
+        margin = PORT_R + 1
+        top = 8 if self._is_search_match else margin
         return QRectF(-margin - 8, -top, NODE_W + margin + PORT_R + 9, self._height + top * 2)
 
     def center(self) -> QPointF:
@@ -196,7 +211,6 @@ class CallNodeItem(NodeItem):
     def set_role_ports(self, initial: str | None, recovery: str | None) -> None:
         if (initial, recovery) == (self._initial_port, self._recovery_port):
             return
-        self.prepareGeometryChange()
         self._initial_port, self._recovery_port = initial, recovery
         self.update()
 
@@ -291,12 +305,14 @@ class CallNodeItem(NodeItem):
 
         half = (inner_r - inner_l) / 2
         painter.setPen(THEME.qcolor("text_subtle"))
-        for i, (_pid, name) in enumerate(self._entries):
+        for i, (pid, name) in enumerate(self._entries):
             y = self._row_y(i)
+            # The port's role badges lead its name, which starts after them.
+            indent = len(self._roles_of(pid)) * (_ROLE_BADGE_R * 2 + _ROLE_BADGE_GAP)
             painter.drawText(
-                QRectF(inner_l, y - _ROW_H / 2, half - 4, _ROW_H),
+                QRectF(inner_l + indent, y - _ROW_H / 2, half - 4 - indent, _ROW_H),
                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-                fm2.elidedText(name, Qt.TextElideMode.ElideRight, int(half - 4)),
+                fm2.elidedText(name, Qt.TextElideMode.ElideRight, int(half - 4 - indent)),
             )
         for i, pid in enumerate(self._returns):
             y = self._row_y(i)
@@ -315,24 +331,36 @@ class CallNodeItem(NodeItem):
                 painter.drawEllipse(QPointF(float(NODE_W), self._row_y(i)), PORT_R, PORT_R)
         self._paint_role_badges(painter)
 
+    def _roles_of(self, pid: str) -> list[str]:
+        """The roles pointing at entry port ``pid``, initial first: none, one, or both."""
+        return [
+            role
+            for role, port in (("initial", self._initial_port), ("recovery", self._recovery_port))
+            if port is not None and port == pid
+        ]
+
     def _paint_role_badges(self, painter: QPainter) -> None:
-        """The initial and recovery roles point at entry ports: a badge left of each."""
-        ids = [pid for pid, _ in self._entries]
-        for pid, color, icon, dx in (
-            (self._initial_port, _badge_initial(), _play_badge_renderer(), 0),
-            (self._recovery_port, _badge_recovery(), _recovery_badge_renderer(), 1),
-        ):
-            if pid not in ids:
-                continue
-            cx = -PORT_R - 4 - _ROLE_BADGE_R - dx * (_ROLE_BADGE_R * 2 + 2)
-            cy = self._row_y(ids.index(pid))
-            painter.save()
-            painter.setPen(QPen(color.darker(140), 1.0))
-            painter.setBrush(QBrush(color))
-            painter.drawEllipse(QPointF(cx, cy), _ROLE_BADGE_R, _ROLE_BADGE_R)
-            r = _ROLE_BADGE_R - 2.5
-            icon.render(painter, QRectF(cx - r, cy - r, r * 2, r * 2))
-            painter.restore()
+        """Each role badges the entry port it points at, inside the body at the start of the row.
+
+        Inside, so no edge arriving at the port can cross one. A port holding both roles
+        wears both, side by side in the order a plain node draws them.
+        """
+        x0 = _BAR_INSET + 8 + _ROLE_BADGE_R
+        for i, (pid, _name) in enumerate(self._entries):
+            cy = self._row_y(i)
+            for n, role in enumerate(self._roles_of(pid)):
+                if role == "initial":
+                    color, icon = _badge_initial(), _play_badge_renderer()
+                else:
+                    color, icon = _badge_recovery(), _recovery_badge_renderer()
+                cx = x0 + n * (_ROLE_BADGE_R * 2 + _ROLE_BADGE_GAP)
+                painter.save()
+                painter.setPen(QPen(color.darker(140), 1.0))
+                painter.setBrush(QBrush(color))
+                painter.drawEllipse(QPointF(cx, cy), _ROLE_BADGE_R, _ROLE_BADGE_R)
+                r = _ROLE_BADGE_R - 2.5
+                icon.render(painter, QRectF(cx - r, cy - r, r * 2, r * 2))
+                painter.restore()
 
 
 class PortNodeItem(NodeItem):
@@ -368,10 +396,13 @@ class PortNodeItem(NodeItem):
             painter.setBrush(QBrush(ring))
             painter.drawRoundedRect(rect.adjusted(-7, -7, 7, 7), NODE_H / 2 + 7, NODE_H / 2 + 7)
         fill = accent.lighter(115) if (self._hovered or selected) else accent
-        border = THEME.qcolor("error") if self._is_error else (THEME.qcolor("warning") if self._is_warning else fill)
-        painter.setPen(
-            QPen(border.darker(130) if not (self._is_error or self._is_warning) else border, 2.5 if selected else 1.5)
-        )
+        if self._is_error:
+            border = THEME.qcolor("error")
+        elif self._is_warning:
+            border = THEME.qcolor("warning")
+        else:
+            border = canvas_edge_color()
+        painter.setPen(QPen(border, 2.5 if selected else 2.0))
         painter.setBrush(QBrush(fill))
         painter.drawRoundedRect(rect, NODE_H / 2, NODE_H / 2)
         painter.setFont(THEME.ui_font(THEME.font_node_px + 2, bold=True))

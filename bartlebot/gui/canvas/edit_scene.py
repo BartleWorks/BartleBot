@@ -472,6 +472,8 @@ class EditScene(QGraphicsScene):
     # and the document stack live there: (region id) for both.
     save_region_as_subgraph_requested = pyqtSignal(str)
     open_definition_requested = pyqtSignal(str)
+    # A subgraph node double-clicked in Run mode: (region id) of the instance whose body to view.
+    view_instance_requested = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -487,6 +489,10 @@ class EditScene(QGraphicsScene):
         self._edge_models: dict[EdgeItem, list[TransitionModel]] = {}
         # Member id -> the region id of the call node it is drawn as.
         self._call_of: dict[str, str] = {}
+        # Instances whose body is on show in Run mode, outermost first: their members
+        # are drawn as nodes of their own, and a nested instance inside the innermost
+        # one as its call node. Kept across setup(); see set_expanded.
+        self._expanded: list[str] = []
         self._region_manager: RegionManager | None = None
         self._drag_src: NodeItem | None = None
         self._drag_when: str | None = None
@@ -589,7 +595,10 @@ class EditScene(QGraphicsScene):
         """
         self.teardown()
         self._config = config
-        self._call_of = {m: region.id for region in outermost_linked_regions(config.regions) for m in region.members}
+        linked = {r.id for r in config.regions if r.source is not None}
+        self._expanded = [rid for rid in self._expanded if rid in linked]
+        call_regions = outermost_linked_regions([r for r in config.regions if r.id not in self._expanded])
+        self._call_of = {m: region.id for region in call_regions for m in region.members}
 
         states = config.states
         sources = {self.display_id(t.source) for t in config.transitions}
@@ -609,7 +618,7 @@ class EditScene(QGraphicsScene):
             node.setPos(x, y)
             self.addItem(node)
             self._node_items[state.id] = node
-        for region in outermost_linked_regions(config.regions):
+        for region in call_regions:
             node = self._make_call_node(region)
             self.addItem(node)
             self._node_items[region.id] = node
@@ -738,6 +747,40 @@ class EditScene(QGraphicsScene):
         anchor = source.anchor or {"x": 0.0, "y": 0.0}
         node.setPos(float(anchor["x"]), float(anchor["y"]) - node.body_height / 2)
         return node
+
+    # ------------------------------------------------------------------
+    # A subgraph node's body, shown in Run mode
+    # ------------------------------------------------------------------
+
+    @property
+    def expanded(self) -> list[str]:
+        """The instances whose members are drawn as nodes, outermost first."""
+        return list(self._expanded)
+
+    def set_expanded(self, region_ids: list[str]) -> None:
+        """Draw these instances' members as nodes of their own, and rebuild if that changed.
+
+        What the Run-mode body view stands on: a running bot's config is already
+        composed, so the members are real states at ``anchor + definition position``,
+        and once they have items the run highlight lands on them by id. Only ever
+        asked for in Run mode, where nothing on the canvas can be edited.
+        """
+        region_ids = list(region_ids)
+        if region_ids == self._expanded:
+            return
+        self._expanded = region_ids
+        if self._config is not None:
+            self.setup(self._config)
+
+    def _expanded_members(self) -> set[str]:
+        return {m for rid in self._expanded if (r := self._region_by_id(rid)) is not None for m in r.members}
+
+    def members_shown_for(self, region_id: str) -> set[str]:
+        """The display ids an expanded instance's members are drawn as: a nested instance is its call node."""
+        region = self._region_by_id(region_id)
+        if region is None:
+            return set()
+        return {self.display_id(m) for m in region.members if self.display_id(m) in self._node_items}
 
     def _definition(self, region: RegionModel):
         if self._subgraph_library is None or region.source is None:
@@ -931,6 +974,10 @@ class EditScene(QGraphicsScene):
             is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, self._config, reachable)
             node = self._node_items.get(state.id)
             if node is not None:
+                if self._expanded and state.id in self._expanded_members():
+                    # A member drawn in the Run-mode body view: the same rule as rolling up.
+                    warn_reasons = member_warnings(warn_reasons)
+                    is_warning = bool(warn_reasons)
                 reasons = err_reasons + warn_reasons
                 node.set_error(is_error, reasons)
                 node.set_warning(is_warning, reasons)
@@ -1410,8 +1457,11 @@ class EditScene(QGraphicsScene):
         if isinstance(item, RegionItem):
             self.focus_region_requested.emit(item.region_id)
             return
-        if isinstance(item, CallNodeItem) and self._interactive_mode:
-            self.open_definition_requested.emit(item.state_id)
+        if isinstance(item, CallNodeItem):
+            if self._interactive_mode:
+                self.open_definition_requested.emit(item.state_id)
+            else:
+                self.view_instance_requested.emit(item.state_id)
             return
         super().mouseDoubleClickEvent(event)
 

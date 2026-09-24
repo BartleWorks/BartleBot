@@ -288,7 +288,7 @@ class _ElidedLabel(ThemedMixin, QLabel):
         self.setToolTip(self._full if super().text() != self._full else "")
 
     def apply_theme_styles(self) -> None:
-        self.setStyleSheet(f"color: {getattr(THEME, self._color_token)}; font-size: {THEME.font_small_px}px;")
+        self.setStyleSheet(f"color: {getattr(THEME, self._color_token)}; font-size: {THEME.font_body_px}px;")
 
 
 class _TagsField(QWidget):
@@ -477,7 +477,7 @@ class BotHeader(ThemedMixin, QWidget):
     dragging the transport off centre now that it shares the row.
 
     Still a ``QGridLayout`` rather than boxes: the columns have very different
-    natural heights -- 32 px buttons against 11 px captions -- and the spanning
+    natural heights -- 44 px buttons against 14 px captions -- and the spanning
     clusters have to centre against the metadata block as a whole.
 
     Both button clusters are ``BotCanvas``'s; they are placed but never touched.
@@ -562,13 +562,24 @@ class BotHeader(ThemedMixin, QWidget):
         title_row.addStretch(1)
         _let_shrink(title)
 
-        # -- Left column, row 2: tags ---------------------------------
+        # -- Left column, row 2: tags, or a definition's provenance -----
         self._tags_field = _TagsField()
+        # A definition has no tags, and hiding the row for one made the bar 22px shorter
+        # in a definition than in the bot it was opened from -- so every step in or out
+        # moved the graph, and the bar was caught mid-change on screen. The row stays,
+        # carrying where the definition comes from and what uses it, and the hidden field
+        # keeps its slot so the row is exactly as tall as an untagged bot's.
+        policy = self._tags_field.sizePolicy()
+        policy.setRetainSizeWhenHidden(True)
+        self._tags_field.setSizePolicy(policy)
+        self._definition_lbl = _ElidedLabel(color="text_subtle")
+        self._definition_lbl.setVisible(False)
 
         self._tag_row = QWidget()
         tag_row = QHBoxLayout(self._tag_row)
         tag_row.setContentsMargins(0, 0, 0, 0)
         tag_row.setSpacing(6)
+        tag_row.addWidget(self._definition_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
         # Centred rather than stretched.  A box layout hands a stretched child the
         # whole row, and ``FlowLayout`` then lays its rows from the top of what it was
         # given -- so whenever the grid row is taller than the byline itself (the
@@ -591,7 +602,7 @@ class BotHeader(ThemedMixin, QWidget):
         # Set on the widget rather than through the stylesheet: a stylesheet
         # ``font-size`` never reaches ``QWidget.font()``, so the metrics
         # ``_size_status_slots`` measures with would be the wrong size entirely.
-        status_font.setPixelSize(THEME.font_small_px)
+        status_font.setPixelSize(THEME.font_body_px)
         self._status_lbl.setFont(status_font)
 
         self._status_side = QWidget()
@@ -677,8 +688,14 @@ class BotHeader(ThemedMixin, QWidget):
             else:
                 self._apply_version(config.version)
             # Tags and authors describe a bot in the library; a definition has neither.
-            self._tag_row.setVisible(config.definition is None)
-            self._authors_slot.setVisible(config.definition is None)
+            # Its row 2 says where it comes from instead: see set_definition_info.
+            is_bot = config.definition is None
+            self._tags_field.setVisible(is_bot)
+            self._definition_lbl.setVisible(not is_bot)
+            if is_bot:
+                self._definition_lbl.setText("")
+            self._tag_row.setVisible(True)
+            self._authors_slot.setVisible(is_bot)
         self._suppress = False
 
     def set_file(self, filename: str | None) -> None:
@@ -686,9 +703,10 @@ class BotHeader(ThemedMixin, QWidget):
         self._file_lbl.setText(f"· {filename}" if filename else "")
 
     def set_definition_info(self, origin: str, used_by: int) -> None:
-        """For a definition document: where it comes from and how many bots link it, beside the version."""
+        """For a definition document: what it is beside the version, and on line 2 where it comes from and what links it."""
         uses = f"Used by {used_by} bot{'s' if used_by != 1 else ''}"
-        self._file_lbl.setText(" · ".join(["· subgraph", *([origin] if origin else []), uses]))
+        self._file_lbl.setText("· subgraph")
+        self._definition_lbl.setText(" · ".join([*([origin] if origin else []), uses]))
 
     def set_editable(self, editable: bool) -> None:
         if self._config is None:
@@ -713,6 +731,11 @@ class BotHeader(ThemedMixin, QWidget):
     @property
     def file_text(self) -> str:
         return self._file_lbl.full_text()
+
+    @property
+    def definition_text(self) -> str:
+        """A definition's line 2: its source and how many bots use it. Empty for a bot."""
+        return self._definition_lbl.full_text()
 
     @property
     def version_text(self) -> str:

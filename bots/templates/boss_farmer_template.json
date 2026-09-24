@@ -4,8 +4,8 @@
   "description": "Template bot file for a boss farming bot. To use this template to create your own bot, follow these steps:\n\n1) Change the zone in \"Go to dungeon entrance zone\" to the zone containing the dungeon entrance. If the correct zone is not on the list, choose the nearest major zone and add navigation nodes to get to the dungeon entrance zone from the major zone.\n\n2) Edit the \"Enter dungeon\" node and record yourself entering the dungeon.\n\n3) Edit the \"Defeat boss\" node by copying the name of the boss from the Players tab and pasting it in the \"Enemy name\" field. This ensures that the bot will attempt to pull the boss first. If left empty, players will teleport to the closest enemy when the node becomes active.\n\n4) Populate the drop list for the boss by clicking \"Import drops from wiki\" and pasting the Wizard101 wiki page URL for the boss.\n\n5) Edit the \"Exit dungeon\" node and record yourself exiting the dungeon.\n\n6) Edit the \"Quicksell\" node to keep relevant drops.\n\n7) In the left side of the toolbar above the bot canvas, update the bot name/author and add tags to the bot by clicking \"Rewards\" and \"Activities\"",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_2",
-  "recovery_state": "state_1",
+  "initial": "sync_players_1_state_2",
+  "recovery_state": "sync_players_1_state_1",
   "drops": [],
   "authors": "BartleBot",
   "tags": [
@@ -14,47 +14,6 @@
   ],
   "options": [],
   "states": [
-    {
-      "id": "state_1",
-      "node_type": "relog",
-      "label": "Relog all players",
-      "position": {
-        "x": 880.0,
-        "y": 0.0
-      },
-      "params": {
-        "relog_clients": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "go_to_zone",
-      "label": "Go to dungeon entrance zone",
-      "position": {
-        "x": 1320.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": ""
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
-      "position": {
-        "x": 1760.0,
-        "y": 0.0
-      },
-      "params": {
-        "use_favorite_realm": true
-      }
-    },
     {
       "id": "state_4",
       "node_type": "handle_potions",
@@ -140,6 +99,47 @@
         "to_zone": "",
         "stagger": false
       }
+    },
+    {
+      "id": "sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "sync_players_1_state_2",
+      "node_type": "go_to_zone",
+      "label": "Go to zone",
+      "position": {
+        "x": 2199.9998649583054,
+        "y": 90.00021952501636
+      },
+      "params": {
+        "zone": ""
+      }
+    },
+    {
+      "id": "sync_players_1_state_3",
+      "node_type": "change_realm",
+      "label": "Change to favorite realm",
+      "position": {
+        "x": 2639.9998649583054,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "use_favorite_realm": true
+      }
     }
   ],
   "transitions": [
@@ -215,18 +215,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
+      "source": "sync_players_1_state_1",
+      "dest": "sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -235,8 +225,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
+      "source": "sync_players_1_state_2",
+      "dest": "sync_players_1_state_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -245,7 +235,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
+      "source": "sync_players_1_state_3",
       "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
@@ -254,5 +244,41 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "sync_players_1",
+      "label": "Sync players",
+      "members": [
+        "sync_players_1_state_1",
+        "sync_players_1_state_2",
+        "sync_players_1_state_3"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 3,
+        "inputs": {},
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_3",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ]
 }

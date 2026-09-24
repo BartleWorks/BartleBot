@@ -4,8 +4,8 @@
   "description": "A basic example script for testing purposes.",
   "version": "2.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "sync_players_1_state_2",
+  "recovery_state": "sync_players_1_state_1",
   "drops": [
     {
       "name": "Nothing"
@@ -19,20 +19,152 @@
   "options": [],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_friend",
-      "label": "Teleport to friend",
+      "id": "state_4",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 0.0,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": -440.0,
+        "y": -90.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "sync_players_1_state_2",
+      "node_type": "go_to_zone",
+      "label": "Go to zone",
       "position": {
         "x": 0.0,
         "y": 0.0
       },
       "params": {
-        "target_hooked_player": true,
-        "target_player": 1,
-        "to_zone": "WizardCity/WC_Streets/WC_Unicorn"
+        "zone": ""
+      }
+    },
+    {
+      "id": "sync_players_1_state_3",
+      "node_type": "change_realm",
+      "label": "Change to favorite realm",
+      "position": {
+        "x": 440.0,
+        "y": -90.0
+      },
+      "params": {
+        "use_favorite_realm": true
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "teleport_to_coordinates",
+      "position": {
+        "x": -880.0,
+        "y": -90.0
+      },
+      "params": {
+        "zone": ""
       }
     }
   ],
-  "transitions": [],
-  "regions": []
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_1",
+      "dest": "sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_2",
+      "dest": "sync_players_1_state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "sync_players_1",
+      "label": "Sync players",
+      "members": [
+        "sync_players_1_state_1",
+        "sync_players_1_state_2",
+        "sync_players_1_state_3"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 3,
+        "inputs": {},
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_3",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": -440.0,
+          "y": -90.0
+        }
+      }
+    }
+  ]
 }
