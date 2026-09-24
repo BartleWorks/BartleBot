@@ -31,6 +31,8 @@ from bartlebot.gui.widgets.card_art_tile import art_icon
 from bartlebot.gui.widgets.picker_popup import PickerButton, PickerRow, Section
 
 SUGGESTED_TITLE = "Recent Zones"
+SUGGESTED_LIMIT = 8
+"""The most rows the suggestions section shows, counted after non-destinations are dropped."""
 POPUP_WIDTH = 480
 """Wider than the tag pickers: a row carries a zone name and a zone id of up to 29 characters."""
 MINIMUM_WIDTH = 80
@@ -48,8 +50,8 @@ def world_keys_by_title(nav: zone_nav.NavMap) -> dict[str, str]:
     The sections are captioned with ``worlds.label``, which is localized and is not the
     key; this is how a header gets back to the key its icon is stored under. Built from
     the same ``nav.worlds`` the sections are, so the two cannot disagree about which
-    worlds exist -- and ``SUGGESTED_TITLE`` is deliberately absent, since "Where players
-    are" spans worlds and an emblem there would claim one.
+    worlds exist -- and ``SUGGESTED_TITLE`` is deliberately absent, since "Recent
+    Zones" spans worlds and an emblem there would claim one.
     """
     return {worlds.label(world.key): world.key for world in nav.worlds.values()}
 
@@ -82,7 +84,8 @@ def zone_sections(nav: zone_nav.NavMap, suggested: Iterable[str] = ()) -> list[S
     """Every destination on the map as picker sections: one per world, both sorted by name.
 
     `suggested` zones -- where the players are -- come first in a section of their own, when
-    they are destinations; each of those rows names its world, since its section does not.
+    they are destinations, up to ``SUGGESTED_LIMIT`` of them; each of those rows names its
+    world, since its section does not.
     """
     by_world: list[Section] = []
     for world in nav.worlds.values():
@@ -101,6 +104,8 @@ def zone_sections(nav: zone_nav.NavMap, suggested: Iterable[str] = ()) -> list[S
             here.append(
                 PickerRow(key=zone, label=zone_names.label(zone), meta=worlds.label(world.key), description=zone)
             )
+            if len(here) == SUGGESTED_LIMIT:
+                break
     return [(SUGGESTED_TITLE, here), *by_world] if here else by_world
 
 
