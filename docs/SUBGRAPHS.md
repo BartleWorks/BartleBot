@@ -4,11 +4,14 @@ What a subgraph definition and an instance are, how an instance follows its defi
 where the three levels of a member's params come from, and what each authoring verb does.
 The editor surfaces are documented with the rest of the canvas in `bartlebot/gui/CLAUDE.md`.
 
-> **Partly superseded.** `docs/SUBGRAPH_CALLS.md` is the successor epic, and it overrides
-> three decisions recorded here: the composite-node rejection (*An instance is a region*),
-> the three-level param model (*A member's params come from three levels*), and "there is no
-> second document type" (*Authoring is edit in place*). Everything else below still holds and
-> is not relitigated there. Read both before any subgraph work.
+> **Partly superseded.** `docs/SUBGRAPH_CALLS.md` links the successor epic's plan, which
+> overrides these sections: the composite-node rejection (*An instance is a region*), the
+> three-level param model (*A member's params come from three levels*; an instance now sets
+> inputs and nothing else), authoring in place (*Authoring is edit in place*; a definition is
+> now its own document), instance locking and the member pages (*The properties panel on an
+> instance*), and instance-owned member layout (*Layout is instance-owned*). Derived ids,
+> follow-latest with snapshot fallback, the two roots, nesting and cycles still hold. Read both
+> before any subgraph work.
 
 Designed for #37. Each stage is its own sub-issue and lands on `master` alone; a section
 below says which stage implements it, and the table is updated as they merge.

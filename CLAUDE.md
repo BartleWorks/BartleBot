@@ -54,7 +54,7 @@ read on purpose.
 | `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value |
 | `docs/COMBAT_CONFIG.md` | the five strategy levels, the two storage roots, the pick/assemble/author split, and the Save/Cancel boundary |
 | `docs/SUBGRAPHS.md` | reusable subgraphs: definition vs. instance, derived member ids, follow-latest with snapshot fallback, the three param levels, instance-owned layout, the authoring verbs |
-| `docs/SUBGRAPH_CALLS.md` | the successor epic to #37: subgraph calls, the node audit, ports, the collapsed call node, and the library rewrite — read it before any subgraph work, it supersedes three of `SUBGRAPHS.md`'s decisions |
+| `docs/SUBGRAPH_CALLS.md` | a pointer to the plan for the successor epic to #37 (subgraph calls, ports, the definition document, the call node, the library rewrite), which lives on a claude.ai page — read that page before any subgraph work; it supersedes several of `SUBGRAPHS.md`'s sections |
 | `docs/LIBRARY_MIGRATION.md` | where all 82 bots stand against the four core templates: per-bot tier and divergence, the template input signature, the outlier bots |
 | `docs/RETURN_ROUTING.md` | the default failure edge, the explicit stop, why neither is drawn, and the three-mode failure-edge toggle |
 | `docs/RELOGGING.md` | why a client slows down, and the two ways to clear it |

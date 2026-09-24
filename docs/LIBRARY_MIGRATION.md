@@ -4,7 +4,7 @@ Where all 82 shipped bots stand against the four core templates, what each one c
 migrate, and what the templates and subgraphs have to cover to absorb them. Measured over
 `bots/` on 2026-09-22; regenerate rather than hand-edit if the corpus moves.
 
-`docs/SUBGRAPH_CALLS.md` Stage 2 has since landed, so the counts, tiers and per-bot rows below
+Stage 2 of the subgraph-calls plan (linked from `docs/SUBGRAPH_CALLS.md`) has since landed, so the counts, tiers and per-bot rows below
 are the pre-Stage-2 measurement: they still name node types that were merged or removed, and
 still count the outliers Stage 2 cleared. The prose sections record what landed.
 
@@ -126,7 +126,7 @@ synchronisation**, not a tail: it waits for `NPCServicesWin/ControlSprite/option
 become visible so the following `click_path` does not race the menu open. Plain `interact`
 would not wait, and the clicks would fire into nothing.
 
-This also corrects the migration note in `docs/SUBGRAPH_CALLS.md`, which claims
+This also corrected a migration note in an earlier draft of the plan, which claimed
 `barkingham_palace_ransacked_throne_room` "becomes `interact` with `has_dialogue: false`". It
 does not — that would break the bot, merge or no merge.
 
@@ -197,7 +197,7 @@ and the GDI ceiling.
   `go_to_zone` there was no step left for it to be. Its target-picking helper,
   `find_target_in_zone`, moved to `node_helpers`, where zone-arrival recovery uses it.
   `form_group` is removed too; `enter_zone_via_ride` is retired from the browser and kept as a
-  `zone_navigation` step. `docs/SUBGRAPH_CALLS.md` Stage 2 has all three.
+  `zone_navigation` step. The plan's Stage 2 records all three.
 - **`skeleton_key_boss_farmer_template.json` is deleted.** It did not run: 5 of its 10 states
   were unreachable and `enter_dungeon` had no outgoing transitions, making it a terminal state
   that stopped the run after entering the dungeon. Nothing referenced it — templates are
@@ -216,7 +216,7 @@ and the GDI ceiling.
 
 ## Stage 2 work: the nine outlier bots and two spinning self-loops
 
-Everything here lands in `docs/SUBGRAPH_CALLS.md` Stage 2, before the templates are rebuilt,
+Everything here lands in the plan's Stage 2, before the templates are rebuilt,
 because Stage 9 re-authors these bots and an unfixed defect would survive the rewrite
 untouched. Each row is independent of the others and of the subgraph work.
 
@@ -268,8 +268,8 @@ All nine are done.
 | `the_great_spyre` | cap the `apply_level_scaling` retry | capped at 3 on the node |
 
 The three detours are not simply deleted at the bot level — they are what the opt-in wisp
-subgraph re-expresses, so a bot that genuinely needs one gets it back by inserting that
-subgraph. `docs/SUBGRAPH_CALLS.md` Stage 8 has its shape.
+detour re-expresses, so a bot that genuinely needs one gets it back. Whether that detour is a
+subgraph or a flag on the top-up step is decided at the start of the plan's Stage 8.
 
 `wait_for_health`'s module docstring now records its real contract: **for zones where
 `handle_potions` cannot refill** — housing gauntlets today, boss rematches later, both entered
@@ -278,19 +278,19 @@ general health check, which is how four of its five former uses happened.
 
 ## What this does to the subgraph port requirement
 
-Worth stating, because it is much smaller than the current corpus suggests. After the rewrite,
-`foulgaze`'s 6-incoming-edge sync region and every second-tier recovery fan-in are gone, and
-the only shapes left are the templates'. What the two shipped definitions then need:
+After the rewrite, `foulgaze`'s 6-incoming-edge sync region and every second-tier recovery
+fan-in are gone, and the only shapes left are the templates'. An earlier draft concluded from
+that that roles were the only source of multiple entries. **Measured against the templates
+themselves, that is wrong**, and the plan now treats several entry points as in scope:
 
-| definition | entry | exits | notes |
-|---|---|---|---|
-| **Player Sync** (`relog → go_to_zone → change_realm`) | none by edge | 1 | two members must be role-bindable: `initial` on `go_to_zone`, `recovery_state` on `relog` |
-| **Farming loop** (`handle_potions → quicksell → enter_dungeon → [slot] → collect_wisps → exit`) | 1 | 1 plus the slot pair | top-up phase has two shapes (potions, or wisps-then-potions) |
+- In **spellement**, `relog --SUCCESS-->` goes to `check_level_scaling`, not to `go_to_zone`, and
+  the loop re-enters at `go_to_zone` by an edge.
+- In **reagent**, the loop re-enters at `change_realm` (`state_6 → state_3`), mid-way through
+  Player Sync.
 
-So the requirement is one entry port, one exit port, a slot pair, and two role-bindable
-members. **Roles, not edges, are the only source of multiple entries** — which is what the
-plan already says, and it means the general multi-entry port machinery is not needed for
-1.0.0.
+Whether those two templates are restructured or Player Sync gains extra entries is decided at
+the start of the plan's Stage 8. The farming loop is no longer a planned definition — it stays
+template structure, and reaches existing bots through template provenance (Stage 10).
 
 ## Coverage: what is missing
 
