@@ -306,12 +306,18 @@ class NodeItem(QGraphicsItem):
         # Port marks are drawn whether or not the node is interactive -- an undrawn
         # route still has to be visible while the bot is running -- so they need the
         # port margin even when the plain dots are not being painted.
-        margin = PORT_R + 1 if (self._interactive or self._port_marks) else 0
+        # Never zero: the body's outline is stroked on its edge, so half the widest
+        # pen (2.5, the run highlight) plus antialiasing lies outside the body.
+        margin = PORT_R + 1 if (self._interactive or self._port_marks) else 2
         if self._is_search_match:
             margin = max(margin, 8)
         nr = self._node_rect()
-        top_extra = _BADGE_R if (self._is_initial or self._is_terminal or self._is_recovery) else 0
-        return QRectF(nr.x() - margin, -(margin + top_extra), NODE_W + margin * 2, NODE_H + margin * 2 + top_extra)
+        badged = self._is_initial or self._is_terminal or self._is_recovery
+        top_extra = _BADGE_R if badged else 0
+        # The first badge is centred on the left edge, so it reaches half a badge (and
+        # its pen) past it. Anything painted outside these bounds is never erased.
+        left = max(margin, _BADGE_R + 1) if badged else margin
+        return QRectF(nr.x() - left, -(margin + top_extra), NODE_W + left + margin, NODE_H + margin * 2 + top_extra)
 
     # ------------------------------------------------------------------
     # State setters
@@ -537,9 +543,12 @@ class NodeItem(QGraphicsItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self._snap_enabled:
+            # The grid row is the body's vertical centre, as the anchor is: a call node
+            # is taller than NODE_H, so its own height has to be used here too.
+            half = self.body_height / 2
             return QPointF(
                 round(value.x() / GRID_W) * GRID_W,
-                round((value.y() + NODE_H / 2) / GRID_H) * GRID_H - NODE_H / 2,
+                round((value.y() + half) / GRID_H) * GRID_H - half,
             )
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionHasChanged:
             for edge in list(self._edges):

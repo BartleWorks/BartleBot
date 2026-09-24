@@ -403,12 +403,14 @@ def test_a_refresh_builds_new_cards(qapp, library):
     """The files were re-read, so a kept card may describe a version that is gone."""
     panel = _BotLibraryPanel()
     panel.refresh()
-    before = {id(card) for card in panel._cards.values()}
+    # Hold the cards themselves, not their ids: a freed card's id is free for the
+    # next allocation, so a new card can come back with an old one's id.
+    before = list(panel._cards.values())
     assert before
 
     panel.refresh()
 
-    assert before.isdisjoint(id(card) for card in panel._cards.values())
+    assert not any(card is old for card in panel._cards.values() for old in before)
 
 
 def test_a_card_built_with_matched_drops_shows_them(qapp):
