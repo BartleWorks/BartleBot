@@ -289,6 +289,11 @@ class NodeItem(QGraphicsItem):
     def _height(self) -> int:
         return NODE_H
 
+    @property
+    def body_height(self) -> int:
+        """The node body's height: a call node's grows with its port rows."""
+        return self._height
+
     def _node_rect(self) -> QRectF:
         """Local bounding rect of the node body (excluding margin)."""
         return QRectF(0, 0, NODE_W, NODE_H)

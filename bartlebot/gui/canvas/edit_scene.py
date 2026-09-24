@@ -649,7 +649,7 @@ class EditScene(QGraphicsScene):
             sn, dn = self._node_items[s], self._node_items[d]
             if dn.pos().x() >= sn.pos().x():
                 continue  # forward edge
-            if abs(sn.pos().y() - dn.pos().y()) >= sn._height:
+            if abs(sn.pos().y() - dn.pos().y()) >= sn.body_height:
                 continue  # Y-band outlier — routes independently
             y_row = round(sn.pos().y() / GRID_H)
             if is_above_routed(sn, w):
@@ -736,7 +736,7 @@ class EditScene(QGraphicsScene):
         )
         node.set_snap_enabled(self._snap_enabled)
         anchor = source.anchor or {"x": 0.0, "y": 0.0}
-        node.setPos(float(anchor["x"]), float(anchor["y"]) - node._height / 2)
+        node.setPos(float(anchor["x"]), float(anchor["y"]) - node.body_height / 2)
         return node
 
     def _definition(self, region: RegionModel):
@@ -1285,7 +1285,7 @@ class EditScene(QGraphicsScene):
                     self._drag_snap_edge.set_snap_target(True)
 
             snap = self._drag_snap_edge
-            end_pt = snap._dst.port_in_at(snap.dst_port) if snap is not None else cur
+            end_pt = snap.dst_node.port_in_at(snap.dst_port) if snap is not None else cur
             self._temp_edge.setLine(src_pt.x(), src_pt.y(), end_pt.x(), end_pt.y())
 
             views = self.views()
@@ -1337,7 +1337,7 @@ class EditScene(QGraphicsScene):
                 self._drag_snap_edge = None
 
                 if snap is not None:
-                    self._create_transition(self._drag_src, snap._dst, self._drag_when, dst_port=snap.dst_port)
+                    self._create_transition(self._drag_src, snap.dst_node, self._drag_when, dst_port=snap.dst_port)
                 else:
                     hit = self._node_near_port_in(event.scenePos())
                     if hit is not None:
@@ -1438,8 +1438,8 @@ class EditScene(QGraphicsScene):
             act = QAction("Delete Transition", menu)
             act.triggered.connect(lambda: self._delete_edge_item(item))
             menu.addAction(act)
-            if not isinstance(item._src, (CallNodeItem, PortNodeItem)) and not isinstance(
-                item._dst, (CallNodeItem, PortNodeItem)
+            if not isinstance(item.src_node, (CallNodeItem, PortNodeItem)) and not isinstance(
+                item.dst_node, (CallNodeItem, PortNodeItem)
             ):
                 act_ins = QAction("Insert State Here", menu)
                 act_ins.triggered.connect(lambda: self._insert_state_on_edge(item))
@@ -1872,7 +1872,7 @@ class EditScene(QGraphicsScene):
             # Shift offset_y downward until no pasted node collides with an existing one.
             # Grid cell key: (col based on left edge, row based on center y) — same as snap formula.
             occupied = {
-                (round(item.pos().x() / GRID_W), round((item.pos().y() + item._height / 2) / GRID_H))
+                (round(item.pos().x() / GRID_W), round((item.pos().y() + item.body_height / 2) / GRID_H))
                 for item in self._node_items.values()
             }
             for _ in range(50):
@@ -2464,7 +2464,7 @@ class EditScene(QGraphicsScene):
         behind "Add State Here" -- offsets its rows by half a node instead, so what it
         returns is collision-free but never row-aligned with anything already there.
         """
-        boxes = [QRectF(n.pos().x(), n.pos().y(), NODE_W, n._height) for n in self._node_items.values()]
+        boxes = [QRectF(n.pos().x(), n.pos().y(), NODE_W, n.body_height) for n in self._node_items.values()]
         cell_x = round(seed.x() / GRID_W)
         cell_y = round(seed.y() / GRID_H)
         for dx, dy in _placement_candidates(x_dir):
@@ -2660,7 +2660,7 @@ class EditScene(QGraphicsScene):
                 continue
             new_pos = {
                 "x": node.scenePos().x(),
-                "y": node.scenePos().y() + node._height / 2,
+                "y": node.scenePos().y() + node.body_height / 2,
             }
             if state.position != new_pos:
                 updates[state.id] = new_pos
@@ -2671,7 +2671,7 @@ class EditScene(QGraphicsScene):
                 continue
             anchor = region.source.anchor or {"x": 0.0, "y": 0.0}
             dx = round(node.scenePos().x() - float(anchor["x"]), 3)
-            dy = round(node.scenePos().y() + node._height / 2 - float(anchor["y"]), 3)
+            dy = round(node.scenePos().y() + node.body_height / 2 - float(anchor["y"]), 3)
             if dx or dy:
                 anchor_moves.append((region, dx, dy))
         if not updates and not anchor_moves:
