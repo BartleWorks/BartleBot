@@ -223,6 +223,10 @@ class ClientTile(QWidget):
         """Return True if the game window (or a child of it) has keyboard focus."""
         return self._window.is_focused()
 
+    def is_game_visible_at(self, x: int, y: int) -> bool:
+        """Return True if the game window is what the screen shows at (x, y), in physical pixels."""
+        return self._window.is_visible_at(x, y)
+
     def _reposition(self) -> None:
         """Center the game window at its native resolution within the tile.
 

@@ -158,6 +158,7 @@ _SIGNATURES: tuple[tuple[str, list, object], ...] = (
     ("AttachThreadInput", [_DWORD, _DWORD, _BOOL], _BOOL),
     ("SetFocus", [_HWND], _HWND),
     ("IsChild", [_HWND, _HWND], _BOOL),
+    ("WindowFromPoint", [ctypes.wintypes.POINT], _HWND),
     ("GetWindowThreadProcessId", [_HWND, ctypes.POINTER(_DWORD)], _DWORD),
     ("GetGUIThreadInfo", [_DWORD, ctypes.POINTER(GUITHREADINFO)], _BOOL),
 )
@@ -288,6 +289,17 @@ class EmbeddedWindow:
             return False
         focus = gti.hwndFocus
         return bool(focus) and (focus == self._hwnd or bool(self._user32.IsChild(self._hwnd, focus)))
+
+    def is_visible_at(self, x: int, y: int) -> bool:
+        """Whether the screen shows this window at (*x*, *y*), in physical pixels.
+
+        ``WindowFromPoint`` answers with whatever is on top at that point, so a window
+        stacked over this one — another app, a popped-out client, a Qt popup — wins.
+        A rect test cannot tell those apart: that is how a click on a window in front
+        of an embedded client used to hand the client focus and pull BartleBot forward.
+        """
+        hit = self._user32.WindowFromPoint(ctypes.wintypes.POINT(x, y))
+        return bool(hit) and (hit == self._hwnd or bool(self._user32.IsChild(self._hwnd, hit)))
 
     # ------------------------------------------------------------------
     # Embed / restore

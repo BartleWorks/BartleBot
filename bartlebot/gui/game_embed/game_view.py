@@ -8,7 +8,6 @@ import ctypes.wintypes
 import logging
 
 from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import (
     QApplication,
     QFrame,
@@ -889,18 +888,16 @@ class GameView(ThemedMixin, QWidget):
 
     def _poll_focus(self) -> None:
         if _user32.GetAsyncKeyState(_VK_LBUTTON) & 0x0001:
-            # Skip focus grant when a non-tile Qt widget (dialog, popup, overlay button)
-            # is on top of the game area at the cursor position.
-            top_widget = QApplication.widgetAt(QCursor.pos())
-            if top_widget is None or isinstance(top_widget, ClientTile):
-                pt = ctypes.wintypes.POINT()
-                _user32.GetCursorPos(ctypes.byref(pt))
-                for tile in self._tiles.values():
-                    rect = ctypes.wintypes.RECT()
-                    _user32.GetWindowRect(tile.hwnd, ctypes.byref(rect))
-                    if rect.left <= pt.x < rect.right and rect.top <= pt.y < rect.bottom:
-                        tile.focus_game()
-                        break
+            # The press can be anywhere on the desktop, so ask what is visible under the
+            # cursor rather than whose rect contains it: a window stacked over a tile — a
+            # dialog, a popup, a popped-out client, another app — must keep the click
+            # instead of a game behind it taking focus and pulling BartleBot forward (#93).
+            pt = ctypes.wintypes.POINT()
+            _user32.GetCursorPos(ctypes.byref(pt))
+            for tile in self._tiles.values():
+                if tile.is_game_visible_at(pt.x, pt.y):
+                    tile.focus_game()
+                    break
 
         for tile in self._tiles.values():
             tile.set_focused(tile.is_game_focused())
