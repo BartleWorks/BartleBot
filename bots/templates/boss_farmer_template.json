@@ -91,16 +91,6 @@
       "params": {
         "from_zone": "",
         "dungeon_zone": "",
-        "sigil_xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
-        "reset_xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
         "offers_challenge_mode": false,
         "offers_team_up": true
       }
@@ -148,11 +138,6 @@
       "params": {
         "from_zone": "",
         "to_zone": "",
-        "xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        },
         "stagger": false
       }
     }
