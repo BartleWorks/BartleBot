@@ -2206,11 +2206,20 @@ class EditScene(QGraphicsScene):
         meta = self._config.definition
         if meta is not None:
             meta.panels = [p for p in meta.panels if not (p.kind == "node" and p.member == state_id)]
+            # An input this node was the only thing setting goes with it: it would sit on
+            # every subgraph node setting nothing. One already unbound is the author's
+            # to keep, so only an input this delete emptied is dropped.
+            emptied = set()
             for inp in meta.inputs:
-                inp.bindings = [b for b in inp.bindings if b.state != state_id]
+                kept = [b for b in inp.bindings if b.state != state_id]
+                if inp.bindings and not kept:
+                    emptied.add(inp.name)
+                inp.bindings = kept
+            meta.inputs = [i for i in meta.inputs if i.name not in emptied]
             for panel in meta.panels:
-                for key in list(panel.bindings):
-                    panel.bindings[key] = [b for b in panel.bindings[key] if b.state != state_id]
+                panel.bindings = {
+                    k: kept for k, v in panel.bindings.items() if (kept := [b for b in v if b.state != state_id])
+                }
         self._reassign_orphaned_roles()
         if state_id in self._node_items:
             self.removeItem(self._node_items.pop(state_id))

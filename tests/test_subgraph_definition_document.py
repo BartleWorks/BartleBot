@@ -356,3 +356,14 @@ def test_every_surface_names_the_source_the_same_way():
     assert source_label(Origin.SHIPPED) == "Source: Built-in"
     assert source_label(Origin.SHIPPED_OVERRIDE) == "Source: Built-in (modified)"
     assert source_label(Origin.USER) == "Source: User"
+
+
+def test_deleting_a_node_takes_the_inputs_only_it_set(doc):
+    # "world" sets go_to_world alone; "hub" also sets tp_b, so it stays.
+    assert doc.scene.delete_state("go_to_world", confirm=False)
+    assert not any(i.name == "world" for i in _meta(doc).inputs)
+    assert doc.scene.delete_state("hub", confirm=False)
+    assert [(b.state, b.param) for b in _input(doc, "hub").bindings] == [("tp_b", "zone")]
+    doc.undo()
+    doc.undo()
+    assert _input(doc, "world").bindings
