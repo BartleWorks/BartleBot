@@ -186,3 +186,59 @@ def test_the_bar_does_not_drift_over_repeated_mode_switches(canvas):
         seen.append(_header_height(canvas))
 
     assert set(seen) == {run}, f"the bar visited {sorted(set(seen))} across four switches, starting from {run}"
+
+
+def _definition() -> BotConfig:
+    from bartlebot.bot.schema import DefinitionMeta
+
+    return BotConfig(
+        id="test-definition",
+        name="Shared steps",
+        initial="a",
+        recovery_state="a",
+        states=[StateModel(id="a", node_type="change_realm", params={})],
+        transitions=[],
+        definition=DefinitionMeta(id="shared-steps"),
+    )
+
+
+@pytest.mark.parametrize("bot_mode", ["run", "edit"])
+def test_the_bar_is_as_tall_in_a_definition_as_in_the_bot_it_was_opened_from(canvas, bot_mode):
+    """A definition has no tags, and hiding the tag row for one made the bar 22px shorter.
+
+    So every step into a definition and back moved the graph, and the bar could be
+    caught on screen part way through the change. The row stays, holding where the
+    definition comes from instead.
+    """
+    from bartlebot.gui.canvas.bot_canvas import BotMode
+
+    if bot_mode == "edit":
+        canvas.enter_edit_mode()
+    bot = _header_height(canvas)
+
+    doc = canvas.take_document()
+    canvas.setup(_definition(), mode=BotMode.EDIT)
+    canvas.set_definition_context(["Example"], origin="Source: User", used_by=2)
+    inside = _header_height(canvas)
+    assert canvas.header.definition_text == "Source: User · Used by 2 bots"
+
+    canvas.restore_document(doc)
+    back = _header_height(canvas)
+
+    assert (bot, inside, back) == (bot, bot, bot)
+    assert canvas.header.definition_text == ""
+
+
+def test_setting_up_straight_into_edit_mode_does_not_pass_through_run_mode(canvas):
+    """Landing in Run first hid the favorites bar and re-laid out the canvas, only to show it again."""
+    from bartlebot.gui.canvas.bot_canvas import BotMode
+
+    canvas.enter_edit_mode()
+    seen = []
+    canvas.mode_changed.connect(seen.append)
+
+    canvas.take_document()
+    canvas.setup(_definition(), mode=BotMode.EDIT)
+
+    assert seen == [BotMode.EDIT]
+    assert canvas.mode == BotMode.EDIT

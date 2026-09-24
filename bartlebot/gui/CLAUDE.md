@@ -687,7 +687,12 @@ follows the default until its own page changes the value (Reset goes back). A ro
 status and action in one control: an unlinked row's Link button appears only on hover or
 focus, and a linked row's chip reads as the link and turns into Unlink under the pointer --
 except on a promoted node, whose chips are locked. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Built-in / Built-in (modified) / User" (`subgraph_store.source_label`); the code keeps `CallNodeItem` and `SubgraphPanel`. In a definition, Bar B shows the
-version read-only, where it comes from and how many bots use it, and no tags.
+version read-only and no tags; line 2 says where it comes from and how many bots use it.
+**Line 2 stays in a definition** and the hidden tag field keeps its slot, so the bar is
+the same height in both documents — hiding the row made every step in or out move the
+graph 22px, and the bar was caught mid-change on screen. Open a document straight into
+its mode with `setup(config, mode=...)`, never `setup` then `enter_edit_mode`, which
+laid the canvas out in Run mode first.
 `docs/SUBGRAPHS.md` has the flow.
 
 ## One crumb bar, and the levels behind it

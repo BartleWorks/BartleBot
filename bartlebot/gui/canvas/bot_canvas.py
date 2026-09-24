@@ -1376,8 +1376,13 @@ class BotCanvas(QWidget):
     # Public API — bot loading
     # ------------------------------------------------------------------
 
-    def setup(self, config: BotConfig) -> None:
-        """Load a BotConfig -- a bot, or a definition document. Enters RUN mode with the graph ready."""
+    def setup(self, config: BotConfig, *, mode: BotMode = BotMode.RUN) -> None:
+        """Load a BotConfig -- a bot, or a definition document -- and enter ``mode`` with the graph ready.
+
+        Pass the mode here rather than calling ``enter_edit_mode`` afterwards: landing in
+        Run mode first hid the favorites bar and re-laid out the whole canvas only for
+        Edit mode to show it again, all inside one call that can take 200ms.
+        """
         self._undo_mgr.clear()
         # Auto-layout when no positions are saved and the setting is enabled
         if (
@@ -1391,8 +1396,8 @@ class BotCanvas(QWidget):
         self._load(config, ComposeReport())
         self._view.fit_scene()
         self._minimap.fit_to_scene()
-        self._apply_mode(BotMode.RUN)
-        self.mode_changed.emit(BotMode.RUN)
+        self._apply_mode(mode)
+        self.mode_changed.emit(mode)
 
     def _load(self, config: BotConfig, report: ComposeReport) -> None:
         """Bind every surface to ``config``: what ``setup`` and ``restore_document`` share."""

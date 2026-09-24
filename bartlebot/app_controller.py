@@ -510,10 +510,9 @@ class AppController(QObject):
         self._loaded_config = config
         self._last_save_path = None
         self._window.set_bot_name(config.name, "Untitled")
-        self._window.bot_canvas.setup(config)
+        self._window.bot_canvas.setup(config, mode=BotMode.EDIT)
         self._window.left_sidebar.set_config(config)
         self._window.right_sidebar.set_config(config)
-        self._window.bot_canvas.enter_edit_mode()
         self._window.set_save_enabled(True)
         self._window.set_close_enabled(True)
         self._window.set_start_enabled(self._start_enabled())
@@ -691,9 +690,8 @@ class AppController(QObject):
         self._loaded_config = config
         self._last_save_path = None
         self._has_unsaved_changes = unsaved
-        canvas.setup(config)
+        canvas.setup(config, mode=BotMode.EDIT)
         canvas.set_compose_report(report)
-        canvas.enter_edit_mode()
         self._refresh_definition_context()
         # The sidebars describe a bot: its options, combat, drops. A definition has none.
         self._window.left_sidebar.set_config(None)
@@ -1799,11 +1797,10 @@ class AppController(QObject):
             self._last_save_path = str(original_path) if original_path else None
             display_name = original_path.name if original_path else "Untitled (recovered)"
             self._window.set_bot_name(config.name, display_name)
-            self._window.bot_canvas.setup(config)
+            self._window.bot_canvas.setup(config, mode=BotMode.EDIT)
             self._window.bot_canvas.set_compose_report(report)
             self._window.left_sidebar.set_config(config)
             self._window.right_sidebar.set_config(config)
-            self._window.bot_canvas.enter_edit_mode()
             self._window.set_save_enabled(True)
             self._window.set_close_enabled(True)
             self._window.set_start_enabled(self._start_enabled())
