@@ -314,3 +314,45 @@ def test_undo_keeps_the_node_selected(doc):
     assert doc.param_panel.shown_state is not None and doc.param_panel.shown_state.id == "wisps"
     doc.redo()
     assert doc.param_panel.shown_state is not None and doc.param_panel.shown_state.id == "wisps"
+
+
+def test_the_expose_button_says_how_to_stop(doc):
+    doc.select_state("hub")
+    button = doc.param_panel.expose_button
+    assert button.text() == "Expose on subgraph node"
+    doc.set_node_exposed("hub", True)
+    assert button.text() == "Stop exposing"
+
+
+def test_an_input_moves_into_and_out_of_a_group(doc):
+    page = doc.param_panel.signature_page
+    page._add_panel()
+    group = next(p for p in _meta(doc).panels if p.kind == "inputs")
+    assert group.label == "Group 1"
+    page.move_input_to_group("world", group.id)
+    assert _input(doc, "world").panel == group.id
+    page.move_input_to_group("world", None)
+    assert _input(doc, "world").panel is None
+    doc.undo()
+    assert _input(doc, "world").panel == group.id
+
+
+def test_a_new_input_can_be_promoted_straight_into_a_group(qapp):
+    from bartlebot.gui.canvas.subgraph_widgets import PromoteInputDialog  # noqa: PLC0415
+
+    dlg = PromoteInputDialog(
+        [], param_key="timeout", param_type="float", param_label="Timeout", current_value=30.0, groups=[("g1", "Waits")]
+    )
+    dlg.set_new_input("wait")
+    dlg.set_group("g1")
+    assert dlg.new_input().panel == "g1"
+    dlg.deleteLater()
+
+
+def test_every_surface_names_the_source_the_same_way():
+    from bartlebot.store_roots import Origin  # noqa: PLC0415
+    from bartlebot.subgraph_store import source_label  # noqa: PLC0415
+
+    assert source_label(Origin.SHIPPED) == "Source: Built-in"
+    assert source_label(Origin.SHIPPED_OVERRIDE) == "Source: Built-in (modified)"
+    assert source_label(Origin.USER) == "Source: User"

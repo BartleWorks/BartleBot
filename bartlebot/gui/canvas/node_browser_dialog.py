@@ -49,15 +49,8 @@ from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_SPECS, NODE_TYPE_TO_C
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import Origin
-from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, count_subgraph_uses
+from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, count_subgraph_uses, source_label
 from bartlebot.subgraphs import entry_nodes, exit_nodes, port_name
-
-_ORIGIN_CHIP = {
-    Origin.SHIPPED: "Shipped",
-    Origin.SHIPPED_OVERRIDE: "Your copy",
-    Origin.USER: "Your library",
-    Origin.MISSING: "Missing",
-}
 
 
 def subgraph_key(subgraph_id: str) -> str:
@@ -252,7 +245,7 @@ class _DetailPanel(ThemedMixin, QScrollArea):
         title_label.setStyleSheet(f"color: {THEME.text};")
         title_row.addWidget(title_label, 1)
         title_row.addWidget(_Chip("Subgraph", THEME.accent, THEME.chip_text))
-        title_row.addWidget(_Chip(_ORIGIN_CHIP.get(origin, origin.value), THEME.border, THEME.text))
+        title_row.addWidget(_Chip(source_label(origin), THEME.border, THEME.text))
         layout.addLayout(title_row)
 
         key_label = QLabel(f"{defn.id} \u00b7 version {defn.version}")

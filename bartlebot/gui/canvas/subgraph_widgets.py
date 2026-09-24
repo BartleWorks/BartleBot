@@ -163,6 +163,7 @@ class PromoteInputDialog(QDialog):
         param_label: str,
         current_value: object,
         shared: list[tuple[str, str, str]] | None = None,
+        groups: list[tuple[str, str]] | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -185,6 +186,11 @@ class PromoteInputDialog(QDialog):
         self._label = QLineEdit(param_label)
         self._help = QLineEdit()
         self._help.setPlaceholderText("Shown as the input's tooltip (optional)")
+        # (group id, label) of the input groups a new input can be listed under.
+        self._group = QComboBox()
+        self._group.addItem("None", None)
+        for gid, glabel in groups or []:
+            self._group.addItem(glabel, gid)
 
         form = QFormLayout()
         form.addRow(QLabel(f"Set <b>{param_label}</b> ({param_type}) from:"))
@@ -192,6 +198,7 @@ class PromoteInputDialog(QDialog):
         form.addRow("Name", self._name)
         form.addRow("Label", self._label)
         form.addRow("Help", self._help)
+        form.addRow("Input group", self._group)
         footer = dialog_footer(self, on_commit=self.accept)
         self._ok = footer.commit
         layout = QVBoxLayout(self)
@@ -232,7 +239,7 @@ class PromoteInputDialog(QDialog):
 
     def _on_choice_changed(self, _index: int) -> None:
         new = self._combo.currentData() is None
-        for w in (self._name, self._label, self._help):
+        for w in (self._name, self._label, self._help, self._group):
             w.setEnabled(new)
         self._validate()
 
@@ -252,4 +259,10 @@ class PromoteInputDialog(QDialog):
             type=self._type,
             help=self._help.text().strip() or None,
             default=self._value,
+            panel=self._group.currentData(),
         )
+
+    def set_group(self, group_id: str | None) -> None:
+        """Pick the new input's group by id -- for tests."""
+        idx = self._group.findData(group_id)
+        self._group.setCurrentIndex(idx if idx >= 0 else 0)

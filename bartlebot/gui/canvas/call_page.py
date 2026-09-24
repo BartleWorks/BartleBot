@@ -35,16 +35,10 @@ from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
-from bartlebot.store_roots import Origin
+from bartlebot.subgraph_store import source_label
 from bartlebot.subgraphs import RegionStatus, exposed_key, local_id, member_id, port_name
 
 #: How the page names where a definition comes from.
-ORIGIN_TEXT = {
-    Origin.SHIPPED: "shipped",
-    Origin.SHIPPED_OVERRIDE: "your copy of a shipped subgraph",
-    Origin.USER: "yours",
-    Origin.MISSING: "not in the library",
-}
 
 _STATUS_WORD = {"linked": "linked", "held": "update held", "missing": "missing", "invalid": "invalid", "cycle": "cycle"}
 
@@ -280,7 +274,7 @@ class CallNodePage(ThemedMixin, QWidget):
             name = defn.name if defn is not None else source.subgraph_id
             parts = [f"Subgraph · {name}"]
             if status is not None:
-                parts.append(ORIGIN_TEXT.get(status.origin, status.origin.value))
+                parts.append(source_label(status.origin))
             parts.append(f"v{source.version}")
             if status is not None and status.library_version not in (None, source.version):
                 parts.append(f"library v{status.library_version}")

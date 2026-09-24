@@ -33,7 +33,7 @@ from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.vendor import PRODUCT, VENDOR
 from bartlebot.store_roots import DEV_ENV_VAR, Origin, dev_mode
-from bartlebot.subgraph_store import SubgraphLibrary, count_subgraph_uses
+from bartlebot.subgraph_store import SubgraphLibrary, count_subgraph_uses, source_label
 from bartlebot.subgraphs import ComposeReport, compose_bot, config_to_definition, definition_to_config
 from bartlebot.utils.window_kill import force_close_client
 
@@ -47,13 +47,6 @@ _ZONE_PLACEHOLDER = "—"
 
 #: An autosave of a definition document is named for the definition, not a file.
 _DEFINITION_AUTOSAVE_PREFIX = "subgraph_"
-
-#: How the header names where a definition comes from.
-_ORIGIN_WORDS = {
-    Origin.SHIPPED: "shipped",
-    Origin.SHIPPED_OVERRIDE: "your copy of a shipped one",
-    Origin.USER: "yours",
-}
 
 
 @dataclass
@@ -717,7 +710,7 @@ class AppController(QObject):
         sm = SettingsManager.instance()
         bots_dir = _resolve_bots_dir(sm.get("canvas", "bot_library_path", default="bots"), project_root())
         used_by = count_subgraph_uses(bots_dir).get(config.definition.id, 0)
-        self._window.bot_canvas.set_definition_context(parent, origin=_ORIGIN_WORDS.get(origin, ""), used_by=used_by)
+        self._window.bot_canvas.set_definition_context(parent, origin=source_label(origin), used_by=used_by)
 
     def _on_definition_save_requested(self, then_back: bool) -> None:
         if self._save_definition() and then_back:
@@ -750,9 +743,9 @@ class AppController(QObject):
             reply = QMessageBox.question(
                 self._window,
                 "Save to Library",
-                f"'{config.name}' ships with BartleBot. Saving makes your own copy, which every bot "
-                "linking it uses from now on, in place of the shipped one's updates.\n\n"
-                "Save your copy?",
+                f"'{config.name}' is built in. Saving makes a modified copy of it, which every bot "
+                "linking it uses from now on, in place of the built-in one's updates.\n\n"
+                "Save the modified copy?",
                 QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel,
                 QMessageBox.StandardButton.Save,
             )

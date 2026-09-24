@@ -802,12 +802,14 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             row_btns: list[QWidget] = []
             if exposed:
                 tag = QLabel("exposed")
-                tag.setToolTip("This node is exposed whole: the call node sets this")
+                tag.setToolTip("This node is exposed whole: the subgraph node sets this")
                 self._bound_chips[field.key] = tag
                 row_btns.append(tag)
             elif field.key in bound:
                 chip = QLabel(f"\u2190 {bound[field.key]}")
-                chip.setToolTip(f"Set by the input '{bound[field.key]}' on the call node; this value is its fallback")
+                chip.setToolTip(
+                    f"Set by the input '{bound[field.key]}' on the subgraph node; this value is its fallback"
+                )
                 self._bound_chips[field.key] = chip
                 row_btns.append(chip)
                 unbind = QToolButton()
@@ -899,7 +901,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         btn.setAutoRaise(True)
         btn.setIconSize(QSize(14, 14))
         btn.setProperty("param_key", key)
-        btn.setToolTip("Promote to subgraph input: let the call node set this")
+        btn.setToolTip("Promote to subgraph input: let the subgraph node set this")
         btn.clicked.connect(lambda _=None, k=key: self.promote_requested.emit(k))
         self._promote_btns.append(btn)
         return btn
@@ -1817,10 +1819,10 @@ class _ParamPanel(ThemedMixin, QWidget):
         _ex_layout = QHBoxLayout(self._expose_row)
         _ex_layout.setContentsMargins(6, 4, 6, 0)
         _ex_layout.setSpacing(6)
-        self._expose_btn = ActionButton("attach", "Expose on call node", fill=False)
+        self._expose_btn = ActionButton("attach", "Expose on subgraph node", fill=False)
         self._expose_btn.setCheckable(True)
         self._expose_btn.setToolTip(
-            "Put every param of this node on the call node, with its Record button. "
+            "Put every param of this node on the subgraph node, with its Record button. "
             "Other nodes' params can then share its values."
         )
         self._expose_note = ThemedTextLabel("", color="text_muted")
@@ -2130,8 +2132,9 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._notes_edit.blockSignals(False)
         self._expose_row.setVisible(in_definition and bool(schema))
         self._expose_btn.setChecked(exposed)
-        self._expose_btn.setText("Exposed on call node" if exposed else "Expose on call node")
-        self._expose_note.setText("Every param is on the call node, with its Record button." if exposed else "")
+        # Named for what a click does next, so an exposed node's button says how to stop.
+        self._expose_btn.setText("Stop exposing" if exposed else "Expose on subgraph node")
+        self._expose_note.setText("Every param is on the subgraph node, with its Record button." if exposed else "")
         self._suppress = False
         self._set_role_checks(state.id, initial_id, recovery_id)
         # A definition's roles are a formality -- every Entry is a way in -- so there
@@ -2382,7 +2385,7 @@ class _ParamPanel(ThemedMixin, QWidget):
 
         for combo in (self._edge_src_combo, self._edge_dst_combo, self._edge_when_combo):
             combo.setEnabled(rewire)
-            combo.setToolTip("" if rewire else "Rewire an edge on a call node by dragging it on the canvas")
+            combo.setToolTip("" if rewire else "Rewire an edge on a subgraph node by dragging it on the canvas")
         self._suppress = False
         self._stack.setCurrentIndex(_PAGE_EDGE)
 

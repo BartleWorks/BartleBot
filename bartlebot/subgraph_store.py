@@ -26,6 +26,21 @@ from bartlebot.store_roots import Origin, merged_by_id, origin_in, resolve_roots
 
 logger = logging.getLogger(__name__)
 
+#: What every surface calls where a definition comes from, after "Source:". One map,
+#: so the node browser, the subgraph node, its page and Bar B never disagree.
+SOURCE_LABELS = {
+    Origin.SHIPPED: "Built-in",
+    Origin.SHIPPED_OVERRIDE: "Built-in (modified)",
+    Origin.USER: "User",
+    Origin.MISSING: "Missing",
+}
+
+
+def source_label(origin: Origin) -> str:
+    """``Source: <label>`` for a definition's origin, as shown to the user."""
+    return f"Source: {SOURCE_LABELS.get(origin, origin.value)}"
+
+
 #: The node browser lists a definition under this key prefix (``subgraph:<id>``) so an
 #: insert can be told apart from a node type by the one string the dialog hands back.
 SUBGRAPH_KEY_PREFIX = "subgraph:"

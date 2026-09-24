@@ -60,7 +60,7 @@ from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
-from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary
+from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, source_label
 from bartlebot.subgraphs import (
     ComposeReport,
     SubgraphCycleError,
@@ -415,15 +415,6 @@ _LINK_STATE_FOR_KIND = {
 }
 
 
-#: How a call node's sub-line names where its definition comes from.
-_ORIGIN_WORD = {
-    "shipped": "shipped",
-    "shipped_override": "your copy",
-    "user": "yours",
-    "missing": "missing",
-}
-
-
 def member_warnings(reasons: list[str]) -> list[str]:
     """A member's warnings worth rolling up onto its call node.
 
@@ -717,7 +708,7 @@ class EditScene(QGraphicsScene):
             name = source.subgraph_id
         origin = ""
         if self._subgraph_library is not None:
-            origin = _ORIGIN_WORD.get(self._subgraph_library.origin(source.subgraph_id).value, "")
+            origin = source_label(self._subgraph_library.origin(source.subgraph_id))
         parts = ["subgraph", name if name != region.label else "", origin, f"v{source.version}"]
         node = CallNodeItem(
             region.id,

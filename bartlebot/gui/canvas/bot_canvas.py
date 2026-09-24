@@ -2509,7 +2509,7 @@ class BotCanvas(QWidget):
         if exposed == (current is not None):
             return False
         if exposed:
-            self._begin_definition_edit("Expose on call node")
+            self._begin_definition_edit("Expose on subgraph node")
             for inp in meta.inputs:
                 inp.bindings = [b for b in inp.bindings if b.state != state_id]
             for panel in node_panels(meta):
@@ -2572,6 +2572,7 @@ class BotCanvas(QWidget):
             param_label=field.label,
             current_value=state.params.get(key, field.default),
             shared=self._shareable_params(state_id, field.type),
+            groups=[(pn.id, pn.label or pn.id) for pn in self._scene.config.definition.panels if pn.kind == "inputs"],
             parent=self,
         )
         if not dlg.exec():

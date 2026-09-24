@@ -26,6 +26,7 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import SUBGRAPH_ENTRY, SUBGRAPH_EXIT, BotConfig, SubgraphInput, SubgraphPanel
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
@@ -33,7 +34,8 @@ from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
-_TOP = "— top —"
+#: The group dropdown's entry for an input listed in no group.
+_NO_GROUP = "None"
 
 
 def _icon(name: str, tip: str, *, danger: bool = False) -> IconButton:
@@ -66,7 +68,7 @@ class SignaturePage(ThemedMixin, QWidget):
 
         self._title = QLabel("Signature")
         self._intro = ThemedTextLabel(
-            "What every call node of this subgraph shows: its ports, its inputs and how they are grouped. "
+            "What every subgraph node of this subgraph shows: its ports, its inputs and how they are grouped. "
             "Promote a node's param on its own page to add a subgraph input.",
             color="text_muted",
         )
@@ -176,7 +178,7 @@ class SignaturePage(ThemedMixin, QWidget):
         for i, inp in enumerate(meta.inputs):
             label = QLineEdit(inp.label or "")
             label.setPlaceholderText(inp.name)
-            label.setToolTip(f"Shown on the call node; the input's name is '{inp.name}'")
+            label.setToolTip(f"Shown on the subgraph node; the input's name is '{inp.name}'")
             label.textChanged.connect(lambda text, n=inp.name: self._set_input(n, "label", text.strip() or None))
             kind = ThemedTextLabel(inp.type, color="text_muted")
             up = _icon("arrow_up", "Move up")
@@ -191,17 +193,19 @@ class SignaturePage(ThemedMixin, QWidget):
             help_edit = QLineEdit(inp.help or "")
             help_edit.setPlaceholderText("Help, shown as the input's tooltip")
             help_edit.textChanged.connect(lambda text, n=inp.name: self._set_input(n, "help", text.strip() or None))
-            panel = QComboBox()
-            panel.addItem(_TOP, None)
+            layout.addWidget(self._row(help_edit, indent=16))
+            group = QComboBox()
+            group.addItem(_NO_GROUP, None)
             for p in inputs_panels:
-                panel.addItem(p.label or p.id, p.id)
-            idx = panel.findData(inp.panel)
-            panel.setCurrentIndex(idx if idx >= 0 else 0)
-            panel.setToolTip("The panel this input is listed under on the call node")
-            panel.currentIndexChanged.connect(
-                lambda _i, n=inp.name, c=panel: self._set_input(n, "panel", c.currentData())
+                group.addItem(p.label or p.id, p.id)
+            idx = group.findData(inp.panel)
+            group.setCurrentIndex(idx if idx >= 0 else 0)
+            group.setToolTip("The input group this input is listed under on the subgraph node")
+            group.currentIndexChanged.connect(
+                lambda _i, n=inp.name, c=group: self._set_input(n, "panel", c.currentData())
             )
-            layout.addWidget(self._row(help_edit, panel, indent=16))
+            group_lbl = ThemedTextLabel("Input group:", color="text_muted")
+            layout.addWidget(self._row(group_lbl, group, indent=16, stretch_first=False))
             default = _DynamicParamForm()
             default.set_clients_getter(self._get_clients)
             default.set_zone_suggestions_getter(self._get_zones)
@@ -220,17 +224,17 @@ class SignaturePage(ThemedMixin, QWidget):
         assert self._config is not None and self._config.definition is not None
         meta = self._config.definition
         layout = self._body_layout
-        layout.addWidget(RuleHeading("Panels"))
+        layout.addWidget(RuleHeading("Input Groups"))
         labels = {s.id: (s.label or s.id) for s in self._config.states}
         for i, panel in enumerate(meta.panels):
             if panel.kind == "node":
                 title: QWidget = ThemedTextLabel(
                     f"⧉ {labels.get(panel.member or '', panel.member)} (node, exposed whole)", color="text"
                 )
-                title.setToolTip("Every param of this node is on the call node, with its Record button")
+                title.setToolTip("Every param of this node is on the subgraph node, with its Record button")
             else:
                 title = QLineEdit(panel.label or "")
-                title.setPlaceholderText("Panel heading")
+                title.setPlaceholderText("Group heading")
                 title.textChanged.connect(lambda text, p=panel.id: self._set_panel(p, "label", text.strip() or None))
             closed = QCheckBox("Starts closed")
             closed.setChecked(panel.default_closed)
@@ -242,11 +246,13 @@ class SignaturePage(ThemedMixin, QWidget):
             up.clicked.connect(lambda _=False, p=panel.id: self._move_panel(p, -1))
             down.clicked.connect(lambda _=False, p=panel.id: self._move_panel(p, 1))
             if panel.kind == "node":
-                remove = _icon("dismiss", "Stop exposing this node on the call node")
+                remove = _icon("dismiss", "Stop exposing this node on the subgraph node")
             else:
-                remove = _icon("trash", "Delete this panel; its inputs move to the top", danger=True)
+                remove = _icon("trash", "Delete this group; its inputs stay, in no group", danger=True)
             remove.clicked.connect(lambda _=False, p=panel.id: self._delete_panel(p))
             layout.addWidget(self._row(title, closed, up, down, remove))
+            if panel.kind == "inputs":
+                self._group_members(panel)
             for key, extra in panel.bindings.items():
                 for b in extra:
                     text = ThemedTextLabel(
@@ -257,9 +263,46 @@ class SignaturePage(ThemedMixin, QWidget):
                         lambda _=False, p=panel.id, k=key, st=b.state, bp=b.param: self._unbind_shared(p, k, st, bp)
                     )
                     layout.addWidget(self._row(text, unbind, indent=16))
-        add = LinkButton("+ Add panel")
+        add = LinkButton("+ Add input group")
         add.clicked.connect(self._add_panel)
         layout.addWidget(add)
+
+    def _group_members(self, panel: SubgraphPanel) -> None:
+        """The inputs in one group, each with a way out of it, and a way to add more."""
+        meta = self._meta()
+        layout = self._body_layout
+        members = [i for i in meta.inputs if i.panel == panel.id]
+        for inp in members:
+            text = ThemedTextLabel(inp.label or inp.name, color="text")
+            out = _icon("dismiss", "Take this input out of the group")
+            out.clicked.connect(lambda _=False, n=inp.name: self._set_input(n, "panel", None))
+            layout.addWidget(self._row(text, out, indent=16))
+        others = [i for i in meta.inputs if i.panel != panel.id]
+        add = LinkButton("+ Add input\u2026")
+        add.setEnabled(bool(others))
+        add.setToolTip(
+            "Move an input into this group"
+            if others
+            else "Every input is in this group already; promote a param to add one"
+        )
+        add.clicked.connect(lambda _=False, p=panel.id, b=add: self._offer_inputs(p, b))
+        layout.addWidget(self._row(add, indent=16, stretch_first=False))
+
+    def _offer_inputs(self, panel_id: str, anchor: QWidget) -> None:
+        groups = {p.id: (p.label or p.id) for p in self._meta().panels}
+        menu = popup_menu(anchor)
+        for inp in self._meta().inputs:
+            if inp.panel == panel_id:
+                continue
+            where = f"  ({groups[inp.panel]})" if inp.panel in groups else ""
+            act = menu.addAction(f"{inp.label or inp.name}{where}")
+            act.triggered.connect(lambda _=False, n=inp.name: self._set_input(n, "panel", panel_id))
+        menu.exec(anchor.mapToGlobal(anchor.rect().bottomLeft()))
+        menu.deleteLater()
+
+    def move_input_to_group(self, name: str, panel_id: str | None) -> None:
+        """Put an input in a group, or in none -- what the group's menu and dismiss do."""
+        self._set_input(name, "panel", panel_id)
 
     # -- edits ---------------------------------------------------------
 
@@ -350,7 +393,7 @@ class SignaturePage(ThemedMixin, QWidget):
         return next(p for p in self._meta().panels if p.id == panel_id)
 
     def _set_panel(self, panel_id: str, attr: str, value) -> None:
-        self._typed("Edit panel", lambda: setattr(self._find_panel(panel_id), attr, value))
+        self._typed("Edit input group", lambda: setattr(self._find_panel(panel_id), attr, value))
 
     def _move_panel(self, panel_id: str, step: int) -> None:
         def apply() -> None:
@@ -360,7 +403,7 @@ class SignaturePage(ThemedMixin, QWidget):
             if 0 <= j < len(panels):
                 panels[i], panels[j] = panels[j], panels[i]
 
-        self._discrete("Reorder panels", apply)
+        self._discrete("Reorder input groups", apply)
 
     def _delete_panel(self, panel_id: str) -> None:
         def apply() -> None:
@@ -370,7 +413,7 @@ class SignaturePage(ThemedMixin, QWidget):
                 if inp.panel == panel_id:
                     inp.panel = None
 
-        self._discrete("Delete panel", apply)
+        self._discrete("Delete input group", apply)
 
     def _add_panel(self) -> None:
         def apply() -> None:
@@ -379,9 +422,9 @@ class SignaturePage(ThemedMixin, QWidget):
             n = 1
             while f"panel_{n}" in taken:
                 n += 1
-            meta.panels.append(SubgraphPanel(id=f"panel_{n}", kind="inputs", label=f"Panel {n}"))
+            meta.panels.append(SubgraphPanel(id=f"panel_{n}", kind="inputs", label=f"Group {n}"))
 
-        self._discrete("Add panel", apply)
+        self._discrete("Add input group", apply)
 
     def _unbind_shared(self, panel_id: str, key: str, state: str, param: str) -> None:
         def apply() -> None:
