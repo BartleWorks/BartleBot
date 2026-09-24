@@ -13,8 +13,18 @@ from collections.abc import Callable
 from dataclasses import replace
 from typing import Any
 
-from PyQt6.QtCore import QEvent, QLocale, QSize, QStringListModel, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QDoubleValidator, QKeySequence, QPen, QStandardItem, QStandardItemModel
+from PyQt6.QtCore import QEvent, QLocale, QRectF, QSize, QStringListModel, Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import (
+    QColor,
+    QDoubleValidator,
+    QFont,
+    QFontMetrics,
+    QKeySequence,
+    QPainter,
+    QPen,
+    QStandardItem,
+    QStandardItemModel,
+)
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -41,7 +51,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
-from bartlebot.gui.icon_utils import svg_icon
+from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
@@ -719,7 +729,16 @@ class _LinkChip(ThemedMixin, QToolButton):
     accent colour. Hovered or focused it becomes the action: a broken chain in the
     warning colour, "Unlink". A *locked* chip (a param of a promoted node) never
     turns: its node's input group owns it, and the tooltip says how to let go.
+
+    Painted here rather than styled, at one size worked out for both states. A
+    stylesheet swapped on hover re-polishes the button and re-queues its layout, and
+    somewhere in that the old outline's bottom edge was left on screen. Now a hover
+    changes two colours and repaints the chip, and nothing else.
     """
+
+    _PAD_X = 5
+    _GAP = 4
+    _ICON = 12
 
     def __init__(self, text: str, *, locked: bool, tooltip: str, parent=None) -> None:
         super().__init__(parent)
@@ -727,12 +746,10 @@ class _LinkChip(ThemedMixin, QToolButton):
         self._shown_name = text
         self._locked = locked
         self._armed = False
-        self.setAutoRaise(True)
-        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self.setIconSize(QSize(12, 12))
         self.setToolTip(tooltip)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus if locked else Qt.FocusPolicy.TabFocus)
         self.setCursor(Qt.CursorShape.ArrowCursor if locked else Qt.CursorShape.PointingHandCursor)
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
         self.refresh_theme_styles()
 
     @property
@@ -744,11 +761,15 @@ class _LinkChip(ThemedMixin, QToolButton):
         """Whether it is showing its Unlink action rather than its status."""
         return self._armed
 
+    def text(self) -> str:  # noqa: D401 - Qt override
+        """What the chip shows now: the linked name (elided if long) or "Unlink"."""
+        return "Unlink" if self._armed else self._shown_name
+
     def _arm(self, armed: bool) -> None:
         armed = armed and not self._locked
         if armed != self._armed:
             self._armed = armed
-            self.refresh_theme_styles()
+            self.update()
 
     def enterEvent(self, event) -> None:
         self._arm(True)
@@ -766,40 +787,39 @@ class _LinkChip(ThemedMixin, QToolButton):
         self._arm(self.underMouse())
         super().focusOutEvent(event)
 
+    def _font(self) -> QFont:
+        font = QFont(self.font())
+        font.setPixelSize(THEME.font_small_px)
+        font.setBold(True)
+        return font
+
     def apply_theme_styles(self) -> None:
-        color = THEME.warning if self._armed else THEME.accent
-        # Hover is styled explicitly, so the style's own hover frame never draws over ours.
-        rule = (
-            f"color: {color}; font-size: {THEME.font_small_px}px; font-weight: 600;"
-            f" border: 1px solid {color}; border-radius: 3px; padding: 0 4px; background: transparent;"
-        )
-        set_style_sheet(self, f"QToolButton {{ {rule} }} QToolButton:hover {{ {rule} }}")
-        self.setIcon(svg_icon("unhook" if self._armed else "hook", 12, tint=color))
-        self._fix_width()
-        self.setText("Unlink" if self._armed else self._shown_name)
-
-    def _fix_width(self) -> None:
-        """One width for both states: the wider of the two, capped, with a long name elided.
-
-        The chip turning into Unlink must not change its size -- shrinking under the
-        pointer is what made it flicker at its edge and left its old outline behind.
-        """
-        self.ensurePolished()
-        self.setMinimumWidth(0)
-        self.setMaximumWidth(16777215)
-        widths = {}
-        for text in ("Unlink", self._text):
-            self.setText(text)
-            widths[text] = self.sizeHint().width()
+        """Work out the one size both states share, and repaint in the theme's colours."""
+        fm = QFontMetrics(self._font())
+        chrome = 2 * self._PAD_X + self._ICON + self._GAP + 2
         self._shown_name = self._text
-        if widths[self._text] > _LINK_CHIP_MAX_W:
-            chrome = widths[self._text] - self.fontMetrics().horizontalAdvance(self._text)
-            self._shown_name = self.fontMetrics().elidedText(
-                self._text, Qt.TextElideMode.ElideRight, _LINK_CHIP_MAX_W - chrome
-            )
-            self.setText(self._shown_name)
-            widths[self._text] = self.sizeHint().width()
-        self.setFixedWidth(min(max(widths.values()), _LINK_CHIP_MAX_W))
+        if chrome + fm.horizontalAdvance(self._text) > _LINK_CHIP_MAX_W:
+            self._shown_name = fm.elidedText(self._text, Qt.TextElideMode.ElideRight, _LINK_CHIP_MAX_W - chrome)
+        width = chrome + max(fm.horizontalAdvance(self._shown_name), fm.horizontalAdvance("Unlink"))
+        self.setFixedSize(min(width, _LINK_CHIP_MAX_W), max(fm.height(), self._ICON) + 8)
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        color = QColor(THEME.warning if self._armed else THEME.accent)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        rect = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
+        painter.setPen(QPen(color, 1))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRoundedRect(rect, 3, 3)
+        icon = svg_pixmap("unhook" if self._armed else "hook", self._ICON, tint=color.name())
+        x = self._PAD_X + 1
+        painter.drawPixmap(x, (self.height() - self._ICON) // 2, icon)
+        painter.setFont(self._font())
+        painter.setPen(color)
+        text_rect = self.rect().adjusted(x + self._ICON + self._GAP, 0, -self._PAD_X, 0)
+        painter.drawText(text_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, self.text())
+        painter.end()
 
 
 class _HoverRow(QWidget):
