@@ -30,11 +30,12 @@ from PyQt6.QtWidgets import (
 )
 
 from bartlebot.bot.schema import SubgraphInput
+from bartlebot.gui.canvas.call_node_item import canvas_edge_color
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
-from bartlebot.gui.widgets.icon_button import IconButton
+from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.nodes.param_schema import narrowest_type
 
 #: The combo entry that means "declare a new input" rather than bind to one.
@@ -142,7 +143,7 @@ class CrumbBar(ThemedMixin, QWidget):
         self._save_as_btn.setToolTip("Save a copy as a new subgraph, and go on editing the copy")
         self._revert_btn = ActionButton("revert", "Revert", fill=False)
         self._revert_btn.setToolTip("Discard your modified copy and go back to the built-in subgraph")
-        self._close_btn = IconButton("dismiss", tooltip="Step out", size=22, icon_size=12)
+        self._close_btn = IconButton("dismiss", tooltip="Step out", size=22, icon_size=12, tint=IconTint.ON_ACCENT)
         self._save_btn.clicked.connect(self.save_requested)
         self._save_as_btn.clicked.connect(self.save_as_requested)
         self._revert_btn.clicked.connect(self.revert_requested)
@@ -257,8 +258,14 @@ class CrumbBar(ThemedMixin, QWidget):
         return THEME.qcolor("accent")
 
     def apply_theme_styles(self) -> None:
-        bg = self.background().name()
-        set_style_sheet(self, f"CrumbBar {{ background-color: {bg}; border: 1px solid {bg}; border-radius: 6px; }}")
+        bg = self.background()
+        # An edge in the canvas's own text colour, not a self-coloured one: the bar floats
+        # over the graph, and an Entry/Exit pill in the same accent otherwise merges into it.
+        edge = canvas_edge_color()
+        edge_rgba = f"rgba({edge.red()}, {edge.green()}, {edge.blue()}, {edge.alpha()})"
+        set_style_sheet(
+            self, f"CrumbBar {{ background-color: {bg.name()}; border: 1px solid {edge_rgba}; border-radius: 6px; }}"
+        )
         set_style_sheet(self._path, "background: transparent;")
         text = (
             f"border: none; background: transparent; color: {THEME.pill_text};"

@@ -41,9 +41,23 @@ _FOOT_PAD = 6
 _BAR_INSET = 10  # the double side bars sit this far in from each edge
 _CALL_RADIUS = 4
 _GLYPH = 14  # link badge size
+_EDGE_ALPHA = 200  # how strongly an accent pill's edge shows against the canvas
 _PORT_HIT_R = 16
 _ROLE_BADGE_R = 7
 _ROLE_BADGE_GAP = 3  # between two badges on one port, and before its name
+
+
+def canvas_edge_color() -> QColor:
+    """The edge of an accent-filled shape over the canvas: the Entry/Exit pills and the crumb bar.
+
+    It is the canvas's own text colour, so it stands off the canvas in either theme (light in
+    the dark one, dark in the light one) and between two accent fills that touch, which a
+    darker accent did against neither.
+    """
+    color = THEME.qcolor("text")
+    color.setAlpha(_EDGE_ALPHA)
+    return color
+
 
 #: Link badge states -- see :func:`paint_link_glyph`.
 LINK_STATES = ("linked", "outdated", "missing", "open")
@@ -382,10 +396,13 @@ class PortNodeItem(NodeItem):
             painter.setBrush(QBrush(ring))
             painter.drawRoundedRect(rect.adjusted(-7, -7, 7, 7), NODE_H / 2 + 7, NODE_H / 2 + 7)
         fill = accent.lighter(115) if (self._hovered or selected) else accent
-        border = THEME.qcolor("error") if self._is_error else (THEME.qcolor("warning") if self._is_warning else fill)
-        painter.setPen(
-            QPen(border.darker(130) if not (self._is_error or self._is_warning) else border, 2.5 if selected else 1.5)
-        )
+        if self._is_error:
+            border = THEME.qcolor("error")
+        elif self._is_warning:
+            border = THEME.qcolor("warning")
+        else:
+            border = canvas_edge_color()
+        painter.setPen(QPen(border, 2.5 if selected else 2.0))
         painter.setBrush(QBrush(fill))
         painter.drawRoundedRect(rect, NODE_H / 2, NODE_H / 2)
         painter.setFont(THEME.ui_font(THEME.font_node_px + 2, bold=True))

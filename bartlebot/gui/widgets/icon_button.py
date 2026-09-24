@@ -46,13 +46,15 @@ class IconTint(Enum):
     reports (the node browser's favourite star). ``ACCENT_WHEN_ENABLED`` spends the
     accent only while the button can act, for a row where *being* enabled is the
     signal. ``DANGER`` is a remove — the red is what separates it from the controls it
-    sits beside in a flag row.
+    sits beside in a flag row. ``ON_ACCENT`` is a glyph drawn *over* an accent fill (the
+    crumb bar's close), in the colour text on that fill already uses.
     """
 
     DEFAULT = "default"
     ACCENT = "accent"
     ACCENT_WHEN_ENABLED = "accent_when_enabled"
     DANGER = "danger"
+    ON_ACCENT = "on_accent"
 
 
 class IconButton(ThemedMixin, QPushButton):
@@ -119,6 +121,8 @@ class IconButton(ThemedMixin, QPushButton):
             return THEME.accent
         if self._tint is IconTint.ACCENT_WHEN_ENABLED and self.isEnabled():
             return THEME.accent
+        if self._tint is IconTint.ON_ACCENT:
+            return THEME.pill_text
         return THEME.icon_tint
 
     def apply_theme_styles(self) -> None:
