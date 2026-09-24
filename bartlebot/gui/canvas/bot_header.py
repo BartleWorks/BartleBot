@@ -288,7 +288,7 @@ class _ElidedLabel(ThemedMixin, QLabel):
         self.setToolTip(self._full if super().text() != self._full else "")
 
     def apply_theme_styles(self) -> None:
-        self.setStyleSheet(f"color: {getattr(THEME, self._color_token)}; font-size: {THEME.font_small_px}px;")
+        self.setStyleSheet(f"color: {getattr(THEME, self._color_token)}; font-size: {THEME.font_body_px}px;")
 
 
 class _TagsField(QWidget):
@@ -477,7 +477,7 @@ class BotHeader(ThemedMixin, QWidget):
     dragging the transport off centre now that it shares the row.
 
     Still a ``QGridLayout`` rather than boxes: the columns have very different
-    natural heights -- 32 px buttons against 11 px captions -- and the spanning
+    natural heights -- 44 px buttons against 14 px captions -- and the spanning
     clusters have to centre against the metadata block as a whole.
 
     Both button clusters are ``BotCanvas``'s; they are placed but never touched.
@@ -602,7 +602,7 @@ class BotHeader(ThemedMixin, QWidget):
         # Set on the widget rather than through the stylesheet: a stylesheet
         # ``font-size`` never reaches ``QWidget.font()``, so the metrics
         # ``_size_status_slots`` measures with would be the wrong size entirely.
-        status_font.setPixelSize(THEME.font_small_px)
+        status_font.setPixelSize(THEME.font_body_px)
         self._status_lbl.setFont(status_font)
 
         self._status_side = QWidget()

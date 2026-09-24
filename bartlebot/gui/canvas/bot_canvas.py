@@ -131,8 +131,8 @@ def _status_dot_color(state: str) -> str:
     return THEME.text_muted  # idle / fallback
 
 
-_ICON_SIZE = QSize(20, 20)
-_BTN_SIZE = QSize(32, 32)
+_ICON_SIZE = QSize(32, 32)
+_BTN_SIZE = QSize(44, 44)
 # Gap *within* a cluster, and between clusters.  Set explicitly on every toolbar row:
 # the style's default spacing is 6 px on Windows, so a row that only called
 # addSpacing(4) got 16 px between its buttons and overflowed the fixed width it was

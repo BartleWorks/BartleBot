@@ -229,7 +229,7 @@ Three things about them:
   without one it is unusable to anyone who does not already recognise the glyph, and
   making it required is what stops that being an oversight rather than a decision.
 - **`IconTint` varies colour and nothing else**, the same rule the four weights follow:
-  the size is the caller's to choose, because a toolbar's 32px and a flag row's 24px are
+  the size is the caller's to choose, because a toolbar's 44px and a flag row's 24px are
   both right. `DANGER` is what makes a remove read as one; `ACCENT_WHEN_ENABLED` is the
   Setup gutter's revert, where *being* enabled is the signal.
 - **A `LinkButton` underlines on hover, not always.** The accent alone says "clickable"
