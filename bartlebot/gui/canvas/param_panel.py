@@ -899,7 +899,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         btn.setAutoRaise(True)
         btn.setIconSize(QSize(14, 14))
         btn.setProperty("param_key", key)
-        btn.setToolTip("Promote to input: let the call node set this")
+        btn.setToolTip("Promote to subgraph input: let the call node set this")
         btn.clicked.connect(lambda _=None, k=key: self.promote_requested.emit(k))
         self._promote_btns.append(btn)
         return btn

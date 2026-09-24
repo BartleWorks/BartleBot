@@ -172,7 +172,7 @@ class CallNodePage(ThemedMixin, QWidget):
         form.addRow("Initial", self._initial_combo)
         form.addRow("Recovery", self._recovery_combo)
 
-        self._inputs_heading = RuleHeading("Inputs")
+        self._inputs_heading = RuleHeading("Subgraph Inputs")
         self._inputs_note = ThemedTextLabel("This subgraph has no inputs.", color="text_muted")
         self._inputs_box = QWidget()
         self._inputs_layout = QVBoxLayout(self._inputs_box)

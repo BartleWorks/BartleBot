@@ -2452,7 +2452,7 @@ class BotCanvas(QWidget):
             target = next((i for i in meta.inputs if i.name == existing), None)
             if target is None:
                 return False
-            self._begin_definition_edit("Promote to input")
+            self._begin_definition_edit("Promote to subgraph input")
             if not any(b.state == state_id and b.param == key for b in target.bindings):
                 target.bindings.append(binding)
         elif shared is not None:
@@ -2466,7 +2466,7 @@ class BotCanvas(QWidget):
         elif new_input is not None:
             if any(i.name == new_input.name for i in meta.inputs):
                 return False
-            self._begin_definition_edit("Promote to input")
+            self._begin_definition_edit("Promote to subgraph input")
             meta.inputs.append(new_input.model_copy(update={"bindings": [binding]}))
         else:
             return False
@@ -2719,10 +2719,20 @@ class BotCanvas(QWidget):
         # the old object has to be re-bound or its edits go nowhere.
         self._toolbar.set_config(config)
         self._toolbar.set_editable(self._mode == BotMode.EDIT)
+        # The scene is rebuilt, so what was selected is re-selected by id: an undo is
+        # about the node being worked on, and dropping it made every undo a lost place.
+        try:
+            keep = [i.state_id for i in self._scene.selectedItems() if isinstance(i, NodeItem)]
+        except RuntimeError:
+            keep = []
         self._scene.setup(config)
         self._apply_failure_edge_visibility()
         self._show_default_page()
         self._on_scene_changed()
+        for sid in keep:
+            node = self._scene.node_items.get(sid)
+            if node is not None:
+                node.setSelected(True)
 
     def prepare_for_shutdown(self) -> None:
         """Make the canvas safe to destroy. Idempotent, and safe to call twice.

@@ -947,7 +947,8 @@ def definition_problems(
 
     Errors: the structural rules (:func:`~bartlebot.bot.schema.definition_structure_errors`),
     a binding whose type is incompatible with the others it shares a value with, and
-    a definition that would contain itself. Warnings: an Exit nothing leads into.
+    a definition that would contain itself. An Exit nothing leads into is the node's
+    own error, found with the rest of node validation, as an Entry's missing edge is.
     ``schemas`` maps node type to its ``ParamField``s (the registry's
     ``NODE_PARAM_SCHEMAS``; passed in so this module stays registry-free). A required
     param left empty is the node's own error, checked with the rest of node validation.
@@ -987,11 +988,7 @@ def definition_problems(
         if defn is not None and contains_subgraph(defn, defn.id, library):
             errors.append(f"'{config.name}' would contain itself, which can never finish composing")
 
-    warnings = [
-        f"Exit '{port_name(x)}' has nothing leading into it"
-        for x in exit_nodes(config)
-        if not any(t.dest == x.id for t in config.transitions)
-    ]
+    warnings: list[str] = []
     return errors, warnings
 
 

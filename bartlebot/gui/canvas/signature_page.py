@@ -4,7 +4,7 @@ Everything a call node shows is authored here -- the Entry and Exit ports, the
 inputs and their defaults, the panels they are grouped under, and the nodes exposed
 whole. A port *is* its node on the canvas, so adding one places a node and deleting
 one deletes the node; its name is the node's label, so renaming changes nothing
-structural. An input is added from a node's own page (*Promote to input*); this page
+structural. An input is added from a node's own page (*Promote to subgraph input*); this page
 renames, re-describes, sets the default, reorders, groups and deletes.
 """
 
@@ -67,7 +67,7 @@ class SignaturePage(ThemedMixin, QWidget):
         self._title = QLabel("Signature")
         self._intro = ThemedTextLabel(
             "What every call node of this subgraph shows: its ports, its inputs and how they are grouped. "
-            "Promote a node's param on its own page to add an input.",
+            "Promote a node's param on its own page to add a subgraph input.",
             color="text_muted",
         )
         self._intro.setWordWrap(True)
@@ -167,7 +167,7 @@ class SignaturePage(ThemedMixin, QWidget):
         assert self._config is not None and self._config.definition is not None
         meta = self._config.definition
         layout = self._body_layout
-        layout.addWidget(RuleHeading("Inputs"))
+        layout.addWidget(RuleHeading("Subgraph Inputs"))
         if not meta.inputs:
             note = ThemedTextLabel("No inputs yet.", color="text_muted")
             layout.addWidget(note)

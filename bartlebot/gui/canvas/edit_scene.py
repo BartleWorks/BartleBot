@@ -296,7 +296,9 @@ def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bo
         if state.node_type == SUBGRAPH_ENTRY and sum(1 for t in config.transitions if t.source == state.id) != 1:
             error_reasons.append("An Entry needs exactly one edge into the subgraph")
         if state.node_type == SUBGRAPH_EXIT and not any(t.dest == state.id for t in config.transitions):
-            warning_reasons.append("Nothing leads into this Exit")
+            # An error, as an Entry with no edge is: a call node would offer a way out
+            # the subgraph can never take.
+            error_reasons.append("Nothing leads into this Exit")
         return bool(error_reasons), bool(warning_reasons), error_reasons, warning_reasons
 
     if state.node_type not in NODE_REGISTRY:

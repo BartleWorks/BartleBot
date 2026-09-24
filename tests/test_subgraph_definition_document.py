@@ -140,7 +140,7 @@ def test_adding_and_deleting_a_port(doc):
     doc._on_add_port_requested(SUBGRAPH_EXIT)
     added = [s for s in doc.config.states if s.node_type == SUBGRAPH_EXIT and s.id not in {"exit_done", "exit_early"}]
     assert len(added) == 1
-    assert any("nothing leading into it" in w for w in doc.validation_warnings())
+    assert any("Nothing leads into this Exit" in e for e in doc.validation_errors())
     doc._on_delete_port_requested(added[0].id)
     assert added[0].id not in {s.id for s in doc.config.states}
 
@@ -305,3 +305,12 @@ def test_the_library_lists_subgraphs_and_opens_one(qapp, library):
     QTest.mouseClick(cards[0], Qt.MouseButton.LeftButton)
     assert opened == [SYNC_ID]
     panel.deleteLater()
+
+
+def test_undo_keeps_the_node_selected(doc):
+    doc.select_state("wisps")
+    doc.promote_param("wisps", "timeout", new_input=SubgraphInput(name="wait", type="float"))
+    doc.undo()
+    assert doc.param_panel.shown_state is not None and doc.param_panel.shown_state.id == "wisps"
+    doc.redo()
+    assert doc.param_panel.shown_state is not None and doc.param_panel.shown_state.id == "wisps"

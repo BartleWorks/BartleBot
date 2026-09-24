@@ -1058,7 +1058,7 @@ def test_a_broken_document_does_not_convert():
         config_to_definition(config)
 
 
-def test_definition_problems_reports_structure_types_and_idle_exits(library):
+def test_definition_problems_reports_structure_and_types(library):
     config = definition_to_config(sync_players_definition())
     assert definition_problems(config, NODE_PARAM_SCHEMAS, library) == ([], [])
     config.transitions = [t for t in config.transitions if t.dest != "exit_early"]
@@ -1074,7 +1074,7 @@ def test_definition_problems_reports_structure_types_and_idle_exits(library):
     )
     errors, warnings = definition_problems(config, NODE_PARAM_SCHEMAS, library)
     assert any("incompatible types" in e for e in errors)
-    assert warnings == ["Exit 'Early' has nothing leading into it"]
+    assert warnings == [], "an idle Exit is the node's own error, not the signature's"
 
 
 def test_a_zone_and_a_nav_zone_can_share_an_input():

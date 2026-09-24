@@ -166,7 +166,7 @@ class PromoteInputDialog(QDialog):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Promote to Input")
+        self.setWindowTitle("Promote to Subgraph Input")
         self._inputs = inputs
         self._key = param_key
         self._type = param_type
