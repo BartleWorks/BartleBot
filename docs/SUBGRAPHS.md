@@ -12,6 +12,11 @@ The editor surfaces are documented with the rest of the canvas in `bartlebot/gui
 > instance*), and instance-owned member layout (*Layout is instance-owned*). Derived ids,
 > follow-latest with snapshot fallback, the two roots, nesting and cycles still hold. Read both
 > before any subgraph work.
+>
+> Stages 4–6 of that plan have landed. The code has no edit-in-place mode, locked members,
+> param or label overrides, or free params any more. The sections named above describe what
+> was removed and are kept for the history. `bartlebot/gui/CLAUDE.md` describes the call node
+> and the definition document as they are now.
 
 Designed for #37. Each stage is its own sub-issue and lands on `master` alone; a section
 below says which stage implements it, and the table is updated as they merge.

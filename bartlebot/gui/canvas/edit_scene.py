@@ -26,15 +26,19 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot import zone_nav
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
+    PORT_NODE_TYPES,
+    SUBGRAPH_ENTRY,
+    SUBGRAPH_EXIT,
     BotConfig,
     RegionModel,
     StateModel,
-    SubgraphDefinition,
     SubgraphSource,
     TransitionModel,
 )
+from bartlebot.gui.canvas.call_node_item import CallNodeItem, PortNodeItem
 from bartlebot.gui.canvas.edge_item import (
     EdgeItem,
     bridge_y_above,
@@ -56,11 +60,14 @@ from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.zone_picker import is_destination
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
-from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary
+from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, source_label
 from bartlebot.subgraphs import (
     ComposeReport,
     SubgraphCycleError,
+    entry_port_of,
+    exit_port_of,
     is_nested_in,
     linked_region_of,
     linked_regions,
@@ -69,6 +76,8 @@ from bartlebot.subgraphs import (
     member_id,
     mint_instance_id,
     nested_regions,
+    outermost_linked_regions,
+    port_name,
     taken_ids,
 )
 from bartlebot.subgraphs import detach as detach_subgraph
@@ -134,6 +143,26 @@ def _auto_scroll_view(view, scene_pos: QPointF) -> None:
 def _node_returns(node_type: str) -> list[str]:
     spec = NODE_SPECS.get(node_type)
     return [r.name for r in spec.returns] if spec else []
+
+
+def driven_params(config: BotConfig) -> set[tuple[str, str]]:
+    """``(state id, param key)`` a definition document's signature sets from outside.
+
+    A param bound to an input, or belonging to an exposed node, is the consumer's to
+    fill in, so an empty one is not the definition's error. Empty for a bot.
+    """
+    meta = config.definition
+    if meta is None:
+        return set()
+    driven = {(b.state, b.param) for inp in meta.inputs for b in inp.bindings}
+    for panel in meta.panels:
+        if panel.kind != "node" or panel.member is None:
+            continue
+        member = next((s for s in config.states if s.id == panel.member), None)
+        if member is not None:
+            driven.update((member.id, f.key) for f in NODE_PARAM_SCHEMAS.get(member.node_type, []))
+        driven.update((b.state, b.param) for extra in panel.bindings.values() for b in extra)
+    return driven
 
 
 # The return an inserted node should carry onward. An edge with no ``when`` fires
@@ -215,6 +244,18 @@ def _required_field_empty(field, params: dict) -> bool:
     return False  # int, float, bool always have a value
 
 
+def _nav_zone_reachable(value) -> bool:
+    """Whether a ``nav_zone`` value is somewhere Go To Zone can go. An empty one, or an unloadable map, passes.
+
+    The picker offers only destinations, but a value can arrive another way: a file,
+    or Record writing a zone param a ``nav_zone`` one is linked to.
+    """
+    if not value or not isinstance(value, str):
+        return True
+    nav = zone_nav.load()
+    return not nav.worlds or is_destination(nav, value)
+
+
 def port_marks_for(state: StateModel, config: BotConfig) -> dict[str, str]:
     """Which of *state*'s output ports act without an edge, and as what.
 
@@ -262,13 +303,30 @@ def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bo
     error_reasons: list[str] = []
     warning_reasons: list[str] = []
 
+    if state.node_type in PORT_NODE_TYPES:
+        # Its own rules -- one edge in for an Exit is optional, one out for an Entry
+        # is not -- are the definition's, listed with its structure; this is the
+        # node-level half, so the port that breaks one is the one marked.
+        if state.node_type == SUBGRAPH_ENTRY and sum(1 for t in config.transitions if t.source == state.id) != 1:
+            error_reasons.append("An Entry needs exactly one edge into the subgraph")
+        if state.node_type == SUBGRAPH_EXIT and not any(t.dest == state.id for t in config.transitions):
+            # An error, as an Entry with no edge is: a call node would offer a way out
+            # the subgraph can never take.
+            error_reasons.append("Nothing leads into this Exit")
+        return bool(error_reasons), bool(warning_reasons), error_reasons, warning_reasons
+
     if state.node_type not in NODE_REGISTRY:
         error_reasons.append(f"Unknown node type: '{state.node_type}'")
 
     schema = NODE_PARAM_SCHEMAS.get(state.node_type, [])
+    driven = driven_params(config) if config.definition is not None else set()
     for field in schema:
+        if (state.id, field.key) in driven:
+            continue
         if field.required and _required_field_empty(field, state.params):
             error_reasons.append(f"Required param '{field.key}' is empty")
+        elif field.type == "nav_zone" and not _nav_zone_reachable(state.params.get(field.key)):
+            error_reasons.append(f"'{field.key}' is not a destination on the zone map")
 
     state_ids = {s.id for s in config.states}
     outgoing = [t for t in config.transitions if t.source == state.id]
@@ -311,7 +369,8 @@ def _reachable_states(config: BotConfig) -> set[str]:
         return set()
     by_id = {s.id: s for s in config.states}
     reachable: set[str] = set()
-    queue = [config.initial]
+    # In a definition every Entry is a way in, not just the one holding the roles.
+    queue = [config.initial, *(s.id for s in config.states if s.node_type == SUBGRAPH_ENTRY)]
     while queue:
         sid = queue.pop()
         if sid in reachable:
@@ -361,9 +420,9 @@ def _unique_id(existing: list[str]) -> str:
 _STATE_NUMBER = re.compile(r"(?:^|_)state_(\d+)$")
 
 
-#: Compose-report kinds → region pill states. ``held`` is an update the bot could
-#: not take; the other three are a definition the library could not supply.
-_PILL_STATE_FOR_KIND = {
+#: Compose-report kinds → call node link badge states. ``held`` is an update the bot
+#: could not take; the other three are a definition the library could not supply.
+_LINK_STATE_FOR_KIND = {
     "linked": "linked",
     "held": "outdated",
     "missing": "missing",
@@ -372,75 +431,29 @@ _PILL_STATE_FOR_KIND = {
 }
 
 
-def _uniform_region_moves(config: BotConfig, updates: dict[str, dict]) -> list[tuple[RegionModel, float, float]]:
-    """Linked regions whose every positioned member is about to move by one delta.
+def member_warnings(reasons: list[str]) -> list[str]:
+    """A member's warnings worth rolling up onto its call node.
 
-    Layout is instance-owned, so a group drag translates the instance's ``anchor``
-    with it and a member the definition adds later still lands where the group now
-    is. A move of only some members is a layout tweak inside the instance and
-    leaves the anchor alone.
+    A member unreachable on its own is reachable through the call node, and an
+    uncovered outcome is where its instance's exit is, not a gap the bot author
+    left -- both are the definition's business.
     """
-    by_id = {s.id: s for s in config.states}
-    moves: list[tuple[RegionModel, float, float]] = []
-    for region in linked_regions(config):
-        deltas: set[tuple[float, float]] = set()
-        for m in region.members:
-            state = by_id.get(m)
-            if state is None or state.position is None:
-                continue
-            new = updates.get(m)
-            if new is None:
-                deltas = set()
-                break
-            dx = round(float(new["x"]) - float(state.position["x"]), 3)
-            dy = round(float(new["y"]) - float(state.position["y"]), 3)
-            deltas.add((dx, dy))
-        if len(deltas) == 1:
-            dx, dy = deltas.pop()
-            if dx or dy:
-                moves.append((region, dx, dy))
-    return moves
+    return [r for r in reasons if r != "Unreachable from initial state" and not r.startswith("Uncovered")]
 
 
-def _clipboard_definition(
-    region_data: dict,
-    source: SubgraphSource,
-    member_data: list[dict],
-    transitions_data: list[dict],
-    locals_: dict[str, str],
-) -> SubgraphDefinition:
-    """A definition synthesised from a copied instance, for a paste the library cannot serve.
+class _DisplayLookup:
+    """``get(state id)`` answering an instance's member with its call node.
 
-    Positions are made relative to the *copied* anchor (``source`` already carries
-    the translated one, so the two are subtracted apart via the members' own
-    stored positions). Nested regions are flattened: their members are plain
-    states of this definition. No inputs -- an override in ``source`` still applies.
+    What a ``RegionItem`` reads its members through, so a plain region holding an
+    instance wraps the call node the members are drawn as.
     """
-    old_anchor = region_data["source"].get("anchor") or {"x": 0.0, "y": 0.0}
-    ids = set(locals_)
-    states = []
-    for sd in member_data:
-        new_sd = dict(sd)
-        new_sd["id"] = locals_[sd["id"]]
-        pos = sd.get("position")
-        new_sd["position"] = (
-            {"x": float(pos["x"]) - float(old_anchor["x"]), "y": float(pos["y"]) - float(old_anchor["y"])}
-            if pos
-            else None
-        )
-        states.append(StateModel.model_validate(new_sd))
-    transitions = [
-        TransitionModel.model_validate({**td, "source": locals_[td["source"]], "dest": locals_[td["dest"]]})
-        for td in transitions_data
-        if td["source"] in ids and td["dest"] in ids
-    ]
-    return SubgraphDefinition(
-        id=source.subgraph_id,
-        name=region_data.get("label") or source.subgraph_id,
-        version=source.version,
-        states=states,
-        transitions=transitions,
-    )
+
+    def __init__(self, scene: "EditScene") -> None:
+        self._scene = scene
+
+    def get(self, state_id: str):
+        items = self._scene.node_items
+        return items.get(state_id) or items.get(self._scene.display_id(state_id))
 
 
 # ---------------------------------------------------------------------------
@@ -455,18 +468,25 @@ class EditScene(QGraphicsScene):
     about_to_change = pyqtSignal(str)  # emitted BEFORE config is mutated; carries description
     focus_region_requested = pyqtSignal(str)
     node_type_chosen = pyqtSignal(str, object)  # (node_type, QPointF canvas position)
-    # Subgraph authoring verbs the scene's menus offer but the canvas performs, since
-    # the library and the editing state live there: (region id) for the first two,
-    # (state id, param key) for the third.
+    # Subgraph verbs the scene's menus offer but the canvas performs, since the library
+    # and the document stack live there: (region id) for both.
     save_region_as_subgraph_requested = pyqtSignal(str)
-    edit_subgraph_requested = pyqtSignal(str)
-    expose_input_requested = pyqtSignal(str, str)
+    open_definition_requested = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._config: BotConfig | None = None
+        # Keyed by *display* id: a state's own id, or for a subgraph instance the
+        # region id its call node carries. An instance's members have no item.
         self._node_items: dict[str, NodeItem] = {}
+        # (source, when, dest) in display ids: an edge out of a call node carries the
+        # exit port id as its ``when``, and one into it names the entry on the item.
         self._edge_items: list[tuple[str, str | None, str, EdgeItem]] = []
+        # The flat transitions each drawn edge stands for -- one, or for a call node's
+        # exit, one per (member, outcome) feeding it.
+        self._edge_models: dict[EdgeItem, list[TransitionModel]] = {}
+        # Member id -> the region id of the call node it is drawn as.
+        self._call_of: dict[str, str] = {}
         self._region_manager: RegionManager | None = None
         self._drag_src: NodeItem | None = None
         self._drag_when: str | None = None
@@ -481,14 +501,7 @@ class EditScene(QGraphicsScene):
         # (states, transitions, regions) as model dumps. Regions are the linked ones
         # copied whole; ordinary regions do not travel with a copy.
         self._clipboard: tuple[list[dict], list[dict], list[dict]] | None = None
-        # The one linked region whose members are unlocked (Stage 4 sets it); None
-        # locks every linked region. This and `is_locked` are the whole lock state.
-        self._editing_region_id: str | None = None
         self._subgraph_library: SubgraphLibrary | None = None
-        # The locked member the last press landed on, so the canvas can tell a
-        # member click (its node page) from a pill click (the region page) when
-        # both leave the same whole-instance selection behind.
-        self._pressed_member_id: str | None = None
         self._in_structural_edit: bool = False  # re-entrancy guard; suppresses nested about_to_change
         self._snap_enabled: bool = False
         self._grid_style: str = "dots"  # "dots" | "lines" | "none"
@@ -554,6 +567,8 @@ class EditScene(QGraphicsScene):
         self.clear()
         self._node_items.clear()
         self._edge_items.clear()
+        self._edge_models.clear()
+        self._call_of = {}
         self._drag_src = None
         self._drag_when = None
         self._temp_edge = None
@@ -566,14 +581,21 @@ class EditScene(QGraphicsScene):
             self.about_to_change.emit(desc)
 
     def setup(self, config: BotConfig) -> None:
-        """Rebuild the scene from a BotConfig."""
+        """Rebuild the scene from a BotConfig.
+
+        Every subgraph instance is drawn as one call node, and its members get no item
+        of their own; an edge into or out of an instance is drawn to the call node's
+        port, however many flat transitions it stands for (``transitions_of``).
+        """
         self.teardown()
         self._config = config
+        self._call_of = {m: region.id for region in outermost_linked_regions(config.regions) for m in region.members}
 
         states = config.states
-        transitions = config.transitions
-
+        sources = {self.display_id(t.source) for t in config.transitions}
         for i, state in enumerate(states):
+            if state.id in self._call_of:
+                continue
             pos = state.position
             if pos and isinstance(pos, dict):
                 x = pos.get("x", 0)
@@ -582,29 +604,15 @@ class EditScene(QGraphicsScene):
                 total_w = (len(states) - 1) * _AUTO_SPACING
                 x = i * _AUTO_SPACING - total_w / 2 - NODE_W / 2
                 y = -NODE_H / 2
-            returns = _node_returns(state.node_type)
-            sources = {t.source for t in transitions}
-            is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, config)
-            reasons = err_reasons + warn_reasons
-            node = NodeItem(
-                state.id,
-                state.label,
-                interactive=self._interactive_mode,
-                returns=returns,
-                is_initial=(state.id == config.initial),
-                is_terminal=(state.id not in sources),
-                is_recovery=(state.id == config.recovery_state),
-                is_error=is_error,
-                is_warning=is_warning,
-                node_type=state.node_type,
-            )
-            node.set_error(is_error, reasons)
-            node.set_warning(is_warning, reasons)
-            node.set_port_marks(port_marks_for(state, config))
-            node.set_snap_enabled(self._snap_enabled)
+            node = self._make_node(state, is_terminal=state.id not in sources)
+            node.set_port_marks(port_marks_for(state, config) if state.node_type not in PORT_NODE_TYPES else {})
             node.setPos(x, y)
             self.addItem(node)
             self._node_items[state.id] = node
+        for region in outermost_linked_regions(config.regions):
+            node = self._make_call_node(region)
+            self.addItem(node)
+            self._node_items[region.id] = node
 
         # Pre-compute shared bridge_y for same-destination backward-edge groups.
         # Backward edges from same-Y nodes that share a (dest, when) pair are snapped
@@ -621,67 +629,49 @@ class EditScene(QGraphicsScene):
         # are excluded from corridor grouping and route independently.
         # bridge_y_below / bridge_y_above / is_above_routed are imported from
         # edge_item so the corridor geometry stays in one place.
-
-        # Collect unique (s, w, d) tuples from transitions (deduplicated).
-        unique_edges: list[tuple[str, str | None, str]] = []
-        _seen: set[tuple[str, str | None, str]] = set()
-        for t in transitions:
-            key = (t.source, t.when, t.dest)
-            if key not in _seen:
-                _seen.add(key)
-                unique_edges.append(key)
+        grouped: dict[tuple[str, str | None, str, str | None], list[TransitionModel]] = {}
+        for t in config.transitions:
+            key = self.display_key(t)
+            if key is not None:
+                grouped.setdefault(key, []).append(t)
 
         # Group by (when, y_row) so all backward edges in the same horizontal band
         # with the same when-label share a corridor, regardless of destination.
         # Using destination as the grouping key caused edges to unique destinations
         # to route independently via a port-midpoint heuristic, producing a different
         # bridge Y than the node-bounds formula used for multi-destination groups.
-        below_groups: dict[tuple[str | None, int], list[tuple[str, str | None, str]]] = defaultdict(list)
-        above_groups: dict[tuple[str | None, int], list[tuple[str, str | None, str]]] = defaultdict(list)
-        for s, w, d in unique_edges:
+        below_groups: dict[tuple[str | None, int], list[tuple]] = defaultdict(list)
+        above_groups: dict[tuple[str | None, int], list[tuple]] = defaultdict(list)
+        for key in grouped:
+            s, w, d, _port = key
             if s == d or s not in self._node_items or d not in self._node_items:
                 continue
             sn, dn = self._node_items[s], self._node_items[d]
             if dn.pos().x() >= sn.pos().x():
                 continue  # forward edge
-            if abs(sn.pos().y() - dn.pos().y()) >= sn._height:
+            if abs(sn.pos().y() - dn.pos().y()) >= sn.body_height:
                 continue  # Y-band outlier — routes independently
             y_row = round(sn.pos().y() / GRID_H)
             if is_above_routed(sn, w):
-                above_groups[(w, y_row)].append((s, w, d))
+                above_groups[(w, y_row)].append(key)
             else:
-                below_groups[(w, y_row)].append((s, w, d))
+                below_groups[(w, y_row)].append(key)
 
-        bridge_y_map: dict[tuple[str, str | None, str], float] = {}
+        bridge_y_map: dict[tuple, float] = {}
         for group_edges in below_groups.values():
-            shared_y = max(bridge_y_below(self._node_items[s], self._node_items[d]) for s, w, d in group_edges)
+            shared_y = max(bridge_y_below(self._node_items[k[0]], self._node_items[k[2]]) for k in group_edges)
             for key in group_edges:
                 bridge_y_map[key] = shared_y
         for group_edges in above_groups.values():
-            shared_y = min(bridge_y_above(self._node_items[s], self._node_items[d]) for s, w, d in group_edges)
+            shared_y = min(bridge_y_above(self._node_items[k[0]], self._node_items[k[2]]) for k in group_edges)
             for key in group_edges:
                 bridge_y_map[key] = shared_y
 
-        drawn: set[tuple[str, str | None, str]] = set()
-        for t in transitions:
-            s, d, w = t.source, t.dest, t.when
-            key = (s, w, d)
-            if key in drawn:
-                continue
-            drawn.add(key)
+        for key, models in grouped.items():
+            s, w, d, port = key
             if s not in self._node_items or d not in self._node_items:
                 continue
-            sn, dn = self._node_items[s], self._node_items[d]
-            has_flags = bool(t.flags or t.flag_groups)
-            if s == d:
-                edge = EdgeItem(sn, sn, when=w, has_flags=has_flags)
-            else:
-                edge = EdgeItem(sn, dn, when=w, bridge_y_override=bridge_y_map.get(key), has_flags=has_flags)
-            self.addItem(edge)
-            sn.add_edge(edge)
-            if dn is not sn:
-                dn.add_edge(edge)
-            self._edge_items.append((s, w, d, edge))
+            self._add_edge_item(s, w, d, port, models, bridge_y=bridge_y_map.get(key))
 
         # Compute forward-edge offsets and fan arrival ports now that all edges
         # are registered with their nodes (port_in_for needs the full edge list).
@@ -689,14 +679,157 @@ class EditScene(QGraphicsScene):
 
         # Add region items behind nodes (z=-1)
         self._region_manager = RegionManager(
-            self, config, self._node_items, self._pre_edit, self.graph_changed.emit, self.is_region_locked
+            self, config, _DisplayLookup(self), self._pre_edit, self.graph_changed.emit, self.is_region_linked
         )
         self._region_manager.setup(self._interactive_mode)
-        self.refresh_locks()
-        # Every linked region reads as linked until the canvas hands over a report.
+        self._refresh_roles()
+        self.refresh_errors()
+        # Every call node reads as linked until the canvas hands over a report.
         self.refresh_region_states(None)
 
         self._update_scene_rect()
+
+    def _make_node(self, state: StateModel, *, is_terminal: bool) -> NodeItem:
+        """The item for one ordinary state: a node, or in a definition an Entry/Exit pill."""
+        if state.node_type in PORT_NODE_TYPES:
+            node: NodeItem = PortNodeItem(
+                state.id, state.label, is_entry=state.node_type == SUBGRAPH_ENTRY, interactive=self._interactive_mode
+            )
+        else:
+            node = NodeItem(
+                state.id,
+                state.label,
+                interactive=self._interactive_mode,
+                returns=_node_returns(state.node_type),
+                is_terminal=is_terminal,
+                node_type=state.node_type,
+            )
+        node.set_snap_enabled(self._snap_enabled)
+        return node
+
+    def _make_call_node(self, region: RegionModel) -> CallNodeItem:
+        """The one node a subgraph instance is drawn as, at its anchor, ports from its definition."""
+        assert region.source is not None
+        defn = self._definition(region)
+        source = region.source
+        if defn is not None:
+            entries = [(s.id, port_name(s)) for s in defn.states if s.node_type == SUBGRAPH_ENTRY]
+            exits = [(s.id, port_name(s)) for s in defn.states if s.node_type == SUBGRAPH_EXIT]
+            name = defn.name
+        else:
+            # Missing from the library: the snapshot's own port map still says what the
+            # ports are, which is what keeps the bot's edges drawable.
+            entries = [(pid, pid) for pid, p in source.ports.items() if p.member is not None]
+            exits = [(pid, pid) for pid, p in source.ports.items() if p.from_ is not None]
+            name = source.subgraph_id
+        origin = ""
+        if self._subgraph_library is not None:
+            origin = source_label(self._subgraph_library.origin(source.subgraph_id))
+        parts = ["subgraph", name if name != region.label else "", origin, f"v{source.version}"]
+        node = CallNodeItem(
+            region.id,
+            region.label,
+            subline=" · ".join(p for p in parts if p),
+            entries=entries,
+            exits=exits,
+            interactive=self._interactive_mode,
+        )
+        node.set_snap_enabled(self._snap_enabled)
+        anchor = source.anchor or {"x": 0.0, "y": 0.0}
+        node.setPos(float(anchor["x"]), float(anchor["y"]) - node.body_height / 2)
+        return node
+
+    def _definition(self, region: RegionModel):
+        if self._subgraph_library is None or region.source is None:
+            return None
+        return self._subgraph_library.get(region.source.subgraph_id)
+
+    def _add_edge_item(
+        self,
+        s: str,
+        w: str | None,
+        d: str,
+        port: str | None,
+        models: list[TransitionModel],
+        *,
+        bridge_y: float | None = None,
+    ) -> EdgeItem:
+        sn, dn = self._node_items[s], self._node_items[d]
+        has_flags = any(t.flags or t.flag_groups for t in models)
+        edge = EdgeItem(sn, dn, when=w, bridge_y_override=bridge_y, has_flags=has_flags, dst_port=port)
+        self.addItem(edge)
+        sn.add_edge(edge)
+        if dn is not sn:
+            dn.add_edge(edge)
+        self._edge_items.append((s, w, d, edge))
+        self._edge_models[edge] = list(models)
+        return edge
+
+    # ------------------------------------------------------------------
+    # Display ids: what an instance's members are drawn as
+    # ------------------------------------------------------------------
+
+    def display_id(self, state_id: str) -> str:
+        """The id of the item ``state_id`` is drawn as: its own, or its call node's region id."""
+        return self._call_of.get(state_id, state_id)
+
+    def display_key(self, t: TransitionModel) -> tuple[str, str | None, str, str | None] | None:
+        """``(source, when, dest, entry port)`` a transition is drawn as, or None when it is inside an instance.
+
+        An edge out of an instance leaves from the exit port its ``(member, outcome)``
+        feeds, and one into it lands on the entry port its member is reached by. A
+        crossing on no port (a hand-edited file) is drawn from the node itself.
+        """
+        s, d = self.display_id(t.source), self.display_id(t.dest)
+        if s == d and t.source in self._call_of:
+            return None
+        w = t.when
+        if t.source in self._call_of:
+            region = self._region_by_id(s)
+            pid = exit_port_of(region.source, s, t.source, t.when) if region and region.source else None
+            w = pid if pid is not None else t.when
+        port = None
+        if t.dest in self._call_of:
+            region = self._region_by_id(d)
+            port = entry_port_of(region.source, d, t.dest) if region and region.source else None
+        return s, w, d, port
+
+    def _region_by_id(self, region_id: str) -> RegionModel | None:
+        if self._config is None:
+            return None
+        return next((r for r in self._config.regions if r.id == region_id), None)
+
+    def transitions_of(self, edge: EdgeItem) -> list[TransitionModel]:
+        """The flat transitions a drawn edge stands for, in file order."""
+        return list(self._edge_models.get(edge, []))
+
+    def edge_for(self, transition: TransitionModel) -> EdgeItem | None:
+        """The drawn edge a flat transition is part of, or None (one inside an instance)."""
+        for edge, models in self._edge_models.items():
+            if any(t is transition for t in models):
+                return edge
+        return None
+
+    def is_call_node(self, display_id: str) -> bool:
+        return isinstance(self._node_items.get(display_id), CallNodeItem)
+
+    def call_nodes(self) -> dict[str, CallNodeItem]:
+        """Region id -> call node, for every subgraph instance on the canvas."""
+        return {rid: n for rid, n in self._node_items.items() if isinstance(n, CallNodeItem)}
+
+    def call_node_of(self, state_id: str) -> CallNodeItem | None:
+        """The call node ``state_id`` is drawn as, when it is a member of an instance."""
+        rid = self._call_of.get(state_id)
+        node = self._node_items.get(rid) if rid is not None else None
+        return node if isinstance(node, CallNodeItem) else None
+
+    def state_ids_of(self, display_ids) -> list[str]:
+        """Expand display ids to state ids: a call node stands for every member of its instance."""
+        out: list[str] = []
+        for did in display_ids:
+            region = self._region_by_id(did) if self.is_call_node(did) else None
+            out.extend(region.members if region is not None else [did])
+        return list(dict.fromkeys(out))
 
     @property
     def config(self) -> BotConfig | None:
@@ -705,26 +838,40 @@ class EditScene(QGraphicsScene):
 
     @property
     def node_items(self) -> dict[str, NodeItem]:
-        """State ID -> NodeItem for every node currently on the scene."""
+        """Display id -> NodeItem for every node currently on the scene (call nodes by region id)."""
         return self._node_items
 
     @property
     def edge_items(self) -> list[tuple[str, str | None, str, EdgeItem]]:
-        """(source, when, dest, EdgeItem) for every edge currently on the scene."""
+        """(source, when, dest, EdgeItem) in display ids for every edge currently on the scene."""
         return self._edge_items
 
     def refresh_initial(self, initial_id: str) -> None:
-        """Update the initial-state purple-border indicator."""
+        """Move the initial badge -- onto an entry port, when the role sits inside an instance."""
+        self._refresh_roles()
+
+    def _refresh_roles(self) -> None:
+        if self._config is None:
+            return
+        initial, recovery = self._config.initial, self._config.recovery_state
         for node_id, node in self._node_items.items():
-            node.set_initial(node_id == initial_id)
+            if isinstance(node, CallNodeItem):
+                region = self._region_by_id(node_id)
+                src = region.source if region is not None else None
+                ip = entry_port_of(src, node_id, initial) if src is not None else None
+                rp = entry_port_of(src, node_id, recovery) if src is not None else None
+                node.set_role_ports(ip, rp)
+            elif isinstance(node, PortNodeItem):
+                continue  # a definition's roles are a formality: every Entry is a way in
+            else:
+                node.set_initial(node_id == initial)
+                node.set_recovery(node_id == recovery)
 
     def refresh_edge_flags(self, transition) -> None:
-        """Refresh the dotted-pen flag indicator on the edge matching *transition*."""
-        has_flags = bool(transition.flags or transition.flag_groups)
-        for s, w, d, edge in self._edge_items:
-            if s == transition.source and d == transition.dest and w == transition.when:
-                edge.set_has_flags(has_flags)
-                break
+        """Refresh the dotted-pen flag indicator on the edge *transition* is drawn as."""
+        edge = self.edge_for(transition)
+        if edge is not None:
+            edge.set_has_flags(any(t.flags or t.flag_groups for t in self._edge_models.get(edge, [])))
 
     def refresh_all_edge_flags(self) -> None:
         """Re-derive every edge's dotted-pen indicator from the config.
@@ -736,24 +883,20 @@ class EditScene(QGraphicsScene):
         can touch any number of edges, and ``set_has_flags`` is a no-op unless the
         flag actually moved.
         """
-        if self._config is None:
-            return
-        by_key = {(t.source, t.when, t.dest): bool(t.flags or t.flag_groups) for t in self._config.transitions}
-        for s, w, d, edge in self._edge_items:
-            edge.set_has_flags(by_key.get((s, w, d), False))
+        for edge, models in self._edge_models.items():
+            edge.set_has_flags(any(t.flags or t.flag_groups for t in models))
 
     def refresh_terminal(self) -> None:
         """Update the terminal-state badge based on current transitions."""
         if self._config is None:
             return
-        sources = {t.source for t in self._config.transitions}
+        sources = {self.display_id(t.source) for t in self._config.transitions}
         for node_id, node in self._node_items.items():
-            node.set_terminal(node_id not in sources)
+            node.set_terminal(node_id not in sources and not isinstance(node, (CallNodeItem, PortNodeItem)))
 
     def refresh_recovery(self, recovery_state_id: str | None) -> None:
-        """Update the recovery-state amber badge across all nodes."""
-        for node_id, node in self._node_items.items():
-            node.set_recovery(node_id == recovery_state_id)
+        """Update the recovery-state badge across all nodes."""
+        self._refresh_roles()
         # Moving the role moves every mark that points at it, including the one the
         # new recovery node loses on its own failure port.
         self.refresh_port_marks()
@@ -770,52 +913,51 @@ class EditScene(QGraphicsScene):
             return
         for state in self._config.states:
             node = self._node_items.get(state.id)
-            if node is not None:
+            if node is not None and not isinstance(node, (CallNodeItem, PortNodeItem)):
                 node.set_port_marks(port_marks_for(state, self._config))
 
     def refresh_errors(self) -> None:
-        """Recompute and apply error/warning indicators for all nodes."""
+        """Recompute and apply error/warning indicators for all nodes.
+
+        An instance's members are checked like any state, and what they find rolls up
+        onto the call node: an input left empty flags the call node, and the banner and
+        the Run button see the member's own error.
+        """
         if self._config is None:
             return
         reachable = _reachable_states(self._config)
+        rolled: dict[str, tuple[list[str], list[str]]] = {}
         for state in self._config.states:
-            node = self._node_items.get(state.id)
-            if node is None:
-                continue
             is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, self._config, reachable)
-            reasons = err_reasons + warn_reasons
-            node.set_error(is_error, reasons)
-            node.set_warning(is_warning, reasons)
+            node = self._node_items.get(state.id)
+            if node is not None:
+                reasons = err_reasons + warn_reasons
+                node.set_error(is_error, reasons)
+                node.set_warning(is_warning, reasons)
+                continue
+            rid = self._call_of.get(state.id)
+            if rid is None:
+                continue
+            errs, warns = rolled.setdefault(rid, ([], []))
+            name = state.label or state.id
+            errs.extend(f"{name}: {r}" for r in err_reasons)
+            warns.extend(f"{name}: {r}" for r in member_warnings(warn_reasons))
+        for rid, node in self.call_nodes().items():
+            errs, warns = rolled.get(rid, ([], []))
+            node.set_error(bool(errs), errs + warns)
+            node.set_warning(bool(warns), errs + warns)
 
     # ------------------------------------------------------------------
-    # Subgraph instances: the lock query, and what reads it
+    # Subgraph instances
     # ------------------------------------------------------------------
 
     def set_subgraph_library(self, library: SubgraphLibrary | None) -> None:
-        """The library a pasted instance composes from and lock tooltips name. May be None."""
+        """The library a pasted instance composes from and a call node reads its ports from. May be None."""
         self._subgraph_library = library
 
     @property
     def subgraph_library(self) -> SubgraphLibrary | None:
         return self._subgraph_library
-
-    @property
-    def editing_region_id(self) -> str | None:
-        """The linked region whose members are unlocked for editing, or None."""
-        return self._editing_region_id
-
-    def set_editing_region(self, region_id: str | None) -> None:
-        """Unlock one linked region for editing (or none), and redraw what the lock query feeds."""
-        self._editing_region_id = region_id
-        self.refresh_locks()
-        self.refresh_region_states(None)
-
-    def editing_members(self) -> list[str]:
-        """Members of the region being edited, or an empty list."""
-        if self._config is None or self._editing_region_id is None:
-            return []
-        region = next((r for r in self._config.regions if r.id == self._editing_region_id), None)
-        return list(region.members) if region is not None else []
 
     def linked_region_of(self, state_id: str) -> RegionModel | None:
         """The outermost linked region ``state_id`` belongs to, or None."""
@@ -823,97 +965,40 @@ class EditScene(QGraphicsScene):
             return None
         return linked_region_of(self._config, state_id)
 
-    def is_locked(self, state_id: str) -> bool:
-        """Whether ``state_id`` is a member of a linked region that is not being edited.
-
-        The only lock query. Nothing keeps a second flag: undo rebuilds the scene
-        from the config and this answer follows, and making it return False
-        everywhere restores the pre-subgraph editor exactly.
-        """
-        region = self.linked_region_of(state_id)
-        return region is not None and region.id != self._editing_region_id
-
-    def is_region_locked(self, region_id: str) -> bool:
-        """Whether the region's membership is the library's to decide rather than the user's."""
-        if self._config is None:
-            return False
-        region = next((r for r in self._config.regions if r.id == region_id), None)
-        return region is not None and region.source is not None and region.id != self._editing_region_id
-
-    def _locked_pair(self, a: str, b: str) -> bool:
-        """True when an edge between ``a`` and ``b`` would be internal to a locked instance."""
-        ra = self.linked_region_of(a)
-        return ra is not None and ra is self.linked_region_of(b) and ra.id != self._editing_region_id
-
-    def _edge_is_locked(self, edge_item: EdgeItem) -> bool:
-        for s, _w, d, ei in self._edge_items:
-            if ei is edge_item:
-                return self._locked_pair(s, d)
-        return False
-
-    def _subgraph_name(self, region: RegionModel) -> str:
-        defn = None
-        if self._subgraph_library is not None and region.source is not None:
-            defn = self._subgraph_library.get(region.source.subgraph_id)
-        return defn.name if defn is not None else region.label
-
-    def refresh_locks(self) -> None:
-        """Re-derive every node's lock glyph from the config. Called by setup and after a detach."""
-        for sid, node in self._node_items.items():
-            region = self.linked_region_of(sid)
-            locked = region is not None and region.id != self._editing_region_id
-            node.set_locked(locked, self._subgraph_name(region) if locked and region is not None else None)
+    def is_region_linked(self, region_id: str) -> bool:
+        """Whether the region is a subgraph instance, whose membership is the library's to decide."""
+        region = self._region_by_id(region_id)
+        return region is not None and region.source is not None
 
     def refresh_region_states(self, report: ComposeReport | None) -> None:
-        """Push each linked region's pill state from the last compose report.
+        """Push each call node's link badge state from the last compose report.
 
-        A linked region the report does not mention (one pasted since, or nested
-        inside another) reads as ``linked``; an ordinary region has no state.
+        An instance the report does not mention (one pasted since) reads as ``linked``.
         """
         if self._config is None:
             return
-        by_id = {r.id: r for r in self._config.regions}
-        for rid, ri in self.region_items.items():
-            region = by_id.get(rid)
-            if region is None or region.source is None:
-                ri.set_link_state(None)
-            elif rid == self._editing_region_id:
-                ri.set_link_state("editing")
-            else:
-                status = report.regions.get(rid) if report is not None else None
-                kind = status.kind if status is not None else "linked"
-                ri.set_link_state(_PILL_STATE_FOR_KIND.get(kind, "linked"))
+        for rid, node in self.call_nodes().items():
+            status = report.regions.get(rid) if report is not None else None
+            kind = status.kind if status is not None else "linked"
+            node.set_link_state(_LINK_STATE_FOR_KIND.get(kind, "linked"))
 
-    def _select_instance_of(self, node: NodeItem, modifiers) -> None:
-        """Select every member of the instance ``node`` belongs to, as the pill click does."""
-        region = self.linked_region_of(node.state_id)
-        if region is None:
-            return
-        members = [self._node_items[m] for m in region.members if m in self._node_items]
-        if all(n.isSelected() for n in members):
-            return
-        if not (modifiers & (Qt.KeyboardModifier.ShiftModifier | Qt.KeyboardModifier.ControlModifier)):
-            self.clearSelection()
-        for n in members:
-            n.setSelected(True)
-
-    def _top_node_at(self, pos: QPointF) -> NodeItem | None:
-        for item in self.items(pos):
-            if isinstance(item, NodeItem):
-                return item
-        return None
+    def refresh_call_nodes(self) -> None:
+        """Re-read every call node's title from its region, after the call node's page renamed it."""
+        for rid, node in self.call_nodes().items():
+            region = self._region_by_id(rid)
+            if region is not None:
+                node.set_label(region.label)
 
     def insert_subgraph_instance(self, subgraph_id: str, pos: QPointF, into_region: str | None = None) -> str | None:
-        """Place a new instance of ``subgraph_id`` with its anchor at ``pos``. Returns the region id.
+        """Place a new instance of ``subgraph_id`` with its call node at ``pos``. Returns the region id.
 
         ``pos`` is the item position the other insert paths use (top-left of a node),
         so the anchor is stored in the model convention: left edge, vertical centre.
-        Inputs are prefilled from their defaults. With ``into_region`` the members
-        also join that region -- what makes an instance inserted while editing
-        another subgraph a nested one, which push carries into the definition.
+        Inputs start unset, following the definition's defaults. With ``into_region`` the members also
+        join that (plain) region.
 
-        The scene is rebuilt from the config, as paste does, since a region item
-        and its composed edges are simpler to build once than to grow.
+        The scene is rebuilt from the config, as paste does, since a call node and its
+        composed edges are simpler to build once than to grow.
         """
         if self._config is None or self._subgraph_library is None:
             return None
@@ -926,7 +1011,8 @@ class EditScene(QGraphicsScene):
         source = SubgraphSource(
             subgraph_id=subgraph_id,
             version=defn.version,
-            inputs={i.name: i.default for i in defn.inputs if i.default is not None},
+            # Nothing set: every input follows the definition's default until changed here.
+            inputs={},
             anchor={"x": pos.x(), "y": pos.y() + NODE_H / 2},
         )
         try:
@@ -934,6 +1020,7 @@ class EditScene(QGraphicsScene):
         except (SubgraphCycleError, LookupError) as exc:
             logger.warning("Cannot insert subgraph %s: %s", subgraph_id, exc)
             return None
+        source.ports = mat.ports
         self._pre_edit("Insert Subgraph")
         self._in_structural_edit = True
         try:
@@ -945,70 +1032,81 @@ class EditScene(QGraphicsScene):
             )
             config.regions.extend(mat.regions)
             if into_region is not None:
-                outer = next((r for r in config.regions if r.id == into_region), None)
-                if outer is not None:
+                outer = self._region_by_id(into_region)
+                if outer is not None and outer.source is None:
                     outer.members.extend(m for m in mat.member_ids if m not in outer.members)
             self.setup(config)
             self.clearSelection()
-            for mid in mat.member_ids:
-                node = self._node_items.get(mid)
-                if node is not None:
-                    node.setSelected(True)
-            view = self.views()[0] if self.views() else None
-            first = self._node_items.get(mat.member_ids[0]) if mat.member_ids else None
-            if view is not None and first is not None:
-                view.smooth_pan_if_offscreen(first)
+            node = self._node_items.get(region_id)
+            if node is not None:
+                node.setSelected(True)
+                view = self.views()[0] if self.views() else None
+                if view is not None:
+                    view.smooth_pan_if_offscreen(node)
         finally:
             self._in_structural_edit = False
         self.graph_changed.emit()
         return region_id
 
     def remove_instance(self, region_id: str, *, confirm: bool = True) -> bool:
-        """Delete a linked region and every one of its members, nested instances included.
+        """Delete a subgraph instance -- its call node -- with every member, nested instances included.
 
-        The one way a locked member leaves the graph. Roles are reassigned as on any
-        delete. Returns False if the user cancels, or if ``region_id`` is not an instance.
+        Roles are reassigned as on any delete. Returns False if the user cancels, or if
+        ``region_id`` is not an instance.
         """
         if self._config is None:
             return False
-        region = next((r for r in self._config.regions if r.id == region_id), None)
+        region = self._region_by_id(region_id)
         if region is None or region.source is None:
             return False
         if confirm:
-            n = len(region.members)
             answer = QMessageBox.question(
                 self.views()[0] if self.views() else None,
-                "Remove Subgraph Instance",
-                f"Remove subgraph instance '{region.label}' and its {n} state{'s' if n != 1 else ''}?",
+                "Delete Subgraph",
+                f"Delete subgraph '{region.label}' and its connections?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No,
             )
             if answer != QMessageBox.StandardButton.Yes:
                 return False
-        self._pre_edit("Remove Subgraph Instance")
-        prev_in_structural = self._in_structural_edit
+        self._pre_edit("Delete Subgraph")
+        config = self._config
+        members = set(region.members)
+        gone = [region, *nested_regions(config, region)]
+        config.states = [s for s in config.states if s.id not in members]
+        config.transitions = [t for t in config.transitions if t.source not in members and t.dest not in members]
+        config.regions = [r for r in config.regions if not any(r is g for g in gone)]
+        for r in config.regions:
+            r.members = [m for m in r.members if m not in members]
+        config.regions = [r for r in config.regions if r.source is not None or len(r.members) >= 2]
+        self._reassign_orphaned_roles()
+        prev = self._in_structural_edit
         self._in_structural_edit = True
         try:
-            for sid in list(region.members):
-                self._delete_node(sid, confirm=False, allow_locked=True)
-            for r in [region, *nested_regions(self._config, region)]:
-                self._region_manager.delete_region(r.id)
+            self.setup(config)
         finally:
-            self._in_structural_edit = prev_in_structural
-        self._update_scene_rect()
+            self._in_structural_edit = prev
         self.graph_changed.emit()
         return True
 
     def detach_region(self, region_id: str) -> None:
-        """Drop the region's link to the library. Members and ids stay exactly as they are."""
+        """Drop the instance's link to the library: its members become ordinary states on the canvas.
+
+        Ids stay exactly as they are; the region stays, as an ordinary one around them.
+        """
         if self._config is None:
             return
-        region = next((r for r in self._config.regions if r.id == region_id), None)
+        region = self._region_by_id(region_id)
         if region is None or region.source is None:
             return
         self._pre_edit("Detach from Library")
         detach_subgraph(self._config, region_id)
-        self.refresh_locks()
+        prev = self._in_structural_edit
+        self._in_structural_edit = True
+        try:
+            self.setup(self._config)
+        finally:
+            self._in_structural_edit = prev
         self.graph_changed.emit()
 
     def set_interactive(self, interactive: bool) -> None:
@@ -1090,18 +1188,45 @@ class EditScene(QGraphicsScene):
         self.graph_changed.emit()
         return state_id
 
+    def add_port_node(self, node_type: str, pos: QPointF) -> str | None:
+        """Place a new Entry or Exit in a definition document, named after its kind. Returns its id.
+
+        A port's id is its node's id, stable for life; its name is the label, which
+        the author changes freely. Only a definition document has ports.
+        """
+        if self._config is None or not self._config.is_definition or node_type not in PORT_NODE_TYPES:
+            return None
+        is_entry = node_type == SUBGRAPH_ENTRY
+        kind = "entry" if is_entry else "exit"
+        taken = {s.id for s in self._config.states}
+        labels = {s.label for s in self._config.states if s.node_type == node_type}
+        n = 1
+        while f"{'Entry' if is_entry else 'Exit'} {n}" in labels:
+            n += 1
+        label = f"{'Entry' if is_entry else 'Exit'} {n}"
+        pid = f"{kind}_{n}"
+        while pid in taken:
+            n += 1
+            pid = f"{kind}_{n}"
+        self._pre_edit("Add Entry" if is_entry else "Add Exit")
+        state = StateModel(id=pid, node_type=node_type, label=label, position={"x": pos.x(), "y": pos.y() + NODE_H / 2})
+        self._config.states.append(state)
+        node = self._make_node(state, is_terminal=False)
+        node.set_interactive(True)
+        node.setPos(pos)
+        self.addItem(node)
+        self._node_items[pid] = node
+        self._update_scene_rect()
+        self.refresh_errors()
+        self.graph_changed.emit()
+        return pid
+
     # ------------------------------------------------------------------
     # Mouse events
     # ------------------------------------------------------------------
 
-    @property
-    def pressed_member_id(self) -> str | None:
-        """The locked member the last left press landed on, or None."""
-        return self._pressed_member_id
-
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton and self._interactive_mode:
-            self._pressed_member_id = None
             scene_pos = event.scenePos()
             result = self._node_near_port_out(scene_pos)
             if result is not None:
@@ -1116,18 +1241,6 @@ class EditScene(QGraphicsScene):
                 self.addItem(line)
                 event.accept()
                 return
-
-            # A locked member is pressed as its whole instance, so Qt's multi-item
-            # drag moves the group. Selecting before the default handler runs is
-            # what keeps the selection: Qt leaves an already-selected item's
-            # selection alone on a plain press.
-            pressed = self._top_node_at(scene_pos)
-            if pressed is not None and self.is_locked(pressed.state_id):
-                self._pressed_member_id = pressed.state_id
-                self._select_instance_of(pressed, event.modifiers())
-                if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
-                    event.accept()  # Qt would toggle the pressed node back off
-                    return
 
             # Click-cycle: when multiple edges overlap at a point, repeated clicks
             # at the same location cycle through them for individual selection.
@@ -1171,7 +1284,8 @@ class EditScene(QGraphicsScene):
                 if self._drag_snap_edge is not None:
                     self._drag_snap_edge.set_snap_target(True)
 
-            end_pt = self._drag_snap_edge._dst.port_in() if self._drag_snap_edge else cur
+            snap = self._drag_snap_edge
+            end_pt = snap.dst_node.port_in_at(snap.dst_port) if snap is not None else cur
             self._temp_edge.setLine(src_pt.x(), src_pt.y(), end_pt.x(), end_pt.y())
 
             views = self.views()
@@ -1223,11 +1337,18 @@ class EditScene(QGraphicsScene):
                 self._drag_snap_edge = None
 
                 if snap is not None:
-                    self._create_transition(self._drag_src, snap._dst, self._drag_when)
+                    self._create_transition(self._drag_src, snap.dst_node, self._drag_when, dst_port=snap.dst_port)
                 else:
-                    dst = self._node_near_port_in(event.scenePos())
-                    if dst is not None:
-                        self._create_transition(self._drag_src, dst, self._drag_when)
+                    hit = self._node_near_port_in(event.scenePos())
+                    if hit is not None:
+                        self._create_transition(self._drag_src, hit[0], self._drag_when, dst_port=hit[1])
+                    elif (
+                        self._config is not None
+                        and self._config.is_definition
+                        and not isinstance(self._drag_src, (CallNodeItem, PortNodeItem))
+                        and self._drag_when is not None
+                    ):
+                        self._offer_new_exit(self._drag_src, self._drag_when, event.scenePos())
             else:
                 if self._drag_snap_edge is not None:
                     self._drag_snap_edge.set_snap_target(False)
@@ -1237,14 +1358,30 @@ class EditScene(QGraphicsScene):
             event.accept()
             return
         super().mouseReleaseEvent(event)
-        # A click that did not drag makes Qt keep only the clicked item selected --
-        # the way one click inside a multi-selection narrows it. For a locked member
-        # the unit is the instance, so the group is put back.
-        if self._pressed_member_id is not None and event.button() == Qt.MouseButton.LeftButton:
-            pressed = self._node_items.get(self._pressed_member_id)
-            if pressed is not None and self.is_locked(pressed.state_id):
-                self._select_instance_of(pressed, event.modifiers())
         self._flush_positions()
+
+    def _offer_new_exit(self, src: NodeItem, when: str, scene_pos: QPointF) -> None:
+        """A member's outcome dragged into empty space in a definition: offer to end it at a new Exit."""
+        from PyQt6.QtWidgets import QMenu
+
+        view = self.views()[0] if self.views() else None
+        menu = popup_menu(view) if view is not None else QMenu()
+        act = QAction("New exit port", menu)
+        menu.addAction(act)
+        chosen = menu.exec(view.mapToGlobal(view.mapFromScene(scene_pos))) if view is not None else None
+        menu.deleteLater()
+        if chosen is not act:
+            return
+        self._pre_edit("New Exit Port")
+        self._in_structural_edit = True
+        try:
+            pid = self.add_port_node(SUBGRAPH_EXIT, QPointF(scene_pos.x(), scene_pos.y() - NODE_H / 2))
+            node = self._node_items.get(pid) if pid else None
+            if node is not None:
+                self._create_transition(src, node, when)
+        finally:
+            self._in_structural_edit = False
+        self.graph_changed.emit()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if not self._interactive_mode:
@@ -1273,6 +1410,9 @@ class EditScene(QGraphicsScene):
         if isinstance(item, RegionItem):
             self.focus_region_requested.emit(item.region_id)
             return
+        if isinstance(item, CallNodeItem) and self._interactive_mode:
+            self.open_definition_requested.emit(item.state_id)
+            return
         super().mouseDoubleClickEvent(event)
 
     # ------------------------------------------------------------------
@@ -1288,25 +1428,36 @@ class EditScene(QGraphicsScene):
         view = self.views()[0] if self.views() else None
         item = self.itemAt(event.scenePos(), view.transform() if view is not None else QTransform())
         menu = popup_menu(view) if view is not None else QMenu()
-        if isinstance(item, NodeItem):
+        if isinstance(item, CallNodeItem):
+            self._build_call_menu(menu, item)
+        elif isinstance(item, NodeItem):
             self._build_node_menu(menu, item, event.scenePos())
         elif isinstance(item, RegionItem):
             self._build_region_menu(menu, item, event.scenePos())
         elif isinstance(item, EdgeItem):
-            if not self._edge_is_locked(item):
-                act = QAction("Delete Transition", menu)
-                act.triggered.connect(lambda: self._delete_edge_item(item))
-                menu.addAction(act)
+            act = QAction("Delete Transition", menu)
+            act.triggered.connect(lambda: self._delete_edge_item(item))
+            menu.addAction(act)
+            if not isinstance(item.src_node, (CallNodeItem, PortNodeItem)) and not isinstance(
+                item.dst_node, (CallNodeItem, PortNodeItem)
+            ):
                 act_ins = QAction("Insert State Here", menu)
                 act_ins.triggered.connect(lambda: self._insert_state_on_edge(item))
                 menu.addAction(act_ins)
         else:
             scene_pos = event.scenePos()
+            at = QPointF(scene_pos.x() - NODE_W / 2, scene_pos.y() - NODE_H / 2)
             act = QAction("Add State Here", menu)
-            act.triggered.connect(
-                lambda: self.add_state(QPointF(scene_pos.x() - NODE_W / 2, scene_pos.y() - NODE_H / 2))
-            )
+            act.triggered.connect(lambda: self.add_state(at))
             menu.addAction(act)
+            if self._config is not None and self._config.is_definition:
+                menu.addSeparator()
+                act_in = QAction("Add Entry", menu)
+                act_in.triggered.connect(lambda: self.add_port_node(SUBGRAPH_ENTRY, at))
+                menu.addAction(act_in)
+                act_out = QAction("Add Exit", menu)
+                act_out.triggered.connect(lambda: self.add_port_node(SUBGRAPH_EXIT, at))
+                menu.addAction(act_out)
             self._add_create_region_action(menu)
         if not menu.isEmpty():
             menu.exec(event.screenPos())
@@ -1317,102 +1468,99 @@ class EditScene(QGraphicsScene):
         if len(selected_nodes) >= 2:
             menu.addSeparator()
             n = len(selected_nodes)
+            ids = self.state_ids_of(nd.state_id for nd in selected_nodes)
             act_cr = QAction(f"Create Region from {n} selected states", menu)
-            act_cr.triggered.connect(lambda: self._region_manager.create_region([nd.state_id for nd in selected_nodes]))
+            act_cr.triggered.connect(lambda: self._region_manager.create_region(ids))
             menu.addAction(act_cr)
 
-    def _port_carries_internal_edge(self, state_id: str, return_name: str | None, *, incoming: bool) -> bool:
-        """Whether inserting at this port would split an edge internal to a locked instance."""
-        if self._config is None:
-            return False
-        for t in self._config.transitions:
-            if incoming and t.dest == state_id and self._locked_pair(t.source, t.dest):
-                return True
-            if not incoming and t.source == state_id and t.when == return_name and self._locked_pair(t.source, t.dest):
-                return True
-        return False
+    def _build_call_menu(self, menu, item: CallNodeItem) -> None:
+        """A subgraph instance's verbs: open its definition, detach it, delete it -- plus region membership."""
+        rid = item.state_id
+        act_open = QAction("Open Definition", menu)
+        act_open.triggered.connect(lambda: self.open_definition_requested.emit(rid))
+        menu.addAction(act_open)
+        act_detach = QAction("Detach from Library", menu)
+        act_detach.triggered.connect(lambda: self.detach_region(rid))
+        menu.addAction(act_detach)
+        act_del = QAction("Delete Subgraph", menu)
+        act_del.triggered.connect(lambda: self.remove_instance(rid))
+        menu.addAction(act_del)
+        self._add_region_membership_actions(menu, item)
 
     def _build_node_menu(self, menu, item: NodeItem, scene_pos: QPointF) -> None:
         sid = item.state_id
-        locked = self.is_locked(sid)
+        is_port = isinstance(item, PortNodeItem)
         # Ports are painted on the node, so itemAt() has already resolved to the
         # NodeItem -- the port under the cursor has to be hit-tested separately,
         # with the same helpers and radius the drag-to-connect path uses so the
         # target areas agree.  Output first, matching mousePressEvent.
         port_out_hit = self._node_near_port_out(scene_pos)
         port_in_hit = self._node_near_port_in(scene_pos)
-        if port_out_hit is not None:
+        if not is_port and port_out_hit is not None and not isinstance(port_out_hit[0], CallNodeItem):
             port_node, port_return = port_out_hit
-            if not self._port_carries_internal_edge(port_node.state_id, port_return, incoming=False):
-                label = f"Insert State at {port_return} Port" if port_return else "Insert State at Output Port"
-                act_port = QAction(label, menu)
-                act_port.triggered.connect(
-                    lambda _=None, s=port_node.state_id, r=port_return: self._prompt_insert_at_output_port(s, r)
-                )
-                menu.addAction(act_port)
+            label = f"Insert State at {port_return} Port" if port_return else "Insert State at Output Port"
+            act_port = QAction(label, menu)
+            act_port.triggered.connect(
+                lambda _=None, s=port_node.state_id, r=port_return: self._prompt_insert_at_output_port(s, r)
+            )
+            menu.addAction(act_port)
             self._add_stop_actions(menu, port_node.state_id, port_return)
             if not menu.isEmpty():
                 menu.addSeparator()
-        elif port_in_hit is not None:
-            if not self._port_carries_internal_edge(port_in_hit.state_id, None, incoming=True):
-                act_port = QAction("Insert State at Input Port", menu)
-                act_port.triggered.connect(lambda _=None, s=port_in_hit.state_id: self._prompt_insert_at_input_port(s))
-                menu.addAction(act_port)
-                menu.addSeparator()
-        if not locked:
-            act = QAction("Delete State", menu)
-            act.triggered.connect(lambda: self._delete_node(item.state_id))
-            menu.addAction(act)
-        act_help = QAction("Node Help", menu)
-        act_help.triggered.connect(lambda _=None, s=sid: self._open_node_help(s))
-        menu.addAction(act_help)
-        if sid in self.editing_members():
-            state = next((st for st in self._config.states if st.id == sid), None) if self._config else None
-            schema = NODE_PARAM_SCHEMAS.get(state.node_type, []) if state is not None else []
-            if schema:
-                sub = menu.addMenu("Expose as Input")
-                for field in schema:
-                    act_x = QAction(field.label, sub)
-                    act_x.triggered.connect(lambda _=None, s=sid, k=field.key: self.expose_input_requested.emit(s, k))
-                    sub.addAction(act_x)
-        # Determine target nodes: all selected if the clicked node is part of a multi-selection
+        elif not is_port and port_in_hit is not None and not isinstance(port_in_hit[0], CallNodeItem):
+            act_port = QAction("Insert State at Input Port", menu)
+            act_port.triggered.connect(lambda _=None, s=port_in_hit[0].state_id: self._prompt_insert_at_input_port(s))
+            menu.addAction(act_port)
+            menu.addSeparator()
+        act = QAction(
+            "Delete Entry" if is_port and item.is_entry else ("Delete Exit" if is_port else "Delete State"), menu
+        )
+        act.triggered.connect(lambda: self._delete_node(item.state_id))
+        menu.addAction(act)
+        if not is_port:
+            act_help = QAction("Node Help", menu)
+            act_help.triggered.connect(lambda _=None, s=sid: self._open_node_help(s))
+            menu.addAction(act_help)
+        self._add_region_membership_actions(menu, item)
+        self._add_create_region_action(menu)
+
+    def _add_region_membership_actions(self, menu, item: NodeItem) -> None:
+        """Add to / Remove from each plain region, for the clicked node or the multi-selection it is in."""
         selected_nodes = [i for i in self.selectedItems() if isinstance(i, NodeItem)]
         if len(selected_nodes) >= 2 and item in selected_nodes:
-            target_ids = [n.state_id for n in selected_nodes]
+            display_ids = [n.state_id for n in selected_nodes]
         else:
-            target_ids = [sid]
-        is_multi = len(target_ids) > 1
-        # Region membership actions. A locked region's membership is the library's,
-        # so it is offered on neither side.
-        regions = [r for r in (self._config.regions if self._config else []) if not self.is_region_locked(r.id)]
-        if regions:
-            menu.addSeparator()
-            for region in regions:
-                not_members = [i for i in target_ids if i not in region.members]
-                in_members = [i for i in target_ids if i in region.members]
-                rid = region.id
-                rlabel = region.label
-                if not_members:
-                    label = (
-                        f"Add {len(not_members)} nodes to Region: {rlabel}" if is_multi else f"Add to Region: {rlabel}"
-                    )
-                    act_add = QAction(label, menu)
-                    act_add.triggered.connect(
-                        lambda _=None, ids=not_members, r=rid: self._region_manager.add_to_region(ids, r)
-                    )
-                    menu.addAction(act_add)
-                if in_members:
-                    label = (
-                        f"Remove {len(in_members)} nodes from Region: {rlabel}"
-                        if is_multi
-                        else f"Remove from Region: {rlabel}"
-                    )
-                    act_rem = QAction(label, menu)
-                    act_rem.triggered.connect(
-                        lambda _=None, ids=in_members, r=rid: self._region_manager.remove_from_region(ids, r)
-                    )
-                    menu.addAction(act_rem)
-        self._add_create_region_action(menu)
+            display_ids = [item.state_id]
+        target_ids = self.state_ids_of(display_ids)
+        is_multi = len(display_ids) > 1
+        # A linked region's membership is the library's, so it is offered on neither side.
+        regions = [r for r in (self._config.regions if self._config else []) if r.source is None]
+        if not regions:
+            return
+        menu.addSeparator()
+        for region in regions:
+            not_members = [i for i in target_ids if i not in region.members]
+            in_members = [i for i in target_ids if i in region.members]
+            rid = region.id
+            rlabel = region.label
+            if not_members:
+                label = f"Add {len(display_ids)} nodes to Region: {rlabel}" if is_multi else f"Add to Region: {rlabel}"
+                act_add = QAction(label, menu)
+                act_add.triggered.connect(
+                    lambda _=None, ids=not_members, r=rid: self._region_manager.add_to_region(ids, r)
+                )
+                menu.addAction(act_add)
+            if in_members:
+                label = (
+                    f"Remove {len(display_ids)} nodes from Region: {rlabel}"
+                    if is_multi
+                    else f"Remove from Region: {rlabel}"
+                )
+                act_rem = QAction(label, menu)
+                act_rem.triggered.connect(
+                    lambda _=None, ids=in_members, r=rid: self._region_manager.remove_from_region(ids, r)
+                )
+                menu.addAction(act_rem)
 
     def _add_stop_actions(self, menu, state_id: str, return_name: str | None) -> None:
         """Offer to make this output port end the run, or to undo that.
@@ -1422,7 +1570,7 @@ class EditScene(QGraphicsScene):
         to disable an edge that is still drawn -- the confusion this whole feature
         exists to remove.
         """
-        if self._config is None or return_name is None or self.is_locked(state_id):
+        if self._config is None or return_name is None:
             return
         state = next((st for st in self._config.states if st.id == state_id), None)
         if state is None:
@@ -1479,58 +1627,41 @@ class EditScene(QGraphicsScene):
 
     def _build_region_menu(self, menu, item: RegionItem, scene_pos: QPointF) -> None:
         rid = item.region_id
-        locked = self.is_region_locked(rid)
-        if not locked:
-            add_pos = QPointF(scene_pos.x() - NODE_W / 2, scene_pos.y() - NODE_H / 2)
-            act_add = QAction("Add State Here", menu)
+        add_pos = QPointF(scene_pos.x() - NODE_W / 2, scene_pos.y() - NODE_H / 2)
+        act_add = QAction("Add State Here", menu)
 
-            def _add_state_in_region(_=None, rid=rid, pos=add_pos):
-                from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
+        def _add_state_in_region(_=None, rid=rid, pos=add_pos):
+            from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
 
-                if self._config is None:
+            if self._config is None:
+                return
+            view = self.views()[0] if self.views() else None
+            dlg = NodeBrowserDialog(view, mode="add", subgraph_library=self._subgraph_library)
+            if dlg.exec() and dlg.selected_node_type:
+                chosen = dlg.selected_node_type
+                if chosen.startswith(SUBGRAPH_KEY_PREFIX):
+                    self.insert_subgraph_instance(chosen[len(SUBGRAPH_KEY_PREFIX) :], pos, into_region=rid)
                     return
-                view = self.views()[0] if self.views() else None
-                dlg = NodeBrowserDialog(view, mode="add", subgraph_library=self._subgraph_library)
-                if dlg.exec() and dlg.selected_node_type:
-                    chosen = dlg.selected_node_type
-                    if chosen.startswith(SUBGRAPH_KEY_PREFIX):
-                        self.insert_subgraph_instance(chosen[len(SUBGRAPH_KEY_PREFIX) :], pos, into_region=rid)
-                        return
-                    state_id = self.create_state_at(chosen, pos)
-                    if state_id:
-                        self._region_manager.add_to_region([state_id], rid)
+                state_id = self.create_state_at(chosen, pos)
+                if state_id:
+                    self._region_manager.add_to_region([state_id], rid)
 
-            act_add.triggered.connect(_add_state_in_region)
-            menu.addAction(act_add)
-            menu.addSeparator()
-        # Label and colour are the instance's own, so both stay on a linked region.
+        act_add.triggered.connect(_add_state_in_region)
+        menu.addAction(act_add)
+        menu.addSeparator()
         act_rn = QAction("Rename Region", menu)
         act_rn.triggered.connect(lambda: self._region_manager.rename_region(rid))
         menu.addAction(act_rn)
         act_rc = QAction("Change Color", menu)
         act_rc.triggered.connect(lambda: self._region_manager.recolor_region(rid))
         menu.addAction(act_rc)
-        if locked:
-            menu.addSeparator()
-            act_edit = QAction("Edit Subgraph", menu)
-            act_edit.triggered.connect(lambda: self.edit_subgraph_requested.emit(rid))
-            menu.addAction(act_edit)
-            act_detach = QAction("Detach from Library", menu)
-            act_detach.triggered.connect(lambda: self.detach_region(rid))
-            menu.addAction(act_detach)
-            act_del = QAction("Remove Subgraph Instance\u2026", menu)
-            act_del.triggered.connect(lambda: self.remove_instance(rid))
-            menu.addAction(act_del)
-        elif rid == self._editing_region_id:
-            pass  # the crumb's Save / Discard are the only verbs on the region being edited
-        else:
-            menu.addSeparator()
-            act_save = QAction("Save Region as Reusable Subgraph\u2026", menu)
-            act_save.triggered.connect(lambda: self.save_region_as_subgraph_requested.emit(rid))
-            menu.addAction(act_save)
-            act_del = QAction("Remove Region", menu)
-            act_del.triggered.connect(lambda: self._region_manager.delete_region(rid))
-            menu.addAction(act_del)
+        menu.addSeparator()
+        act_save = QAction("Save Region as Reusable Subgraph…", menu)
+        act_save.triggered.connect(lambda: self.save_region_as_subgraph_requested.emit(rid))
+        menu.addAction(act_save)
+        act_del = QAction("Remove Region", menu)
+        act_del.triggered.connect(lambda: self._region_manager.delete_region(rid))
+        menu.addAction(act_del)
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -1550,6 +1681,8 @@ class EditScene(QGraphicsScene):
 
     def _node_near_port_out(self, pos: QPointF) -> tuple[NodeItem, str | None] | None:
         for node in self._node_items.values():
+            if not node.has_output_port:
+                continue
             if node._returns:
                 for name in node._returns:
                     if _dist(pos, node.port_out_for(name)) <= _PORT_HIT_RADIUS:
@@ -1559,10 +1692,12 @@ class EditScene(QGraphicsScene):
                     return (node, None)
         return None
 
-    def _node_near_port_in(self, pos: QPointF) -> NodeItem | None:
+    def _node_near_port_in(self, pos: QPointF) -> tuple[NodeItem, str | None] | None:
+        """The node and input port nearest ``pos`` within reach: ``(node, None)`` for an ordinary node."""
         for node in self._node_items.values():
-            if _dist(pos, node.port_in()) <= _PORT_HIT_RADIUS:
-                return node
+            for port in node.input_ports():
+                if _dist(pos, node.port_in_at(port)) <= _PORT_HIT_RADIUS:
+                    return (node, port)
         return None
 
     def _edge_near(self, pos: QPointF) -> EdgeItem | None:
@@ -1598,25 +1733,85 @@ class EditScene(QGraphicsScene):
                 edge._offset = bidi_base + (i - (n - 1) / 2) * PARALLEL_STEP
                 edge._rebuild()
 
-    def _create_transition(self, src_node: NodeItem, dst_node: NodeItem, when: str | None = None) -> None:
+    def _flat_endpoints(
+        self, src_node: NodeItem, dst_node: NodeItem, when: str | None, dst_port: str | None
+    ) -> tuple[list[tuple[str, str | None]], str] | None:
+        """The flat ``[(source, when)]`` and destination a drawn edge between two items stands for.
+
+        From a call node, the pairs feeding the exit ``when`` names; into one, the
+        member its entry ``dst_port`` is reached by. None when there is nothing to wire.
+        """
+        if isinstance(dst_node, CallNodeItem):
+            region = self._region_by_id(dst_node.state_id)
+            port = region.source.ports.get(dst_port or "") if region and region.source else None
+            if port is None or port.member is None:
+                return None
+            dest = member_id(dst_node.state_id, port.member)
+        else:
+            dest = dst_node.state_id
+        if isinstance(src_node, CallNodeItem):
+            region = self._region_by_id(src_node.state_id)
+            port = region.source.ports.get(when or "") if region and region.source else None
+            if port is None or not port.from_:
+                return None
+            pairs = [(member_id(src_node.state_id, m), w) for m, w in port.from_]
+        else:
+            pairs = [(src_node.state_id, when)]
+        return pairs, dest
+
+    def _create_transition(
+        self, src_node: NodeItem, dst_node: NodeItem, when: str | None = None, *, dst_port: str | None = None
+    ) -> None:
+        """Draw an edge between two items, and add the flat transitions it stands for.
+
+        An edge from a call node's exit is one flat transition per ``(member, outcome)``
+        feeding the exit; into a call node, it lands on the member its entry leads to.
+        An Entry has exactly one edge, so drawing another from it replaces the first;
+        nothing leads into an Entry or out of an Exit.
+        """
         if self._config is None:
             return
-        s, d = src_node.state_id, dst_node.state_id
-        if any(t.source == s and t.dest == d and t.when == when for t in self._config.transitions):
+        if not src_node.has_output_port or not dst_node.input_ports():
             return
-        if self._locked_pair(s, d):
-            logger.info("Refusing to add an edge inside locked subgraph instance: %s -> %s", s, d)
+        if isinstance(dst_node, CallNodeItem) and dst_port not in dst_node.input_ports():
+            dst_port = dst_node.input_ports()[0] if dst_node.input_ports() else None
+        if isinstance(dst_node, PortNodeItem) and isinstance(src_node, PortNodeItem):
+            return  # an Entry straight into an Exit wires nothing
+        flat = self._flat_endpoints(src_node, dst_node, when, dst_port)
+        if flat is None:
+            logger.info("Nothing to wire from %s (%s): the port has nothing leading to it", src_node.state_id, when)
+            return
+        pairs, dest = flat
+        new = [
+            (s, w)
+            for s, w in pairs
+            if not any(t.source == s and t.dest == dest and t.when == w for t in self._config.transitions)
+        ]
+        if not new:
             return
         self._pre_edit("Create Edge")
-        t = TransitionModel(trigger="advance", source=s, dest=d, when=when)
-        self._config.transitions.append(t)
-
-        edge = EdgeItem(src_node, dst_node, when=when)
-        self.addItem(edge)
-        src_node.add_edge(edge)
-        if dst_node is not src_node:
-            dst_node.add_edge(edge)
-        self._edge_items.append((s, when, d, edge))
+        prev = self._in_structural_edit
+        self._in_structural_edit = True
+        try:
+            if isinstance(src_node, PortNodeItem):
+                for _s, _w, _d, ei in [r for r in self._edge_items if r[0] == src_node.state_id]:
+                    self._delete_edge_item(ei, confirm=False)
+            models = [TransitionModel(trigger="advance", source=s, dest=dest, when=w) for s, w in new]
+            self._config.transitions.extend(models)
+            existing = next(
+                (
+                    ei
+                    for s, w, d, ei in self._edge_items
+                    if s == src_node.state_id and w == when and d == dst_node.state_id and ei.dst_port == dst_port
+                ),
+                None,
+            )
+            if existing is not None:
+                self._edge_models[existing].extend(models)
+            else:
+                self._add_edge_item(src_node.state_id, when, dst_node.state_id, dst_port, models)
+        finally:
+            self._in_structural_edit = prev
         self._recompute_offsets()
         self._update_scene_rect()
         self.refresh_terminal()
@@ -1627,16 +1822,16 @@ class EditScene(QGraphicsScene):
     def _copy_selected(self) -> None:
         if self._config is None:
             return
-        selected_ids = {item.state_id for item in self.selectedItems() if isinstance(item, NodeItem)}
-        if not selected_ids:
+        display_ids = [item.state_id for item in self.selectedItems() if isinstance(item, NodeItem)]
+        if not display_ids:
             return
+        selected_ids = set(self.state_ids_of(display_ids))
         states = [s.model_dump() for s in self._config.states if s.id in selected_ids]
         transitions = [
             t.model_dump() for t in self._config.transitions if t.source in selected_ids and t.dest in selected_ids
         ]
-        # A linked region travels with the copy when every member is selected -- the
-        # outermost ones only, since a nested instance composes through its outer.
-        # A partial selection pastes as ordinary states, as any partial copy does.
+        # A selected call node carries its whole instance -- the outermost ones only,
+        # since a nested instance composes through its outer.
         whole = [r for r in linked_regions(self._config) if r.members and set(r.members) <= selected_ids]
         regions = [r.model_dump() for r in whole if not any(is_nested_in(r, o) for o in whole)]
         self._clipboard = (states, transitions, regions)
@@ -1650,7 +1845,10 @@ class EditScene(QGraphicsScene):
 
         # Determine (offset_x, offset_y) to apply to every pasted node's stored position.
         # Clipboard positions: p["x"] = node left edge, p["y"] = node center y (StateModel convention).
-        positions = [sd["position"] for sd in states_data if sd.get("position")]
+        # A copied instance is placed by its anchor -- its call node -- not by its members.
+        member_ids = {m for rd in regions_data for m in rd["members"]}
+        positions = [sd["position"] for sd in states_data if sd.get("position") and sd["id"] not in member_ids]
+        positions += [rd["source"].get("anchor") for rd in regions_data if rd["source"].get("anchor")]
 
         offset_x = 0.0
         offset_y = 0.0
@@ -1674,7 +1872,7 @@ class EditScene(QGraphicsScene):
             # Shift offset_y downward until no pasted node collides with an existing one.
             # Grid cell key: (col based on left edge, row based on center y) — same as snap formula.
             occupied = {
-                (round(item.pos().x() / GRID_W), round((item.pos().y() + NODE_H / 2) / GRID_H))
+                (round(item.pos().x() / GRID_W), round((item.pos().y() + item.body_height / 2) / GRID_H))
                 for item in self._node_items.values()
             }
             for _ in range(50):
@@ -1707,17 +1905,11 @@ class EditScene(QGraphicsScene):
                     "y": new_sd["position"]["y"] + offset_y,
                 }
             state = StateModel.model_validate(new_sd)
+            if state.node_type in PORT_NODE_TYPES and not self._config.is_definition:
+                continue  # a bot has no ports: pasting one into it drops it
             self._config.states.append(state)
-            returns = _node_returns(state.node_type)
-            node = NodeItem(
-                state.id,
-                state.label,
-                interactive=True,
-                returns=returns,
-                is_terminal=True,
-                node_type=state.node_type,
-            )
-            node.set_snap_enabled(self._snap_enabled)
+            node = self._make_node(state, is_terminal=True)
+            node.set_interactive(True)
             if new_sd.get("position"):
                 node.setPos(
                     QPointF(
@@ -1730,9 +1922,10 @@ class EditScene(QGraphicsScene):
 
         # Re-create internal transitions (_create_transition calls refresh_terminal/errors)
         for td in transitions_data:
-            src_node = self._node_items[id_map[td["source"]]]
-            dst_node = self._node_items[id_map[td["dest"]]]
-            self._create_transition(src_node, dst_node, when=td.get("when"))
+            src_node = self._node_items.get(id_map[td["source"]])
+            dst_node = self._node_items.get(id_map[td["dest"]])
+            if src_node is not None and dst_node is not None:
+                self._create_transition(src_node, dst_node, when=td.get("when"))
 
         # Ensure terminal/error badges are correct even with no internal transitions
         self.refresh_terminal()
@@ -1762,22 +1955,18 @@ class EditScene(QGraphicsScene):
         offset_x: float,
         offset_y: float,
     ) -> None:
-        """Paste a clipboard that carries at least one whole linked region.
+        """Paste a clipboard that carries at least one whole subgraph instance.
 
         Each copied instance becomes a *new* instance: a fresh region id, the same
-        inputs and overrides, the anchor translated with the paste, and members
-        composed from the library so their ids derive from the new region id and
-        never from ``_unique_id``. A member the clipboard had keeps its (translated)
-        position; one the library has since added lands at ``anchor + definition
-        position``, as on any compose. When the library cannot supply the
-        definition, the clipboard's own states stand in for it, so the paste still
-        works and the region flags ``missing`` at the next compose like any other.
+        inputs, the anchor translated with the paste, and members composed from the
+        library so their ids derive from the new region id and never from
+        ``_unique_id``. When the library cannot supply the definition, the clipboard's
+        own snapshot is renamed onto the new region id instead, so the paste still
+        works and the new call node flags ``missing`` at the next compose like any other.
 
         States outside every copied instance paste as ordinary states. The scene is
-        rebuilt from the config afterwards rather than grown item by item -- the
-        same path undo takes -- because a region item, its nested regions and the
-        composed edges are simpler to build once than to thread through the
-        incremental path.
+        rebuilt from the config afterwards rather than grown item by item -- the same
+        path undo takes.
         """
         assert self._config is not None
         config = self._config
@@ -1787,6 +1976,10 @@ class EditScene(QGraphicsScene):
         new_states: list[StateModel] = []
         new_transitions: list[TransitionModel] = []
         new_regions: list[RegionModel] = []
+        new_rids: list[str] = []
+
+        def moved(pos: dict | None) -> dict | None:
+            return {"x": float(pos["x"]) + offset_x, "y": float(pos["y"]) + offset_y} if pos else None
 
         taken = taken_ids(config)
         for rd in regions_data:
@@ -1795,60 +1988,70 @@ class EditScene(QGraphicsScene):
             defn = library.get(source.subgraph_id) if library is not None else None
             new_rid = mint_instance_id(defn.name if defn is not None else rd["label"], taken)
             taken.add(new_rid)
-            source.anchor = {"x": float(source.anchor["x"]) + offset_x, "y": float(source.anchor["y"]) + offset_y}
+            new_rids.append(new_rid)
+            source.anchor = moved(source.anchor) or {"x": offset_x, "y": offset_y}
             member_data = [sd for sd in states_data if sd["id"] in set(rd["members"])]
             locals_ = {sd["id"]: (local_id(old_rid, sd["id"]) or sd["id"]) for sd in member_data}
-            existing = {
-                member_id(new_rid, locals_[sd["id"]]): {
-                    "x": sd["position"]["x"] + offset_x,
-                    "y": sd["position"]["y"] + offset_y,
-                }
-                for sd in member_data
-                if sd.get("position")
-            }
+            for sd in member_data:
+                id_map[sd["id"]] = member_id(new_rid, locals_[sd["id"]])
             mat = None
             if defn is not None:
                 try:
-                    mat = materialize_region(new_rid, source, defn, library, existing_positions=existing)
+                    mat = materialize_region(new_rid, source, defn, library)
+                    source.ports = mat.ports
+                    source.version = defn.version
+                    new_states.extend(mat.states)
+                    new_transitions.extend(mat.transitions)
+                    new_regions.append(
+                        RegionModel(
+                            id=new_rid,
+                            label=rd["label"],
+                            members=list(mat.member_ids),
+                            color=rd.get("color", 1),
+                            source=source,
+                        )
+                    )
+                    new_regions.extend(mat.regions)
+                    for mid in mat.member_ids:
+                        instance_of[mid] = new_rid
                 except (SubgraphCycleError, LookupError) as exc:
                     logger.warning("Pasting subgraph %s from its clipboard snapshot: %s", source.subgraph_id, exc)
                     mat = None
             if mat is None:
-                defn = _clipboard_definition(rd, source, member_data, transitions_data, locals_)
-                mat = materialize_region(new_rid, source, defn, library, existing_positions=existing)
-            for sd in member_data:
-                id_map[sd["id"]] = member_id(new_rid, locals_[sd["id"]])
-            for mid in mat.member_ids:
-                instance_of[mid] = new_rid
-            new_states.extend(mat.states)
-            new_transitions.extend(mat.transitions)
-            new_regions.append(
-                RegionModel(
-                    id=new_rid,
-                    label=rd["label"],
-                    members=list(mat.member_ids),
-                    color=rd.get("color", 1),
-                    source=source.model_copy(update={"version": defn.version}),
+                ids = set(locals_)
+                for sd in member_data:
+                    new_states.append(
+                        StateModel.model_validate({**sd, "id": id_map[sd["id"]], "position": moved(sd.get("position"))})
+                    )
+                    instance_of[id_map[sd["id"]]] = new_rid
+                for td in transitions_data:
+                    if td["source"] in ids and td["dest"] in ids:
+                        new_transitions.append(
+                            TransitionModel.model_validate(
+                                {**td, "source": id_map[td["source"]], "dest": id_map[td["dest"]]}
+                            )
+                        )
+                new_regions.append(
+                    RegionModel(
+                        id=new_rid,
+                        label=rd["label"],
+                        members=[id_map[sd["id"]] for sd in member_data],
+                        color=rd.get("color", 1),
+                        source=source,
+                    )
                 )
-            )
-            new_regions.extend(mat.regions)
 
         # Everything outside a copied instance is an ordinary paste.
         existing_ids = [st.id for st in config.states] + [st.id for st in new_states]
         for sd in states_data:
             if sd["id"] in id_map:
                 continue
+            if sd.get("node_type") in PORT_NODE_TYPES and not config.is_definition:
+                continue
             new_id = _unique_id(existing_ids)
             existing_ids.append(new_id)
             id_map[sd["id"]] = new_id
-            new_sd = dict(sd)
-            new_sd["id"] = new_id
-            if new_sd.get("position"):
-                new_sd["position"] = {
-                    "x": new_sd["position"]["x"] + offset_x,
-                    "y": new_sd["position"]["y"] + offset_y,
-                }
-            new_states.append(StateModel.model_validate(new_sd))
+            new_states.append(StateModel.model_validate({**sd, "id": new_id, "position": moved(sd.get("position"))}))
 
         new_ids = {st.id for st in new_states}
         for td in transitions_data:
@@ -1865,12 +2068,12 @@ class EditScene(QGraphicsScene):
 
         self.setup(config)
         self.clearSelection()
-        for nid in new_ids:
-            node = self._node_items.get(nid)
+        for did in dict.fromkeys(self.display_id(nid) for nid in new_ids):
+            node = self._node_items.get(did)
             if node is not None:
                 node.setSelected(True)
         view = self.views()[0] if self.views() else None
-        first = next((self._node_items[st.id] for st in new_states if st.id in self._node_items), None)
+        first = self._node_items.get(new_rids[0]) if new_rids else None
         if view is not None and first is not None:
             view.smooth_pan_if_offscreen(first)
         self._in_structural_edit = False
@@ -1882,46 +2085,47 @@ class EditScene(QGraphicsScene):
         selected = list(self.selectedItems())
         if not selected:
             return
-        nodes = [item for item in selected if isinstance(item, NodeItem)]
+        nodes = [item for item in selected if isinstance(item, NodeItem) and not isinstance(item, CallNodeItem)]
+        calls = [item for item in selected if isinstance(item, CallNodeItem)]
         edges = [item for item in selected if isinstance(item, EdgeItem)]
-
-        # Exactly one whole instance and nothing else: that is a remove-instance.
-        if nodes and not edges and all(self.is_locked(n.state_id) for n in nodes):
-            region = self.linked_region_of(nodes[0].state_id)
-            if region is not None and {n.state_id for n in nodes} == set(region.members):
-                self.remove_instance(region.id)
-                return
-
-        # Locked members and locked internal edges are not the user's to delete.
-        nodes = [n for n in nodes if not self.is_locked(n.state_id)]
-        edges = [e for e in edges if not self._edge_is_locked(e)]
-        if not nodes and not edges:
+        if not nodes and not calls and not edges:
             return
 
         # Single item — keep the original per-item dialogs (show node label / edge endpoints).
-        if len(nodes) + len(edges) == 1:
-            if nodes:
+        if len(nodes) + len(calls) + len(edges) == 1:
+            if calls:
+                self.remove_instance(calls[0].state_id)
+            elif nodes:
                 self._delete_node(nodes[0].state_id)
             elif edges:
                 self._delete_edge_item(edges[0])
             return
 
         # Multiple items — one bulk confirmation.
-        selected_node_ids = {n.state_id for n in nodes}
+        node_ids = {n.state_id for n in nodes}
+        display_ids = node_ids | {c.state_id for c in calls}
+        deleted = set(self.state_ids_of(display_ids))
+        # Every edge on a deleted node, and every edge crossing into a deleted instance --
+        # never the edges inside one, which are not the user's to count.
         implicit_transition_count = sum(
-            1 for t in self._config.transitions if t.source in selected_node_ids or t.dest in selected_node_ids
+            1
+            for t in self._config.transitions
+            if t.source in node_ids or t.dest in node_ids or (t.source in deleted) != (t.dest in deleted)
         )
         # Edges whose endpoints are not being deleted need separate confirmation in the count.
         standalone_edges = [
             e
             for e in edges
-            if not any(s in selected_node_ids or d in selected_node_ids for s, _w, d, ei in self._edge_items if ei is e)
+            if not any(s in display_ids or d in display_ids for s, _w, d, ei in self._edge_items if ei is e)
         ]
         total_transitions = implicit_transition_count + len(standalone_edges)
 
         parts = []
-        if nodes:
-            parts.append(f"{len(nodes)} state{'s' if len(nodes) != 1 else ''}")
+        n_states = len(nodes)
+        if n_states:
+            parts.append(f"{n_states} state{'s' if n_states != 1 else ''}")
+        if calls:
+            parts.append(f"{len(calls)} subgraph{'s' if len(calls) != 1 else ''}")
         if total_transitions:
             parts.append(f"{total_transitions} transition{'s' if total_transitions != 1 else ''}")
         summary = " and ".join(parts) if parts else "selection"
@@ -1938,11 +2142,16 @@ class EditScene(QGraphicsScene):
 
         self._pre_edit("Delete Selection")
         self._in_structural_edit = True
-        for node in nodes:
-            self._delete_node(node.state_id, confirm=False)
-        for edge in standalone_edges:
-            self._delete_edge_item(edge, confirm=False)
-        self._in_structural_edit = False
+        try:
+            for edge in standalone_edges:
+                self._delete_edge_item(edge, confirm=False)
+            for node in nodes:
+                self._delete_node(node.state_id, confirm=False)
+            for call in calls:
+                self.remove_instance(call.state_id, confirm=False)
+        finally:
+            self._in_structural_edit = False
+        self.graph_changed.emit()
 
     def delete_state(self, state_id: str, *, confirm: bool = True) -> bool:
         """Delete a state and its edges. Returns False if the user cancels the prompt."""
@@ -1965,22 +2174,25 @@ class EditScene(QGraphicsScene):
             return
         ids = {s.id for s in self._config.states}
         fallback = self._config.states[0].id
+        if self._config.is_definition:
+            fallback = next((s.id for s in self._config.states if s.node_type == SUBGRAPH_ENTRY), fallback)
         if self._config.initial not in ids:
             self._config.initial = fallback
         if self._config.recovery_state not in ids:
             self._config.recovery_state = fallback
 
-    def _delete_node(self, state_id: str, *, confirm: bool = True, allow_locked: bool = False) -> bool:
-        """Delete a state and all its edges.  Returns False if the user cancels.
+    def _delete_node(self, state_id: str, *, confirm: bool = True) -> bool:
+        """Delete a state -- or, for a call node's id, the whole instance -- and all its edges.
 
-        A locked member is refused unless ``allow_locked`` -- which only
-        :meth:`remove_instance` passes, since deleting one member of an instance
-        leaves a hole the next compose fills back in.
+        Returns False if the user cancels. Deleting an Entry or Exit in a definition
+        deletes the port, and with it whatever of the node panels named it.
         """
         if self._config is None:
             return False
-        if not allow_locked and self.is_locked(state_id):
-            return False
+        if self.is_call_node(state_id):
+            return self.remove_instance(state_id, confirm=confirm)
+        if state_id in self._call_of:
+            return False  # a member goes only with its whole instance
         if confirm:
             state = next((s for s in self._config.states if s.id == state_id), None)
             label = (state.label or state_id) if state else state_id
@@ -2002,18 +2214,29 @@ class EditScene(QGraphicsScene):
         remaining = []
         for s, w, d, edge_item in self._edge_items:
             if s == state_id or d == state_id:
-                s_node = self._node_items.get(s)
-                d_node = self._node_items.get(d)
-                if s_node:
-                    s_node.remove_edge(edge_item)
-                if d_node and d_node is not s_node:
-                    d_node.remove_edge(edge_item)
-                self.removeItem(edge_item)
+                self._unregister_edge(s, d, edge_item)
             else:
                 remaining.append((s, w, d, edge_item))
         self._edge_items = remaining
         self._recompute_offsets()
         self._config.states = [s for s in self._config.states if s.id != state_id]
+        meta = self._config.definition
+        if meta is not None:
+            meta.panels = [p for p in meta.panels if not (p.kind == "node" and p.member == state_id)]
+            # An input this node was the only thing setting goes with it: it would sit on
+            # every subgraph node setting nothing. One already unbound is the author's
+            # to keep, so only an input this delete emptied is dropped.
+            emptied = set()
+            for inp in meta.inputs:
+                kept = [b for b in inp.bindings if b.state != state_id]
+                if inp.bindings and not kept:
+                    emptied.add(inp.name)
+                inp.bindings = kept
+            meta.inputs = [i for i in meta.inputs if i.name not in emptied]
+            for panel in meta.panels:
+                panel.bindings = {
+                    k: kept for k, v in panel.bindings.items() if (kept := [b for b in v if b.state != state_id])
+                }
         self._reassign_orphaned_roles()
         if state_id in self._node_items:
             self.removeItem(self._node_items.pop(state_id))
@@ -2026,17 +2249,25 @@ class EditScene(QGraphicsScene):
         self.graph_changed.emit()
         return True
 
+    def _unregister_edge(self, s: str, d: str, edge_item: EdgeItem) -> None:
+        s_node = self._node_items.get(s)
+        d_node = self._node_items.get(d)
+        if s_node:
+            s_node.remove_edge(edge_item)
+        if d_node and d_node is not s_node:
+            d_node.remove_edge(edge_item)
+        self._edge_models.pop(edge_item, None)
+        self.removeItem(edge_item)
+
     def _delete_edge_item(self, edge_item: EdgeItem, *, confirm: bool = True) -> bool:
-        """Delete a transition edge.  Returns False if the user cancels, or the edge is inside a locked instance."""
+        """Delete a drawn edge and every flat transition it stands for.  Returns False if the user cancels."""
         if self._config is None:
-            return False
-        if self._edge_is_locked(edge_item):
             return False
         if confirm:
             src = dst = ""
             for s, _w, d, ei in self._edge_items:
                 if ei is edge_item:
-                    src, dst = s, d
+                    src, dst = self._node_label(s), self._node_label(d)
                     break
             answer = QMessageBox.question(
                 self.views()[0] if self.views() else None,
@@ -2048,19 +2279,12 @@ class EditScene(QGraphicsScene):
             if answer != QMessageBox.StandardButton.Yes:
                 return False
         self._pre_edit("Delete Edge")
+        models = self._edge_models.get(edge_item, [])
+        self._config.transitions = [t for t in self._config.transitions if not any(t is m for m in models)]
         remaining = []
         for s, w, d, ei in self._edge_items:
             if ei is edge_item:
-                s_node = self._node_items.get(s)
-                d_node = self._node_items.get(d)
-                if s_node:
-                    s_node.remove_edge(ei)
-                if d_node and d_node is not s_node:
-                    d_node.remove_edge(ei)
-                self._config.transitions = [
-                    t for t in self._config.transitions if not (t.source == s and t.dest == d and t.when == w)
-                ]
-                self.removeItem(ei)
+                self._unregister_edge(s, d, ei)
             else:
                 remaining.append((s, w, d, ei))
         self._edge_items = remaining
@@ -2070,6 +2294,22 @@ class EditScene(QGraphicsScene):
         self.refresh_errors()
         self.graph_changed.emit()
         return True
+
+    def _node_label(self, display_id: str) -> str:
+        node = self._node_items.get(display_id)
+        return node.label if node is not None else display_id
+
+    def _record_index(self, source: str, when: str | None, dest: str) -> int | None:
+        """The ``_edge_items`` index of the drawn edge a flat ``(source, when, dest)`` belongs to."""
+        probe = TransitionModel(trigger="advance", source=source, dest=dest, when=when)
+        key = self.display_key(probe)
+        if key is None:
+            return None
+        s, w, d, port = key
+        for i, (rs, rw, rd, ei) in enumerate(self._edge_items):
+            if rs == s and rw == w and rd == d and ei.dst_port == port:
+                return i
+        return None
 
     def change_edge_when(
         self,
@@ -2092,16 +2332,12 @@ class EditScene(QGraphicsScene):
             return
         old_when_str: str | None = old_when  # type: ignore[assignment]
         new_when_str: str | None = new_when  # type: ignore[assignment]
-        record_idx: int | None = None
-        for i, (s, w, d, _ei) in enumerate(self._edge_items):
-            if s == source and w == old_when_str and d == dest:
-                record_idx = i
-                break
+        record_idx = self._record_index(source, old_when_str, dest)
         if record_idx is None:
             return
-        edge_item = self._edge_items[record_idx][3]
+        s, _w, d, edge_item = self._edge_items[record_idx]
         edge_item.set_when(new_when_str)
-        self._edge_items[record_idx] = (source, new_when_str, dest, edge_item)
+        self._edge_items[record_idx] = (s, new_when_str, d, edge_item)
 
         # Parallel edges between the same pair are laned by `when`, so the whole
         # group's offsets shift when one of them is relabelled.
@@ -2123,6 +2359,8 @@ class EditScene(QGraphicsScene):
 
         The TransitionModel itself is already updated by the param panel before this
         is called.  This method updates the visual EdgeItem and all data structures.
+        An edge touching a call node is rebuilt from the model instead, since which
+        port it lands on follows from the new endpoints.
 
         The caller owns the undo snapshot: it has to be taken *before* the model is
         mutated, which is earlier than this method can see (the param panel emits
@@ -2131,41 +2369,46 @@ class EditScene(QGraphicsScene):
         if self._config is None:
             return
         old_when_str: str | None = old_when  # type: ignore[assignment]
-        # Locate the edge record
-        record_idx: int | None = None
-        for i, (s, w, d, _ei) in enumerate(self._edge_items):
-            if s == old_src and w == old_when_str and d == old_dst:
-                record_idx = i
-                break
+        record_idx = self._record_index(old_src, old_when_str, old_dst)
         if record_idx is None:
             return
-        _s, _w, _d, edge_item = self._edge_items[record_idx]
-
-        old_src_node = self._node_items.get(old_src)
-        old_dst_node = self._node_items.get(old_dst)
-        new_src_node = self._node_items.get(new_src)
-        new_dst_node = self._node_items.get(new_dst)
-        if new_src_node is None or new_dst_node is None:
-            return
-
-        # Unregister from old nodes
-        if old_src_node:
-            old_src_node.remove_edge(edge_item)
-        if old_dst_node and old_dst_node is not old_src_node:
-            old_dst_node.remove_edge(edge_item)
-
-        # Update the EdgeItem in-place
-        edge_item._src = new_src_node
-        edge_item._dst = new_dst_node
-        edge_item._is_self_loop = new_src_node is new_dst_node
-
-        # Register with new nodes
-        new_src_node.add_edge(edge_item)
-        if new_dst_node is not new_src_node:
-            new_dst_node.add_edge(edge_item)
-
-        # Update the _edge_items record
-        self._edge_items[record_idx] = (new_src, old_when_str, new_dst, edge_item)
+        s, w, d, edge_item = self._edge_items[record_idx]
+        new_s, new_d = self.display_id(new_src), self.display_id(new_dst)
+        involves_call = any(self.is_call_node(x) for x in (s, d, new_s, new_d))
+        if involves_call:
+            models = self._edge_models.get(edge_item, [])
+            self._unregister_edge(s, d, edge_item)
+            del self._edge_items[record_idx]
+            regroup: dict[tuple, list[TransitionModel]] = {}
+            for t in models:
+                key = self.display_key(t)
+                if key is not None:
+                    regroup.setdefault(key, []).append(t)
+            for (ks, kw, kd, kport), ms in regroup.items():
+                existing = next(
+                    (ei for rs, rw, rd, ei in self._edge_items if (rs, rw, rd, ei.dst_port) == (ks, kw, kd, kport)),
+                    None,
+                )
+                if existing is not None:
+                    self._edge_models[existing].extend(ms)
+                elif ks in self._node_items and kd in self._node_items:
+                    self._add_edge_item(ks, kw, kd, kport, ms)
+        else:
+            old_src_node = self._node_items.get(s)
+            old_dst_node = self._node_items.get(d)
+            new_src_node = self._node_items.get(new_s)
+            new_dst_node = self._node_items.get(new_d)
+            if new_src_node is None or new_dst_node is None:
+                return
+            if old_src_node:
+                old_src_node.remove_edge(edge_item)
+            if old_dst_node and old_dst_node is not old_src_node:
+                old_dst_node.remove_edge(edge_item)
+            edge_item.set_endpoints(new_src_node, new_dst_node)
+            new_src_node.add_edge(edge_item)
+            if new_dst_node is not new_src_node:
+                new_dst_node.add_edge(edge_item)
+            self._edge_items[record_idx] = (new_s, w, new_d, edge_item)
 
         # Recompute all offsets and fan positions now that the topology has changed.
         self._recompute_offsets()
@@ -2221,7 +2464,7 @@ class EditScene(QGraphicsScene):
         behind "Add State Here" -- offsets its rows by half a node instead, so what it
         returns is collision-free but never row-aligned with anything already there.
         """
-        boxes = [QRectF(n.pos().x(), n.pos().y(), NODE_W, NODE_H) for n in self._node_items.values()]
+        boxes = [QRectF(n.pos().x(), n.pos().y(), NODE_W, n.body_height) for n in self._node_items.values()]
         cell_x = round(seed.x() / GRID_W)
         cell_y = round(seed.y() / GRID_H)
         for dx, dy in _placement_candidates(x_dir):
@@ -2282,7 +2525,7 @@ class EditScene(QGraphicsScene):
         if self._config is None:
             return None
         target = self._node_items.get(state_id)
-        if target is None:
+        if target is None or isinstance(target, (CallNodeItem, PortNodeItem)):
             return None
         incoming = [t for t in self._config.transitions if t.dest == state_id]
         pos = self.free_position_near(QPointF(target.pos().x() - GRID_W, target.pos().y()), x_dir=-1)
@@ -2321,7 +2564,7 @@ class EditScene(QGraphicsScene):
         if self._config is None:
             return None
         source = self._node_items.get(state_id)
-        if source is None:
+        if source is None or isinstance(source, (CallNodeItem, PortNodeItem)):
             return None
         if return_name is not None and return_name not in _node_returns(node_type):
             logger.warning(
@@ -2400,6 +2643,12 @@ class EditScene(QGraphicsScene):
         self._update_scene_rect()
 
     def _flush_positions(self) -> None:
+        """Write where every item now sits back into the model.
+
+        A call node's position is its instance's ``anchor``, and the members follow it
+        by the same delta -- nested instances' anchors included -- since members sit at
+        ``anchor + definition position``.
+        """
         if self._config is None:
             return
         # Compute all position changes before mutating so about_to_change fires
@@ -2411,22 +2660,39 @@ class EditScene(QGraphicsScene):
                 continue
             new_pos = {
                 "x": node.scenePos().x(),
-                "y": node.scenePos().y() + node._height / 2,
+                "y": node.scenePos().y() + node.body_height / 2,
             }
             if state.position != new_pos:
                 updates[state.id] = new_pos
-        if updates:
-            anchor_moves = _uniform_region_moves(self._config, updates)
-            self._pre_edit("Move Node")
-            for state in self._config.states:
-                if state.id in updates:
-                    state.position = updates[state.id]
-            for region, dx, dy in anchor_moves:
-                assert region.source is not None
-                anchor = region.source.anchor
-                region.source.anchor = {"x": float(anchor["x"]) + dx, "y": float(anchor["y"]) + dy}
-            self._update_scene_rect()
-            self.graph_changed.emit()
+        anchor_moves: list[tuple[RegionModel, float, float]] = []
+        for rid, node in self.call_nodes().items():
+            region = self._region_by_id(rid)
+            if region is None or region.source is None:
+                continue
+            anchor = region.source.anchor or {"x": 0.0, "y": 0.0}
+            dx = round(node.scenePos().x() - float(anchor["x"]), 3)
+            dy = round(node.scenePos().y() + node.body_height / 2 - float(anchor["y"]), 3)
+            if dx or dy:
+                anchor_moves.append((region, dx, dy))
+        if not updates and not anchor_moves:
+            return
+        self._pre_edit("Move Node")
+        for state in self._config.states:
+            if state.id in updates:
+                state.position = updates[state.id]
+        by_id = {s.id: s for s in self._config.states}
+        for region, dx, dy in anchor_moves:
+            assert region.source is not None
+            shifted = [region, *nested_regions(self._config, region)]
+            for r in shifted:
+                a = r.source.anchor or {"x": 0.0, "y": 0.0}
+                r.source.anchor = {"x": float(a["x"]) + dx, "y": float(a["y"]) + dy}
+            for m in region.members:
+                st = by_id.get(m)
+                if st is not None and st.position is not None:
+                    st.position = {"x": float(st.position["x"]) + dx, "y": float(st.position["y"]) + dy}
+        self._update_scene_rect()
+        self.graph_changed.emit()
 
     @property
     def region_items(self) -> dict[str, RegionItem]:
@@ -2437,16 +2703,24 @@ class EditScene(QGraphicsScene):
         bounds = self.itemsBoundingRect().adjusted(-500, -500, 500, 500)
         set_scene_rect_and_repaint(self, bounds)
 
+    def flush_positions(self) -> None:
+        """Write where every item now sits back into the model (anchors for call nodes)."""
+        self._flush_positions()
+
+    def tab_order(self) -> list[str]:
+        """Display ids in the order Tab visits them."""
+        return self._get_tab_order()
+
     def _get_tab_order(self) -> list[str]:
-        """State IDs in BFS order from initial state, orphans appended at the end."""
+        """Display ids in BFS order from the initial state, orphans appended at the end."""
         if self._config is None:
             return list(self._node_items.keys())
         adj: dict[str, list[str]] = {}
         for t in self._config.transitions:
-            adj.setdefault(t.source, []).append(t.dest)
+            adj.setdefault(self.display_id(t.source), []).append(self.display_id(t.dest))
         order: list[str] = []
         seen: set[str] = set()
-        queue = [self._config.initial]
+        queue = [self.display_id(self._config.initial)]
         while queue:
             sid = queue.pop(0)
             if sid in seen:

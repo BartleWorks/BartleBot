@@ -10,10 +10,21 @@ import json
 import logging
 import re
 from collections.abc import Callable
+from dataclasses import replace
 from typing import Any
 
-from PyQt6.QtCore import QLocale, QSize, QStringListModel, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QDoubleValidator, QKeySequence, QPen, QStandardItem, QStandardItemModel
+from PyQt6.QtCore import QEvent, QLocale, QRectF, QSize, QStringListModel, Qt, QTimer, pyqtSignal
+from PyQt6.QtGui import (
+    QColor,
+    QDoubleValidator,
+    QFont,
+    QFontMetrics,
+    QKeySequence,
+    QPainter,
+    QPen,
+    QStandardItem,
+    QStandardItemModel,
+)
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -22,6 +33,7 @@ from PyQt6.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
     QFrame,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -37,51 +49,55 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, SubgraphDefinition, TransitionModel
+from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
-from bartlebot.gui.icon_utils import svg_icon
+from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
-from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.zone_picker import NavZoneButton, is_destination
 from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.store_roots import Origin
-from bartlebot.subgraphs import RegionStatus, member_id
+from bartlebot.subgraphs import binding_type
 from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
 
 
-def input_param_field(defn: SubgraphDefinition, inp) -> ParamField:
-    """The ``ParamField`` the region page builds an input's widget from.
+def input_param_field(defn, inp) -> ParamField:
+    """The ``ParamField`` an input's widget is built from, on the call node and the signature panel.
 
-    The input declares key, type, label, help and default; what it does not
-    carry -- the dropdown choices of a ``str_choice``, a placeholder, a numeric
-    range -- comes from the first bound member param of the same type, so a
-    World input gets the same dropdown the node has instead of an empty combo.
+    The input stores what the author owns: key, type, label, help and default. What
+    the *type* owns -- a ``str_choice``'s dropdown, a placeholder, a numeric range --
+    comes from a bound member param of the input's own type when the form is drawn,
+    so a change to a node's schema reaches every input bound to it, and a World input
+    gets the node's dropdown rather than an empty combo. If any bound param is
+    required, so is the input. ``defn`` is anything with ``states``: a definition, or
+    a definition document's config.
     """
     by_id = {s.id: s for s in defn.states}
+    # The strictest type of what the input is linked to, whatever an older file stored.
+    inp_type = binding_type(defn, inp.bindings, NODE_PARAM_SCHEMAS) or inp.type
     bound = [
         f
         for b in inp.bindings
         if (st := by_id.get(b.state)) is not None
         for f in NODE_PARAM_SCHEMAS.get(st.node_type, [])
-        if f.key == b.param and f.type == inp.type
+        if f.key == b.param
     ]
-    first = bound[0] if bound else None
+    first = next((f for f in bound if f.type == inp_type), bound[0] if bound else None)
     return ParamField(
         key=inp.name,
-        type=inp.type,
+        type=inp_type,
         label=inp.label or inp.name,
         help=inp.help or "",
         default=inp.default,
+        required=any(f.required for f in bound),
         choices=list(first.choices) if first is not None else [],
         placeholder=first.placeholder if first is not None else "",
         minimum=first.minimum if first is not None else None,
@@ -698,21 +714,166 @@ class _StrChoiceComboBox(QComboBox):
 
 
 # ---------------------------------------------------------------------------
+# Link controls on a definition's param rows
+# ---------------------------------------------------------------------------
+
+
+#: The widest a link chip grows; a longer name is elided, and the tooltip has it whole.
+_LINK_CHIP_MAX_W = 180
+
+
+class _LinkChip(ThemedMixin, QToolButton):
+    """A linked param's status, which turns into its Unlink action under the pointer.
+
+    At rest it reads as a status -- a chain and what the param is linked to, in the
+    accent colour. Hovered or focused it becomes the action: a broken chain in the
+    warning colour, "Unlink". A *locked* chip (a param of a promoted node) never
+    turns: its node's input group owns it, and the tooltip says how to let go.
+
+    Painted here rather than styled, at one size worked out for both states. A
+    stylesheet swapped on hover re-polishes the button and re-queues its layout, and
+    somewhere in that the old outline's bottom edge was left on screen. Now a hover
+    changes two colours and repaints the chip, and nothing else.
+    """
+
+    _PAD_X = 5
+    _GAP = 4
+    _ICON = 12
+
+    def __init__(self, text: str, *, locked: bool, tooltip: str, parent=None) -> None:
+        super().__init__(parent)
+        self._text = text
+        self._shown_name = text
+        self._locked = locked
+        self._armed = False
+        self.setToolTip(tooltip)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus if locked else Qt.FocusPolicy.TabFocus)
+        self.setCursor(Qt.CursorShape.ArrowCursor if locked else Qt.CursorShape.PointingHandCursor)
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        self.refresh_theme_styles()
+
+    @property
+    def locked(self) -> bool:
+        return self._locked
+
+    @property
+    def armed(self) -> bool:
+        """Whether it is showing its Unlink action rather than its status."""
+        return self._armed
+
+    def text(self) -> str:  # noqa: D401 - Qt override
+        """What the chip shows now: the linked name (elided if long) or "Unlink"."""
+        return "Unlink" if self._armed else self._shown_name
+
+    def _arm(self, armed: bool) -> None:
+        armed = armed and not self._locked
+        if armed != self._armed:
+            self._armed = armed
+            self.update()
+
+    def enterEvent(self, event) -> None:
+        self._arm(True)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self._arm(self.hasFocus())
+        super().leaveEvent(event)
+
+    def focusInEvent(self, event) -> None:
+        self._arm(True)
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event) -> None:
+        self._arm(self.underMouse())
+        super().focusOutEvent(event)
+
+    def _font(self) -> QFont:
+        font = QFont(self.font())
+        font.setPixelSize(THEME.font_small_px)
+        font.setBold(True)
+        return font
+
+    def apply_theme_styles(self) -> None:
+        """Work out the one size both states share, and repaint in the theme's colours."""
+        fm = QFontMetrics(self._font())
+        chrome = 2 * self._PAD_X + self._ICON + self._GAP + 2
+        self._shown_name = self._text
+        if chrome + fm.horizontalAdvance(self._text) > _LINK_CHIP_MAX_W:
+            self._shown_name = fm.elidedText(self._text, Qt.TextElideMode.ElideRight, _LINK_CHIP_MAX_W - chrome)
+        width = chrome + max(fm.horizontalAdvance(self._shown_name), fm.horizontalAdvance("Unlink"))
+        self.setFixedSize(min(width, _LINK_CHIP_MAX_W), max(fm.height(), self._ICON) + 8)
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        color = QColor(THEME.warning if self._armed else THEME.accent)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        rect = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
+        painter.setPen(QPen(color, 1))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRoundedRect(rect, 3, 3)
+        icon = svg_pixmap("unhook" if self._armed else "hook", self._ICON, tint=color.name())
+        x = self._PAD_X + 1
+        painter.drawPixmap(x, (self.height() - self._ICON) // 2, icon)
+        painter.setFont(self._font())
+        painter.setPen(color)
+        text_rect = self.rect().adjusted(x + self._ICON + self._GAP, 0, -self._PAD_X, 0)
+        painter.drawText(text_rect, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, self.text())
+        painter.end()
+
+
+class _HoverRow(QWidget):
+    """A param row whose Link button shows only while the row is hovered or the button focused.
+
+    Faded rather than hidden, so the row never reflows and Tab still reaches it.
+    """
+
+    def __init__(self, button: QToolButton | None = None, parent=None) -> None:
+        super().__init__(parent)
+        self._button = button
+        self._effect = None
+        if button is not None:
+            self._effect = QGraphicsOpacityEffect(button)
+            self._effect.setOpacity(0.0)
+            button.setGraphicsEffect(self._effect)
+            button.installEventFilter(self)
+
+    def _show(self, shown: bool) -> None:
+        if self._effect is not None:
+            self._effect.setOpacity(1.0 if shown else 0.0)
+
+    @property
+    def link_shown(self) -> bool:
+        return self._effect is not None and self._effect.opacity() > 0
+
+    def enterEvent(self, event) -> None:
+        self._show(True)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        self._show(self._button is not None and self._button.hasFocus())
+        super().leaveEvent(event)
+
+    def eventFilter(self, obj, event) -> bool:
+        if obj is self._button and event.type() in (QEvent.Type.FocusIn, QEvent.Type.FocusOut):
+            self._show(event.type() == QEvent.Type.FocusIn or self.underMouse())
+        return super().eventFilter(obj, event)
+
+
+# ---------------------------------------------------------------------------
 # _DynamicParamForm
 # ---------------------------------------------------------------------------
 
 
 class _DynamicParamForm(ThemedMixin, QWidget):
     changed = pyqtSignal()
-    # (param key, active) when the user flips a row's Override toggle on a locked form.
-    # The form only reports; the canvas records the override and reloads the form.
-    override_toggled = pyqtSignal(str, bool)
-    # (param key) when the user asks to expose a row as a subgraph input, on a form
-    # shown for a member of the region being edited.
-    expose_requested = pyqtSignal(str)
-    # (param key, free) when the author flips a row's lock while editing a subgraph:
-    # free means consumers set it on the node; locked means the subgraph owns it.
-    free_toggled = pyqtSignal(str, bool)
+    # (param key) from a row's Link button, on a node shown in a definition document.
+    # The form only reports; the canvas links the param and reloads.
+    link_requested = pyqtSignal(str)
+    # (param key) from a linked row's chip, clicked while it reads "Unlink".
+    unlink_requested = pyqtSignal(str)
+    # (param key) from a row's Reset, on a subgraph node's form: follow the definition again.
+    reset_requested = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -722,12 +883,14 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._form.addStretch()
         self._widgets: dict[str, Any] = {}
         self._required_widgets: dict[str, Any] = {}
-        # The per-row toggles; their icons are THEME-tinted. Override toggles sit on
-        # a locked form (checked = overridden), free toggles on a form shown while
-        # editing a subgraph (checked = free), Expose buttons beside those.
-        self._override_btns: list[QToolButton] = []
-        self._free_btns: list[QToolButton] = []
-        self._expose_btns: list[QToolButton] = []
+        # Per-row controls, all THEME-coloured: in a definition, a Link button that
+        # shows on hover, or for a linked param its chip; on a subgraph node, a Reset
+        # for a value changed from the definition's.
+        self._link_btns: dict[str, QToolButton] = {}
+        self._link_chips: dict[str, _LinkChip] = {}
+        self._reset_btns: dict[str, QToolButton] = {}
+        self._hover_rows: dict[str, _HoverRow] = {}
+        self._schema: list = []
         # Every label load_schema builds that carries a THEME colour, cleared and
         # refilled alongside _widgets. Field labels keep their ParamField because the
         # required marker is a colour baked into *rich text* rather than a stylesheet,
@@ -751,23 +914,24 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         schema: list,
         params: dict,
         *,
-        locked: bool = False,
-        overrides: frozenset = frozenset(),
-        exposable: bool = False,
-        free: frozenset = frozenset(),
-        bound: dict[str, str] | None = None,
+        linkable: bool = False,
+        links: dict[str, str] | None = None,
+        promoted_group: str | None = None,
+        resettable: set[str] | frozenset[str] = frozenset(),
+        field_types: dict[str, str] | None = None,
     ) -> None:
         """Rebuild the form for *schema* showing *params*.
 
-        With *locked*, a field is disabled unless its key is in *free* (the
-        author left it for the consumer: enabled, no toggle) or *overrides*; the
-        rest carry a lock toggle: open unlocks that one field for this instance
-        as an override, closed resets it to the subgraph's value. With
-        *exposable* (a member of the subgraph being edited) each row carries the
-        author's lock toggle (checked = free) and an Expose button; a row *bound*
-        to an input (key -> input name) has neither, since the input owns it.
-        The buttons wrap the row rather than the widget ``_make_widget`` returns,
-        so every widget type gets them without knowing.
+        On a node in a definition document, *linkable* gives each row a Link button
+        that shows while the row is hovered; a row in *links* (key -> what it is linked
+        to) shows a chip instead, which turns into Unlink on hover. On a node promoted to
+        an input group, every row is linked to *promoted_group* and its chip is locked.
+        On a subgraph node's form, a key in *resettable* has a Reset beside it. A key in
+        *field_types* is drawn as that type rather than its own: a linked param takes
+        the strictest type of what it is linked with, so a ``zone`` linked to a
+        ``nav_zone`` gets the destination picker. The
+        controls wrap the row rather than the widget ``_make_widget`` returns, so every
+        widget type gets them without knowing.
         """
         self._suppress = True
         # Remove everything except the trailing stretch.
@@ -779,13 +943,17 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._required_widgets.clear()
         self._field_labels.clear()
         self._muted_labels.clear()
-        self._override_btns.clear()
-        self._free_btns.clear()
-        self._expose_btns.clear()
-        bound = bound or {}
-        editable = {field.key: (not locked) or field.key in overrides or field.key in free for field in schema}
+        self._link_btns.clear()
+        self._link_chips.clear()
+        self._reset_btns.clear()
+        self._hover_rows.clear()
+        self._schema = list(schema)
+        links = links or {}
+        field_types = field_types or {}
         insert_idx = 0
         for field in schema:
+            if field_types.get(field.key, field.type) != field.type:
+                field = replace(field, type=field_types[field.key])
             label_w = QLabel()
             label_w.setTextFormat(Qt.TextFormat.RichText)
             self._field_labels.append((label_w, field, insert_idx > 0))
@@ -807,20 +975,34 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             if field.required:
                 self._required_widgets[field.key] = widget
             display_w = widget
-            row_btns: list[QToolButton] = []
-            if locked:
-                if field.key not in free:
-                    row_btns.append(self._make_override_button(field.key, editable[field.key]))
-                display_w.setEnabled(editable[field.key])
-            elif exposable:
-                input_name = bound.get(field.key)
-                if input_name is None:
-                    row_btns.append(self._make_free_button(field.key, field.key in free))
-                    row_btns.append(self._make_expose_button(field.key))
-                else:
-                    row_btns.append(self._make_expose_button(field.key, bound_to=input_name))
+            row_btns: list[QWidget] = []
+            link_btn: QToolButton | None = None
+            if promoted_group is not None:
+                chip = _LinkChip(
+                    promoted_group,
+                    locked=True,
+                    tooltip=f"Part of the {promoted_group} input group. Demote the node to unlink.",
+                )
+                self._link_chips[field.key] = chip
+                row_btns.append(chip)
+            elif field.key in links:
+                chip = _LinkChip(
+                    links[field.key],
+                    locked=False,
+                    tooltip=f"Linked to {links[field.key]}: this value is its default. Click to unlink.",
+                )
+                chip.clicked.connect(lambda _=False, k=field.key: self.unlink_requested.emit(k))
+                self._link_chips[field.key] = chip
+                row_btns.append(chip)
+            elif linkable:
+                link_btn = self._make_link_button(field.key)
+                row_btns.append(link_btn)
+            if field.key in resettable:
+                row_btns.append(self._make_reset_button(field.key))
             if field.type == "bool":
-                container = QWidget()
+                container = _HoverRow(link_btn)
+                if link_btn is not None:
+                    self._hover_rows[field.key] = container
                 row = QHBoxLayout(container)
                 row.setContentsMargins(0, 0, 0, 0)
                 row.setSpacing(8)
@@ -832,7 +1014,14 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 self._form.insertWidget(insert_idx, container)
                 insert_idx += 1
             else:
-                if row_btns:
+                if link_btn is not None:
+                    # Label and widget in one hover target, so pointing at the field
+                    # itself shows its Link button, not only pointing at its label.
+                    block = _HoverRow(link_btn)
+                    self._hover_rows[field.key] = block
+                    block_col = QVBoxLayout(block)
+                    block_col.setContentsMargins(0, 0, 0, 0)
+                    block_col.setSpacing(4)
                     head = QWidget()
                     head_row = QHBoxLayout(head)
                     head_row.setContentsMargins(0, 0, 0, 0)
@@ -841,11 +1030,25 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                     head_row.addStretch()
                     for row_btn in row_btns:
                         head_row.addWidget(row_btn)
-                    self._form.insertWidget(insert_idx, head)
+                    block_col.addWidget(head)
+                    block_col.addWidget(display_w)
+                    self._form.insertWidget(insert_idx, block)
+                    insert_idx += 1
                 else:
-                    self._form.insertWidget(insert_idx, label_w)
-                self._form.insertWidget(insert_idx + 1, display_w)
-                insert_idx += 2
+                    if row_btns:
+                        head = QWidget()
+                        head_row = QHBoxLayout(head)
+                        head_row.setContentsMargins(0, 0, 0, 0)
+                        head_row.setSpacing(8)
+                        head_row.addWidget(label_w)
+                        head_row.addStretch()
+                        for row_btn in row_btns:
+                            head_row.addWidget(row_btn)
+                        self._form.insertWidget(insert_idx, head)
+                    else:
+                        self._form.insertWidget(insert_idx, label_w)
+                    self._form.insertWidget(insert_idx + 1, display_w)
+                    insert_idx += 2
             if field.default_hint and not field.required:
                 hint_lbl = QLabel(f"Default: {field.default_hint}")
                 self._muted_labels.append(hint_lbl)
@@ -865,7 +1068,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             if field.disabled_by and field.disabled_by in self._widgets:
                 controller = self._widgets[field.disabled_by]
                 display_w = self._widgets[field.key]
-                ok = editable[field.key]
+                ok = True
                 if isinstance(controller, QCheckBox):
                     display_w.setEnabled(ok and not controller.isChecked())
                     controller.checkStateChanged.connect(
@@ -881,7 +1084,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             if field.enabled_by and field.enabled_by in self._widgets:
                 controller = self._widgets[field.enabled_by]
                 display_w = self._widgets[field.key]
-                ok = editable[field.key]
+                ok = True
                 if isinstance(controller, QCheckBox):
                     display_w.setEnabled(ok and controller.isChecked())
                     controller.checkStateChanged.connect(
@@ -893,90 +1096,42 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         # _validate_required_fields, which apply_theme_styles re-runs.
         self.refresh_theme_styles()
 
-    @staticmethod
-    def _style_override_button(btn: QToolButton, overridden: bool) -> None:
-        btn.setIcon(svg_icon("unlock" if overridden else "lock", 14))
-        btn.setToolTip(
-            "Overridden for this instance: this value no longer follows the subgraph. Click to reset it."
-            if overridden
-            else "The subgraph owns this value. Click to unlock it and override it for this instance only."
-        )
-
-    @staticmethod
-    def _style_free_button(btn: QToolButton, free: bool) -> None:
-        btn.setIcon(svg_icon("unlock" if free else "lock", 14))
-        btn.setToolTip(
-            "Free: whoever uses this subgraph sets this value on the node. Click to lock it."
-            if free
-            else "Locked: the subgraph owns this value; users can only override it. Click to free it."
-        )
-
-    def _make_override_button(self, key: str, active: bool) -> QToolButton:
-        btn = QToolButton()
-        btn.setCheckable(True)
-        btn.setChecked(active)
-        btn.setAutoRaise(True)
-        btn.setIconSize(QSize(14, 14))
-        btn.setProperty("param_key", key)
-        btn.toggled.connect(lambda checked, k=key: self._on_override_toggled(k, checked))
-        self._override_btns.append(btn)
-        return btn
-
-    def _on_override_toggled(self, key: str, checked: bool) -> None:
-        if self._suppress:
-            return
-        display_w = self._widgets.get(key)
-        if display_w is not None:
-            display_w.setEnabled(checked)
-        btn = self.override_button(key)
-        if btn is not None:
-            self._style_override_button(btn, checked)
-        self.override_toggled.emit(key, checked)
-
-    def _make_free_button(self, key: str, free: bool) -> QToolButton:
-        btn = QToolButton()
-        btn.setCheckable(True)
-        btn.setChecked(free)
-        btn.setAutoRaise(True)
-        btn.setIconSize(QSize(14, 14))
-        btn.setProperty("param_key", key)
-        btn.toggled.connect(lambda checked, k=key: self._on_free_toggled(k, checked))
-        self._free_btns.append(btn)
-        return btn
-
-    def _on_free_toggled(self, key: str, checked: bool) -> None:
-        if self._suppress:
-            return
-        btn = self.free_button(key)
-        if btn is not None:
-            self._style_free_button(btn, checked)
-        self.free_toggled.emit(key, checked)
-
-    def _make_expose_button(self, key: str, *, bound_to: str | None = None) -> QToolButton:
+    def _make_link_button(self, key: str) -> QToolButton:
         btn = QToolButton()
         btn.setAutoRaise(True)
         btn.setIconSize(QSize(14, 14))
-        btn.setProperty("param_key", key)
-        if bound_to is None:
-            btn.setToolTip("Expose as a subgraph input\u2026")
-            btn.clicked.connect(lambda _=None, k=key: self.expose_requested.emit(k))
-        else:
-            btn.setEnabled(False)
-            btn.setToolTip(f"Set by the input '{bound_to}'. Unbind it on the region page to change that.")
-        self._expose_btns.append(btn)
+        btn.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+        btn.setToolTip("Link to subgraph input\u2026")
+        btn.clicked.connect(lambda _=None, k=key: self.link_requested.emit(k))
+        self._link_btns[key] = btn
         return btn
 
-    def expose_button(self, key: str) -> QToolButton | None:
-        """The Expose button for one row of a form shown while editing a subgraph, or None."""
-        return next((b for b in self._expose_btns if b.property("param_key") == key), None)
+    def _make_reset_button(self, key: str) -> QToolButton:
+        btn = QToolButton()
+        btn.setAutoRaise(True)
+        btn.setIconSize(QSize(12, 12))
+        btn.setToolTip("Changed here. Reset to follow the subgraph's default")
+        btn.clicked.connect(lambda _=None, k=key: self.reset_requested.emit(k))
+        self._reset_btns[key] = btn
+        return btn
 
-    def override_button(self, key: str) -> QToolButton | None:
-        """The lock toggle for one row of a locked form (checked = overridden), or None."""
-        return next((b for b in self._override_btns if b.property("param_key") == key), None)
+    def link_button(self, key: str) -> QToolButton | None:
+        """One row's Link button, shown on hover, or None."""
+        return self._link_btns.get(key)
 
-    def free_button(self, key: str) -> QToolButton | None:
-        """The author's lock toggle for one row of a form shown while editing (checked = free), or None."""
-        return next((b for b in self._free_btns if b.property("param_key") == key), None)
+    def link_chip(self, key: str) -> _LinkChip | None:
+        """One linked row's chip, or None."""
+        return self._link_chips.get(key)
+
+    def reset_button(self, key: str) -> QToolButton | None:
+        return self._reset_btns.get(key)
+
+    def hover_row(self, key: str) -> _HoverRow | None:
+        return self._hover_rows.get(key)
+
+    def required_fields(self) -> list:
+        """The required ``ParamField``s the form was last built from."""
+        return [f for f in self._schema if f.required]
 
     def set_param_value(self, key: str, value) -> None:
         """Set one param's widget from outside, as if the user had typed it.
@@ -1036,12 +1191,10 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             self._style_field_label(label, field, spaced)
         for label in self._muted_labels:
             label.setStyleSheet(f"color: {THEME.text_muted};")
-        for btn in self._override_btns:
-            self._style_override_button(btn, btn.isChecked())
-        for btn in self._free_btns:
-            self._style_free_button(btn, btn.isChecked())
-        for btn in self._expose_btns:
-            btn.setIcon(svg_icon("attach", 14))
+        for btn in self._link_btns.values():
+            btn.setIcon(svg_icon("hook", 14))
+        for btn in self._reset_btns.values():
+            btn.setIcon(svg_icon("revert", 12))
         # The red border on an empty required field is THEME.error, and is applied
         # outside load_schema — re-running the check is what re-derives it.
         self._validate_required_fields()
@@ -1248,7 +1401,14 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         widget = self._widgets.get(key)
         self._suppress = True
         if isinstance(widget, _NavZoneField):
+            # Written whatever it is -- Record must never be refused -- but a zone Go To
+            # Zone cannot reach is said so here, and validation marks the node.
             widget.set_value(value)
+            reachable = not value or not widget.picker.nav.worlds or is_destination(widget.picker.nav, value)
+            widget.notice.setText(
+                "" if reachable else f"{value} is not a destination on the zone map: pick the nearest major zone."
+            )
+            widget.notice.setVisible(not reachable)
         elif isinstance(widget, _ZoneWidget | QLineEdit):
             widget.setText(value)
         else:
@@ -1561,13 +1721,8 @@ _PAGE_IDLE = 0
 _PAGE_NODE = 1
 _PAGE_EDGE = 2
 _PAGE_REGION = 3
-
-_ORIGIN_TEXT = {
-    Origin.SHIPPED: "shipped with BartleBot",
-    Origin.SHIPPED_OVERRIDE: "your copy of a shipped subgraph",
-    Origin.USER: "in your library",
-    Origin.MISSING: "not in the library",
-}
+_PAGE_CALL = 4
+_PAGE_SIGNATURE = 5
 
 
 class _RegionColorRow(ThemedMixin, QWidget):
@@ -1675,33 +1830,30 @@ class _ParamPanel(ThemedMixin, QWidget):
     # always names the state taking the role.
     initial_state_requested = pyqtSignal(str)  # state ID
     recovery_state_requested = pyqtSignal(str)  # state ID
-    # A locked member's Override toggle, or a Reset on the region page:
-    # (state id, param key, active). The canvas owns the instance's overrides.
-    override_toggled = pyqtSignal(str, str, bool)
-    # The region page wrote into the shown RegionModel (label, colour, inputs).
-    # Its undo step is already open: a typed edit announced itself with
+    # The region or call node page wrote into the shown RegionModel (label, colour,
+    # inputs). Its undo step is already open: a typed edit announced itself with
     # edit_starting, a discrete one pushed through structural_property_changed.
     region_property_changed = pyqtSignal()
     detach_requested = pyqtSignal(str)  # region ID
-    edit_subgraph_requested = pyqtSignal(str)  # region ID
-    # (state id, param key): a row's Expose button, on a member of the region being edited.
-    expose_input_requested = pyqtSignal(str, str)
-    # (state id, param key, free): the author's lock toggle on a member of the region being edited.
-    free_toggled = pyqtSignal(str, str, bool)
-    # (state id): Reset beside a label override on the region page.
-    label_override_reset = pyqtSignal(str)
-    # The inputs editor changed the working definition the canvas handed to show_region.
+    open_definition_requested = pyqtSignal(str)  # region ID
+    # (role field, state id): the call node's page moved a bot role onto the member
+    # the chosen entry port leads to.
+    role_requested = pyqtSignal(str, str)
+    # (state id, param key): Link to subgraph input, and Unlink, on a definition node's page.
+    link_input_requested = pyqtSignal(str, str)
+    unlink_input_requested = pyqtSignal(str, str)
+    # (state id, promoted): the node page's Promote to input group / Demote button.
+    promote_node_requested = pyqtSignal(str, bool)
+    # The signature page wrote into the definition document's signature.
     definition_changed = pyqtSignal()
+    add_port_requested = pyqtSignal(str)  # SUBGRAPH_ENTRY / SUBGRAPH_EXIT
+    delete_port_requested = pyqtSignal(str)  # state ID
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self._state: StateModel | None = None
         self._transition: TransitionModel | None = None
         self._region: RegionModel | None = None
-        self._region_defn: SubgraphDefinition | None = None
-        self._region_editing: bool = False
-        self._locked: bool = False
-        self._region_inputs_initial: dict = {}
         self._suppress: bool = False
         self._get_clients: Callable[[], list] = lambda: []
         # All states for the source/dest dropdowns; populated by show_transition()
@@ -1875,17 +2027,27 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._conn_toggle_btn.clicked.connect(self._toggle_connections)
         self._connections_section.setVisible(False)
 
-        # Lock note -- shown above the form for a member of a linked subgraph
-        self._lock_note = ThemedTextLabel("", color="text_muted")
-        self._lock_note.setWordWrap(True)
-        self._lock_note.setContentsMargins(6, 6, 6, 0)
-        self._lock_note.setVisible(False)
+        # Definition documents only: promote this node whole to an input group on the
+        # subgraph node, or demote it. A text button, so it is named for what a click
+        # does; the status is the note beside it.
+        self._promote_row = QWidget()
+        _pr_layout = QHBoxLayout(self._promote_row)
+        _pr_layout.setContentsMargins(6, 4, 6, 0)
+        _pr_layout.setSpacing(6)
+        self._promote_btn = ActionButton("chevrons_up", "Promote to input group", fill=False)
+        self._promote_note = ThemedTextLabel("", color="text_muted")
+        self._promote_note.setWordWrap(True)
+        _pr_layout.addWidget(self._promote_btn)
+        _pr_layout.addWidget(self._promote_note, 1)
+        self._promote_row.setVisible(False)
+        self._node_promoted = False
+        self._promote_btn.clicked.connect(self._on_promote_clicked)
 
         node_outer = QWidget()
         node_vbox = QVBoxLayout(node_outer)
         node_vbox.setContentsMargins(0, 0, 0, 0)
         node_vbox.setSpacing(0)
-        node_vbox.addWidget(self._lock_note)
+        node_vbox.addWidget(self._promote_row)
         node_vbox.addWidget(node_w)
         node_vbox.addWidget(self._record_row)
         node_vbox.addWidget(scroll, 1)
@@ -1945,74 +2107,42 @@ class _ParamPanel(ThemedMixin, QWidget):
         rf.addRow("Color", self._region_color_row)
         region_vbox.addWidget(region_form_w)
 
-        self._region_link_box = QWidget()
-        link_vbox = QVBoxLayout(self._region_link_box)
-        link_vbox.setContentsMargins(6, 0, 6, 6)
-        link_vbox.setSpacing(4)
-        link_vbox.addWidget(RuleHeading("Subgraph"))
-        self._region_defn_name = QLabel()
-        _name_font = self._region_defn_name.font()
-        _name_font.setBold(True)
-        self._region_defn_name.setFont(_name_font)
-        self._region_defn_desc = ThemedTextLabel("", color="text_muted")
-        self._region_defn_desc.setWordWrap(True)
-        self._region_version = ThemedTextLabel("", color="text_muted")
-        self._region_version.setWordWrap(True)
-        self._region_status = ThemedTextLabel("", color="warning")
-        self._region_status.setWordWrap(True)
-        self._region_editing_note = ThemedTextLabel(
-            "Editing in place: the members show the definition's own values. Inputs and overrides "
-            "come back when the edit is saved or discarded.",
-            color="text_muted",
-        )
-        self._region_editing_note.setWordWrap(True)
-        link_vbox.addWidget(self._region_defn_name)
-        link_vbox.addWidget(self._region_defn_desc)
-        link_vbox.addWidget(self._region_version)
-        link_vbox.addWidget(self._region_status)
-        link_vbox.addWidget(self._region_editing_note)
-        link_vbox.addWidget(RuleHeading("Inputs"))
-        self._region_inputs_form = _DynamicParamForm()
-        self._region_inputs_note = ThemedTextLabel("This subgraph declares no inputs.", color="text_muted")
-        self._region_inputs_note.setContentsMargins(6, 0, 6, 0)
-        # While editing, the form gives way to an editor over the working definition:
-        # one row per input, its bindings beneath, a Remove on each.
-        self._region_inputs_editor = QWidget()
-        self._region_inputs_editor_layout = QVBoxLayout(self._region_inputs_editor)
-        self._region_inputs_editor_layout.setContentsMargins(6, 0, 6, 0)
-        self._region_inputs_editor_layout.setSpacing(2)
-        link_vbox.addWidget(self._region_inputs_form)
-        link_vbox.addWidget(self._region_inputs_note)
-        link_vbox.addWidget(self._region_inputs_editor)
-        self._region_overrides_heading = RuleHeading("Overrides")
-        self._region_overrides_body = QWidget()
-        self._region_overrides_layout = QVBoxLayout(self._region_overrides_body)
-        self._region_overrides_layout.setContentsMargins(6, 0, 6, 0)
-        self._region_overrides_layout.setSpacing(2)
-        link_vbox.addWidget(self._region_overrides_heading)
-        link_vbox.addWidget(self._region_overrides_body)
-        self._region_detach_btn = ActionButton("detach", "Detach from library", fill=False)
-        self._region_detach_btn.setToolTip(
-            "Drop the link to the library. The states stay exactly as they are, and stop following updates."
-        )
-        self._region_edit_btn = ActionButton("pencil", "Edit subgraph", style=ActionStyle.SECONDARY, fill=False)
-        self._region_edit_btn.setToolTip(
-            "Unlock this instance and edit the subgraph in place; Save to library pushes the result to every bot."
-        )
-        _detach_row = QWidget()
-        _detach_layout = QHBoxLayout(_detach_row)
-        _detach_layout.setContentsMargins(0, 8, 0, 0)
-        _detach_layout.addStretch()
-        _detach_layout.addWidget(self._region_edit_btn)
-        _detach_layout.addWidget(self._region_detach_btn)
-        link_vbox.addWidget(_detach_row)
-        region_vbox.addWidget(self._region_link_box)
         region_vbox.addStretch()
         region_scroll = QScrollArea()
         region_scroll.setWidgetResizable(True)
         region_scroll.setFrameShape(region_scroll.Shape.NoFrame)
         region_scroll.setWidget(region_outer)
         self._stack.addWidget(region_scroll)
+
+        # Page 4 -- a call node; page 5 -- a definition's signature, nothing selected.
+        # Imported here: both build their forms from _DynamicParamForm, defined above.
+        from bartlebot.gui.canvas.call_page import CallNodePage  # noqa: PLC0415
+        from bartlebot.gui.canvas.signature_page import SignaturePage  # noqa: PLC0415
+
+        self._call_page = CallNodePage()
+        call_scroll = QScrollArea()
+        call_scroll.setWidgetResizable(True)
+        call_scroll.setFrameShape(call_scroll.Shape.NoFrame)
+        call_scroll.setWidget(self._call_page)
+        self._stack.addWidget(call_scroll)
+        self._signature_page = SignaturePage()
+        sig_scroll = QScrollArea()
+        sig_scroll.setWidgetResizable(True)
+        sig_scroll.setFrameShape(sig_scroll.Shape.NoFrame)
+        sig_scroll.setWidget(self._signature_page)
+        self._stack.addWidget(sig_scroll)
+        self._call_page.edit_starting.connect(self.edit_starting)
+        self._call_page.structural_change.connect(self.structural_property_changed)
+        self._call_page.changed.connect(self.region_property_changed)
+        self._call_page.role_requested.connect(self.role_requested)
+        self._call_page.open_definition_requested.connect(self.open_definition_requested)
+        self._call_page.detach_requested.connect(self.detach_requested)
+        self._signature_page.edit_starting.connect(self.edit_starting)
+        self._signature_page.structural_change.connect(self.structural_property_changed)
+        self._signature_page.changed.connect(self.definition_changed)
+        self._signature_page.add_port_requested.connect(self.add_port_requested)
+        self._signature_page.delete_port_requested.connect(self.delete_port_requested)
+        self._signature_page.select_state_requested.connect(self.select_state_requested)
 
         self._node_label_edit.textChanged.connect(self._on_node_label_changed)
         self._node_label_edit.editingFinished.connect(self._on_label_editing_finished)
@@ -2025,14 +2155,10 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._edge_src_combo.currentTextChanged.connect(self._on_edge_src_changed)
         self._edge_dst_combo.currentTextChanged.connect(self._on_edge_dst_changed)
         self._flag_conditions_widget.changed.connect(self._on_flag_conditions_changed)
-        self._param_form.override_toggled.connect(self._on_form_override_toggled)
+        self._param_form.link_requested.connect(self._on_form_link_requested)
+        self._param_form.unlink_requested.connect(self._on_form_unlink_requested)
         self._region_label_edit.textChanged.connect(self._on_region_label_changed)
         self._region_color_row.changed.connect(self._on_region_color_changed)
-        self._region_inputs_form.changed.connect(self._on_region_inputs_changed)
-        self._region_detach_btn.clicked.connect(self._on_detach_clicked)
-        self._region_edit_btn.clicked.connect(self._on_edit_subgraph_clicked)
-        self._param_form.expose_requested.connect(self._on_form_expose_requested)
-        self._param_form.free_toggled.connect(self._on_form_free_toggled)
 
         # The connection rows are the one part of this panel a theme switch has to
         # rebuild rather than restyle, and rebuilding deletes widgets — so it is
@@ -2114,13 +2240,15 @@ class _ParamPanel(ThemedMixin, QWidget):
         """Pass a callable returning the currently hooked clients."""
         self._get_clients = fn
         self._param_form.set_clients_getter(fn)
-        self._region_inputs_form.set_clients_getter(fn)
+        self._call_page.set_clients_getter(fn)
+        self._signature_page.set_clients_getter(fn)
         self.refresh_player_availability()
 
     def set_zone_suggestions_getter(self, fn: Callable[[], list[str]]) -> None:
         """Pass a callable returning zone suggestions, for the node form and the region inputs form alike."""
         self._param_form.set_zone_suggestions_getter(fn)
-        self._region_inputs_form.set_zone_suggestions_getter(fn)
+        self._call_page.set_zone_suggestions_getter(fn)
+        self._signature_page.set_zone_suggestions_getter(fn)
 
     def refresh_player_availability(self) -> None:
         """Re-grey the player checkboxes — call when clients connect or disconnect.
@@ -2145,14 +2273,29 @@ class _ParamPanel(ThemedMixin, QWidget):
         return self._state
 
     @property
+    def shown_transition(self) -> TransitionModel | None:
+        """The transition on the edge page, or None when another page is up."""
+        return self._transition
+
+    @property
     def shown_region(self) -> RegionModel | None:
         """The region on the region page, or None when another page is up."""
         return self._region
 
     @property
-    def is_locked(self) -> bool:
-        """Whether the node page is showing a member of a linked subgraph."""
-        return self._locked
+    def call_page(self):
+        """The call node's page (``CallNodePage``)."""
+        return self._call_page
+
+    @property
+    def signature_page(self):
+        """A definition's signature page (``SignaturePage``)."""
+        return self._signature_page
+
+    @property
+    def promote_button(self) -> ActionButton:
+        """The node page's Promote to input group / Demote button, shown in a definition document."""
+        return self._promote_btn
 
     def show_state(
         self,
@@ -2162,28 +2305,22 @@ class _ParamPanel(ThemedMixin, QWidget):
         initial_id: str | None = None,
         recovery_id: str | None = None,
         *,
-        locked: bool = False,
-        override_keys: frozenset = frozenset(),
-        subgraph_name: str | None = None,
-        exposable: bool = False,
-        free_keys: frozenset = frozenset(),
-        bound_inputs: dict[str, str] | None = None,
+        in_definition: bool = False,
+        links: dict[str, str] | None = None,
+        promoted_group: str | None = None,
+        field_types: dict[str, str] | None = None,
     ) -> None:
-        """Show *state*. With *locked*, only the roles, the label, free params and overridden params are editable.
+        """Show *state*. *in_definition* is a node of a definition document open for editing.
 
-        Roles stay enabled on a locked member because they are the bot's, not the
-        subgraph's (docs/SUBGRAPHS.md), and so does the label, which is always the
-        consumer's. Type and notes are the definition's, so they lock; a param in
-        *free_keys* is the consumer's by the author's choice, and any other
-        unlocks one at a time through its lock toggle. With *exposable* the same
-        two sets drive the author's controls: *free_keys* is what is free so far,
-        *bound_inputs* which params an input already owns.
+        There, each param row can be linked to a subgraph input -- its Link button shows
+        on hover -- and a row already linked (*links*, key -> what it is linked to) shows
+        a chip that unlinks it. The page offers *Promote to input group* for the whole
+        node; a node promoted to *promoted_group* has every row linked to it, locked.
         """
         self._cancel_record()
         self._state = state
         self._transition = None
         self._region = None
-        self._locked = locked
         self._all_states_for_node = list(all_states or [])
         self._all_transitions_for_node = list(all_transitions or [])
         self._suppress = True
@@ -2192,220 +2329,96 @@ class _ParamPanel(ThemedMixin, QWidget):
         idx = self._node_type_combo.findData(state.node_type, Qt.ItemDataRole.UserRole)
         if idx >= 0:
             self._node_type_combo.setCurrentIndex(idx)
-        self._node_type_combo.setEnabled(not locked)
         schema = NODE_PARAM_SCHEMAS.get(state.node_type, [])
         self._param_form.load_schema(
             schema,
             state.params or {},
-            locked=locked,
-            overrides=override_keys,
-            exposable=exposable,
-            free=free_keys,
-            bound=bound_inputs,
+            linkable=in_definition,
+            links=links,
+            promoted_group=promoted_group,
+            field_types=field_types,
         )
         self._rebuild_returns(state.node_type)
         self._rebuild_connections(state.id)
         self._notes_edit.blockSignals(True)
         self._notes_edit.setPlainText(state.notes or "")
         self._notes_edit.blockSignals(False)
-        self._notes_edit.setEnabled(not locked)
-        if locked:
-            name = subgraph_name or "instance"
-            self._lock_note.setText(
-                f"Part of subgraph {name}. Its locked values follow the library; unlock one to override it for "
-                "this instance only, and that value stops following the subgraph."
+        self._promote_row.setVisible(in_definition and bool(schema))
+        self._node_promoted = promoted_group is not None
+        if self._node_promoted:
+            self._promote_btn.set_icon_name("chevrons_down")
+            self._promote_btn.setText("Demote")
+            self._promote_btn.setToolTip("Take this node's input group off the subgraph node")
+            self._promote_note.setText("Promoted: every param is on the subgraph node, with Record.")
+        else:
+            self._promote_btn.set_icon_name("chevrons_up")
+            self._promote_btn.setText("Promote to input group")
+            self._promote_btn.setToolTip(
+                "Put every param of this node on the subgraph node as an input group, with its Record "
+                "button. It follows the node: a param added to the node type later appears there too."
             )
-        self._lock_note.setVisible(locked)
+            self._promote_note.setText("")
         self._suppress = False
         self._set_role_checks(state.id, initial_id, recovery_id)
-        self._record_row.setVisible(state.node_type in recording.RECORDABLE_NODES and not locked)
+        # A definition's roles are a formality -- every Entry is a way in -- so there
+        # is nothing for the boxes to mean there.
+        self._initial_check.parentWidget().setVisible(not in_definition)
+        self._record_row.setVisible(state.node_type in recording.RECORDABLE_NODES)
         self._wiki_import_row.setVisible(state.node_type == "handle_combat")
         self._stack.setCurrentIndex(_PAGE_NODE)
 
-    def show_region(
-        self,
-        region: RegionModel,
-        defn: SubgraphDefinition | None = None,
-        status: RegionStatus | None = None,
-        member_labels: dict[str, str] | None = None,
-        *,
-        editing: bool = False,
-    ) -> None:
-        """Show the region page: label and colour, plus the subgraph section for a linked region.
-
-        *defn* is the library's current definition when it has one; *status* is the
-        last compose report's entry for this region; *member_labels* names members
-        in the override list. The page edits ``region`` in place and reports through
-        ``region_property_changed``. With *editing*, *defn* is the canvas's working
-        copy and the inputs form gives way to an editor over it.
-        """
+    def show_region(self, region: RegionModel) -> None:
+        """Show a plain region's page: its label and colour. The page edits ``region`` in place."""
         self._cancel_record()
         self._state = None
         self._transition = None
         self._region = region
-        self._region_defn = defn
-        self._region_editing = editing
         self._suppress = True
         try:
             self._region_label_edit.setText(region.label)
             self._region_color_row.set_key(region.color)
-            source = region.source
-            self._region_link_box.setVisible(source is not None)
-            if source is not None:
-                self._region_defn_name.setText(defn.name if defn is not None else source.subgraph_id)
-                desc = (defn.description or "") if defn is not None else ""
-                self._region_defn_desc.setText(desc)
-                self._region_defn_desc.setVisible(bool(desc))
-                parts = [f"Version {source.version}"]
-                if status is not None and status.library_version not in (None, source.version):
-                    parts.append(f"library version {status.library_version}")
-                if status is not None:
-                    parts.append(_ORIGIN_TEXT.get(status.origin, status.origin.value))
-                self._region_version.setText(" \u00b7 ".join(parts))
-                reasons = list(status.reasons) if status is not None else []
-                self._region_status.setText("\n".join(reasons))
-                self._region_status.setVisible(bool(reasons))
-                schema = [input_param_field(defn, i) for i in (defn.inputs if defn is not None else [])]
-                self._region_editing_note.setVisible(editing)
-                self._region_edit_btn.setVisible(not editing and defn is not None)
-                self._region_detach_btn.setVisible(not editing)
-                if editing:
-                    self._region_inputs_form.setVisible(False)
-                    self._region_inputs_note.setVisible(not schema)
-                    self._rebuild_inputs_editor(defn, member_labels or {})
-                    self._region_inputs_editor.setVisible(bool(schema))
-                    self._region_overrides_heading.setVisible(False)
-                    self._region_overrides_body.setVisible(False)
-                else:
-                    self._region_inputs_editor.setVisible(False)
-                    self._region_inputs_form.load_schema(schema, dict(source.inputs))
-                    self._region_inputs_form.setVisible(bool(schema))
-                    self._region_inputs_note.setVisible(not schema)
-                    self._region_inputs_initial = self._region_inputs_form.get_params()
-                    self._rebuild_override_rows(region, member_labels or {})
         finally:
             self._suppress = False
         self._stack.setCurrentIndex(_PAGE_REGION)
 
-    def _rebuild_override_rows(self, region: RegionModel, member_labels: dict[str, str]) -> None:
-        layout = self._region_overrides_layout
-        while layout.count():
-            item = layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-        source = region.source
-        rows = 0
+    def show_call(self, region: RegionModel, defn, status, config) -> None:
+        """Show a call node's page for the subgraph instance *region*."""
+        self._cancel_record()
+        self._state = None
+        self._transition = None
+        self._region = region
+        self._call_page.show_call(region, defn, status, config)
+        self._stack.setCurrentIndex(_PAGE_CALL)
 
-        def add_row(text: str, on_reset) -> None:
-            nonlocal rows
-            row = QWidget()
-            h = QHBoxLayout(row)
-            h.setContentsMargins(0, 0, 0, 0)
-            h.setSpacing(6)
-            lbl = QLabel(text)
-            lbl.setWordWrap(True)
-            reset = IconButton("revert", tooltip="Reset to the subgraph's value", size=20, icon_size=14)
-            reset.clicked.connect(on_reset)
-            h.addWidget(lbl, 1)
-            h.addWidget(reset)
-            layout.addWidget(row)
-            rows += 1
-
-        if source is not None:
-            for local, params in source.param_overrides.items():
-                state_id = member_id(region.id, local)
-                for key, value in params.items():
-                    add_row(
-                        f"{member_labels.get(state_id, local)} \u00b7 {key} = {value!r}",
-                        lambda _=None, sid=state_id, k=key: self.override_toggled.emit(sid, k, False),
-                    )
-            for local, label in source.label_overrides.items():
-                state_id = member_id(region.id, local)
-                add_row(
-                    f"{member_labels.get(state_id, local)} \u00b7 label = {label!r}",
-                    lambda _=None, sid=state_id: self.label_override_reset.emit(sid),
-                )
-        self._region_overrides_heading.setVisible(rows > 0)
-        self._region_overrides_body.setVisible(rows > 0)
-
-    def _rebuild_inputs_editor(self, defn: SubgraphDefinition | None, member_labels: dict[str, str]) -> None:
-        layout = self._region_inputs_editor_layout
-        while layout.count():
-            item = layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-        if defn is None or self._region is None:
-            return
-        for inp in defn.inputs:
-            head = QWidget()
-            h = QHBoxLayout(head)
-            h.setContentsMargins(0, 4, 0, 0)
-            h.setSpacing(6)
-            title = QLabel(f"<b>{inp.label or inp.name}</b> ({inp.name}) \u00b7 {inp.type}")
-            title.setToolTip(inp.help or "")
-            remove = IconButton(
-                "trash",
-                tooltip="Remove this input; its bound params keep their current values",
-                size=20,
-                icon_size=14,
-            )
-            remove.clicked.connect(lambda _=None, name=inp.name: self._remove_input(name))
-            h.addWidget(title, 1)
-            h.addWidget(remove)
-            layout.addWidget(head)
-            for b in inp.bindings:
-                row = QWidget()
-                rh = QHBoxLayout(row)
-                rh.setContentsMargins(16, 0, 0, 0)
-                rh.setSpacing(6)
-                state_id = member_id(self._region.id, b.state)
-                text = ThemedTextLabel(f"{member_labels.get(state_id, b.state)} \u00b7 {b.param}", color="text_muted")
-                unbind = IconButton("dismiss", tooltip="Unbind this param from the input", size=18, icon_size=12)
-                unbind.clicked.connect(
-                    lambda _=None, name=inp.name, st=b.state, k=b.param: self._remove_binding(name, st, k)
-                )
-                rh.addWidget(text, 1)
-                rh.addWidget(unbind)
-                layout.addWidget(row)
-
-    def _remove_input(self, name: str) -> None:
-        defn = self._region_defn
-        if defn is None:
-            return
-        defn.inputs = [i for i in defn.inputs if i.name != name]
-        self.definition_changed.emit()
-
-    def _remove_binding(self, name: str, state: str, key: str) -> None:
-        defn = self._region_defn
-        if defn is None:
-            return
-        for inp in defn.inputs:
-            if inp.name == name:
-                inp.bindings = [b for b in inp.bindings if not (b.state == state and b.param == key)]
-        self.definition_changed.emit()
-
-    def _on_edit_subgraph_clicked(self) -> None:
-        if self._region is not None:
-            self.edit_subgraph_requested.emit(self._region.id)
-
-    def _on_form_expose_requested(self, key: str) -> None:
-        if self._state is not None:
-            self.expose_input_requested.emit(self._state.id, key)
-
-    def _on_form_free_toggled(self, key: str, free: bool) -> None:
-        if self._suppress or self._state is None:
-            return
-        self.free_toggled.emit(self._state.id, key, free)
+    def show_signature(self, config) -> None:
+        """Show a definition document's signature: its page when nothing is selected."""
+        self._cancel_record()
+        self._state = None
+        self._transition = None
+        self._region = None
+        self._signature_page.show_signature(config)
+        self._stack.setCurrentIndex(_PAGE_SIGNATURE)
 
     @property
-    def region_editing(self) -> bool:
-        """Whether the region page is showing the region being edited in place."""
-        return self._region_editing
+    def showing_call(self) -> bool:
+        return self._stack.currentIndex() == _PAGE_CALL
 
-    def _on_form_override_toggled(self, key: str, active: bool) -> None:
+    @property
+    def showing_signature(self) -> bool:
+        return self._stack.currentIndex() == _PAGE_SIGNATURE
+
+    def _on_form_link_requested(self, key: str) -> None:
+        if self._state is not None:
+            self.link_input_requested.emit(self._state.id, key)
+
+    def _on_form_unlink_requested(self, key: str) -> None:
+        if self._state is not None:
+            self.unlink_input_requested.emit(self._state.id, key)
+
+    def _on_promote_clicked(self) -> None:
         if self._suppress or self._state is None:
             return
-        self.override_toggled.emit(self._state.id, key, active)
+        self.promote_node_requested.emit(self._state.id, not self._node_promoted)
 
     def _on_region_label_changed(self, text: str) -> None:
         if self._suppress or self._region is None:
@@ -2424,32 +2437,6 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._region.color = key
         self.region_property_changed.emit()
 
-    def _on_region_inputs_changed(self) -> None:
-        """Write the inputs the user has touched into ``source.inputs``.
-
-        Only a key that was already set, or whose widget moved from what it loaded
-        with, is written: an unset input is ``None`` and leaves the definition's
-        value in place, and a widget always has *some* value, so writing every key
-        would turn every untouched input into an empty override.
-        """
-        if self._suppress or self._region is None or self._region.source is None:
-            return
-        source = self._region.source
-        current = self._region_inputs_form.get_params()
-        self.edit_starting.emit("Edit region")
-        for key, value in current.items():
-            if key in source.inputs or value != self._region_inputs_initial.get(key):
-                source.inputs[key] = value
-        # A blank coordinate is absent from the form's params rather than empty; clearing one unsets it.
-        for key in source.inputs.keys() - current.keys():
-            if self._region_inputs_form.widget(key) is not None:
-                source.inputs[key] = None
-        self.region_property_changed.emit()
-
-    def _on_detach_clicked(self) -> None:
-        if self._region is not None:
-            self.detach_requested.emit(self._region.id)
-
     @property
     def region_label_edit(self) -> QLineEdit:
         return self._region_label_edit
@@ -2457,10 +2444,6 @@ class _ParamPanel(ThemedMixin, QWidget):
     @property
     def region_color_row(self) -> _RegionColorRow:
         return self._region_color_row
-
-    @property
-    def region_inputs_form(self) -> _DynamicParamForm:
-        return self._region_inputs_form
 
     @property
     def param_form(self) -> _DynamicParamForm:
@@ -2581,9 +2564,14 @@ class _ParamPanel(ThemedMixin, QWidget):
         option_names: list[str] | None = None,
         states: list | None = None,
         all_transitions: list[TransitionModel] | None = None,
+        *,
+        rewire: bool = True,
     ) -> None:
+        """Show *transition*. Without *rewire* its ends and ``when`` are read-only: a call node's edge is rewired on the canvas."""
+        self._cancel_record()
         self._transition = transition
         self._state = None
+        self._region = None
         self._all_states = list(states or [])
         self._all_transitions = list(all_transitions or [])
         self._suppress = True
@@ -2618,6 +2606,9 @@ class _ParamPanel(ThemedMixin, QWidget):
                 option_names or [],
             )
 
+        for combo in (self._edge_src_combo, self._edge_dst_combo, self._edge_when_combo):
+            combo.setEnabled(rewire)
+            combo.setToolTip("" if rewire else "Rewire an edge on a subgraph node by dragging it on the canvas")
         self._suppress = False
         self._stack.setCurrentIndex(_PAGE_EDGE)
 
@@ -2797,14 +2788,6 @@ class _ParamPanel(ThemedMixin, QWidget):
         # previously discarded.
         if not page:
             return
-        # On a locked subgraph member the field starts disabled and un-overridden;
-        # set_param_value() only ever reaches the widget's text, and a value that
-        # was never registered as an override is discarded the next time the
-        # instance is recomposed from its definition. Flip the override on first,
-        # exactly as the user's own lock toggle would, so the edit sticks.
-        override_btn = self._param_form.override_button(WIKI_PAGE_PARAM)
-        if override_btn is not None and not override_btn.isChecked():
-            override_btn.setChecked(True)
         self._param_form.set_param_value(WIKI_PAGE_PARAM, page)
 
     # ------------------------------------------------------------------

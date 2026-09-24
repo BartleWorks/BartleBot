@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from bartlebot.bot_tags import normalize_tags
 
@@ -148,6 +148,15 @@ class BotOptionModel(BaseModel):
     depends_on: str | None = None
 
 
+#: The two reserved node types a definition's ports are drawn as. An FSM edge lands
+#: on a state, not on a pin, so a port has to be a node an edge can target. They live
+#: in a definition's ``states`` and are never composed into a bot, and they are
+#: deliberately absent from ``NODE_SPECS``, so the node browser never offers them.
+SUBGRAPH_ENTRY = "subgraph_entry"
+SUBGRAPH_EXIT = "subgraph_exit"
+PORT_NODE_TYPES = frozenset({SUBGRAPH_ENTRY, SUBGRAPH_EXIT})
+
+
 class SubgraphInputBinding(BaseModel):
     """One member param an input drives: ``state`` is a definition-local id."""
 
@@ -158,10 +167,13 @@ class SubgraphInputBinding(BaseModel):
 class SubgraphInput(BaseModel):
     """A knob a subgraph definition exposes, set per instance in ``SubgraphSource.inputs``.
 
-    ``type`` is a ``ParamField`` type name, so the region page can build its form
-    with the same widgets a node's params get. ``default`` is what a fresh
-    instance is prefilled with; it is *not* applied during composition -- an input
-    the instance has not set leaves the definition's own value in place.
+    What the author owns is stored here: name, label, help, default and type. ``type``
+    is a ``ParamField`` type name, the narrowest of the bound params' types, so its
+    value is valid for every param it feeds; what the *type* owns -- choices, range,
+    placeholder, the widget -- comes from the bound fields when the form is drawn.
+    ``default`` is what a fresh instance is prefilled with; it is *not* applied during
+    composition -- an input the instance has not set leaves the definition's own value
+    in place. ``panel`` names the inputs panel it is listed under, or None for the top.
     """
 
     name: str
@@ -170,28 +182,57 @@ class SubgraphInput(BaseModel):
     help: str | None = None
     default: object | None = None
     bindings: list[SubgraphInputBinding] = Field(default_factory=list)
+    panel: str | None = None
+
+
+class SubgraphPanel(BaseModel):
+    """A heading on the call node's page. Layout only: no effect on binding or composition.
+
+    ``kind="inputs"`` groups the inputs that name it. ``kind="node"`` exposes the member
+    ``member`` *whole*: one input per param of its node type, worked out from the
+    node's schema rather than stored, each valued in ``SubgraphSource.inputs`` under
+    ``<member>.<key>`` -- which is how a recordable node keeps its Record button inside
+    a subgraph. ``bindings`` lets other members' params share an exposed value, keyed
+    by the exposed param.
+    """
+
+    id: str
+    kind: Literal["inputs", "node"] = "inputs"
+    label: str | None = None
+    default_closed: bool = False
+    member: str | None = None
+    bindings: dict[str, list[SubgraphInputBinding]] = Field(default_factory=dict)
+
+
+class SubgraphPort(BaseModel):
+    """Which member a port crosses at, in definition-local ids, as of the instance's snapshot.
+
+    An entry names the ``member`` its one edge goes into; an exit lists the
+    ``(member, outcome)`` pairs that feed it, stored under ``"from"``. Recorded per
+    instance so a later definition change can move the bot's edges with the port.
+    """
+
+    model_config = ConfigDict(serialize_by_alias=True, validate_by_name=True, validate_by_alias=True)
+
+    member: str | None = None
+    from_: list[tuple[str, str | None]] | None = Field(default=None, alias="from")
 
 
 class SubgraphSource(BaseModel):
     """The link that makes a region an instance of a subgraph definition.
 
     ``version`` is the definition version the stored members were composed from.
-    ``inputs`` maps input name to value; ``None`` (or absence) means unset.
-    ``param_overrides`` maps a definition-local state id to the params this
-    instance pins on it, and wins over everything. A consumer's edit to a *free*
-    param (``SubgraphDefinition.free_params``) lands here too, so the two are
-    told apart only by how the panel shows them. ``label_overrides`` maps a
-    local id to the label this instance gives that member: a label is always
-    the consumer's to change. ``anchor`` is where the definition's origin sits
-    on this canvas, in the ``StateModel.position`` convention -- layout is
-    instance-owned, see docs/SUBGRAPHS.md.
+    ``inputs`` maps input name to value (and ``<member>.<key>`` to an exposed node's
+    param); ``None`` or absence means unset. An instance sets inputs and nothing else:
+    to change anything internal, detach. ``ports`` maps port id to where it crossed
+    when the snapshot was composed. ``anchor`` is the call node's position, in the
+    ``StateModel.position`` convention; members sit at ``anchor + definition position``.
     """
 
     subgraph_id: str
     version: int
     inputs: dict[str, object] = Field(default_factory=dict)
-    param_overrides: dict[str, dict[str, object]] = Field(default_factory=dict)
-    label_overrides: dict[str, str] = Field(default_factory=dict)
+    ports: dict[str, SubgraphPort] = Field(default_factory=dict)
     anchor: dict = Field(default_factory=lambda: {"x": 0.0, "y": 0.0})
 
 
@@ -227,6 +268,21 @@ class RegionModel(BaseModel):
         return data
 
 
+class DefinitionMeta(BaseModel):
+    """What makes an in-memory ``BotConfig`` a subgraph definition document rather than a bot.
+
+    Opening a definition builds a ``BotConfig`` from its graph so the canvas, scene and
+    undo need not know the difference; this carries the rest of the definition --
+    its identity and its signature -- through undo and autosave with it. Never set on
+    a bot file, so ``exclude_none`` keeps it out of every one.
+    """
+
+    id: str
+    version: int = 1
+    inputs: list[SubgraphInput] = Field(default_factory=list)
+    panels: list[SubgraphPanel] = Field(default_factory=list)
+
+
 class BotConfig(BaseModel):
     # Required, with no default_factory: a minted id is indistinguishable from a real
     # one, so a file missing it would silently get a fresh identity on every load --
@@ -252,6 +308,13 @@ class BotConfig(BaseModel):
     states: list[StateModel]
     transitions: list[TransitionModel]
     regions: list[RegionModel] = Field(default_factory=list)
+    # Set only while this config is a subgraph definition open as a document.
+    definition: DefinitionMeta | None = None
+
+    @property
+    def is_definition(self) -> bool:
+        """Whether this is a subgraph definition document rather than a bot."""
+        return self.definition is not None
 
     @field_validator("drops", mode="before")
     @classmethod
@@ -423,23 +486,124 @@ def _atomic_write_json(data: dict, path: str | Path) -> None:
 SUBGRAPH_LOCAL_ID = re.compile(r"^[A-Za-z0-9_]+$")
 
 
+def definition_structure_errors(
+    states: list[StateModel],
+    transitions: list[TransitionModel],
+    regions: list[RegionModel],
+    inputs: list[SubgraphInput],
+    panels: list[SubgraphPanel],
+) -> list[str]:
+    """Every way a definition's graph and signature break the rules a definition is held to.
+
+    Shared by :class:`SubgraphDefinition`, which refuses a file that breaks one, and
+    the definition document's validation, which lists them and blocks saving. Kept
+    registry-free, as ``BotConfig``'s validation is: a binding's ``param`` is not
+    checked against the node's ``ParamField``s here, and neither are types -- that
+    needs the registry, and lives with the editor.
+    """
+    errors: list[str] = []
+    seen: set[str] = set()
+    by_id: dict[str, StateModel] = {}
+    for s in states:
+        if not SUBGRAPH_LOCAL_ID.match(s.id):
+            errors.append(f"state id {s.id!r} is not a valid subgraph-local id")
+        if s.id in seen:
+            errors.append(f"duplicate state id {s.id!r}")
+        seen.add(s.id)
+        by_id[s.id] = s
+    ports = {sid for sid, s in by_id.items() if s.node_type in PORT_NODE_TYPES}
+    for t in transitions:
+        if t.source not in seen or t.dest not in seen:
+            errors.append(f"transition {t.source!r} -> {t.dest!r} leaves the definition")
+
+    entries = [s for s in states if s.node_type == SUBGRAPH_ENTRY]
+    exits = [s for s in states if s.node_type == SUBGRAPH_EXIT]
+    if not entries:
+        errors.append("a subgraph needs at least one Entry")
+    targets: dict[str, str] = {}
+    for e in entries:
+        name = e.label or e.id
+        out = [t for t in transitions if t.source == e.id]
+        if len(out) != 1:
+            errors.append(f"Entry '{name}' needs exactly one edge into the subgraph, not {len(out)}")
+        elif out[0].dest in ports:
+            errors.append(f"Entry '{name}' must lead to a node, not straight to another port")
+        else:
+            dest = out[0].dest
+            if dest in targets:
+                errors.append(f"Entries '{targets[dest]}' and '{name}' both lead to the same node")
+            targets.setdefault(dest, name)
+        if any(t.dest == e.id for t in transitions):
+            errors.append(f"Entry '{name}' cannot have edges leading into it")
+    for x in exits:
+        if any(t.source == x.id for t in transitions):
+            errors.append(f"Exit '{x.label or x.id}' cannot have edges leading out of it")
+
+    panel_ids: set[str] = set()
+    exposed: set[str] = set()
+    input_panels: set[str] = set()
+    for panel in panels:
+        if panel.id in panel_ids:
+            errors.append(f"duplicate panel id {panel.id!r}")
+        panel_ids.add(panel.id)
+        if panel.kind == "inputs":
+            input_panels.add(panel.id)
+            continue
+        if panel.member not in seen or panel.member in ports:
+            errors.append(f"panel {panel.id!r} exposes {panel.member!r}, which is not a node of this subgraph")
+        elif panel.member in exposed:
+            errors.append(f"{panel.member!r} is exposed twice")
+        exposed.add(panel.member or "")
+
+    driven: set[tuple[str, str]] = set()
+
+    def drive(state: str, param: str, what: str) -> None:
+        if state not in seen or state in ports:
+            errors.append(f"{what} binds to unknown state {state!r}")
+        elif state in exposed:
+            errors.append(f"{what} binds '{param}' of {state!r}, which an exposed node panel already owns")
+        elif (state, param) in driven:
+            errors.append(f"'{param}' of {state!r} is bound twice")
+        driven.add((state, param))
+
+    names: set[str] = set()
+    for inp in inputs:
+        if inp.name in names:
+            errors.append(f"duplicate input name {inp.name!r}")
+        names.add(inp.name)
+        if inp.panel is not None and inp.panel not in input_panels:
+            errors.append(f"input {inp.name!r} names panel {inp.panel!r}, which is not an inputs panel")
+        for b in inp.bindings:
+            drive(b.state, b.param, f"input {inp.name!r}")
+    for panel in panels:
+        for key, extra in panel.bindings.items():
+            for b in extra:
+                drive(b.state, b.param, f"the exposed '{key}' of {panel.member!r}")
+
+    region_ids: set[str] = set()
+    for r in regions:
+        if not SUBGRAPH_LOCAL_ID.match(r.id):
+            errors.append(f"region id {r.id!r} is not a valid subgraph-local id")
+        if r.id in region_ids:
+            errors.append(f"duplicate region id {r.id!r}")
+        region_ids.add(r.id)
+        for m in r.members:
+            if m not in seen:
+                errors.append(f"region {r.id!r} names unknown state {m!r}")
+    return errors
+
+
 class SubgraphDefinition(BaseModel):
     """A reusable subgraph, stored as one file in the subgraph library.
 
-    Holds states, internal transitions and (for nesting) regions, every id local
-    to this file and every position relative to ``(0, 0)``. It has no ``initial``
-    or ``recovery_state``: roles are bot-owned. Composition into a bot is
+    A user-made node type: its inputs are its params, its Entry and Exit nodes
+    (``SUBGRAPH_ENTRY`` / ``SUBGRAPH_EXIT`` states) are its ports, and its body is
+    edited in a document of its own. Holds states, transitions and regions, every id
+    local to this file and every position relative to ``(0, 0)``. A nested instance
+    is stored the way a bot stores one -- its members as a snapshot among ``states``,
+    its region carrying ``source`` -- and a plain region is kept as layout. It has no
+    ``initial`` or ``recovery_state``: roles are bot-owned. Composition into a bot is
     :mod:`bartlebot.subgraphs`; storage is :mod:`bartlebot.subgraph_store`.
-
-    ``free_params`` maps a local state id to the params the author left for the
-    consumer to set on the node itself (a one-off zone, a wait); every other
-    param is *locked*, the subgraph's own, and a consumer changes one only by an
-    explicit override. It is seeded at extraction from which values were still
-    at their defaults, then the author's to toggle while editing.
-
-    Validation stays registry-free, as ``BotConfig``'s does: a binding's ``param``
-    is not checked against the node's ``ParamField``s here, for the same reason
-    ``_validate_node`` lives in the scene rather than in this module.
     """
 
     id: str
@@ -447,7 +611,7 @@ class SubgraphDefinition(BaseModel):
     description: str | None = None
     version: int = 1
     inputs: list[SubgraphInput] = Field(default_factory=list)
-    free_params: dict[str, list[str]] = Field(default_factory=dict)
+    panels: list[SubgraphPanel] = Field(default_factory=list)
     states: list[StateModel]
     transitions: list[TransitionModel] = Field(default_factory=list)
     regions: list[RegionModel] = Field(default_factory=list)
@@ -467,37 +631,10 @@ class SubgraphDefinition(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def ids_are_local_and_consistent(self) -> "SubgraphDefinition":
-        seen: set[str] = set()
-        for s in self.states:
-            if not SUBGRAPH_LOCAL_ID.match(s.id):
-                raise ValueError(f"state id {s.id!r} is not a valid subgraph-local id")
-            if s.id in seen:
-                raise ValueError(f"duplicate state id {s.id!r}")
-            seen.add(s.id)
-        for t in self.transitions:
-            if t.source not in seen or t.dest not in seen:
-                raise ValueError(f"transition {t.source!r} -> {t.dest!r} leaves the definition")
-        names: set[str] = set()
-        for inp in self.inputs:
-            if inp.name in names:
-                raise ValueError(f"duplicate input name {inp.name!r}")
-            names.add(inp.name)
-            for b in inp.bindings:
-                if b.state not in seen:
-                    raise ValueError(f"input {inp.name!r} binds to unknown state {b.state!r}")
-        for state_id in self.free_params:
-            if state_id not in seen:
-                raise ValueError(f"free_params names unknown state {state_id!r}")
-        region_ids: set[str] = set()
-        for r in self.regions:
-            if not SUBGRAPH_LOCAL_ID.match(r.id):
-                raise ValueError(f"region id {r.id!r} is not a valid subgraph-local id")
-            if r.id in region_ids:
-                raise ValueError(f"duplicate region id {r.id!r}")
-            region_ids.add(r.id)
-            if r.source is None:
-                raise ValueError(f"region {r.id!r} in a definition must be a nested instance (carry source)")
+    def structure_is_valid(self) -> "SubgraphDefinition":
+        errors = definition_structure_errors(self.states, self.transitions, self.regions, self.inputs, self.panels)
+        if errors:
+            raise ValueError("; ".join(errors))
         return self
 
     @classmethod

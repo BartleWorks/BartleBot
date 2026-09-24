@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -22,7 +23,7 @@ from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
 from bartlebot.combat_warnings import collect_combat_warnings
 from bartlebot.deck_io import DeckApplyReport, apply_deck, read_deck
-from bartlebot.gui.canvas.bot_canvas import BotMode
+from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument, _resolve_bots_dir
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
@@ -31,9 +32,9 @@ from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT, DECK_IMPORT_TIMEOUT
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.shared.vendor import PRODUCT, VENDOR
-from bartlebot.store_roots import DEV_ENV_VAR, dev_mode
-from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraphs import ComposeReport, compose_bot
+from bartlebot.store_roots import DEV_ENV_VAR, Origin, dev_mode
+from bartlebot.subgraph_store import SubgraphLibrary, count_subgraph_uses, source_label
+from bartlebot.subgraphs import ComposeReport, compose_bot, config_to_definition, definition_to_config
 from bartlebot.utils.window_kill import force_close_client
 
 if TYPE_CHECKING:
@@ -43,6 +44,23 @@ if TYPE_CHECKING:
 
 #: What a PlayerCard shows for a zone it could not read; never a real zone name.
 _ZONE_PLACEHOLDER = "—"
+
+#: An autosave of a definition document is named for the definition, not a file.
+_DEFINITION_AUTOSAVE_PREFIX = "subgraph_"
+
+
+@dataclass
+class _DocumentFrame:
+    """A document set aside while a definition is open on top of it.
+
+    Everything the controller holds for the open document -- the canvas's own state,
+    the file it came from, whether it has unsaved changes -- so going back puts it
+    exactly as it was.
+    """
+
+    doc: CanvasDocument
+    path: str | None
+    unsaved: bool
 
 
 def merge_zone_choices(client_zones: Sequence[str], recent_zones: Sequence[str]) -> tuple[list[str], list[str]]:
@@ -101,6 +119,10 @@ class AppController(QObject):
         # and accepted once they are — see _confirm_shutdown.
         self._shutdown_task: asyncio.Task | None = None
         self._clients_released: bool = False
+
+        # Documents under the open one, bottom first: a bot, then each definition
+        # opened from it. Empty while a bot, or a definition opened on its own, is on top.
+        self._doc_stack: list[_DocumentFrame] = []
 
         # Auto-save state
         self._has_unsaved_changes: bool = False
@@ -202,6 +224,9 @@ class AppController(QObject):
         w.bot_canvas.resume_requested.connect(self._resume_bot)
         w.bot_canvas.stop_button.clicked.connect(self._stop_bot)
         w.bot_canvas.save_done.connect(self._save_bot)
+        w.bot_canvas.open_definition_requested.connect(self._open_definition)
+        w.bot_canvas.definition_back_requested.connect(self._definition_back)
+        w.bot_canvas.definition_save_requested.connect(self._on_definition_save_requested)
         w.bot_canvas.set_clients_getter(lambda: self._client_manager.clients)
         w.bot_canvas.set_subgraph_library(self._subgraph_library)
         w.left_sidebar.set_clients_getter(lambda: self._client_manager.clients)
@@ -467,7 +492,7 @@ class AppController(QObject):
     # ------------------------------------------------------------------
 
     def _new_bot(self) -> None:
-        if not self._window.bot_canvas.resolve_subgraph_edit():
+        if not self._close_definitions():
             return
         self._delete_autosave()
         self._has_unsaved_changes = False
@@ -491,7 +516,7 @@ class AppController(QObject):
         self._window.set_start_enabled(self._start_enabled())
 
     def _open_bot(self, path: str | None = None) -> None:
-        if not self._window.bot_canvas.resolve_subgraph_edit():
+        if not self._close_definitions():
             return
         if path is None:
             path, _ = QFileDialog.getOpenFileName(self._window, "Open Bot File", "", "Bot Files (*.json)")
@@ -522,7 +547,9 @@ class AppController(QObject):
     def _close_bot(self) -> None:
         if self._loaded_config is None:
             return
-        if not self._window.bot_canvas.resolve_subgraph_edit():
+        if self._loaded_config.is_definition:
+            # Close is the document on top: a definition goes back to what it was opened from.
+            self._definition_back()
             return
         if self._has_unsaved_changes:
             reply = QMessageBox.question(
@@ -554,6 +581,9 @@ class AppController(QObject):
     def _save_bot(self) -> None:
         if self._loaded_config is None:
             return
+        if self._loaded_config.is_definition:
+            self._save_definition()
+            return
         if self._last_save_path is None:
             self._save_bot_as()
             return
@@ -566,6 +596,10 @@ class AppController(QObject):
 
     def _save_bot_as(self) -> None:
         if self._loaded_config is None:
+            return
+        if self._loaded_config.is_definition:
+            # A definition lives in the library under its id, not in a file the user names.
+            self._save_definition()
             return
         path, _ = QFileDialog.getSaveFileName(self._window, "Save Bot As", "", "Bot Files (*.json)")
         if not path:
@@ -601,6 +635,215 @@ class AppController(QObject):
         # The combat half of the same re-resolve: the active strategy and the BCS
         # list are both keyed on the id, and a fork inherits neither.
         self._window.left_sidebar.rebind_identity()
+
+    # ------------------------------------------------------------------
+    # Definition documents
+    # ------------------------------------------------------------------
+
+    @property
+    def document_depth(self) -> int:
+        """How many documents sit under the open one."""
+        return len(self._doc_stack)
+
+    def _open_definition(self, subgraph_id: str) -> bool:
+        """Open a subgraph definition as a document, on top of whatever is open.
+
+        The document underneath is set aside whole -- canvas, undo history, file,
+        unsaved flag -- and comes back when this one closes. A definition already open
+        further down is refused, since editing it twice at once has no good answer.
+        """
+        self._subgraph_library.reload()
+        defn = self._subgraph_library.get(subgraph_id)
+        if defn is None:
+            QMessageBox.warning(self._window, "Open Definition", "That subgraph is not in the library.")
+            return False
+        open_ids = {f.doc.config.definition.id for f in self._doc_stack if f.doc.config.definition is not None}
+        current = self._loaded_config
+        if current is not None and current.definition is not None:
+            open_ids.add(current.definition.id)
+        if subgraph_id in open_ids:
+            QMessageBox.information(
+                self._window, "Open Definition", f"'{defn.name}' is already open: go back to it to edit it."
+            )
+            return False
+        self._push_current()
+        self._show_definition(definition_to_config(defn), parent=None, unsaved=False)
+        logger.info("Opened subgraph '%s' v%d as a document", defn.name, defn.version)
+        return True
+
+    def _push_current(self) -> None:
+        """Set the open document aside on the stack, if there is one."""
+        if self._loaded_config is None:
+            return
+        # The one underneath stops autosaving while it is covered, so its latest
+        # edits reach a recovery file now rather than being held only in memory.
+        self._do_autosave()
+        doc = self._window.bot_canvas.take_document()
+        if doc is not None:
+            self._doc_stack.append(_DocumentFrame(doc, self._last_save_path, self._has_unsaved_changes))
+
+    def _show_definition(self, config: BotConfig, *, parent: str | None, unsaved: bool) -> None:
+        canvas = self._window.bot_canvas
+        config, report = self._compose(config)
+        self._loaded_config = config
+        self._last_save_path = None
+        self._has_unsaved_changes = unsaved
+        canvas.setup(config)
+        canvas.set_compose_report(report)
+        canvas.enter_edit_mode()
+        self._refresh_definition_context(parent)
+        # The sidebars describe a bot: its options, combat, drops. A definition has none.
+        self._window.left_sidebar.set_config(None)
+        self._window.right_sidebar.set_config(None)
+        self._window.set_bot_name(config.name, "subgraph")
+        self._window.set_save_enabled(True)
+        self._window.set_close_enabled(True)
+        self._window.set_start_enabled(False)
+
+    def _refresh_definition_context(self, parent: str | None = None) -> None:
+        config = self._loaded_config
+        if config is None or config.definition is None:
+            return
+        if parent is None and self._doc_stack:
+            parent = self._doc_stack[-1].doc.config.name
+        origin = self._subgraph_library.origin(config.definition.id)
+        sm = SettingsManager.instance()
+        bots_dir = _resolve_bots_dir(sm.get("canvas", "bot_library_path", default="bots"), project_root())
+        used_by = count_subgraph_uses(bots_dir).get(config.definition.id, 0)
+        self._window.bot_canvas.set_definition_context(parent, origin=source_label(origin), used_by=used_by)
+
+    def _on_definition_save_requested(self, then_back: bool) -> None:
+        if self._save_definition() and then_back:
+            self._definition_back()
+
+    def _save_definition(self) -> bool:
+        """Write the open definition to the library as its next version. False when refused or cancelled.
+
+        Refused while the document has errors: a definition that cannot compose must
+        not reach the bots that link it. A shipped definition is saved as the user's
+        own copy, which shadows it until reverted -- asked first, since from then on
+        the shipped one's updates stop arriving.
+        """
+        config = self._loaded_config
+        if config is None or config.definition is None:
+            return False
+        canvas = self._window.bot_canvas
+        errors = canvas.validation_errors()
+        if errors:
+            listed = "\n".join(f"\u2022 {e}" for e in errors[:12])
+            more = f"\n\u2026and {len(errors) - 12} more" if len(errors) > 12 else ""
+            QMessageBox.critical(
+                self._window, "Save to Library", f"Fix these before saving '{config.name}':\n\n{listed}{more}"
+            )
+            return False
+        library = self._subgraph_library
+        library.reload()
+        sid = config.definition.id
+        if library.origin(sid) == Origin.SHIPPED and not dev_mode():
+            reply = QMessageBox.question(
+                self._window,
+                "Save to Library",
+                f"'{config.name}' is built in. Saving makes a modified copy of it, which every bot "
+                "linking it uses from now on, in place of the built-in one's updates.\n\n"
+                "Save the modified copy?",
+                QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Save,
+            )
+            if reply != QMessageBox.StandardButton.Save:
+                return False
+        stored = library.get(sid)
+        version = max(config.definition.version, stored.version if stored is not None else 0) + 1
+        try:
+            defn = config_to_definition(config, version=version)
+        except ValueError as exc:
+            QMessageBox.critical(self._window, "Save to Library", str(exc))
+            return False
+        try:
+            library.save(defn)
+        except Exception as exc:
+            QMessageBox.critical(self._window, "Save to Library", f"Could not save '{config.name}':\n\n{exc}")
+            return False
+        config.definition.version = version
+        self._has_unsaved_changes = False
+        self._delete_autosave(stem=self._autosave_stem())
+        self._refresh_definition_context()
+        logger.info("Saved subgraph '%s' version %d to the library", defn.name, version)
+        return True
+
+    def _definition_back(self) -> bool:
+        """Close the open definition, asking about unsaved changes first. False when the user cancels."""
+        config = self._loaded_config
+        if config is None or config.definition is None:
+            return True
+        if self._has_unsaved_changes:
+            reply = QMessageBox.question(
+                self._window,
+                "Close Definition",
+                f"Save your changes to '{config.name}' to the library?",
+                QMessageBox.StandardButton.Save
+                | QMessageBox.StandardButton.Discard
+                | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Save,
+            )
+            if reply == QMessageBox.StandardButton.Cancel:
+                return False
+            if reply == QMessageBox.StandardButton.Save and not self._save_definition():
+                return False
+        self._leave_definition()
+        return True
+
+    def _leave_definition(self) -> None:
+        """Drop the open definition and put back the document underneath, recomposed from the library."""
+        stem = self._autosave_stem()
+        self._delete_autosave(stem=stem)
+        canvas = self._window.bot_canvas
+        if not self._doc_stack:
+            self._loaded_config = None
+            self._last_save_path = None
+            self._has_unsaved_changes = False
+            canvas.close_bot()
+            self._window.set_bot_name(None, None)
+            self._window.set_save_enabled(False)
+            self._window.set_close_enabled(False)
+            self._window.set_start_enabled(False)
+            return
+        frame = self._doc_stack.pop()
+        canvas.restore_document(frame.doc)
+        config = frame.doc.config
+        self._loaded_config = config
+        self._last_save_path = frame.path
+        self._has_unsaved_changes = frame.unsaved
+        # What was just edited is linked from here, most likely: take it now, as a
+        # run would, so the call node shows the new ports straight away.
+        composed, report = self._compose(config)
+        if composed is not config and composed.model_dump() != config.model_dump():
+            canvas.replace_config(composed, "Update subgraphs")
+            self._loaded_config = composed
+            self._has_unsaved_changes = True
+        canvas.set_compose_report(report)
+        loaded = self._loaded_config
+        if loaded.is_definition:
+            self._refresh_definition_context()
+            self._window.set_bot_name(loaded.name, "subgraph")
+            self._window.set_start_enabled(False)
+        else:
+            self._window.left_sidebar.set_config(loaded)
+            self._window.right_sidebar.set_config(loaded)
+            self._window.left_sidebar.set_editable(canvas.mode == BotMode.EDIT)
+            self._window.right_sidebar.set_editable(canvas.mode == BotMode.EDIT)
+            self._window.set_bot_name(
+                loaded.name, Path(self._last_save_path).name if self._last_save_path else "Untitled"
+            )
+            self._window.set_start_enabled(self._start_enabled())
+        self._window.set_save_enabled(True)
+        self._window.set_close_enabled(True)
+
+    def _close_definitions(self) -> bool:
+        """Close every definition document open, top down. False if the user cancelled one."""
+        while self._loaded_config is not None and self._loaded_config.is_definition:
+            if not self._definition_back():
+                return False
+        return True
 
     # ------------------------------------------------------------------
     # Bot control
@@ -1252,6 +1495,13 @@ class AppController(QObject):
         self._has_unsaved_changes = True
         self._window.set_save_enabled(True)
         canvas_config = self._window.bot_canvas.config
+        if canvas_config is not None and canvas_config.is_definition:
+            # No sidebars to follow and no options to compose: a definition has neither.
+            self._loaded_config = canvas_config
+            self._window.bot_canvas.refresh_initial(canvas_config.initial)
+            self._window.bot_canvas.refresh_edge_flags()
+            self._window.set_bot_name(canvas_config.name, "subgraph")
+            return
         if canvas_config is not None:
             self._loaded_config = canvas_config
             # Undo/redo replaces the canvas's config object; the sidebar has to
@@ -1277,7 +1527,11 @@ class AppController(QObject):
             self._window.set_start_enabled(self._start_enabled())
 
     def _start_enabled(self) -> bool:
-        return bool(self._client_manager.clients) and self._loaded_config is not None
+        return (
+            bool(self._client_manager.clients)
+            and self._loaded_config is not None
+            and not self._loaded_config.is_definition
+        )
 
     def _on_clients_changed(self, clients: list) -> None:
         self._window.set_start_enabled(self._start_enabled())
@@ -1321,10 +1575,16 @@ class AppController(QObject):
             self._auto_save_timer.setInterval(interval_ms)
             self._auto_save_timer.start()
 
+    def _autosave_stem(self) -> str:
+        """The recovery file's stem: the bot file's, or for a definition document the definition's id."""
+        config = self._loaded_config
+        if config is not None and config.definition is not None:
+            return f"{_DEFINITION_AUTOSAVE_PREFIX}{config.definition.id}"
+        return Path(self._last_save_path).stem if self._last_save_path else "_unsaved"
+
     def _autosave_path(self) -> Path:
         """Derive the recovery file path for the currently loaded config."""
-        stem = Path(self._last_save_path).stem if self._last_save_path else "_unsaved"
-        return SettingsManager.autosave_dir() / f"{stem}.autosave.json"
+        return SettingsManager.autosave_dir() / f"{self._autosave_stem()}.autosave.json"
 
     def _do_autosave(self) -> None:
         """Timer callback — write a recovery file if there are unsaved changes."""
@@ -1336,15 +1596,16 @@ class AppController(QObject):
         try:
             self._loaded_config.save(self._autosave_path())
             logger.debug("Auto-saved recovery file: %s", self._autosave_path())
-            if self._last_save_path:
+            if self._last_save_path and not self._loaded_config.is_definition:
                 stem = Path(self._last_save_path).stem
                 SettingsManager.instance().set_autosave_origin(stem, self._last_save_path)
         except Exception:
             logger.exception("Auto-save failed")
 
-    def _delete_autosave(self, save_path: str | None = None) -> None:
+    def _delete_autosave(self, save_path: str | None = None, *, stem: str | None = None) -> None:
         """Remove the recovery file after a successful manual save."""
-        stem = Path(save_path).stem if save_path else "_unsaved"
+        if stem is None:
+            stem = Path(save_path).stem if save_path else "_unsaved"
         p = SettingsManager.autosave_dir() / f"{stem}.autosave.json"
         try:
             if p.exists():
@@ -1359,7 +1620,9 @@ class AppController(QObject):
         candidates = []
         for autosave_path in sorted(SettingsManager.autosave_dir().glob("*.autosave.json")):
             stem = autosave_path.name.replace(".autosave.json", "")
-            if stem == "_unsaved":
+            if stem == "_unsaved" or stem.startswith(_DEFINITION_AUTOSAVE_PREFIX):
+                # A definition's recovery file has no bot file to compare against; it
+                # only exists while that definition had unsaved changes.
                 original_path: Path | None = None
                 is_candidate = True
             else:
@@ -1421,6 +1684,10 @@ class AppController(QObject):
                     f"Could not load recovery file:\n{autosave_path}\n\n{e}",
                 )
                 chosen_paths.discard(autosave_path)
+                continue
+            if config.is_definition:
+                self._push_current()
+                self._show_definition(config, parent=None, unsaved=True)
                 continue
             config, report = self._compose(config)
             self._loaded_config = config

@@ -629,20 +629,35 @@ nowhere. The pre-run subgraph recompose (`docs/SUBGRAPHS.md`) is the second call
 after undo. In EDIT mode a `desc` pushes the outgoing config onto the undo stack first,
 so the swap is one undoable step; in RUN mode there is no stack and none is pushed.
 
-## Locked members: ask `EditScene.is_locked`, never keep a second flag
+## An instance is drawn as its call node: go through display ids
 
-A member of a linked subgraph region (`docs/SUBGRAPHS.md`) cannot be deleted, retyped or
-re-parameterised outside an override, and no edge may be added or removed inside the
-instance. Every surface that refuses one of those asks `EditScene.is_locked(state_id)`
-(or `is_region_locked(region_id)` for membership) at the moment of the edit. Nothing
-caches the answer: the scene is rebuilt from the config on undo, on `replace_config` and
-on paste, and a cached lock would have to be rebuilt with it. The node's padlock glyph
-and the pill's link glyph are *displays* of the query (`refresh_locks`,
-`refresh_region_states`), re-derived on setup and after a detach, not a second source.
+A subgraph instance is one `CallNodeItem`, keyed in `EditScene.node_items` by its
+*region* id; its members are in the config but have no item at all. So an item lookup by
+state id misses every member. Ask the scene instead: `display_id(state_id)` is the id
+it is drawn as, `call_node_of(state_id)` its call node, and `state_ids_of(display_ids)`
+expands a selection back to state ids. An edge is drawn per `(source, when, dest)` in
+display ids (an exit's port id stands in for `when`), and `transitions_of(edge)` gives
+the flat transitions behind it -- one, or for an exit one per `(member, outcome)`
+feeding it. `edge_for(transition)` is the way back. Nothing caches these: the scene is
+rebuilt from the config on undo, `replace_config`, paste, detach and delete of an
+instance, and the mapping is rebuilt with it.
 
-The one deliberate hole is `remove_instance`, which deletes locked members on purpose
-and passes `allow_locked=True` to `_delete_node`. Anything else that wants to delete a
-locked member is a bug.
+What a member does rolls up onto its call node: its errors (`refresh_errors`, filtered
+by `member_warnings`), the run highlight (`BotCanvas.set_state` titles the call node with
+the running member), and search. A member is never edited from a bot: its values come
+from the instance's inputs, set on the call node's page, and anything else is the
+definition's, edited in its own document.
+
+## A definition is a document of its own
+
+Opening a definition (double-click a call node, *Open definition*, or the library's
+Subgraphs folder) sets the open document aside with `BotCanvas.take_document()`, which
+takes its config, undo history, camera and compose report. `restore_document()` puts it
+back. The controller keeps the stack (`AppController._doc_stack`), and Save, Close,
+autosave and crash recovery branch on `config.is_definition`. Going back recomposes
+the document underneath from the library, as a run does. The definition's own signature
+(inputs, panels, id and version) rides on `BotConfig.definition`, so undo and autosave
+carry it with no extra code.
 
 ## Which panel owns what
 
@@ -661,13 +676,22 @@ Two bars, and which one a thing belongs to is decided by what it is *about*:
 | **Bar B** (`canvas/bot_header.py`) | the bot's graph | the bot: name, version, file, author, tags, the run buttons, and the run status |
 
 The **properties panel** (`canvas/param_panel.py`) is a page per selection: a node, an
-edge, or — since the subgraph work — a *region*, reached by selecting a whole region's
-members (the pill click). The region page owns the region's label and colour for every
-region and the instance's inputs, overrides and link for a linked one; a locked member's
-node page owns only its roles and its overrides. The **editing crumb**
-(`canvas/subgraph_widgets.EditSubgraphCrumb`) is the canvas's, pinned under the focus
-crumb, and its Save and Discard are the only verbs on a region being edited — the
-region's menu offers none while the edit is open. `docs/SUBGRAPHS.md` has the flow.
+edge, a plain *region* (reached by selecting a whole region's members, the pill click),
+a *call node* (`canvas/call_page.py`: label, roles by entry port, inputs and node panels
+with Record, Open definition, Detach), or in a definition document with nothing selected
+the *signature* (`canvas/signature_page.py`: ports, inputs, panels). A definition's node
+page links a param to a subgraph input (**Link**, one param) or puts the whole node on the
+subgraph node (**Promote to input group** / **Demote**). A linked param *is* its input's
+default: `subgraphs.sync_linked_values` keeps them equal both ways, and a subgraph node
+follows the default until its own page changes the value (Reset goes back). A row shows
+status and action in one control: an unlinked row's Link button appears only on hover or
+focus, and a linked row's chip reads as the link and turns into Unlink under the pointer --
+except on a promoted node, whose chips are locked. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Built-in / Built-in (modified) / User" (`subgraph_store.source_label`); the code keeps `CallNodeItem` and `SubgraphPanel`. The **definition crumb**
+(`canvas/subgraph_widgets.DefinitionCrumb`) is the canvas's, pinned under the focus
+crumb; its Save to library and its way back are the definition document's only exits,
+along with Bar B's Done and Save & Done, which mean the same there. In a definition, Bar
+B shows the version read-only, where it comes from and how many bots use it, and no tags.
+`docs/SUBGRAPHS.md` has the flow.
 
 Bar B is a three-column grid grouped by *subject*: everything about the bot on the
 left, the run controls in the middle with the clock and the run state either side of

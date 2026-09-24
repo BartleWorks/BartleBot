@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from bartlebot.bot.schema import StateModel, SubgraphDefinition
+from bartlebot.bot.schema import SUBGRAPH_ENTRY, StateModel, SubgraphDefinition, TransitionModel
 from bartlebot.paths import project_root
 from bartlebot.store_roots import Origin
 from bartlebot.subgraph_store import (
@@ -17,7 +17,16 @@ from bartlebot.subgraph_store import (
 
 
 def _defn(sg_id: str = "sg-a", name: str = "A", version: int = 1) -> SubgraphDefinition:
-    return SubgraphDefinition(id=sg_id, name=name, version=version, states=[StateModel(id="s", node_type="relog")])
+    return SubgraphDefinition(
+        id=sg_id,
+        name=name,
+        version=version,
+        states=[
+            StateModel(id="entry_start", node_type=SUBGRAPH_ENTRY, label="Start"),
+            StateModel(id="s", node_type="relog"),
+        ],
+        transitions=[TransitionModel(trigger="advance", source="entry_start", dest="s")],
+    )
 
 
 def test_user_root_shadows_shipped(tmp_path):
@@ -110,7 +119,10 @@ def test_every_linked_bot_resolves_under_the_shipped_root_alone():
     shipped = project_root()
     library = SubgraphLibrary(shipped, shipped)
     uses = count_subgraph_uses(shipped / "bots")
-    assert uses, "no bot links a subgraph, so this guard checks nothing"
+    # No shipped bot links one yet (the library rewrite brings them), so every shipped
+    # definition loading cleanly is the half of the guard with something to check.
+    assert library.ids(), "no shipped subgraph, so this guard checks nothing"
+    assert not library.errors, f"shipped definitions that fail to load: {library.errors}"
 
     unresolved = sorted(sid for sid in uses if library.get(sid) is None)
     assert not unresolved, f"linked from bots/ but not loadable from subgraphs/: {unresolved}"

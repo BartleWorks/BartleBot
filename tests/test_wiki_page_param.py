@@ -178,86 +178,49 @@ def test_a_rejected_url_never_becomes_a_page(qapp, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
-# Import on a locked subgraph member (#68) -- the page must survive a recompose
+# Import inside a subgraph (#68) -- the page is the definition's, set in its document
 # ---------------------------------------------------------------------------
 
 
 @pytest.fixture
-def combat_canvas(qapp, tmp_path):
-    from bartlebot.bot.schema import (
-        BotConfig,
-        RegionModel,
-        StateModel,
-        SubgraphDefinition,
-        SubgraphSource,
-        TransitionModel,
-    )
+def definition_canvas(qapp):
+    from bartlebot.bot.schema import SUBGRAPH_ENTRY, StateModel, SubgraphDefinition, TransitionModel
     from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
-    from bartlebot.subgraph_store import SubgraphLibrary
-    from bartlebot.subgraphs import materialize_region
+    from bartlebot.subgraphs import definition_to_config
 
-    region_id = "aabbccdd"
-    # Two members, not one: with a single-member region, selecting it also selects
-    # "the whole region", which the canvas treats as a region-page press rather
-    # than a member press -- an artifact of the fixture, not of the bug under test.
+    # A bot never edits a member in place any more: a combat node inside a subgraph
+    # gets its page in the definition document, where it is an ordinary node.
     defn = SubgraphDefinition(
         id="one-fight",
         name="One fight",
-        description="A single combat encounter.",
         version=1,
         states=[
+            StateModel(id="entry_start", node_type=SUBGRAPH_ENTRY, label="Start", position={"x": -440.0, "y": 0.0}),
             StateModel(id="fight", node_type="handle_combat", position={"x": 0.0, "y": 0.0}, params={}),
-            StateModel(id="loot", node_type="handle_potions", position={"x": 440.0, "y": 0.0}, params={}),
         ],
-        transitions=[TransitionModel(trigger="next", source="fight", dest="loot")],
+        transitions=[TransitionModel(trigger="advance", source="entry_start", dest="fight")],
     )
-    library = SubgraphLibrary(tmp_path / "library")
-    library.save(defn)
-
-    source = SubgraphSource(subgraph_id=defn.id, version=defn.version, anchor={"x": 0.0, "y": 0.0})
-    mat = materialize_region(region_id, source, defn, library)
-    fight_id = next(sid for sid in mat.member_ids if sid.endswith("_fight"))
-    bot = BotConfig(
-        id="bot-1",
-        name="Combat bot",
-        initial=fight_id,
-        recovery_state=fight_id,
-        states=mat.states,
-        transitions=mat.transitions,
-        regions=[RegionModel(id=region_id, label="Fight", members=mat.member_ids, color=1, source=source)],
-    )
-
     c = BotCanvas()
-    c.set_subgraph_library(library)
-    c.setup(bot)
+    c.setup(definition_to_config(defn))
     c.enter_edit_mode()
-    c.select_state(fight_id)
-    yield c, region_id
+    c.select_state("fight")
+    yield c
     c.prepare_for_shutdown()
 
 
-def test_importing_on_a_locked_member_overrides_the_page(combat_canvas):
-    # Reproduces #68: the field starts locked and un-overridden, so setting its
-    # text alone (the old behaviour) was discarded on the next recompose.
-    canvas, region_id = combat_canvas
-    panel = canvas.param_panel
-    assert panel.is_locked
-    assert not panel.param_form.override_button(WIKI_PAGE_PARAM).isChecked()
+def test_importing_in_a_definition_sets_the_page_on_the_node(definition_canvas):
+    from bartlebot.subgraphs import config_to_definition
 
+    panel = definition_canvas.param_panel
     panel.apply_wiki_import([], "Creature:Lost Soul")
 
-    region = next(r for r in canvas.scene.config.regions if r.id == region_id)
-    assert region.source.param_overrides == {"fight": {WIKI_PAGE_PARAM: "Creature:Lost Soul"}}
     assert panel.shown_state.params[WIKI_PAGE_PARAM] == "Creature:Lost Soul"
-    assert panel.param_form.override_button(WIKI_PAGE_PARAM).isChecked()
+    saved = config_to_definition(definition_canvas.config)
+    fight = next(st for st in saved.states if st.id == "fight")
+    assert fight.params[WIKI_PAGE_PARAM] == "Creature:Lost Soul"
 
 
-def test_importing_with_no_page_does_not_force_an_override(combat_canvas):
-    canvas, region_id = combat_canvas
-    panel = canvas.param_panel
-
+def test_importing_with_no_page_leaves_the_param_alone(definition_canvas):
+    panel = definition_canvas.param_panel
     panel.apply_wiki_import([], None)
-
-    region = next(r for r in canvas.scene.config.regions if r.id == region_id)
-    assert region.source.param_overrides == {}
-    assert not panel.param_form.override_button(WIKI_PAGE_PARAM).isChecked()
+    assert WIKI_PAGE_PARAM not in (panel.shown_state.params or {}) or not panel.shown_state.params[WIKI_PAGE_PARAM]
