@@ -2,7 +2,7 @@
 
 Its own tab, not a Canvas section: the utilities drive the clients rather than the graph,
 and not a Game tab row either, because nothing here happens to a client as it launches.
-See ``bartlebot.authoring_tools`` for what the four utilities do and
+See ``bartlebot.authoring_tools`` for what the utilities do and
 ``bartlebot.gui.global_hotkeys`` for why the keys only work inside a game window.
 """
 
@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.authoring_tools import ACTION_LABELS, AuthoringAction
+from bartlebot.authoring_tools import ACTION_LABELS, SLOT_KEYS, AuthoringAction
 from bartlebot.game_keybindings import GameBinding, read_game_keybindings
 from bartlebot.gui.global_hotkeys import parse_binding
 from bartlebot.gui.settings.rows import hint
@@ -37,7 +37,26 @@ _HOTKEY_HINTS: dict[AuthoringAction, str] = {
         "Switches auto-combat on and off. Fights use the open bot's default Duel Strategy, or the "
         "built-in one; PvP is never fought."
     ),
+    AuthoringAction.TOGGLE_SPEED_AUTHORING: (
+        "Switches speed-authoring on and off. While it is on and the canvas is in Edit mode, keys "
+        "1–0 in a game window add that slot's favorites-bar node after the selected node, or at the "
+        "first gap from the start node, and start recording it from the player whose window you are in."
+    ),
 }
+
+
+def slot_key_notes(game_bindings: Sequence[GameBinding]) -> str:
+    """What the game loses while speed-authoring holds keys 1-0; empty when nothing.
+
+    A note rather than a problem: the keys are fixed, and taking them is the feature. The
+    stock game binds 1-5 only to Pet Derby talents, which nothing recorded in a dungeon
+    needs, but a user may have put something of their own there.
+    """
+    taken = [gb for gb in game_bindings if gb.binding in SLOT_KEYS]
+    if not taken:
+        return ""
+    uses = ", ".join(f"{gb.binding} ({gb.description})" for gb in taken)
+    return f"While speed-authoring is on, the game does not see these keys it binds: {uses}."
 
 
 def binding_problems(bindings: dict[str, str], game_bindings: Sequence[GameBinding] = ()) -> list[str]:
@@ -128,6 +147,9 @@ class AuthoringTab(QWidget):
                 "in; a button in the bar above the game windows uses the one you were last in."
             )
         )
+        notes = slot_key_notes(self._game_bindings)
+        if notes:
+            layout.addWidget(hint(notes))
         self._problems = ThemedTextLabel("", css="padding-top: 6px;", color="error")
         self._problems.setWordWrap(True)
         layout.addWidget(self._problems)

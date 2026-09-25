@@ -42,6 +42,7 @@ AUTHORING_ICONS: dict[AuthoringAction, str] = {
     AuthoringAction.TP_TO_FOCUSED: "teleport",
     AuthoringAction.TOGGLE_SPEED: "speed",
     AuthoringAction.TOGGLE_COMBAT: "sword",
+    AuthoringAction.TOGGLE_SPEED_AUTHORING: "keyboard",
 }
 
 
@@ -55,6 +56,9 @@ def authoring_tooltip(action: AuthoringAction, binding: str, *, on: bool = False
         AuthoringAction.TP_TO_FOCUSED: "Port every other player to the focused player through the friends list",
         AuthoringAction.TOGGLE_SPEED: "Make every player walk faster, until switched off or a bot starts",
         AuthoringAction.TOGGLE_COMBAT: "Fight any battle a player enters, with the open bot's default Duel Strategy",
+        AuthoringAction.TOGGLE_SPEED_AUTHORING: (
+            "Keys 1–0 in a game window add that hotbar node after the selected one and record it"
+        ),
     }[action]
     name = f"{ACTION_LABELS[action]} (on)" if on else ACTION_LABELS[action]
     key = f" [{binding}]" if binding else ""
@@ -75,7 +79,7 @@ def authoring_enabled(action: AuthoringAction, *, clients: int, run_active: bool
 
 
 class AuthoringBar(QWidget):
-    """The four authoring utilities as icon buttons, in the middle of Bar A (#81).
+    """The authoring utilities as icon buttons, in the middle of Bar A (#81, #85).
 
     Bar A, because the utilities are about the clients, not the bot. A toggle that is on
     draws its glyph in the accent, the same way the node browser's favourite star reports
@@ -95,7 +99,15 @@ class AuthoringBar(QWidget):
             btn.clicked.connect(lambda _checked=False, a=action: self.action_requested.emit(a.value))
             layout.addWidget(btn)
             self._buttons[action] = btn
-        self.set_state(speed_on=False, combat_on=False, busy=False, run_active=False, clients=0, hotkeys={})
+        self.set_state(
+            speed_on=False,
+            combat_on=False,
+            busy=False,
+            run_active=False,
+            clients=0,
+            hotkeys={},
+            speed_authoring_on=False,
+        )
 
     def button(self, action: AuthoringAction) -> IconButton:
         return self._buttons[action]
@@ -109,8 +121,13 @@ class AuthoringBar(QWidget):
         run_active: bool,
         clients: int,
         hotkeys: dict[str, str],
+        speed_authoring_on: bool = False,
     ) -> None:
-        on = {AuthoringAction.TOGGLE_SPEED: speed_on, AuthoringAction.TOGGLE_COMBAT: combat_on}
+        on = {
+            AuthoringAction.TOGGLE_SPEED: speed_on,
+            AuthoringAction.TOGGLE_COMBAT: combat_on,
+            AuthoringAction.TOGGLE_SPEED_AUTHORING: speed_authoring_on,
+        }
         for action, btn in self._buttons.items():
             is_on = on.get(action, False)
             btn.set_tint(IconTint.ACCENT if is_on else IconTint.DEFAULT)

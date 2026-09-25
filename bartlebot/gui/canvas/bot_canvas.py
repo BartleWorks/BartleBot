@@ -60,9 +60,11 @@ from bartlebot.gui.canvas.edge_item import EdgeItem
 from bartlebot.gui.canvas.edit_scene import (
     EditScene,
     _EditView,
+    _happy_path_return,
     _node_returns,
     _reachable_states,
     _validate_node,
+    authoring_anchor,
     member_warnings,
 )
 from bartlebot.gui.canvas.favorites_bar import FavoritesBar
@@ -2003,6 +2005,65 @@ class BotCanvas(QWidget):
         pos = self._scene.find_empty_grid_cell(self._canvas_origin())
         self._scene.create_state_at(node_type, pos)
         SettingsManager.instance().add_recently_used_node(node_type)
+
+    def speed_insert(self, slot: int) -> tuple[str | None, str]:
+        """Speed-authoring (#85): add *slot*'s hotbar node after the anchor, and select it.
+
+        The anchor is the selected node's happy-path port, or ``authoring_anchor`` -- the
+        first gap on the happy path from the start -- with nothing selected. The insert
+        goes through ``insert_state_at_output_port``, so whatever that port led to now
+        follows the new node: the Exit a template leaves at the far right stays last.
+        Selecting the new node is what makes the next key build on it, and what loads it
+        into the properties panel for recording.
+
+        An Enter Zone gets Stagger Players on: steps recorded this way are inside a
+        dungeon, where the players go through a door one after another.
+
+        Returns ``(new state id, "")``, or ``(None, why)`` with a sentence the user can act on.
+        """
+        key = str(slot + 1) if slot < 9 else "0"
+        if self._mode != BotMode.EDIT or self._scene.config is None:
+            return None, "Speed-authoring adds nodes in Edit mode. Switch the canvas to Edit, then press the key again."
+        node_type = SettingsManager.instance().favorited_hotkey_nodes[slot]
+        if not node_type:
+            return None, f"Key {key} has no node on the favorites bar. Assign one to its slot, then press it again."
+
+        states = {s.id: s for s in self._scene.config.states}
+        selected = [i for i in self._scene.selectedItems() if isinstance(i, NodeItem)]
+        if len(selected) > 1:
+            return None, "Several nodes are selected. Select the one node to build from, then press the key again."
+        if selected:
+            item = selected[0]
+            state = states.get(item.state_id) if type(item) is NodeItem else None
+            happy = _happy_path_return(_node_returns(state.node_type)) if state is not None else None
+            if state is None or happy is None:
+                return None, (
+                    "Speed-authoring builds on an ordinary node, not a subgraph node or port. "
+                    "Select a different node, then press the key again."
+                )
+            if state.stop_reason(happy) is not None:
+                return None, (
+                    f"The selected node stops the bot on {happy}, so nothing after it could run. "
+                    "Select a different node, or remove the stop, then press the key again."
+                )
+            anchor = (state.id, happy)
+        else:
+            anchor = authoring_anchor(self._scene.config)
+            if anchor is None or anchor[0] not in self._scene.node_items:
+                return None, (
+                    "There is no gap to fill: every step from the start node is already connected, or "
+                    "the path ends in a stop or inside a subgraph. Select the node to build from, then "
+                    "press the key again."
+                )
+
+        new_id = self._scene.insert_state_at_output_port(anchor[0], anchor[1], node_type)
+        if new_id is None:
+            name = node_type.replace("_", " ").title()
+            return None, f"{name} could not be added after the selected node. Select a different node."
+        if node_type == "enter_zone":
+            next(s for s in self._scene.config.states if s.id == new_id).params["stagger"] = True
+        self.select_state(new_id)
+        return new_id, ""
 
     def _add_node_at_viewport_center(self, node_type: str) -> None:
         """Add a node of the given type near the canvas origin, avoiding occupied grid cells."""

@@ -63,6 +63,7 @@ def test_the_default_hotkeys_are_the_f_keys_in_order():
         "tp_to_focused": "F2",
         "toggle_speed": "F3",
         "toggle_combat": "F4",
+        "toggle_speed_authoring": "F5",
     }
 
 

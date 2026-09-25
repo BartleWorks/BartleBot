@@ -223,6 +223,38 @@ def node_types_producing(return_name: str) -> set[str]:
     return {nt for nt in NODE_SPECS if return_name in _node_returns(nt)}
 
 
+def authoring_anchor(config: BotConfig) -> tuple[str, str] | None:
+    """Where speed-authoring (#85) builds on with nothing selected: ``(state id, return)``.
+
+    The first happy-path port with nothing leaving it, following happy paths from the
+    initial state. That is the gap a template leaves between entering a dungeon and an
+    Exit node already sitting unconnected at the far right, which is why the walk goes
+    by edges rather than by where nodes are drawn: the Exit is reachable by none.
+
+    An edge with no ``when`` fires on every return, so it routes the happy port too.
+    Of several edges on the port (flag-guarded branches), the walk follows the first.
+
+    None when there is no gap: the path loops back on itself, or ends on a port the
+    author marked as a stop -- a node inserted there could never be reached.
+    """
+    by_id = {s.id: s for s in config.states}
+    seen: set[str] = set()
+    sid = config.initial
+    while sid and sid not in seen:
+        seen.add(sid)
+        state = by_id.get(sid)
+        if state is None:
+            return None
+        happy = _happy_path_return(_node_returns(state.node_type))
+        if happy is None or state.stop_reason(happy) is not None:
+            return None
+        onward = next((t.dest for t in config.transitions if t.source == sid and t.when in (happy, None)), None)
+        if onward is None:
+            return sid, happy
+        sid = onward
+    return None
+
+
 def _required_field_empty(field, params: dict) -> bool:
     """Return True if a required ParamField has no meaningful value in params."""
     if field.key not in params:

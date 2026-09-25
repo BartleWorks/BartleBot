@@ -18,14 +18,15 @@ from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot import group_manager, recovery_readiness, restricted_zones, wizard_names
-from bartlebot.authoring_tools import AuthoringAction, AuthoringTools, source_index
+from bartlebot.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
 from bartlebot.combat_warnings import collect_combat_warnings
 from bartlebot.deck_io import DeckApplyReport, apply_deck, read_deck
+from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument, _resolve_bots_dir
-from bartlebot.gui.global_hotkeys import GlobalHotkeys
+from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
@@ -152,6 +153,10 @@ class AppController(QObject):
         self._hotkeys = GlobalHotkeys(self._on_authoring_hotkey)
         self._hotkeys.set_bindings(SettingsManager.instance().authoring_hotkeys)
         self._app.installNativeEventFilter(self._hotkeys)
+        # Speed-authoring's keys 1-0 (#85). A set of their own, armed apart from the rest,
+        # since while registered the digits are taken from the game's chat as well.
+        self._slot_hotkeys = GlobalHotkeys(self._on_slot_hotkey, id_base=ID_BASE_SPEED_AUTHORING)
+        self._app.installNativeEventFilter(self._slot_hotkeys)
         self._window.set_launch_registrar(
             self._client_manager.begin_launch,
             self._client_manager.end_launch,
@@ -328,6 +333,7 @@ class AppController(QObject):
         # settings that bind them.
         w.authoring_bar.action_requested.connect(self._on_authoring_action)
         w.game_view.game_focus_changed.connect(self._on_game_focus_changed)
+        w.bot_canvas.mode_changed.connect(lambda _mode: self._refresh_slot_keys())
         w.settings_applied.connect(self._apply_authoring_settings)
         self._refresh_authoring_bar()
 
@@ -353,6 +359,7 @@ class AppController(QObject):
         self._app.aboutToQuit.connect(self._client_manager.stop)
         # Give the system-wide hotkeys back while the thread that registered them can.
         self._app.aboutToQuit.connect(self._hotkeys.close)
+        self._app.aboutToQuit.connect(self._slot_hotkeys.close)
         # The canvas is never closed: Qt delivers QCloseEvent to the window being
         # closed, not to its children, so its own closeEvent never fires in the app.
         self._app.aboutToQuit.connect(self._window.bot_canvas.prepare_for_shutdown)
@@ -468,6 +475,55 @@ class AppController(QObject):
 
     def _on_game_focus_changed(self, hwnd: int | None) -> None:
         self._hotkeys.set_armed(hwnd is not None and not self._authoring.run_active)
+        self._refresh_slot_keys()
+
+    def _refresh_slot_keys(self) -> None:
+        """Arm or disarm speed-authoring's keys 1-0, by ``authoring_tools.slot_keys_armed``."""
+        canvas = self._window.bot_canvas
+        armed = slot_keys_armed(
+            speed_authoring=self._authoring.speed_authoring_on,
+            game_focused=self._window.game_view.focused_hwnd is not None,
+            editing=canvas.mode == BotMode.EDIT and canvas.config is not None,
+            run_active=self._authoring.run_active,
+        )
+        if armed and not self._slot_hotkeys.armed:
+            # Read on every arming, and only the assigned slots, so an empty one leaves its
+            # digit to the game. Slots are assigned on the favorites bar, which takes the
+            # keyboard back from the game -- so nothing can change while the keys are armed.
+            slots = SettingsManager.instance().favorited_hotkey_nodes
+            self._slot_hotkeys.set_bindings({f"slot_{i}": SLOT_KEYS[i] for i, node in enumerate(slots) if node})
+        self._slot_hotkeys.set_armed(armed)
+
+    def _on_slot_hotkey(self, action: str) -> None:
+        """A key 1-0, pressed in a game window while speed-authoring is on (#85).
+
+        The node goes in after the selected one, and records from the player whose window
+        the key was pressed in. Called from Qt's native event dispatch, so nothing here may
+        block: a refusal's popup is deferred through the event loop, like every dialog
+        opened from a callback. The popup takes the keyboard from the game, which disarms
+        the keys until the author clicks back in -- they need the canvas to act on it anyway.
+        """
+        slot = int(action.removeprefix("slot_"))
+        if recording.is_recording():
+            logger.warning(
+                "Speed-authoring: key %s ignored, the last node is still recording. "
+                "Finish that step, or stop it with its Record button, first.",
+                SLOT_KEYS[slot],
+            )
+            return
+        canvas = self._window.bot_canvas
+        new_id, refusal = canvas.speed_insert(slot)
+        if new_id is None:
+            QTimer.singleShot(0, lambda: QMessageBox.information(self._window, "Speed-Authoring", refusal))
+            return
+        node_type = SettingsManager.instance().favorited_hotkey_nodes[slot]
+        clients = self._client_manager.clients
+        game_view = self._window.game_view
+        index = source_index(clients, game_view.focused_hwnd or game_view.last_focused_hwnd)
+        if clients and canvas.param_panel.start_record(clients[index]):
+            logger.info("Speed-authoring: added %s, recording from P%d", node_type, index + 1)
+        else:
+            logger.info("Speed-authoring: added %s", node_type)
 
     def _apply_authoring_settings(self) -> None:
         self._hotkeys.set_bindings(SettingsManager.instance().authoring_hotkeys)
@@ -482,7 +538,9 @@ class AppController(QObject):
             run_active=tools.run_active,
             clients=len(self._client_manager.clients),
             hotkeys=SettingsManager.instance().authoring_hotkeys,
+            speed_authoring_on=tools.speed_authoring_on,
         )
+        self._refresh_slot_keys()
 
     async def _unhook_client(self, idx: int) -> None:
         """Unhook one client, after giving it back its own speed and stopping its fight."""
@@ -1360,6 +1418,7 @@ class AppController(QObject):
         self._window.right_sidebar.clients.set_bot_running(True)
         self._window.left_sidebar.set_bot_running(True)
         self._hotkeys.set_armed(False)
+        self._slot_hotkeys.set_armed(False)
         try:
             # A run walks at the game's own speed and fights through its own nodes.
             await self._authoring.suspend_for_run()

@@ -89,6 +89,7 @@ DEFAULT_AUTHORING_HOTKEYS: dict[str, str] = {
     "tp_to_focused": "F2",
     "toggle_speed": "F3",
     "toggle_combat": "F4",
+    "toggle_speed_authoring": "F5",
 }
 
 # The walking-speed multiple the speed toggle applies. 1.0 is the game's own speed.

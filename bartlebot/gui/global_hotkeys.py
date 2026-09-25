@@ -42,7 +42,10 @@ _MODIFIERS = {"ctrl": MOD_CONTROL, "alt": MOD_ALT, "shift": MOD_SHIFT}
 
 # Ids an application may register, per the RegisterHotKey docs, are 0x0000-0xBFFF. These
 # sit near the top so they stay clear of anything else in the process that registers low.
-_ID_BASE = 0xB800
+# One base per ``GlobalHotkeys``: every instance registers on the same thread with no
+# window, so two sharing ids would each replace the other's keys.
+ID_BASE_AUTHORING = 0xB800
+ID_BASE_SPEED_AUTHORING = 0xB900
 
 _VK_F1 = 0x70
 
@@ -82,9 +85,10 @@ class GlobalHotkeys(QAbstractNativeEventFilter):
     filter takes the event loop with it.
     """
 
-    def __init__(self, on_hotkey: Callable[[str], None]) -> None:
+    def __init__(self, on_hotkey: Callable[[str], None], *, id_base: int = ID_BASE_AUTHORING) -> None:
         super().__init__()
         self._on_hotkey = on_hotkey
+        self._id_base = id_base
         self._bindings: dict[str, tuple[int, int]] = {}
         # Registered id -> action, while armed.
         self._registered: dict[int, str] = {}
@@ -133,7 +137,7 @@ class GlobalHotkeys(QAbstractNativeEventFilter):
 
     def _register_all(self) -> None:
         for offset, (action, (modifiers, vk)) in enumerate(sorted(self._bindings.items())):
-            hotkey_id = _ID_BASE + offset
+            hotkey_id = self._id_base + offset
             if self._user32.RegisterHotKey(None, hotkey_id, modifiers | MOD_NOREPEAT, vk):
                 self._registered[hotkey_id] = action
             elif (action, (modifiers, vk)) not in self._warned:

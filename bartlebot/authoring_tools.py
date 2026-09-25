@@ -12,6 +12,10 @@ set a Deimos user reaches for while multiboxing:
   changes -- the game rewrites the value on every door.
 * **Auto-combat** fights any battle a player is pulled into, with the open bot's default
   Duel Strategy, or the built-in one when it has none.
+* **Speed-authoring** (#85) arms keys 1-0 inside a game window: each adds its hotbar node
+  after the selected one and starts recording it, so a dungeon is recorded without leaving
+  the game. ``BotCanvas.speed_insert`` places the node; the toggle only says when the keys
+  are live, which ``slot_keys_armed`` decides.
 
 The *source* of the first two is the game window that last had focus, falling back to
 Player 1. "Last", because clicking a button in BartleBot takes the focus away from the game.
@@ -19,7 +23,8 @@ Player 1. "Last", because clicking a button in BartleBot takes the focus away fr
 None of this belongs in a run. A run walks at the game's own speed -- its timeouts and a
 recording's pacing assume it -- and fights with its own ``handle_combat`` nodes, which would
 race an auto-combat task for the same cards. So a run switches both toggles off before it
-starts (``suspend_for_run``), and every action refuses while one is in progress.
+starts (``suspend_for_run``), and every action refuses while one is in progress. A run
+switches speed-authoring off too: its keys add nodes, and a run's canvas takes none.
 
 Auto-combat refuses PvP exactly as a run does: ``restriction_for`` is the check the health
 monitor's watcher makes, and a hit turns auto-combat off rather than fighting the duel.
@@ -47,12 +52,13 @@ _SPEED_VALUE_MAX = 0x7FFF
 
 
 class AuthoringAction(StrEnum):
-    """The four utilities, by the id their hotkey is stored under in settings."""
+    """The utilities, by the id their hotkey is stored under in settings."""
 
     XYZ_SYNC = "xyz_sync"
     TP_TO_FOCUSED = "tp_to_focused"
     TOGGLE_SPEED = "toggle_speed"
     TOGGLE_COMBAT = "toggle_combat"
+    TOGGLE_SPEED_AUTHORING = "toggle_speed_authoring"
 
 
 #: What each action is called on a button and in a settings row.
@@ -61,7 +67,22 @@ ACTION_LABELS: dict[AuthoringAction, str] = {
     AuthoringAction.TP_TO_FOCUSED: "TP to Player",
     AuthoringAction.TOGGLE_SPEED: "Speed",
     AuthoringAction.TOGGLE_COMBAT: "Auto-combat",
+    AuthoringAction.TOGGLE_SPEED_AUTHORING: "Speed-authoring",
 }
+
+
+#: The keys speed-authoring takes while it is on: the favorites bar's slots, 1-9 then 0.
+SLOT_KEYS: tuple[str, ...] = tuple(str(n) for n in (*range(1, 10), 0))
+
+
+def slot_keys_armed(*, speed_authoring: bool, game_focused: bool, editing: bool, run_active: bool) -> bool:
+    """Whether speed-authoring's keys 1-0 should be registered (#85).
+
+    Only while it is switched on, since while registered the digits are taken from the
+    game's chat as well; only while a game window has the keyboard, as for every
+    authoring key; and only while the canvas can take a node, in Edit mode with no run.
+    """
+    return speed_authoring and game_focused and editing and not run_active
 
 
 def boosted_speed_value(multiplier: float) -> int:
@@ -95,7 +116,7 @@ class _ModuleLog:
 
 
 class AuthoringTools:
-    """The state behind the four utilities: two toggles, and at most one action in flight.
+    """The state behind the utilities: three toggles, and at most one action in flight.
 
     *clients* and *bot_config* are getters rather than values, because both change under
     it: clients hook and unhook, and the open bot is swapped whenever a file is opened.
@@ -129,6 +150,8 @@ class AuthoringTools:
 
         self._action_task: asyncio.Task | None = None
 
+        self._speed_authoring = False
+
     # ------------------------------------------------------------------
     # State
     # ------------------------------------------------------------------
@@ -140,6 +163,20 @@ class AuthoringTools:
     @property
     def combat_on(self) -> bool:
         return self._combat_task is not None
+
+    @property
+    def speed_authoring_on(self) -> bool:
+        """Whether keys 1-0 add hotbar nodes from inside a game window (#85)."""
+        return self._speed_authoring
+
+    def set_speed_authoring(self, on: bool) -> None:
+        if on == self._speed_authoring:
+            return
+        if on and self._refuse_during_run("Speed-authoring"):
+            return
+        self._speed_authoring = on
+        logger.info("Speed-authoring %s", "on: keys 1-0 add hotbar nodes from a game window" if on else "off")
+        self._changed()
 
     @property
     def busy(self) -> bool:
@@ -177,6 +214,8 @@ class AuthoringTools:
             await self.set_speed(not self.speed_on)
         elif action is AuthoringAction.TOGGLE_COMBAT:
             await self.set_auto_combat(not self.combat_on)
+        elif action is AuthoringAction.TOGGLE_SPEED_AUTHORING:
+            self.set_speed_authoring(not self.speed_authoring_on)
 
     # ------------------------------------------------------------------
     # Speed
@@ -390,6 +429,7 @@ class AuthoringTools:
         await _cancel(self._action_task)
         await self.set_speed(False)
         await self.set_auto_combat(False)
+        self.set_speed_authoring(False)
         self._run_active = True
         self._changed()
 
@@ -412,6 +452,7 @@ class AuthoringTools:
         await _cancel(self._action_task)
         await self.set_speed(False)
         await self.set_auto_combat(False)
+        self.set_speed_authoring(False)
 
 
 async def _cancel(task: asyncio.Task | None) -> None:
