@@ -160,12 +160,24 @@ def _overlaps_partly(a: set[str], b: set[str]) -> bool:
     return bool(a & b) and not (a <= b or b <= a)
 
 
-def collapse_blocker(config: BotConfig, region_id: str) -> str | None:
+def is_collapsed(region: RegionModel, overrides: Mapping[str, bool] | None = None) -> bool:
+    """Whether a plain region is drawn collapsed: its override for this session, else its saved flag.
+
+    ``overrides`` is Run mode's: a collapse or expand there is a view, never saved,
+    so it sits over the file's flag rather than changing it.
+    """
+    if overrides and region.id in overrides:
+        return overrides[region.id]
+    return bool(region.collapsed)
+
+
+def collapse_blocker(config: BotConfig, region_id: str, overrides: Mapping[str, bool] | None = None) -> str | None:
     """Why the plain region ``region_id`` cannot be drawn as one node (#67), or ``None`` if it can.
 
     Collapsed nodes nest the way instances do, by membership, so a region may sit
     wholly inside or wholly around another folded one but never half across it: the
-    states they share could then be drawn as either node.
+    states they share could then be drawn as either node. ``overrides`` as for
+    :func:`is_collapsed`.
     """
     region = next((r for r in config.regions if r.id == region_id), None)
     if region is None:
@@ -182,20 +194,22 @@ def collapse_blocker(config: BotConfig, region_id: str) -> str | None:
         if _overlaps_partly(members, set(other.members)):
             return f"It holds only part of the subgraph node '{other.label}'."
     for other in config.regions:
-        if other is region or other.source is not None or not other.collapsed:
+        if other is region or other.source is not None or not is_collapsed(other, overrides):
             continue
         if _overlaps_partly(members, set(other.members)):
             return f"It overlaps the collapsed region '{other.label}'."
     return None
 
 
-def folded_regions(config: BotConfig, expanded: Iterable[str] = ()) -> list[RegionModel]:
+def folded_regions(
+    config: BotConfig, expanded: Iterable[str] = (), overrides: Mapping[str, bool] | None = None
+) -> list[RegionModel]:
     """The regions drawn as one node each, outermost only, in file order.
 
     Every linked region not composed through another, as before, plus every plain
     region marked ``collapsed`` (#67). A region in ``expanded`` -- opened in the
     Run-mode view, or stepped into -- is not folded, so what it holds is considered in
-    its place. A hand-edited file can mark a collapse that :func:`collapse_blocker`
+    its place. ``overrides`` as for :func:`is_collapsed`. A hand-edited file can mark a collapse that :func:`collapse_blocker`
     would refuse; such a region is drawn expanded rather than guessed at. Larger
     plain regions are taken first, so of two that partly overlap the larger folds.
     """
@@ -206,7 +220,7 @@ def folded_regions(config: BotConfig, expanded: Iterable[str] = ()) -> list[Regi
         r
         for r in config.regions
         if r.source is None
-        and r.collapsed
+        and is_collapsed(r, overrides)
         and r.id not in shut
         and r.members
         and not any(m in by_id and is_port_node(by_id[m]) for m in r.members)

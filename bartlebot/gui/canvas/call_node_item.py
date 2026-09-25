@@ -24,10 +24,11 @@ bookkeeping work unchanged; what differs is the geometry of their ports.
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 
 from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QBrush, QColor, QPainter, QPen
-from PyQt6.QtWidgets import QStyleOptionGraphicsItem
+from PyQt6.QtWidgets import QGraphicsView, QStyleOptionGraphicsItem
 
 from bartlebot.gui.canvas.lod import text_is_legible
 from bartlebot.gui.canvas.node_item import (
@@ -50,6 +51,7 @@ _CALL_RADIUS = 4
 _GLYPH = 14  # link badge size
 _EDGE_ALPHA = 200  # how strongly an accent pill's edge shows against the canvas
 _PORT_HIT_R = 16
+_MARKER_HIT_PAD = 3  # slack around a clickable corner marker
 _ROLE_BADGE_R = 7
 _ROLE_BADGE_GAP = 3  # between two badges on one port, and before its name
 
@@ -199,6 +201,18 @@ class FoldedNodeItem(NodeItem):
         if extra:
             lines.append(extra)
         self.setToolTip("\n".join(lines))
+
+    def marker_rect(self) -> QRectF:
+        """Where the corner marker is drawn, in item coordinates, when details are."""
+        inner_r = NODE_W - self._INSET - 8
+        return QRectF(inner_r - _GLYPH, 6, _GLYPH, _GLYPH)
+
+    @staticmethod
+    def details_drawn(lod: float) -> bool:
+        """Whether a view at ``lod`` draws the node's details -- the marker among them."""
+        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 - as paint
+
+        return lod >= SettingsManager.instance().get("canvas", "lod_compact_threshold", default=0.6)
 
     # -- the shape: what a subclass decides ----------------------------
 
@@ -406,6 +420,15 @@ class CallNodeItem(FoldedNodeItem):
         paint_link_glyph(painter, x, y, size, THEME.qcolor("accent"), self._link_state)
 
 
+def _event_lod(event) -> float:
+    """The level of detail of the view a scene mouse event came through; 1.0 without one."""
+    widget = event.widget()
+    view = widget.parentWidget() if widget is not None else None
+    if not isinstance(view, QGraphicsView):
+        return 1.0
+    return QStyleOptionGraphicsItem.levelOfDetailFromTransform(view.transform())
+
+
 def paint_collapse_marker(painter: QPainter, x: float, y: float, size: float, color: QColor) -> None:
     """A boxed plus -- BPMN's mark for a collapsed sub-process: there is more inside."""
     painter.save()
@@ -427,7 +450,60 @@ class CollapsedRegionItem(FoldedNodeItem):
 
     def __init__(self, *args, color: int, **kwargs) -> None:
         self._color_key = color
+        self._on_expand: Callable[[], None] | None = None
+        self._pressed_button = False
         super().__init__(*args, **kwargs)
+
+    def set_expand_action(self, on_expand: Callable[[], None] | None) -> None:
+        """What clicking the boxed plus does: expand the region, in either mode."""
+        self._on_expand = on_expand
+
+    def expand_button_rect(self, lod: float) -> QRectF | None:
+        """The boxed plus in item coordinates, with slack for the pointer, as a view at ``lod`` shows it.
+
+        None where that view does not draw it. Asked of the view the pointer is in,
+        never remembered from the last paint: the minimap paints the same item at a
+        tiny scale straight after the canvas does, so the last paint is always its.
+        """
+        if self._on_expand is None or not self.details_drawn(lod):
+            return None
+        return self.marker_rect().adjusted(-_MARKER_HIT_PAD, -_MARKER_HIT_PAD, _MARKER_HIT_PAD, _MARKER_HIT_PAD)
+
+    def _on_button(self, event) -> bool:
+        button = self.expand_button_rect(_event_lod(event))
+        return button is not None and button.contains(event.pos())
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self._on_button(event):
+            # The press is the click: expand, and keep what Qt does with the rest of it
+            # -- a drag on the move, a select on the release -- from happening.
+            self._pressed_button = True
+            self._on_expand()
+            event.accept()
+            return
+        self._pressed_button = False
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event) -> None:
+        if self._pressed_button:
+            event.accept()
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event) -> None:
+        if self._pressed_button:
+            self._pressed_button = False
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
+
+    def hoverMoveEvent(self, event) -> None:
+        if self._on_button(event):
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.setToolTip("Expand region")
+            return
+        self._update_tooltip()
+        super().hoverMoveEvent(event)
 
     @property
     def color_key(self) -> int:

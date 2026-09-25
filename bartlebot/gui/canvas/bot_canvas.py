@@ -1137,6 +1137,13 @@ class BotCanvas(QWidget):
         self._failure_edges_btn = _icon_btn("failure_edges", _FAILURE_EDGE_TOOLTIPS[FAILURE_EDGES_ALL])
         self._failure_edges_btn.clicked.connect(self._cycle_failure_edge_mode)
 
+        # Collapse and expand every region at once (#67): in both modes, since in Run
+        # mode a collapse is a view and nothing is saved.
+        self._collapse_all_btn = _icon_btn("region_collapse", "Collapse all regions")
+        self._collapse_all_btn.clicked.connect(lambda: self.set_all_regions_collapsed(True))
+        self._expand_all_btn = _icon_btn("region_expand", "Expand all regions")
+        self._expand_all_btn.clicked.connect(lambda: self.set_all_regions_collapsed(False))
+
         self._add_state_btn = _icon_btn("plus", "Add State")
         self._add_state_btn.clicked.connect(self._on_add_state)
 
@@ -1187,6 +1194,17 @@ class BotCanvas(QWidget):
         view_row.addWidget(self._fit_btn)
         view_row.addWidget(self._failure_edges_btn)
 
+        # ── Region tools: collapse all, expand all ────────────────────
+        # About how much of the graph is on show, like the view tools, but a pair of
+        # their own: they act on the regions, not on the camera.
+        region_tools = QWidget()
+        region_tools.setFixedWidth(_PAIR_WIDTH)
+        region_row = QHBoxLayout(region_tools)
+        region_row.setContentsMargins(0, 0, 0, 0)
+        region_row.setSpacing(_BTN_GAP)
+        region_row.addWidget(self._collapse_all_btn)
+        region_row.addWidget(self._expand_all_btn)
+
         # ── Right mode-toggle zone ───────────────────────────────────
         # Run mode page: single icon right-aligned inside the pair's width
         run_right = QWidget()
@@ -1219,6 +1237,7 @@ class BotCanvas(QWidget):
         tools_row.setContentsMargins(0, 0, 0, 0)
         tools_row.setSpacing(_GROUP_GAP)
         tools_row.addWidget(self._edit_tools_stack)
+        tools_row.addWidget(region_tools)
         tools_row.addWidget(view_tools)
         tools_row.addWidget(self._right_stack)
 
@@ -1365,6 +1384,8 @@ class BotCanvas(QWidget):
         self._scene.selectionChanged.connect(self._on_selection_changed)
         self._scene.focus_region_requested.connect(self.enter_focus_mode)
         self._scene.view_instance_requested.connect(self.view_instance)
+        self._scene.collapse_toggle_requested.connect(self.set_region_collapsed)
+        self._scene.collapse_all_requested.connect(self.set_all_regions_collapsed)
 
         # ── Placeholder — shown until the first bot is loaded ────────
         self._placeholder = _BotLibraryPanel(self)
@@ -1421,6 +1442,7 @@ class BotCanvas(QWidget):
         self._config = config
         self._compose_report = report
         self._toolbar.set_config(config)
+        self._scene.forget_collapse_overrides()
         self._scene.setup(config)
         self._scene.set_snap_enabled(sm.get("canvas", "snap_to_grid", default=False))
         self._scene.set_grid_style(sm.get("canvas", "grid_style", default="dots"))
@@ -1431,6 +1453,7 @@ class BotCanvas(QWidget):
             self._can_revert = False
         self._refresh_crumb()
         self._show_default_page()
+        self._refresh_collapse_buttons()
         self._reposition_banner()
         self._edit_btn.setEnabled(True)
         self._update_validation_badge()
@@ -2111,7 +2134,7 @@ class BotCanvas(QWidget):
         out: list[str] = []
         for lv in self._levels:
             region = self._region(lv.region_id)
-            if lv.kind == "instance" or (region is not None and region.source is None and region.collapsed):
+            if lv.kind == "instance" or (region is not None and self._scene.is_region_collapsed(region.id)):
                 out.append(lv.region_id)
         return out
 
@@ -2187,7 +2210,7 @@ class BotCanvas(QWidget):
         top = self._levels[-1] if self._levels else None
         top_region = self._region(top.region_id) if top is not None else None
         nested = (
-            bool(region.collapsed)
+            self._scene.is_region_collapsed(region_id)
             and top_region is not None
             and region is not top_region
             and set(region.members) <= set(top_region.members)
@@ -2293,6 +2316,7 @@ class BotCanvas(QWidget):
         self._scene.refresh_region_states(self._compose_report)
         if self._active_state:
             self._set_node_active(self._active_state, True)
+        self._refresh_collapse_buttons()
         self._apply_levels()
 
     def _shown_ids(self) -> set[str] | None:
@@ -2507,6 +2531,9 @@ class BotCanvas(QWidget):
             self._edit_tools_stack.setCurrentIndex(_TB_EDIT)
             self._right_stack.setCurrentIndex(_TB_EDIT)
             self._favorites_bar.setVisible(True)
+            # Edit mode shows the saved collapses: it is where they are decided.
+            if self._scene.clear_collapse_overrides():
+                self._after_scene_rebuild()
             self._scene.set_interactive(True)
             self._undo_mgr.set_enabled(True)
             # Visible but not usable, and the tooltip says why rather than leaving a
@@ -2538,6 +2565,7 @@ class BotCanvas(QWidget):
         self._scene.refresh_all_edge_flags()
 
     def _on_scene_changed(self) -> None:
+        self._refresh_collapse_buttons()
         config = self._scene.config
         if config is not None and config.is_definition:
             # Links may have moved: each input takes its params' strictest type, and
@@ -2655,22 +2683,66 @@ class BotCanvas(QWidget):
             for s in (config.states if config else [])
             if s.id in set(region.members) and s.node_type == "handle_combat"
         ]
-        self._param_panel.show_region(region, collapse_blocker=self._scene.collapse_blocker(region.id), fights=fights)
+        self._param_panel.show_region(
+            region,
+            collapsed=self._scene.is_region_collapsed(region.id),
+            collapse_blocker=self._scene.collapse_blocker(region.id),
+            fights=fights,
+        )
 
     def set_region_collapsed(self, region_id: str, collapsed: bool) -> bool:
-        """Collapse a plain region into one node, or expand it (#67). Edit mode only; one undoable step."""
-        if self._mode != BotMode.EDIT or not self._scene.set_region_collapsed(region_id, collapsed):
-            return False
-        # The rebuild dropped the selection: select what was acted on -- the node, or the
-        # members it opened into -- so the region's page stays up with the verb flipped.
+        """Collapse a plain region into one node, or expand it (#67). False if refused or already so.
+
+        In Edit mode it is one undoable step, saved with the bot. In Run mode it is a
+        view: an override over the saved flag, never written, dropped on entering Edit.
+        """
+        if self._mode == BotMode.RUN:
+            if not self._scene.set_collapse_overrides([region_id], collapsed):
+                return False
+            self._after_scene_rebuild()
+            self._reshow_region_page(region_id)
+            return True
         region = self._region(region_id)
-        if region is not None:
+        on_page = region is not None and self._param_panel.shown_region is region
+        if not self._scene.set_region_collapsed(region_id, collapsed):
+            return False
+        # From the region's own page, the rebuild would drop the page with the selection:
+        # select what was acted on -- the node, or the members it opened into -- so the
+        # page stays up with the verb flipped. From anywhere else nothing was selected, and
+        # selecting now would read as the click having selected something.
+        if on_page and region is not None:
             items = self._scene.node_items
             targets = [items[region_id]] if region_id in items else [items[m] for m in region.members if m in items]
             self._scene.clearSelection()
             for item in targets:
                 item.setSelected(True)
         return True
+
+    def set_all_regions_collapsed(self, collapsed: bool) -> bool:
+        """*Collapse all* / *Expand all*: every plain region that can, as one step. False if none could."""
+        targets = self._scene.bulk_collapse_targets(collapsed)
+        if not targets:
+            return False
+        if self._mode == BotMode.RUN:
+            changed = self._scene.set_collapse_overrides(targets, collapsed)
+        else:
+            changed = self._scene.set_regions_collapsed(targets, collapsed)
+        if changed:
+            self._after_scene_rebuild()
+        return changed
+
+    def _refresh_collapse_buttons(self) -> None:
+        """Enable *Collapse all* and *Expand all* only while each has a region to act on."""
+        if not hasattr(self, "_collapse_all_btn"):
+            return
+        has_config = self._scene.config is not None
+        self._collapse_all_btn.setEnabled(has_config and bool(self._scene.bulk_collapse_targets(True)))
+        self._expand_all_btn.setEnabled(has_config and bool(self._scene.bulk_collapse_targets(False)))
+
+    def _reshow_region_page(self, region_id: str) -> None:
+        region = self._region(region_id)
+        if region is not None and self._param_panel.shown_region is region:
+            self._show_region_page(region)
 
     def _on_region_property_changed(self) -> None:
         """The region or call node page wrote into the shown region: label, colour, or an instance's inputs."""

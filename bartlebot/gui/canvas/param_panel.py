@@ -2155,6 +2155,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         region_vbox.addWidget(self._region_fold_note)
         region_vbox.addWidget(region_actions)
         self._region_collapse_btn.clicked.connect(self._on_region_collapse_clicked)
+        self._region_collapsed = False  # as drawn, for the button's next click
 
         region_vbox.addStretch()
         region_scroll = QScrollArea()
@@ -2419,12 +2420,18 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._stack.setCurrentIndex(_PAGE_NODE)
 
     def show_region(
-        self, region: RegionModel, *, collapse_blocker: str | None = None, fights: list[str] | None = None
+        self,
+        region: RegionModel,
+        *,
+        collapsed: bool | None = None,
+        collapse_blocker: str | None = None,
+        fights: list[str] | None = None,
     ) -> None:
         """Show a plain region's page: its label, colour, and Collapse / Expand. Edits ``region`` in place.
 
-        ``collapse_blocker`` is why the region cannot collapse, shown on the disabled
-        button. ``fights`` are the fights a collapsed region holds, named because they
+        ``collapsed`` is whether it is drawn collapsed, which in Run mode can differ
+        from its saved flag; it defaults to the flag. ``collapse_blocker`` is why the
+        region cannot collapse, shown on the disabled button. ``fights`` are the fights a collapsed region holds, named because they
         are out of sight on the canvas.
         """
         self._cancel_record()
@@ -2435,7 +2442,8 @@ class _ParamPanel(ThemedMixin, QWidget):
         try:
             self._region_label_edit.setText(region.label)
             self._region_color_row.set_key(region.color)
-            collapsed = bool(region.collapsed)
+            collapsed = bool(region.collapsed) if collapsed is None else collapsed
+            self._region_collapsed = collapsed
             self._region_collapse_btn.setText("Expand" if collapsed else "Collapse")
             self._region_collapse_btn.set_icon_name("region_expand" if collapsed else "region_collapse")
             self._region_collapse_btn.setEnabled(collapsed or collapse_blocker is None)
@@ -2458,7 +2466,7 @@ class _ParamPanel(ThemedMixin, QWidget):
     def _on_region_collapse_clicked(self) -> None:
         if self._suppress or self._region is None:
             return
-        self.region_collapse_requested.emit(self._region.id, not self._region.collapsed)
+        self.region_collapse_requested.emit(self._region.id, not self._region_collapsed)
 
     @property
     def region_collapse_button(self) -> ActionButton:

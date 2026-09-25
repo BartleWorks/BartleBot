@@ -72,6 +72,7 @@ from bartlebot.subgraphs import (
     boundary_ports,
     collapse_blocker,
     folded_regions,
+    is_collapsed,
     is_nested_in,
     linked_region_of,
     linked_regions,
@@ -556,6 +557,11 @@ class EditScene(QGraphicsScene):
     open_definition_requested = pyqtSignal(str)
     # A subgraph node double-clicked in Run mode: (region id) of the instance whose body to view.
     view_instance_requested = pyqtSignal(str)
+    # (region id, collapse): a region label's collapse button or a collapsed node's
+    # expand button was clicked. The canvas decides what that means in its mode.
+    collapse_toggle_requested = pyqtSignal(str, bool)
+    # (collapse): the canvas menu's Collapse All Regions / Expand All Regions.
+    collapse_all_requested = pyqtSignal(bool)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -574,6 +580,10 @@ class EditScene(QGraphicsScene):
         self._call_of: dict[str, str] = {}
         # Region id -> the ports its folded node shows, for every folded node drawn.
         self._fold_ports: dict[str, FoldPorts] = {}
+        # Run mode's collapses and expands, region id -> collapsed: a view over the
+        # saved flags, never written to the file. Kept across setup(); cleared by the
+        # canvas on entering Edit mode, where the saved state is decided.
+        self._collapse_overrides: dict[str, bool] = {}
         # (region id, members) of each folded region as last drawn: see _after_region_edit.
         self._folded_sig: tuple = ()
         # Where stored positions are drawn: identity until a region is collapsed, and
@@ -693,9 +703,11 @@ class EditScene(QGraphicsScene):
         """
         self.teardown()
         self._config = config
-        foldable = {r.id for r in config.regions if r.source is not None or r.collapsed}
+        region_ids = {r.id for r in config.regions}
+        self._collapse_overrides = {rid: v for rid, v in self._collapse_overrides.items() if rid in region_ids}
+        foldable = {r.id for r in config.regions if r.source is not None or is_collapsed(r, self._collapse_overrides)}
         self._expanded = [rid for rid in self._expanded if rid in foldable]
-        folded = folded_regions(config, self._expanded)
+        folded = folded_regions(config, self._expanded, self._collapse_overrides)
         self._folded_sig = tuple((r.id, frozenset(r.members)) for r in folded)
         self._call_of = {m: region.id for region in folded for m in region.members}
         self._fold_ports = {region.id: self._ports_for(region) for region in folded}
@@ -802,6 +814,7 @@ class EditScene(QGraphicsScene):
             if r.source is None and r.members and any(set(r.members) <= fm for fm in folded_members)
         }
         self._region_manager.setup(self._interactive_mode, folded_away)
+        self._sync_region_buttons()
         self._refresh_roles()
         self.refresh_errors()
         # Every call node reads as linked until the canvas hands over a report.
@@ -863,6 +876,8 @@ class EditScene(QGraphicsScene):
             color=region.color,
         )
         node.set_snap_enabled(self._snap_enabled)
+        rid = region.id
+        node.set_expand_action(lambda: self._request_collapse(rid, False))
         return node
 
     def _ports_for(self, region: RegionModel) -> FoldPorts:
@@ -1379,7 +1394,109 @@ class EditScene(QGraphicsScene):
         """Why ``region_id`` cannot be collapsed, or None if it can."""
         if self._config is None:
             return "No bot is open."
-        return collapse_blocker(self._config, region_id)
+        return collapse_blocker(self._config, region_id, self._collapse_overrides)
+
+    def is_region_collapsed(self, region_id: str) -> bool:
+        """Whether a plain region is drawn collapsed: Run mode's override, else its saved flag."""
+        region = self._region_by_id(region_id)
+        return region is not None and region.source is None and is_collapsed(region, self._collapse_overrides)
+
+    def _request_collapse(self, region_id: str, collapsed: bool) -> None:
+        """A button asked: pass it on once the click is over, since acting rebuilds the item clicked."""
+        QTimer.singleShot(0, lambda: self.collapse_toggle_requested.emit(region_id, collapsed))
+
+    def _sync_region_buttons(self) -> None:
+        """Give every drawn region's label its collapse button, faded with the reason when refused."""
+        if self._region_manager is None:
+            return
+        for rid, item in self._region_manager.items.items():
+            item.set_collapse_action(lambda rid=rid: self._request_collapse(rid, True), self.collapse_blocker(rid))
+
+    def bulk_collapse_targets(self, collapsed: bool) -> list[str]:
+        """The plain regions *Collapse all* or *Expand all* would change, in the order it would.
+
+        Collapse all goes largest first, and skips a region its own earlier collapses
+        would block, so of two partly overlapping regions the larger folds. A region
+        inside one that collapses is still marked, and shows when stepped into.
+        """
+        if self._config is None:
+            return []
+        plain = [r for r in self._config.regions if r.source is None and r.members]
+        if not collapsed:
+            return [r.id for r in plain if is_collapsed(r, self._collapse_overrides)]
+        order = {r.id: i for i, r in enumerate(self._config.regions)}
+        sim = dict(self._collapse_overrides)
+        targets: list[str] = []
+        for r in sorted(plain, key=lambda r: (-len(r.members), order[r.id])):
+            if is_collapsed(r, sim) or collapse_blocker(self._config, r.id, sim) is not None:
+                continue
+            sim[r.id] = True
+            targets.append(r.id)
+        return targets
+
+    def set_regions_collapsed(self, region_ids: list[str], collapsed: bool) -> bool:
+        """Collapse or expand several plain regions as one undoable step (Edit mode's *all*)."""
+        if self._config is None or not region_ids:
+            return False
+        self._pre_edit("Collapse All Regions" if collapsed else "Expand All Regions")
+        for rid in region_ids:
+            region = self._region_by_id(rid)
+            if region is not None and region.source is None:
+                region.collapsed = True if collapsed else None
+        if not collapsed:
+            self._expanded = [rid for rid in self._expanded if rid not in set(region_ids)]
+        prev = self._in_structural_edit
+        self._in_structural_edit = True
+        try:
+            self.setup(self._config)
+        finally:
+            self._in_structural_edit = prev
+        self.graph_changed.emit()
+        return True
+
+    def set_collapse_overrides(self, region_ids: list[str], collapsed: bool) -> bool:
+        """Run mode's collapse or expand: a view over the saved flags, not an edit. False if nothing changed.
+
+        An override equal to the saved flag is dropped rather than kept, so what is
+        held is only where the view differs from the file.
+        """
+        if self._config is None:
+            return False
+        changed = False
+        for rid in region_ids:
+            region = self._region_by_id(rid)
+            if (
+                region is None
+                or region.source is not None
+                or is_collapsed(region, self._collapse_overrides) == collapsed
+            ):
+                continue
+            if collapsed and collapse_blocker(self._config, rid, self._collapse_overrides) is not None:
+                continue
+            if bool(region.collapsed) == collapsed:
+                self._collapse_overrides.pop(rid, None)
+            else:
+                self._collapse_overrides[rid] = collapsed
+            changed = True
+        if not changed:
+            return False
+        if not collapsed:
+            self._expanded = [rid for rid in self._expanded if rid not in set(region_ids)]
+        self.setup(self._config)
+        return True
+
+    def forget_collapse_overrides(self) -> None:
+        """Drop Run mode's view without rebuilding: for a caller about to set up a new document."""
+        self._collapse_overrides = {}
+
+    def clear_collapse_overrides(self) -> bool:
+        """Drop Run mode's view, back to the saved flags. True, having rebuilt, if there was one."""
+        if not self._collapse_overrides:
+            return False
+        self._collapse_overrides = {}
+        if self._config is not None:
+            self.setup(self._config)
+        return True
 
     def set_region_collapsed(self, region_id: str, collapsed: bool) -> bool:
         """Draw a plain region as one node, or open it back up. One undoable step; False if refused.
@@ -1786,6 +1903,17 @@ class EditScene(QGraphicsScene):
                 act_out.triggered.connect(lambda: self.add_port_node(SUBGRAPH_EXIT, at))
                 menu.addAction(act_out)
             self._add_create_region_action(menu)
+            to_collapse, to_expand = self.bulk_collapse_targets(True), self.bulk_collapse_targets(False)
+            if to_collapse or to_expand:
+                menu.addSeparator()
+                act_ca = QAction("Collapse All Regions", menu)
+                act_ca.setEnabled(bool(to_collapse))
+                act_ca.triggered.connect(lambda: self.collapse_all_requested.emit(True))
+                menu.addAction(act_ca)
+                act_ea = QAction("Expand All Regions", menu)
+                act_ea.setEnabled(bool(to_expand))
+                act_ea.triggered.connect(lambda: self.collapse_all_requested.emit(False))
+                menu.addAction(act_ea)
         if not menu.isEmpty():
             menu.exec(event.screenPos())
         menu.deleteLater()
@@ -1856,7 +1984,9 @@ class EditScene(QGraphicsScene):
     def _folded_signature(self) -> tuple:
         if self._config is None:
             return ()
-        return tuple((r.id, frozenset(r.members)) for r in folded_regions(self._config, self._expanded))
+        return tuple(
+            (r.id, frozenset(r.members)) for r in folded_regions(self._config, self._expanded, self._collapse_overrides)
+        )
 
     def _after_region_edit(self) -> None:
         """What a region edit reports: rebuilt first when it changed what is drawn folded.
@@ -1871,6 +2001,8 @@ class EditScene(QGraphicsScene):
                 self.setup(self._config)
             finally:
                 self._in_structural_edit = prev
+        else:
+            self._sync_region_buttons()  # a new region gets its button; a changed one its blocker
         self.graph_changed.emit()
 
     def _build_node_menu(self, menu, item: NodeItem, scene_pos: QPointF) -> None:
@@ -2221,6 +2353,7 @@ class EditScene(QGraphicsScene):
         column of the fold. Either rebuilds the scene from the config, as undo does.
         Nothing is done, cheaply, while no region is collapsed.
         """
+        self._sync_region_buttons()
         if self._config is None or not any(self.is_collapsed(rid) for rid in self._fold_ports):
             return
         ports = {rid: self._ports_for(r) for rid in self._fold_ports if (r := self._region_by_id(rid)) is not None}
@@ -2266,7 +2399,7 @@ class EditScene(QGraphicsScene):
         # region still does not travel.
         regions += [
             r.model_dump()
-            for r in folded_regions(self._config, self._expanded)
+            for r in folded_regions(self._config, self._expanded, self._collapse_overrides)
             if r.source is None and set(r.members) <= selected_ids
         ]
         self._clipboard = (states, transitions, regions)

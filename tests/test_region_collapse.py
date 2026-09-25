@@ -523,3 +523,177 @@ def test_a_blocked_collapse_is_refused_and_the_button_says_why(canvas):
     panel = canvas.param_panel
     assert not panel.region_collapse_button.isEnabled()
     assert panel.region_collapse_button.toolTip() == "It overlaps the collapsed region 'Middle'."
+
+
+# ---------------------------------------------------------------------------
+# Run mode: a collapse is a view, never saved
+# ---------------------------------------------------------------------------
+
+
+def test_collapsing_in_run_mode_changes_the_view_and_not_the_file(canvas):
+    canvas.exit_edit_mode()
+    changes = []
+    canvas.config_changed.connect(lambda: changes.append(1))
+    assert canvas.set_region_collapsed("r1", True)
+    assert isinstance(canvas.scene.node_items["r1"], CollapsedRegionItem)
+    assert canvas.config.regions[0].collapsed is None
+    assert canvas.scene.is_region_collapsed("r1")
+    assert changes == []
+
+
+def test_entering_edit_mode_drops_run_modes_view(canvas):
+    canvas.exit_edit_mode()
+    canvas.set_region_collapsed("r1", True)
+    canvas.enter_edit_mode()
+    assert "a4" in canvas.scene.node_items
+    assert not canvas.scene.is_region_collapsed("r1")
+
+
+def test_expanding_a_saved_collapse_in_run_mode_leaves_it_saved(canvas):
+    canvas.set_region_collapsed("r1", True)
+    canvas.exit_edit_mode()
+    assert canvas.set_region_collapsed("r1", False)
+    assert "a4" in canvas.scene.node_items
+    assert canvas.config.regions[0].collapsed is True
+    canvas.enter_edit_mode()
+    assert isinstance(canvas.scene.node_items["r1"], CollapsedRegionItem)
+
+
+def test_the_region_page_shows_run_modes_view(canvas):
+    canvas.exit_edit_mode()
+    canvas.set_region_collapsed("r1", True)
+    canvas._show_region_page(canvas.config.regions[0])
+    button = canvas.param_panel.region_collapse_button
+    assert button.text() == "Expand"
+    button.click()
+    assert "a4" in canvas.scene.node_items
+    assert canvas.config.regions[0].collapsed is None
+
+
+# ---------------------------------------------------------------------------
+# The buttons: the label's collapse, the node's expand, and all at once
+# ---------------------------------------------------------------------------
+
+
+def _shown_at(canvas, qtbot, item, scale: float):
+    """The canvas on screen at ``scale``, centred on ``item``, painted -- minimap and all -- and its view."""
+    from PyQt6.QtGui import QTransform  # noqa: PLC0415
+
+    canvas.resize(1400, 700)
+    canvas.show()
+    qtbot.waitExposed(canvas)
+    view = canvas._view
+    view.setTransform(QTransform.fromScale(scale, scale))
+    view.centerOn(item)
+    view.viewport().repaint()
+    qtbot.wait(20)
+    return view
+
+
+def _click(view, scene_point, *, drag_by: int = 0) -> None:
+    """Press at a scene point through the view's viewport, move by ``drag_by`` pixels, release."""
+    from PyQt6.QtCore import QPoint, Qt  # noqa: PLC0415
+    from PyQt6.QtTest import QTest  # noqa: PLC0415
+
+    at = view.mapFromScene(scene_point)
+    left, none = Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier
+    QTest.mousePress(view.viewport(), left, none, at)
+    if drag_by:
+        QTest.mouseMove(view.viewport(), at + QPoint(drag_by, 0))
+    QTest.mouseRelease(view.viewport(), left, none, at + QPoint(drag_by, 0))
+
+
+@pytest.mark.parametrize("mode", ["edit", "run"])
+def test_the_labels_button_collapses_the_region(canvas, qtbot, mode):
+    if mode == "run":
+        canvas.exit_edit_mode()
+    item = canvas.scene.region_items["r1"]
+    assert not item.collapse_button_rect().isNull()
+    item._on_collapse()
+    qtbot.waitUntil(lambda: "r1" in canvas.scene.node_items)
+    assert isinstance(canvas.scene.node_items["r1"], CollapsedRegionItem)
+    assert canvas.config.regions[0].collapsed is (True if mode == "edit" else None)
+
+
+def test_a_refused_collapse_fades_the_labels_button_and_says_why(canvas):
+    canvas.config.regions.append(RegionModel(id="r2", label="Late", members=["a5", "a6"], color=3))
+    canvas.scene.setup(canvas.config)
+    canvas.set_region_collapsed("r1", True)
+    assert canvas.scene.region_items["r2"].collapse_blocker == "It overlaps the collapsed region 'Middle'."
+
+
+def test_a_new_region_gets_its_button(canvas):
+    canvas.scene._region_manager.add_region(RegionModel(id="r3", label="Tail", members=["a7", "a8"], color=4))
+    canvas.scene._after_region_edit()
+    assert not canvas.scene.region_items["r3"].collapse_button_rect().isNull()
+
+
+@pytest.mark.parametrize("mode", ["edit", "run"])
+def test_clicking_the_collapsed_nodes_plus_expands_it(canvas, qtbot, mode):
+    """Through the view, with the minimap painting the same item at its own tiny scale."""
+    canvas.set_region_collapsed("r1", True)
+    if mode == "run":
+        canvas.exit_edit_mode()
+    node = canvas.scene.node_items["r1"]
+    view = _shown_at(canvas, qtbot, node, 1.0)
+    _click(view, node.mapToScene(node.marker_rect().center()))
+    qtbot.waitUntil(lambda: "a4" in canvas.scene.node_items)
+    assert canvas.config.regions[0].collapsed is (None if mode == "edit" else True)
+
+
+def test_a_press_on_the_plus_neither_drags_nor_selects(canvas, qtbot):
+    canvas.set_region_collapsed("r1", True)
+    node = canvas.scene.node_items["r1"]
+    view = _shown_at(canvas, qtbot, node, 1.0)
+    before = _positions(canvas.config)
+    _click(view, node.mapToScene(node.marker_rect().center()), drag_by=60)
+    qtbot.waitUntil(lambda: "a4" in canvas.scene.node_items)
+    assert _positions(canvas.config) == before
+    assert not canvas.scene.selectedItems()
+
+
+def test_zoomed_out_the_plus_is_not_a_button(canvas, qtbot):
+    canvas.set_region_collapsed("r1", True)
+    node = canvas.scene.node_items["r1"]
+    view = _shown_at(canvas, qtbot, node, 0.3)
+    _click(view, node.mapToScene(node.marker_rect().center()))
+    qtbot.wait(20)
+    assert isinstance(canvas.scene.node_items["r1"], CollapsedRegionItem)
+    assert node.expand_button_rect(0.3) is None and node.expand_button_rect(1.0) is not None
+
+
+def test_clicking_the_labels_minus_collapses_the_region(canvas, qtbot):
+    item = canvas.scene.region_items["r1"]
+    view = _shown_at(canvas, qtbot, item, 1.0)
+    _click(view, item.collapse_button_rect().center())
+    qtbot.waitUntil(lambda: "r1" in canvas.scene.node_items)
+    assert canvas.config.regions[0].collapsed is True
+    assert not canvas.scene.selectedItems()
+
+
+def test_collapse_all_and_expand_all_are_one_undoable_step(canvas):
+    canvas.config.regions.append(RegionModel(id="r3", label="Tail", members=["a7", "a8"], color=4))
+    canvas.scene.setup(canvas.config)
+    canvas._refresh_collapse_buttons()
+    assert canvas._collapse_all_btn.isEnabled() and not canvas._expand_all_btn.isEnabled()
+    canvas._collapse_all_btn.click()
+    assert [r.collapsed for r in canvas.config.regions] == [True, True]
+    assert not canvas._collapse_all_btn.isEnabled() and canvas._expand_all_btn.isEnabled()
+    canvas.undo()
+    assert [r.collapsed for r in canvas.config.regions] == [None, None]
+    canvas._collapse_all_btn.click()
+    canvas._expand_all_btn.click()
+    assert [r.collapsed for r in canvas.config.regions] == [None, None]
+
+
+def test_collapse_all_in_run_mode_is_a_view(canvas):
+    canvas.exit_edit_mode()
+    canvas._collapse_all_btn.click()
+    assert isinstance(canvas.scene.node_items["r1"], CollapsedRegionItem)
+    assert canvas.config.regions[0].collapsed is None
+
+
+def test_collapse_all_folds_the_larger_of_two_overlapping_regions(canvas):
+    canvas.config.regions.append(RegionModel(id="r2", label="Late", members=["a5", "a6"], color=3))
+    canvas.scene.setup(canvas.config)
+    assert canvas.scene.bulk_collapse_targets(True) == ["r1"]

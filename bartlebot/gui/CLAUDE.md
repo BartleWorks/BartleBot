@@ -673,6 +673,23 @@ expanded one and the folded view has no gap. Stepping into a collapsed region op
 (`set_expanded`), which makes its members visible and so unfolds its columns with
 nothing more.
 
+**Collapsing works in both modes, and means something different in each.** In Edit
+mode it sets the region's saved flag, as one undoable step. In Run mode it is a view:
+`EditScene`'s collapse overrides sit over the saved flags, are never written, and are
+dropped on entering Edit mode, which is where the saved state is decided. So "is this
+region collapsed" is `EditScene.is_region_collapsed` (or `subgraphs.is_collapsed` with
+the overrides), never `region.collapsed` read directly. `BotCanvas.set_region_collapsed`
+and `set_all_regions_collapsed` pick the meaning from the mode; everything that asks
+for a collapse -- the label's boxed minus, the collapsed node's boxed plus, the region
+page, the menus, and Bar B's *Collapse all* / *Expand all* -- goes through them. The two
+canvas buttons ask through `collapse_toggle_requested`, deferred a turn, since acting
+rebuilds the item that was clicked. The boxed plus is a button only when it is drawn:
+zoomed out past the compact level of detail, a collapsed node has no expand button.
+**Never decide a hit from what the last `paint()` drew**: the minimap paints every item
+too, at a tiny scale, straight after the canvas does, so "the last paint" is always the
+minimap's. Ask the view the event came through (`event.widget().parentWidget()`) for
+its level of detail instead -- the plus did the former first, and was never a button.
+
 ## A definition is a document of its own
 
 Opening a definition (double-click a call node, *Open definition*, or the library's
