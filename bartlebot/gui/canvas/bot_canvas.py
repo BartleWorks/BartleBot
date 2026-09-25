@@ -69,6 +69,7 @@ from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NodeItem
 from bartlebot.gui.canvas.param_panel import _ParamPanel
+from bartlebot.gui.canvas.repaint_trace import RepaintTracer
 from bartlebot.gui.canvas.subgraph_widgets import (
     Crumb,
     CrumbBar,
@@ -92,6 +93,7 @@ from bartlebot.nodes.param_schema import narrowest_type
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
+from bartlebot.store_roots import dev_mode
 from bartlebot.strategy_store import rekey_bot_strategy_states
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import (
@@ -1108,6 +1110,8 @@ class BotCanvas(QWidget):
     def _build_ui(self) -> None:
         self._scene = EditScene()
         self._view = _EditView(self._scene)
+        # #73: log any item change Qt never repainted. Developer builds only.
+        self._repaint_tracer = RepaintTracer(self._view) if dev_mode() else None
         self._param_panel = _ParamPanel()
 
         # ── Buttons ───────────────────────────────────────────────────

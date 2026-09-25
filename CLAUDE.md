@@ -15,6 +15,10 @@ shadows the repo's. `bartlebot/store_roots.py` has the detail. The suite clears 
 and `test_every_linked_bot_resolves_under_the_shipped_root_alone` catches a
 definition that only exists on your machine.
 
+It also turns on the canvas repaint tracer (`bartlebot/gui/canvas/repaint_trace.py`, for
+#73). The tracer logs a WARNING, with a screenshot under `logs/repaint/`, whenever an item
+change on the canvas is left unrepainted.
+
 ## Build / Test / Lint
 
 ```bash
