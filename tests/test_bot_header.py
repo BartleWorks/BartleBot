@@ -12,6 +12,7 @@ is still exercised there against this class.
 from __future__ import annotations
 
 import pytest
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QResizeEvent
 from PyQt6.QtWidgets import QApplication, QWidget
 
@@ -501,9 +502,15 @@ def test_a_typical_bot_keeps_its_tags_on_one_line_in_edit_mode(header):
 
     A single line means ``height() == _floor()``: the floor is one row of the editable
     form, and wrapping is the only thing that takes the field past it.
+
+    Off-screen, because a shown top-level window is clamped to its screen: CI's Windows
+    runner has a 1024x768 display, so a plain ``resize(1920, ...)`` there laid the row
+    out at about 1000px, where it does wrap, and the test failed on every push while
+    passing on any dev machine with a wider monitor.
     """
     header.set_config(_config(tags=["Gear", "Reagents", "Spellements", "Dungeon"]))
     header.set_editable(True)
+    header.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen)
     header.resize(1920, header.sizeHint().height())
     header.show()
     header.layout().activate()
