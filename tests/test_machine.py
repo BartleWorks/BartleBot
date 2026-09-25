@@ -227,6 +227,23 @@ async def test_stop_halts_after_current_node():
     assert machine.state == "state_a"  # advance was skipped
 
 
+async def test_stopping_the_run_cancels_a_drop_poll_still_in_flight():
+    """A poll outliving the run would report drops into a run that has already ended."""
+    poll = None
+
+    async def node(machine, clients, params):
+        nonlocal poll
+        poll = asyncio.create_task(asyncio.Event().wait())
+        machine.start_drop_poll(poll)
+        machine.stop()
+        return "SUCCESS"
+
+    machine = make_machine(node)
+    await asyncio.wait_for(machine.run(), timeout=1.0)
+    await asyncio.sleep(0)
+    assert poll.cancelled()
+
+
 async def test_stop_before_run_exits_immediately():
     """If stop() is called before run(), the loop should not execute any node."""
     visited = []

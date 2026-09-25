@@ -397,8 +397,32 @@ async def poll_combat_drops(machine, clients: list, slots: list[int]) -> list[st
     found: list[str] = []
     for slot, result in zip(slots, results):
         if isinstance(result, Exception):
-            # A failed read must not fail the fight that already succeeded.
-            machine.log(f"Drop detection error on client {slot}: {result}", logging.DEBUG)
+            # A failed read must not fail the fight that already succeeded. Logged here
+            # rather than through machine.log: this usually runs in the background, after
+            # the node that started it has finished.
+            logger.debug("Drop detection error on client %d: %s", slot, result)
             continue
         found.extend(result)
     return found
+
+
+def start_combat_drop_poll(machine, clients: list, slots: list[int]) -> None:
+    """Run ``poll_combat_drops`` for a finished fight in the background.
+
+    The fight's caller returns at once instead of waiting out the poll window, which a
+    fight that drops nothing pays in full. ``machine.start_drop_poll`` owns the task and
+    cancels it when the next fight's poll starts; its docstring says why that is safe.
+    """
+
+    async def _poll() -> None:
+        try:
+            found = await poll_combat_drops(machine, clients, slots)
+        except Exception:
+            logger.exception("Drop poll for client(s) %s raised", slots)
+            return
+        if found:
+            logger.info("Detected %d drop(s) on client(s) %s: %s", len(found), slots, ", ".join(found))
+        else:
+            logger.debug("No drops detected on client(s) %s", slots)
+
+    machine.start_drop_poll(asyncio.create_task(_poll()))

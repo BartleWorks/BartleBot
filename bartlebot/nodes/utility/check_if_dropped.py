@@ -49,9 +49,12 @@ NODE_SPEC = NodeSpec(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: machine.has_drop() (runtime state — no client API calls)
+    APIs: machine.wait_for_drop_poll(), machine.has_drop() (runtime state — no client API calls)
 
     Flow:
+      0. Wait for the last fight's drop poll, which runs in the background after the
+         fight ends. Without this, a node placed straight after handle_combat would
+         answer before that fight's drops were recorded.
       1. Normalize item_names to lowercase; return FALSE immediately if the list is empty.
       2. Resolve which 0-based client indices to check (defaults to all clients).
       3. If require_all: return TRUE only if every item appears for every checked client.
@@ -62,6 +65,8 @@ async def run(machine, clients: list, params: dict) -> str:
     item_names: list[str] = params.get("item_names") or []
     clients_to_check: list[int] = params.get("clients_to_check") or []
     require_all: bool = params.get("require_all", False)
+
+    await machine.wait_for_drop_poll()
 
     # Normalise item names for case-insensitive comparison.
     items = [n.strip().lower() for n in item_names if n.strip()]

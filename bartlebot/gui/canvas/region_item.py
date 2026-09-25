@@ -5,9 +5,10 @@ RegionItem — colored translucent background rect drawn behind member nodes.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import QRectF, Qt
+from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsSceneMouseEvent, QStyleOptionGraphicsItem
 
@@ -31,6 +32,10 @@ _PILL_PAD_X = 10  # horizontal padding inside pill
 _PILL_GAP = 4  # gap between pill bottom and region top
 _PILL_ALPHA = 80  # fill alpha for pill (~31% opacity)
 _BORDER_ALPHA = 100  # ~39% opacity for region border — recedes behind full-opacity edges
+_GLYPH_PX = 12  # the collapse button's box, in screen px
+_GLYPH_GAP = 6  # between the label and the collapse button
+_GLYPH_DIM_ALPHA = 90  # a collapse that is refused: the button is drawn, faded
+_GLYPH_HIT_PAD = 3  # screen px of slack around the button for the pointer
 
 
 class RegionItem(QGraphicsItem):
@@ -44,7 +49,10 @@ class RegionItem(QGraphicsItem):
     that answers a subgraph member with the call node it is drawn as, so a region
     holding an instance wraps the call node.
 
-    Clicking the region's pill label in edit mode selects all member nodes.
+    Clicking the region's pill label in edit mode selects all member nodes. The pill
+    also carries a collapse button (#67), a boxed minus at its right end, in both modes:
+    the scene hands over what a click does and, when a collapse would be refused, why --
+    the button is then drawn faded and says so instead.
     """
 
     def __init__(
@@ -62,6 +70,9 @@ class RegionItem(QGraphicsItem):
         self._rect = QRectF()
         self._pill_w_nominal: float = 0.0  # pill width in screen px (zoom-invariant); set on first paint
         self._interactive: bool = False
+        self._on_collapse: Callable[[], None] | None = None
+        self._collapse_blocker: str | None = None
+        self.setAcceptHoverEvents(True)
 
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable, False)
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsMovable, False)
@@ -116,7 +127,8 @@ class RegionItem(QGraphicsItem):
         painter.setFont(font)
         fm = painter.fontMetrics()
         text_w = fm.horizontalAdvance(self._label)
-        pill_w = text_w + pill_pad_x * 2
+        glyph_room = (_GLYPH_GAP + _GLYPH_PX) * s if self._on_collapse is not None else 0.0
+        pill_w = text_w + pill_pad_x * 2 + glyph_room
         pill_x = self._rect.left() + (self._rect.width() - pill_w) / 2
         pill_y = self._rect.top() - pill_h - pill_gap
         pill_rect = QRectF(pill_x, pill_y, pill_w, pill_h)
@@ -133,9 +145,64 @@ class RegionItem(QGraphicsItem):
         # Past the LOD clamp the pill stops compensating for zoom, so the label
         # shrinks with the real transform and eventually collapses Qt's glyph
         # buffer — see canvas.lod.  Test against raw_lod, not the clamped one.
+        text_rect = pill_rect.adjusted(0, 0, -glyph_room, 0)
         if text_is_legible(fm.height(), raw_lod):
             painter.setPen(label_color)
-            painter.drawText(pill_rect, Qt.AlignmentFlag.AlignCenter, self._label)
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, self._label)
+        if self._on_collapse is not None:
+            glyph = self._glyph_rect(pill_rect, s)
+            glyph_color = QColor(label_color)
+            if self._collapse_blocker is not None:
+                glyph_color.setAlpha(_GLYPH_DIM_ALPHA)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(glyph_color, 1.4 * s))
+            painter.drawRoundedRect(glyph, 2 * s, 2 * s)
+            inset = glyph.width() * 0.26
+            mid = glyph.center().y()
+            painter.drawLine(QPointF(glyph.left() + inset, mid), QPointF(glyph.right() - inset, mid))
+
+    @staticmethod
+    def _glyph_rect(pill_rect: QRectF, s: float) -> QRectF:
+        """The collapse button inside a pill drawn at scale ``s``: a square at its right end."""
+        size = _GLYPH_PX * s
+        return QRectF(pill_rect.right() - _PILL_PAD_X * s - size, pill_rect.center().y() - size / 2, size, size)
+
+    # ------------------------------------------------------------------
+    # The collapse button
+    # ------------------------------------------------------------------
+
+    def set_collapse_action(self, on_collapse: Callable[[], None] | None, blocker: str | None = None) -> None:
+        """What clicking the pill's collapse button does, or None for no button; ``blocker`` fades it."""
+        if on_collapse is self._on_collapse and blocker == self._collapse_blocker:
+            return
+        self._on_collapse = on_collapse
+        self._collapse_blocker = blocker
+        self.update()
+
+    @property
+    def collapse_blocker(self) -> str | None:
+        return self._collapse_blocker
+
+    def collapse_button_rect(self) -> QRectF:
+        """The collapse button in scene coordinates at the current zoom, or empty with none."""
+        if self._on_collapse is None:
+            return QRectF()
+        pill = self._pill_hit_rect()
+        if pill.isNull():
+            return QRectF()
+        s = pill.height() / _PILL_H
+        pad = _GLYPH_HIT_PAD * s
+        return self._glyph_rect(pill, s).adjusted(-pad, -pad, pad, pad)
+
+    def hoverMoveEvent(self, event) -> None:
+        on_button = self.collapse_button_rect().contains(event.pos())
+        if on_button:
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            self.setToolTip(self._collapse_blocker or "Collapse region")
+        else:
+            self.unsetCursor()
+            self.setToolTip("")
+        super().hoverMoveEvent(event)
 
     def shape(self) -> QPainterPath:
         # boundingRect() is intentionally oversized (8× pill height) so Qt never clips the
@@ -150,6 +217,16 @@ class RegionItem(QGraphicsItem):
         return path
 
     def mousePressEvent(self, event: QGraphicsSceneMouseEvent) -> None:
+        if (
+            event.button() == Qt.MouseButton.LeftButton
+            and self._on_collapse is not None
+            and self.collapse_button_rect().contains(event.pos())
+        ):
+            # In either mode: collapsing is a view in Run mode. A refused one does nothing.
+            if self._collapse_blocker is None:
+                self._on_collapse()
+            event.accept()
+            return
         if not self._interactive or self._rect.isNull():
             event.ignore()
             return

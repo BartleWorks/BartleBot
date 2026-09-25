@@ -1,5 +1,6 @@
 """Shared test doubles for node unit tests."""
 
+import asyncio
 import ctypes
 import itertools
 import logging
@@ -142,6 +143,7 @@ class FakeMachine:
         self.logs: list[tuple] = []
         self.drops: list[tuple] = []
         self.chat_baselines: dict[object, str] = {}
+        self.drop_poll: asyncio.Task | None = None
         # Which client hwnds are currently exempt from ClientHealthMonitor, and which have
         # been put back. A node that suspends and forgets to restore leaves a real crash
         # unnoticed for the rest of the run, so both sides are recorded.
@@ -166,6 +168,16 @@ class FakeMachine:
 
     def set_chat_baseline(self, client, text: str) -> None:
         self.chat_baselines[client] = text
+
+    def start_drop_poll(self, task: asyncio.Task) -> None:
+        """Mirror BotMachine: a new fight's poll cancels the previous one."""
+        if self.drop_poll is not None:
+            self.drop_poll.cancel()
+        self.drop_poll = task
+
+    async def wait_for_drop_poll(self) -> None:
+        if self.drop_poll is not None and not self.drop_poll.done():
+            await asyncio.wait({self.drop_poll})
 
     def suspend_health_checks_for(self, hwnds) -> None:
         """Record a health-check suspension. Real BotMachine flags them on its monitor."""
@@ -225,16 +237,24 @@ def message_box_patches(visible_buttons=()):
 class FakeParamForm:
     """Minimal stub for _DynamicParamForm used by recording workflows.
 
-    Recording workflows write through two methods, and snapshot/restore around them:
-      - set_str(key, value)    — stores a string field
-      - set_xyz(key, x, y, z) — stores an XYZ coordinate triple
+    Recording workflows write through three methods, and snapshot/restore around them:
+      - set_str(key, value)      — stores a string field
+      - set_xyz(key, x, y, z)   — stores an XYZ coordinate triple
+      - set_players(key, value) — stores a player list, read back by players(key)
 
-    Tests inspect .str_fields and .xyz_fields directly.
+    Tests inspect .str_fields, .xyz_fields and .player_fields directly.
     """
 
     def __init__(self):
         self.str_fields: dict[str, str] = {}
         self.xyz_fields: dict[str, tuple[float, float, float]] = {}
+        self.player_fields: dict[str, list[int]] = {}
+
+    def players(self, key: str) -> list[int]:
+        return self.player_fields.get(key, [])
+
+    def set_players(self, key: str, value: list[int]) -> None:
+        self.player_fields[key] = list(value)
 
     def set_str(self, key: str, value: str) -> None:
         self.str_fields[key] = value
@@ -243,11 +263,11 @@ class FakeParamForm:
         self.xyz_fields[key] = (x, y, z)
 
     def snapshot(self, keys) -> dict:
-        return {key: (self.str_fields.get(key), self.xyz_fields.get(key)) for key in keys}
+        return {key: (self.str_fields.get(key), self.xyz_fields.get(key), self.player_fields.get(key)) for key in keys}
 
     def restore(self, saved: dict) -> None:
-        for key, (text, xyz) in saved.items():
-            for fields, value in ((self.str_fields, text), (self.xyz_fields, xyz)):
+        for key, (text, xyz, players) in saved.items():
+            for fields, value in ((self.str_fields, text), (self.xyz_fields, xyz), (self.player_fields, players)):
                 if value is None:
                     fields.pop(key, None)
                 else:

@@ -196,6 +196,8 @@ class MainWindow(QMainWindow):
         self.right_sidebar = RightSidebar()
         self._game_view_panel = GameViewPanel()
         self.game_view = self._game_view_panel.game_view
+        # The authoring utilities in Bar A (#81); AppController drives them.
+        self.authoring_bar = self._game_view_panel.authoring_bar
 
         # Wire View menu
         self.action_toggle_game_view.triggered.connect(lambda: self.show_game_view(not self._game_view_visible))

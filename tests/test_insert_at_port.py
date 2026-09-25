@@ -220,24 +220,58 @@ def test_output_port_keeps_flag_guards(canvas):
     assert [(f.option, f.negate) for f in _t(c.config, new_id, "b").flags] == [("repeat", True)]
 
 
-def test_output_port_refuses_a_node_that_cannot_produce_the_return(canvas):
-    """A check_* node cannot return SUCCESS, so it would strand every guard."""
+def test_output_port_remaps_a_return_the_new_node_cannot_produce(canvas):
+    """A check_* node never returns SUCCESS, so the rerouted edges leave on its TRUE instead."""
     c = canvas(_out_config())
-    before = list(c.config.transitions)
 
-    result = c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health_and_mana")
+    new_id = c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health_and_mana")
 
-    assert result is None
-    assert c.config.transitions == before
+    assert new_id is not None
+    assert {(t.dest, t.when) for t in c.config.transitions if t.source == new_id} == {("b", "TRUE"), ("c", "TRUE")}
+    assert _t(c.config, "a", new_id).when == "SUCCESS"
 
 
-def test_the_refused_insert_creates_no_state(canvas):
+def test_a_remapped_edge_keeps_its_flag_guards(canvas):
+    config = _config(
+        transitions=[
+            TransitionModel(
+                trigger="advance", source="a", dest="b", when="SUCCESS", flags=[FlagCondition(option="repeat")]
+            ),
+        ]
+    )
+    c = canvas(config)
+
+    new_id = c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health_and_mana")
+
+    assert [f.option for f in _t(c.config, new_id, "b").flags] == ["repeat"]
+
+
+def test_a_remapped_edge_is_rekeyed_on_the_canvas(canvas):
+    """The scene's edge record carries `when` too; a stale one hides the edge from every lookup."""
     c = canvas(_out_config())
-    before = {s.id for s in c.config.states}
 
-    c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health_and_mana")
+    new_id = c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health_and_mana")
 
-    assert {s.id for s in c.config.states} == before
+    records = {(s, w, d) for s, w, d, _ei in c.scene.edge_items if s == new_id}
+    assert records == {(new_id, "TRUE", "b"), (new_id, "TRUE", "c")}
+
+
+def test_an_action_on_a_condition_port_leaves_on_success(canvas):
+    """The speed-authoring case (#85): building on from a condition's TRUE port."""
+    config = _config(
+        states=[
+            StateModel(id="cond", node_type="check_health_and_mana", params={}),
+            StateModel(id="b", node_type="change_realm", params={}),
+            StateModel(id="a", node_type="change_realm", params={}),
+        ],
+        transitions=[TransitionModel(trigger="advance", source="cond", dest="b", when="TRUE")],
+    )
+    c = canvas(config)
+
+    new_id = c.scene.insert_state_at_output_port("cond", "TRUE", "sleep")
+
+    assert _t(c.config, "cond", new_id).when == "TRUE"
+    assert _t(c.config, new_id, "b").when == "SUCCESS"
 
 
 def test_output_port_accepts_a_condition_node_on_a_condition_port(canvas):
@@ -309,14 +343,20 @@ def test_the_new_state_appears_on_the_canvas(canvas):
 
 
 def test_the_stored_position_matches_where_the_node_is_drawn(canvas):
-    """They diverged by one NODE_H on the edge-insert path before the insert-at-port work."""
+    """A stored y is the node's centre, as _flush_positions writes it and setup reads it.
+
+    Storing the item's top-left instead put a node saved before anything flushed it
+    back half a node higher than it was drawn.
+    """
+    from bartlebot.gui.canvas.node_item import NODE_H
+
     c = canvas()
 
     new_id = c.scene.insert_state_at_input_port("target", "sleep")
 
     state = next(s for s in c.config.states if s.id == new_id)
     item = c.scene.node_items[new_id]
-    assert (state.position["x"], state.position["y"]) == (item.pos().x(), item.pos().y())
+    assert (state.position["x"], state.position["y"]) == (item.pos().x(), item.pos().y() + NODE_H / 2)
 
 
 def test_inserting_at_an_unknown_state_is_refused(canvas):
@@ -453,21 +493,19 @@ def test_placement_holds_the_column_and_moves_the_row(canvas):
     The three sources fill column 0 at rows 0, 90 and 180, so the insert has to take
     a free row in that same column rather than drift into another one.
     """
+    from bartlebot.gui.canvas.node_item import NODE_H
+
     c = canvas(_grid_config())
 
     new_id = c.scene.insert_state_at_input_port("target", "sleep")
 
     assert c.scene.node_items[new_id].pos().x() == pytest.approx(0.0)
-    assert c.scene.node_items[new_id].pos().y() not in (0.0, 90.0, 180.0)
+    assert c.scene.node_items[new_id].pos().y() + NODE_H / 2 not in (0.0, 90.0, 180.0)
 
 
 def test_placement_lands_on_the_same_grid_the_bots_use(canvas):
-    """All 1264 nodes in the shipped library sit on whole GRID_W/GRID_H multiples.
-
-    The older "Add State Here" search offsets its rows by half a node, which is
-    collision-free but never row-aligned with anything already on the canvas.
-    """
-    from bartlebot.gui.canvas.node_item import GRID_H, GRID_W
+    """The shipped library's nodes sit with their left edge on GRID_W and centre on GRID_H multiples."""
+    from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H
 
     c = canvas(_grid_config())
 
@@ -475,21 +513,44 @@ def test_placement_lands_on_the_same_grid_the_bots_use(canvas):
 
     p = c.scene.node_items[new_id].pos()
     assert p.x() % GRID_W == pytest.approx(0)
-    assert p.y() % GRID_H == pytest.approx(0)
+    assert (p.y() + NODE_H / 2) % GRID_H == pytest.approx(0)
+
+
+def test_an_output_insert_lands_in_its_sources_row(canvas):
+    """The speed-authoring report (#85): each new node sat one row above the last."""
+    from bartlebot.gui.canvas.node_item import GRID_W
+
+    config = _config(
+        states=[
+            StateModel(id="a", node_type="enter_dungeon", params={}, position={"x": 0.0, "y": 0.0}),
+            StateModel(id="b", node_type="sleep", params={}, position={"x": 3 * GRID_W, "y": 0.0}),
+        ],
+        transitions=[TransitionModel(trigger="advance", source="a", dest="b", when="SUCCESS")],
+    )
+    c = canvas(config)
+
+    first = c.scene.insert_state_at_output_port("a", "SUCCESS", "sleep")
+    second = c.scene.insert_state_at_output_port(first, "SUCCESS", "sleep")
+
+    stored = {s.id: s.position for s in c.config.states}
+    assert stored[first] == {"x": GRID_W, "y": 0.0}
+    assert stored[second] == {"x": 2 * GRID_W, "y": 0.0}
+    items = c.scene.node_items
+    assert items[first].pos().y() == items["a"].pos().y() == items[second].pos().y()
 
 
 def test_free_position_near_snaps_an_already_clear_seed_to_the_grid(canvas):
     """Empty space still gets grid-aligned, so an insert never lands off-grid."""
     from PyQt6.QtCore import QPointF
 
-    from bartlebot.gui.canvas.node_item import GRID_H, GRID_W
+    from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H
 
     c = canvas(_grid_config())
 
     got = c.scene.free_position_near(QPointF(-4400.0, -4505.0), x_dir=-1)
 
     assert got.x() % GRID_W == pytest.approx(0)
-    assert got.y() % GRID_H == pytest.approx(0)
+    assert (got.y() + NODE_H / 2) % GRID_H == pytest.approx(0)
     assert abs(got.x() - (-4400.0)) <= GRID_W / 2
     assert abs(got.y() - (-4505.0)) <= GRID_H / 2
 

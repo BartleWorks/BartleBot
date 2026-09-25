@@ -397,7 +397,7 @@ states — the same thing copy does with any partial selection today.
 | **Autosave and crash recovery** | write and read the in-memory config, which is the composed one; recovery composes again on load like open does |
 | **Save As** | mints a new bot id only; member ids and every `source` are untouched, so the fork still follows the same definitions |
 | **Validation banner** | `cycle` is an error line and disables Run; `held`, `missing`, `invalid` and a stale override are warning lines |
-| **Region pill** | a two-squares glyph marks an instance; its dot is the state — none for linked, warning for outdated (`held`), error for missing (`missing`, `invalid`, `cycle`), accent while editing. `EditScene.refresh_region_states(report)` sets it from the last compose report; a linked region the report does not mention reads as linked |
+| **Link badge** | a two-squares glyph in the call node's corner marks an instance; its dot is the state — none for linked, warning for outdated (`held`), error for missing (`missing`, `invalid`, `cycle`), accent while its definition is open. `EditScene.refresh_region_states(report)` sets it from the last compose report; a linked region the report does not mention reads as linked |
 | **Combat assignments** | keyed by member id, so they survive updates; re-keyed once on conversion |
 | **`flush_regions`** | never auto-deletes a region with `source`, even with one member |
 | **Nesting** | an instance inserted while editing another becomes an inner linked region; compose recurses; push carries it in the definition's `regions` |
@@ -406,6 +406,5 @@ states — the same thing copy does with any partial selection today.
 ## Out of scope
 
 - Migrating the shipped library onto definitions (#59).
-- A collapsed rendering of an instance. Members are drawn as they are today.
 - #11 (default failure edge) and #12 (client subsets). Neither is a prerequisite:
   composed members are ordinary states, so both apply to them unchanged.

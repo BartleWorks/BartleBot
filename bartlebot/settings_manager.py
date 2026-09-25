@@ -81,15 +81,54 @@ class _CanvasSettings(BaseModel):
     bot_library_path: str = "bots"
 
 
+# The authoring utilities' hotkeys (#81), by action id -- the ids are
+# ``authoring_tools.AuthoringAction``'s values, spelled out here rather than imported so
+# loading settings does not pull in the combat runner. An empty string is an unbound action.
+DEFAULT_AUTHORING_HOTKEYS: dict[str, str] = {
+    "xyz_sync": "F1",
+    "tp_to_focused": "F2",
+    "toggle_speed": "F3",
+    "toggle_combat": "F4",
+    "toggle_dialogue": "F5",
+    "toggle_speed_authoring": "F6",
+}
+
+# The walking-speed multiple the speed toggle applies. 1.0 is the game's own speed.
+SPEED_MULTIPLIER_RANGE = (1.0, 10.0)
+
+
+class _AuthoringSettings(BaseModel):
+    speed_multiplier: float = 5.0
+    hotkeys: dict[str, str] = dict(DEFAULT_AUTHORING_HOTKEYS)
+
+
 _SECTION_MODELS: dict[str, type[BaseModel]] = {
     "general": _GeneralSettings,
     "game_embed": _GameEmbedSettings,
     "canvas": _CanvasSettings,
+    "authoring": _AuthoringSettings,
 }
 
 # ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------
+
+# The node hotbar's slots, keys 1-9 then 0. The steps recorded inside a dungeon, in the
+# order an author usually meets them (#85): walk in, talk, reposition, fight, tidy up.
+# The shipped bots use enter_zone, interact, handle_combat and teleport_to_coordinates
+# most; the four after are what else turns up between entering a dungeon and leaving it.
+DEFAULT_HOTKEY_NODES: tuple[str, ...] = (
+    "enter_zone",
+    "interact",
+    "teleport_to_coordinates",
+    "handle_combat",
+    "collect_wisps",
+    "wait_for_dialogue",
+    "sleep",
+    "enter_zone_via_object",
+    "",
+    "",
+)
 
 _DEFAULTS: dict[str, Any] = {
     "general": {
@@ -140,6 +179,10 @@ _DEFAULTS: dict[str, Any] = {
         "grid_style": "dots",
         "bot_library_path": "bots",
     },
+    "authoring": {
+        "speed_multiplier": 5.0,
+        "hotkeys": dict(DEFAULT_AUTHORING_HOTKEYS),
+    },
     # accounts and launch_profiles are deliberately absent: they live one level up, in
     # the vendor-level store (shared.account_store), because a second product by this
     # publisher needs them and none of the rest of this file. `_migrate_accounts` moves
@@ -149,7 +192,9 @@ _DEFAULTS: dict[str, Any] = {
     "autosave_origins": {},
     "recently_used_nodes": [],
     "favorite_nodes": [],
-    "favorited_hotkey_nodes": ["", "", "", "", "", "", "", "", "", ""],  # indices 0–9 → keys 1–9, 0
+    "favorited_hotkey_nodes": list(DEFAULT_HOTKEY_NODES),  # indices 0–9 → keys 1–9, 0
+    # Whether an install has had DEFAULT_HOTKEY_NODES offered once. See _seed_hotkey_nodes.
+    "hotkey_nodes_seeded": False,
     "custom_theme": {},  # {token_name: "#rrggbb"} — only overridden tokens stored
     "recent_zones": [],
     "recent_friend_names": [],
@@ -328,6 +373,21 @@ class SettingsManager:
                 self._data[section_key] = copy.deepcopy(_DEFAULTS[section_key])
 
         self._migrate_accounts()
+        self._seed_hotkey_nodes()
+
+    def _seed_hotkey_nodes(self) -> None:
+        """Give an install whose hotbar was never filled the default slots, once.
+
+        ``save`` writes every default, so a settings file from before the defaults
+        existed holds ten empty slots rather than no key, and merging alone would never
+        reach it. An empty hotbar is taken as that file, once; the marker stops it
+        being refilled after, so a user who clears every slot keeps them clear.
+        """
+        if self._data.get("hotkey_nodes_seeded"):
+            return
+        self._data["hotkey_nodes_seeded"] = True
+        if not any(self._data.get("favorited_hotkey_nodes") or []):
+            self._data["favorited_hotkey_nodes"] = list(DEFAULT_HOTKEY_NODES)
 
     def _migrate_accounts(self) -> None:
         """Hand a settings file's own accounts and launch profiles to the shared store.
@@ -734,6 +794,44 @@ class SettingsManager:
     def clear_favorited_hotkey_node(self, slot: int) -> None:
         """Clear the assignment for the given 0-based slot."""
         self.set_favorited_hotkey_node(slot, "")
+
+    @property
+    def speed_multiplier(self) -> float:
+        """The walking-speed multiple the authoring speed toggle applies, clamped to its range."""
+        low, high = SPEED_MULTIPLIER_RANGE
+        try:
+            value = float(self.get("authoring", "speed_multiplier", default=5.0))
+        except (TypeError, ValueError):
+            return 5.0
+        return min(max(value, low), high)
+
+    @speed_multiplier.setter
+    def speed_multiplier(self, value: float) -> None:
+        self.set("authoring", "speed_multiplier", value=float(value))
+
+    @property
+    def authoring_hotkeys(self) -> dict[str, str]:
+        """Each authoring action's key binding, e.g. ``{"xyz_sync": "F1"}``. Empty = unbound.
+
+        Every known action is present: one missing from the file falls back to its default.
+        """
+        stored = self.get("authoring", "hotkeys", default={}) or {}
+        return {action: str(stored.get(action, default)) for action, default in DEFAULT_AUTHORING_HOTKEYS.items()}
+
+    def set_authoring_hotkey(self, action: str, binding: str) -> None:
+        """Bind *action* to *binding* (``""`` unbinds it). Not saved; the caller saves.
+
+        Only a binding that differs from the default is stored, and one set back to its
+        default is dropped. Storing the whole set froze every default the first time the
+        Authoring tab was applied, so when the defaults were renumbered a user who had never
+        chosen a key kept speed-authoring on its old F5 -- on top of auto-dialogue's new F5.
+        """
+        stored = dict(self.get("authoring", "hotkeys", default={}) or {})
+        if binding == DEFAULT_AUTHORING_HOTKEYS.get(action):
+            stored.pop(action, None)
+        else:
+            stored[action] = binding
+        self.set("authoring", "hotkeys", value=stored)
 
     @property
     def recent_zones(self) -> list[str]:

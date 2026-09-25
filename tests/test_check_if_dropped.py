@@ -1,5 +1,7 @@
 """Unit tests for the check_if_dropped condition node."""
 
+import asyncio
+
 import bartlebot.nodes.utility.check_if_dropped as cid
 from tests.conftest import FakeClient, FakeMachine
 
@@ -149,4 +151,17 @@ async def test_require_all_single_client_single_item_true():
         [FakeClient()],
         {"item_names": ["IronBloom"], "require_all": True},
     )
+    assert result == "TRUE"
+
+
+async def test_waits_for_the_last_fights_drop_poll():
+    """Placed straight after handle_combat, the node must not answer before that fight's drops are in."""
+    machine = FakeMachine()
+
+    async def _poll():
+        await asyncio.sleep(0.02)
+        machine.on_drop("IronBloom", 1, 0)
+
+    machine.start_drop_poll(asyncio.create_task(_poll()))
+    result = await cid.run(machine, [FakeClient()], {"item_names": ["IronBloom"], "clients_to_check": [1]})
     assert result == "TRUE"

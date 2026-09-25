@@ -112,6 +112,12 @@ DIALOG_FAST_POLL_INTERVAL = 0.05
 # Once a banner is dismissed, the watcher switches to this faster rate until a full
 # Safety Delay window has elapsed with no further dialogue.
 
+DIALOG_PAGE_SETTLE = 0.15
+# Seconds a dialogue press holds its client's dialogue lock after the press, so the next
+# page is on screen before anyone reads the buttons again. The ambient watcher and a node's
+# own advance loop both press dialogue; two reads of the page before a side quest offer,
+# each followed by a press, would put the second press on the offer's ACCEPT.
+
 
 REAGENT_DROP_MESSAGE_TIMEOUT = 3.0
 # Seconds to keep watching the chat log for a drop announcement after a reagent
@@ -135,11 +141,12 @@ COMBAT_DROP_MESSAGE_TIMEOUT = 15.0
 # and that is exactly when a long-running session lags hardest, so the round-trip
 # that is normally instant can stretch to many seconds.
 #
-# Paid in full only by a fight that drops nothing at all — poll_new_drops returns
-# as soon as a line appears. It is also not the last line of defence: the caller
-# carries its chat baseline between fights, so a message that beats even this
-# window is recorded late by the next fight's poll rather than lost. That makes
-# this value an attribution-latency knob, not a correctness one.
+# The poll runs in the background (combat_runner.start_combat_drop_poll), so this
+# window never holds up the next node, even on a fight that drops nothing and waits
+# all of it out; only check_if_dropped waits for it. Nor is it the last line of
+# defence: the caller carries its chat baseline between fights, so a message that
+# beats even this window is recorded late by the next fight's poll rather than lost.
+# That makes this value an attribution-latency knob, not a correctness one.
 
 COMBAT_DROP_MESSAGE_POLL = 0.5
 # How often to re-read the chat log while waiting for a combat drop announcement.
@@ -583,3 +590,9 @@ def jitter(base: float, factor: float = 0.2) -> float:
     human-action simulations.
     """
     return base * (1.0 + random.uniform(-factor, factor))
+
+
+SPEED_REAPPLY_INTERVAL = 0.3
+# Seconds between the authoring speed toggle's checks that each client still walks at the
+# boosted speed. The game rewrites the multiplier on every zone change and mount, so a
+# boost written once is gone after the first door; this is how soon it comes back.

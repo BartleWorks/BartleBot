@@ -81,6 +81,8 @@ class BotMachine:
         # said. Shared by handle_combat and the ambient combat watcher so the two do not
         # absorb each other's announcements.
         self._chat_baselines: dict[object, str] = {}
+        # The last fight's drop poll, left running so the FSM can move on. See start_drop_poll.
+        self._drop_poll: asyncio.Task | None = None
         self._resume_event = asyncio.Event()
         self._resume_event.set()  # not paused by default
         # Set by the run loop once it has actually reached its paused wait. pause() only
@@ -287,6 +289,32 @@ class BotMachine:
         a lost one — the next fight's poll still has the old baseline to diff against.
         """
         self._chat_baselines[client] = text
+
+    def start_drop_poll(self, task: asyncio.Task) -> None:
+        """Adopt *task* as the fight's drop poll, cancelling the previous fight's.
+
+        A fight hands its poll here instead of awaiting it: an announcement can take many
+        seconds to arrive, and on a fight that dropped nothing the poll waits out its whole
+        window. Nothing downstream needs the answer at once except ``check_if_dropped``,
+        which calls ``wait_for_drop_poll``.
+
+        Cancelling the old poll loses nothing. It only moves a baseline forward on a hit,
+        and records that hit with no await in between, so a cancel lands either before
+        it saw the line — leaving the line ahead of the baseline for the new poll — or
+        after it has been fully recorded. Letting both run would diff the same baseline
+        twice and report the same drop twice.
+        """
+        if self._drop_poll is not None:
+            self._drop_poll.cancel()
+        self._drop_poll = task
+
+    async def wait_for_drop_poll(self) -> None:
+        """Wait until the last fight's drop poll has finished. Returns at once if none is running.
+
+        Waiting never cancels the poll, even if the waiter is itself cancelled.
+        """
+        if self._drop_poll is not None and not self._drop_poll.done():
+            await asyncio.wait({self._drop_poll})
 
     # --- Public API ---
 
@@ -590,6 +618,8 @@ class BotMachine:
             watcher.cancel()
             combat_watcher.cancel()
             health_task.cancel()
+            if self._drop_poll is not None:
+                self._drop_poll.cancel()
             for t in (watcher, combat_watcher, health_task):
                 try:
                     await t
@@ -597,7 +627,7 @@ class BotMachine:
                     pass
 
     async def _ambient_dialog_watcher(self) -> None:
-        """Background task: dismiss any open dialog on all clients.
+        """Background task: advance any open dialog on all clients, declining side quests.
 
         Polls at POLL_INTERVAL normally. Once a banner is dismissed, switches to
         DIALOG_FAST_POLL_INTERVAL until a full Safety Delay window has elapsed with
@@ -615,7 +645,7 @@ class BotMachine:
             if not self.clients:
                 continue
             results = await asyncio.gather(
-                *[node_helpers.dismiss_ambient_dialog_once(c) for c in self.clients],
+                *[node_helpers.advance_dialog_once(c) for c in self.clients],
                 return_exceptions=True,
             )
             for i, r in enumerate(results):
@@ -635,10 +665,10 @@ class BotMachine:
         from bartlebot.nodes import node_helpers
         from bartlebot.nodes.combat_runner import (
             _run_combat,
-            poll_combat_drops,
             resolve_combat,
             seed_chat_baselines,
             slots_in_battle,
+            start_combat_drop_poll,
         )
 
         while not self._stop_flag.is_set():
@@ -720,9 +750,8 @@ class BotMachine:
 
                     self._log_machine("Ambient combat: SprintyCombat finished", logging.DEBUG)
 
-                    drops_found = await poll_combat_drops(self, battling, battling_slots)
-                    for item_name in drops_found:
-                        self._log_machine(f"Ambient combat drop: {item_name}")
+                    # In the background, so the FSM resumes as soon as the fight is over.
+                    start_combat_drop_poll(self, battling, battling_slots)
             finally:
                 if self._combat_auto_paused:
                     self._combat_auto_paused = False

@@ -192,6 +192,8 @@ class _ReleaseStub:
         self._shutdown_task = MagicMock()
         self._clients_released = False
         self._client_manager = MagicMock()
+        self._authoring = MagicMock()
+        self._authoring.shutdown = AsyncMock()
         if raises:
             self._client_manager.shutdown = AsyncMock(side_effect=RuntimeError("boom"))
         else:
@@ -207,6 +209,8 @@ async def test_the_release_stops_the_bot_and_then_lets_the_window_close(qapp):
 
     assert stub.stopped, "a running bot would keep reading hooks that are being torn down"
     stub._client_manager.shutdown.assert_awaited_once_with(close_windows=True)
+    # Before the unhook: a boosted speed can only be written back while the hook is live.
+    stub._authoring.shutdown.assert_awaited_once()
     assert stub._clients_released is True
     assert stub._shutdown_task is None
 

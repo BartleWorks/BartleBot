@@ -5,6 +5,7 @@ import fnmatch
 import logging
 import math
 import re
+import weakref
 from collections.abc import Awaitable, Callable, Collection
 from dataclasses import dataclass
 from typing import NamedTuple
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 from bartlebot import dialog_captions, wizard_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
+    DECLINE_QUEST_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
     FRIENDS_LIST_WINDOW_NAME,
     FRIENDS_LIST_WINDOW_NAMES,
@@ -30,6 +32,7 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
 )
 from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     DIALOG_FAST_POLL_INTERVAL,
+    DIALOG_PAGE_SETTLE,
     DIALOG_TIMEOUT,
     MAX_RETRIES,
     OBJECT_USE_DELAY,
@@ -106,12 +109,44 @@ DUNGEON_ENTRANCE_PROMPT = PromptKind(
 )
 
 
-async def dismiss_ambient_dialog_once(client) -> bool:
-    """If client has an advanceable dialog open, press SPACEBAR to dismiss it. Returns True if dismissed."""
-    if await is_visible_by_path(client, ADVANCE_DIALOG_PATH):
-        await client.send_key(Keycode.SPACEBAR, 0.1)
+# One lock per client around a dialogue page's read and its press. See DIALOG_PAGE_SETTLE.
+_dialog_locks: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
+
+
+def _dialog_lock(client) -> asyncio.Lock:
+    lock = _dialog_locks.get(client)
+    if lock is None:
+        lock = _dialog_locks[client] = asyncio.Lock()
+    return lock
+
+
+async def advance_dialog_once(client) -> bool:
+    """Advance *client*'s open dialogue by one page, declining a side quest rather than taking it.
+
+    The one place dialogue is pressed. A side quest's offer page puts ACCEPT on the right
+    button, the same one SPACEBAR presses to advance every other page, so pressing through
+    blind takes every side quest an NPC offers. The offer page is the only one with a left
+    button (DECLINE), so while that shows it is clicked instead, and nothing else is pressed.
+
+    DECLINE is only read once the right button shows: a child's visibility is its own flag
+    (see is_visible_by_path), and the right button is the one already trusted to say a
+    dialogue is open.
+
+    Returns True while dialogue is open -- pressed, or a DECLINE that could not be clicked,
+    which the next call tries again rather than falling back to SPACEBAR.
+    """
+    async with _dialog_lock(client):
+        if not await is_visible_by_path(client, ADVANCE_DIALOG_PATH):
+            return False
+        if await is_visible_by_path(client, DECLINE_QUEST_PATH):
+            if await click_by_path(client, DECLINE_QUEST_PATH):
+                logger.info("Declined a side quest offer")
+            else:
+                logger.debug("A side quest offer's DECLINE could not be clicked yet")
+        else:
+            await client.send_key(Keycode.SPACEBAR, 0.1)
+        await asyncio.sleep(DIALOG_PAGE_SETTLE)
         return True
-    return False
 
 
 async def advance_dialogue_until_clear(
@@ -121,9 +156,9 @@ async def advance_dialogue_until_clear(
 ) -> bool:
     """Advance dialogue on all clients until all are dialogue-free for safety_delay seconds.
 
-    Presses SPACEBAR on any client that has an open dialogue banner, then resets the quiet
-    timer. Polls at DIALOG_FAST_POLL_INTERVAL after a dismissal and POLL_INTERVAL during the
-    quiet phase (no dialogue detected). Returns True when all clients have been dialogue-free
+    Advances any client that has an open dialogue banner (advance_dialog_once, which declines
+    a side quest offer), then resets the quiet timer. Polls at DIALOG_FAST_POLL_INTERVAL
+    after a dismissal and POLL_INTERVAL during the quiet phase (no dialogue detected). Returns True when all clients have been dialogue-free
     for safety_delay seconds. Returns False if timeout expires while clients are still in
     dialogue.
     """
@@ -133,7 +168,7 @@ async def advance_dialogue_until_clear(
 
     while True:
         now = loop.time()
-        dialogs = await asyncio.gather(*[is_visible_by_path(c, ADVANCE_DIALOG_PATH) for c in clients])
+        dialogs = await asyncio.gather(*[advance_dialog_once(c) for c in clients])
 
         if not any(dialogs) and (now - quiet_since) >= safety_delay:
             return True
@@ -142,7 +177,6 @@ async def advance_dialogue_until_clear(
             return False
 
         if any(dialogs):
-            await asyncio.gather(*[c.send_key(Keycode.SPACEBAR, 0.1) for c, d in zip(clients, dialogs) if d])
             quiet_since = loop.time()
             await asyncio.sleep(DIALOG_FAST_POLL_INTERVAL)
         else:
@@ -727,7 +761,8 @@ def entity_name_matches(actual: str, pattern: str) -> bool:
 
       * No metacharacters — case-insensitive *substring* match, which is what
         WizSprinter's get_base_entities_with_vague_name() does. "Cyclops" finds
-        "Cyclops/CyclopsMinion". Every existing bot file relies on this.
+        "Cyclops/CyclopsMinion". The reagent bots rely on this: "Ore" is a category.
+        A fight does not use it directly -- see fight_target_rank.
       * With metacharacters — case-insensitive glob against the *whole* name, so
         "*Bandit*" matches anywhere but "Bandit*" only matches names that start
         with it. Anchoring is the point: substring matching alone cannot express
@@ -751,6 +786,11 @@ def entity_name_predicate(pattern: str):
     Suitable for WizSprinter's find_closest_by_predicate() and
     get_base_entities_with_predicate().
     """
+    return _template_name_predicate(lambda name: entity_name_matches(name, pattern))
+
+
+def _template_name_predicate(matches: Callable[[str], bool]):
+    """An async entity predicate that applies *matches* to the entity's template name."""
 
     async def _matches(entity) -> bool:
         # An entity can despawn mid-scan; WizSprinter's own vague-name predicate
@@ -759,7 +799,7 @@ def entity_name_predicate(pattern: str):
             template = await entity.object_template()
             if template is None:
                 return False
-            return entity_name_matches(await template.object_name(), pattern)
+            return matches(await template.object_name())
         except (ValueError, MemoryReadError):
             return False
 
@@ -777,6 +817,53 @@ async def find_closest_entity_by_name(client, pattern: str):
     if not has_glob(pattern):
         return await client.find_closest_by_vague_name(pattern)
     return await client.find_closest_by_predicate(entity_name_predicate(pattern))
+
+
+#: Template names that share a mob's name without being its fight: the StandIn is the actor
+#: that speaks a mob's pre-battle dialogue (it has no display name of its own), and -mini is
+#: the pet copy of a boss. Teleporting onto a StandIn plays the speech and never starts the
+#: fight, which is how Atlantea's Voracious Legionnaires stalled.
+_NOT_A_FIGHT_MARKERS = ("standin", "-mini")
+
+
+def fight_target_rank(actual: str | None, pattern: str) -> int | None:
+    """How well an entity's template name answers a fight's plain enemy name, for handle_combat.
+
+    0 is the name itself. 1 is a name merely containing it -- the advanced-mode ``Adv_``
+    copy, a ``_Hard`` copy -- other than a StandIn or pet copy, unless *pattern* names one
+    itself. None is no match. Exact wins outright rather than by distance: a substring can
+    also be a different boss (``Golem-Steel-MBBoss-L50-1`` is Mr. Incinerator, not Bellows).
+    """
+    if not actual:
+        return None
+    name, wanted = actual.lower(), pattern.lower()
+    if name == wanted:
+        return 0
+    if wanted not in name:
+        return None
+    if any(marker in name and marker not in wanted for marker in _NOT_A_FIGHT_MARKERS):
+        return None
+    return 1
+
+
+async def find_closest_fight_target(client, pattern: str):
+    """The closest entity to fight for *pattern*, or None: an exact name first, then a fallback.
+
+    See fight_target_rank for the ranking. A pattern with wildcards names its own anchoring,
+    so it matches as find_closest_entity_by_name does. The fallback costs a second scan of
+    the entity list, paid only when nothing carries the name exactly -- in advanced mode,
+    or while the mob has not loaded.
+    """
+    if has_glob(pattern):
+        return await find_closest_entity_by_name(client, pattern)
+    exact = await client.find_closest_by_predicate(
+        _template_name_predicate(lambda n: fight_target_rank(n, pattern) == 0)
+    )
+    if exact is not None:
+        return exact
+    return await client.find_closest_by_predicate(
+        _template_name_predicate(lambda n: fight_target_rank(n, pattern) == 1)
+    )
 
 
 async def find_entities_by_name(client, pattern: str) -> list:

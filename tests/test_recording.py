@@ -1,7 +1,7 @@
 """Tests for bartlebot.gui.canvas.recording."""
 
 import asyncio
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
 from wizwalker import XYZ
@@ -12,6 +12,7 @@ from bartlebot.gui.canvas.recording import (
     _wait_for_zone_name,
     _zone_display,
     cancel_active_recording,
+    is_recorded_label,
     is_recording,
     run_recording,
 )
@@ -207,6 +208,7 @@ def test_recordable_nodes_contains_all_expected_types():
         "enter_zone_via_object",
         "mark_location",
         "teleport_to_marked_location",
+        "handle_combat",
     }
     assert RECORDABLE_NODES == expected
 
@@ -268,17 +270,23 @@ async def test_a_recording_fills_exactly_the_nodes_zone_and_xyz_params(node_type
     from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS  # noqa: PLC0415
 
     client = _client()
-    # Enough for any workflow: the prompt shows then goes, a load starts then ends.
+    # Enough for any workflow: the prompt shows then goes, a load starts then ends, a mob is near.
     client.is_in_npc_range.side_effect = [True, False]
     client.is_loading.side_effect = [True, False]
+    client.find_closest_mob.return_value = _mob("Test-Mob")
     form = FakeParamForm()
     on_status, on_btn, try_set_label = _callbacks()
 
-    await run_recording(node_type, client, form, on_status, on_btn, try_set_label)
+    await run_recording(node_type, client, form, on_status, on_btn, try_set_label, player=1)
 
     fields = NODE_PARAM_SCHEMAS[node_type]
-    assert set(form.str_fields) == {f.key for f in fields if f.type == "zone"}
+    # A plain-text param is filled only by the workflow that names it; every other is a zone.
+    assert set(form.str_fields) == {f.key for f in fields if f.type == "zone"} | (
+        {f.key for f in fields if f.type == "str"} & set(recording._REGISTRY[node_type].keys())
+    )
+    assert set(form.str_fields) <= {f.key for f in fields}
     assert set(form.xyz_fields) == {f.key for f in fields if f.type == "xyz"}
+    assert set(form.player_fields) <= {f.key for f in fields if f.type == "player_list"}
     assert on_status.call_args_list[-1][0][0].startswith("Done")
 
 
@@ -852,3 +860,174 @@ async def test_enter_zone_interact_exception(zero_poll):
     await run_recording("enter_zone_via_object", client, form, on_status, on_btn, try_set_label)
 
     assert on_status.call_args_list[-1][0][0].startswith("Error:")
+
+
+# ---------------------------------------------------------------------------
+# interact / interact_menu — naming the target and the player who used it
+# ---------------------------------------------------------------------------
+
+
+def _interact_client():
+    """A client that walks into range for one poll, then out."""
+    client = FakeClient()
+    client.zone_name.return_value = "Zone/Name"
+    client.body.position.return_value = XYZ(1.0, 2.0, 3.0)
+    client.is_in_npc_range.side_effect = [True, False]
+    return client
+
+
+@pytest.fixture
+def prompt_title(monkeypatch):
+    """The interact prompt's title, as the game would show it."""
+    read = AsyncMock(return_value="<center>Cyrus Drake")
+    monkeypatch.setattr(recording.node_helpers, "get_text_by_path", read)
+    return read
+
+
+@pytest.mark.parametrize("node_type", ["interact", "interact_menu"])
+async def test_interact_is_named_after_the_prompt_title(zero_poll, prompt_title, node_type):
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording(node_type, _interact_client(), FakeParamForm(), on_status, on_btn, try_set_label)
+
+    try_set_label.assert_called_once_with("Interact with Cyrus Drake")
+    assert prompt_title.await_args.args[1] == recording.NPC_RANGE_TITLE_PATH
+
+
+async def test_interact_with_no_readable_title_is_named_after_the_zone(zero_poll, prompt_title):
+    prompt_title.return_value = ""
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("interact", _interact_client(), FakeParamForm(), on_status, on_btn, try_set_label)
+
+    try_set_label.assert_called_once_with(_zone_display("Zone/Name"))
+
+
+async def test_a_title_read_that_fails_does_not_fail_the_recording(zero_poll, prompt_title):
+    prompt_title.side_effect = RuntimeError("stale window")
+    form = FakeParamForm()
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("interact", _interact_client(), form, on_status, on_btn, try_set_label)
+
+    try_set_label.assert_called_once_with(_zone_display("Zone/Name"))
+    assert form.xyz_fields["interact_xyz"] == (1.0, 2.0, 3.0)
+
+
+async def test_apply_level_scaling_keeps_its_zone_label(zero_poll, prompt_title):
+    """Only interact and interact_menu are named after their target."""
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("apply_level_scaling", _interact_client(), FakeParamForm(), on_status, on_btn, try_set_label)
+
+    try_set_label.assert_called_once_with(_zone_display("Zone/Name"))
+
+
+@pytest.mark.parametrize("node_type", ["interact", "interact_menu"])
+async def test_an_empty_player_list_becomes_the_recorded_player(zero_poll, node_type):
+    form = FakeParamForm()
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording(node_type, _interact_client(), form, on_status, on_btn, try_set_label, player=2)
+
+    assert form.player_fields["interact_clients"] == [2]
+
+
+async def test_a_filled_player_list_is_left_alone(zero_poll):
+    form = FakeParamForm()
+    form.set_players("interact_clients", [1, 3])
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("interact", _interact_client(), form, on_status, on_btn, try_set_label, player=2)
+
+    assert form.player_fields["interact_clients"] == [1, 3]
+
+
+async def test_no_player_named_leaves_the_player_list_empty(zero_poll):
+    form = FakeParamForm()
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("interact", _interact_client(), form, on_status, on_btn, try_set_label)
+
+    assert "interact_clients" not in form.player_fields
+
+
+# ---------------------------------------------------------------------------
+# handle_combat  (_Enemy: the closest mob, at once)
+# ---------------------------------------------------------------------------
+
+
+def _mob(name):
+    mob = MagicMock()
+    mob.object_name = AsyncMock(return_value=name)
+    return mob
+
+
+async def test_handle_combat_records_the_closest_mob_and_its_display_name(monkeypatch):
+    names = {"AQ-Centaur": "Crescent Moon Centaur"}
+    monkeypatch.setattr(recording.entity_names, "display_name", names.get)
+    client = FakeClient()
+    client.find_closest_mob.return_value = _mob("AQ-Centaur")
+    form = FakeParamForm()
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("handle_combat", client, form, on_status, on_btn, try_set_label)
+
+    assert form.str_fields["enemy"] == "AQ-Centaur"
+    try_set_label.assert_called_once_with("Defeat Crescent Moon Centaur")
+    assert on_status.call_args_list[-1][0][0] == "Done — Crescent Moon Centaur"
+    assert call("Stop") not in on_btn.call_args_list, "an instant capture has nothing to stop"
+
+
+async def test_handle_combat_falls_back_to_the_object_name(monkeypatch):
+    monkeypatch.setattr(recording.entity_names, "display_name", lambda *_: None)
+    client = FakeClient()
+    client.find_closest_mob.return_value = _mob("Test-Unnamed-Mob")
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("handle_combat", client, FakeParamForm(), on_status, on_btn, try_set_label)
+
+    try_set_label.assert_called_once_with("Defeat Test-Unnamed-Mob")
+
+
+async def test_handle_combat_with_no_mob_nearby_changes_nothing():
+    form = FakeParamForm()
+    form.set_str("enemy", "Kept")
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("handle_combat", FakeClient(), form, on_status, on_btn, try_set_label)
+
+    assert form.str_fields["enemy"] == "Kept"
+    try_set_label.assert_not_called()
+    assert on_status.call_args_list[-1][0][0] == "No enemy nearby."
+
+
+async def test_handle_combat_read_failure_reports_and_restores():
+    client = FakeClient()
+    client.find_closest_mob.side_effect = RuntimeError("stale entity list")
+    form = FakeParamForm()
+    form.set_str("enemy", "Kept")
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("handle_combat", client, form, on_status, on_btn, try_set_label)
+
+    assert form.str_fields["enemy"] == "Kept"
+    assert on_status.call_args_list[-1][0][0].startswith("Error:")
+
+
+# ---------------------------------------------------------------------------
+# is_recorded_label — which labels recording again may replace
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "label",
+    ["Interact with Cyrus Drake", "Defeat Rattlebones", "WC_Hub → WC_Streets", "WC_Hub", "(unknown zone)"],
+)
+def test_labels_record_writes_are_recognised(label):
+    assert is_recorded_label(label)
+
+
+@pytest.mark.parametrize("label", ["Talk to the headmaster", "Boss", "Defeat", "Interact with", "Loot"])
+def test_labels_an_author_typed_are_kept(label):
+    assert not is_recorded_label(label)

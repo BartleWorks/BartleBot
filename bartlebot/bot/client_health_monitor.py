@@ -141,6 +141,35 @@ async def _network_link_level(client) -> str | None:
     return None
 
 
+async def restriction_for(client) -> restricted_zones.Restriction | None:
+    """Return the restriction in force for *client*, or None.
+
+    Checks the zone first because it is one read and always available. The duel
+    flags are only consulted while the client is actually in battle: outside
+    combat the duel struct still holds whatever the last fight left in it, and a
+    stale PvP flag would stop a bot standing in a questing zone.
+
+    The participant list is read only once a flag is already set, because it is
+    one memory read per combatant and this runs every 250 ms. In an ordinary PvE
+    fight neither flag is set and the extra reads never happen; in a Challenge
+    Mode fight both are set and the list is what proves the fight is still PvE.
+    """
+    hit = restricted_zones.check_zone(await client.zone_name())
+    if hit is not None:
+        return hit
+    if not await client.in_battle():
+        return None
+    pvp = await client.duel.pvp()
+    battleground = await client.duel.battleground()
+    if not (pvp or battleground):
+        return None
+    return restricted_zones.check_duel(
+        pvp=pvp,
+        battleground=battleground,
+        players_on_both_teams=await _players_on_both_teams(client),
+    )
+
+
 @dataclass
 class _LinkStreak:
     """One client's unbroken run of a single network status icon."""
@@ -422,32 +451,8 @@ class ClientHealthMonitor:
                         self._fire_disconnected(hwnd)
 
     async def _restriction_for(self, client) -> restricted_zones.Restriction | None:
-        """Return the restriction in force for *client*, or None.
-
-        Checks the zone first because it is one read and always available. The duel
-        flags are only consulted while the client is actually in battle: outside
-        combat the duel struct still holds whatever the last fight left in it, and a
-        stale PvP flag would stop a bot standing in a questing zone.
-
-        The participant list is read only once a flag is already set, because it is
-        one memory read per combatant and this runs every 250 ms. In an ordinary PvE
-        fight neither flag is set and the extra reads never happen; in a Challenge
-        Mode fight both are set and the list is what proves the fight is still PvE.
-        """
-        hit = restricted_zones.check_zone(await client.zone_name())
-        if hit is not None:
-            return hit
-        if not await client.in_battle():
-            return None
-        pvp = await client.duel.pvp()
-        battleground = await client.duel.battleground()
-        if not (pvp or battleground):
-            return None
-        return restricted_zones.check_duel(
-            pvp=pvp,
-            battleground=battleground,
-            players_on_both_teams=await _players_on_both_teams(client),
-        )
+        """Return the restriction in force for *client*, or None. See ``restriction_for``."""
+        return await restriction_for(client)
 
     async def _restricted_zone_watcher(self) -> None:
         """Stop the bot outright when any client is somewhere it must not be automated.

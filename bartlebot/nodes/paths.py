@@ -112,11 +112,21 @@ ENTER_TEAMUP_BUTTON_PATH = ["WorldView", "TeamUpConfirmationWindow", "TeamUpConf
 SIGIL_MODE_TOGGLE_BUTTON_PATH = ["WorldView", "NPCRangeWin", "sigilModeToggleButton"]
 SIGIL_ENTRANCE_TITLE_PATH = ["WorldView", "NPCRangeWin", "wndTitleBackground", "NPCRangeTxtTitle"]
 
+# The interact prompt's title: the name of whatever the player is in range of, in the
+# client's display language. The same window as the sigil entrance's title above.
+NPC_RANGE_TITLE_PATH = SIGIL_ENTRANCE_TITLE_PATH
+
 # Gauntlet entrance prompt (no TeamUpButton — gauntlets use the parent window directly)
 GAUNTLET_ENTRANCE_PATH = ["WorldView", "NPCRangeWin", "imgBackground"]
 
 # Advance button inside the ambient NPC dialog (visible only when a dialog is open and advanceable)
 ADVANCE_DIALOG_PATH = ["WorldView", "wndDialogMain", "btnRight"]
+
+# The dialog's left button, shown only on a side quest's offer page: DECLINE, beside the
+# ACCEPT that ADVANCE_DIALOG_PATH is on that page. Its visibility alone says the page is an
+# offer, so no caption read is needed. While it shows, nothing may press ADVANCE_DIALOG_PATH
+# or SPACEBAR -- see node_helpers.advance_dialog_once.
+DECLINE_QUEST_PATH = ["WorldView", "wndDialogMain", "btnLeft"]
 
 # Character select screen ("WorldView/mainWindow" is visible when on the char select screen)
 CHAR_SELECT_PATH = ["WorldView", "mainWindow"]

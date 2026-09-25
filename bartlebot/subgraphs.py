@@ -156,6 +156,104 @@ def linked_region_of(config: BotConfig, state_id: str) -> RegionModel | None:
     return None
 
 
+def _overlaps_partly(a: set[str], b: set[str]) -> bool:
+    return bool(a & b) and not (a <= b or b <= a)
+
+
+def is_collapsed(region: RegionModel, overrides: Mapping[str, bool] | None = None) -> bool:
+    """Whether a plain region is drawn collapsed: its override for this session, else its saved flag.
+
+    ``overrides`` is Run mode's: a collapse or expand there is a view, never saved,
+    so it sits over the file's flag rather than changing it.
+    """
+    if overrides and region.id in overrides:
+        return overrides[region.id]
+    return bool(region.collapsed)
+
+
+def collapse_blocker(config: BotConfig, region_id: str, overrides: Mapping[str, bool] | None = None) -> str | None:
+    """Why the plain region ``region_id`` cannot be drawn as one node (#67), or ``None`` if it can.
+
+    Collapsed nodes nest the way instances do, by membership, so a region may sit
+    wholly inside or wholly around another folded one but never half across it: the
+    states they share could then be drawn as either node. ``overrides`` as for
+    :func:`is_collapsed`.
+    """
+    region = next((r for r in config.regions if r.id == region_id), None)
+    if region is None:
+        return "The region no longer exists."
+    if region.source is not None:
+        return "A subgraph node is already drawn as one node."
+    members = set(region.members)
+    if not members:
+        return "The region has no nodes."
+    by_id = {s.id: s for s in config.states}
+    if any(m in by_id and is_port_node(by_id[m]) for m in members):
+        return "It holds an Entry or Exit node, which the signature needs to show."
+    for other in outermost_linked_regions(config.regions):
+        if _overlaps_partly(members, set(other.members)):
+            return f"It holds only part of the subgraph node '{other.label}'."
+    for other in config.regions:
+        if other is region or other.source is not None or not is_collapsed(other, overrides):
+            continue
+        if _overlaps_partly(members, set(other.members)):
+            return f"It overlaps the collapsed region '{other.label}'."
+    return None
+
+
+def folded_regions(
+    config: BotConfig, expanded: Iterable[str] = (), overrides: Mapping[str, bool] | None = None
+) -> list[RegionModel]:
+    """The regions drawn as one node each, outermost only, in file order.
+
+    Every linked region not composed through another, as before, plus every plain
+    region marked ``collapsed`` (#67). A region in ``expanded`` -- opened in the
+    Run-mode view, or stepped into -- is not folded, so what it holds is considered in
+    its place. ``overrides`` as for :func:`is_collapsed`. A hand-edited file can mark a collapse that :func:`collapse_blocker`
+    would refuse; such a region is drawn expanded rather than guessed at. Larger
+    plain regions are taken first, so of two that partly overlap the larger folds.
+    """
+    shut = set(expanded)
+    linked = outermost_linked_regions([r for r in config.regions if r.id not in shut])
+    by_id = {s.id: s for s in config.states}
+    plain = [
+        r
+        for r in config.regions
+        if r.source is None
+        and is_collapsed(r, overrides)
+        and r.id not in shut
+        and r.members
+        and not any(m in by_id and is_port_node(by_id[m]) for m in r.members)
+    ]
+    order = {r.id: i for i, r in enumerate(config.regions)}
+    accepted: list[RegionModel] = list(linked)
+    for r in sorted(plain, key=lambda r: (-len(r.members), order[r.id])):
+        members = set(r.members)
+        if any(_overlaps_partly(members, set(a.members)) for a in accepted):
+            continue
+        if any(members <= set(a.members) for a in accepted):
+            continue
+        accepted.append(r)
+    outer = [
+        r
+        for r in accepted
+        if not any(o is not r and o.source is None and set(r.members) <= set(o.members) for o in accepted)
+    ]
+    return sorted(outer, key=lambda r: order[r.id])
+
+
+def region_anchor(config: BotConfig, region: RegionModel) -> dict:
+    """Where a folded region's one node sits, in the ``StateModel.position`` convention.
+
+    An instance's is its stored ``anchor``. A collapsed plain region stores none: its
+    node sits at its members' top-left, so moving the node is moving the members.
+    """
+    if region.source is not None:
+        return region.source.anchor or {"x": 0.0, "y": 0.0}
+    members = set(region.members)
+    return _anchor_of([s for s in config.states if s.id in members])
+
+
 def _pos_add(a: dict | None, b: dict | None) -> dict | None:
     if a is None or b is None:
         return None
@@ -720,6 +818,78 @@ def _unique_port_id(base: str, taken: set[str]) -> str:
     return candidate
 
 
+@dataclass(frozen=True)
+class BoundaryEntry:
+    """An inferred entry port: where edges or roles from outside a set of states come in."""
+
+    port_id: str
+    name: str
+    member: str
+
+
+@dataclass(frozen=True)
+class BoundaryExit:
+    """An inferred exit port: one outside destination, fed by the ``(member, outcome)`` pairs reaching it."""
+
+    port_id: str
+    name: str
+    dest: str
+    feeds: tuple[tuple[str, str | None], ...]
+
+
+def boundary_ports(
+    config: BotConfig, members: Iterable[str], *, taken: set[str] | None = None
+) -> tuple[list[BoundaryEntry], list[BoundaryExit]]:
+    """The ports the edges crossing ``members``' boundary imply, in bot ids.
+
+    - an **entry** per distinct member that an outside edge or a role targets --
+      named *Start* for the initial state's, *Recover* for the recovery state's,
+      the member's label otherwise -- or one *Start* into the first member when
+      nothing outside reaches in;
+    - an **exit** per distinct outside destination, fed by the ``(member, outcome)``
+      pairs that reach it -- *Done* when there is only one, *To <label>* otherwise.
+
+    One rule for both of its callers: :func:`extract_definition` turns them into Entry
+    and Exit nodes, and a collapsed plain region (#67) is drawn with them, so a
+    collapsed region looks exactly like the subgraph node it would become. Port ids
+    are kept clear of ``taken``, which is updated.
+    """
+    member_set = set(members)
+    taken = set() if taken is None else taken
+    labels = {s.id: s.label for s in config.states}
+
+    targets: list[tuple[str, str]] = []  # (member, entry name), first reason wins
+    if config.initial in member_set:
+        targets.append((config.initial, "Start"))
+    if config.recovery_state in member_set:
+        targets.append((config.recovery_state, "Recover"))
+    for t in config.transitions:
+        if t.dest in member_set and t.source not in member_set:
+            targets.append((t.dest, labels.get(t.dest) or "Entry"))
+    if not targets:
+        first = next((s.id for s in config.states if s.id in member_set), None)
+        if first is not None:
+            targets.append((first, "Start"))
+    entries: list[BoundaryEntry] = []
+    seen_members: set[str] = set()
+    for member, entry_name in targets:
+        if member in seen_members:
+            continue
+        seen_members.add(member)
+        pid = _unique_port_id(f"entry_{instance_slug(entry_name)}", taken)
+        entries.append(BoundaryEntry(pid, entry_name, member))
+
+    outgoing = [t for t in config.transitions if t.source in member_set and t.dest not in member_set]
+    dests = list(dict.fromkeys(t.dest for t in outgoing))
+    exits: list[BoundaryExit] = []
+    for dest in dests:
+        exit_name = "Done" if len(dests) == 1 else f"To {labels.get(dest) or dest}"
+        pid = _unique_port_id(f"exit_{instance_slug(exit_name)}", taken)
+        feeds = tuple(dict.fromkeys((t.source, t.when) for t in outgoing if t.dest == dest))
+        exits.append(BoundaryExit(pid, exit_name, dest, feeds))
+    return entries, exits
+
+
 def extract_definition(
     config: BotConfig,
     region_id: str,
@@ -781,46 +951,21 @@ def extract_definition(
         pos = by_id[member].position
         return _pos_sub({"x": float(pos["x"]) + dx, "y": float(pos["y"])}, anchor) if pos is not None else None
 
-    targets: list[tuple[str, str]] = []  # (member, entry name), first reason wins
-    if config.initial in members:
-        targets.append((config.initial, "Start"))
-    if config.recovery_state in members:
-        targets.append((config.recovery_state, "Recover"))
-    for t in config.transitions:
-        if t.dest in members and t.source not in members:
-            targets.append((t.dest, by_id[t.dest].label or "Entry"))
-    if not targets:
-        first = next(s.id for s in config.states if s.id in members)
-        targets.append((first, "Start"))
-    entry_for: dict[str, str] = {}
-    for member, entry_name in targets:
-        if member in entry_for:
-            continue
-        pid = _unique_port_id(f"entry_{instance_slug(entry_name)}", taken)
-        entry_for[member] = pid
+    entries, exits = boundary_ports(config, region.members, taken=taken)
+    for entry in entries:
         port_states.append(
-            StateModel(id=pid, node_type=SUBGRAPH_ENTRY, label=entry_name, position=place(member, -PORT_COLUMN))
+            StateModel(
+                id=entry.port_id, node_type=SUBGRAPH_ENTRY, label=entry.name, position=place(entry.member, -PORT_COLUMN)
+            )
         )
-        port_edges.append(TransitionModel(trigger="advance", source=pid, dest=locals_[member]))
-
-    outgoing = [t for t in config.transitions if t.source in members and t.dest not in members]
-    dests = list(dict.fromkeys(t.dest for t in outgoing))
-    labels = {s.id: s.label or s.id for s in config.states}
-    for dest in dests:
-        exit_name = "Done" if len(dests) == 1 else f"To {labels.get(dest, dest)}"
-        pid = _unique_port_id(f"exit_{instance_slug(exit_name)}", taken)
-        feeders = [t for t in outgoing if t.dest == dest]
-        rightmost = max(feeders, key=lambda t: float((by_id[t.source].position or {"x": 0})["x"])).source
+        port_edges.append(TransitionModel(trigger="advance", source=entry.port_id, dest=locals_[entry.member]))
+    for ex in exits:
+        rightmost = max((m for m, _ in ex.feeds), key=lambda m: float((by_id[m].position or {"x": 0})["x"]))
         port_states.append(
-            StateModel(id=pid, node_type=SUBGRAPH_EXIT, label=exit_name, position=place(rightmost, PORT_COLUMN))
+            StateModel(id=ex.port_id, node_type=SUBGRAPH_EXIT, label=ex.name, position=place(rightmost, PORT_COLUMN))
         )
-        seen_pairs: set[tuple[str, str | None]] = set()
-        for t in feeders:
-            pair = (locals_[t.source], t.when)
-            if pair in seen_pairs:
-                continue
-            seen_pairs.add(pair)
-            port_edges.append(TransitionModel(trigger="advance", source=pair[0], dest=pid, when=t.when))
+        for m, when in ex.feeds:
+            port_edges.append(TransitionModel(trigger="advance", source=locals_[m], dest=ex.port_id, when=when))
 
     all_states = local_states + port_states
     all_transitions = transitions + port_edges
@@ -863,6 +1008,7 @@ def convert_region_to_instance(
         r.id = member_id(new_rid, r.id)
     region.id = new_rid
     region.source = source.model_copy(deep=True)
+    region.collapsed = None  # an instance is drawn as its call node regardless
     return id_map
 
 

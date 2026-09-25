@@ -11,7 +11,9 @@ also exported here so BotCanvas can use them without circular imports.
 import logging
 import math
 import re
+import uuid
 from collections import defaultdict
+from dataclasses import dataclass
 
 from PyQt6.QtCore import QPointF, QRectF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QBrush, QCursor, QKeyEvent, QMouseEvent, QPainter, QPen
@@ -38,13 +40,14 @@ from bartlebot.bot.schema import (
     SubgraphSource,
     TransitionModel,
 )
-from bartlebot.gui.canvas.call_node_item import CallNodeItem, PortNodeItem
+from bartlebot.gui.canvas.call_node_item import CallNodeItem, CollapsedRegionItem, FoldedNodeItem, PortNodeItem
 from bartlebot.gui.canvas.edge_item import (
     EdgeItem,
     bridge_y_above,
     bridge_y_below,
     is_above_routed,
 )
+from bartlebot.gui.canvas.fold import FoldMap
 from bartlebot.gui.canvas.graph_view import GraphView
 from bartlebot.gui.canvas.node_item import (
     GRID_H,
@@ -66,8 +69,10 @@ from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, sourc
 from bartlebot.subgraphs import (
     ComposeReport,
     SubgraphCycleError,
-    entry_port_of,
-    exit_port_of,
+    boundary_ports,
+    collapse_blocker,
+    folded_regions,
+    is_collapsed,
     is_nested_in,
     linked_region_of,
     linked_regions,
@@ -76,8 +81,8 @@ from bartlebot.subgraphs import (
     member_id,
     mint_instance_id,
     nested_regions,
-    outermost_linked_regions,
     port_name,
+    region_anchor,
     taken_ids,
 )
 from bartlebot.subgraphs import detach as detach_subgraph
@@ -221,6 +226,38 @@ def node_types_producing(return_name: str) -> set[str]:
     SUCCESS and nothing else -- on exactly the SUCCESS ports it is most wanted on.
     """
     return {nt for nt in NODE_SPECS if return_name in _node_returns(nt)}
+
+
+def authoring_anchor(config: BotConfig) -> tuple[str, str] | None:
+    """Where speed-authoring (#85) builds on with nothing selected: ``(state id, return)``.
+
+    The first happy-path port with nothing leaving it, following happy paths from the
+    initial state. That is the gap a template leaves between entering a dungeon and an
+    Exit node already sitting unconnected at the far right, which is why the walk goes
+    by edges rather than by where nodes are drawn: the Exit is reachable by none.
+
+    An edge with no ``when`` fires on every return, so it routes the happy port too.
+    Of several edges on the port (flag-guarded branches), the walk follows the first.
+
+    None when there is no gap: the path loops back on itself, or ends on a port the
+    author marked as a stop -- a node inserted there could never be reached.
+    """
+    by_id = {s.id: s for s in config.states}
+    seen: set[str] = set()
+    sid = config.initial
+    while sid and sid not in seen:
+        seen.add(sid)
+        state = by_id.get(sid)
+        if state is None:
+            return None
+        happy = _happy_path_return(_node_returns(state.node_type))
+        if happy is None or state.stop_reason(happy) is not None:
+            return None
+        onward = next((t.dest for t in config.transitions if t.source == sid and t.when in (happy, None)), None)
+        if onward is None:
+            return sid, happy
+        sid = onward
+    return None
 
 
 def _required_field_empty(field, params: dict) -> bool:
@@ -431,6 +468,11 @@ _LINK_STATE_FOR_KIND = {
 }
 
 
+def _moved(old: dict, new: dict) -> bool:
+    """Whether a stored position really changed, not just by the fold's round trip."""
+    return abs(float(old["x"]) - new["x"]) > 1e-6 or abs(float(old["y"]) - new["y"]) > 1e-6
+
+
 def member_warnings(reasons: list[str]) -> list[str]:
     """A member's warnings worth rolling up onto its call node.
 
@@ -441,11 +483,52 @@ def member_warnings(reasons: list[str]) -> list[str]:
     return [r for r in reasons if r != "Unreachable from initial state" and not r.startswith("Uncovered")]
 
 
+@dataclass(frozen=True)
+class FoldPorts:
+    """A folded node's ports, in bot ids: what its edges attach to and the flat states behind them.
+
+    One shape for both kinds of folded node. An instance's comes from its snapshot's
+    port map through the derived member ids, named by its definition; a collapsed
+    plain region's is inferred from the edges crossing its boundary
+    (:func:`~bartlebot.subgraphs.boundary_ports`). Nothing that reads one needs to
+    know which it has.
+    """
+
+    #: ``(port id, name, member)``: the member an entry leads into, None if it leads nowhere.
+    entries: tuple[tuple[str, str, str | None], ...] = ()
+    #: ``(port id, name, feeds)``: the ``(member, outcome)`` pairs an exit is fed by.
+    exits: tuple[tuple[str, str, tuple[tuple[str, str | None], ...]], ...] = ()
+    #: Port id -> the one destination an inferred exit stands for. An instance's exits
+    #: have none: which way they lead is the bot's edge, not the port.
+    exit_dests: tuple[tuple[str, str], ...] = ()
+
+    def entry_port(self, state_id: str) -> str | None:
+        return next((pid for pid, _n, m in self.entries if m == state_id), None)
+
+    def exit_port(self, state_id: str, when: str | None, dest: str | None = None) -> str | None:
+        """The exit ``(state_id, when)`` feeds -- toward ``dest``, when exits are per destination."""
+        dests = dict(self.exit_dests)
+        return next(
+            (
+                pid
+                for pid, _n, feeds in self.exits
+                if (state_id, when) in feeds and (pid not in dests or dest is None or dests[pid] == dest)
+            ),
+            None,
+        )
+
+    def entry_member(self, port_id: str | None) -> str | None:
+        return next((m for pid, _n, m in self.entries if pid == port_id), None)
+
+    def exit_feeds(self, port_id: str | None) -> list[tuple[str, str | None]]:
+        return next((list(feeds) for pid, _n, feeds in self.exits if pid == port_id), [])
+
+
 class _DisplayLookup:
-    """``get(state id)`` answering an instance's member with its call node.
+    """``get(state id)`` answering a folded region's member with the node it is drawn as.
 
     What a ``RegionItem`` reads its members through, so a plain region holding an
-    instance wraps the call node the members are drawn as.
+    instance or a collapsed region wraps the node the members are drawn as.
     """
 
     def __init__(self, scene: "EditScene") -> None:
@@ -474,6 +557,11 @@ class EditScene(QGraphicsScene):
     open_definition_requested = pyqtSignal(str)
     # A subgraph node double-clicked in Run mode: (region id) of the instance whose body to view.
     view_instance_requested = pyqtSignal(str)
+    # (region id, collapse): a region label's collapse button or a collapsed node's
+    # expand button was clicked. The canvas decides what that means in its mode.
+    collapse_toggle_requested = pyqtSignal(str, bool)
+    # (collapse): the canvas menu's Collapse All Regions / Expand All Regions.
+    collapse_all_requested = pyqtSignal(bool)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -487,11 +575,24 @@ class EditScene(QGraphicsScene):
         # The flat transitions each drawn edge stands for -- one, or for a call node's
         # exit, one per (member, outcome) feeding it.
         self._edge_models: dict[EdgeItem, list[TransitionModel]] = {}
-        # Member id -> the region id of the call node it is drawn as.
+        # Member id -> the region id of the folded node it is drawn as: an instance's
+        # call node, or a collapsed region's node (#67).
         self._call_of: dict[str, str] = {}
-        # Instances whose body is on show in Run mode, outermost first: their members
-        # are drawn as nodes of their own, and a nested instance inside the innermost
-        # one as its call node. Kept across setup(); see set_expanded.
+        # Region id -> the ports its folded node shows, for every folded node drawn.
+        self._fold_ports: dict[str, FoldPorts] = {}
+        # Run mode's collapses and expands, region id -> collapsed: a view over the
+        # saved flags, never written to the file. Kept across setup(); cleared by the
+        # canvas on entering Edit mode, where the saved state is decided.
+        self._collapse_overrides: dict[str, bool] = {}
+        # (region id, members) of each folded region as last drawn: see _after_region_edit.
+        self._folded_sig: tuple = ()
+        # Where stored positions are drawn: identity until a region is collapsed, and
+        # then the columns and rows only its members used are closed up (fold.py).
+        self._fold = FoldMap(GRID_W, GRID_H)
+        # Folded regions opened up, outermost first: an instance whose body is on show
+        # in Run mode, or a collapsed region stepped into. Their members are drawn as
+        # nodes of their own, and a folded region inside the innermost one as its
+        # folded node. Kept across setup(); see set_expanded.
         self._expanded: list[str] = []
         self._region_manager: RegionManager | None = None
         self._drag_src: NodeItem | None = None
@@ -514,6 +615,9 @@ class EditScene(QGraphicsScene):
         self._cycle_pos: QPointF = QPointF()
         self._cycle_edges: list[EdgeItem] = []
         self._cycle_idx: int = -1
+        # Connected first, so every other listener sees a collapsed region's ports and the
+        # fold already brought up to date by whatever edit emitted it.
+        self.graph_changed.connect(self._refresh_folds)
 
     # ------------------------------------------------------------------
     # Grid / snap
@@ -575,6 +679,8 @@ class EditScene(QGraphicsScene):
         self._edge_items.clear()
         self._edge_models.clear()
         self._call_of = {}
+        self._fold_ports = {}
+        self._fold = FoldMap(GRID_W, GRID_H)
         self._drag_src = None
         self._drag_when = None
         self._temp_edge = None
@@ -589,39 +695,50 @@ class EditScene(QGraphicsScene):
     def setup(self, config: BotConfig) -> None:
         """Rebuild the scene from a BotConfig.
 
-        Every subgraph instance is drawn as one call node, and its members get no item
-        of their own; an edge into or out of an instance is drawn to the call node's
-        port, however many flat transitions it stands for (``transitions_of``).
+        Every subgraph instance is drawn as one call node, and every collapsed plain
+        region as one node of its own (#67); their members get no item. An edge into or
+        out of either is drawn to the folded node's port, however many flat transitions
+        it stands for (``transitions_of``). Stored positions are drawn through the fold,
+        which closes up the columns and rows only collapsed members used.
         """
         self.teardown()
         self._config = config
-        linked = {r.id for r in config.regions if r.source is not None}
-        self._expanded = [rid for rid in self._expanded if rid in linked]
-        call_regions = outermost_linked_regions([r for r in config.regions if r.id not in self._expanded])
-        self._call_of = {m: region.id for region in call_regions for m in region.members}
+        region_ids = {r.id for r in config.regions}
+        self._collapse_overrides = {rid: v for rid, v in self._collapse_overrides.items() if rid in region_ids}
+        foldable = {r.id for r in config.regions if r.source is not None or is_collapsed(r, self._collapse_overrides)}
+        self._expanded = [rid for rid in self._expanded if rid in foldable]
+        folded = folded_regions(config, self._expanded, self._collapse_overrides)
+        self._folded_sig = tuple((r.id, frozenset(r.members)) for r in folded)
+        self._call_of = {m: region.id for region in folded for m in region.members}
+        self._fold_ports = {region.id: self._ports_for(region) for region in folded}
 
         states = config.states
         sources = {self.display_id(t.source) for t in config.transitions}
+        # (item, stored left x, stored centre y) for everything placed through the fold.
+        placed: list[tuple[NodeItem, float, float]] = []
         for i, state in enumerate(states):
             if state.id in self._call_of:
                 continue
-            pos = state.position
-            if pos and isinstance(pos, dict):
-                x = pos.get("x", 0)
-                y = pos.get("y", 0) - NODE_H / 2
-            else:
-                total_w = (len(states) - 1) * _AUTO_SPACING
-                x = i * _AUTO_SPACING - total_w / 2 - NODE_W / 2
-                y = -NODE_H / 2
             node = self._make_node(state, is_terminal=state.id not in sources)
             node.set_port_marks(port_marks_for(state, config) if state.node_type not in PORT_NODE_TYPES else {})
-            node.setPos(x, y)
+            pos = state.position
+            if pos and isinstance(pos, dict):
+                placed.append((node, float(pos.get("x", 0)), float(pos.get("y", 0))))
+            else:
+                total_w = (len(states) - 1) * _AUTO_SPACING
+                node.setPos(i * _AUTO_SPACING - total_w / 2 - NODE_W / 2, -NODE_H / 2)
             self.addItem(node)
             self._node_items[state.id] = node
-        for region in call_regions:
-            node = self._make_call_node(region)
+        for region in folded:
+            node = self._make_call_node(region) if region.source is not None else self._make_collapsed_node(region)
+            anchor = region_anchor(config, region)
+            placed.append((node, float(anchor["x"]), float(anchor["y"])))
             self.addItem(node)
             self._node_items[region.id] = node
+        self._fold = self._build_fold(placed, folded)
+        for node, x, y in placed:
+            dx, dy = self._fold.to_display(x, y)
+            node.setPos(dx, dy - node.body_height / 2)
 
         # Pre-compute shared bridge_y for same-destination backward-edge groups.
         # Backward edges from same-Y nodes that share a (dest, when) pair are snapped
@@ -688,9 +805,16 @@ class EditScene(QGraphicsScene):
 
         # Add region items behind nodes (z=-1)
         self._region_manager = RegionManager(
-            self, config, _DisplayLookup(self), self._pre_edit, self.graph_changed.emit, self.is_region_linked
+            self, config, _DisplayLookup(self), self._pre_edit, self._after_region_edit, self.is_region_linked
         )
-        self._region_manager.setup(self._interactive_mode)
+        folded_members = [set(r.members) for r in folded]
+        folded_away = {
+            r.id
+            for r in config.regions
+            if r.source is None and r.members and any(set(r.members) <= fm for fm in folded_members)
+        }
+        self._region_manager.setup(self._interactive_mode, folded_away)
+        self._sync_region_buttons()
         self._refresh_roles()
         self.refresh_errors()
         # Every call node reads as linked until the canvas hands over a report.
@@ -717,20 +841,12 @@ class EditScene(QGraphicsScene):
         return node
 
     def _make_call_node(self, region: RegionModel) -> CallNodeItem:
-        """The one node a subgraph instance is drawn as, at its anchor, ports from its definition."""
+        """The one node a subgraph instance is drawn as, ports from its definition. Placed by ``setup``."""
         assert region.source is not None
         defn = self._definition(region)
         source = region.source
-        if defn is not None:
-            entries = [(s.id, port_name(s)) for s in defn.states if s.node_type == SUBGRAPH_ENTRY]
-            exits = [(s.id, port_name(s)) for s in defn.states if s.node_type == SUBGRAPH_EXIT]
-            name = defn.name
-        else:
-            # Missing from the library: the snapshot's own port map still says what the
-            # ports are, which is what keeps the bot's edges drawable.
-            entries = [(pid, pid) for pid, p in source.ports.items() if p.member is not None]
-            exits = [(pid, pid) for pid, p in source.ports.items() if p.from_ is not None]
-            name = source.subgraph_id
+        ports = self._fold_ports[region.id]
+        name = defn.name if defn is not None else source.subgraph_id
         origin = ""
         if self._subgraph_library is not None:
             origin = source_label(self._subgraph_library.origin(source.subgraph_id))
@@ -739,14 +855,106 @@ class EditScene(QGraphicsScene):
             region.id,
             region.label,
             subline=" · ".join(p for p in parts if p),
-            entries=entries,
-            exits=exits,
+            entries=[(pid, name) for pid, name, _m in ports.entries],
+            exits=[(pid, name) for pid, name, _f in ports.exits],
             interactive=self._interactive_mode,
         )
         node.set_snap_enabled(self._snap_enabled)
-        anchor = source.anchor or {"x": 0.0, "y": 0.0}
-        node.setPos(float(anchor["x"]), float(anchor["y"]) - node.body_height / 2)
         return node
+
+    def _make_collapsed_node(self, region: RegionModel) -> CollapsedRegionItem:
+        """The one node a collapsed plain region is drawn as, its ports inferred. Placed by ``setup``."""
+        ports = self._fold_ports[region.id]
+        n = len(region.members)
+        node = CollapsedRegionItem(
+            region.id,
+            region.label,
+            subline=f"region · {n} node{'' if n == 1 else 's'}",
+            entries=[(pid, name) for pid, name, _m in ports.entries],
+            exits=[(pid, name) for pid, name, _f in ports.exits],
+            interactive=self._interactive_mode,
+            color=region.color,
+        )
+        node.set_snap_enabled(self._snap_enabled)
+        rid = region.id
+        node.set_expand_action(lambda: self._request_collapse(rid, False))
+        return node
+
+    def _ports_for(self, region: RegionModel) -> FoldPorts:
+        """What a folded region's node shows as ports, and the member each one reaches, in bot ids."""
+        assert self._config is not None
+        if region.source is None:
+            entries, exits = boundary_ports(self._config, region.members)
+            return FoldPorts(
+                tuple((e.port_id, e.name, e.member) for e in entries),
+                tuple((x.port_id, x.name, x.feeds) for x in exits),
+                tuple((x.port_id, x.dest) for x in exits),
+            )
+        source = region.source
+        defn = self._definition(region)
+        if defn is not None:
+            entry_ids = [(s.id, port_name(s)) for s in defn.states if s.node_type == SUBGRAPH_ENTRY]
+            exit_ids = [(s.id, port_name(s)) for s in defn.states if s.node_type == SUBGRAPH_EXIT]
+        else:
+            # Missing from the library: the snapshot's own port map still says what the
+            # ports are, which is what keeps the bot's edges drawable.
+            entry_ids = [(pid, pid) for pid, p in source.ports.items() if p.member is not None]
+            exit_ids = [(pid, pid) for pid, p in source.ports.items() if p.from_ is not None]
+        rid = region.id
+
+        def member_of(pid: str) -> str | None:
+            port = source.ports.get(pid)
+            return member_id(rid, port.member) if port is not None and port.member is not None else None
+
+        def feeds_of(pid: str) -> tuple[tuple[str, str | None], ...]:
+            port = source.ports.get(pid)
+            return tuple((member_id(rid, m), w) for m, w in (port.from_ or ())) if port is not None else ()
+
+        return FoldPorts(
+            tuple((pid, name, member_of(pid)) for pid, name in entry_ids),
+            tuple((pid, name, feeds_of(pid)) for pid, name in exit_ids),
+        )
+
+    def _build_fold(self, placed: list[tuple[NodeItem, float, float]], folded: list[RegionModel]) -> FoldMap:
+        """The fold for what is drawn: every collapsed plain region's span, closed up around what is visible."""
+        assert self._config is not None
+        base = FoldMap(GRID_W, GRID_H)
+        by_id = {s.id: s for s in self._config.states}
+        spans = []
+        for region in folded:
+            if region.source is not None:
+                continue
+            positions = [
+                (float(p["x"]), float(p["y"]))
+                for m in region.members
+                if (s := by_id.get(m)) is not None and (p := s.position) is not None
+            ]
+            span = base.span_of(positions)
+            if span is not None:
+                spans.append(span)
+        if not spans:
+            return base
+        occupied = [(x, y, node.body_height) for node, x, y in placed]
+        return FoldMap.build(spans, occupied, col_w=GRID_W, row_h=GRID_H)
+
+    # ------------------------------------------------------------------
+    # Stored positions and where they are drawn
+    # ------------------------------------------------------------------
+
+    @property
+    def fold(self) -> FoldMap:
+        """How stored positions map to where they are drawn; the identity when nothing is collapsed."""
+        return self._fold
+
+    def stored_position(self, top_left: QPointF, body_height: float = NODE_H) -> dict:
+        """The ``StateModel.position`` an item drawn with its top-left at ``top_left`` stands for."""
+        x, y = self._fold.to_stored(top_left.x(), top_left.y() + body_height / 2)
+        return {"x": x, "y": y}
+
+    def drawn_position(self, position: dict, body_height: float = NODE_H) -> QPointF:
+        """Where an item whose stored position is ``position`` has its top-left drawn."""
+        x, y = self._fold.to_display(float(position["x"]), float(position["y"]))
+        return QPointF(x, y - body_height / 2)
 
     # ------------------------------------------------------------------
     # A subgraph node's body, shown in Run mode
@@ -754,16 +962,18 @@ class EditScene(QGraphicsScene):
 
     @property
     def expanded(self) -> list[str]:
-        """The instances whose members are drawn as nodes, outermost first."""
+        """The folded regions whose members are drawn as nodes, outermost first."""
         return list(self._expanded)
 
     def set_expanded(self, region_ids: list[str]) -> None:
-        """Draw these instances' members as nodes of their own, and rebuild if that changed.
+        """Draw these folded regions' members as nodes of their own, and rebuild if that changed.
 
         What the Run-mode body view stands on: a running bot's config is already
         composed, so the members are real states at ``anchor + definition position``,
-        and once they have items the run highlight lands on them by id. Only ever
-        asked for in Run mode, where nothing on the canvas can be edited.
+        and once they have items the run highlight lands on them by id. An instance is
+        only ever opened in Run mode, where nothing can be edited; a collapsed region is
+        opened by stepping into it in either mode, and its members are then visible, so
+        the fold opens its columns back up with nothing more.
         """
         region_ids = list(region_ids)
         if region_ids == self._expanded:
@@ -775,8 +985,17 @@ class EditScene(QGraphicsScene):
     def _expanded_members(self) -> set[str]:
         return {m for rid in self._expanded if (r := self._region_by_id(rid)) is not None for m in r.members}
 
+    def _expanded_instance_members(self) -> set[str]:
+        """Members of opened instances: a collapsed region stepped into is the bot's own graph."""
+        return {
+            m
+            for rid in self._expanded
+            if (r := self._region_by_id(rid)) is not None and r.source is not None
+            for m in r.members
+        }
+
     def members_shown_for(self, region_id: str) -> set[str]:
-        """The display ids an expanded instance's members are drawn as: a nested instance is its call node."""
+        """The display ids an expanded region's members are drawn as: a folded region inside is its node."""
         region = self._region_by_id(region_id)
         if region is None:
             return set()
@@ -827,14 +1046,12 @@ class EditScene(QGraphicsScene):
         if s == d and t.source in self._call_of:
             return None
         w = t.when
-        if t.source in self._call_of:
-            region = self._region_by_id(s)
-            pid = exit_port_of(region.source, s, t.source, t.when) if region and region.source else None
+        if t.source in self._call_of and s in self._fold_ports:
+            pid = self._fold_ports[s].exit_port(t.source, t.when, t.dest)
             w = pid if pid is not None else t.when
         port = None
-        if t.dest in self._call_of:
-            region = self._region_by_id(d)
-            port = entry_port_of(region.source, d, t.dest) if region and region.source else None
+        if t.dest in self._call_of and d in self._fold_ports:
+            port = self._fold_ports[d].entry_port(t.dest)
         return s, w, d, port
 
     def _region_by_id(self, region_id: str) -> RegionModel | None:
@@ -854,7 +1071,30 @@ class EditScene(QGraphicsScene):
         return None
 
     def is_call_node(self, display_id: str) -> bool:
+        """Whether ``display_id`` is a subgraph instance's call node -- linked, not a collapsed region."""
         return isinstance(self._node_items.get(display_id), CallNodeItem)
+
+    def is_folded(self, display_id: str) -> bool:
+        """Whether ``display_id`` is drawn as a folded node: a call node or a collapsed region."""
+        return isinstance(self._node_items.get(display_id), FoldedNodeItem)
+
+    def folded_nodes(self) -> dict[str, FoldedNodeItem]:
+        """Region id -> folded node, for every call node and collapsed region on the canvas."""
+        return {rid: n for rid, n in self._node_items.items() if isinstance(n, FoldedNodeItem)}
+
+    def folded_node_of(self, state_id: str) -> FoldedNodeItem | None:
+        """The folded node ``state_id`` is drawn as, when it is a member of one."""
+        rid = self._call_of.get(state_id)
+        node = self._node_items.get(rid) if rid is not None else None
+        return node if isinstance(node, FoldedNodeItem) else None
+
+    def ports_of(self, region_id: str) -> FoldPorts | None:
+        """The ports a folded region's node shows, or None when it is not drawn folded."""
+        return self._fold_ports.get(region_id)
+
+    def is_collapsed(self, display_id: str) -> bool:
+        """Whether ``display_id`` is a collapsed plain region's node."""
+        return isinstance(self._node_items.get(display_id), CollapsedRegionItem)
 
     def call_nodes(self) -> dict[str, CallNodeItem]:
         """Region id -> call node, for every subgraph instance on the canvas."""
@@ -867,10 +1107,10 @@ class EditScene(QGraphicsScene):
         return node if isinstance(node, CallNodeItem) else None
 
     def state_ids_of(self, display_ids) -> list[str]:
-        """Expand display ids to state ids: a call node stands for every member of its instance."""
+        """Expand display ids to state ids: a folded node stands for every member of its region."""
         out: list[str] = []
         for did in display_ids:
-            region = self._region_by_id(did) if self.is_call_node(did) else None
+            region = self._region_by_id(did) if self.is_folded(did) else None
             out.extend(region.members if region is not None else [did])
         return list(dict.fromkeys(out))
 
@@ -898,11 +1138,10 @@ class EditScene(QGraphicsScene):
             return
         initial, recovery = self._config.initial, self._config.recovery_state
         for node_id, node in self._node_items.items():
-            if isinstance(node, CallNodeItem):
-                region = self._region_by_id(node_id)
-                src = region.source if region is not None else None
-                ip = entry_port_of(src, node_id, initial) if src is not None else None
-                rp = entry_port_of(src, node_id, recovery) if src is not None else None
+            if isinstance(node, FoldedNodeItem):
+                ports = self._fold_ports.get(node_id)
+                ip = ports.entry_port(initial) if ports is not None else None
+                rp = ports.entry_port(recovery) if ports is not None else None
                 node.set_role_ports(ip, rp)
             elif isinstance(node, PortNodeItem):
                 continue  # a definition's roles are a formality: every Entry is a way in
@@ -935,7 +1174,7 @@ class EditScene(QGraphicsScene):
             return
         sources = {self.display_id(t.source) for t in self._config.transitions}
         for node_id, node in self._node_items.items():
-            node.set_terminal(node_id not in sources and not isinstance(node, (CallNodeItem, PortNodeItem)))
+            node.set_terminal(node_id not in sources and not isinstance(node, (FoldedNodeItem, PortNodeItem)))
 
     def refresh_recovery(self, recovery_state_id: str | None) -> None:
         """Update the recovery-state badge across all nodes."""
@@ -956,7 +1195,7 @@ class EditScene(QGraphicsScene):
             return
         for state in self._config.states:
             node = self._node_items.get(state.id)
-            if node is not None and not isinstance(node, (CallNodeItem, PortNodeItem)):
+            if node is not None and not isinstance(node, (FoldedNodeItem, PortNodeItem)):
                 node.set_port_marks(port_marks_for(state, self._config))
 
     def refresh_errors(self) -> None:
@@ -974,7 +1213,7 @@ class EditScene(QGraphicsScene):
             is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, self._config, reachable)
             node = self._node_items.get(state.id)
             if node is not None:
-                if self._expanded and state.id in self._expanded_members():
+                if self._expanded and state.id in self._expanded_instance_members():
                     # A member drawn in the Run-mode body view: the same rule as rolling up.
                     warn_reasons = member_warnings(warn_reasons)
                     is_warning = bool(warn_reasons)
@@ -988,8 +1227,11 @@ class EditScene(QGraphicsScene):
             errs, warns = rolled.setdefault(rid, ([], []))
             name = state.label or state.id
             errs.extend(f"{name}: {r}" for r in err_reasons)
-            warns.extend(f"{name}: {r}" for r in member_warnings(warn_reasons))
-        for rid, node in self.call_nodes().items():
+            # A collapsed region's gaps are the bot author's own, so nothing is filtered.
+            warns.extend(
+                f"{name}: {r}" for r in (warn_reasons if self.is_collapsed(rid) else member_warnings(warn_reasons))
+            )
+        for rid, node in self.folded_nodes().items():
             errs, warns = rolled.get(rid, ([], []))
             node.set_error(bool(errs), errs + warns)
             node.set_warning(bool(warns), errs + warns)
@@ -1030,11 +1272,14 @@ class EditScene(QGraphicsScene):
             node.set_link_state(_LINK_STATE_FOR_KIND.get(kind, "linked"))
 
     def refresh_call_nodes(self) -> None:
-        """Re-read every call node's title from its region, after the call node's page renamed it."""
-        for rid, node in self.call_nodes().items():
+        """Re-read every folded node's title (and a collapsed region's colour) from its region, after a page changed it."""
+        for rid, node in self.folded_nodes().items():
             region = self._region_by_id(rid)
-            if region is not None:
-                node.set_label(region.label)
+            if region is None:
+                continue
+            node.set_label(region.label)
+            if isinstance(node, CollapsedRegionItem):
+                node.set_color(region.color)
 
     def insert_subgraph_instance(self, subgraph_id: str, pos: QPointF, into_region: str | None = None) -> str | None:
         """Place a new instance of ``subgraph_id`` with its call node at ``pos``. Returns the region id.
@@ -1060,7 +1305,7 @@ class EditScene(QGraphicsScene):
             version=defn.version,
             # Nothing set: every input follows the definition's default until changed here.
             inputs={},
-            anchor={"x": pos.x(), "y": pos.y() + NODE_H / 2},
+            anchor=self.stored_position(pos),
         )
         try:
             mat = materialize_region(region_id, source, defn, self._subgraph_library)
@@ -1096,27 +1341,36 @@ class EditScene(QGraphicsScene):
         return region_id
 
     def remove_instance(self, region_id: str, *, confirm: bool = True) -> bool:
-        """Delete a subgraph instance -- its call node -- with every member, nested instances included.
+        """Delete a folded node with every member, nested instances included.
 
-        Roles are reassigned as on any delete. Returns False if the user cancels, or if
-        ``region_id`` is not an instance.
+        A subgraph instance -- its call node -- or a collapsed region, which is deleted
+        as what it is drawn as: the region and every node in it. *Remove Region* is the
+        way to drop only the grouping. Roles are reassigned as on any delete. Returns
+        False if the user cancels, or if ``region_id`` is not drawn folded.
         """
         if self._config is None:
             return False
         region = self._region_by_id(region_id)
-        if region is None or region.source is None:
+        if region is None or not (region.source is not None or self.is_collapsed(region_id)):
             return False
+        is_instance = region.source is not None
         if confirm:
+            n = len(region.members)
+            question = (
+                f"Delete subgraph '{region.label}' and its connections?"
+                if is_instance
+                else f"Delete region '{region.label}' and the {n} node{'' if n == 1 else 's'} in it?"
+            )
             answer = QMessageBox.question(
                 self.views()[0] if self.views() else None,
-                "Delete Subgraph",
-                f"Delete subgraph '{region.label}' and its connections?",
+                "Delete Subgraph" if is_instance else "Delete Region",
+                question,
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No,
             )
             if answer != QMessageBox.StandardButton.Yes:
                 return False
-        self._pre_edit("Delete Subgraph")
+        self._pre_edit("Delete Subgraph" if is_instance else "Delete Region")
         config = self._config
         members = set(region.members)
         gone = [region, *nested_regions(config, region)]
@@ -1131,6 +1385,140 @@ class EditScene(QGraphicsScene):
         self._in_structural_edit = True
         try:
             self.setup(config)
+        finally:
+            self._in_structural_edit = prev
+        self.graph_changed.emit()
+        return True
+
+    def collapse_blocker(self, region_id: str) -> str | None:
+        """Why ``region_id`` cannot be collapsed, or None if it can."""
+        if self._config is None:
+            return "No bot is open."
+        return collapse_blocker(self._config, region_id, self._collapse_overrides)
+
+    def is_region_collapsed(self, region_id: str) -> bool:
+        """Whether a plain region is drawn collapsed: Run mode's override, else its saved flag."""
+        region = self._region_by_id(region_id)
+        return region is not None and region.source is None and is_collapsed(region, self._collapse_overrides)
+
+    def _request_collapse(self, region_id: str, collapsed: bool) -> None:
+        """A button asked: pass it on once the click is over, since acting rebuilds the item clicked."""
+        QTimer.singleShot(0, lambda: self.collapse_toggle_requested.emit(region_id, collapsed))
+
+    def _sync_region_buttons(self) -> None:
+        """Give every drawn region's label its collapse button, faded with the reason when refused."""
+        if self._region_manager is None:
+            return
+        for rid, item in self._region_manager.items.items():
+            item.set_collapse_action(lambda rid=rid: self._request_collapse(rid, True), self.collapse_blocker(rid))
+
+    def bulk_collapse_targets(self, collapsed: bool) -> list[str]:
+        """The plain regions *Collapse all* or *Expand all* would change, in the order it would.
+
+        Collapse all goes largest first, and skips a region its own earlier collapses
+        would block, so of two partly overlapping regions the larger folds. A region
+        inside one that collapses is still marked, and shows when stepped into.
+        """
+        if self._config is None:
+            return []
+        plain = [r for r in self._config.regions if r.source is None and r.members]
+        if not collapsed:
+            return [r.id for r in plain if is_collapsed(r, self._collapse_overrides)]
+        order = {r.id: i for i, r in enumerate(self._config.regions)}
+        sim = dict(self._collapse_overrides)
+        targets: list[str] = []
+        for r in sorted(plain, key=lambda r: (-len(r.members), order[r.id])):
+            if is_collapsed(r, sim) or collapse_blocker(self._config, r.id, sim) is not None:
+                continue
+            sim[r.id] = True
+            targets.append(r.id)
+        return targets
+
+    def set_regions_collapsed(self, region_ids: list[str], collapsed: bool) -> bool:
+        """Collapse or expand several plain regions as one undoable step (Edit mode's *all*)."""
+        if self._config is None or not region_ids:
+            return False
+        self._pre_edit("Collapse All Regions" if collapsed else "Expand All Regions")
+        for rid in region_ids:
+            region = self._region_by_id(rid)
+            if region is not None and region.source is None:
+                region.collapsed = True if collapsed else None
+        if not collapsed:
+            self._expanded = [rid for rid in self._expanded if rid not in set(region_ids)]
+        prev = self._in_structural_edit
+        self._in_structural_edit = True
+        try:
+            self.setup(self._config)
+        finally:
+            self._in_structural_edit = prev
+        self.graph_changed.emit()
+        return True
+
+    def set_collapse_overrides(self, region_ids: list[str], collapsed: bool) -> bool:
+        """Run mode's collapse or expand: a view over the saved flags, not an edit. False if nothing changed.
+
+        An override equal to the saved flag is dropped rather than kept, so what is
+        held is only where the view differs from the file.
+        """
+        if self._config is None:
+            return False
+        changed = False
+        for rid in region_ids:
+            region = self._region_by_id(rid)
+            if (
+                region is None
+                or region.source is not None
+                or is_collapsed(region, self._collapse_overrides) == collapsed
+            ):
+                continue
+            if collapsed and collapse_blocker(self._config, rid, self._collapse_overrides) is not None:
+                continue
+            if bool(region.collapsed) == collapsed:
+                self._collapse_overrides.pop(rid, None)
+            else:
+                self._collapse_overrides[rid] = collapsed
+            changed = True
+        if not changed:
+            return False
+        if not collapsed:
+            self._expanded = [rid for rid in self._expanded if rid not in set(region_ids)]
+        self.setup(self._config)
+        return True
+
+    def forget_collapse_overrides(self) -> None:
+        """Drop Run mode's view without rebuilding: for a caller about to set up a new document."""
+        self._collapse_overrides = {}
+
+    def clear_collapse_overrides(self) -> bool:
+        """Drop Run mode's view, back to the saved flags. True, having rebuilt, if there was one."""
+        if not self._collapse_overrides:
+            return False
+        self._collapse_overrides = {}
+        if self._config is not None:
+            self.setup(self._config)
+        return True
+
+    def set_region_collapsed(self, region_id: str, collapsed: bool) -> bool:
+        """Draw a plain region as one node, or open it back up. One undoable step; False if refused.
+
+        Only a flag changes: stored positions stay the expanded layout, and the fold
+        closes up the space the members used (fold.py), so expanding is exact.
+        """
+        if self._config is None:
+            return False
+        region = self._region_by_id(region_id)
+        if region is None or region.source is not None or bool(region.collapsed) == collapsed:
+            return False
+        if collapsed and collapse_blocker(self._config, region_id) is not None:
+            return False
+        self._pre_edit("Collapse Region" if collapsed else "Expand Region")
+        region.collapsed = True if collapsed else None
+        if not collapsed:
+            self._expanded = [rid for rid in self._expanded if rid != region_id]
+        prev = self._in_structural_edit
+        self._in_structural_edit = True
+        try:
+            self.setup(self._config)
         finally:
             self._in_structural_edit = prev
         self.graph_changed.emit()
@@ -1218,7 +1606,7 @@ class EditScene(QGraphicsScene):
         state = StateModel(
             id=state_id,
             node_type=node_type,
-            position={"x": pos.x(), "y": pos.y() + NODE_H / 2},
+            position=self.stored_position(pos),
             params=default_params,
         )
         self._config.states.append(state)
@@ -1256,7 +1644,7 @@ class EditScene(QGraphicsScene):
             n += 1
             pid = f"{kind}_{n}"
         self._pre_edit("Add Entry" if is_entry else "Add Exit")
-        state = StateModel(id=pid, node_type=node_type, label=label, position={"x": pos.x(), "y": pos.y() + NODE_H / 2})
+        state = StateModel(id=pid, node_type=node_type, label=label, position=self.stored_position(pos))
         self._config.states.append(state)
         node = self._make_node(state, is_terminal=False)
         node.set_interactive(True)
@@ -1392,7 +1780,7 @@ class EditScene(QGraphicsScene):
                     elif (
                         self._config is not None
                         and self._config.is_definition
-                        and not isinstance(self._drag_src, (CallNodeItem, PortNodeItem))
+                        and not isinstance(self._drag_src, (FoldedNodeItem, PortNodeItem))
                         and self._drag_when is not None
                     ):
                         self._offer_new_exit(self._drag_src, self._drag_when, event.scenePos())
@@ -1457,6 +1845,10 @@ class EditScene(QGraphicsScene):
         if isinstance(item, RegionItem):
             self.focus_region_requested.emit(item.region_id)
             return
+        if isinstance(item, CollapsedRegionItem):
+            # Stepping in, in either mode: the region stays collapsed behind the level.
+            self.focus_region_requested.emit(item.state_id)
+            return
         if isinstance(item, CallNodeItem):
             if self._interactive_mode:
                 self.open_definition_requested.emit(item.state_id)
@@ -1480,6 +1872,8 @@ class EditScene(QGraphicsScene):
         menu = popup_menu(view) if view is not None else QMenu()
         if isinstance(item, CallNodeItem):
             self._build_call_menu(menu, item)
+        elif isinstance(item, CollapsedRegionItem):
+            self._build_collapsed_menu(menu, item)
         elif isinstance(item, NodeItem):
             self._build_node_menu(menu, item, event.scenePos())
         elif isinstance(item, RegionItem):
@@ -1488,8 +1882,8 @@ class EditScene(QGraphicsScene):
             act = QAction("Delete Transition", menu)
             act.triggered.connect(lambda: self._delete_edge_item(item))
             menu.addAction(act)
-            if not isinstance(item.src_node, (CallNodeItem, PortNodeItem)) and not isinstance(
-                item.dst_node, (CallNodeItem, PortNodeItem)
+            if not isinstance(item.src_node, (FoldedNodeItem, PortNodeItem)) and not isinstance(
+                item.dst_node, (FoldedNodeItem, PortNodeItem)
             ):
                 act_ins = QAction("Insert State Here", menu)
                 act_ins.triggered.connect(lambda: self._insert_state_on_edge(item))
@@ -1509,6 +1903,17 @@ class EditScene(QGraphicsScene):
                 act_out.triggered.connect(lambda: self.add_port_node(SUBGRAPH_EXIT, at))
                 menu.addAction(act_out)
             self._add_create_region_action(menu)
+            to_collapse, to_expand = self.bulk_collapse_targets(True), self.bulk_collapse_targets(False)
+            if to_collapse or to_expand:
+                menu.addSeparator()
+                act_ca = QAction("Collapse All Regions", menu)
+                act_ca.setEnabled(bool(to_collapse))
+                act_ca.triggered.connect(lambda: self.collapse_all_requested.emit(True))
+                menu.addAction(act_ca)
+                act_ea = QAction("Expand All Regions", menu)
+                act_ea.setEnabled(bool(to_expand))
+                act_ea.triggered.connect(lambda: self.collapse_all_requested.emit(False))
+                menu.addAction(act_ea)
         if not menu.isEmpty():
             menu.exec(event.screenPos())
         menu.deleteLater()
@@ -1537,6 +1942,69 @@ class EditScene(QGraphicsScene):
         menu.addAction(act_del)
         self._add_region_membership_actions(menu, item)
 
+    def _build_collapsed_menu(self, menu, item: CollapsedRegionItem) -> None:
+        """A collapsed region's verbs: the region's own, plus expanding it and deleting what it holds."""
+        rid = item.state_id
+        region = self._region_by_id(rid)
+        n = len(region.members) if region is not None else 0
+        act_expand = QAction("Expand Region", menu)
+        act_expand.triggered.connect(lambda: self.set_region_collapsed(rid, False))
+        menu.addAction(act_expand)
+        menu.addSeparator()
+        act_rn = QAction("Rename Region", menu)
+        act_rn.triggered.connect(lambda: self._rename_region(rid))
+        menu.addAction(act_rn)
+        act_rc = QAction("Change Color", menu)
+        act_rc.triggered.connect(lambda: self._recolor_region(rid))
+        menu.addAction(act_rc)
+        menu.addSeparator()
+        act_save = QAction("Save Region as Reusable Subgraph…", menu)
+        act_save.triggered.connect(lambda: self.save_region_as_subgraph_requested.emit(rid))
+        menu.addAction(act_save)
+        act_rm = QAction("Remove Region", menu)
+        act_rm.triggered.connect(lambda: self._remove_region(rid))
+        menu.addAction(act_rm)
+        act_del = QAction(f"Delete Region and {n} Node{'' if n == 1 else 's'}", menu)
+        act_del.triggered.connect(lambda: self.remove_instance(rid))
+        menu.addAction(act_del)
+        self._add_region_membership_actions(menu, item)
+
+    def _rename_region(self, region_id: str) -> None:
+        self._region_manager.rename_region(region_id)
+        self.refresh_call_nodes()
+
+    def _recolor_region(self, region_id: str) -> None:
+        self._region_manager.recolor_region(region_id)
+        self.refresh_call_nodes()
+
+    def _remove_region(self, region_id: str) -> None:
+        """Drop the grouping only; a collapsed region's members come back into view (``_after_region_edit``)."""
+        self._region_manager.delete_region(region_id)
+
+    def _folded_signature(self) -> tuple:
+        if self._config is None:
+            return ()
+        return tuple(
+            (r.id, frozenset(r.members)) for r in folded_regions(self._config, self._expanded, self._collapse_overrides)
+        )
+
+    def _after_region_edit(self) -> None:
+        """What a region edit reports: rebuilt first when it changed what is drawn folded.
+
+        Adding a node to a collapsed region folds it away, and removing the region or
+        a member brings nodes back; the region manager edits the model only.
+        """
+        if self._config is not None and self._folded_signature() != self._folded_sig:
+            prev = self._in_structural_edit
+            self._in_structural_edit = True
+            try:
+                self.setup(self._config)
+            finally:
+                self._in_structural_edit = prev
+        else:
+            self._sync_region_buttons()  # a new region gets its button; a changed one its blocker
+        self.graph_changed.emit()
+
     def _build_node_menu(self, menu, item: NodeItem, scene_pos: QPointF) -> None:
         sid = item.state_id
         is_port = isinstance(item, PortNodeItem)
@@ -1546,7 +2014,7 @@ class EditScene(QGraphicsScene):
         # target areas agree.  Output first, matching mousePressEvent.
         port_out_hit = self._node_near_port_out(scene_pos)
         port_in_hit = self._node_near_port_in(scene_pos)
-        if not is_port and port_out_hit is not None and not isinstance(port_out_hit[0], CallNodeItem):
+        if not is_port and port_out_hit is not None and not isinstance(port_out_hit[0], FoldedNodeItem):
             port_node, port_return = port_out_hit
             label = f"Insert State at {port_return} Port" if port_return else "Insert State at Output Port"
             act_port = QAction(label, menu)
@@ -1557,7 +2025,7 @@ class EditScene(QGraphicsScene):
             self._add_stop_actions(menu, port_node.state_id, port_return)
             if not menu.isEmpty():
                 menu.addSeparator()
-        elif not is_port and port_in_hit is not None and not isinstance(port_in_hit[0], CallNodeItem):
+        elif not is_port and port_in_hit is not None and not isinstance(port_in_hit[0], FoldedNodeItem):
             act_port = QAction("Insert State at Input Port", menu)
             act_port.triggered.connect(lambda _=None, s=port_in_hit[0].state_id: self._prompt_insert_at_input_port(s))
             menu.addAction(act_port)
@@ -1705,6 +2173,14 @@ class EditScene(QGraphicsScene):
         act_rc = QAction("Change Color", menu)
         act_rc.triggered.connect(lambda: self._region_manager.recolor_region(rid))
         menu.addAction(act_rc)
+        act_col = QAction("Collapse Region", menu)
+        blocker = self.collapse_blocker(rid)
+        if blocker is not None:
+            act_col.setEnabled(False)
+            act_col.setToolTip(blocker)
+            menu.setToolTipsVisible(True)
+        act_col.triggered.connect(lambda: self.set_region_collapsed(rid, True))
+        menu.addAction(act_col)
         menu.addSeparator()
         act_save = QAction("Save Region as Reusable Subgraph…", menu)
         act_save.triggered.connect(lambda: self.save_region_as_subgraph_requested.emit(rid))
@@ -1788,23 +2264,22 @@ class EditScene(QGraphicsScene):
     ) -> tuple[list[tuple[str, str | None]], str] | None:
         """The flat ``[(source, when)]`` and destination a drawn edge between two items stands for.
 
-        From a call node, the pairs feeding the exit ``when`` names; into one, the
+        From a folded node, the pairs feeding the exit ``when`` names; into one, the
         member its entry ``dst_port`` is reached by. None when there is nothing to wire.
         """
-        if isinstance(dst_node, CallNodeItem):
-            region = self._region_by_id(dst_node.state_id)
-            port = region.source.ports.get(dst_port or "") if region and region.source else None
-            if port is None or port.member is None:
+        if isinstance(dst_node, FoldedNodeItem):
+            ports = self._fold_ports.get(dst_node.state_id)
+            member = ports.entry_member(dst_port) if ports is not None else None
+            if member is None:
                 return None
-            dest = member_id(dst_node.state_id, port.member)
+            dest = member
         else:
             dest = dst_node.state_id
-        if isinstance(src_node, CallNodeItem):
-            region = self._region_by_id(src_node.state_id)
-            port = region.source.ports.get(when or "") if region and region.source else None
-            if port is None or not port.from_:
+        if isinstance(src_node, FoldedNodeItem):
+            ports = self._fold_ports.get(src_node.state_id)
+            pairs = ports.exit_feeds(when) if ports is not None else []
+            if not pairs:
                 return None
-            pairs = [(member_id(src_node.state_id, m), w) for m, w in port.from_]
         else:
             pairs = [(src_node.state_id, when)]
         return pairs, dest
@@ -1823,7 +2298,7 @@ class EditScene(QGraphicsScene):
             return
         if not src_node.has_output_port or not dst_node.input_ports():
             return
-        if isinstance(dst_node, CallNodeItem) and dst_port not in dst_node.input_ports():
+        if isinstance(dst_node, FoldedNodeItem) and dst_port not in dst_node.input_ports():
             dst_port = dst_node.input_ports()[0] if dst_node.input_ports() else None
         if isinstance(dst_node, PortNodeItem) and isinstance(src_node, PortNodeItem):
             return  # an Entry straight into an Exit wires nothing
@@ -1867,7 +2342,43 @@ class EditScene(QGraphicsScene):
         self.refresh_terminal()
         self.refresh_port_marks()
         self.refresh_errors()
+        self._refresh_folds()
         self.graph_changed.emit()
+
+    def _refresh_folds(self) -> None:
+        """Redraw when an edit changed what a collapsed region's node shows.
+
+        Its ports are inferred from the edges crossing it, so an edge added, deleted or
+        rewired there can add, drop or rename one; and a node moved can open or close a
+        column of the fold. Either rebuilds the scene from the config, as undo does.
+        Nothing is done, cheaply, while no region is collapsed.
+        """
+        self._sync_region_buttons()
+        if self._config is None or not any(self.is_collapsed(rid) for rid in self._fold_ports):
+            return
+        ports = {rid: self._ports_for(r) for rid in self._fold_ports if (r := self._region_by_id(rid)) is not None}
+        if ports != self._fold_ports:
+            self.setup(self._config)
+            return
+        placed = []
+        for did, node in self._node_items.items():
+            region = self._region_by_id(did) if self.is_folded(did) else None
+            if region is not None:
+                anchor = region_anchor(self._config, region)
+                placed.append((node, float(anchor["x"]), float(anchor["y"])))
+                continue
+            state = next((s for s in self._config.states if s.id == did), None)
+            if state is not None and state.position is not None:
+                placed.append((node, float(state.position["x"]), float(state.position["y"])))
+        folded = [r for rid in self._fold_ports if (r := self._region_by_id(rid)) is not None]
+        fold = self._build_fold(placed, folded)
+        if fold == self._fold:
+            return
+        self._fold = fold
+        for node, x, y in placed:
+            dx, dy = fold.to_display(x, y)
+            node.setPos(dx, dy - node.body_height / 2)
+        self._update_scene_rect()
 
     def _copy_selected(self) -> None:
         if self._config is None:
@@ -1884,6 +2395,13 @@ class EditScene(QGraphicsScene):
         # since a nested instance composes through its outer.
         whole = [r for r in linked_regions(self._config) if r.members and set(r.members) <= selected_ids]
         regions = [r.model_dump() for r in whole if not any(is_nested_in(r, o) for o in whole)]
+        # So does a selected collapsed region, which pastes collapsed; an expanded plain
+        # region still does not travel.
+        regions += [
+            r.model_dump()
+            for r in folded_regions(self._config, self._expanded, self._collapse_overrides)
+            if r.source is None and set(r.members) <= selected_ids
+        ]
         self._clipboard = (states, transitions, regions)
 
     def _paste(self) -> None:
@@ -1896,9 +2414,12 @@ class EditScene(QGraphicsScene):
         # Determine (offset_x, offset_y) to apply to every pasted node's stored position.
         # Clipboard positions: p["x"] = node left edge, p["y"] = node center y (StateModel convention).
         # A copied instance is placed by its anchor -- its call node -- not by its members.
-        member_ids = {m for rd in regions_data for m in rd["members"]}
+        # Everything here is in stored positions; the cursor and the items are drawn
+        # through the fold, and are mapped back before they are compared.
+        linked_data = [rd for rd in regions_data if rd.get("source")]
+        member_ids = {m for rd in linked_data for m in rd["members"]}
         positions = [sd["position"] for sd in states_data if sd.get("position") and sd["id"] not in member_ids]
-        positions += [rd["source"].get("anchor") for rd in regions_data if rd["source"].get("anchor")]
+        positions += [rd["source"].get("anchor") for rd in linked_data if rd["source"].get("anchor")]
 
         offset_x = 0.0
         offset_y = 0.0
@@ -1910,10 +2431,11 @@ class EditScene(QGraphicsScene):
                 cursor_in_vp = view.viewport().rect().contains(cursor_local)
                 if cursor_in_vp:
                     cursor_scene = view.mapToScene(view.mapFromGlobal(QCursor.pos()))
+                    cursor_x, cursor_y = self._fold.to_stored(cursor_scene.x(), cursor_scene.y())
                     centroid_x = sum(p["x"] for p in positions) / len(positions)
                     centroid_y = sum(p["y"] for p in positions) / len(positions)
-                    offset_x = cursor_scene.x() - centroid_x
-                    offset_y = cursor_scene.y() - centroid_y
+                    offset_x = cursor_x - centroid_x
+                    offset_y = cursor_y - centroid_y
 
             if not cursor_in_vp:
                 # Fallback: start one grid row below the source nodes, preserving X.
@@ -1922,9 +2444,15 @@ class EditScene(QGraphicsScene):
             # Shift offset_y downward until no pasted node collides with an existing one.
             # Grid cell key: (col based on left edge, row based on center y) — same as snap formula.
             occupied = {
-                (round(item.pos().x() / GRID_W), round((item.pos().y() + item.body_height / 2) / GRID_H))
+                (round(p["x"] / GRID_W), round(p["y"] / GRID_H))
                 for item in self._node_items.values()
+                if (p := self.stored_position(item.pos(), item.body_height))
             }
+            # A collapsed region's members are out of sight but not out of the layout:
+            # a node pasted onto one would sit on it once the region is expanded.
+            for s in self._config.states:
+                if s.position is not None and self.is_collapsed(self.display_id(s.id)):
+                    occupied.add((round(float(s.position["x"]) / GRID_W), round(float(s.position["y"]) / GRID_H)))
             for _ in range(50):
                 if not any(
                     (round((p["x"] + offset_x) / GRID_W), round((p["y"] + offset_y) / GRID_H)) in occupied
@@ -1961,12 +2489,7 @@ class EditScene(QGraphicsScene):
             node = self._make_node(state, is_terminal=True)
             node.set_interactive(True)
             if new_sd.get("position"):
-                node.setPos(
-                    QPointF(
-                        new_sd["position"]["x"],
-                        new_sd["position"]["y"] - NODE_H / 2,
-                    )
-                )
+                node.setPos(self.drawn_position(new_sd["position"]))
             self.addItem(node)
             self._node_items[state.id] = node
 
@@ -1988,6 +2511,7 @@ class EditScene(QGraphicsScene):
             if new_id in self._node_items:
                 self._node_items[new_id].setSelected(True)
 
+        self._refresh_folds()
         self._update_scene_rect()
         view = self.views()[0] if self.views() else None
         if view is not None:
@@ -2005,7 +2529,7 @@ class EditScene(QGraphicsScene):
         offset_x: float,
         offset_y: float,
     ) -> None:
-        """Paste a clipboard that carries at least one whole subgraph instance.
+        """Paste a clipboard that carries at least one whole subgraph instance or collapsed region.
 
         Each copied instance becomes a *new* instance: a fresh region id, the same
         inputs, the anchor translated with the paste, and members composed from the
@@ -2014,9 +2538,10 @@ class EditScene(QGraphicsScene):
         own snapshot is renamed onto the new region id instead, so the paste still
         works and the new call node flags ``missing`` at the next compose like any other.
 
-        States outside every copied instance paste as ordinary states. The scene is
-        rebuilt from the config afterwards rather than grown item by item -- the same
-        path undo takes.
+        States outside every copied instance paste as ordinary states, and a copied
+        collapsed region comes back around its pasted members, still collapsed, under a
+        new id. The scene is rebuilt from the config afterwards rather than grown item
+        by item -- the same path undo takes.
         """
         assert self._config is not None
         config = self._config
@@ -2033,6 +2558,8 @@ class EditScene(QGraphicsScene):
 
         taken = taken_ids(config)
         for rd in regions_data:
+            if not rd.get("source"):
+                continue  # a collapsed plain region: rebuilt around its members below
             old_rid = rd["id"]
             source = SubgraphSource.model_validate(rd["source"])
             defn = library.get(source.subgraph_id) if library is not None else None
@@ -2112,6 +2639,22 @@ class EditScene(QGraphicsScene):
                 continue  # internal to an instance: the composition supplied it
             new_transitions.append(TransitionModel.model_validate({**td, "source": src, "dest": dst}))
 
+        taken_rids = {r.id for r in config.regions} | {r.id for r in new_regions}
+        for rd in regions_data:
+            if rd.get("source"):
+                continue
+            members = [id_map[m] for m in rd["members"] if id_map.get(m) in new_ids]
+            if len(members) < 2:
+                continue
+            rid = uuid.uuid4().hex[:8]
+            while rid in taken_rids:
+                rid = uuid.uuid4().hex[:8]
+            taken_rids.add(rid)
+            new_rids.append(rid)
+            new_regions.append(
+                RegionModel(id=rid, label=rd["label"], members=members, color=rd.get("color", 1), collapsed=True)
+            )
+
         config.states.extend(new_states)
         config.transitions.extend(new_transitions)
         config.regions.extend(new_regions)
@@ -2135,8 +2678,8 @@ class EditScene(QGraphicsScene):
         selected = list(self.selectedItems())
         if not selected:
             return
-        nodes = [item for item in selected if isinstance(item, NodeItem) and not isinstance(item, CallNodeItem)]
-        calls = [item for item in selected if isinstance(item, CallNodeItem)]
+        nodes = [item for item in selected if isinstance(item, NodeItem) and not isinstance(item, FoldedNodeItem)]
+        calls = [item for item in selected if isinstance(item, FoldedNodeItem)]
         edges = [item for item in selected if isinstance(item, EdgeItem)]
         if not nodes and not calls and not edges:
             return
@@ -2174,8 +2717,16 @@ class EditScene(QGraphicsScene):
         n_states = len(nodes)
         if n_states:
             parts.append(f"{n_states} state{'s' if n_states != 1 else ''}")
-        if calls:
-            parts.append(f"{len(calls)} subgraph{'s' if len(calls) != 1 else ''}")
+        instances = [c for c in calls if isinstance(c, CallNodeItem)]
+        collapsed = [c for c in calls if isinstance(c, CollapsedRegionItem)]
+        if instances:
+            parts.append(f"{len(instances)} subgraph{'s' if len(instances) != 1 else ''}")
+        if collapsed:
+            held = sum(len(r.members) for c in collapsed if (r := self._region_by_id(c.state_id)) is not None)
+            parts.append(
+                f"{len(collapsed)} collapsed region{'s' if len(collapsed) != 1 else ''} "
+                f"({held} node{'s' if held != 1 else ''})"
+            )
         if total_transitions:
             parts.append(f"{total_transitions} transition{'s' if total_transitions != 1 else ''}")
         summary = " and ".join(parts) if parts else "selection"
@@ -2239,10 +2790,10 @@ class EditScene(QGraphicsScene):
         """
         if self._config is None:
             return False
-        if self.is_call_node(state_id):
+        if self.is_folded(state_id):
             return self.remove_instance(state_id, confirm=confirm)
         if state_id in self._call_of:
-            return False  # a member goes only with its whole instance
+            return False  # a member goes only with the whole node it is drawn as
         if confirm:
             state = next((s for s in self._config.states if s.id == state_id), None)
             label = (state.label or state_id) if state else state_id
@@ -2424,7 +2975,7 @@ class EditScene(QGraphicsScene):
             return
         s, w, d, edge_item = self._edge_items[record_idx]
         new_s, new_d = self.display_id(new_src), self.display_id(new_dst)
-        involves_call = any(self.is_call_node(x) for x in (s, d, new_s, new_d))
+        involves_call = any(self.is_folded(x) for x in (s, d, new_s, new_d))
         if involves_call:
             models = self._edge_models.get(edge_item, [])
             self._unregister_edge(s, d, edge_item)
@@ -2509,16 +3060,17 @@ class EditScene(QGraphicsScene):
         Overlap is tested against the nodes' actual rectangles rather than which grid
         cell they round to; cell-occupancy alone still left 7% overlapping.
 
-        Rows are snapped to whole multiples of GRID_H, which is where the shipped bots
-        put every one of their 1264 nodes. ``find_empty_grid_cell`` -- the older search
-        behind "Add State Here" -- offsets its rows by half a node instead, so what it
-        returns is collision-free but never row-aligned with anything already there.
+        *seed* and the result are an item's top-left, as ``setPos`` takes it. Rows are
+        snapped so the node's *centre* sits on a whole multiple of GRID_H, because a
+        stored position's y is the centre and that is where the shipped bots put every
+        one of their nodes -- the same rows ``find_empty_grid_cell`` returns. Snapping
+        the top edge instead put every insert one row above its neighbours (#85).
         """
         boxes = [QRectF(n.pos().x(), n.pos().y(), NODE_W, n.body_height) for n in self._node_items.values()]
         cell_x = round(seed.x() / GRID_W)
-        cell_y = round(seed.y() / GRID_H)
+        cell_y = round((seed.y() + NODE_H / 2) / GRID_H)
         for dx, dy in _placement_candidates(x_dir):
-            pos = QPointF((cell_x + dx) * GRID_W, (cell_y + dy) * GRID_H)
+            pos = QPointF((cell_x + dx) * GRID_W, (cell_y + dy) * GRID_H - NODE_H / 2)
             if not any(QRectF(pos.x(), pos.y(), NODE_W, NODE_H).intersects(b) for b in boxes):
                 return pos
         return seed
@@ -2529,10 +3081,9 @@ class EditScene(QGraphicsScene):
         Shared by every insert path. The caller owns the undo snapshot and all the
         transition wiring; this only brings the state into existence.
 
-        The stored position is the one the item is actually placed at. That was not
-        true of the edge-insert path, which wrote a y one NODE_H below where the node
-        appeared -- self-correcting, because the next mouse release flushes real item
-        positions into the model, but wrong until then.
+        *pos* is the item's top-left; the stored y is its centre, as ``_flush_positions``
+        writes it and ``setup`` reads it. Storing the top-left put a node saved before
+        anything flushed it back half a node higher than it was drawn.
         """
         new_id = _unique_id([st.id for st in self._config.states])
         default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
@@ -2540,7 +3091,7 @@ class EditScene(QGraphicsScene):
             StateModel(
                 id=new_id,
                 node_type=node_type,
-                position={"x": pos.x(), "y": pos.y()},
+                position=self.stored_position(pos),
                 params=default_params,
             )
         )
@@ -2575,7 +3126,7 @@ class EditScene(QGraphicsScene):
         if self._config is None:
             return None
         target = self._node_items.get(state_id)
-        if target is None or isinstance(target, (CallNodeItem, PortNodeItem)):
+        if target is None or isinstance(target, (FoldedNodeItem, PortNodeItem)):
             return None
         incoming = [t for t in self._config.transitions if t.dest == state_id]
         pos = self.free_position_near(QPointF(target.pos().x() - GRID_W, target.pos().y()), x_dir=-1)
@@ -2600,32 +3151,35 @@ class EditScene(QGraphicsScene):
         """Insert a state of *node_type* after *state_id*'s *return_name* port.
 
         Every transition leaving that port now leaves the new state instead, keeping
-        its ``when``, flags and label; *state_id* is then wired to the new state on the
-        port that was clicked.
+        its flags and label; *state_id* is then wired to the new state on the port
+        that was clicked.
 
-        ``when`` survives the move only because *node_type* is required to produce
-        *return_name* -- the value describes the *source* node's outcome, so a node
-        that cannot produce it would leave every rerouted edge unconditional, firing
-        on failure as readily as on success. The picker enforces this, and so does
-        this method: it refuses rather than quietly rewriting the guards.
+        ``when`` describes the *source* node's outcome, so it survives the move only
+        when *node_type* can produce *return_name* too. When it cannot -- an action
+        dropped on a condition's TRUE port -- the rerouted edges take the new node's
+        happy-path return instead, the rule an insert on an edge follows. Left as it
+        was, the value would never be produced and every rerouted edge would be dead.
+        The port picker still offers only node types that keep the value, since that
+        is the insert an author clicking a port means; speed-authoring (#85) is what
+        relies on the remap.
 
-        Returns the new state's id, or None if the insert was refused.
+        Returns the new state's id, or None if the insert was refused: the source is
+        not an ordinary node, or *node_type* has no returns to route anything off.
         """
         if self._config is None:
             return None
         source = self._node_items.get(state_id)
-        if source is None or isinstance(source, (CallNodeItem, PortNodeItem)):
+        if source is None or isinstance(source, (FoldedNodeItem, PortNodeItem)):
             return None
-        if return_name is not None and return_name not in _node_returns(node_type):
-            logger.warning(
-                "Refusing to insert %r at the %s port of %s: it cannot return %s, "
-                "which would leave the rerouted edges unconditional",
-                node_type,
-                return_name,
-                state_id,
-                return_name,
-            )
-            return None
+        new_returns = _node_returns(node_type)
+        onward_when = return_name
+        if return_name is not None and return_name not in new_returns:
+            onward_when = _happy_path_return(new_returns)
+            if onward_when is None:
+                logger.warning(
+                    "Refusing to insert %r at the %s port of %s: it has no returns", node_type, return_name, state_id
+                )
+                return None
 
         outgoing = [t for t in self._config.transitions if t.source == state_id and t.when == return_name]
         port = source.port_out_for(return_name)
@@ -2639,7 +3193,12 @@ class EditScene(QGraphicsScene):
             for t in outgoing:
                 old_dst = t.dest
                 t.source = new_id
+                t.when = onward_when
+                # An edge into a call node is rebuilt from the model, which already
+                # carries the new `when`; any other keeps its record and is re-keyed.
                 self.change_edge_endpoints(state_id, return_name, old_dst, new_id, old_dst)
+                if onward_when != return_name and not self.is_folded(self.display_id(old_dst)):
+                    self.change_edge_when(new_id, return_name, old_dst, onward_when)
             self._create_transition(source, new_node, return_name)
         finally:
             self._in_structural_edit = prev_in_structural
@@ -2693,11 +3252,12 @@ class EditScene(QGraphicsScene):
         self._update_scene_rect()
 
     def _flush_positions(self) -> None:
-        """Write where every item now sits back into the model.
+        """Write where every item now sits back into the model, through the fold.
 
-        A call node's position is its instance's ``anchor``, and the members follow it
-        by the same delta -- nested instances' anchors included -- since members sit at
-        ``anchor + definition position``.
+        A call node's position is its instance's ``anchor``, and a collapsed region's is
+        its members' top-left; either way the members follow it by the same delta --
+        nested instances' anchors included -- since an instance's members sit at
+        ``anchor + definition position`` and a collapsed region stores nothing else.
         """
         if self._config is None:
             return
@@ -2708,20 +3268,18 @@ class EditScene(QGraphicsScene):
             node = self._node_items.get(state.id)
             if node is None:
                 continue
-            new_pos = {
-                "x": node.scenePos().x(),
-                "y": node.scenePos().y() + node.body_height / 2,
-            }
-            if state.position != new_pos:
+            new_pos = self.stored_position(node.scenePos(), node.body_height)
+            if state.position is None or _moved(state.position, new_pos):
                 updates[state.id] = new_pos
         anchor_moves: list[tuple[RegionModel, float, float]] = []
-        for rid, node in self.call_nodes().items():
+        for rid, node in self.folded_nodes().items():
             region = self._region_by_id(rid)
-            if region is None or region.source is None:
+            if region is None:
                 continue
-            anchor = region.source.anchor or {"x": 0.0, "y": 0.0}
-            dx = round(node.scenePos().x() - float(anchor["x"]), 3)
-            dy = round(node.scenePos().y() + node.body_height / 2 - float(anchor["y"]), 3)
+            anchor = region_anchor(self._config, region)
+            new_anchor = self.stored_position(node.scenePos(), node.body_height)
+            dx = round(new_anchor["x"] - float(anchor["x"]), 3)
+            dy = round(new_anchor["y"] - float(anchor["y"]), 3)
             if dx or dy:
                 anchor_moves.append((region, dx, dy))
         if not updates and not anchor_moves:
@@ -2732,15 +3290,16 @@ class EditScene(QGraphicsScene):
                 state.position = updates[state.id]
         by_id = {s.id: s for s in self._config.states}
         for region, dx, dy in anchor_moves:
-            assert region.source is not None
-            shifted = [region, *nested_regions(self._config, region)]
-            for r in shifted:
+            for r in [region, *nested_regions(self._config, region)]:
+                if r.source is None:
+                    continue
                 a = r.source.anchor or {"x": 0.0, "y": 0.0}
                 r.source.anchor = {"x": float(a["x"]) + dx, "y": float(a["y"]) + dy}
             for m in region.members:
                 st = by_id.get(m)
                 if st is not None and st.position is not None:
                     st.position = {"x": float(st.position["x"]) + dx, "y": float(st.position["y"]) + dy}
+        self._refresh_folds()
         self._update_scene_rect()
         self.graph_changed.emit()
 

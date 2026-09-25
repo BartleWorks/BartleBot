@@ -52,13 +52,13 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
-from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
+from bartlebot.gui.widgets.player_picker import pick_player, picker_label
 from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.zone_picker import NavZoneButton, is_destination
@@ -214,8 +214,7 @@ class _FillButton(ActionButton):
         super().enterEvent(event)
 
     def _refresh_label(self) -> None:
-        n = len(self._get_clients())
-        self.setText("Fill current" if n == 1 else "Fill current ▾")
+        self.setText(picker_label("Fill current", len(self._get_clients())))
 
 
 def _format_axis(value: Any) -> str:
@@ -425,17 +424,7 @@ class _XyzField(ThemedMixin, QWidget):
             self.set_coordinate(values)
 
     def _show_fill_menu(self, btn: QPushButton) -> None:
-        clients = self._get_clients()
-        if not clients:
-            return
-        if len(clients) == 1:
-            asyncio.ensure_future(self._fill_from_player(0))
-            return
-        menu = popup_menu(btn)
-        for i in range(len(clients)):
-            action = menu.addAction(f"Fill from Player {i + 1}")
-            action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._fill_from_player(idx)))
-        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+        pick_player(btn, len(self._get_clients()), "Fill", lambda i: asyncio.ensure_future(self._fill_from_player(i)))
 
     async def _fill_from_player(self, idx: int) -> None:
         clients = self._get_clients()
@@ -538,17 +527,7 @@ class _ZoneWidget(QWidget):
     # ------------------------------------------------------------------
 
     def _show_fill_menu(self, btn: QPushButton) -> None:
-        clients = self._get_clients()
-        if not clients:
-            return
-        if len(clients) == 1:
-            asyncio.ensure_future(self._fill_from_player(0))
-            return
-        menu = popup_menu(btn)
-        for i in range(len(clients)):
-            action = menu.addAction(f"Fill from Player {i + 1}")
-            action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._fill_from_player(idx)))
-        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+        pick_player(btn, len(self._get_clients()), "Fill", lambda i: asyncio.ensure_future(self._fill_from_player(i)))
 
     async def _fill_from_player(self, idx: int) -> None:
         clients = self._get_clients()
@@ -634,17 +613,9 @@ class _NavZoneField(QWidget):
         self.picker.set_value(zone)
 
     def _show_fill_menu(self) -> None:
-        clients = self._get_clients()
-        if not clients:
-            return
-        if len(clients) == 1:
-            asyncio.ensure_future(self._fill_from_player(0))
-            return
-        menu = popup_menu(self.fill_btn)
-        for i in range(len(clients)):
-            action = menu.addAction(f"Fill from Player {i + 1}")
-            action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._fill_from_player(idx)))
-        menu.exec(self.fill_btn.mapToGlobal(self.fill_btn.rect().bottomLeft()))
+        pick_player(
+            self.fill_btn, len(self._get_clients()), "Fill", lambda i: asyncio.ensure_future(self._fill_from_player(i))
+        )
 
     async def _fill_from_player(self, idx: int) -> None:
         clients = self._get_clients()
@@ -1435,8 +1406,19 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         if isinstance(widget, _XyzField):
             widget.set_coordinate({"x": x, "y": y, "z": z})
 
+    def players(self, key: str) -> list[int]:
+        """The 1-based players a 'player_list' field names, or [] for no such field."""
+        widget = self._widgets.get(key)
+        return widget.get_value() if isinstance(widget, PlayerListWidget) else []
+
+    def set_players(self, key: str, value: list[int]) -> None:
+        """Programmatically set a 'player_list' field by key."""
+        widget = self._widgets.get(key)
+        if isinstance(widget, PlayerListWidget):
+            widget.set_value(value)
+
     def snapshot(self, keys) -> dict[str, Any]:
-        """What the zone and xyz fields named in *keys* hold now, for ``restore``.
+        """What the zone, xyz and player list fields named in *keys* hold now, for ``restore``.
 
         Record writes as it goes, so a recording cancelled partway puts these back
         rather than leaving half of it behind. An xyz field is kept as its boxes'
@@ -1452,6 +1434,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 saved[key] = widget.value()
             elif isinstance(widget, _ZoneWidget | QLineEdit):
                 saved[key] = widget.text()
+            elif isinstance(widget, PlayerListWidget):
+                saved[key] = widget.get_value()
         return saved
 
     def restore(self, saved: dict[str, Any]) -> None:
@@ -1460,6 +1444,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             widget = self._widgets.get(key)
             if isinstance(widget, _XyzField):
                 widget.set_texts(value)
+            elif isinstance(widget, PlayerListWidget):
+                widget.set_value(value)
             else:
                 self.set_str(key, value)
 
@@ -1874,6 +1860,8 @@ class _ParamPanel(ThemedMixin, QWidget):
     # inputs). Its undo step is already open: a typed edit announced itself with
     # edit_starting, a discrete one pushed through structural_property_changed.
     region_property_changed = pyqtSignal()
+    # (region id, collapse): the region page's Collapse / Expand button (#67).
+    region_collapse_requested = pyqtSignal(str, bool)
     detach_requested = pyqtSignal(str)  # region ID
     open_definition_requested = pyqtSignal(str)  # region ID
     # (role field, state id): the call node's page moved a bot role onto the member
@@ -1896,6 +1884,8 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._region: RegionModel | None = None
         self._suppress: bool = False
         self._get_clients: Callable[[], list] = lambda: []
+        # The player Ctrl+R records from; AppController points it at the last-focused game window.
+        self._preferred_player: Callable[[], int] = lambda: 0
         # All states for the source/dest dropdowns; populated by show_transition()
         self._all_states: list = []
         # Other transitions in the config — for duplicate-check in endpoint change
@@ -2010,8 +2000,10 @@ class _ParamPanel(ThemedMixin, QWidget):
         # found (#106): the full width of the panel, like the wiki import beside it,
         # with SECONDARY's accent and the red dot. The status goes underneath, and is
         # hidden while it has nothing to say.
-        self._record_btn = RecordButton(style=ActionStyle.SECONDARY, fill=True)
-        self._record_btn.setToolTip("Fill this node's values from the game (Ctrl+R)")
+        self._record_btn = RecordButton(style=ActionStyle.SECONDARY, fill=True, get_clients=lambda: self._get_clients())
+        self._record_btn.setToolTip(
+            "Fill this node's values from the game (Ctrl+R records from the game window you were last in)"
+        )
         self._record_status_lbl = QLabel("")
         self._record_status_lbl.setWordWrap(True)
         self._record_status_lbl.setVisible(False)
@@ -2150,6 +2142,20 @@ class _ParamPanel(ThemedMixin, QWidget):
         rf.addRow("Label", self._region_label_edit)
         rf.addRow("Color", self._region_color_row)
         region_vbox.addWidget(region_form_w)
+        # Collapsing draws the region as one node and closes up the space it used.
+        self._region_fold_note = ThemedTextLabel("", color="text_muted")
+        self._region_fold_note.setWordWrap(True)
+        self._region_fold_note.setContentsMargins(6, 0, 6, 0)
+        self._region_collapse_btn = ActionButton("region_collapse", "Collapse", fill=False)
+        region_actions = QWidget()
+        region_actions_row = QHBoxLayout(region_actions)
+        region_actions_row.setContentsMargins(6, 8, 6, 0)
+        region_actions_row.addStretch(1)
+        region_actions_row.addWidget(self._region_collapse_btn)
+        region_vbox.addWidget(self._region_fold_note)
+        region_vbox.addWidget(region_actions)
+        self._region_collapse_btn.clicked.connect(self._on_region_collapse_clicked)
+        self._region_collapsed = False  # as drawn, for the button's next click
 
         region_vbox.addStretch()
         region_scroll = QScrollArea()
@@ -2303,6 +2309,8 @@ class _ParamPanel(ThemedMixin, QWidget):
         connected = len(self._get_clients())
         for w in self.findChildren(PlayerListWidget) + self.findChildren(PlayerSlotWidget):
             w.set_available_players(connected)
+        for button in self.findChildren(RecordButton):
+            button.refresh_players()
 
     def show_idle(self) -> None:
         self._cancel_record()
@@ -2411,8 +2419,21 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._wiki_import_row.setVisible(state.node_type == "handle_combat")
         self._stack.setCurrentIndex(_PAGE_NODE)
 
-    def show_region(self, region: RegionModel) -> None:
-        """Show a plain region's page: its label and colour. The page edits ``region`` in place."""
+    def show_region(
+        self,
+        region: RegionModel,
+        *,
+        collapsed: bool | None = None,
+        collapse_blocker: str | None = None,
+        fights: list[str] | None = None,
+    ) -> None:
+        """Show a plain region's page: its label, colour, and Collapse / Expand. Edits ``region`` in place.
+
+        ``collapsed`` is whether it is drawn collapsed, which in Run mode can differ
+        from its saved flag; it defaults to the flag. ``collapse_blocker`` is why the
+        region cannot collapse, shown on the disabled button. ``fights`` are the fights a collapsed region holds, named because they
+        are out of sight on the canvas.
+        """
         self._cancel_record()
         self._state = None
         self._transition = None
@@ -2421,9 +2442,35 @@ class _ParamPanel(ThemedMixin, QWidget):
         try:
             self._region_label_edit.setText(region.label)
             self._region_color_row.set_key(region.color)
+            collapsed = bool(region.collapsed) if collapsed is None else collapsed
+            self._region_collapsed = collapsed
+            self._region_collapse_btn.setText("Expand" if collapsed else "Collapse")
+            self._region_collapse_btn.set_icon_name("region_expand" if collapsed else "region_collapse")
+            self._region_collapse_btn.setEnabled(collapsed or collapse_blocker is None)
+            self._region_collapse_btn.setToolTip(
+                "Draw the region's nodes again"
+                if collapsed
+                else (collapse_blocker or "Draw the region as one node and close up the space it uses")
+            )
+            lines = []
+            if collapsed:
+                lines.append("Drawn as one node. Double-click it to step in.")
+                if fights:
+                    lines.append(f"Fights inside: {', '.join(fights)}. Their strategies are set on the Combat tab.")
+            self._region_fold_note.setText("\n".join(lines))
+            self._region_fold_note.setVisible(bool(lines))
         finally:
             self._suppress = False
         self._stack.setCurrentIndex(_PAGE_REGION)
+
+    def _on_region_collapse_clicked(self) -> None:
+        if self._suppress or self._region is None:
+            return
+        self.region_collapse_requested.emit(self._region.id, not self._region_collapsed)
+
+    @property
+    def region_collapse_button(self) -> ActionButton:
+        return self._region_collapse_btn
 
     def show_call(self, region: RegionModel, defn, status, config) -> None:
         """Show a call node's page for the subgraph instance *region*."""
@@ -2838,9 +2885,52 @@ class _ParamPanel(ThemedMixin, QWidget):
     # Recording
     # ------------------------------------------------------------------
 
+    def set_preferred_player_getter(self, fn: Callable[[], int]) -> None:
+        """Pass a callable naming the player index Ctrl+R records from."""
+        self._preferred_player = fn
+
     def toggle_record(self) -> None:
-        """Start or cancel recording for the currently selected node (hotkey handler)."""
-        self._on_record_clicked()
+        """Ctrl+R: start or cancel recording the shown node.
+
+        A key has no menu to open, so it records from the preferred player -- the game
+        window last in focus, the rule Bar A's buttons follow -- rather than asking.
+        """
+        if recording.is_recording():
+            self._cancel_record()
+            return
+        if not self._shows_recordable_node():
+            return
+        clients = self._get_clients()
+        if not clients:
+            self._set_record_status("No player connected.")
+            return
+        index = self._preferred_player()
+        self.start_record(clients[index if 0 <= index < len(clients) else 0])
+
+    def start_record(self, client) -> bool:
+        """Record the shown node from *client*.
+
+        False, and nothing started, when the shown node has no recorder or another
+        recording is already live -- speed-authoring (#85) says so rather than cancelling it.
+        """
+        if recording.is_recording() or not self._shows_recordable_node():
+            return False
+        clients = self._get_clients()
+        asyncio.ensure_future(
+            recording.run_recording(
+                self._state.node_type,
+                client,
+                self._param_form,
+                self._set_record_status,
+                self._record_btn.set_label,
+                self._try_set_label,
+                player=clients.index(client) + 1 if client in clients else None,
+            )
+        )
+        return True
+
+    def _shows_recordable_node(self) -> bool:
+        return self._state is not None and self._state.node_type in recording.RECORDABLE_NODES
 
     def _cancel_record(self) -> None:
         recording.cancel_active_recording()
@@ -2855,28 +2945,28 @@ class _ParamPanel(ThemedMixin, QWidget):
         if recording.is_recording():
             self._cancel_record()
             return
-        if self._state is None:
+        if not self._shows_recordable_node():
             return
         clients = self._get_clients()
         if not clients:
             self._set_record_status("No player connected.")
             return
-        if self._state.node_type not in recording.RECORDABLE_NODES:
-            return
-        asyncio.ensure_future(
-            recording.run_recording(
-                self._state.node_type,
-                clients[0],
-                self._param_form,
-                self._set_record_status,
-                self._record_btn.set_label,
-                self._try_set_label,
-            )
-        )
+        pick_player(self._record_btn, len(clients), "Record", self._record_from_player)
+
+    def _record_from_player(self, index: int) -> None:
+        clients = self._get_clients()
+        if index < len(clients):
+            self.start_record(clients[index])
 
     def _try_set_label(self, label: str) -> None:
-        """Auto-populate the node label if it is currently empty."""
-        if self._state is None or (self._state.label or "").strip():
+        """Auto-populate the node label if it is empty or one an earlier recording wrote.
+
+        A label the author typed is never replaced.
+        """
+        if self._state is None:
+            return
+        current = (self._state.label or "").strip()
+        if current == label or (current and not recording.is_recorded_label(current)):
             return
         self.edit_starting.emit("Edit params")
         self._state.label = label

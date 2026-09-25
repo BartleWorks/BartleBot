@@ -4,9 +4,33 @@ import asyncio
 from itertools import chain, repeat
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 import bartlebot.nodes.interaction.interact as ix
 import bartlebot.nodes.node_helpers as _nh
+from bartlebot.nodes.paths import DECLINE_QUEST_PATH
 from tests.conftest import FakeClient, FakeMachine
+
+
+@pytest.fixture(autouse=True)
+def _no_page_settle(monkeypatch):
+    monkeypatch.setattr(_nh, "DIALOG_PAGE_SETTLE", 0.0)
+
+
+def _no_offer(visible):
+    """*visible*, except that no page is a side quest offer: the DECLINE button never shows.
+
+    Without this a fake answering every path alike would put DECLINE on every page, and
+    advance_dialog_once would decline rather than press SPACEBAR.
+    """
+
+    async def _fake(c, path):
+        if path == DECLINE_QUEST_PATH:
+            return False
+        return await visible(c, path)
+
+    return _fake
+
 
 _PARAMS = {
     "zone": "TestZone",
@@ -59,7 +83,7 @@ async def test_success_with_dialog():
         patch.object(ix, "POLL_INTERVAL", 0),
         patch.object(_nh, "POLL_INTERVAL", 0),
         patch.object(_nh, "DIALOG_FAST_POLL_INTERVAL", 0),
-        patch.object(_nh, "is_visible_by_path", side_effect=_visible),
+        patch.object(_nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
     ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
@@ -89,7 +113,7 @@ async def test_success_multiple_clients():
         patch.object(ix, "POLL_INTERVAL", 0),
         patch.object(_nh, "POLL_INTERVAL", 0),
         patch.object(_nh, "DIALOG_FAST_POLL_INTERVAL", 0),
-        patch.object(_nh, "is_visible_by_path", side_effect=_visible),
+        patch.object(_nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
     ):
         result = await ix.run(FakeMachine(), clients, {**_PARAMS, "interact_clients": [1, 2]})
 
@@ -150,7 +174,7 @@ async def test_dialog_timeout_fails():
         patch.object(ix, "POLL_INTERVAL", 0),
         patch.object(ix, "DIALOG_TIMEOUT", 0.01),
         patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
-        patch.object(_nh, "is_visible_by_path", new=AsyncMock(return_value=True)),
+        patch.object(_nh, "is_visible_by_path", side_effect=_no_offer(AsyncMock(return_value=True))),
     ):
         result = await ix.run(FakeMachine(), [client], _PARAMS)
 
@@ -388,7 +412,7 @@ async def test_sequential_advances_dialogue_per_client():
         patch.object(_nh, "POLL_INTERVAL", 0),
         patch.object(_nh, "DIALOG_FAST_POLL_INTERVAL", 0),
         patch.object(_nh, "OBJECT_USE_DELAY", 0),
-        patch.object(_nh, "is_visible_by_path", side_effect=_visible),
+        patch.object(_nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
     ):
         result = await ix.run(FakeMachine(), [c1, c2], params)
 
@@ -463,7 +487,7 @@ async def test_late_dialog_caught_within_safety_window():
     with (
         patch.object(ix, "POLL_INTERVAL", 0),
         patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0),
-        patch.object(_nh, "is_visible_by_path", side_effect=_late_visible),
+        patch.object(_nh, "is_visible_by_path", side_effect=_no_offer(_late_visible)),
     ):
         result = await ix.run(machine, [client], _PARAMS)
 
