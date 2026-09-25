@@ -9,17 +9,25 @@ with its own param keys and prompt text:
     screen (``interact``, ``interact_menu``, ``apply_level_scaling``,
     ``enter_zone_via_object``).
   * ``_Point`` — the zone and the player's position, at once.
+  * ``_Enemy`` — the mob closest to the player, by name (``handle_combat``).
 
 Adding a new recordable node type is one ``_REGISTRY`` entry: a workflow and the
 keys it fills. ``RECORDABLE_NODES`` and the dispatch in ``run_recording`` follow.
 """
 
 import asyncio
+import logging
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from bartlebot import entity_names
+from bartlebot.nodes import node_helpers
+from bartlebot.nodes.paths import NPC_RANGE_TITLE_PATH
 from bartlebot.nodes.timing import RECORDING_POLL_INTERVAL
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Session guard — enforces at most one active recording across the entire app
@@ -62,8 +70,13 @@ async def run_recording(
     on_status: Callable[[str], None],
     on_btn: Callable[[str], None],
     try_set_label: Callable[[str], None],
+    *,
+    player: int | None = None,
 ) -> None:
     """Dispatch to the recording workflow for *node_type*.
+
+    *player* is the 1-based number of the player *client* is, for a workflow that
+    records who performed the step; None when the caller cannot say.
 
     At most one session runs at a time.  Returns immediately if another
     session is already active.
@@ -77,7 +90,7 @@ async def run_recording(
     my_task = asyncio.current_task()
     _active_task = my_task
     try:
-        await fn.record(client, param_form, on_status, on_btn, try_set_label)
+        await fn.record(client, param_form, on_status, on_btn, try_set_label, player)
     finally:
         # Only clear if we're still the registered task; a cancel followed by
         # an immediate new session could have already replaced _active_task.
@@ -100,6 +113,34 @@ def _zone_display(zone: str | None) -> str:
         return toZoneDisplayName(toZone(zone))
     except Exception:
         return zone.split("/")[-1] if "/" in zone else zone
+
+
+#: The labels Record writes, other than a bare zone: ``Interact with …``, ``Defeat …``,
+#: and a zone change's ``A → B``.
+_RECORDED_LABEL = re.compile(r"^(?:Interact with |Defeat ).+|.+ → .+$")
+#: What ``_zone_display`` falls back to, and so what an older recording left as the label:
+#: a zone path's last segment, like ``WC_Hub`` — one word joined by underscores, which a
+#: label typed by hand almost never is.
+_ZONE_SEGMENT_LABEL = re.compile(r"^\w+_\w+$")
+
+
+def is_recorded_label(label: str) -> bool:
+    """Whether *label* has the shape of one Record wrote, so recording again may replace it.
+
+    Recognised by shape rather than remembered, so a label recorded in an earlier session,
+    or before this rule existed, is still replaced; one the author typed is kept.
+    """
+    label = label.strip()
+    return label == _zone_display(None) or bool(_RECORDED_LABEL.match(label) or _ZONE_SEGMENT_LABEL.match(label))
+
+
+async def _npc_range_title(client) -> str:
+    """The interact prompt's title — the name of what the player is in range of — or ''."""
+    try:
+        return node_helpers.strip_html(await node_helpers.get_text_by_path(client, NPC_RANGE_TITLE_PATH))
+    except Exception:
+        logger.debug("Could not read the interact prompt's title", exc_info=True)
+        return ""
 
 
 async def _wait_for_zone_name(client, poll: float, timeout: float = 10.0) -> str | None:
@@ -143,13 +184,13 @@ class _Workflow:
     #: to stop.
     shows_stop: bool = True
 
-    async def record(self, client, param_form, on_status, on_btn, try_set_label) -> None:
+    async def record(self, client, param_form, on_status, on_btn, try_set_label, player=None) -> None:
         saved = param_form.snapshot(self.keys())
         if self.shows_stop:
             on_btn("Stop")
             on_status("Starting…")
         try:
-            on_status(await self.capture(client, param_form, on_status, try_set_label))
+            on_status(await self.capture(client, param_form, on_status, try_set_label, player))
             on_btn("Record")
         except asyncio.CancelledError:
             param_form.restore(saved)
@@ -164,8 +205,8 @@ class _Workflow:
         """Every param key ``capture`` may write."""
         raise NotImplementedError
 
-    async def capture(self, client, param_form, on_status, try_set_label) -> str:
-        """Fill *param_form* and return the closing status."""
+    async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
+        """Fill *param_form* and return the closing status. *player* is as ``run_recording``'s."""
         raise NotImplementedError
 
 
@@ -186,7 +227,7 @@ class _WalkIn(_Workflow):
     def keys(self) -> list[str]:
         return [self.zone_key, "reset_xyz", self.point_key, self.destination_key]
 
-    async def capture(self, client, param_form, on_status, try_set_label) -> str:
+    async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
         from_zone = await client.zone_name()
         param_form.set_str(self.zone_key, from_zone)
         last_pos = await client.body.position()
@@ -218,6 +259,11 @@ class _Interact(_Workflow):
     until the prompt goes — the last in-range position wins. With a
     *destination_key*, the workflow then waits out the loading screen that follows
     and reads the zone it lands in.
+
+    With *names_target*, the prompt's title — what the player is in range of — names the
+    node ``Interact with …``, in the author's display language; the zone names it when the
+    title cannot be read. With *players_key*, an empty player list becomes the player the
+    step was recorded from; one the author already filled is left alone.
     """
 
     zone_key: str = "zone"
@@ -226,12 +272,16 @@ class _Interact(_Workflow):
     destination_key: str | None = None
     #: What is left for the author to do by hand, said in the closing status.
     todo: str | None = None
+    names_target: bool = False
+    players_key: str | None = None
 
     def keys(self) -> list[str]:
         keys = [self.zone_key, "reset_xyz", "interact_xyz"]
+        if self.players_key is not None:
+            keys.append(self.players_key)
         return keys if self.destination_key is None else [*keys, self.destination_key]
 
-    async def capture(self, client, param_form, on_status, try_set_label) -> str:
+    async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
         zone = await client.zone_name()
         param_form.set_str(self.zone_key, zone)
         _set_position(param_form, "reset_xyz", await client.body.position())
@@ -241,14 +291,21 @@ class _Interact(_Workflow):
             await asyncio.sleep(RECORDING_POLL_INTERVAL)
 
         on_status(self.finish)
+        target = ""
         while True:
             _set_position(param_form, "interact_xyz", await client.body.position())
+            if self.names_target:
+                # Read on every poll: the prompt can show before its title is filled in.
+                target = await _npc_range_title(client) or target
             await asyncio.sleep(RECORDING_POLL_INTERVAL)
             if not await client.is_in_npc_range():
                 break
 
+        if self.players_key is not None and player is not None and not param_form.players(self.players_key):
+            param_form.set_players(self.players_key, [player])
+
         if self.destination_key is None:
-            try_set_label(_zone_display(zone))
+            try_set_label(f"Interact with {target}" if target else _zone_display(zone))
             where = zone.split("/")[-1]
             return f"Done — {self.todo} ({where})" if self.todo else f"Done — {where}"
 
@@ -271,7 +328,7 @@ class _Point(_Workflow):
     def keys(self) -> list[str]:
         return ["zone", "xyz"]
 
-    async def capture(self, client, param_form, on_status, try_set_label) -> str:
+    async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
         zone = await client.zone_name()
         pos = await client.body.position()
         param_form.set_str("zone", zone)
@@ -279,6 +336,31 @@ class _Point(_Workflow):
         if self.sets_label:
             try_set_label(_zone_display(zone))
         return f"Done — {zone.split('/')[-1]}"
+
+
+@dataclass(frozen=True, kw_only=True)
+class _Enemy(_Workflow):
+    """The mob closest to the player — the one their card shows — captured at once.
+
+    Its object name fills *key*, the identity a fight node matches on; the name a player
+    reads, where the game has one, names the node ``Defeat …``.
+    """
+
+    key: str = "enemy"
+    shows_stop: bool = False
+
+    def keys(self) -> list[str]:
+        return [self.key]
+
+    async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
+        mob = await client.find_closest_mob()
+        name = await mob.object_name() if mob is not None else None
+        if not name:
+            return "No enemy nearby."
+        param_form.set_str(self.key, name)
+        shown = entity_names.label(name)
+        try_set_label(f"Defeat {shown}")
+        return f"Done — {shown}"
 
 
 # ---------------------------------------------------------------------------
@@ -292,8 +374,8 @@ _REGISTRY: dict[str, _Workflow] = {
     "enter_dungeon": _WalkIn(
         zone_key="from_zone", point_key="sigil_xyz", destination_key="dungeon_zone", approach="Walk to sigil…"
     ),
-    "interact": _Interact(),
-    "interact_menu": _Interact(todo="set Menu Path manually"),
+    "interact": _Interact(names_target=True, players_key="interact_clients"),
+    "interact_menu": _Interact(todo="set Menu Path manually", names_target=True, players_key="interact_clients"),
     "apply_level_scaling": _Interact(approach="Walk to level-scaling NPC…", finish="Leave NPC range to finish…"),
     "enter_zone_via_object": _Interact(
         zone_key="from_zone", finish="Interact to trigger zone change…", destination_key="to_zone"
@@ -301,6 +383,7 @@ _REGISTRY: dict[str, _Workflow] = {
     "teleport_to_coordinates": _Point(shows_stop=False),
     "mark_location": _Point(shows_stop=False),
     "teleport_to_marked_location": _Point(sets_label=True),
+    "handle_combat": _Enemy(),
 }
 
 #: Frozenset of node_type strings that have a recording workflow.

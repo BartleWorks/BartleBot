@@ -436,6 +436,7 @@ class CallNodePage(ThemedMixin, QWidget):
                 status.setText if status is not None else (lambda _t: None),
                 button.set_label,
                 lambda _label: None,  # the member's label belongs to the definition
+                player=index + 1,
             )
         )
 

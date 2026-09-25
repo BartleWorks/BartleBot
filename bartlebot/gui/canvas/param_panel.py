@@ -1406,8 +1406,19 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         if isinstance(widget, _XyzField):
             widget.set_coordinate({"x": x, "y": y, "z": z})
 
+    def players(self, key: str) -> list[int]:
+        """The 1-based players a 'player_list' field names, or [] for no such field."""
+        widget = self._widgets.get(key)
+        return widget.get_value() if isinstance(widget, PlayerListWidget) else []
+
+    def set_players(self, key: str, value: list[int]) -> None:
+        """Programmatically set a 'player_list' field by key."""
+        widget = self._widgets.get(key)
+        if isinstance(widget, PlayerListWidget):
+            widget.set_value(value)
+
     def snapshot(self, keys) -> dict[str, Any]:
-        """What the zone and xyz fields named in *keys* hold now, for ``restore``.
+        """What the zone, xyz and player list fields named in *keys* hold now, for ``restore``.
 
         Record writes as it goes, so a recording cancelled partway puts these back
         rather than leaving half of it behind. An xyz field is kept as its boxes'
@@ -1423,6 +1434,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 saved[key] = widget.value()
             elif isinstance(widget, _ZoneWidget | QLineEdit):
                 saved[key] = widget.text()
+            elif isinstance(widget, PlayerListWidget):
+                saved[key] = widget.get_value()
         return saved
 
     def restore(self, saved: dict[str, Any]) -> None:
@@ -1431,6 +1444,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             widget = self._widgets.get(key)
             if isinstance(widget, _XyzField):
                 widget.set_texts(value)
+            elif isinstance(widget, PlayerListWidget):
+                widget.set_value(value)
             else:
                 self.set_str(key, value)
 
@@ -2845,6 +2860,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         """
         if recording.is_recording() or not self._shows_recordable_node():
             return False
+        clients = self._get_clients()
         asyncio.ensure_future(
             recording.run_recording(
                 self._state.node_type,
@@ -2853,6 +2869,7 @@ class _ParamPanel(ThemedMixin, QWidget):
                 self._set_record_status,
                 self._record_btn.set_label,
                 self._try_set_label,
+                player=clients.index(client) + 1 if client in clients else None,
             )
         )
         return True
@@ -2887,8 +2904,14 @@ class _ParamPanel(ThemedMixin, QWidget):
             self.start_record(clients[index])
 
     def _try_set_label(self, label: str) -> None:
-        """Auto-populate the node label if it is currently empty."""
-        if self._state is None or (self._state.label or "").strip():
+        """Auto-populate the node label if it is empty or one an earlier recording wrote.
+
+        A label the author typed is never replaced.
+        """
+        if self._state is None:
+            return
+        current = (self._state.label or "").strip()
+        if current == label or (current and not recording.is_recorded_label(current)):
             return
         self.edit_starting.emit("Edit params")
         self._state.label = label

@@ -110,14 +110,21 @@ def test_the_mark_follows_players_connecting(qapp):
 
 
 @pytest.fixture
-def panel(qapp, monkeypatch):
+def players() -> list[int | None]:
+    """The 1-based player each recording the panel started was told it records from."""
+    return []
+
+
+@pytest.fixture
+def panel(qapp, monkeypatch, players):
     """A canvas showing one Go To XYZ node, with run_recording captured instead of run."""
     from bartlebot.gui.canvas.bot_canvas import BotCanvas
 
     started: list[object] = []
 
-    async def _fake_run(node_type, client, *_args):
+    async def _fake_run(node_type, client, *_args, player=None):
         started.append(client)
+        players.append(player)
 
     monkeypatch.setattr(recording, "run_recording", _fake_run)
     recording._active_task = None
@@ -153,6 +160,16 @@ async def test_start_record_uses_the_client_it_is_given(panel):
     await _settle()
 
     assert started == ["p3"]
+
+
+async def test_start_record_names_the_player_it_records_from(panel, players):
+    """Record fills who performed a step, so it is told which player the client is."""
+    p, _started, _canvas = panel
+
+    p.start_record("p3")
+    await _settle()
+
+    assert players == [3]
 
 
 async def test_ctrl_r_records_from_the_preferred_player(panel):

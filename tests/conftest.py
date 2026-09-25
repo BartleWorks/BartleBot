@@ -225,16 +225,24 @@ def message_box_patches(visible_buttons=()):
 class FakeParamForm:
     """Minimal stub for _DynamicParamForm used by recording workflows.
 
-    Recording workflows write through two methods, and snapshot/restore around them:
-      - set_str(key, value)    — stores a string field
-      - set_xyz(key, x, y, z) — stores an XYZ coordinate triple
+    Recording workflows write through three methods, and snapshot/restore around them:
+      - set_str(key, value)      — stores a string field
+      - set_xyz(key, x, y, z)   — stores an XYZ coordinate triple
+      - set_players(key, value) — stores a player list, read back by players(key)
 
-    Tests inspect .str_fields and .xyz_fields directly.
+    Tests inspect .str_fields, .xyz_fields and .player_fields directly.
     """
 
     def __init__(self):
         self.str_fields: dict[str, str] = {}
         self.xyz_fields: dict[str, tuple[float, float, float]] = {}
+        self.player_fields: dict[str, list[int]] = {}
+
+    def players(self, key: str) -> list[int]:
+        return self.player_fields.get(key, [])
+
+    def set_players(self, key: str, value: list[int]) -> None:
+        self.player_fields[key] = list(value)
 
     def set_str(self, key: str, value: str) -> None:
         self.str_fields[key] = value
@@ -243,11 +251,11 @@ class FakeParamForm:
         self.xyz_fields[key] = (x, y, z)
 
     def snapshot(self, keys) -> dict:
-        return {key: (self.str_fields.get(key), self.xyz_fields.get(key)) for key in keys}
+        return {key: (self.str_fields.get(key), self.xyz_fields.get(key), self.player_fields.get(key)) for key in keys}
 
     def restore(self, saved: dict) -> None:
-        for key, (text, xyz) in saved.items():
-            for fields, value in ((self.str_fields, text), (self.xyz_fields, xyz)):
+        for key, (text, xyz, players) in saved.items():
+            for fields, value in ((self.str_fields, text), (self.xyz_fields, xyz), (self.player_fields, players)):
                 if value is None:
                     fields.pop(key, None)
                 else:
