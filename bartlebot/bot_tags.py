@@ -13,11 +13,27 @@ it.
 Tags are deliberately *not* derived from ``drops[].category``. Nearly every boss
 drops jewels and treasure cards, so a derived list would tag almost every bot with
 almost every tag — the opposite of a filter. They record stated intent instead.
+
+A few tags are *suggested* by the graph, and :func:`suggested_tags` is the whole list of
+rules. They are the present-or-absent cases true of few bots — an ``enter_gauntlet`` node
+means Gauntlet — and nothing broader: Boss against Mobs is two ``handle_combat`` nodes
+with different monsters in front of them, which no rule can tell apart. A suggestion is
+not a derived tag. The editor offers it, the author accepts it or does not, and once
+accepted it is an ordinary tag in the file, removable and indistinguishable from one
+typed by hand. Deriving and locking it would override an author who has a reagent node
+in a combat bot and does not call it Collecting.
+
+The cost of storing it is that it can go stale: delete the reagent node and Collecting
+stays. The library test flags a *missing* suggested tag and never an extra one, because
+a test cannot tell a stale tag from that author's judgment.
 """
 
 from __future__ import annotations
 
 import logging
+from pathlib import Path
+
+from bartlebot.bot_folders import TEMPLATES_FOLDER
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +61,7 @@ TAG_GROUPS: dict[str, tuple[str, ...]] = {
         "Dungeon",  # a full dungeon (more than just a single fight)
         "Challenge Mode",  # dungeons with Challenge Mode available
         "Gauntlet",  # housing gauntlets
-        "Team-Up",  # joins the fight through Team-Up instead of entering alone
+        "Team-Up",  # the dungeon offers Team-Up; entering alone is always still an option
         "Collecting",  # a reagent-node route with no combat, unlike a boss that drops reagents
         "Training Points",  # a bot that completes training point quests
     ),
@@ -93,3 +109,55 @@ def normalize_tags(raw: object) -> list[str]:
             continue
         seen.add(entry)
     return sorted(seen, key=_TAG_ORDER.__getitem__)
+
+
+#: The group a bot is asked about when it is saved without any tag from it.
+REWARDS = "Rewards"
+
+
+def _all_specs(specs=None):
+    """The NodeSpec registry, imported late so this module stays importable alone."""
+    if specs is not None:
+        return specs
+    from bartlebot.nodes.registry import NODE_SPECS  # noqa: PLC0415 - avoids an import cycle
+
+    return NODE_SPECS
+
+
+def suggested_tags(states, specs=None) -> list[str]:
+    """The tags *states* suggest, in ``BOT_TAGS`` order.
+
+    Pass the *composed* states: a ``handle_combat`` inside a linked subgraph is still
+    combat, and is what keeps a bot that collects reagents between fights out of
+    Collecting.
+
+    The rules live beside the nodes that imply them, as ``NodeSpec.implies_tags`` and
+    ``implies_tags_when``, so a new node that implies a tag never touches this module.
+    The one rule no single node can know — Collecting needs the *absence* of combat — is
+    written out here.
+    """
+    registry = _all_specs(specs)
+    out: set[str] = set()
+    node_types: set[str] = set()
+    for state in states:
+        node_types.add(state.node_type)
+        spec = registry.get(state.node_type)
+        if spec is None:
+            continue
+        out.update(spec.implies_tags)
+        out.update(tag for tag, param in spec.implies_tags_when.items() if state.params.get(param))
+    if "collect_reagent" in node_types and "handle_combat" not in node_types:
+        out.add("Collecting")
+    return [t for t in BOT_TAGS if t in out]
+
+
+def wants_rewards_prompt(tags: list[str], path: str | Path | None) -> bool:
+    """Whether saving a bot with *tags* to *path* should ask for a Rewards tag.
+
+    A bot normally says what a run of it yields, and a library filtered by Rewards never
+    finds one that does not. Templates are exempt: what a run yields depends on the
+    dungeon a template is turned into, so there is nothing true for one to say.
+    """
+    if any(tag_group(t) == REWARDS for t in tags):
+        return False
+    return path is None or Path(path).parent.name != TEMPLATES_FOLDER

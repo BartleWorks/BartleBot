@@ -66,8 +66,12 @@ FOLDER_BADGES: dict[str, str] = {
     "raids": "Raid",
 }
 
+#: The folder the bot templates live in. Its files are skeletons rather than library bots,
+#: so what a run yields is not theirs to say: nothing asks one for a Rewards tag.
+TEMPLATES_FOLDER = "templates"
+
 #: Folders that hold bot files but are no badge category, and so carry no icon.
-UNBADGED_FOLDERS: frozenset[str] = frozenset({"subgraphs", "templates"})
+UNBADGED_FOLDERS: frozenset[str] = frozenset({"subgraphs", TEMPLATES_FOLDER})
 
 #: The category the library's "All" row wears: the badge page's own "all badges" spiral.
 ALL_BADGE = "All"

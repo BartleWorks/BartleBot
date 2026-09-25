@@ -1600,6 +1600,10 @@ class BotCanvas(QWidget):
         self._restore(config)
         self._refresh_undo_actions()
 
+    def refresh_tags(self) -> None:
+        """Re-read the loaded bot's tags into the header, after something outside it set them."""
+        self._toolbar.refresh_tags()
+
     def set_bot_file(self, filename: str | None) -> None:
         """Name the file the loaded bot came from, shown in the header."""
         self._toolbar.set_file(filename)
@@ -1964,7 +1968,7 @@ class BotCanvas(QWidget):
     def _on_edit_clicked(self) -> None:
         self.enter_edit_mode()
 
-    def exit_edit_mode(self) -> bool:
+    def exit_edit_mode(self, *, saved: bool = False) -> bool:
         """Switch back to Run mode, as the Done button does.
 
         Returns False, having changed nothing, in a definition document, which has no
@@ -1972,12 +1976,16 @@ class BotCanvas(QWidget):
         counterpart to :meth:`enter_edit_mode`, so that a caller outside the canvas can
         drive a round trip -- the layout probe and the height tests both do -- without
         reaching for the button's own slot.
+
+        *saved* is Save & Done's way out, taken after the save has been written: there
+        is no change to announce, and announcing one would mark the bot unsaved again.
         """
         if self.is_definition:
             return False
         self._apply_mode(BotMode.RUN)
         self.mode_changed.emit(BotMode.RUN)
-        self.config_changed.emit()
+        if not saved:
+            self.config_changed.emit()
         return True
 
     def _on_done_clicked(self) -> None:
@@ -1987,11 +1995,11 @@ class BotCanvas(QWidget):
         self.exit_edit_mode()
 
     def _on_save_done_clicked(self) -> None:
+        # The listener saves and then calls ``exit_edit_mode``, and only if the save went
+        # through: a save the author cancels (the Rewards prompt) leaves them editing.
         if self.is_definition:
             self.definition_save_requested.emit(True)
             return
-        self._apply_mode(BotMode.RUN)
-        self.mode_changed.emit(BotMode.RUN)
         self.save_done.emit()
 
     def _canvas_origin(self):
@@ -2580,6 +2588,7 @@ class BotCanvas(QWidget):
         self._refresh_errors()
         self._scene.refresh_region_states(self._compose_report)
         self._update_validation_badge()
+        self._toolbar.refresh_tag_suggestions()
         self._minimap.fit_to_scene()
         if self._search_bar.isVisible():
             self._on_search_text_changed(self._search_bar.current_text())
@@ -2670,6 +2679,8 @@ class BotCanvas(QWidget):
                     sibling.flag_groups_op = shown.flag_groups_op
             self._scene.refresh_edge_flags(shown)
             self._config.sort_transitions()
+        # A bool param can be what suggests a tag: Offers Team-Up is the case.
+        self._toolbar.refresh_tag_suggestions()
         # Emit config change immediately for autosave/other consumers, but defer the
         # expensive full validation pass (O(n²) with large graphs) until typing pauses.
         self.config_changed.emit()

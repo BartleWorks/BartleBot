@@ -36,7 +36,7 @@ as one.
 from __future__ import annotations
 
 from PyQt6.QtCore import QEvent, QRect, QRectF, QSize, Qt, pyqtSignal
-from PyQt6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPainterPath
+from PyQt6.QtGui import QColor, QFont, QFontMetrics, QIcon, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import QLabel, QPushButton, QSizePolicy, QWidget
 
 from bartlebot.bot_tags import tag_group
@@ -256,6 +256,108 @@ class TagChip(QPushButton):
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
             self._restyle()
+
+
+class SuggestedTagPill(QPushButton):
+    """A tag the bot does not carry yet, outlined in its group's colour: ``+ Reagents``.
+
+    :class:`TagChip`'s metrics, one pixel of the padding given to the border so the two
+    sit level in a row. Outlined rather than filled because it is not a tag yet — a
+    filled one would read as already on the bot — and with no medallion for the same
+    reason, which also keeps it one shape on every install.
+
+    Checkable, for the one surface that picks several at once: checked, it fills like
+    the tag it would become and drops the ``+``. The editor header leaves it unchecked
+    and treats a click as accepting the suggestion.
+
+    The outline is painted by :func:`paint_pill_outline`, not by the stylesheet, whose
+    border is a transparent placeholder keeping the metrics. A stylesheet border is one
+    *logical* pixel, which at 125% display scaling is 1.25 device pixels, and each edge
+    rasterises to one pixel or two depending on where it falls: the bottom edge came out
+    visibly thinner than the rest.
+    """
+
+    def __init__(self, tag: str, *, tooltip: str | None = None, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._tag = tag
+        self._applying_style = False
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setToolTip(tooltip or f"Add the {tag} tag")
+        self.toggled.connect(self._on_toggled)
+        self._on_toggled(False)
+
+    @property
+    def tag(self) -> str:
+        return self._tag
+
+    def _on_toggled(self, checked: bool) -> None:
+        self.setText(self._tag if checked else f"+ {self._tag}")
+        self._restyle()
+
+    def _restyle(self) -> None:
+        if self._applying_style:  # see TagPill._restyle
+            return
+        self._applying_style = True
+        try:
+            accent = group_accent(tag_group(self._tag))
+            outline = "border: 1px solid transparent; border-radius: 9px; padding: 1px 8px;"
+            filled = pill_style(accent, THEME.pill_text, font_size=THEME.font_subtext_px, radius=9, pad="1px 8px")
+            set_style_sheet(
+                self,
+                f"QPushButton {{ background: transparent; color: {THEME.text}; font-size: {THEME.font_subtext_px}px;"
+                f" font-weight: bold; {outline} }}"
+                f"QPushButton:hover, QPushButton:checked {{ {filled} border: 1px solid transparent; }}",
+            )
+        finally:
+            self._applying_style = False
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        paint_pill_outline(painter, QRectF(self.rect()), group_accent(tag_group(self._tag)))
+        painter.end()
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._restyle()
+
+
+def paint_pill_outline(painter: QPainter, rect: QRectF, color: str) -> None:
+    """Outline *rect* as a pill, with every edge the same whole number of device pixels.
+
+    Worked in device pixels: *rect* is mapped through the painter's transform and its
+    edges rounded onto the pixel grid before the pen is inset by half its width, so each
+    edge covers whole rows and columns. At fractional scaling a widget's logical origin
+    lands between device pixels (y=109 at 125% is 136.25), so snapping in logical
+    coordinates would not be enough. The width is the scale rounded -- one pixel at 100%
+    and 125%, two at 150% and up -- so the line keeps its weight as the display scales.
+    """
+    to_device = painter.deviceTransform()
+    device = to_device.mapRect(rect)
+    scale = to_device.m22() or 1.0
+    width = max(1, round(scale))
+    snapped = QRectF(
+        round(device.left()),
+        round(device.top()),
+        round(device.right()) - round(device.left()),
+        round(device.bottom()) - round(device.top()),
+    )
+    half = width / 2
+    # Back into the painter's own coordinates rather than resetting its transform: a
+    # reset clears the world transform but not the device pixel ratio's scale, so device
+    # coordinates drawn after one are scaled a second time.
+    to_logical, _invertible = to_device.inverted()
+    box = to_logical.mapRect(snapped.adjusted(half, half, -half, -half))
+    radius = box.height() / 2
+    painter.save()
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    pen = QPen(QColor(color))
+    pen.setWidthF(width / scale)
+    painter.setPen(pen)
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.drawRoundedRect(box, radius, radius)
+    painter.restore()
 
 
 class NeutralChip(QPushButton):

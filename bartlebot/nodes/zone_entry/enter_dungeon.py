@@ -172,6 +172,7 @@ NODE_SPEC = NodeSpec(
         "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
         "every player to already be mutual in-game friends."
     ),
+    implies_tags_when={"Team-Up": PARAM_OFFERS_TEAM_UP, "Challenge Mode": "offers_challenge_mode"},
 )
 
 from bartlebot.nodes.timing import (  # noqa: E402

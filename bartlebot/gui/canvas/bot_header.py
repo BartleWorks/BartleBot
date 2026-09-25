@@ -41,13 +41,13 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, tag_group
+from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, suggested_tags, tag_group
 from bartlebot.gui.sidebar.sidebar_section import value_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.flow_layout import flow_container
 from bartlebot.gui.widgets.tag_picker import TagPickerButton
-from bartlebot.gui.widgets.tag_pill import NeutralPill, TagChip, TagPill
+from bartlebot.gui.widgets.tag_pill import NeutralPill, SuggestedTagPill, TagChip, TagPill
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -304,6 +304,12 @@ class _TagsField(QWidget):
     selection.  Here the chips beside them already do that.  Nor "Add Rewards…": the
     popup toggles, so the same button takes a tag off again, and a caption saying
     "Add" mislabels half of what it does.
+
+    In Edit mode the chips are followed by an outlined ``+ Tag`` for each tag the graph
+    suggests and the bot does not carry (#19). A reminder rather than a question: a click
+    makes it an ordinary tag, and ignoring it costs nothing and is remembered nowhere.
+    Taking an accepted one off again brings its suggestion back, which is the same
+    reminder, not a nag.
     """
 
     tags_changed = pyqtSignal(list)
@@ -311,6 +317,7 @@ class _TagsField(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._tags: list[str] = []
+        self._suggested: list[str] = []
         self._editable = False
 
         root = QHBoxLayout(self)
@@ -368,6 +375,22 @@ class _TagsField(QWidget):
             picker.set_selection([t for t in self._tags if tag_group(t) == group])
         self._rebuild()
 
+    def set_suggestions(self, tags: list[str]) -> None:
+        """Offer *tags*, the ones the graph suggests, wherever the bot does not carry them.
+
+        Called on every graph edit, so an unchanged list is a no-op rather than a rebuild.
+        """
+        if tags == self._suggested:
+            return
+        self._suggested = list(tags)
+        self._rebuild()
+
+    def shown_suggestions(self) -> list[str]:
+        """The suggestions on show: Edit mode only, and only for tags not already set."""
+        if not self._editable:
+            return []
+        return [t for t in self._suggested if t not in self._tags]
+
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
         self._rebuild()
@@ -422,6 +445,10 @@ class _TagsField(QWidget):
         self.set_tags([t for t in self._tags if t != tag])
         self.tags_changed.emit(list(self._tags))
 
+    def _accept(self, tag: str) -> None:
+        self.set_tags([*self._tags, tag])
+        self.tags_changed.emit(list(self._tags))
+
     def _rebuild(self) -> None:
         # The picker buttons live in this layout too and are long-lived, so they come out
         # before the sweep and go back in after it, always first.
@@ -439,6 +466,10 @@ class _TagsField(QWidget):
                 self._pill_layout.addWidget(chip)
             else:
                 self._pill_layout.addWidget(TagPill(tag))
+        for tag in self.shown_suggestions():
+            ghost = SuggestedTagPill(tag, tooltip=f"This bot's graph suggests {tag}. Click to add it.")
+            ghost.clicked.connect(lambda _checked=False, t=tag: self._accept(t))
+            self._pill_layout.addWidget(ghost)
 
         # The placeholder stands in for the pills, not for the whole row: with the
         # picker buttons showing, an untagged bot already reads as untagged.
@@ -669,6 +700,7 @@ class BotHeader(ThemedMixin, QWidget):
             self._authors_edit.setText("")
             self._authors_lbl.setText("")
             self._tags_field.set_tags([])
+            self._tags_field.set_suggestions([])
             self._version_pill.setText("")
             self._apply_version_slot()
             self._tag_row.setVisible(False)
@@ -680,6 +712,7 @@ class BotHeader(ThemedMixin, QWidget):
             self._authors_edit.setText(config.authors or "")
             self._authors_lbl.setText(f"by {config.authors}" if config.authors else "")
             self._tags_field.set_tags(config.tags)
+            self.refresh_tag_suggestions()
             if config.definition is not None:
                 # A definition's version is an integer the library bumps on every
                 # save, never typed: the pill is all there is, in both modes.
@@ -697,6 +730,19 @@ class BotHeader(ThemedMixin, QWidget):
             self._tag_row.setVisible(True)
             self._authors_slot.setVisible(is_bot)
         self._suppress = False
+
+    def refresh_tag_suggestions(self) -> None:
+        """Re-read which tags the graph suggests. Call after any edit to the graph or a param."""
+        config = self._config
+        if config is None or config.definition is not None:
+            self._tags_field.set_suggestions([])
+            return
+        self._tags_field.set_suggestions(suggested_tags(config.states))
+
+    def refresh_tags(self) -> None:
+        """Re-read the bot's tags, after something other than this header changed them."""
+        if self._config is not None:
+            self._tags_field.set_tags(self._config.tags)
 
     def set_file(self, filename: str | None) -> None:
         """Name the file the bot came from, shown beside the version."""

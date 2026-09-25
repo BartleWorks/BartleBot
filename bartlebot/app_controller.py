@@ -13,7 +13,7 @@ from wakepy import ActivationError, keep
 logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import QObject, Qt, QTimer
-from PyQt6.QtWidgets import QApplication, QFileDialog, QMessageBox
+from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
 from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
 
@@ -21,6 +21,7 @@ from bartlebot import group_manager, recovery_readiness, restricted_zones, wizar
 from bartlebot.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.bot_tags import normalize_tags, suggested_tags, wants_rewards_prompt
 from bartlebot.client_manager import ClientManager
 from bartlebot.combat_warnings import collect_combat_warnings
 from bartlebot.deck_io import DeckApplyReport, apply_deck, read_deck
@@ -28,6 +29,7 @@ from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument, _resolve_bots_dir
 from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartlebot.gui.main_window import MainWindow
+from bartlebot.gui.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
 from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
@@ -129,6 +131,9 @@ class AppController(QObject):
 
         # Auto-save state
         self._has_unsaved_changes: bool = False
+        # The id of the open bot whose author chose Save Without at the Rewards prompt:
+        # asked once per open, and remembered nowhere else. See rewards_tag_dialog.
+        self._rewards_declined_for: str | None = None
         self._auto_save_timer = QTimer(self)
         self._auto_save_timer.setSingleShot(False)
         self._auto_save_timer.timeout.connect(self._do_autosave)
@@ -242,7 +247,7 @@ class AppController(QObject):
         w.bot_canvas.pause_requested.connect(self._pause_bot)
         w.bot_canvas.resume_requested.connect(self._resume_bot)
         w.bot_canvas.stop_button.clicked.connect(self._stop_bot)
-        w.bot_canvas.save_done.connect(self._save_bot)
+        w.bot_canvas.save_done.connect(self._save_and_done)
         w.bot_canvas.open_definition_requested.connect(self._open_definition)
         w.bot_canvas.definition_back_requested.connect(self._definition_back)
         w.bot_canvas.definition_save_requested.connect(self._on_definition_save_requested)
@@ -640,6 +645,7 @@ class AppController(QObject):
         )
         self._loaded_config = config
         self._last_save_path = None
+        self._rewards_declined_for = None
         self._window.set_bot_name(config.name, "Untitled")
         self._window.bot_canvas.setup(config, mode=BotMode.EDIT)
         self._window.left_sidebar.set_config(config)
@@ -666,6 +672,7 @@ class AppController(QObject):
         self._has_unsaved_changes = False
         self._loaded_config = config
         self._last_save_path = path
+        self._rewards_declined_for = None
         self._window.set_bot_name(config.name, Path(path).name)
         self._window.bot_canvas.setup(config)
         self._window.bot_canvas.set_compose_report(report)
@@ -703,6 +710,7 @@ class AppController(QObject):
         self._loaded_config = None
         self._last_save_path = None
         self._has_unsaved_changes = False
+        self._rewards_declined_for = None
         self._window.bot_canvas.close_bot()
         self._window.left_sidebar.set_config(None)
         self._window.right_sidebar.set_config(None)
@@ -711,34 +719,69 @@ class AppController(QObject):
         self._window.set_close_enabled(False)
         self._window.set_start_enabled(False)
 
-    def _save_bot(self) -> None:
+    def _save_and_done(self) -> None:
+        """Save & Done: back to Run mode, but only once the save has gone through.
+
+        A save the author cancels -- at the Rewards prompt, or in the file dialog --
+        leaves them where they were, editing.
+        """
+        if self._save_bot():
+            self._window.bot_canvas.exit_edit_mode(saved=True)
+
+    def _confirm_rewards_tags(self, path: str | None) -> bool:
+        """Ask for a Rewards tag if the bot has none. False when the author cancels the save.
+
+        Asked once per open: Save Without is remembered against the bot's id until it is
+        closed or reopened. *path* is where the bot is about to be written, which is what
+        exempts a template.
+        """
+        config = self._loaded_config
+        if config is None or config.id == self._rewards_declined_for or not wants_rewards_prompt(config.tags, path):
+            return True
+        dialog = RewardsTagDialog(suggested_tags(config.states), self._window)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return False
+        if dialog.choice is RewardsChoice.TAGGED:
+            config.tags = normalize_tags([*config.tags, *dialog.selected_tags()])
+            self._window.bot_canvas.refresh_tags()
+        else:
+            self._rewards_declined_for = config.id
+        return True
+
+    def _save_bot(self) -> bool:
+        """Save the open document. False when nothing was written: cancelled, refused or failed."""
         if self._loaded_config is None:
-            return
+            return False
         if self._loaded_config.is_definition:
-            self._save_definition()
-            return
+            return self._save_definition()
         if self._last_save_path is None:
-            self._save_bot_as()
-            return
+            return self._save_bot_as()
+        if not self._confirm_rewards_tags(self._last_save_path):
+            return False
         try:
             self._loaded_config.save(self._last_save_path)
             self._has_unsaved_changes = False
             self._delete_autosave()
         except Exception as e:
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
+            return False
+        return True
 
-    def _save_bot_as(self) -> None:
+    def _save_bot_as(self) -> bool:
+        """Save the open bot to a file the user names. False when nothing was written."""
         if self._loaded_config is None:
-            return
+            return False
         if self._loaded_config.is_definition:
             # A definition lives in the library under its id, not in a file the user names.
-            self._save_definition()
-            return
+            return self._save_definition()
         path, _ = QFileDialog.getSaveFileName(self._window, "Save Bot As", "", "Bot Files (*.json)")
         if not path:
-            return
+            return False
         if not path.endswith(".json"):
             path += ".json"
+        # After the file dialog, not before: whether the target is a template decides it.
+        if not self._confirm_rewards_tags(path):
+            return False
         old_save_path = self._last_save_path
         # A fork gets its own identity. The copy would otherwise share the original's
         # id, and with it every value the user has stored against that bot -- and the
@@ -753,7 +796,10 @@ class AppController(QObject):
             # every value the user has stored against it for the rest of the session.
             self._loaded_config.id = old_id
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
-            return
+            return False
+        if self._rewards_declined_for == old_id:
+            # Still the same open document, under its new identity.
+            self._rewards_declined_for = self._loaded_config.id
         self._last_save_path = path
         self._has_unsaved_changes = False
         self._delete_autosave(old_save_path)
@@ -768,6 +814,7 @@ class AppController(QObject):
         # The combat half of the same re-resolve: the active strategy and the BCS
         # list are both keyed on the id, and a fork inherits neither.
         self._window.left_sidebar.rebind_identity()
+        return True
 
     # ------------------------------------------------------------------
     # Definition documents

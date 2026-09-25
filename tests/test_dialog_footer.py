@@ -229,6 +229,13 @@ def _safety_warning_dialog():
     return SafetyWarningDialog([SafetyWarning(message="This bot sells drops.")])
 
 
+def _rewards_tag_dialog():
+    from bartlebot.gui.rewards_tag_dialog import RewardsTagDialog
+
+    # With a suggestion, so Save starts enabled and Enter has somewhere to go.
+    return RewardsTagDialog(["Reagents"])
+
+
 def _wiki_import_dialog():
     from bartlebot.gui.wiki_import_dialog import WikiImportDialog
 
@@ -247,6 +254,7 @@ CONVERTED = [
     ("region_color", _color_picker_dialog, "OK"),
     ("recovery", _recovery_dialog, "OK"),
     ("safety_warning", _safety_warning_dialog, "Run Bot"),
+    ("rewards_tag", _rewards_tag_dialog, "Save"),
 ]
 
 
