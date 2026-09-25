@@ -1,5 +1,6 @@
 """Shared test doubles for node unit tests."""
 
+import asyncio
 import ctypes
 import itertools
 import logging
@@ -142,6 +143,7 @@ class FakeMachine:
         self.logs: list[tuple] = []
         self.drops: list[tuple] = []
         self.chat_baselines: dict[object, str] = {}
+        self.drop_poll: asyncio.Task | None = None
         # Which client hwnds are currently exempt from ClientHealthMonitor, and which have
         # been put back. A node that suspends and forgets to restore leaves a real crash
         # unnoticed for the rest of the run, so both sides are recorded.
@@ -166,6 +168,16 @@ class FakeMachine:
 
     def set_chat_baseline(self, client, text: str) -> None:
         self.chat_baselines[client] = text
+
+    def start_drop_poll(self, task: asyncio.Task) -> None:
+        """Mirror BotMachine: a new fight's poll cancels the previous one."""
+        if self.drop_poll is not None:
+            self.drop_poll.cancel()
+        self.drop_poll = task
+
+    async def wait_for_drop_poll(self) -> None:
+        if self.drop_poll is not None and not self.drop_poll.done():
+            await asyncio.wait({self.drop_poll})
 
     def suspend_health_checks_for(self, hwnds) -> None:
         """Record a health-check suspension. Real BotMachine flags them on its monitor."""

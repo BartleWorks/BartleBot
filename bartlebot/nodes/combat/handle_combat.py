@@ -7,9 +7,9 @@ import time
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import (
     _run_combat,
-    poll_combat_drops,
     resolve_combat,
     seed_chat_baselines,
+    start_combat_drop_poll,
 )
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 
@@ -115,7 +115,8 @@ async def run(machine, clients: list, params: dict) -> str:
            until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires.
       6. If max_duration is set and has elapsed, return FAILURE.
       7. Run SprintyCombat for all clients in parallel until combat ends.
-      8. Poll chat for drop announcements; report each via machine.on_drop().
+      8. Start a background poll of chat for drop announcements, which reports each via
+         machine.on_drop(); the node returns without waiting for it.
 
     FAILURE: target not found after retries; max_duration exceeded; clients did not enter
     combat within ENTER_COMBAT_TIMEOUT.  DSL resolution itself cannot fail — resolve_combat
@@ -243,13 +244,8 @@ async def run(machine, clients: list, params: dict) -> str:
 
     # 6. Watch the chat log for this fight's drop announcements. They are a server
     # round-trip that lands after the duel has locally ended, so this polls rather
-    # than reading once.
-    drops_found = await poll_combat_drops(machine, clients, list(range(len(clients))))
-
-    if drops_found:
-        machine.log(f"Detected {len(drops_found)} drop(s): {', '.join(drops_found)}")
-    else:
-        machine.log("No drops detected", logging.DEBUG)
+    # than reading once -- in the background, so the next node need not wait for it.
+    start_combat_drop_poll(machine, clients, list(range(len(clients))))
 
     machine.log("SUCCESS: combat complete")
     return "SUCCESS"

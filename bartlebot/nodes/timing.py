@@ -141,11 +141,12 @@ COMBAT_DROP_MESSAGE_TIMEOUT = 15.0
 # and that is exactly when a long-running session lags hardest, so the round-trip
 # that is normally instant can stretch to many seconds.
 #
-# Paid in full only by a fight that drops nothing at all — poll_new_drops returns
-# as soon as a line appears. It is also not the last line of defence: the caller
-# carries its chat baseline between fights, so a message that beats even this
-# window is recorded late by the next fight's poll rather than lost. That makes
-# this value an attribution-latency knob, not a correctness one.
+# The poll runs in the background (combat_runner.start_combat_drop_poll), so this
+# window never holds up the next node, even on a fight that drops nothing and waits
+# all of it out; only check_if_dropped waits for it. Nor is it the last line of
+# defence: the caller carries its chat baseline between fights, so a message that
+# beats even this window is recorded late by the next fight's poll rather than lost.
+# That makes this value an attribution-latency knob, not a correctness one.
 
 COMBAT_DROP_MESSAGE_POLL = 0.5
 # How often to re-read the chat log while waiting for a combat drop announcement.

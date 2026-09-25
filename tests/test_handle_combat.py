@@ -260,6 +260,7 @@ async def test_success_with_drops():
     ):
         machine = FakeMachine()
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
+        await machine.wait_for_drop_poll()
 
     assert result == "SUCCESS"
     assert len(machine.drops) == 1
@@ -267,6 +268,38 @@ async def test_success_with_drops():
     assert item == "IronBloom"
     assert qty == 1
     assert idx == 0
+
+
+async def test_success_does_not_wait_for_the_drop_poll():
+    """A fight that drops nothing used to hold the node for the whole drop window.
+
+    The poll is left running on the machine instead, and still reports what it finds.
+    """
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = True
+    announce = asyncio.Event()
+
+    async def _poll(machine, clients, slots):
+        await announce.wait()
+        machine.on_drop("IronBloom", 1, 0)
+        return ["IronBloom"]
+
+    with (
+        _patch_run_combat(),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "poll_combat_drops", new=_poll),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
+        machine = FakeMachine()
+        result = await asyncio.wait_for(hc.run(machine, [client], _DEFAULT_PARAMS), timeout=2.0)
+        assert result == "SUCCESS"
+        assert machine.drops == []
+
+        announce.set()
+        await machine.wait_for_drop_poll()
+
+    assert machine.drops == [("IronBloom", 1, 0)]
 
 
 # ---------------------------------------------------------------------------

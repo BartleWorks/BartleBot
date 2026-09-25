@@ -195,3 +195,51 @@ async def test_set_clients_prunes_departed_baselines_and_keeps_survivors():
 
     assert machine.chat_baseline(staying) == "kept"
     assert machine.chat_baseline(leaving) is None
+
+
+async def test_a_new_fights_poll_replaces_the_last_without_reporting_a_drop_twice(fast):
+    """The last fight's poll is cancelled, and the new one still sees the line it missed.
+
+    Both polls running would diff the same baseline and each report the drop.
+    """
+    machine, client = FakeMachine(), FakeClient()
+    machine.set_chat_baseline(client, "")
+    chat = ""
+
+    async def _snap(_client):
+        return chat
+
+    with patch(_SNAP, new=_snap):
+        combat_runner.start_combat_drop_poll(machine, [client], [0])
+        first = machine.drop_poll
+        await asyncio.sleep(0.03)  # the first poll is mid-window, having seen nothing
+
+        chat = _DROP
+        combat_runner.start_combat_drop_poll(machine, [client], [0])
+        await machine.wait_for_drop_poll()
+
+    assert first.cancelled()
+    assert machine.drops == [("Iron Bloom", 1, 0)]
+
+
+async def test_the_machine_cancels_the_previous_drop_poll_and_waits_without_cancelling():
+    from bartlebot.bot.machine import BotMachine
+
+    machine = BotMachine(clients=[], config={"states": [], "transitions": [], "initial": ""}, node_registry={})
+    release = asyncio.Event()
+    old = asyncio.create_task(asyncio.Event().wait())
+    new = asyncio.create_task(release.wait())
+
+    machine.start_drop_poll(old)
+    machine.start_drop_poll(new)
+    await asyncio.sleep(0)
+    assert old.cancelled()
+
+    # A waiter that gives up must leave the poll running for the next one.
+    with pytest.raises(TimeoutError):
+        await asyncio.wait_for(machine.wait_for_drop_poll(), timeout=0.01)
+    assert not new.done()
+
+    release.set()
+    await asyncio.wait_for(machine.wait_for_drop_poll(), timeout=1.0)
+    assert new.done()
