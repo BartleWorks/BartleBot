@@ -100,6 +100,14 @@ class IconButton(ThemedMixin, QPushButton):
         self._icon_name = icon_name
         self.refresh_theme_styles()
 
+    def set_tint(self, tint: IconTint) -> None:
+        """Change the glyph's colour — a toggle whose state lives elsewhere, spending the
+        accent while it is on (the authoring bar's Speed and Auto-combat)."""
+        if tint is self._tint:
+            return
+        self._tint = tint
+        self.refresh_theme_styles()
+
     def setEnabled(self, enabled: bool) -> None:  # noqa: N802 - Qt override
         was = self.isEnabled()
         super().setEnabled(enabled)

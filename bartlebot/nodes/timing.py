@@ -583,3 +583,9 @@ def jitter(base: float, factor: float = 0.2) -> float:
     human-action simulations.
     """
     return base * (1.0 + random.uniform(-factor, factor))
+
+
+SPEED_REAPPLY_INTERVAL = 0.3
+# Seconds between the authoring speed toggle's checks that each client still walks at the
+# boosted speed. The game rewrites the multiplier on every zone change and mount, so a
+# boost written once is gone after the first door; this is how soon it comes back.

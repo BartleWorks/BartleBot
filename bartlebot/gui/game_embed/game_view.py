@@ -278,10 +278,17 @@ class GameView(ThemedMixin, QWidget):
     # A failed launch's tile was clicked away. Carries the account, not the slot: a pending
     # tile's slot can still move under it, and the launch is keyed by account throughout.
     dismiss_launch_requested = pyqtSignal(str)
+    # The game window holding the keyboard right now (an hwnd), or None when BartleBot's
+    # own widgets or another application have it. What arms the authoring hotkeys: they
+    # are system-wide keys, and armed anywhere else they would eat F1 in every other app.
+    game_focus_changed = pyqtSignal(object)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._tiles: dict[int, ClientTile] = {}
+        # See game_focus_changed and last_focused_hwnd.
+        self._focused_hwnd: int | None = None
+        self._last_focused_hwnd: int | None = None
         self._detached_tiles: dict[int, DetachedTile] = {}
         # Slots holding a launch that has not produced a window yet. A third tile kind
         # rather than a flag on the other two: it has no hwnd, so almost nothing the
@@ -889,5 +896,36 @@ class GameView(ThemedMixin, QWidget):
         # ClientTile.nativeEvent): a poll grants it too late to survive BartleBot being
         # brought to the front by that click, and matched clicks through windows stacked
         # over a tile (#93).
+        focused = None
         for tile in self._tiles.values():
-            tile.set_focused(tile.is_game_focused())
+            has_focus = tile.is_game_focused()
+            tile.set_focused(has_focus)
+            if has_focus:
+                focused = tile.hwnd
+        # A game thread keeps its focus when the user switches to another application, so
+        # an embedded tile only counts while BartleBot itself is in front. A detached game
+        # window is a top-level window of its own, and is in front or not by itself.
+        foreground = _user32.GetForegroundWindow()
+        if focused is not None and foreground != int(self.window().winId()):
+            focused = None
+        if foreground and foreground in self._detached_hwnds.values():
+            focused = foreground
+        if focused is not None:
+            self._last_focused_hwnd = focused
+        if focused != self._focused_hwnd:
+            self._focused_hwnd = focused
+            self.game_focus_changed.emit(focused)
+
+    @property
+    def focused_hwnd(self) -> int | None:
+        """The game window holding the keyboard right now, or None. See game_focus_changed."""
+        return self._focused_hwnd
+
+    @property
+    def last_focused_hwnd(self) -> int | None:
+        """The game window that most recently held the keyboard, or None if none ever has.
+
+        The source for XYZ sync and TP to player. *Last*, not current: pressing their button
+        is a click on BartleBot, which takes the focus away from the game first.
+        """
+        return self._last_focused_hwnd

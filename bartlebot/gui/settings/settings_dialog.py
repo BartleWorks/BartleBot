@@ -1,4 +1,4 @@
-"""SettingsDialog: modal dialog with General, Bot, Canvas, Theme, and Game tabs."""
+"""SettingsDialog: modal dialog with General, Bot, Canvas, Authoring, Theme, and Game tabs."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui import screen_fit
 from bartlebot.gui.settings.accounts_tab import AccountsTab
+from bartlebot.gui.settings.authoring_tab import AuthoringTab
 from bartlebot.gui.settings.bot_tab import BotTab
 from bartlebot.gui.settings.canvas_tab import CanvasTab
 from bartlebot.gui.settings.general_tab import GeneralTab
@@ -53,7 +54,7 @@ class SettingsDialog(QDialog):
 
         self._tabs = QTabWidget()
 
-        # The three form tabs are as tall as their rows make them -- every setting is a
+        # The four form tabs are as tall as their rows make them -- every setting is a
         # row plus a visible description under it -- so each is wrapped in a scroll area.
         # Theme scrolls its own colour grid already, and Game is elastic.
 
@@ -68,6 +69,10 @@ class SettingsDialog(QDialog):
         # Canvas tab
         self._canvas_tab = ScrollableTab(CanvasTab())
         self._tabs.addTab(self._canvas_tab, "Canvas")
+
+        # Authoring tab (the speed multiplier and the authoring utilities' hotkeys)
+        self._authoring_tab = ScrollableTab(AuthoringTab())
+        self._tabs.addTab(self._authoring_tab, "Authoring")
 
         # Theme tab
         self._theme_tab = ThemeTab()
@@ -148,11 +153,12 @@ class SettingsDialog(QDialog):
             self._tabs.widget(i).apply()
 
     def open_tab(self, tab_name: str) -> None:
-        """Switch to the named tab. Valid names: general, bot, canvas, theme, game."""
+        """Switch to the named tab. Valid names: general, bot, canvas, authoring, theme, game."""
         widgets = {
             "general": self._general_tab,
             "bot": self._bot_tab,
             "canvas": self._canvas_tab,
+            "authoring": self._authoring_tab,
             "theme": self._theme_tab,
             "game": self._accounts_tab,
         }

@@ -81,10 +81,30 @@ class _CanvasSettings(BaseModel):
     bot_library_path: str = "bots"
 
 
+# The authoring utilities' hotkeys (#81), by action id -- the ids are
+# ``authoring_tools.AuthoringAction``'s values, spelled out here rather than imported so
+# loading settings does not pull in the combat runner. An empty string is an unbound action.
+DEFAULT_AUTHORING_HOTKEYS: dict[str, str] = {
+    "xyz_sync": "F1",
+    "tp_to_focused": "F2",
+    "toggle_speed": "F3",
+    "toggle_combat": "F4",
+}
+
+# The walking-speed multiple the speed toggle applies. 1.0 is the game's own speed.
+SPEED_MULTIPLIER_RANGE = (1.0, 10.0)
+
+
+class _AuthoringSettings(BaseModel):
+    speed_multiplier: float = 5.0
+    hotkeys: dict[str, str] = dict(DEFAULT_AUTHORING_HOTKEYS)
+
+
 _SECTION_MODELS: dict[str, type[BaseModel]] = {
     "general": _GeneralSettings,
     "game_embed": _GameEmbedSettings,
     "canvas": _CanvasSettings,
+    "authoring": _AuthoringSettings,
 }
 
 # ---------------------------------------------------------------------------
@@ -139,6 +159,10 @@ _DEFAULTS: dict[str, Any] = {
         "pan_animation_ms": 300,
         "grid_style": "dots",
         "bot_library_path": "bots",
+    },
+    "authoring": {
+        "speed_multiplier": 5.0,
+        "hotkeys": dict(DEFAULT_AUTHORING_HOTKEYS),
     },
     # accounts and launch_profiles are deliberately absent: they live one level up, in
     # the vendor-level store (shared.account_store), because a second product by this
@@ -734,6 +758,35 @@ class SettingsManager:
     def clear_favorited_hotkey_node(self, slot: int) -> None:
         """Clear the assignment for the given 0-based slot."""
         self.set_favorited_hotkey_node(slot, "")
+
+    @property
+    def speed_multiplier(self) -> float:
+        """The walking-speed multiple the authoring speed toggle applies, clamped to its range."""
+        low, high = SPEED_MULTIPLIER_RANGE
+        try:
+            value = float(self.get("authoring", "speed_multiplier", default=5.0))
+        except (TypeError, ValueError):
+            return 5.0
+        return min(max(value, low), high)
+
+    @speed_multiplier.setter
+    def speed_multiplier(self, value: float) -> None:
+        self.set("authoring", "speed_multiplier", value=float(value))
+
+    @property
+    def authoring_hotkeys(self) -> dict[str, str]:
+        """Each authoring action's key binding, e.g. ``{"xyz_sync": "F1"}``. Empty = unbound.
+
+        Every known action is present: one missing from the file falls back to its default.
+        """
+        stored = self.get("authoring", "hotkeys", default={}) or {}
+        return {action: str(stored.get(action, default)) for action, default in DEFAULT_AUTHORING_HOTKEYS.items()}
+
+    def set_authoring_hotkey(self, action: str, binding: str) -> None:
+        """Bind *action* to *binding* (``""`` unbinds it). Not saved; the caller saves."""
+        hotkeys = self.authoring_hotkeys
+        hotkeys[action] = binding
+        self.set("authoring", "hotkeys", value=hotkeys)
 
     @property
     def recent_zones(self) -> list[str]:
