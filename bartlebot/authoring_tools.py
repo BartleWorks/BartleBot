@@ -12,6 +12,9 @@ set a Deimos user reaches for while multiboxing:
   changes -- the game rewrites the value on every door.
 * **Auto-combat** fights any battle a player is pulled into, with the open bot's default
   Duel Strategy, or the built-in one when it has none.
+* **Auto-dialogue** advances every player's NPC dialogue as it opens, and declines any side
+  quest offered on the way -- ``node_helpers.advance_dialog_once``, which a run's own dialogue
+  pressing goes through too.
 * **Speed-authoring** (#85) arms keys 1-0 inside a game window: each adds its hotbar node
   after the selected one and starts recording it, so a dungeon is recorded without leaving
   the game. ``BotCanvas.speed_insert`` places the node; the toggle only says when the keys
@@ -22,8 +25,8 @@ Player 1. "Last", because clicking a button in BartleBot takes the focus away fr
 
 None of this belongs in a run. A run walks at the game's own speed -- its timeouts and a
 recording's pacing assume it -- and fights with its own ``handle_combat`` nodes, which would
-race an auto-combat task for the same cards. So a run switches both toggles off before it
-starts (``suspend_for_run``), and every action refuses while one is in progress. A run
+race an auto-combat task for the same cards, and advances dialogue with its own watcher. So a
+run switches the toggles off before it starts (``suspend_for_run``), and every action refuses while one is in progress. A run
 switches speed-authoring off too: its keys add nodes, and a run's canvas takes none.
 
 Auto-combat refuses PvP exactly as a run does: ``restriction_for`` is the check the health
@@ -43,7 +46,7 @@ from bartlebot import wizard_names
 from bartlebot.bot.client_health_monitor import restriction_for
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import _run_combat, resolve_combat
-from bartlebot.nodes.timing import POLL_INTERVAL, SPEED_REAPPLY_INTERVAL
+from bartlebot.nodes.timing import DIALOG_FAST_POLL_INTERVAL, POLL_INTERVAL, SPEED_REAPPLY_INTERVAL
 
 logger = logging.getLogger(__name__)
 
@@ -52,12 +55,17 @@ _SPEED_VALUE_MAX = 0x7FFF
 
 
 class AuthoringAction(StrEnum):
-    """The utilities, by the id their hotkey is stored under in settings."""
+    """The utilities, by the id their hotkey is stored under in settings.
+
+    In Bar A's order, which is also the Settings tab's and the default F-keys': the moves,
+    then the toggles that act on every player, then speed-authoring, which acts on the canvas.
+    """
 
     XYZ_SYNC = "xyz_sync"
     TP_TO_FOCUSED = "tp_to_focused"
     TOGGLE_SPEED = "toggle_speed"
     TOGGLE_COMBAT = "toggle_combat"
+    TOGGLE_DIALOGUE = "toggle_dialogue"
     TOGGLE_SPEED_AUTHORING = "toggle_speed_authoring"
 
 
@@ -67,6 +75,7 @@ ACTION_LABELS: dict[AuthoringAction, str] = {
     AuthoringAction.TP_TO_FOCUSED: "TP to Player",
     AuthoringAction.TOGGLE_SPEED: "Speed",
     AuthoringAction.TOGGLE_COMBAT: "Auto-combat",
+    AuthoringAction.TOGGLE_DIALOGUE: "Auto-dialogue",
     AuthoringAction.TOGGLE_SPEED_AUTHORING: "Speed-authoring",
 }
 
@@ -116,7 +125,7 @@ class _ModuleLog:
 
 
 class AuthoringTools:
-    """The state behind the utilities: three toggles, and at most one action in flight.
+    """The state behind the utilities: four toggles, and at most one action in flight.
 
     *clients* and *bot_config* are getters rather than values, because both change under
     it: clients hook and unhook, and the open bot is swapped whenever a file is opened.
@@ -148,6 +157,8 @@ class AuthoringTools:
         self._combat_task: asyncio.Task | None = None
         self._fights: dict[int, asyncio.Task] = {}
 
+        self._dialogue_task: asyncio.Task | None = None
+
         self._action_task: asyncio.Task | None = None
 
         self._speed_authoring = False
@@ -163,6 +174,10 @@ class AuthoringTools:
     @property
     def combat_on(self) -> bool:
         return self._combat_task is not None
+
+    @property
+    def dialogue_on(self) -> bool:
+        return self._dialogue_task is not None
 
     @property
     def speed_authoring_on(self) -> bool:
@@ -216,6 +231,8 @@ class AuthoringTools:
             await self.set_auto_combat(not self.combat_on)
         elif action is AuthoringAction.TOGGLE_SPEED_AUTHORING:
             self.set_speed_authoring(not self.speed_authoring_on)
+        elif action is AuthoringAction.TOGGLE_DIALOGUE:
+            await self.set_auto_dialogue(not self.dialogue_on)
 
     # ------------------------------------------------------------------
     # Speed
@@ -344,6 +361,33 @@ class AuthoringTools:
             await _cancel(task)
 
     # ------------------------------------------------------------------
+    # Auto-dialogue
+    # ------------------------------------------------------------------
+
+    async def set_auto_dialogue(self, on: bool) -> None:
+        if on == self.dialogue_on:
+            return
+        if on:
+            if self._refuse_during_run("Auto-dialogue"):
+                return
+            self._dialogue_task = asyncio.create_task(self._dialogue_loop())
+            logger.info("Auto-dialogue on: side quests are declined")
+        else:
+            task, self._dialogue_task = self._dialogue_task, None
+            await _cancel(task)
+            logger.info("Auto-dialogue off")
+        self._changed()
+
+    async def _dialogue_loop(self) -> None:
+        while True:
+            # An exception is a client mid-zone-change or unhooking; the next tick gets it.
+            results = await asyncio.gather(
+                *[node_helpers.advance_dialog_once(c) for c in list(self._clients())], return_exceptions=True
+            )
+            # Straight on to the next page while a conversation is going, as a run's watcher does.
+            await asyncio.sleep(DIALOG_FAST_POLL_INTERVAL if True in results else POLL_INTERVAL)
+
+    # ------------------------------------------------------------------
     # XYZ sync and TP
     # ------------------------------------------------------------------
 
@@ -429,6 +473,7 @@ class AuthoringTools:
         await _cancel(self._action_task)
         await self.set_speed(False)
         await self.set_auto_combat(False)
+        await self.set_auto_dialogue(False)
         self.set_speed_authoring(False)
         self._run_active = True
         self._changed()
@@ -452,6 +497,7 @@ class AuthoringTools:
         await _cancel(self._action_task)
         await self.set_speed(False)
         await self.set_auto_combat(False)
+        await self.set_auto_dialogue(False)
         self.set_speed_authoring(False)
 
 

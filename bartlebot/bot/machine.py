@@ -597,7 +597,7 @@ class BotMachine:
                     pass
 
     async def _ambient_dialog_watcher(self) -> None:
-        """Background task: dismiss any open dialog on all clients.
+        """Background task: advance any open dialog on all clients, declining side quests.
 
         Polls at POLL_INTERVAL normally. Once a banner is dismissed, switches to
         DIALOG_FAST_POLL_INTERVAL until a full Safety Delay window has elapsed with
@@ -615,7 +615,7 @@ class BotMachine:
             if not self.clients:
                 continue
             results = await asyncio.gather(
-                *[node_helpers.dismiss_ambient_dialog_once(c) for c in self.clients],
+                *[node_helpers.advance_dialog_once(c) for c in self.clients],
                 return_exceptions=True,
             )
             for i, r in enumerate(results):

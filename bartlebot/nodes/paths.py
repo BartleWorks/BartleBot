@@ -122,6 +122,12 @@ GAUNTLET_ENTRANCE_PATH = ["WorldView", "NPCRangeWin", "imgBackground"]
 # Advance button inside the ambient NPC dialog (visible only when a dialog is open and advanceable)
 ADVANCE_DIALOG_PATH = ["WorldView", "wndDialogMain", "btnRight"]
 
+# The dialog's left button, shown only on a side quest's offer page: DECLINE, beside the
+# ACCEPT that ADVANCE_DIALOG_PATH is on that page. Its visibility alone says the page is an
+# offer, so no caption read is needed. While it shows, nothing may press ADVANCE_DIALOG_PATH
+# or SPACEBAR -- see node_helpers.advance_dialog_once.
+DECLINE_QUEST_PATH = ["WorldView", "wndDialogMain", "btnLeft"]
+
 # Character select screen ("WorldView/mainWindow" is visible when on the char select screen)
 CHAR_SELECT_PATH = ["WorldView", "mainWindow"]
 CHAR_SELECT_PLAY_PATH = ["WorldView", "mainWindow", "btnPlay"]

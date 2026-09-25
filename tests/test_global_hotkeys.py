@@ -144,7 +144,8 @@ def test_the_hotkey_settings_fill_in_an_action_the_file_does_not_mention():
         "tp_to_focused": "F2",
         "toggle_speed": "F3",
         "toggle_combat": "F4",
-        "toggle_speed_authoring": "F5",
+        "toggle_dialogue": "F5",
+        "toggle_speed_authoring": "F6",
     }
     sm.set_authoring_hotkey("toggle_combat", "")
     assert sm.authoring_hotkeys["toggle_combat"] == ""

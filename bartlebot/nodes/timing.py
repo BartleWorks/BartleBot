@@ -112,6 +112,12 @@ DIALOG_FAST_POLL_INTERVAL = 0.05
 # Once a banner is dismissed, the watcher switches to this faster rate until a full
 # Safety Delay window has elapsed with no further dialogue.
 
+DIALOG_PAGE_SETTLE = 0.15
+# Seconds a dialogue press holds its client's dialogue lock after the press, so the next
+# page is on screen before anyone reads the buttons again. The ambient watcher and a node's
+# own advance loop both press dialogue; two reads of the page before a side quest offer,
+# each followed by a press, would put the second press on the offer's ACCEPT.
+
 
 REAGENT_DROP_MESSAGE_TIMEOUT = 3.0
 # Seconds to keep watching the chat log for a drop announcement after a reagent

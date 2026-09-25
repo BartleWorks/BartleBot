@@ -539,6 +539,7 @@ class AppController(QObject):
             clients=len(self._client_manager.clients),
             hotkeys=SettingsManager.instance().authoring_hotkeys,
             speed_authoring_on=tools.speed_authoring_on,
+            dialogue_on=tools.dialogue_on,
         )
         self._refresh_slot_keys()
 

@@ -5,6 +5,7 @@ import fnmatch
 import logging
 import math
 import re
+import weakref
 from collections.abc import Awaitable, Callable, Collection
 from dataclasses import dataclass
 from typing import NamedTuple
@@ -17,6 +18,7 @@ logger = logging.getLogger(__name__)
 from bartlebot import dialog_captions, wizard_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
+    DECLINE_QUEST_PATH,
     DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH,
     FRIENDS_LIST_WINDOW_NAME,
     FRIENDS_LIST_WINDOW_NAMES,
@@ -30,6 +32,7 @@ from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
 )
 from bartlebot.nodes.timing import (  # noqa: F401 — re-exported for callers
     DIALOG_FAST_POLL_INTERVAL,
+    DIALOG_PAGE_SETTLE,
     DIALOG_TIMEOUT,
     MAX_RETRIES,
     OBJECT_USE_DELAY,
@@ -106,12 +109,44 @@ DUNGEON_ENTRANCE_PROMPT = PromptKind(
 )
 
 
-async def dismiss_ambient_dialog_once(client) -> bool:
-    """If client has an advanceable dialog open, press SPACEBAR to dismiss it. Returns True if dismissed."""
-    if await is_visible_by_path(client, ADVANCE_DIALOG_PATH):
-        await client.send_key(Keycode.SPACEBAR, 0.1)
+# One lock per client around a dialogue page's read and its press. See DIALOG_PAGE_SETTLE.
+_dialog_locks: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
+
+
+def _dialog_lock(client) -> asyncio.Lock:
+    lock = _dialog_locks.get(client)
+    if lock is None:
+        lock = _dialog_locks[client] = asyncio.Lock()
+    return lock
+
+
+async def advance_dialog_once(client) -> bool:
+    """Advance *client*'s open dialogue by one page, declining a side quest rather than taking it.
+
+    The one place dialogue is pressed. A side quest's offer page puts ACCEPT on the right
+    button, the same one SPACEBAR presses to advance every other page, so pressing through
+    blind takes every side quest an NPC offers. The offer page is the only one with a left
+    button (DECLINE), so while that shows it is clicked instead, and nothing else is pressed.
+
+    DECLINE is only read once the right button shows: a child's visibility is its own flag
+    (see is_visible_by_path), and the right button is the one already trusted to say a
+    dialogue is open.
+
+    Returns True while dialogue is open -- pressed, or a DECLINE that could not be clicked,
+    which the next call tries again rather than falling back to SPACEBAR.
+    """
+    async with _dialog_lock(client):
+        if not await is_visible_by_path(client, ADVANCE_DIALOG_PATH):
+            return False
+        if await is_visible_by_path(client, DECLINE_QUEST_PATH):
+            if await click_by_path(client, DECLINE_QUEST_PATH):
+                logger.info("Declined a side quest offer")
+            else:
+                logger.debug("A side quest offer's DECLINE could not be clicked yet")
+        else:
+            await client.send_key(Keycode.SPACEBAR, 0.1)
+        await asyncio.sleep(DIALOG_PAGE_SETTLE)
         return True
-    return False
 
 
 async def advance_dialogue_until_clear(
@@ -121,9 +156,9 @@ async def advance_dialogue_until_clear(
 ) -> bool:
     """Advance dialogue on all clients until all are dialogue-free for safety_delay seconds.
 
-    Presses SPACEBAR on any client that has an open dialogue banner, then resets the quiet
-    timer. Polls at DIALOG_FAST_POLL_INTERVAL after a dismissal and POLL_INTERVAL during the
-    quiet phase (no dialogue detected). Returns True when all clients have been dialogue-free
+    Advances any client that has an open dialogue banner (advance_dialog_once, which declines
+    a side quest offer), then resets the quiet timer. Polls at DIALOG_FAST_POLL_INTERVAL
+    after a dismissal and POLL_INTERVAL during the quiet phase (no dialogue detected). Returns True when all clients have been dialogue-free
     for safety_delay seconds. Returns False if timeout expires while clients are still in
     dialogue.
     """
@@ -133,7 +168,7 @@ async def advance_dialogue_until_clear(
 
     while True:
         now = loop.time()
-        dialogs = await asyncio.gather(*[is_visible_by_path(c, ADVANCE_DIALOG_PATH) for c in clients])
+        dialogs = await asyncio.gather(*[advance_dialog_once(c) for c in clients])
 
         if not any(dialogs) and (now - quiet_since) >= safety_delay:
             return True
@@ -142,7 +177,6 @@ async def advance_dialogue_until_clear(
             return False
 
         if any(dialogs):
-            await asyncio.gather(*[c.send_key(Keycode.SPACEBAR, 0.1) for c, d in zip(clients, dialogs) if d])
             quiet_since = loop.time()
             await asyncio.sleep(DIALOG_FAST_POLL_INTERVAL)
         else:

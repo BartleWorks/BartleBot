@@ -37,13 +37,29 @@ def client_summary(connected: int, profile: str | None) -> str:
 #: Each utility's glyph. Icons, not labels: Bar A's height is a term in the window-sizing
 #: arithmetic (``game_sizing.GAME_PANEL_CHROME_PX``), and a labelled button is taller than
 #: the caption row it would sit in.
+#: The pin is the node params' TP glyph, since XYZ sync is a teleport to a spot; porting to
+#: a friend and fighting take the game's own teleport and damage icons.
 AUTHORING_ICONS: dict[AuthoringAction, str] = {
-    AuthoringAction.XYZ_SYNC: "sync",
-    AuthoringAction.TP_TO_FOCUSED: "teleport",
+    AuthoringAction.XYZ_SYNC: "teleport",
+    AuthoringAction.TP_TO_FOCUSED: "friend_teleport",
     AuthoringAction.TOGGLE_SPEED: "speed",
-    AuthoringAction.TOGGLE_COMBAT: "sword",
+    AuthoringAction.TOGGLE_COMBAT: "fist",
+    AuthoringAction.TOGGLE_DIALOGUE: "dialogue",
     AuthoringAction.TOGGLE_SPEED_AUTHORING: "keyboard",
 }
+
+#: Bar A's buttons by what they do, with a divider between groups: the two moves, the
+#: toggles that act on every player, and speed-authoring, which acts on the canvas.
+AUTHORING_GROUPS: tuple[tuple[AuthoringAction, ...], ...] = (
+    (AuthoringAction.XYZ_SYNC, AuthoringAction.TP_TO_FOCUSED),
+    (AuthoringAction.TOGGLE_SPEED, AuthoringAction.TOGGLE_COMBAT, AuthoringAction.TOGGLE_DIALOGUE),
+    (AuthoringAction.TOGGLE_SPEED_AUTHORING,),
+)
+
+# The divider's box: the rule is drawn centred in it, so the width beyond its 1px is the
+# padding either side, added to the row's spacing. Shorter than the 24px buttons, so it
+# reads as a break in the row rather than a wall.
+_DIVIDER_SIZE = (9, 16)
 
 
 def authoring_tooltip(action: AuthoringAction, binding: str, *, on: bool = False) -> str:
@@ -56,6 +72,7 @@ def authoring_tooltip(action: AuthoringAction, binding: str, *, on: bool = False
         AuthoringAction.TP_TO_FOCUSED: "Port every other player to the focused player through the friends list",
         AuthoringAction.TOGGLE_SPEED: "Make every player walk faster, until switched off or a bot starts",
         AuthoringAction.TOGGLE_COMBAT: "Fight any battle a player enters, with the open bot's default Duel Strategy",
+        AuthoringAction.TOGGLE_DIALOGUE: "Click through every player's NPC dialogue, declining any side quest",
         AuthoringAction.TOGGLE_SPEED_AUTHORING: (
             "Keys 1–0 in a game window add that hotbar node after the selected one and record it"
         ),
@@ -78,12 +95,12 @@ def authoring_enabled(action: AuthoringAction, *, clients: int, run_active: bool
     return clients >= 1
 
 
-class AuthoringBar(QWidget):
+class AuthoringBar(ThemedMixin, QWidget):
     """The authoring utilities as icon buttons, in the middle of Bar A (#81, #85).
 
     Bar A, because the utilities are about the clients, not the bot. A toggle that is on
     draws its glyph in the accent, the same way the node browser's favourite star reports
-    its state.
+    its state. The buttons sit in AUTHORING_GROUPS, with a divider between groups.
     """
 
     action_requested = pyqtSignal(str)
@@ -91,14 +108,25 @@ class AuthoringBar(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._buttons: dict[AuthoringAction, IconButton] = {}
+        self._dividers: list[QFrame] = []
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
-        for action in AuthoringAction:
-            btn = IconButton(AUTHORING_ICONS[action], tooltip=ACTION_LABELS[action], size=24, icon_size=18, parent=self)
-            btn.clicked.connect(lambda _checked=False, a=action: self.action_requested.emit(a.value))
-            layout.addWidget(btn)
-            self._buttons[action] = btn
+        for group in AUTHORING_GROUPS:
+            if self._buttons:
+                divider = QFrame(self)
+                divider.setFrameShape(QFrame.Shape.VLine)
+                divider.setFixedSize(*_DIVIDER_SIZE)
+                layout.addWidget(divider, alignment=Qt.AlignmentFlag.AlignVCenter)
+                self._dividers.append(divider)
+            for action in group:
+                btn = IconButton(
+                    AUTHORING_ICONS[action], tooltip=ACTION_LABELS[action], size=24, icon_size=18, parent=self
+                )
+                btn.clicked.connect(lambda _checked=False, a=action: self.action_requested.emit(a.value))
+                layout.addWidget(btn)
+                self._buttons[action] = btn
+        self.refresh_theme_styles()
         self.set_state(
             speed_on=False,
             combat_on=False,
@@ -107,10 +135,19 @@ class AuthoringBar(QWidget):
             clients=0,
             hotkeys={},
             speed_authoring_on=False,
+            dialogue_on=False,
         )
 
     def button(self, action: AuthoringAction) -> IconButton:
         return self._buttons[action]
+
+    @property
+    def dividers(self) -> list[QFrame]:
+        return list(self._dividers)
+
+    def apply_theme_styles(self) -> None:
+        for divider in self._dividers:
+            divider.setStyleSheet(f"color: {THEME.border};")
 
     def set_state(
         self,
@@ -122,11 +159,13 @@ class AuthoringBar(QWidget):
         clients: int,
         hotkeys: dict[str, str],
         speed_authoring_on: bool = False,
+        dialogue_on: bool = False,
     ) -> None:
         on = {
             AuthoringAction.TOGGLE_SPEED: speed_on,
             AuthoringAction.TOGGLE_COMBAT: combat_on,
             AuthoringAction.TOGGLE_SPEED_AUTHORING: speed_authoring_on,
+            AuthoringAction.TOGGLE_DIALOGUE: dialogue_on,
         }
         for action, btn in self._buttons.items():
             is_on = on.get(action, False)

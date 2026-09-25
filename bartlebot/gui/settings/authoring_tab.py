@@ -37,6 +37,10 @@ _HOTKEY_HINTS: dict[AuthoringAction, str] = {
         "Switches auto-combat on and off. Fights use the open bot's default Duel Strategy, or the "
         "built-in one; PvP is never fought."
     ),
+    AuthoringAction.TOGGLE_DIALOGUE: (
+        "Switches auto-dialogue on and off. NPC dialogue is clicked through on every player as it "
+        "opens, and a side quest offered on the way is declined, never accepted."
+    ),
     AuthoringAction.TOGGLE_SPEED_AUTHORING: (
         "Switches speed-authoring on and off. While it is on and the canvas is in Edit mode, keys "
         "1–0 in a game window add that slot's favorites-bar node after the selected node, or at the "

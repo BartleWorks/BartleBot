@@ -2,11 +2,33 @@
 
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from wizwalker import Keycode
 
 import bartlebot.nodes.interaction.wait_for_dialogue as wfd
 import bartlebot.nodes.node_helpers as nh
+from bartlebot.nodes.paths import DECLINE_QUEST_PATH
 from tests.conftest import FakeClient, FakeMachine
+
+
+@pytest.fixture(autouse=True)
+def _no_page_settle(monkeypatch):
+    monkeypatch.setattr(nh, "DIALOG_PAGE_SETTLE", 0.0)
+
+
+def _no_offer(visible):
+    """*visible*, except that no page is a side quest offer: the DECLINE button never shows.
+
+    Without this a fake answering every path alike would put DECLINE on every page, and
+    advance_dialog_once would decline rather than press SPACEBAR.
+    """
+
+    async def _fake(c, path):
+        if path == DECLINE_QUEST_PATH:
+            return False
+        return await visible(c, path)
+
+    return _fake
 
 
 def _spacebar_count(client: FakeClient) -> int:
@@ -36,7 +58,7 @@ async def test_dialogue_dismissed_then_success():
         return False
 
     with (
-        patch.object(nh, "is_visible_by_path", side_effect=_visible),
+        patch.object(nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
         patch.object(nh, "POLL_INTERVAL", 0),
         patch.object(nh, "DIALOG_FAST_POLL_INTERVAL", 0),
     ):
@@ -56,7 +78,7 @@ async def test_multiple_dialogues_dismissed():
         return _call[0] <= 2  # True on first two calls, False after
 
     with (
-        patch.object(nh, "is_visible_by_path", side_effect=_visible),
+        patch.object(nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
         patch.object(nh, "POLL_INTERVAL", 0),
         patch.object(nh, "DIALOG_FAST_POLL_INTERVAL", 0),
     ):
@@ -70,7 +92,7 @@ async def test_timeout_returns_failure():
     """Dialogue persists beyond the timeout → FAILURE."""
     client = FakeClient()
 
-    with patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True)):
+    with patch.object(nh, "is_visible_by_path", side_effect=_no_offer(AsyncMock(return_value=True))):
         with patch("bartlebot.nodes.node_helpers.POLL_INTERVAL", 0):
             result = await wfd.run(FakeMachine(), [client], {"timeout": 0.01})
 
@@ -103,7 +125,7 @@ async def test_all_clients_must_be_clear():
         return False
 
     with (
-        patch.object(nh, "is_visible_by_path", side_effect=_visible),
+        patch.object(nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
         patch.object(nh, "POLL_INTERVAL", 0),
         patch.object(nh, "DIALOG_FAST_POLL_INTERVAL", 0),
     ):
@@ -136,7 +158,7 @@ async def test_timer_resets_after_dialogue():
     machine.get_option = lambda _: 0.001  # 1ms Safety Delay
 
     with (
-        patch.object(nh, "is_visible_by_path", side_effect=_visible),
+        patch.object(nh, "is_visible_by_path", side_effect=_no_offer(_visible)),
         patch.object(nh, "POLL_INTERVAL", 0),
         patch.object(nh, "DIALOG_FAST_POLL_INTERVAL", 0),
     ):

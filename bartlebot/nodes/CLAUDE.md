@@ -164,6 +164,21 @@ any other locale. To add a dialog: append to `KNOWN_KEYS`, run
 uniquely. An unrecognised caption returns `None`, and callers must fall back rather
 than treat it as "no dialog".
 
+## NPC dialogue, and side quests
+
+NPC dialogue is a different window, `WorldView/wndDialogMain`, and is pressed only
+through `node_helpers.advance_dialog_once` — never a bare SPACEBAR or a click on
+`ADVANCE_DIALOG_PATH`. A side quest's offer page puts ACCEPT on the right button, the
+one SPACEBAR presses on every other page, so pressing blind takes every side quest an
+NPC offers. The helper clicks DECLINE (`DECLINE_QUEST_PATH`, the left button) instead.
+
+That check reads which buttons are showing, which the section above forbids for
+modals. It holds here because the left button appears on the offer page and nowhere
+else in this window. It is also read only while the right button shows, because a
+child's visibility flag outlives its closed parent. The helper holds a per-client lock
+across each read and press, so the ambient watcher and a node's own advance loop cannot
+both press the page before an offer.
+
 ## Ambiguous UI paths
 
 Window-tree paths match on **name only**. `_get_window_from_path` walks depth-first and

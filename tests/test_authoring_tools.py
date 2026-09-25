@@ -1,4 +1,4 @@
-"""The authoring utilities (#81): speed, auto-combat, XYZ sync and TP to player."""
+"""The authoring utilities (#81): speed, auto-combat, auto-dialogue, XYZ sync and TP to player."""
 
 from __future__ import annotations
 
@@ -24,6 +24,7 @@ from tests.conftest import FakeClient
 def fast(monkeypatch):
     monkeypatch.setattr(authoring_tools, "SPEED_REAPPLY_INTERVAL", 0.001)
     monkeypatch.setattr(authoring_tools, "POLL_INTERVAL", 0.001)
+    monkeypatch.setattr(authoring_tools, "DIALOG_FAST_POLL_INTERVAL", 0.001)
 
 
 def _speed_field(client: FakeClient, value: int) -> None:
@@ -63,7 +64,8 @@ def test_the_default_hotkeys_are_the_f_keys_in_order():
         "tp_to_focused": "F2",
         "toggle_speed": "F3",
         "toggle_combat": "F4",
-        "toggle_speed_authoring": "F5",
+        "toggle_dialogue": "F5",
+        "toggle_speed_authoring": "F6",
     }
 
 
@@ -160,16 +162,20 @@ async def test_a_released_client_gets_its_speed_back_before_it_is_unhooked():
 # ---------------------------------------------------------------------------
 
 
-async def test_a_run_switches_both_toggles_off_and_refuses_them_until_it_ends(monkeypatch):
+async def test_a_run_switches_the_toggles_off_and_refuses_them_until_it_ends(monkeypatch):
     monkeypatch.setattr(authoring_tools, "restriction_for", AsyncMock(return_value=None))
+    monkeypatch.setattr(authoring_tools.node_helpers, "advance_dialog_once", AsyncMock(return_value=False))
     client = FakeClient()
     _speed_field(client, 0)
     tools = _tools([client])
     await tools.set_speed(True)
     await tools.set_auto_combat(True)
+    await tools.set_auto_dialogue(True)
 
     await tools.suspend_for_run()
-    assert not tools.speed_on and not tools.combat_on
+    assert not tools.speed_on and not tools.combat_on and not tools.dialogue_on
+    await tools.perform(AuthoringAction.TOGGLE_DIALOGUE, None)
+    assert not tools.dialogue_on
     await tools.perform(AuthoringAction.TOGGLE_SPEED, None)
     await tools.perform(AuthoringAction.XYZ_SYNC, None)
     assert not tools.speed_on
@@ -179,6 +185,54 @@ async def test_a_run_switches_both_toggles_off_and_refuses_them_until_it_ends(mo
     await tools.perform(AuthoringAction.TOGGLE_SPEED, None)
     assert tools.speed_on
     await tools.shutdown()
+
+
+# ---------------------------------------------------------------------------
+# Auto-dialogue
+# ---------------------------------------------------------------------------
+
+
+async def test_auto_dialogue_advances_every_players_dialogue_until_switched_off(monkeypatch):
+    """Each player goes through the shared helper, which is what declines a side quest."""
+    advanced: list[int] = []
+
+    async def advance(client):
+        advanced.append(client.window_handle)
+        return False
+
+    monkeypatch.setattr(authoring_tools.node_helpers, "advance_dialog_once", advance)
+    clients = [FakeClient(), FakeClient()]
+    changes: list[bool] = []
+    tools = _tools(clients, on_change=lambda: changes.append(tools.dialogue_on))
+
+    await tools.perform(AuthoringAction.TOGGLE_DIALOGUE, None)
+    await _until(lambda: {c.window_handle for c in clients} <= set(advanced))
+    await tools.perform(AuthoringAction.TOGGLE_DIALOGUE, None)
+    seen = len(advanced)
+    await asyncio.sleep(0.01)
+
+    assert len(advanced) == seen
+    assert changes == [True, False]
+
+
+async def test_auto_dialogue_survives_a_client_that_cannot_be_read(monkeypatch):
+    good = FakeClient()
+    broken = FakeClient()
+    advanced: list[int] = []
+
+    async def advance(client):
+        if client is broken:
+            raise RuntimeError("mid zone change")
+        advanced.append(client.window_handle)
+        return False
+
+    monkeypatch.setattr(authoring_tools.node_helpers, "advance_dialog_once", advance)
+    tools = _tools([broken, good])
+    await tools.set_auto_dialogue(True)
+    await _until(lambda: len(advanced) >= 3)
+    assert tools.dialogue_on
+    await tools.shutdown()
+    assert not tools.dialogue_on
 
 
 # ---------------------------------------------------------------------------
