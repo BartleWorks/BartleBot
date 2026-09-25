@@ -220,24 +220,58 @@ def test_output_port_keeps_flag_guards(canvas):
     assert [(f.option, f.negate) for f in _t(c.config, new_id, "b").flags] == [("repeat", True)]
 
 
-def test_output_port_refuses_a_node_that_cannot_produce_the_return(canvas):
-    """A check_* node cannot return SUCCESS, so it would strand every guard."""
+def test_output_port_remaps_a_return_the_new_node_cannot_produce(canvas):
+    """A check_* node never returns SUCCESS, so the rerouted edges leave on its TRUE instead."""
     c = canvas(_out_config())
-    before = list(c.config.transitions)
 
-    result = c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health_and_mana")
+    new_id = c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health_and_mana")
 
-    assert result is None
-    assert c.config.transitions == before
+    assert new_id is not None
+    assert {(t.dest, t.when) for t in c.config.transitions if t.source == new_id} == {("b", "TRUE"), ("c", "TRUE")}
+    assert _t(c.config, "a", new_id).when == "SUCCESS"
 
 
-def test_the_refused_insert_creates_no_state(canvas):
+def test_a_remapped_edge_keeps_its_flag_guards(canvas):
+    config = _config(
+        transitions=[
+            TransitionModel(
+                trigger="advance", source="a", dest="b", when="SUCCESS", flags=[FlagCondition(option="repeat")]
+            ),
+        ]
+    )
+    c = canvas(config)
+
+    new_id = c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health_and_mana")
+
+    assert [f.option for f in _t(c.config, new_id, "b").flags] == ["repeat"]
+
+
+def test_a_remapped_edge_is_rekeyed_on_the_canvas(canvas):
+    """The scene's edge record carries `when` too; a stale one hides the edge from every lookup."""
     c = canvas(_out_config())
-    before = {s.id for s in c.config.states}
 
-    c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health_and_mana")
+    new_id = c.scene.insert_state_at_output_port("a", "SUCCESS", "check_health_and_mana")
 
-    assert {s.id for s in c.config.states} == before
+    records = {(s, w, d) for s, w, d, _ei in c.scene.edge_items if s == new_id}
+    assert records == {(new_id, "TRUE", "b"), (new_id, "TRUE", "c")}
+
+
+def test_an_action_on_a_condition_port_leaves_on_success(canvas):
+    """The speed-authoring case (#85): building on from a condition's TRUE port."""
+    config = _config(
+        states=[
+            StateModel(id="cond", node_type="check_health_and_mana", params={}),
+            StateModel(id="b", node_type="change_realm", params={}),
+            StateModel(id="a", node_type="change_realm", params={}),
+        ],
+        transitions=[TransitionModel(trigger="advance", source="cond", dest="b", when="TRUE")],
+    )
+    c = canvas(config)
+
+    new_id = c.scene.insert_state_at_output_port("cond", "TRUE", "sleep")
+
+    assert _t(c.config, "cond", new_id).when == "TRUE"
+    assert _t(c.config, new_id, "b").when == "SUCCESS"
 
 
 def test_output_port_accepts_a_condition_node_on_a_condition_port(canvas):

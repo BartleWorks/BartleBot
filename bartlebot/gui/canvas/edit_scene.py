@@ -2600,32 +2600,35 @@ class EditScene(QGraphicsScene):
         """Insert a state of *node_type* after *state_id*'s *return_name* port.
 
         Every transition leaving that port now leaves the new state instead, keeping
-        its ``when``, flags and label; *state_id* is then wired to the new state on the
-        port that was clicked.
+        its flags and label; *state_id* is then wired to the new state on the port
+        that was clicked.
 
-        ``when`` survives the move only because *node_type* is required to produce
-        *return_name* -- the value describes the *source* node's outcome, so a node
-        that cannot produce it would leave every rerouted edge unconditional, firing
-        on failure as readily as on success. The picker enforces this, and so does
-        this method: it refuses rather than quietly rewriting the guards.
+        ``when`` describes the *source* node's outcome, so it survives the move only
+        when *node_type* can produce *return_name* too. When it cannot -- an action
+        dropped on a condition's TRUE port -- the rerouted edges take the new node's
+        happy-path return instead, the rule an insert on an edge follows. Left as it
+        was, the value would never be produced and every rerouted edge would be dead.
+        The port picker still offers only node types that keep the value, since that
+        is the insert an author clicking a port means; speed-authoring (#85) is what
+        relies on the remap.
 
-        Returns the new state's id, or None if the insert was refused.
+        Returns the new state's id, or None if the insert was refused: the source is
+        not an ordinary node, or *node_type* has no returns to route anything off.
         """
         if self._config is None:
             return None
         source = self._node_items.get(state_id)
         if source is None or isinstance(source, (CallNodeItem, PortNodeItem)):
             return None
-        if return_name is not None and return_name not in _node_returns(node_type):
-            logger.warning(
-                "Refusing to insert %r at the %s port of %s: it cannot return %s, "
-                "which would leave the rerouted edges unconditional",
-                node_type,
-                return_name,
-                state_id,
-                return_name,
-            )
-            return None
+        new_returns = _node_returns(node_type)
+        onward_when = return_name
+        if return_name is not None and return_name not in new_returns:
+            onward_when = _happy_path_return(new_returns)
+            if onward_when is None:
+                logger.warning(
+                    "Refusing to insert %r at the %s port of %s: it has no returns", node_type, return_name, state_id
+                )
+                return None
 
         outgoing = [t for t in self._config.transitions if t.source == state_id and t.when == return_name]
         port = source.port_out_for(return_name)
@@ -2639,7 +2642,12 @@ class EditScene(QGraphicsScene):
             for t in outgoing:
                 old_dst = t.dest
                 t.source = new_id
+                t.when = onward_when
+                # An edge into a call node is rebuilt from the model, which already
+                # carries the new `when`; any other keeps its record and is re-keyed.
                 self.change_edge_endpoints(state_id, return_name, old_dst, new_id, old_dst)
+                if onward_when != return_name and not self.is_call_node(self.display_id(old_dst)):
+                    self.change_edge_when(new_id, return_name, old_dst, onward_when)
             self._create_transition(source, new_node, return_name)
         finally:
             self._in_structural_edit = prev_in_structural
