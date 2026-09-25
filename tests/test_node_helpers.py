@@ -2,6 +2,7 @@
 
 import asyncio
 import itertools
+import logging
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -1053,6 +1054,99 @@ async def test_resolve_friend_name_raises_when_the_name_is_absent(monkeypatch):
 
     with pytest.raises(ValueError, match="Could not find friend"):
         await nh_mod.resolve_friend_name(object(), "bob frostgem")
+
+
+# ---------------------------------------------------------------------------
+# reach_prompt / clear_stale_prompt
+#
+# The reset-and-retry routine every prompt-raising node shares. Driven here with
+# INTERACT_PROMPT, whose checks read FakeClient.is_in_npc_range directly.
+# ---------------------------------------------------------------------------
+
+
+async def test_reach_prompt_teleports_once_when_the_prompt_appears():
+    client = FakeClient()
+    client.is_in_npc_range.side_effect = [False, True]  # stale check, then the first wait
+
+    reached = await nh.reach_prompt(FakeMachine(), [client], _SIGIL, _RESET, nh.INTERACT_PROMPT, 0.01, 0)
+
+    assert reached is True
+    client.teleport.assert_called_once_with(_SIGIL)
+
+
+async def test_reach_prompt_clears_a_stale_prompt_first():
+    """A prompt already on screen is not the one this run raised, and pressing X on it
+    would use whatever the client happens to be standing next to."""
+    client = FakeClient()
+    client.is_in_npc_range.side_effect = [True, False, True]  # stale, cleared, raised
+
+    reached = await nh.reach_prompt(FakeMachine(), [client], _SIGIL, _RESET, nh.INTERACT_PROMPT, 0.01, 0)
+
+    assert reached is True
+    assert [call.args[0] for call in client.teleport.call_args_list] == [_RESET, _SIGIL]
+
+
+async def test_reach_prompt_resets_and_retries_after_a_miss():
+    client = FakeClient()
+    # The prompt shows only once the client is back at the point for the second time:
+    # point, reset, point.
+    client.is_in_npc_range.side_effect = lambda: client.teleport.call_count >= 3
+
+    reached = await nh.reach_prompt(FakeMachine(), [client], _SIGIL, _RESET, nh.INTERACT_PROMPT, 0.05, 0)
+
+    assert reached is True
+    assert [call.args[0] for call in client.teleport.call_args_list] == [_SIGIL, _RESET, _SIGIL]
+
+
+async def test_reach_prompt_gives_up_after_max_retries_and_logs_the_failure():
+    client = FakeClient()
+    machine = FakeMachine()
+
+    reached = await nh.reach_prompt(machine, [client], _SIGIL, _RESET, nh.INTERACT_PROMPT, 0.01, 0)
+
+    assert reached is False
+    # One teleport to the point and one reset teleport per attempt.
+    assert client.teleport.call_count == nh.MAX_RETRIES * 2
+    assert any(
+        msg == f"FAILURE: interact prompt never appeared after {nh.MAX_RETRIES} attempts" and level == logging.WARNING
+        for msg, level in machine.logs
+    )
+
+
+async def test_reach_prompt_leaves_a_miss_to_the_caller_when_asked():
+    """enter_zone_via_object carries on with whichever clients did get the prompt, so a
+    miss there is not the node's failure and must not be logged as one."""
+    machine = FakeMachine()
+
+    reached = await nh.reach_prompt(
+        machine, [FakeClient()], _SIGIL, _RESET, nh.INTERACT_PROMPT, 0.01, 0, fail_on_miss=False
+    )
+
+    assert reached is False
+    assert not any(level >= logging.WARNING for _, level in machine.logs)
+
+
+async def test_clear_stale_prompt_labels_clients_by_the_numbers_given():
+    """A node working on a subset of the party names its clients by party position."""
+    idle, stale = FakeClient(), FakeClient()
+    stale.is_in_npc_range.side_effect = [True, False]
+    machine = FakeMachine()
+
+    await nh.clear_stale_prompt(machine, [idle, stale], _RESET, nh.INTERACT_PROMPT, 0.01, 0, numbers=[2, 4])
+
+    assert any("client(s) [4]" in msg for msg, _ in machine.logs)
+    idle.teleport.assert_called_once_with(_RESET)
+    stale.teleport.assert_called_once_with(_RESET)
+
+
+async def test_clear_stale_prompt_does_nothing_without_one():
+    client = FakeClient()
+    machine = FakeMachine()
+
+    await nh.clear_stale_prompt(machine, [client], _RESET, nh.INTERACT_PROMPT, 0.01, 0)
+
+    client.teleport.assert_not_called()
+    assert machine.logs == []
 
 
 # ---------------------------------------------------------------------------

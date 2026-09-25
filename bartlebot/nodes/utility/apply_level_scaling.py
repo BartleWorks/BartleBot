@@ -141,17 +141,15 @@ async def run(machine, clients: list, params: dict) -> str:
     machine.log(f"Scaling client(s): {[i + 1 for i in scale_indices]}", logging.DEBUG)
 
     # 3. Clear any pre-existing interact prompt on the scaled clients.
-    prompts = await asyncio.gather(*[c.is_in_npc_range() for c in scale_clients])
-    if any(prompts):
-        stale = [scale_indices[i] for i, p in enumerate(prompts) if p]
-        machine.log(
-            f"Pre-existing interact prompt on client(s) {[i + 1 for i in stale]}; teleporting to reset_xyz to clear it",
-            logging.DEBUG,
-        )
-        await asyncio.gather(*[c.teleport(reset) for c in scale_clients])
-        await node_helpers.poll_until(
-            lambda: node_helpers.none_in_npc_range(scale_clients), safety_delay, POLL_INTERVAL
-        )
+    await node_helpers.clear_stale_prompt(
+        machine,
+        scale_clients,
+        reset,
+        node_helpers.INTERACT_PROMPT,
+        safety_delay,
+        POLL_INTERVAL,
+        numbers=[i + 1 for i in scale_indices],
+    )
 
     # 4. Retry rounds over the clients that still need the elixir. One client uses the
     #    station from start to finish before the next one opens it: an open menu closes

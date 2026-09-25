@@ -310,7 +310,7 @@ class _XyzField(ThemedMixin, QWidget):
             boxes_row.addWidget(edit, 1)
             self._edits[axis] = edit
         outer.addLayout(boxes_row)
-        self._loaded_texts = self._texts()
+        self._loaded_texts = self.texts()
         # Full-width segmented action bar — all buttons equal width, uniform height.
         # Every button carries a glyph: a row where some do and others do not reads
         # as two kinds of control rather than one.
@@ -351,7 +351,7 @@ class _XyzField(ThemedMixin, QWidget):
 
     def value(self) -> dict | None:
         """The coordinate to store, or None when there is none: blank, or invalid."""
-        if self._loaded is not None and self._texts() == self._loaded_texts:
+        if self._loaded is not None and self.texts() == self._loaded_texts:
             return dict(self._loaded)
         numbers = [self._edits[axis].number() for axis in _AXES]
         if any(n is None for n in numbers):
@@ -385,8 +385,21 @@ class _XyzField(ThemedMixin, QWidget):
         for axis, edit in self._edits.items():
             set_style_sheet(edit, f"border: 1px solid {THEME.error};" if axis in marked else "")
 
-    def _texts(self) -> tuple[str, ...]:
+    def texts(self) -> tuple[str, ...]:
+        """The three boxes' text as typed, X, Y then Z."""
         return tuple(self._edits[axis].text() for axis in _AXES)
+
+    def set_texts(self, texts: tuple[str, ...]) -> None:
+        """Put back what ``texts()`` read. Unlike ``set_coordinate`` this keeps a
+        half-typed box as it was, and a loaded value at its full precision: the boxes
+        match what was loaded again, so ``value()`` returns the loaded value."""
+        self._quiet = True
+        try:
+            for axis, text in zip(_AXES, texts):
+                self._edits[axis].setText(text)
+        finally:
+            self._quiet = False
+        self._on_text_changed()
 
     def _on_text_changed(self, *_) -> None:
         if self._quiet:
@@ -1421,6 +1434,34 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         widget = self._widgets.get(key)
         if isinstance(widget, _XyzField):
             widget.set_coordinate({"x": x, "y": y, "z": z})
+
+    def snapshot(self, keys) -> dict[str, Any]:
+        """What the zone and xyz fields named in *keys* hold now, for ``restore``.
+
+        Record writes as it goes, so a recording cancelled partway puts these back
+        rather than leaving half of it behind. An xyz field is kept as its boxes'
+        text, so it comes back exactly as it was — see ``_XyzField.set_texts``.
+        Keys naming no such field are skipped.
+        """
+        saved: dict[str, Any] = {}
+        for key in keys:
+            widget = self._widgets.get(key)
+            if isinstance(widget, _XyzField):
+                saved[key] = widget.texts()
+            elif isinstance(widget, _NavZoneField):
+                saved[key] = widget.value()
+            elif isinstance(widget, _ZoneWidget | QLineEdit):
+                saved[key] = widget.text()
+        return saved
+
+    def restore(self, saved: dict[str, Any]) -> None:
+        """Put back what ``snapshot`` read."""
+        for key, value in saved.items():
+            widget = self._widgets.get(key)
+            if isinstance(widget, _XyzField):
+                widget.set_texts(value)
+            else:
+                self.set_str(key, value)
 
 
 # ---------------------------------------------------------------------------

@@ -19,6 +19,11 @@ an author marks a return value fatal.
 ## Multi-client coordination
 Use `poll_each_until_seen()` from `bartlebot/nodes/node_helpers.py` for operations that must complete across all clients (zone changes, prompts, loading screens).
 
+A node that teleports its clients to a point until a prompt shows uses `reach_prompt()` with
+a `PromptKind` (`INTERACT_PROMPT`, `DUNGEON_ENTRANCE_PROMPT`) rather than its own loop: it
+clears a stale prompt via `reset_xyz`, retries up to `MAX_RETRIES`, and logs the failure.
+It lived six times over until #104, and a fix to it had to be made six times.
+
 Some world objects only serve one player at a time — a second client interacting while the
 first is mid-interaction has its keypress silently swallowed. Use `take_turns()` for those:
 it parks every client at `reset_xyz`, then sends them to the object one at a time, handing

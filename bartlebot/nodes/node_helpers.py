@@ -5,7 +5,7 @@ import fnmatch
 import logging
 import math
 import re
-from collections.abc import Collection
+from collections.abc import Awaitable, Callable, Collection
 from dataclasses import dataclass
 from typing import NamedTuple
 
@@ -72,6 +72,38 @@ async def none_at_dungeon_entrance(clients: list, path: list[str] = DUNGEON_ENTR
     """
     results = await asyncio.gather(*[is_visible_by_path(c, path) for c in clients])
     return not any(results)
+
+
+class PromptKind(NamedTuple):
+    """A prompt a node stands a client in front of, and how to tell it is showing.
+
+    ``showing`` checks one client; ``all_showing`` and ``none_showing`` check a group.
+    The group checks are kept rather than derived from ``showing`` so a test patching
+    ``all_at_dungeon_entrance`` still reaches ``reach_prompt`` — the constants below
+    look every check up at call time for the same reason.
+    """
+
+    name: str
+    showing: Callable[[object], Awaitable[bool]]
+    all_showing: Callable[[list], Awaitable[bool]]
+    none_showing: Callable[[list], Awaitable[bool]]
+
+
+#: The X-to-interact prompt raised by an NPC, sign, door or other interactable.
+INTERACT_PROMPT = PromptKind(
+    "interact prompt",
+    lambda c: c.is_in_npc_range(),
+    lambda cs: all_in_npc_range(cs),
+    lambda cs: none_in_npc_range(cs),
+)
+
+#: The entrance prompt raised by standing on a dungeon sigil.
+DUNGEON_ENTRANCE_PROMPT = PromptKind(
+    "dungeon entrance prompt",
+    lambda c: is_visible_by_path(c, DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH),
+    lambda cs: all_at_dungeon_entrance(cs),
+    lambda cs: none_at_dungeon_entrance(cs),
+)
 
 
 async def dismiss_ambient_dialog_once(client) -> bool:
@@ -1656,6 +1688,90 @@ async def open_friend_profile(client, name: str):
 
 
 # ---------------------------------------------------------------------------
+# Reaching a prompt
+# ---------------------------------------------------------------------------
+
+
+def _client_numbers(clients: list, numbers: list[int] | None) -> list[int]:
+    return list(numbers) if numbers is not None else list(range(1, len(clients) + 1))
+
+
+async def clear_stale_prompt(
+    machine,
+    clients: list,
+    reset,
+    prompt: PromptKind,
+    safety_delay: float,
+    poll_interval: float = POLL_INTERVAL,
+    numbers: list[int] | None = None,
+) -> None:
+    """Step every client off a *prompt* that is already showing before this run raises one.
+
+    A prompt left over from a previous interaction can linger after a teleport, and one
+    mistaken for this run's has the client press X on whatever it happens to be standing
+    on. If any client has one, every client teleports to *reset* and this waits up to
+    ``safety_delay`` for it to clear. *numbers* labels the clients in the log, 1-based,
+    for a caller working on a subset of the party.
+    """
+    showing = await asyncio.gather(*[prompt.showing(c) for c in clients])
+    if not any(showing):
+        return
+    labels = _client_numbers(clients, numbers)
+    stale = [n for n, s in zip(labels, showing) if s]
+    machine.log(
+        f"Pre-existing {prompt.name} on client(s) {stale}; teleporting to reset_xyz to clear it",
+        logging.DEBUG,
+    )
+    await asyncio.gather(*[c.teleport(reset) for c in clients])
+    await poll_until(lambda: prompt.none_showing(clients), safety_delay, poll_interval)
+
+
+async def reach_prompt(
+    machine,
+    clients: list,
+    point,
+    reset,
+    prompt: PromptKind,
+    safety_delay: float,
+    poll_interval: float = POLL_INTERVAL,
+    *,
+    numbers: list[int] | None = None,
+    fail_on_miss: bool = True,
+) -> bool:
+    """Get every client standing at *point* with *prompt* showing.
+
+    The routine every node that resets and retries shares, up to the point the prompt
+    is on screen:
+
+      1. Clear a pre-existing prompt — see ``clear_stale_prompt``.
+      2. Up to MAX_RETRIES: teleport to *point* and wait ``safety_delay`` for the
+         prompt on every client; on a miss, teleport back to *reset* and try again.
+
+    Returns False once the retries run out. With *fail_on_miss*, the default, that is
+    logged as the node's failure, so a caller's failure path is a bare ``return
+    "FAILURE"``; a caller that carries on with whichever clients did get the prompt
+    passes False and logs its own outcome. Logs under the running node, since it is
+    called from one — see ``machine.log`` in the node conventions.
+    """
+    await clear_stale_prompt(machine, clients, reset, prompt, safety_delay, poll_interval, numbers)
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to the {prompt.name}", logging.DEBUG)
+        await asyncio.gather(*[c.teleport(point) for c in clients])
+
+        machine.log(f"Waiting for {prompt.name}…", logging.DEBUG)
+        if await poll_until(lambda: prompt.all_showing(clients), safety_delay, poll_interval):
+            return True
+
+        machine.log(f"{prompt.name.capitalize()} did not appear (attempt {attempt}); resetting", logging.DEBUG)
+        await asyncio.gather(*[c.teleport(reset) for c in clients])
+
+    if fail_on_miss:
+        machine.log(f"FAILURE: {prompt.name} never appeared after {MAX_RETRIES} attempts", logging.WARNING)
+    return False
+
+
+# ---------------------------------------------------------------------------
 # Dungeon sigils
 # ---------------------------------------------------------------------------
 
@@ -1672,17 +1788,11 @@ async def reach_sigil_prompt(
     """Get every client standing on a dungeon sigil with its entrance prompt showing.
 
     The half `enter_dungeon` shares whichever way it is entered — normal or Team-Up —
-    which is the whole of the node up to the point the prompt is on screen:
-
-      1. Verify every client is in *from_zone*.
-      2. Clear a pre-existing prompt by teleporting to *reset*, so a stale one is not
-         mistaken for the one this run raised.
-      3. Up to MAX_RETRIES: teleport to *sigil* and wait ``safety_delay`` for the
-         prompt; on a miss, teleport back to *reset* and try again.
+    which is the whole of the node up to the point the prompt is on screen: verify
+    every client is in *from_zone*, then ``reach_prompt`` for the entrance prompt.
 
     Returns False having already logged the reason, so a caller's failure path is a
-    bare ``return "FAILURE"``. Logs under the running node, since it is called from
-    one — see ``machine.log`` in the node conventions.
+    bare ``return "FAILURE"``.
     """
     zones = await asyncio.gather(*[c.zone_name() for c in clients])
     machine.log(f"Current client zones: {list(zones)}", logging.DEBUG)
@@ -1694,32 +1804,4 @@ async def reach_sigil_prompt(
         )
         return False
 
-    prompts = await asyncio.gather(*[is_visible_by_path(c, DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH) for c in clients])
-    if any(prompts):
-        stale = [i for i, p in enumerate(prompts) if p]
-        machine.log(
-            f"Pre-existing dungeon entrance prompt on client(s) {stale}; teleporting to reset_xyz to clear it",
-            logging.DEBUG,
-        )
-        await asyncio.gather(*[c.teleport(reset) for c in clients])
-        await poll_until(lambda: none_at_dungeon_entrance(clients), safety_delay, poll_interval)
-
-    for attempt in range(1, MAX_RETRIES + 1):
-        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting clients to sigil", logging.DEBUG)
-        await asyncio.gather(*[c.teleport(sigil) for c in clients])
-
-        machine.log("Waiting for dungeon entrance prompt…", logging.DEBUG)
-        if await poll_until(lambda: all_at_dungeon_entrance(clients), safety_delay, poll_interval):
-            return True
-
-        machine.log(
-            f"Entrance prompt did not appear (attempt {attempt}); resetting to reset_xyz",
-            logging.DEBUG,
-        )
-        await asyncio.gather(*[c.teleport(reset) for c in clients])
-
-    machine.log(
-        f"FAILURE: entrance prompt never appeared after {MAX_RETRIES} attempts",
-        logging.WARNING,
-    )
-    return False
+    return await reach_prompt(machine, clients, sigil, reset, DUNGEON_ENTRANCE_PROMPT, safety_delay, poll_interval)

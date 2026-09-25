@@ -308,29 +308,10 @@ async def run(machine, clients: list, params: dict) -> str:
             return failure
         return await _confirm_arrival(machine, clients, to_zone)
 
-    # 2. Clear any pre-existing interact prompt.
-    prompts = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
-    if any(prompts):
-        machine.log("Pre-existing interact prompt detected; teleporting to reset_xyz to clear it", logging.DEBUG)
-        await asyncio.gather(*[c.teleport(reset) for c in clients])
-        await node_helpers.poll_until(lambda: node_helpers.none_in_npc_range(clients), safety_delay, POLL_INTERVAL)
-
-    # 3. Retry loop: teleport to interact_xyz, wait for prompt.
-    prompt_appeared = False
-    for attempt in range(1, MAX_RETRIES + 1):
-        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to interact_xyz", logging.DEBUG)
-        await asyncio.gather(*[c.teleport(interact) for c in clients])
-        if await node_helpers.poll_until(lambda: node_helpers.all_in_npc_range(clients), safety_delay, POLL_INTERVAL):
-            prompt_appeared = True
-            break
-        machine.log(f"Interact prompt did not appear (attempt {attempt}); resetting", logging.DEBUG)
-        await asyncio.gather(*[c.teleport(reset) for c in clients])
-
-    if not prompt_appeared:
-        machine.log(
-            f"FAILURE: interact prompt never appeared after {MAX_RETRIES} attempts",
-            logging.WARNING,
-        )
+    # 2–3. Clear a stale prompt, then teleport to interact_xyz until the prompt shows.
+    if not await node_helpers.reach_prompt(
+        machine, clients, interact, reset, node_helpers.INTERACT_PROMPT, safety_delay, POLL_INTERVAL
+    ):
         return "FAILURE"
 
     # 4. Press X to open the zone list.
