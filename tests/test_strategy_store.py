@@ -186,8 +186,8 @@ def test_write_goes_only_to_user_root(tmp_path: Path):
     dcs = DuelCombatStrategy(name="New")
     save_duel_strategy(dcs, root=shipped, user_root=user)
 
-    assert not (shipped / "strategies" / "duel" / f"{dcs.id}.json").exists()
-    assert (user / "strategies" / "duel" / f"{dcs.id}.json").exists()
+    assert not (shipped / "strategies" / "duel").exists()
+    assert (user / "strategies" / "duel" / "new.json").exists()
 
 
 def test_copy_on_write_leaves_shipped_file_untouched(tmp_path: Path):
@@ -225,7 +225,7 @@ def test_delete_never_touches_shipped_file(tmp_path: Path):
 
     delete_player_strategy(original.id, root=shipped, user_root=user)  # no user copy exists yet
 
-    assert (shipped / "strategies" / "player" / f"{original.id}.json").exists()
+    assert (shipped / "strategies" / "player" / "shipped.json").exists()
 
 
 # ---------------------------------------------------------------------------

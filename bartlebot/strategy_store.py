@@ -14,10 +14,13 @@ same id — an override, not a fork. Deleting a user copy of a shipped id is how
 "revert to default" works; the shipped file itself is never touched by the app.
 
 Directory layout is identical under both roots:
-  strategies/player/   — PlayerCombatStrategy  files, named {uuid}.json
-  strategies/duel/     — DuelCombatStrategy     files, named {uuid}.json
-  strategies/decks/    — DeckPreset             files, named {uuid}.json
-  bot_strategies/      — BotCombatStrategy      files, named {uuid}.json
+  strategies/player/   — PlayerCombatStrategy files
+  strategies/duel/     — DuelCombatStrategy   files
+  strategies/decks/    — DeckPreset           files
+  bot_strategies/      — BotCombatStrategy    files
+
+Each file is named after the strategy's name (``default-support.json``) and found
+by the id inside it; :mod:`bartlebot.store_roots` has the naming rules.
 
 Every function accepts an optional ``root``, which sets the shipped root and,
 unless ``user_root`` is also given, doubles as the user root too — so a single
@@ -42,7 +45,15 @@ from bartlebot.bot.strategy_models import (
     DuelCombatStrategy,
     PlayerCombatStrategy,
 )
-from bartlebot.store_roots import Origin, merged_by_id, origin_in, resolve_roots
+from bartlebot.store_roots import (
+    Origin,
+    delete_by_id,
+    load_by_id,
+    merged_by_id,
+    origin_in,
+    resolve_roots,
+    save_by_id,
+)
 
 __all__ = [
     "Origin",
@@ -136,22 +147,19 @@ def load_player_strategy(
     uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> PlayerCombatStrategy:
     shipped, user = _roots(root, user_root)
-    user_path = _player_dir(user) / f"{uuid}.json"
-    if user_path.exists():
-        return PlayerCombatStrategy.load(user_path)
-    return PlayerCombatStrategy.load(_player_dir(shipped) / f"{uuid}.json")
+    return load_by_id(_player_dir(shipped), _player_dir(user), uuid, PlayerCombatStrategy.load)  # type: ignore[return-value]
 
 
 def save_player_strategy(
     s: PlayerCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> None:
     _, user = _roots(root, user_root)
-    s.save(_player_dir(user) / f"{s.id}.json")
+    save_by_id(_player_dir(user), s.id, s.name, s.save)
 
 
 def delete_player_strategy(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
     _, user = _roots(root, user_root)
-    (_player_dir(user) / f"{uuid}.json").unlink(missing_ok=True)
+    delete_by_id(_player_dir(user), uuid)
 
 
 # ---------------------------------------------------------------------------
@@ -175,22 +183,19 @@ def load_duel_strategy(
     uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> DuelCombatStrategy:
     shipped, user = _roots(root, user_root)
-    user_path = _duel_dir(user) / f"{uuid}.json"
-    if user_path.exists():
-        return DuelCombatStrategy.load(user_path)
-    return DuelCombatStrategy.load(_duel_dir(shipped) / f"{uuid}.json")
+    return load_by_id(_duel_dir(shipped), _duel_dir(user), uuid, DuelCombatStrategy.load)  # type: ignore[return-value]
 
 
 def save_duel_strategy(
     s: DuelCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> None:
     _, user = _roots(root, user_root)
-    s.save(_duel_dir(user) / f"{s.id}.json")
+    save_by_id(_duel_dir(user), s.id, s.name, s.save)
 
 
 def delete_duel_strategy(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
     _, user = _roots(root, user_root)
-    (_duel_dir(user) / f"{uuid}.json").unlink(missing_ok=True)
+    delete_by_id(_duel_dir(user), uuid)
 
 
 # ---------------------------------------------------------------------------
@@ -222,22 +227,19 @@ def load_bot_strategy(
     uuid: str, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> BotCombatStrategy:
     shipped, user = _roots(root, user_root)
-    user_path = _bot_strategy_dir(user) / f"{uuid}.json"
-    if user_path.exists():
-        return BotCombatStrategy.load(user_path)
-    return BotCombatStrategy.load(_bot_strategy_dir(shipped) / f"{uuid}.json")
+    return load_by_id(_bot_strategy_dir(shipped), _bot_strategy_dir(user), uuid, BotCombatStrategy.load)  # type: ignore[return-value]
 
 
 def save_bot_strategy(
     s: BotCombatStrategy, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> None:
     _, user = _roots(root, user_root)
-    s.save(_bot_strategy_dir(user) / f"{s.id}.json")
+    save_by_id(_bot_strategy_dir(user), s.id, s.name, s.save)
 
 
 def delete_bot_strategy(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
     _, user = _roots(root, user_root)
-    (_bot_strategy_dir(user) / f"{uuid}.json").unlink(missing_ok=True)
+    delete_by_id(_bot_strategy_dir(user), uuid)
 
 
 def rekey_bot_strategy_states(
@@ -282,20 +284,17 @@ def list_deck_presets(root: str | Path | None = None, user_root: str | Path | No
 
 def load_deck_preset(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> DeckPreset:
     shipped, user = _roots(root, user_root)
-    user_path = _deck_preset_dir(user) / f"{uuid}.json"
-    if user_path.exists():
-        return DeckPreset.load(user_path)
-    return DeckPreset.load(_deck_preset_dir(shipped) / f"{uuid}.json")
+    return load_by_id(_deck_preset_dir(shipped), _deck_preset_dir(user), uuid, DeckPreset.load)  # type: ignore[return-value]
 
 
 def save_deck_preset(preset: DeckPreset, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
     _, user = _roots(root, user_root)
-    preset.save(_deck_preset_dir(user) / f"{preset.id}.json")
+    save_by_id(_deck_preset_dir(user), preset.id, preset.name, preset.save)
 
 
 def delete_deck_preset(uuid: str, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
     _, user = _roots(root, user_root)
-    (_deck_preset_dir(user) / f"{uuid}.json").unlink(missing_ok=True)
+    delete_by_id(_deck_preset_dir(user), uuid)
 
 
 # ---------------------------------------------------------------------------

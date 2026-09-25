@@ -55,7 +55,7 @@ def test_dev_mode_subgraph_save_lands_in_the_shipped_root(fake_roots, monkeypatc
     library = SubgraphLibrary()
     library.save(_defn())
 
-    assert (project / "subgraphs" / "sg-a.json").exists()
+    assert (project / "subgraphs" / "a.json").exists()
     assert not appdata.exists()
     assert library.origin("sg-a") is not Origin.SHIPPED_OVERRIDE
 
@@ -66,7 +66,7 @@ def test_dev_mode_strategy_save_lands_in_the_shipped_root(fake_roots, monkeypatc
     preset = DeckPreset(name="Deck")
     save_deck_preset(preset)
 
-    assert (project / "strategies" / "decks" / f"{preset.id}.json").exists()
+    assert (project / "strategies" / "decks" / "deck.json").exists()
     assert not appdata.exists()
     assert strategy_origin_of(StrategyKind.DECK, preset.id) is not Origin.SHIPPED_OVERRIDE
 
@@ -77,5 +77,5 @@ def test_without_dev_mode_a_save_shadows_the_shipped_file(fake_roots):
     library = SubgraphLibrary()
     library.save(_defn(name="Mine"))
 
-    assert (appdata / "subgraphs" / "sg-a.json").exists()
+    assert (appdata / "subgraphs" / "mine.json").exists()
     assert library.origin("sg-a") is Origin.SHIPPED_OVERRIDE

@@ -199,8 +199,8 @@ def test_commit_writes_only_to_the_user_root(tmp_path: Path):
     ws.get(StrategyKind.DUEL, dcs.id).name = "Mine"
     ws.commit()
 
-    assert not (shipped / "strategies" / "duel" / f"{dcs.id}.json").read_text().count("Mine")
-    assert (user / "strategies" / "duel" / f"{dcs.id}.json").exists()
+    assert not (shipped / "strategies" / "duel" / "shipped.json").read_text().count("Mine")
+    assert (user / "strategies" / "duel" / "mine.json").exists()
     assert list_duel_strategies(shipped, user)[0].name == "Mine"
 
 

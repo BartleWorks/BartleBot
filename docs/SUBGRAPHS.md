@@ -252,6 +252,8 @@ write and shadows a shipped file of the same id. `bartlebot/subgraph_store.py` m
 `strategy_store.py` function for function, and the `Origin` enum (`SHIPPED`,
 `SHIPPED_OVERRIDE`, `USER`, `MISSING`) is the one from the strategy store, not a copy,
 so the region page can say honestly whether removing a definition deletes or reverts it.
+A definition's file is named after it (`subgraphs/sync-players.json`) and found by the id
+inside, like a strategy's — "Filenames are names, ids are inside" in `COMBAT_CONFIG.md`.
 
 A shipped definition is authored with `BARTLEBOT_DEV` set, which makes the project root
 the user root as well: one copy, written where git sees it. Authoring without it is how

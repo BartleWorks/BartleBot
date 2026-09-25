@@ -6,7 +6,8 @@
             With ``BARTLEBOT_DEV`` set it is the project root, so a shipped definition
             is authored in place — see :mod:`bartlebot.store_roots`.
 
-Files are named ``{id}.json``. The root argument convention, :class:`Origin` and the
+Files are named after the definition's name (``sync-players.json``) and found by the
+id inside them; :mod:`bartlebot.store_roots` has the naming rules. The root argument convention, :class:`Origin` and the
 shadowing rule are :mod:`bartlebot.store_roots`; this module mirrors
 :mod:`bartlebot.strategy_store` function for function so a reader of one knows the
 other. :class:`SubgraphLibrary` is the session's cached view over the pair, which is
@@ -22,7 +23,16 @@ import logging
 from pathlib import Path
 
 from bartlebot.bot.schema import SubgraphDefinition
-from bartlebot.store_roots import Origin, merged_by_id, origin_in, resolve_roots
+from bartlebot.store_roots import (
+    Origin,
+    delete_by_id,
+    index_dir,
+    load_by_id,
+    merged_by_id,
+    origin_in,
+    resolve_roots,
+    save_by_id,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +70,7 @@ def load_subgraph(
     subgraph_id: str, root: str | Path | None = None, user_root: str | Path | None = None
 ) -> SubgraphDefinition:
     shipped, user = resolve_roots(root, user_root)
-    user_path = _subgraph_dir(user) / f"{subgraph_id}.json"
-    if user_path.exists():
-        return SubgraphDefinition.load(user_path)
-    return SubgraphDefinition.load(_subgraph_dir(shipped) / f"{subgraph_id}.json")
+    return load_by_id(_subgraph_dir(shipped), _subgraph_dir(user), subgraph_id, SubgraphDefinition.load)  # type: ignore[return-value]
 
 
 def save_subgraph(
@@ -71,13 +78,13 @@ def save_subgraph(
 ) -> None:
     """Write to the user root only; the shipped file is never touched."""
     _, user = resolve_roots(root, user_root)
-    defn.save(_subgraph_dir(user) / f"{defn.id}.json")
+    save_by_id(_subgraph_dir(user), defn.id, defn.name, defn.save)
 
 
 def delete_subgraph(subgraph_id: str, root: str | Path | None = None, user_root: str | Path | None = None) -> None:
     """Remove the user copy. On a shipped id this is *revert*, not delete — see :class:`Origin`."""
     _, user = resolve_roots(root, user_root)
-    (_subgraph_dir(user) / f"{subgraph_id}.json").unlink(missing_ok=True)
+    delete_by_id(_subgraph_dir(user), subgraph_id)
 
 
 def origin_of(subgraph_id: str, root: str | Path | None = None, user_root: str | Path | None = None) -> Origin:
@@ -135,7 +142,11 @@ class SubgraphLibrary:
 
     @property
     def errors(self) -> dict[str, str]:
-        """Definition id (file stem) → why its file failed to load, as of the last reload."""
+        """Definition id → why its file failed to load, as of the last reload.
+
+        The id is the one the file declares, read without validating the rest, or its
+        stem when even that cannot be read — see :func:`bartlebot.store_roots.declared_id`.
+        """
         return dict(self._errors)
 
     def reload(self) -> None:
@@ -143,14 +154,12 @@ class SubgraphLibrary:
         by_id: dict[str, SubgraphDefinition] = {}
         errors: dict[str, str] = {}
         for d in (_subgraph_dir(shipped), _subgraph_dir(user)):
-            if not d.exists():
-                continue
-            for p in sorted(d.glob("*.json")):
+            for item_id, p in index_dir(d).items():
                 try:
                     defn = SubgraphDefinition.load(p)
                 except Exception as exc:
                     logger.warning("Skipping unloadable subgraph definition %s: %s", p, exc)
-                    errors[p.stem] = str(exc)
+                    errors[item_id] = str(exc)
                     continue
                 by_id[defn.id] = defn
                 errors.pop(defn.id, None)
