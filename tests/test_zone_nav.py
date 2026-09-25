@@ -470,12 +470,23 @@ def test_an_unverified_gate_is_left_out_unless_asked_for():
 def test_the_hub_button_right_after_home_waits_out_their_shared_cooldown():
     """One timer covers both buttons. Fresh, the button would beat the teleporter on effort; after HOME it waits."""
     raw = _spiral()
-    raw["worlds"]["Home"]["links"][0] = _object("Home/Dorm", "Home/Hub")
+    raw["worlds"]["Home"]["links"][0] = _walk("Home/Dorm", "Home/Tree")
+    raw["worlds"]["Home"]["links"].append(_object("Home/Tree", "Home/Hub"))
 
     assert _route(raw, "Housing/Castle", "Home/Hub") == [
         ("home", "Housing/Castle", "Home/Dorm"),
-        ("object", "Home/Dorm", "Home/Hub"),
+        ("walk", "Home/Dorm", "Home/Tree"),
+        ("object", "Home/Tree", "Home/Hub"),
     ]
+    assert _route(raw, "Home/Tree", "Home/Hub") == [("hub", "Home/Tree", "Home/Hub")]
+
+
+def test_the_dorm_has_no_hub_button():
+    """From the dorm the button goes to the last world visited, not the dorm's own world's hub."""
+    nav = zone_nav.parse(_spiral())
+
+    assert "hub" not in {s.kind for s in nav.steps_from("Home/Dorm")}
+    assert _route(_spiral(), "Home/Dorm", "Home/Hub") == [("walk", "Home/Dorm", "Home/Hub")]
 
 
 def test_a_cooling_timer_delays_home_too():
@@ -896,6 +907,26 @@ def test_home_is_the_dorm_that_pressing_home_verifies():
     from bartlebot.nodes import wizard_city
 
     assert _shipped().home == wizard_city.DORM_ZONE
+
+
+def test_the_dorm_walks_to_the_commons_through_ravenwood():
+    steps = zone_nav.plan(_shipped(), "WizardCity/Interiors/WC_Housing_Dorm_Interior", "WizardCity/WC_Hub")
+
+    assert [(s.kind, s.to_zone) for s in steps] == [
+        ("walk", "WizardCity/WC_Ravenwood"),
+        ("walk", "WizardCity/WC_Hub"),
+    ]
+
+
+def test_every_wizard_city_walk_has_a_reset_point():
+    """A walk with no reset point falls back to each player's position, which may already be in the trigger."""
+    missing = [
+        (s.from_zone, s.to_zone)
+        for s in _shipped().links
+        if s.kind == "walk" and s.from_zone.startswith("WizardCity/") and "reset_xyz" not in s.params
+    ]
+
+    assert missing == []
 
 
 def test_the_commons_reaches_another_world_through_the_world_tree_gate():
