@@ -136,13 +136,33 @@ class GlobalHotkeys(QAbstractNativeEventFilter):
             self._unregister_all()
 
     def _register_all(self) -> None:
-        for offset, (action, (modifiers, vk)) in enumerate(sorted(self._bindings.items())):
+        # Two actions on one key are caught here rather than left to Windows, which refuses
+        # the second the same way it refuses a key another application holds. Reporting that
+        # as another application's sent a user looking for one when the clash was our own.
+        owners: dict[tuple[int, int], str] = {}
+        for offset, (action, combo) in enumerate(sorted(self._bindings.items())):
             hotkey_id = self._id_base + offset
-            if self._user32.RegisterHotKey(None, hotkey_id, modifiers | MOD_NOREPEAT, vk):
+            modifiers, vk = combo
+            if (owner := owners.get(combo)) is not None:
+                self._warn_once(
+                    action, combo, "The hotkeys for %s and %s are the same key; only %s gets it", owner, action, owner
+                )
+            elif self._user32.RegisterHotKey(None, hotkey_id, modifiers | MOD_NOREPEAT, vk):
                 self._registered[hotkey_id] = action
-            elif (action, (modifiers, vk)) not in self._warned:
-                self._warned.add((action, (modifiers, vk)))
-                logger.warning("The hotkey for %s is already taken by another application", action)
+                owners[combo] = action
+            else:
+                self._warn_once(
+                    action,
+                    combo,
+                    "The hotkey for %s is already registered elsewhere: by another application, "
+                    "or by BartleBot's other hotkey set if it is a digit speed-authoring uses",
+                    action,
+                )
+
+    def _warn_once(self, action: str, combo: tuple[int, int], message: str, *args) -> None:
+        if (action, combo) not in self._warned:
+            self._warned.add((action, combo))
+            logger.warning(message, *args)
 
     def _unregister_all(self) -> None:
         for hotkey_id in self._registered:

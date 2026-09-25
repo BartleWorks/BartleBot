@@ -21,7 +21,7 @@ from bartlebot.gui.global_hotkeys import (
     parse_binding,
 )
 from bartlebot.gui.settings.authoring_tab import binding_problems
-from bartlebot.settings_manager import SettingsManager
+from bartlebot.settings_manager import DEFAULT_AUTHORING_HOTKEYS, SettingsManager
 
 
 @pytest.mark.parametrize(
@@ -71,6 +71,35 @@ def test_a_key_another_application_holds_is_skipped(qapp):
     hk.set_bindings({"xyz_sync": "F1"})
     hk.set_armed(True)
     assert hk.registered_actions == []
+
+
+def test_a_refused_key_is_reported_as_held_elsewhere(qapp, caplog):
+    hk, user32 = _hotkeys()
+    user32.RegisterHotKey.return_value = 0
+    hk.set_bindings({"xyz_sync": "F1"})
+    hk.set_armed(True)
+    assert "xyz_sync is already registered elsewhere" in caplog.text
+
+
+def test_two_actions_on_one_key_are_reported_as_our_own_clash(qapp, caplog):
+    """Windows refuses the second one exactly as it refuses another application's key, so
+    the clash has to be caught before asking it. The alphabetically first action keeps it."""
+    hk, user32 = _hotkeys()
+    hk.set_bindings({"toggle_speed_authoring": "F5", "toggle_dialogue": "F5", "xyz_sync": "F1"})
+    hk.set_armed(True)
+
+    assert hk.registered_actions == ["toggle_dialogue", "xyz_sync"]
+    assert user32.RegisterHotKey.call_count == 2
+    assert (
+        "The hotkeys for toggle_dialogue and toggle_speed_authoring are the same key; only toggle_dialogue gets it"
+        in caplog.text
+    )
+    assert "elsewhere" not in caplog.text
+
+    # Once a session, not on every focus change.
+    hk.set_armed(False)
+    hk.set_armed(True)
+    assert caplog.text.count("are the same key") == 1
 
 
 def test_an_unbindable_key_is_reported_and_left_out(qapp):
@@ -170,3 +199,25 @@ def test_the_buttons_are_off_during_a_run_and_the_moves_need_two_players():
 def test_a_tooltip_names_the_button_its_key_and_whether_it_is_on():
     assert authoring_tooltip(AuthoringAction.TOGGLE_SPEED, "F3", on=True).startswith("Speed (on) [F3] — ")
     assert authoring_tooltip(AuthoringAction.XYZ_SYNC, "").startswith("XYZ Sync — ")
+
+
+def test_only_a_key_that_differs_from_its_default_is_stored():
+    """Applying the Authoring tab writes every row; a default must not be frozen by it, or a
+    renumbered default never reaches the user -- speed-authoring stayed on F5 that way."""
+    sm = SettingsManager.instance()
+    sm.set("authoring", "hotkeys", value={})
+    for action, binding in DEFAULT_AUTHORING_HOTKEYS.items():
+        sm.set_authoring_hotkey(action, binding)
+    sm.set_authoring_hotkey("xyz_sync", "F9")
+    sm.set_authoring_hotkey("toggle_combat", "")
+
+    assert sm.get("authoring", "hotkeys") == {"xyz_sync": "F9", "toggle_combat": ""}
+
+
+def test_a_key_set_back_to_its_default_is_dropped_from_the_file():
+    sm = SettingsManager.instance()
+    sm.set("authoring", "hotkeys", value={"toggle_speed_authoring": "F5", "xyz_sync": "F9"})
+    sm.set_authoring_hotkey("toggle_speed_authoring", DEFAULT_AUTHORING_HOTKEYS["toggle_speed_authoring"])
+
+    assert sm.get("authoring", "hotkeys") == {"xyz_sync": "F9"}
+    assert sm.authoring_hotkeys["toggle_speed_authoring"] == "F6"

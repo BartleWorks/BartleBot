@@ -819,10 +819,19 @@ class SettingsManager:
         return {action: str(stored.get(action, default)) for action, default in DEFAULT_AUTHORING_HOTKEYS.items()}
 
     def set_authoring_hotkey(self, action: str, binding: str) -> None:
-        """Bind *action* to *binding* (``""`` unbinds it). Not saved; the caller saves."""
-        hotkeys = self.authoring_hotkeys
-        hotkeys[action] = binding
-        self.set("authoring", "hotkeys", value=hotkeys)
+        """Bind *action* to *binding* (``""`` unbinds it). Not saved; the caller saves.
+
+        Only a binding that differs from the default is stored, and one set back to its
+        default is dropped. Storing the whole set froze every default the first time the
+        Authoring tab was applied, so when the defaults were renumbered a user who had never
+        chosen a key kept speed-authoring on its old F5 -- on top of auto-dialogue's new F5.
+        """
+        stored = dict(self.get("authoring", "hotkeys", default={}) or {})
+        if binding == DEFAULT_AUTHORING_HOTKEYS.get(action):
+            stored.pop(action, None)
+        else:
+            stored[action] = binding
+        self.set("authoring", "hotkeys", value=stored)
 
     @property
     def recent_zones(self) -> list[str]:
