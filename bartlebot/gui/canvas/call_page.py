@@ -33,6 +33,7 @@ from bartlebot.gui.sidebar.sidebar_section import disclosure_pixmap
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
@@ -391,7 +392,7 @@ class CallNodePage(ThemedMixin, QWidget):
         self._add_form(panel.id, form)
         record = None
         if state.node_type in recording.RECORDABLE_NODES:
-            record = ActionButton("", "Record", fill=False)
+            record = RecordButton(style=ActionStyle.SECONDARY)
             record.setToolTip("Record this node's values from the game, as on the node itself")
             status = QLabel("")
             self._record_status[panel.id] = status
@@ -403,11 +404,11 @@ class CallNodePage(ThemedMixin, QWidget):
             section.layout().insertWidget(1, self._record_status[panel.id])
         return form, section
 
-    def _record(self, panel_id: str, node_type: str, button: ActionButton) -> None:
+    def _record(self, panel_id: str, node_type: str, button: RecordButton) -> None:
         """Run the node's own recorder against its panel's form -- the recorder needs no changes."""
         if recording.is_recording():
             recording.cancel_active_recording()
-            button.setText("Record")
+            button.set_label(IDLE_TEXT)
             return
         status = self._record_status.get(panel_id)
         clients = self._get_clients()
@@ -425,7 +426,7 @@ class CallNodePage(ThemedMixin, QWidget):
                 clients[0],
                 form,
                 status.setText if status is not None else (lambda _t: None),
-                button.setText,
+                button.set_label,
                 lambda _label: None,  # the member's label belongs to the definition
             )
         )

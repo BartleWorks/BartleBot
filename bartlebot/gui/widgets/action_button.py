@@ -167,6 +167,11 @@ class ActionButton(ThemedMixin, QPushButton):
         self._icon_name = icon_name
         self.refresh_theme_styles()
 
+    def _icon_tint(self, text: str) -> str:
+        """The glyph's colour, given the style's text colour: the same, unless a subclass
+        has a glyph whose colour is its meaning — ``RecordButton``'s red dot."""
+        return text
+
     def _palette(self) -> tuple[str, str, str, str, str]:
         """(background, text, border, hover background, pressed background) for the style.
 
@@ -212,7 +217,9 @@ class ActionButton(ThemedMixin, QPushButton):
         # against the accent, and on the other two it is the colour it would have picked
         # anyway. An empty name means a button with no glyph — a dialog's Cancel — and
         # clearing the icon is how it stays that way across a theme pass.
-        self.setIcon(svg_icon(self._icon_name, self._icon_px, tint=text) if self._icon_name else QIcon())
+        self.setIcon(
+            svg_icon(self._icon_name, self._icon_px, tint=self._icon_tint(text)) if self._icon_name else QIcon()
+        )
         self.setStyleSheet(
             "QPushButton {"
             f"  background: {background};"

@@ -55,10 +55,11 @@ from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
+from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.zone_picker import NavZoneButton, is_destination
 from bartlebot.nodes import zone_navigation
@@ -1963,16 +1964,20 @@ class _ParamPanel(ThemedMixin, QWidget):
 
         # Record row — shown only for recordable node types
         self._record_row = QWidget()
-        _rr_layout = QHBoxLayout(self._record_row)
+        _rr_layout = QVBoxLayout(self._record_row)
         _rr_layout.setContentsMargins(6, 0, 6, 4)
-        _rr_layout.setSpacing(6)
-        # Glyphless and fill=False: pinned to 70px with a status label beside it, which
-        # leaves no room for a 16px icon and no space for the button to grow into.
-        self._record_btn = ActionButton("", "Record", fill=False)
-        self._record_btn.setFixedWidth(70)
+        _rr_layout.setSpacing(2)
+        # Recording is how most params here get filled, so the button is drawn to be
+        # found (#106): the full width of the panel, like the wiki import beside it,
+        # with SECONDARY's accent and the red dot. The status goes underneath, and is
+        # hidden while it has nothing to say.
+        self._record_btn = RecordButton(style=ActionStyle.SECONDARY, fill=True)
+        self._record_btn.setToolTip("Fill this node's values from the game (Ctrl+R)")
         self._record_status_lbl = QLabel("")
+        self._record_status_lbl.setWordWrap(True)
+        self._record_status_lbl.setVisible(False)
         _rr_layout.addWidget(self._record_btn)
-        _rr_layout.addWidget(self._record_status_lbl, 1)
+        _rr_layout.addWidget(self._record_status_lbl)
         self._record_row.setVisible(False)
         self._record_btn.clicked.connect(self._on_record_clicked)
 
@@ -2800,8 +2805,12 @@ class _ParamPanel(ThemedMixin, QWidget):
 
     def _cancel_record(self) -> None:
         recording.cancel_active_recording()
-        self._record_btn.setText("Record")
-        self._record_status_lbl.setText("")
+        self._record_btn.set_label(IDLE_TEXT)
+        self._set_record_status("")
+
+    def _set_record_status(self, text: str) -> None:
+        self._record_status_lbl.setText(text)
+        self._record_status_lbl.setVisible(bool(text))
 
     def _on_record_clicked(self) -> None:
         if recording.is_recording():
@@ -2811,7 +2820,7 @@ class _ParamPanel(ThemedMixin, QWidget):
             return
         clients = self._get_clients()
         if not clients:
-            self._record_status_lbl.setText("No player connected.")
+            self._set_record_status("No player connected.")
             return
         if self._state.node_type not in recording.RECORDABLE_NODES:
             return
@@ -2820,8 +2829,8 @@ class _ParamPanel(ThemedMixin, QWidget):
                 self._state.node_type,
                 clients[0],
                 self._param_form,
-                self._record_status_lbl.setText,
-                self._record_btn.setText,
+                self._set_record_status,
+                self._record_btn.set_label,
                 self._try_set_label,
             )
         )
