@@ -50,6 +50,10 @@ SWP_FRAMECHANGED = 0x0020  # Required after SetWindowLongW to flush a style chan
 
 SW_SHOW = 5
 
+WM_PARENTNOTIFY = 0x0210
+# The button-down events WM_PARENTNOTIFY reports in its wParam's low word.
+_BUTTON_DOWN_EVENTS = frozenset({0x0201, 0x0204, 0x0207, 0x020B})  # L, R, M, X
+
 _STYLE_MASK = 0xFFFFFFFF
 
 
@@ -105,6 +109,21 @@ def restored_parent(orig_parent: int, orig_style: int) -> int:
     return orig_parent if orig_style & WS_CHILD else 0
 
 
+def is_click_notification(message: int, wparam: int) -> bool:
+    """Whether a message the tile received says a mouse button went down on the game.
+
+    Windows sends ``WM_PARENTNOTIFY`` to a child's parent for every button press on
+    the child, and only for presses that actually reach it, so a click on a window
+    stacked over the tile never produces one. It also arrives before the game
+    handles the press, which is the property the focus grant depends on. When the
+    click also brings BartleBot to the front, focus is first moved to BartleBot's own
+    window and then, some 25 ms later, restored to wherever it was last placed inside
+    it. Focus given on this message is in place before that, so it is what gets
+    restored; the 50 ms poll this replaced gave it after, and lost it (#93).
+    """
+    return message == WM_PARENTNOTIFY and (wparam & 0xFFFF) in _BUTTON_DOWN_EVENTS
+
+
 def _intersects(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> bool:
     return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
 
@@ -158,7 +177,6 @@ _SIGNATURES: tuple[tuple[str, list, object], ...] = (
     ("AttachThreadInput", [_DWORD, _DWORD, _BOOL], _BOOL),
     ("SetFocus", [_HWND], _HWND),
     ("IsChild", [_HWND, _HWND], _BOOL),
-    ("WindowFromPoint", [ctypes.wintypes.POINT], _HWND),
     ("GetWindowThreadProcessId", [_HWND, ctypes.POINTER(_DWORD)], _DWORD),
     ("GetGUIThreadInfo", [_DWORD, ctypes.POINTER(GUITHREADINFO)], _BOOL),
 )
@@ -289,17 +307,6 @@ class EmbeddedWindow:
             return False
         focus = gti.hwndFocus
         return bool(focus) and (focus == self._hwnd or bool(self._user32.IsChild(self._hwnd, focus)))
-
-    def is_visible_at(self, x: int, y: int) -> bool:
-        """Whether the screen shows this window at (*x*, *y*), in physical pixels.
-
-        ``WindowFromPoint`` answers with whatever is on top at that point, so a window
-        stacked over this one — another app, a popped-out client, a Qt popup — wins.
-        A rect test cannot tell those apart: that is how a click on a window in front
-        of an embedded client used to hand the client focus and pull BartleBot forward.
-        """
-        hit = self._user32.WindowFromPoint(ctypes.wintypes.POINT(x, y))
-        return bool(hit) and (hit == self._hwnd or bool(self._user32.IsChild(self._hwnd, hit)))
 
     # ------------------------------------------------------------------
     # Embed / restore

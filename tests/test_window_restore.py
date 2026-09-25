@@ -25,6 +25,7 @@ from bartlebot.gui.game_embed.win32_window import (
     WS_VISIBLE,
     EmbeddedWindow,
     child_style,
+    is_click_notification,
     restored_parent,
     restored_style,
     visible_position,
@@ -113,9 +114,6 @@ class FakeUser32:
         self.calls: list[tuple] = []
         self._parent = parent
         self._styles = {GWL_STYLE: style, GWL_EXSTYLE: ex_style}
-        # What WindowFromPoint answers, and which handles IsChild calls the game's children.
-        self.top_window = 0
-        self.game_children: set[int] = set()
 
     def _record(self, name: str, *args) -> None:
         self.calls.append((name,) + args)
@@ -150,13 +148,6 @@ class FakeUser32:
 
     def GetWindowThreadProcessId(self, hwnd, out):
         return 4242
-
-    def WindowFromPoint(self, point):
-        self._record("WindowFromPoint", point.x, point.y)
-        return self.top_window
-
-    def IsChild(self, parent, hwnd):
-        return parent == GAME_HWND and hwnd in self.game_children
 
     # -- writes ------------------------------------------------------------
 
@@ -232,27 +223,25 @@ class TestEmbed:
         assert window.is_embedded
 
 
-class TestIsVisibleAt:
-    """#93: a click on a window stacked over an embedded client must not count as a click on it."""
+class TestIsClickNotification:
+    """#93: the tile grants focus on the WM_PARENTNOTIFY a press on the game sends it."""
 
-    def test_the_game_itself_on_top(self, window: EmbeddedWindow, user32: FakeUser32) -> None:
-        user32.top_window = GAME_HWND
-        assert window.is_visible_at(500, 400)
-        assert user32.call("WindowFromPoint")[1:] == (500, 400)
+    WM_PARENTNOTIFY = 0x0210
 
-    def test_a_child_of_the_game_on_top(self, window: EmbeddedWindow, user32: FakeUser32) -> None:
-        user32.top_window = 0xC0DE
-        user32.game_children.add(0xC0DE)
-        assert window.is_visible_at(500, 400)
+    @pytest.mark.parametrize("button_down", [0x0201, 0x0204, 0x0207, 0x020B])  # L, R, M, X
+    def test_every_button_press(self, button_down: int) -> None:
+        assert is_click_notification(self.WM_PARENTNOTIFY, button_down)
 
-    def test_a_window_stacked_over_the_game(self, window: EmbeddedWindow, user32: FakeUser32) -> None:
-        """The cursor is inside the game's rect, but another window is what the screen shows there."""
-        user32.top_window = 0xF00D  # a popped-out client, another app, a Qt popup
-        assert not window.is_visible_at(500, 400)
+    def test_reads_only_the_low_word(self) -> None:
+        """The high word carries the X button's identity (or a child id), not the event."""
+        assert is_click_notification(self.WM_PARENTNOTIFY, 0x0002_020B)
 
-    def test_nothing_at_the_point(self, window: EmbeddedWindow, user32: FakeUser32) -> None:
-        user32.top_window = 0
-        assert not window.is_visible_at(500, 400)
+    @pytest.mark.parametrize("event", [0x0001, 0x0002])  # WM_CREATE, WM_DESTROY
+    def test_not_a_child_being_created_or_destroyed(self, event: int) -> None:
+        assert not is_click_notification(self.WM_PARENTNOTIFY, event)
+
+    def test_not_a_button_press_sent_to_the_tile_itself(self) -> None:
+        assert not is_click_notification(0x0201, 0x0201)
 
 
 class TestRestore:
