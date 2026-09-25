@@ -629,24 +629,49 @@ nowhere. The pre-run subgraph recompose (`docs/SUBGRAPHS.md`) is the second call
 after undo. In EDIT mode a `desc` pushes the outgoing config onto the undo stack first,
 so the swap is one undoable step; in RUN mode there is no stack and none is pushed.
 
-## An instance is drawn as its call node: go through display ids
+## A folded region is drawn as one node: go through display ids
 
-A subgraph instance is one `CallNodeItem`, keyed in `EditScene.node_items` by its
-*region* id; its members are in the config but have no item at all. So an item lookup by
-state id misses every member. Ask the scene instead: `display_id(state_id)` is the id
-it is drawn as, `call_node_of(state_id)` its call node, and `state_ids_of(display_ids)`
-expands a selection back to state ids. An edge is drawn per `(source, when, dest)` in
+Two kinds of region are drawn as one `FoldedNodeItem`, keyed in `EditScene.node_items`
+by its *region* id, with members in the config but no item at all: a subgraph instance
+(`CallNodeItem`: side bars and link badge) and a collapsed plain region (#67,
+`CollapsedRegionItem`: a single border in the region's colour and a boxed plus). Which
+regions fold is `subgraphs.folded_regions`. So an item lookup by state id misses every
+member. Ask the scene instead: `display_id(state_id)` is the id it is drawn as,
+`folded_node_of(state_id)` its node, and `state_ids_of(display_ids)` expands a
+selection back to state ids. **Mind which you mean**: `is_folded`/`folded_nodes` are
+"drawn as one node", `is_call_node`/`call_nodes` are "linked to a library definition" --
+open definition, detach, link badge. An edge is drawn per `(source, when, dest)` in
 display ids (an exit's port id stands in for `when`), and `transitions_of(edge)` gives
 the flat transitions behind it -- one, or for an exit one per `(member, outcome)`
-feeding it. `edge_for(transition)` is the way back. Nothing caches these: the scene is
-rebuilt from the config on undo, `replace_config`, paste, detach and delete of an
-instance, and the mapping is rebuilt with it.
+feeding it. `edge_for(transition)` is the way back. The ports come from `ports_of`
+(`FoldPorts`): an instance's from its snapshot's port map, a collapsed region's
+inferred from the edges crossing it (`subgraphs.boundary_ports`, the same rule *Save
+region as subgraph* uses), so an edge added or deleted there can change them --
+`_refresh_folds`, on `graph_changed`, rebuilds when it does. Nothing caches these: the
+scene is rebuilt from the config on undo, `replace_config`, paste, detach and delete,
+and the mapping is rebuilt with it.
 
-What a member does rolls up onto its call node: its errors (`refresh_errors`, filtered
-by `member_warnings`), the run highlight (`BotCanvas.set_state` titles the call node with
-the running member), and search. A member is never edited from a bot: its values come
-from the instance's inputs, set on the call node's page, and anything else is the
-definition's, edited in its own document.
+What a member does rolls up onto its node: its errors (`refresh_errors`; an instance's
+filtered by `member_warnings`, a collapsed region's not, since its gaps are the bot's
+own), the run highlight (`BotCanvas.set_state` titles the node with the running member),
+and search. An instance's member is never edited from a bot: its values come from the
+instance's inputs, set on the call node's page, and anything else is the definition's,
+edited in its own document. A collapsed region's members are edited by stepping in.
+
+## Stored positions are the expanded layout: go through the fold
+
+Collapsing a region moves nothing. `canvas/fold.py`'s `FoldMap` hides the grid columns
+and rows only collapsed members used -- inside a collapsed span, past its node's own
+column, with nothing drawn in them -- so the rest of the graph slides in, the way an
+editor folds code. **Every read or write of a stored position in the scene goes through
+`EditScene.stored_position` / `drawn_position`**; an item's `pos()` is where it is
+drawn. With nothing collapsed the map is the identity, which is why a missed call
+survives every test that collapses nothing. A collapsed node sits at its members'
+top-left (`subgraphs.region_anchor`) and moving it moves them. `layout.auto_layout`
+inserts a collapsed region's columns behind it, so the stored layout stays a valid
+expanded one and the folded view has no gap. Stepping into a collapsed region opens it
+(`set_expanded`), which makes its members visible and so unfolds its columns with
+nothing more.
 
 ## A definition is a document of its own
 
@@ -676,8 +701,9 @@ Two bars, and which one a thing belongs to is decided by what it is *about*:
 | **Bar B** (`canvas/bot_header.py`) | the bot's graph | the bot: name, version, file, author, tags, the run buttons, and the run status |
 
 The **properties panel** (`canvas/param_panel.py`) is a page per selection: a node, an
-edge, a plain *region* (reached by selecting a whole region's members, the pill click),
-a *call node* (`canvas/call_page.py`: label, roles by entry port, inputs and node panels
+edge, a plain *region* (reached by selecting a whole region's members, the pill click,
+or its collapsed node; label, colour, Collapse / Expand -- disabled with the reason when
+`collapse_blocker` refuses -- and a collapsed region's fights), a *call node* (`canvas/call_page.py`: label, roles by entry port, inputs and node panels
 with Record, Open definition, Detach), or in a definition document with nothing selected
 the *signature* (`canvas/signature_page.py`: ports, inputs, panels). A definition's node
 page links a param to a subgraph input (**Link**, one param) or puts the whole node on the
@@ -706,8 +732,12 @@ echo: double means shared. The path is the documents under this one (the control
 hands them over in `set_definition_context`), this one, then each *level* in.
 
 `BotCanvas._levels` is those levels: a region focused (either mode) or an instance
-opened (Run mode only). Opening one sets `EditScene.set_expanded`, which draws that
-instance's members as nodes of their own at their composed positions; everything else
+opened (Run mode only). A collapsed region is stepped into by double-click in either
+mode; it stays collapsed behind the level, and one collapsed inside the focused region
+pushes a level of its own ("Focus Mode › Outer › Inner") instead of replacing it.
+Opening an instance or a collapsed region sets `EditScene.set_expanded`
+(`BotCanvas._opened_regions`), which draws its members as nodes of their own at their
+stored positions; everything else
 is Focus Mode's visibility filter over them, and the run highlight lands on them by id
 with nothing added. Every scene rebuild goes through `_after_scene_rebuild`, which prunes
 levels an undo or a recompose took away and re-applies the filter — a rebuild that

@@ -56,14 +56,16 @@ class RegionManager:
     def items(self) -> dict[str, RegionItem]:
         return self._region_items
 
-    def setup(self, interactive: bool) -> None:
+    def setup(self, interactive: bool, folded_away: set[str] | frozenset[str] = frozenset()) -> None:
         """Build RegionItems from config and connect scene.changed.
 
         A linked region gets none: a subgraph instance is drawn as its call node, and a
-        region nested inside one is part of what the call node stands for.
+        region nested inside one is part of what the call node stands for. Nor does a
+        region in ``folded_away``: a collapsed region is drawn as its own node, and one
+        wholly inside a folded node is part of what that node stands for.
         """
         for region in self._config.regions:
-            if region.source is not None:
+            if region.source is not None or region.id in folded_away:
                 continue
             ri = RegionItem(region, self._node_items)
             ri.set_interactive(interactive)

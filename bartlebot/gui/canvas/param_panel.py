@@ -1860,6 +1860,8 @@ class _ParamPanel(ThemedMixin, QWidget):
     # inputs). Its undo step is already open: a typed edit announced itself with
     # edit_starting, a discrete one pushed through structural_property_changed.
     region_property_changed = pyqtSignal()
+    # (region id, collapse): the region page's Collapse / Expand button (#67).
+    region_collapse_requested = pyqtSignal(str, bool)
     detach_requested = pyqtSignal(str)  # region ID
     open_definition_requested = pyqtSignal(str)  # region ID
     # (role field, state id): the call node's page moved a bot role onto the member
@@ -2140,6 +2142,19 @@ class _ParamPanel(ThemedMixin, QWidget):
         rf.addRow("Label", self._region_label_edit)
         rf.addRow("Color", self._region_color_row)
         region_vbox.addWidget(region_form_w)
+        # Collapsing draws the region as one node and closes up the space it used.
+        self._region_fold_note = ThemedTextLabel("", color="text_muted")
+        self._region_fold_note.setWordWrap(True)
+        self._region_fold_note.setContentsMargins(6, 0, 6, 0)
+        self._region_collapse_btn = ActionButton("region_collapse", "Collapse", fill=False)
+        region_actions = QWidget()
+        region_actions_row = QHBoxLayout(region_actions)
+        region_actions_row.setContentsMargins(6, 8, 6, 0)
+        region_actions_row.addStretch(1)
+        region_actions_row.addWidget(self._region_collapse_btn)
+        region_vbox.addWidget(self._region_fold_note)
+        region_vbox.addWidget(region_actions)
+        self._region_collapse_btn.clicked.connect(self._on_region_collapse_clicked)
 
         region_vbox.addStretch()
         region_scroll = QScrollArea()
@@ -2403,8 +2418,15 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._wiki_import_row.setVisible(state.node_type == "handle_combat")
         self._stack.setCurrentIndex(_PAGE_NODE)
 
-    def show_region(self, region: RegionModel) -> None:
-        """Show a plain region's page: its label and colour. The page edits ``region`` in place."""
+    def show_region(
+        self, region: RegionModel, *, collapse_blocker: str | None = None, fights: list[str] | None = None
+    ) -> None:
+        """Show a plain region's page: its label, colour, and Collapse / Expand. Edits ``region`` in place.
+
+        ``collapse_blocker`` is why the region cannot collapse, shown on the disabled
+        button. ``fights`` are the fights a collapsed region holds, named because they
+        are out of sight on the canvas.
+        """
         self._cancel_record()
         self._state = None
         self._transition = None
@@ -2413,9 +2435,34 @@ class _ParamPanel(ThemedMixin, QWidget):
         try:
             self._region_label_edit.setText(region.label)
             self._region_color_row.set_key(region.color)
+            collapsed = bool(region.collapsed)
+            self._region_collapse_btn.setText("Expand" if collapsed else "Collapse")
+            self._region_collapse_btn.set_icon_name("region_expand" if collapsed else "region_collapse")
+            self._region_collapse_btn.setEnabled(collapsed or collapse_blocker is None)
+            self._region_collapse_btn.setToolTip(
+                "Draw the region's nodes again"
+                if collapsed
+                else (collapse_blocker or "Draw the region as one node and close up the space it uses")
+            )
+            lines = []
+            if collapsed:
+                lines.append("Drawn as one node. Double-click it to step in.")
+                if fights:
+                    lines.append(f"Fights inside: {', '.join(fights)}. Their strategies are set on the Combat tab.")
+            self._region_fold_note.setText("\n".join(lines))
+            self._region_fold_note.setVisible(bool(lines))
         finally:
             self._suppress = False
         self._stack.setCurrentIndex(_PAGE_REGION)
+
+    def _on_region_collapse_clicked(self) -> None:
+        if self._suppress or self._region is None:
+            return
+        self.region_collapse_requested.emit(self._region.id, not self._region.collapsed)
+
+    @property
+    def region_collapse_button(self) -> ActionButton:
+        return self._region_collapse_btn
 
     def show_call(self, region: RegionModel, defn, status, config) -> None:
         """Show a call node's page for the subgraph instance *region*."""

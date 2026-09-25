@@ -255,6 +255,10 @@ class RegionModel(BaseModel):
     # Set only on a subgraph instance. None is excluded from every dump, so a region
     # without one is written exactly as before the field existed.
     source: SubgraphSource | None = None
+    # True while a plain region is drawn as one node (#67). Never False: expanding sets it
+    # back to None, so a region that was never collapsed is written exactly as before.
+    # Meaningless on a linked region, which is always drawn as its call node.
+    collapsed: bool | None = None
 
     @model_validator(mode="before")
     @classmethod

@@ -29,16 +29,24 @@ def auto_layout(config: BotConfig) -> None:
     placed, and the anchor and every member move with it, since members sit at
     ``anchor + definition position``.
 
+    A collapsed region (#67) is laid out as one node too, its members keeping their
+    places relative to each other. Stored positions are always the *expanded* layout,
+    though, so its members must not land on anything else: behind each one, the
+    columns its members span are inserted, pushing everything further along out of
+    the way, and whatever shares its column below it moves down past its rows. The
+    inserted columns then hold members only, and the fold closes them up again --
+    the folded view of a laid-out bot is exactly "the region as one node".
+
     Modifies state.position in-place. Caller must call scene.setup(config)
     to rebuild the canvas.
     """
     if not config.states:
         return
 
-    from bartlebot.subgraphs import nested_regions, outermost_linked_regions  # noqa: PLC0415
+    from bartlebot.subgraphs import folded_regions, nested_regions, region_anchor  # noqa: PLC0415
 
-    instances = outermost_linked_regions(config.regions)
-    call_of = {m: r.id for r in instances for m in r.members}
+    folded = folded_regions(config)
+    call_of = {m: r.id for r in folded for m in r.members}
 
     def display(sid: str) -> str:
         return call_of.get(sid, sid)
@@ -84,17 +92,50 @@ def auto_layout(config: BotConfig) -> None:
         for i, sid in enumerate(nodes_sorted):
             y_pos[sid] = mean_bary + (i - (n - 1) / 2) * V_SPACING
 
+    # A collapsed region's members, relative to its anchor, and how far past its own
+    # column and row they reach. Members never placed are laid out in a row.
+    by_id = {s.id: s for s in config.states}
+    collapsed = [r for r in folded if r.source is None]
+    for region in collapsed:
+        if any(by_id[m].position is None for m in region.members if m in by_id):
+            base = region_anchor(config, region)
+            for i, m in enumerate(mid for mid in region.members if mid in by_id):
+                by_id[m].position = {"x": float(base["x"]) + i * H_SPACING, "y": float(base["y"])}
+    extra_cols: dict[str, int] = {}
+    extra_h: dict[str, float] = {}
+    for region in collapsed:
+        placed = [by_id[m].position for m in region.members if m in by_id]
+        xs = [float(p["x"]) for p in placed]
+        ys = [float(p["y"]) for p in placed]
+        extra_cols[region.id] = round((max(xs) - min(xs)) / H_SPACING) if xs else 0
+        extra_h[region.id] = (max(ys) - min(ys)) if ys else 0.0
+
+    def column(did: str) -> int:
+        return layer[did] + sum(n for rid, n in extra_cols.items() if layer[rid] < layer[did])
+
+    target = {did: (column(did) * H_SPACING, y_pos.get(did, 0.0)) for did in state_ids}
+    for rid, h in extra_h.items():
+        if not h:
+            continue
+        x0, y0 = target[rid]
+        for did, (x, y) in target.items():
+            if did != rid and x == x0 and y > y0:
+                target[did] = (x, y + h)
+
     for state in config.states:
         sid = state.id
         if sid in call_of:
             continue
-        state.position = {"x": layer[sid] * H_SPACING, "y": y_pos.get(sid, 0.0)}
-    for region in instances:
-        assert region.source is not None
-        old = region.source.anchor or {"x": 0.0, "y": 0.0}
-        dx = layer[region.id] * H_SPACING - float(old["x"])
-        dy = y_pos.get(region.id, 0.0) - float(old["y"])
+        x, y = target[sid]
+        state.position = {"x": x, "y": y}
+    for region in folded:
+        old = region_anchor(config, region)
+        x, y = target[region.id]
+        dx = x - float(old["x"])
+        dy = y - float(old["y"])
         for r in [region, *nested_regions(config, region)]:
+            if r.source is None:
+                continue
             a = r.source.anchor or {"x": 0.0, "y": 0.0}
             r.source.anchor = {"x": float(a["x"]) + dx, "y": float(a["y"]) + dy}
         members = set(region.members)

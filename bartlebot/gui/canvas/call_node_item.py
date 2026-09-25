@@ -1,16 +1,23 @@
-"""The two node shapes a subgraph adds to the canvas.
+"""The node shapes a group of states is drawn as, and the Entry/Exit pills.
 
-``CallNodeItem`` is a whole subgraph instance drawn as one node: its entry ports down
-the left edge and its exit ports down the right, labelled by name. What marks it as a
-call is its *shape* -- double side bars, the flowchart "predefined process", which has
-always meant a call to something defined elsewhere -- and a link badge in its corner
-carrying the status dot. Colour is only a supporting cue: region colour 5 is too close
-to the accent for colour alone to tell a call from a region.
+``FoldedNodeItem`` is any group of states drawn as one node: its entry ports down the
+left edge and its exit ports down the right, labelled by name. Nothing in it assumes a
+definition exists; its two shapes do:
+
+- ``CallNodeItem`` is a subgraph instance. What marks it as a call is its *shape* --
+  double side bars, the flowchart "predefined process", which has always meant a call
+  to something defined elsewhere -- and a link badge in its corner carrying the status
+  dot. Colour is only a supporting cue: region colour 5 is too close to the accent for
+  colour alone to tell a call from a region.
+- ``CollapsedRegionItem`` is a plain region folded away (#67), after BPMN's collapsed
+  embedded sub-process: a single border in the region's own colour and a boxed-plus
+  marker, no side bars and no badge. Ordinary nodes, calls and collapsed regions differ
+  by shape, never by colour alone.
 
 ``PortNodeItem`` is an Entry or Exit node inside a definition: a pill in the accent,
 with an output port only (Entry) or an input port only (Exit).
 
-Both are ``NodeItem`` subclasses, so selection, dragging, snapping and edge
+All are ``NodeItem`` subclasses, so selection, dragging, snapping and edge
 bookkeeping work unchanged; what differs is the geometry of their ports.
 """
 
@@ -95,13 +102,17 @@ def paint_link_glyph(painter: QPainter, x: float, y: float, size: float, color: 
     painter.restore()
 
 
-class CallNodeItem(NodeItem):
-    """A subgraph instance, drawn as one node. ``state_id`` is the instance's region id.
+class FoldedNodeItem(NodeItem):
+    """A group of states drawn as one node. ``state_id`` is the group's region id.
 
     ``_returns`` holds the exit port ids, so everything that asks a node for its
     output ports -- starting a drag, routing an edge, the port hit-test -- asks it
-    of the exits without knowing it is talking to a call node.
+    of the exits without knowing it is talking to a folded node. Subclasses give the
+    shape: the frame's colour, what marks it, and the corner marker.
     """
+
+    #: How far in from each side the content starts: past a call's side bars.
+    _INSET = 0.0
 
     def __init__(
         self,
@@ -117,7 +128,6 @@ class CallNodeItem(NodeItem):
         self._exit_names = dict(exits)
         super().__init__(region_id, label, interactive=interactive, returns=[pid for pid, _ in exits])
         self._subline = subline
-        self._link_state: str | None = "linked"
         self._initial_port: str | None = None
         self._recovery_port: str | None = None
         self._active_member: str | None = None
@@ -183,25 +193,27 @@ class CallNodeItem(NodeItem):
         self._subline = text
         self.update()
 
-    @property
-    def link_state(self) -> str | None:
-        return self._link_state
-
-    def set_link_state(self, state: str | None) -> None:
-        if state is not None and state not in LINK_STATES:
-            raise ValueError(f"unknown link state {state!r}")
-        if state == self._link_state:
-            return
-        self._link_state = state
-        self._update_tooltip()
-        self.update()
-
     def _update_tooltip(self) -> None:
         lines = list(self._reasons) if (self._is_error or self._is_warning) else []
-        link = _LINK_TOOLTIPS.get(self._link_state or "")
-        if link:
-            lines.append(link)
+        extra = self._tooltip_extra()
+        if extra:
+            lines.append(extra)
         self.setToolTip("\n".join(lines))
+
+    # -- the shape: what a subclass decides ----------------------------
+
+    def _tooltip_extra(self) -> str | None:
+        return None
+
+    def _frame_color(self) -> QColor:
+        """The border's colour when nothing is wrong."""
+        return THEME.qcolor("accent")
+
+    def _paint_shape_marks(self, painter: QPainter, rect: QRectF, border: QColor) -> None:
+        """What marks the shape, drawn at every level of detail."""
+
+    def _paint_marker(self, painter: QPainter, x: float, y: float, size: float) -> None:
+        """The corner marker, top right, drawn when details are."""
 
     @property
     def role_ports(self) -> tuple[str | None, str | None]:
@@ -235,7 +247,6 @@ class CallNodeItem(NodeItem):
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget=None) -> None:
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        accent = THEME.qcolor("accent")
         selected = self._interactive and self.isSelected()
         if self._active:
             fill = self._active_fill
@@ -252,7 +263,7 @@ class CallNodeItem(NodeItem):
         elif self._is_warning:
             border = THEME.qcolor("warning")
         else:
-            border = accent
+            border = self._frame_color()
         rect = self._node_rect()
         lod = option.levelOfDetailFromTransform(painter.worldTransform())
 
@@ -265,10 +276,7 @@ class CallNodeItem(NodeItem):
         painter.setPen(QPen(border, 2.8 if (selected or self._active) else 1.8))
         painter.setBrush(QBrush(fill))
         painter.drawRoundedRect(rect, _CALL_RADIUS, _CALL_RADIUS)
-        # The bars are the shape that says "call": drawn at every level of detail.
-        painter.setPen(QPen(border, 1.8))
-        for x in (_BAR_INSET, NODE_W - _BAR_INSET):
-            painter.drawLine(QPointF(x, 0.0), QPointF(x, rect.height()))
+        self._paint_shape_marks(painter, rect, border)
 
         from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 - as NodeItem.paint
 
@@ -279,11 +287,11 @@ class CallNodeItem(NodeItem):
             if text_is_legible(painter.fontMetrics().height(), lod):
                 painter.setPen(THEME.qcolor("text"))
                 flags = int(Qt.AlignmentFlag.AlignCenter) | int(Qt.TextFlag.TextWordWrap)
-                painter.drawText(rect.adjusted(_BAR_INSET + 6, 4, -_BAR_INSET - 6, -4), flags, title)
+                painter.drawText(rect.adjusted(self._INSET + 6, 4, -self._INSET - 6, -4), flags, title)
             self._paint_role_badges(painter)
             return
 
-        inner_l, inner_r = _BAR_INSET + 8, NODE_W - _BAR_INSET - 8
+        inner_l, inner_r = self._INSET + 8, NODE_W - self._INSET - 8
         painter.setFont(THEME.font_node_main())
         painter.setPen(THEME.qcolor("text"))
         fm = painter.fontMetrics()
@@ -301,7 +309,7 @@ class CallNodeItem(NodeItem):
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             fm2.elidedText(self._subline, Qt.TextElideMode.ElideRight, int(inner_r - inner_l)),
         )
-        paint_link_glyph(painter, inner_r - _GLYPH, 6, _GLYPH, accent, self._link_state)
+        self._paint_marker(painter, inner_r - _GLYPH, 6, _GLYPH)
 
         half = (inner_r - inner_l) / 2
         painter.setPen(THEME.qcolor("text_subtle"))
@@ -345,7 +353,7 @@ class CallNodeItem(NodeItem):
         Inside, so no edge arriving at the port can cross one. A port holding both roles
         wears both, side by side in the order a plain node draws them.
         """
-        x0 = _BAR_INSET + 8 + _ROLE_BADGE_R
+        x0 = self._INSET + 8 + _ROLE_BADGE_R
         for i, (pid, _name) in enumerate(self._entries):
             cy = self._row_y(i)
             for n, role in enumerate(self._roles_of(pid)):
@@ -361,6 +369,79 @@ class CallNodeItem(NodeItem):
                 r = _ROLE_BADGE_R - 2.5
                 icon.render(painter, QRectF(cx - r, cy - r, r * 2, r * 2))
                 painter.restore()
+
+
+class CallNodeItem(FoldedNodeItem):
+    """A subgraph instance, drawn as one node: double side bars and a link badge."""
+
+    _INSET = float(_BAR_INSET)
+
+    def __init__(self, *args, **kwargs) -> None:
+        self._link_state: str | None = "linked"
+        super().__init__(*args, **kwargs)
+
+    @property
+    def link_state(self) -> str | None:
+        return self._link_state
+
+    def set_link_state(self, state: str | None) -> None:
+        if state is not None and state not in LINK_STATES:
+            raise ValueError(f"unknown link state {state!r}")
+        if state == self._link_state:
+            return
+        self._link_state = state
+        self._update_tooltip()
+        self.update()
+
+    def _tooltip_extra(self) -> str | None:
+        return _LINK_TOOLTIPS.get(self._link_state or "")
+
+    def _paint_shape_marks(self, painter: QPainter, rect: QRectF, border: QColor) -> None:
+        # The bars are the shape that says "call": drawn at every level of detail.
+        painter.setPen(QPen(border, 1.8))
+        for x in (_BAR_INSET, NODE_W - _BAR_INSET):
+            painter.drawLine(QPointF(x, 0.0), QPointF(x, rect.height()))
+
+    def _paint_marker(self, painter: QPainter, x: float, y: float, size: float) -> None:
+        paint_link_glyph(painter, x, y, size, THEME.qcolor("accent"), self._link_state)
+
+
+def paint_collapse_marker(painter: QPainter, x: float, y: float, size: float, color: QColor) -> None:
+    """A boxed plus -- BPMN's mark for a collapsed sub-process: there is more inside."""
+    painter.save()
+    painter.setBrush(QBrush(THEME.qcolor("node_fill")))
+    painter.setPen(QPen(color, 1.4))
+    painter.drawRoundedRect(QRectF(x, y, size, size), 2, 2)
+    mid, pad = size / 2, size * 0.26
+    painter.drawLine(QPointF(x + pad, y + mid), QPointF(x + size - pad, y + mid))
+    painter.drawLine(QPointF(x + mid, y + pad), QPointF(x + mid, y + size - pad))
+    painter.restore()
+
+
+class CollapsedRegionItem(FoldedNodeItem):
+    """A plain region folded into one node (#67): a single border in its own colour, and a boxed plus.
+
+    The colour is a palette slot read from THEME at paint time, like the region's own
+    frame, so a theme switch needs no bookkeeping and a recolour only ``set_color``.
+    """
+
+    def __init__(self, *args, color: int, **kwargs) -> None:
+        self._color_key = color
+        super().__init__(*args, **kwargs)
+
+    @property
+    def color_key(self) -> int:
+        return self._color_key
+
+    def set_color(self, key: int) -> None:
+        self._color_key = key
+        self.update()
+
+    def _frame_color(self) -> QColor:
+        return QColor(THEME.region_color(self._color_key))
+
+    def _paint_marker(self, painter: QPainter, x: float, y: float, size: float) -> None:
+        paint_collapse_marker(painter, x, y, size, self._frame_color())
 
 
 class PortNodeItem(NodeItem):

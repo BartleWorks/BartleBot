@@ -55,7 +55,7 @@ from bartlebot.bot_options import compose_options, orphaned_flag_options
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, tag_group
 from bartlebot.game_sizing import BOTCANVAS_MIN_HEIGHT, BOTCANVAS_MIN_WIDTH
 from bartlebot.gui.canvas.bot_header import BotHeader
-from bartlebot.gui.canvas.call_node_item import CallNodeItem, PortNodeItem
+from bartlebot.gui.canvas.call_node_item import CallNodeItem, FoldedNodeItem, PortNodeItem
 from bartlebot.gui.canvas.edge_item import EdgeItem
 from bartlebot.gui.canvas.edit_scene import (
     EditScene,
@@ -1350,6 +1350,7 @@ class BotCanvas(QWidget):
         self._param_panel.initial_state_requested.connect(self._on_initial_state_requested)
         self._param_panel.recovery_state_requested.connect(self._on_recovery_state_requested)
         self._param_panel.region_property_changed.connect(self._on_region_property_changed)
+        self._param_panel.region_collapse_requested.connect(self.set_region_collapsed)
         self._param_panel.detach_requested.connect(self._on_detach_requested)
         self._param_panel.open_definition_requested.connect(self.open_definition_of)
         self._param_panel.role_requested.connect(self._on_role_requested)
@@ -1883,7 +1884,7 @@ class BotCanvas(QWidget):
             return None
         node = self._scene.node_items.get(state_id)
         if node is None:
-            node = self._scene.call_node_of(state_id)
+            node = self._scene.folded_node_of(state_id)
             if node is not None:
                 state = next((s for s in self._config.states if s.id == state_id), None) if self._config else None
                 node.set_active_member((state.label or state.id) if active and state is not None else None)
@@ -2105,6 +2106,23 @@ class BotCanvas(QWidget):
         """The subgraph nodes whose body is on show in Run mode, outermost first."""
         return [lv.region_id for lv in self._levels if lv.kind == "instance"]
 
+    def _opened_regions(self) -> list[str]:
+        """What the scene draws opened up: viewed instances, and collapsed regions stepped into (#67)."""
+        out: list[str] = []
+        for lv in self._levels:
+            region = self._region(lv.region_id)
+            if lv.kind == "instance" or (region is not None and region.source is None and region.collapsed):
+                out.append(lv.region_id)
+        return out
+
+    def _sync_opened(self) -> None:
+        """Rebuild the scene when what it draws opened up no longer matches the levels, else just refilter."""
+        if self._scene.expanded != self._opened_regions():
+            self._scene.set_expanded(self._opened_regions())
+            self._after_scene_rebuild()
+        else:
+            self._apply_levels()
+
     @property
     def level_depth(self) -> int:
         """How many steps in from the open document the view is."""
@@ -2157,19 +2175,29 @@ class BotCanvas(QWidget):
 
         Focusing a second region replaces the first rather than nesting in it, and
         keeps the camera from before the first, so stepping out lands where the
-        user started.
+        user started. A collapsed region is stepped *into* (#67): its members are drawn
+        where they really are for as long as the level lasts, and one collapsed inside
+        the focused region pushes a level of its own, so Esc comes back out to it.
         """
         if self._config is None:
             return
         region = self._region(region_id)
         if region is None or region.source is not None:
             return
-        if self._levels and self._levels[-1].kind == "region":
+        top = self._levels[-1] if self._levels else None
+        top_region = self._region(top.region_id) if top is not None else None
+        nested = (
+            bool(region.collapsed)
+            and top_region is not None
+            and region is not top_region
+            and set(region.members) <= set(top_region.members)
+        )
+        if top is not None and top.kind == "region" and not nested:
             camera = self._levels.pop().camera
         else:
             camera = self._view.camera_state()
         self._levels.append(_ViewLevel("region", region_id, camera))
-        self._apply_levels()
+        self._sync_opened()
         # Frame the region. Hiding everything else is what made the canvas look empty
         # without explanation: the camera never moved, so a region that was small
         # or off to one side stayed small and off to one side while the rest vanished.
@@ -2189,8 +2217,7 @@ class BotCanvas(QWidget):
         if self._config is None or self._mode != BotMode.RUN or not self._scene.is_call_node(region_id):
             return
         self._levels.append(_ViewLevel("instance", region_id, self._view.camera_state()))
-        self._scene.set_expanded(self.viewed_instances)
-        self._after_scene_rebuild()
+        self._sync_opened()
         rect = QRectF()
         for did in self._scene.members_shown_for(region_id):
             rect = rect.united(self._scene.node_items[did].sceneBoundingRect())
@@ -2202,11 +2229,7 @@ class BotCanvas(QWidget):
         if not self._levels:
             return False
         level = self._levels.pop()
-        if level.kind == "instance":
-            self._scene.set_expanded(self.viewed_instances)
-            self._after_scene_rebuild()
-        else:
-            self._apply_levels()
+        self._sync_opened()
         self._view.restore_camera(level.camera)
         return True
 
@@ -2265,8 +2288,8 @@ class BotCanvas(QWidget):
                 break  # gone with an undo or a recompose: so is everything inside it
             kept.append(lv)
         self._levels = kept
-        if self._scene.expanded != self.viewed_instances:
-            self._scene.set_expanded(self.viewed_instances)
+        if self._scene.expanded != self._opened_regions():
+            self._scene.set_expanded(self._opened_regions())
         self._scene.refresh_region_states(self._compose_report)
         if self._active_state:
             self._set_node_active(self._active_state, True)
@@ -2315,9 +2338,18 @@ class BotCanvas(QWidget):
             self._focus_frame.setVisible(False)
             return
         if not definition and not self.viewed_instances and top_region is not None:
+            if len(self._levels) == 1:
+                crumbs = [Crumb(f"Focus Mode — {top_region.label}")]
+            else:
+                # A collapsed region stepped into inside another: segment i + 1 is level i,
+                # which is what a click on it steps back out to.
+                crumbs = [Crumb("Focus Mode")] + [
+                    Crumb(r.label if (r := self._region(lv.region_id)) is not None else lv.region_id)
+                    for lv in self._levels
+                ]
             self._crumb.show_state(
                 CrumbMode.FOCUS,
-                [Crumb(f"Focus Mode — {top_region.label}")],
+                crumbs,
                 hint="Esc to exit",
                 color_slot=top_region.color,
                 close_tip="Exit Focus Mode",
@@ -2396,12 +2428,12 @@ class BotCanvas(QWidget):
         if q:
             for state in config.states:
                 if q in (state.label or "").lower() or q in state.id.lower() or q in state.node_type.lower():
-                    # A member is found as the call node it is drawn as.
+                    # A member is found as the folded node it is drawn as.
                     did = self._scene.display_id(state.id)
                     if did not in matches:
                         matches.append(did)
             for region in config.regions:
-                if region.source is not None and region.id in self._scene.node_items and q in region.label.lower():
+                if self._scene.is_folded(region.id) and q in region.label.lower():
                     if region.id not in matches:
                         matches.append(region.id)
         self._search_matches = matches
@@ -2616,6 +2648,30 @@ class BotCanvas(QWidget):
         self._refresh_undo_actions()
         self._validation_timer.start()
 
+    def _show_region_page(self, region) -> None:
+        config = self._scene.config
+        fights = [
+            s.label or s.id
+            for s in (config.states if config else [])
+            if s.id in set(region.members) and s.node_type == "handle_combat"
+        ]
+        self._param_panel.show_region(region, collapse_blocker=self._scene.collapse_blocker(region.id), fights=fights)
+
+    def set_region_collapsed(self, region_id: str, collapsed: bool) -> bool:
+        """Collapse a plain region into one node, or expand it (#67). Edit mode only; one undoable step."""
+        if self._mode != BotMode.EDIT or not self._scene.set_region_collapsed(region_id, collapsed):
+            return False
+        # The rebuild dropped the selection: select what was acted on -- the node, or the
+        # members it opened into -- so the region's page stays up with the verb flipped.
+        region = self._region(region_id)
+        if region is not None:
+            items = self._scene.node_items
+            targets = [items[region_id]] if region_id in items else [items[m] for m in region.members if m in items]
+            self._scene.clearSelection()
+            for item in targets:
+                item.setSelected(True)
+        return True
+
     def _on_region_property_changed(self) -> None:
         """The region or call node page wrote into the shown region: label, colour, or an instance's inputs."""
         region = self._param_panel.shown_region
@@ -2627,6 +2683,8 @@ class BotCanvas(QWidget):
             if ri is not None:
                 ri.set_label(region.label)
                 ri.set_color(region.color)
+            self._scene.refresh_call_nodes()  # a collapsed region is drawn as its node
+            self._refresh_crumb()
         else:
             defn = self._definition_for(region)
             if defn is not None:
@@ -3003,7 +3061,7 @@ class BotCanvas(QWidget):
         ``_on_selection_changed``.
         """
         self._scene.clearSelection()
-        node = self._scene.node_items.get(state_id) or self._scene.call_node_of(state_id)
+        node = self._scene.node_items.get(state_id) or self._scene.folded_node_of(state_id)
         if node is not None:
             node.setSelected(True)
             self._view.centerOn(node)
@@ -3125,12 +3183,14 @@ class BotCanvas(QWidget):
         for state in config.states:
             name = state.label or state.id
             _, _, err_reasons, warn_reasons = _validate_node(state, config, reachable)
-            call = self._scene.call_node_of(state.id)
-            if call is not None:
-                # Named through the call node it is drawn as, and without what is the
-                # definition's business rather than this bot's -- see member_warnings.
-                name = f"{call.label} \u203a {name}"
-                warn_reasons = member_warnings(warn_reasons)
+            folded = self._scene.folded_node_of(state.id)
+            if folded is not None:
+                # Named through the node it is drawn as. For a call node, without what is
+                # the definition's business rather than this bot's -- see member_warnings;
+                # a collapsed region's gaps are this bot's own.
+                name = f"{folded.label} \u203a {name}"
+                if isinstance(folded, CallNodeItem):
+                    warn_reasons = member_warnings(warn_reasons)
             error_lines.extend(f"{name}: {r}" for r in err_reasons)
             warning_lines.extend(f"{name}: {r}" for r in warn_reasons)
         warning_lines.extend(self._orphan_flag_lines(config))
@@ -3251,7 +3311,7 @@ class BotCanvas(QWidget):
             node = self._scene.node_items.get(state.id)
             if isinstance(node, PortNodeItem):
                 node.set_label(state.label)
-            elif node and not isinstance(node, CallNodeItem):
+            elif node and not isinstance(node, FoldedNodeItem):
                 node.set_label(state.label)
                 node.set_node_type(state.node_type)
         self._scene.refresh_call_nodes()
@@ -3261,7 +3321,7 @@ class BotCanvas(QWidget):
             return
         for state in self._scene.config.states:
             node = self._scene.node_items.get(state.id)
-            if node and not isinstance(node, (CallNodeItem, PortNodeItem)):
+            if node and not isinstance(node, (FoldedNodeItem, PortNodeItem)):
                 returns = _node_returns(state.node_type)
                 if node._returns != returns:
                     node.set_returns(returns)
@@ -3279,7 +3339,7 @@ class BotCanvas(QWidget):
         orphan_ids = [
             s.id
             for s in config.states
-            if s.id not in reachable and self._scene.call_node_of(s.id) is None and s.node_type not in PORT_NODE_TYPES
+            if s.id not in reachable and self._scene.folded_node_of(s.id) is None and s.node_type not in PORT_NODE_TYPES
         ]
         for sid in orphan_ids:
             self._scene.delete_state(sid, confirm=False)
@@ -3309,7 +3369,7 @@ class BotCanvas(QWidget):
                 None,
             )
             if region is not None:
-                self._param_panel.show_region(region)
+                self._show_region_page(region)
                 self.tab_switch.emit("properties")
                 return
         if isinstance(item, CallNodeItem):
@@ -3341,7 +3401,7 @@ class BotCanvas(QWidget):
             option_names = [opt.name for opt in compose_options(config) if opt.type == "bool"]
             # An edge on a call node is rewired on the canvas, where its port is: the
             # dropdowns name states, and its ends are a member and a port.
-            on_call = isinstance(item.src_node, CallNodeItem) or isinstance(item.dst_node, CallNodeItem)
+            on_call = isinstance(item.src_node, FoldedNodeItem) or isinstance(item.dst_node, FoldedNodeItem)
             self._shown_edge_models = models
             self._param_panel.show_transition(
                 trans,
