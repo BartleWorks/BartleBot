@@ -312,18 +312,16 @@ class _XyzField(ThemedMixin, QWidget):
         outer.addLayout(boxes_row)
         self._loaded_texts = self._texts()
         # Full-width segmented action bar — all buttons equal width, uniform height.
-        # Text alone, apart from the fill button's own glyph: four icons and four
-        # labels do not fit the panel's width, and a row where some buttons carry a
-        # glyph and others do not reads as two kinds of control rather than one.
-        # There is no paste or teleport icon in the set to be consistent *with*.
+        # Every button carries a glyph: a row where some do and others do not reads
+        # as two kinds of control rather than one.
         btns_row = QHBoxLayout()
         btns_row.setContentsMargins(0, 0, 0, 0)
         btns_row.setSpacing(2)
-        self._copy_btn = ActionButton("", "Copy")
+        self._copy_btn = ActionButton("copy", "Copy")
         self._copy_btn.setToolTip("Copy XYZ to clipboard as JSON")
         self._copy_btn.clicked.connect(self._copy)
         btns_row.addWidget(self._copy_btn, 1)
-        paste_btn = ActionButton("", "Paste")
+        paste_btn = ActionButton("paste", "Paste")
         paste_btn.setToolTip("Paste XYZ from clipboard (JSON, x, y, z or XYZ(x, y, z) format)")
         paste_btn.clicked.connect(self._paste)
         btns_row.addWidget(paste_btn, 1)
@@ -331,7 +329,7 @@ class _XyzField(ThemedMixin, QWidget):
         fill_btn.setToolTip("Fill from a connected player's live position")
         fill_btn.clicked.connect(lambda _checked, b=fill_btn: self._show_fill_menu(b))
         btns_row.addWidget(fill_btn, 1)
-        self._tp_btn = ActionButton("", "TP")
+        self._tp_btn = ActionButton("teleport", "TP")
         self._tp_btn.setToolTip("Teleport all connected players to these coordinates")
         self._tp_btn.clicked.connect(lambda _checked: asyncio.ensure_future(self._teleport()))
         btns_row.addWidget(self._tp_btn, 1)
