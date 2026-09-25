@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ctypes
+import ctypes.wintypes
 import time
 
 from PyQt6.QtCore import QRect, QRectF, Qt, QTimer, pyqtSignal
@@ -11,7 +13,7 @@ from PyQt6.QtWidgets import QWidget
 from bartlebot import streamer_mode
 from bartlebot.game_sizing import FOCUS_BORDER, LABEL_GAP, LABEL_RESERVE
 from bartlebot.gui.account_accent import TINT_ALPHA_PERCENT
-from bartlebot.gui.game_embed.win32_window import EmbeddedWindow
+from bartlebot.gui.game_embed.win32_window import EmbeddedWindow, is_click_notification
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
 from bartlebot.nodes.timing import LAUNCH_STAGE_ELAPSED_HINT
@@ -135,6 +137,10 @@ class ClientTile(QWidget):
 
     AttachThreadInput is used so that the Qt thread can call SetFocus on the
     game window (cross-thread SetFocus requires shared input queues).
+
+    A click on the game gives it focus through nativeEvent: the tile's own HWND is
+    the game window's parent, so it receives WM_PARENTNOTIFY for every press that
+    reaches the game. See is_click_notification for why that message, and not a poll.
     """
 
     detach_requested = pyqtSignal()
@@ -253,6 +259,15 @@ class ClientTile(QWidget):
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self._reposition()
+
+    def nativeEvent(self, event_type, message):
+        msg = ctypes.wintypes.MSG.from_address(int(message))
+        if is_click_notification(msg.message, msg.wParam) and self._window.is_embedded:
+            self.focus_game()
+        # Never super().nativeEvent: calling the base implementation from a Python
+        # override crashes PyQt6 with an access violation on the first message. The
+        # base only ever answers "not handled", so answer that directly.
+        return False, 0
 
     def set_focused(self, focused: bool) -> None:
         if focused != self._focused:

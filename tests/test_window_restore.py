@@ -25,6 +25,7 @@ from bartlebot.gui.game_embed.win32_window import (
     WS_VISIBLE,
     EmbeddedWindow,
     child_style,
+    is_click_notification,
     restored_parent,
     restored_style,
     visible_position,
@@ -220,6 +221,27 @@ class TestEmbed:
         assert user32.call("SetWindowPos")[7] & SWP_FRAMECHANGED
         assert user32.call("AttachThreadInput")[1:] == (1111, 4242, True)
         assert window.is_embedded
+
+
+class TestIsClickNotification:
+    """#93: the tile grants focus on the WM_PARENTNOTIFY a press on the game sends it."""
+
+    WM_PARENTNOTIFY = 0x0210
+
+    @pytest.mark.parametrize("button_down", [0x0201, 0x0204, 0x0207, 0x020B])  # L, R, M, X
+    def test_every_button_press(self, button_down: int) -> None:
+        assert is_click_notification(self.WM_PARENTNOTIFY, button_down)
+
+    def test_reads_only_the_low_word(self) -> None:
+        """The high word carries the X button's identity (or a child id), not the event."""
+        assert is_click_notification(self.WM_PARENTNOTIFY, 0x0002_020B)
+
+    @pytest.mark.parametrize("event", [0x0001, 0x0002])  # WM_CREATE, WM_DESTROY
+    def test_not_a_child_being_created_or_destroyed(self, event: int) -> None:
+        assert not is_click_notification(self.WM_PARENTNOTIFY, event)
+
+    def test_not_a_button_press_sent_to_the_tile_itself(self) -> None:
+        assert not is_click_notification(0x0201, 0x0201)
 
 
 class TestRestore:

@@ -50,6 +50,10 @@ SWP_FRAMECHANGED = 0x0020  # Required after SetWindowLongW to flush a style chan
 
 SW_SHOW = 5
 
+WM_PARENTNOTIFY = 0x0210
+# The button-down events WM_PARENTNOTIFY reports in its wParam's low word.
+_BUTTON_DOWN_EVENTS = frozenset({0x0201, 0x0204, 0x0207, 0x020B})  # L, R, M, X
+
 _STYLE_MASK = 0xFFFFFFFF
 
 
@@ -103,6 +107,21 @@ def restored_parent(orig_parent: int, orig_style: int) -> int:
     window really was a child; otherwise return 0, which means the desktop.
     """
     return orig_parent if orig_style & WS_CHILD else 0
+
+
+def is_click_notification(message: int, wparam: int) -> bool:
+    """Whether a message the tile received says a mouse button went down on the game.
+
+    Windows sends ``WM_PARENTNOTIFY`` to a child's parent for every button press on
+    the child, and only for presses that actually reach it, so a click on a window
+    stacked over the tile never produces one. It also arrives before the game
+    handles the press, which is the property the focus grant depends on. When the
+    click also brings BartleBot to the front, focus is first moved to BartleBot's own
+    window and then, some 25 ms later, restored to wherever it was last placed inside
+    it. Focus given on this message is in place before that, so it is what gets
+    restored; the 50 ms poll this replaced gave it after, and lost it (#93).
+    """
+    return message == WM_PARENTNOTIFY and (wparam & 0xFFFF) in _BUTTON_DOWN_EVENTS
 
 
 def _intersects(a: tuple[int, int, int, int], b: tuple[int, int, int, int]) -> bool:

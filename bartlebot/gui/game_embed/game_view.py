@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import contextlib
 import ctypes
-import ctypes.wintypes
 import logging
 
 from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import (
     QApplication,
     QFrame,
@@ -40,7 +38,6 @@ from bartlebot.tile_slots import TileKey, TileSlot, plan_tile_changes
 logger = logging.getLogger(__name__)
 
 _user32 = ctypes.windll.user32
-_VK_LBUTTON = 0x01
 
 _OVERLAY_BTN_SIZE = 34
 _OVERLAY_BTN_MARGIN = 4
@@ -331,7 +328,7 @@ class GameView(ThemedMixin, QWidget):
         self._overlay_btn.setVisible(False)
         self._overlay_btn.raise_()
 
-        # Poll every 50 ms: grant focus to the game HWND on click, update tile borders
+        # Poll every 50 ms to keep each tile's focus border in step with its game window
         self._focus_timer = QTimer(self)
         self._focus_timer.setInterval(50)
         self._focus_timer.timeout.connect(self._poll_focus)
@@ -870,7 +867,7 @@ class GameView(ThemedMixin, QWidget):
             self.detach_all()
 
     # ------------------------------------------------------------------
-    # Focus polling
+    # Focus
     # ------------------------------------------------------------------
 
     def eventFilter(self, obj, event) -> bool:
@@ -878,7 +875,7 @@ class GameView(ThemedMixin, QWidget):
             widget = obj if isinstance(obj, QWidget) else None
             while widget is not None:
                 if isinstance(widget, ClientTile):
-                    return False  # click is on or inside a game tile; focus polling handles it
+                    return False  # click is on or inside a game tile; the tile grants focus itself
                 widget = widget.parent() if isinstance(widget, QWidget) else None
             # Click landed on a non-game Qt widget; revoke game focus if any tile has it.
             for tile in self._tiles.values():
@@ -888,19 +885,9 @@ class GameView(ThemedMixin, QWidget):
         return False
 
     def _poll_focus(self) -> None:
-        if _user32.GetAsyncKeyState(_VK_LBUTTON) & 0x0001:
-            # Skip focus grant when a non-tile Qt widget (dialog, popup, overlay button)
-            # is on top of the game area at the cursor position.
-            top_widget = QApplication.widgetAt(QCursor.pos())
-            if top_widget is None or isinstance(top_widget, ClientTile):
-                pt = ctypes.wintypes.POINT()
-                _user32.GetCursorPos(ctypes.byref(pt))
-                for tile in self._tiles.values():
-                    rect = ctypes.wintypes.RECT()
-                    _user32.GetWindowRect(tile.hwnd, ctypes.byref(rect))
-                    if rect.left <= pt.x < rect.right and rect.top <= pt.y < rect.bottom:
-                        tile.focus_game()
-                        break
-
+        # Borders only. Granting focus is the tile's job, on the click itself (see
+        # ClientTile.nativeEvent): a poll grants it too late to survive BartleBot being
+        # brought to the front by that click, and matched clicks through windows stacked
+        # over a tile (#93).
         for tile in self._tiles.values():
             tile.set_focused(tile.is_game_focused())
