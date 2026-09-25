@@ -111,6 +111,23 @@ _SECTION_MODELS: dict[str, type[BaseModel]] = {
 # Defaults
 # ---------------------------------------------------------------------------
 
+# The node hotbar's slots, keys 1-9 then 0. The steps recorded inside a dungeon, in the
+# order an author usually meets them (#85): walk in, talk, reposition, fight, tidy up.
+# The shipped bots use enter_zone, interact, handle_combat and teleport_to_coordinates
+# most; the four after are what else turns up between entering a dungeon and leaving it.
+DEFAULT_HOTKEY_NODES: tuple[str, ...] = (
+    "enter_zone",
+    "interact",
+    "teleport_to_coordinates",
+    "handle_combat",
+    "collect_wisps",
+    "wait_for_dialogue",
+    "sleep",
+    "enter_zone_via_object",
+    "",
+    "",
+)
+
 _DEFAULTS: dict[str, Any] = {
     "general": {
         "theme": "system",
@@ -173,7 +190,9 @@ _DEFAULTS: dict[str, Any] = {
     "autosave_origins": {},
     "recently_used_nodes": [],
     "favorite_nodes": [],
-    "favorited_hotkey_nodes": ["", "", "", "", "", "", "", "", "", ""],  # indices 0–9 → keys 1–9, 0
+    "favorited_hotkey_nodes": list(DEFAULT_HOTKEY_NODES),  # indices 0–9 → keys 1–9, 0
+    # Whether an install has had DEFAULT_HOTKEY_NODES offered once. See _seed_hotkey_nodes.
+    "hotkey_nodes_seeded": False,
     "custom_theme": {},  # {token_name: "#rrggbb"} — only overridden tokens stored
     "recent_zones": [],
     "recent_friend_names": [],
@@ -352,6 +371,21 @@ class SettingsManager:
                 self._data[section_key] = copy.deepcopy(_DEFAULTS[section_key])
 
         self._migrate_accounts()
+        self._seed_hotkey_nodes()
+
+    def _seed_hotkey_nodes(self) -> None:
+        """Give an install whose hotbar was never filled the default slots, once.
+
+        ``save`` writes every default, so a settings file from before the defaults
+        existed holds ten empty slots rather than no key, and merging alone would never
+        reach it. An empty hotbar is taken as that file, once; the marker stops it
+        being refilled after, so a user who clears every slot keeps them clear.
+        """
+        if self._data.get("hotkey_nodes_seeded"):
+            return
+        self._data["hotkey_nodes_seeded"] = True
+        if not any(self._data.get("favorited_hotkey_nodes") or []):
+            self._data["favorited_hotkey_nodes"] = list(DEFAULT_HOTKEY_NODES)
 
     def _migrate_accounts(self) -> None:
         """Hand a settings file's own accounts and launch profiles to the shared store.
