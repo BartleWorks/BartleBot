@@ -1803,6 +1803,10 @@ class BotCanvas(QWidget):
         """Pass a callable that returns the current list of hooked clients."""
         self._param_panel.set_clients_getter(fn)
 
+    def set_preferred_player_getter(self, fn: Callable[[], int]) -> None:
+        """Pass a callable naming the player index Ctrl+R records from."""
+        self._param_panel.set_preferred_player_getter(fn)
+
     def refresh_player_availability(self) -> None:
         """Re-grey player checkboxes for the current client count."""
         self._param_panel.refresh_player_availability()

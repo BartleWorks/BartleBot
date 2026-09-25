@@ -52,13 +52,13 @@ from PyQt6.QtWidgets import (
 from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
-from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
+from bartlebot.gui.widgets.player_picker import pick_player, picker_label
 from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.zone_picker import NavZoneButton, is_destination
@@ -214,8 +214,7 @@ class _FillButton(ActionButton):
         super().enterEvent(event)
 
     def _refresh_label(self) -> None:
-        n = len(self._get_clients())
-        self.setText("Fill current" if n == 1 else "Fill current ▾")
+        self.setText(picker_label("Fill current", len(self._get_clients())))
 
 
 def _format_axis(value: Any) -> str:
@@ -425,17 +424,7 @@ class _XyzField(ThemedMixin, QWidget):
             self.set_coordinate(values)
 
     def _show_fill_menu(self, btn: QPushButton) -> None:
-        clients = self._get_clients()
-        if not clients:
-            return
-        if len(clients) == 1:
-            asyncio.ensure_future(self._fill_from_player(0))
-            return
-        menu = popup_menu(btn)
-        for i in range(len(clients)):
-            action = menu.addAction(f"Fill from Player {i + 1}")
-            action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._fill_from_player(idx)))
-        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+        pick_player(btn, len(self._get_clients()), "Fill", lambda i: asyncio.ensure_future(self._fill_from_player(i)))
 
     async def _fill_from_player(self, idx: int) -> None:
         clients = self._get_clients()
@@ -538,17 +527,7 @@ class _ZoneWidget(QWidget):
     # ------------------------------------------------------------------
 
     def _show_fill_menu(self, btn: QPushButton) -> None:
-        clients = self._get_clients()
-        if not clients:
-            return
-        if len(clients) == 1:
-            asyncio.ensure_future(self._fill_from_player(0))
-            return
-        menu = popup_menu(btn)
-        for i in range(len(clients)):
-            action = menu.addAction(f"Fill from Player {i + 1}")
-            action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._fill_from_player(idx)))
-        menu.exec(btn.mapToGlobal(btn.rect().bottomLeft()))
+        pick_player(btn, len(self._get_clients()), "Fill", lambda i: asyncio.ensure_future(self._fill_from_player(i)))
 
     async def _fill_from_player(self, idx: int) -> None:
         clients = self._get_clients()
@@ -634,17 +613,9 @@ class _NavZoneField(QWidget):
         self.picker.set_value(zone)
 
     def _show_fill_menu(self) -> None:
-        clients = self._get_clients()
-        if not clients:
-            return
-        if len(clients) == 1:
-            asyncio.ensure_future(self._fill_from_player(0))
-            return
-        menu = popup_menu(self.fill_btn)
-        for i in range(len(clients)):
-            action = menu.addAction(f"Fill from Player {i + 1}")
-            action.triggered.connect(lambda _checked, idx=i: asyncio.ensure_future(self._fill_from_player(idx)))
-        menu.exec(self.fill_btn.mapToGlobal(self.fill_btn.rect().bottomLeft()))
+        pick_player(
+            self.fill_btn, len(self._get_clients()), "Fill", lambda i: asyncio.ensure_future(self._fill_from_player(i))
+        )
 
     async def _fill_from_player(self, idx: int) -> None:
         clients = self._get_clients()
@@ -1896,6 +1867,8 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._region: RegionModel | None = None
         self._suppress: bool = False
         self._get_clients: Callable[[], list] = lambda: []
+        # The player Ctrl+R records from; AppController points it at the last-focused game window.
+        self._preferred_player: Callable[[], int] = lambda: 0
         # All states for the source/dest dropdowns; populated by show_transition()
         self._all_states: list = []
         # Other transitions in the config — for duplicate-check in endpoint change
@@ -2010,8 +1983,10 @@ class _ParamPanel(ThemedMixin, QWidget):
         # found (#106): the full width of the panel, like the wiki import beside it,
         # with SECONDARY's accent and the red dot. The status goes underneath, and is
         # hidden while it has nothing to say.
-        self._record_btn = RecordButton(style=ActionStyle.SECONDARY, fill=True)
-        self._record_btn.setToolTip("Fill this node's values from the game (Ctrl+R)")
+        self._record_btn = RecordButton(style=ActionStyle.SECONDARY, fill=True, get_clients=lambda: self._get_clients())
+        self._record_btn.setToolTip(
+            "Fill this node's values from the game (Ctrl+R records from the game window you were last in)"
+        )
         self._record_status_lbl = QLabel("")
         self._record_status_lbl.setWordWrap(True)
         self._record_status_lbl.setVisible(False)
@@ -2303,6 +2278,8 @@ class _ParamPanel(ThemedMixin, QWidget):
         connected = len(self._get_clients())
         for w in self.findChildren(PlayerListWidget) + self.findChildren(PlayerSlotWidget):
             w.set_available_players(connected)
+        for button in self.findChildren(RecordButton):
+            button.refresh_players()
 
     def show_idle(self) -> None:
         self._cancel_record()
@@ -2838,9 +2815,50 @@ class _ParamPanel(ThemedMixin, QWidget):
     # Recording
     # ------------------------------------------------------------------
 
+    def set_preferred_player_getter(self, fn: Callable[[], int]) -> None:
+        """Pass a callable naming the player index Ctrl+R records from."""
+        self._preferred_player = fn
+
     def toggle_record(self) -> None:
-        """Start or cancel recording for the currently selected node (hotkey handler)."""
-        self._on_record_clicked()
+        """Ctrl+R: start or cancel recording the shown node.
+
+        A key has no menu to open, so it records from the preferred player -- the game
+        window last in focus, the rule Bar A's buttons follow -- rather than asking.
+        """
+        if recording.is_recording():
+            self._cancel_record()
+            return
+        if not self._shows_recordable_node():
+            return
+        clients = self._get_clients()
+        if not clients:
+            self._set_record_status("No player connected.")
+            return
+        index = self._preferred_player()
+        self.start_record(clients[index if 0 <= index < len(clients) else 0])
+
+    def start_record(self, client) -> bool:
+        """Record the shown node from *client*.
+
+        False, and nothing started, when the shown node has no recorder or another
+        recording is already live -- speed-authoring (#85) says so rather than cancelling it.
+        """
+        if recording.is_recording() or not self._shows_recordable_node():
+            return False
+        asyncio.ensure_future(
+            recording.run_recording(
+                self._state.node_type,
+                client,
+                self._param_form,
+                self._set_record_status,
+                self._record_btn.set_label,
+                self._try_set_label,
+            )
+        )
+        return True
+
+    def _shows_recordable_node(self) -> bool:
+        return self._state is not None and self._state.node_type in recording.RECORDABLE_NODES
 
     def _cancel_record(self) -> None:
         recording.cancel_active_recording()
@@ -2855,24 +2873,18 @@ class _ParamPanel(ThemedMixin, QWidget):
         if recording.is_recording():
             self._cancel_record()
             return
-        if self._state is None:
+        if not self._shows_recordable_node():
             return
         clients = self._get_clients()
         if not clients:
             self._set_record_status("No player connected.")
             return
-        if self._state.node_type not in recording.RECORDABLE_NODES:
-            return
-        asyncio.ensure_future(
-            recording.run_recording(
-                self._state.node_type,
-                clients[0],
-                self._param_form,
-                self._set_record_status,
-                self._record_btn.set_label,
-                self._try_set_label,
-            )
-        )
+        pick_player(self._record_btn, len(clients), "Record", self._record_from_player)
+
+    def _record_from_player(self, index: int) -> None:
+        clients = self._get_clients()
+        if index < len(clients):
+            self.start_record(clients[index])
 
     def _try_set_label(self, label: str) -> None:
         """Auto-populate the node label if it is currently empty."""

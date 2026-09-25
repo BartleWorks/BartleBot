@@ -33,6 +33,7 @@ from bartlebot.gui.sidebar.sidebar_section import disclosure_pixmap
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
+from bartlebot.gui.widgets.player_picker import pick_player
 from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
@@ -392,7 +393,7 @@ class CallNodePage(ThemedMixin, QWidget):
         self._add_form(panel.id, form)
         record = None
         if state.node_type in recording.RECORDABLE_NODES:
-            record = RecordButton(style=ActionStyle.SECONDARY)
+            record = RecordButton(style=ActionStyle.SECONDARY, get_clients=lambda: self._get_clients())
             record.setToolTip("Record this node's values from the game, as on the node itself")
             status = QLabel("")
             self._record_status[panel.id] = status
@@ -416,6 +417,13 @@ class CallNodePage(ThemedMixin, QWidget):
             if status is not None:
                 status.setText("No player connected.")
             return
+        pick_player(button, len(clients), "Record", lambda i: self._record_from(panel_id, node_type, button, i))
+
+    def _record_from(self, panel_id: str, node_type: str, button: RecordButton, index: int) -> None:
+        clients = self._get_clients()
+        if index >= len(clients):
+            return
+        status = self._record_status.get(panel_id)
         form = self._forms.get(panel_id)
         section = self._sections.get(panel_id)
         if section is not None and not section.expanded:
@@ -423,7 +431,7 @@ class CallNodePage(ThemedMixin, QWidget):
         asyncio.ensure_future(
             recording.run_recording(
                 node_type,
-                clients[0],
+                clients[index],
                 form,
                 status.setText if status is not None else (lambda _t: None),
                 button.set_label,

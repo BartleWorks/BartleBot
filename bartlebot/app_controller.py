@@ -18,7 +18,7 @@ from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot import group_manager, recovery_readiness, restricted_zones, wizard_names
-from bartlebot.authoring_tools import AuthoringAction, AuthoringTools
+from bartlebot.authoring_tools import AuthoringAction, AuthoringTools, source_index
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.client_manager import ClientManager
@@ -245,6 +245,10 @@ class AppController(QObject):
         w.bot_canvas.definition_revert_requested.connect(lambda: self._revert_definition())
         w.bot_canvas.document_back_requested.connect(self._back_to_document)
         w.bot_canvas.set_clients_getter(lambda: self._client_manager.clients)
+        # Ctrl+R records from the game window last in focus, as Bar A's buttons act on it.
+        w.bot_canvas.set_preferred_player_getter(
+            lambda: source_index(self._client_manager.clients, w.game_view.last_focused_hwnd)
+        )
         w.bot_canvas.set_subgraph_library(self._subgraph_library)
         w.left_sidebar.set_clients_getter(lambda: self._client_manager.clients)
 
