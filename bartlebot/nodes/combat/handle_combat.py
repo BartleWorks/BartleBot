@@ -19,10 +19,12 @@ PARAM_SCHEMA: list[ParamField] = [
         type="str",
         label="Enemy Name",
         help=(
-            "Entity name of the enemy to initiate combat with. Plain text matches any name "
-            "containing it, so 'Cyclops' finds 'Cyclops/CyclopsMinion'. Wildcards (* ? []) "
-            "match the whole name instead, so use '*Bandit*' to match anywhere and 'Bandit*' "
-            "to match only names starting with it. Leave empty to use the closest available mob."
+            "Entity name of the enemy to initiate combat with. An entity with exactly this name "
+            "is preferred; failing that, any name containing it, so advanced mode's 'Adv_' copy is "
+            "still found. A StandIn (the actor that speaks a pre-battle dialogue) and a boss's "
+            "'-mini' pet copy are never picked that way. Wildcards (* ? []) match the whole name "
+            "instead, so use '*Bandit*' to match anywhere and 'Bandit*' to match only names "
+            "starting with it. Leave empty to use the closest available mob."
         ),
         default="",
         default_hint="targets the closest available mob",
@@ -96,7 +98,7 @@ from bartlebot.nodes.timing import (
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: SprintyClient.find_closest_by_vague_name(), SprintyClient.find_closest_mob(),
+    APIs: node_helpers.find_closest_fight_target(), SprintyClient.find_closest_mob(),
           SprintyClient.tp_to(), SprintyClient.in_battle(), SprintyCombat
 
     Flow:
@@ -190,7 +192,7 @@ async def run(machine, clients: list, params: dict) -> str:
                     logging.DEBUG,
                 )
                 continue
-            if not await _tp_and_wait_for_combat(clients[idx], enemy_name, ENTER_COMBAT_TIMEOUT):
+            if not await _tp_and_wait_for_combat(machine, clients[idx], idx, enemy_name, ENTER_COMBAT_TIMEOUT):
                 machine.log(
                     f"FAILURE: client {client_num} did not enter combat within {ENTER_COMBAT_TIMEOUT}s",
                     logging.WARNING,
@@ -199,7 +201,9 @@ async def run(machine, clients: list, params: dict) -> str:
     else:
         # 4. Teleport all clients to their targets, retrying until in combat
         machine.log("Teleporting all clients to target (retrying until in combat)…", logging.DEBUG)
-        results = await asyncio.gather(*[_tp_and_wait_for_combat(c, enemy_name, ENTER_COMBAT_TIMEOUT) for c in clients])
+        results = await asyncio.gather(
+            *[_tp_and_wait_for_combat(machine, c, i, enemy_name, ENTER_COMBAT_TIMEOUT) for i, c in enumerate(clients)]
+        )
         if not all(results):
             not_in_battle = [i for i, ok in enumerate(results) if not ok]
             machine.log(f"Clients not in battle at timeout: {not_in_battle}", logging.DEBUG)
@@ -259,27 +263,63 @@ async def run(machine, clients: list, params: dict) -> str:
 async def _find_target(client, enemy_name: str):
     """Return the closest matching entity, or None if not found."""
     if enemy_name:
-        return await node_helpers.find_closest_entity_by_name(client, enemy_name)
+        return await node_helpers.find_closest_fight_target(client, enemy_name)
     return await client.find_closest_mob()
 
 
-async def _tp_and_wait_for_combat(client, enemy_name: str, timeout: float) -> bool:
-    """Teleport to target, retrying every COMBAT_TP_RETRY_INTERVAL seconds until in combat."""
-    deadline = asyncio.get_event_loop().time() + timeout
+async def _tp_and_wait_for_combat(machine, client, index: int, enemy_name: str, timeout: float) -> bool:
+    """Teleport to target, retrying every COMBAT_TP_RETRY_INTERVAL seconds until in combat.
+
+    A target that disappears is waited out rather than given up on: an encounter that swaps
+    or hides its mob as its fight starts may still pull the player in before the timeout.
+    Giving up at once also said nothing, which left a player standing still for the rest
+    of the wait with no line in the log to say why.
+
+    Each re-teleport logs how far it moved the player. Zero means the player was already
+    on the mob, so the retry could not have started the fight.
+    """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
+    attempt = 0
+    target_lost = False
     while True:
+        attempt += 1
         target = await _find_target(client, enemy_name)
         if target is None:
-            return False
-        await client.tp_to(target)
+            if not target_lost:
+                machine.log(
+                    f"Client {index}: target not found on attempt {attempt}; waiting for the fight without teleporting",
+                    logging.DEBUG,
+                )
+                target_lost = True
+        else:
+            if target_lost:
+                machine.log(f"Client {index}: target found again on attempt {attempt}", logging.DEBUG)
+                target_lost = False
+            before = await _position(client) if attempt > 1 else None
+            await client.tp_to(target)
+            if before is not None and (after := await _position(client)) is not None:
+                machine.log(
+                    f"Client {index}: not in battle; re-teleport {attempt} moved {before.distance(after):.1f} units",
+                    logging.DEBUG,
+                )
 
         # Poll in_battle() for up to COMBAT_TP_RETRY_INTERVAL (or remaining time)
-        retry_at = min(asyncio.get_event_loop().time() + COMBAT_TP_RETRY_INTERVAL, deadline)
-        while asyncio.get_event_loop().time() < retry_at:
+        retry_at = min(loop.time() + COMBAT_TP_RETRY_INTERVAL, deadline)
+        while loop.time() < retry_at:
             if await client.in_battle():
                 return True
             await asyncio.sleep(POLL_INTERVAL)
 
-        if asyncio.get_event_loop().time() >= deadline:
+        if loop.time() >= deadline:
             break
 
     return False
+
+
+async def _position(client):
+    """The client's position, or None when it cannot be read; only a log line depends on it."""
+    try:
+        return await client.body.position()
+    except Exception:
+        return None

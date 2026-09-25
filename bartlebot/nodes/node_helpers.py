@@ -761,7 +761,8 @@ def entity_name_matches(actual: str, pattern: str) -> bool:
 
       * No metacharacters — case-insensitive *substring* match, which is what
         WizSprinter's get_base_entities_with_vague_name() does. "Cyclops" finds
-        "Cyclops/CyclopsMinion". Every existing bot file relies on this.
+        "Cyclops/CyclopsMinion". The reagent bots rely on this: "Ore" is a category.
+        A fight does not use it directly -- see fight_target_rank.
       * With metacharacters — case-insensitive glob against the *whole* name, so
         "*Bandit*" matches anywhere but "Bandit*" only matches names that start
         with it. Anchoring is the point: substring matching alone cannot express
@@ -785,6 +786,11 @@ def entity_name_predicate(pattern: str):
     Suitable for WizSprinter's find_closest_by_predicate() and
     get_base_entities_with_predicate().
     """
+    return _template_name_predicate(lambda name: entity_name_matches(name, pattern))
+
+
+def _template_name_predicate(matches: Callable[[str], bool]):
+    """An async entity predicate that applies *matches* to the entity's template name."""
 
     async def _matches(entity) -> bool:
         # An entity can despawn mid-scan; WizSprinter's own vague-name predicate
@@ -793,7 +799,7 @@ def entity_name_predicate(pattern: str):
             template = await entity.object_template()
             if template is None:
                 return False
-            return entity_name_matches(await template.object_name(), pattern)
+            return matches(await template.object_name())
         except (ValueError, MemoryReadError):
             return False
 
@@ -811,6 +817,53 @@ async def find_closest_entity_by_name(client, pattern: str):
     if not has_glob(pattern):
         return await client.find_closest_by_vague_name(pattern)
     return await client.find_closest_by_predicate(entity_name_predicate(pattern))
+
+
+#: Template names that share a mob's name without being its fight: the StandIn is the actor
+#: that speaks a mob's pre-battle dialogue (it has no display name of its own), and -mini is
+#: the pet copy of a boss. Teleporting onto a StandIn plays the speech and never starts the
+#: fight, which is how Atlantea's Voracious Legionnaires stalled.
+_NOT_A_FIGHT_MARKERS = ("standin", "-mini")
+
+
+def fight_target_rank(actual: str | None, pattern: str) -> int | None:
+    """How well an entity's template name answers a fight's plain enemy name, for handle_combat.
+
+    0 is the name itself. 1 is a name merely containing it -- the advanced-mode ``Adv_``
+    copy, a ``_Hard`` copy -- other than a StandIn or pet copy, unless *pattern* names one
+    itself. None is no match. Exact wins outright rather than by distance: a substring can
+    also be a different boss (``Golem-Steel-MBBoss-L50-1`` is Mr. Incinerator, not Bellows).
+    """
+    if not actual:
+        return None
+    name, wanted = actual.lower(), pattern.lower()
+    if name == wanted:
+        return 0
+    if wanted not in name:
+        return None
+    if any(marker in name and marker not in wanted for marker in _NOT_A_FIGHT_MARKERS):
+        return None
+    return 1
+
+
+async def find_closest_fight_target(client, pattern: str):
+    """The closest entity to fight for *pattern*, or None: an exact name first, then a fallback.
+
+    See fight_target_rank for the ranking. A pattern with wildcards names its own anchoring,
+    so it matches as find_closest_entity_by_name does. The fallback costs a second scan of
+    the entity list, paid only when nothing carries the name exactly -- in advanced mode,
+    or while the mob has not loaded.
+    """
+    if has_glob(pattern):
+        return await find_closest_entity_by_name(client, pattern)
+    exact = await client.find_closest_by_predicate(
+        _template_name_predicate(lambda n: fight_target_rank(n, pattern) == 0)
+    )
+    if exact is not None:
+        return exact
+    return await client.find_closest_by_predicate(
+        _template_name_predicate(lambda n: fight_target_rank(n, pattern) == 1)
+    )
 
 
 async def find_entities_by_name(client, pattern: str) -> list:

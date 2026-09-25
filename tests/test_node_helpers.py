@@ -1550,3 +1550,80 @@ async def test_attempt_zone_recovery_swallows_a_value_error():
 
     with patch.object(nh, "find_target_in_zone", find_target), patch.object(nh, "port_to_friend", port):
         await nh._attempt_zone_recovery(machine, clients, "Dst", zones, 0)  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# fight_target_rank / find_closest_fight_target — which entity a fight's enemy name means
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("actual", "pattern", "rank"),
+    [
+        ("AQ-Piranha-Guard", "AQ-Piranha-Guard", 0),
+        ("aq-piranha-guard", "AQ-Piranha-Guard", 0),
+        ("Adv_AQ-Piranha-Guard", "AQ-Piranha-Guard", 1),  # advanced mode's copy
+        ("LM_Dog_Hero_A_01_Hard", "LM_Dog_Hero_A_01", 1),
+        ("AQ-Piranha-Guard_StandIn", "AQ-Piranha-Guard", None),  # the pre-battle speaker
+        ("AR-DeathSpell170-Standin-Ilga_01", "Ilga", None),
+        ("Oni-War-MSBoss-L50-mini", "Oni-War-MSBoss-L50", None),  # the pet copy
+        ("AQ-Piranha-Guard_StandIn", "AQ-Piranha-Guard_StandIn", 0),  # named on purpose
+        ("AQ-Piranha-Guard_StandIn", "Guard_StandIn", 1),
+        ("AQ-Shark-Lamia", "AQ-Piranha-Guard", None),
+        (None, "AQ-Piranha-Guard", None),
+    ],
+)
+def test_fight_target_rank(actual, pattern, rank):
+    assert nh.fight_target_rank(actual, pattern) == rank
+
+
+def _world(client: FakeClient, *entities: tuple[str, float]) -> dict:
+    """Give *client* a world of named entities at distances, searched as WizSprinter would."""
+    placed = {}
+    for name, distance in entities:
+        entity = FakeEntity(name)
+        placed[name] = (entity, distance)
+
+    async def closest(pred):
+        matching = [(d, e) for e, d in placed.values() if await pred(e)]
+        return min(matching, key=lambda m: m[0])[1] if matching else None
+
+    client.find_closest_by_predicate.side_effect = closest
+    return {name: entity for name, (entity, _d) in placed.items()}
+
+
+async def test_an_exact_name_wins_over_a_closer_different_boss():
+    """Golem-Steel-MBBoss-L50-1 is Mr. Incinerator; the Bellows fight must not port to it."""
+    client = FakeClient()
+    world = _world(client, ("Golem-Steel-MBBoss-L50-1", 10.0), ("Golem-Steel-MBBoss-L50", 500.0))
+    assert await nh.find_closest_fight_target(client, "Golem-Steel-MBBoss-L50") is world["Golem-Steel-MBBoss-L50"]
+
+
+async def test_a_closer_stand_in_is_never_the_fight():
+    client = FakeClient()
+    world = _world(client, ("AQ-Piranha-Guard_StandIn", 5.0), ("AQ-Piranha-Guard", 300.0))
+    assert await nh.find_closest_fight_target(client, "AQ-Piranha-Guard") is world["AQ-Piranha-Guard"]
+
+
+async def test_advanced_mode_falls_back_to_the_copy_but_not_its_stand_in_or_pet():
+    client = FakeClient()
+    world = _world(
+        client,
+        ("AQ-Piranha-Guard_StandIn", 5.0),
+        ("AQ-Piranha-Guard-mini", 6.0),
+        ("Adv_AQ-Piranha-Guard", 300.0),
+    )
+    assert await nh.find_closest_fight_target(client, "AQ-Piranha-Guard") is world["Adv_AQ-Piranha-Guard"]
+
+
+async def test_only_a_stand_in_means_no_target():
+    client = FakeClient()
+    _world(client, ("AQ-Piranha-Guard_StandIn", 5.0))
+    assert await nh.find_closest_fight_target(client, "AQ-Piranha-Guard") is None
+
+
+async def test_a_wildcard_fight_name_matches_as_written():
+    """A glob names its own anchoring, stand-in or not; exact-first does not apply to it."""
+    client = FakeClient()
+    world = _world(client, ("AQ-Piranha-Guard_StandIn", 5.0), ("AQ-Piranha-Guard", 300.0))
+    assert await nh.find_closest_fight_target(client, "AQ-Piranha-Guard*") is world["AQ-Piranha-Guard_StandIn"]
