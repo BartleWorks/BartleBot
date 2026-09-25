@@ -20,6 +20,7 @@ import logging.handlers
 import platform
 import sys
 from collections.abc import Callable
+from pathlib import Path
 
 from bartlebot.paths import project_root
 
@@ -162,6 +163,20 @@ class _GuiBridgeHandler(logging.Handler):
 _gui_bridge = _GuiBridgeHandler()
 
 
+def prune_session_logs(log_dir: Path, keep: int = 10) -> None:
+    """Delete all but the *keep* most recent session logs in *log_dir*.
+
+    Only ``bartlebot_*.log`` files are touched. A file that cannot be deleted -- still
+    open in another running instance -- is left for a later startup to try again.
+    """
+    logs = sorted(log_dir.glob("bartlebot_*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
+    for old in logs[keep:]:
+        try:
+            old.unlink()
+        except OSError:
+            pass
+
+
 def configure_logging() -> None:
     """Call once at startup before any other bartlebot imports."""
     log_dir = project_root() / "logs"
@@ -176,13 +191,7 @@ def configure_logging() -> None:
     file_handler.addFilter(GuiOnlyFilter())
     file_handler.addFilter(RepeatCollapsingFilter(file_handler))
 
-    # Prune old session logs — keep only the 10 most recent.
-    old_logs = sorted(log_dir.glob("bartlebot_*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
-    for old in old_logs[10:]:
-        try:
-            old.unlink()
-        except OSError:
-            pass
+    prune_session_logs(log_dir)
 
     # The widget is watched live, where the date is never in question and the column
     # would cost width the message needs, so it keeps the time alone.

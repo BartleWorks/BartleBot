@@ -214,3 +214,241 @@ async def test_set_equipped_reports_failure_when_the_icon_never_changes():
     with text, visible, enabled, click, patch.object(housing, "HOUSING_EQUIP_TIMEOUT", 0):
         # Row 1 is equipped and the fake never flips it, so asking to unequip must fail.
         assert await housing._set_equipped(FakeClient(), 1, False) is False
+
+
+async def test_set_equipped_fails_when_equip_item_never_enables(monkeypatch):
+    """Selecting the row is what ungrays Equip_Item; without it the toggle is never pressed."""
+    _fast(monkeypatch)
+    text, visible, _enabled, click = _page(_TWO_CASTLES)
+    never = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False))
+
+    with text, visible, never, click as c:
+        assert await housing._set_equipped(FakeClient(), 2, True) is False
+
+    assert all(call.args[1] != housing.HOUSING_EQUIP_BUTTON_PATH for call in c.await_args_list)
+
+
+# ---------------------------------------------------------------------------
+# Opening, closing and navigating the page
+# ---------------------------------------------------------------------------
+
+
+def _fast(monkeypatch):
+    """Compress the waits housing reads, for the tests whose subject is giving up."""
+    monkeypatch.setattr(housing, "TRIGGER_TIMEOUT", 0.01)
+    monkeypatch.setattr(housing, "POLL_INTERVAL", 0.001)
+
+
+def _spellbook(client, *, blocked_by_other_page: bool):
+    """A fake spellbook: U opens the housing page unless another page already owns the window.
+
+    ESC closes whatever page that was, after which U works. Every key press is recorded on
+    ``client.send_key`` for the tests to read the order back.
+    """
+    state = {"open": False, "blocked": blocked_by_other_page}
+
+    async def send_key(key, _seconds):
+        if key == housing.Keycode.ESC:
+            state["blocked"] = False
+        elif key == housing.Keycode.U and not state["blocked"]:
+            state["open"] = True
+
+    async def is_visible(_client, path):
+        return path == housing.HOUSING_CASTLES_TAB_PATH and state["open"]
+
+    client.send_key.side_effect = send_key
+    return patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=is_visible))
+
+
+def _keys(client) -> list:
+    return [call.args[0] for call in client.send_key.await_args_list]
+
+
+async def test_open_page_presses_u():
+    client = FakeClient()
+
+    with _spellbook(client, blocked_by_other_page=False):
+        assert await housing.open_page(client) is True
+
+    assert _keys(client) == [housing.Keycode.U]
+
+
+async def test_open_page_presses_nothing_when_already_open():
+    client = FakeClient()
+
+    with patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True)):
+        assert await housing.open_page(client) is True
+
+    client.send_key.assert_not_awaited()
+
+
+async def test_open_page_backs_out_of_another_page_and_retries(monkeypatch):
+    """U is swallowed while another spellbook page is up; ESC clears it, the next U works."""
+    _fast(monkeypatch)
+    client = FakeClient()
+
+    with _spellbook(client, blocked_by_other_page=True):
+        assert await housing.open_page(client) is True
+
+    assert _keys(client) == [housing.Keycode.U, housing.Keycode.ESC, housing.Keycode.U]
+
+
+async def test_open_page_gives_up_after_its_retries(monkeypatch):
+    _fast(monkeypatch)
+    client = FakeClient()
+
+    with patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False)):
+        assert await housing.open_page(client) is False
+
+    assert _keys(client).count(housing.Keycode.U) == housing.HOUSING_OPEN_RETRIES
+
+
+async def test_close_page_clicks_the_close_button_when_there_is_one():
+    client = FakeClient()
+    enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=True))
+    click = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+
+    with enabled, click as c:
+        await housing.close_page(client)
+
+    c.assert_awaited_once_with(client, housing.BACKPACK_CLOSE_BUTTON_PATH)
+    client.send_key.assert_not_awaited()
+
+
+async def test_close_page_falls_back_to_esc():
+    client = FakeClient()
+    enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False))
+    click = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+
+    with enabled, click as c:
+        await housing.close_page(client)
+
+    c.assert_not_awaited()
+    assert _keys(client) == [housing.Keycode.ESC]
+
+
+async def test_select_castles_tab_clicks_the_tab_until_equip_item_shows():
+    client = FakeClient()
+    state = {"on_castles": False}
+
+    async def is_visible(_client, path):
+        return path == housing.HOUSING_EQUIP_BUTTON_PATH and state["on_castles"]
+
+    async def click(_client, path):
+        state["on_castles"] = path == housing.HOUSING_CASTLES_TAB_PATH
+        return True
+
+    visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=is_visible))
+    clicked = patch.object(nh, "click_by_path", new=AsyncMock(side_effect=click))
+
+    with visible, clicked as c:
+        assert await housing.select_castles_tab(client) is True
+
+    c.assert_awaited_once_with(client, housing.HOUSING_CASTLES_TAB_PATH)
+
+
+async def test_select_castles_tab_does_not_click_when_already_there():
+    visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True))
+    clicked = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+
+    with visible, clicked as c:
+        assert await housing.select_castles_tab(FakeClient()) is True
+
+    c.assert_not_awaited()
+
+
+async def test_select_castles_tab_fails_when_equip_item_never_shows(monkeypatch):
+    _fast(monkeypatch)
+    visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=False))
+    clicked = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+
+    with visible, clicked:
+        assert await housing.select_castles_tab(FakeClient()) is False
+
+
+async def test_find_equipped_row_pages_to_a_later_castle():
+    """The equipped castle of a wizard with more than 8 is on a later page."""
+    page2 = {1: ("Celestial Observatory", True)}
+    text, visible, enabled, click = _page(_NONE_EQUIPPED, pages=[page2])
+
+    with text, visible, enabled, click:
+        assert await housing.find_equipped_row(FakeClient()) == (1, "Celestial Observatory")
+
+
+async def test_find_equipped_row_gives_up_rather_than_paging_forever():
+    stuck = [dict(_NONE_EQUIPPED) for _ in range(housing.HOUSING_PAGE_MAX + 5)]
+    text, visible, enabled, click = _page(_NONE_EQUIPPED, pages=stuck)
+
+    with text, visible, enabled, click:
+        assert await housing.find_equipped_row(FakeClient()) is None
+
+
+async def test_next_page_stops_at_a_grayed_scroll_button():
+    """A visible but grayed rightscroll is the last page; clicking it would not advance."""
+    visible = patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True))
+    enabled = patch.object(nh, "is_enabled_by_path", new=AsyncMock(return_value=False))
+    clicked = patch.object(nh, "click_by_path", new=AsyncMock(return_value=True))
+
+    with visible, enabled, clicked as c:
+        assert await housing._next_page(FakeClient()) is False
+
+    c.assert_not_awaited()
+
+
+# ---------------------------------------------------------------------------
+# Unequip / equip failure paths
+# ---------------------------------------------------------------------------
+
+
+def _opened_on_castles():
+    return (
+        patch.object(housing, "open_page", new=AsyncMock(return_value=True)),
+        patch.object(housing, "select_castles_tab", new=AsyncMock(return_value=True)),
+        patch.object(housing, "close_page", new=AsyncMock()),
+    )
+
+
+async def test_unequip_returns_none_when_the_toggle_does_not_take():
+    """None sends the caller down the slow HOME path; a name here would be "restored" later."""
+    text, visible, enabled, click = _page(_TWO_CASTLES)
+    opened, tab, close = _opened_on_castles()
+    setter = patch.object(housing, "_set_equipped", new=AsyncMock(return_value=False))
+
+    with text, visible, enabled, click, opened, tab, close as c, setter:
+        assert await housing.unequip_castle(FakeClient()) is None
+
+    c.assert_awaited_once()
+
+
+async def test_equip_castle_fails_when_the_page_will_not_open():
+    opened = patch.object(housing, "open_page", new=AsyncMock(return_value=False))
+    close = patch.object(housing, "close_page", new=AsyncMock())
+
+    with opened, close as c:
+        assert await housing.equip_castle(FakeClient(), "Red Barn Farm") is False
+
+    c.assert_not_awaited()  # nothing was opened, so there is nothing to close
+
+
+async def test_equip_castle_fails_and_closes_when_the_tab_will_not_show():
+    opened, _tab, close = _opened_on_castles()
+    tab = patch.object(housing, "select_castles_tab", new=AsyncMock(return_value=False))
+
+    with opened, tab, close as c:
+        assert await housing.equip_castle(FakeClient(), "Red Barn Farm") is False
+
+    c.assert_awaited_once()
+
+
+async def test_equip_castle_fails_and_closes_when_the_toggle_does_not_take(caplog):
+    """The user's castle stays off here, so the failure has to be reported, not swallowed."""
+    text, visible, enabled, click = _page(_NONE_EQUIPPED)
+    opened, tab, close = _opened_on_castles()
+    setter = patch.object(housing, "_set_equipped", new=AsyncMock(return_value=False))
+
+    with text, visible, enabled, click, opened, tab, close as c, setter:
+        with caplog.at_level(logging.WARNING, logger=housing.logger.name):
+            assert await housing.equip_castle(FakeClient(), "Red Barn Farm") is False
+
+    c.assert_awaited_once()
+    assert "could not re-equip castle 'Red Barn Farm'" in caplog.text

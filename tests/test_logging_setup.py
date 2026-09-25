@@ -7,6 +7,8 @@ a miscounted repeat, a mangled logger name.
 """
 
 import logging
+import os
+from pathlib import Path
 
 import pytest
 
@@ -15,6 +17,8 @@ from bartlebot.logging_setup import (
     GuiOnlyFilter,
     RepeatCollapsingFilter,
     ShortNameFormatter,
+    _GuiBridgeHandler,
+    prune_session_logs,
 )
 
 
@@ -212,3 +216,115 @@ def test_a_failing_summary_does_not_take_the_next_record_down(handler):
     exploding.handle(_record(msg="something else"))
 
     assert exploding.messages == ["timed out", "something else"]
+
+
+# ---------------------------------------------------------------------------
+# prune_session_logs
+# ---------------------------------------------------------------------------
+
+
+def _session_logs(log_dir, count: int) -> list:
+    """*count* session logs, oldest first, with mtimes a minute apart."""
+    logs = []
+    for i in range(count):
+        path = log_dir / f"bartlebot_2026-09-{i + 1:02d}_12-00-00.log"
+        path.write_text("x")
+        os.utime(path, (1_000_000 + i * 60, 1_000_000 + i * 60))
+        logs.append(path)
+    return logs
+
+
+def test_prune_keeps_the_ten_newest_session_logs(tmp_path):
+    logs = _session_logs(tmp_path, 13)
+
+    prune_session_logs(tmp_path)
+
+    assert sorted(tmp_path.iterdir()) == logs[3:]
+
+
+def test_prune_goes_by_modification_time_not_name(tmp_path):
+    """A log whose name sorts oldest is kept when it was the last one written to."""
+    logs = _session_logs(tmp_path, 11)
+    os.utime(logs[0], (9_999_999, 9_999_999))
+
+    prune_session_logs(tmp_path)
+
+    assert logs[0].exists()
+    assert not logs[1].exists()
+
+
+def test_prune_leaves_other_files_alone(tmp_path):
+    _session_logs(tmp_path, 12)
+    others = [tmp_path / "notes.txt", tmp_path / "bartlebot_crash.dmp", tmp_path / "other_2026-01-01.log"]
+    for path in others:
+        path.write_text("keep me")
+        os.utime(path, (1, 1))  # older than every session log
+
+    prune_session_logs(tmp_path)
+
+    assert all(path.exists() for path in others)
+
+
+def test_prune_skips_a_log_it_cannot_delete(tmp_path, monkeypatch):
+    """A log held open by another running instance must not stop startup, or the rest of the prune."""
+    logs = _session_logs(tmp_path, 12)
+    real_unlink = Path.unlink
+
+    def unlink(self, *args, **kwargs):
+        if self == logs[0]:
+            raise PermissionError("in use")
+        return real_unlink(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", unlink)
+
+    prune_session_logs(tmp_path)
+
+    assert logs[0].exists()
+    assert not logs[1].exists()
+
+
+# ---------------------------------------------------------------------------
+# _GuiBridgeHandler
+# ---------------------------------------------------------------------------
+
+
+def test_the_bridge_hands_each_callback_the_formatted_line_and_level():
+    bridge = _GuiBridgeHandler()
+    bridge.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+    seen = []
+    bridge.add_callback(lambda msg, level: seen.append((msg, level)))
+
+    bridge.handle(_record(msg="hello", level=logging.WARNING))
+
+    assert seen == [("[WARNING] hello", logging.WARNING)]
+
+
+def test_a_failing_gui_callback_does_not_silence_the_others():
+    bridge = _GuiBridgeHandler()
+    seen = []
+
+    def broken(_msg, _level):
+        raise RuntimeError("widget already deleted")
+
+    bridge.add_callback(broken)
+    bridge.add_callback(lambda msg, _level: seen.append(msg))
+
+    bridge.handle(_record(msg="first"))
+    bridge.handle(_record(msg="second"))
+
+    assert seen == ["first", "second"]
+
+
+def test_a_removed_callback_stops_receiving():
+    bridge = _GuiBridgeHandler()
+    seen = []
+
+    def callback(msg, _level):
+        seen.append(msg)
+
+    bridge.add_callback(callback)
+    bridge.handle(_record(msg="before"))
+    bridge.remove_callback(callback)
+    bridge.handle(_record(msg="after"))
+
+    assert seen == ["before"]
