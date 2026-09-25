@@ -1405,6 +1405,15 @@ class EditScene(QGraphicsScene):
         """A button asked: pass it on once the click is over, since acting rebuilds the item clicked."""
         QTimer.singleShot(0, lambda: self.collapse_toggle_requested.emit(region_id, collapsed))
 
+    def note_node_moved(self) -> None:
+        """A node's position changed: fit the regions to it. ``NodeItem.itemChange`` calls this.
+
+        The moves that need it are a drag and ``_refresh_folds``, which calls it itself;
+        every other reposition goes through ``setup``, which builds the regions last.
+        """
+        if self._region_manager is not None:
+            self._region_manager.recompute_all()
+
     def _sync_region_buttons(self) -> None:
         """Give every drawn region's label its collapse button, faded with the reason when refused."""
         if self._region_manager is None:
@@ -1771,10 +1780,17 @@ class EditScene(QGraphicsScene):
                 snap = self._drag_snap_edge
                 self._drag_snap_edge = None
 
+                # For #73, which asks whether a lost repaint followed a snap or a port drop.
+                hit = None if snap is not None else self._node_near_port_in(event.scenePos())
+                logger.debug(
+                    "Edge drop from %s (%s): %s",
+                    self._drag_src.state_id,
+                    self._drag_when,
+                    "snap onto an incoming edge" if snap is not None else "onto a port" if hit else "into empty space",
+                )
                 if snap is not None:
                     self._create_transition(self._drag_src, snap.dst_node, self._drag_when, dst_port=snap.dst_port)
                 else:
-                    hit = self._node_near_port_in(event.scenePos())
                     if hit is not None:
                         self._create_transition(self._drag_src, hit[0], self._drag_when, dst_port=hit[1])
                     elif (
@@ -2378,6 +2394,7 @@ class EditScene(QGraphicsScene):
         for node, x, y in placed:
             dx, dy = fold.to_display(x, y)
             node.setPos(dx, dy - node.body_height / 2)
+        self.note_node_moved()  # a node without ItemSendsGeometryChanges never reports its own move
         self._update_scene_rect()
 
     def _copy_selected(self) -> None:

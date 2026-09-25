@@ -562,6 +562,11 @@ class NodeItem(QGraphicsItem):
                 # The union keeps this cheap on a drag, where itemsBoundingRect() would
                 # be O(items) on every position change.
                 set_scene_rect_and_repaint(scene, scene.sceneRect().united(item_rect))
+                # Regions follow their members from here, not from scene.changed: see
+                # RegionManager. A plain QGraphicsScene (the tests') has no regions.
+                note_moved = getattr(scene, "note_node_moved", None)
+                if note_moved is not None:
+                    note_moved()
         return super().itemChange(change, value)
 
     def _paint_port_mark(self, painter: QPainter, center: QPointF, mark: str, lod: float) -> None:

@@ -42,8 +42,9 @@ class RegionItem(QGraphicsItem):
     """A colored translucent rect drawn behind a set of member NodeItems.
 
     The item is fixed at scene origin (pos = 0,0); its bounding rect is
-    expressed in scene coordinates.  Member positions are tracked via a
-    ``scene.changed`` connection wired by EditScene.setup().
+    expressed in scene coordinates.  It follows its members because the scene
+    calls ``recompute_rect`` (through ``RegionManager.recompute_all``) whenever a
+    node moves -- never through ``scene.changed``; ``RegionManager`` says why.
 
     ``node_items`` is anything with ``get(state_id)``: the scene hands over a lookup
     that answers a subgraph member with the call node it is drawn as, so a region
@@ -270,8 +271,8 @@ class RegionItem(QGraphicsItem):
     # Rect recompute
     # ------------------------------------------------------------------
 
-    def _recompute_rect(self) -> None:
-        """Union all member node bounding rects + padding.  Called by scene.changed."""
+    def recompute_rect(self) -> None:
+        """Union all member node bounding rects + padding.  Called whenever a member may have moved."""
         rects = []
         seen: set[int] = set()
         for sid in self._member_ids:

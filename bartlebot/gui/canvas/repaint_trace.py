@@ -13,7 +13,14 @@ symptom #73 describes, caught when it happens instead of when someone notices it
 
 Each stale finding is logged as a WARNING with the item, which area (``was`` = old
 pixels never erased, ``now`` = new pixels never drawn), the unpainted rect, and the
-last few canvas events. A screenshot of what is actually on screen goes to
+last few canvas events. Three more lines are there to test one theory: that the lost
+repaints come from Qt's *compatibility* update path, which a listener on
+``scene.changed`` switches every view onto. ``update path`` says which path the scene
+was on; ``paints since`` lists every Paint the viewport got after the change, which
+tells "nothing was ever scheduled" from "a paint came but missed"; and ``scene rect``
+says whether the gap lay inside it, since the compatibility path repaints a removed
+item by repainting the scene rect and nothing past it. **The tracer itself must never
+connect ``scene.changed``**, or it would put the canvas on the path it is testing. A screenshot of what is actually on screen goes to
 ``logs/repaint/``. It is taken with ``QScreen.grabWindow``, never ``QWidget.grab``,
 which re-renders the widget and would hide the stale pixels. Like the rest of
 ``logs/``, it is gitignored: the canvas can show anything a node label holds.
@@ -57,6 +64,9 @@ SAMPLE_INTERVAL_MS = 100
 CONTEXT_EVENTS = 12
 #: Cap on screenshots per session, so a systematic false positive can't fill the disk.
 MAX_SCREENSHOTS = 20
+#: How many recent viewport paints are kept, to say which came after a stale change.
+#: A drag paints every frame, so this only needs to span the deadline.
+PAINT_HISTORY = 32
 
 
 # ---------------------------------------------------------------------------
@@ -190,6 +200,9 @@ class RepaintTracer(QObject):
         self._scale: tuple[float, float] | None = None
         self._offset: QPoint | None = None
         self._events: deque[str] = deque(maxlen=CONTEXT_EVENTS)
+        # (monotonic time, painted region's bounding rect, rect count), viewport coordinates
+        self._paints: deque[tuple[float, QRect, int]] = deque(maxlen=PAINT_HISTORY)
+        self._update_path: str | None = None
         self._t0 = time.monotonic()
         self._screenshots = 0
         self._scene = None
@@ -213,7 +226,9 @@ class RepaintTracer(QObject):
             # is now, so it pays for changes made up to this moment.
             self.sample()
             offset = self._offset if self._offset is not None else QPoint()
-            self._ledger.painted(event.region().translated(-offset))
+            region = event.region()
+            self._paints.append((time.monotonic(), region.boundingRect(), region.rectCount()))
+            self._ledger.painted(region.translated(-offset))
         return False
 
     def _tick(self) -> None:
@@ -244,6 +259,11 @@ class RepaintTracer(QObject):
         if scene is None:
             return
         self._watch_scene(scene)
+        path = update_path(scene)
+        if path != self._update_path:
+            if self._update_path is not None:
+                self._note(f"update path -> {path}")
+            self._update_path = path
         vt = self._view.viewportTransform()
         scale = (round(vt.m11(), 6), round(vt.m22(), 6))
         offset = QPoint(round(vt.dx()), round(vt.dy()))
@@ -292,19 +312,31 @@ class RepaintTracer(QObject):
         if not stale:
             return
         offset = self._offset if self._offset is not None else QPoint()
+        scene = self._view.scene()
+        scene_rect = self._view.mapFromScene(scene.sceneRect()).boundingRect() if scene is not None else QRect()
         lines = []
         for s in stale:
             gap = s.missing.boundingRect().translated(offset)
+            inside = "inside" if scene_rect.contains(gap) else "NOT inside"
             lines.append(
                 f"  {s.what}: {s.kind} {_fmt_rect(s.rect.translated(offset))} "
-                f"unpainted {_fmt_rect(gap)} after {s.age:.2f}s"
+                f"unpainted {_fmt_rect(gap)} after {s.age:.2f}s, {inside} the scene rect"
             )
+        since = time.monotonic() - max(s.age for s in stale)
+        paints = [f"    +{t - since:.3f}s {_fmt_rect(r)} in {n} rect(s)" for t, r, n in self._paints if t >= since] or [
+            "    (none)"
+        ]
         shot = self._screenshot([s.missing.translated(offset) for s in stale])
         context = "\n".join(f"    {e}" for e in self._events) or "    (none)"
         logger.warning(
-            "Lost canvas repaint (#73): %d area(s), viewport coordinates\n%s\n  recent canvas events:\n%s%s",
+            "Lost canvas repaint (#73): %d area(s), viewport coordinates\n%s\n"
+            "  update path: %s\n  scene rect: %s\n  paints since the change:\n%s\n"
+            "  recent canvas events:\n%s%s",
             len(stale),
             "\n".join(lines),
+            update_path(scene) if scene is not None else "(no scene)",
+            _fmt_rect(scene_rect),
+            "\n".join(paints),
             context,
             f"\n  screenshot: {shot}" if shot else "",
         )
@@ -334,6 +366,18 @@ class RepaintTracer(QObject):
             return None
         self._screenshots += 1
         return str(path)
+
+
+def update_path(scene) -> str:  # noqa: ANN001
+    """Which way Qt delivers this scene's item updates to its views.
+
+    ``direct`` is Qt's default, each item's update sent straight to each view. Any
+    listener on ``scene.changed`` switches every view to ``compat``: updates are
+    batched into that queued signal and each view maps the scene rects it is handed.
+    Once that happens Qt connects the views themselves too, so the count includes them.
+    """
+    n = scene.receivers(scene.changed)
+    return f"compat ({n} scene.changed listener(s))" if n else "direct"
 
 
 def _fmt_rect(r: QRect) -> str:

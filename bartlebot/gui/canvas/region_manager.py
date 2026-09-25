@@ -24,8 +24,15 @@ class RegionManager:
     """Owns RegionItem creation/deletion and all region mutation methods.
 
     EditScene constructs one instance per setup() call, passing itself as the
-    scene so addItem/removeItem/changed signal wiring works without EditScene
-    subclassing or attribute injection.
+    scene so addItem/removeItem work without EditScene subclassing or attribute
+    injection.
+
+    **Never connect ``scene.changed``.** A region's rect follows its members, and it
+    used to follow them through that signal, but one listener on it switches every
+    view on the scene off Qt's direct item updates and onto the compatibility path,
+    which batches them through the queued signal. Both lost repaints the #73 tracer
+    has caught were on a graph with a region, so the scene calls ``recompute_all``
+    when a node moves instead. ``test_nothing_listens_to_scene_changed`` is the guard.
     """
 
     def __init__(
@@ -57,7 +64,7 @@ class RegionManager:
         return self._region_items
 
     def setup(self, interactive: bool, folded_away: set[str] | frozenset[str] = frozenset()) -> None:
-        """Build RegionItems from config and connect scene.changed.
+        """Build RegionItems from config.
 
         A linked region gets none: a subgraph instance is drawn as its call node, and a
         region nested inside one is part of what the call node stands for. Nor does a
@@ -71,18 +78,16 @@ class RegionManager:
             ri.set_interactive(interactive)
             self._scene.addItem(ri)
             self._region_items[region.id] = ri
-        for ri in self._region_items.values():
-            self._scene.changed.connect(ri._recompute_rect)
-            ri._recompute_rect()
+        self.recompute_all()
 
     def teardown(self) -> None:
-        """Disconnect signals and clear the item dict (scene.clear() removes the items)."""
-        for ri in self._region_items.values():
-            try:
-                self._scene.changed.disconnect(ri._recompute_rect)
-            except (RuntimeError, TypeError):
-                pass
+        """Clear the item dict (scene.clear() removes the items)."""
         self._region_items.clear()
+
+    def recompute_all(self) -> None:
+        """Fit every region to where its members are drawn now. Cheap: one union per region."""
+        for ri in self._region_items.values():
+            ri.recompute_rect()
 
     def set_interactive(self, interactive: bool) -> None:
         for region in self._region_items.values():
@@ -105,7 +110,7 @@ class RegionManager:
                 ri = self._region_items.get(region.id)
                 if ri is not None:
                     ri._member_ids[:] = cleaned
-                    ri._recompute_rect()
+                    ri.recompute_rect()
 
     def create_region(self, state_ids: list[str]) -> None:
         if len(state_ids) < 2:
@@ -126,8 +131,7 @@ class RegionManager:
         ri.set_interactive(True)
         self._scene.addItem(ri)
         self._region_items[region.id] = ri
-        self._scene.changed.connect(ri._recompute_rect)
-        ri._recompute_rect()
+        ri.recompute_rect()
         self._graph_changed()
 
     def add_region(self, region: RegionModel) -> None:
@@ -141,17 +145,12 @@ class RegionManager:
         ri.set_interactive(True)
         self._scene.addItem(ri)
         self._region_items[region.id] = ri
-        self._scene.changed.connect(ri._recompute_rect)
-        ri._recompute_rect()
+        ri.recompute_rect()
 
     def delete_region(self, region_id: str) -> None:
         self._pre_edit("Delete Region")
         ri = self._region_items.pop(region_id, None)
         if ri is not None:
-            try:
-                self._scene.changed.disconnect(ri._recompute_rect)
-            except RuntimeError:
-                pass
             self._scene.removeItem(ri)
         self._config.regions = [r for r in self._config.regions if r.id != region_id]
         self._graph_changed()
@@ -202,7 +201,7 @@ class RegionManager:
         if ri is not None:
             for sid in to_add:
                 ri._member_ids.append(sid)
-            ri._recompute_rect()
+            ri.recompute_rect()
         self._graph_changed()
 
     def remove_from_region(self, state_ids: list[str], region_id: str) -> None:
@@ -227,5 +226,5 @@ class RegionManager:
             for sid in to_remove:
                 if sid in ri._member_ids:
                     ri._member_ids.remove(sid)
-            ri._recompute_rect()
+            ri.recompute_rect()
         self._graph_changed()
