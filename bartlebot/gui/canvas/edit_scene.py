@@ -2541,16 +2541,17 @@ class EditScene(QGraphicsScene):
         Overlap is tested against the nodes' actual rectangles rather than which grid
         cell they round to; cell-occupancy alone still left 7% overlapping.
 
-        Rows are snapped to whole multiples of GRID_H, which is where the shipped bots
-        put every one of their 1264 nodes. ``find_empty_grid_cell`` -- the older search
-        behind "Add State Here" -- offsets its rows by half a node instead, so what it
-        returns is collision-free but never row-aligned with anything already there.
+        *seed* and the result are an item's top-left, as ``setPos`` takes it. Rows are
+        snapped so the node's *centre* sits on a whole multiple of GRID_H, because a
+        stored position's y is the centre and that is where the shipped bots put every
+        one of their nodes -- the same rows ``find_empty_grid_cell`` returns. Snapping
+        the top edge instead put every insert one row above its neighbours (#85).
         """
         boxes = [QRectF(n.pos().x(), n.pos().y(), NODE_W, n.body_height) for n in self._node_items.values()]
         cell_x = round(seed.x() / GRID_W)
-        cell_y = round(seed.y() / GRID_H)
+        cell_y = round((seed.y() + NODE_H / 2) / GRID_H)
         for dx, dy in _placement_candidates(x_dir):
-            pos = QPointF((cell_x + dx) * GRID_W, (cell_y + dy) * GRID_H)
+            pos = QPointF((cell_x + dx) * GRID_W, (cell_y + dy) * GRID_H - NODE_H / 2)
             if not any(QRectF(pos.x(), pos.y(), NODE_W, NODE_H).intersects(b) for b in boxes):
                 return pos
         return seed
@@ -2561,10 +2562,9 @@ class EditScene(QGraphicsScene):
         Shared by every insert path. The caller owns the undo snapshot and all the
         transition wiring; this only brings the state into existence.
 
-        The stored position is the one the item is actually placed at. That was not
-        true of the edge-insert path, which wrote a y one NODE_H below where the node
-        appeared -- self-correcting, because the next mouse release flushes real item
-        positions into the model, but wrong until then.
+        *pos* is the item's top-left; the stored y is its centre, as ``_flush_positions``
+        writes it and ``setup`` reads it. Storing the top-left put a node saved before
+        anything flushed it back half a node higher than it was drawn.
         """
         new_id = _unique_id([st.id for st in self._config.states])
         default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
@@ -2572,7 +2572,7 @@ class EditScene(QGraphicsScene):
             StateModel(
                 id=new_id,
                 node_type=node_type,
-                position={"x": pos.x(), "y": pos.y()},
+                position={"x": pos.x(), "y": pos.y() + NODE_H / 2},
                 params=default_params,
             )
         )
