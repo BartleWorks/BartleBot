@@ -142,7 +142,7 @@ class CrumbBar(ThemedMixin, QWidget):
         self._save_as_btn = ActionButton("save_as", "Save as…", fill=False)
         self._save_as_btn.setToolTip("Save a copy as a new subgraph, and go on editing the copy")
         self._revert_btn = ActionButton("revert", "Revert", fill=False)
-        self._revert_btn.setToolTip("Discard your modified copy and go back to the built-in subgraph")
+        self._revert_btn.setToolTip("Revert to the built-in version of this subgraph")
         self._close_btn = IconButton("dismiss", tooltip="Step out", size=22, icon_size=12, tint=IconTint.ON_ACCENT)
         self._save_btn.clicked.connect(self.save_requested)
         self._save_as_btn.clicked.connect(self.save_as_requested)

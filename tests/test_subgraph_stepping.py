@@ -486,7 +486,7 @@ def two_roots(tmp_path):
 def test_revert_discards_the_copy_and_shows_the_built_in(qapp, two_roots, monkeypatch):
     from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
 
-    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Discard)
+    monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Ok)
     canvas = BotCanvas()
     canvas.set_subgraph_library(two_roots)
     h = ControllerHarness(canvas, two_roots)

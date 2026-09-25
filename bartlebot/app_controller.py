@@ -835,12 +835,13 @@ class AppController(QObject):
         reply = QMessageBox.question(
             self._window,
             "Revert to Built-in",
-            f"Discard your modified copy of '{config.name}' and go back to the built-in one?\n\n"
-            "Every bot linking it uses the built-in one from now on, and this can't be undone.",
-            QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
+            f"Revert '{config.name}' to the built-in version?\n\n"
+            "Your changes to it are lost, and every bot linking it uses the built-in version "
+            "from now on. This can't be undone.",
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
             QMessageBox.StandardButton.Cancel,
         )
-        if reply != QMessageBox.StandardButton.Discard:
+        if reply != QMessageBox.StandardButton.Ok:
             return False
         library.delete(sid)
         shipped = library.get(sid)
