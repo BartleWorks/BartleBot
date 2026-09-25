@@ -45,6 +45,12 @@ def test_unrelated_node_returns_empty():
     assert collect_safety_warnings(config) == []
 
 
+def test_relog_does_not_warn():
+    """Nothing about a relog is the user's to decide before the run (#98)."""
+    config = _config({"node_type": "relog", "params": {"relog_clients": [0]}})
+    assert collect_safety_warnings(config) == []
+
+
 # ---------------------------------------------------------------------------
 # quicksell
 # ---------------------------------------------------------------------------
