@@ -94,10 +94,6 @@ NODE_SPEC = NodeSpec(
         "menu. Use the node when the moment matters — after a fixed number of passes, or on a "
         "FAILURE transition as a last resort before giving up."
     ),
-    safety_warning=(
-        "This bot logs your players out and back in. Each one returns to where it was before "
-        "entering its current dungeon or house, and any group is re-formed afterwards."
-    ),
 )
 
 
