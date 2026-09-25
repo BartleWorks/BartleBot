@@ -149,6 +149,7 @@
           "from": "WizardCity/Interiors/WC_Housing_Dorm_Interior",
           "to": "WizardCity/WC_Ravenwood",
           "xyz": {"x": -197.23, "y": 1.41, "z": 0.0},
+          "reset_xyz": {"x": 29.56, "y": 4.14, "z": 6.0},
           "verified": true,
           "source": "code",
           "note": "wizard_city.py"
@@ -188,9 +189,10 @@
           "from": "WizardCity/WC_Hub",
           "to": "WizardCity/WC_Ravenwood",
           "xyz": {"x": -95.08, "y": 1740.94, "z": -27.99},
+          "reset_xyz": {"x": -86.58, "y": 1414.71, "z": -27.99},
           "verified": true,
           "source": "bot",
-          "note": "test_example.json; no reset_xyz recorded"
+          "note": "test_example.json"
         },
         {
           "kind": "walk",
@@ -366,6 +368,7 @@
           "from": "WizardCity/WC_Streets/Interiors/WC_PET_Park",
           "to": "WizardCity/WC_Hub",
           "xyz": {"x": -1766.38, "y": 1298.81, "z": -44.36},
+          "reset_xyz": {"x": -1720.78, "y": 674.82, "z": -40.35},
           "volume": "TeleportVol_TeleportToCommons",
           "verified": true,
           "source": "recorded"

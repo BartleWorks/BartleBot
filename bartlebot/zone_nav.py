@@ -175,10 +175,13 @@ class NavMap:
 
         HOME works from anywhere, including a zone no world declares -- a castle, a zone off the
         map entirely -- so it is how a client with no other step still has a route.
+
+        The hub button is left out at home: from the dorm it goes to the hub of the world last
+        visited, not Wizard City's, so the dorm walks out through Ravenwood instead.
         """
         steps = [s for s in self._out.get(zone, ()) if (s.verified or include_unverified) and s.kind not in avoid]
         world = self.world_of(zone)
-        if world is not None and zone != world.hub and HUB not in avoid:
+        if world is not None and zone not in (world.hub, self.home) and HUB not in avoid:
             steps.append(Step(HUB, zone, world.hub, source="implied"))
         if self.home is not None and zone != self.home and HOME not in avoid:
             steps.append(Step(HOME, zone, self.home, source="implied"))

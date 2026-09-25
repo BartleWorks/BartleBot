@@ -140,7 +140,8 @@ A character who has not unlocked the world fails that step, as `go_to_world` wou
 
 HOME works from any zone at all, a castle or a zone off the map included, so a `home` step to
 the dorm (the file's top-level `home`) is implied from every zone but the dorm, the way `hub` is
-from every zone of a world. The dorm walks out to Ravenwood, Ravenwood to the World Tree, and the
+from every zone of a world — except the dorm, whose hub button goes to the hub of the world last
+visited rather than Wizard City's, so it has none. The dorm walks out to Ravenwood, Ravenwood to the World Tree, and the
 World Tree has Wizard City's gate: the route `go_to_world` hard-codes is one the planner can pick.
 A world whose own gate is recorded beats it — the hub button and the gate are two transitions,
 HOME to another world's door is four — and a world whose gate is not recorded yet still routes,

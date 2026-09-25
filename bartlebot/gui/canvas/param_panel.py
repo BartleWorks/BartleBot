@@ -55,10 +55,11 @@ from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
+from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.zone_picker import NavZoneButton, is_destination
 from bartlebot.nodes import zone_navigation
@@ -311,18 +312,16 @@ class _XyzField(ThemedMixin, QWidget):
         outer.addLayout(boxes_row)
         self._loaded_texts = self._texts()
         # Full-width segmented action bar — all buttons equal width, uniform height.
-        # Text alone, apart from the fill button's own glyph: four icons and four
-        # labels do not fit the panel's width, and a row where some buttons carry a
-        # glyph and others do not reads as two kinds of control rather than one.
-        # There is no paste or teleport icon in the set to be consistent *with*.
+        # Every button carries a glyph: a row where some do and others do not reads
+        # as two kinds of control rather than one.
         btns_row = QHBoxLayout()
         btns_row.setContentsMargins(0, 0, 0, 0)
         btns_row.setSpacing(2)
-        self._copy_btn = ActionButton("", "Copy")
+        self._copy_btn = ActionButton("copy", "Copy")
         self._copy_btn.setToolTip("Copy XYZ to clipboard as JSON")
         self._copy_btn.clicked.connect(self._copy)
         btns_row.addWidget(self._copy_btn, 1)
-        paste_btn = ActionButton("", "Paste")
+        paste_btn = ActionButton("paste", "Paste")
         paste_btn.setToolTip("Paste XYZ from clipboard (JSON, x, y, z or XYZ(x, y, z) format)")
         paste_btn.clicked.connect(self._paste)
         btns_row.addWidget(paste_btn, 1)
@@ -330,7 +329,7 @@ class _XyzField(ThemedMixin, QWidget):
         fill_btn.setToolTip("Fill from a connected player's live position")
         fill_btn.clicked.connect(lambda _checked, b=fill_btn: self._show_fill_menu(b))
         btns_row.addWidget(fill_btn, 1)
-        self._tp_btn = ActionButton("", "TP")
+        self._tp_btn = ActionButton("teleport", "TP")
         self._tp_btn.setToolTip("Teleport all connected players to these coordinates")
         self._tp_btn.clicked.connect(lambda _checked: asyncio.ensure_future(self._teleport()))
         btns_row.addWidget(self._tp_btn, 1)
@@ -1963,16 +1962,20 @@ class _ParamPanel(ThemedMixin, QWidget):
 
         # Record row — shown only for recordable node types
         self._record_row = QWidget()
-        _rr_layout = QHBoxLayout(self._record_row)
+        _rr_layout = QVBoxLayout(self._record_row)
         _rr_layout.setContentsMargins(6, 0, 6, 4)
-        _rr_layout.setSpacing(6)
-        # Glyphless and fill=False: pinned to 70px with a status label beside it, which
-        # leaves no room for a 16px icon and no space for the button to grow into.
-        self._record_btn = ActionButton("", "Record", fill=False)
-        self._record_btn.setFixedWidth(70)
+        _rr_layout.setSpacing(2)
+        # Recording is how most params here get filled, so the button is drawn to be
+        # found (#106): the full width of the panel, like the wiki import beside it,
+        # with SECONDARY's accent and the red dot. The status goes underneath, and is
+        # hidden while it has nothing to say.
+        self._record_btn = RecordButton(style=ActionStyle.SECONDARY, fill=True)
+        self._record_btn.setToolTip("Fill this node's values from the game (Ctrl+R)")
         self._record_status_lbl = QLabel("")
+        self._record_status_lbl.setWordWrap(True)
+        self._record_status_lbl.setVisible(False)
         _rr_layout.addWidget(self._record_btn)
-        _rr_layout.addWidget(self._record_status_lbl, 1)
+        _rr_layout.addWidget(self._record_status_lbl)
         self._record_row.setVisible(False)
         self._record_btn.clicked.connect(self._on_record_clicked)
 
@@ -2800,8 +2803,12 @@ class _ParamPanel(ThemedMixin, QWidget):
 
     def _cancel_record(self) -> None:
         recording.cancel_active_recording()
-        self._record_btn.setText("Record")
-        self._record_status_lbl.setText("")
+        self._record_btn.set_label(IDLE_TEXT)
+        self._set_record_status("")
+
+    def _set_record_status(self, text: str) -> None:
+        self._record_status_lbl.setText(text)
+        self._record_status_lbl.setVisible(bool(text))
 
     def _on_record_clicked(self) -> None:
         if recording.is_recording():
@@ -2811,7 +2818,7 @@ class _ParamPanel(ThemedMixin, QWidget):
             return
         clients = self._get_clients()
         if not clients:
-            self._record_status_lbl.setText("No player connected.")
+            self._set_record_status("No player connected.")
             return
         if self._state.node_type not in recording.RECORDABLE_NODES:
             return
@@ -2820,8 +2827,8 @@ class _ParamPanel(ThemedMixin, QWidget):
                 self._state.node_type,
                 clients[0],
                 self._param_form,
-                self._record_status_lbl.setText,
-                self._record_btn.setText,
+                self._set_record_status,
+                self._record_btn.set_label,
                 self._try_set_label,
             )
         )
