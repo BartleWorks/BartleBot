@@ -207,6 +207,45 @@ def test_set_xyz_rounds_to_two_decimals_and_emits_once(qapp):
     assert len(emitted) == 1
 
 
+@pytest.mark.parametrize(
+    "stored",
+    [
+        {"x": -6704.8123, "y": 6382.2177, "z": 29.8531},  # more precise than the boxes show
+        None,  # blank
+    ],
+)
+def test_restore_puts_a_coordinate_back_exactly_after_record_overwrote_it(qapp, stored):
+    """A cancelled recording restores what was there. Put back through set_xyz, a
+    stored coordinate would lose everything past two decimals, and a blank one could
+    not be blank again."""
+    form = _form([_OPTIONAL], {"spot": dict(stored)} if stored else {})
+    saved = form.snapshot(["spot"])
+
+    form.set_xyz("spot", 1.0, 2.0, 3.0)
+    form.restore(saved)
+
+    assert form.get_params().get("spot") == stored
+
+
+def test_restore_puts_back_a_half_typed_coordinate_as_it_was(qapp):
+    form = _form([_OPTIONAL], {})
+    field = form.widget("spot")
+    _type(field, "10", "", "3")
+    saved = form.snapshot(["spot"])
+
+    form.set_xyz("spot", 1.0, 2.0, 3.0)
+    form.restore(saved)
+
+    assert field.texts() == ("10", "", "3")
+    assert field.marked_axes() == {"y"}
+
+
+def test_snapshot_skips_keys_the_form_does_not_have(qapp):
+    form = _form([_OPTIONAL], {})
+
+    assert list(form.snapshot(["spot", "not_a_param"])) == ["spot"]
+
+
 def test_paste_button_fills_the_axes_the_clipboard_names(qapp, clipboard):
     form = _form([_OPTIONAL], {"spot": {"x": 1.0, "y": 2.0, "z": 3.0}})
     clipboard.setText('{"y": 7}')

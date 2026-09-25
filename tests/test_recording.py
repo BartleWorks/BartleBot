@@ -211,8 +211,79 @@ def test_recordable_nodes_contains_all_expected_types():
     assert RECORDABLE_NODES == expected
 
 
+async def test_a_cancelled_recording_puts_back_what_the_form_held(zero_poll):
+    """Half a recording is values never recorded together: a cancel puts every field
+    the workflow fills back as it was, including one that was blank."""
+    form = FakeParamForm()
+    form.set_str("from_zone", "Old/Zone")
+    form.set_str("to_zone", "Old/Dest")
+    form.set_xyz("reset_xyz", 9.0, 9.0, 9.0)  # interact_xyz starts blank
+
+    client = FakeClient()
+    client.zone_name.return_value = "Src/Zone"
+    client.body.position.return_value = XYZ(1.0, 2.0, 3.0)
+    client.is_in_npc_range.side_effect = [True, False]
+    waiting_for_load = asyncio.Event()
+
+    def not_loading_yet():
+        waiting_for_load.set()
+        return False
+
+    client.is_loading.side_effect = not_loading_yet
+    on_status, on_btn, try_set_label = _callbacks()
+
+    task = asyncio.create_task(run_recording("enter_zone_via_object", client, form, on_status, on_btn, try_set_label))
+    await waiting_for_load.wait()
+    assert form.xyz_fields["interact_xyz"] == (1.0, 2.0, 3.0), "recorded values show as they are captured"
+    task.cancel()
+    await task
+
+    assert form.str_fields == {"from_zone": "Old/Zone", "to_zone": "Old/Dest"}
+    assert form.xyz_fields == {"reset_xyz": (9.0, 9.0, 9.0)}
+    on_btn.assert_called_with("Record")
+
+
+async def test_a_failed_recording_puts_back_what_the_form_held(zero_poll):
+    form = FakeParamForm()
+    form.set_str("from_zone", "Old/Zone")
+    form.set_xyz("xyz", 5.0, 5.0, 5.0)
+
+    client = FakeClient()
+    client.zone_name.return_value = "Src/Zone"
+    client.body.position.side_effect = [XYZ(0.0, 0.0, 0.0), RuntimeError("read error")]
+    client.is_loading.return_value = False
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("enter_zone", client, form, on_status, on_btn, try_set_label)
+
+    assert form.str_fields == {"from_zone": "Old/Zone"}
+    assert form.xyz_fields == {"xyz": (5.0, 5.0, 5.0)}
+    assert on_status.call_args_list[-1][0][0].startswith("Error:")
+
+
+@pytest.mark.parametrize("node_type", sorted(RECORDABLE_NODES))
+async def test_a_recording_fills_exactly_the_nodes_zone_and_xyz_params(node_type, zero_poll):
+    """The keys a workflow fills are data in _REGISTRY, so a misspelt one would record
+    into a field the node does not have while its real one stays empty."""
+    from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS  # noqa: PLC0415
+
+    client = _client()
+    # Enough for any workflow: the prompt shows then goes, a load starts then ends.
+    client.is_in_npc_range.side_effect = [True, False]
+    client.is_loading.side_effect = [True, False]
+    form = FakeParamForm()
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording(node_type, client, form, on_status, on_btn, try_set_label)
+
+    fields = NODE_PARAM_SCHEMAS[node_type]
+    assert set(form.str_fields) == {f.key for f in fields if f.type == "zone"}
+    assert set(form.xyz_fields) == {f.key for f in fields if f.type == "xyz"}
+    assert on_status.call_args_list[-1][0][0].startswith("Done")
+
+
 # ---------------------------------------------------------------------------
-# _record_go_to_xyz  (instant, no Stop button)
+# teleport_to_coordinates  (_Point: instant, no Stop button)
 # ---------------------------------------------------------------------------
 
 
@@ -267,7 +338,7 @@ async def test_go_to_xyz_exception_shows_error():
 
 
 # ---------------------------------------------------------------------------
-# _record_mark_location  (instant, structurally identical to go_to_xyz)
+# mark_location  (_Point, as teleport_to_coordinates)
 # ---------------------------------------------------------------------------
 
 
@@ -311,7 +382,7 @@ async def test_mark_location_exception():
 
 
 # ---------------------------------------------------------------------------
-# _record_teleport_to_marked_location  (instant but shows Stop button)
+# teleport_to_marked_location  (_Point, but shows Stop and sets the label)
 # ---------------------------------------------------------------------------
 
 
@@ -358,7 +429,7 @@ async def test_teleport_to_marked_location_exception():
 
 
 # ---------------------------------------------------------------------------
-# _record_enter_zone_gateway  (loading-screen polling loop)
+# enter_zone  (_WalkIn: loading-screen polling loop)
 # ---------------------------------------------------------------------------
 
 
@@ -463,7 +534,7 @@ async def test_enter_zone_gateway_exception(zero_poll):
 
 
 # ---------------------------------------------------------------------------
-# _record_enter_dungeon  (same loading-screen structure, different field names)
+# enter_dungeon  (_WalkIn, different field names)
 # ---------------------------------------------------------------------------
 
 
@@ -522,7 +593,7 @@ async def test_enter_dungeon_exception(zero_poll):
 
 
 # ---------------------------------------------------------------------------
-# _record_interact  (NPC-range polling loop)
+# interact  (_Interact: NPC-range polling loop)
 # ---------------------------------------------------------------------------
 
 
@@ -603,7 +674,7 @@ async def test_interact_exception(zero_poll):
 
 
 # ---------------------------------------------------------------------------
-# _record_interact_menu  (same loop, different final status)
+# interact_menu  (_Interact, different final status)
 # ---------------------------------------------------------------------------
 
 
@@ -655,7 +726,7 @@ async def test_interact_menu_exception(zero_poll):
 
 
 # ---------------------------------------------------------------------------
-# _record_apply_level_scaling  (same loop, distinctive status messages)
+# apply_level_scaling  (_Interact, distinctive status messages)
 # ---------------------------------------------------------------------------
 
 
@@ -707,7 +778,7 @@ async def test_apply_level_scaling_exception(zero_poll):
 
 
 # ---------------------------------------------------------------------------
-# _record_enter_zone_interact  (NPC-range + loading-screen, combined)
+# enter_zone_via_object  (_Interact with a destination: NPC range, then loading screen)
 # ---------------------------------------------------------------------------
 
 

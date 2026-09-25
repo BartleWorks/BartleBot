@@ -223,9 +223,9 @@ def message_box_patches(visible_buttons=()):
 
 
 class FakeParamForm:
-    """Minimal stub for _DynamicParamForm used by recording coroutines.
+    """Minimal stub for _DynamicParamForm used by recording workflows.
 
-    Recording coroutines call only two methods:
+    Recording workflows write through two methods, and snapshot/restore around them:
       - set_str(key, value)    — stores a string field
       - set_xyz(key, x, y, z) — stores an XYZ coordinate triple
 
@@ -241,6 +241,17 @@ class FakeParamForm:
 
     def set_xyz(self, key: str, x: float, y: float, z: float) -> None:
         self.xyz_fields[key] = (x, y, z)
+
+    def snapshot(self, keys) -> dict:
+        return {key: (self.str_fields.get(key), self.xyz_fields.get(key)) for key in keys}
+
+    def restore(self, saved: dict) -> None:
+        for key, (text, xyz) in saved.items():
+            for fields, value in ((self.str_fields, text), (self.xyz_fields, xyz)):
+                if value is None:
+                    fields.pop(key, None)
+                else:
+                    fields[key] = value
 
 
 # ---------------------------------------------------------------------------
