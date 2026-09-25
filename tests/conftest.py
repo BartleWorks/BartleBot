@@ -404,11 +404,10 @@ def _no_strategy_writes_into_the_repo(_record_baseline_strategy_files):
     """Fail any test that saves a strategy into the real repo instead of tmp_path.
 
     ``save_bot_strategy`` and friends default their root to ``project_root()``, so a
-    test that calls one without redirecting the store writes a ``{uuid}.json`` file
-    straight into the tracked ``bot_strategies/`` directory.  There are 51 real files
-    in there under exactly that naming scheme, so the junk is indistinguishable from
-    the genuine article by name -- ``.gitignore`` cannot separate them, and one has
-    already been committed by accident once (0c12612).
+    test that calls one without redirecting the store writes a file straight into a
+    tracked store directory.  Its name comes from the strategy's name, just as a real
+    one's does, so ``.gitignore`` cannot separate the junk from the genuine article,
+    and one has already been committed by accident once (0c12612).
 
     Catching it here instead: the offending file is removed and the test that wrote it
     is named, rather than the mess being left for `git status` to find later.  The fix

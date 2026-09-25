@@ -54,6 +54,18 @@ This is what makes a shared bot shareable. `SettingsManager.get_active_strategy(
 
 Before this, `project_root()` was the only root, and the Combat tab autosaved into it — so a user whose roster did not match the author's edited tracked repo files that an update would overwrite, and could not share the bot without shipping their roster choices with it.
 
+## Filenames are names, ids are inside
+
+A file is named after its item — `strategies/duel/default-team-boss-duel.json`, not `{uuid}.json` (#99) — and every lookup by id goes through `store_roots.index_dir`, which reads the id each file declares. Everything that refers to a strategy or a subgraph does so by id, so the filename is for people browsing the directory and for git, and nothing else.
+
+What that costs, and where each cost is paid:
+
+- **A rename moves the file.** `save_by_id` writes the new name *before* deleting the old one, so an interrupted save leaves two files with one id rather than none. `index_dir` resolves a duplicate to the newer file and logs a warning; the next save or delete removes the extra one.
+- **A hand-copied file keeps its source's id**, and one silently hides the other. `test_no_two_shipped_files_declare_one_id` catches it in the repo; on a user's machine the warning is all there is. Give a copy a fresh uuid4.
+- **Shadowing is by id, not filename.** A user copy of a shipped strategy is named after the *user's* name for it, so the two roots can hold one item under different filenames. `origin_in`, load and revert all look it up by id.
+- **Collisions are numbered**, `support-2.json`. The slug is lowercase, so names differing only in case are numbered apart rather than overwrite each other on Windows. A file keeps its number when the plain name frees up, so a re-save does not churn git.
+- **A file from before #99**, named `{uuid}.json`, still loads, and is renamed on its next save. The shipped ones were renamed in one commit; `test_every_shipped_file_is_named_after_its_item` keeps them that way.
+
 ## The Save/Cancel boundary
 
 `StrategyWorkingSet` holds deep copies of the library. Every editor mutates a copy; nothing reaches disk until `commit()`. `CombatStrategyDialog` is a view of one working set, and **nothing below the dialog decides when a file is written**.

@@ -59,7 +59,7 @@ def test_origin_of_matrix(tmp_path):
 def test_save_only_touches_user_root(tmp_path):
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     save_subgraph(_defn(), shipped, user)
-    assert (user / "subgraphs" / "sg-a.json").exists()
+    assert (user / "subgraphs" / "a.json").exists()
     assert not (shipped / "subgraphs").exists()
 
 
