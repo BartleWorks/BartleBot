@@ -249,45 +249,16 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log("SUCCESS: interaction complete")
         return "SUCCESS"
 
-    # 3. Clear any pre-existing interact prompt before starting.
-    #    A stale prompt from a previous interaction can linger briefly after teleport,
-    #    causing the client to interact with the wrong object if X is pressed too soon.
-    prompts = await asyncio.gather(*[c.is_in_npc_range() for c in active_clients])
-    if any(prompts):
-        stale = [interact_indices[i] for i, p in enumerate(prompts) if p]
-        machine.log(
-            f"Pre-existing interact prompt on client(s) {[i + 1 for i in stale]}; teleporting to reset_xyz to clear it",
-            logging.DEBUG,
-        )
-        await asyncio.gather(*[c.teleport(reset) for c in active_clients])
-        await node_helpers.poll_until(
-            lambda: node_helpers.none_in_npc_range(active_clients), safety_delay, POLL_INTERVAL
-        )
-
-    # 4–5. Retry loop: teleport to interact_xyz, wait for the prompt, reset if it doesn't appear.
-    prompt_appeared = False
-    for attempt in range(1, MAX_RETRIES + 1):
-        machine.log(f"Attempt {attempt}/{MAX_RETRIES}: teleporting to interact_xyz", logging.DEBUG)
-        await asyncio.gather(*[c.teleport(interact) for c in active_clients])
-
-        machine.log("Waiting for interact prompt…", logging.DEBUG)
-        if await node_helpers.poll_until(
-            lambda: node_helpers.all_in_npc_range(active_clients), safety_delay, POLL_INTERVAL
-        ):
-            prompt_appeared = True
-            break
-
-        machine.log(
-            f"Interact prompt did not appear (attempt {attempt}); resetting",
-            logging.DEBUG,
-        )
-        await asyncio.gather(*[c.teleport(reset) for c in active_clients])
-
-    if not prompt_appeared:
-        machine.log(
-            f"FAILURE: interact prompt never appeared after {MAX_RETRIES} attempts",
-            logging.WARNING,
-        )
+    # 3–5. Clear a stale prompt, then teleport to interact_xyz until the prompt shows.
+    if not await node_helpers.reach_prompt(
+        machine,
+        active_clients,
+        interact,
+        reset,
+        node_helpers.INTERACT_PROMPT,
+        safety_delay,
+        numbers=[i + 1 for i in interact_indices],
+    ):
         return "FAILURE"
 
     # 6. Press X to begin interaction.

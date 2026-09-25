@@ -300,36 +300,18 @@ async def run(machine, clients: list, params: dict) -> str:
             return failure
         return await _await_arrival(machine, clients, to_zone)
 
-    # 2. Clear any pre-existing interact prompt before starting.
-    prompts = await asyncio.gather(*[c.is_in_npc_range() for c in clients])
-    if any(prompts):
-        stale = [i for i, p in enumerate(prompts) if p]
-        machine.log(
-            f"Pre-existing interact prompt on client(s) {stale}; teleporting to reset_xyz to clear it",
-            logging.DEBUG,
-        )
-        await asyncio.gather(*[c.teleport(reset) for c in clients])
-        await node_helpers.poll_until(lambda: node_helpers.none_in_npc_range(clients), safety_delay, POLL_INTERVAL)
-
-    # 3. Retry loop: teleport to interact_xyz, wait for prompt on all clients.
-    prompt_appeared = False
-    for attempt in range(1, MAX_RETRIES + 1):
-        machine.log(
-            f"Attempt {attempt}/{MAX_RETRIES}: teleporting clients to interact_xyz",
-            logging.DEBUG,
-        )
-        await asyncio.gather(*[c.teleport(interact) for c in clients])
-
-        machine.log("Waiting for interact prompt on all clients…", logging.DEBUG)
-        if await node_helpers.poll_until(lambda: node_helpers.all_in_npc_range(clients), safety_delay, POLL_INTERVAL):
-            prompt_appeared = True
-            break
-
-        machine.log(
-            f"Interact prompt did not appear for all clients (attempt {attempt}); resetting",
-            logging.DEBUG,
-        )
-        await asyncio.gather(*[c.teleport(reset) for c in clients])
+    # 2–3. Clear a stale prompt, then teleport to interact_xyz until the prompt shows on
+    #      every client. A miss is not yet a failure — see below.
+    prompt_appeared = await node_helpers.reach_prompt(
+        machine,
+        clients,
+        interact,
+        reset,
+        node_helpers.INTERACT_PROMPT,
+        safety_delay,
+        POLL_INTERVAL,
+        fail_on_miss=False,
+    )
 
     if prompt_appeared:
         ready = clients
