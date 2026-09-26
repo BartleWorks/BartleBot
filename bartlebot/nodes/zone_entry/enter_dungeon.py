@@ -25,6 +25,9 @@ OPTION_MINIMUM_TEAM_SIZE = "Minimum Team Size"
 #: The param that says this sigil offers Team-Up at all.
 PARAM_OFFERS_TEAM_UP = "offers_team_up"
 
+#: The param holding the entrance prompt's title. Editor-only: see bartlebot/bot_summary.py.
+PARAM_DUNGEON_NAME = "dungeon_name"
+
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="from_zone",
@@ -41,6 +44,19 @@ PARAM_SCHEMA: list[ParamField] = [
         help="Zone name all players must be in after successfully entering the dungeon.",
         default="",
         required=True,
+    ),
+    ParamField(
+        key=PARAM_DUNGEON_NAME,
+        type="str",
+        label="Dungeon Name",
+        help=(
+            "The dungeon's name as its entrance prompt shows it. Record fills it in. "
+            "Nothing reads it while the bot runs: it names the dungeon in the bot's generated "
+            "description, which the zone cannot always do, because many dungeons share their "
+            "street's zone name."
+        ),
+        default="",
+        default_hint="Empty — the generated description names the dungeon by its zone, if at all.",
     ),
     ParamField(
         key="sigil_xyz",

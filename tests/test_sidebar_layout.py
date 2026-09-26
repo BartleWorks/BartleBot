@@ -255,6 +255,107 @@ def test_the_read_only_copy_follows_the_editor(sidebar):
     assert sidebar.setup_description.text() == "Farms Jade Oni."
 
 
+# ---------------------------------------------------------------------------
+# An empty description stands in with the one the graph implies
+# ---------------------------------------------------------------------------
+
+_NIGHTSHADE = "Defeats Lord Nightshade in Nightshade's Tower, Haunted Cave, Wizard City."
+
+
+def _boss_config(**overrides) -> BotConfig:
+    """A bot whose graph implies :data:`_NIGHTSHADE`. See tests/test_bot_summary.py."""
+    states = [
+        StateModel(
+            id="a",
+            node_type="enter_dungeon",
+            params={
+                "from_zone": "WizardCity/WC_Streets/WC_HauntedCave",
+                "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_HauntedCave_T1",
+            },
+        ),
+        StateModel(id="b", node_type="handle_combat", params={"enemy": "Wraith-WCBoss-L05"}),
+    ]
+    return _config(states=states, **overrides)
+
+
+def test_an_empty_description_shows_the_generated_one_above_setup(sidebar):
+    sidebar.set_config(_boss_config())
+
+    assert sidebar.setup_description.text() == _NIGHTSHADE
+
+
+def test_the_generated_description_is_offered_under_the_empty_editor(sidebar):
+    sidebar.set_editable(True)
+    sidebar.set_config(_boss_config())
+
+    assert sidebar.options_description.editor.toPlainText() == ""
+    assert sidebar.options_description.suggestion_shown
+
+
+def test_use_this_writes_the_generated_description_into_the_bot(sidebar):
+    config = _boss_config()
+    sidebar.set_editable(True)
+    sidebar.set_config(config)
+    seen = []
+    sidebar.metadata_changed.connect(lambda: seen.append(True))
+
+    sidebar.options_description._use_btn.click()  # noqa: SLF001
+
+    assert config.description == _NIGHTSHADE
+    assert seen
+    assert not sidebar.options_description.suggestion_shown
+
+
+def test_the_generated_description_is_never_written_unasked(sidebar):
+    config = _boss_config()
+    seen = []
+    sidebar.metadata_changed.connect(lambda: seen.append(True))
+
+    sidebar.set_config(config)
+
+    assert config.description is None
+    assert not seen
+
+
+def test_typing_withdraws_the_offer_and_clearing_brings_it_back(sidebar):
+    sidebar.set_editable(True)
+    sidebar.set_config(_boss_config())
+
+    sidebar.options_description.set_text("Farms Lord Nightshade.")
+    assert not sidebar.options_description.suggestion_shown
+    assert sidebar.setup_description.text() == "Farms Lord Nightshade."
+
+    sidebar.options_description.set_text("")
+    assert sidebar.options_description.suggestion_shown
+    assert sidebar.setup_description.text() == _NIGHTSHADE
+
+
+def test_an_authored_description_is_shown_instead_of_the_generated_one(sidebar):
+    sidebar.set_editable(True)
+    sidebar.set_config(_boss_config(description="Farms Lord Nightshade."))
+
+    assert sidebar.setup_description.text() == "Farms Lord Nightshade."
+    assert not sidebar.options_description.suggestion_shown
+
+
+def test_a_graph_edit_regenerates_the_description(sidebar):
+    config = _boss_config()
+    sidebar.set_config(config)
+
+    config.states[1].params["enemy"] = ""
+    sidebar.refresh_options(config)
+
+    assert sidebar.setup_description.text() == "Completes Nightshade's Tower, Wizard City."
+
+
+def test_a_graph_implying_nothing_still_says_it_has_no_description(sidebar):
+    sidebar.set_editable(True)
+    sidebar.set_config(_config())
+
+    assert sidebar.setup_description.text() == "This bot has no description."
+    assert not sidebar.options_description.suggestion_shown
+
+
 def test_loading_a_bot_does_not_dirty_it(sidebar):
     """``setPlainText`` emits ``textChanged`` like any other edit, so an unguarded
     refresh marks a freshly opened bot as modified."""

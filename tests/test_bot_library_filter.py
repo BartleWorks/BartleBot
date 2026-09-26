@@ -13,7 +13,7 @@ from PyQt6.QtGui import QEnterEvent
 from PyQt6.QtWidgets import QLabel
 
 import bartlebot.gui.theme as theme_mod
-from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel, _BotMeta, filter_bot_metas
+from bartlebot.gui.canvas.bot_canvas import _BotCard, _BotLibraryPanel, _BotMeta, _read_bot_meta, filter_bot_metas
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.tag_picker import group_accent
 
@@ -27,6 +27,7 @@ def _meta(name: str, *, tags: list[str] | None = None, drops: list[str] | None =
         tags=tags or [],
         version="1.0",
         path=Path(f"/bots/{name}.json"),
+        generated=kw.get("generated", ""),
     )
 
 
@@ -56,6 +57,67 @@ def test_query_matches_name_case_insensitively():
 def test_query_matches_description_and_author():
     assert _names(filter_bot_metas(ALL, "crab", set())[0]) == ["Waterworks"]
     assert _names(filter_bot_metas(ALL, "someone", set())[0]) == ["Waterworks"]
+
+
+# ---------------------------------------------------------------------------
+# A bot with no description: the one its graph implies
+# ---------------------------------------------------------------------------
+
+_BOSS_BOT = {
+    "id": "b",
+    "name": "Nightshade",
+    "initial": "a",
+    "recovery_state": "a",
+    "states": [
+        {
+            "id": "a",
+            "node_type": "enter_dungeon",
+            "params": {
+                "from_zone": "WizardCity/WC_Streets/WC_HauntedCave",
+                "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_HauntedCave_T1",
+            },
+        },
+        {"id": "b", "node_type": "handle_combat", "params": {"enemy": "Wraith-WCBoss-L05"}},
+    ],
+    "transitions": [{"trigger": "advance", "source": "a", "dest": "b", "when": "SUCCESS"}],
+}
+
+
+def test_a_bot_with_no_description_gets_the_generated_one(tmp_path):
+    path = tmp_path / "nightshade.json"
+    path.write_text(json.dumps(_BOSS_BOT), encoding="utf-8")
+
+    meta = _read_bot_meta(path)
+
+    assert meta.description == ""
+    assert meta.generated == "Defeats Lord Nightshade in Nightshade's Tower, Haunted Cave, Wizard City."
+
+
+def test_a_bot_with_a_description_is_not_given_another(tmp_path):
+    path = tmp_path / "nightshade.json"
+    path.write_text(json.dumps({**_BOSS_BOT, "description": "Farms Lord Nightshade."}), encoding="utf-8")
+
+    assert _read_bot_meta(path).generated == ""
+
+
+def test_query_matches_the_generated_description():
+    bot = _meta("Nightshade", generated="Defeats Lord Nightshade in Nightshade's Tower.")
+
+    assert _names(filter_bot_metas([*ALL, bot], "tower", set())[0]) == ["Nightshade"]
+
+
+def test_a_card_shows_the_generated_description_in_italics(qapp):
+    card = _BotCard(_meta("Nightshade", generated="Defeats Lord Nightshade."))
+
+    assert card._desc_lbl.text() == "Defeats Lord Nightshade."  # noqa: SLF001
+    assert "italic" in card._desc_lbl.styleSheet()  # noqa: SLF001
+
+
+def test_a_card_shows_an_authored_description_upright(qapp):
+    card = _BotCard(WATER)
+
+    assert card._desc_lbl.text() == "Crab Alley"  # noqa: SLF001
+    assert "italic" not in card._desc_lbl.styleSheet()  # noqa: SLF001
 
 
 def test_query_matches_a_tag():

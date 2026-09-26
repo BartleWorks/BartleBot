@@ -256,7 +256,10 @@ class _WalkIn(_Workflow):
     *point_key* keeps neither — ``enter_gauntlet`` leaves the walk to the player.
 
     With *names_target*, the entrance prompt's title — the dungeon's name — names the node
-    ``Enter …``; the zone change names it when the title cannot be read. With *names_zones*,
+    ``Enter …``; the zone change names it when the title cannot be read. A *name_key* keeps
+    the title as a param too, where a label the author may retype cannot be relied on to
+    hold it (see bartlebot/bot_summary.py) — written empty when the title cannot be read, so
+    a recording never leaves a name behind from an entrance it did not record. With *names_zones*,
     the zones name it ``Enter <destination> from <origin>`` when their names tell them
     apart, and ``A → B`` by path segment when they do not.
     """
@@ -266,11 +269,12 @@ class _WalkIn(_Workflow):
     destination_key: str
     approach: str
     names_target: bool = False
+    name_key: str | None = None
     names_zones: bool = False
 
     def keys(self) -> list[str]:
         points = [] if self.point_key is None else ["reset_xyz", self.point_key]
-        return [k for k in (self.zone_key, *points, self.destination_key) if k is not None]
+        return [k for k in (self.zone_key, *points, self.destination_key, self.name_key) if k is not None]
 
     async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
         from_zone = await client.zone_name()
@@ -299,6 +303,8 @@ class _WalkIn(_Workflow):
         await _wait_out_loading(client)
         to_zone = await _wait_for_zone_name(client, RECORDING_POLL_INTERVAL)
         param_form.set_str(self.destination_key, to_zone)
+        if self.name_key is not None:
+            param_form.set_str(self.name_key, target)
         if target:
             try_set_label(f"Enter {target}")
         elif self.names_zones and _names_differ(from_zone, to_zone):
@@ -444,6 +450,7 @@ _REGISTRY: dict[str, _Workflow] = {
         destination_key="dungeon_zone",
         approach="Walk to sigil…",
         names_target=True,
+        name_key="dungeon_name",
     ),
     "enter_gauntlet": _WalkIn(
         zone_key=None,
@@ -451,6 +458,7 @@ _REGISTRY: dict[str, _Workflow] = {
         destination_key="dungeon_zone",
         approach="Walk to gauntlet sigil…",
         names_target=True,
+        name_key="gauntlet_name",
     ),
     "interact": _Interact(names_target=True, players_key="interact_clients"),
     "interact_menu": _Interact(todo="set Menu Path manually", names_target=True, players_key="interact_clients"),

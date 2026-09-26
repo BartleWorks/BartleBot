@@ -40,7 +40,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import card_art
+from bartlebot import bot_summary, card_art
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -242,6 +242,9 @@ class _BotMeta:
     path: Path
     #: Set on a card for a subgraph definition, which opens as a document rather than a file.
     subgraph_id: str | None = None
+    #: The sentence the graph implies, for a bot with no description; "" when it has one,
+    #: or the graph implies nothing. See bartlebot/bot_summary.py.
+    generated: str = ""
 
 
 def _drop_names(raw: object) -> list[str]:
@@ -266,14 +269,16 @@ def _read_bot_meta(path: Path) -> "_BotMeta | None":
     try:
         with path.open(encoding="utf-8") as f:
             data = json.load(f)
+        description = data.get("description") or ""
         return _BotMeta(
             name=data.get("name") or path.stem,
-            description=data.get("description") or "",
+            description=description,
             authors=data.get("authors") or "",
             drops=_drop_names(data.get("drops")),
             tags=normalize_tags(data.get("tags")),
             version=data.get("version") or "",
             path=path,
+            generated="" if description else (bot_summary.describe_data(data) or ""),
         )
     except Exception:
         return None
@@ -348,6 +353,7 @@ def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple
         if q and not (
             q in m.name.casefold()
             or q in m.description.casefold()
+            or q in m.generated.casefold()
             or q in m.authors.casefold()
             or any(q in t.casefold() for t in m.tags)
             or drop_matches
@@ -414,6 +420,13 @@ class _BotCard(ThemedMixin, QWidget):
             self._desc_lbl = QLabel(self._meta.description)
             self._desc_lbl.setWordWrap(True)
             layout.addWidget(self._desc_lbl)
+        elif self._meta.generated:
+            # In italics, so a sentence the app wrote never reads as one the author did.
+            self._desc_lbl = QLabel(self._meta.generated)
+            self._desc_lbl.setTextFormat(Qt.TextFormat.PlainText)
+            self._desc_lbl.setWordWrap(True)
+            self._desc_lbl.setToolTip("Generated from the graph: this bot has no description.")
+            layout.addWidget(self._desc_lbl)
 
         parts: list[str] = []
         if self._meta.authors:
@@ -467,7 +480,10 @@ class _BotCard(ThemedMixin, QWidget):
             (self._match_lbl, THEME.accent),
         ):
             if lbl is not None:
-                lbl.setStyleSheet(f"color: {color}; font-size: {THEME.font_subtext_px}px; background: transparent;")
+                italic = " font-style: italic;" if lbl is self._desc_lbl and not self._meta.description else ""
+                lbl.setStyleSheet(
+                    f"color: {color}; font-size: {THEME.font_subtext_px}px; background: transparent;{italic}"
+                )
 
     def enterEvent(self, event) -> None:
         self._hovered = True

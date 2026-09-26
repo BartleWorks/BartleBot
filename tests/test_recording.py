@@ -1029,9 +1029,53 @@ async def test_enter_gauntlet_records_only_the_dungeon_zone(zero_poll, prompt_ti
 
     await run_recording("enter_gauntlet", client, form, on_status, on_btn, try_set_label)
 
-    assert form.str_fields == {"dungeon_zone": _TRITON_TOWER}
+    assert set(form.str_fields) == {"dungeon_zone", "gauntlet_name"}
+    assert form.str_fields["dungeon_zone"] == _TRITON_TOWER
     assert form.xyz_fields == {}
     client.body.position.assert_not_awaited()
+
+
+@pytest.mark.parametrize(("node_type", "key"), [("enter_dungeon", "dungeon_name"), ("enter_gauntlet", "gauntlet_name")])
+async def test_the_entrance_title_is_kept_as_the_nodes_name(zero_poll, prompt_title, node_type, key):
+    """The label is the author's to retype, so the name the generated description uses
+    is kept where it cannot be: see bartlebot/bot_summary.py."""
+    prompt_title.return_value = "<center>Skull Fort (Challenge)"
+    form = FakeParamForm()
+
+    await run_recording(node_type, _walk_in_client(), form, *_callbacks())
+
+    assert form.str_fields[key] == "Skull Fort"
+
+
+async def test_an_unreadable_title_clears_the_name_a_previous_recording_left(zero_poll, prompt_title):
+    """The name belongs to the entrance just recorded, and this one's could not be read."""
+    prompt_title.return_value = ""
+    form = FakeParamForm()
+    form.set_str("dungeon_name", "Galvanost Tower")
+
+    await run_recording("enter_dungeon", _walk_in_client(), form, *_callbacks())
+
+    assert form.str_fields["dungeon_name"] == ""
+
+
+async def test_a_cancelled_recording_puts_the_name_back(zero_poll, prompt_title):
+    prompt_title.return_value = "<center>Skull Fort"
+    form = FakeParamForm()
+    form.set_str("dungeon_name", "Galvanost Tower")
+    client = _walk_in_client()
+    waiting_for_load = asyncio.Event()
+
+    def never_loading():
+        waiting_for_load.set()
+        return False
+
+    client.is_loading.side_effect = never_loading
+    task = asyncio.create_task(run_recording("enter_dungeon", client, form, *_callbacks()))
+    await waiting_for_load.wait()
+    task.cancel()
+    await task
+
+    assert form.str_fields["dungeon_name"] == "Galvanost Tower"
 
 
 @pytest.mark.parametrize(
