@@ -688,6 +688,7 @@
       "params": {
         "from_zone": "Azteca/AZ_Z08_PitchBlackLake",
         "dungeon_zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room01",
+        "dungeon_name": "Pyramid of Mother Moon",
         "sigil_xyz": {
           "x": -4402.27,
           "y": -6405.45,
@@ -790,6 +791,7 @@
       "params": {
         "from_zone": "Aquila/AQ_Z00_Hub",
         "dungeon_zone": "Aquila/AQ_Z03_Tartarus",
+        "dungeon_name": "Tartarus",
         "sigil_xyz": {
           "x": 7633.61,
           "y": 12837.84,

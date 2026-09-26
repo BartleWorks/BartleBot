@@ -182,6 +182,7 @@
       "params": {
         "from_zone": "Aquila/AQ_Z00_Hub",
         "dungeon_zone": "Aquila/AQ_Z02_Atlantea",
+        "dungeon_name": "Atlantea",
         "sigil_xyz": {
           "x": 11442.09,
           "y": 9193.82,

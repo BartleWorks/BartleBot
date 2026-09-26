@@ -468,6 +468,7 @@
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
         "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_OldeTown_T2",
+        "dungeon_name": "Sapphyra's Tower",
         "sigil_xyz": {
           "x": -9580.06,
           "y": -5382.17,

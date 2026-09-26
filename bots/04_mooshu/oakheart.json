@@ -632,6 +632,7 @@
       "params": {
         "from_zone": "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage",
         "dungeon_zone": "MooShu/MS_Death/Interiors/MS_Death2_T3",
+        "dungeon_name": "Oakheart's Lair",
         "sigil_xyz": {
           "x": 68150.55,
           "y": 49217.7,

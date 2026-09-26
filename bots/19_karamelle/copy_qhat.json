@@ -1065,6 +1065,7 @@
       "params": {
         "from_zone": "Karamelle/Interiors/KM_Z00_CavityDining",
         "dungeon_zone": "Karamelle/Interiors/KM_Z00_TheCavity",
+        "dungeon_name": "Cavity Chamber",
         "sigil_xyz": {
           "x": 338.15,
           "y": -1512.39,
@@ -1110,6 +1111,7 @@
       "params": {
         "from_zone": "Karamelle/KM_Z07_Gutenstadt",
         "dungeon_zone": "Karamelle/Interiors/KM_Z07_CupcakeFactory",
+        "dungeon_name": "Cupcake Factory",
         "sigil_xyz": {
           "x": -3931.73,
           "y": 2793.8,

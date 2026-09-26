@@ -9,6 +9,9 @@ from bartlebot import dialog_captions
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
+#: The param holding the entrance prompt's title. Editor-only: see bartlebot/bot_summary.py.
+PARAM_GAUNTLET_NAME = "gauntlet_name"
+
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="dungeon_zone",
@@ -17,6 +20,18 @@ PARAM_SCHEMA: list[ParamField] = [
         help="Zone name all players must be in after successfully entering the gauntlet.",
         default="",
         required=True,
+    ),
+    ParamField(
+        key=PARAM_GAUNTLET_NAME,
+        type="str",
+        label="Gauntlet Name",
+        help=(
+            "The gauntlet's name as its entrance prompt shows it. Record fills it in. "
+            "Nothing reads it while the bot runs: it names the gauntlet in the bot's "
+            "generated description."
+        ),
+        default="",
+        default_hint="Empty — the generated description names the gauntlet by its zone, if at all.",
     ),
 ]
 
@@ -49,6 +64,7 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     max_consecutive_retries=10,
+    implies_tags=["Gauntlet"],
 )
 
 from bartlebot.nodes.timing import POLL_INTERVAL, ZONE_CHANGE_TIMEOUT

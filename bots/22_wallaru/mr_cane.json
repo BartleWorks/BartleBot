@@ -798,6 +798,7 @@
       "params": {
         "from_zone": "Wallaru/WL_Z08_BillabongResort",
         "dungeon_zone": "Wallaru/Interiors/WL_Z08_I03_HotelRoom",
+        "dungeon_name": "Cabin",
         "sigil_xyz": {
           "x": 2732.91,
           "y": 19665.74,

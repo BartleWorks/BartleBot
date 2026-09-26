@@ -65,6 +65,9 @@ class ControllerHarness:
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
         self._has_unsaved_changes = False
+        self._rewards_declined_for = None
+        # The Rewards prompt is modal; what is under test here is the write behind it.
+        self._confirm_rewards_tags = lambda path: True
         self._doc_stack = []
         self._current_machine = None
         self._bot_task = None

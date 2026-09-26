@@ -83,6 +83,7 @@ NODE_SPEC = NodeSpec(
     safety_warning=(
         "This bot teleports to collect reagents. Ensure that you are not in a busy realm when you run this bot."
     ),
+    implies_tags=["Reagents"],
 )
 
 

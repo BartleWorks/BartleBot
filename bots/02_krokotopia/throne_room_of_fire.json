@@ -537,6 +537,7 @@
       "params": {
         "from_zone": "Krokotopia/KT_Pyramid/KT_PalaceOfFire",
         "dungeon_zone": "Krokotopia/KT_Pyramid/KT_ThroneRoom",
+        "dungeon_name": "Throne Room of Fire",
         "sigil_xyz": {
           "x": -2105.14,
           "y": -14784.01,

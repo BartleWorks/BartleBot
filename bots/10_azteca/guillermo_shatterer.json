@@ -348,6 +348,7 @@
       "params": {
         "from_zone": "Azteca/AZ_Z02_Cenote",
         "dungeon_zone": "Azteca/Interiors/AZ_Z02_Mine03",
+        "dungeon_name": "Ruined Mine",
         "sigil_xyz": {
           "x": -8226.21,
           "y": 736.95,

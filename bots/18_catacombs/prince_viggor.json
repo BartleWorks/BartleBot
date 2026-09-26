@@ -291,6 +291,7 @@
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Catacombs",
         "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Catacombs_ViggorsTomb",
+        "dungeon_name": "Viggor's Tomb",
         "sigil_xyz": {
           "x": 9312.77,
           "y": -4867.95,

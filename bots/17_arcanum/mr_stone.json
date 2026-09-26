@@ -338,6 +338,7 @@
       "params": {
         "from_zone": "Arcanum/AR_Z01_Hub",
         "dungeon_zone": "Arcanum/Interiors/AR_Z01_CursedRepository",
+        "dungeon_name": "Cursed Repository",
         "sigil_xyz": {
           "x": -4160.88,
           "y": -749.08,

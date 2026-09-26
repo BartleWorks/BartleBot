@@ -1176,6 +1176,7 @@
       "params": {
         "from_zone": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter",
         "dungeon_zone": "Lemuria/Interiors/LM_Z00_I08_HallofHeroesInner",
+        "dungeon_name": "Hall of Heroes",
         "sigil_xyz": {
           "x": 215.12,
           "y": -3637.5,

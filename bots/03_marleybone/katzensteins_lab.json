@@ -858,6 +858,7 @@
       "params": {
         "from_zone": "Marleybone/MB_ScotlandYard/MB_Roof",
         "dungeon_zone": "Marleybone/MB_ScotlandYard/MB_KatzLab",
+        "dungeon_name": "Katzenstein's Lab",
         "sigil_xyz": {
           "x": -2449.45,
           "y": 2362.81,

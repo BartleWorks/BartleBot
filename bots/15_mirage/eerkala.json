@@ -110,6 +110,7 @@
       "params": {
         "from_zone": "Mirage/MR_Z08_EeremPalace",
         "dungeon_zone": "Mirage/Interiors/MR_Z08_EeremGardens",
+        "dungeon_name": "Eerem Gardens",
         "sigil_xyz": {
           "x": -2208.15,
           "y": -253.85,
@@ -266,6 +267,7 @@
       "params": {
         "from_zone": "Mirage/Interiors/MR_Z10_SandsofTime",
         "dungeon_zone": "Mirage/Interiors/MR_Z10_NorthTimeDunes",
+        "dungeon_name": "North Sands of Time",
         "sigil_xyz": {
           "x": 562.17,
           "y": -4862.3,

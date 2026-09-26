@@ -1,0 +1,2426 @@
+{
+  "id": "29fe690b-a1e8-4f86-b88e-5d7ae9394143",
+  "name": "Atlantea",
+  "description": "Endlessly completes Atlantea in Aquila",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "sync_players_1_state_2",
+  "recovery_state": "sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "25 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "28 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "30 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "35 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "45 Olympian Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ares' Cold Heart Spear",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Spear of Elation",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Spear of Furor",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Spear of Honor",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Spear of Insight",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Sunflare Spear",
+      "category": "Wands"
+    },
+    {
+      "name": "Ares' Waterspout Spear",
+      "category": "Wands"
+    },
+    {
+      "name": "Eternal Skeleturion",
+      "category": "Pets"
+    },
+    {
+      "name": "Fires of Mars",
+      "category": "Spellements"
+    },
+    {
+      "name": "Helm of Poseidon's Acumen",
+      "category": "Hats"
+    },
+    {
+      "name": "Jupiter's Might",
+      "category": "Spellements"
+    },
+    {
+      "name": "Neptune's Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phoebus' Will",
+      "category": "Spellements"
+    },
+    {
+      "name": "Pluto's Peril",
+      "category": "Spellements"
+    },
+    {
+      "name": "Poseidon's Backdraft Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Poseidon's Calm Seas Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Cover of Vim",
+      "category": "Hats"
+    },
+    {
+      "name": "Poseidon's Fabled Raiment",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Floodskimmers",
+      "category": "Boots"
+    },
+    {
+      "name": "Poseidon's Frost Runners",
+      "category": "Boots"
+    },
+    {
+      "name": "Poseidon's Iceberg Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Poseidon's Icy Seas Armor",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Maritime Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Poseidon's Polar Trident",
+      "category": "Wands"
+    },
+    {
+      "name": "Poseidon's Raging Sea Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Poseidon's Sizzling Garb",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Squalls Trident",
+      "category": "Wands"
+    },
+    {
+      "name": "Poseidon's Staff of Tides",
+      "category": "Wands"
+    },
+    {
+      "name": "Poseidon's Steamwalkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Poseidon's Trident of Lore",
+      "category": "Wands"
+    },
+    {
+      "name": "Poseidon's Tsunami Garb",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Typhoon Helmet",
+      "category": "Hats"
+    },
+    {
+      "name": "Poseidon's Undertow Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Poseidon's Waterbane",
+      "category": "Wands"
+    },
+    {
+      "name": "Poseidon's Waterwalkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Poseidon's Wave Crest Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Poseidon's Wave Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Poseidon's Wavemaker Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Poseidon's Whirlpool Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Saturn's Reaping",
+      "category": "Spellements"
+    },
+    {
+      "name": "Senator's Downpour Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Downpour Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Downpour Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Embering Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Forlorn Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Forlorn Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Forlorn Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Frigid Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Frigid Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Frigid Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Laurel of Vigor",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Sandals of Vigor",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Scholarly Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Scholarly Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Scholarly Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Shoes of Embers",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Stately Laurel",
+      "category": "Hats"
+    },
+    {
+      "name": "Senator's Stately Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Senator's Stately Toga",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Toga of Embers",
+      "category": "Robes"
+    },
+    {
+      "name": "Senator's Toga of Vigor",
+      "category": "Robes"
+    },
+    {
+      "name": "Stormy Skeleturion",
+      "category": "Pets"
+    },
+    {
+      "name": "Terminus' Strike",
+      "category": "Spellements"
+    },
+    {
+      "name": "Trident of Poseidon's Fury",
+      "category": "Wands"
+    },
+    {
+      "name": "Tunic of Poseidon's Mercy",
+      "category": "Robes"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Reagents",
+    "Spellements",
+    "Pets",
+    "Dungeon",
+    "Challenge Mode",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Fail puzzle and defeat Teles",
+      "type": "bool",
+      "default": false,
+      "description": "Whether or not to fail the CoralChord puzzle and trigger the optional boss fight with Teles, who drops the Life Skeleturion."
+    }
+  ],
+  "states": [
+    {
+      "id": "state_4",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_dungeon",
+      "label": "Enter Atlantea",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z00_Hub",
+        "dungeon_zone": "Aquila/AQ_Z02_Atlantea",
+        "dungeon_name": "Atlantea",
+        "sigil_xyz": {
+          "x": 11442.09,
+          "y": 9193.82,
+          "z": -1474.83
+        },
+        "reset_xyz": {
+          "x": 10879.24,
+          "y": 8967.49,
+          "z": -1479.71
+        },
+        "offers_challenge_mode": true,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "sync_players_1_state_2",
+      "node_type": "go_to_zone",
+      "label": "Go to zone",
+      "position": {
+        "x": 0.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z00_Hub"
+      }
+    },
+    {
+      "id": "sync_players_1_state_3",
+      "node_type": "change_realm",
+      "label": "Change to favorite realm",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "use_favorite_realm": true
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "interact",
+      "label": "Talk to Hermes Winged Wayfarer",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "interact_xyz": {
+          "x": -900.66,
+          "y": -6671.1,
+          "z": 394.09
+        },
+        "reset_xyz": {
+          "x": -904.63,
+          "y": -7193.08,
+          "z": 504.2
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_13",
+      "node_type": "teleport_to_coordinates",
+      "label": "Locate Voracious Legionnaires",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "xyz": {
+          "x": -956.13,
+          "y": -2099.3,
+          "z": 99.88
+        }
+      }
+    },
+    {
+      "id": "state_14",
+      "node_type": "handle_combat",
+      "label": "Defeat Voracious Legionnaires",
+      "position": {
+        "x": 2640,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Piranha-Guard",
+        "wiki_page": "Creature:Voracious_Legionnaire",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "interact",
+      "label": "Talk to Hermes Winged Wayfarer",
+      "position": {
+        "x": 3080,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "interact_xyz": {
+          "x": -799.95,
+          "y": -6218.93,
+          "z": 333.77
+        },
+        "reset_xyz": {
+          "x": -287.93,
+          "y": -5500.77,
+          "z": 333.77
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "enter_zone",
+      "label": "Enter House of Lost Saliors",
+      "position": {
+        "x": 3520,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z02_Atlantea",
+        "to_zone": "Aquila/Interiors/AQ_Z02_HouseOfLostSaliors",
+        "xyz": {
+          "x": 3531.17,
+          "y": -2009.35,
+          "z": 386.93
+        },
+        "reset_xyz": {
+          "x": 3160.65,
+          "y": -1873.9,
+          "z": 332.98
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_17",
+      "node_type": "teleport_to_coordinates",
+      "label": "Locate Lamia",
+      "position": {
+        "x": 3960,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_HouseOfLostSaliors",
+        "xyz": {
+          "x": -31.81,
+          "y": -19.03,
+          "z": 96.25
+        }
+      }
+    },
+    {
+      "id": "state_18",
+      "node_type": "handle_combat",
+      "label": "Defeat Lamia",
+      "position": {
+        "x": 4400,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Shark-Lamia",
+        "wiki_page": "Creature:Lamia",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_19",
+      "node_type": "interact",
+      "label": "Interact with Alabaster Sea Cow",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_HouseOfLostSaliors",
+        "interact_xyz": {
+          "x": -25.08,
+          "y": 4312.45,
+          "z": 96.25
+        },
+        "reset_xyz": {
+          "x": -22.17,
+          "y": 3772.46,
+          "z": 96.25
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_20",
+      "node_type": "enter_zone",
+      "label": "Exit House of Lost Saliors",
+      "position": {
+        "x": 5280.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z02_HouseOfLostSaliors",
+        "to_zone": "Aquila/AQ_Z02_Atlantea",
+        "xyz": {
+          "x": -2.71,
+          "y": -1023.91,
+          "z": 96.25
+        },
+        "reset_xyz": {
+          "x": -16.11,
+          "y": 235.99,
+          "z": 83.36
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_21",
+      "node_type": "interact",
+      "label": "Talk to Hermes Winged Wayfarer",
+      "position": {
+        "x": 5720.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "interact_xyz": {
+          "x": -816.27,
+          "y": -6300.44,
+          "z": 333.77
+        },
+        "reset_xyz": {
+          "x": -406.78,
+          "y": -5829.59,
+          "z": 333.77
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_22",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to wisps",
+      "position": {
+        "x": 6160.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "xyz": {
+          "x": -939.46,
+          "y": -5591.9,
+          "z": 333.77
+        }
+      }
+    },
+    {
+      "id": "state_23",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 6600.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_24",
+      "node_type": "enter_zone",
+      "label": "Enter House of Fury",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z02_Atlantea",
+        "to_zone": "Aquila/Interiors/AQ_Z02_HouseOfFury",
+        "xyz": {
+          "x": -5290.61,
+          "y": 1297.57,
+          "z": 386.93
+        },
+        "reset_xyz": {
+          "x": -4858.26,
+          "y": 1143.41,
+          "z": 297.87
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_25",
+      "node_type": "teleport_to_coordinates",
+      "label": "Locate Arion Spiny Stallion",
+      "position": {
+        "x": 7480.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_HouseOfFury",
+        "xyz": {
+          "x": 2.16,
+          "y": -1804.32,
+          "z": 25.5
+        }
+      }
+    },
+    {
+      "id": "state_26",
+      "node_type": "handle_combat",
+      "label": "Defeat Arion Spiny Stallion",
+      "position": {
+        "x": 7920.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Centaur-Arion",
+        "wiki_page": "Creature:Arion Spiny Stallion",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_27",
+      "node_type": "interact",
+      "label": "Interact with Onyx Sea Cow",
+      "position": {
+        "x": 8360.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_HouseOfFury",
+        "interact_xyz": {
+          "x": -2403.23,
+          "y": 4.22,
+          "z": 94.14
+        },
+        "reset_xyz": {
+          "x": -2017.74,
+          "y": 7.21,
+          "z": 94.13
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_28",
+      "node_type": "enter_zone",
+      "label": "Exit House of Fury",
+      "position": {
+        "x": 8800.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z02_HouseOfFury",
+        "to_zone": "Aquila/AQ_Z02_Atlantea",
+        "xyz": {
+          "x": 8.86,
+          "y": -3233.05,
+          "z": 188.49
+        },
+        "reset_xyz": {
+          "x": -2403.23,
+          "y": 4.22,
+          "z": 94.14
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_29",
+      "node_type": "interact",
+      "label": "Interact with Hermes Winged Wayfarer",
+      "position": {
+        "x": 9240.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "interact_xyz": {
+          "x": -875.77,
+          "y": -6388.2,
+          "z": 333.77
+        },
+        "reset_xyz": {
+          "x": -852.88,
+          "y": -7038.8,
+          "z": 504.2
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_30",
+      "node_type": "enter_zone",
+      "label": "Enter Hall of Contriver",
+      "position": {
+        "x": 10560.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z02_Atlantea",
+        "to_zone": "Aquila/Interiors/AQ_Z02_HallOfContriver",
+        "xyz": {
+          "x": -5285.58,
+          "y": -2104.51,
+          "z": 386.93
+        },
+        "reset_xyz": {
+          "x": -5077.5,
+          "y": -1990.22,
+          "z": 386.93
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_31",
+      "node_type": "teleport_to_coordinates",
+      "label": "Locate Akhelios the Contriver",
+      "position": {
+        "x": 11000.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_HallOfContriver",
+        "xyz": {
+          "x": 7.02,
+          "y": -2205.77,
+          "z": 188.47
+        }
+      }
+    },
+    {
+      "id": "state_32",
+      "node_type": "handle_combat",
+      "label": "Defeat Akheilos the Contriver",
+      "position": {
+        "x": 11440.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Shark-Akheilos",
+        "wiki_page": "Creature:Akheilos the Contriver",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_33",
+      "node_type": "enter_zone",
+      "label": "Exit Hall of Contriver",
+      "position": {
+        "x": 11880.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z02_HallOfContriver",
+        "to_zone": "Aquila/AQ_Z02_Atlantea",
+        "xyz": {
+          "x": 17.54,
+          "y": -3695.17,
+          "z": 188.47
+        },
+        "reset_xyz": {
+          "x": -12.11,
+          "y": -2825.67,
+          "z": 188.49
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_34",
+      "node_type": "interact",
+      "label": "Interact with Hermes Winged Wayfarer",
+      "position": {
+        "x": 12320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "interact_xyz": {
+          "x": -1053.99,
+          "y": -6205.17,
+          "z": 333.77
+        },
+        "reset_xyz": {
+          "x": -1768.09,
+          "y": -5623.54,
+          "z": 333.77
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_35",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to health and mana wisps",
+      "position": {
+        "x": 12760.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "xyz": {
+          "x": -912.74,
+          "y": -5561.18,
+          "z": 333.77
+        }
+      }
+    },
+    {
+      "id": "state_36",
+      "node_type": "collect_wisps",
+      "label": "Collect health and mana wisps",
+      "position": {
+        "x": 13200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_37",
+      "node_type": "enter_zone",
+      "label": "Enter Teles' Room",
+      "position": {
+        "x": 13640.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z02_Atlantea",
+        "to_zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "xyz": {
+          "x": -914.73,
+          "y": 2652.26,
+          "z": 341.58
+        },
+        "reset_xyz": {
+          "x": -857.48,
+          "y": 2324.38,
+          "z": 341.58
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_38",
+      "node_type": "interact",
+      "label": "Interact with Teles",
+      "position": {
+        "x": 14080.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "interact_xyz": {
+          "x": -2.43,
+          "y": 37.33,
+          "z": 94.35
+        },
+        "reset_xyz": {
+          "x": 6.35,
+          "y": -661.33,
+          "z": 94.35
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_39",
+      "node_type": "teleport_to_coordinates",
+      "label": "Fix first CoralChord pipe",
+      "position": {
+        "x": 14520.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "xyz": {
+          "x": 395.4,
+          "y": 5749.64,
+          "z": 203.68
+        }
+      }
+    },
+    {
+      "id": "state_40",
+      "node_type": "sleep",
+      "label": "Wait",
+      "position": {
+        "x": 14960.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 1.0
+      }
+    },
+    {
+      "id": "state_41",
+      "node_type": "teleport_to_coordinates",
+      "label": " Fix second CoralChord pipe",
+      "position": {
+        "x": 15400.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "xyz": {
+          "x": -46.0,
+          "y": 5485.7,
+          "z": 203.68
+        }
+      }
+    },
+    {
+      "id": "state_42",
+      "node_type": "sleep",
+      "label": "Wait",
+      "position": {
+        "x": 15840.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 1.0
+      }
+    },
+    {
+      "id": "state_43",
+      "node_type": "teleport_to_coordinates",
+      "label": "Fix third CoralChord pipe",
+      "position": {
+        "x": 16280.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "xyz": {
+          "x": -662.96,
+          "y": 6062.88,
+          "z": 203.68
+        }
+      }
+    },
+    {
+      "id": "state_44",
+      "node_type": "sleep",
+      "label": "Wait",
+      "position": {
+        "x": 16720.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 1.0
+      }
+    },
+    {
+      "id": "state_45",
+      "node_type": "interact",
+      "label": "Interact with Lever",
+      "position": {
+        "x": 17160.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "interact_xyz": {
+          "x": -1054.83,
+          "y": 6362.24,
+          "z": 190.15
+        },
+        "reset_xyz": {
+          "x": -1028.98,
+          "y": 5903.96,
+          "z": 190.15
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_46",
+      "node_type": "enter_zone",
+      "label": "Exit Teles' Room",
+      "position": {
+        "x": 17600.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "to_zone": "Aquila/AQ_Z02_Atlantea02",
+        "xyz": {
+          "x": -1393.41,
+          "y": 5499.08,
+          "z": 190.17
+        },
+        "reset_xyz": {
+          "x": -989.01,
+          "y": 5498.14,
+          "z": 190.15
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_47",
+      "node_type": "teleport_to_coordinates",
+      "label": "Locate Lost Maiden",
+      "position": {
+        "x": 18040.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea02",
+        "xyz": {
+          "x": -1352.6,
+          "y": 4524.42,
+          "z": 341.58
+        }
+      }
+    },
+    {
+      "id": "state_48",
+      "node_type": "handle_combat",
+      "label": "Defeat Lost Maiden",
+      "position": {
+        "x": 18480.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Undead-LostMaiden",
+        "wiki_page": "Creature:Lost Maiden",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_49",
+      "node_type": "collect_wisps",
+      "label": "Collect health and mana wisps",
+      "position": {
+        "x": 18920.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_50",
+      "node_type": "teleport_to_coordinates",
+      "label": "Locate Atlantean Trierarch",
+      "position": {
+        "x": 19360.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea02",
+        "xyz": {
+          "x": -2008.86,
+          "y": 8109.59,
+          "z": 672.46
+        }
+      }
+    },
+    {
+      "id": "state_51",
+      "node_type": "handle_combat",
+      "label": "Defeat Atlantean Trierarch",
+      "position": {
+        "x": 19800.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Kraken-Guard",
+        "wiki_page": "Creature:Atlantean_Trierarch",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_52",
+      "node_type": "collect_wisps",
+      "label": "Collect health and mana wisps",
+      "position": {
+        "x": 20240.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_53",
+      "node_type": "interact",
+      "label": "Interact with Pedestal",
+      "position": {
+        "x": 20680.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea02",
+        "interact_xyz": {
+          "x": -1346.81,
+          "y": 10821.57,
+          "z": 672.46
+        },
+        "reset_xyz": {
+          "x": -976.95,
+          "y": 10766.58,
+          "z": 672.46
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_54",
+      "node_type": "interact",
+      "label": "Interact with Pedestal",
+      "position": {
+        "x": 21120.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea02",
+        "interact_xyz": {
+          "x": -2867.39,
+          "y": 10848.49,
+          "z": 672.46
+        },
+        "reset_xyz": {
+          "x": -3337.46,
+          "y": 10817.6,
+          "z": 672.46
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_55",
+      "node_type": "enter_zone",
+      "label": "Enter Poseidon's Throne Room",
+      "position": {
+        "x": 21560.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z02_Atlantea02",
+        "to_zone": "Aquila/Interiors/AQ_Z02_ThroneRoom",
+        "xyz": {
+          "x": -2086.05,
+          "y": 11274.87,
+          "z": 672.46
+        },
+        "reset_xyz": {
+          "x": -2067.31,
+          "y": 10488.85,
+          "z": 672.46
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_56",
+      "node_type": "teleport_to_coordinates",
+      "label": "Locate Poseidon Earth Shaker",
+      "position": {
+        "x": 22000.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_ThroneRoom",
+        "xyz": {
+          "x": 3.68,
+          "y": 1009.2,
+          "z": -345.8
+        }
+      }
+    },
+    {
+      "id": "state_57",
+      "node_type": "handle_combat",
+      "label": "Defeat Poseidon Earth Shaker",
+      "position": {
+        "x": 22440.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "AQ-Immortal-Poseidon-A",
+        "wiki_page": "Creature:Poseidon Earth Shaker (Atlantea)",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_58",
+      "node_type": "enter_zone_via_object",
+      "label": "Return to Garden of Hesperides",
+      "position": {
+        "x": 22880.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/Interiors/AQ_Z02_ThroneRoom",
+        "to_zone": "Aquila/AQ_Z00_Hub",
+        "interact_xyz": {
+          "x": -26.54,
+          "y": 3614.8,
+          "z": -345.8
+        },
+        "reset_xyz": {
+          "x": 626.0,
+          "y": 3549.5,
+          "z": -345.8
+        },
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_59",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to wisps",
+      "position": {
+        "x": 9680.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "xyz": {
+          "x": -939.46,
+          "y": -5591.9,
+          "z": 333.77
+        }
+      }
+    },
+    {
+      "id": "state_60",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 10120.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_63",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
+      "id": "state_64",
+      "node_type": "interact",
+      "label": "Interact with Lever",
+      "position": {
+        "x": 14520.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "interact_xyz": {
+          "x": -1054.83,
+          "y": 6362.24,
+          "z": 190.15
+        },
+        "reset_xyz": {
+          "x": -1028.98,
+          "y": 5903.96,
+          "z": 190.15
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_65",
+      "node_type": "handle_combat",
+      "label": "Defeat Teles",
+      "position": {
+        "x": 17160.0,
+        "y": 180.0
+      },
+      "params": {
+        "enemy": "AQ-Siren-Teles",
+        "wiki_page": "Creature:Teles",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_66",
+      "node_type": "interact",
+      "label": "Interact with Lever",
+      "position": {
+        "x": 14960.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "interact_xyz": {
+          "x": -1054.83,
+          "y": 6362.24,
+          "z": 190.15
+        },
+        "reset_xyz": {
+          "x": -1028.98,
+          "y": 5903.96,
+          "z": 190.15
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_67",
+      "node_type": "interact",
+      "label": "Interact with Lever",
+      "position": {
+        "x": 15400.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "interact_xyz": {
+          "x": -1054.83,
+          "y": 6362.24,
+          "z": 190.15
+        },
+        "reset_xyz": {
+          "x": -1028.98,
+          "y": 5903.96,
+          "z": 190.15
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_68",
+      "node_type": "interact",
+      "label": "Interact with Lever",
+      "position": {
+        "x": 15840.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "interact_xyz": {
+          "x": -1054.83,
+          "y": 6362.24,
+          "z": 190.15
+        },
+        "reset_xyz": {
+          "x": -1028.98,
+          "y": 5903.96,
+          "z": 190.15
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_69",
+      "node_type": "interact",
+      "label": "Interact with Lever",
+      "position": {
+        "x": 16280.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "interact_xyz": {
+          "x": -1054.83,
+          "y": 6362.24,
+          "z": 190.15
+        },
+        "reset_xyz": {
+          "x": -1028.98,
+          "y": 5903.96,
+          "z": 190.15
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_70",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Teles",
+      "position": {
+        "x": 16720.0,
+        "y": 180.0
+      },
+      "params": {
+        "zone": "Aquila/Interiors/AQ_Z02_SirenPuzzleRoom",
+        "xyz": {
+          "x": 27.07,
+          "y": 3717.96,
+          "z": 94.35
+        }
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_63",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_26",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_59",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_30",
+      "dest": "state_31",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_32",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_33",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_34",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_35",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_35",
+      "dest": "state_36",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_36",
+      "dest": "state_37",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_37",
+      "dest": "state_38",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_39",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Fail puzzle and defeat Teles",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "state_64",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Fail puzzle and defeat Teles",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_39",
+      "dest": "state_40",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_40",
+      "dest": "state_41",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_41",
+      "dest": "state_42",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_42",
+      "dest": "state_43",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_43",
+      "dest": "state_44",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_44",
+      "dest": "state_45",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_45",
+      "dest": "state_46",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_46",
+      "dest": "state_47",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_47",
+      "dest": "state_48",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_48",
+      "dest": "state_49",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_49",
+      "dest": "state_50",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_50",
+      "dest": "state_51",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_51",
+      "dest": "state_52",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_52",
+      "dest": "state_53",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_53",
+      "dest": "state_54",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_54",
+      "dest": "state_55",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_55",
+      "dest": "state_56",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_56",
+      "dest": "state_57",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_57",
+      "dest": "state_58",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_58",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_59",
+      "dest": "state_60",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_60",
+      "dest": "state_30",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_63",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_64",
+      "dest": "state_66",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_65",
+      "dest": "state_46",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_66",
+      "dest": "state_67",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_67",
+      "dest": "state_68",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_68",
+      "dest": "state_69",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_69",
+      "dest": "state_70",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_70",
+      "dest": "state_65",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_1",
+      "dest": "sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_2",
+      "dest": "sync_players_1_state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "sync_players_1",
+      "label": "Sync players",
+      "members": [
+        "sync_players_1_state_1",
+        "sync_players_1_state_2",
+        "sync_players_1_state_3"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 3,
+        "inputs": {
+          "state_2.zone": "Aquila/AQ_Z00_Hub"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_3",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": -440.0,
+          "y": 0.0
+        }
+      }
+    },
+    {
+      "id": "e12846bd",
+      "label": "Start Atlantea",
+      "members": [
+        "state_5",
+        "state_12",
+        "state_8",
+        "state_4"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "00524b63",
+      "label": "Defeat Voracious Legionnaires",
+      "members": [
+        "state_14",
+        "state_15",
+        "state_13",
+        "state_63"
+      ],
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "6771f665",
+      "label": "Defeat Lamia",
+      "members": [
+        "state_17",
+        "state_21",
+        "state_16",
+        "state_19",
+        "state_18",
+        "state_20",
+        "state_22",
+        "state_23"
+      ],
+      "color": 5,
+      "collapsed": true
+    },
+    {
+      "id": "f9d4e1ba",
+      "label": "Defeat Arion Spiny Stallion",
+      "members": [
+        "state_59",
+        "state_60",
+        "state_24",
+        "state_27",
+        "state_25",
+        "state_26",
+        "state_29",
+        "state_28"
+      ],
+      "color": 6,
+      "collapsed": true
+    },
+    {
+      "id": "df5a75a6",
+      "label": "Defeat Akhelios the Contriver",
+      "members": [
+        "state_31",
+        "state_36",
+        "state_35",
+        "state_34",
+        "state_30",
+        "state_33",
+        "state_32"
+      ],
+      "color": 1,
+      "collapsed": true
+    },
+    {
+      "id": "67f4de64",
+      "label": "Teles' Room",
+      "members": [
+        "state_42",
+        "state_43",
+        "state_40",
+        "state_46",
+        "state_45",
+        "state_37",
+        "state_41",
+        "state_38",
+        "state_44",
+        "state_39",
+        "state_69",
+        "state_67",
+        "state_66",
+        "state_64",
+        "state_68",
+        "state_65",
+        "state_70"
+      ],
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "4d23f8d5",
+      "label": "Unlock Poseidon's Throne Room",
+      "members": [
+        "state_53",
+        "state_50",
+        "state_54",
+        "state_51",
+        "state_48",
+        "state_47",
+        "state_49",
+        "state_52",
+        "state_55"
+      ],
+      "color": 2,
+      "collapsed": true
+    },
+    {
+      "id": "dc1dab1e",
+      "label": "Defeat Poseidon Earth Shaker",
+      "members": [
+        "state_58",
+        "state_57",
+        "state_56"
+      ],
+      "color": 3,
+      "collapsed": true
+    }
+  ]
+}

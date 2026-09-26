@@ -13,7 +13,7 @@ from PyQt6.QtCore import QRect, QRectF
 from PyQt6.QtGui import QPainterPath, QRegion
 from PyQt6.QtWidgets import QGraphicsItem, QGraphicsPathItem, QGraphicsScene, QGraphicsView
 
-from bartlebot.gui.canvas.repaint_trace import RepaintLedger, RepaintTracer, describe_item
+from bartlebot.gui.canvas.repaint_trace import RepaintLedger, RepaintTracer, describe_item, update_path
 
 VISIBLE = QRect(0, 0, 800, 600)
 NAMES = {1: "EdgeItem(a -> b)", 2: "NodeItem(c)"}
@@ -159,6 +159,34 @@ def test_bounds_changed_behind_qts_back_are_reported(qtbot, caplog, tmp_path):
     assert [(s.what, s.kind) for s in stale] == [("_Sneaky", "was")]
     assert "Lost canvas repaint" in caplog.text
     assert len(list(tmp_path.glob("stale_*.png"))) == 1, "the real screen is captured as evidence"
+
+
+def test_a_finding_carries_what_tests_the_compat_path_theory(qtbot, caplog, tmp_path):
+    item = _Sneaky()
+    _view, tracer = _live(qtbot, item, tmp_path)
+
+    item.rect = QRectF(100, 250, 80, 40)
+    item.update()  # paints the new bounds, so a paint lands after the change
+
+    with caplog.at_level(logging.WARNING, logger="bartlebot.gui.canvas.repaint_trace"):
+        _settle(qtbot, tracer)
+    text = caplog.text
+    assert "update path: direct" in text
+    assert "inside the scene rect" in text and "NOT inside" not in text
+    paints = text.split("paints since the change:")[1].split("recent canvas events:")[0]
+    assert "rect(s)" in paints, "the paint that covered the new bounds is listed"
+
+
+def test_update_path_names_the_compat_path_once_anything_listens_to_changed(qapp):
+    scene = QGraphicsScene()
+    assert update_path(scene) == "direct"
+    scene.changed.connect(lambda _rects: None)
+    assert update_path(scene).startswith("compat (1 ")
+
+
+def test_the_tracer_never_puts_the_canvas_on_the_compat_path(qtbot):
+    _view, tracer = _live(qtbot, _Sneaky())
+    assert update_path(_view.scene()) == "direct"
 
 
 def test_the_canvas_installs_a_tracer_only_in_dev_mode(qapp, monkeypatch):

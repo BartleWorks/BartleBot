@@ -380,6 +380,7 @@
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Triton",
         "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T2",
+        "dungeon_name": "Skull Fort",
         "sigil_xyz": {
           "x": 5420.85,
           "y": -7541.99,

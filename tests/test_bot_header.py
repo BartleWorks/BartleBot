@@ -19,7 +19,7 @@ from PyQt6.QtWidgets import QApplication, QWidget
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.canvas.bot_header import BotHeader, _ElidedLabel
 from bartlebot.gui.game_embed.game_view_panel import client_summary
-from bartlebot.gui.widgets.tag_pill import TagPill
+from bartlebot.gui.widgets.tag_pill import SuggestedTagPill, TagPill
 
 
 def _config(**overrides) -> BotConfig:
@@ -146,6 +146,72 @@ def test_clearing_the_author_clears_the_byline(header):
 
     assert config.authors is None
     assert header.byline_text == ""
+
+
+# ---------------------------------------------------------------------------
+# Tags the graph suggests (#19)
+# ---------------------------------------------------------------------------
+
+
+def _reagent_bot(**overrides) -> BotConfig:
+    """A reagent route with no combat: its graph suggests Reagents and Collecting."""
+    return _config(states=[StateModel(id="a", node_type="collect_reagent", params={})], **overrides)
+
+
+def test_suggestions_show_in_edit_mode_only(header):
+    """A reminder for the author. In Run mode nobody is in a position to act on it."""
+    header.set_config(_reagent_bot())
+
+    header.set_editable(False)
+    assert header._tags_field.shown_suggestions() == []
+    header.set_editable(True)
+    assert header._tags_field.shown_suggestions() == ["Reagents", "Collecting"]
+
+
+def test_a_tag_the_bot_already_carries_is_not_suggested(header):
+    header.set_config(_reagent_bot(tags=["Reagents"]))
+    header.set_editable(True)
+
+    assert header._tags_field.shown_suggestions() == ["Collecting"]
+
+
+def test_clicking_a_suggestion_makes_it_an_ordinary_tag(header):
+    config = _reagent_bot(tags=["Boss"])
+    header.set_config(config)
+    header.set_editable(True)
+    dirty: list[int] = []
+    header.metadata_changed.connect(lambda: dirty.append(1))
+
+    ghost = next(g for g in header._tags_field.findChildren(SuggestedTagPill) if g.tag == "Reagents")
+    ghost.click()
+
+    assert config.tags == ["Reagents", "Boss"]
+    assert header._tags_field.shown_suggestions() == ["Collecting"]
+    assert dirty
+
+
+def test_a_graph_edit_is_picked_up_on_refresh(header):
+    """The canvas calls ``refresh_tag_suggestions`` after every graph or param edit."""
+    config = _config(states=[StateModel(id="a", node_type="enter_dungeon", params={})])
+    header.set_config(config)
+    header.set_editable(True)
+    assert header._tags_field.shown_suggestions() == []
+
+    config.states[0].params["offers_team_up"] = True
+    header.refresh_tag_suggestions()
+
+    assert header._tags_field.shown_suggestions() == ["Team-Up"]
+
+
+def test_refresh_tags_reads_tags_set_outside_the_header(header):
+    """The save-time Rewards prompt writes the config directly, then asks the header to re-read it."""
+    config = _config()
+    header.set_config(config)
+
+    config.tags = ["Pets"]
+    header.refresh_tags()
+
+    assert header._tags_field.tags() == ["Pets"]
 
 
 def test_a_mode_switch_does_not_bring_back_an_empty_version_pill(header):

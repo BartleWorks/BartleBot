@@ -1364,6 +1364,7 @@
       "params": {
         "from_zone": "Celestia/CL_Hub",
         "dungeon_zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "dungeon_name": "Trial of the Spheres",
         "sigil_xyz": {
           "x": -217.96,
           "y": 15369.93,

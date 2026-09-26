@@ -866,6 +866,7 @@
       "params": {
         "from_zone": "G14_DM/DM_Z06_Bridge",
         "dungeon_zone": "G14_DM/DM_Z07_Graveyard",
+        "dungeon_name": "Graveyard",
         "sigil_xyz": {
           "x": -222.0,
           "y": 2474.73,

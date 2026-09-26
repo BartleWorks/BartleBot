@@ -22,6 +22,13 @@ Two things fall out of that:
   whose ``REQUIREMENTS`` blocks run to 20 lines still scroll here, which is the same
   split as ever — the wrapping label above Setup is where a long block is *read*.
 
+**An empty description stands in for itself with the one the graph implies**
+(``bartlebot/bot_summary.py``).  Above Setup it is shown in italics, so it never reads
+as something the author wrote.  Above Options it sits under the empty editor with a
+*Use this* link rather than in the placeholder, which Qt draws as one unwrapped line and
+clips — and the generated sentence is usually longer than the prompt.  It is never
+written to the file unless the author takes it.
+
 Writing back is guarded by ``_suppress``: ``setPlainText`` emits
 ``textChanged`` like any other edit, so refreshing from a freshly loaded config
 would otherwise mark the bot dirty the moment it opened.
@@ -29,16 +36,19 @@ would otherwise mark the bot dirty the moment it opened.
 
 from __future__ import annotations
 
+import html
 from typing import TYPE_CHECKING
 
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QFont
-from PyQt6.QtWidgets import QVBoxLayout
+from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
+from bartlebot import bot_summary
 from bartlebot.gui.sidebar.sidebar_section import SidebarSection
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
+from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
 if TYPE_CHECKING:
@@ -71,6 +81,7 @@ class DescriptionSection(ThemedMixin, SidebarSection):
         super().__init__("Description", parent)
         self._config: BotConfig | None = None
         self._suppress = False
+        self._generated: str | None = None
 
         vbox = QVBoxLayout()
         vbox.setSpacing(0)
@@ -90,6 +101,24 @@ class DescriptionSection(ThemedMixin, SidebarSection):
             self._edit.setToolTip(_TOOLTIP)
             self._edit.textChanged.connect(self._on_text_changed)
             vbox.addWidget(self._edit)
+
+            # The generated sentence, offered while the editor is empty.
+            self._suggestion = QWidget()
+            row = QHBoxLayout(self._suggestion)
+            row.setContentsMargins(0, 4, 0, 0)
+            row.setSpacing(8)
+            self._suggestion_lbl = ThemedTextLabel(
+                "", color="text_muted", css=f"font-size: {THEME.font_small_px}px; font-style: italic;"
+            )
+            self._suggestion_lbl.setWordWrap(True)
+            self._suggestion_lbl.setTextFormat(Qt.TextFormat.PlainText)
+            self._suggestion_lbl.setToolTip("Generated from the graph. Shown while the description is empty.")
+            self._use_btn = LinkButton("Use this")
+            self._use_btn.setToolTip("Put this sentence in the description, to edit or keep")
+            self._use_btn.clicked.connect(self._use_generated)
+            row.addWidget(self._suggestion_lbl, 1)
+            row.addWidget(self._use_btn, 0, Qt.AlignmentFlag.AlignTop)
+            vbox.addWidget(self._suggestion)
         else:
             self._label = ThemedTextLabel("", color="text_muted", css=f"font-size: {THEME.font_small_px}px;")
             self._label.setWordWrap(True)
@@ -115,8 +144,15 @@ class DescriptionSection(ThemedMixin, SidebarSection):
         """
         self.setVisible(self._config is not None)
         text = (self._config.description or "").strip() if self._config else ""
+        config = self._config
+        self._generated = bot_summary.describe(config) if config is not None and not config.is_definition else None
         if self._label is not None:
-            self._label.setText(text or NO_DESCRIPTION)
+            if text or not self._generated:
+                self._label.setTextFormat(Qt.TextFormat.PlainText)
+                self._label.setText(text or NO_DESCRIPTION)
+            else:
+                self._label.setTextFormat(Qt.TextFormat.RichText)
+                self._label.setText(f"<i>{html.escape(self._generated)}</i>")
         if self._edit is not None and self._edit.toPlainText() != text:
             # Guarded, not because the write is wrong but because it is not the
             # user's: an unguarded setPlainText on load marks the bot dirty.  The
@@ -126,6 +162,17 @@ class DescriptionSection(ThemedMixin, SidebarSection):
                 self._edit.setPlainText(text)
             finally:
                 self._suppress = False
+        self._refresh_suggestion()
+
+    @property
+    def generated(self) -> str | None:
+        """The sentence the graph implies, shown while the description is empty; None if none."""
+        return self._generated
+
+    @property
+    def suggestion_shown(self) -> bool:
+        """Whether the editor is offering the generated sentence — never on the read-only copy."""
+        return self._edit is not None and not self._suggestion.isHidden()
 
     @property
     def is_editable(self) -> bool:
@@ -151,13 +198,26 @@ class DescriptionSection(ThemedMixin, SidebarSection):
         if self._edit is not None:
             return self._edit.toPlainText()
         assert self._label is not None
+        if self._label.textFormat() == Qt.TextFormat.RichText:
+            return self._generated or ""
         return self._label.text()
 
     # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
 
+    def _refresh_suggestion(self) -> None:
+        if self._edit is None:
+            return
+        self._suggestion_lbl.setText(self._generated or "")
+        self._suggestion.setVisible(bool(self._generated) and not self._edit.toPlainText().strip())
+
+    def _use_generated(self) -> None:
+        if self._edit is not None and self._generated:
+            self._edit.setPlainText(self._generated)
+
     def _on_text_changed(self) -> None:
+        self._refresh_suggestion()
         if self._suppress or self._config is None:
             return
         text = self._edit.toPlainText() if self._edit is not None else ""

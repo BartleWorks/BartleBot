@@ -530,6 +530,7 @@
       "params": {
         "from_zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
         "dungeon_zone": "MooShu/MS_War/MS_War_BattlefieldA",
+        "dungeon_name": "Crimson Fields",
         "sigil_xyz": {
           "x": -6737.96,
           "y": -27769.27,

@@ -308,6 +308,7 @@
       "params": {
         "from_zone": "Marleybone/MB_BigBen/MB_Museum",
         "dungeon_zone": "Marleybone/MB_BigBen/MB_BigBen",
+        "dungeon_name": "Big Ben",
         "sigil_xyz": {
           "x": -220.67,
           "y": 4540.38,

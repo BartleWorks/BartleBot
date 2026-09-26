@@ -995,6 +995,7 @@
       "params": {
         "from_zone": "Celestia/CL_Hub",
         "dungeon_zone": "Celestia/CL_Z11_Temple_Of_The_Sun",
+        "dungeon_name": "Temple of the Sun",
         "sigil_xyz": {
           "x": 654.88,
           "y": 11343.67,

@@ -2974,6 +2974,8 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._node_label_edit.setText(label)
         self._suppress = False
         self.properties_changed.emit()
+        # The field never had focus, so no focus-out will draw the new label on the canvas.
+        self.label_committed.emit()
 
     def _rebuild_returns(self, node_type: str) -> None:
         while self._returns_body_layout.count():

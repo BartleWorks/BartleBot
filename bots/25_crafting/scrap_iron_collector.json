@@ -86,6 +86,7 @@
       "params": {
         "from_zone": "Marleybone/MB_BigBen/MB_Museum",
         "dungeon_zone": "Marleybone/MB_BigBen/MB_CounterweightWest",
+        "dungeon_name": "Counterweight West",
         "sigil_xyz": {
           "x": -869.31,
           "y": 6168.7,

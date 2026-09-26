@@ -1160,6 +1160,7 @@
       "params": {
         "from_zone": "Avalon/AV_Z01_AbbeyRoad",
         "dungeon_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
+        "dungeon_name": "Telegraph Box",
         "sigil_xyz": {
           "x": -576.04,
           "y": 191.72,

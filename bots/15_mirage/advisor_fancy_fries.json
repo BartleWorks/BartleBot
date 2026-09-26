@@ -562,6 +562,7 @@
       "params": {
         "from_zone": "Mirage/Interiors/MR_Z04_CalixcoManor",
         "dungeon_zone": "Mirage/Interiors/MR_Z04_BaronsAudienceChamber",
+        "dungeon_name": "Baron's Audience Chamber",
         "sigil_xyz": {
           "x": 1910.02,
           "y": -2297.92,
