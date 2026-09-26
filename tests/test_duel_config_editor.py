@@ -20,6 +20,7 @@ from bartlebot.gui.combat_strategies.assignment_card import (
     REMOVE_VERB,
 )
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor, move_item
+from tests.drag_helpers import drag_card, row_height, show
 
 
 def test_load_populates_fields_from_the_config(qapp):
@@ -368,51 +369,41 @@ def test_move_assignment_puts_the_widget_where_the_model_says(qapp):
     assert len(order) == len(config.player_assignments)
 
 
-def test_dropping_below_a_row_lands_after_it(qapp):
-    """A drop on the lower half of row 0 puts the dragged row second, not first."""
+def _shown_editor(qapp):
     config, editor = _three_row_editor()
-    rows = list(editor.cards)
-
-    editor._on_reorder_card(rows[2], rows[0], False)
-
-    assert [a.dsl for a in config.player_assignments] == ["one", "three", "two"]
+    show(qapp, editor)
+    return config, editor
 
 
-def test_dropping_above_a_row_lands_before_it(qapp):
-    config, editor = _three_row_editor()
-    rows = list(editor.cards)
+def test_dragging_a_row_down_past_one_reorders_the_config(qapp):
+    config, editor = _shown_editor(qapp)
+    seen: list[bool] = []
+    editor.changed.connect(lambda: seen.append(True))
 
-    editor._on_reorder_card(rows[2], rows[0], True)
+    drag_card(qapp, editor.cards[0], row_height(editor.cards, editor._cards_layout.spacing()))
+
+    assert [a.dsl for a in config.player_assignments] == ["two", "one", "three"]
+    assert seen == [True]
+
+
+def test_dragging_a_row_to_the_top_puts_it_first(qapp):
+    config, editor = _shown_editor(qapp)
+
+    drag_card(qapp, editor.cards[2], -2 * row_height(editor.cards, editor._cards_layout.spacing()) - 10)
 
     assert [a.dsl for a in config.player_assignments] == ["three", "one", "two"]
+    layout = editor._cards_layout
+    assert [layout.itemAt(i).widget() for i in range(layout.count())] == editor.cards
 
 
-def test_a_row_refuses_a_drop_from_itself(qapp):
-    _config, editor = _three_row_editor()
-    row = editor.cards[0]
-
-    assert not row.accepts_drop_from(row)
-
-
-def test_a_row_refuses_drops_while_the_bot_is_running(qapp):
+def test_rows_cannot_be_dragged_while_the_bot_is_running(qapp):
     """Reordering is an edit, and edits are locked mid-run like every other one."""
-    _config, editor = _three_row_editor()
+    config, editor = _shown_editor(qapp)
     editor.set_editable(False)
 
-    assert not editor.cards[1].accepts_drop_from(editor.cards[0])
+    drag_card(qapp, editor.cards[0], row_height(editor.cards, editor._cards_layout.spacing()))
 
-
-def test_a_row_accepts_a_drop_from_a_sibling(qapp):
-    _config, editor = _three_row_editor()
-
-    assert editor.cards[1].accepts_drop_from(editor.cards[0])
-
-
-def test_the_dsl_box_does_not_swallow_row_drops(qapp):
-    """The DSL editor accepts drops by default, which would shrink the target."""
-    _config, editor = _three_row_editor()
-
-    assert not editor.cards[0]._dsl_edit.acceptDrops()
+    assert [a.dsl for a in config.player_assignments] == ["one", "two", "three"]
 
 
 class TestPlayerRangeCannotInvert:

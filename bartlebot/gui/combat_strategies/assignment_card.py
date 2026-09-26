@@ -37,20 +37,15 @@ REORDERING
 ----------
 
 The grip in the gutter is the only drag source, as on every other card in the app, and
-this class installs its own event filter on it — ``GripHandle`` accepts the press and so
-never passes the moves on to the card. What a drop then *does* is the still-list-with-a-
-drop-line family rather than ``CardColumn``'s lift-and-slide, and deliberately: this list
-lives inside the detail pane's single scroll area, and ``CardColumn`` brings a scroll area
-of its own. A nested scrollable region here is the defect ``_KindPage`` and
-``DuelConfigEditor`` both carry a comment about.
+the drag is the same lift-and-slide every other card list uses: ``DuelConfigEditor``
+hosts a ``DragReorder`` over its cards. This card's part is only the grip, and its lock
+while the bot is running.
 """
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QByteArray, QEvent, QMimeData, QPoint, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QDrag, QPainter, QPen
+from PyQt6.QtCore import QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
-    QApplication,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -92,13 +87,6 @@ REMOVE_VERB = "Remove"
 #: like the card was always configured that way, and Save would then make it true.
 MISSING_TITLE = "(missing strategy)"
 
-#: Private to this widget, so a drag from anywhere else is ignored outright.
-_ROW_MIME = "application/x-bartlebot-assignment-card"
-_DROP_INDICATOR_WIDTH = 2
-#: Cap on the drag ghost's height. An expanded card holding a twenty-line DSL grabs as a
-#: ghost the size of the panel otherwise.
-_DRAG_PIXMAP_MAX_HEIGHT = 48
-
 
 def strategy_menu_entries(all_pcs: list[PlayerCombatStrategy]) -> list[tuple[str, str]]:
     """``(label, data)`` for every answer the change-strategy menu offers, in order.
@@ -128,9 +116,6 @@ class AssignmentCard(CardFrame):
     FRAME_NAME = "AssignmentCard"
 
     remove_requested = pyqtSignal(object)  # emits self
-    #: (source_card, self, before) when another card is dropped on this one. ``before``
-    #: says which of this card's edges the indicator was showing.
-    reorder_requested = pyqtSignal(object, object, bool)
     changed = pyqtSignal()
     #: (self, newly_added_set) after a user-driven player change. Only newly added players
     #: are reported, so exclusivity only evicts what was just claimed.
@@ -155,13 +140,10 @@ class AssignmentCard(CardFrame):
         # The title without its warning mark. Set before ``_build`` because a theme pass
         # can arrive during construction and ``_restyle_content`` reads it.
         self._title = ""
-        self._drag_start_pos: QPoint | None = None
-        self._drop_edge: str | None = None  # "above" / "below" while a drop hovers
         # Whether the user asked for the DSL box on a card that has no DSL yet. Without it,
         # choosing "Custom DSL…" on an empty assignment would resolve straight back to the
         # built-in default on the next refresh and the box would never appear.
         self._custom = bool(assignment.dsl.strip()) and not assignment.is_linked
-        self.setAcceptDrops(True)
 
         self._build()
         # Validation piggybacks on its own debounce rather than every keystroke — a
@@ -236,10 +218,6 @@ class AssignmentCard(CardFrame):
         details.addWidget(self._note_edit)
 
         self._dsl_edit = DslGrowingTextEdit(parent=self._details)
-        # A QPlainTextEdit accepts drops by default, and leaving that on would carve this
-        # card's drop target down to a strip along the top. Dropping text *into* a DSL box
-        # is far rarer than dropping a card onto its neighbour.
-        self._dsl_edit.setAcceptDrops(False)
         self._dsl_edit.setPlaceholderText("Combat DSL for these players — blank uses the built-in default")
         self._dsl_edit.setToolTip(DSL_HELP)
         self._dsl_edit.textChanged.connect(self._on_dsl_changed)
@@ -314,10 +292,7 @@ class AssignmentCard(CardFrame):
         """Lock or unlock every control (used while a bot is running)."""
         self._editable = editable
         if self.grip is not None:
-            self.grip.setCursor(Qt.CursorShape.OpenHandCursor if editable else Qt.CursorShape.ArrowCursor)
-            self.grip.setToolTip(
-                "Drag to reorder player assignments" if editable else "Locked while the bot is running"
-            )
+            self.grip.set_locked(not editable, "Locked while the bot is running")
         self._pills.set_editable(editable)
         self._school_combo.setEnabled(editable)
         self._note_edit.setEnabled(editable)
@@ -563,102 +538,3 @@ class AssignmentCard(CardFrame):
         self._dsl_edit.set_dsl_error(error)
         self._dsl_edit.set_dsl_warnings(warnings)
         self._restyle_content()
-
-    # ------------------------------------------------------------------
-    # Drag to reorder
-    # ------------------------------------------------------------------
-
-    def _make_grip(self, what: str):
-        """The base class's grip, plus the event filter that turns it into a drag source.
-
-        ``GripHandle`` accepts its own presses and so never passes the moves on — which is
-        what makes it a reliable handle, and what means the thing being dragged has to
-        watch it from outside. ``CardColumn`` does the same from the column; here the card
-        watches its own, there being no column.
-        """
-        grip = super()._make_grip(what)
-        grip.installEventFilter(self)
-        return grip
-
-    def eventFilter(self, obj, event) -> bool:  # noqa: ANN001
-        if obj is not self.grip or not self._editable:
-            return super().eventFilter(obj, event)
-        if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
-            self._drag_start_pos = event.pos()
-        elif event.type() == QEvent.Type.MouseMove and self._drag_start_pos is not None:
-            if (event.pos() - self._drag_start_pos).manhattanLength() >= QApplication.startDragDistance():
-                self._start_drag()
-        elif event.type() == QEvent.Type.MouseButtonRelease:
-            self._drag_start_pos = None
-        return super().eventFilter(obj, event)
-
-    def _start_drag(self) -> None:
-        self._drag_start_pos = None
-        mime = QMimeData()
-        # The payload carries nothing: event.source() identifies the card, and unlike a
-        # recorded index it cannot go stale across a move. The format is only there to make
-        # a foreign drag distinguishable.
-        mime.setData(_ROW_MIME, QByteArray(b"1"))
-        drag = QDrag(self)
-        drag.setMimeData(mime)
-        pixmap = self.grab()
-        if pixmap.height() > _DRAG_PIXMAP_MAX_HEIGHT:
-            pixmap = pixmap.copy(0, 0, pixmap.width(), _DRAG_PIXMAP_MAX_HEIGHT)
-        drag.setPixmap(pixmap)
-        drag.setHotSpot(QPoint(pixmap.width() // 2, pixmap.height() // 2))
-        drag.exec(Qt.DropAction.MoveAction)
-
-    def accepts_drop_from(self, source) -> bool:
-        """Whether *source* is a sibling card this one could accept a drop from."""
-        return self._editable and isinstance(source, AssignmentCard) and source is not self
-
-    def _accepts(self, event) -> bool:  # noqa: ANN001
-        return event.mimeData().hasFormat(_ROW_MIME) and self.accepts_drop_from(event.source())
-
-    def drop_edge(self) -> str | None:
-        """Which edge the drop indicator is currently drawn on, if any."""
-        return self._drop_edge
-
-    def _set_drop_edge(self, edge: str | None) -> None:
-        if edge != self._drop_edge:
-            self._drop_edge = edge
-            self.update()
-
-    def dragEnterEvent(self, event) -> None:  # noqa: ANN001
-        if self._accepts(event):
-            event.acceptProposedAction()
-        else:
-            event.ignore()
-
-    def dragMoveEvent(self, event) -> None:  # noqa: ANN001
-        if not self._accepts(event):
-            event.ignore()
-            return
-        # Cards are variable height — an expanded one holding a long DSL is many times the
-        # height of a folded neighbour — so which edge is meant has to come from the cursor
-        # against this card's own midpoint, not a fixed band.
-        self._set_drop_edge("above" if event.position().y() < self.height() / 2 else "below")
-        event.acceptProposedAction()
-
-    def dragLeaveEvent(self, event) -> None:  # noqa: ANN001, ARG002
-        self._set_drop_edge(None)
-
-    def dropEvent(self, event) -> None:  # noqa: ANN001
-        edge = self._drop_edge
-        self._set_drop_edge(None)
-        if not self._accepts(event):
-            event.ignore()
-            return
-        self.reorder_requested.emit(event.source(), self, edge != "below")
-        event.acceptProposedAction()
-
-    def paintEvent(self, event) -> None:  # noqa: ANN001
-        super().paintEvent(event)
-        if self._drop_edge is None:
-            return
-        # Read at paint time, so a theme switch needs no changeEvent here.
-        painter = QPainter(self)
-        painter.setPen(QPen(QColor(THEME.accent), _DROP_INDICATOR_WIDTH))
-        y = 1 if self._drop_edge == "above" else self.height() - 1
-        painter.drawLine(0, y, self.width(), y)
-        painter.end()

@@ -56,6 +56,7 @@ from bartlebot.bot.strategy_models import (
 from bartlebot.gui.combat_strategies.assignment_card import AssignmentCard
 from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
 from bartlebot.gui.widgets.add_card import AddCard
+from bartlebot.gui.widgets.drag_reorder import DragReorder
 from bartlebot.gui.widgets.elided_label import apply_muted_color
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 
@@ -72,12 +73,10 @@ def move_item(items: list, src: int, dst: int) -> list:
     """``items`` with the element at ``src`` reinserted at position ``dst``.
 
     ``dst`` is interpreted against the list *as the caller sees it now* — the positions
-    before the move — which is the only reading a drop indicator can mean. Removing the
-    source first shifts everything after it down one, so a downward move has to
-    compensate; that off-by-one is the whole function.
+    before the move. Removing the source first shifts everything after it down one, so a
+    downward move has to compensate; that off-by-one is the whole function.
 
-    Out-of-range or no-op moves return an unchanged copy rather than raising: a drop is a
-    user gesture, not a contract.
+    Out-of-range or no-op moves return an unchanged copy rather than raising.
     """
     if not (0 <= src < len(items)) or not (0 <= dst <= len(items)) or dst in (src, src + 1):
         return list(items)
@@ -154,12 +153,16 @@ class DuelConfigEditor(QWidget):
         # scroll area, and nesting a second scrollable region here hid cards behind a tiny
         # inner scrollbar nobody could see was there. It is also why the card list is a
         # plain layout of ``CardFrame``s rather than a ``CardColumn``, which brings a
-        # scroll area of its own.
+        # scroll area of its own. The drag is the same one ``CardColumn`` uses, and it
+        # auto-scrolls the dialog's pane.
         self._cards_container = QWidget(self)
         self._cards_layout = QVBoxLayout(self._cards_container)
         self._cards_layout.setContentsMargins(0, 0, 0, 0)
         self._cards_layout.setSpacing(4)
         outer.addWidget(self._cards_container)
+        self._drag = DragReorder(self._cards_layout, self)
+        self._drag.reordered.connect(self._on_cards_reordered)
+        self._drag.watch_for_show(self)
 
         self._add_card = AddCard(ADD_ASSIGNMENT_TEXT, parent=self)
         self._add_card.add_requested.connect(self._on_add_assignment)
@@ -233,9 +236,8 @@ class DuelConfigEditor(QWidget):
     def cards(self) -> list[AssignmentCard]:
         """The assignment cards, in the order they are drawn.
 
-        Public because reordering is checked from outside — a drop reports two cards and
-        the caller has to turn them into indices — and because a test naming a card should
-        not have to reach past this class to find one.
+        Public because a test naming a card should not have to reach past this class to
+        find one.
         """
         return list(self._cards)
 
@@ -249,6 +251,8 @@ class DuelConfigEditor(QWidget):
     # ------------------------------------------------------------------
 
     def _rebuild_cards(self) -> None:
+        # Before the cards go: a drag in flight would otherwise be left holding one.
+        self._drag.cancel()
         for card in self._cards:
             # setParent(None) as well as removeWidget: a widget merely taken out of a
             # layout stays a child and keeps painting where it last was, until the
@@ -267,11 +271,11 @@ class DuelConfigEditor(QWidget):
         card.set_editable(self._editable)
         card.changed.connect(self._on_changed)
         card.remove_requested.connect(self._on_remove_card)
-        card.reorder_requested.connect(self._on_reorder_card)
         card.players_changed.connect(self._enforce_exclusivity)
         card.promote_requested.connect(self.promote_requested)
         self._cards_layout.addWidget(card)
         self._cards.append(card)
+        self._drag.set_cards(self._cards)
 
     def _enforce_exclusivity(self, source_card: AssignmentCard, newly_added: set) -> None:
         """Remove newly-claimed players from every other card."""
@@ -315,22 +319,20 @@ class DuelConfigEditor(QWidget):
         card.setParent(None)
         card.deleteLater()
         self._cards.remove(card)
+        self._drag.set_cards(self._cards)
         self._update_add_card()
         self._update_requirements_label()
         self.changed.emit()
 
-    def _on_reorder_card(self, source: AssignmentCard, target: AssignmentCard, before: bool) -> None:
-        """Handle a card dropped on another: move it to the indicated edge."""
-        if source not in self._cards or target not in self._cards:
-            return
-        dst = self._cards.index(target)
-        self.move_assignment(self._cards.index(source), dst if before else dst + 1)
+    def _on_cards_reordered(self, order: list[int]) -> None:
+        """A drag has settled: the cards already stand in their new order."""
+        self._apply_card_order([self._cards[index] for index in order])
 
     def move_assignment(self, src: int, dst: int) -> None:
         """Move the assignment at index ``src`` to sit at index ``dst``.
 
-        ``dst`` is a position in the list as it stands *before* the move, which is what a
-        drop indicator between two cards means — see :func:`move_item`.
+        ``dst`` is a position in the list as it stands *before* the move — see
+        :func:`move_item`.
 
         Ordering is presentational. ``_enforce_exclusivity`` already guarantees a player
         appears in exactly one assignment, so ``resolve_dsl_for_player``'s first-match
@@ -343,13 +345,20 @@ class DuelConfigEditor(QWidget):
         if self._config is None:
             return
         reordered = move_item(self._cards, src, dst)
-        if reordered == self._cards:
+        if reordered != self._cards:
+            self._apply_card_order(reordered)
+
+    def _apply_card_order(self, cards: list[AssignmentCard]) -> None:
+        """Put the assignments, and the cards drawing them, in the order of *cards*."""
+        if self._config is None:
             return
-        self._cards = reordered
+        self._cards = list(cards)
         self._config.player_assignments = [card.assignment() for card in self._cards]
         for index, card in enumerate(self._cards):
-            # insertWidget moves a widget the layout already owns.
+            # insertWidget moves a widget the layout already owns; after a drag the cards
+            # are already there, and this changes nothing on screen.
             self._cards_layout.insertWidget(index, card)
+        self._drag.set_cards(self._cards)
         self.changed.emit()
 
     # ------------------------------------------------------------------

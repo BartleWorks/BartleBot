@@ -355,7 +355,7 @@ space at all.** The layout skips it outright rather than laying out a zero-size 
 so a spacer or placeholder that is parented but never shown holds nothing open and
 every widget after it lands a row early — with the layout, the size hints and the
 geometry all internally consistent about the wrong answer, which is why it reads as an
-arithmetic bug rather than a visibility one. `CardColumn._begin_drag` is the case:
+arithmetic bug rather than a visibility one. `DragReorder._begin_drag` is the case:
 the placeholder standing in for a lifted card has to be `show()`n by hand, after the
 parent it was constructed with. (`setRetainSizeWhenHidden` is the other way, and is what
 the launch cards' hover-revealed buttons use — but it only applies to a widget the layout
@@ -494,8 +494,8 @@ Left alone it lands wherever the first offscreen render happens to be, which is 
 gesture — the first card drag of a session stalled for a fifth of a second while the
 shadow went on, and no later one did. Call `warm_offscreen_render(widget)`
 (`gui/offscreen_warmup.py`) a turn after the surface is shown instead; it is per window,
-because the flush is, so a dialog does not inherit the main window's. `CardColumn.showEvent`
-is the pattern. It is per window *and* once: the flag means the layouts outstanding at
+because the flush is, so a dialog does not inherit the main window's.
+`DragReorder.watch_for_show` is the pattern, and every card list that drags gets it. It is per window *and* once: the flag means the layouts outstanding at
 that moment ran, not that the window is immune. Nothing warms the other offscreen sites
 (`favorites_bar`, `combat_order_widget`, `duel_strategy_editor`) — if one ever stalls,
 warm its window; do not add a call per widget class.

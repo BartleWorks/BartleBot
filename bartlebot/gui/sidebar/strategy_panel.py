@@ -93,12 +93,17 @@ THE GUTTER IS THE NESTING INDENT
 --------------------------------
 
 ``CardFrame`` puts its drag handle in a gutter outside the frame, and a card built
-without a handle keeps the gutter so its frame lines up with the ones above it. Nothing
-here is draggable -- the order of these cards is the order the fights group in, not a
-user's -- so every card passes ``draggable=False`` and the gutter is empty. It is not
-waste: ``GRIP_GUTTER`` is what indents these cards one level inside their
-``SidebarSection``, the job ``NEST_INDENT_PX`` used to do, and the deck cards take the
-same indent so both sections' frames start at one x.
+without a handle keeps the gutter so its frame lines up with the ones above it.
+``GRIP_GUTTER`` is what indents these cards one level inside their ``SidebarSection``,
+the job ``NEST_INDENT_PX`` used to do, and the deck cards take the same indent so both
+sections' frames start at one x.
+
+A specialized card has a grip in it, and dragging reorders the cards. The order is the
+user's and purely cosmetic -- which fights a card covers decides what they fight with,
+never where the card sits -- and it is kept as the order of the strategy's
+``state_assignments``. The default card has no grip and takes no drops: it is first
+because everything below it is an exception to it, so the tab's ``DragReorder`` is handed
+the specialized cards alone and nothing can be dragged above it.
 
 VERBS
 -----
@@ -302,10 +307,10 @@ class StrategyPanel(CardFrame):
     # ------------------------------------------------------------------
 
     def _build(self) -> None:
-        # draggable=False: these cards are ordered by how their fights group, which is
-        # not a fact any drag could change. The gutter it keeps is what indents the card
-        # one level inside its section -- see the module docstring.
-        layout = self._build_frame("strategies", draggable=False)
+        # The default card is locked to the top, so it alone has no grip. The gutter is
+        # kept either way, and is what indents the card inside its section -- see the
+        # module docstring.
+        layout = self._build_frame("strategies", draggable=self._role is PanelRole.SPECIALIZED)
 
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
@@ -595,6 +600,8 @@ class StrategyPanel(CardFrame):
                 pill.setEnabled(editable)
         self.setCursor(Qt.CursorShape.PointingHandCursor if editable else Qt.CursorShape.ArrowCursor)
         self.setToolTip("" if editable else LOCKED)
+        if self.grip is not None:
+            self.grip.set_locked(not editable, LOCKED)
 
     # ------------------------------------------------------------------
     # Rendering

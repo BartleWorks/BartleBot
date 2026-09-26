@@ -47,11 +47,12 @@ module.
 This is not only about cards. Anything that renders a widget offscreen pays the same
 toll on its first go -- ``QWidget.grab()`` for a ``QDrag`` pixmap, as
 ``combat_order_widget`` and ``favorites_bar`` do, and any other graphics effect. A
-surface with one of those in it can call this the way ``CardColumn`` does. None of them
-do today, and none of them shares a window with a card column, so each still pays on its
-first gesture. If that starts to matter, warm the *window* rather than adding a call per
-widget class -- the debt belongs to the top-level, and ``CardColumn`` is only the
-volunteer that happens to sit on all three surfaces that drag.
+surface with one of those in it can call this the way ``DragReorder.watch_for_show``
+does. None of them do today, so each still pays on its first gesture unless a card list
+in the same window has already paid it. If that starts to matter, warm the *window*
+rather than adding a call per widget class -- the debt belongs to the top-level, and
+``DragReorder`` is only the volunteer that happens to sit on every surface that drags
+cards.
 """
 
 from __future__ import annotations

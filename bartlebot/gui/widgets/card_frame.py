@@ -36,8 +36,8 @@ Reordering is a separate gesture on a separate target: ``GripHandle``, the six d
 gutter beside every card. It is the *only* drag source, and that is what makes the cursor
 honest. The cursor is how a surface says "this drags", and it cannot say that over a whole
 card whose primary verb is launch -- so the announcement was given a place of its own to
-live, where an open hand is the truth. ``CardColumn`` owns what a drag then does, order
-being a fact about the column rather than about any card.
+live, where an open hand is the truth. ``DragReorder`` owns what a drag then does, order
+being a fact about the list rather than about any card.
 
 That place is *outside* the card's frame: the handle in the gutter, everything else in the
 frame, and only the frame carrying the border and the fill. Inside the header the handle
@@ -236,7 +236,7 @@ class GripHandle(ThemedMixin, QWidget):
     Presses are **accepted**, not passed on. A plain widget ignores them by default and Qt
     re-sends what a child ignores to its parent, which would hand the press to the card --
     and, more to the point, would send every subsequent mouse *move* to the card as well.
-    The moves are what ``CardColumn`` turns into a reorder, so a grip that does not keep
+    The moves are what ``DragReorder`` turns into a reorder, so a grip that does not keep
     the press is a grip that never sees the drag.
 
     Still a child of the card, for all that it is drawn outside its frame. Qt sends no
@@ -318,7 +318,7 @@ class GripHandle(ThemedMixin, QWidget):
 
         Disabled and dimmed rather than hidden: a handle that vanishes moves nothing (its
         size is retained) but leaves the user wondering where the gesture went, while a
-        greyed one with a reason in its tooltip answers that. ``CardColumn`` reads
+        greyed one with a reason in its tooltip answers that. ``DragReorder`` reads
         ``isEnabled`` before starting a drag, so this is the only lock there is.
         """
         self.setEnabled(not locked)
@@ -386,7 +386,7 @@ class CardFrame(ThemedMixin, QWidget):
         # The drag handle, and whether the column currently has this card off the layout
         # and following the pointer. ``_dragging`` is a styling state exactly like
         # ``_hovered`` -- one flag that picks which palette apply_theme_styles uses -- and
-        # it is set by CardColumn, which is the only thing that knows a drag is happening.
+        # it is set by DragReorder, which is the only thing that knows a drag is happening.
         self._grip: GripHandle | None = None
         # A card's optional face button for verbs the face alone does not show -- see
         # ``_make_kebab_button``. None on every card that has not asked for one.
@@ -459,7 +459,7 @@ class CardFrame(ThemedMixin, QWidget):
         unhooked player, which sits outside the run ``ClientManager`` keeps contiguous.
         The gutter stays, holding a spacer of exactly the handle's width: a card built
         without one is not a card that has moved twenty-two pixels left of the ones above
-        it. ``CardColumn`` reads ``grip`` and skips a card that has none, so this is also
+        it. ``DragReorder`` reads ``grip`` and skips a card that has none, so this is also
         what makes such a card undraggable rather than merely unlabelled -- the same
         arrangement ``AddCard`` uses for the column's terminator.
         """
@@ -509,9 +509,9 @@ class CardFrame(ThemedMixin, QWidget):
     def grip(self) -> GripHandle | None:
         """This card's drag handle, or None if it was built without one.
 
-        Public because the column installs its event filter on it: the drag belongs to
-        ``CardColumn`` -- order is a fact about the column, not about any card -- and the
-        grip is the card's half of that arrangement.
+        Public because ``DragReorder`` installs its event filter on it: the drag belongs to
+        the list -- order is a fact about the list, not about any card -- and the grip is
+        the card's half of that arrangement.
         """
         return self._grip
 
