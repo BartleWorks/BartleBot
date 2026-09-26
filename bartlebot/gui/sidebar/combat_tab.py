@@ -126,10 +126,11 @@ from bartlebot.gui.sidebar.strategy_panel import (
     StrategyPanel,
 )
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.add_card import AddCard
 from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge
 from bartlebot.gui.widgets.card_art_tile import CardArtStrip
-from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
+from bartlebot.gui.widgets.card_frame import GRIP_GUTTER, CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.deck_card_list import DeckCardList
 from bartlebot.gui.widgets.elided_label import ElidedLabel
 from bartlebot.gui.widgets.picker_popup import PickerRow, Section
@@ -188,6 +189,11 @@ _LOAD_DECK = "Load from Library…"
 _CLEAR_DECK = "Clear deck"
 _NO_DECK = "No deck saved"
 
+#: The section's two whole-group verbs (#109), and what a verb says while a deck job runs.
+_IMPORT_ALL = "Import all"
+_APPLY_ALL = "Apply all"
+_DECK_BUSY = "Working on a deck — wait for it to finish"
+
 
 class _DeckCard(CardFrame):
     """One player slot's saved deck: what is in it, and the six things you can do to it.
@@ -225,6 +231,9 @@ class _DeckCard(CardFrame):
         self._deck: DeckData | None = None
         self._editable = True
         self._has_client = False
+        # A deck import or apply is running somewhere in the section. Every deck verb waits
+        # for it, because two jobs on one client drive the same deck window at once.
+        self._busy = False
         self._expanded = False
         # The account in this slot right now, as a palette slot, or None for no stripe --
         # the same stripe a player card wears, so deck and player are matched by hue.
@@ -350,6 +359,11 @@ class _DeckCard(CardFrame):
         self._has_client = has_client
         self._reapply_verb_states()
 
+    def set_busy(self, busy: bool) -> None:
+        """Whether a deck job is running -- Import and Apply wait while one is."""
+        self._busy = busy
+        self._reapply_verb_states()
+
     @property
     def color_key(self) -> int | None:
         """The account palette slot this card is striped with, or None for no stripe."""
@@ -443,6 +457,8 @@ class _DeckCard(CardFrame):
         """
         if not self._editable:
             return LOCKED
+        if self._busy:
+            return _DECK_BUSY
         if not self._has_client:
             return f"No game client connected for P{self._slot}"
         return "Snapshot the deck from this game client"
@@ -450,6 +466,8 @@ class _DeckCard(CardFrame):
     def _apply_tooltip(self) -> str:
         if not self._editable:
             return LOCKED
+        if self._busy:
+            return _DECK_BUSY
         if not self._has_client:
             return f"No game client connected for P{self._slot}"
         if not self.has_deck:
@@ -457,9 +475,10 @@ class _DeckCard(CardFrame):
         return "Push the saved deck to this game client now"
 
     def _reapply_verb_states(self) -> None:
+        ready = self._editable and self._has_client and not self._busy
         for label, enabled, tooltip in (
-            (_IMPORT_DECK, self._editable and self._has_client, self._import_tooltip()),
-            (_APPLY_DECK, self._editable and self._has_client and self.has_deck, self._apply_tooltip()),
+            (_IMPORT_DECK, ready, self._import_tooltip()),
+            (_APPLY_DECK, ready and self.has_deck, self._apply_tooltip()),
         ):
             button = self.action_button(label)
             if button is not None:
@@ -486,10 +505,17 @@ class _PlayerDecksSection(SidebarSection):
 
     Signals carry the slot, so the tab never has to ask a card which one it is: each
     card's own slot-less signal is re-emitted here with the number bound.
+
+    Above the cards sit Import all and Apply all (#109), the same two verbs for every
+    hooked client at once -- doing four wizards one card at a time was the complaint. They
+    are a row in the body rather than buttons in the heading because ``SidebarSection``'s
+    heading is a disclosure, and a verb sitting on it would share its click.
     """
 
     import_requested = pyqtSignal(int)  # 1-based slot number
     apply_requested = pyqtSignal(int)  # 1-based slot number
+    import_all_requested = pyqtSignal()
+    apply_all_requested = pyqtSignal()
     save_to_library_requested = pyqtSignal(int)  # 1-based slot number
     load_from_library_requested = pyqtSignal(int)  # 1-based slot number
     clear_requested = pyqtSignal(int)  # 1-based slot number
@@ -503,6 +529,21 @@ class _PlayerDecksSection(SidebarSection):
         layout.setSpacing(4)
         self._cards: list[_DeckCard] = []
         self._client_count = 0
+        self._editable = True
+        self._busy = False
+
+        all_row = QHBoxLayout()
+        # Indented by the gutter every card below reserves for its grip, so the row spans
+        # exactly the width of the card frames it acts on.
+        all_row.setContentsMargins(GRIP_GUTTER, 0, 0, 0)
+        all_row.setSpacing(4)
+        self._import_all_btn = ActionButton("download", _IMPORT_ALL, parent=self)
+        self._import_all_btn.clicked.connect(self.import_all_requested)
+        self._apply_all_btn = ActionButton("upload", _APPLY_ALL, parent=self)
+        self._apply_all_btn.clicked.connect(self.apply_all_requested)
+        all_row.addWidget(self._import_all_btn, 1)
+        all_row.addWidget(self._apply_all_btn, 1)
+        layout.addLayout(all_row)
 
         for slot in range(1, _NUM_PLAYER_SLOTS + 1):
             card = _DeckCard(slot)
@@ -516,6 +557,7 @@ class _PlayerDecksSection(SidebarSection):
             self._cards.append(card)
 
         self.set_content_layout(layout)
+        self._reapply_all_states()
 
     def _on_archmastery(self, slot: int, mode: object) -> None:
         self.archmastery_mode_changed.emit(slot, mode)
@@ -524,18 +566,62 @@ class _PlayerDecksSection(SidebarSection):
         """The card for a 1-based slot. Public so the tab and the tests can read one."""
         return self._cards[slot - 1]
 
+    @property
+    def import_all_button(self) -> ActionButton:
+        return self._import_all_btn
+
+    @property
+    def apply_all_button(self) -> ActionButton:
+        return self._apply_all_btn
+
     def set_row_expanded(self, slot: int, expanded: bool) -> None:
         """Fold or unfold one slot's card list, exactly as a body click would."""
         self.card(slot).set_expanded(expanded)
 
     def set_editable(self, editable: bool) -> None:
+        self._editable = editable
         for card in self._cards:
             card.set_editable(editable)
+        self._reapply_all_states()
 
     def set_client_count(self, count: int) -> None:
         self._client_count = count
         for card in self._cards:
             card.set_has_client(card.slot <= count)
+        self._reapply_all_states()
+
+    def set_busy(self, busy: bool) -> None:
+        """Hold every deck verb, per card and for all, while a deck job runs."""
+        self._busy = busy
+        for card in self._cards:
+            card.set_busy(busy)
+        self._reapply_all_states()
+
+    def _reapply_all_states(self) -> None:
+        """Enable the two whole-group verbs, each with the one reason it would not run.
+
+        Apply all needs a saved deck in at least one *hooked* slot: a deck saved for P4
+        with two clients hooked has nowhere to go, and the controller skips it.
+        """
+        ready = self._editable and not self._busy and self._client_count > 0
+        any_deck = any(card.has_deck for card in self._cards if card.slot <= self._client_count)
+        if not self._editable:
+            import_tip = apply_tip = LOCKED
+        elif self._busy:
+            import_tip = apply_tip = _DECK_BUSY
+        elif self._client_count == 0:
+            import_tip = apply_tip = "No game clients connected"
+        else:
+            import_tip = "Read the current deck from every hooked client into this strategy"
+            apply_tip = (
+                "Apply each saved deck to its client"
+                if any_deck
+                else "No deck saved for any connected client — use Import first"
+            )
+        self._import_all_btn.setEnabled(ready)
+        self._import_all_btn.setToolTip(import_tip)
+        self._apply_all_btn.setEnabled(ready and any_deck)
+        self._apply_all_btn.setToolTip(apply_tip)
 
     def set_player_colors(self, keys: list[int | None], labels: list[str]) -> None:
         """Per slot, index 0 being P1; shorter lists leave the remaining cards unstriped."""
@@ -549,6 +635,7 @@ class _PlayerDecksSection(SidebarSection):
     def refresh(self, player_decks: dict[int, DeckData]) -> None:
         for card in self._cards:
             card.set_deck(player_decks.get(card.slot))
+        self._reapply_all_states()
 
 
 # ---------------------------------------------------------------------------
@@ -720,6 +807,8 @@ class CombatTab(QWidget):
     combat_config_changed = pyqtSignal()
     import_deck_requested = pyqtSignal(int)  # 1-based slot number
     apply_deck_requested = pyqtSignal(int)  # 1-based slot number
+    import_all_decks_requested = pyqtSignal()
+    apply_all_decks_requested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -818,6 +907,8 @@ class CombatTab(QWidget):
         self._decks_section = _PlayerDecksSection(self)
         self._decks_section.import_requested.connect(self.import_deck_requested)
         self._decks_section.apply_requested.connect(self.apply_deck_requested)
+        self._decks_section.import_all_requested.connect(self.import_all_decks_requested)
+        self._decks_section.apply_all_requested.connect(self.apply_all_decks_requested)
         self._decks_section.save_to_library_requested.connect(self._on_save_deck_to_library)
         self._decks_section.load_from_library_requested.connect(self._on_load_deck_from_library)
         self._decks_section.clear_requested.connect(self._on_clear_deck)
@@ -911,6 +1002,11 @@ class CombatTab(QWidget):
     def set_client_count(self, count: int) -> None:
         self._decks_section.set_client_count(count)
         self.refresh_player_colors()
+
+    def set_deck_busy(self, busy: bool) -> None:
+        """Whether a deck import or apply is running. Pushed by ``AppController``, which
+        owns the job; every deck verb waits for it."""
+        self._decks_section.set_busy(busy)
 
     def set_player_account_source(self, source: Callable[[], list[str | None]] | None) -> None:
         """Install what answers *which account is behind each player slot, right now*.

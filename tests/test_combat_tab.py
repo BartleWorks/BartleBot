@@ -1839,6 +1839,110 @@ def test_deck_tooltips_name_the_run_lock(qapp):
 
 
 # ---------------------------------------------------------------------------
+# Import all / Apply all (#109)
+# ---------------------------------------------------------------------------
+
+
+def test_the_all_buttons_span_the_deck_cards_width(qapp):
+    """The row is indented by the cards' grip gutter, so its edges meet their frames."""
+    section = _PlayerDecksSection()
+    section.resize(300, 600)
+    section.set_expanded(True)
+    section.show()
+    qapp.processEvents()
+
+    frame = section.card(1).frame
+    left = frame.mapTo(section, frame.rect().topLeft()).x()
+    right = frame.mapTo(section, frame.rect().topRight()).x()
+    import_btn, apply_btn = section.import_all_button, section.apply_all_button
+    assert import_btn.mapTo(section, import_btn.rect().topLeft()).x() == left
+    assert apply_btn.mapTo(section, apply_btn.rect().topRight()).x() == right
+    section.close()
+
+
+def test_the_all_buttons_are_off_with_no_client(qapp):
+    section = _PlayerDecksSection()
+    section.refresh({1: DeckData(normal={"Card": 1})})
+
+    assert not section.import_all_button.isEnabled()
+    assert not section.apply_all_button.isEnabled()
+    assert section.import_all_button.toolTip() == "No game clients connected"
+
+
+def test_import_all_needs_only_a_client_and_apply_all_a_saved_deck(qapp):
+    section = _PlayerDecksSection()
+    section.set_client_count(2)
+
+    assert section.import_all_button.isEnabled()
+    assert not section.apply_all_button.isEnabled()
+    assert "use Import first" in section.apply_all_button.toolTip()
+
+    section.refresh({2: DeckData(normal={"Card": 1})})
+
+    assert section.apply_all_button.isEnabled()
+
+
+def test_apply_all_ignores_a_deck_saved_for_an_unhooked_slot(qapp):
+    """P4's deck has nowhere to go with two clients hooked, so it enables nothing."""
+    section = _PlayerDecksSection()
+    section.set_client_count(2)
+    section.refresh({4: DeckData(normal={"Card": 1})})
+
+    assert not section.apply_all_button.isEnabled()
+
+
+def test_the_all_buttons_name_the_run_lock(qapp):
+    section = _PlayerDecksSection()
+    section.set_client_count(4)
+    section.refresh({1: DeckData(normal={"Card": 1})})
+
+    section.set_editable(False)
+
+    assert not section.import_all_button.isEnabled()
+    assert not section.apply_all_button.isEnabled()
+    assert section.import_all_button.toolTip() == LOCKED
+
+
+def test_the_all_buttons_reach_the_tab(qapp):
+    tab = CombatTab()
+    tab.set_client_count(1)
+    seen: list[str] = []
+    tab.import_all_decks_requested.connect(lambda: seen.append("import"))
+    tab.apply_all_decks_requested.connect(lambda: seen.append("apply"))
+
+    tab._decks_section.import_all_button.click()
+    tab._decks_section.apply_all_requested.emit()
+
+    assert seen == ["import", "apply"]
+
+
+def test_a_busy_deck_job_holds_every_deck_verb(qapp):
+    tab = CombatTab()
+    tab.set_client_count(4)
+    section = tab._decks_section
+    section.refresh({1: DeckData(normal={"Card": 1})})
+
+    tab.set_deck_busy(True)
+
+    card = section.card(1)
+    for button in (
+        card.action_button(_IMPORT_DECK),
+        card.action_button(_APPLY_DECK),
+        section.import_all_button,
+        section.apply_all_button,
+    ):
+        assert not button.isEnabled()
+        assert "wait for it to finish" in button.toolTip()
+
+    tab.set_deck_busy(False)
+
+    assert card.action_button(_IMPORT_DECK).isEnabled()
+    assert card.action_button(_APPLY_DECK).isEnabled()
+    assert section.import_all_button.isEnabled()
+    assert section.apply_all_button.isEnabled()
+
+
+# ---------------------------------------------------------------------------
 # Which account is behind each player slot, for the combat dialog's pills (#40)
 #
 # A callable rather than a pushed value, and asked at the moment the dialog opens.
