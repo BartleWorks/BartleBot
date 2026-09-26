@@ -76,6 +76,7 @@ from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.elided_label import apply_muted_color
 from bartlebot.gui.widgets.rule_heading import RuleHeading
+from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.strategy_card import StrategyCard
 from bartlebot.strategy_store import Origin, StrategyKind
@@ -277,6 +278,8 @@ class _KindPage(QWidget):
     #: to a field edit, which only ever redraws one card.
     structure_changed = pyqtSignal()
     promote_requested = pyqtSignal(object)
+    #: The Duel tab's pencil asked to edit a Player Strategy, by id.
+    open_pcs_requested = pyqtSignal(str)
 
     def __init__(self, kind: StrategyKind, ws: StrategyWorkingSet, parent=None):
         super().__init__(parent)
@@ -320,6 +323,8 @@ class _KindPage(QWidget):
 
         self._list = QListWidget()
         self._list.setSpacing(2)
+        # Filtering changes how many cards there are, and so whether the list scrolls.
+        reserve_scrollbar_gutter(self._list)
         self._list.currentItemChanged.connect(self._on_item_changed)
         box.addWidget(self._list, 1)
 
@@ -355,6 +360,7 @@ class _KindPage(QWidget):
             # section's now.
             self._editor = DuelConfigEditor()
             self._editor.promote_requested.connect(self.promote_requested)
+            self._editor.open_pcs_requested.connect(self.open_pcs_requested)
         elif self._kind is StrategyKind.PLAYER:
             self._editor = PlayerStrategyEditor()
         else:
@@ -367,6 +373,9 @@ class _KindPage(QWidget):
         self._scroll = QScrollArea()
         self._scroll.setWidgetResizable(True)
         self._scroll.setFrameShape(QFrame.Shape.NoFrame)
+        # An assignment card folding open is what most often tips this pane into
+        # scrolling, and without a reserved gutter every card narrows under the click.
+        reserve_scrollbar_gutter(self._scroll)
         self._scroll.setWidget(self._editor)
         box.addWidget(self._scroll, 1)
 
@@ -461,6 +470,19 @@ class _KindPage(QWidget):
             if item.data(Qt.ItemDataRole.UserRole) == self._selected_id:
                 return item
         return None
+
+    def clear_filter(self) -> None:
+        """Empty the filter box, so every row is visible again."""
+        self._filter.clear()
+
+    def focus_editor(self) -> None:
+        """Move focus into the detail pane's main field, where the editor has one.
+
+        Only the Player tab's does — its DSL box. The other editors have no single field
+        a visitor has obviously come for, so focus stays where it is.
+        """
+        if isinstance(self._editor, PlayerStrategyEditor):
+            self._editor.focus_dsl()
 
     def select(self, uuid: str | None) -> None:
         """Select ``uuid`` if it is in the list, loading it into the detail pane."""
@@ -674,6 +696,7 @@ class CombatStrategyDialog(QDialog):
             page = _KindPage(k, ws)
             page.structure_changed.connect(self._on_structure_changed)
             page.promote_requested.connect(self._on_promote_requested)
+            page.open_pcs_requested.connect(self._on_open_pcs_requested)
             self._pages[k] = page
             self._tabs.addTab(page, label)
         self._tabs.currentChanged.connect(self._on_tab_changed)
@@ -795,6 +818,23 @@ class CombatStrategyDialog(QDialog):
         self._pages[StrategyKind.PLAYER].rebuild_list()
         self._pages[StrategyKind.DUEL].refresh_pcs_list()
         row.link_to(pcs.id)
+
+    def _on_open_pcs_requested(self, pcs_id: str) -> None:
+        """Show one Player Strategy on its own tab — the Duel tab's pencil.
+
+        The filter is cleared first: ``_apply_filter`` keeps a selected row selected
+        even when the query hides it, so a stale query would load the strategy into the
+        editor with no visible card saying which one it is. Nothing is saved or lost on
+        the way — both tabs edit the one working set.
+
+        Focus goes to the DSL box last: switching tabs hands it to the page's first
+        focusable child, the filter, and the DSL is what the pencil promised.
+        """
+        page = self._pages[StrategyKind.PLAYER]
+        page.clear_filter()
+        self._tabs.setCurrentWidget(page)
+        page.select(pcs_id)
+        page.focus_editor()
 
     # -- closing --------------------------------------------------------
 

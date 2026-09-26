@@ -1,6 +1,6 @@
 """Tests for ``AssignmentCard`` — the card that replaced the assignment form row.
 
-The row's controls did not go away; they went behind the pencil. So what these tests are
+The row's controls did not go away; they went behind the chevron. So what these tests are
 mostly about is that the fold is honest: everything is still reachable, everything still
 writes through, and the one thing the fold must *not* hide — a DSL that does not parse —
 is on the face whether or not the card is open.
@@ -19,8 +19,10 @@ from bartlebot.gui.combat_strategies.assignment_card import (
     DEFAULT_CHOICE,
     DEFAULT_DATA,
     EDIT_VERB,
+    HIDE_DETAILS,
     MISSING_TITLE,
     REMOVE_VERB,
+    SHOW_DETAILS,
     AssignmentCard,
     dsl_preview,
     strategy_menu_entries,
@@ -130,27 +132,104 @@ def test_a_card_starts_folded(qapp):
     assert card._details.isHidden()
 
 
-def test_the_pencil_unfolds_the_details(qapp):
+def test_the_chevron_unfolds_the_details(qapp):
     card = _card(PlayerAssignment(players=[1]))
 
-    card.action_button(EDIT_VERB).click()
+    card.chevron.click()
 
     assert card.is_expanded()
     assert not card._details.isHidden()
 
 
-def test_the_pencil_folds_it_back(qapp):
+def test_the_chevron_folds_it_back(qapp):
     card = _card(PlayerAssignment(players=[1]))
     card.toggle_expanded()
 
-    card.action_button(EDIT_VERB).click()
+    card.chevron.click()
 
     assert not card.is_expanded()
 
 
+def test_the_chevron_points_the_way_the_fold_will_go(qapp):
+    card = _card(PlayerAssignment(players=[1]))
+
+    assert card.chevron._icon_name == "chevron_down"
+    assert card.chevron.toolTip() == SHOW_DETAILS
+
+    card.chevron.click()
+
+    assert card.chevron._icon_name == "chevron_up"
+    assert card.chevron.toolTip() == HIDE_DETAILS
+
+
+def test_the_chevron_sits_at_the_right_edge_of_the_header(qapp):
+    """The standard disclosure placement, and the one spot that does not move as the card grows."""
+    card = _card(PlayerAssignment(players=[1]))
+    header = card.frame.layout().itemAt(0).layout()
+
+    assert header.itemAt(header.count() - 1).widget() is card.chevron
+
+
+def _menu_labels(card: AssignmentCard) -> list[str]:
+    return [action.text() for action in card._build_verbs_menu().actions()]
+
+
+def test_the_fold_is_still_in_the_right_click_menu(qapp):
+    card = _card(PlayerAssignment(players=[1]))
+
+    assert SHOW_DETAILS in _menu_labels(card)
+    card.toggle_expanded()
+    assert HIDE_DETAILS in _menu_labels(card)
+
+
+# ---------------------------------------------------------------------------
+# The pencil: edit the linked Player Strategy
+# ---------------------------------------------------------------------------
+
+
+def test_the_pencil_asks_to_open_the_linked_strategy(qapp):
+    pcs = PlayerCombatStrategy(name="Blade", dsl="any<blade>")
+    card = _card(PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id), [pcs])
+    seen = []
+    card.open_pcs_requested.connect(seen.append)
+
+    card.action_button(EDIT_VERB).click()
+
+    assert seen == [pcs.id]
+    assert not card.is_expanded()  # it navigates; it no longer folds
+
+
+@pytest.mark.parametrize(
+    "assignment",
+    [
+        PlayerAssignment(players=[1]),
+        PlayerAssignment(players=[1], dsl="any<aoe>"),
+        PlayerAssignment(players=[1], player_combat_strategy_id="gone"),
+    ],
+    ids=["default", "custom", "missing"],
+)
+def test_the_pencil_is_withdrawn_when_there_is_no_strategy_to_open(qapp, assignment):
+    card = _card(assignment)
+
+    assert card.action_button(EDIT_VERB).isHidden()
+    assert EDIT_VERB not in _menu_labels(card)
+
+
+def test_the_pencil_follows_the_strategy_the_card_is_given(qapp):
+    pcs = PlayerCombatStrategy(name="Blade")
+    card = _card(PlayerAssignment(players=[1]), [pcs])
+
+    card.choose_strategy(pcs.id)
+    assert not card.action_button(EDIT_VERB).isHidden()
+    assert EDIT_VERB in _menu_labels(card)
+
+    card.choose_strategy(DEFAULT_DATA)
+    assert card.action_button(EDIT_VERB).isHidden()
+
+
 def test_choosing_custom_dsl_unfolds_the_card_on_its_own(qapp):
     """Custom DSL is the one answer with nowhere to be typed on the face, so choosing it
-    and then having to find the pencil would be two gestures for one intent."""
+    and then having to find the chevron would be two gestures for one intent."""
     card = _card(PlayerAssignment(players=[1]))
 
     card.choose_strategy(CUSTOM_DATA)
@@ -254,15 +333,24 @@ def test_locking_disables_the_change_and_remove_verbs(qapp):
     assert not card.action_button(REMOVE_VERB).isEnabled()
 
 
-def test_locking_leaves_the_pencil_live_so_the_details_stay_readable(qapp):
+def test_locking_leaves_the_chevron_live_so_the_details_stay_readable(qapp):
     """Everything the fold reveals is read-only by then, and watching a bot fight is
     exactly when someone wants to read the note and the DSL."""
     card = _card(PlayerAssignment(players=[1], dsl="any<aoe>"))
 
     card.set_editable(False)
 
-    assert card.action_button(EDIT_VERB).isEnabled()
+    assert card.chevron.isEnabled()
     assert card._dsl_edit.isReadOnly()
+
+
+def test_locking_leaves_the_pencil_live_since_it_only_navigates(qapp):
+    pcs = PlayerCombatStrategy(name="Blade")
+    card = _card(PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id), [pcs])
+
+    card.set_editable(False)
+
+    assert card.action_button(EDIT_VERB).isEnabled()
 
 
 def test_a_locked_card_refuses_to_change_its_strategy_by_menu(qapp):

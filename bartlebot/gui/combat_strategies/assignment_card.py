@@ -16,19 +16,28 @@ launch cards, the player cards and the Combat tab's own cards are built from, so
 list finally looks like the other card lists in the app instead of like a settings form
 that wandered into a dialog.
 
-THE THREE VERBS
----------------
+THE VERBS
+---------
 
 * **search** — change what these players do. A themed popup menu over the same three
   answers the combo offered: the built-in default, any Player Strategy in the working
   set, or DSL of your own. A menu rather than ``PickerPopup`` because the payload is one
   line and single-valued, and rather than a nested dialog because a dialog stacked on
   this dialog is exactly what the combo was introduced to retire.
-* **pencil** — the rest of the form, unfolded in place: the school, the note, and (only
+* **pencil** — edit the linked Player Strategy: the dialog switches to its Player tab
+  with that strategy selected. Only on a card that links one. A pencil that merely
+  unfolded the card read as "edit this strategy's DSL" and did nothing of the kind
+  (#112), and nothing else here led to the DSL a linked card runs. Default, custom and
+  missing cards have nothing to open, so the button is withdrawn rather than greyed —
+  the same call ``StrategyBindingCard`` makes for an inline config.
+* **dismiss** — remove the assignment.
+* **chevron** — the rest of the form, unfolded in place: the school, the note, and (only
   when the answer is custom DSL) the DSL box with its validator and its offer to be
   saved as a Player Strategy. Nothing was dropped; it stopped being in front of every
-  user of every duel whether or not they had anything to say in it.
-* **dismiss** — remove the assignment.
+  user of every duel whether or not they had anything to say in it. A disclosure
+  chevron at the header's right edge, where Material, Fluent and macOS all put one, so
+  it never moves as the card grows. Not a verb button, because its glyph and tooltip
+  follow the fold; the right-click menu still offers the fold as a verb.
 
 The expansion is per-card and not remembered: it is a detour, and a card that reopens
 folded is a card whose height is a function of its content rather than of its history.
@@ -44,7 +53,7 @@ while the bot is running.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QTimer, pyqtSignal
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -60,6 +69,7 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.dsl_edit import DslGrowingTextEdit
+from bartlebot.gui.widgets.icon_button import IconButton
 from bartlebot.gui.widgets.player_pills import PlayerPillBar
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.school_combo import SchoolCombo
@@ -79,8 +89,11 @@ PROMOTE_LABEL = "Save as Player Strategy…"
 
 #: The verbs' labels, so a caller (and a test) can ask for a button by name.
 CHANGE_VERB = "Change strategy"
-EDIT_VERB = "Edit details"
+EDIT_VERB = "Edit this Player Strategy"
 REMOVE_VERB = "Remove"
+#: The fold's menu entry and the chevron's tooltip, each naming what a press does next.
+SHOW_DETAILS = "Show details"
+HIDE_DETAILS = "Hide details"
 
 #: What the card's title reads when the assignment names a strategy that is no longer in
 #: the working set. Named rather than silently reset to the default — resetting would look
@@ -109,7 +122,7 @@ def dsl_preview(text: str, limit: int = 120) -> str:
 class AssignmentCard(CardFrame):
     """One player-assignment card: which players, what they do, and the rest folded away.
 
-    ``CardMode.MEMBER``: the body is not a button. Its verbs are the grip and the three
+    ``CardMode.MEMBER``: the body is not a button. Its verbs are the grip and the header
     icons, and a body click that also did something would fight the pills sitting on it.
     """
 
@@ -123,6 +136,8 @@ class AssignmentCard(CardFrame):
     #: This card's custom DSL is worth keeping — emits self, for the dialog to turn into a
     #: Player Strategy in its working set.
     promote_requested = pyqtSignal(object)
+    #: The pencil: open the linked Player Strategy, by id, wherever it is edited.
+    open_pcs_requested = pyqtSignal(str)
 
     def __init__(
         self,
@@ -177,7 +192,10 @@ class AssignmentCard(CardFrame):
         header.addWidget(self._pills, 0)
 
         header.addStretch(1)
-        self._add_face_verbs(header)
+        self._add_face_verbs(header, self._all_verbs())
+        self._chevron = self._make_face_icon_button("chevron_down", SHOW_DETAILS)
+        self._chevron.clicked.connect(self.toggle_expanded)
+        header.addWidget(self._chevron, 0, Qt.AlignmentFlag.AlignVCenter)
         inner.addLayout(header)
 
         self._desc_lbl = QLabel(self)
@@ -236,12 +254,20 @@ class AssignmentCard(CardFrame):
         self._details.setVisible(False)
         inner.addWidget(self._details)
 
-    def _verbs(self) -> list[CardVerb]:
+    def _all_verbs(self) -> list[CardVerb]:
+        """Every verb this card can ever offer — what its face buttons are built from."""
+        fold = HIDE_DETAILS if self._expanded else SHOW_DETAILS
         return [
             CardVerb(CHANGE_VERB, "search", "Change Player Combat Strategy", self._open_strategy_menu, on_face=True),
-            CardVerb(EDIT_VERB, "pencil", "Edit required school, note, and custom DSL", self.toggle_expanded, True),
+            CardVerb(EDIT_VERB, "pencil", "Open this Player Strategy in the Player tab", self._open_linked_pcs, True),
             CardVerb(REMOVE_VERB, "dismiss", "Remove this assignment", lambda: self.remove_requested.emit(self), True),
+            CardVerb(fold, "chevron_up" if self._expanded else "chevron_down", fold, self.toggle_expanded),
         ]
+
+    def _verbs(self) -> list[CardVerb]:
+        """What the right-click menu offers now: the pencil only while there is a strategy to open."""
+        linked = self._linked_pcs() is not None
+        return [v for v in self._all_verbs() if v.label != EDIT_VERB or linked]
 
     # ------------------------------------------------------------------
     # Reading
@@ -296,10 +322,11 @@ class AssignmentCard(CardFrame):
         self._pills.set_editable(editable)
         self._school_combo.setEnabled(editable)
         self._note_edit.setEnabled(editable)
-        for button, verb in ((self.action_button(v.label), v) for v in self._verbs()):
+        for button, verb in ((self.action_button(v.label), v) for v in self._all_verbs()):
             if button is not None:
-                # The pencil stays live while locked: reading the note and the DSL of a
-                # running bot is exactly what someone watching it fight wants to do, and
+                # The pencil stays live while locked: it only navigates, and reading the
+                # strategy a running bot fights with is exactly what someone watching it
+                # wants to do. The chevron is never locked, for the same reason:
                 # everything the fold reveals is already read-only by then.
                 button.setEnabled(editable or verb.label == EDIT_VERB)
         self._refresh()
@@ -332,6 +359,16 @@ class AssignmentCard(CardFrame):
         self._custom = False
         self._refresh()
         self.changed.emit()
+
+    @property
+    def chevron(self) -> IconButton:
+        """The fold's disclosure button. Public so a test can press it and read its glyph."""
+        return self._chevron
+
+    def _open_linked_pcs(self) -> None:
+        pcs = self._linked_pcs()
+        if pcs is not None:
+            self.open_pcs_requested.emit(pcs.id)
 
     def toggle_expanded(self) -> None:
         self.set_expanded(not self._expanded)
@@ -386,7 +423,7 @@ class AssignmentCard(CardFrame):
             self._assignment.player_combat_strategy_id = None
             self._custom = True
             # Custom DSL is the one answer with nowhere to be typed on the face, so the
-            # fold opens itself: choosing it and then having to find the pencil is two
+            # fold opens itself: choosing it and then having to find the chevron is two
             # gestures for one intent.
             self._expanded = True
         else:
@@ -439,11 +476,13 @@ class AssignmentCard(CardFrame):
             self._dsl_error_lbl.setVisible(custom and bool(self._dsl_error_lbl.text()))
             self._promote_btn.setVisible(custom and self._editable and bool(self._assignment.dsl.strip()))
             self._details.setVisible(self._expanded)
-            button = self.action_button(EDIT_VERB)
-            if button is not None:
-                button.setToolTip(
-                    "Hide this assignment's details" if self._expanded else "Edit required school, note, and custom DSL"
-                )
+            self._chevron.set_icon_name("chevron_up" if self._expanded else "chevron_down")
+            self._chevron.setToolTip(HIDE_DETAILS if self._expanded else SHOW_DETAILS)
+            # Withdrawn rather than greyed, as on ``StrategyBindingCard``: with no linked
+            # strategy there is nothing to open, and the button holds its space either way.
+            pencil = self.action_button(EDIT_VERB)
+            if pencil is not None:
+                pencil.setVisible(pcs is not None)
         finally:
             self._suppress = False
         self._update_dsl_validation()
@@ -521,7 +560,7 @@ class AssignmentCard(CardFrame):
         problem with a *shared* strategy belongs.
 
         The warning mark on the title is what makes the fold safe. Everything else the
-        pencil hides is optional; a DSL that does not parse is not, and a card that only
+        chevron hides is optional; a DSL that does not parse is not, and a card that only
         admitted to it once expanded would hide the one thing the user has to act on.
         Same mark and same tooltip as ``StrategyCard``, so a broken thing looks broken
         wherever it is drawn.

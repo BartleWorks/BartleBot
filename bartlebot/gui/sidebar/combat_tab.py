@@ -136,6 +136,7 @@ from bartlebot.gui.widgets.drag_reorder import DragReorder
 from bartlebot.gui.widgets.elided_label import ElidedLabel
 from bartlebot.gui.widgets.picker_popup import PickerRow, Section
 from bartlebot.gui.widgets.player_pills import PlayerBadge
+from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
@@ -927,6 +928,8 @@ class CombatTab(QWidget):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        # Sections fold and decks come and go, each of which can tip the tab into scrolling.
+        reserve_scrollbar_gutter(scroll_area)
 
         content = QWidget()
         self._content_layout = QVBoxLayout(content)

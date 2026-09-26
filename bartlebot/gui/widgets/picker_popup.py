@@ -43,6 +43,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import set_style_sheet
+from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 
 POPUP_WIDTH = 400
@@ -678,6 +679,9 @@ class PickerPopup(QWidget):
         self._scroll.setWidgetResizable(True)
         self._scroll.setFrameShape(QFrame.Shape.NoFrame)
         self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        # Every keystroke in the search changes how many rows there are, and so whether
+        # the body scrolls; without the gutter the rows would widen and narrow as you type.
+        reserve_scrollbar_gutter(self._scroll)
         self._body = QWidget()
         self._body.setObjectName("PickerBody")
         self._body.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)

@@ -480,6 +480,21 @@ Three things together, or none of them work: a `QSizePolicy` with
 row of everything, which is what it would like rather than what it needs.
 `test_the_strip_reports_a_taller_height_when_it_has_to_wrap` is the guard.
 
+## A scroll area whose content grows under the user reserves its gutter
+
+An as-needed vertical bar takes its width out of the viewport when the content
+overflows and hands it back when it shrinks, so every card in the pane narrows and
+widens by the bar's width — on a folding card, under the very click that folded it
+(#112). A scroll area of cards, or of a form with sections that fold, calls
+`reserve_scrollbar_gutter` (`widgets/scroll_gutter.py`), the Qt stand-in for CSS
+`scrollbar-gutter: stable`. Text editors, trees and tables keep the as-needed bar:
+re-wrapping text costs nothing, and a permanent gutter there only costs width.
+
+Do not "simplify" it into a viewport margin toggled with the bar's visibility. Qt
+decides whether the bar is needed against the viewport *less its margins*, so the two
+states measure different widths and content in the gap between them loops; the module
+docstring has the detail.
+
 ## The first offscreen render costs 150-200ms
 
 A widget with a `QGraphicsEffect` on it, and a `QWidget.grab()` or `render()` for a

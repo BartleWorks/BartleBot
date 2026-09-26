@@ -102,6 +102,9 @@ class DuelConfigEditor(QWidget):
     #: whoever owns the working set to name it, create it and call
     #: :meth:`AssignmentCard.link_to`.
     promote_requested = pyqtSignal(object)
+    #: A card's pencil: open this Player Strategy (by id) wherever Player Strategies are
+    #: edited. Re-emitted from :attr:`AssignmentCard.open_pcs_requested`.
+    open_pcs_requested = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -273,6 +276,7 @@ class DuelConfigEditor(QWidget):
         card.remove_requested.connect(self._on_remove_card)
         card.players_changed.connect(self._enforce_exclusivity)
         card.promote_requested.connect(self.promote_requested)
+        card.open_pcs_requested.connect(self.open_pcs_requested)
         self._cards_layout.addWidget(card)
         self._cards.append(card)
         self._drag.set_cards(self._cards)

@@ -120,6 +120,7 @@ from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
+from bartlebot.gui.widgets.icon_button import IconButton
 
 _FACE_BTN_SIZE = 22
 
@@ -391,6 +392,9 @@ class CardFrame(ThemedMixin, QWidget):
         # A card's optional face button for verbs the face alone does not show -- see
         # ``_make_kebab_button``. None on every card that has not asked for one.
         self._kebab_btn: QToolButton | None = None
+        # Face buttons a subclass placed itself rather than drawing from a verb -- see
+        # ``_make_face_icon_button``. Held only so the launch screen's hover reveals them.
+        self._extra_face_btns: list[IconButton] = []
         self._dragging = False
         self._shadow: QGraphicsDropShadowEffect | None = None
         # Where the left button went down, and whether it has travelled since. A card
@@ -655,15 +659,19 @@ class CardFrame(ThemedMixin, QWidget):
         """
         return []
 
-    def _add_face_verbs(self, header: QHBoxLayout) -> None:
+    def _add_face_verbs(self, header: QHBoxLayout, verbs: list[CardVerb] | None = None) -> None:
         """Put every verb marked ``on_face`` into *header*, in the order ``_verbs`` gives.
 
         The one place a card's buttons are built, so which buttons a card has is decided
         by its verb list and nowhere else. ``_build`` used to name each button in the
         layout code, which meant a surface wanting a different set needed a branch in
         there -- and there was no way to ask a card what its verbs were without reading it.
+
+        *verbs* overrides ``_verbs`` for a card whose menu offers a verb only in some
+        states: the button has to exist from the start to be shown later, while the menu,
+        rebuilt at every right-click, can simply leave the verb out.
         """
-        for verb in self._verbs():
+        for verb in self._verbs() if verbs is None else verbs:
             if verb.on_face:
                 header.addWidget(self._make_verb_button(verb), 0, Qt.AlignmentFlag.AlignVCenter)
 
@@ -789,6 +797,27 @@ class CardFrame(ThemedMixin, QWidget):
         self._kebab_btn = button
         return button
 
+    def _make_face_icon_button(self, icon_name: str, tooltip: str) -> IconButton:
+        """A header button that is not one verb's, for a subclass to place and drive itself.
+
+        For a control whose glyph and tooltip follow the card's own state -- an assignment
+        card's disclosure chevron, which flips with the fold. ``_make_verb_button`` binds
+        one fixed icon to one fixed verb and so cannot say that. An ``IconButton`` rather
+        than a bare ``QToolButton`` because it re-renders its own tint on a theme pass and
+        swaps glyphs through ``set_icon_name``, so there is nothing here for
+        ``_restyle_action_icons`` to keep in step.
+
+        Sized, revealed and held while hidden exactly as the verb buttons are, so it sits
+        in the same row as them without a seam.
+        """
+        button = IconButton(icon_name, tooltip=tooltip, size=_FACE_BTN_SIZE, icon_size=14, parent=self)
+        policy = button.sizePolicy()
+        policy.setRetainSizeWhenHidden(True)
+        button.setSizePolicy(policy)
+        button.setVisible(self.pins_chrome)
+        self._extra_face_btns.append(button)
+        return button
+
     def _open_verbs_menu(self, anchor: QWidget) -> None:
         """Show the kebab button's menu, dropped from *anchor*'s own bottom-left corner."""
         menu = self._build_verbs_menu()
@@ -808,6 +837,8 @@ class CardFrame(ThemedMixin, QWidget):
             button.setVisible(visible)
         if self._kebab_btn is not None:
             self._kebab_btn.setVisible(visible)
+        for button in self._extra_face_btns:
+            button.setVisible(visible)
         if self._grip is not None:
             self._grip.setVisible(visible)
 
