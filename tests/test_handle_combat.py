@@ -99,7 +99,8 @@ async def test_named_enemy_is_found_as_a_fight_target():
         )
 
     assert result == "SUCCESS"
-    # _find_target is called in step 1 (target check) and again inside _tp_and_wait_for_combat.
+    # _find_target is called in step 1 (target check) and again inside _tp_and_wait_for_combat,
+    # until some client is in battle: from then on every teleport goes to the fight centre.
     assert find.await_count >= 1
     assert all(c == call(client, "Cyclops") for c in find.await_args_list)
     client.find_closest_mob.assert_not_called()
@@ -207,6 +208,8 @@ async def test_combat_order_sequential():
 
     c1.tp_to.side_effect = _record_tp_c1
     c2.tp_to.side_effect = _record_tp_c2
+    c1.teleport.side_effect = _record_tp_c1
+    c2.teleport.side_effect = _record_tp_c2
 
     with (
         _patch_run_combat(),
@@ -218,6 +221,11 @@ async def test_combat_order_sequential():
 
     assert result == "SUCCESS"
     assert tp_order == [2, 1]
+    # The first in order goes to the mob; the next joins at the centre it published.
+    c2.tp_to.assert_awaited_once()
+    c1.tp_to.assert_not_called()
+    c1.teleport.assert_awaited_once()
+    assert _xyz(c1.teleport.await_args.args[0]) == _xyz(_CENTRE)
 
 
 async def test_combat_order_invalid_client_number_skipped():
@@ -305,6 +313,14 @@ async def test_success_does_not_wait_for_the_drop_poll():
 # ---------------------------------------------------------------------------
 # Waiting to enter combat
 # ---------------------------------------------------------------------------
+
+
+_CENTRE = XYZ(500.0, 600.0, 0.0)  # FakeClient's duel.position()
+
+
+def _xyz(point: XYZ) -> tuple[float, float, float]:
+    """XYZ has no __eq__, so compare coordinates."""
+    return (point.x, point.y, point.z)
 
 
 def _log_lines(machine: FakeMachine, fragment: str) -> list[str]:
@@ -399,3 +415,87 @@ async def test_a_re_teleport_logs_how_far_it_moved_the_player():
         "Client 0: not in battle; re-teleport 2 moved 0.0 units",
         "Client 0: not in battle; re-teleport 3 moved 0.0 units",
     ]
+
+
+# ---------------------------------------------------------------------------
+# Joining at the fight centre (#110)
+# ---------------------------------------------------------------------------
+
+
+def _leader_and_follower():
+    """A leader, and a follower pulled in only by a teleport to the centre.
+
+    The leader gets in once both have made their first mob teleport, so the follower is
+    already aiming at the mob when the centre is published. The follower's mob teleport
+    never joins it, as when the mob has walked to its seat.
+    """
+    leader, follower = FakeClient(), FakeClient()
+    for client in (leader, follower):
+        client.find_closest_mob.return_value = FakeEntity()
+    leader.in_battle.side_effect = lambda: leader.tp_to.await_count > 0 and follower.tp_to.await_count > 0
+    follower.in_battle.side_effect = lambda: follower.teleport.await_count > 0
+    return leader, follower
+
+
+def _patches_for_fast_retry():
+    return (
+        _patch_run_combat(),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(hc, "POLL_INTERVAL", 0),
+        patch.object(hc, "COMBAT_TP_RETRY_INTERVAL", 0.01),
+    )
+
+
+async def test_a_follower_teleports_to_the_leaders_fight_centre_not_the_mob():
+    leader, follower = _leader_and_follower()
+    p1, p2, p3, p4 = _patches_for_fast_retry()
+    with p1, p2, p3, p4:
+        machine = FakeMachine()
+        result = await hc.run(machine, [leader, follower], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    follower.tp_to.assert_awaited_once()  # the first attempt, before any centre existed
+    follower.teleport.assert_awaited_once()
+    assert _xyz(follower.teleport.await_args.args[0]) == _xyz(_CENTRE)
+    assert len(_log_lines(machine, "Client 1: teleporting to the fight centre")) == 1
+
+
+async def test_the_centre_is_never_read_from_a_client_not_in_battle():
+    leader, follower = _leader_and_follower()
+    p1, p2, p3, p4 = _patches_for_fast_retry()
+    with p1, p2, p3, p4:
+        await hc.run(FakeMachine(), [leader, follower], _DEFAULT_PARAMS)
+
+    leader.duel.position.assert_awaited_once()
+    # The follower got in only after the centre was published, so it never read its own.
+    follower.duel.position.assert_not_called()
+
+
+async def test_with_no_client_in_battle_every_attempt_still_aims_at_the_mob():
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = False
+
+    p1, p2, p3, p4 = _patches_for_fast_retry()
+    with p1, p2, p3, p4, patch.object(hc, "ENTER_COMBAT_TIMEOUT", 0.1):
+        result = await hc.run(FakeMachine(), [client], _DEFAULT_PARAMS)
+
+    assert result == "FAILURE"
+    assert client.tp_to.await_count > 1
+    client.teleport.assert_not_called()
+    client.duel.position.assert_not_called()
+
+
+async def test_an_unreadable_centre_leaves_the_follower_aiming_at_the_mob():
+    leader, follower = _leader_and_follower()
+    leader.duel.position.side_effect = RuntimeError("duel read failed")
+    follower.in_battle.side_effect = lambda: follower.tp_to.await_count >= 2
+
+    p1, p2, p3, p4 = _patches_for_fast_retry()
+    with p1, p2, p3, p4:
+        machine = FakeMachine()
+        result = await hc.run(machine, [leader, follower], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    follower.teleport.assert_not_called()
+    assert len(_log_lines(machine, "Client 0: fight centre unreadable")) == 1

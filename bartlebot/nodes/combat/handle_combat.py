@@ -113,6 +113,8 @@ async def run(machine, clients: list, params: dict) -> str:
            a time in that order, waiting for each to report in_battle().
          - Otherwise: teleport all clients simultaneously, retrying every COMBAT_TP_RETRY_INTERVAL
            until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires.
+         Either way, once any client is in battle its fight centre is published, and every
+         later teleport goes there instead of to the mob (see _FightCentre).
       6. If max_duration is set and has elapsed, return FAILURE.
       7. Run SprintyCombat for all clients in parallel until combat ends.
       8. Start a background poll of chat for drop announcements, which reports each via
@@ -183,6 +185,7 @@ async def run(machine, clients: list, params: dict) -> str:
     await seed_chat_baselines(machine, clients)
 
     # 3. Teleport clients to their target (sequential or simultaneous).
+    fight = _FightCentre()
     if combat_order:
         machine.log(f"Entering combat sequentially: order={combat_order}", logging.DEBUG)
         for client_num in combat_order:
@@ -193,7 +196,7 @@ async def run(machine, clients: list, params: dict) -> str:
                     logging.DEBUG,
                 )
                 continue
-            if not await _tp_and_wait_for_combat(machine, clients[idx], idx, enemy_name, ENTER_COMBAT_TIMEOUT):
+            if not await _tp_and_wait_for_combat(machine, clients[idx], idx, enemy_name, fight, ENTER_COMBAT_TIMEOUT):
                 machine.log(
                     f"FAILURE: client {client_num} did not enter combat within {ENTER_COMBAT_TIMEOUT}s",
                     logging.WARNING,
@@ -203,7 +206,10 @@ async def run(machine, clients: list, params: dict) -> str:
         # 4. Teleport all clients to their targets, retrying until in combat
         machine.log("Teleporting all clients to target (retrying until in combat)…", logging.DEBUG)
         results = await asyncio.gather(
-            *[_tp_and_wait_for_combat(machine, c, i, enemy_name, ENTER_COMBAT_TIMEOUT) for i, c in enumerate(clients)]
+            *[
+                _tp_and_wait_for_combat(machine, c, i, enemy_name, fight, ENTER_COMBAT_TIMEOUT)
+                for i, c in enumerate(clients)
+            ]
         )
         if not all(results):
             not_in_battle = [i for i, ok in enumerate(results) if not ok]
@@ -263,8 +269,51 @@ async def _find_target(client, enemy_name: str):
     return await client.find_closest_mob()
 
 
-async def _tp_and_wait_for_combat(machine, client, index: int, enemy_name: str, timeout: float) -> bool:
+class _FightCentre:
+    """The centre of this node run's fight, published by the first client seen in battle.
+
+    Once a fight starts its mob walks to its seat, or is hidden or swapped, so a late client
+    re-aiming at the mob aims at a moving or absent target (#110). The centre of the duel
+    circle stays put, and teleporting there joins the fight just as teleporting onto an
+    engaged mob does.
+
+    The centre is read from the duel the client is in, and only once in_battle() has read
+    true: outside a fight the duel struct still holds the last fight's data.
+    """
+
+    def __init__(self):
+        self.centre = None
+
+    async def publish(self, machine, client, index: int) -> None:
+        """Record *client*'s fight centre if none is recorded yet. Call only while it is in battle."""
+        if self.centre is not None:
+            return
+        try:
+            centre = await client.duel.position()
+        except Exception as exc:
+            machine.log(
+                f"Client {index}: fight centre unreadable ({exc!r}); late clients keep aiming at the mob",
+                logging.DEBUG,
+            )
+            return
+        if self.centre is not None:  # another client published while this one read
+            return
+        self.centre = centre
+        where = await _position(client)
+        machine.log(
+            f"Client {index} is in battle; publishing its fight centre"
+            + (f" ({where.distance(centre):.1f} units from it)" if where is not None else ""),
+            logging.DEBUG,
+        )
+
+
+async def _tp_and_wait_for_combat(
+    machine, client, index: int, enemy_name: str, fight: _FightCentre, timeout: float
+) -> bool:
     """Teleport to target, retrying every COMBAT_TP_RETRY_INTERVAL seconds until in combat.
+
+    Once *fight* has a centre, each attempt teleports there instead of re-finding the mob,
+    and a client that gets in first publishes its own centre for the rest.
 
     A target that disappears is waited out rather than given up on: an encounter that swaps
     or hides its mob as its fight starts may still pull the player in before the timeout.
@@ -272,16 +321,27 @@ async def _tp_and_wait_for_combat(machine, client, index: int, enemy_name: str, 
     of the wait with no line in the log to say why.
 
     Each re-teleport logs how far it moved the player. Zero means the player was already
-    on the mob, so the retry could not have started the fight.
+    on the mob or the centre, so the retry could not have started the fight.
     """
     loop = asyncio.get_event_loop()
     deadline = loop.time() + timeout
     attempt = 0
     target_lost = False
+    aimed_at_centre = False
     while True:
         attempt += 1
-        target = await _find_target(client, enemy_name)
-        if target is None:
+        if fight.centre is not None:
+            if not aimed_at_centre:
+                machine.log(f"Client {index}: teleporting to the fight centre on attempt {attempt}", logging.DEBUG)
+                aimed_at_centre = True
+            before = await _position(client) if attempt > 1 else None
+            try:
+                await client.teleport(fight.centre)
+            except Exception as exc:
+                machine.log(f"Client {index}: teleport to the fight centre failed ({exc!r})", logging.DEBUG)
+            else:
+                await _log_re_teleport(machine, client, index, attempt, before)
+        elif (target := await _find_target(client, enemy_name)) is None:
             if not target_lost:
                 machine.log(
                     f"Client {index}: target not found on attempt {attempt}; waiting for the fight without teleporting",
@@ -294,16 +354,13 @@ async def _tp_and_wait_for_combat(machine, client, index: int, enemy_name: str, 
                 target_lost = False
             before = await _position(client) if attempt > 1 else None
             await client.tp_to(target)
-            if before is not None and (after := await _position(client)) is not None:
-                machine.log(
-                    f"Client {index}: not in battle; re-teleport {attempt} moved {before.distance(after):.1f} units",
-                    logging.DEBUG,
-                )
+            await _log_re_teleport(machine, client, index, attempt, before)
 
         # Poll in_battle() for up to COMBAT_TP_RETRY_INTERVAL (or remaining time)
         retry_at = min(loop.time() + COMBAT_TP_RETRY_INTERVAL, deadline)
         while loop.time() < retry_at:
             if await client.in_battle():
+                await fight.publish(machine, client, index)
                 return True
             await asyncio.sleep(POLL_INTERVAL)
 
@@ -311,6 +368,15 @@ async def _tp_and_wait_for_combat(machine, client, index: int, enemy_name: str, 
             break
 
     return False
+
+
+async def _log_re_teleport(machine, client, index: int, attempt: int, before) -> None:
+    """Log how far a re-teleport moved the player; *before* is None on the first attempt."""
+    if before is not None and (after := await _position(client)) is not None:
+        machine.log(
+            f"Client {index}: not in battle; re-teleport {attempt} moved {before.distance(after):.1f} units",
+            logging.DEBUG,
+        )
 
 
 async def _position(client):
