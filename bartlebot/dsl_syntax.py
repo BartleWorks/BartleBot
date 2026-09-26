@@ -58,6 +58,10 @@ SPELL_TYPES: tuple[str, ...] = (
     "req_met",
 )
 HEAL_QUALIFIERS: tuple[str, ...] = ("self", "other")
+#: What ``!`` can negate: ``any<trap & !aoe>``. ``req_met`` and the hanging verbs are
+#: checked after a card is picked, so there is nothing for a negation of one to test.
+#: Any other word after ``!`` is a card name to exclude: ``any<trap & !feint>``.
+NEGATABLE_TYPES: tuple[str, ...] = tuple(t for t in SPELL_TYPES if t != "req_met")
 #: Spell types that take arguments: ``gambit(harmful_charms, 2)``.
 HANGING_VERBS: tuple[str, ...] = ("gambit", "clear", "echo", "swap")
 
@@ -107,6 +111,7 @@ CONDITION_ATTRIBUTES: tuple[str, ...] = MEMBER_ATTRIBUTES + HANGING_KINDS
 DSL_HELP = (
     "{round} move @ target | move @ target | pass — rounds optional, '|' is priority order.\n"
     'Moves: "Named Spell" or any<damage|heal|blade|trap|charm|ward|aura|...>[enchant]\n'
+    "Combine types with &, and rule one out with !: any<trap & !aoe>, or a card by name: any<trap & !feint>\n"
     'Targets: self, enemy, boss, ally, aoe, or a name — Nightshade, or "Lord Nightshade"\n'
     "Pick one out with ally(0) or enemy(1). ally(last) is the last player on the team, you included,\n"
     "so every client in the group can share the line.\n"
@@ -174,7 +179,7 @@ _TOKEN = re.compile(
     | (?P<string>"(?:[^"\\]|\\.)*"?)
     | (?P<number>-?\d+(?:\.\d+)?%?)
     | (?P<word>[A-Za-z_][A-Za-z0-9_]*)
-    | (?P<punct>\?\(|&&|<=|>=|!=|==|[@|&<>()\[\]{},.%])
+    | (?P<punct>\?\(|&&|<=|>=|!=|==|[@|&<>()\[\]{},.%!])
     | (?P<other>.)
     """,
     re.VERBOSE,
@@ -182,6 +187,10 @@ _TOKEN = re.compile(
 
 #: Where a bare number is a number. Anywhere else it is part of a name — "Storm Lord 2".
 _NUMERIC_CONTEXTS = frozenset({Context.ROUND, Context.INDEX, Context.HANGING, Context.CONDITION})
+
+#: The tokens a filter inside ``any<…>`` follows. A word after anything else continues a name.
+#: None is the start of a line, which inside ``any<…>`` follows one of these on the last.
+_FILTER_STARTS = frozenset({"<", "&", "!", None})
 
 #: Contexts whose pops are driven by a specific closing bracket.
 _CLOSERS = {")": None, ">": Context.SPELL_TYPE, "]": Context.ENCHANT, "}": Context.ROUND}
@@ -227,11 +236,15 @@ def _classify_word(word: str, top: Context, last: str | None) -> Kind | None:
                 return Kind.TARGET
             return Kind.KEYWORD if top in _AFTER_AT and lowered in TARGET_FORMS else None
         case Context.SPELL_TYPE:
+            if last == "heal" and lowered in HEAL_QUALIFIERS:
+                return Kind.TYPE
+            # After ``!`` a word that is not a type starts a card name, and every word
+            # after that is part of it: the Trap in ``!Fire Trap`` is not the type.
+            if last not in _FILTER_STARTS:
+                return None
             if lowered in HANGING_VERBS:
                 return Kind.KEYWORD
-            if lowered in SPELL_TYPES or (last == "heal" and lowered in HEAL_QUALIFIERS):
-                return Kind.TYPE
-            return None
+            return Kind.TYPE if lowered in SPELL_TYPES else None
         case Context.HANGING:
             return Kind.TYPE if lowered in HANGING_KINDS else None
         case Context.CONDITION:
@@ -398,6 +411,8 @@ def _offered(stack: tuple[Context, ...], last: str | None) -> tuple[str, ...]:
             return TARGETS
         case Context.SPELL_TYPE if last in ("<", "&"):
             return (*SPELL_TYPES, *(f"{verb}(" for verb in HANGING_VERBS))
+        case Context.SPELL_TYPE if last == "!":
+            return NEGATABLE_TYPES
         case Context.SPELL_TYPE if last == "heal":
             return HEAL_QUALIFIERS
         case Context.HANGING if last == "(":

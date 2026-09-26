@@ -208,10 +208,23 @@ any<heal> @ self
 any<trap & inc_damage> @ enemy        # AND of types
 any<blade & out_damage>[sharp] @ self  # with enchant
 
+# Negation with ! (combined with &)
+any<trap & !aoe> @ enemy              # a trap, but not an AoE one
+any<trap & !feint> @ boss             # a trap, but no card whose name contains "feint"
+any<trap & !"Feint"> @ boss           # a trap, but not the card named exactly Feint
+
 # Enchantment variants
 any<damage>[epic] @ enemy             # enchant with any<enchant> named "epic"
 any<heal>[potent] @ self
 ```
+
+`!word` negates a spell type when `word` is one, and excludes a card by name otherwise.
+An unquoted name is the same loose, case-insensitive substring match a bare spell move
+uses, so `!feint` also rules out Mass Feint (`Feint Mass - Amulet`); a quoted name is
+exact. A negated type rules out every card with that effect, AoE or not: `aoe` beside
+`trap` narrows the positive `trap` to a single-target effect, but never narrows `!trap`.
+`req_met` and the hanging verbs (`gambit(…)` and its siblings) cannot be negated — they
+are checked after a card is picked, so there is nothing for the negation to test.
 
 ### Target Types
 
