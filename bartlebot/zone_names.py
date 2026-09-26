@@ -54,3 +54,10 @@ def label(zone: str) -> str:
     if world is not None and (override := world.label(zone)):
         return override
     return next(iter(display_names(zone)), zone.rsplit("/", 1)[-1])
+
+
+@cache
+def labels() -> frozenset[str]:
+    """Every text ``label()`` gives some zone in the snapshot."""
+    zones, _ = _snapshot()
+    return frozenset(label(zone) for zone in zones)

@@ -4,7 +4,8 @@ A workflow follows the player through one kind of step and fills the param form
 with what it captured. There are three, and every recordable node is one of them
 with its own param keys and prompt text:
 
-  * ``_WalkIn`` — walk into a zone change (``enter_zone``, ``enter_dungeon``).
+  * ``_WalkIn`` — walk into a zone change (``enter_zone``, ``enter_dungeon``,
+    ``enter_gauntlet``).
   * ``_Interact`` — walk up to something and use it, optionally through a loading
     screen (``interact``, ``interact_menu``, ``apply_level_scaling``,
     ``enter_zone_via_object``).
@@ -22,7 +23,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from bartlebot import entity_names
+from bartlebot import entity_names, zone_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import NPC_RANGE_TITLE_PATH
 from bartlebot.nodes.timing import RECORDING_POLL_INTERVAL
@@ -104,23 +105,47 @@ async def run_recording(
 
 
 def _zone_display(zone: str | None) -> str:
-    """Return a human-friendly display name for a zone path like 'WizardCity/WC_Hub'."""
+    """A zone path like 'WizardCity/WC_Hub' as a reader would name it: ``zone_names.label``."""
     if zone is None:
         return "(unknown zone)"
-    try:
-        from wizsprinter import toZone, toZoneDisplayName  # noqa: PLC0415
+    return zone_names.label(zone)
 
-        return toZoneDisplayName(toZone(zone))
-    except Exception:
-        return zone.split("/")[-1] if "/" in zone else zone
+
+def _zone_segment(zone: str | None) -> str:
+    """A zone path's last segment, like 'WC_Hub' — the one name two zones never share."""
+    if zone is None:
+        return _zone_display(None)
+    return zone.rsplit("/", 1)[-1]
+
+
+def _names_differ(from_zone: str | None, to_zone: str | None) -> bool:
+    """Whether both zones have a game name, and different ones.
+
+    Often they do not: a dungeon's interior shares its street's name key, so Galvanost
+    Tower reads as Triton Avenue, and a label naming both would say nothing.
+    """
+    return (
+        from_zone is not None
+        and to_zone is not None
+        and bool(zone_names.display_names(from_zone))
+        and bool(zone_names.display_names(to_zone))
+        and _zone_display(from_zone) != _zone_display(to_zone)
+    )
+
+
+def _transition_label(from_zone: str | None, to_zone: str | None, via: str = "") -> str:
+    """``A → B``, by game name where the two differ and by path segment where they do not,
+    with ``via …`` when the thing used to get there is known."""
+    name = _zone_display if _names_differ(from_zone, to_zone) else _zone_segment
+    return f"{name(from_zone)} → {name(to_zone)}" + (f" via {via}" if via else "")
 
 
 #: The labels Record writes, other than a bare zone: ``Interact with …``, ``Defeat …``,
-#: and a zone change's ``A → B``.
-_RECORDED_LABEL = re.compile(r"^(?:Interact with |Defeat ).+|.+ → .+$")
-#: What ``_zone_display`` falls back to, and so what an older recording left as the label:
-#: a zone path's last segment, like ``WC_Hub`` — one word joined by underscores, which a
-#: label typed by hand almost never is.
+#: ``Enter …``, and a zone change's ``A → B``.
+_RECORDED_LABEL = re.compile(r"^(?:Interact with |Defeat |Enter ).+|.+ → .+$")
+#: What ``_zone_display`` once fell back to every time, and so what an older recording left
+#: as the label: a zone path's last segment, like ``WC_Hub`` — one word joined by
+#: underscores, which a label typed by hand almost never is.
 _ZONE_SEGMENT_LABEL = re.compile(r"^\w+_\w+$")
 
 
@@ -128,19 +153,30 @@ def is_recorded_label(label: str) -> bool:
     """Whether *label* has the shape of one Record wrote, so recording again may replace it.
 
     Recognised by shape rather than remembered, so a label recorded in an earlier session,
-    or before this rule existed, is still replaced; one the author typed is kept.
+    or before this rule existed, is still replaced; one the author typed is kept. A bare
+    zone is recognised by being some zone's name.
     """
     label = label.strip()
-    return label == _zone_display(None) or bool(_RECORDED_LABEL.match(label) or _ZONE_SEGMENT_LABEL.match(label))
+    return (
+        label == _zone_display(None)
+        or bool(_RECORDED_LABEL.match(label) or _ZONE_SEGMENT_LABEL.match(label))
+        or label in zone_names.labels()
+    )
+
+
+#: A parenthesised aside in a prompt title, like the ``(Standard)`` or ``(Challenge)`` a
+#: sigil offering Challenge Mode adds to the dungeon's name. Never part of the name itself.
+_TITLE_ASIDE = re.compile(r"\s*\([^()]*\)")
 
 
 async def _npc_range_title(client) -> str:
     """The interact prompt's title — the name of what the player is in range of — or ''."""
     try:
-        return node_helpers.strip_html(await node_helpers.get_text_by_path(client, NPC_RANGE_TITLE_PATH))
+        title = node_helpers.strip_html(await node_helpers.get_text_by_path(client, NPC_RANGE_TITLE_PATH))
     except Exception:
         logger.debug("Could not read the interact prompt's title", exc_info=True)
         return ""
+    return _TITLE_ASIDE.sub("", title).strip()
 
 
 async def _wait_for_zone_name(client, poll: float, timeout: float = 10.0) -> str | None:
@@ -216,37 +252,59 @@ class _WalkIn(_Workflow):
 
     The zone and the starting position become the reset; the player is followed
     until the loading screen, and the last position before it is the trigger point.
-    The zone read after loading is the destination.
+    The zone read after loading is the destination. A node without a *zone_key* or a
+    *point_key* keeps neither — ``enter_gauntlet`` leaves the walk to the player.
+
+    With *names_target*, the entrance prompt's title — the dungeon's name — names the node
+    ``Enter …``; the zone change names it when the title cannot be read. With *names_zones*,
+    the zones name it ``Enter <destination> from <origin>`` when their names tell them
+    apart, and ``A → B`` by path segment when they do not.
     """
 
-    zone_key: str
-    point_key: str
+    zone_key: str | None
+    point_key: str | None
     destination_key: str
     approach: str
+    names_target: bool = False
+    names_zones: bool = False
 
     def keys(self) -> list[str]:
-        return [self.zone_key, "reset_xyz", self.point_key, self.destination_key]
+        points = [] if self.point_key is None else ["reset_xyz", self.point_key]
+        return [k for k in (self.zone_key, *points, self.destination_key) if k is not None]
 
     async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
         from_zone = await client.zone_name()
-        param_form.set_str(self.zone_key, from_zone)
-        last_pos = await client.body.position()
-        _set_position(param_form, "reset_xyz", last_pos)
+        if self.zone_key is not None:
+            param_form.set_str(self.zone_key, from_zone)
+        if self.point_key is not None:
+            last_pos = await client.body.position()
+            _set_position(param_form, "reset_xyz", last_pos)
         on_status(self.approach)
 
+        target = ""
         while True:
             await asyncio.sleep(RECORDING_POLL_INTERVAL)
             if await client.is_loading():
-                _set_position(param_form, self.point_key, last_pos)
+                if self.point_key is not None:
+                    _set_position(param_form, self.point_key, last_pos)
                 on_status("Loading…")
                 break
-            last_pos = await client.body.position()
-            _set_position(param_form, self.point_key, last_pos)
+            if self.names_target and await client.is_in_npc_range():
+                # Kept once read: pressing X can close the prompt before the load starts.
+                target = await _npc_range_title(client) or target
+            if self.point_key is not None:
+                last_pos = await client.body.position()
+                _set_position(param_form, self.point_key, last_pos)
 
         await _wait_out_loading(client)
         to_zone = await _wait_for_zone_name(client, RECORDING_POLL_INTERVAL)
         param_form.set_str(self.destination_key, to_zone)
-        try_set_label(f"{_zone_display(from_zone)} → {_zone_display(to_zone)}")
+        if target:
+            try_set_label(f"Enter {target}")
+        elif self.names_zones and _names_differ(from_zone, to_zone):
+            try_set_label(f"Enter {_zone_display(to_zone)} from {_zone_display(from_zone)}")
+        else:
+            try_set_label(_transition_label(from_zone, to_zone))
         return f"Done — {_zone_display(to_zone)}"
 
 
@@ -262,7 +320,9 @@ class _Interact(_Workflow):
 
     With *names_target*, the prompt's title — what the player is in range of — names the
     node ``Interact with …``, in the author's display language; the zone names it when the
-    title cannot be read. With *players_key*, an empty player list becomes the player the
+    title cannot be read. With a *destination_key* as well, the title is what took the
+    player there: ``Enter <destination> via …`` when the zones' names tell them apart, and
+    ``A → B via …`` by path segment when they do not. With *players_key*, an empty player list becomes the player the
     step was recorded from; one the author already filled is left alone.
     """
 
@@ -315,7 +375,10 @@ class _Interact(_Workflow):
         await _wait_out_loading(client)
         to_zone = await _wait_for_zone_name(client, RECORDING_POLL_INTERVAL)
         param_form.set_str(self.destination_key, to_zone)
-        try_set_label(f"{_zone_display(zone)} → {_zone_display(to_zone)}")
+        if target and _names_differ(zone, to_zone):
+            try_set_label(f"Enter {_zone_display(to_zone)} via {target}")
+        else:
+            try_set_label(_transition_label(zone, to_zone, via=target))
         return f"Done — {_zone_display(to_zone)}"
 
 
@@ -369,16 +432,31 @@ class _Enemy(_Workflow):
 
 _REGISTRY: dict[str, _Workflow] = {
     "enter_zone": _WalkIn(
-        zone_key="from_zone", point_key="xyz", destination_key="to_zone", approach="Walk to transition…"
+        zone_key="from_zone",
+        point_key="xyz",
+        destination_key="to_zone",
+        approach="Walk to transition…",
+        names_zones=True,
     ),
     "enter_dungeon": _WalkIn(
-        zone_key="from_zone", point_key="sigil_xyz", destination_key="dungeon_zone", approach="Walk to sigil…"
+        zone_key="from_zone",
+        point_key="sigil_xyz",
+        destination_key="dungeon_zone",
+        approach="Walk to sigil…",
+        names_target=True,
+    ),
+    "enter_gauntlet": _WalkIn(
+        zone_key=None,
+        point_key=None,
+        destination_key="dungeon_zone",
+        approach="Walk to gauntlet sigil…",
+        names_target=True,
     ),
     "interact": _Interact(names_target=True, players_key="interact_clients"),
     "interact_menu": _Interact(todo="set Menu Path manually", names_target=True, players_key="interact_clients"),
     "apply_level_scaling": _Interact(approach="Walk to level-scaling NPC…", finish="Leave NPC range to finish…"),
     "enter_zone_via_object": _Interact(
-        zone_key="from_zone", finish="Interact to trigger zone change…", destination_key="to_zone"
+        zone_key="from_zone", finish="Interact to trigger zone change…", destination_key="to_zone", names_target=True
     ),
     "teleport_to_coordinates": _Point(shows_stop=False),
     "mark_location": _Point(shows_stop=False),

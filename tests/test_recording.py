@@ -60,18 +60,33 @@ def test_zone_display_none_returns_unknown():
     assert _zone_display(None) == "(unknown zone)"
 
 
-def test_zone_display_fallback_uses_last_path_segment():
-    """When wizsprinter is unavailable, _zone_display returns the last path segment."""
-    with patch.dict("sys.modules", {"wizsprinter": None}):
-        result = _zone_display("WizardCity/WC_Hub")
-    assert result == "WC_Hub"
+def test_zone_display_is_the_zones_game_name():
+    assert _zone_display("WizardCity/WC_Streets/WC_Triton") == "Triton Avenue"
 
 
-def test_zone_display_fallback_no_slash():
-    """Fallback for a zone string with no slash returns the full string."""
-    with patch.dict("sys.modules", {"wizsprinter": None}):
-        result = _zone_display("FlatZone")
-    assert result == "FlatZone"
+def test_zone_display_of_an_unknown_zone_is_its_last_path_segment():
+    assert _zone_display("Nowhere/NW_Hub") == "NW_Hub"
+    assert _zone_display("FlatZone") == "FlatZone"
+
+
+# Two zones whose game names differ, and a dungeon interior that shares its street's name.
+_TEMPLE, _WELL = "Krokotopia/KT_Tomb/KT_TempleOfStorms", "Krokotopia/KT_Tomb/KT_WellOfSpirits"
+_TRITON, _TRITON_TOWER = "WizardCity/WC_Streets/WC_Triton", "WizardCity/WC_Streets/Interiors/WC_Triton_T1"
+
+
+def test_a_zone_change_between_differently_named_zones_is_labelled_by_name():
+    assert recording._transition_label(_TEMPLE, _WELL) == "Temple of Storms → Well of Spirits"
+
+
+@pytest.mark.parametrize(
+    ("from_zone", "to_zone", "expected"),
+    [
+        (_TRITON, _TRITON_TOWER, "WC_Triton → WC_Triton_T1"),  # same game name
+        (_TEMPLE, "Nowhere/NW_Hub", "KT_TempleOfStorms → NW_Hub"),  # one has no game name
+    ],
+)
+def test_a_zone_change_names_cannot_tell_apart_is_labelled_by_path_segment(from_zone, to_zone, expected):
+    assert recording._transition_label(from_zone, to_zone) == expected
 
 
 # ---------------------------------------------------------------------------
@@ -202,6 +217,7 @@ def test_recordable_nodes_contains_all_expected_types():
         "enter_zone",
         "teleport_to_coordinates",
         "enter_dungeon",
+        "enter_gauntlet",
         "interact",
         "interact_menu",
         "apply_level_scaling",
@@ -953,6 +969,128 @@ async def test_no_player_named_leaves_the_player_list_empty(zero_poll):
 
 
 # ---------------------------------------------------------------------------
+# enter_dungeon / enter_gauntlet / enter_zone_via_object — named after the entrance
+# ---------------------------------------------------------------------------
+
+
+def _walk_in_client(from_zone=_TRITON, to_zone=_TRITON_TOWER):
+    """A client standing in an entrance prompt for two polls, then loading into *to_zone*."""
+    client = FakeClient()
+    client.zone_name.side_effect = [from_zone, to_zone]
+    client.body.position.return_value = XYZ(1.0, 2.0, 3.0)
+    client.is_in_npc_range.return_value = True
+    client.is_loading.side_effect = [False, False, True, False]
+    return client
+
+
+@pytest.mark.parametrize("node_type", ["enter_dungeon", "enter_gauntlet"])
+async def test_a_dungeon_entrance_is_named_after_the_prompt_title(zero_poll, prompt_title, node_type):
+    prompt_title.return_value = "<center>Skull Fort"
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording(node_type, _walk_in_client(), FakeParamForm(), on_status, on_btn, try_set_label)
+
+    try_set_label.assert_called_once_with("Enter Skull Fort")
+
+
+@pytest.mark.parametrize("mode", ["Standard", "Challenge"])
+async def test_a_sigils_mode_is_left_out_of_the_name(zero_poll, prompt_title, mode):
+    prompt_title.return_value = f"<center>Skull Fort ({mode})"
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("enter_dungeon", _walk_in_client(), FakeParamForm(), on_status, on_btn, try_set_label)
+
+    try_set_label.assert_called_once_with("Enter Skull Fort")
+
+
+async def test_the_title_is_kept_when_the_prompt_closes_before_the_load(zero_poll, prompt_title):
+    prompt_title.side_effect = ["<center>Skull Fort", ""]
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("enter_dungeon", _walk_in_client(), FakeParamForm(), on_status, on_btn, try_set_label)
+
+    try_set_label.assert_called_once_with("Enter Skull Fort")
+
+
+async def test_a_dungeon_entrance_with_no_readable_title_is_named_after_the_zone_change(zero_poll, prompt_title):
+    prompt_title.return_value = ""
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("enter_dungeon", _walk_in_client(), FakeParamForm(), on_status, on_btn, try_set_label)
+
+    try_set_label.assert_called_once_with("WC_Triton → WC_Triton_T1")
+
+
+async def test_enter_gauntlet_records_only_the_dungeon_zone(zero_poll, prompt_title):
+    """The player walks to a gauntlet's sigil each run, so there is no position to keep."""
+    client = _walk_in_client()
+    form = FakeParamForm()
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording("enter_gauntlet", client, form, on_status, on_btn, try_set_label)
+
+    assert form.str_fields == {"dungeon_zone": _TRITON_TOWER}
+    assert form.xyz_fields == {}
+    client.body.position.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("from_zone", "to_zone", "expected"),
+    [
+        (_TEMPLE, _WELL, "Enter Well of Spirits from Temple of Storms"),
+        (_TRITON, _TRITON_TOWER, "WC_Triton → WC_Triton_T1"),
+    ],
+)
+async def test_enter_zone_is_named_after_both_zones(zero_poll, from_zone, to_zone, expected):
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording(
+        "enter_zone", _walk_in_client(from_zone, to_zone), FakeParamForm(), on_status, on_btn, try_set_label
+    )
+
+    try_set_label.assert_called_once_with(expected)
+
+
+def _object_client(from_zone, to_zone):
+    """A client in range of an object for one poll, then loading into *to_zone*."""
+    client = FakeClient()
+    client.zone_name.side_effect = [from_zone, to_zone]
+    client.body.position.return_value = XYZ(1.0, 2.0, 3.0)
+    client.is_in_npc_range.side_effect = [True, False]
+    client.is_loading.side_effect = [True, False]
+    return client
+
+
+@pytest.mark.parametrize(
+    ("from_zone", "to_zone", "expected"),
+    [
+        (_TEMPLE, _WELL, "Enter Well of Spirits via Teleporter"),
+        (_TRITON, _TRITON_TOWER, "WC_Triton → WC_Triton_T1 via Teleporter"),
+    ],
+)
+async def test_enter_zone_via_object_is_named_after_the_object(zero_poll, prompt_title, from_zone, to_zone, expected):
+    prompt_title.return_value = "<center>Teleporter"
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording(
+        "enter_zone_via_object", _object_client(from_zone, to_zone), FakeParamForm(), on_status, on_btn, try_set_label
+    )
+
+    try_set_label.assert_called_once_with(expected)
+
+
+async def test_enter_zone_via_object_with_no_readable_title_is_named_after_the_zone_change(zero_poll, prompt_title):
+    prompt_title.return_value = ""
+    on_status, on_btn, try_set_label = _callbacks()
+
+    await run_recording(
+        "enter_zone_via_object", _object_client(_TEMPLE, _WELL), FakeParamForm(), on_status, on_btn, try_set_label
+    )
+
+    try_set_label.assert_called_once_with("Temple of Storms → Well of Spirits")
+
+
+# ---------------------------------------------------------------------------
 # handle_combat  (_Enemy: the closest mob, at once)
 # ---------------------------------------------------------------------------
 
@@ -1022,12 +1160,23 @@ async def test_handle_combat_read_failure_reports_and_restores():
 
 @pytest.mark.parametrize(
     "label",
-    ["Interact with Cyrus Drake", "Defeat Rattlebones", "WC_Hub → WC_Streets", "WC_Hub", "(unknown zone)"],
+    [
+        "Interact with Cyrus Drake",
+        "Defeat Rattlebones",
+        "Enter Skull Fort",
+        "Enter Well of Spirits via Teleporter",
+        "Enter Well of Spirits from Temple of Storms",
+        "WC_Triton → WC_Triton_T1 via Teleporter",
+        "WC_Hub → WC_Streets",
+        "WC_Hub",
+        "Triton Avenue",
+        "(unknown zone)",
+    ],
 )
 def test_labels_record_writes_are_recognised(label):
     assert is_recorded_label(label)
 
 
-@pytest.mark.parametrize("label", ["Talk to the headmaster", "Boss", "Defeat", "Interact with", "Loot"])
+@pytest.mark.parametrize("label", ["Talk to the headmaster", "Boss", "Defeat", "Interact with", "Enter", "Loot"])
 def test_labels_an_author_typed_are_kept(label):
     assert not is_recorded_label(label)
