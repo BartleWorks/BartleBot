@@ -134,7 +134,7 @@ from bartlebot.gui.sidebar.strategy_panel import (
 )
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import set_style_sheet
-from bartlebot.gui.widgets.action_button import ActionButton, accent_wash
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.add_card import AddCard
 from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge
 from bartlebot.gui.widgets.card_art_tile import CardArtStrip
@@ -777,10 +777,10 @@ class _BotStrategyBanner(CardFrame):
 
     It is still a card in everything but its outline -- the same name and summary lines,
     face verbs, right-click menu and body click -- drawn as a banner (#119): no gutter,
-    no rounded border, edge to edge across the top of the tab in the accent wash
-    ``SECONDARY`` buttons use, and ruled off from the sections below. Its own caption
-    stands in for the folding section heading it used to sit under, which promised a
-    fold over a region that only ever held this one row.
+    no rounded border, edge to edge across the top of the tab in the cards' own fill,
+    and ruled off from the sections below. Its own caption stands in for the folding
+    section heading it used to sit under, which promised a fold over a region that only
+    ever held this one row.
 
     Three verbs reach the face and two do not. Duplicate is rare, and Delete is
     destructive next to a body that changes the live configuration -- the rule
@@ -891,7 +891,7 @@ class _BotStrategyBanner(CardFrame):
         return not self._editable or self._bcs is None
 
     def _apply_state_palette(self) -> bool:
-        """The banner's palette, in place of the card's: a wash and a rule, not a box.
+        """The banner's palette, in place of the card's: the card fill and a rule, not a box.
 
         Hover lights it the way it lights a card -- ``node_fill`` and an accent line --
         because the body click is the same promise here as there. There is no dragging
@@ -900,7 +900,7 @@ class _BotStrategyBanner(CardFrame):
         lit = self._hovered and self.has_body_verb
         set_style_sheet(
             self,
-            f"#{self.FRAME_NAME} {{ background: {THEME.node_fill if lit else accent_wash()}; "
+            f"#{self.FRAME_NAME} {{ background: {THEME.node_fill if lit else THEME.surface}; "
             f"border: none; border-bottom: 1px solid {THEME.accent if lit else THEME.border}; }}",
         )
         self._restyle_content()
