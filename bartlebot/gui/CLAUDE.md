@@ -350,6 +350,17 @@ loose. `test_building_a_row_never_shows_a_parentless_widget` is the guard, and t
 way it catches it is worth reusing — an event filter on the `QApplication` recording
 every `Show` delivered to a widget whose `parent()` is `None`.
 
+The same window opens on the way *out*. **Discard a widget with `discard_widget`
+(`widgets/discard.py`)**, never a bare `setParent(None)` + `deleteLater()`: a widget
+shown earlier in the same event-loop turn still has that show to come, and once it is
+unparented the show maps it as a window. Import all redrew each deck card once per slot
+in one turn, and every art tile from the discarded redraws flashed in the corner (#120).
+The helper hides first, which is the whole fix. `test_discard_widget.py` guards it.
+When a flash appears that you can't place, run with `BARTLEBOT_DEV=1`:
+`gui/window_show_trace.py` logs each stray window's class and geometry, which usually
+names it, plus the Python stack. A deferred show has no Python caller, so for one of those
+the stack ends at the event loop. It also logs windows shown by the game processes.
+
 The inverse trap sits one line away: **a hidden widget in a `QBoxLayout` reserves no
 space at all.** The layout skips it outright rather than laying out a zero-size cell,
 so a spacer or placeholder that is parented but never shown holds nothing open and

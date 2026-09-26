@@ -23,6 +23,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.discard import discard_widget
 from bartlebot.gui.widgets.duel_slot_gem import DuelSlotGem, duel_slot_tooltip
 
 _CHIP_MIME = "application/x-bartlebot-combat-order-chip"
@@ -359,14 +360,7 @@ class CombatOrderWidget(QWidget):
 
     def _rebuild_chips(self) -> None:
         for chip in self._chips:
-            # Unparented, not merely removed from the layout. ``removeWidget`` takes a
-            # widget out of the layout but leaves it a child of this one, so it keeps
-            # painting at its last geometry until the deferred delete runs -- which shows
-            # up as ghost chips overlapping the new row for a frame or more. Reparenting
-            # to None takes it off the screen in the same breath.
-            self._chip_layout.removeWidget(chip)
-            chip.setParent(None)
-            chip.deleteLater()
+            discard_widget(chip, self._chip_layout)
         self._chips.clear()
         enabled = self._drag_enabled
         # Reversed: ``_order[0]`` enters first and so belongs at the *right-hand* end,

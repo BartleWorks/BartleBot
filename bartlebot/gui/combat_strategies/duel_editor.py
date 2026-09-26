@@ -56,6 +56,7 @@ from bartlebot.bot.strategy_models import (
 from bartlebot.gui.combat_strategies.assignment_card import AssignmentCard
 from bartlebot.gui.sidebar.sections.combat_order_widget import CombatOrderWidget
 from bartlebot.gui.widgets.add_card import AddCard
+from bartlebot.gui.widgets.discard import discard_widget
 from bartlebot.gui.widgets.drag_reorder import DragReorder
 from bartlebot.gui.widgets.elided_label import apply_muted_color
 from bartlebot.gui.widgets.rule_heading import RuleHeading
@@ -257,12 +258,7 @@ class DuelConfigEditor(QWidget):
         # Before the cards go: a drag in flight would otherwise be left holding one.
         self._drag.cancel()
         for card in self._cards:
-            # setParent(None) as well as removeWidget: a widget merely taken out of a
-            # layout stays a child and keeps painting where it last was, until the
-            # deferred delete runs. See CombatOrderWidget._rebuild_chips.
-            self._cards_layout.removeWidget(card)
-            card.setParent(None)
-            card.deleteLater()
+            discard_widget(card, self._cards_layout)
         self._cards.clear()
         if self._config:
             for assignment in self._config.player_assignments:
@@ -319,9 +315,7 @@ class DuelConfigEditor(QWidget):
             return
         assignment = card.assignment()
         self._config.player_assignments = [a for a in self._config.player_assignments if a is not assignment]
-        self._cards_layout.removeWidget(card)
-        card.setParent(None)
-        card.deleteLater()
+        discard_widget(card, self._cards_layout)
         self._cards.remove(card)
         self._drag.set_cards(self._cards)
         self._update_add_card()

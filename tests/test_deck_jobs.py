@@ -95,23 +95,12 @@ def client_decks(monkeypatch):
 
     decks: dict[str, object] = {}
 
-    class _Builder:
-        def __init__(self, client) -> None:
-            self.client = client
-
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, *_exc) -> None:
-            return None
-
-    async def _read(builder):
-        result = decks[builder.client]
+    async def _read(client):
+        result = decks[client]
         if isinstance(result, BaseException):
             raise result
         return result
 
-    monkeypatch.setattr(ac, "DeckBuilder", _Builder)
     monkeypatch.setattr(ac, "read_deck", _read)
     return decks
 
@@ -137,7 +126,8 @@ async def test_import_all_saves_once_with_every_slot_set(strategy, client_decks)
 
     assert len(strategy.saves) == 1
     assert {slot: deck.normal["Tempest"] for slot, deck in strategy.saves[0].items()} == {1: 1, 2: 2, 3: 3}
-    assert sorted(c.args[0] for c in harness.combat_tab.update_deck_slot.call_args_list) == [1, 2, 3]
+    [redraw] = harness.combat_tab.update_deck_slots.call_args_list
+    assert sorted(redraw.args[0]) == [1, 2, 3]  # one redraw for every slot, never one per slot
     harness._on_config_changed.assert_called_once()
     assert harness.notices == []
 
@@ -183,7 +173,7 @@ async def test_import_all_reads_concurrently(strategy, monkeypatch, client_decks
 
     started = asyncio.Barrier(4)
 
-    async def _read(_builder):
+    async def _read(_client):
         await started.wait()
         return _preset(1)
 
@@ -219,7 +209,7 @@ async def test_single_slot_import_still_stores_its_deck(strategy, client_decks):
     await harness._import_deck_for_slot(2)
 
     assert set(strategy.saves[0]) == {2}
-    harness.combat_tab.update_deck_slot.assert_called_once()
+    harness.combat_tab.update_deck_slots.assert_called_once()
 
 
 async def test_single_slot_import_failure_is_reported(strategy, client_decks):

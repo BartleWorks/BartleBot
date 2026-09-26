@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
-from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot import group_manager, recovery_readiness, restricted_zones, wizard_names
@@ -30,6 +29,7 @@ from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument, _resolve_bo
 from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
+from bartlebot.gui.window_show_trace import WindowShowTracer
 from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
@@ -123,6 +123,8 @@ class AppController(QObject):
                 DEV_ENV_VAR,
                 project_root(),
             )
+        # Stray windows flashing on screen (#120): logged with the call that showed them.
+        self._window_tracer = WindowShowTracer(app) if dev_mode() else None
 
         # Long-lived asyncio task — held here to prevent GC (event loop keeps weak refs only).
         self._bot_task: asyncio.Task | None = None
@@ -1251,8 +1253,7 @@ class AppController(QObject):
 
         logger.info("Importing deck for slot %d", slot)
         try:
-            async with DeckBuilder(client) as db:
-                preset_dict = await asyncio.wait_for(read_deck(db), timeout=DECK_IMPORT_TIMEOUT)
+            preset_dict = await asyncio.wait_for(read_deck(client), timeout=DECK_IMPORT_TIMEOUT)
             deck_data = DeckData(**preset_dict)
         except TimeoutError:
             logger.error("Deck import for slot %d timed out after %.0fs", slot, DECK_IMPORT_TIMEOUT)
@@ -1283,9 +1284,7 @@ class AppController(QObject):
             save_bot_strategy(bcs)
         except Exception:
             logger.exception("Failed to save BotCombatStrategy after deck import")
-        combat_tab = self._window.left_sidebar.combat_tab
-        for slot, deck_data in decks.items():
-            combat_tab.update_deck_slot(slot, deck_data)
+        self._window.left_sidebar.combat_tab.update_deck_slots(decks)
         self._on_config_changed()
 
     def _saved_decks(self) -> dict[int, DeckData] | None:

@@ -17,7 +17,9 @@ definition that only exists on your machine.
 
 It also turns on the canvas repaint tracer (`bartlebot/gui/canvas/repaint_trace.py`, for
 #73). The tracer logs a WARNING, with a screenshot under `logs/repaint/`, whenever an item
-change on the canvas is left unrepainted.
+change on the canvas is left unrepainted. The window show tracer
+(`bartlebot/gui/window_show_trace.py`, for #120) logs a WARNING for every stray top-level
+window, ours or the game clients', with the Python stack for ours.
 
 ## Build / Test / Lint
 

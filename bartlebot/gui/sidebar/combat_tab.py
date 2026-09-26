@@ -1086,10 +1086,14 @@ class CombatTab(QWidget):
     def refresh_deck_summaries(self) -> None:
         self._refresh_deck_summaries()
 
-    def update_deck_slot(self, slot: int, deck: DeckData) -> None:
-        """Update the in-memory BCS deck for one slot and refresh the display."""
+    def update_deck_slots(self, decks: dict[int, DeckData]) -> None:
+        """Update the in-memory BCS decks by slot, then redraw the cards once.
+
+        Once for all of them: a redraw per slot rebuilt every card's art once per slot
+        in the same event-loop turn, which is what flashed windows during Import all (#120).
+        """
         if self._bcs is not None:
-            self._bcs.player_decks[slot] = deck
+            self._bcs.player_decks.update(decks)
         self._refresh_deck_summaries()
 
     def refresh_duel_profiles(self) -> None:

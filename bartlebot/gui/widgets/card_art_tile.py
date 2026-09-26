@@ -42,6 +42,7 @@ from PyQt6.QtWidgets import QSizePolicy, QWidget
 from bartlebot import card_art
 from bartlebot.gui.deck_content import DeckCardEntry, DeckGroup
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.discard import discard_widget
 from bartlebot.gui.widgets.flow_layout import FlowLayout
 
 #: Tile size in the collapsed strip. See "the art is not cropped" above.
@@ -308,6 +309,5 @@ class CardArtStrip(QWidget):
         while (item := self._layout.takeAt(0)) is not None:
             widget = item.widget()
             if widget is not None:
-                widget.setParent(None)
-                widget.deleteLater()
+                discard_widget(widget)
         self._tiles.clear()

@@ -626,12 +626,19 @@ async def test_write_deck_rewrites_when_item_cards_differ(monkeypatch):
     assert db.added == {"Tempest": 2}
 
 
-async def test_read_deck_never_reports_treasure_cards(monkeypatch):
-    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
+def _read_client(monkeypatch, *, open_now: bool = False) -> FakeClient:
+    """A client whose deck page opens on P, with the deck's controls faked."""
+    state = _PageState(open_now=open_now)
+    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", state)
     monkeypatch.setattr("bartlebot.deck_io.read_deck_cards", _fake_deck_cards)
     monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _fake_item_slots)
-    db = FakeDeckBuilder()
-    result = await read_deck(db)
+    client = _page_client(state)
+    client.client_object.try_get_deck_behavior = AsyncMock(return_value=None)
+    return client
+
+
+async def test_read_deck_never_reports_treasure_cards(monkeypatch):
+    result = await read_deck(_read_client(monkeypatch))
     assert result["normal"] == {"Tempest": 2}
     assert result["item"] == {"Sharpened Blade - Tear": 1}
     assert result["tc"] == {}
@@ -670,13 +677,10 @@ async def test_read_archmastery_school_swallows_a_failed_read():
 
 
 async def test_read_deck_carries_the_archmastery_school(monkeypatch):
-    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
-    monkeypatch.setattr("bartlebot.deck_io.read_deck_cards", _fake_deck_cards)
-    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _fake_item_slots)
-    db = FakeDeckBuilder()
-    db.client.client_object.try_get_deck_behavior = AsyncMock(return_value=_behavior(72777))
+    client = _read_client(monkeypatch)
+    client.client_object.try_get_deck_behavior = AsyncMock(return_value=_behavior(72777))
 
-    result = await read_deck(db)
+    result = await read_deck(client)
 
     assert result["archmastery_school"] == "Ice"
     assert DeckData(**result).archmastery_school == "Ice"
@@ -684,16 +688,35 @@ async def test_read_deck_carries_the_archmastery_school(monkeypatch):
 
 async def test_read_deck_survives_an_unreadable_archmastery_school(monkeypatch):
     """A cosmetic field must never be able to fail a whole deck import."""
-    monkeypatch.setattr("bartlebot.deck_io._maybe_get_named_window", _fake_window)
-    monkeypatch.setattr("bartlebot.deck_io.read_deck_cards", _fake_deck_cards)
-    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _fake_item_slots)
-    db = FakeDeckBuilder()
-    db.client.client_object.try_get_deck_behavior = AsyncMock(side_effect=RuntimeError("boom"))
+    client = _read_client(monkeypatch)
+    client.client_object.try_get_deck_behavior = AsyncMock(side_effect=RuntimeError("boom"))
 
-    result = await read_deck(db)
+    result = await read_deck(client)
 
     assert result["archmastery_school"] is None
     assert result["normal"] == {"Tempest": 2}
+
+
+async def test_read_deck_opens_the_page_once_and_leaves_it_closed(monkeypatch):
+    """#120: one P to open and one to close -- no DeckBuilder reopen on top, no
+    clicks, and no mouseless hook toggled per keypress."""
+    client = _read_client(monkeypatch)
+
+    await read_deck(client)
+
+    assert client.send_key.await_count == 2
+    assert not client.page_state.is_open
+    client.mouse_handler.__aenter__.assert_not_awaited()
+
+
+async def test_read_deck_raises_when_the_page_will_not_open(monkeypatch):
+    """Failing the slot is what keeps an empty read from being saved over a real deck."""
+    client = _read_client(monkeypatch)
+    client.page_state.ever_opens = False
+    monkeypatch.setattr("bartlebot.deck_io.DECK_PAGE_OPEN_TIMEOUT", 0.05)
+
+    with pytest.raises(RuntimeError, match="did not open"):
+        await read_deck(client)
 
 
 async def test_a_deck_holding_only_an_archmastery_school_is_still_empty():

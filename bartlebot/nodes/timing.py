@@ -242,8 +242,8 @@ CLIENT_REFRESH_TIMEOUT = 1.0
 # that widget's refresh is cancelled rather than blocking all others.
 
 DECK_IMPORT_TIMEOUT = 120.0
-# Ceiling for snapshotting one client's deck. A full 64-card deck is read by
-# hovering each slot, so this is generously above the expected duration.
+# Ceiling for snapshotting one client's deck. The read is memory under a page
+# opened by keypress (deck_io.read_deck), so this only bounds a hung client.
 
 DECK_ITEM_PAGE_SETTLE = 0.3
 # Pause after writing the ItemSpells page (deck_io._set_item_page), so the new
