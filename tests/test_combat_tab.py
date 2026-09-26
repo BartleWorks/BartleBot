@@ -44,7 +44,7 @@ from bartlebot.gui.sidebar.combat_tab import (
     _NO_STRATEGY_LABEL,
     _RENAME_BCS,
     CombatTab,
-    _BotStrategyCard,
+    _BotStrategyBanner,
     _DefaultBinding,
     _PlayerDecksSection,
 )
@@ -460,13 +460,13 @@ def test_the_pill_row_is_hidden_where_membership_is_not_supported(qapp):
 
 
 # ---------------------------------------------------------------------------
-# _BotStrategyCard
+# _BotStrategyBanner
 # ---------------------------------------------------------------------------
 
 
 def test_bot_card_names_the_strategy_and_summarises_it(qapp):
     bcs = BotCombatStrategy(name="Four wizards", bot_id="bot-1")
-    card = _BotStrategyCard()
+    card = _BotStrategyBanner()
 
     card.set_strategy(bcs)
 
@@ -475,7 +475,7 @@ def test_bot_card_names_the_strategy_and_summarises_it(qapp):
 
 
 def test_bot_card_with_no_strategy_says_so_and_refuses_its_body(qapp):
-    card = _BotStrategyCard()
+    card = _BotStrategyBanner()
 
     card.set_strategy(None)
 
@@ -485,7 +485,7 @@ def test_bot_card_with_no_strategy_says_so_and_refuses_its_body(qapp):
 
 def test_new_stays_live_with_no_strategy_loaded(qapp):
     """That is exactly the state a user gets out of by making one."""
-    card = _BotStrategyCard()
+    card = _BotStrategyBanner()
     card.set_strategy(None)
 
     assert card.action_button(_NEW_BCS).isEnabled()
@@ -495,7 +495,7 @@ def test_new_stays_live_with_no_strategy_loaded(qapp):
 
 def test_destructive_bot_verbs_stay_off_the_face(qapp):
     """A trash 22px from a body click that changes the live configuration."""
-    card = _BotStrategyCard()
+    card = _BotStrategyBanner()
     card.set_strategy(BotCombatStrategy(name="B", bot_id="bot-1"))
 
     assert {_DUPLICATE_BCS, _DELETE_BCS} <= set(_verb_labels(card))
@@ -503,8 +503,20 @@ def test_destructive_bot_verbs_stay_off_the_face(qapp):
     assert card.action_button(_DUPLICATE_BCS) is None
 
 
+def test_the_bot_strategy_is_a_banner_pinned_above_the_scrolling_sections(qapp):
+    """#119: one pick is not a region, so it heads the tab rather than folding in it."""
+    tab = CombatTab()
+    banner = tab._bcs_banner
+
+    outer = tab.layout()
+    assert outer.itemAt(0).widget() is banner
+    assert isinstance(outer.itemAt(1).widget(), QScrollArea)
+    assert banner.grip is None
+    assert banner.parentWidget() is tab
+
+
 def test_bot_card_body_click_asks_for_a_different_strategy(qapp):
-    card = _BotStrategyCard()
+    card = _BotStrategyBanner()
     card.set_strategy(BotCombatStrategy(name="B", bot_id="bot-1"))
     seen: list[bool] = []
     card.change_requested.connect(lambda: seen.append(True))
@@ -716,7 +728,7 @@ def test_set_editable_locks_every_card_without_replacing_it(qapp, store):
 
     assert tab._state_panels["state_9"] is panel_before
     assert panel_before._refuses_activation()
-    assert not tab._bcs_card.action_button(_CHANGE_BCS).isEnabled()
+    assert not tab._bcs_banner.action_button(_CHANGE_BCS).isEnabled()
 
 
 def test_the_default_cards_pills_are_locked_with_the_rest(qapp, store):
@@ -1088,7 +1100,7 @@ def test_rebind_identity_drops_the_originals_strategy(qapp, store):
 
     assert tab._bcs is None
     assert tab._all_bcs == []
-    assert tab._bcs_card._name.full_text() == _NO_STRATEGY_LABEL
+    assert tab._bcs_banner._name.full_text() == _NO_STRATEGY_LABEL
 
 
 def test_rebind_identity_does_not_bind_the_fork_to_the_originals_strategy(qapp, store):
@@ -1116,7 +1128,7 @@ def test_rebind_identity_finds_the_forks_own_strategy(qapp, store):
     tab.rebind_identity()
 
     assert tab._bcs is not None and tab._bcs.id == fork_bcs.id
-    assert tab._bcs_card._name.full_text() == "Fork BCS"
+    assert tab._bcs_banner._name.full_text() == "Fork BCS"
 
 
 def test_rebind_identity_is_silent(qapp, store):

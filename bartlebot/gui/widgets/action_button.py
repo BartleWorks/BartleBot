@@ -108,6 +108,19 @@ def _mix(base: str, over: str, amount: float) -> str:
     ).name()
 
 
+def accent_wash() -> str:
+    """A faint wash of the accent over the page colour -- ``SECONDARY``'s fill.
+
+    Public because it is the one tint in the app that means "worth your attention, but
+    not the commit", and a surface wanting that meaning elsewhere should get the same
+    colour rather than a near miss. The Combat tab's Bot Combat Strategy banner is the
+    other user. How much shows through is read off ``bg``'s own lightness, not off a
+    comparison with a literal -- a custom light theme is not required to be ``#ffffff``.
+    """
+    wash = _WASH_ON_LIGHT if QColor(THEME.bg).lightnessF() > 0.5 else _WASH_ON_DARK
+    return _mix(THEME.bg, THEME.accent, wash)
+
+
 class ActionButton(ThemedMixin, QPushButton):
     """A flat button with an icon and a label, sized to expand and fill its row.
 
@@ -193,16 +206,13 @@ class ActionButton(ThemedMixin, QPushButton):
             return fill, THEME.pill_text, fill, _shift(fill, _HOVER_SHIFT), _shift(fill, _PRESS_SHIFT)
         if self._style is ActionStyle.SECONDARY:
             # A faint wash of the accent over the page colour rather than a stored tint,
-            # so a theme that changes ``accent`` moves the wash with it. How much of it
-            # shows through is read off ``bg``'s own lightness, not off a comparison with
-            # a literal — a custom light theme is not required to be ``#ffffff``.
-            wash = _WASH_ON_LIGHT if QColor(THEME.bg).lightnessF() > 0.5 else _WASH_ON_DARK
-            # The wash is faint enough that the hover still has to come from somewhere
+            # so a theme that changes ``accent`` moves the wash with it -- see
+            # ``accent_wash``. The wash is faint enough that the hover still has to come from somewhere
             # other than the outline: ``node_fill`` is the same "this is live" tint every
             # card and list row in the app takes on hover, which is what keeps the
             # outlined button in that family.
             return (
-                _mix(THEME.bg, THEME.accent, wash),
+                accent_wash(),
                 THEME.accent,
                 THEME.accent,
                 THEME.node_fill,

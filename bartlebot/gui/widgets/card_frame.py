@@ -449,7 +449,7 @@ class CardFrame(ThemedMixin, QWidget):
     # The frame and its gutter
     # ------------------------------------------------------------------
 
-    def _build_frame(self, what: str, *, draggable: bool = True) -> QVBoxLayout:
+    def _build_frame(self, what: str, *, draggable: bool = True, gutter: bool = True) -> QVBoxLayout:
         """Lay out the handle and the card frame, and hand back the frame's own layout.
 
         Every card is built into this rather than into itself, so that the grip is beside
@@ -466,11 +466,17 @@ class CardFrame(ThemedMixin, QWidget):
         it. ``DragReorder`` reads ``grip`` and skips a card that has none, so this is also
         what makes such a card undraggable rather than merely unlabelled -- the same
         arrangement ``AddCard`` uses for the column's terminator.
+
+        *gutter* False drops even that spacer, for a card that is not in a column at all
+        and so has nothing to line up with -- the Combat tab's Bot Combat Strategy banner,
+        which spans the tab edge to edge. It implies *draggable* False.
         """
         row = QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(_GRIP_GAP)
-        if draggable:
+        if not gutter:
+            pass
+        elif draggable:
             row.addWidget(self._make_grip(what), 0)
         else:
             # GRIP_GUTTER, not _GRIP_WIDTH: an explicit spacer gets none of the row's

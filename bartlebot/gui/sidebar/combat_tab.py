@@ -10,13 +10,19 @@ a user-owned edit that wants an explicit Save/Cancel boundary, and it lives in
 ``CombatStrategyDialog``. ``Change…`` on a card opens that dialog in pick mode; ``Edit…``
 opens the same window on the same strategy in manage mode.
 
-TWO SECTIONS, NOT THREE AND A CAPTION
--------------------------------------
+A BANNER, THEN THE SECTIONS
+---------------------------
 
 **Bot Combat Strategy** is which of the user's setups for this bot is live -- someone
 who usually runs four wizards and someone who solos want different ones, and a
-``BotCombatStrategy`` is the thing that differs. **Duel Combat Strategies** is what that
-setup fights with: one card per strategy, each naming the fights it covers.
+``BotCombatStrategy`` is the thing that differs. It is a banner pinned across the top of
+the tab rather than a card in a folding section of its own (#119): a section is for a
+region holding several distinct groups, and this one only ever holds the one pick. It is
+also the thing every section below it belongs *to*, so it sits above them, outside the
+scroll area, and never scrolls away from what it qualifies.
+
+**Duel Combat Strategies** is what that setup fights with: one card per strategy, each
+naming the fights it covers.
 
 That second section used to be two sections and a bare caption -- "Default Duel Combat
 Strategy" over a single card, "Specialized Duel Combat Strategies" over the cards for
@@ -36,7 +42,8 @@ one.
 EVERYTHING IS A CARD
 --------------------
 
-Every row on this tab is a ``CardFrame`` -- the same frame, hover, verb list and
+Every row on this tab is a ``CardFrame`` -- the banner included, which is a card drawn
+full-bleed rather than a different kind of widget -- the same frame, hover, verb list and
 right-click menu as the launch profile cards and the player cards, which is what the
 tab was conspicuously not built from. What that replaces, per section: a ``QPushButton``
 styled to look like a search field, two 1pt-smaller muted lines, and a ``⋮`` button
@@ -126,7 +133,8 @@ from bartlebot.gui.sidebar.strategy_panel import (
     StrategyPanel,
 )
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.gui.themed import set_style_sheet
+from bartlebot.gui.widgets.action_button import ActionButton, accent_wash
 from bartlebot.gui.widgets.add_card import AddCard
 from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge
 from bartlebot.gui.widgets.card_art_tile import CardArtStrip
@@ -137,6 +145,7 @@ from bartlebot.gui.widgets.elided_label import ElidedLabel
 from bartlebot.gui.widgets.picker_popup import PickerRow, Section
 from bartlebot.gui.widgets.player_pills import PlayerBadge
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
@@ -160,17 +169,19 @@ _NUM_PLAYER_SLOTS = 4
 _NO_STRATEGY_LABEL = "(no strategy set)"
 _ICON_BTN_SIZE = 16
 
-#: Section headings. Two, where there were three plus a bare caption: the levels below
+#: The banner's caption. Nothing heads the banner, so it names itself.
+_BCS_CAPTION = "Bot Combat Strategy"
+
+#: Section heading. One, where there were three plus a bare caption: the levels below
 #: the Bot Combat Strategy are all Duel Combat Strategies, and which one is the default
 #: is a fact about a *card* — its ``Default`` badge — rather than about a region of the
 #: sidebar. See the module docstring.
-_BCS_SECTION = "Bot Combat Strategy"
 _STRATEGIES_SECTION = "Duel Combat Strategies"
 
 #: The section's terminator, in the AddCard the launch columns end with.
 _ADD_STRATEGY = "Add a strategy for specific fights"
 
-#: Verb labels for the Bot Combat Strategy card, shared with its menu and the tests.
+#: Verb labels for the Bot Combat Strategy banner, shared with its menu and the tests.
 _CHANGE_BCS = "Change…"
 _RENAME_BCS = "Rename…"
 _NEW_BCS = "New…"
@@ -750,11 +761,11 @@ class _DefaultBinding:
 
 
 # ---------------------------------------------------------------------------
-# Bot Combat Strategy card
+# Bot Combat Strategy banner
 # ---------------------------------------------------------------------------
 
 
-class _BotStrategyCard(CardFrame):
+class _BotStrategyBanner(CardFrame):
     """Which of the user's setups for this bot is live, and the five things you can
     do to that list.
 
@@ -764,13 +775,20 @@ class _BotStrategyCard(CardFrame):
     which is the point: three levels drawn as three different kinds of widget was most
     of why this tab did not read as one surface.
 
+    It is still a card in everything but its outline -- the same name and summary lines,
+    face verbs, right-click menu and body click -- drawn as a banner (#119): no gutter,
+    no rounded border, edge to edge across the top of the tab in the accent wash
+    ``SECONDARY`` buttons use, and ruled off from the sections below. Its own caption
+    stands in for the folding section heading it used to sit under, which promised a
+    fold over a region that only ever held this one row.
+
     Three verbs reach the face and two do not. Duplicate is rare, and Delete is
     destructive next to a body that changes the live configuration -- the rule
     ``card_frame.py`` states for a trash icon 22px from a body click. Both are in the
     right-click menu, which is also the keyboard route.
     """
 
-    FRAME_NAME = "BotStrategyCard"
+    FRAME_NAME = "BotStrategyBanner"
 
     change_requested = pyqtSignal()
     new_requested = pyqtSignal()
@@ -787,7 +805,15 @@ class _BotStrategyCard(CardFrame):
         self.refresh_theme_styles()
 
     def _build(self) -> None:
-        layout = self._build_frame("strategies", draggable=False)
+        layout = self._build_frame("strategies", draggable=False, gutter=False)
+        # Lines the text up with the text inside the cards below: the tab's 8px margin,
+        # their grip gutter, their 1px border and their own 10px padding.
+        layout.setContentsMargins(8 + GRIP_GUTTER + 1 + 10, 6, 8 + 1 + 10, 8)
+
+        self._caption = ThemedTextLabel(
+            _BCS_CAPTION, css=f"font-size: {THEME.font_micro_px}px; font-weight: bold;", parent=self.frame
+        )
+        layout.addWidget(self._caption)
 
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
@@ -864,6 +890,22 @@ class _BotStrategyCard(CardFrame):
         """A body click picks, and there is nothing to pick between until one exists."""
         return not self._editable or self._bcs is None
 
+    def _apply_state_palette(self) -> bool:
+        """The banner's palette, in place of the card's: a wash and a rule, not a box.
+
+        Hover lights it the way it lights a card -- ``node_fill`` and an accent line --
+        because the body click is the same promise here as there. There is no dragging
+        branch to honour: with no grip, nothing can pick the banner up.
+        """
+        lit = self._hovered and self.has_body_verb
+        set_style_sheet(
+            self,
+            f"#{self.FRAME_NAME} {{ background: {THEME.node_fill if lit else accent_wash()}; "
+            f"border: none; border-bottom: 1px solid {THEME.accent if lit else THEME.border}; }}",
+        )
+        self._restyle_content()
+        return True
+
     def _restyle_content(self) -> None:
         for label, color in ((self._name, THEME.text), (self._meta, THEME.text_muted)):
             palette = label.palette()
@@ -937,18 +979,14 @@ class CombatTab(QWidget):
         self._content_layout.setSpacing(4)
 
         # ── Bot Combat Strategy ──────────────────────────────────────
-        bcs_section = SidebarSection(_BCS_SECTION, self)
-        bcs_layout = QVBoxLayout()
-        bcs_layout.setSpacing(2)
-        self._bcs_card = _BotStrategyCard()
-        self._bcs_card.change_requested.connect(self._on_pick_bcs)
-        self._bcs_card.new_requested.connect(self._on_new_bcs)
-        self._bcs_card.rename_requested.connect(self._on_rename_bcs)
-        self._bcs_card.duplicate_requested.connect(self._on_duplicate_bcs)
-        self._bcs_card.delete_requested.connect(self._on_delete_bcs)
-        bcs_layout.addWidget(self._bcs_card)
-        bcs_section.set_content_layout(bcs_layout)
-        self._content_layout.addWidget(bcs_section)
+        # A banner above the scroll area rather than a section inside it -- see the
+        # module docstring. The outer layout at the foot of ``__init__`` places it.
+        self._bcs_banner = _BotStrategyBanner(self)
+        self._bcs_banner.change_requested.connect(self._on_pick_bcs)
+        self._bcs_banner.new_requested.connect(self._on_new_bcs)
+        self._bcs_banner.rename_requested.connect(self._on_rename_bcs)
+        self._bcs_banner.duplicate_requested.connect(self._on_duplicate_bcs)
+        self._bcs_banner.delete_requested.connect(self._on_delete_bcs)
 
         # ── Duel Combat Strategies ───────────────────────────────────
         # One section for both levels. The default card is first and always present; the
@@ -1007,6 +1045,8 @@ class CombatTab(QWidget):
         scroll_area.setWidget(content)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        outer.addWidget(self._bcs_banner)
         outer.addWidget(scroll_area)
 
     # ------------------------------------------------------------------
@@ -1039,7 +1079,7 @@ class CombatTab(QWidget):
         self._load_bcs()
         self._rebuild_state_assignments()
         self._refresh_deck_summaries()
-        self._bcs_card.set_strategy(self._bcs)
+        self._bcs_banner.set_strategy(self._bcs)
         self._refresh_default_panel()
         self._suppress = False
 
@@ -1067,7 +1107,7 @@ class CombatTab(QWidget):
         self._all_pcs = list_player_strategies()
         if self._config is not None:
             self._all_bcs = list_bot_strategies(self._config.id)
-        self._bcs_card.set_strategy(self._bcs)
+        self._bcs_banner.set_strategy(self._bcs)
         self._default_panel.set_libraries(self._all_dcs, self._all_pcs)
         for panel in self._group_panels():
             panel.set_libraries(self._all_dcs, self._all_pcs)
@@ -1079,7 +1119,7 @@ class CombatTab(QWidget):
 
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
-        self._bcs_card.set_editable(editable)
+        self._bcs_banner.set_editable(editable)
         self._decks_section.set_editable(editable)
         self._default_panel.set_editable(editable)
         self._add_card.setEnabled(editable)
@@ -1740,7 +1780,7 @@ class CombatTab(QWidget):
                 self._set_bindings(self._bcs.state_assignments if self._bcs else [])
                 SettingsManager.instance().set_active_strategy(self._config.id, chosen)
                 self._rebuild_state_assignments()
-                self._bcs_card.set_strategy(self._bcs)
+                self._bcs_banner.set_strategy(self._bcs)
                 self._refresh_default_panel()
                 self._refresh_deck_summaries()
 
@@ -1757,7 +1797,7 @@ class CombatTab(QWidget):
         self._set_bindings([])
         SettingsManager.instance().set_active_strategy(self._config.id, bcs.id)
         self._rebuild_state_assignments()
-        self._bcs_card.set_strategy(self._bcs)
+        self._bcs_banner.set_strategy(self._bcs)
         self._refresh_default_panel()
         self._refresh_deck_summaries()
 
@@ -1769,7 +1809,7 @@ class CombatTab(QWidget):
             return
         self._bcs.name = name.strip()
         self._save_bcs()
-        self._bcs_card.set_strategy(self._bcs)
+        self._bcs_banner.set_strategy(self._bcs)
 
     def _on_duplicate_bcs(self) -> None:
         if self._bcs is None or self._config is None:
@@ -1784,7 +1824,7 @@ class CombatTab(QWidget):
         self._set_bindings(new_bcs.state_assignments)
         SettingsManager.instance().set_active_strategy(self._config.id, new_bcs.id)
         self._rebuild_state_assignments()
-        self._bcs_card.set_strategy(self._bcs)
+        self._bcs_banner.set_strategy(self._bcs)
         self._refresh_default_panel()
 
     def _on_delete_bcs(self) -> None:
@@ -1806,7 +1846,7 @@ class CombatTab(QWidget):
         new_active = self._bcs.id if self._bcs else None
         SettingsManager.instance().set_active_strategy(self._config.id, new_active)
         self._rebuild_state_assignments()
-        self._bcs_card.set_strategy(self._bcs)
+        self._bcs_banner.set_strategy(self._bcs)
         self._refresh_default_panel()
         self._refresh_deck_summaries()
 
