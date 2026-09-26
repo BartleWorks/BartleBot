@@ -156,10 +156,49 @@ async def test_a_negated_type_rejects_a_card_of_that_type(parse):
 
 
 async def test_a_negated_type_reaches_aoe_effects_too(parse):
-    """`aoe` beside `trap` narrows the trap to a single-target effect; a negation is
-    never narrowed, so `!trap` still rules out a mass trap there."""
     assert await _matches(parse, "any<aoe>", MASS_STORM_TRAP) is True
     assert await _matches(parse, "any<aoe & !trap>", MASS_STORM_TRAP) is False
+
+
+# ---------------------------------------------------------------------------
+# aoe beside blade/charm/ward/trap
+# ---------------------------------------------------------------------------
+
+TEAM_BLADE = FakeCard(
+    "Team Fire Blade", FakeEffect(SpellEffects.modify_outgoing_damage, EffectTarget.friendly_team, 25)
+)
+#: A single-target trap riding along with a team blade: what `any<trap & aoe>` used to require.
+TRAP_WITH_TEAM_BLADE = FakeCard(
+    "Trap And Team Blade",
+    _trap(),
+    FakeEffect(SpellEffects.modify_outgoing_damage, EffectTarget.friendly_team, 25),
+)
+
+
+async def test_trap_and_aoe_is_a_mass_trap(parse):
+    """The bug: `aoe` took the AoE targets out of `trap`, so `any<trap & aoe>` needed a
+    single-target trap *and* a team effect, and never matched Mass Feint."""
+    assert await _matches(parse, "any<trap & aoe>", MASS_FEINT) is True
+    assert await _matches(parse, "any<trap & aoe>", MASS_STORM_TRAP) is True
+    assert await _matches(parse, "any<trap & aoe>", STORM_TRAP) is False
+
+
+async def test_blade_and_aoe_is_a_team_blade(parse):
+    assert await _matches(parse, "any<blade & aoe>", TEAM_BLADE) is True
+    assert await _matches(parse, "any<blade & aoe>", FIRE_BLADE) is False
+
+
+async def test_a_bare_type_still_matches_single_target_and_team_effects_alike(parse):
+    assert await _matches(parse, "any<blade>", FIRE_BLADE) is True
+    assert await _matches(parse, "any<blade>", TEAM_BLADE) is True
+    assert await _matches(parse, "any<trap>", STORM_TRAP) is True
+    assert await _matches(parse, "any<trap>", MASS_STORM_TRAP) is True
+
+
+async def test_each_type_can_still_be_met_by_a_different_effect(parse):
+    """Types are an AND over the card's effects, not a single effect: a single-target
+    trap plus a team blade still has a trap and an AoE effect."""
+    assert await _matches(parse, "any<trap & aoe>", TRAP_WITH_TEAM_BLADE) is True
 
 
 async def test_not_aoe_keeps_a_single_target_trap_and_drops_a_mass_one(parse):
