@@ -12,7 +12,7 @@
         1,
         2
       ],
-      "dsl": "feint mass | feint[potent]@boss | any<blade>[sharp]@ally(1) | any<global>"
+      "dsl": "\"Feint Mass - Amulet\" | feint[potent]@boss | any<blade>[sharp]@ally(1) | any<global>"
     },
     {
       "players": [

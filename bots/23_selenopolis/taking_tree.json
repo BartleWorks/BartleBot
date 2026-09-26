@@ -1,0 +1,1554 @@
+{
+  "id": "b2154ac7-6a31-4af8-8bbf-06791c60e2d2",
+  "name": "Taking Tree",
+  "description": "Defeats Taking Tree in Dark Abode, Vivarium, Selenopolis.",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "sync_players_1_state_2",
+  "recovery_state": "sync_players_1_state_1",
+  "drops": [
+    {
+      "name": "Ammut",
+      "category": "Spellements"
+    },
+    {
+      "name": "Anubis",
+      "category": "Spellements"
+    },
+    {
+      "name": "Avatar's Amulet of Bad Blood",
+      "category": "Amulets"
+    },
+    {
+      "name": "Avatar's Amulet of Payback",
+      "category": "Amulets"
+    },
+    {
+      "name": "Avatar's Amulet of Reprisal",
+      "category": "Amulets"
+    },
+    {
+      "name": "Avatar's Amulet of Retribution",
+      "category": "Amulets"
+    },
+    {
+      "name": "Avatar's Amulet of Revenge",
+      "category": "Amulets"
+    },
+    {
+      "name": "Avatar's Amulet of Vengeance",
+      "category": "Amulets"
+    },
+    {
+      "name": "Avatar's Amulet of Wrath",
+      "category": "Amulets"
+    },
+    {
+      "name": "Avatar's Chakram of Bad Blood",
+      "category": "Wands"
+    },
+    {
+      "name": "Avatar's Chakram of Payback",
+      "category": "Wands"
+    },
+    {
+      "name": "Avatar's Chakram of Reprisal",
+      "category": "Wands"
+    },
+    {
+      "name": "Avatar's Chakram of Retribution",
+      "category": "Wands"
+    },
+    {
+      "name": "Avatar's Chakram of Revenge",
+      "category": "Wands"
+    },
+    {
+      "name": "Avatar's Chakram of Vengeance",
+      "category": "Wands"
+    },
+    {
+      "name": "Avatar's Chakram of Wrath",
+      "category": "Wands"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Death)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Life)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (150)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Blocking Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Blocking Pin (160)"
+    },
+    {
+      "name": "Balance Mending Pin (140)",
+      "category": "Pins"
+    },
+    {
+      "name": "Balance Mending Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Balance Resist Pin (140, Death)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Fire)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Life)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Myth)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Balance Resist Pin (140, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Resist Pin (140)"
+    },
+    {
+      "name": "Barbarian's Saga",
+      "category": "Spellements"
+    },
+    {
+      "name": "Blast Off!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bunyip's Rage",
+      "category": "Spellements"
+    },
+    {
+      "name": "Chameleon Clash",
+      "category": "Spellements"
+    },
+    {
+      "name": "Count Croakula",
+      "category": "Spellements"
+    },
+    {
+      "name": "Dark & Stormy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Death Blocking Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Death Blocking Pin (150)"
+    },
+    {
+      "name": "Death Blocking Pin (150, Ice)",
+      "category": "Pins",
+      "match_name": "Death Blocking Pin (150)"
+    },
+    {
+      "name": "Death Blocking Pin (150, Myth)",
+      "category": "Pins",
+      "match_name": "Death Blocking Pin (150)"
+    },
+    {
+      "name": "Death Blocking Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Death Blocking Pin (160)"
+    },
+    {
+      "name": "Death Blocking Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Death Blocking Pin (160)"
+    },
+    {
+      "name": "Death Blocking Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Death Blocking Pin (160)"
+    },
+    {
+      "name": "Death Resist Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Death Resist Pin (150)"
+    },
+    {
+      "name": "Death Resist Pin (150, Ice)",
+      "category": "Pins",
+      "match_name": "Death Resist Pin (150)"
+    },
+    {
+      "name": "Death Resist Pin (150, Myth)",
+      "category": "Pins",
+      "match_name": "Death Resist Pin (150)"
+    },
+    {
+      "name": "Deathly Depths",
+      "category": "Spellements"
+    },
+    {
+      "name": "Drop Bear Fury",
+      "category": "Spellements"
+    },
+    {
+      "name": "Fire Blocking Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (150)"
+    },
+    {
+      "name": "Fire Blocking Pin (150, Life)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (150)"
+    },
+    {
+      "name": "Fire Blocking Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (150)"
+    },
+    {
+      "name": "Fire Blocking Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (160)"
+    },
+    {
+      "name": "Fire Blocking Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (160)"
+    },
+    {
+      "name": "Fire Blocking Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Blocking Pin (160)"
+    },
+    {
+      "name": "Fire Mending Pin (140)",
+      "category": "Pins"
+    },
+    {
+      "name": "Fire Mending Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Fire Resist Pin (120, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Resist Pin (120)"
+    },
+    {
+      "name": "Fire Resist Pin (140, Balance)",
+      "category": "Pins",
+      "match_name": "Fire Resist Pin (140)"
+    },
+    {
+      "name": "Fire Resist Pin (140, Life)",
+      "category": "Pins",
+      "match_name": "Fire Resist Pin (140)"
+    },
+    {
+      "name": "Fire Resist Pin (140, Storm)",
+      "category": "Pins",
+      "match_name": "Fire Resist Pin (140)"
+    },
+    {
+      "name": "Flawless Critical Amethyst +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Amethyst +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Citrine +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Citrine +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Jade +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Jade +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Onyx +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Onyx +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Peridot +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Peridot +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Ruby +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Ruby +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Sapphire +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawless Critical Sapphire +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Freeze Ray",
+      "category": "Spellements"
+    },
+    {
+      "name": "Glimpse of Infinity",
+      "category": "Spellements"
+    },
+    {
+      "name": "Gravestorm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grim Reader",
+      "category": "Spellements"
+    },
+    {
+      "name": "Grrnadier",
+      "category": "Spellements"
+    },
+    {
+      "name": "Heqet",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ice Blocking Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Blocking Pin (150)"
+    },
+    {
+      "name": "Ice Blocking Pin (150, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Blocking Pin (150)"
+    },
+    {
+      "name": "Ice Blocking Pin (150, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Blocking Pin (150)"
+    },
+    {
+      "name": "Ice Blocking Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Blocking Pin (160)"
+    },
+    {
+      "name": "Ice Blocking Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Blocking Pin (160)"
+    },
+    {
+      "name": "Ice Blocking Pin (160, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Blocking Pin (160)"
+    },
+    {
+      "name": "Ice Resist Pin (140, Balance)",
+      "category": "Pins",
+      "match_name": "Ice Resist Pin (140)"
+    },
+    {
+      "name": "Ice Resist Pin (140, Fire)",
+      "category": "Pins",
+      "match_name": "Ice Resist Pin (140)"
+    },
+    {
+      "name": "Ice Resist Pin (140, Myth)",
+      "category": "Pins",
+      "match_name": "Ice Resist Pin (140)"
+    },
+    {
+      "name": "Improbable Gaze",
+      "category": "Spellements"
+    },
+    {
+      "name": "Life Blocking Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Life Blocking Pin (150)"
+    },
+    {
+      "name": "Life Blocking Pin (150, Death)",
+      "category": "Pins",
+      "match_name": "Life Blocking Pin (150)"
+    },
+    {
+      "name": "Life Blocking Pin (150, Storm)",
+      "category": "Pins",
+      "match_name": "Life Blocking Pin (150)"
+    },
+    {
+      "name": "Life Blocking Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Life Blocking Pin (160)"
+    },
+    {
+      "name": "Life Blocking Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Life Blocking Pin (160)"
+    },
+    {
+      "name": "Life Blocking Pin (160, Storm)",
+      "category": "Pins",
+      "match_name": "Life Blocking Pin (160)"
+    },
+    {
+      "name": "Life Mending Pin (140)",
+      "category": "Pins"
+    },
+    {
+      "name": "Life Mending Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Life Resist Pin (140, Balance)",
+      "category": "Pins",
+      "match_name": "Life Resist Pin (140)"
+    },
+    {
+      "name": "Life Resist Pin (140, Death)",
+      "category": "Pins",
+      "match_name": "Life Resist Pin (140)"
+    },
+    {
+      "name": "Life Resist Pin (140, Storm)",
+      "category": "Pins",
+      "match_name": "Life Resist Pin (140)"
+    },
+    {
+      "name": "Lord of the Jungle",
+      "category": "Spellements"
+    },
+    {
+      "name": "Manifest Amulet of Bad Blood",
+      "category": "Amulets"
+    },
+    {
+      "name": "Manifest Amulet of Payback",
+      "category": "Amulets"
+    },
+    {
+      "name": "Manifest Amulet of Reprisal",
+      "category": "Amulets"
+    },
+    {
+      "name": "Manifest Amulet of Retribution",
+      "category": "Amulets"
+    },
+    {
+      "name": "Manifest Amulet of Revenge",
+      "category": "Amulets"
+    },
+    {
+      "name": "Manifest Amulet of Vengeance",
+      "category": "Amulets"
+    },
+    {
+      "name": "Manifest Amulet of Wrath",
+      "category": "Amulets"
+    },
+    {
+      "name": "Manifest Chakram of Bad Blood",
+      "category": "Wands"
+    },
+    {
+      "name": "Manifest Chakram of Payback",
+      "category": "Wands"
+    },
+    {
+      "name": "Manifest Chakram of Reprisal",
+      "category": "Wands"
+    },
+    {
+      "name": "Manifest Chakram of Retribution",
+      "category": "Wands"
+    },
+    {
+      "name": "Manifest Chakram of Revenge",
+      "category": "Wands"
+    },
+    {
+      "name": "Manifest Chakram of Vengeance",
+      "category": "Wands"
+    },
+    {
+      "name": "Manifest Chakram of Wrath",
+      "category": "Wands"
+    },
+    {
+      "name": "Mockenspiel",
+      "category": "Spellements"
+    },
+    {
+      "name": "Moon Dust",
+      "category": "Reagents"
+    },
+    {
+      "name": "Myth Blocking Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Blocking Pin (150)"
+    },
+    {
+      "name": "Myth Blocking Pin (150, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Blocking Pin (150)"
+    },
+    {
+      "name": "Myth Blocking Pin (150, Life)",
+      "category": "Pins",
+      "match_name": "Myth Blocking Pin (150)"
+    },
+    {
+      "name": "Myth Blocking Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Blocking Pin (160)"
+    },
+    {
+      "name": "Myth Blocking Pin (160, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Blocking Pin (160)"
+    },
+    {
+      "name": "Myth Blocking Pin (160, Life)",
+      "category": "Pins",
+      "match_name": "Myth Blocking Pin (160)"
+    },
+    {
+      "name": "Myth Resist Pin (140, Balance)",
+      "category": "Pins",
+      "match_name": "Myth Resist Pin (140)"
+    },
+    {
+      "name": "Myth Resist Pin (140, Fire)",
+      "category": "Pins",
+      "match_name": "Myth Resist Pin (140)"
+    },
+    {
+      "name": "Myth Resist Pin (140, Life)",
+      "category": "Pins",
+      "match_name": "Myth Resist Pin (140)"
+    },
+    {
+      "name": "Old One's Endgame",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phantasmania!",
+      "category": "Spellements"
+    },
+    {
+      "name": "Polished Piercing Amethyst +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Citrine +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Jade +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Onyx +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Peridot +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Ruby +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Polished Piercing Sapphire +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Rainbow Serpent",
+      "category": "Spellements"
+    },
+    {
+      "name": "S'more Machine",
+      "category": "Spellements"
+    },
+    {
+      "name": "Scales of Destiny",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shatterhorn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Shu",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snack Attack",
+      "category": "Spellements"
+    },
+    {
+      "name": "Sound of Musicology",
+      "category": "Spellements"
+    },
+    {
+      "name": "Starspawn",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm Blocking Pin (150, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Blocking Pin (150)"
+    },
+    {
+      "name": "Storm Blocking Pin (150, Death)",
+      "category": "Pins",
+      "match_name": "Storm Blocking Pin (150)"
+    },
+    {
+      "name": "Storm Blocking Pin (150, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Blocking Pin (150)"
+    },
+    {
+      "name": "Storm Blocking Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Blocking Pin (160)"
+    },
+    {
+      "name": "Storm Blocking Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Storm Blocking Pin (160)"
+    },
+    {
+      "name": "Storm Blocking Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Blocking Pin (160)"
+    },
+    {
+      "name": "Storm Mending Pin (140)",
+      "category": "Pins"
+    },
+    {
+      "name": "Storm Mending Pin (160)",
+      "category": "Pins"
+    },
+    {
+      "name": "Storm Resist Pin (130, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (130)"
+    },
+    {
+      "name": "Storm Resist Pin (130, Death)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (130)"
+    },
+    {
+      "name": "Storm Resist Pin (130, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (130)"
+    },
+    {
+      "name": "Storm Resist Pin (160, Balance)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (160)"
+    },
+    {
+      "name": "Storm Resist Pin (160, Death)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (160)"
+    },
+    {
+      "name": "Storm Resist Pin (160, Ice)",
+      "category": "Pins",
+      "match_name": "Storm Resist Pin (160)"
+    },
+    {
+      "name": "Tatzlewurm Terror",
+      "category": "Spellements"
+    },
+    {
+      "name": "Taweret",
+      "category": "Spellements"
+    },
+    {
+      "name": "Thoth",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tree of Strife",
+      "category": "Spellements"
+    },
+    {
+      "name": "Unearthly Critical Amethyst +42 (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Amethyst +42"
+    },
+    {
+      "name": "Unearthly Critical Amethyst +44 (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Amethyst +44"
+    },
+    {
+      "name": "Unearthly Critical Amethyst +46 (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Amethyst +46"
+    },
+    {
+      "name": "Unearthly Critical Amethyst +48 (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Amethyst +48"
+    },
+    {
+      "name": "Unearthly Critical Amethyst +50 (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Amethyst +50"
+    },
+    {
+      "name": "Unearthly Critical Amethyst +51 (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Amethyst +51"
+    },
+    {
+      "name": "Unearthly Critical Amethyst +54 (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Amethyst +54"
+    },
+    {
+      "name": "Unearthly Critical Citrine +42 (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Citrine +42"
+    },
+    {
+      "name": "Unearthly Critical Citrine +44 (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Citrine +44"
+    },
+    {
+      "name": "Unearthly Critical Citrine +46 (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Citrine +46"
+    },
+    {
+      "name": "Unearthly Critical Citrine +48 (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Citrine +48"
+    },
+    {
+      "name": "Unearthly Critical Citrine +50 (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Citrine +50"
+    },
+    {
+      "name": "Unearthly Critical Citrine +51 (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Citrine +51"
+    },
+    {
+      "name": "Unearthly Critical Citrine +54 (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Citrine +54"
+    },
+    {
+      "name": "Unearthly Critical Jade +42 (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Jade +42"
+    },
+    {
+      "name": "Unearthly Critical Jade +44 (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Jade +44"
+    },
+    {
+      "name": "Unearthly Critical Jade +46 (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Jade +46"
+    },
+    {
+      "name": "Unearthly Critical Jade +48 (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Jade +48"
+    },
+    {
+      "name": "Unearthly Critical Jade +50 (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Jade +50"
+    },
+    {
+      "name": "Unearthly Critical Jade +51 (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Jade +51"
+    },
+    {
+      "name": "Unearthly Critical Jade +54 (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Jade +54"
+    },
+    {
+      "name": "Unearthly Critical Onyx +42 (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Onyx +42"
+    },
+    {
+      "name": "Unearthly Critical Onyx +44 (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Onyx +44"
+    },
+    {
+      "name": "Unearthly Critical Onyx +46 (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Onyx +46"
+    },
+    {
+      "name": "Unearthly Critical Onyx +48 (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Onyx +48"
+    },
+    {
+      "name": "Unearthly Critical Onyx +50 (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Onyx +50"
+    },
+    {
+      "name": "Unearthly Critical Onyx +51 (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Onyx +51"
+    },
+    {
+      "name": "Unearthly Critical Onyx +54 (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Onyx +54"
+    },
+    {
+      "name": "Unearthly Critical Peridot +42 (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Peridot +42"
+    },
+    {
+      "name": "Unearthly Critical Peridot +44 (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Peridot +44"
+    },
+    {
+      "name": "Unearthly Critical Peridot +46 (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Peridot +46"
+    },
+    {
+      "name": "Unearthly Critical Peridot +48 (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Peridot +48"
+    },
+    {
+      "name": "Unearthly Critical Peridot +50 (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Peridot +50"
+    },
+    {
+      "name": "Unearthly Critical Peridot +51 (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Peridot +51"
+    },
+    {
+      "name": "Unearthly Critical Peridot +54 (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Peridot +54"
+    },
+    {
+      "name": "Unearthly Critical Ruby +42 (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Ruby +42"
+    },
+    {
+      "name": "Unearthly Critical Ruby +44 (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Ruby +44"
+    },
+    {
+      "name": "Unearthly Critical Ruby +46 (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Ruby +46"
+    },
+    {
+      "name": "Unearthly Critical Ruby +48 (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Ruby +48"
+    },
+    {
+      "name": "Unearthly Critical Ruby +50 (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Ruby +50"
+    },
+    {
+      "name": "Unearthly Critical Ruby +51 (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Ruby +51"
+    },
+    {
+      "name": "Unearthly Critical Ruby +54 (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Ruby +54"
+    },
+    {
+      "name": "Unearthly Critical Sapphire +42 (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Sapphire +42"
+    },
+    {
+      "name": "Unearthly Critical Sapphire +44 (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Sapphire +44"
+    },
+    {
+      "name": "Unearthly Critical Sapphire +46 (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Sapphire +46"
+    },
+    {
+      "name": "Unearthly Critical Sapphire +48 (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Sapphire +48"
+    },
+    {
+      "name": "Unearthly Critical Sapphire +50 (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Sapphire +50"
+    },
+    {
+      "name": "Unearthly Critical Sapphire +51 (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Sapphire +51"
+    },
+    {
+      "name": "Unearthly Critical Sapphire +54 (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Critical Sapphire +54"
+    },
+    {
+      "name": "Unearthly Damage Amethyst +10% (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Amethyst +10%"
+    },
+    {
+      "name": "Unearthly Damage Amethyst +10% (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Amethyst +10%"
+    },
+    {
+      "name": "Unearthly Damage Amethyst +10% (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Amethyst +10%"
+    },
+    {
+      "name": "Unearthly Damage Amethyst +11% (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Amethyst +11%"
+    },
+    {
+      "name": "Unearthly Damage Amethyst +11% (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Amethyst +11%"
+    },
+    {
+      "name": "Unearthly Damage Amethyst +9% (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Amethyst +9%"
+    },
+    {
+      "name": "Unearthly Damage Amethyst +9% (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Amethyst +9%"
+    },
+    {
+      "name": "Unearthly Damage Citrine +10% (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Citrine +10%"
+    },
+    {
+      "name": "Unearthly Damage Citrine +10% (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Citrine +10%"
+    },
+    {
+      "name": "Unearthly Damage Citrine +10% (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Citrine +10%"
+    },
+    {
+      "name": "Unearthly Damage Citrine +11% (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Citrine +11%"
+    },
+    {
+      "name": "Unearthly Damage Citrine +11% (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Citrine +11%"
+    },
+    {
+      "name": "Unearthly Damage Citrine +9% (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Citrine +9%"
+    },
+    {
+      "name": "Unearthly Damage Citrine +9% (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Citrine +9%"
+    },
+    {
+      "name": "Unearthly Damage Jade +10% (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Jade +10%"
+    },
+    {
+      "name": "Unearthly Damage Jade +10% (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Jade +10%"
+    },
+    {
+      "name": "Unearthly Damage Jade +10% (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Jade +10%"
+    },
+    {
+      "name": "Unearthly Damage Jade +11% (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Jade +11%"
+    },
+    {
+      "name": "Unearthly Damage Jade +11% (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Jade +11%"
+    },
+    {
+      "name": "Unearthly Damage Jade +9% (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Jade +9%"
+    },
+    {
+      "name": "Unearthly Damage Jade +9% (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Jade +9%"
+    },
+    {
+      "name": "Unearthly Damage Onyx +10% (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Onyx +10%"
+    },
+    {
+      "name": "Unearthly Damage Onyx +10% (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Onyx +10%"
+    },
+    {
+      "name": "Unearthly Damage Onyx +10% (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Onyx +10%"
+    },
+    {
+      "name": "Unearthly Damage Onyx +11% (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Onyx +11%"
+    },
+    {
+      "name": "Unearthly Damage Onyx +11% (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Onyx +11%"
+    },
+    {
+      "name": "Unearthly Damage Onyx +9% (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Onyx +9%"
+    },
+    {
+      "name": "Unearthly Damage Onyx +9% (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Onyx +9%"
+    },
+    {
+      "name": "Unearthly Damage Peridot +10% (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Peridot +10%"
+    },
+    {
+      "name": "Unearthly Damage Peridot +10% (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Peridot +10%"
+    },
+    {
+      "name": "Unearthly Damage Peridot +10% (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Peridot +10%"
+    },
+    {
+      "name": "Unearthly Damage Peridot +11% (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Peridot +11%"
+    },
+    {
+      "name": "Unearthly Damage Peridot +11% (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Peridot +11%"
+    },
+    {
+      "name": "Unearthly Damage Peridot +9% (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Peridot +9%"
+    },
+    {
+      "name": "Unearthly Damage Peridot +9% (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Peridot +9%"
+    },
+    {
+      "name": "Unearthly Damage Ruby +10% (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Ruby +10%"
+    },
+    {
+      "name": "Unearthly Damage Ruby +10% (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Ruby +10%"
+    },
+    {
+      "name": "Unearthly Damage Ruby +10% (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Ruby +10%"
+    },
+    {
+      "name": "Unearthly Damage Ruby +11% (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Ruby +11%"
+    },
+    {
+      "name": "Unearthly Damage Ruby +11% (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Ruby +11%"
+    },
+    {
+      "name": "Unearthly Damage Ruby +9% (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Ruby +9%"
+    },
+    {
+      "name": "Unearthly Damage Ruby +9% (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Ruby +9%"
+    },
+    {
+      "name": "Unearthly Damage Sapphire +10% (Balance)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Sapphire +10%"
+    },
+    {
+      "name": "Unearthly Damage Sapphire +10% (Fire)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Sapphire +10%"
+    },
+    {
+      "name": "Unearthly Damage Sapphire +10% (Myth)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Sapphire +10%"
+    },
+    {
+      "name": "Unearthly Damage Sapphire +11% (Death)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Sapphire +11%"
+    },
+    {
+      "name": "Unearthly Damage Sapphire +11% (Storm)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Sapphire +11%"
+    },
+    {
+      "name": "Unearthly Damage Sapphire +9% (Ice)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Sapphire +9%"
+    },
+    {
+      "name": "Unearthly Damage Sapphire +9% (Life)",
+      "category": "Jewels",
+      "match_name": "Unearthly Damage Sapphire +9%"
+    },
+    {
+      "name": "Wobbegong Frenzy",
+      "category": "Spellements"
+    },
+    {
+      "name": "Zand the Bandit",
+      "category": "Spellements"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Jewels",
+    "Reagents",
+    "Spellements",
+    "Boss",
+    "Team-Up"
+  ],
+  "options": [],
+  "states": [
+    {
+      "id": "state_4",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_dungeon",
+      "label": "Enter Dark Abode",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium",
+        "dungeon_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I03_DarkAbode",
+        "dungeon_name": "Dark Abode",
+        "sigil_xyz": {
+          "x": 25975.75,
+          "y": 2324.29,
+          "z": 0.02
+        },
+        "reset_xyz": {
+          "x": 26183.05,
+          "y": 1795.52,
+          "z": 0.02
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "handle_combat",
+      "label": "Defeat Taking Tree",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "KT_SE_Treant_Tormented_A_01",
+        "wiki_page": "Creature:Taking Tree (Standard)",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_10",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_11",
+      "node_type": "enter_zone",
+      "label": "Exit Dark Abode",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I03_DarkAbode",
+        "to_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium",
+        "xyz": {
+          "x": 8.68,
+          "y": -3437.25,
+          "z": 81.59
+        },
+        "reset_xyz": {
+          "x": 8.68,
+          "y": -2919.45,
+          "z": 40.16
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "sync_players_1_state_2",
+      "node_type": "go_to_zone",
+      "label": "Go to zone",
+      "position": {
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium"
+      }
+    },
+    {
+      "id": "sync_players_1_state_3",
+      "node_type": "change_realm",
+      "label": "Change to favorite realm",
+      "position": {
+        "x": 2639.999864958305,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "use_favorite_realm": true
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_11",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_1",
+      "dest": "sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_2",
+      "dest": "sync_players_1_state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "sync_players_1",
+      "label": "Sync players in Vivarium",
+      "members": [
+        "sync_players_1_state_1",
+        "sync_players_1_state_2",
+        "sync_players_1_state_3"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 3,
+        "inputs": {
+          "state_2.zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_3",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ]
+}
