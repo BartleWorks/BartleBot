@@ -246,7 +246,9 @@ def dsl_error(dsl: str) -> DslError | None:
     try:
         _str_provider_class()(dsl)
     except Exception as exc:
-        message = str(exc).strip()
+        # An error raised while transforming arrives wrapped in Lark's VisitError, whose
+        # own first line only names the rule. The wrapped error says what is wrong.
+        message = str(getattr(exc, "orig_exc", exc)).strip()
         # Lark's UnexpectedInput carries both; an unexpected end of input sets them to -1.
         line, column = getattr(exc, "line", 0), getattr(exc, "column", 0)
         positioned = isinstance(line, int) and isinstance(column, int) and line > 0 and column > 0
@@ -273,9 +275,10 @@ class DslWarning(NamedTuple):
 
 #: Names ``SprintyCombat.try_get_spell`` answers itself, before it looks for a card.
 _RESERVED_SPELL_NAMES = frozenset({"pass", "none", "willcast", "discard"})
-#: Grammar nodes whose name is a card's: the move, its enchants, and ``spell(…)``'s list.
-#: Not ``target_named`` — that name is a combatant's.
-_CARD_NAME_NODES = frozenset({"spell", "enchant", "second_enchant", "target_spell"})
+#: Grammar nodes whose name is a card's: the move, its enchants, ``spell(…)``'s list, and
+#: a name excluded inside ``any<…>`` (``!feint``). Not ``target_named`` — that name is a
+#: combatant's.
+_CARD_NAME_NODES = frozenset({"spell", "enchant", "second_enchant", "target_spell", "neg_name"})
 
 
 @lru_cache(maxsize=512)

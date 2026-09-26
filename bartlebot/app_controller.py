@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
-from wizwalker.extensions.scripting.deck_builder import DeckBuilder
 from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot import group_manager, recovery_readiness, restricted_zones, wizard_names
@@ -30,6 +29,7 @@ from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument, _resolve_bo
 from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
+from bartlebot.gui.window_show_trace import WindowShowTracer
 from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
 from bartlebot.logging_setup import add_gui_callback, remove_gui_callback
 from bartlebot.nodes.registry import NODE_REGISTRY, NODE_SPECS
@@ -43,7 +43,7 @@ from bartlebot.subgraphs import ComposeReport, compose_bot, config_to_definition
 from bartlebot.utils.window_kill import force_close_client
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Coroutine, Sequence
 
     from bartlebot.bot.strategy_models import DeckData
 
@@ -52,6 +52,16 @@ _ZONE_PLACEHOLDER = "—"
 
 #: An autosave of a definition document is named for the definition, not a file.
 _DEFINITION_AUTOSAVE_PREFIX = "subgraph_"
+
+#: Player slots with a deck card on the Combat tab; a group is at most four wizards, so
+#: Import all reads no client past the fourth.
+_DECK_SLOTS = 4
+
+#: Why a deck import or apply failed, when the log has the traceback and the user does not.
+_DECK_JOB_FAILED = "failed — see the log for details"
+
+#: Said under every deck failure: a job that dies part-way leaves the game's window as it was.
+_DECK_WINDOW_NOTE = "The game's deck window may be left open or partially edited — check the client before retrying."
 
 
 @dataclass
@@ -113,12 +123,17 @@ class AppController(QObject):
                 DEV_ENV_VAR,
                 project_root(),
             )
+        # Stray windows flashing on screen (#120): logged with the call that showed them.
+        self._window_tracer = WindowShowTracer(app) if dev_mode() else None
 
         # Long-lived asyncio task — held here to prevent GC (event loop keeps weak refs only).
         self._bot_task: asyncio.Task | None = None
 
         # Same reason: in-flight client close sequences, one per crashed client.
         self._close_tasks: set[asyncio.Task] = set()
+
+        # Same reason: the one deck import or apply allowed to run — see _start_deck_job.
+        self._deck_task: asyncio.Task | None = None
 
         # Quit gate state. The close event is refused while clients are being released,
         # and accepted once they are — see _confirm_shutdown.
@@ -279,6 +294,8 @@ class AppController(QObject):
         # Deck import / apply requests from Combat tab
         w.left_sidebar.combat_tab.import_deck_requested.connect(self._on_import_deck_requested)
         w.left_sidebar.combat_tab.apply_deck_requested.connect(self._on_apply_deck_requested)
+        w.left_sidebar.combat_tab.import_all_decks_requested.connect(self._on_import_all_decks_requested)
+        w.left_sidebar.combat_tab.apply_all_decks_requested.connect(self._on_apply_all_decks_requested)
 
         # Which account is behind each player slot, for the combat dialog's slot pills.
         # A callable rather than a pushed value: an account identity is learned some time
@@ -1132,104 +1149,201 @@ class AppController(QObject):
     # ------------------------------------------------------------------
 
     def _on_import_deck_requested(self, slot: int) -> None:
+        if self._slot_has_client(slot):
+            self._start_deck_job(self._import_deck_for_slot(slot))
+
+    def _on_apply_deck_requested(self, slot: int) -> None:
+        if self._slot_has_client(slot):
+            self._start_deck_job(self._apply_deck_for_slot(slot))
+
+    def _on_import_all_decks_requested(self) -> None:
+        if self._slot_has_client(1):
+            self._start_deck_job(self._import_all_decks())
+
+    def _on_apply_all_decks_requested(self) -> None:
+        if self._slot_has_client(1):
+            self._start_deck_job(self._apply_all_decks())
+
+    def _slot_has_client(self, slot: int) -> bool:
+        """Whether *slot* has a hooked client, telling the user when it does not.
+
+        Slot 1 is what the whole-group verbs ask about: it is missing exactly when no
+        client is hooked at all.
+        """
         clients = self._client_manager.clients
         if not clients:
             QMessageBox.warning(self._window, "No clients", "No Wizard101 clients are connected.")
-            return
-        client_idx = slot - 1
-        if client_idx >= len(clients):
+            return False
+        if slot - 1 >= len(clients):
             QMessageBox.warning(self._window, "No client", f"No client connected for slot {slot}.")
+            return False
+        return True
+
+    def _start_deck_job(self, job: Coroutine[object, object, None]) -> None:
+        """Run a deck import or apply, holding every deck verb until it finishes.
+
+        One job at a time. Two on one client drive its deck window at once, and two
+        imports each load, set and save the strategy, so the later save drops the
+        earlier one's deck. The tab disables its verbs while a job runs, but a card's
+        right-click menu still reaches Import and Apply, so the refusal lives here too.
+        """
+        if self._deck_task is not None:
+            job.close()
+            logger.info("A deck import or apply is already running — ignoring the new request")
             return
-        asyncio.create_task(self._import_deck_for_slot(slot))
+        self._deck_task = asyncio.create_task(job)
+        self._deck_task.add_done_callback(self._on_deck_job_done)
+        self._window.left_sidebar.combat_tab.set_deck_busy(True)
+
+    def _on_deck_job_done(self, task: asyncio.Task) -> None:
+        self._deck_task = None
+        if not task.cancelled() and task.exception() is not None:
+            logger.error("Deck job raised", exc_info=task.exception())
+        self._window.left_sidebar.combat_tab.set_deck_busy(False)
+
+    def _active_deck_strategy_id(self, action: str) -> str | None:
+        """The Bot Combat Strategy a deck import or apply works on, or None to skip it."""
+        if self._loaded_config is None:
+            return None
+        bcs_id = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
+        if not bcs_id:
+            logger.warning("No active Bot Combat Strategy — deck %s skipped", action)
+            return None
+        return bcs_id
 
     async def _import_deck_for_slot(self, slot: int) -> None:
-        from bartlebot.bot.strategy_models import DeckData  # noqa: PLC0415
-        from bartlebot.strategy_store import load_bot_strategy, save_bot_strategy  # noqa: PLC0415
-
-        if self._loaded_config is None:
-            return
+        bcs_id = self._active_deck_strategy_id("import")
         clients = self._client_manager.clients
-        client_idx = slot - 1
-        if client_idx >= len(clients):
+        if bcs_id is None or slot - 1 >= len(clients):
             return
-        active_bcs_id = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
-        if not active_bcs_id:
-            logger.warning("No active Bot Combat Strategy — deck import skipped for slot %d", slot)
+        result = await self._read_slot_deck(slot, clients[slot - 1])
+        if isinstance(result, str):
+            self._warn_deck_failed("import", {slot: result})
             return
-        try:
-            bcs = load_bot_strategy(active_bcs_id)
-        except Exception:
-            logger.exception("Failed to load BotCombatStrategy %s for deck import", active_bcs_id)
+        self._store_imported_decks(bcs_id, {slot: result})
+
+    async def _import_all_decks(self) -> None:
+        """Read every hooked client's deck, then store them all with one save.
+
+        The reads run concurrently, for the reason ``_apply_pre_run_decks`` gives: every
+        input WizWalker sends is addressed to one client's own window. The save does not:
+        see ``_store_imported_decks``. A slot that fails is reported, and the others are
+        kept.
+        """
+        bcs_id = self._active_deck_strategy_id("import")
+        if bcs_id is None:
             return
-        client = clients[client_idx]
+        clients = list(self._client_manager.clients)[:_DECK_SLOTS]
+        slots = list(range(1, len(clients) + 1))
+        results = await asyncio.gather(*(self._read_slot_deck(slot, client) for slot, client in zip(slots, clients)))
+        decks = {slot: result for slot, result in zip(slots, results) if not isinstance(result, str)}
+        failures = {slot: result for slot, result in zip(slots, results) if isinstance(result, str)}
+        if decks:
+            self._store_imported_decks(bcs_id, decks)
+        if failures:
+            self._warn_deck_failed("import", failures)
+
+    async def _read_slot_deck(self, slot: int, client) -> DeckData | str:
+        """*client*'s current deck, or the reason it could not be read. Never raises.
+
+        The read half of an import, shared by one slot and by all of them, so Import all
+        can read concurrently and still save once.
+        """
+        from bartlebot.bot.strategy_models import DeckData  # noqa: PLC0415
+
         logger.info("Importing deck for slot %d", slot)
         try:
-            async with DeckBuilder(client) as db:
-                preset_dict = await asyncio.wait_for(read_deck(db), timeout=DECK_IMPORT_TIMEOUT)
+            preset_dict = await asyncio.wait_for(read_deck(client), timeout=DECK_IMPORT_TIMEOUT)
+            deck_data = DeckData(**preset_dict)
         except TimeoutError:
             logger.error("Deck import for slot %d timed out after %.0fs", slot, DECK_IMPORT_TIMEOUT)
-            self._warn_deck_failed("import", slot, "timed out")
-            return
+            return "timed out"
         except Exception:
             logger.exception("Failed to import deck for slot %d", slot)
-            self._warn_deck_failed("import", slot, "failed — see the log for details")
-            return
-        deck_data = DeckData(**preset_dict)
-        bcs.player_decks[slot] = deck_data
+            return _DECK_JOB_FAILED
         logger.info("Deck imported for slot %d: %d cards", slot, deck_data.total_cards())
+        return deck_data
+
+    def _store_imported_decks(self, bcs_id: str, decks: dict[int, DeckData]) -> None:
+        """Write *decks* into the strategy with one load and one save, then redraw.
+
+        Once for every slot, never once per slot: a load-set-save per slot, run
+        concurrently, keeps only the slot saved last and silently drops the others.
+        Loaded after the reads rather than before them, so the save lands on the file as
+        it stands now.
+        """
+        from bartlebot.strategy_store import load_bot_strategy, save_bot_strategy  # noqa: PLC0415
+
+        try:
+            bcs = load_bot_strategy(bcs_id)
+        except Exception:
+            logger.exception("Failed to load BotCombatStrategy %s for deck import", bcs_id)
+            return
+        bcs.player_decks.update(decks)
         try:
             save_bot_strategy(bcs)
         except Exception:
             logger.exception("Failed to save BotCombatStrategy after deck import")
-        self._window.left_sidebar.combat_tab.update_deck_slot(slot, deck_data)
+        self._window.left_sidebar.combat_tab.update_deck_slots(decks)
         self._on_config_changed()
 
-    def _on_apply_deck_requested(self, slot: int) -> None:
-        clients = self._client_manager.clients
-        if not clients:
-            QMessageBox.warning(self._window, "No clients", "No Wizard101 clients are connected.")
-            return
-        client_idx = slot - 1
-        if client_idx >= len(clients):
-            QMessageBox.warning(self._window, "No client", f"No client connected for slot {slot}.")
-            return
-        asyncio.create_task(self._apply_deck_for_slot(slot))
-
-    async def _apply_deck_for_slot(self, slot: int) -> None:
+    def _saved_decks(self) -> dict[int, DeckData] | None:
+        """The active strategy's non-empty decks by slot, or None if there is no strategy."""
         from bartlebot.strategy_store import load_bot_strategy  # noqa: PLC0415
 
-        if self._loaded_config is None:
-            return
-        clients = self._client_manager.clients
-        client_idx = slot - 1
-        if client_idx >= len(clients):
-            return
-        active_bcs_id = SettingsManager.instance().get_active_strategy(self._loaded_config.id)
-        if not active_bcs_id:
-            logger.warning("No active Bot Combat Strategy — deck apply skipped for slot %d", slot)
-            return
+        bcs_id = self._active_deck_strategy_id("apply")
+        if bcs_id is None:
+            return None
         try:
-            bcs = load_bot_strategy(active_bcs_id)
+            bcs = load_bot_strategy(bcs_id)
         except Exception:
-            logger.exception("Failed to load BotCombatStrategy %s for deck apply", active_bcs_id)
+            logger.exception("Failed to load BotCombatStrategy %s for deck apply", bcs_id)
+            return None
+        return {slot: deck_data for slot, deck_data in bcs.player_decks.items() if not deck_data.is_empty()}
+
+    async def _apply_deck_for_slot(self, slot: int) -> None:
+        decks = self._saved_decks()
+        clients = self._client_manager.clients
+        if decks is None or slot - 1 >= len(clients):
             return
-        deck_data = bcs.player_decks.get(slot)
-        if deck_data is None or deck_data.is_empty():
+        deck_data = decks.get(slot)
+        if deck_data is None:
             logger.warning("No deck saved for slot %d — nothing to apply", slot)
             return
-        client = clients[client_idx]
+        result = await self._apply_slot_deck(slot, clients[slot - 1], deck_data)
+        if isinstance(result, str):
+            self._warn_deck_failed("apply", {slot: result})
+        else:
+            self._report_deck_apply(slot, result)
+
+    async def _apply_all_decks(self) -> None:
+        """Apply each saved deck to its hooked client, concurrently, and report once."""
+        decks = self._saved_decks()
+        if decks is None:
+            return
+        clients = self._client_manager.clients
+        pending = {slot: deck_data for slot, deck_data in sorted(decks.items()) if slot - 1 < len(clients)}
+        if not pending:
+            logger.warning("No saved deck has a connected client — nothing to apply")
+            return
+        results = await asyncio.gather(
+            *(self._apply_slot_deck(slot, clients[slot - 1], deck_data) for slot, deck_data in pending.items())
+        )
+        self._report_apply_all(dict(zip(pending, results)))
+
+    async def _apply_slot_deck(self, slot: int, client, deck_data: DeckData) -> DeckApplyReport | str:
+        """Apply one slot's deck: the report, or the reason it failed. Never raises."""
         logger.info("Applying deck for slot %d (%d cards)", slot, deck_data.total_cards())
         try:
             report = await apply_deck(client, deck_data)
-            logger.info("Deck applied for slot %d", slot)
         except TimeoutError:
             logger.error("Deck apply for slot %d timed out after %.0fs", slot, DECK_APPLY_TIMEOUT)
-            self._warn_deck_failed("apply", slot, "timed out")
+            return "timed out"
         except Exception:
             logger.exception("Failed to apply deck for slot %d", slot)
-            self._warn_deck_failed("apply", slot, "failed — see the log for details")
-        else:
-            self._report_deck_apply(slot, report)
+            return _DECK_JOB_FAILED
+        logger.info("Deck applied for slot %d", slot)
+        return report
 
     def _report_deck_apply(self, slot: int, report: DeckApplyReport) -> None:
         """Tell the user when the deck that went on is not the deck that was saved.
@@ -1248,6 +1362,53 @@ class AppController(QObject):
         if report.is_clean:
             return
 
+        lines = self._deck_apply_lines(report)
+        if not report.applied:
+            title = f"Deck for P{slot} not applied"
+            body = "None of the saved deck's cards are in this wizard's spellbook, so the current deck was left alone."
+            self._show_deck_notice(title, f"{body}\n\n" + "\n".join(lines), warn=True)
+            return
+
+        self._show_deck_notice(
+            f"Deck applied for P{slot}, with changes",
+            "\n".join(lines),
+            warn=bool(report.skipped or report.archmastery_failed),
+        )
+
+    def _report_apply_all(self, outcomes: dict[int, DeckApplyReport | str]) -> None:
+        """One notice for Apply all, however many slots need one.
+
+        Each slot says what ``_report_deck_apply`` or ``_warn_deck_failed`` would have
+        said for it alone; four dialogs in a row was the alternative. Silent when every
+        deck went on clean, as a single apply is.
+        """
+        failures = {slot: outcome for slot, outcome in outcomes.items() if isinstance(outcome, str)}
+        sections: list[str] = []
+        if failures:
+            sections.append(self._deck_failure_lines("apply", failures))
+        warn = bool(failures)
+        all_applied = not failures
+        for slot, report in outcomes.items():
+            if isinstance(report, str) or report.is_clean:
+                continue
+            if report.applied:
+                heading = f"P{slot}: applied, with changes"
+                warn = warn or bool(report.skipped or report.archmastery_failed)
+            else:
+                heading = f"P{slot}: not applied — none of the saved deck's cards are in this wizard's spellbook"
+                warn = True
+                all_applied = False
+            body = [f"    {line}" if line else "" for line in self._deck_apply_lines(report)]
+            sections.append("\n".join([heading, *body]))
+        if not sections:
+            return
+        if failures:
+            sections.append(_DECK_WINDOW_NOTE)
+        title = "Decks applied, with changes" if all_applied else "Some decks were not applied"
+        self._show_deck_notice(title, "\n\n".join(sections), warn=warn)
+
+    def _deck_apply_lines(self, report: DeckApplyReport) -> list[str]:
+        """What went on differently from the saved deck, in groups split by blank lines."""
         lines: list[str] = []
         if report.archmastery_failed:
             lines.append(
@@ -1270,18 +1431,7 @@ class AppController(QObject):
             lines += [f"    {self._describe_skipped(name, report)}" for name in report.skipped]
             lines.append("")
             lines.append("Swap in this wizard's own cards and re-import the deck to fix this.")
-
-        if not report.applied:
-            title = f"Deck for P{slot} not applied"
-            body = "None of the saved deck's cards are in this wizard's spellbook, so the current deck was left alone."
-            self._show_deck_notice(title, f"{body}\n\n" + "\n".join(lines), warn=True)
-            return
-
-        self._show_deck_notice(
-            f"Deck applied for P{slot}, with changes",
-            "\n".join(lines),
-            warn=bool(report.skipped or report.archmastery_failed),
-        )
+        return lines
 
     @staticmethod
     def _describe_skipped(name: str, report: DeckApplyReport) -> str:
@@ -1301,15 +1451,17 @@ class AppController(QObject):
             line += f"; you have {', '.join(options)}"
         return line
 
-    def _warn_deck_failed(self, action: str, slot: int, reason: str) -> None:
-        """Surface a deck import/apply failure instead of leaving it log-only."""
+    def _warn_deck_failed(self, action: str, failures: dict[int, str]) -> None:
+        """Surface deck import/apply failures, one line per slot, instead of leaving them log-only."""
         self._show_deck_notice(
             f"Deck {action} failed",
-            f"Deck {action} for P{slot} {reason}.\n\n"
-            "The game's deck window may be left open or partially edited — "
-            "check the client before retrying.",
+            f"{self._deck_failure_lines(action, failures)}\n\n{_DECK_WINDOW_NOTE}",
             warn=True,
         )
+
+    @staticmethod
+    def _deck_failure_lines(action: str, failures: dict[int, str]) -> str:
+        return "\n".join(f"Deck {action} for P{slot} {reason}." for slot, reason in sorted(failures.items()))
 
     def _show_deck_notice(self, title: str, body: str, *, warn: bool) -> None:
         """Show a deck dialog *after* the calling task has finished.

@@ -350,12 +350,23 @@ loose. `test_building_a_row_never_shows_a_parentless_widget` is the guard, and t
 way it catches it is worth reusing — an event filter on the `QApplication` recording
 every `Show` delivered to a widget whose `parent()` is `None`.
 
+The same window opens on the way *out*. **Discard a widget with `discard_widget`
+(`widgets/discard.py`)**, never a bare `setParent(None)` + `deleteLater()`: a widget
+shown earlier in the same event-loop turn still has that show to come, and once it is
+unparented the show maps it as a window. Import all redrew each deck card once per slot
+in one turn, and every art tile from the discarded redraws flashed in the corner (#120).
+The helper hides first, which is the whole fix. `test_discard_widget.py` guards it.
+When a flash appears that you can't place, run with `BARTLEBOT_DEV=1`:
+`gui/window_show_trace.py` logs each stray window's class and geometry, which usually
+names it, plus the Python stack. A deferred show has no Python caller, so for one of those
+the stack ends at the event loop. It also logs windows shown by the game processes.
+
 The inverse trap sits one line away: **a hidden widget in a `QBoxLayout` reserves no
 space at all.** The layout skips it outright rather than laying out a zero-size cell,
 so a spacer or placeholder that is parented but never shown holds nothing open and
 every widget after it lands a row early — with the layout, the size hints and the
 geometry all internally consistent about the wrong answer, which is why it reads as an
-arithmetic bug rather than a visibility one. `CardColumn._begin_drag` is the case:
+arithmetic bug rather than a visibility one. `DragReorder._begin_drag` is the case:
 the placeholder standing in for a lifted card has to be `show()`n by hand, after the
 parent it was constructed with. (`setRetainSizeWhenHidden` is the other way, and is what
 the launch cards' hover-revealed buttons use — but it only applies to a widget the layout
@@ -480,6 +491,21 @@ Three things together, or none of them work: a `QSizePolicy` with
 row of everything, which is what it would like rather than what it needs.
 `test_the_strip_reports_a_taller_height_when_it_has_to_wrap` is the guard.
 
+## A scroll area whose content grows under the user reserves its gutter
+
+An as-needed vertical bar takes its width out of the viewport when the content
+overflows and hands it back when it shrinks, so every card in the pane narrows and
+widens by the bar's width — on a folding card, under the very click that folded it
+(#112). A scroll area of cards, or of a form with sections that fold, calls
+`reserve_scrollbar_gutter` (`widgets/scroll_gutter.py`), the Qt stand-in for CSS
+`scrollbar-gutter: stable`. Text editors, trees and tables keep the as-needed bar:
+re-wrapping text costs nothing, and a permanent gutter there only costs width.
+
+Do not "simplify" it into a viewport margin toggled with the bar's visibility. Qt
+decides whether the bar is needed against the viewport *less its margins*, so the two
+states measure different widths and content in the gap between them loops; the module
+docstring has the detail.
+
 ## The first offscreen render costs 150-200ms
 
 A widget with a `QGraphicsEffect` on it, and a `QWidget.grab()` or `render()` for a
@@ -494,8 +520,8 @@ Left alone it lands wherever the first offscreen render happens to be, which is 
 gesture — the first card drag of a session stalled for a fifth of a second while the
 shadow went on, and no later one did. Call `warm_offscreen_render(widget)`
 (`gui/offscreen_warmup.py`) a turn after the surface is shown instead; it is per window,
-because the flush is, so a dialog does not inherit the main window's. `CardColumn.showEvent`
-is the pattern. It is per window *and* once: the flag means the layouts outstanding at
+because the flush is, so a dialog does not inherit the main window's.
+`DragReorder.watch_for_show` is the pattern, and every card list that drags gets it. It is per window *and* once: the flag means the layouts outstanding at
 that moment ran, not that the window is immune. Nothing warms the other offscreen sites
 (`favorites_bar`, `combat_order_widget`, `duel_strategy_editor`) — if one ever stalls,
 warm its window; do not add a call per widget class.

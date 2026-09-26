@@ -1,6 +1,6 @@
 {
   "id": "d2496f8b-85c5-44f5-98da-13fb0c7ddea5",
   "name": "Default Support",
-  "dsl": "feint mass | feint[potent]@boss | any<blade>[sharp]@ally(last) | any<trap>[potent]@boss | any<trap>[potent]@enemy",
+  "dsl": "\"Feint Mass - Amulet\" | feint[potent]@boss | any<blade>[sharp]@ally(last) | any<trap>[potent]@boss | any<trap>[potent]@enemy",
   "description": "Default support strategy for general use"
 }

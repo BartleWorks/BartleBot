@@ -220,6 +220,21 @@ def test_an_open_bracket_carries_to_the_next_line_and_a_finished_line_does_not()
     assert ds.next_line_stack(finished.stack) == (Context.MOVE,)
 
 
+def test_a_bang_is_punctuation_and_colours_a_type_after_it_but_not_a_name():
+    assert _spans("any<trap & !aoe>")[2:6] == [("trap", T), ("&", P), ("!", P), ("aoe", T)]
+    assert _spans("any<trap & !feint>")[2:5] == [("trap", T), ("&", P), ("!", P)]
+    assert _spans('any<trap & !"Feint">')[4:6] == [("!", P), ('"Feint"', S)]
+
+
+def test_a_type_word_inside_an_excluded_name_is_part_of_the_name():
+    assert validate_dsl("any<damage & !Fire Trap>") is None
+    assert _spans("any<damage & !Fire Trap>")[2:6] == [("damage", T), ("&", P), ("!", P), (">", P)]
+
+
+def test_negatable_types_parse_after_a_bang():
+    assert validate_dsl("\n".join(f"any<damage & !{t}> @ enemy" for t in ds.NEGATABLE_TYPES)) is None
+
+
 def test_a_stack_survives_the_block_state_round_trip():
     stack = (Context.MOVE, Context.ENCHANT, Context.SPELL_TYPE, Context.HANGING)
     assert ds.decode_stack(ds.encode_stack(stack)) == stack
@@ -242,6 +257,16 @@ def test_any_lt_offers_every_spell_type_before_anything_is_typed():
     assert completion.eager
     assert completion.candidates[: len(ds.SPELL_TYPES)] == ds.SPELL_TYPES
     assert "gambit(" in completion.candidates
+
+
+def test_a_bang_offers_the_types_it_can_negate():
+    completion = ds.complete("any<trap & !")
+    assert completion.eager
+    assert completion.candidates == ds.NEGATABLE_TYPES
+    assert "req_met" not in completion.candidates
+    assert ds.complete("any<trap & !ao").candidates == ("aoe",)
+    # A name is typed freely; nothing is offered for one.
+    assert ds.complete("any<trap & !fei").candidates == ()
 
 
 def test_a_typed_prefix_narrows_the_candidates_case_insensitively():

@@ -19,7 +19,7 @@ a half-typed DSL is invalid by definition and must not nag.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QEvent, QTimer, pyqtSignal
+from PyQt6.QtCore import QEvent, Qt, QTimer, pyqtSignal
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -104,6 +104,10 @@ class PlayerStrategyEditor(QWidget):
         self._suppress = False
         self._validate_timer.stop()
         self._update_dsl_validation()
+
+    def focus_dsl(self) -> None:
+        """Put the caret in the DSL box — the field someone arriving to edit a strategy wants."""
+        self._dsl_edit.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def clear(self) -> None:
         """Detach from the loaded strategy. Nothing is pending — every edit is

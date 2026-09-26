@@ -10,13 +10,19 @@ a user-owned edit that wants an explicit Save/Cancel boundary, and it lives in
 ``CombatStrategyDialog``. ``Change…`` on a card opens that dialog in pick mode; ``Edit…``
 opens the same window on the same strategy in manage mode.
 
-TWO SECTIONS, NOT THREE AND A CAPTION
--------------------------------------
+A BANNER, THEN THE SECTIONS
+---------------------------
 
 **Bot Combat Strategy** is which of the user's setups for this bot is live -- someone
 who usually runs four wizards and someone who solos want different ones, and a
-``BotCombatStrategy`` is the thing that differs. **Duel Combat Strategies** is what that
-setup fights with: one card per strategy, each naming the fights it covers.
+``BotCombatStrategy`` is the thing that differs. It is a banner pinned across the top of
+the tab rather than a card in a folding section of its own (#119): a section is for a
+region holding several distinct groups, and this one only ever holds the one pick. It is
+also the thing every section below it belongs *to*, so it sits above them, outside the
+scroll area, and never scrolls away from what it qualifies.
+
+**Duel Combat Strategies** is what that setup fights with: one card per strategy, each
+naming the fights it covers.
 
 That second section used to be two sections and a bare caption -- "Default Duel Combat
 Strategy" over a single card, "Specialized Duel Combat Strategies" over the cards for
@@ -36,7 +42,8 @@ one.
 EVERYTHING IS A CARD
 --------------------
 
-Every row on this tab is a ``CardFrame`` -- the same frame, hover, verb list and
+Every row on this tab is a ``CardFrame`` -- the banner included, which is a card drawn
+full-bleed rather than a different kind of widget -- the same frame, hover, verb list and
 right-click menu as the launch profile cards and the player cards, which is what the
 tab was conspicuously not built from. What that replaces, per section: a ``QPushButton``
 styled to look like a search field, two 1pt-smaller muted lines, and a ``⋮`` button
@@ -126,14 +133,19 @@ from bartlebot.gui.sidebar.strategy_panel import (
     StrategyPanel,
 )
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.themed import set_style_sheet
+from bartlebot.gui.widgets.action_button import ActionButton
 from bartlebot.gui.widgets.add_card import AddCard
 from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge
 from bartlebot.gui.widgets.card_art_tile import CardArtStrip
-from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
+from bartlebot.gui.widgets.card_frame import GRIP_GUTTER, CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.deck_card_list import DeckCardList
+from bartlebot.gui.widgets.drag_reorder import DragReorder
 from bartlebot.gui.widgets.elided_label import ElidedLabel
 from bartlebot.gui.widgets.picker_popup import PickerRow, Section
 from bartlebot.gui.widgets.player_pills import PlayerBadge
+from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
@@ -157,17 +169,19 @@ _NUM_PLAYER_SLOTS = 4
 _NO_STRATEGY_LABEL = "(no strategy set)"
 _ICON_BTN_SIZE = 16
 
-#: Section headings. Two, where there were three plus a bare caption: the levels below
+#: The banner's caption. Nothing heads the banner, so it names itself.
+_BCS_CAPTION = "Bot Combat Strategy"
+
+#: Section heading. One, where there were three plus a bare caption: the levels below
 #: the Bot Combat Strategy are all Duel Combat Strategies, and which one is the default
 #: is a fact about a *card* — its ``Default`` badge — rather than about a region of the
 #: sidebar. See the module docstring.
-_BCS_SECTION = "Bot Combat Strategy"
 _STRATEGIES_SECTION = "Duel Combat Strategies"
 
 #: The section's terminator, in the AddCard the launch columns end with.
 _ADD_STRATEGY = "Add a strategy for specific fights"
 
-#: Verb labels for the Bot Combat Strategy card, shared with its menu and the tests.
+#: Verb labels for the Bot Combat Strategy banner, shared with its menu and the tests.
 _CHANGE_BCS = "Change…"
 _RENAME_BCS = "Rename…"
 _NEW_BCS = "New…"
@@ -187,6 +201,11 @@ _SAVE_DECK = "Save to Library…"
 _LOAD_DECK = "Load from Library…"
 _CLEAR_DECK = "Clear deck"
 _NO_DECK = "No deck saved"
+
+#: The section's two whole-group verbs (#109), and what a verb says while a deck job runs.
+_IMPORT_ALL = "Import all"
+_APPLY_ALL = "Apply all"
+_DECK_BUSY = "Working on a deck — wait for it to finish"
 
 
 class _DeckCard(CardFrame):
@@ -225,6 +244,9 @@ class _DeckCard(CardFrame):
         self._deck: DeckData | None = None
         self._editable = True
         self._has_client = False
+        # A deck import or apply is running somewhere in the section. Every deck verb waits
+        # for it, because two jobs on one client drive the same deck window at once.
+        self._busy = False
         self._expanded = False
         # The account in this slot right now, as a palette slot, or None for no stripe --
         # the same stripe a player card wears, so deck and player are matched by hue.
@@ -234,7 +256,9 @@ class _DeckCard(CardFrame):
         self.refresh_theme_styles()
 
     def _build(self) -> None:
-        layout = self._build_frame("decks", draggable=False)
+        # A drag takes the deck to another player: the card is the deck, and its slot is
+        # wherever it stands. See ``_PlayerDecksSection``.
+        layout = self._build_frame("decks between players")
 
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
@@ -288,6 +312,18 @@ class _DeckCard(CardFrame):
     @property
     def slot(self) -> int:
         return self._slot
+
+    def set_slot(self, slot: int) -> None:
+        """Stand in *slot*: the pill and every sentence naming the player follow it.
+
+        A card is the deck, not the player -- a drag moves the deck to another player --
+        so the slot is wherever the card stands, and the section says so as it moves.
+        """
+        if slot == self._slot:
+            return
+        self._slot = slot
+        self._name.set_player(slot)
+        self._reapply_verb_states()
 
     @property
     def is_expanded(self) -> bool:
@@ -348,6 +384,11 @@ class _DeckCard(CardFrame):
     def set_has_client(self, has_client: bool) -> None:
         """Whether a game client is hooked for this slot -- what Import and Apply need."""
         self._has_client = has_client
+        self._reapply_verb_states()
+
+    def set_busy(self, busy: bool) -> None:
+        """Whether a deck job is running -- Import and Apply wait while one is."""
+        self._busy = busy
         self._reapply_verb_states()
 
     @property
@@ -443,6 +484,8 @@ class _DeckCard(CardFrame):
         """
         if not self._editable:
             return LOCKED
+        if self._busy:
+            return _DECK_BUSY
         if not self._has_client:
             return f"No game client connected for P{self._slot}"
         return "Snapshot the deck from this game client"
@@ -450,6 +493,8 @@ class _DeckCard(CardFrame):
     def _apply_tooltip(self) -> str:
         if not self._editable:
             return LOCKED
+        if self._busy:
+            return _DECK_BUSY
         if not self._has_client:
             return f"No game client connected for P{self._slot}"
         if not self.has_deck:
@@ -457,9 +502,10 @@ class _DeckCard(CardFrame):
         return "Push the saved deck to this game client now"
 
     def _reapply_verb_states(self) -> None:
+        ready = self._editable and self._has_client and not self._busy
         for label, enabled, tooltip in (
-            (_IMPORT_DECK, self._editable and self._has_client, self._import_tooltip()),
-            (_APPLY_DECK, self._editable and self._has_client and self.has_deck, self._apply_tooltip()),
+            (_IMPORT_DECK, ready, self._import_tooltip()),
+            (_APPLY_DECK, ready and self.has_deck, self._apply_tooltip()),
         ):
             button = self.action_button(label)
             if button is not None:
@@ -467,6 +513,8 @@ class _DeckCard(CardFrame):
                 button.setToolTip(tooltip)
         self.setCursor(Qt.CursorShape.PointingHandCursor if self.has_deck else Qt.CursorShape.ArrowCursor)
         self.setToolTip("" if self._editable else LOCKED)
+        if self.grip is not None:
+            self.grip.set_locked(not self._editable or self._busy, LOCKED if not self._editable else _DECK_BUSY)
 
     def _refuses_activation(self) -> bool:
         """Nothing to unfold on a slot with no deck, so the body has no verb there."""
@@ -486,13 +534,29 @@ class _PlayerDecksSection(SidebarSection):
 
     Signals carry the slot, so the tab never has to ask a card which one it is: each
     card's own slot-less signal is re-emitted here with the number bound.
+
+    Above the cards sit Import all and Apply all (#109), the same two verbs for every
+    hooked client at once -- doing four wizards one card at a time was the complaint. They
+    are a row in the body rather than buttons in the heading because ``SidebarSection``'s
+    heading is a disclosure, and a verb sitting on it would share its click.
+
+    A card is a *deck*, and its slot is wherever it stands: dragging one to the third
+    place gives that deck to P3, and the decks between shift one place, as a drag does
+    everywhere else. So the slot-shaped things on a card -- the pill, the account stripe,
+    whether a client is hooked -- are the position's, and are re-said on every step of the
+    drag rather than only once it lands. Every signal reads the card's slot at the moment
+    it fires for the same reason.
     """
 
     import_requested = pyqtSignal(int)  # 1-based slot number
     apply_requested = pyqtSignal(int)  # 1-based slot number
+    import_all_requested = pyqtSignal()
+    apply_all_requested = pyqtSignal()
     save_to_library_requested = pyqtSignal(int)  # 1-based slot number
     load_from_library_requested = pyqtSignal(int)  # 1-based slot number
     clear_requested = pyqtSignal(int)  # 1-based slot number
+    #: The slots in their new order: new slot N takes the deck that was in ``order[N-1]``.
+    decks_reordered = pyqtSignal(list)
     # (slot, True/False/None) — the deck's three-state archmastery override.
     archmastery_mode_changed = pyqtSignal(int, object)
 
@@ -503,42 +567,150 @@ class _PlayerDecksSection(SidebarSection):
         layout.setSpacing(4)
         self._cards: list[_DeckCard] = []
         self._client_count = 0
+        self._editable = True
+        self._busy = False
+
+        all_row = QHBoxLayout()
+        # Indented by the gutter every card below reserves for its grip, so the row spans
+        # exactly the width of the card frames it acts on.
+        all_row.setContentsMargins(GRIP_GUTTER, 0, 0, 0)
+        all_row.setSpacing(4)
+        self._import_all_btn = ActionButton("download", _IMPORT_ALL, parent=self)
+        self._import_all_btn.clicked.connect(self.import_all_requested)
+        self._apply_all_btn = ActionButton("upload", _APPLY_ALL, parent=self)
+        self._apply_all_btn.clicked.connect(self.apply_all_requested)
+        all_row.addWidget(self._import_all_btn, 1)
+        all_row.addWidget(self._apply_all_btn, 1)
+        layout.addLayout(all_row)
+
+        # The account colour per slot, held so a card that moves into a slot mid-drag can
+        # be striped for it. See ``set_player_colors``.
+        self._color_keys: list[int | None] = []
+        self._color_labels: list[str] = []
 
         for slot in range(1, _NUM_PLAYER_SLOTS + 1):
             card = _DeckCard(slot)
-            card.import_requested.connect(partial(self.import_requested.emit, slot))
-            card.apply_requested.connect(partial(self.apply_requested.emit, slot))
-            card.save_to_library_requested.connect(partial(self.save_to_library_requested.emit, slot))
-            card.load_from_library_requested.connect(partial(self.load_from_library_requested.emit, slot))
-            card.clear_requested.connect(partial(self.clear_requested.emit, slot))
-            card.archmastery_mode_changed.connect(partial(self._on_archmastery, slot))
+            for source, target in (
+                (card.import_requested, self.import_requested),
+                (card.apply_requested, self.apply_requested),
+                (card.save_to_library_requested, self.save_to_library_requested),
+                (card.load_from_library_requested, self.load_from_library_requested),
+                (card.clear_requested, self.clear_requested),
+            ):
+                source.connect(partial(self._emit_for, target, card))
+            card.archmastery_mode_changed.connect(partial(self._on_archmastery, card))
             layout.addWidget(card)
             self._cards.append(card)
 
         self.set_content_layout(layout)
+        self._drag = DragReorder(layout, self)
+        self._drag.set_cards(self._cards)
+        self._drag.previewed.connect(self._on_drag_previewed)
+        self._drag.reordered.connect(self._on_drag_reordered)
+        self._drag.watch_for_show(self)
+        self._reapply_all_states()
 
-    def _on_archmastery(self, slot: int, mode: object) -> None:
-        self.archmastery_mode_changed.emit(slot, mode)
+    @staticmethod
+    def _emit_for(signal, card: _DeckCard) -> None:
+        """Re-emit a card's slot-less *signal* with the slot it stands in now."""
+        signal.emit(card.slot)
+
+    def _on_archmastery(self, card: _DeckCard, mode: object) -> None:
+        self.archmastery_mode_changed.emit(card.slot, mode)
+
+    def _on_drag_previewed(self, cards: list) -> None:
+        """Re-say every card's slot from where it now stands, as the drag moves it."""
+        self._cards = list(cards)
+        for index, card in enumerate(self._cards):
+            card.set_slot(index + 1)
+            card.set_has_client(card.slot <= self._client_count)
+        self._apply_player_colors()
+        self._reapply_all_states()
+
+    def _on_drag_reordered(self, order: list[int]) -> None:
+        """A drag has settled: new slot N holds the deck that was in slot ``order[N-1] + 1``.
+
+        The cards were handed to the engine in slot order, so a baseline index is the old
+        slot less one. The cards already stand, and already read, where they belong; this
+        makes it the baseline for the next drag and tells the tab to move the decks.
+        """
+        self._drag.set_cards(self._cards)
+        self.decks_reordered.emit([index + 1 for index in order])
 
     def card(self, slot: int) -> _DeckCard:
-        """The card for a 1-based slot. Public so the tab and the tests can read one."""
+        """The card standing in a 1-based slot. Public so the tab and the tests can read one."""
         return self._cards[slot - 1]
+
+    @property
+    def drag(self) -> DragReorder:
+        """The drag that reorders the cards. Public for the tests that drive it."""
+        return self._drag
+
+    @property
+    def import_all_button(self) -> ActionButton:
+        return self._import_all_btn
+
+    @property
+    def apply_all_button(self) -> ActionButton:
+        return self._apply_all_btn
 
     def set_row_expanded(self, slot: int, expanded: bool) -> None:
         """Fold or unfold one slot's card list, exactly as a body click would."""
         self.card(slot).set_expanded(expanded)
 
     def set_editable(self, editable: bool) -> None:
+        self._editable = editable
         for card in self._cards:
             card.set_editable(editable)
+        self._reapply_all_states()
 
     def set_client_count(self, count: int) -> None:
         self._client_count = count
         for card in self._cards:
             card.set_has_client(card.slot <= count)
+        self._reapply_all_states()
+
+    def set_busy(self, busy: bool) -> None:
+        """Hold every deck verb, per card and for all, while a deck job runs."""
+        self._busy = busy
+        for card in self._cards:
+            card.set_busy(busy)
+        self._reapply_all_states()
+
+    def _reapply_all_states(self) -> None:
+        """Enable the two whole-group verbs, each with the one reason it would not run.
+
+        Apply all needs a saved deck in at least one *hooked* slot: a deck saved for P4
+        with two clients hooked has nowhere to go, and the controller skips it.
+        """
+        ready = self._editable and not self._busy and self._client_count > 0
+        any_deck = any(card.has_deck for card in self._cards if card.slot <= self._client_count)
+        if not self._editable:
+            import_tip = apply_tip = LOCKED
+        elif self._busy:
+            import_tip = apply_tip = _DECK_BUSY
+        elif self._client_count == 0:
+            import_tip = apply_tip = "No game clients connected"
+        else:
+            import_tip = "Read the current deck from every hooked client into this strategy"
+            apply_tip = (
+                "Apply each saved deck to its client"
+                if any_deck
+                else "No deck saved for any connected client — use Import first"
+            )
+        self._import_all_btn.setEnabled(ready)
+        self._import_all_btn.setToolTip(import_tip)
+        self._apply_all_btn.setEnabled(ready and any_deck)
+        self._apply_all_btn.setToolTip(apply_tip)
 
     def set_player_colors(self, keys: list[int | None], labels: list[str]) -> None:
         """Per slot, index 0 being P1; shorter lists leave the remaining cards unstriped."""
+        self._color_keys = list(keys)
+        self._color_labels = list(labels)
+        self._apply_player_colors()
+
+    def _apply_player_colors(self) -> None:
+        keys, labels = self._color_keys, self._color_labels
         for card in self._cards:
             index = card.slot - 1
             card.set_player_color(
@@ -549,6 +721,7 @@ class _PlayerDecksSection(SidebarSection):
     def refresh(self, player_decks: dict[int, DeckData]) -> None:
         for card in self._cards:
             card.set_deck(player_decks.get(card.slot))
+        self._reapply_all_states()
 
 
 # ---------------------------------------------------------------------------
@@ -588,11 +761,11 @@ class _DefaultBinding:
 
 
 # ---------------------------------------------------------------------------
-# Bot Combat Strategy card
+# Bot Combat Strategy banner
 # ---------------------------------------------------------------------------
 
 
-class _BotStrategyCard(CardFrame):
+class _BotStrategyBanner(CardFrame):
     """Which of the user's setups for this bot is live, and the five things you can
     do to that list.
 
@@ -602,13 +775,20 @@ class _BotStrategyCard(CardFrame):
     which is the point: three levels drawn as three different kinds of widget was most
     of why this tab did not read as one surface.
 
+    It is still a card in everything but its outline -- the same name and summary lines,
+    face verbs, right-click menu and body click -- drawn as a banner (#119): no gutter,
+    no rounded border, edge to edge across the top of the tab in the cards' own fill,
+    and ruled off from the sections below. Its own caption stands in for the folding
+    section heading it used to sit under, which promised a fold over a region that only
+    ever held this one row.
+
     Three verbs reach the face and two do not. Duplicate is rare, and Delete is
     destructive next to a body that changes the live configuration -- the rule
     ``card_frame.py`` states for a trash icon 22px from a body click. Both are in the
     right-click menu, which is also the keyboard route.
     """
 
-    FRAME_NAME = "BotStrategyCard"
+    FRAME_NAME = "BotStrategyBanner"
 
     change_requested = pyqtSignal()
     new_requested = pyqtSignal()
@@ -625,7 +805,15 @@ class _BotStrategyCard(CardFrame):
         self.refresh_theme_styles()
 
     def _build(self) -> None:
-        layout = self._build_frame("strategies", draggable=False)
+        layout = self._build_frame("strategies", draggable=False, gutter=False)
+        # Lines the text up with the text inside the cards below: the tab's 8px margin,
+        # their grip gutter, their 1px border and their own 10px padding.
+        layout.setContentsMargins(8 + GRIP_GUTTER + 1 + 10, 6, 8 + 1 + 10, 8)
+
+        self._caption = ThemedTextLabel(
+            _BCS_CAPTION, css=f"font-size: {THEME.font_micro_px}px; font-weight: bold;", parent=self.frame
+        )
+        layout.addWidget(self._caption)
 
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
@@ -702,6 +890,22 @@ class _BotStrategyCard(CardFrame):
         """A body click picks, and there is nothing to pick between until one exists."""
         return not self._editable or self._bcs is None
 
+    def _apply_state_palette(self) -> bool:
+        """The banner's palette, in place of the card's: the card fill and a rule, not a box.
+
+        Hover lights it the way it lights a card -- ``node_fill`` and an accent line --
+        because the body click is the same promise here as there. There is no dragging
+        branch to honour: with no grip, nothing can pick the banner up.
+        """
+        lit = self._hovered and self.has_body_verb
+        set_style_sheet(
+            self,
+            f"#{self.FRAME_NAME} {{ background: {THEME.node_fill if lit else THEME.surface}; "
+            f"border: none; border-bottom: 1px solid {THEME.accent if lit else THEME.border}; }}",
+        )
+        self._restyle_content()
+        return True
+
     def _restyle_content(self) -> None:
         for label, color in ((self._name, THEME.text), (self._meta, THEME.text_muted)):
             palette = label.palette()
@@ -720,6 +924,8 @@ class CombatTab(QWidget):
     combat_config_changed = pyqtSignal()
     import_deck_requested = pyqtSignal(int)  # 1-based slot number
     apply_deck_requested = pyqtSignal(int)  # 1-based slot number
+    import_all_decks_requested = pyqtSignal()
+    apply_all_decks_requested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -736,6 +942,10 @@ class CombatTab(QWidget):
         # membership popup has something to anchor to, and it is dropped unsaved if that
         # popup closes with nothing chosen — see ``_on_add_strategy``.
         self._pending_panel: StrategyPanel | None = None
+        # The specialized cards' order, top to bottom: the user's, set by dragging, and
+        # kept on disk as the order of ``state_assignments``. Identity, not equality --
+        # two inline assignments can hold the same config. See ``_set_bindings``.
+        self._card_order: list[StateAssignment] = []
         self._suppress = False
         self._editable = True
         # Answers "which account is behind each player slot"; installed by AppController,
@@ -760,6 +970,8 @@ class CombatTab(QWidget):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        # Sections fold and decks come and go, each of which can tip the tab into scrolling.
+        reserve_scrollbar_gutter(scroll_area)
 
         content = QWidget()
         self._content_layout = QVBoxLayout(content)
@@ -767,18 +979,14 @@ class CombatTab(QWidget):
         self._content_layout.setSpacing(4)
 
         # ── Bot Combat Strategy ──────────────────────────────────────
-        bcs_section = SidebarSection(_BCS_SECTION, self)
-        bcs_layout = QVBoxLayout()
-        bcs_layout.setSpacing(2)
-        self._bcs_card = _BotStrategyCard()
-        self._bcs_card.change_requested.connect(self._on_pick_bcs)
-        self._bcs_card.new_requested.connect(self._on_new_bcs)
-        self._bcs_card.rename_requested.connect(self._on_rename_bcs)
-        self._bcs_card.duplicate_requested.connect(self._on_duplicate_bcs)
-        self._bcs_card.delete_requested.connect(self._on_delete_bcs)
-        bcs_layout.addWidget(self._bcs_card)
-        bcs_section.set_content_layout(bcs_layout)
-        self._content_layout.addWidget(bcs_section)
+        # A banner above the scroll area rather than a section inside it -- see the
+        # module docstring. The outer layout at the foot of ``__init__`` places it.
+        self._bcs_banner = _BotStrategyBanner(self)
+        self._bcs_banner.change_requested.connect(self._on_pick_bcs)
+        self._bcs_banner.new_requested.connect(self._on_new_bcs)
+        self._bcs_banner.rename_requested.connect(self._on_rename_bcs)
+        self._bcs_banner.duplicate_requested.connect(self._on_duplicate_bcs)
+        self._bcs_banner.delete_requested.connect(self._on_delete_bcs)
 
         # ── Duel Combat Strategies ───────────────────────────────────
         # One section for both levels. The default card is first and always present; the
@@ -811,6 +1019,11 @@ class CombatTab(QWidget):
         self._add_card.setVisible(False)
 
         self._strategies_section.set_content_layout(self._strategies_layout)
+        # Handed the specialized cards alone, so the default card above them and the
+        # add-card below are never part of the order -- see ``_on_strategies_reordered``.
+        self._strategy_drag = DragReorder(self._strategies_layout, self)
+        self._strategy_drag.reordered.connect(self._on_strategies_reordered)
+        self._strategy_drag.watch_for_show(self._strategies_section)
         self._content_layout.addWidget(self._strategies_section)
         self._strategies_section.setVisible(False)
 
@@ -818,10 +1031,13 @@ class CombatTab(QWidget):
         self._decks_section = _PlayerDecksSection(self)
         self._decks_section.import_requested.connect(self.import_deck_requested)
         self._decks_section.apply_requested.connect(self.apply_deck_requested)
+        self._decks_section.import_all_requested.connect(self.import_all_decks_requested)
+        self._decks_section.apply_all_requested.connect(self.apply_all_decks_requested)
         self._decks_section.save_to_library_requested.connect(self._on_save_deck_to_library)
         self._decks_section.load_from_library_requested.connect(self._on_load_deck_from_library)
         self._decks_section.clear_requested.connect(self._on_clear_deck)
         self._decks_section.archmastery_mode_changed.connect(self._on_archmastery_mode_changed)
+        self._decks_section.decks_reordered.connect(self._on_decks_reordered)
         self._content_layout.addWidget(self._decks_section)
 
         self._content_layout.addStretch()
@@ -829,6 +1045,8 @@ class CombatTab(QWidget):
         scroll_area.setWidget(content)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        outer.addWidget(self._bcs_banner)
         outer.addWidget(scroll_area)
 
     # ------------------------------------------------------------------
@@ -861,17 +1079,21 @@ class CombatTab(QWidget):
         self._load_bcs()
         self._rebuild_state_assignments()
         self._refresh_deck_summaries()
-        self._bcs_card.set_strategy(self._bcs)
+        self._bcs_banner.set_strategy(self._bcs)
         self._refresh_default_panel()
         self._suppress = False
 
     def refresh_deck_summaries(self) -> None:
         self._refresh_deck_summaries()
 
-    def update_deck_slot(self, slot: int, deck: DeckData) -> None:
-        """Update the in-memory BCS deck for one slot and refresh the display."""
+    def update_deck_slots(self, decks: dict[int, DeckData]) -> None:
+        """Update the in-memory BCS decks by slot, then redraw the cards once.
+
+        Once for all of them: a redraw per slot rebuilt every card's art once per slot
+        in the same event-loop turn, which is what flashed windows during Import all (#120).
+        """
         if self._bcs is not None:
-            self._bcs.player_decks[slot] = deck
+            self._bcs.player_decks.update(decks)
         self._refresh_deck_summaries()
 
     def refresh_duel_profiles(self) -> None:
@@ -889,7 +1111,7 @@ class CombatTab(QWidget):
         self._all_pcs = list_player_strategies()
         if self._config is not None:
             self._all_bcs = list_bot_strategies(self._config.id)
-        self._bcs_card.set_strategy(self._bcs)
+        self._bcs_banner.set_strategy(self._bcs)
         self._default_panel.set_libraries(self._all_dcs, self._all_pcs)
         for panel in self._group_panels():
             panel.set_libraries(self._all_dcs, self._all_pcs)
@@ -901,7 +1123,7 @@ class CombatTab(QWidget):
 
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
-        self._bcs_card.set_editable(editable)
+        self._bcs_banner.set_editable(editable)
         self._decks_section.set_editable(editable)
         self._default_panel.set_editable(editable)
         self._add_card.setEnabled(editable)
@@ -911,6 +1133,11 @@ class CombatTab(QWidget):
     def set_client_count(self, count: int) -> None:
         self._decks_section.set_client_count(count)
         self.refresh_player_colors()
+
+    def set_deck_busy(self, busy: bool) -> None:
+        """Whether a deck import or apply is running. Pushed by ``AppController``, which
+        owns the job; every deck verb waits for it."""
+        self._decks_section.set_busy(busy)
 
     def set_player_account_source(self, source: Callable[[], list[str | None]] | None) -> None:
         """Install what answers *which account is behind each player slot, right now*.
@@ -979,7 +1206,7 @@ class CombatTab(QWidget):
     def _load_bcs(self) -> None:
         """Load BCS from disk based on active strategy setting."""
         self._bcs = None
-        self._state_bindings = {}
+        self._set_bindings([])
         self._all_bcs = []
         self._all_dcs = list_duel_strategies()
         self._all_pcs = list_player_strategies()
@@ -995,7 +1222,23 @@ class CombatTab(QWidget):
             if active_id != self._bcs.id:
                 SettingsManager.instance().set_active_strategy(self._config.id, self._bcs.id)
         if self._bcs is not None:
-            self._state_bindings = build_bindings(self._bcs.state_assignments)
+            self._set_bindings(self._bcs.state_assignments)
+
+    def _set_bindings(self, assignments: list[StateAssignment]) -> None:
+        """Bind every fight from a strategy file's *assignments*, whose order is the cards'.
+
+        ``build_bindings`` inserts in file order, so each assignment's first appearance
+        among the values is its place in the file.
+        """
+        self._state_bindings = build_bindings(assignments)
+        self._card_order = list({id(a): a for a in self._state_bindings.values()}.values())
+
+    def _card_rank(self, assignment: StateAssignment) -> int:
+        """Where *assignment*'s card sits; one the order has not seen yet goes last."""
+        for index, known in enumerate(self._card_order):
+            if known is assignment:
+                return index
+        return len(self._card_order)
 
     def _ensure_state_binding(self, state_id: str) -> StateAssignment:
         """Return this state's binding, creating an empty in-memory one if absent.
@@ -1019,7 +1262,9 @@ class CombatTab(QWidget):
         # dict keyed by id() in case a loaded file grouped several state_ids
         # under one shared StateAssignment object.
         kept = {id(a): a for a in self._state_bindings.values() if a.is_linked or not a.duel_config.is_empty()}
-        self._bcs.state_assignments = self._prune_orphans(list(kept.values()))
+        # In card order, which is how the order survives a reload.
+        ordered = sorted(kept.values(), key=self._card_rank)
+        self._bcs.state_assignments = self._prune_orphans(ordered)
         try:
             save_bot_strategy(self._bcs)
         except Exception:
@@ -1173,6 +1418,22 @@ class CombatTab(QWidget):
         save_bot_strategy(self._bcs)
         self._refresh_deck_summaries()
 
+    def _on_decks_reordered(self, order: list[int]) -> None:
+        """Give each player the deck the drag put in their slot, and save.
+
+        *order* is the old slots in their new order. An empty slot moves like any other,
+        so dragging P3's deck onto an empty P1 leaves P3 empty rather than copying.
+        """
+        if self._bcs is None:
+            return
+        old = self._bcs.player_decks
+        # A slot past the four cards is not in *order*, and keeps its deck.
+        decks = {slot: deck for slot, deck in old.items() if slot not in order}
+        decks.update({new: old[prev] for new, prev in enumerate(order, start=1) if prev in old})
+        self._bcs.player_decks = dict(sorted(decks.items()))
+        save_bot_strategy(self._bcs)
+        self._refresh_deck_summaries()
+
     def _on_archmastery_mode_changed(self, slot: int, mode: object) -> None:
         """Pin (or unpin) this deck's answer to "set the archmastery school".
 
@@ -1211,6 +1472,8 @@ class CombatTab(QWidget):
         Fights with no strategy of their own get no panel: they are pills on the default
         card, which is why ``_state_panels`` maps only the configured ones.
         """
+        # Before the cards go: a drag in flight would otherwise be left holding one.
+        self._strategy_drag.cancel()
         while self._strategies_layout.count():
             item = self._strategies_layout.takeAt(0)
             widget = item.widget() if item else None
@@ -1229,10 +1492,13 @@ class CombatTab(QWidget):
         for state in exposed:
             self._ensure_state_binding(state.id)
         groups = group_bindings(self._state_bindings, exposed)
+        # The user's order, not ``group_bindings``' FSM order; a card new since the last
+        # rebuild goes last (sorted is stable, so newcomers keep FSM order among
+        # themselves). Recorded again so the order forgets cards that are gone.
+        configured = sorted((g for g in groups if g.is_configured), key=lambda g: self._card_rank(g.assignment))
+        self._card_order = [g.assignment for g in configured]
 
-        for group in groups:
-            if not group.is_configured:
-                continue
+        for group in configured:
             panel = self._make_group_panel(group.assignment, exposed, group.states)
             panel.membership_changed.connect(partial(self._on_membership_changed, group.assignment))
             self._strategies_layout.addWidget(panel)
@@ -1248,6 +1514,7 @@ class CombatTab(QWidget):
 
         self._strategies_layout.addWidget(self._add_card)
         self._add_card.setVisible(bool(exposed))
+        self._strategy_drag.set_cards(self._group_panels())
 
     def _make_group_panel(
         self, assignment: StateAssignment, exposed: list[StateModel], states: list[StateModel]
@@ -1343,6 +1610,8 @@ class CombatTab(QWidget):
         # Where the rebuild would have put it: above the add-card, below the rest.
         self._strategies_layout.insertWidget(self._strategies_layout.count() - 1, panel)
         self._pending_panel = panel
+        # Not a card in the order until it has fights: see ``_on_pending_membership``.
+        panel.grip.set_locked(True, "Choose this strategy's fights first")
         # Deferred a turn: the popup positions itself against the button's place on
         # screen, which the layout has not given it yet on the card inserted just above.
         QTimer.singleShot(0, panel.open_fights_popup)
@@ -1360,6 +1629,21 @@ class CombatTab(QWidget):
         apply_membership(self._state_bindings, assignment, list(chosen_ids))
         self._regroup_bindings()
         self._rebuild_state_assignments()
+        self._save_bcs()
+
+    def _on_strategies_reordered(self, order: list[int]) -> None:
+        """A drag of the specialized cards has settled: keep the order, and save it.
+
+        Cosmetic: which fights a card covers decides what they fight with, never where it
+        sits. The cards already stand where they belong, so nothing is rebuilt -- the
+        order is recorded, the per-fight index follows it, and the file is written.
+        """
+        panels = self._group_panels()
+        reordered = [panels[index] for index in order]
+        self._card_order = [panel.binding for panel in reordered]
+        old = self._state_panels
+        self._state_panels = {sid: panel for panel in reordered for sid, p in old.items() if p is panel}
+        self._strategy_drag.set_cards(reordered)
         self._save_bcs()
 
     def _pick_into(self, binding, none_label: str) -> bool:
@@ -1497,10 +1781,10 @@ class CombatTab(QWidget):
             chosen = dlg.selected_id()
             if chosen:
                 self._bcs = next((b for b in self._all_bcs if b.id == chosen), None)
-                self._state_bindings = build_bindings(self._bcs.state_assignments) if self._bcs else {}
+                self._set_bindings(self._bcs.state_assignments if self._bcs else [])
                 SettingsManager.instance().set_active_strategy(self._config.id, chosen)
                 self._rebuild_state_assignments()
-                self._bcs_card.set_strategy(self._bcs)
+                self._bcs_banner.set_strategy(self._bcs)
                 self._refresh_default_panel()
                 self._refresh_deck_summaries()
 
@@ -1514,10 +1798,10 @@ class CombatTab(QWidget):
         save_bot_strategy(bcs)
         self._all_bcs.append(bcs)
         self._bcs = bcs
-        self._state_bindings = {}
+        self._set_bindings([])
         SettingsManager.instance().set_active_strategy(self._config.id, bcs.id)
         self._rebuild_state_assignments()
-        self._bcs_card.set_strategy(self._bcs)
+        self._bcs_banner.set_strategy(self._bcs)
         self._refresh_default_panel()
         self._refresh_deck_summaries()
 
@@ -1529,7 +1813,7 @@ class CombatTab(QWidget):
             return
         self._bcs.name = name.strip()
         self._save_bcs()
-        self._bcs_card.set_strategy(self._bcs)
+        self._bcs_banner.set_strategy(self._bcs)
 
     def _on_duplicate_bcs(self) -> None:
         if self._bcs is None or self._config is None:
@@ -1541,10 +1825,10 @@ class CombatTab(QWidget):
         save_bot_strategy(new_bcs)
         self._all_bcs.append(new_bcs)
         self._bcs = new_bcs
-        self._state_bindings = build_bindings(new_bcs.state_assignments)
+        self._set_bindings(new_bcs.state_assignments)
         SettingsManager.instance().set_active_strategy(self._config.id, new_bcs.id)
         self._rebuild_state_assignments()
-        self._bcs_card.set_strategy(self._bcs)
+        self._bcs_banner.set_strategy(self._bcs)
         self._refresh_default_panel()
 
     def _on_delete_bcs(self) -> None:
@@ -1562,11 +1846,11 @@ class CombatTab(QWidget):
         self._all_bcs = [b for b in self._all_bcs if b.id != to_delete.id]
         delete_bot_strategy(to_delete.id)
         self._bcs = self._all_bcs[0] if self._all_bcs else None
-        self._state_bindings = build_bindings(self._bcs.state_assignments) if self._bcs else {}
+        self._set_bindings(self._bcs.state_assignments if self._bcs else [])
         new_active = self._bcs.id if self._bcs else None
         SettingsManager.instance().set_active_strategy(self._config.id, new_active)
         self._rebuild_state_assignments()
-        self._bcs_card.set_strategy(self._bcs)
+        self._bcs_banner.set_strategy(self._bcs)
         self._refresh_default_panel()
         self._refresh_deck_summaries()
 

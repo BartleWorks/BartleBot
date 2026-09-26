@@ -208,10 +208,33 @@ any<heal> @ self
 any<trap & inc_damage> @ enemy        # AND of types
 any<blade & out_damage>[sharp] @ self  # with enchant
 
+# Negation with ! (combined with &)
+any<trap & !aoe> @ enemy              # a trap, but not an AoE one
+any<trap & !feint> @ boss             # a trap, but no card whose name contains "feint"
+any<trap & !"Feint"> @ boss           # a trap, but not the card named exactly Feint
+
 # Enchantment variants
 any<damage>[epic] @ enemy             # enchant with any<enchant> named "epic"
 any<heal>[potent] @ self
 ```
+
+`!word` negates a spell type when `word` is one, and excludes a card by name otherwise.
+An unquoted name is the same loose, case-insensitive substring match a bare spell move
+uses, so `!feint` also rules out Mass Feint (`Feint Mass - Amulet`); a quoted name is
+exact. A negated type rules out every card with that effect, AoE or not.
+
+`&` is an AND over the card's effects, not within one effect: each type needs *some*
+effect that satisfies it. `aoe` is about whom an effect targets, not what it does — it
+matches any effect aimed at a whole team, either side: AoE damage, a mass trap or charm,
+a team blade, ward or heal (not an aura, which targets self, or a global). So
+`any<trap & aoe>` is a mass trap, `any<blade & aoe>` a team blade, and `any<damage & aoe>`
+an AoE hit. Blade, charm, ward and trap match single-target and team effects alike, so
+bare `any<trap>` includes mass traps; write `any<trap & !aoe>` for single-target only.
+With `aoe` in the template, a card with a single-target damage effect on an enemy is
+rejected (Storm Beetle), and the matches are ranked by AoE damage, which leaves a
+non-damage clause in hand order.
+`req_met` and the hanging verbs (`gambit(…)` and its siblings) cannot be negated — they
+are checked after a card is picked, so there is nothing for the negation to test.
 
 ### Target Types
 

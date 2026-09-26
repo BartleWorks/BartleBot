@@ -60,6 +60,7 @@ from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
 from bartlebot.gui.widgets.player_picker import pick_player, picker_label
 from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
+from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.zone_picker import NavZoneButton, is_destination
 from bartlebot.nodes import zone_navigation
@@ -1978,6 +1979,9 @@ class _ParamPanel(ThemedMixin, QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(scroll.Shape.NoFrame)
+        # Every inspector page reserves its gutter, so the panel keeps one content width
+        # whichever page is up and whether or not that page scrolls.
+        reserve_scrollbar_gutter(scroll)
         scroll.setWidget(self._param_form)
 
         self._returns_section = QWidget()
@@ -2161,6 +2165,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         region_scroll = QScrollArea()
         region_scroll.setWidgetResizable(True)
         region_scroll.setFrameShape(region_scroll.Shape.NoFrame)
+        reserve_scrollbar_gutter(region_scroll)
         region_scroll.setWidget(region_outer)
         self._stack.addWidget(region_scroll)
 
@@ -2173,12 +2178,14 @@ class _ParamPanel(ThemedMixin, QWidget):
         call_scroll = QScrollArea()
         call_scroll.setWidgetResizable(True)
         call_scroll.setFrameShape(call_scroll.Shape.NoFrame)
+        reserve_scrollbar_gutter(call_scroll)
         call_scroll.setWidget(self._call_page)
         self._stack.addWidget(call_scroll)
         self._signature_page = SignaturePage()
         sig_scroll = QScrollArea()
         sig_scroll.setWidgetResizable(True)
         sig_scroll.setFrameShape(sig_scroll.Shape.NoFrame)
+        reserve_scrollbar_gutter(sig_scroll)
         sig_scroll.setWidget(self._signature_page)
         self._stack.addWidget(sig_scroll)
         self._call_page.edit_starting.connect(self.edit_starting)

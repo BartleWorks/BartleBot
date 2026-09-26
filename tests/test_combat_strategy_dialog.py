@@ -31,7 +31,7 @@ from bartlebot.bot.strategy_models import (
     PlayerAssignment,
     PlayerCombatStrategy,
 )
-from bartlebot.gui.combat_strategies.assignment_card import CUSTOM_DATA, strategy_menu_entries
+from bartlebot.gui.combat_strategies.assignment_card import CUSTOM_DATA, EDIT_VERB, strategy_menu_entries
 from bartlebot.gui.combat_strategies.dialog import (
     KIND_LABELS,
     NEW_NAMES,
@@ -39,6 +39,7 @@ from bartlebot.gui.combat_strategies.dialog import (
     DialogMode,
     _KindPage,
 )
+from bartlebot.gui.widgets.scroll_gutter import is_gutter_reserved
 from bartlebot.strategy_store import (
     StrategyKind,
     list_duel_strategies,
@@ -369,6 +370,85 @@ def test_a_player_strategy_made_on_the_sibling_tab_appears_in_the_selector(qapp,
     row = dlg._pages[StrategyKind.DUEL]._editor.cards[0]
     assert NEW_NAMES[StrategyKind.PLAYER] in [label for label, _data in strategy_menu_entries(dlg._ws.players)]
     assert row.is_expanded() is False  # naming a strategy elsewhere unfolds nothing here
+
+
+# ---------------------------------------------------------------------------
+# The pencil: from an assignment to the Player Strategy it links
+# ---------------------------------------------------------------------------
+
+
+def _linked_duel(roots) -> tuple[DuelCombatStrategy, PlayerCombatStrategy]:
+    shipped, _user = roots
+    other = PlayerCombatStrategy(name="Aoe")
+    pcs = PlayerCombatStrategy(name="Blade", dsl="any<blade>")
+    dcs = DuelCombatStrategy(
+        name="Boss", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
+    )
+    save_player_strategy(other, shipped)
+    save_player_strategy(pcs, shipped)
+    save_duel_strategy(dcs, shipped)
+    return dcs, pcs
+
+
+def test_the_pencil_opens_the_linked_strategy_on_the_player_tab(qapp, roots):
+    dcs, pcs = _linked_duel(roots)
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
+    player = dlg._pages[StrategyKind.PLAYER]
+
+    dlg._pages[StrategyKind.DUEL]._editor.cards[0].action_button(EDIT_VERB).click()
+
+    assert dlg._tabs.currentWidget() is player
+    assert player.selected_id() == pcs.id
+    assert player.about._name_edit.text() == "Blade"
+
+
+def test_the_pencil_puts_the_caret_in_the_dsl_box(qapp, roots):
+    """Not the filter, which is where the tab switch alone would leave it."""
+    dcs, _pcs = _linked_duel(roots)
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
+    dlg.show()
+
+    dlg._pages[StrategyKind.DUEL]._editor.cards[0].action_button(EDIT_VERB).click()
+
+    assert dlg.focusWidget() is dlg._pages[StrategyKind.PLAYER]._editor._dsl_edit
+    dlg.close()
+
+
+def test_the_pencil_clears_a_filter_that_would_hide_the_strategy(qapp, roots):
+    """``_apply_filter`` keeps a hidden row selected, so a stale query would load the
+    strategy with no visible card saying which one it is."""
+    dcs, pcs = _linked_duel(roots)
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
+    player = dlg._pages[StrategyKind.PLAYER]
+    player._filter.setText("Aoe")
+
+    dlg._pages[StrategyKind.DUEL]._editor.cards[0].action_button(EDIT_VERB).click()
+
+    assert player._filter.text() == ""
+    assert player.selected_id() == pcs.id
+    assert not player._list.currentItem().isHidden()
+
+
+def test_the_duel_tab_keeps_its_selection_across_the_round_trip(qapp, roots):
+    dcs, _pcs = _linked_duel(roots)
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
+    duel = dlg._pages[StrategyKind.DUEL]
+
+    duel._editor.cards[0].action_button(EDIT_VERB).click()
+    dlg._tabs.setCurrentWidget(duel)
+
+    assert duel.selected_id() == dcs.id
+    assert duel.about._name_edit.text() == "Boss"
+
+
+@pytest.mark.parametrize("kind", list(KIND_LABELS))
+def test_both_panes_reserve_their_scrollbar_gutter(qapp, roots, kind):
+    """A card folding open, or a filter keystroke, must not narrow every card by a bar's width."""
+    dlg = _dialog(roots)
+    page = dlg._pages[kind]
+
+    assert is_gutter_reserved(page._scroll)
+    assert is_gutter_reserved(page._list)
 
 
 # ---------------------------------------------------------------------------

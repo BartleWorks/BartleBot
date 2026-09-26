@@ -1,6 +1,6 @@
 {
   "id": "f0b1a45f-4b97-4b7e-aae8-e334307185ce",
   "name": "Default No-Feints Support",
-  "dsl": "any<blade>[sharp]@ally(last) | any<trap & aoe> | any<trap>[potent]@boss | any<trap>[potent]@enemy | any<global>",
-  "description": "Default support strategy for duels where Feints are not allowed. Allows Mass Feint since many cheating bosses do not counter it."
+  "dsl": "any<blade>[sharp]@ally(last) | any<trap & aoe & !feint>[potent] | any<trap & !feint>[potent]@boss | any<trap & !feint>[potent]@enemy | any<global>",
+  "description": "Default support strategy for duels where Feints are not allowed"
 }

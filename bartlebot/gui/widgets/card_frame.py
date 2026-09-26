@@ -36,8 +36,8 @@ Reordering is a separate gesture on a separate target: ``GripHandle``, the six d
 gutter beside every card. It is the *only* drag source, and that is what makes the cursor
 honest. The cursor is how a surface says "this drags", and it cannot say that over a whole
 card whose primary verb is launch -- so the announcement was given a place of its own to
-live, where an open hand is the truth. ``CardColumn`` owns what a drag then does, order
-being a fact about the column rather than about any card.
+live, where an open hand is the truth. ``DragReorder`` owns what a drag then does, order
+being a fact about the list rather than about any card.
 
 That place is *outside* the card's frame: the handle in the gutter, everything else in the
 frame, and only the frame carrying the border and the fill. Inside the header the handle
@@ -120,6 +120,7 @@ from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
+from bartlebot.gui.widgets.icon_button import IconButton
 
 _FACE_BTN_SIZE = 22
 
@@ -236,7 +237,7 @@ class GripHandle(ThemedMixin, QWidget):
     Presses are **accepted**, not passed on. A plain widget ignores them by default and Qt
     re-sends what a child ignores to its parent, which would hand the press to the card --
     and, more to the point, would send every subsequent mouse *move* to the card as well.
-    The moves are what ``CardColumn`` turns into a reorder, so a grip that does not keep
+    The moves are what ``DragReorder`` turns into a reorder, so a grip that does not keep
     the press is a grip that never sees the drag.
 
     Still a child of the card, for all that it is drawn outside its frame. Qt sends no
@@ -318,7 +319,7 @@ class GripHandle(ThemedMixin, QWidget):
 
         Disabled and dimmed rather than hidden: a handle that vanishes moves nothing (its
         size is retained) but leaves the user wondering where the gesture went, while a
-        greyed one with a reason in its tooltip answers that. ``CardColumn`` reads
+        greyed one with a reason in its tooltip answers that. ``DragReorder`` reads
         ``isEnabled`` before starting a drag, so this is the only lock there is.
         """
         self.setEnabled(not locked)
@@ -386,11 +387,14 @@ class CardFrame(ThemedMixin, QWidget):
         # The drag handle, and whether the column currently has this card off the layout
         # and following the pointer. ``_dragging`` is a styling state exactly like
         # ``_hovered`` -- one flag that picks which palette apply_theme_styles uses -- and
-        # it is set by CardColumn, which is the only thing that knows a drag is happening.
+        # it is set by DragReorder, which is the only thing that knows a drag is happening.
         self._grip: GripHandle | None = None
         # A card's optional face button for verbs the face alone does not show -- see
         # ``_make_kebab_button``. None on every card that has not asked for one.
         self._kebab_btn: QToolButton | None = None
+        # Face buttons a subclass placed itself rather than drawing from a verb -- see
+        # ``_make_face_icon_button``. Held only so the launch screen's hover reveals them.
+        self._extra_face_btns: list[IconButton] = []
         self._dragging = False
         self._shadow: QGraphicsDropShadowEffect | None = None
         # Where the left button went down, and whether it has travelled since. A card
@@ -445,7 +449,7 @@ class CardFrame(ThemedMixin, QWidget):
     # The frame and its gutter
     # ------------------------------------------------------------------
 
-    def _build_frame(self, what: str, *, draggable: bool = True) -> QVBoxLayout:
+    def _build_frame(self, what: str, *, draggable: bool = True, gutter: bool = True) -> QVBoxLayout:
         """Lay out the handle and the card frame, and hand back the frame's own layout.
 
         Every card is built into this rather than into itself, so that the grip is beside
@@ -459,14 +463,20 @@ class CardFrame(ThemedMixin, QWidget):
         unhooked player, which sits outside the run ``ClientManager`` keeps contiguous.
         The gutter stays, holding a spacer of exactly the handle's width: a card built
         without one is not a card that has moved twenty-two pixels left of the ones above
-        it. ``CardColumn`` reads ``grip`` and skips a card that has none, so this is also
+        it. ``DragReorder`` reads ``grip`` and skips a card that has none, so this is also
         what makes such a card undraggable rather than merely unlabelled -- the same
         arrangement ``AddCard`` uses for the column's terminator.
+
+        *gutter* False drops even that spacer, for a card that is not in a column at all
+        and so has nothing to line up with -- the Combat tab's Bot Combat Strategy banner,
+        which spans the tab edge to edge. It implies *draggable* False.
         """
         row = QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(_GRIP_GAP)
-        if draggable:
+        if not gutter:
+            pass
+        elif draggable:
             row.addWidget(self._make_grip(what), 0)
         else:
             # GRIP_GUTTER, not _GRIP_WIDTH: an explicit spacer gets none of the row's
@@ -509,9 +519,9 @@ class CardFrame(ThemedMixin, QWidget):
     def grip(self) -> GripHandle | None:
         """This card's drag handle, or None if it was built without one.
 
-        Public because the column installs its event filter on it: the drag belongs to
-        ``CardColumn`` -- order is a fact about the column, not about any card -- and the
-        grip is the card's half of that arrangement.
+        Public because ``DragReorder`` installs its event filter on it: the drag belongs to
+        the list -- order is a fact about the list, not about any card -- and the grip is
+        the card's half of that arrangement.
         """
         return self._grip
 
@@ -655,15 +665,19 @@ class CardFrame(ThemedMixin, QWidget):
         """
         return []
 
-    def _add_face_verbs(self, header: QHBoxLayout) -> None:
+    def _add_face_verbs(self, header: QHBoxLayout, verbs: list[CardVerb] | None = None) -> None:
         """Put every verb marked ``on_face`` into *header*, in the order ``_verbs`` gives.
 
         The one place a card's buttons are built, so which buttons a card has is decided
         by its verb list and nowhere else. ``_build`` used to name each button in the
         layout code, which meant a surface wanting a different set needed a branch in
         there -- and there was no way to ask a card what its verbs were without reading it.
+
+        *verbs* overrides ``_verbs`` for a card whose menu offers a verb only in some
+        states: the button has to exist from the start to be shown later, while the menu,
+        rebuilt at every right-click, can simply leave the verb out.
         """
-        for verb in self._verbs():
+        for verb in self._verbs() if verbs is None else verbs:
             if verb.on_face:
                 header.addWidget(self._make_verb_button(verb), 0, Qt.AlignmentFlag.AlignVCenter)
 
@@ -789,6 +803,27 @@ class CardFrame(ThemedMixin, QWidget):
         self._kebab_btn = button
         return button
 
+    def _make_face_icon_button(self, icon_name: str, tooltip: str) -> IconButton:
+        """A header button that is not one verb's, for a subclass to place and drive itself.
+
+        For a control whose glyph and tooltip follow the card's own state -- an assignment
+        card's disclosure chevron, which flips with the fold. ``_make_verb_button`` binds
+        one fixed icon to one fixed verb and so cannot say that. An ``IconButton`` rather
+        than a bare ``QToolButton`` because it re-renders its own tint on a theme pass and
+        swaps glyphs through ``set_icon_name``, so there is nothing here for
+        ``_restyle_action_icons`` to keep in step.
+
+        Sized, revealed and held while hidden exactly as the verb buttons are, so it sits
+        in the same row as them without a seam.
+        """
+        button = IconButton(icon_name, tooltip=tooltip, size=_FACE_BTN_SIZE, icon_size=14, parent=self)
+        policy = button.sizePolicy()
+        policy.setRetainSizeWhenHidden(True)
+        button.setSizePolicy(policy)
+        button.setVisible(self.pins_chrome)
+        self._extra_face_btns.append(button)
+        return button
+
     def _open_verbs_menu(self, anchor: QWidget) -> None:
         """Show the kebab button's menu, dropped from *anchor*'s own bottom-left corner."""
         menu = self._build_verbs_menu()
@@ -808,6 +843,8 @@ class CardFrame(ThemedMixin, QWidget):
             button.setVisible(visible)
         if self._kebab_btn is not None:
             self._kebab_btn.setVisible(visible)
+        for button in self._extra_face_btns:
+            button.setVisible(visible)
         if self._grip is not None:
             self._grip.setVisible(visible)
 

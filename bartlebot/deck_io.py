@@ -1633,19 +1633,32 @@ async def _safe(coro, *, what: str = ""):
         return None
 
 
-async def read_deck(db) -> dict:
-    """Snapshot the normal deck and active item cards from an open DeckBuilder.
+async def read_deck(client) -> dict:
+    """Snapshot ``client``'s normal deck and active item cards, opening the page itself.
 
     Card kinds are recorded here and nowhere else: this wizard owns every card
     in the deck, so its templates are readable, and a wizard the deck is later
     applied to will not own the ones that matter.
+
+    The page is opened by ``deck_page_open`` -- one P to open, one to close --
+    because everything read here is memory under ``DeckConfiguration``, which is
+    what that door is for.  This used to go through ``DeckBuilder``, whose open
+    clicks the Deck tab and the school filter, and then ``refresh_deck_page()``
+    on top, which pressed P twice more to close and reopen the page just opened:
+    the deck visibly opened a second time on every import, and each keypress and
+    click activated and unhooked the mouseless hook on its own.  Import all ran
+    that on four clients at once and read one wizard's deck as empty (#120).
+
+    Raises ``RuntimeError`` when the page will not open, so the caller reports
+    the slot as failed rather than saving an empty deck over the real one.
     """
-    await db.refresh_deck_page()
-    deck_window = await _maybe_get_named_window(db.client.root_window, "DeckConfiguration")
-    cards = await read_deck_cards(db.client, deck_window, classify=True)
-    items = await read_item_slots(db.client, deck_window)
+    async with deck_page_open(client) as deck_window:
+        if deck_window is None:
+            raise RuntimeError("the deck page did not open")
+        cards = await read_deck_cards(client, deck_window, classify=True)
+        items = await read_item_slots(client, deck_window)
     kinds = {name: kind for name, kind in cards if kind}
-    school = await read_archmastery_school(db.client)
+    school = await read_archmastery_school(client)
     logger.debug(
         "Read deck: %d normal cards, %d item card slots, %d classified, archmastery=%s",
         len(cards),

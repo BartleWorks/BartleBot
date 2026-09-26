@@ -16,7 +16,7 @@ The middle tier is the largest, and it is user-owned work. Putting it behind `Bo
 
 **Assemble must show no DSL.** An assignment picks a Player Strategy from the menu behind its card's search verb, and `(built-in default)` is a real, named choice rather than an empty field. Author is one level deeper, behind `Custom DSL…` — never a monospace box in front of a user who will never type into one. Any change that surfaces DSL by default has collapsed the two tiers back together.
 
-That is also what the assignment card's fold is for. The school, the note and the DSL box live behind the pencil, so what an assignment shows at rest is the two things a reader is scanning for — which players, and what they do. The one exception is a DSL that does not parse: the card wears the `⚠` mark and the error colour on its title *while folded*, because everything else the fold hides is optional and that is not.
+That is also what the assignment card's fold is for. The school, the note and the DSL box live behind the chevron at the right edge of its header, so what an assignment shows at rest is the two things a reader is scanning for — which players, and what they do. The one exception is a DSL that does not parse: the card wears the `⚠` mark and the error colour on its title *while folded*, because everything else the fold hides is optional and that is not. The pencil is a different verb: on a card that links a Player Strategy it switches to the Player tab with that strategy selected, and on any other card it is withdrawn (#112).
 
 ## Five levels, and what each one is a fact about
 

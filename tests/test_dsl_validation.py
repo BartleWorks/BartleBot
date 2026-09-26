@@ -26,6 +26,10 @@ _VALID_DSLS = [
     "any<blade>[sharp]@ally(2)",
     "feint mass | any<blade>[sharp]@ally(2)",
     "any<aura & out_damage> | any<aoe>[epic]",
+    # `!` inside any<…>: a negated type, a loosely excluded name, an exactly excluded one.
+    "any<trap & !aoe>",
+    "any<trap & !feint>",
+    'any<trap & !"Feint">',
 ]
 
 
@@ -159,6 +163,19 @@ def test_an_error_with_no_position_reports_zero_rather_than_lark_s_minus_one():
     assert error.column >= 0
 
 
+@pytest.mark.parametrize("dsl", ["any<!>", "any<trap & !>", "any<trap !aoe>"])
+def test_a_bang_needs_a_type_or_a_name_after_it_and_an_ampersand_before_it(dsl):
+    assert validate_dsl(dsl) is not None
+
+
+@pytest.mark.parametrize("dsl", ["any<trap & !gambit(charms)>", "any<damage & !req_met>"])
+def test_only_a_spell_type_can_be_negated(dsl):
+    """A hanging verb and req_met are checked after selection, so a negation of one
+    could never exclude a card. The transformer says so, and the message is its own
+    rather than Lark's wrapper naming the rule."""
+    assert validate_dsl(dsl).startswith("Only a spell type can be negated")
+
+
 def test_provider_class_is_cached():
     first = _str_provider_class()
     second = _str_provider_class()
@@ -248,6 +265,11 @@ def test_moves_on_one_line_need_a_pipe_between_them():
 def test_enchants_and_discard_lists_are_checked_but_combatants_and_keywords_are_not():
     dsl = "Tempest[Zzyzx] @ Lord Zzyzx | discard @ spell(Incindiate, any<aoe>) | pass"
     assert _warned_names(dsl) == ["Zzyzx", "Incindiate"]
+
+
+def test_an_excluded_name_is_checked_but_a_negated_type_is_not():
+    assert dsl_warnings("any<trap & !feint & !aoe> @ boss") == ()
+    assert _warned_names("any<trap & !Fient> @ boss") == ["Fient"]
 
 
 def test_a_number_in_an_unquoted_name_is_warned_about_across_the_whole_name():

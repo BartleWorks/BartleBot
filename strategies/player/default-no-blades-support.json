@@ -1,6 +1,6 @@
 {
   "id": "0c0f0554-df96-440d-837e-21ca2004198e",
   "name": "Default No-Blades Support",
-  "dsl": "feint mass | feint[potent]@boss | any<trap & aoe> | any<trap>[potent]@boss",
+  "dsl": "\"Feint Mass - Amulet\" | feint[potent]@boss | any<trap & aoe> | any<trap>[potent]@boss",
   "description": "Default support strategy for duels where Blades are not allowed"
 }

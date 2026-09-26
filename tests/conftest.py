@@ -89,6 +89,10 @@ class FakeClient:
         self.find_closest_by_predicate = AsyncMock(return_value=None)
         self.tp_to = AsyncMock()
         self.in_battle = AsyncMock(return_value=False)
+        # The centre of the fight this client is in, away from FakeEntity's location so a
+        # teleport to one is never mistaken for a teleport to the other.
+        self.duel = MagicMock()
+        self.duel.position = AsyncMock(return_value=XYZ(500.0, 600.0, 0.0))
         self.body = MagicMock()
         self.body.position = AsyncMock(return_value=XYZ(0.0, 0.0, 0.0))
         self.root_window = MagicMock()

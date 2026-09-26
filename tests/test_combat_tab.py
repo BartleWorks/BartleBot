@@ -44,7 +44,7 @@ from bartlebot.gui.sidebar.combat_tab import (
     _NO_STRATEGY_LABEL,
     _RENAME_BCS,
     CombatTab,
-    _BotStrategyCard,
+    _BotStrategyBanner,
     _DefaultBinding,
     _PlayerDecksSection,
 )
@@ -66,6 +66,7 @@ from bartlebot.gui.sidebar.strategy_panel import (
 )
 from bartlebot.gui.widgets.picker_popup import PickerRow
 from bartlebot.gui.widgets.tag_pill import AccentPill, ActionPill, NeutralPill
+from tests.drag_helpers import drag_card, press_and_move, release, show
 
 
 @pytest.fixture
@@ -459,13 +460,13 @@ def test_the_pill_row_is_hidden_where_membership_is_not_supported(qapp):
 
 
 # ---------------------------------------------------------------------------
-# _BotStrategyCard
+# _BotStrategyBanner
 # ---------------------------------------------------------------------------
 
 
 def test_bot_card_names_the_strategy_and_summarises_it(qapp):
     bcs = BotCombatStrategy(name="Four wizards", bot_id="bot-1")
-    card = _BotStrategyCard()
+    card = _BotStrategyBanner()
 
     card.set_strategy(bcs)
 
@@ -474,7 +475,7 @@ def test_bot_card_names_the_strategy_and_summarises_it(qapp):
 
 
 def test_bot_card_with_no_strategy_says_so_and_refuses_its_body(qapp):
-    card = _BotStrategyCard()
+    card = _BotStrategyBanner()
 
     card.set_strategy(None)
 
@@ -484,7 +485,7 @@ def test_bot_card_with_no_strategy_says_so_and_refuses_its_body(qapp):
 
 def test_new_stays_live_with_no_strategy_loaded(qapp):
     """That is exactly the state a user gets out of by making one."""
-    card = _BotStrategyCard()
+    card = _BotStrategyBanner()
     card.set_strategy(None)
 
     assert card.action_button(_NEW_BCS).isEnabled()
@@ -494,7 +495,7 @@ def test_new_stays_live_with_no_strategy_loaded(qapp):
 
 def test_destructive_bot_verbs_stay_off_the_face(qapp):
     """A trash 22px from a body click that changes the live configuration."""
-    card = _BotStrategyCard()
+    card = _BotStrategyBanner()
     card.set_strategy(BotCombatStrategy(name="B", bot_id="bot-1"))
 
     assert {_DUPLICATE_BCS, _DELETE_BCS} <= set(_verb_labels(card))
@@ -502,8 +503,20 @@ def test_destructive_bot_verbs_stay_off_the_face(qapp):
     assert card.action_button(_DUPLICATE_BCS) is None
 
 
+def test_the_bot_strategy_is_a_banner_pinned_above_the_scrolling_sections(qapp):
+    """#119: one pick is not a region, so it heads the tab rather than folding in it."""
+    tab = CombatTab()
+    banner = tab._bcs_banner
+
+    outer = tab.layout()
+    assert outer.itemAt(0).widget() is banner
+    assert isinstance(outer.itemAt(1).widget(), QScrollArea)
+    assert banner.grip is None
+    assert banner.parentWidget() is tab
+
+
 def test_bot_card_body_click_asks_for_a_different_strategy(qapp):
-    card = _BotStrategyCard()
+    card = _BotStrategyBanner()
     card.set_strategy(BotCombatStrategy(name="B", bot_id="bot-1"))
     seen: list[bool] = []
     card.change_requested.connect(lambda: seen.append(True))
@@ -715,7 +728,7 @@ def test_set_editable_locks_every_card_without_replacing_it(qapp, store):
 
     assert tab._state_panels["state_9"] is panel_before
     assert panel_before._refuses_activation()
-    assert not tab._bcs_card.action_button(_CHANGE_BCS).isEnabled()
+    assert not tab._bcs_banner.action_button(_CHANGE_BCS).isEnabled()
 
 
 def test_the_default_cards_pills_are_locked_with_the_rest(qapp, store):
@@ -1087,7 +1100,7 @@ def test_rebind_identity_drops_the_originals_strategy(qapp, store):
 
     assert tab._bcs is None
     assert tab._all_bcs == []
-    assert tab._bcs_card._name.full_text() == _NO_STRATEGY_LABEL
+    assert tab._bcs_banner._name.full_text() == _NO_STRATEGY_LABEL
 
 
 def test_rebind_identity_does_not_bind_the_fork_to_the_originals_strategy(qapp, store):
@@ -1115,7 +1128,7 @@ def test_rebind_identity_finds_the_forks_own_strategy(qapp, store):
     tab.rebind_identity()
 
     assert tab._bcs is not None and tab._bcs.id == fork_bcs.id
-    assert tab._bcs_card._name.full_text() == "Fork BCS"
+    assert tab._bcs_banner._name.full_text() == "Fork BCS"
 
 
 def test_rebind_identity_is_silent(qapp, store):
@@ -1839,6 +1852,110 @@ def test_deck_tooltips_name_the_run_lock(qapp):
 
 
 # ---------------------------------------------------------------------------
+# Import all / Apply all (#109)
+# ---------------------------------------------------------------------------
+
+
+def test_the_all_buttons_span_the_deck_cards_width(qapp):
+    """The row is indented by the cards' grip gutter, so its edges meet their frames."""
+    section = _PlayerDecksSection()
+    section.resize(300, 600)
+    section.set_expanded(True)
+    section.show()
+    qapp.processEvents()
+
+    frame = section.card(1).frame
+    left = frame.mapTo(section, frame.rect().topLeft()).x()
+    right = frame.mapTo(section, frame.rect().topRight()).x()
+    import_btn, apply_btn = section.import_all_button, section.apply_all_button
+    assert import_btn.mapTo(section, import_btn.rect().topLeft()).x() == left
+    assert apply_btn.mapTo(section, apply_btn.rect().topRight()).x() == right
+    section.close()
+
+
+def test_the_all_buttons_are_off_with_no_client(qapp):
+    section = _PlayerDecksSection()
+    section.refresh({1: DeckData(normal={"Card": 1})})
+
+    assert not section.import_all_button.isEnabled()
+    assert not section.apply_all_button.isEnabled()
+    assert section.import_all_button.toolTip() == "No game clients connected"
+
+
+def test_import_all_needs_only_a_client_and_apply_all_a_saved_deck(qapp):
+    section = _PlayerDecksSection()
+    section.set_client_count(2)
+
+    assert section.import_all_button.isEnabled()
+    assert not section.apply_all_button.isEnabled()
+    assert "use Import first" in section.apply_all_button.toolTip()
+
+    section.refresh({2: DeckData(normal={"Card": 1})})
+
+    assert section.apply_all_button.isEnabled()
+
+
+def test_apply_all_ignores_a_deck_saved_for_an_unhooked_slot(qapp):
+    """P4's deck has nowhere to go with two clients hooked, so it enables nothing."""
+    section = _PlayerDecksSection()
+    section.set_client_count(2)
+    section.refresh({4: DeckData(normal={"Card": 1})})
+
+    assert not section.apply_all_button.isEnabled()
+
+
+def test_the_all_buttons_name_the_run_lock(qapp):
+    section = _PlayerDecksSection()
+    section.set_client_count(4)
+    section.refresh({1: DeckData(normal={"Card": 1})})
+
+    section.set_editable(False)
+
+    assert not section.import_all_button.isEnabled()
+    assert not section.apply_all_button.isEnabled()
+    assert section.import_all_button.toolTip() == LOCKED
+
+
+def test_the_all_buttons_reach_the_tab(qapp):
+    tab = CombatTab()
+    tab.set_client_count(1)
+    seen: list[str] = []
+    tab.import_all_decks_requested.connect(lambda: seen.append("import"))
+    tab.apply_all_decks_requested.connect(lambda: seen.append("apply"))
+
+    tab._decks_section.import_all_button.click()
+    tab._decks_section.apply_all_requested.emit()
+
+    assert seen == ["import", "apply"]
+
+
+def test_a_busy_deck_job_holds_every_deck_verb(qapp):
+    tab = CombatTab()
+    tab.set_client_count(4)
+    section = tab._decks_section
+    section.refresh({1: DeckData(normal={"Card": 1})})
+
+    tab.set_deck_busy(True)
+
+    card = section.card(1)
+    for button in (
+        card.action_button(_IMPORT_DECK),
+        card.action_button(_APPLY_DECK),
+        section.import_all_button,
+        section.apply_all_button,
+    ):
+        assert not button.isEnabled()
+        assert "wait for it to finish" in button.toolTip()
+
+    tab.set_deck_busy(False)
+
+    assert card.action_button(_IMPORT_DECK).isEnabled()
+    assert card.action_button(_APPLY_DECK).isEnabled()
+    assert section.import_all_button.isEnabled()
+    assert section.apply_all_button.isEnabled()
+
+
+# ---------------------------------------------------------------------------
 # Which account is behind each player slot, for the combat dialog's pills (#40)
 #
 # A callable rather than a pushed value, and asked at the moment the dialog opens.
@@ -2055,3 +2172,279 @@ def test_an_unchanged_answer_repaints_nothing(qapp):
         tab.refresh_player_colors()
 
     recolour.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# Dragging the cards: duel strategies (cosmetic) and decks (which player)
+#
+# Real drags on the grips, through the same DragReorder every card list uses; the gesture
+# itself is tested with CardColumn in test_card_drag_feedback.py. What is tested here is
+# what a settled drag *means* on this tab.
+# ---------------------------------------------------------------------------
+
+
+def _three_strategy_tab(qapp, *labels: str) -> tuple[CombatTab, BotCombatStrategy]:
+    """A shown tab with three specialized cards, filed Alpha, Beta, Gamma against fights
+    A, B, C, plus any unassigned fights named in *labels*."""
+    dcs = [_saved_dcs(name) for name in ("Alpha", "Beta", "Gamma")]
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[
+            StateAssignment(state_ids=[f"state_{i}"], duel_combat_strategy_id=d.id) for i, d in enumerate(dcs, start=1)
+        ],
+    )
+    tab = _tab_for(bcs, _multi_config("A", "B", "C", *labels))
+    show(qapp, tab, height=1600)
+    return tab, bcs
+
+
+def _drag_onto(qapp, card, target, nudge: int) -> None:
+    """Drag *card* until its top meets *target*'s, *nudge* pixels further."""
+    drag_card(qapp, card, target.y() - card.y() + nudge)
+
+
+def _card_titles(tab: CombatTab) -> list[list[str]]:
+    return [panel.titles() for panel in tab._group_panels()]
+
+
+def _saved_state_order(bcs: BotCombatStrategy) -> list[list[str]]:
+    return [a.state_ids for a in store_mod.load_bot_strategy(bcs.id).state_assignments]
+
+
+def test_only_the_specialized_cards_have_a_grip(qapp, store):
+    tab, _bcs = _three_strategy_tab(qapp)
+
+    assert tab._default_panel.grip is None
+    assert all(panel.grip is not None for panel in tab._group_panels())
+
+
+def test_dragging_a_strategy_card_moves_it_and_saves_the_order(qapp, store):
+    tab, bcs = _three_strategy_tab(qapp)
+    panels = tab._group_panels()
+
+    _drag_onto(qapp, panels[2], panels[0], -10)
+
+    assert _card_titles(tab) == [["C"], ["A"], ["B"]]
+    layout = tab._strategies_layout
+    assert [layout.itemAt(i).widget() for i in range(layout.count())] == [
+        tab._default_panel,
+        *tab._group_panels(),
+        tab._add_card,
+    ]
+    assert _saved_state_order(bcs) == [["state_3"], ["state_1"], ["state_2"]]
+
+
+def test_nothing_can_be_dragged_above_the_default_card(qapp, store):
+    tab, bcs = _three_strategy_tab(qapp)
+    first = tab._group_panels()[0]
+
+    drag_card(qapp, first, -(first.y() - tab._default_panel.y()) - 40)
+
+    assert _card_titles(tab) == [["A"], ["B"], ["C"]]
+    assert tab._strategies_layout.itemAt(0).widget() is tab._default_panel
+
+
+def test_the_strategy_card_order_survives_a_reload(qapp, store):
+    tab, _bcs = _three_strategy_tab(qapp)
+    panels = tab._group_panels()
+    _drag_onto(qapp, panels[0], panels[2], 1)
+
+    reloaded = CombatTab()
+    reloaded.set_config(tab._config)
+
+    assert _card_titles(reloaded) == [["B"], ["C"], ["A"]]
+
+
+def test_the_cards_follow_the_file_rather_than_the_fsm(qapp, store):
+    first, second = _saved_dcs("First"), _saved_dcs("Second")
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[
+            StateAssignment(state_ids=["state_2"], duel_combat_strategy_id=first.id),
+            StateAssignment(state_ids=["state_1"], duel_combat_strategy_id=second.id),
+        ],
+    )
+
+    tab = _tab_for(bcs, _multi_config("A", "B"))
+
+    assert _card_titles(tab) == [["B"], ["A"]]
+
+
+def test_a_new_strategy_card_goes_last(qapp, store):
+    tab, _bcs = _three_strategy_tab(qapp, "D")
+    panels = tab._group_panels()
+    _drag_onto(qapp, panels[2], panels[0], -10)  # C, A, B
+    delta = _saved_dcs("Delta")
+
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_id.return_value = delta.id
+        tab._on_pick_for_fight("state_4")
+
+    assert _card_titles(tab) == [["C"], ["A"], ["B"], ["D"]]
+
+
+def test_strategy_cards_are_not_dragged_while_the_bot_runs(qapp, store):
+    tab, _bcs = _three_strategy_tab(qapp)
+    tab.set_editable(False)
+    panels = tab._group_panels()
+
+    _drag_onto(qapp, panels[2], panels[0], -10)
+
+    assert _card_titles(tab) == [["A"], ["B"], ["C"]]
+    assert panels[0].grip.toolTip() == LOCKED
+
+
+def test_a_card_still_choosing_its_fights_cannot_be_dragged(qapp, store):
+    tab, _bcs = _three_strategy_tab(qapp)
+    dcs = _saved_dcs("Pending")
+
+    with (
+        patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
+        patch("bartlebot.gui.sidebar.combat_tab.QTimer.singleShot"),
+    ):
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_id.return_value = dcs.id
+        tab._on_add_strategy()
+
+    assert not tab._pending_panel.grip.isEnabled()
+    assert tab._pending_panel not in tab._strategy_drag.cards
+
+
+def _deck_tab(qapp) -> tuple[CombatTab, BotCombatStrategy]:
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        player_decks={1: DeckData(normal={"One": 1}), 2: DeckData(normal={"Two": 2}), 3: DeckData(normal={"Three": 3})},
+    )
+    tab = _tab_for(bcs, _config())
+    show(qapp, tab, height=1600)
+    return tab, bcs
+
+
+def _deck_names(decks: dict[int, DeckData]) -> dict[int, str]:
+    return {slot: next(iter(deck.normal)) for slot, deck in decks.items()}
+
+
+def test_every_deck_card_has_a_grip(qapp):
+    section = _PlayerDecksSection()
+
+    assert all(section.card(slot).grip is not None for slot in range(1, 5))
+
+
+def test_dragging_a_deck_gives_it_to_another_player(qapp, store):
+    """P1's deck dragged to the third place becomes P3's; the two between move up one."""
+    tab, bcs = _deck_tab(qapp)
+    section = tab._decks_section
+    moved = section.card(1)
+
+    _drag_onto(qapp, moved, section.card(3), 1)
+
+    assert _deck_names(tab._bcs.player_decks) == {1: "Two", 2: "Three", 3: "One"}
+    assert _deck_names(store_mod.load_bot_strategy(bcs.id).player_decks) == {1: "Two", 2: "Three", 3: "One"}
+    assert section.card(3) is moved
+    assert [section.card(slot).slot for slot in range(1, 5)] == [1, 2, 3, 4]
+    assert moved._name.player == 3
+
+
+def test_a_deck_card_says_which_player_it_is_while_it_is_still_moving(qapp, store):
+    tab, _bcs = _deck_tab(qapp)
+    section = tab._decks_section
+    first, second = section.card(1), section.card(2)
+
+    press_and_move(qapp, first, second.y() - first.y() + 1)
+    try:
+        assert first.slot == 2
+        assert second.slot == 1
+    finally:
+        release(qapp, first, second.y() - first.y() + 1)
+
+
+def test_an_unfolded_deck_stays_unfolded_when_it_moves(qapp, store):
+    tab, _bcs = _deck_tab(qapp)
+    section = tab._decks_section
+    moved = section.card(1)
+    moved.set_expanded(True)
+    qapp.processEvents()
+
+    # The engine places a card by its middle, and an unfolded card is tall: dragged until
+    # its middle is just past the next card's.
+    target = section.card(2)
+    drag_card(qapp, moved, target.y() + target.height() // 2 + 1 - moved.height() // 2 - moved.y())
+
+    assert moved.slot == 2
+    assert moved.is_expanded
+
+
+def test_an_empty_slot_moves_like_any_other(qapp, store):
+    """P4 has no deck; dragging it to the top leaves P1 empty rather than copying a deck."""
+    tab, _bcs = _deck_tab(qapp)
+    section = tab._decks_section
+
+    _drag_onto(qapp, section.card(4), section.card(1), -10)
+
+    assert _deck_names(tab._bcs.player_decks) == {2: "One", 3: "Two", 4: "Three"}
+    assert not section.card(1).has_deck
+
+
+def test_a_moved_deck_card_speaks_for_its_new_slot(qapp, store):
+    tab, _bcs = _deck_tab(qapp)
+    section = tab._decks_section
+    moved = section.card(1)
+    seen: list[int] = []
+    section.import_requested.connect(seen.append)
+
+    _drag_onto(qapp, moved, section.card(3), 1)
+    moved.import_requested.emit()
+
+    assert seen == [3]
+
+
+def test_a_moved_deck_card_takes_its_new_slots_stripe(qapp, store):
+    tab, _bcs = _deck_tab(qapp)
+    section = tab._decks_section
+    section.set_player_colors([1, 2, 3, 4], ["a", "b", "c", "d"])
+    moved = section.card(1)
+
+    _drag_onto(qapp, moved, section.card(3), 1)
+
+    assert moved.color_key == 3
+    assert section.card(1).color_key == 1
+
+
+def test_a_deck_past_the_fourth_slot_survives_a_reorder(qapp, store):
+    tab, _bcs = _deck_tab(qapp)
+    tab._bcs.player_decks[5] = DeckData(normal={"Five": 1})
+
+    tab._on_decks_reordered([2, 1, 3, 4])
+
+    assert _deck_names(tab._bcs.player_decks) == {1: "Two", 2: "One", 3: "Three", 5: "Five"}
+
+
+def test_deck_grips_lock_while_running_and_while_a_deck_job_runs(qapp):
+    section = _PlayerDecksSection()
+    card = section.card(1)
+
+    section.set_busy(True)
+    assert not card.grip.isEnabled()
+    assert "wait for it to finish" in card.grip.toolTip()
+
+    section.set_busy(False)
+    section.set_editable(False)
+    assert not card.grip.isEnabled()
+    assert card.grip.toolTip() == LOCKED
+
+    section.set_editable(True)
+    assert card.grip.isEnabled()
+
+
+def test_a_locked_deck_does_not_move(qapp, store):
+    tab, _bcs = _deck_tab(qapp)
+    section = tab._decks_section
+    tab.set_deck_busy(True)
+
+    _drag_onto(qapp, section.card(1), section.card(3), 1)
+
+    assert _deck_names(tab._bcs.player_decks) == {1: "One", 2: "Two", 3: "Three"}
