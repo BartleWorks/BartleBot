@@ -71,6 +71,16 @@ async def test_a_blank_or_recorded_label_takes_the_new_recording(interact_panel,
     assert canvas.config.states[0].label == "Interact with Cyrus Drake"
 
 
+async def test_a_recorded_label_is_drawn_on_the_canvas_at_once(interact_panel):
+    """The label field never has focus during a recording, so no focus-out draws it."""
+    canvas = interact_panel("", _labels_it("Interact with Cyrus Drake"))
+
+    canvas.param_panel.start_record("p1")
+    await _settle()
+
+    assert canvas.scene.node_items["a"].label == "Interact with Cyrus Drake"
+
+
 async def test_a_label_the_author_typed_is_kept(interact_panel):
     canvas = interact_panel("Hand in the quest", _labels_it("Interact with Cyrus Drake"))
 
@@ -78,6 +88,7 @@ async def test_a_label_the_author_typed_is_kept(interact_panel):
     await _settle()
 
     assert canvas.config.states[0].label == "Hand in the quest"
+    assert canvas.scene.node_items["a"].label == "Hand in the quest"
 
 
 async def test_the_player_list_is_written_and_read_through_the_form(interact_panel):
