@@ -663,6 +663,7 @@
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
         "dungeon_zone": "WizardCity/Gauntlets/WC_Triton_Gauntlet1/WC_Triton_Gauntlet_01",
+        "dungeon_name": "Waterworks",
         "sigil_xyz": {
           "x": -2782.77,
           "y": -2808.39,

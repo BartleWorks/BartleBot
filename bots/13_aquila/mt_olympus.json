@@ -336,6 +336,7 @@
       "params": {
         "from_zone": "Aquila/AQ_Z00_Hub",
         "dungeon_zone": "Aquila/AQ_Z01_MountOlympus",
+        "dungeon_name": "Mount Olympus",
         "sigil_xyz": {
           "x": -669.19,
           "y": 4202.56,

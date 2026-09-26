@@ -2250,6 +2250,7 @@
       "params": {
         "from_zone": "Zafaria/ZF_Z00_Hub",
         "dungeon_zone": "Zafaria/ZF_Z11_Mirror_Lake",
+        "dungeon_name": "Mirror Lake",
         "sigil_xyz": {
           "x": 2954.12,
           "y": 2855.28,

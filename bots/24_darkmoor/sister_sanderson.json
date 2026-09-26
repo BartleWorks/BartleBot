@@ -624,6 +624,7 @@
       "params": {
         "from_zone": "Darkmoor/DM_Z01_Graveholm",
         "dungeon_zone": "Darkmoor/Interiors/DM_Z01I17_SandersonHouse",
+        "dungeon_name": "Sanderson House",
         "sigil_xyz": {
           "x": 6630.18,
           "y": 3196.74,

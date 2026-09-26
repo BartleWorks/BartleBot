@@ -732,6 +732,7 @@
       "params": {
         "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
         "dungeon_zone": "Marleybone/G14_Gauntlet/MB_Z06_Rooftop",
+        "dungeon_name": "Rooftop",
         "sigil_xyz": {
           "x": -2852.08,
           "y": -6434.02,

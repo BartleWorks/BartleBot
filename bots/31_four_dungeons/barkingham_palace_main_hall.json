@@ -297,6 +297,7 @@
       "params": {
         "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
         "dungeon_zone": "Marleybone/G14_Gauntlet/MB_Z10_MainHall_01",
+        "dungeon_name": "Main Hall",
         "sigil_xyz": {
           "x": 208.89,
           "y": -8494.42,

@@ -608,6 +608,7 @@
       "params": {
         "from_zone": "Krokotopia/KT_Pyramid/KT_Hall",
         "dungeon_zone": "Krokotopia/KT_Pyramid/Interiors/KT_Hall_T1",
+        "dungeon_name": "Biti's Chamber",
         "sigil_xyz": {
           "x": 38155.3,
           "y": -26780.08,
@@ -846,6 +847,7 @@
       "params": {
         "from_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
         "dungeon_zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
+        "dungeon_name": "Temple of Storms",
         "sigil_xyz": {
           "x": -220.43,
           "y": 6449.81,

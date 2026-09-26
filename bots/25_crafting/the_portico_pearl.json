@@ -59,6 +59,7 @@
       "params": {
         "from_zone": "Celestia/CL_Hub",
         "dungeon_zone": "Celestia/CL_Z08_Temple_Of_The_Moon/MoonC1",
+        "dungeon_name": "The Portico",
         "sigil_xyz": {
           "x": -865.03,
           "y": 10956.36,

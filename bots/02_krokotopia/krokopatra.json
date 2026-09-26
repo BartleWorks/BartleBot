@@ -772,6 +772,7 @@
       "params": {
         "from_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
         "dungeon_zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
+        "dungeon_name": "Temple of Storms",
         "sigil_xyz": {
           "x": -220.43,
           "y": 6449.81,

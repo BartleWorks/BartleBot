@@ -483,6 +483,7 @@
       "params": {
         "from_zone": "Avalon/AV_Z02_HighRoad",
         "dungeon_zone": "Avalon/Interiors/AV_Z02_TowerHarlequin",
+        "dungeon_name": "Harlequin Knight's Tower",
         "sigil_xyz": {
           "x": -32.12,
           "y": 13380.61,
@@ -631,6 +632,7 @@
       "params": {
         "from_zone": "Avalon/AV_Z07_OuterYard",
         "dungeon_zone": "Avalon/AV_Z13_KeepOfGanelon",
+        "dungeon_name": "Keep of Ganelon",
         "sigil_xyz": {
           "x": -196.05,
           "y": 4712.33,

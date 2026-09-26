@@ -447,6 +447,7 @@
       "params": {
         "from_zone": "Aquila/AQ_Z00_Hub",
         "dungeon_zone": "Aquila/Interiors/AQ_Z01_TempleOfSisyphus*",
+        "dungeon_name": "Temple of Sisyphus",
         "sigil_xyz": {
           "x": 1180.28,
           "y": 3764.68,

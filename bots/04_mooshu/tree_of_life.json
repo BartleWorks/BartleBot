@@ -926,6 +926,7 @@
       "params": {
         "from_zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
         "dungeon_zone": "MooShu/MS_Death/MS_Death_Zone3_AncientTree",
+        "dungeon_name": "Tree of Life",
         "sigil_xyz": {
           "x": 22340.45,
           "y": 17011.45,

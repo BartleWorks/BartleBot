@@ -390,6 +390,7 @@
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Drains/Z00_Drains_HUB",
         "dungeon_zone": "WizardCity/WC_Streets/WC_Drains/Z00_ClubHouse",
+        "dungeon_name": "Abandoned House",
         "sigil_xyz": {
           "x": 13218.09,
           "y": -15550.06,

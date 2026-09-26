@@ -551,6 +551,7 @@
       "params": {
         "from_zone": "Avalon/AV_Z02_HighRoad",
         "dungeon_zone": "Avalon/Interiors/AV_Z02_JabberwockLair",
+        "dungeon_name": "Jabberwock's Lair",
         "sigil_xyz": {
           "x": 2973.37,
           "y": 9718.94,

@@ -586,6 +586,7 @@
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Firecat",
         "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Firecat_Theatre",
+        "dungeon_name": "Fireglobe Theatre",
         "sigil_xyz": {
           "x": -24675.15,
           "y": -6214.91,

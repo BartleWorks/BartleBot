@@ -633,6 +633,7 @@
       "params": {
         "from_zone": "Wysteria/PA_Z01_Pegasus",
         "dungeon_zone": "Wysteria/Interiors/PA_Crystal_Tower",
+        "dungeon_name": "Crystal Tower",
         "sigil_xyz": {
           "x": -6618.74,
           "y": 16309.6,

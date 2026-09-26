@@ -727,6 +727,7 @@
       "params": {
         "from_zone": "Mirage/MR_Z04_RubalWastes",
         "dungeon_zone": "Mirage/Interiors/MR_Z04_MonguRefuge",
+        "dungeon_name": "Mongu Refuge",
         "sigil_xyz": {
           "x": 4082.19,
           "y": 4071.54,

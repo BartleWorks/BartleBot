@@ -140,6 +140,7 @@
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
         "dungeon_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
+        "dungeon_name": "Great Spyre",
         "sigil_xyz": {
           "x": -216.38,
           "y": 6265.21,

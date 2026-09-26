@@ -752,6 +752,7 @@
       "params": {
         "from_zone": "Marleybone/MB_Station/MB_Station_Hub",
         "dungeon_zone": "Marleybone/MB_Station/MB_FlightToIronworks",
+        "dungeon_name": "Ironworks",
         "sigil_xyz": {
           "x": -4709.25,
           "y": 8132.7,

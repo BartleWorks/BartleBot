@@ -633,6 +633,7 @@
       "params": {
         "from_zone": "Wysteria/PA_Z02_Tanglewood",
         "dungeon_zone": "Wysteria/Interiors/PA_Lord_Bramble_Tower",
+        "dungeon_name": "Lord Bramble's Tower",
         "sigil_xyz": {
           "x": 550.47,
           "y": 11667.16,

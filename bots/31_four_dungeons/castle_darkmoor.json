@@ -978,6 +978,7 @@
       "params": {
         "from_zone": "G14_DM/DM_Z01_CastleDarkmoor",
         "dungeon_zone": "G14_DM/DM_Z02_MainHall",
+        "dungeon_name": "Castle Darkmoor",
         "sigil_xyz": {
           "x": -208.41,
           "y": 134.9,

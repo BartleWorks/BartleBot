@@ -548,6 +548,7 @@
       "params": {
         "from_zone": "Polaris/PL_Z03_IcefallPassage",
         "dungeon_zone": "Polaris/Interiors/PL_Z03I04_SunlessShrineEnt",
+        "dungeon_name": "Sunless Shrine",
         "sigil_xyz": {
           "x": 7289.76,
           "y": -28522.47,

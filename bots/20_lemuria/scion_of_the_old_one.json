@@ -1898,6 +1898,7 @@
       "params": {
         "from_zone": "Lemuria/Interiors/LM_Z00_I09_OldOnesComplex",
         "dungeon_zone": "Lemuria/Interiors/LM_Z00_I12_SynthesizerChamber",
+        "dungeon_name": "Scion's Chamber",
         "sigil_xyz": {
           "x": 5208.36,
           "y": 216.07,

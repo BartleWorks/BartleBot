@@ -387,6 +387,7 @@
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Triton",
         "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T1",
+        "dungeon_name": "Galvanost Tower",
         "sigil_xyz": {
           "x": -36814.59,
           "y": -7190.39,

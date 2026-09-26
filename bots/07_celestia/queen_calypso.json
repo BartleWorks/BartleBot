@@ -1040,6 +1040,7 @@
       "params": {
         "from_zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
         "dungeon_zone": "Celestia/Interiors/CL_Z10i3_Kingdom_Of_The_Crabs",
+        "dungeon_name": "Calypso's Cavern",
         "sigil_xyz": {
           "x": 713.39,
           "y": 28581.93,

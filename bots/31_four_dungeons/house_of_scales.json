@@ -575,6 +575,7 @@
       "params": {
         "from_zone": "G14_HS/HS_Z01_ZigazagUpper",
         "dungeon_zone": "G14_HS/HS_Z04_HouseOfScales",
+        "dungeon_name": "House of Scales",
         "sigil_xyz": {
           "x": 9936.0,
           "y": -3459.35,

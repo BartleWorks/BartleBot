@@ -131,6 +131,7 @@
       "params": {
         "from_zone": "Darkmoor/DM_Z05_ScholomanceEntrance",
         "dungeon_zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
+        "dungeon_name": "Heretical Academy",
         "sigil_xyz": {
           "x": 8690.85,
           "y": 2060.59,

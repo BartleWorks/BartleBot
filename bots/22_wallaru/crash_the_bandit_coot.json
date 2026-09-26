@@ -85,6 +85,7 @@
       "params": {
         "from_zone": "Wallaru/WL_Z05_Wobbegong_JT",
         "dungeon_zone": "Wallaru/Interiors/WL_Z05_BanditCootCave",
+        "dungeon_name": "Crash's Cave",
         "sigil_xyz": {
           "x": -5997.44,
           "y": -2107.52,

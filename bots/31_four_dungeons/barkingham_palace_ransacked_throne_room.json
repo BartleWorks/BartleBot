@@ -214,6 +214,7 @@
       "params": {
         "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
         "dungeon_zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB*",
+        "dungeon_name": "Ransacked Throne Room",
         "sigil_xyz": {
           "x": 2905.41,
           "y": -6594.68,

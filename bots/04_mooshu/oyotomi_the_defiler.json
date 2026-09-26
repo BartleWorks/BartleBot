@@ -499,6 +499,7 @@
       "params": {
         "from_zone": "MooShu/MS_Hub",
         "dungeon_zone": "MooShu/Interiors/MS_Emperor_Palace",
+        "dungeon_name": "Emperor's Throne Room",
         "sigil_xyz": {
           "x": 19169.84,
           "y": 209.98,

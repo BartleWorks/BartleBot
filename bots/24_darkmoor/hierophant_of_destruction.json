@@ -892,6 +892,7 @@
       "params": {
         "from_zone": "Darkmoor/DM_Z04_BlackLagoon",
         "dungeon_zone": "Darkmoor/Interiors/DM_Z04I08_BogOfVengeance",
+        "dungeon_name": "Bog of Vengeance",
         "sigil_xyz": {
           "x": -9154.1,
           "y": -2425.66,

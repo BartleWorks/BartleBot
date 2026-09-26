@@ -340,6 +340,7 @@
       "params": {
         "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
         "dungeon_zone": "Marleybone/G14_Gauntlet/MB_Z02_PalaceWestWing_01",
+        "dungeon_name": "State Wing",
         "sigil_xyz": {
           "x": 2358.23,
           "y": -3802.26,
