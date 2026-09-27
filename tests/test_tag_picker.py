@@ -1,5 +1,7 @@
 """Tests for the bot-tag picker shared by the bot header and the library panel."""
 
+from dataclasses import replace
+
 from PyQt6.QtCore import QEvent
 from PyQt6.QtWidgets import QWidget
 
@@ -8,6 +10,8 @@ from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS
 from bartlebot.gui.canvas.bot_header import BotHeader
 from bartlebot.gui.widgets.picker_popup import _RowWidget
 from bartlebot.gui.widgets.tag_picker import (
+    BOT_VOCABULARY,
+    STRATEGY_VOCABULARY,
     TagPickerButton,
     count_label,
     group_accent,
@@ -15,6 +19,8 @@ from bartlebot.gui.widgets.tag_picker import (
     tag_sections,
 )
 from bartlebot.gui.widgets.tag_pill import TagChip, TagPill
+from bartlebot.strategy_tags import STRATEGY_TAG_GROUPS
+from tests.picker_helpers import pick
 
 # ---------------------------------------------------------------------------
 # Section building (pure)
@@ -339,3 +345,38 @@ def test_a_chip_is_coloured_by_its_group(qapp):
 
     assert group_accent("Rewards") in styles
     assert group_accent("Activities") in styles
+
+
+# ---------------------------------------------------------------------------
+# The vocabulary is a parameter (#125)
+# ---------------------------------------------------------------------------
+
+
+def test_the_default_vocabulary_is_the_bot_tags():
+    assert BOT_VOCABULARY.tags == BOT_TAGS
+    assert tag_sections() == tag_sections(vocabulary=BOT_VOCABULARY)
+
+
+def test_sections_follow_the_vocabulary_they_are_given():
+    sections = tag_sections(vocabulary=STRATEGY_VOCABULARY)
+    assert [name for name, _rows in sections] == list(STRATEGY_TAG_GROUPS)
+
+
+def test_counts_use_the_vocabularys_noun():
+    vocab = replace(STRATEGY_VOCABULARY, noun=("preset", "presets"))
+    [(_name, rows)] = tag_sections({"Hitter": 1, "Healer": 2}, group="Role", vocabulary=vocab)
+    assert [r.meta for r in rows] == ["1 preset", "0 presets", "2 presets"]
+
+
+def test_a_picker_returns_tags_in_its_own_vocabularys_order(qapp):
+    btn = TagPickerButton(title="Role", group="Role", vocabulary=STRATEGY_VOCABULARY)
+    pick(btn, "Healer", "Hitter")
+    assert btn.tags() == ["Hitter", "Healer"]
+
+
+def test_a_strategy_chip_and_pill_take_their_colour_from_the_strategy_vocabulary(qapp):
+    chip = TagChip("Custom", vocabulary=STRATEGY_VOCABULARY)
+    pill = TagPill("Hitter", vocabulary=STRATEGY_VOCABULARY)
+    assert STRATEGY_VOCABULARY.accent("Custom") in chip.styleSheet()
+    assert STRATEGY_VOCABULARY.accent("Hitter") in pill.styleSheet()
+    assert STRATEGY_VOCABULARY.accent("Custom") != STRATEGY_VOCABULARY.accent("Hitter")

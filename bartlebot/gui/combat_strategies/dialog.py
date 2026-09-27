@@ -42,6 +42,21 @@ A :class:`~bartlebot.strategy_workset.StrategyWorkingSet` — deep copies, edite
 freely, written only by ``commit()``. Nothing below this dialog decides when a
 file is written any more. See that module for why dirtiness is derived rather
 than reported.
+
+TAGS, FILTERS AND FAVORITES (#125)
+----------------------------------
+
+Each tab has a :class:`~bartlebot.gui.combat_strategies.filter_bar.StrategyFilterBar`
+across its top: facet pickers and the search box, with the selection as chips below.
+:mod:`bartlebot.strategy_tags` holds the vocabulary and the matching rule.
+
+Favorites are the one thing here that is *not* inside the Save/Cancel boundary. A
+star is saved to the user's settings on the click, because it is a preference about
+the library rather than a change to it. A favorite moves its card into a "★
+Favorites" section at the top. Each entry is in exactly one section, never both:
+selection is restored by id, so an entry drawn twice would make it ambiguous which
+row is selected. The headers only appear once something is a favorite, and a section
+that the filter empties hides its header.
 """
 
 from __future__ import annotations
@@ -71,6 +86,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
+from bartlebot.gui.combat_strategies.filter_bar import KIND_NOUNS, StrategyFilterBar
 from bartlebot.gui.combat_strategies.player_editor import PlayerStrategyEditor
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
@@ -78,8 +94,9 @@ from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.gui.widgets.elided_label import apply_muted_color
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
-from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.strategy_card import StrategyCard
+from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY, TagPickerButton
+from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import SOURCE_LABELS
 from bartlebot.strategy_store import Origin, StrategyKind
 from bartlebot.strategy_summary import (
@@ -87,6 +104,13 @@ from bartlebot.strategy_summary import (
     summarize_deck,
     summarize_duel,
     summarize_player,
+)
+from bartlebot.strategy_tags import (
+    KIND_GROUPS,
+    STORED_GROUPS,
+    StrategyFacets,
+    facets_match,
+    normalize_strategy_tags,
 )
 from bartlebot.strategy_workset import StrategyWorkingSet
 
@@ -121,6 +145,13 @@ NONE_LABEL = "(built-in default)"
 #: never has to re-summarize the entry behind it.
 _HAYSTACK_ROLE = Qt.ItemDataRole.UserRole + 1
 
+#: Where a section header row keeps its text. Not DisplayRole: the item would paint it
+#: underneath the heading widget drawn over the row.
+_HEADING_ROLE = Qt.ItemDataRole.UserRole + 2
+
+#: The two section headers, shown only once something is a favorite.
+FAVORITES_HEADING = "★ Favorites"
+
 #: Origin.SHIPPED_OVERRIDE means the shipped file reappears underneath, so the
 #: honest verb is "revert" — see :class:`bartlebot.strategy_store.Origin`.
 _REVERT_TEXT = "Revert to default"
@@ -153,7 +184,21 @@ def summary_haystack(summary: StrategySummary) -> str:
     parses every DSL the entry references.
     """
     source = SOURCE_LABELS[summary.source] if summary.source is not None else ""
-    return f"{summary.name} {summary.description} {summary.subtitle_line()} {source}".lower()
+    tags = " ".join(summary.tags)
+    return f"{summary.name} {summary.description} {summary.subtitle_line()} {source} {tags}".lower()
+
+
+def summary_facets(summary: StrategySummary) -> StrategyFacets:
+    """What the facet filter asks of an entry: its stored tags plus its derived source."""
+    tags = set(summary.tags)
+    if summary.source is not None:
+        tags.add(SOURCE_LABELS[summary.source])
+    return StrategyFacets(tags=frozenset(tags), slot_schools=summary.slot_schools, player_range=summary.player_range)
+
+
+def others_heading(kind: StrategyKind) -> str:
+    """The header over the non-favorites: "Other duels", "Other strategies", "Other presets"."""
+    return f"Other {KIND_NOUNS[kind][1]}"
 
 
 def matches_query(haystack: str, query: str) -> bool:
@@ -189,11 +234,14 @@ class AboutSection(QWidget):
     The two muted lines under the fields are things the card list has no room for and the
     old Strategy Library never said at all: how many things break if this goes, and
     whether "delete" here means delete or means revert.
+
+    *tag_groups* are the stored tag groups this kind is tagged with — Role, on Player
+    Strategies and Deck Presets — one picker row each (#125). Duels pass none.
     """
 
     changed = pyqtSignal()
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent: QWidget | None = None, *, tag_groups: tuple[str, ...] = ()) -> None:
         super().__init__(parent)
         self._entry = None
         self._suppress = False
@@ -220,6 +268,17 @@ class AboutSection(QWidget):
         self._description_edit.setPlaceholderText("What this is for and why (optional)")
         self._description_edit.textChanged.connect(self._on_changed)
         grid.addWidget(self._description_edit, 1, 1)
+        self._tag_pickers: list[TagPickerButton] = []
+        for row, group in enumerate(tag_groups, start=2):
+            grid.addWidget(QLabel(f"{group}:", self), row, 0)
+            picker = TagPickerButton(
+                title=group, placeholder="None", group=group, vocabulary=STRATEGY_VOCABULARY, lists_selection=True
+            )
+            picker.setToolTip(f"What this is for — shown on its card, and filterable by {group}")
+            picker.selection_changed.connect(self._on_changed)
+            # Sized to its selection at the left of the cell, not stretched across it.
+            grid.addWidget(picker, row, 1, Qt.AlignmentFlag.AlignLeft)
+            self._tag_pickers.append(picker)
         layout.addLayout(grid)
 
         self._usage_lbl = QLabel(self)
@@ -235,6 +294,9 @@ class AboutSection(QWidget):
         self._suppress = True
         self._name_edit.setText(entry.name)
         self._description_edit.setText(entry.description)
+        tags = getattr(entry, "tags", [])
+        for picker in self._tag_pickers:
+            picker.set_selection([t for t in tags if picker.vocabulary.group_of(t) == picker.group])
         self._suppress = False
 
     def clear(self) -> None:
@@ -242,6 +304,8 @@ class AboutSection(QWidget):
         self._suppress = True
         self._name_edit.clear()
         self._description_edit.clear()
+        for picker in self._tag_pickers:
+            picker.set_selection([])
         self._usage_lbl.clear()
         self._origin_lbl.clear()
         self._origin_lbl.setVisible(False)
@@ -252,6 +316,11 @@ class AboutSection(QWidget):
         self._usage_lbl.setText(usage)
         self._origin_lbl.setText(origin)
         self._origin_lbl.setVisible(bool(origin))
+
+    @property
+    def tag_pickers(self) -> list[TagPickerButton]:
+        """One picker per stored tag group. Public so a test can tag an entry as a user would."""
+        return list(self._tag_pickers)
 
     @property
     def usage_text(self) -> str:
@@ -270,6 +339,8 @@ class AboutSection(QWidget):
         # with no way back to it.
         self._entry.name = self._name_edit.text().strip() or self._entry.name
         self._entry.description = self._description_edit.text()
+        if self._tag_pickers:
+            self._entry.tags = normalize_strategy_tags([t for p in self._tag_pickers for t in p.tags()])
         self.changed.emit()
 
 
@@ -293,6 +364,11 @@ class _KindPage(QWidget):
         self._ws = ws
         self._selected_id: str | None = None
         self._card_map: list[tuple[QListWidgetItem, StrategyCard]] = []
+        #: Per entry id: what the facet filter asks of it, and which section it is in.
+        self._facets: dict[str, StrategyFacets] = {}
+        self._favorite_ids: set[str] = set()
+        #: Section header rows, favorites first; empty when nothing is a favorite.
+        self._headers: list[QListWidgetItem] = []
 
         layout = QVBoxLayout(self)
         # A real inset on all four sides. The page used to run edge to edge inside the tab
@@ -301,6 +377,13 @@ class _KindPage(QWidget):
         # as crowded. A line with nothing beside it reads as a wall.
         layout.setContentsMargins(_PAGE_INSET, _PAGE_INSET, _PAGE_INSET, _PAGE_INSET)
         layout.setSpacing(6)
+
+        # Across the whole tab, not over the card list alone: four pickers and a search
+        # box need more width than the list has, and the chips need a row of their own.
+        self._filter_bar = StrategyFilterBar(kind, self)
+        # Filtering hides rows; it never rebuilds them. See _apply_filter.
+        self._filter_bar.changed.connect(self._apply_filter)
+        layout.addWidget(self._filter_bar)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(self._build_master())
@@ -321,11 +404,6 @@ class _KindPage(QWidget):
         box = QVBoxLayout(panel)
         box.setContentsMargins(0, 0, _SPLITTER_GUTTER, 0)
         box.setSpacing(4)
-
-        self._filter = SearchLineEdit("Filter…")
-        # Filtering hides rows; it never rebuilds them. See _apply_filter.
-        self._filter.textChanged.connect(self._apply_filter)
-        box.addWidget(self._filter)
 
         self._list = QListWidget()
         self._list.setSpacing(2)
@@ -356,7 +434,7 @@ class _KindPage(QWidget):
         box.setContentsMargins(_SPLITTER_GUTTER, 0, 0, 0)
         box.setSpacing(6)
 
-        self._about = AboutSection()
+        self._about = AboutSection(tag_groups=tuple(g for g in KIND_GROUPS[self._kind] if g in STORED_GROUPS))
         self._about.changed.connect(self._on_edited)
         box.addWidget(self._about)
 
@@ -407,6 +485,19 @@ class _KindPage(QWidget):
             summary = summarize_deck(item)
         return replace(summary, source=self._ws.status(self._kind, item.id))
 
+    @property
+    def filter_bar(self) -> StrategyFilterBar:
+        """The tab's facet pickers and search box."""
+        return self._filter_bar
+
+    def section_headings(self) -> list[str]:
+        """The visible section headers, top to bottom. Empty when nothing is a favorite."""
+        return [h.data(_HEADING_ROLE) for h in self._headers if not h.isHidden()]
+
+    def visible_ids(self) -> list[str]:
+        """The ids of the cards the filter leaves showing, top to bottom."""
+        return [i.data(Qt.ItemDataRole.UserRole) for i, _c in self._card_map if not i.isHidden()]
+
     def card_for(self, uuid: str) -> StrategyCard | None:
         """The card drawn for ``uuid``, or None. Public so a test can read what a card says."""
         for item, card in self._card_map:
@@ -430,20 +521,34 @@ class _KindPage(QWidget):
         try:
             self._list.clear()
             self._card_map.clear()
+            self._facets.clear()
+            self._headers.clear()
             keep: QListWidgetItem | None = None
-            for entry in self._ws.items(self._kind):
-                summary = self.summarize(entry)
-                card = StrategyCard(summary)
-                item = QListWidgetItem()
-                item.setData(Qt.ItemDataRole.UserRole, entry.id)
-                item.setData(_HAYSTACK_ROLE, summary_haystack(summary))
-                item.setSizeHint(card.sizeHint())
-                self._list.addItem(item)
-                self._list.setItemWidget(item, card)
-                self._card_map.append((item, card))
-                if entry.id == self._selected_id:
-                    keep = item
-                    card.set_selected(True)
+            entries = self._ws.items(self._kind)
+            saved = set(SettingsManager.instance().favorite_strategies(self._kind.value))
+            self._favorite_ids = {e.id for e in entries if e.id in saved}
+            favorites = [e for e in entries if e.id in self._favorite_ids]
+            others = [e for e in entries if e.id not in self._favorite_ids]
+            sections = (
+                [(FAVORITES_HEADING, favorites), (others_heading(self._kind), others)] if favorites else [("", others)]
+            )
+            for heading, section in sections:
+                if heading:
+                    self._add_header(heading)
+                for entry in section:
+                    summary = self.summarize(entry)
+                    card = self._make_card(entry.id, summary)
+                    item = QListWidgetItem()
+                    item.setData(Qt.ItemDataRole.UserRole, entry.id)
+                    item.setData(_HAYSTACK_ROLE, summary_haystack(summary))
+                    item.setSizeHint(card.sizeHint())
+                    self._list.addItem(item)
+                    self._list.setItemWidget(item, card)
+                    self._card_map.append((item, card))
+                    self._facets[entry.id] = summary_facets(summary)
+                    if entry.id == self._selected_id:
+                        keep = item
+                        card.set_selected(True)
             # Reselected inside the blocked region: every item here is a new
             # QListWidgetItem, so Qt would report a selection change that did not
             # happen, and the slot would reload the editor mid-keystroke.
@@ -451,6 +556,7 @@ class _KindPage(QWidget):
                 self._list.setCurrentItem(keep)
         finally:
             self._list.blockSignals(blocked)
+        self._filter_bar.set_counts(self._facets.values())
         self._apply_filter()
         if keep is None:
             # Actually gone — deleted, or never there. Detach the editor. An entry
@@ -468,11 +574,24 @@ class _KindPage(QWidget):
         selected row is restored afterwards even when the query hides it, so the
         editor keeps the entry it was given.
         """
-        query = self._filter.text()
+        query = self._filter_bar.query()
+        flt = self._filter_bar.selection()
         blocked = self._list.blockSignals(True)
         try:
+            shown: set[str] = set()
             for item, _card in self._card_map:
-                item.setHidden(not matches_query(item.data(_HAYSTACK_ROLE) or "", query))
+                uuid = item.data(Qt.ItemDataRole.UserRole)
+                facets = self._facets.get(uuid, StrategyFacets())
+                visible = matches_query(item.data(_HAYSTACK_ROLE) or "", query) and facets_match(facets, flt)
+                item.setHidden(not visible)
+                if visible:
+                    shown.add(uuid)
+            if self._headers:
+                # A section the filter has emptied loses its header too, or it would sit
+                # over nothing — or, worse, appear to head the section below it.
+                favorites, others = self._headers
+                favorites.setHidden(not (shown & self._favorite_ids))
+                others.setHidden(not (shown - self._favorite_ids))
             current = self._current_item()
             if current is not None and self._list.currentItem() is not current:
                 self._list.setCurrentItem(current)
@@ -487,8 +606,42 @@ class _KindPage(QWidget):
         return None
 
     def clear_filter(self) -> None:
-        """Empty the filter box, so every row is visible again."""
-        self._filter.clear()
+        """Drop every facet and empty the search box, so every row is visible again."""
+        self._filter_bar.clear()
+
+    # -- sections and favorites -----------------------------------------
+
+    def _add_header(self, text: str) -> None:
+        """A section header row: not selectable, not focusable, skipped by the arrow keys."""
+        item = QListWidgetItem()
+        item.setData(_HEADING_ROLE, text)
+        item.setFlags(Qt.ItemFlag.NoItemFlags)
+        heading = RuleHeading(text)
+        item.setSizeHint(heading.sizeHint())
+        self._list.addItem(item)
+        self._list.setItemWidget(item, heading)
+        self._headers.append(item)
+
+    def _make_card(self, uuid: str, summary: StrategySummary) -> StrategyCard:
+        card = StrategyCard(summary, favorite=uuid in self._favorite_ids)
+        card.favorite_toggled.connect(lambda wanted, uuid=uuid: self.set_favorite(uuid, wanted))
+        return card
+
+    def is_favorite(self, uuid: str) -> bool:
+        return uuid in self._favorite_ids
+
+    def set_favorite(self, uuid: str, wanted: bool) -> None:
+        """Star or unstar ``uuid``, saving at once, and move its card to the right section.
+
+        Saved now, not on Save: a favorite is a preference about the library, not a
+        change to it, and so it is not something Cancel should take back.
+        """
+        settings = SettingsManager.instance()
+        if settings.is_favorite_strategy(self._kind.value, uuid) != wanted:
+            settings.toggle_favorite_strategy(self._kind.value, uuid)
+        # Safe inside the star's own click: clearing the list hands each card to
+        # deleteLater, so the button being clicked outlives this call.
+        self.rebuild_list()
 
     def focus_editor(self) -> None:
         """Move focus into the detail pane's main field, where the editor has one.
@@ -532,10 +685,14 @@ class _KindPage(QWidget):
             if item.data(Qt.ItemDataRole.UserRole) != self._selected_id:
                 continue
             summary = self.summarize(entry)
-            card = StrategyCard(summary)
+            card = self._make_card(entry.id, summary)
             card.set_selected(True)
             item.setSizeHint(card.sizeHint())
             item.setData(_HAYSTACK_ROLE, summary_haystack(summary))
+            # The facets follow the edit, and so do the counts; whether the row still
+            # passes the filter is left for the next filter change, as the name is.
+            self._facets[entry.id] = summary_facets(summary)
+            self._filter_bar.set_counts(self._facets.values())
             self._list.setItemWidget(item, card)
             self._card_map = [(i, card if i is item else c) for i, c in self._card_map]
             return
@@ -845,7 +1002,7 @@ class CombatStrategyDialog(QDialog):
             return
         pcs = self._ws.create(StrategyKind.PLAYER, name.strip())
         pcs.dsl = assignment.dsl
-        pcs.school = assignment.school
+        pcs.schools = list(assignment.schools)
         self._pages[StrategyKind.PLAYER].rebuild_list()
         self._pages[StrategyKind.DUEL].refresh_pcs_list()
         row.link_to(pcs.id)

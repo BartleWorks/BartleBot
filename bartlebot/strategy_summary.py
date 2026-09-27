@@ -163,6 +163,14 @@ class StrategySummary:
     #: does not arise. Supplied by whoever knows the working set — the summarize_*
     #: functions see one entry and cannot tell (#124).
     source: Origin | None = None
+    #: Stored tags (the Role group of :mod:`bartlebot.strategy_tags`), in vocabulary order.
+    tags: tuple[str, ...] = ()
+    #: One school set per player slot, empty meaning any school — what the "works with"
+    #: filter asks. One slot for a Player Strategy, ``max_players`` for a duel, none for a
+    #: deck, which is never asked (#125).
+    slot_schools: tuple[frozenset[str], ...] = ()
+    #: A duel's ``(min_players, max_players)``, for the team-size filter; None otherwise.
+    player_range: tuple[int, int] | None = None
 
     def subtitle_line(self) -> str:
         """One line for a compact card: the facets, plus a bare DSL preview if
@@ -270,6 +278,8 @@ def summarize_duel(config: DuelConfig, all_pcs: list[PlayerCombatStrategy], name
         lines=lines,
         health=_duel_health(config, pcs_by_id),
         combat_order=tuple(config.combat_order or ()),
+        slot_schools=tuple(config.slot_schools(pcs_by_id)),
+        player_range=(config.min_players, config.max_players),
     )
 
 
@@ -277,14 +287,22 @@ def summarize_player(pcs: PlayerCombatStrategy) -> StrategySummary:
     """Summarize a shared Player Combat Strategy preset."""
     dsl = pcs.dsl.strip()
     preview = _truncate(dsl, _DSL_PREVIEW_CHARS) if dsl else "(empty DSL)"
-    facets = [pcs.school] if pcs.school else []
+    facets = ["/".join(pcs.schools)] if pcs.schools else []
     lines = [AssignmentLine(players="", label=preview, is_linked=False)]
     if not dsl:
         health = _EMPTY
     else:
         error = validate_dsl(dsl)
         health = Health(HealthStatus.INVALID_DSL, error) if error else _OK
-    return StrategySummary(name=pcs.name, description=pcs.description, facets=facets, lines=lines, health=health)
+    return StrategySummary(
+        name=pcs.name,
+        description=pcs.description,
+        facets=facets,
+        lines=lines,
+        health=health,
+        tags=tuple(pcs.tags),
+        slot_schools=(frozenset(pcs.schools),),
+    )
 
 
 def summarize_bot(bcs: BotCombatStrategy, config: BotConfig | None = None) -> StrategySummary:
@@ -307,4 +325,6 @@ def summarize_deck(preset: DeckPreset) -> StrategySummary:
     total = preset.deck.total_cards()
     facets = [f"{total} cards"] if total else ["empty"]
     health = _EMPTY if preset.deck.is_empty() else _OK
-    return StrategySummary(name=preset.name, description=preset.description, facets=facets, health=health)
+    return StrategySummary(
+        name=preset.name, description=preset.description, facets=facets, health=health, tags=tuple(preset.tags)
+    )

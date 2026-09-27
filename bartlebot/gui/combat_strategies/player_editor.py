@@ -31,7 +31,7 @@ from bartlebot.bot.strategy_models import PlayerCombatStrategy
 from bartlebot.dsl_syntax import DSL_HELP
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.dsl_edit import DslPlainTextEdit
-from bartlebot.gui.widgets.school_combo import SchoolCombo
+from bartlebot.gui.widgets.school_picker import SchoolPickerButton
 from bartlebot.nodes.combat_runner import dsl_error, dsl_warning_text, dsl_warnings, validate_dsl
 
 #: How long after the last keystroke the DSL is re-validated. Not a save delay.
@@ -61,13 +61,13 @@ class PlayerStrategyEditor(QWidget):
         # arrangement is what the About section exists to end. See
         # :class:`~bartlebot.gui.combat_strategies.dialog.AboutSection`.
         school_row = QHBoxLayout()
-        school_row.addWidget(QLabel("School:"))
+        school_row.addWidget(QLabel("Schools:"))
         # Authored, never inferred from the DSL — used as a fallback wherever an
         # assignment links this strategy without its own school set.
-        self._school_combo = SchoolCombo()
-        self._school_combo.setToolTip("What school this strategy is written for, if any — descriptive only")
-        self._school_combo.currentIndexChanged.connect(self._on_changed)
-        school_row.addWidget(self._school_combo)
+        self._school_picker = SchoolPickerButton()
+        self._school_picker.setToolTip("The schools this strategy is written for, if any — descriptive only")
+        self._school_picker.selection_changed.connect(self._on_changed)
+        school_row.addWidget(self._school_picker)
         school_row.addStretch()
         layout.addLayout(school_row)
 
@@ -92,6 +92,11 @@ class PlayerStrategyEditor(QWidget):
 
         self._apply_style()
 
+    @property
+    def school_picker(self) -> SchoolPickerButton:
+        """The schools control. Public so a test can pick a school as a user would."""
+        return self._school_picker
+
     def strategy(self) -> PlayerCombatStrategy | None:
         """The working copy being edited, or None."""
         return self._strategy
@@ -99,7 +104,7 @@ class PlayerStrategyEditor(QWidget):
     def load(self, strategy: PlayerCombatStrategy) -> None:
         self._strategy = strategy
         self._suppress = True
-        self._school_combo.set_value(strategy.school)
+        self._school_picker.set_value(strategy.schools)
         self._dsl_edit.setPlainText(strategy.dsl)
         self._suppress = False
         self._validate_timer.stop()
@@ -116,7 +121,7 @@ class PlayerStrategyEditor(QWidget):
         self._validate_timer.stop()
         self._strategy = None
         self._suppress = True
-        self._school_combo.set_value(None)
+        self._school_picker.set_value([])
         self._dsl_edit.clear()
         self._suppress = False
         self._update_dsl_validation()
@@ -124,7 +129,7 @@ class PlayerStrategyEditor(QWidget):
     def _on_changed(self) -> None:
         if self._suppress or self._strategy is None:
             return
-        self._strategy.school = self._school_combo.value()
+        self._strategy.schools = self._school_picker.value()
         dsl = self._dsl_edit.toPlainText()
         if dsl != self._strategy.dsl:
             # The underlines mark columns in the text as it was validated; after an

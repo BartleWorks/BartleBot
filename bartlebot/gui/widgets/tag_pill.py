@@ -43,7 +43,7 @@ from bartlebot.bot_tags import tag_group
 from bartlebot.gui.account_accent import account_accent, account_tint
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import set_style_sheet
-from bartlebot.gui.widgets.tag_picker import TAG_ICON_PX, group_accent, tag_icon
+from bartlebot.gui.widgets.tag_picker import BOT_VOCABULARY, TAG_ICON_PX, TagVocabulary, group_accent, tag_icon
 
 #: The inert pill's own metrics, shared with :class:`ActionPill` so a clickable pill and
 #: a descriptive one are the same shape -- which is the whole reason the clickable one
@@ -130,9 +130,10 @@ class TagPill(QLabel):
     read a card by.
     """
 
-    def __init__(self, tag: str, parent: QWidget | None = None) -> None:
+    def __init__(self, tag: str, parent: QWidget | None = None, *, vocabulary: TagVocabulary = BOT_VOCABULARY) -> None:
         super().__init__(tag, parent)
         self._tag = tag
+        self._vocabulary = vocabulary
         self._applying_style = False
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._icon = tag_icon(tag)
@@ -159,7 +160,7 @@ class TagPill(QLabel):
         painter = QPainter(self)
         painter.setFont(self.font())
         paint_medallion_pill(
-            painter, self.width(), self._icon, self._tag, group_accent(tag_group(self._tag)), THEME.pill_text
+            painter, self.width(), self._icon, self._tag, self._vocabulary.accent(self._tag), THEME.pill_text
         )
         painter.end()
 
@@ -176,7 +177,7 @@ class TagPill(QLabel):
                 # would override the one the width was measured with.
                 set_style_sheet(self, "background: transparent;")
             else:
-                set_style_sheet(self, pill_style(group_accent(tag_group(self._tag)), THEME.pill_text))
+                set_style_sheet(self, pill_style(self._vocabulary.accent(self._tag), THEME.pill_text))
         finally:
             self._applying_style = False
 
@@ -195,9 +196,17 @@ class TagChip(QPushButton):
 
     removed = pyqtSignal(str)
 
-    def __init__(self, tag: str, *, tooltip: str | None = None, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        tag: str,
+        *,
+        tooltip: str | None = None,
+        vocabulary: TagVocabulary = BOT_VOCABULARY,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(f"{tag}  ✕", parent)
         self._tag = tag
+        self._vocabulary = vocabulary
         self._applying_style = False
         self._icon = tag_icon(tag)
         if self._icon is not None:
@@ -226,7 +235,7 @@ class TagChip(QPushButton):
             return
         painter = QPainter(self)
         painter.setFont(self.font())
-        fill = THEME.edge_selected if self.underMouse() else group_accent(tag_group(self._tag))
+        fill = THEME.edge_selected if self.underMouse() else self._vocabulary.accent(self._tag)
         paint_medallion_pill(painter, self.width(), self._icon, self.text(), fill, THEME.pill_text)
         painter.end()
 
@@ -239,7 +248,7 @@ class TagChip(QPushButton):
                 set_style_sheet(self, "QPushButton { border: none; background: transparent; }")
                 return
             base = pill_style(
-                group_accent(tag_group(self._tag)),
+                self._vocabulary.accent(self._tag),
                 THEME.pill_text,
                 font_size=THEME.font_subtext_px,
                 radius=9,

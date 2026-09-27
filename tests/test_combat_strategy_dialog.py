@@ -398,7 +398,9 @@ def test_the_usage_line_counts_a_link_made_a_minute_ago(qapp, roots):
 
 def test_promoting_a_rows_dsl_makes_a_player_strategy_and_links_it(qapp, roots):
     shipped, _user = roots
-    dcs = DuelCombatStrategy(name="Boss", player_assignments=[PlayerAssignment(players=[1], dsl="blade", school="Ice")])
+    dcs = DuelCombatStrategy(
+        name="Boss", player_assignments=[PlayerAssignment(players=[1], dsl="blade", schools=["Ice"])]
+    )
     save_duel_strategy(dcs, shipped)
     dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
     row = dlg._pages[StrategyKind.DUEL]._editor.cards[0]
@@ -408,7 +410,7 @@ def test_promoting_a_rows_dsl_makes_a_player_strategy_and_links_it(qapp, roots):
 
     made = next(p for p in dlg._ws.players if p.name == "Ice Blade")
     assert made.dsl == "blade"
-    assert made.school == "Ice"
+    assert made.schools == ["Ice"]
     assert row.assignment().player_combat_strategy_id == made.id
     assert not row.is_custom()
 
@@ -488,11 +490,11 @@ def test_the_pencil_clears_a_filter_that_would_hide_the_strategy(qapp, roots):
     dcs, pcs = _linked_duel(roots)
     dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
     player = dlg._pages[StrategyKind.PLAYER]
-    player._filter.setText("Aoe")
+    player.filter_bar.search.setText("Aoe")
 
     dlg._pages[StrategyKind.DUEL]._editor.cards[0].action_button(EDIT_VERB).click()
 
-    assert player._filter.text() == ""
+    assert player.filter_bar.search.text() == ""
     assert player.selected_id() == pcs.id
     assert not player._list.currentItem().isHidden()
 

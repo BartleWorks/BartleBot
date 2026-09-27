@@ -27,6 +27,7 @@ from bartlebot.gui.combat_strategies.assignment_card import (
     dsl_preview,
     strategy_menu_entries,
 )
+from tests.picker_helpers import pick
 
 _BROKEN_DSL = "any<"
 
@@ -253,19 +254,19 @@ def test_the_school_and_note_in_the_fold_still_write_through(qapp):
     card = _card(assignment)
     card.toggle_expanded()
 
-    card._school_combo.setCurrentIndex(1)
+    pick(card.school_picker, "Fire")
     card._note_edit.setText("Passes to bank pips")
 
-    assert assignment.school is not None
+    assert assignment.schools
     assert assignment.note == "Passes to bank pips"
 
 
 def test_a_folded_card_still_loads_its_school_and_note(qapp):
     """Nothing is deferred to first expand: the fold hides built widgets, it does not
     postpone building them."""
-    card = _card(PlayerAssignment(players=[1], dsl="x", school="Storm", note="Kites adds"))
+    card = _card(PlayerAssignment(players=[1], dsl="x", schools=["Storm"], note="Kites adds"))
 
-    assert card._school_combo.value() == "Storm"
+    assert card.school_picker.value() == ["Storm"]
     assert card._note_edit.text() == "Kites adds"
 
 

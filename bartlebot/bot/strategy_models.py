@@ -19,17 +19,50 @@ import tempfile
 from pathlib import Path
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+def _schools_from_legacy(data: object) -> object:
+    """Lift a pre-#125 single ``school`` into ``schools``, so old files keep loading.
+
+    ``"school": "Fire"`` becomes ``["Fire"]`` and ``"school": null`` becomes ``[]``
+    (any school). A file carrying both keeps ``schools`` and drops the stray ``school``.
+    """
+    if isinstance(data, dict) and "school" in data:
+        data = dict(data)
+        school = data.pop("school")
+        if "schools" not in data:
+            data["schools"] = [school] if isinstance(school, str) and school else []
+    return data
+
+
+def _dedupe_schools(value: list[str]) -> list[str]:
+    """Drop blanks and repeats, keeping the author's order."""
+    return list(dict.fromkeys(s for s in value if s))
+
+
+def _normalize_tags(value: object) -> list[str]:
+    # Imported here: strategy_tags needs StrategyKind from strategy_store, which
+    # imports this module.
+    from bartlebot.strategy_tags import normalize_strategy_tags  # noqa: PLC0415
+
+    return normalize_strategy_tags(value)
 
 
 class PlayerCombatStrategy(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str
     dsl: str = ""
-    # One of deck_io.PIP_SCHOOLS, or None for "any school" — authored, never
+    # Each one of deck_io.PIP_SCHOOLS; empty means any school. Authored, never
     # inferred from dsl.  See DuelConfig.school_requirements.
-    school: str | None = None
+    schools: list[str] = Field(default_factory=list)
     description: str = ""
+    # Stored tags — the Role group of bartlebot.strategy_tags. Source is derived, never here.
+    tags: list[str] = Field(default_factory=list)
+
+    _legacy_school = model_validator(mode="before")(_schools_from_legacy)
+    _schools = field_validator("schools")(_dedupe_schools)
+    _tags = field_validator("tags", mode="before")(_normalize_tags)
 
     @classmethod
     def load(cls, path: str | Path) -> PlayerCombatStrategy:
@@ -91,6 +124,11 @@ class DeckPreset(BaseModel):
     name: str
     deck: DeckData = Field(default_factory=DeckData)
     description: str = ""
+    # Stored tags — the Role group of bartlebot.strategy_tags. No schools: most spells
+    # can be trained on any wizard, so a deck's school is not a real constraint.
+    tags: list[str] = Field(default_factory=list)
+
+    _tags = field_validator("tags", mode="before")(_normalize_tags)
 
     @classmethod
     def load(cls, path: str | Path) -> DeckPreset:
@@ -114,11 +152,14 @@ class PlayerAssignment(BaseModel):
     players: list[int]  # 1-based player numbers, e.g. [1, 2]
     dsl: str = ""  # inline DSL — used when player_combat_strategy_id is None
     player_combat_strategy_id: str | None = None  # UUID of a PlayerCombatStrategy preset
-    # One of deck_io.PIP_SCHOOLS, or None. Authored, never inferred from dsl —
-    # see DuelConfig.school_requirements. Takes precedence over a linked
-    # preset's own school when both are set.
-    school: str | None = None
+    # Each one of deck_io.PIP_SCHOOLS; empty means any. Authored, never inferred
+    # from dsl — see DuelConfig.school_requirements. A non-empty set takes
+    # precedence over a linked preset's own schools.
+    schools: list[str] = Field(default_factory=list)
     note: str = ""  # e.g. "P2 passes to bank pips for round 3"
+
+    _legacy_school = model_validator(mode="before")(_schools_from_legacy)
+    _schools = field_validator("schools")(_dedupe_schools)
 
     @property
     def is_linked(self) -> bool:
@@ -189,26 +230,49 @@ class DuelConfig(BaseModel):
         """UUIDs of every PlayerCombatStrategy preset this duel links to."""
         return [a.player_combat_strategy_id for a in self.player_assignments if a.player_combat_strategy_id is not None]
 
-    def school_requirements(self, pcs_by_id: dict[str, PlayerCombatStrategy]) -> dict[str, int]:
-        """Count of players needed per school, e.g. {"Storm": 2, "Life": 1}.
+    @staticmethod
+    def assignment_schools(assignment: PlayerAssignment, pcs_by_id: dict[str, PlayerCombatStrategy]) -> list[str]:
+        """The schools ``assignment`` accepts: its own set, else its linked preset's, else [] (any)."""
+        if assignment.schools:
+            return list(assignment.schools)
+        if assignment.player_combat_strategy_id is not None:
+            pcs = pcs_by_id.get(assignment.player_combat_strategy_id)
+            if pcs is not None:
+                return list(pcs.schools)
+        return []
 
-        Resolved per assignment — the assignment's own school, else its linked
-        preset's, else none — and multiplied by how many players that
-        assignment covers.  Descriptive only: never gates a run, since a school
-        tag cannot be verified against the DSL it labels (see decision 01).
+    def slot_schools(self, pcs_by_id: dict[str, PlayerCombatStrategy]) -> list[frozenset[str]]:
+        """One school set per player slot, 1..max_players; empty means any school.
+
+        A slot no assignment covers is empty, since it falls back to the built-in
+        default, which any wizard can play. This is what "works with school X" asks.
+        """
+        slots: list[frozenset[str]] = [frozenset() for _ in range(self.max_players)]
+        for assignment in self.player_assignments:
+            schools = frozenset(self.assignment_schools(assignment, pcs_by_id))
+            for p in assignment.players:
+                if 1 <= p <= self.max_players:
+                    slots[p - 1] = schools
+        return slots
+
+    def school_requirements(self, pcs_by_id: dict[str, PlayerCombatStrategy]) -> dict[str, int]:
+        """Count of players needed per school set, e.g. {"Storm": 2, "Life/Myth": 1}.
+
+        Resolved per assignment by :meth:`assignment_schools`, and multiplied by how
+        many players that assignment covers. A slot accepting several schools is
+        keyed by them joined with "/", in the order they were authored. Descriptive
+        only: never gates a run, since a school tag cannot be verified against the
+        DSL it labels (see decision 01).
 
         ``pcs_by_id``: {pcs_uuid: PlayerCombatStrategy} — pre-loaded preset data.
         """
         counts: dict[str, int] = {}
         for assignment in self.player_assignments:
-            school = assignment.school
-            if school is None and assignment.player_combat_strategy_id is not None:
-                pcs = pcs_by_id.get(assignment.player_combat_strategy_id)
-                if pcs is not None:
-                    school = pcs.school
-            if school is None:
+            schools = self.assignment_schools(assignment, pcs_by_id)
+            if not schools:
                 continue
-            counts[school] = counts.get(school, 0) + len(assignment.players)
+            key = "/".join(schools)
+            counts[key] = counts.get(key, 0) + len(assignment.players)
         return counts
 
     def is_empty(self) -> bool:

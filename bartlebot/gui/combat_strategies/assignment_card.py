@@ -72,7 +72,7 @@ from bartlebot.gui.widgets.dsl_edit import DslGrowingTextEdit
 from bartlebot.gui.widgets.icon_button import IconButton
 from bartlebot.gui.widgets.player_pills import PlayerPillBar
 from bartlebot.gui.widgets.rule_heading import RuleHeading
-from bartlebot.gui.widgets.school_combo import SchoolCombo
+from bartlebot.gui.widgets.school_picker import SchoolPickerButton
 from bartlebot.nodes.combat_runner import dsl_error, dsl_warning_text, dsl_warnings, validate_dsl
 
 #: The two answers in the strategy menu that are not a Player Strategy, and the sentinel
@@ -219,13 +219,15 @@ class AssignmentCard(CardFrame):
         school_row = QHBoxLayout()
         school_row.setContentsMargins(0, 0, 0, 0)
         school_row.setSpacing(6)
-        self._school_label = QLabel("School:", self._details)
+        self._school_label = QLabel("Schools:", self._details)
         school_row.addWidget(self._school_label, 0)
-        self._school_combo = SchoolCombo()
-        self._school_combo.setToolTip("What this assignment needs, if any — descriptive only, never enforced")
-        self._school_combo.set_value(self._assignment.school)
-        self._school_combo.currentIndexChanged.connect(self._on_school_changed)
-        school_row.addWidget(self._school_combo, 0)
+        self._school_picker = SchoolPickerButton(parent=self._details)
+        self._school_picker.setToolTip(
+            "The schools these players can be, if it matters — descriptive only, never enforced"
+        )
+        self._school_picker.set_value(self._assignment.schools)
+        self._school_picker.selection_changed.connect(self._on_school_changed)
+        school_row.addWidget(self._school_picker, 0)
         school_row.addStretch(1)
         details.addLayout(school_row)
 
@@ -283,6 +285,11 @@ class AssignmentCard(CardFrame):
         """
         return self._pills
 
+    @property
+    def school_picker(self) -> SchoolPickerButton:
+        """The schools control in the fold. Public so a test can pick a school as a user would."""
+        return self._school_picker
+
     def is_custom(self) -> bool:
         """Whether this card is answering with DSL of its own rather than a name."""
         return self._custom and not self._assignment.is_linked
@@ -320,7 +327,7 @@ class AssignmentCard(CardFrame):
         if self.grip is not None:
             self.grip.set_locked(not editable, "Locked while the bot is running")
         self._pills.set_editable(editable)
-        self._school_combo.setEnabled(editable)
+        self._school_picker.setEnabled(editable)
         self._note_edit.setEnabled(editable)
         for button, verb in ((self.action_button(v.label), v) for v in self._all_verbs()):
             if button is not None:
@@ -417,9 +424,9 @@ class AssignmentCard(CardFrame):
             # The assignment's own school already won over the linked one, so only fill in
             # where nothing was authored here: forking a Storm strategy into custom DSL
             # must not quietly drop the Storm.
-            if pcs is not None and self._assignment.school is None:
-                self._assignment.school = pcs.school
-                self._school_combo.set_value(self._assignment.school)
+            if pcs is not None and not self._assignment.schools:
+                self._assignment.schools = list(pcs.schools)
+                self._school_picker.set_value(self._assignment.schools)
             self._assignment.player_combat_strategy_id = None
             self._custom = True
             # Custom DSL is the one answer with nowhere to be typed on the face, so the
@@ -469,7 +476,7 @@ class AssignmentCard(CardFrame):
             self._dsl_lbl.setVisible(bool(self._dsl_lbl.text()))
 
             self._pills.set_value(self._assignment.players)
-            self._school_combo.set_value(self._assignment.school)
+            self._school_picker.set_value(self._assignment.schools)
             self._dsl_edit.setPlainText(self._assignment.dsl if custom else "")
             self._dsl_edit.setReadOnly(not self._editable)
             self._dsl_edit.setVisible(custom)
@@ -521,7 +528,7 @@ class AssignmentCard(CardFrame):
     def _on_school_changed(self) -> None:
         if self._suppress:
             return
-        self._assignment.school = self._school_combo.value()
+        self._assignment.schools = self._school_picker.value()
         self.changed.emit()
 
     def _on_note_changed(self) -> None:

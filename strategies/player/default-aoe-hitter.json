@@ -2,5 +2,8 @@
   "id": "615bbd5f-eb76-4f47-b0da-7e16de8a7b33",
   "name": "Default AoE Hitter",
   "dsl": "any<blade>[sharp]@self | any<aura & out_damage> | any<aoe & damage>[any<mod_damage>]",
-  "description": "Default AoE hitter strategy for general use"
+  "description": "Default AoE hitter strategy for general use",
+  "tags": [
+    "Hitter"
+  ]
 }

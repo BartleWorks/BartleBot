@@ -377,7 +377,7 @@ class DuelConfigEditor(QWidget):
         if not reqs:
             self._requirements_lbl.hide()
             return
-        self._requirements_lbl.setText(" · ".join(f"{school} ×{n}" for school, n in reqs.items()))
+        self._requirements_lbl.setText(" · ".join(f"{schools} ×{n}" for schools, n in reqs.items()))
         self._requirements_lbl.show()
 
     def _on_min_players_changed(self, value: int) -> None:

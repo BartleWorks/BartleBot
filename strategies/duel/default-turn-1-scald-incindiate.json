@@ -19,7 +19,9 @@
         3
       ],
       "dsl": "scald[any<mod_damage>]",
-      "school": "Fire"
+      "schools": [
+        "Fire"
+      ]
     },
     {
       "players": [

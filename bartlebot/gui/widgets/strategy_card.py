@@ -13,20 +13,39 @@ no way to express that.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QEvent, QSize, Qt
+from PyQt6.QtCore import QEvent, QSize, Qt, pyqtSignal
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import set_style_sheet
-from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill
+from bartlebot.gui.widgets.icon_button import IconButton, IconTint
+from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY
+from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill, TagPill
 from bartlebot.store_roots import SOURCE_LABELS, Origin
 from bartlebot.strategy_summary import HealthStatus, StrategySummary
 
+ADD_FAVORITE_TIP = "Add to favorites"
+REMOVE_FAVORITE_TIP = "Remove from favorites"
+
 
 class StrategyCard(QWidget):
-    """Card widget rendered inside a QListWidget item via setItemWidget."""
+    """Card widget rendered inside a QListWidget item via setItemWidget.
 
-    def __init__(self, summary: StrategySummary, parent: QWidget | None = None):
+    Pass *favorite* (True or False) to give the card a star; leave it None on a surface
+    with no favorites. A favorite's star is always drawn, filled. A non-favorite's
+    outline star shows only while the card is hovered or selected (#125): a column of
+    empty stars on every card is noise, and the star is the one thing on a card that
+    is a control rather than a description.
+
+    The card does not store the favorite itself. It reports the click with
+    ``favorite_toggled``, and the list decides — a favorite moves the card into
+    another section, which only the list can do.
+    """
+
+    #: The star was clicked; the argument is whether it now wants to be a favorite.
+    favorite_toggled = pyqtSignal(bool)
+
+    def __init__(self, summary: StrategySummary, parent: QWidget | None = None, *, favorite: bool | None = None):
         super().__init__(parent)
         self._selected = False
         self._hovered = False
@@ -56,20 +75,39 @@ class StrategyCard(QWidget):
         name_row.setWordWrap(True)
         self._name_lbl = name_row
         self._source_pill: QLabel | None = None
-        if summary.source is None:
+        self._star: IconButton | None = None
+        if summary.source is None and favorite is None:
             header.addWidget(name_row)
         else:
-            # Always shown, and a pill of words rather than a glyph: no icon says
-            # "ships with the app" unaided (#124). Grey for the ordinary cases; the
-            # accent outline only for a modified built-in, the one that shadows updates.
             row = QHBoxLayout()
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(6)
             row.addWidget(name_row, 1)
-            text = SOURCE_LABELS[summary.source]
-            pill = AccentPill(text) if summary.source is Origin.SHIPPED_OVERRIDE else NeutralPill(text)
-            row.addWidget(pill, 0, Qt.AlignmentFlag.AlignTop)
-            self._source_pill = pill
+            if summary.source is not None:
+                # Always shown, and a pill of words rather than a glyph: no icon says
+                # "ships with the app" unaided (#124). Grey for the ordinary cases; the
+                # accent outline only for a modified built-in, the one that shadows updates.
+                text = SOURCE_LABELS[summary.source]
+                pill = AccentPill(text) if summary.source is Origin.SHIPPED_OVERRIDE else NeutralPill(text)
+                row.addWidget(pill, 0, Qt.AlignmentFlag.AlignTop)
+                self._source_pill = pill
+            if favorite is not None:
+                star = IconButton(
+                    "star_outline",
+                    checked_icon_name="star_filled",
+                    tooltip=REMOVE_FAVORITE_TIP if favorite else ADD_FAVORITE_TIP,
+                    tint=IconTint.ACCENT,
+                )
+                star.setChecked(favorite)
+                # Hidden stars keep their space, so a card's name does not rewrap under
+                # the pointer as the star appears.
+                policy = star.sizePolicy()
+                policy.setRetainSizeWhenHidden(True)
+                star.setSizePolicy(policy)
+                star.toggled.connect(self._on_star_toggled)
+                star.clicked.connect(lambda checked: self.favorite_toggled.emit(checked))
+                row.addWidget(star, 0, Qt.AlignmentFlag.AlignTop)
+                self._star = star
             header.addLayout(row)
 
         # Every line under the name is the same kind of thing — a muted caption at
@@ -89,7 +127,23 @@ class StrategyCard(QWidget):
         if summary.schools:
             self._add_sub_line(header, " · ".join(f"{count}× {school}" for school, count in summary.schools.items()))
 
+        # Stored tags — the roles — as pills under everything else, rather than beside
+        # the name: the name row already carries the source pill and the star, and a
+        # 350px card list cannot fit three pills there without wrapping every name.
+        self._tag_pills: list[TagPill] = []
+        if summary.tags:
+            tag_row = QHBoxLayout()
+            tag_row.setContentsMargins(0, 2, 0, 0)
+            tag_row.setSpacing(4)
+            for tag in summary.tags:
+                pill = TagPill(tag, vocabulary=STRATEGY_VOCABULARY)
+                tag_row.addWidget(pill)
+                self._tag_pills.append(pill)
+            tag_row.addStretch(1)
+            header.addLayout(tag_row)
+
         layout.addLayout(header)
+        self._update_star()
 
         self._apply_style()
 
@@ -115,19 +169,40 @@ class StrategyCard(QWidget):
         """What the source pill says, or empty when the card has none."""
         return self._source_pill.text() if self._source_pill is not None else ""
 
+    @property
+    def tag_texts(self) -> list[str]:
+        """What the tag pills say, in order."""
+        return [p.tag for p in self._tag_pills]
+
+    @property
+    def star(self) -> IconButton | None:
+        """The favorite star, or None on a card without one. Public so a test can click it."""
+        return self._star
+
+    def _on_star_toggled(self, checked: bool) -> None:
+        self._star.setToolTip(REMOVE_FAVORITE_TIP if checked else ADD_FAVORITE_TIP)
+        self._update_star()
+
+    def _update_star(self) -> None:
+        if self._star is not None:
+            self._star.setVisible(self._star.isChecked() or self._hovered or self._selected)
+
     def set_selected(self, selected: bool) -> None:
         if self._selected == selected:
             return
         self._selected = selected
+        self._update_star()
         self._apply_style()
 
     def enterEvent(self, event) -> None:
         self._hovered = True
+        self._update_star()
         self._apply_style()
         super().enterEvent(event)
 
     def leaveEvent(self, event) -> None:
         self._hovered = False
+        self._update_star()
         self._apply_style()
         super().leaveEvent(event)
 

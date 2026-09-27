@@ -1021,7 +1021,7 @@ def test_promote_carries_every_field_of_the_config(qapp, store):
         default_duel_config=DuelConfig(
             description="Farm loop, no adds",
             player_assignments=[
-                PlayerAssignment(players=[1], dsl="custom", school="Life", note="Heals through round 2"),
+                PlayerAssignment(players=[1], dsl="custom", schools=["Life"], note="Heals through round 2"),
             ],
         ),
     )
@@ -1032,7 +1032,7 @@ def test_promote_carries_every_field_of_the_config(qapp, store):
 
     saved = store_mod.load_duel_strategy(tab._bcs.default_strategy_id)
     assert saved.description == "Farm loop, no adds"
-    assert saved.player_assignments[0].school == "Life"
+    assert saved.player_assignments[0].schools == ["Life"]
     assert saved.player_assignments[0].note == "Heals through round 2"
 
 

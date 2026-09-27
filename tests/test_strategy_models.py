@@ -3,9 +3,12 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DeckData,
+    DeckPreset,
     DuelCombatStrategy,
     DuelConfig,
     PlayerAssignment,
@@ -277,7 +280,7 @@ def test_an_inverted_range_is_repaired_on_load_not_rejected():
 
 
 def test_new_fields_round_trip_under_exclude_defaults(tmp_path: Path):
-    pcs = PlayerCombatStrategy(name="Blade", dsl="trap @ self", school="Storm", description="Storm blade support")
+    pcs = PlayerCombatStrategy(name="Blade", dsl="trap @ self", schools=["Storm"], description="Storm blade support")
     path = tmp_path / f"{pcs.id}.json"
     pcs.save(path)
     data = json.loads(path.read_text())
@@ -285,11 +288,11 @@ def test_new_fields_round_trip_under_exclude_defaults(tmp_path: Path):
         "id": pcs.id,
         "name": "Blade",
         "dsl": "trap @ self",
-        "school": "Storm",
+        "schools": ["Storm"],
         "description": "Storm blade support",
     }
     loaded = PlayerCombatStrategy.load(path)
-    assert loaded.school == "Storm"
+    assert loaded.schools == ["Storm"]
     assert loaded.description == "Storm blade support"
 
 
@@ -300,6 +303,8 @@ def test_default_valued_new_fields_are_not_written(tmp_path: Path):
     pcs.save(path)
     data = json.loads(path.read_text())
     assert "school" not in data
+    assert "schools" not in data
+    assert "tags" not in data
     assert "description" not in data
 
 
@@ -322,14 +327,14 @@ def test_player_assignment_school_and_note_round_trip(tmp_path: Path):
     dcs = DuelCombatStrategy(
         name="Boss",
         player_assignments=[
-            PlayerAssignment(players=[1], dsl="blade @ self", school="Storm", note="Sets up the kill"),
+            PlayerAssignment(players=[1], dsl="blade @ self", schools=["Storm"], note="Sets up the kill"),
         ],
     )
     path = tmp_path / f"{dcs.id}.json"
     dcs.save(path)
     loaded = DuelCombatStrategy.load(path)
     assignment = loaded.player_assignments[0]
-    assert assignment.school == "Storm"
+    assert assignment.schools == ["Storm"]
     assert assignment.note == "Sets up the kill"
 
 
@@ -341,8 +346,8 @@ def test_player_assignment_school_and_note_round_trip(tmp_path: Path):
 def test_school_requirements_counts_players_per_assignment():
     config = DuelConfig(
         player_assignments=[
-            PlayerAssignment(players=[1, 2], dsl="x", school="Storm"),
-            PlayerAssignment(players=[3], dsl="y", school="Life"),
+            PlayerAssignment(players=[1, 2], dsl="x", schools=["Storm"]),
+            PlayerAssignment(players=[3], dsl="y", schools=["Life"]),
         ],
     )
     assert config.school_requirements({}) == {"Storm": 2, "Life": 1}
@@ -355,7 +360,7 @@ def test_school_requirements_ignores_assignments_with_no_school():
 
 def test_school_requirements_resolves_through_a_linked_preset():
     """An unset assignment school falls back to the linked preset's own school."""
-    pcs = PlayerCombatStrategy(name="Storm Blade", dsl="x", school="Storm")
+    pcs = PlayerCombatStrategy(name="Storm Blade", dsl="x", schools=["Storm"])
     config = DuelConfig(
         player_assignments=[PlayerAssignment(players=[1, 2], player_combat_strategy_id=pcs.id)],
     )
@@ -363,10 +368,10 @@ def test_school_requirements_resolves_through_a_linked_preset():
 
 
 def test_school_requirements_assignment_school_wins_over_linked_preset():
-    pcs = PlayerCombatStrategy(name="Storm Blade", dsl="x", school="Storm")
+    pcs = PlayerCombatStrategy(name="Storm Blade", dsl="x", schools=["Storm"])
     config = DuelConfig(
         player_assignments=[
-            PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id, school="Life"),
+            PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id, schools=["Life"]),
         ],
     )
     assert config.school_requirements({pcs.id: pcs}) == {"Life": 1}
@@ -377,3 +382,78 @@ def test_school_requirements_missing_preset_reference_is_ignored():
         player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id="missing-id")],
     )
     assert config.school_requirements({}) == {}
+
+
+# ---------------------------------------------------------------------------
+# #125: a school is a set, and entries carry stored tags
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("raw", "schools"),
+    [({"school": "Fire"}, ["Fire"]), ({"school": None}, []), ({"school": ""}, []), ({}, [])],
+)
+def test_a_file_with_a_single_school_still_loads(raw, schools):
+    assert PlayerCombatStrategy.model_validate({"name": "Old", **raw}).schools == schools
+    assert PlayerAssignment.model_validate({"players": [1], **raw}).schools == schools
+
+
+def test_a_file_carrying_both_keeps_schools_and_drops_school():
+    pcs = PlayerCombatStrategy.model_validate({"name": "Both", "school": "Fire", "schools": ["Ice"]})
+    assert pcs.schools == ["Ice"]
+    assert "school" not in pcs.model_dump()
+
+
+def test_an_old_file_is_rewritten_with_schools_on_save(tmp_path: Path):
+    path = tmp_path / "old.json"
+    path.write_text(json.dumps({"id": "x", "name": "Old", "school": "Storm"}), encoding="utf-8")
+    PlayerCombatStrategy.load(path).save(path)
+    data = json.loads(path.read_text())
+    assert data["schools"] == ["Storm"]
+    assert "school" not in data
+
+
+def test_schools_drop_repeats_and_blanks_but_keep_the_authors_order():
+    assert PlayerCombatStrategy(name="x", schools=["Storm", "", "Fire", "Storm"]).schools == ["Storm", "Fire"]
+
+
+def test_tags_are_normalized_on_load():
+    pcs = PlayerCombatStrategy.model_validate({"name": "x", "tags": ["Healer", "Custom", "Hitter", "Healer"]})
+    assert pcs.tags == ["Hitter", "Healer"]
+
+
+def test_a_deck_preset_carries_tags_but_no_schools(tmp_path: Path):
+    preset = DeckPreset(name="Deck", tags=["Support"])
+    path = tmp_path / "deck.json"
+    preset.save(path)
+    assert json.loads(path.read_text())["tags"] == ["Support"]
+    assert DeckPreset.load(path).tags == ["Support"]
+    assert "schools" not in DeckPreset.model_fields
+
+
+def test_slot_schools_has_one_set_per_slot_and_uncovered_slots_accept_any():
+    config = DuelConfig(
+        max_players=3,
+        player_assignments=[PlayerAssignment(players=[1, 3], dsl="x", schools=["Storm", "Fire"])],
+    )
+    assert config.slot_schools({}) == [frozenset({"Storm", "Fire"}), frozenset(), frozenset({"Storm", "Fire"})]
+
+
+def test_slot_schools_resolves_a_linked_preset_and_ignores_slots_past_max():
+    pcs = PlayerCombatStrategy(name="Heals", dsl="x", schools=["Life"])
+    config = DuelConfig(
+        max_players=2,
+        player_assignments=[PlayerAssignment(players=[2, 4], player_combat_strategy_id=pcs.id)],
+    )
+    assert config.slot_schools({pcs.id: pcs}) == [frozenset(), frozenset({"Life"})]
+
+
+def test_school_requirements_keys_a_set_by_its_schools():
+    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1, 2], dsl="x", schools=["Storm", "Fire"])])
+    assert config.school_requirements({}) == {"Storm/Fire": 2}
+
+
+def test_an_empty_assignment_set_falls_through_to_the_linked_preset():
+    pcs = PlayerCombatStrategy(name="Heals", dsl="x", schools=["Life", "Myth"])
+    assignment = PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)
+    assert DuelConfig.assignment_schools(assignment, {pcs.id: pcs}) == ["Life", "Myth"]

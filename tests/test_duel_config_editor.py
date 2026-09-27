@@ -21,6 +21,7 @@ from bartlebot.gui.combat_strategies.assignment_card import (
 )
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor, move_item
 from tests.drag_helpers import drag_card, row_height, show
+from tests.picker_helpers import pick
 
 
 def test_load_populates_fields_from_the_config(qapp):
@@ -473,8 +474,8 @@ def test_requirements_label_hidden_with_no_school_assignments(qapp):
 def test_requirements_label_shows_derived_counts(qapp):
     config = DuelConfig(
         player_assignments=[
-            PlayerAssignment(players=[1, 2], dsl="x", school="Storm"),
-            PlayerAssignment(players=[3], dsl="y", school="Life"),
+            PlayerAssignment(players=[1, 2], dsl="x", schools=["Storm"]),
+            PlayerAssignment(players=[3], dsl="y", schools=["Life"]),
         ],
     )
     editor = DuelConfigEditor()
@@ -490,7 +491,7 @@ def test_requirements_label_updates_when_a_row_school_changes(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    editor.cards[0]._school_combo.setCurrentIndex(1)  # first real school after "Any school"
+    pick(editor.cards[0].school_picker, "Fire")
 
     assert not editor._requirements_lbl.isHidden()
 
@@ -498,7 +499,7 @@ def test_requirements_label_updates_when_a_row_school_changes(qapp):
 def test_requirements_label_updates_when_a_row_is_removed(qapp):
     config = DuelConfig(
         player_assignments=[
-            PlayerAssignment(players=[1], dsl="x", school="Storm"),
+            PlayerAssignment(players=[1], dsl="x", schools=["Storm"]),
             PlayerAssignment(players=[2], dsl="y"),
         ],
     )
@@ -517,12 +518,12 @@ def test_requirements_label_updates_when_a_row_is_removed(qapp):
 
 def test_row_loads_school_and_note_from_the_assignment(qapp):
     config = DuelConfig(
-        player_assignments=[PlayerAssignment(players=[1], dsl="x", school="Storm", note="Kites adds")],
+        player_assignments=[PlayerAssignment(players=[1], dsl="x", schools=["Storm"], note="Kites adds")],
     )
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    assert editor.cards[0]._school_combo.value() == "Storm"
+    assert editor.cards[0].school_picker.value() == ["Storm"]
     assert editor.cards[0]._note_edit.text() == "Kites adds"
 
 
@@ -532,9 +533,9 @@ def test_editing_the_row_school_mutates_the_assignment_live(qapp):
     editor = DuelConfigEditor()
     editor.load(config, [])
 
-    editor.cards[0]._school_combo.setCurrentIndex(1)
+    pick(editor.cards[0].school_picker, "Fire")
 
-    assert assignment.school is not None
+    assert assignment.schools
 
 
 def test_editing_the_row_note_mutates_the_assignment_live(qapp):
@@ -556,7 +557,7 @@ def test_set_editable_false_disables_school_and_note(qapp):
 
     editor.set_editable(False)
 
-    assert not editor.cards[0]._school_combo.isEnabled()
+    assert not editor.cards[0].school_picker.isEnabled()
     assert not editor.cards[0]._note_edit.isEnabled()
 
 
@@ -566,7 +567,7 @@ def _choose(card, data: str) -> None:
 
 
 def test_forking_to_custom_dsl_seeds_from_the_strategy_left_behind(qapp):
-    pcs = PlayerCombatStrategy(name="Preset", dsl="blade", school="Storm")
+    pcs = PlayerCombatStrategy(name="Preset", dsl="blade", schools=["Storm"])
     assignment = PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)
     config = DuelConfig(player_assignments=[assignment])
     editor = DuelConfigEditor()
@@ -575,20 +576,20 @@ def test_forking_to_custom_dsl_seeds_from_the_strategy_left_behind(qapp):
     _choose(editor.cards[0], CUSTOM_DATA)
 
     assert assignment.dsl == "blade"
-    assert assignment.school == "Storm"
+    assert assignment.schools == ["Storm"]
     assert assignment.player_combat_strategy_id is None
 
 
 def test_forking_to_custom_dsl_leaves_an_authored_assignment_school_alone(qapp):
-    pcs = PlayerCombatStrategy(name="Preset", dsl="blade", school="Storm")
-    assignment = PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id, school="Life")
+    pcs = PlayerCombatStrategy(name="Preset", dsl="blade", schools=["Storm"])
+    assignment = PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id, schools=["Life"])
     config = DuelConfig(player_assignments=[assignment])
     editor = DuelConfigEditor()
     editor.load(config, [pcs])
 
     _choose(editor.cards[0], CUSTOM_DATA)
 
-    assert assignment.school == "Life"
+    assert assignment.schools == ["Life"]
 
 
 def test_choosing_the_built_in_default_clears_both_answers(qapp):

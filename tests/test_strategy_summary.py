@@ -76,8 +76,8 @@ def test_summarize_duel_with_inline_assignments():
         combat_order=[1, 2],
         description="Boss fight — P1 tanks, P2 heals",
         player_assignments=[
-            PlayerAssignment(players=[1], dsl=_VALID_DSL, school="Storm"),
-            PlayerAssignment(players=[2], dsl="", school="Life"),
+            PlayerAssignment(players=[1], dsl=_VALID_DSL, schools=["Storm"]),
+            PlayerAssignment(players=[2], dsl="", schools=["Life"]),
         ],
     )
 
@@ -93,13 +93,13 @@ def test_summarize_duel_with_inline_assignments():
 
 
 def test_summarize_duel_school_requirement_covers_a_multi_player_assignment():
-    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1, 2], dsl=_VALID_DSL, school="Storm")])
+    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1, 2], dsl=_VALID_DSL, schools=["Storm"])])
 
     assert summarize_duel(config, []).schools == {"Storm": 2}
 
 
 def test_summarize_duel_resolves_school_through_a_linked_preset():
-    pcs = PlayerCombatStrategy(name="Storm DPS", dsl=_VALID_DSL, school="Storm")
+    pcs = PlayerCombatStrategy(name="Storm DPS", dsl=_VALID_DSL, schools=["Storm"])
     config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)])
 
     summary = summarize_duel(config, [pcs])
@@ -152,7 +152,7 @@ def test_summarize_empty_player_strategy():
 
 
 def test_summarize_player_strategy_with_school_and_dsl():
-    pcs = PlayerCombatStrategy(name="Storm DPS", dsl=_VALID_DSL, school="Storm", description="Blade + hit")
+    pcs = PlayerCombatStrategy(name="Storm DPS", dsl=_VALID_DSL, schools=["Storm"], description="Blade + hit")
 
     summary = summarize_player(pcs)
 

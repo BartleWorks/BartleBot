@@ -107,7 +107,7 @@ def test_filtering_hides_rows_instead_of_rebuilding_them(qapp, store):
     page = dlg._pages[StrategyKind.PLAYER]
     before = list(page._card_map)
 
-    page._filter.setText("Alp")
+    page.filter_bar.search.setText("Alp")
 
     assert page._card_map == before
     assert [i.data(Qt.ItemDataRole.UserRole) for i in _visible(page)] == [a.id]
@@ -118,10 +118,10 @@ def test_clearing_the_filter_shows_every_row_again(qapp, store):
     b = PlayerCombatStrategy(name="Beta")
     dlg = _dialog(store, players=[a, b], kind=StrategyKind.PLAYER, current_id=a.id)
     page = dlg._pages[StrategyKind.PLAYER]
-    page._filter.setText("zzz")
+    page.filter_bar.search.setText("zzz")
     assert _visible(page) == []
 
-    page._filter.setText("")
+    page.filter_bar.search.setText("")
 
     assert len(_visible(page)) == 2
 
@@ -135,7 +135,7 @@ def test_filtering_does_not_re_summarize_any_entry(qapp, store, monkeypatch):
     calls = _count_calls(monkeypatch, page, "summarize")
 
     for text in ("a", "an", "any"):
-        page._filter.setText(text)
+        page.filter_bar.search.setText(text)
 
     assert calls == []
 
@@ -167,7 +167,7 @@ def test_typing_in_the_pcs_filter_leaves_the_dsl_caret_alone(qapp, store):
     cursor.setPosition(5)
     editor._dsl_edit.setTextCursor(cursor)
 
-    page._filter.setText("Alp")
+    page.filter_bar.search.setText("Alp")
 
     assert editor._dsl_edit.textCursor().position() == 5
 
@@ -178,7 +178,7 @@ def test_typing_in_the_pcs_filter_does_not_reload_the_editor(qapp, store, monkey
     page = dlg._pages[StrategyKind.PLAYER]
     loads = _count_calls(monkeypatch, page._editor, "load")
 
-    page._filter.setText("Alp")
+    page.filter_bar.search.setText("Alp")
 
     assert loads == []
 
@@ -188,7 +188,7 @@ def test_filtering_the_selected_pcs_out_of_view_keeps_it_in_the_editor(qapp, sto
     dlg = _dialog(store, players=[a, PlayerCombatStrategy(name="Beta")], kind=StrategyKind.PLAYER, current_id=a.id)
     page = dlg._pages[StrategyKind.PLAYER]
 
-    page._filter.setText("Beta")
+    page.filter_bar.search.setText("Beta")
 
     assert page.selected_id() == a.id
     assert page._editor.strategy() is a or page._editor.strategy().id == a.id
@@ -198,9 +198,9 @@ def test_clearing_the_pcs_filter_reselects_the_edited_row(qapp, store):
     a = PlayerCombatStrategy(name="Alpha")
     dlg = _dialog(store, players=[a, PlayerCombatStrategy(name="Beta")], kind=StrategyKind.PLAYER, current_id=a.id)
     page = dlg._pages[StrategyKind.PLAYER]
-    page._filter.setText("Beta")
+    page.filter_bar.search.setText("Beta")
 
-    page._filter.setText("")
+    page.filter_bar.search.setText("")
 
     assert page.selected_id() == a.id
     assert page._list.currentItem() is not None
@@ -210,7 +210,7 @@ def test_edits_made_while_the_pcs_row_is_filtered_out_still_land(qapp, store):
     a = PlayerCombatStrategy(name="Alpha", dsl="blade")
     dlg = _dialog(store, players=[a, PlayerCombatStrategy(name="Beta")], kind=StrategyKind.PLAYER, current_id=a.id)
     page = dlg._pages[StrategyKind.PLAYER]
-    page._filter.setText("Beta")
+    page.filter_bar.search.setText("Beta")
 
     page._editor._dsl_edit.setPlainText("pass")
 
@@ -239,7 +239,7 @@ def test_typing_in_the_dcs_filter_does_not_reload_the_editor(qapp, store, monkey
     page = dlg._pages[StrategyKind.DUEL]
     loads = _count_calls(monkeypatch, page._editor, "load")
 
-    page._filter.setText("Fren")
+    page.filter_bar.search.setText("Fren")
 
     assert loads == []
 
@@ -256,7 +256,7 @@ def test_filtering_the_selected_dcs_out_of_view_leaves_it_pickable(qapp, store):
     )
     page = dlg._pages[StrategyKind.DUEL]
 
-    page._filter.setText("Other")
+    page.filter_bar.search.setText("Other")
 
     assert page.selected_id() == d.id
 
@@ -285,7 +285,7 @@ def test_typing_in_the_decks_filter_does_not_reload_the_detail_panel(qapp, store
     page = dlg._pages[StrategyKind.DECK]
     loads = _count_calls(monkeypatch, page._editor, "load")
 
-    page._filter.setText("Storm")
+    page.filter_bar.search.setText("Storm")
 
     assert loads == []
 
