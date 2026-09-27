@@ -3,8 +3,18 @@
 import asyncio
 import logging
 
+from wizwalker import XYZ
+
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
+
+# How far a wisp must be from every enemy to count as safe. A battle triggers at a fixed
+# radius on the server, but the client shows a mob walking toward the wizard trailing
+# where it really is, so a fast mob pulls the wizard in from further off than it looks:
+# up to 886 units measured (#117, tools/probe_aggro_radius.py). WizSprinter's default of
+# 700 did not cover that; this also leaves room for a mob to close in while the group
+# waits at the wisp.
+SAFE_WISP_RADIUS = 1500.0
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -36,9 +46,9 @@ PARAM_SCHEMA: list[ParamField] = [
         type="float",
         label="Timeout (seconds, 0 = no limit)",
         help=(
-            "Maximum seconds to spend collecting each resource (health and mana each get "
-            "their own window). Bounds the collection loop in case a stale or bugged health/mana "
-            "ratio reading never crosses the threshold. Set to 0 to wait indefinitely."
+            "Maximum seconds to spend collecting wisps. Bounds the collection loop in case a "
+            "stale or bugged health/mana ratio reading never crosses the threshold. Set to 0 "
+            "to wait indefinitely."
         ),
         default=WISP_COLLECT_TIMEOUT,
         default_hint="10s",
@@ -74,9 +84,9 @@ PARAM_SCHEMA: list[ParamField] = [
         type="bool",
         label="Only Collect Safe Wisps",
         help=(
-            "Skip wisps that are within 700 units of an enemy. Prevents accidentally "
-            "entering combat while collecting wisps after a fight. Disable only if you "
-            "need to collect wisps in areas where enemies are always nearby."
+            f"Skip wisps that are within {SAFE_WISP_RADIUS:.0f} units of an enemy. Prevents "
+            "accidentally entering combat while collecting wisps after a fight. Disable only "
+            "if you need to collect wisps in areas where enemies are always nearby."
         ),
         default=True,
         default_hint="skip wisps near enemies",
@@ -86,11 +96,13 @@ PARAM_SCHEMA: list[ParamField] = [
 NODE_SPEC = NodeSpec(
     description=(
         "Collects health and mana wisps after combat if players are below specified "
-        "thresholds. Teleports each player to the nearest wisp repeatedly until the "
-        "threshold is met, no more wisps are in range, or the per-resource timeout expires. "
-        "By default, skips wisps within 700 units of an enemy to avoid re-entering combat. "
-        "Returns FAILURE if any player is still below the configured fail thresholds after "
-        "collection — useful for routing to a potion fallback node."
+        "thresholds. The players move as one group, all teleporting to the same wisp at "
+        "once, so a player who is already full passes through without using it up and nobody "
+        "is left behind on their own. Repeats until every player meets its thresholds, no "
+        "wisp is left, or the timeout expires. "
+        f"By default, skips wisps within {SAFE_WISP_RADIUS:.0f} units of an enemy to avoid "
+        "re-entering combat. Returns FAILURE if any player is still below the configured fail "
+        "thresholds after collection — useful for routing to a potion fallback node."
     ),
     params=PARAM_SCHEMA,
     returns=[
@@ -107,16 +119,22 @@ NODE_SPEC = NodeSpec(
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: SprintyClient.calc_health_ratio(), SprintyClient.calc_mana_ratio(),
-          SprintyClient.tp_to_closest_health_wisp(), SprintyClient.tp_to_closest_mana_wisp()
+          SprintyClient.get_health_wisps(), SprintyClient.get_mana_wisps(),
+          SprintyClient.get_mobs(), SprintyClient.teleport()
 
-    Flow:
-      1. For each client (in parallel), collect health wisps while health < if_health_below.
-         Stop when no more wisps are in range (tp_to_closest_health_wisp returns False) or
-         the timeout for this resource expires.
-      2. For each client (in parallel), collect mana wisps while mana < if_mana_below.
-         Stop when no more wisps are in range or the timeout expires.
-      3. Re-check all ratios. Return FAILURE if any client's health is still below
+    Flow, one hop at a time with a fresh scan each hop:
+      1. Read every client's ratios. Health wisps are wanted if any client is below
+         if_health_below, mana wisps if any is below if_mana_below. If neither is wanted,
+         stop — nobody moves.
+      2. List the wanted wisps not visited yet, drop any within SAFE_WISP_RADIUS of an
+         enemy (when only_safe), and pick the one nearest the group.
+      3. Teleport every client to it at once. Stop when no wisp is left or the timeout
+         expires.
+      4. Re-check all ratios. Return FAILURE if any client's health is still below
          fail_if_health_below or mana is still below fail_if_mana_below.
+
+    A visited wisp is never picked again, so one that lingers in memory after collection,
+    or a ratio reading that never rises, ends the loop instead of spinning on one spot.
 
     FAILURE: any client is still below a fail threshold after wisps are exhausted or the
     timeout expires — e.g. a stale/bugged health ratio reading that never crosses the threshold.
@@ -135,9 +153,7 @@ async def run(machine, clients: list, params: dict) -> str:
         f"only_safe={only_safe}"
     )
 
-    await asyncio.gather(
-        *[_collect_for_client(c, if_health_below, if_mana_below, timeout_val, only_safe) for c in clients]
-    )
+    await _collect_as_group(machine, clients, if_health_below, if_mana_below, timeout_val, only_safe)
 
     # Post-collection check: return FAILURE if any client is still below a fail threshold.
     final_health, final_mana = zip(*await asyncio.gather(*[_get_ratios(c) for c in clients]))
@@ -175,33 +191,84 @@ async def run(machine, clients: list, params: dict) -> str:
 # ---------------------------------------------------------------------------
 
 
-async def _collect_for_client(
-    client, if_health_below: float, if_mana_below: float, timeout_val: float | None, only_safe: bool
+async def _collect_as_group(
+    machine, clients: list, if_health_below: float, if_mana_below: float, timeout_val: float | None, only_safe: bool
 ) -> None:
-    """Collect health and mana wisps for a single client until thresholds are met.
+    """Hop the whole group from wisp to wisp until nobody needs one, none is left, or time runs out.
 
-    Health and mana each get their own timeout window, so one client's stuck resource
-    reading can't eat into the other resource's collection time.
+    Every client lands on the same wisp at the same moment. The game gives a wisp to each
+    wizard that reaches it together, and a wizard already full of that resource doesn't
+    take it, so moving as one lets every client that needs it collect it. Each hop's DEBUG
+    line records the ratios before it; the next hop's line, or the post-collection one,
+    shows what it gave — which is how to tell whether arriving together is close enough.
     """
-    if if_health_below > 0.0:
-        loop_start = asyncio.get_event_loop().time()
-        while await client.calc_health_ratio() < if_health_below:
-            if timeout_val is not None and asyncio.get_event_loop().time() - loop_start > timeout_val:
-                break
-            found = await client.tp_to_closest_health_wisp(only_safe=only_safe)
-            if not found:
-                break
-            await asyncio.sleep(jitter(WISP_COLLECT_DELAY))
+    loop = asyncio.get_running_loop()
+    start = loop.time()
+    visited: set[int] = set()
+    hop = 0
 
-    if if_mana_below > 0.0:
-        loop_start = asyncio.get_event_loop().time()
-        while await client.calc_mana_ratio() < if_mana_below:
-            if timeout_val is not None and asyncio.get_event_loop().time() - loop_start > timeout_val:
-                break
-            found = await client.tp_to_closest_mana_wisp(only_safe=only_safe)
-            if not found:
-                break
-            await asyncio.sleep(jitter(WISP_COLLECT_DELAY))
+    while True:
+        health, mana = zip(*await asyncio.gather(*[_get_ratios(c) for c in clients]))
+        want_health = if_health_below > 0.0 and any(h < if_health_below for h in health)
+        want_mana = if_mana_below > 0.0 and any(m < if_mana_below for m in mana)
+        if not (want_health or want_mana):
+            return
+        if timeout_val is not None and loop.time() - start > timeout_val:
+            machine.log(f"collect_wisps: timed out after {timeout_val}s", logging.DEBUG)
+            return
+
+        pick = await _pick_wisp(clients, want_health, want_mana, visited, only_safe)
+        if pick is None:
+            machine.log("collect_wisps: no wanted wisp left to collect", logging.DEBUG)
+            return
+        wisp_id, location, note = pick
+        visited.add(wisp_id)
+        hop += 1
+        machine.log(
+            f"collect_wisps: hop {hop} ({note}); before — "
+            f"health: {[f'{h:.2f}' for h in health]}, mana: {[f'{m:.2f}' for m in mana]}",
+            logging.DEBUG,
+        )
+        await asyncio.gather(*[c.teleport(location) for c in clients])
+        await asyncio.sleep(jitter(WISP_COLLECT_DELAY))
+
+
+async def _pick_wisp(
+    clients: list, want_health: bool, want_mana: bool, visited: set[int], only_safe: bool
+) -> tuple[int, XYZ, str] | None:
+    """Return (id, location, log note) for the wanted wisp nearest the group, or None.
+
+    Every client is in the same zone, so the first one's entity list stands for all.
+    Nearest means the smallest total distance from every client, so the pick is the same
+    whether or not the group already stands together.
+    """
+    lead = clients[0]
+    wisps = []
+    if want_health:
+        wisps += await lead.get_health_wisps(visited)
+    if want_mana:
+        wisps += await lead.get_mana_wisps(visited)
+    if not wisps:
+        return None
+
+    located = [(w, await w.location()) for w in wisps]
+    mob_positions = [await m.location() for m in await lead.get_mobs()] if only_safe else []
+
+    def clearance(location: XYZ) -> float:
+        return min((location.distance(p) for p in mob_positions), default=float("inf"))
+
+    if only_safe:
+        located = [(w, loc) for w, loc in located if clearance(loc) >= SAFE_WISP_RADIUS]
+        if not located:
+            return None
+
+    positions = [await c.body.position() for c in clients]
+    wisp, location = min(located, key=lambda wl: sum(wl[1].distance(p) for p in positions))
+    if only_safe:
+        note = f"{len(located)} of {len(wisps)} wisps safe, nearest enemy {clearance(location):.0f}"
+    else:
+        note = f"{len(wisps)} wisps, safety check off"
+    return await wisp.global_id_full(), location, note
 
 
 async def _get_ratios(client) -> tuple[float, float]:

@@ -384,8 +384,8 @@ INTERACT_ANIMATION_DELAY = 0.0
 # this exists to retire.
 
 WISP_COLLECT_TIMEOUT = 10.0
-# Ceiling on how long a single client may spend collecting wisps for one
-# resource (health or mana). Guards against a game bug where a client's
+# Ceiling on how long collect_wisps may spend moving the group between
+# wisps. Guards against a game bug where a client's
 # displayed max HP can read far above actual, making calc_health_ratio()
 # never clear the threshold and the collection loop spin indefinitely.
 
