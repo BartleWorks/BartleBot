@@ -548,14 +548,24 @@ class AccentPill(QLabel):
     pill beside grey ones reads as the loudest item in the list rather than as a label on
     it. It is also the affordance boundary on that card, where the fight pills are
     :class:`ActionPill`\\ s: no fill, no hover, no pointing hand, nothing to click.
+
+    ``filled=True`` is the heavier rung, filled with the accent -- ``ActionButton``'s
+    ``PRIMARY`` to the outline's ``SECONDARY``. The strategy cards' source pill uses both,
+    so the three sources read as three weights: a built-in filled, a modified built-in
+    outlined, a custom one grey.
     """
 
-    def __init__(self, text: str, parent: QWidget | None = None) -> None:
+    def __init__(self, text: str, parent: QWidget | None = None, *, filled: bool = False) -> None:
         super().__init__(text, parent)
         self._applying_style = False
+        self._filled = filled
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setFixedHeight(pill_height())
         self._restyle()
+
+    @property
+    def filled(self) -> bool:
+        return self._filled
 
     def _restyle(self) -> None:
         if self._applying_style:  # see TagPill._restyle
@@ -563,10 +573,12 @@ class AccentPill(QLabel):
         self._applying_style = True
         try:
             # One pixel of the padding goes to the border, so the text sits at the same
-            # x inside this pill as inside the filled ones beside it.
+            # x inside this pill as inside the filled ones beside it. The filled form
+            # keeps the border, in its own fill colour, so both forms are the same size.
+            bg, fg = (THEME.accent, THEME.pill_text) if self._filled else ("transparent", THEME.accent)
             set_style_sheet(
                 self,
-                f"background: transparent; color: {THEME.accent};"
+                f"background: {bg}; color: {fg};"
                 f" font-size: {THEME.font_micro_px}px; font-weight: bold; border-radius: 7px;"
                 f" border: 1px solid {THEME.accent}; padding: 0px {_PILL_PAD_X - 1}px;",
             )

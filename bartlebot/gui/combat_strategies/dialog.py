@@ -65,7 +65,7 @@ import logging
 from dataclasses import replace
 from enum import Enum
 
-from PyQt6.QtCore import QEvent, Qt, pyqtSignal
+from PyQt6.QtCore import QEvent, QObject, QSize, Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
     QFrame,
@@ -170,6 +170,8 @@ _BUILT_IN_DELETE_TIP = "Built-in strategies can't be deleted. Duplicate one to m
 #: divider — and a scrollbar pressed against a vertical line reads as part of the line.
 _PAGE_INSET = 10
 _SPLITTER_GUTTER = 12
+#: The card list's per-row padding, in its stylesheet and in the width a row is fitted to.
+_ROW_PAD = 1
 
 
 def summary_haystack(summary: StrategySummary) -> str:
@@ -410,6 +412,8 @@ class _KindPage(QWidget):
         # Filtering changes how many cards there are, and so whether the list scrolls.
         reserve_scrollbar_gutter(self._list)
         self._list.currentItemChanged.connect(self._on_item_changed)
+        # Rows are sized for the width the column actually has; see _fit_row.
+        self._list.viewport().installEventFilter(self)
         box.addWidget(self._list, 1)
 
         buttons = QHBoxLayout()
@@ -541,7 +545,7 @@ class _KindPage(QWidget):
                     item = QListWidgetItem()
                     item.setData(Qt.ItemDataRole.UserRole, entry.id)
                     item.setData(_HAYSTACK_ROLE, summary_haystack(summary))
-                    item.setSizeHint(card.sizeHint())
+                    self._fit_row(item, card)
                     self._list.addItem(item)
                     self._list.setItemWidget(item, card)
                     self._card_map.append((item, card))
@@ -622,6 +626,32 @@ class _KindPage(QWidget):
         self._list.setItemWidget(item, heading)
         self._headers.append(item)
 
+    def _fit_row(self, item: QListWidgetItem, card: StrategyCard) -> None:
+        """Size *item* to what *card* needs at the column's real width.
+
+        Not ``card.sizeHint()``: its height wraps the name at whatever width Qt's own
+        guess for a word-wrapped label picks, not at the column's. A name that fits on
+        one line was still given a two-line row, and the card spread the slack between
+        its lines -- so an edit that turned the source pill into the wider "Built-in
+        (modified)", really wrapping the name, visibly tightened the card's spacing.
+
+        The width asked for is only the card's minimum: a list row fills the viewport
+        anyway, and asking for more is what gives the list a horizontal scrollbar.
+        """
+        width = self._list.viewport().width() - 2 * (self._list.spacing() + _ROW_PAD)
+        height = card.heightForWidth(width)
+        item.setSizeHint(QSize(card.minimumSizeHint().width(), height if height > 0 else card.sizeHint().height()))
+
+    def _refit_rows(self) -> None:
+        for item, card in self._card_map:
+            self._fit_row(item, card)
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if obj is self._list.viewport() and event.type() == QEvent.Type.Resize:
+            if event.size().width() != event.oldSize().width():
+                self._refit_rows()
+        return super().eventFilter(obj, event)
+
     def _make_card(self, uuid: str, summary: StrategySummary) -> StrategyCard:
         card = StrategyCard(summary, favorite=uuid in self._favorite_ids)
         card.favorite_toggled.connect(lambda wanted, uuid=uuid: self.set_favorite(uuid, wanted))
@@ -687,7 +717,7 @@ class _KindPage(QWidget):
             summary = self.summarize(entry)
             card = self._make_card(entry.id, summary)
             card.set_selected(True)
-            item.setSizeHint(card.sizeHint())
+            self._fit_row(item, card)
             item.setData(_HAYSTACK_ROLE, summary_haystack(summary))
             # The facets follow the edit, and so do the counts; whether the row still
             # passes the filter is left for the next filter change, as the name is.
@@ -832,7 +862,7 @@ class _KindPage(QWidget):
         # this pane stops — a box around a column of boxes is one line too many.
         self._list.setStyleSheet(
             f"QListWidget {{ border: none; background: {THEME.bg}; }}"
-            f"QListWidget::item {{ background: transparent; border: none; padding: 1px; }}"
+            f"QListWidget::item {{ background: transparent; border: none; padding: {_ROW_PAD}px; }}"
             f"QListWidget::item:selected {{ background: transparent; border: none; }}"
             f"QListWidget::item:hover {{ background: transparent; border: none; }}"
         )
@@ -872,8 +902,9 @@ class CombatStrategyDialog(QDialog):
         self.setWindowTitle("Pick a Combat Strategy" if mode is DialogMode.PICK else "Combat Strategies")
         self.setMinimumSize(880, 560)
         # Wider than the minimum so the card sidebar isn't fighting the detail
-        # pane for space by default — see issue #44.
-        self.resize(1040, 640)
+        # pane for space by default — see issue #44 — and wide enough that a card
+        # carrying the longest source pill, "Built-in (modified)", fits the column.
+        self.resize(1200, 720)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(6)

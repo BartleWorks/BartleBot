@@ -21,7 +21,8 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QLabel, QMessageBox, QSplitter
 
 from bartlebot import store_roots
 from bartlebot.bot.strategy_models import (
@@ -40,6 +41,7 @@ from bartlebot.gui.combat_strategies.dialog import (
     _KindPage,
 )
 from bartlebot.gui.widgets.scroll_gutter import is_gutter_reserved
+from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill
 from bartlebot.strategy_store import (
     StrategyKind,
     list_duel_strategies,
@@ -344,6 +346,80 @@ def test_the_source_pill_follows_an_unsaved_edit(qapp, roots):
     page.about._description_edit.setText("tweaked")
 
     assert page.card_for(pcs.id).source_text == "Built-in (modified)"
+
+
+@pytest.mark.parametrize(
+    ("where", "pill_type", "filled"),
+    [("shipped", AccentPill, True), ("override", AccentPill, False), ("user", NeutralPill, None)],
+)
+def test_the_source_pill_is_weighted_like_a_button(qapp, roots, where, pill_type, filled):
+    """Built-in filled with the accent, modified built-in outlined in it, custom grey."""
+    shipped, user = roots
+    pcs = PlayerCombatStrategy(name="Support")
+    if where in ("shipped", "override"):
+        save_player_strategy(pcs, shipped)
+    if where in ("override", "user"):
+        save_player_strategy(pcs.model_copy(update={"dsl": "pass"}), user)
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+    card = dlg._pages[StrategyKind.PLAYER].card_for(pcs.id)
+
+    pills = [p for p in card.findChildren(QLabel) if isinstance(p, AccentPill | NeutralPill)]
+    assert [type(p) for p in pills] == [pill_type]
+    if filled is not None:
+        assert pills[0].filled is filled
+
+
+def test_a_source_pill_edit_keeps_the_card_height(qapp, roots):
+    """The filled and outlined pills are one size, so the card does not jump on an edit."""
+    assert AccentPill("Built-in", filled=True).sizeHint().height() == AccentPill("Built-in").sizeHint().height()
+    assert AccentPill("Built-in").sizeHint().height() == NeutralPill("Custom").sizeHint().height()
+
+
+def _row(page, uuid):
+    return next((item, card) for item, card in page._card_map if item.data(Qt.ItemDataRole.UserRole) == uuid)
+
+
+def test_a_row_is_as_tall_as_its_card_needs_at_the_columns_width(qapp, roots):
+    """Not the card's own size hint, which wraps the name at a width Qt guesses.
+
+    A one-line name was given a two-line row, and the slack spread between the card's
+    lines — so the card's spacing visibly changed when an edit made the name wrap.
+    """
+    pcs = PlayerCombatStrategy(name="Frenzy Blade Stack Hitter With A Long Name", description="tank and spank")
+    save_player_strategy(pcs, roots[0])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+    page = dlg._pages[StrategyKind.PLAYER]
+    splitter = page.findChild(QSplitter)
+    dlg.resize(1400, 720)
+    dlg.show()
+    qapp.processEvents()
+
+    item, card = _row(page, pcs.id)
+    wide = item.sizeHint().height()
+    assert wide == card.heightForWidth(card.width())
+
+    splitter.setSizes([splitter.widget(0).minimumSizeHint().width(), 2000])
+    qapp.processEvents()
+
+    item, card = _row(page, pcs.id)
+    assert item.sizeHint().height() == card.heightForWidth(card.width())
+    assert item.sizeHint().height() > wide
+    dlg.close()
+
+
+def test_a_card_never_asks_for_more_width_than_the_column(qapp, roots):
+    """A row asking for its card's preferred width gives the list a horizontal scrollbar."""
+    pcs = PlayerCombatStrategy(name="Frenzy Blade Stack Hitter With A Long Name")
+    save_player_strategy(pcs, roots[0])
+    save_player_strategy(pcs.model_copy(update={"dsl": "pass"}), roots[1])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+    page = dlg._pages[StrategyKind.PLAYER]
+    dlg.resize(dlg.minimumSize())
+    dlg.show()
+    qapp.processEvents()
+
+    assert page._list.horizontalScrollBar().maximum() == 0
+    dlg.close()
 
 
 def test_a_declined_delete_removes_nothing(qapp, roots):

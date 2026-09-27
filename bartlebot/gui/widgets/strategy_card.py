@@ -28,6 +28,21 @@ ADD_FAVORITE_TIP = "Add to favorites"
 REMOVE_FAVORITE_TIP = "Remove from favorites"
 
 
+def source_pill(source: Origin) -> QLabel:
+    """The pill naming where a strategy comes from, weighted like ``ActionButton``.
+
+    A built-in is filled with the accent (``PRIMARY``), a modified built-in outlined in
+    it (``SECONDARY``) and anything else grey (``TERTIARY``). All three are the same
+    height, so a card does not change size when an edit turns one into another.
+    """
+    text = SOURCE_LABELS[source]
+    if source is Origin.SHIPPED:
+        return AccentPill(text, filled=True)
+    if source is Origin.SHIPPED_OVERRIDE:
+        return AccentPill(text)
+    return NeutralPill(text)
+
+
 class StrategyCard(QWidget):
     """Card widget rendered inside a QListWidget item via setItemWidget.
 
@@ -85,10 +100,10 @@ class StrategyCard(QWidget):
             row.addWidget(name_row, 1)
             if summary.source is not None:
                 # Always shown, and a pill of words rather than a glyph: no icon says
-                # "ships with the app" unaided (#124). Grey for the ordinary cases; the
-                # accent outline only for a modified built-in, the one that shadows updates.
-                text = SOURCE_LABELS[summary.source]
-                pill = AccentPill(text) if summary.source is Origin.SHIPPED_OVERRIDE else NeutralPill(text)
+                # "ships with the app" unaided (#124). Three weights, on ActionButton's
+                # model: a built-in filled with the accent, a modified built-in outlined
+                # in it, and a custom one grey.
+                pill = source_pill(summary.source)
                 row.addWidget(pill, 0, Qt.AlignmentFlag.AlignTop)
                 self._source_pill = pill
             if favorite is not None:
