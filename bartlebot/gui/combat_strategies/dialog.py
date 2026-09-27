@@ -47,6 +47,7 @@ than reported.
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from enum import Enum
 
 from PyQt6.QtCore import QEvent, Qt, pyqtSignal
@@ -79,6 +80,7 @@ from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.search_field import SearchLineEdit
 from bartlebot.gui.widgets.strategy_card import StrategyCard
+from bartlebot.store_roots import SOURCE_LABELS
 from bartlebot.strategy_store import Origin, StrategyKind
 from bartlebot.strategy_summary import (
     StrategySummary,
@@ -123,6 +125,9 @@ _HAYSTACK_ROLE = Qt.ItemDataRole.UserRole + 1
 #: honest verb is "revert" — see :class:`bartlebot.strategy_store.Origin`.
 _REVERT_TEXT = "Revert to default"
 _DELETE_TEXT = "Delete"
+#: Why Delete is greyed out on an unedited built-in: removing only touches the user
+#: root, so the entry would be back on the next open (#124).
+_BUILT_IN_DELETE_TIP = "Built-in strategies can't be deleted. Duplicate one to make a copy of your own."
 
 #: How far a tab's contents sit inside the tab pane, and how far *each* pane sits from
 #: the splitter between them. Two numbers rather than one because the splitter handle is
@@ -147,7 +152,8 @@ def summary_haystack(summary: StrategySummary) -> str:
     is only cheap relative to the summary it comes from — producing that summary
     parses every DSL the entry references.
     """
-    return f"{summary.name} {summary.description} {summary.subtitle_line()}".lower()
+    source = SOURCE_LABELS[summary.source] if summary.source is not None else ""
+    return f"{summary.name} {summary.description} {summary.subtitle_line()} {source}".lower()
 
 
 def matches_query(haystack: str, query: str) -> bool:
@@ -394,10 +400,19 @@ class _KindPage(QWidget):
 
     def summarize(self, item) -> StrategySummary:
         if self._kind is StrategyKind.DUEL:
-            return summarize_duel(item, self._ws.players, name=item.name)
-        if self._kind is StrategyKind.PLAYER:
-            return summarize_player(item)
-        return summarize_deck(item)
+            summary = summarize_duel(item, self._ws.players, name=item.name)
+        elif self._kind is StrategyKind.PLAYER:
+            summary = summarize_player(item)
+        else:
+            summary = summarize_deck(item)
+        return replace(summary, source=self._ws.status(self._kind, item.id))
+
+    def card_for(self, uuid: str) -> StrategyCard | None:
+        """The card drawn for ``uuid``, or None. Public so a test can read what a card says."""
+        for item, card in self._card_map:
+            if item.data(Qt.ItemDataRole.UserRole) == uuid:
+                return card
+        return None
 
     # -- the card list --------------------------------------------------
 
@@ -550,16 +565,21 @@ class _KindPage(QWidget):
         entry = self._ws.get(self._kind, self._selected_id)
         if entry is None:
             return
-        origin = self._ws.origin(self._kind, entry.id)
-        revert = origin is Origin.SHIPPED_OVERRIDE
+        # The working set's status, not the file's origin: an edit made a moment ago
+        # already makes a built-in revertible, before anything is written (#124).
+        status = self._ws.status(self._kind, entry.id)
+        revert = status is Origin.SHIPPED_OVERRIDE
+        built_in = status is Origin.SHIPPED
         self._del_btn.setText(_REVERT_TEXT if revert else _DELETE_TEXT)
         self._del_btn.set_icon_name("revert" if revert else "trash")
-        # A revert is not a caution: the shipped file reappears underneath, so there is
-        # nothing to lose — which is exactly the distinction the two verbs exist to draw.
+        # A revert is not a caution: the shipped version comes back, so there is nothing
+        # to lose — which is exactly the distinction the two verbs exist to draw.
         self._del_btn.set_action_style(ActionStyle.TERTIARY if revert else ActionStyle.CAUTION)
+        self._del_btn.setEnabled(not built_in)
+        self._del_btn.setToolTip(_BUILT_IN_DELETE_TIP if built_in else "")
         if revert:
             note = "Your copy of a strategy BartleBot ships — reverting restores the original."
-        elif origin is Origin.SHIPPED:
+        elif built_in:
             note = "Ships with BartleBot — editing it saves your own copy."
         else:
             note = ""
@@ -593,16 +613,19 @@ class _KindPage(QWidget):
         entry = self._ws.get(self._kind, self._selected_id)
         if entry is None:
             return
-        revert = self._ws.origin(self._kind, entry.id) is Origin.SHIPPED_OVERRIDE
-        usage = self._ws.usage(entry.id)
+        status = self._ws.status(self._kind, entry.id)
+        if status is Origin.SHIPPED:
+            return  # nothing to delete or revert; the button is disabled for this
+        revert = status is Origin.SHIPPED_OVERRIDE
         verb = "Revert" if revert else "Delete"
-        detail = (
-            f"“{entry.name}” will go back to the version BartleBot ships."
-            if revert
-            else f"“{entry.name}” will be removed when you save."
-        )
-        if usage.total:
-            detail += f"\n\n{usage.phrase()} — those will fall back to the built-in default."
+        if revert:
+            # No usage warning: the id stays, so everything linking it keeps working.
+            detail = f"“{entry.name}” will go back to the version BartleBot ships."
+        else:
+            detail = f"“{entry.name}” will be removed when you save."
+            usage = self._ws.usage(entry.id)
+            if usage.total:
+                detail += f"\n\n{usage.phrase()} — those will fall back to the built-in default."
         answer = QMessageBox.question(
             self,
             f"{verb} strategy?",
@@ -612,9 +635,17 @@ class _KindPage(QWidget):
         )
         if answer is not QMessageBox.StandardButton.Yes:
             return
-        self._ws.remove(self._kind, entry.id)
-        self._selected_id = None
-        self.rebuild_list()
+        if revert:
+            # The shipped version replaces the live object here and now, so the entry
+            # stays listed and selected; the editor must reload, since it holds the
+            # object that was just replaced.
+            self._ws.revert(self._kind, entry.id)
+            self.rebuild_list()
+            self.select(entry.id)
+        else:
+            self._ws.remove(self._kind, entry.id)
+            self._selected_id = None
+            self.rebuild_list()
         self.structure_changed.emit()
 
     # -- cross-tab refresh ----------------------------------------------

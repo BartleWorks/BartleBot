@@ -34,6 +34,21 @@ differ from the snapshot taken at load, which means an editor that mutates its
 model directly — as ``DuelConfigEditor`` has always done — needs no changes to
 participate, and an edit typed and then typed back out again correctly leaves
 the dialog clean. A dirty flag set by a ``changed`` signal cannot say that.
+
+BUILT-IN, MODIFIED, CUSTOM — ALSO DERIVED
+-----------------------------------------
+
+Whether an entry is still the built-in one is asked of its *content*, against the
+shipped version held from load, not of what is on disk (#124). Asking disk meant an
+unsaved edit to a built-in still read as unedited, so the dialog offered Delete
+where it meant Revert, and a revert took the entry out of the list until the dialog
+was reopened, because disk was the only place the shipped version came back from.
+
+So :meth:`StrategyWorkingSet.revert` puts the shipped version back *here*, and
+:meth:`~StrategyWorkingSet.commit` removes the user copy of any built-in whose
+content has come back to the shipped version, however it got there. A built-in is
+never removed: there is nothing under the user root to delete, and the shipped file
+would reappear on the next open anyway.
 """
 
 from __future__ import annotations
@@ -59,6 +74,7 @@ from bartlebot.strategy_store import (
     list_deck_presets,
     list_duel_strategies,
     list_player_strategies,
+    list_shipped,
     origin_of,
     save_deck_preset,
     save_duel_strategy,
@@ -125,6 +141,12 @@ class _Slot:
     items: dict[str, object] = field(default_factory=dict)
     baselines: dict[str, str] = field(default_factory=dict)
     deleted: list[str] = field(default_factory=list)
+    #: Built-in entries as they ship, by id. Empty in developer mode, where nothing is shipped.
+    shipped: dict[str, object] = field(default_factory=dict)
+    #: Built-ins reverted this session. Counted as a change even when the content
+    #: matches the baseline: a user copy identical to the shipped one still shadows
+    #: every future update to it, so reverting one is a real write.
+    reverted: set[str] = field(default_factory=set)
 
 
 class StrategyWorkingSet:
@@ -143,6 +165,7 @@ class StrategyWorkingSet:
         bot_strategies: list[BotCombatStrategy] | None = None,
         root: str | Path | None = None,
         user_root: str | Path | None = None,
+        shipped: dict[StrategyKind, list] | None = None,
     ) -> None:
         self._root = root
         self._user_root = user_root
@@ -159,6 +182,8 @@ class StrategyWorkingSet:
                 # behind the dialog before anything was saved.
                 slot.items[item.id] = item.model_copy(deep=True)
                 slot.baselines[item.id] = _snapshot(item)
+            for item in (shipped or {}).get(kind, []):
+                slot.shipped[item.id] = item
         # Read-only, and not copied: nothing here edits one.
         self._bot_strategies = list(bot_strategies or [])
 
@@ -172,6 +197,7 @@ class StrategyWorkingSet:
             bot_strategies=list_all_bot_strategies(root, user_root),
             root=root,
             user_root=user_root,
+            shipped={kind: list_shipped(kind, root, user_root) for kind in EDITABLE_KINDS},
         )
 
     # ------------------------------------------------------------------
@@ -244,6 +270,11 @@ class StrategyWorkingSet:
         written would make ``changes()`` overstate what Save is about to do.
         """
         slot = self._slots[kind]
+        if uuid in slot.shipped:
+            # Removing only ever touches the user root, so a built-in would reappear on
+            # the next open. The dialog does not offer it; this is the backstop.
+            logger.warning("Refusing to remove built-in %s strategy %s; revert it instead", kind.value, uuid)
+            return
         if slot.items.pop(uuid, None) is None:
             return
         if uuid in slot.baselines:
@@ -259,6 +290,55 @@ class StrategyWorkingSet:
         to, and Save would be its first write.
         """
         return origin_of(kind, uuid, root=self._root, user_root=self._user_root)
+
+    def status(self, kind: StrategyKind, uuid: str) -> Origin:
+        """What this entry *is* right now, unsaved edits included — the source a surface shows.
+
+        :meth:`origin` answers where the file is; this answers what Save would leave
+        behind. A built-in edited a moment ago reads :attr:`Origin.SHIPPED_OVERRIDE`
+        before anything is written, and a reverted one reads :attr:`Origin.SHIPPED`
+        while its user copy is still on disk. Anything that is not a built-in, including
+        an entry created this session, reads :attr:`Origin.USER`.
+        """
+        slot = self._slots[kind]
+        item = slot.items.get(uuid)
+        if item is None:
+            return Origin.MISSING
+        shipped = slot.shipped.get(uuid)
+        if shipped is None:
+            return Origin.USER
+        if _snapshot(item) != _snapshot(shipped):
+            return Origin.SHIPPED_OVERRIDE
+        if uuid in slot.reverted or _snapshot(item) != slot.baselines.get(uuid):
+            # Back to the shipped content this session; Save removes the user copy.
+            return Origin.SHIPPED
+        # Unchanged since load and identical to the shipped version: only disk can say
+        # whether a user copy is shadowing it.
+        return self.origin(kind, uuid)
+
+    def revert(self, kind: StrategyKind, uuid: str):
+        """Put the shipped version of ``uuid`` back in place and return it; None if not a built-in.
+
+        The returned object replaces the live one, so a surface holding the old one
+        must reload. The user copy, if there is one, goes on :meth:`commit`.
+        """
+        slot = self._slots[kind]
+        shipped = slot.shipped.get(uuid)
+        if shipped is None or uuid not in slot.items:
+            return None
+        restored = shipped.model_copy(deep=True)
+        slot.items[uuid] = restored
+        # Only a user copy on disk makes this a change. Reverting unsaved edits to a
+        # built-in that was never saved over just undoes them, and leaves the set clean.
+        if self.origin(kind, uuid) is Origin.SHIPPED_OVERRIDE:
+            slot.reverted.add(uuid)
+        return restored
+
+    def _matches_shipped(self, kind: StrategyKind, uuid: str) -> bool:
+        slot = self._slots[kind]
+        shipped = slot.shipped.get(uuid)
+        item = slot.items.get(uuid)
+        return shipped is not None and item is not None and _snapshot(item) == _snapshot(shipped)
 
     def unique_name(self, kind: StrategyKind, base: str) -> str:
         """``base`` made unique against every live name of that kind — see
@@ -281,7 +361,7 @@ class StrategyWorkingSet:
                 baseline = slot.baselines.get(uuid)
                 if baseline is None:
                     created.append(uuid)
-                elif _snapshot(item) != baseline:
+                elif _snapshot(item) != baseline or uuid in slot.reverted:
                     modified.append(uuid)
             deleted.extend(slot.deleted)
         return Changes(created=created, modified=modified, deleted=deleted)
@@ -301,6 +381,10 @@ class StrategyWorkingSet:
         name in one session is a rename by another route, and doing the delete
         first would be the only ordering where a failure mid-commit loses both.
 
+        A built-in whose content is back to the shipped version — reverted, or edited
+        back by hand — is not written: its user copy is deleted instead, so the
+        shipped file shows through again and keeps receiving updates.
+
         A single failed write is logged and skipped rather than raised: the rest
         of the session's work is not forfeit because one file could not be
         written, and the entry keeps its old baseline, so it still reads as
@@ -310,16 +394,21 @@ class StrategyWorkingSet:
         for kind in EDITABLE_KINDS:
             slot = self._slots[kind]
             save = _SAVERS[kind]
+            delete = _DELETERS[kind]
             for uuid in [*written.created, *written.modified]:
                 item = slot.items.get(uuid)
                 if item is None:
                     continue
                 try:
-                    save(item, root=self._root, user_root=self._user_root)
+                    if self._matches_shipped(kind, uuid):
+                        delete(uuid, root=self._root, user_root=self._user_root)
+                    else:
+                        save(item, root=self._root, user_root=self._user_root)
                 except Exception:
                     logger.exception("Failed to save %s strategy %s", kind.value, uuid)
                     continue
                 slot.baselines[uuid] = _snapshot(item)
+                slot.reverted.discard(uuid)
         for kind in EDITABLE_KINDS:
             slot = self._slots[kind]
             delete = _DELETERS[kind]

@@ -18,6 +18,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from bartlebot.nodes.combat_runner import validate_dsl
+from bartlebot.store_roots import Origin
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -158,6 +159,10 @@ class StrategySummary:
     #: other kind. The facet already says it in words; this is for a surface that draws
     #: the order as coloured pills and has to leave that facet out when it does.
     combat_order: tuple[int, ...] = ()
+    #: Built-in, modified or custom, for a surface that shows it; None where the question
+    #: does not arise. Supplied by whoever knows the working set — the summarize_*
+    #: functions see one entry and cannot tell (#124).
+    source: Origin | None = None
 
     def subtitle_line(self) -> str:
         """One line for a compact card: the facets, plus a bare DSL preview if

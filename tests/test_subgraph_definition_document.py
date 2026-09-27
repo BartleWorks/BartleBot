@@ -363,7 +363,7 @@ def test_every_surface_names_the_source_the_same_way():
 
     assert source_label(Origin.SHIPPED) == "Source: Built-in"
     assert source_label(Origin.SHIPPED_OVERRIDE) == "Source: Built-in (modified)"
-    assert source_label(Origin.USER) == "Source: User"
+    assert source_label(Origin.USER) == "Source: Custom"
 
 
 def test_deleting_a_node_takes_the_inputs_only_it_set(doc):

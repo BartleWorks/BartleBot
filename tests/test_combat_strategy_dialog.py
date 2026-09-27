@@ -278,6 +278,74 @@ def test_reverting_an_override_restores_the_shipped_version_on_save(qapp, roots)
     assert list_duel_strategies(shipped, user)[0].name == "Frenzy AoE"
 
 
+def test_an_untouched_built_in_offers_no_delete(qapp, roots):
+    """Removing only touches the user root, so a deleted built-in was back on the next open (#124)."""
+    dcs = DuelCombatStrategy(name="Frenzy AoE")
+    save_duel_strategy(dcs, roots[0])
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
+    button = dlg._pages[StrategyKind.DUEL]._del_btn
+
+    assert not button.isEnabled()
+    assert "Duplicate" in button.toolTip()
+
+
+def test_editing_a_built_in_offers_revert_before_anything_is_saved(qapp, roots):
+    pcs = PlayerCombatStrategy(name="Support", dsl="pass")
+    save_player_strategy(pcs, roots[0])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER, current_id=pcs.id)
+    page = dlg._pages[StrategyKind.PLAYER]
+
+    page.about._description_edit.setText("tweaked")
+
+    assert page._del_btn.isEnabled()
+    assert page._del_btn.text() == "Revert to default"
+
+
+def test_a_revert_keeps_the_entry_listed_selected_and_loaded(qapp, roots):
+    """#124's fourth point: the reverted entry used to vanish until the dialog was reopened."""
+    shipped, user = roots
+    pcs = PlayerCombatStrategy(name="Support", dsl="pass")
+    save_player_strategy(pcs, shipped)
+    save_player_strategy(pcs.model_copy(update={"name": "Mine"}), user)
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER, current_id=pcs.id)
+    page = dlg._pages[StrategyKind.PLAYER]
+
+    with patch.object(QMessageBox, "question", return_value=QMessageBox.StandardButton.Yes):
+        page._on_delete()
+
+    assert page.selected_id() == pcs.id
+    assert page.card_for(pcs.id).source_text == "Built-in"
+    assert page.about._name_edit.text() == "Support"
+    assert not page._del_btn.isEnabled()
+
+
+@pytest.mark.parametrize(
+    ("where", "label"),
+    [("shipped", "Built-in"), ("override", "Built-in (modified)"), ("user", "Custom")],
+)
+def test_every_card_says_where_its_entry_comes_from(qapp, roots, where, label):
+    shipped, user = roots
+    pcs = PlayerCombatStrategy(name="Support")
+    if where in ("shipped", "override"):
+        save_player_strategy(pcs, shipped)
+    if where in ("override", "user"):
+        save_player_strategy(pcs.model_copy(update={"dsl": "pass"}), user)
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+
+    assert dlg._pages[StrategyKind.PLAYER].card_for(pcs.id).source_text == label
+
+
+def test_the_source_pill_follows_an_unsaved_edit(qapp, roots):
+    pcs = PlayerCombatStrategy(name="Support")
+    save_player_strategy(pcs, roots[0])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER, current_id=pcs.id)
+    page = dlg._pages[StrategyKind.PLAYER]
+
+    page.about._description_edit.setText("tweaked")
+
+    assert page.card_for(pcs.id).source_text == "Built-in (modified)"
+
+
 def test_a_declined_delete_removes_nothing(qapp, roots):
     dcs = DuelCombatStrategy(name="Mine")
     save_duel_strategy(dcs, roots[1])

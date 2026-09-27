@@ -755,7 +755,7 @@ default: `subgraphs.sync_linked_values` keeps them equal both ways, and a subgra
 follows the default until its own page changes the value (Reset goes back). A row shows
 status and action in one control: an unlinked row's Link button appears only on hover or
 focus, and a linked row's chip reads as the link and turns into Unlink under the pointer --
-except on a promoted node, whose chips are locked. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Built-in / Built-in (modified) / User" (`subgraph_store.source_label`); the code keeps `CallNodeItem` and `SubgraphPanel`. In a definition, Bar B shows the
+except on a promoted node, whose chips are locked. In the UI an instance is a "subgraph node", a panel an "input group", and a definition's origin reads "Source: Built-in / Built-in (modified) / Custom" (`store_roots.source_label`, shared with the combat strategy cards); the code keeps `CallNodeItem` and `SubgraphPanel`. In a definition, Bar B shows the
 version read-only and no tags; line 2 says where it comes from and how many bots use it.
 **Line 2 stays in a definition** and the hidden tag field keeps its slot, so the bar is
 the same height in both documents — hiding the row made every step in or out move the

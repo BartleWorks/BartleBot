@@ -75,7 +75,7 @@ def test_the_detail_panel_describes_the_subgraph(qapp, library, tmp_path, monkey
     assert panel._shown[0] == "subgraph"
     joined = " ".join(w.text() for w in panel.widget().findChildren(QLabel))
     assert "Used by 1 bot" in joined
-    assert "Source: User" in joined
+    assert "Source: Custom" in joined
     assert "7 states" in joined
 
 

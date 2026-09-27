@@ -14,10 +14,12 @@ no way to express that.
 from __future__ import annotations
 
 from PyQt6.QtCore import QEvent, QSize, Qt
-from PyQt6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import set_style_sheet
+from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill
+from bartlebot.store_roots import SOURCE_LABELS, Origin
 from bartlebot.strategy_summary import HealthStatus, StrategySummary
 
 
@@ -51,8 +53,24 @@ class StrategyCard(QWidget):
             name_row.setToolTip(f"Does not parse: {summary.health.reason}")
         else:
             name_row.setText(summary.name)
-        header.addWidget(name_row)
+        name_row.setWordWrap(True)
         self._name_lbl = name_row
+        self._source_pill: QLabel | None = None
+        if summary.source is None:
+            header.addWidget(name_row)
+        else:
+            # Always shown, and a pill of words rather than a glyph: no icon says
+            # "ships with the app" unaided (#124). Grey for the ordinary cases; the
+            # accent outline only for a modified built-in, the one that shadows updates.
+            row = QHBoxLayout()
+            row.setContentsMargins(0, 0, 0, 0)
+            row.setSpacing(6)
+            row.addWidget(name_row, 1)
+            text = SOURCE_LABELS[summary.source]
+            pill = AccentPill(text) if summary.source is Origin.SHIPPED_OVERRIDE else NeutralPill(text)
+            row.addWidget(pill, 0, Qt.AlignmentFlag.AlignTop)
+            self._source_pill = pill
+            header.addLayout(row)
 
         # Every line under the name is the same kind of thing — a muted caption at
         # THEME.font_subtext_px — so they are held as one list rather than as three
@@ -91,6 +109,11 @@ class StrategyCard(QWidget):
         header.addWidget(label)
         self._sub_lbls.append(label)
         return label
+
+    @property
+    def source_text(self) -> str:
+        """What the source pill says, or empty when the card has none."""
+        return self._source_pill.text() if self._source_pill is not None else ""
 
     def set_selected(self, selected: bool) -> None:
         if self._selected == selected:

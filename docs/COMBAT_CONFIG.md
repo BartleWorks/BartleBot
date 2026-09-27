@@ -48,6 +48,14 @@ The link/inline pair repeats one level down: a `PlayerAssignment` carries either
 
 Every read merges the two with the user copy winning; every write and every delete touches only the user root. A user editing a shipped strategy therefore produces an **override**, not a fork: same id, user copy wins, shipped file untouched and still updatable. Deleting the user copy of a shipped id is not a delete at all — it is *revert to default*, and `Origin` / `origin_of()` exist so a surface can tell the two apart and say the honest word on the button.
 
+The dialog asks a second question on top of that one: not *where is the file*, but *what will Save leave behind*. That is `StrategyWorkingSet.status()`, which compares an entry's content with the shipped version the set loaded (`list_shipped`), so it counts unsaved edits (#124):
+
+- **Built-in**: the shipped content, unedited. Its Delete is disabled. Removing only touches the user root, so a "deleted" built-in came back on the next open, while the confirmation had promised otherwise.
+- **Built-in (modified)**: differs from the shipped version, saved or not. The button is *Revert to default*. `revert()` puts the shipped version back in the working set and the entry stays listed and selected, with the same id, so everything linking it keeps working. Save then deletes the user copy.
+- **Custom**: not shipped. An ordinary Delete.
+
+Save deletes the user copy of any built-in whose content is back to the shipped version, whether through Revert or by hand-editing it back, because an identical copy would still shadow every later update. Every card wears its source as a pill, with labels from `store_roots.SOURCE_LABELS`, the one map the subgraph library uses too. In developer mode the two roots are one directory, so nothing reads as built-in and Delete really deletes, which is what authoring shipped strategies needs.
+
 Shipped strategies are authored with `BARTLEBOT_DEV` set (`bartlebot/store_roots.py`), which makes the project root the user root too, so a save lands in the repo. Without it, editing a shipped strategy produces an override that the app keeps running while the tracked file quietly goes stale.
 
 This is what makes a shared bot shareable. `SettingsManager.get_active_strategy(bot_id)` stores *which* strategy a bot uses, per user, in `settings.json`; the bot file never records it. The pick was always user-owned; #2 made the content user-owned too.

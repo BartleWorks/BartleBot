@@ -24,6 +24,7 @@ from pathlib import Path
 
 from bartlebot.bot.schema import SubgraphDefinition
 from bartlebot.store_roots import (
+    SOURCE_LABELS,  # noqa: F401  (re-exported: the subgraph surfaces import it from here)
     Origin,
     delete_by_id,
     index_dir,
@@ -32,24 +33,10 @@ from bartlebot.store_roots import (
     origin_in,
     resolve_roots,
     save_by_id,
+    source_label,  # noqa: F401  (re-exported)
 )
 
 logger = logging.getLogger(__name__)
-
-#: What every surface calls where a definition comes from, after "Source:". One map,
-#: so the node browser, the subgraph node, its page and Bar B never disagree.
-SOURCE_LABELS = {
-    Origin.SHIPPED: "Built-in",
-    Origin.SHIPPED_OVERRIDE: "Built-in (modified)",
-    Origin.USER: "User",
-    Origin.MISSING: "Missing",
-}
-
-
-def source_label(origin: Origin) -> str:
-    """``Source: <label>`` for a definition's origin, as shown to the user."""
-    return f"Source: {SOURCE_LABELS.get(origin, origin.value)}"
-
 
 #: The node browser lists a definition under this key prefix (``subgraph:<id>``) so an
 #: insert can be told apart from a node type by the one string the dialog hands back.

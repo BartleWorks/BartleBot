@@ -35,6 +35,7 @@ combat surface imports it from this module.
 
 from __future__ import annotations
 
+import logging
 import re
 from enum import Enum
 from pathlib import Path
@@ -48,12 +49,15 @@ from bartlebot.bot.strategy_models import (
 from bartlebot.store_roots import (
     Origin,
     delete_by_id,
+    index_dir,
     load_by_id,
     merged_by_id,
     origin_in,
     resolve_roots,
     save_by_id,
 )
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
     "Origin",
@@ -67,6 +71,7 @@ __all__ = [
     "list_deck_presets",
     "list_duel_strategies",
     "list_player_strategies",
+    "list_shipped",
     "load_bot_strategy",
     "load_deck_preset",
     "load_duel_strategy",
@@ -322,3 +327,31 @@ def origin_of(
     """
     shipped, user = _roots(root, user_root)
     return origin_in(_KIND_DIRS[kind], uuid, shipped, user)
+
+
+_LOADERS = {
+    StrategyKind.PLAYER: PlayerCombatStrategy.load,
+    StrategyKind.DUEL: DuelCombatStrategy.load,
+    StrategyKind.BOT: BotCombatStrategy.load,
+    StrategyKind.DECK: DeckPreset.load,
+}
+
+
+def list_shipped(kind: StrategyKind, root: str | Path | None = None, user_root: str | Path | None = None) -> list:
+    """Every ``kind`` entry as it ships, ignoring any user copy that shadows it.
+
+    What "revert to default" restores, and what a working set compares an entry
+    against to say whether it is still the built-in one. Empty when the two roots
+    are one directory — developer mode, or a single-root test sandbox — since
+    nothing is shipped in that arrangement (see :func:`origin_of`).
+    """
+    shipped, user = _roots(root, user_root)
+    if shipped == user:
+        return []
+    items = []
+    for path in index_dir(_KIND_DIRS[kind](shipped)).values():
+        try:
+            items.append(_LOADERS[kind](path))
+        except Exception:
+            logger.warning("Skipping unloadable %s", path, exc_info=True)
+    return items
