@@ -255,8 +255,12 @@ class DuelConfigEditor(QWidget):
     # ------------------------------------------------------------------
 
     def _rebuild_cards(self) -> None:
-        # Before the cards go: a drag in flight would otherwise be left holding one.
-        self._drag.cancel()
+        # Before the cards go, not after: the drag holds their grips until it is handed a
+        # new list, and ``_add_card_for`` is the only thing that hands it one. A config
+        # with no assignments never calls it, so the discarded grips outlived their
+        # deferred delete and the next load touched them — New, then any other duel.
+        # ``set_cards`` also cancels a drag in flight.
+        self._drag.set_cards([])
         for card in self._cards:
             discard_widget(card, self._cards_layout)
         self._cards.clear()

@@ -650,3 +650,29 @@ def test_typing_a_note_reaches_the_assignment_without_losing_focus(qapp):
     editor.cards[0]._note_edit.setText("Passes to bank pips for round 3")
 
     assert assignment.note == "Passes to bank pips for round 3"
+
+
+@pytest.mark.parametrize("empty", ["no assignments", "cleared"])
+def test_loading_after_an_empty_rebuild_survives_the_deferred_delete(qapp, empty):
+    """New, then any other duel, crashed the app: a rebuild to no cards left the drag
+    holding the discarded cards' grips, and the next load touched them once deleted.
+
+    The suite runs no event loop, so the deferred delete that made it fatal is flushed
+    by hand — without that, the stale grips are still alive and nothing fails.
+    """
+    from PyQt6.QtCore import QCoreApplication, QEvent  # noqa: PLC0415
+
+    def with_cards() -> DuelConfig:
+        return DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="pass")])
+
+    editor = DuelConfigEditor()
+    editor.load(with_cards(), [])
+    if empty == "cleared":
+        editor.clear()
+    else:
+        editor.load(DuelConfig(), [])
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete.value)
+
+    editor.load(with_cards(), [])
+
+    assert len(editor.cards) == 1
