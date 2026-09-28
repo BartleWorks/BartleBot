@@ -48,6 +48,7 @@ PAGING
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import logging
 import time
 from contextlib import asynccontextmanager
@@ -76,6 +77,9 @@ from bartlebot.nodes.timing import (
     DECK_APPLY_TIMEOUT,
     DECK_CARD_CONFIRM_POLL,
     DECK_CARD_CONFIRM_TIMEOUT,
+    DECK_CARD_COUNT_POLL,
+    DECK_CARD_LAND_TIMEOUT,
+    DECK_CARD_STABLE_WINDOW,
     DECK_FUSION_CLICK_SETTLE,
     DECK_FUSION_CLOSE_SETTLE,
     DECK_FUSION_FLYOUT_SETTLE,
@@ -91,7 +95,23 @@ from bartlebot.nodes.timing import (
 if TYPE_CHECKING:
     from bartlebot.bot.strategy_models import DeckData
 
-logger = logging.getLogger(__name__)
+# The slot whose deck this task is applying, for the log.  Up to four applies run
+# at once under one gather, and a line saying "Only 1 of 3 copies of 'Epic'" is
+# no use when it cannot say whose deck it was (#107).  A context variable rather
+# than a parameter threaded through every helper: each gathered apply runs in its
+# own task, and so in its own copy of the context.
+_apply_slot: contextvars.ContextVar[int | None] = contextvars.ContextVar("deck_io_apply_slot", default=None)
+
+
+class _SlotLogger(logging.LoggerAdapter):
+    """Prefixes each record with ``[P<slot>]`` while an apply for that slot is running."""
+
+    def process(self, msg, kwargs):
+        slot = _apply_slot.get()
+        return (f"[P{slot}] {msg}" if slot is not None else msg), kwargs
+
+
+logger = _SlotLogger(logging.getLogger(__name__))
 
 # --- memory layout (see module docstring) ---------------------------------
 ENTRY_VECTOR_OFFSET = 0x300
@@ -211,6 +231,11 @@ class DeckApplyReport:
     # the card, and saying nothing would put it back in the class of partial
     # applies that look like clean ones.
     short: dict[str, tuple[int, int]] = field(default_factory=dict)
+    # Deck card → (copies it holds, copies asked for), for a card that ended up
+    # with more copies than asked for and could not be trimmed back.  A late
+    # copy racing a re-click can do this (#107), and an extra copy of a hitter
+    # changes the deck's odds just as a missing one does.
+    over: dict[str, tuple[int, int]] = field(default_factory=dict)
     applied: bool = True  # False when nothing was placeable and the deck was left alone
     unchanged: bool = False  # already matched, so no clear/rewrite was needed
     # The archmastery school this apply actually set, or None if it was left
@@ -232,7 +257,13 @@ class DeckApplyReport:
         counts as unclean for the same reason a skipped card does: it was asked
         for and did not happen.
         """
-        return not self.substitutions and not self.skipped and not self.short and not self.archmastery_failed
+        return (
+            not self.substitutions
+            and not self.skipped
+            and not self.short
+            and not self.over
+            and not self.archmastery_failed
+        )
 
     def merge(self, substitutions: dict[str, str], skipped: list[str]) -> None:
         self.substitutions.update(substitutions)
@@ -483,6 +514,45 @@ def expected_normal_deck(direct: dict[str, int], fusion_placed: dict[str, int]) 
     return expected
 
 
+def requested_per_card(
+    direct: dict[str, dict[str, int]], fusion: dict[str, int], fusion_subs: dict[str, str]
+) -> dict[str, dict[str, int]]:
+    """Each deck card that went in, mapped to the requested names behind it and their counts.
+
+    ``direct`` is keyed by spellbook entry already (see ``direct_requesters``);
+    a fusion name lands on the variant it resolved to, or on itself when it was
+    placed as asked.  A card both routes reached gets both sets of names.  The
+    sum for a card is how many copies of it the deck asked for: the ceiling the
+    settle trims down to, and what the final read is reported against.
+    """
+    asked: dict[str, dict[str, int]] = {card: dict(names) for card, names in direct.items()}
+    for name, count in fusion.items():
+        asked.setdefault(fusion_subs.get(name, name), {})[name] = count
+    return asked
+
+
+def tally_against_request(
+    asked: dict[str, dict[str, int]], held: dict[str, int]
+) -> tuple[dict[str, tuple[int, int]], dict[str, tuple[int, int]]]:
+    """Compare what the deck holds against what was asked for: ``(short, over)``.
+
+    ``short`` is keyed by requested name, like ``DeckApplyReport.short``, with a
+    card's copies shared out across the names that asked for it.  ``over`` is
+    keyed by deck card, because an extra copy belongs to no request.
+    """
+    short: dict[str, tuple[int, int]] = {}
+    over: dict[str, tuple[int, int]] = {}
+    for card, names in asked.items():
+        total = sum(names.values())
+        got = held.get(card, 0)
+        if got > total:
+            over[card] = (got, total)
+        elif got < total:
+            for name, share in _share_shortfall(names, got).items():
+                short[name] = (share, names[name])
+    return short, over
+
+
 def direct_requesters(addable: dict[str, int], routing: CardRouting) -> dict[str, dict[str, int]]:
     """The deck names behind each direct spellbook entry, with their counts.
 
@@ -635,6 +705,68 @@ async def read_deck_cards(client, deck_window, *, classify: bool = False) -> lis
 async def read_deck_card_names(client, deck_window) -> list[str]:
     """Names of every card in the normal deck, in slot order."""
     return [name for name, _kind in await read_deck_cards(client, deck_window)]
+
+
+async def _deck_entry_names(client, deck_window) -> list[str | None]:
+    """Every ``CardsInDeck`` entry's name by vector index, None where one cannot be read.
+
+    Kept positional, unlike ``read_deck_card_names``, because the index is the
+    grid slot a click on the deck lands on.
+    """
+    control = await _control_for(client, deck_window, "CardsInDeck")
+    begin, count = await _entry_vector(control)
+    names: list[str | None] = []
+    for idx in range(count):
+        try:
+            names.append(await _entry_name(control, begin + idx * ENTRY_STRIDE))
+        except Exception:
+            names.append(None)
+    return names
+
+
+async def _trim_copy(db, deck_window, name: str) -> bool:
+    """Take one copy of ``name`` out of the deck by clicking it there.  True once it is gone.
+
+    Clicking a card in the deck removes one copy of it.  The click goes on the
+    card's last copy, located by vector index in the 8x8 grid wizwalker's
+    ``calculate_deck_card_position`` lays out.
+
+    The result is read back rather than assumed, and only ``name`` going down
+    counts as success.  Anything else — nothing leaving, or a different card
+    leaving because the grid is not in vector order after all — returns False,
+    and ``_settle_deck`` stops trimming, so a wrong guess costs one card and is
+    reported rather than repeated.
+    """
+    names = await _deck_entry_names(db.client, deck_window)
+    slots = [idx for idx, entry in enumerate(names) if entry == name]
+    if not slots:
+        return False
+    before = count_names([entry for entry in names if entry])
+    position = await db.calculate_deck_card_position(slots[-1] + 1)
+    async with db.client.mouse_handler:
+        await db.client.mouse_handler.click(*position)
+
+    lost: set[str] = set()
+    deadline = time.perf_counter() + DECK_CARD_STABLE_WINDOW
+    while True:
+        await asyncio.sleep(DECK_CARD_COUNT_POLL)
+        try:
+            now = count_names(await read_deck_card_names(db.client, deck_window))
+        except Exception:
+            now = {}
+        if now:  # an empty read is a failed one, not a deck that lost everything
+            lost = {card for card, n in before.items() if now.get(card, 0) < n}
+            if lost == {name}:
+                return True
+        if time.perf_counter() >= deadline:
+            break
+    if lost - {name}:
+        logger.warning(
+            "Clicking an extra '%s' in the deck took out %s instead — not trimming any further",
+            name,
+            ", ".join(sorted(lost - {name})),
+        )
+    return False
 
 
 async def read_item_slots(client, deck_window) -> list[ItemSlot]:
@@ -898,92 +1030,117 @@ async def _owned_tier_variants(db) -> list[str]:
 
 
 def card_counter(client, deck_window):
-    """An async callable giving the normal deck's card count, or None if unreadable.
+    """An async callable giving how many copies of one card the normal deck holds, or None if unreadable.
 
-    Two memory reads per call, whatever the deck holds — ``_entry_vector``
-    returns the begin and end pointers and the count falls out of the
-    difference.  Card *names* cost four reads each, which is why the confirm
-    loops below count cards instead of identifying them: they only ever need to
-    know that the deck grew.
+    Counts the card by *name*, read fresh on every call.  This used to count the
+    whole deck from its entry vector's begin and end pointers, through a control
+    built once and reused, and confirm a click by the deck growing.  That count
+    stayed flat for seconds while the copies went in anyway (#107): three clicks
+    on Epic confirmed one, the retries clicked four more, and the deck came out
+    holding the copy limit.  The per-name read here is the one ``_settle_deck``
+    makes, which read that same deck correctly.
 
-    The control is built once and reused, so a poll is not paying for a window
-    tree walk every 50 ms.  It is built lazily rather than up front so a failure
-    to find it degrades to "unreadable" like any other, instead of taking down
-    the apply that has already cleared the deck.
+    Naming every card costs about four memory reads a card rather than two for
+    the whole deck, which is why this is polled at ``DECK_CARD_COUNT_POLL``.
     """
-    control = None
 
-    async def count() -> int | None:
-        nonlocal control
+    async def count(name: str) -> int | None:
         try:
-            if control is None:
-                control = await _control_for(client, deck_window, "CardsInDeck")
-            _begin, total = await _entry_vector(control)
+            names = await read_deck_card_names(client, deck_window)
         except Exception:
-            logger.debug("Could not read the deck card count", exc_info=True)
-            control = None  # it may have gone stale; rebuild on the next try
+            logger.debug("Could not read the deck to count '%s'", name, exc_info=True)
             return None
-        return total
+        return names.count(name)
 
     return count
 
 
-async def _await_card_growth(count_cards, before: int, expected: int) -> int:
-    """Poll until the deck has grown by ``expected``, returning how far it got.
+async def _await_card_count(count_card, name: str, have: int, target: int) -> int:
+    """Poll ``name``'s copy count until it reaches ``target`` or stops moving.  Returns the highest count read.
 
-    Returns ``expected`` when the deck cannot be read at all.  An unreadable
-    count is not evidence that the click failed, and treating it as failure
-    would make the retry above click again — turning a broken memory read into
-    duplicate copies of every card in the deck.  Degrading to the old
-    click-and-hope behaviour is the safe direction.
+    Stops moving means unchanged for ``DECK_CARD_STABLE_WINDOW``: a count that is
+    still climbing is copies arriving late, and clicking again then is how a deck
+    overshoots.  ``DECK_CARD_LAND_TIMEOUT`` bounds a count that creeps forever.
+
+    The highest reading wins, not the latest.  Copies only arrive while a card is
+    being placed, so a lower reading is a read that caught the list mid-update
+    or skipped an unreadable entry, and trusting it would click a copy again.
+
+    Returns ``target`` when the deck cannot be read at all.  An unreadable count
+    is not evidence that the click failed, and treating it as failure would make
+    the caller click again — turning a broken memory read into duplicate copies.
     """
-    deadline = time.perf_counter() + DECK_CARD_CONFIRM_TIMEOUT
-    grown = 0
+    start = time.perf_counter()
+    last_change = start
+    best = have
     readable = False
     while True:
-        now = await count_cards()
+        await asyncio.sleep(DECK_CARD_COUNT_POLL)
+        now = await count_card(name)
+        tick = time.perf_counter()
         if now is not None:
             readable = True
-            grown = max(grown, now - before)
-            if grown >= expected:
-                return grown
-        if time.perf_counter() >= deadline:
+            if now > best:
+                best, last_change = now, tick
+        if best >= target:
+            return best
+        if tick - last_change >= DECK_CARD_STABLE_WINDOW or tick - start >= DECK_CARD_LAND_TIMEOUT:
             break
-        await asyncio.sleep(DECK_CARD_CONFIRM_POLL)
     if not readable:
-        logger.debug("Deck count unreadable, assuming %d card(s) went in", expected)
-        return expected
-    return grown
+        logger.debug("Deck unreadable while confirming '%s', assuming the clicks went in", name)
+        return target
+    return best
 
 
-async def _place_copies(db, count_cards, position: tuple[int, int], wanted: int, label: str) -> int:
-    """Click ``position`` until ``wanted`` copies are in the deck.  Returns how many landed.
+async def _place_copies(db, count_card, position: tuple[int, int], wanted: int, label: str) -> int:
+    """Click ``position`` until ``wanted`` more copies of ``label`` are in the deck.  Returns how many landed.
 
     Confirming beats sleeping here because a click can be lost outright — the
     flyout used to be closed 50 ms after the last one, which is the whole reason
     this exists — and no fixed delay can tell a slow click from a dropped one.
 
-    The order is poll first, re-click second, never the reverse.  A click that
-    landed while the read was mid-update would otherwise be clicked again, and a
-    deck holding an extra copy is worse than one holding too few: the shortfall
-    is reported, the duplicate is not.
+    Every round clicks only what the deck, read just now, still lacks, and only
+    after the count has stopped moving (see ``_await_card_count``).  Adding up
+    what each round confirmed instead is what #107 was: the first round's late
+    copies never got counted, so every later round clicked them again.
+
+    The count can still come out over ``wanted`` if a copy arrives later than
+    the stable window allows for.  That is returned as it is rather than capped;
+    ``_settle_deck`` is what takes the extra back out.
     """
-    placed = 0
-    for _attempt in range(CARD_CLICK_ATTEMPTS):
-        missing = wanted - placed
-        before = await count_cards()
+    baseline = await count_card(label)
+    if baseline is None:
+        # Nothing to confirm against; the clicks are all we have.
         async with db.client.mouse_handler:
-            for _ in range(missing):
+            for _ in range(wanted):
                 await db.client.mouse_handler.click(*position)
                 await asyncio.sleep(DECK_FUSION_CLICK_SETTLE)
-        if before is None:
-            return wanted  # nothing to confirm against; the clicks are all we have
-        placed += await _await_card_growth(count_cards, before, missing)
-        if placed >= wanted:
-            return wanted
-        logger.debug("'%s': %d of %d copies in the deck, clicking again", label, placed, wanted)
-    logger.warning("Only %d of %d copies of '%s' went into the deck", placed, wanted, label)
-    return placed
+        return wanted
+
+    target = baseline + wanted
+    have = baseline
+    for attempt in range(CARD_CLICK_ATTEMPTS):
+        if attempt:
+            # Once more right before clicking, for a copy that lands in the gap.
+            now = await count_card(label)
+            have = max(have, now or 0)
+            if have >= target:
+                break
+            logger.debug("'%s': %d of %d copies in the deck, clicking again", label, have - baseline, wanted)
+        async with db.client.mouse_handler:
+            for _ in range(target - have):
+                await db.client.mouse_handler.click(*position)
+                await asyncio.sleep(DECK_FUSION_CLICK_SETTLE)
+        have = await _await_card_count(count_card, label, have, target)
+        if have >= target:
+            break
+
+    landed = have - baseline
+    if landed < wanted:
+        logger.warning("Only %d of %d copies of '%s' went into the deck", landed, wanted, label)
+    elif landed > wanted:
+        logger.info("%d copies of '%s' went in where %d were clicked for", landed, label, wanted)
+    return landed
 
 
 async def _close_tier_flyout(db) -> None:
@@ -1065,7 +1222,7 @@ async def _add_direct_cards(
         if not landed:
             skipped.extend(requesters)
             continue
-        placed[entry] = landed
+        placed[entry] = min(landed, wanted)  # an extra copy is the settle's to trim
         if landed < wanted:
             for name, got in _share_shortfall(requesters, landed).items():
                 short[name] = (got, requesters[name])
@@ -1149,7 +1306,7 @@ async def _add_fusion_cards(
             # Taken before the click, because this one is ambiguous: it opens a
             # flyout for a wizard holding two paths and adds a card for one
             # holding none, and only the count says which happened.
-            before = await count_cards()
+            before = await count_cards(entry)
             async with db.client.mouse_handler:
                 await db.client.mouse_handler.click(*position)
             # The click is what populates the variant list; reading straight
@@ -1226,7 +1383,9 @@ async def _fill_base_form(
     would wait out its timeout on a deck that is exactly right.
     """
     total = sum(requested.values())
-    now = await count_cards()
+    # Waited for rather than read once: a copy that is only late would be topped
+    # up by one click too many (#107).
+    now = None if before is None else await _await_card_count(count_cards, entry, before, before + 1)
     already = 1 if before is None or now is None else max(0, min(total, now - before))
     landed = already
     if total > already:
@@ -1237,6 +1396,7 @@ async def _fill_base_form(
             entry,
             name,
         )
+    landed = min(landed, total)  # an extra copy is the settle's to trim
     placed = {entry: landed} if landed else {}
     short = _share_shortfall(requested, landed) if landed < total else {}
     return dict.fromkeys(requested, entry), placed, short
@@ -1297,7 +1457,7 @@ async def _click_fusion_variants(
         variant_position = await db.calculate_tiered_spell_card_position(variant_idx)
         landed = await _place_copies(db, count_cards, variant_position, count, resolved)
         if landed:
-            placed[resolved] = placed.get(resolved, 0) + landed
+            placed[resolved] = placed.get(resolved, 0) + min(landed, count)  # the settle trims any extra
         if landed < count:
             short[name] = landed
         if landed == 0:
@@ -1928,8 +2088,11 @@ async def write_deck(db, deck: DeckData, *, set_archmastery: bool | None = None)
     await db.clear_deck()
     await db.view_deck_cards()
 
-    count_cards = card_counter(db.client, deck_window)  # one control, shared by both passes
+    count_cards = card_counter(db.client, deck_window)
 
+    fusion_subs: dict[str, str] = {}
+    fusion_skipped: list[str] = []
+    direct_skipped: list[str] = []
     direct_placed: dict[str, int] = {}
     if direct:
         direct_placed, direct_skipped, direct_short = await _add_direct_cards(
@@ -1959,6 +2122,12 @@ async def write_deck(db, deck: DeckData, *, set_archmastery: bool | None = None)
         total_pages = page_count(max(s.index for s in slots) + 1)
         await _apply_item_toggles(db, deck_window, plan, total_pages)
 
+    asked = requested_per_card(
+        {entry: requested_by.get(entry, {entry: direct[entry]}) for entry in direct_placed},
+        {name: n for name, n in fusion.items() if name not in fusion_skipped},
+        fusion_subs,
+    )
+
     # Last thing before the caller closes the page: the game's card list lags the
     # clicks that filled it, and closing early loses the stragglers.
     await _settle_deck(
@@ -1966,11 +2135,27 @@ async def write_deck(db, deck: DeckData, *, set_archmastery: bool | None = None)
         deck_window,
         expected_normal_deck(direct_placed, fusion_placed),
         deck.item,
+        ceiling={card: sum(names.values()) for card, names in asked.items()},
+        trim=lambda name: _trim_copy(db, deck_window, name),
     )
+
+    # The report says what the deck holds, not what the clicks confirmed: a copy
+    # that arrived after its card was given up on is in the deck all the same.
+    # An empty read is not taken at its word: every card in ``asked`` was
+    # confirmed in the deck, so reading none back is a failed read.
+    try:
+        held = count_names(await read_deck_card_names(db.client, deck_window))
+    except Exception:
+        logger.debug("Could not read the deck back for the report", exc_info=True)
+    else:
+        if held:
+            report.short, report.over = tally_against_request(asked, held)
     return report
 
 
-async def apply_deck(client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT) -> DeckApplyReport:
+async def apply_deck(
+    client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT, *, slot: int | None = None
+) -> DeckApplyReport:
     """Open the deck window on ``client`` and restore ``deck``, bounded by ``timeout``.
 
     The single entry point for every deck-apply path — the manual "Apply" button and
@@ -1993,6 +2178,9 @@ async def apply_deck(client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT
     Raises ``TimeoutError`` if the apply does not finish in time; callers decide
     whether that is fatal.  Otherwise returns the :class:`DeckApplyReport` from
     ``write_deck``, which is what the caller shows the user.
+
+    ``slot`` only labels this apply's log lines, which interleave with the other
+    slots' when several decks go on at once.
     """
 
     async def _open_and_write() -> DeckApplyReport:
@@ -2026,10 +2214,29 @@ async def apply_deck(client, deck: DeckData, timeout: float = DECK_APPLY_TIMEOUT
             db._on_deck_page = True  # noqa: SLF001
             return await write_deck(db, deck, set_archmastery=set_archmastery)
 
-    return await asyncio.wait_for(_open_and_write(), timeout=timeout)
+    token = _apply_slot.set(slot)
+    try:
+        return await asyncio.wait_for(_open_and_write(), timeout=timeout)
+    finally:
+        _apply_slot.reset(token)
 
 
-async def _settle_deck(client, deck_window, expected_normal: dict[str, int], desired_item: dict[str, int]) -> bool:
+def _within(held: dict[str, int], floor: dict[str, int], top: dict[str, int]) -> bool:
+    """True when every card holds between its floor and its top, and nothing else is in the deck."""
+    if set(held) - set(top):
+        return False
+    return all(floor.get(card, 0) <= held.get(card, 0) <= n for card, n in top.items())
+
+
+async def _settle_deck(
+    client,
+    deck_window,
+    expected_normal: dict[str, int],
+    desired_item: dict[str, int],
+    *,
+    ceiling: dict[str, int] | None = None,
+    trim=None,
+) -> bool:
     """Wait until the deck reads back as expected, before the page is closed.
 
     Cards go into the deck by clicking, and the list the game renders lags those
@@ -2037,10 +2244,18 @@ async def _settle_deck(client, deck_window, expected_normal: dict[str, int], des
     even though every card was found and every click landed — the apply looked
     clean and the wizard entered combat missing cards.
 
-    Both halves of the end state are known by the time this runs (see
-    :func:`expected_normal_deck`), so this waits for a *match* rather than for a
-    fixed delay, and returns as soon as the game agrees.  The timeout is only
-    reached when the deck is never going to match.
+    ``expected_normal`` is the floor, the copies placement confirmed (see
+    :func:`expected_normal_deck`), and ``ceiling`` the copies that were asked
+    for.  They differ only where placement gave up on copies that may yet turn
+    up (#107), so the deck is settled the moment it holds the ceiling exactly,
+    or once every card sits between the two and nothing has changed for
+    ``DECK_CARD_STABLE_WINDOW``.  Without a ceiling the floor is both, and only
+    an exact match settles.  The timeout is only reached when the deck is never
+    going to match.
+
+    A card over its ceiling is a copy that arrived after it was clicked again.
+    ``trim`` takes one out per read, and is dropped the first time it fails
+    (see ``_trim_copy``), leaving the extra for the report.
 
     Item cards are checked in the same loop, filtered to the ones this account
     actually grants — a saved deck naming item cards from gear the wizard is no
@@ -2049,10 +2264,16 @@ async def _settle_deck(client, deck_window, expected_normal: dict[str, int], des
     Never raises, and a False return is not fatal: the cards are already placed,
     and a partially-applied deck is better reported than rolled back.
     """
+    top = dict(expected_normal)
+    for card, n in (ceiling or {}).items():
+        top[card] = max(n, top.get(card, 0))
+    full = {card: n for card, n in top.items() if n > 0}
     deadline = time.perf_counter() + DECK_SETTLE_TIMEOUT
     normal: dict[str, int] | None = None
     item: dict[str, int] | None = None
     expected_item: dict[str, int] = {}
+    last_seen: dict[str, int] | None = None
+    steady_since = time.perf_counter()
 
     while True:
         try:
@@ -2065,20 +2286,40 @@ async def _settle_deck(client, deck_window, expected_normal: dict[str, int], des
             # A read can fail mid-update; that is exactly what we are waiting out.
             logger.debug("Could not read the deck while waiting for it to settle", exc_info=True)
         else:
-            if normal == expected_normal and item == expected_item:
-                logger.debug("Deck settled: %s", normal or "{}")
-                return True
+            if normal != last_seen:
+                last_seen, steady_since = normal, time.perf_counter()
+            over = sorted(card for card, n in normal.items() if card in top and n > top[card])
+            if over and trim is not None:
+                logger.info("Taking an extra copy of '%s' back out of the deck", over[0])
+                try:
+                    trimmed = await trim(over[0])
+                except Exception:
+                    logger.debug("Trimming '%s' failed", over[0], exc_info=True)
+                    trimmed = False
+                if not trimmed:
+                    trim = None
+            elif item == expected_item:
+                if normal == full:
+                    logger.debug("Deck settled: %s", normal or "{}")
+                    return True
+                if (
+                    top != expected_normal
+                    and _within(normal, expected_normal, top)
+                    and time.perf_counter() - steady_since >= DECK_CARD_STABLE_WINDOW
+                ):
+                    logger.debug("Deck settled short of the full request: %s", normal)
+                    return True
 
         if time.perf_counter() >= deadline:
             break
         await asyncio.sleep(DECK_SETTLE_POLL)
 
-    if normal != expected_normal:
+    if normal is None or not _within(normal, expected_normal, top):
         logger.warning(
             "Deck did not settle within %.0fs — closing anyway. Deck holds %s, expected %s",
             DECK_SETTLE_TIMEOUT,
             normal if normal is not None else "(unreadable)",
-            expected_normal or "{}",
+            full or "{}",
         )
     if item != expected_item:
         logger.warning(

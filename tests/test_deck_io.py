@@ -27,10 +27,12 @@ from bartlebot.deck_io import (
     DeckApplyReport,
     ItemSlot,
     _apply_item_toggles,
+    _apply_slot,
     _click,
     _settle_deck,
     _share_shortfall,
     _spell_list_names,
+    _trim_copy,
     active_item_counts,
     apply_deck,
     archmastery_menu_is_open,
@@ -46,13 +48,16 @@ from bartlebot.deck_io import (
     plan_normal_cards,
     read_archmastery_school,
     read_deck,
+    requested_per_card,
     resolve_apply_archmastery,
     resolve_tier,
     resolved_at_click_time,
     set_archmastery_school,
     suggest_alternatives,
+    tally_against_request,
     write_deck,
 )
+from bartlebot.deck_io import logger as deck_logger
 from bartlebot.nodes.timing import DECK_APPLY_TIMEOUT
 from tests.conftest import FakeClient
 
@@ -77,6 +82,9 @@ def _fast_settle(monkeypatch):
     # never grows gives up at once instead of waiting out 2s per attempt.
     monkeypatch.setattr("bartlebot.deck_io.DECK_CARD_CONFIRM_TIMEOUT", 0.0)
     monkeypatch.setattr("bartlebot.deck_io.DECK_CARD_CONFIRM_POLL", 0.001)
+    monkeypatch.setattr("bartlebot.deck_io.DECK_CARD_STABLE_WINDOW", 0.0)
+    monkeypatch.setattr("bartlebot.deck_io.DECK_CARD_LAND_TIMEOUT", 0.0)
+    monkeypatch.setattr("bartlebot.deck_io.DECK_CARD_COUNT_POLL", 0.001)
     for name in (
         "DECK_ITEM_PAGE_SETTLE",
         "DECK_ITEM_TOGGLE_SETTLE",
@@ -99,6 +107,22 @@ class _FakeSpellEntry:
             raise RuntimeError("unreadable entry")
         template = SimpleNamespace(name=_async_returning(self._name))
         return SimpleNamespace(spell_template=_async_returning(template))
+
+
+@pytest.fixture(autouse=True)
+def _unreadable_card_count(monkeypatch):
+    """Place cards on the clicks alone unless a test models the deck's count.
+
+    Most fakes here record clicks without keeping a deck, so a real per-name
+    read would see no copies arrive and click every card three times.  An
+    unreadable count is the fallback ``_place_copies`` already has for that.
+    Tests about confirming copies install a counting deck with ``_use_deck``.
+    """
+
+    async def _unreadable(_name):
+        return None
+
+    monkeypatch.setattr("bartlebot.deck_io.card_counter", lambda *_args: _unreadable)
 
 
 @pytest.fixture(autouse=True)
@@ -2301,7 +2325,7 @@ def _counting_deck(mouse, *, at_variant=True, lost=0, cap=None):
     per-spell copy limits — a refusal the count cannot distinguish from a drop.
     """
 
-    async def count() -> int:
+    async def count(_name: str) -> int:
         landed = sum(1 for x, _y in mouse.clicks if (x >= _VARIANT_CLICK_BASE) is at_variant)
         landed = max(0, landed - lost)
         return min(landed, cap) if cap is not None else landed
@@ -2374,7 +2398,7 @@ async def test_the_settle_expects_only_the_copies_that_landed(monkeypatch):
     _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, cap=2))
     expected: dict[str, int] = {}
 
-    async def _spy_settle(_client, _window, expected_normal, _desired_item):
+    async def _spy_settle(_client, _window, expected_normal, _desired_item, **_kwargs):
         expected.update(expected_normal)
         return True
 
@@ -2390,7 +2414,7 @@ async def test_an_unreadable_count_falls_back_to_clicking_once(monkeypatch):
     _tier_patches(monkeypatch)
     db = _two_path_builder()
 
-    async def _unreadable() -> None:
+    async def _unreadable(_name) -> None:
         return None
 
     _use_deck(monkeypatch, _unreadable)
@@ -2444,7 +2468,7 @@ async def test_the_settle_expects_only_the_direct_copies_that_landed(monkeypatch
     _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, at_variant=False, cap=2))
     expected: dict[str, int] = {}
 
-    async def _spy_settle(_client, _window, expected_normal, _desired_item):
+    async def _spy_settle(_client, _window, expected_normal, _desired_item, **_kwargs):
         expected.update(expected_normal)
         return True
 
@@ -2493,6 +2517,281 @@ def test_shortfall_reports_a_partly_filled_request():
     short = _share_shortfall({"X - T05 - A": 3}, landed=1)
 
     assert short == {"X - T05 - A": 1}
+
+
+# ---------------------------------------------------------------------------
+# #107: a count that trails the clicks
+# ---------------------------------------------------------------------------
+#
+# Epic x3 confirmed one copy, the retries clicked four more, the deck came out
+# holding the copy limit, and the settle then waited 15s for the one copy the
+# tally had confirmed. Copies are now counted by name, fresh, and clicked again
+# only once the count has stopped moving; an extra copy is trimmed at the settle.
+
+
+def _lagging_deck(mouse, *, prompt=1, lag_reads=5):
+    """A deck that shows ``prompt`` copies at once and the rest ``lag_reads`` reads after the last click."""
+    state = {"clicks": 0, "reads": 0}
+
+    async def count(_name: str) -> int:
+        clicks = sum(1 for x, _y in mouse.clicks if x < _VARIANT_CLICK_BASE)
+        if clicks != state["clicks"]:
+            state["clicks"], state["reads"] = clicks, 0
+        state["reads"] += 1
+        return clicks if state["reads"] > lag_reads else min(clicks, prompt)
+
+    return count
+
+
+def _scripted_deck(readings: list[int]):
+    """A deck whose count reads back ``readings`` in turn, then holds the last one."""
+    queue = list(readings)
+
+    async def count(_name: str) -> int:
+        return queue.pop(0) if len(queue) > 1 else queue[0]
+
+    return count
+
+
+async def test_copies_that_show_up_late_are_not_clicked_again(monkeypatch):
+    """The reported bug: one of three copies showed at once and the rest were re-clicked."""
+    _tier_patches(monkeypatch)
+    # A ceiling the lag stays well inside, so the wait sees the copies arrive.
+    monkeypatch.setattr("bartlebot.deck_io.DECK_CARD_STABLE_WINDOW", 5.0)
+    monkeypatch.setattr("bartlebot.deck_io.DECK_CARD_LAND_TIMEOUT", 5.0)
+    db = FakeDeckBuilder()
+    _use_deck(monkeypatch, _lagging_deck(db.client.mouse_handler))
+
+    report = await write_deck(db, DeckData(normal={"Epic": 3}))
+
+    assert db.added == {"Epic": 3}
+    assert report.is_clean
+
+
+async def test_a_copy_landing_between_rounds_is_not_clicked_again(monkeypatch):
+    """The re-click is sized from a read taken just before it, not from the last round's tally."""
+    _tier_patches(monkeypatch)
+    db = FakeDeckBuilder()
+    # The baseline, the round's wait giving up at one, then all three by the re-click.
+    _use_deck(monkeypatch, _scripted_deck([0, 1, 3]))
+
+    report = await write_deck(db, DeckData(normal={"Epic": 3}))
+
+    assert db.added == {"Epic": 3}
+    assert report.is_clean
+
+
+async def test_a_stalled_count_is_clicked_up_only_by_what_is_missing(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = FakeDeckBuilder()
+    _use_deck(monkeypatch, _scripted_deck([0, 1, 1, 3]))
+
+    await write_deck(db, DeckData(normal={"Epic": 3}))
+
+    assert db.added == {"Epic": 5}  # three, then the two the deck still lacked
+
+
+async def test_late_copies_count_in_the_report_and_the_settle(monkeypatch, caplog):
+    """The settle used to wait on the confirmed count, and time out against a deck that was right."""
+    _tier_patches(monkeypatch)
+    monkeypatch.setattr("bartlebot.deck_io.DECK_SETTLE_TIMEOUT", 5.0)
+    db = FakeDeckBuilder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, at_variant=False, cap=1))
+
+    async def _all_three(*_args, **_kwargs):
+        return ["Epic", "Epic", "Epic"]
+
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _all_three)
+
+    with caplog.at_level(logging.WARNING, logger="bartlebot.deck_io"):
+        report = await write_deck(db, DeckData(normal={"Epic": 3}))
+
+    assert "did not settle" not in caplog.text
+    assert report.short == {}
+    assert report.is_clean
+
+
+async def test_the_settle_is_told_how_many_copies_were_asked_for(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = FakeDeckBuilder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, at_variant=False, cap=1))
+    seen: dict = {}
+
+    async def _spy_settle(_client, _window, expected_normal, _desired_item, **kwargs):
+        seen.update(floor=expected_normal, ceiling=kwargs["ceiling"])
+        return True
+
+    monkeypatch.setattr("bartlebot.deck_io._settle_deck", _spy_settle)
+
+    await write_deck(db, DeckData(normal={"Epic": 3}))
+
+    assert seen == {"floor": {"Epic": 1}, "ceiling": {"Epic": 3}}
+
+
+async def test_an_extra_copy_that_cannot_be_trimmed_is_reported(monkeypatch):
+    _tier_patches(monkeypatch)
+    db = FakeDeckBuilder()
+    _use_deck(monkeypatch, _counting_deck(db.client.mouse_handler, at_variant=False))
+
+    async def _four(*_args, **_kwargs):
+        return ["Epic"] * 4
+
+    async def _no_trim(*_args, **_kwargs):
+        return False
+
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _four)
+    monkeypatch.setattr("bartlebot.deck_io._trim_copy", _no_trim)
+
+    report = await write_deck(db, DeckData(normal={"Epic": 3}))
+
+    assert report.over == {"Epic": (4, 3)}
+    assert not report.is_clean
+
+
+async def test_settle_takes_an_extra_copy_back_out(monkeypatch):
+    deck = ["Epic"] * 4 + ["Tri Blade"] * 3
+    trimmed: list[str] = []
+
+    async def _names(*_args, **_kwargs):
+        return list(deck)
+
+    async def _trim(name):
+        trimmed.append(name)
+        deck.remove(name)
+        return True
+
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _names)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+    monkeypatch.setattr("bartlebot.deck_io.DECK_SETTLE_TIMEOUT", 5.0)
+
+    settled = await _settle_deck(
+        FakeClient(), object(), {"Epic": 1, "Tri Blade": 3}, {}, ceiling={"Epic": 3, "Tri Blade": 3}, trim=_trim
+    )
+
+    assert settled is True
+    assert trimmed == ["Epic"]
+
+
+async def test_settle_stops_trimming_after_a_trim_fails(monkeypatch):
+    """A failed trim may have taken out the wrong card; repeating it would take out more."""
+    calls: list[str] = []
+
+    async def _four(*_args, **_kwargs):
+        return ["Epic"] * 4
+
+    async def _trim(name):
+        calls.append(name)
+        return False
+
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _four)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+    monkeypatch.setattr("bartlebot.deck_io.DECK_SETTLE_TIMEOUT", 0.05)
+
+    settled = await _settle_deck(FakeClient(), object(), {"Epic": 3}, {}, ceiling={"Epic": 3}, trim=_trim)
+
+    assert settled is False
+    assert calls == ["Epic"]
+
+
+async def test_settle_accepts_a_steady_deck_short_of_the_request(monkeypatch):
+    """Copies placement gave up on may yet arrive, but a deck that has stopped changing is done."""
+
+    async def _two(*_args, **_kwargs):
+        return ["Epic", "Epic"]
+
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _two)
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+    monkeypatch.setattr("bartlebot.deck_io.DECK_SETTLE_TIMEOUT", 5.0)
+    monkeypatch.setattr("bartlebot.deck_io.DECK_CARD_STABLE_WINDOW", 0.02)
+
+    assert await _settle_deck(FakeClient(), object(), {"Epic": 1}, {}, ceiling={"Epic": 3}) is True
+
+
+async def test_settle_without_a_ceiling_still_wants_an_exact_match(monkeypatch):
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _fake_deck_names)  # two Tempest
+    monkeypatch.setattr("bartlebot.deck_io.read_item_slots", _no_item_slots)
+    monkeypatch.setattr("bartlebot.deck_io.DECK_SETTLE_TIMEOUT", 0.05)
+
+    assert await _settle_deck(FakeClient(), object(), {"Tempest": 1}, {}) is False
+
+
+def test_tally_reports_short_by_requested_name_and_over_by_card():
+    asked = {"Epic": {"Epic": 3}, "X - T04 - B": {"X - T05 - B": 2, "X - T04 - B": 1}}
+
+    short, over = tally_against_request(asked, {"Epic": 4, "X - T04 - B": 2})
+
+    assert over == {"Epic": (4, 3)}
+    assert short == {"X - T04 - B": (0, 1)}
+
+
+def test_requested_per_card_folds_fusion_names_onto_what_they_resolved_to():
+    asked = requested_per_card(
+        {"Tempest": {"Tempest": 2}},
+        {"Novus Storm - T05 - A": 1, "Bunyips Rage - T05 - A": 2},
+        {"Bunyips Rage - T05 - A": "Bunyips Rage"},
+    )
+
+    assert asked == {
+        "Tempest": {"Tempest": 2},
+        "Novus Storm - T05 - A": {"Novus Storm - T05 - A": 1},
+        "Bunyips Rage": {"Bunyips Rage - T05 - A": 2},
+    }
+
+
+class _TrimBuilder(FakeDeckBuilder):
+    async def calculate_deck_card_position(self, card_number: int) -> tuple[int, int]:
+        return (1000 + card_number, 0)
+
+
+def _trim_patches(monkeypatch, entries: list[str], after_click: list[str]):
+    async def _entries(*_args, **_kwargs):
+        return list(entries)
+
+    async def _names(*_args, **_kwargs):
+        return list(after_click)
+
+    monkeypatch.setattr("bartlebot.deck_io._deck_entry_names", _entries)
+    monkeypatch.setattr("bartlebot.deck_io.read_deck_card_names", _names)
+
+
+async def test_trim_clicks_the_cards_last_copy_in_the_deck(monkeypatch):
+    _trim_patches(monkeypatch, ["Epic", "Tri Blade", "Epic"], ["Epic", "Tri Blade"])
+    db = _TrimBuilder()
+
+    assert await _trim_copy(db, object(), "Epic") is True
+    assert db.client.mouse_handler.clicks == [(1003, 0)]  # vector index 2, the grid's third slot
+
+
+async def test_trim_that_takes_out_another_card_reports_failure(monkeypatch, caplog):
+    _trim_patches(monkeypatch, ["Epic", "Tri Blade", "Epic"], ["Epic", "Epic"])
+    db = _TrimBuilder()
+
+    with caplog.at_level(logging.WARNING, logger="bartlebot.deck_io"):
+        assert await _trim_copy(db, object(), "Epic") is False
+    assert "took out Tri Blade instead" in caplog.text
+
+
+async def test_trim_of_a_card_not_in_the_deck_clicks_nothing(monkeypatch):
+    _trim_patches(monkeypatch, ["Tri Blade"], ["Tri Blade"])
+    db = _TrimBuilder()
+
+    assert await _trim_copy(db, object(), "Epic") is False
+    assert db.client.mouse_handler.clicks == []
+
+
+async def test_log_lines_carry_the_slot_of_the_apply_they_belong_to(caplog):
+    """Four applies run at once, and their lines interleave."""
+
+    async def _one(slot: int) -> None:
+        _apply_slot.set(slot)
+        await asyncio.sleep(0)
+        deck_logger.warning("placing")
+
+    with caplog.at_level(logging.WARNING, logger="bartlebot.deck_io"):
+        await asyncio.gather(_one(1), _one(2))
+        deck_logger.warning("outside")
+
+    assert sorted(r.getMessage() for r in caplog.records) == ["[P1] placing", "[P2] placing", "outside"]
 
 
 # ---------------------------------------------------------------------------

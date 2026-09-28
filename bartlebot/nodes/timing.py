@@ -270,16 +270,32 @@ DECK_FUSION_CLICK_SETTLE = 0.05
 # variant -- matching the cadence wizwalker used when adding copies.
 
 DECK_CARD_CONFIRM_TIMEOUT = 2.0
-# How long to wait for clicked copies of one card to appear in CardsInDeck
-# before treating the clicks as lost. Generous: the cost of being wrong is a
-# duplicate copy, and the deck read is two memory reads so polling is cheap.
+# How long to wait for a clicked item card slot to read back toggled before
+# treating the click as lost. The read is one byte, so polling is cheap.
 
 DECK_CARD_CONFIRM_POLL = 0.05
-# Gap between deck-count reads while confirming a card went in.
+# Gap between reads while confirming an item card toggle went in.
+
+DECK_CARD_STABLE_WINDOW = 2.0
+# How long a card's copy count in CardsInDeck must sit still, short of what was
+# clicked, before the missing copies are taken as lost and clicked again. The
+# deck list can trail the clicks by seconds (#107), and a re-click on a copy
+# that was only late puts an extra one in the deck, so a count that is still
+# moving is always waited on. Also bounds the wait for a trimmed copy to leave.
+
+DECK_CARD_LAND_TIMEOUT = 8.0
+# Ceiling on one round of waiting for clicked copies of a card to appear, however
+# much the count keeps creeping. Only reached by a deck that trickles copies in
+# for this long; a stalled one is caught sooner by DECK_CARD_STABLE_WINDOW.
+
+DECK_CARD_COUNT_POLL = 0.1
+# Gap between reads of a card's copy count while confirming or trimming it. Each
+# read names every card in the deck, about four memory reads a card, so this is
+# coarser than the item card poll.
 
 DECK_FUSION_CLOSE_SETTLE = 0.5
 # Pause after a base's variant clicks are confirmed in CardsInDeck, before the
-# tier flyout is closed. The entry-vector count that confirms a click can grow
+# tier flyout is closed. The CardsInDeck count that confirms a click can grow
 # ahead of the server actually committing the card -- closing the flyout in
 # that gap has been observed to drop a card the read had just confirmed, and
 # the card reappears if the deck page is closed and reopened, which is the

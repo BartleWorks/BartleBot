@@ -238,7 +238,7 @@ def apply_results(monkeypatch):
 
     results: dict[str, object] = {"applied": []}
 
-    async def _apply(client, _deck):
+    async def _apply(client, _deck, slot=None):
         results["applied"].append(client)
         result = results.get(client, DeckApplyReport())
         if isinstance(result, BaseException):

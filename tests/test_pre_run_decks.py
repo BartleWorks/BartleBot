@@ -53,7 +53,7 @@ def applies(monkeypatch):
 
     recorded: list[tuple[object, DeckData]] = []
 
-    async def _apply(client, deck):
+    async def _apply(client, deck, slot=None):
         recorded.append((client, deck))
 
     monkeypatch.setattr(ac, "apply_deck", _apply)
@@ -100,6 +100,23 @@ async def test_no_decks_configured_does_nothing(strategy, applies):
     assert applies == []
 
 
+async def test_each_apply_is_told_its_slot_for_the_log(strategy, monkeypatch):
+    """Concurrent applies interleave their deck_io lines; the slot tells them apart (#107)."""
+    import bartlebot.app_controller as ac  # noqa: PLC0415
+
+    slots: dict[str, int | None] = {}
+
+    async def _apply(client, _deck, slot=None):
+        slots[client] = slot
+
+    monkeypatch.setattr(ac, "apply_deck", _apply)
+    strategy.player_decks = {1: _deck(), 2: _deck()}
+
+    await PreRunDeckHarness(["c1", "c2"])._apply_pre_run_decks()
+
+    assert slots == {"c1": 1, "c2": 2}
+
+
 # ---------------------------------------------------------------------------
 # Failure isolation — what makes the gather safe
 # ---------------------------------------------------------------------------
@@ -110,7 +127,7 @@ async def test_one_client_failing_does_not_stop_the_others(strategy, monkeypatch
 
     finished: list[str] = []
 
-    async def _apply(client, _deck):
+    async def _apply(client, _deck, slot=None):
         if client == "c2":
             raise RuntimeError("deck window not open")
         finished.append(client)
@@ -128,7 +145,7 @@ async def test_one_client_timing_out_does_not_stop_the_others(strategy, monkeypa
 
     finished: list[str] = []
 
-    async def _apply(client, _deck):
+    async def _apply(client, _deck, slot=None):
         if client == "c1":
             raise TimeoutError
         finished.append(client)
@@ -146,7 +163,7 @@ async def test_a_failed_apply_never_propagates(strategy, monkeypatch):
     cancelled one, so nothing here may escape."""
     import bartlebot.app_controller as ac  # noqa: PLC0415
 
-    async def _apply(_client, _deck):
+    async def _apply(_client, _deck, slot=None):
         raise RuntimeError("boom")
 
     monkeypatch.setattr(ac, "apply_deck", _apply)
@@ -158,7 +175,7 @@ async def test_a_failed_apply_never_propagates(strategy, monkeypatch):
 async def test_timeout_is_logged_as_an_error(strategy, monkeypatch, caplog):
     import bartlebot.app_controller as ac  # noqa: PLC0415
 
-    async def _apply(_client, _deck):
+    async def _apply(_client, _deck, slot=None):
         raise TimeoutError
 
     monkeypatch.setattr(ac, "apply_deck", _apply)
@@ -186,7 +203,7 @@ async def test_decks_are_applied_concurrently(strategy, monkeypatch):
 
     started = asyncio.Barrier(4)
 
-    async def _apply(_client, _deck):
+    async def _apply(_client, _deck, slot=None):
         await started.wait()
 
     monkeypatch.setattr(ac, "apply_deck", _apply)
@@ -204,7 +221,7 @@ async def test_all_applies_complete_before_returning(strategy, monkeypatch):
 
     done: list[str] = []
 
-    async def _apply(client, _deck):
+    async def _apply(client, _deck, slot=None):
         await asyncio.sleep(0.01)
         done.append(client)
 

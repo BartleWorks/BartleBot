@@ -1335,7 +1335,7 @@ class AppController(QObject):
         """Apply one slot's deck: the report, or the reason it failed. Never raises."""
         logger.info("Applying deck for slot %d (%d cards)", slot, deck_data.total_cards())
         try:
-            report = await apply_deck(client, deck_data)
+            report = await apply_deck(client, deck_data, slot=slot)
         except TimeoutError:
             logger.error("Deck apply for slot %d timed out after %.0fs", slot, DECK_APPLY_TIMEOUT)
             return "timed out"
@@ -1424,6 +1424,13 @@ class AppController(QObject):
                 lines.append("")
             lines.append("Fewer copies went in than the deck asked for:")
             lines += [f"    {name}  ({got} of {wanted})" for name, (got, wanted) in sorted(report.short.items())]
+        if report.over:
+            if lines:
+                lines.append("")
+            lines.append("More copies went in than the deck asked for, and could not be taken back out:")
+            lines += [
+                f"    {name}  ({held}, asked for {wanted})" for name, (held, wanted) in sorted(report.over.items())
+            ]
         if report.skipped:
             if lines:
                 lines.append("")
@@ -1782,7 +1789,7 @@ class AppController(QObject):
         will not apply is a degraded run, not a cancelled one.
         """
         try:
-            await apply_deck(client, deck_data)
+            await apply_deck(client, deck_data, slot=slot)
         except TimeoutError:
             # Log only. This runs inside the _start_bot task, and a blocking
             # QMessageBox from an asyncio task deadlocks the qasync loop under
