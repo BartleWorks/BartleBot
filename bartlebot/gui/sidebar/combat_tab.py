@@ -153,6 +153,7 @@ from bartlebot.strategy_store import (
     list_bot_strategies,
     list_duel_strategies,
     list_player_strategies,
+    load_bot_strategy,
     save_bot_strategy,
 )
 from bartlebot.strategy_summary import summarize_bot
@@ -164,6 +165,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _NUM_PLAYER_SLOTS = 4
+#: ``_binding_key`` for the bot default, which has no fights of its own to be named by.
+_DEFAULT_BINDING = "\x00default"
 _NO_STRATEGY_LABEL = "(no strategy set)"
 _ICON_BTN_SIZE = 16
 
@@ -1318,11 +1321,22 @@ class CombatTab(QWidget):
         Modal, and given a working set loaded fresh each time. Modal because the
         dialog owns a Save boundary over the same files this tab reads, and a
         non-modal window editing them alongside the tab is how the two used to
-        disagree about what was on disk. A reload afterwards is unconditional:
-        Cancel writes nothing, so re-reading costs a few files and removes the
-        question of whether it was needed.
+        disagree about what was on disk.
+
+        The working set holds this tab's active profile, editable, so the dialog can
+        write the profile file (#118). That makes this tab's own ``self._bcs`` stale
+        the moment an accepted dialog closes, and every caller goes on to change a
+        binding and save — which would write the stale copy over the dialog's work,
+        dropping a strategy made there and leaving the fight linked to nothing. So an
+        accepted dialog is followed by a reload of the profile from disk and a re-bind
+        of every fight, *before* the caller acts on the result: a caller holding a
+        binding from before the dialog must look it up again. Cancel writes nothing,
+        so it only re-reads the library.
         """
-        ws = StrategyWorkingSet.from_store()
+        ws = StrategyWorkingSet.from_store(
+            profile_id=self._bcs.id if self._bcs is not None else None,
+            bot_id=self._config.id if self._config is not None else None,
+        )
         color_keys, account_labels = self._player_color_keys()
         dlg = CombatStrategyDialog(
             ws,
@@ -1336,8 +1350,32 @@ class CombatTab(QWidget):
             parent=self,
         )
         accepted = bool(dlg.exec())
-        self.refresh_strategy_data()
-        return dlg if accepted else None
+        if not accepted:
+            self.refresh_strategy_data()
+            return None
+        made = ws.profile
+        if self._config is not None and made is not None and (self._bcs is None or made.id != self._bcs.id):
+            # A bot with no profile had one made in the dialog: it becomes the active one.
+            SettingsManager.instance().set_active_strategy(self._config.id, made.id)
+            self._rebind()
+        elif self._profile_changed_on_disk():
+            self._rebind()
+        else:
+            # Nothing the tab holds is stale, so the cards stay: a rebuild would destroy
+            # every one of them for a pick that changes one line.
+            self.refresh_strategy_data()
+        self.combat_config_changed.emit()
+        return dlg
+
+    def _profile_changed_on_disk(self) -> bool:
+        """Whether the active profile's file no longer matches ``self._bcs``."""
+        if self._bcs is None:
+            return False
+        try:
+            on_disk = load_bot_strategy(self._bcs.id)
+        except Exception:
+            return True
+        return on_disk.model_dump() != self._bcs.model_dump()
 
     # ------------------------------------------------------------------
     # UI refresh
@@ -1557,8 +1595,10 @@ class CombatTab(QWidget):
         binding = panel.binding
         if binding is None:
             return
-        if self._pick_into(binding, panel.empty_label):
-            self._after_linkage_change(panel)
+        key = self._binding_key(binding)
+        accepted, chosen = self._pick(binding.duel_combat_strategy_id, panel.empty_label)
+        if accepted:
+            self._link(key, chosen)
 
     def _on_pick_for_fight(self, state_id: str) -> None:
         """Give one fight a strategy of its own — a click on its pill in ``BotDefaultPanel``.
@@ -1569,12 +1609,10 @@ class CombatTab(QWidget):
         """
         if self._config is None:
             return
-        binding = self._ensure_state_binding(state_id)
-        if not self._pick_into(binding, STATE_INHERIT_LABEL):
-            return
-        self._regroup_bindings()
-        self._rebuild_state_assignments()
-        self._save_bcs()
+        current = self._ensure_state_binding(state_id).duel_combat_strategy_id
+        accepted, chosen = self._pick(current, STATE_INHERIT_LABEL)
+        if accepted:
+            self._link(state_id, chosen)
 
     def _on_add_strategy(self) -> None:
         """Give some fights a strategy of their own — the add-card at the foot of the list.
@@ -1644,35 +1682,51 @@ class CombatTab(QWidget):
         self._strategy_drag.set_cards(reordered)
         self._save_bcs()
 
-    def _pick_into(self, binding, none_label: str) -> bool:
-        """Run the picker against *binding*, and say whether it was accepted.
+    def _pick(self, current_id: str | None, none_label: str) -> tuple[bool, str | None]:
+        """Run the picker, and return whether it was accepted and what it chose.
 
         Shared by the card path and the pill path so both offer the same dialog with the
         same "none" row — what a binding falls through to is a property of the binding's
         level, not of which widget the click landed on.
+
+        Returns the choice rather than applying it: an accepted dialog reloads the
+        profile (see ``open_combat_dialog``), so the binding the click came from is gone,
+        and the caller finds its successor with ``_link``.
         """
         dlg = self.open_combat_dialog(
             kind=StrategyKind.DUEL,
             mode=DialogMode.PICK,
-            current_id=binding.duel_combat_strategy_id,
+            current_id=current_id,
             allow_none=True,
             none_label=none_label,
         )
         if dlg is None:
-            return False
-        binding.duel_combat_strategy_id = dlg.selected_id()
-        return True
+            return False, None
+        return True, dlg.selected_id()
 
-    def _after_linkage_change(self, panel: StrategyPanel) -> None:
-        """A panel now names a different strategy: redraw, regroup, save.
+    def _binding_key(self, binding) -> str:
+        """What names *binding* across a reload: the default, or its group's first fight.
 
-        The bot default has no group of its own, so it only redraws.  A
-        per-fight panel may have just joined or left a group, which is a rebuild
-        of the whole section.
+        Bindings are rebuilt from disk after the dialog closes, so an object held from
+        before is a stale copy; this is how the caller finds the one that replaced it.
         """
-        if panel is self._default_panel:
-            panel.refresh()
+        if isinstance(binding, _DefaultBinding) or not binding.state_ids:
+            return _DEFAULT_BINDING
+        return binding.state_ids[0]
+
+    def _link(self, key: str, dcs_id: str | None) -> None:
+        """Point the binding *key* names at *dcs_id*: redraw, regroup, save.
+
+        The bot default has no group of its own, so it only redraws. A fight may have
+        just joined or left a group, which is a rebuild of the whole section.
+        """
+        if self._bcs is None:
+            return
+        if key == _DEFAULT_BINDING:
+            self._bcs.default_strategy_id = dcs_id
+            self._default_panel.refresh()
         else:
+            self._ensure_state_binding(key).duel_combat_strategy_id = dcs_id
             self._regroup_bindings()
             self._rebuild_state_assignments()
         self._save_bcs()

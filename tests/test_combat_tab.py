@@ -2261,3 +2261,90 @@ def test_a_profile_duel_shadows_a_library_duel_on_the_card(qapp, store):
     tab = _tab_for(bcs, _config())
 
     assert tab._default_panel._name.full_text() == "Profile Version"
+
+
+# ---------------------------------------------------------------------------
+# The dialog writes the profile too (#118) — the tab must not save a stale copy over it
+# ---------------------------------------------------------------------------
+
+
+def _dialog_that_makes_a_profile_duel(bcs_id: str, name: str = "Made Here"):
+    """A stand-in dialog whose Use this does what the real one's commit does: it writes the
+    profile file with a new strategy in it, and returns that strategy as the pick."""
+    made = DuelCombatStrategy(name=name)
+
+    def _exec():
+        profile = store_mod.load_bot_strategy(bcs_id)
+        profile.duel_strategies.append(made)
+        store_mod.save_bot_strategy(profile)
+        return True
+
+    return made, _exec
+
+
+def test_a_strategy_made_in_the_dialog_survives_the_pick_that_links_it(qapp, store):
+    """The exact sequence: the dialog writes the profile with a new entry, the tab links
+    the fight to it, then saves. Saving the tab's old copy lost the entry and left the
+    fight linked to nothing, falling back to the built-in default without a word."""
+    bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
+    tab = _tab_for(bcs, _config())
+    made, run = _dialog_that_makes_a_profile_duel(bcs.id)
+
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
+        MockDlg.return_value.exec.side_effect = run
+        MockDlg.return_value.selected_id.return_value = made.id
+        tab._on_pick_for_fight("state_9")
+
+    saved = store_mod.load_bot_strategy(bcs.id)
+    assert [d.id for d in saved.duel_strategies] == [made.id]
+    assert saved.state_assignments[0].duel_combat_strategy_id == made.id
+    assert tab._state_panels["state_9"]._name.full_text() == "Made Here"
+
+
+def test_a_strategy_made_in_the_dialog_survives_a_pick_on_the_default_card(qapp, store):
+    bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
+    tab = _tab_for(bcs, _config())
+    made, run = _dialog_that_makes_a_profile_duel(bcs.id)
+
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
+        MockDlg.return_value.exec.side_effect = run
+        MockDlg.return_value.selected_id.return_value = made.id
+        tab._on_pick_duel(tab._default_panel)
+
+    saved = store_mod.load_bot_strategy(bcs.id)
+    assert [d.id for d in saved.duel_strategies] == [made.id]
+    assert saved.default_strategy_id == made.id
+    assert tab._default_panel._name.full_text() == "Made Here"
+
+
+def test_a_strategy_made_in_the_dialog_survives_the_add_card(qapp, store):
+    """The add flow reloads before it makes the pending card, not after."""
+    bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
+    tab = _tab_for(bcs, _multi_config("A", "B"))
+    made, run = _dialog_that_makes_a_profile_duel(bcs.id)
+
+    with (
+        patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
+        patch("bartlebot.gui.sidebar.combat_tab.QTimer.singleShot"),
+    ):
+        MockDlg.return_value.exec.side_effect = run
+        MockDlg.return_value.selected_id.return_value = made.id
+        tab._on_add_strategy()
+    pending = tab._pending_panel
+    pending.membership_changed.emit(["state_2"])
+
+    saved = store_mod.load_bot_strategy(bcs.id)
+    assert [d.id for d in saved.duel_strategies] == [made.id]
+    assert [(a.state_ids, a.duel_combat_strategy_id) for a in saved.state_assignments] == [(["state_2"], made.id)]
+
+
+def test_a_cancelled_dialog_leaves_the_cards_alone(qapp, store):
+    dcs = _saved_dcs()
+    tab = _tab_for(_linked_bcs(dcs.id, ["state_1"]), _multi_config("A", "B"))
+    before = tab._state_panels["state_1"]
+
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = False
+        tab._on_pick_duel(before)
+
+    assert tab._state_panels["state_1"] is before
