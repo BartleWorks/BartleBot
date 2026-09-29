@@ -50,6 +50,13 @@ def test_identifies_the_dungeon_exit_warning():
     assert dc.identify_caption(text) == dc.INSTANCE_EXIT
 
 
+@pytest.mark.parametrize("key", [dc.DUNGEON_LOGOUT, dc.DUNGEON_RECALL_LOGOUT])
+def test_the_logout_warnings_are_questions_to_confirm(key):
+    """#108: relog answers these, so they must be confirmed rather than dismissed."""
+    assert key in dc.CONFIRM_TO_PROCEED
+    assert all(dc.identify_caption(text) == key for text in CAPTIONS[key].values())
+
+
 def test_identifies_the_friend_busy_dialog():
     """This and the dungeon exit warning share a button layout."""
     assert dc.identify_caption("Your friend is busy right now.") == dc.FRIEND_BUSY
