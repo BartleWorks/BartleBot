@@ -442,7 +442,7 @@ class BotConfig(BaseModel):
             data = json.load(f)
         return cls.model_validate(data)
 
-    def _dump_for_file(self) -> dict:
+    def file_dump(self) -> dict:
         """The JSON body of this bot, with derived declarations left out.
 
         An option a node requires is composed at load time from its NodeSpec, so
@@ -462,7 +462,7 @@ class BotConfig(BaseModel):
         return data
 
     def save(self, path: str | Path) -> None:
-        _atomic_write_json(self._dump_for_file(), path)
+        _atomic_write_json(self.file_dump(), path)
 
 
 def _atomic_write_json(data: dict, path: str | Path) -> None:

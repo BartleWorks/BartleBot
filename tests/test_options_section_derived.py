@@ -194,7 +194,7 @@ def test_a_specs_bounds_reach_the_composed_option_and_never_the_file(qapp):
     composed = next(o for o in compose_options(config) if o.name == "Safety Delay")
     assert (composed.minimum, composed.suffix) == (0.0, " s")
 
-    stored = config._dump_for_file()["options"]
+    stored = config.file_dump()["options"]
     assert [o["name"] for o in stored] == ["Safety Delay"]
     assert set(stored[0]) == {"name", "type", "default"}
     assert [o.name for o in storable_options(config)] == ["Safety Delay"]
