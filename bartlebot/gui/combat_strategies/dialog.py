@@ -543,6 +543,9 @@ class _KindPage(QWidget):
         self._list.setSpacing(2)
         # Filtering changes how many cards there are, and so whether the list scrolls.
         reserve_scrollbar_gutter(self._list)
+        # A column of cards scrolls one way. _fit_row keeps every row inside the
+        # viewport, so this only says so; it never hides content that had a bar.
+        self._list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._list.currentItemChanged.connect(self._on_item_changed)
         # Rows are sized for the width the column actually has; see _fit_row.
         self._list.viewport().installEventFilter(self)
@@ -885,12 +888,21 @@ class _KindPage(QWidget):
         The width asked for is only the card's minimum: a list row fills the viewport
         anyway, and asking for more is what gives the list a horizontal scrollbar.
 
+        And never more than the column, even when the minimum is wider. A list's rows
+        are all as wide as its widest, so one card that could not fit -- a long profile
+        name in its pill did it -- widened every row past the edge and clipped the stars
+        off cards that fit perfectly well. Capped, a card that still cannot fit is
+        clipped on its own. The card elides its text so that should not happen; this is
+        what keeps it one card's problem if it does.
+
         The profile section's note row is fitted the same way: its sentence wraps too,
         and a row left at the height it had when the column was wider cuts it off.
         """
         width = self._list.viewport().width() - 2 * (self._list.spacing() + _ROW_PAD)
         height = card.heightForWidth(width)
-        item.setSizeHint(QSize(card.minimumSizeHint().width(), height if height > 0 else card.sizeHint().height()))
+        item.setSizeHint(
+            QSize(min(card.minimumSizeHint().width(), width), height if height > 0 else card.sizeHint().height())
+        )
 
     def _refit_rows(self) -> None:
         for item, card in self._card_map:

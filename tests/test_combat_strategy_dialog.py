@@ -422,6 +422,25 @@ def test_a_card_never_asks_for_more_width_than_the_column(qapp, roots):
     dlg.close()
 
 
+def test_no_row_is_wider_than_the_column_even_when_its_card_cannot_fit(qapp, roots):
+    """A list's rows are as wide as its widest: one card that could not fit clipped every card's star."""
+    wide = PlayerCombatStrategy(name="Frenzy" * 40)
+    save_player_strategy(wide, roots[1])
+    save_player_strategy(PlayerCombatStrategy(name="Short"), roots[1])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+    page = dlg._pages[StrategyKind.PLAYER]
+    dlg.resize(dlg.minimumSize())
+    dlg.show()
+    qapp.processEvents()
+
+    viewport = page._list.viewport().width()
+    for item, _card in page._card_map:
+        assert item.sizeHint().width() <= viewport
+    assert page._list.horizontalScrollBar().maximum() == 0
+    assert page._list.horizontalScrollBarPolicy() == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    dlg.close()
+
+
 def test_a_declined_delete_removes_nothing(qapp, roots):
     dcs = DuelCombatStrategy(name="Mine")
     save_duel_strategy(dcs, roots[1])
