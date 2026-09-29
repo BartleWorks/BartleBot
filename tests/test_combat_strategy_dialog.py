@@ -575,6 +575,17 @@ def test_the_pencil_clears_a_filter_that_would_hide_the_strategy(qapp, roots):
     assert not player._list.currentItem().isHidden()
 
 
+def test_a_pick_greys_the_pencil_it_has_nowhere_to_send(qapp, roots):
+    """Pick has only the Duel tab, so there is no Player tab for the pencil to open."""
+    dcs, _pcs = _linked_duel(roots)
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.PICK, current_id=dcs.id)
+
+    pencil = dlg._pages[StrategyKind.DUEL]._editor.cards[0].action_button(EDIT_VERB)
+
+    assert not pencil.isHidden()
+    assert not pencil.isEnabled()
+
+
 def test_the_duel_tab_keeps_its_selection_across_the_round_trip(qapp, roots):
     dcs, _pcs = _linked_duel(roots)
     dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)

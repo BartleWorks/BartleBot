@@ -354,6 +354,27 @@ def test_locking_leaves_the_pencil_live_since_it_only_navigates(qapp):
     assert card.action_button(EDIT_VERB).isEnabled()
 
 
+def test_a_card_with_nowhere_to_open_its_strategy_greys_the_pencil(qapp):
+    """Pick has no Player tab, so the pencil there would be a live button that does nothing."""
+    pcs = PlayerCombatStrategy(name="Blade")
+    card = _card(PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id), [pcs])
+
+    card.set_can_open_pcs(False)
+
+    assert not card.action_button(EDIT_VERB).isEnabled()
+    assert EDIT_VERB not in _menu_labels(card)
+
+
+def test_a_locked_card_offers_nothing_editing_by_right_click(qapp):
+    """The menu does not consult the buttons' enabled state, so it has to leave them out."""
+    card = _card(PlayerAssignment(players=[1]))
+
+    card.set_editable(False)
+
+    assert CHANGE_VERB not in _menu_labels(card)
+    assert REMOVE_VERB not in _menu_labels(card)
+
+
 def test_a_locked_card_refuses_to_change_its_strategy_by_menu(qapp):
     assignment = PlayerAssignment(players=[1])
     card = _card(assignment)

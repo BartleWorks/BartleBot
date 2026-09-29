@@ -114,6 +114,7 @@ class DuelConfigEditor(QWidget):
         self._suppress = False
         self._cards: list[AssignmentCard] = []
         self._editable = True
+        self._can_open_pcs = True
         self._color_keys: list[int | None] = []
         self._account_labels: list[str] = []
 
@@ -232,6 +233,12 @@ class DuelConfigEditor(QWidget):
             card.set_editable(editable)
         self._update_add_card()
 
+    def set_can_open_pcs(self, can_open: bool) -> None:
+        """Whether the cards' pencils have a Player tab to open on, including cards added later."""
+        self._can_open_pcs = can_open
+        for card in self._cards:
+            card.set_can_open_pcs(can_open)
+
     # ------------------------------------------------------------------
     # Reading
     # ------------------------------------------------------------------
@@ -272,6 +279,7 @@ class DuelConfigEditor(QWidget):
         card = AssignmentCard(assignment, self._all_pcs, parent=self._cards_container)
         card.set_player_color_keys(self._color_keys, self._account_labels)
         card.set_editable(self._editable)
+        card.set_can_open_pcs(self._can_open_pcs)
         card.changed.connect(self._on_changed)
         card.remove_requested.connect(self._on_remove_card)
         card.players_changed.connect(self._enforce_exclusivity)

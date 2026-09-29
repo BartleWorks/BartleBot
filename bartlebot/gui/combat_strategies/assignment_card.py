@@ -151,6 +151,9 @@ class AssignmentCard(CardFrame):
         self._updating = False  # suppresses re-entrant enforcement
         self._suppress = False
         self._editable = True
+        # Whether anything is listening for the pencil with somewhere to take it. Pick
+        # has no Player tab, so there the pencil is greyed rather than a dead button.
+        self._can_open_pcs = True
         self._expanded = False
         # The title without its warning mark. Set before ``_build`` because a theme pass
         # can arrive during construction and ``_restyle_content`` reads it.
@@ -267,9 +270,18 @@ class AssignmentCard(CardFrame):
         ]
 
     def _verbs(self) -> list[CardVerb]:
-        """What the right-click menu offers now: the pencil only while there is a strategy to open."""
-        linked = self._linked_pcs() is not None
-        return [v for v in self._all_verbs() if v.label != EDIT_VERB or linked]
+        """What the right-click menu offers now: only the verbs whose face button is live.
+
+        The pencil needs a strategy to open and somewhere to open it; Change and Remove
+        need the card to be editable. The menu bypasses the buttons' enabled state, so
+        without this a read-only card's right-click could still remove an assignment.
+        """
+        return [v for v in self._all_verbs() if self._verb_enabled(v.label)]
+
+    def _verb_enabled(self, label: str) -> bool:
+        if label == EDIT_VERB:
+            return self._can_open_pcs and self._linked_pcs() is not None
+        return self._editable or label not in (CHANGE_VERB, REMOVE_VERB)
 
     # ------------------------------------------------------------------
     # Reading
@@ -329,14 +341,25 @@ class AssignmentCard(CardFrame):
         self._pills.set_editable(editable)
         self._school_picker.setEnabled(editable)
         self._note_edit.setEnabled(editable)
-        for button, verb in ((self.action_button(v.label), v) for v in self._all_verbs()):
-            if button is not None:
-                # The pencil stays live while locked: it only navigates, and reading the
-                # strategy a running bot fights with is exactly what someone watching it
-                # wants to do. The chevron is never locked, for the same reason:
-                # everything the fold reveals is already read-only by then.
-                button.setEnabled(editable or verb.label == EDIT_VERB)
+        self._sync_verb_buttons()
         self._refresh()
+
+    def set_can_open_pcs(self, can_open: bool) -> None:
+        """Grey the pencil when nothing can take it anywhere (Pick has no Player tab)."""
+        self._can_open_pcs = can_open
+        self._sync_verb_buttons()
+
+    def _sync_verb_buttons(self) -> None:
+        # The pencil does not follow ``_editable``: it only navigates, so a locked card
+        # still opens its strategy wherever there is a Player tab to open it on. The
+        # chevron is never locked: everything the fold reveals is already read-only.
+        for verb in self._all_verbs():
+            button = self.action_button(verb.label)
+            if button is not None:
+                if verb.label == EDIT_VERB:
+                    button.setEnabled(self._can_open_pcs)
+                else:
+                    button.setEnabled(self._editable or verb.label not in (CHANGE_VERB, REMOVE_VERB))
 
     def set_max_players(self, n: int) -> None:
         """Hide slots beyond *n* and clamp ``assignment.players`` to 1..n."""

@@ -1232,6 +1232,11 @@ class CombatStrategyDialog(QDialog):
             page.create_profile_requested.connect(self._on_create_profile)
             self._pages[k] = page
             self._tabs.addTab(page, KIND_LABELS[k])
+        # The Duel tab's pencil opens a Player Strategy on the Player tab; without one
+        # (Pick) it has nowhere to go, so it is greyed rather than a dead button.
+        duel = self._pages.get(StrategyKind.DUEL)
+        if duel is not None:
+            duel.editor.set_can_open_pcs(StrategyKind.PLAYER in self._pages)
         self._tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self._tabs, 1)
 
