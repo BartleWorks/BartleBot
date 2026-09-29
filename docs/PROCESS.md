@@ -41,6 +41,9 @@ no commit trail behind it.
 - **A type and one label, always, at creation**: an issue type (`Bug` / `Feature` /
   `Task` / `Epic`) and exactly one `area/*`. If two areas fit equally well, it is
   probably two issues.
+- **On the board, with its Product set, at creation.** Every new issue goes on The World
+  Tree Backlog with `Product` set to the repo it was filed in. The board is shared by
+  three products, and an issue with no `Product` drops out of every per-product view.
 - **A milestone is a commitment.** Add `1.0.0` only if it blocks going public. No
   milestone is the default and carries no stigma.
 - **Priority and Size are set at triage, not at creation.** Filing is cheap;
