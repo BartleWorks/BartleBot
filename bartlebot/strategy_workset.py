@@ -21,7 +21,16 @@ WHAT IS AND IS NOT IN HERE
 The three kinds the dialog owns — player, duel, deck. Bot Combat Strategies are
 held too, but read-only: they are bot-scoped, they are edited on the Combat tab,
 and the only thing this module wants from them is *who references what* for a
-delete confirmation.
+delete confirmation and for the Save confirmation below.
+
+The one exception is the **active combat profile** (#118). It owns duel and player
+strategies of its own, and those are edited here like any library entry, so the
+profile is held as an editable copy inside the same boundary. Only the active one:
+every other profile stays read-only, there only to be counted. Commit writes the
+library before the profile, so moving an entry from the profile into the library
+leaves two copies if it is interrupted, never none — the rule ``save_by_id``
+follows for a rename. Lookups go profile first, then library, as they do
+everywhere else (:mod:`bartlebot.combat_profile`).
 
 Everything is Qt-free and needs no ``QApplication``, matching
 :mod:`bartlebot.strategy_summary` and :mod:`bartlebot.combat_grouping` next door.
@@ -55,8 +64,10 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from uuid import uuid4
 
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
@@ -64,6 +75,7 @@ from bartlebot.bot.strategy_models import (
     DuelCombatStrategy,
     PlayerCombatStrategy,
 )
+from bartlebot.combat_profile import StrategyLookup, profile_players_of
 from bartlebot.strategy_store import (
     Origin,
     StrategyKind,
@@ -76,17 +88,29 @@ from bartlebot.strategy_store import (
     list_player_strategies,
     list_shipped,
     origin_of,
+    save_bot_strategy,
     save_deck_preset,
     save_duel_strategy,
     save_player_strategy,
     unique_name,
 )
+from bartlebot.strategy_summary import name_list
 
 logger = logging.getLogger(__name__)
 
 #: The three kinds this module can edit. ``StrategyKind.BOT`` is deliberately absent —
 #: see the module docstring.
 EDITABLE_KINDS = (StrategyKind.PLAYER, StrategyKind.DUEL, StrategyKind.DECK)
+
+#: The kinds a combat profile can hold strategies of. Deck presets stay library-only: a
+#: profile's own decks are its ``player_decks``, one per slot, on the Combat tab.
+PROFILE_KINDS = (StrategyKind.PLAYER, StrategyKind.DUEL)
+
+
+def _profile_list(profile: BotCombatStrategy, kind: StrategyKind) -> list:
+    """The profile's own list of *kind* — the live list, so appending to it adds an entry."""
+    return profile.duel_strategies if kind is StrategyKind.DUEL else profile.player_strategies
+
 
 _SAVERS = {
     StrategyKind.PLAYER: save_player_strategy,
@@ -134,6 +158,35 @@ class Changes:
         return self.total > 0
 
 
+@dataclass(frozen=True)
+class SharedUse:
+    """A changed library entry, and the places outside the open profile that use it.
+
+    What the Save confirmation lists (#118): an edit to a library entry reaches every
+    profile and library duel that uses it, and the dialog only shows one profile.
+    ``profiles`` and ``duels`` are display names, already quoted.
+    """
+
+    name: str
+    profiles: tuple[str, ...] = ()
+    duels: tuple[str, ...] = ()
+
+    def sentence(self, *, other: bool = True) -> str:
+        """ "'Boss Burn' is also used by 2 other profiles: 'Solo' (Atlantea) and 'Team' (Darkmoor)."
+
+        *other* is False in the library view, where no profile is open and "other"
+        would have nothing to be other than.
+        """
+        parts = []
+        if self.profiles:
+            noun = f"{'other ' if other else ''}profile{'s' if len(self.profiles) != 1 else ''}"
+            parts.append(f"{len(self.profiles)} {noun}: {name_list(self.profiles)}")
+        if self.duels:
+            noun = f"library duel{'s' if len(self.duels) != 1 else ''}"
+            parts.append(f"{len(self.duels)} {noun}: {name_list(self.duels)}")
+        return f"'{self.name}' is {'also ' if other else ''}used by {'; and '.join(parts)}."
+
+
 @dataclass
 class _Slot:
     """One kind's live items, plus what they looked like when they were loaded."""
@@ -166,9 +219,26 @@ class StrategyWorkingSet:
         root: str | Path | None = None,
         user_root: str | Path | None = None,
         shipped: dict[StrategyKind, list] | None = None,
+        profile: BotCombatStrategy | None = None,
+        bot_id: str | None = None,
     ) -> None:
+        """*profile* is the active combat profile, held editable; see the module docstring.
+
+        *bot_id* names the loaded bot when it has no profile yet, so the dialog can offer to
+        make one. It is taken from *profile* when one is given.
+        """
         self._root = root
         self._user_root = user_root
+        # The active profile, as a copy: the Combat tab is still drawing from the original.
+        self._profile = profile.model_copy(deep=True) if profile is not None else None
+        # None for a profile made in this session, which Save writes for the first time.
+        self._profile_baseline = _snapshot(profile) if profile is not None else None
+        self._profile_entry_baselines: dict[str, str] = {}
+        if profile is not None:
+            for kind in PROFILE_KINDS:
+                for item in _profile_list(profile, kind):
+                    self._profile_entry_baselines[item.id] = _snapshot(item)
+        self._bot_id = profile.bot_id if profile is not None else bot_id
         self._slots: dict[StrategyKind, _Slot] = {kind: _Slot() for kind in EDITABLE_KINDS}
         for kind, loaded in (
             (StrategyKind.PLAYER, players),
@@ -188,16 +258,32 @@ class StrategyWorkingSet:
         self._bot_strategies = list(bot_strategies or [])
 
     @classmethod
-    def from_store(cls, root: str | Path | None = None, user_root: str | Path | None = None) -> StrategyWorkingSet:
-        """Load every kind from the ordered roots — the dialog's own entry point."""
+    def from_store(
+        cls,
+        root: str | Path | None = None,
+        user_root: str | Path | None = None,
+        *,
+        profile_id: str | None = None,
+        bot_id: str | None = None,
+    ) -> StrategyWorkingSet:
+        """Load every kind from the ordered roots — the dialog's own entry point.
+
+        *profile_id* is the active combat profile to hold editable, read from the same
+        load as every other profile so the two can never disagree. *bot_id* is the loaded
+        bot, for when it has no profile yet. Leave both unset for the library view.
+        """
+        bot_strategies = list_all_bot_strategies(root, user_root)
+        profile = next((b for b in bot_strategies if b.id == profile_id), None) if profile_id else None
         return cls(
             players=list_player_strategies(root, user_root),
             duels=list_duel_strategies(root, user_root),
             decks=list_deck_presets(root, user_root),
-            bot_strategies=list_all_bot_strategies(root, user_root),
+            bot_strategies=bot_strategies,
             root=root,
             user_root=user_root,
             shipped={kind: list_shipped(kind, root, user_root) for kind in EDITABLE_KINDS},
+            profile=profile,
+            bot_id=bot_id,
         )
 
     # ------------------------------------------------------------------
@@ -214,10 +300,15 @@ class StrategyWorkingSet:
         return sorted(self._slots[kind].items.values(), key=lambda i: i.name.lower())
 
     def get(self, kind: StrategyKind, uuid: str | None):
-        """The live entry for ``uuid``, or None. This is the object editors mutate."""
+        """The live entry for ``uuid``, or None. This is the object editors mutate.
+
+        The active profile's own entries first, then the library's — the lookup order
+        everything else uses (:mod:`bartlebot.combat_profile`).
+        """
         if uuid is None:
             return None
-        return self._slots[kind].items.get(uuid)
+        own = self._profile_entry(kind, uuid)
+        return own if own is not None else self._slots[kind].items.get(uuid)
 
     @property
     def players(self) -> list[PlayerCombatStrategy]:
@@ -233,42 +324,156 @@ class StrategyWorkingSet:
 
     @property
     def bot_strategies(self) -> list[BotCombatStrategy]:
-        """Read-only, for reference counting only — see the module docstring."""
-        return list(self._bot_strategies)
+        """Every profile, for reference counting — the active one as its live copy.
+
+        The others are read-only; see the module docstring.
+        """
+        if self._profile is None:
+            return list(self._bot_strategies)
+        return [self._profile, *(b for b in self._bot_strategies if b.id != self._profile.id)]
+
+    # ------------------------------------------------------------------
+    # The active combat profile (#118)
+    # ------------------------------------------------------------------
+
+    @property
+    def profile(self) -> BotCombatStrategy | None:
+        """The active profile's live copy, or None — the library view, or a bot with none yet."""
+        return self._profile
+
+    @property
+    def bot_id(self) -> str | None:
+        """The loaded bot, if any. Set without a profile when that bot has none yet."""
+        return self._bot_id
+
+    @property
+    def profile_created(self) -> bool:
+        """Whether the profile was made in this session, so Save writes it for the first time."""
+        return self._profile is not None and self._profile_baseline is None
+
+    def create_profile(self, name: str) -> BotCombatStrategy:
+        """A new, empty profile for the loaded bot, held here until Save. Cancel discards it."""
+        if self._bot_id is None:
+            raise ValueError("No bot is loaded to make a combat profile for")
+        self._profile = BotCombatStrategy(name=name, bot_id=self._bot_id)
+        self._profile_baseline = None
+        self._profile_entry_baselines = {}
+        return self._profile
+
+    def profile_items(self, kind: StrategyKind) -> list:
+        """The active profile's own entries of *kind*, name-sorted; empty without a profile."""
+        if self._profile is None or kind not in PROFILE_KINDS:
+            return []
+        return sorted(_profile_list(self._profile, kind), key=lambda i: i.name.lower())
+
+    def is_profile_entry(self, kind: StrategyKind, uuid: str | None) -> bool:
+        """Whether *uuid* is one of the active profile's own entries rather than the library's."""
+        return uuid is not None and self._profile_entry(kind, uuid) is not None
+
+    def _profile_entry(self, kind: StrategyKind, uuid: str):
+        if self._profile is None or kind not in PROFILE_KINDS:
+            return None
+        return next((i for i in _profile_list(self._profile, kind) if i.id == uuid), None)
+
+    def lookup(self) -> StrategyLookup:
+        """Every duel and player strategy in reach, profile first — for summaries and the tab."""
+        return StrategyLookup(self._profile, self.duels, self.players)
+
+    def players_for_duel(self, duel_id: str | None) -> list[PlayerCombatStrategy]:
+        """The player strategies an assignment in duel *duel_id* may link.
+
+        A profile duel may use the profile's own and the library's, the profile's first. A
+        library duel may use the library's only: every profile shares it, so it must not
+        depend on one of them.
+        """
+        if self.is_profile_entry(StrategyKind.DUEL, duel_id):
+            return self.profile_items(StrategyKind.PLAYER) + self.players
+        return self.players
+
+    def was_created(self, kind: StrategyKind, uuid: str | None) -> bool:
+        """Whether *uuid* was made in this session — by New, Duplicate or a promotion.
+
+        What lets the Combat tab link the card that opened the dialog to a strategy made
+        on this visit, and to nothing else. An entry moved from the profile into the
+        library still counts only if it was new to begin with.
+        """
+        if uuid is None or self.get(kind, uuid) is None:
+            return False
+        return uuid not in self._slots[kind].baselines and uuid not in self._profile_entry_baselines
+
+    def move_to_library(self, kind: StrategyKind, uuid: str) -> list:
+        """Move a profile entry into the library, keeping its id; return every entry moved.
+
+        A duel takes the profile's own player strategies it uses along with it, since a
+        library duel may not link profile content — the caller confirms that first, with
+        :func:`bartlebot.combat_profile.profile_players_of`. Like every edit it reaches disk
+        at :meth:`commit` and not before, and Cancel undoes it.
+        """
+        entry = self._profile_entry(kind, uuid)
+        if entry is None:
+            return []
+        moving = [(kind, entry)]
+        if kind is StrategyKind.DUEL:
+            moving += [(StrategyKind.PLAYER, pcs) for pcs in profile_players_of(entry, self._profile)]
+        for moved_kind, item in moving:
+            own = _profile_list(self._profile, moved_kind)
+            own[:] = [i for i in own if i.id != item.id]
+            self._slots[moved_kind].items[item.id] = item
+            # A tombstone for this id, left by deleting a library entry it once shadowed,
+            # would otherwise delete the file this move is about to write.
+            slot = self._slots[moved_kind]
+            slot.deleted = [d for d in slot.deleted if d != item.id]
+        return [item for _kind, item in moving]
 
     # ------------------------------------------------------------------
     # Editing
     # ------------------------------------------------------------------
 
-    def create(self, kind: StrategyKind, base_name: str):
-        """A new, empty entry of ``kind``, named uniquely against what is here now."""
+    def create(self, kind: StrategyKind, base_name: str, *, in_profile: bool = False):
+        """A new, empty entry of ``kind``, named uniquely against what is here now.
+
+        *in_profile* puts it in the active profile rather than the library (#118).
+        """
         item = _FACTORIES[kind](self.unique_name(kind, base_name))
-        self._slots[kind].items[item.id] = item
+        self._add(kind, item, in_profile)
         return item
 
-    def duplicate(self, kind: StrategyKind, uuid: str):
+    def duplicate(self, kind: StrategyKind, uuid: str, *, in_profile: bool = False):
         """A copy of ``uuid`` under a fresh id and the next free name, or None if it is gone.
 
         A fresh id, not the source's: an override shares its id with the shipped
         file it shadows, and duplicating one under that id would silently *become*
-        the override rather than making a second entry.
+        the override rather than making a second entry. *in_profile* puts the copy in
+        the active profile, whichever side the source was on — which is how "this
+        fight needs something slightly different" is done.
         """
-        from uuid import uuid4  # noqa: PLC0415 — only needed on this path
-
         source = self.get(kind, uuid)
         if source is None:
             return None
         copy = source.model_copy(deep=True, update={"id": str(uuid4()), "name": self.unique_name(kind, source.name)})
-        self._slots[kind].items[copy.id] = copy
+        self._add(kind, copy, in_profile)
         return copy
+
+    def _add(self, kind: StrategyKind, item, in_profile: bool) -> None:
+        if in_profile:
+            if self._profile is None or kind not in PROFILE_KINDS:
+                raise ValueError(f"No combat profile to hold a {kind.value} strategy")
+            _profile_list(self._profile, kind).append(item)
+        else:
+            self._slots[kind].items[item.id] = item
 
     def remove(self, kind: StrategyKind, uuid: str) -> None:
         """Drop an entry. Written through as a delete by :meth:`commit`.
 
         An entry created in this same session is simply forgotten — there is no
         file to delete, and recording a tombstone for an id that was never
-        written would make ``changes()`` overstate what Save is about to do.
+        written would make ``changes()`` overstate what Save is about to do. A
+        profile entry is a plain delete: it leaves the profile file when it is saved.
         """
+        if self.is_profile_entry(kind, uuid):
+            own = _profile_list(self._profile, kind)
+            own[:] = [i for i in own if i.id != uuid]
+            return
         slot = self._slots[kind]
         if uuid in slot.shipped:
             # Removing only ever touches the user root, so a built-in would reappear on
@@ -300,6 +505,9 @@ class StrategyWorkingSet:
         while its user copy is still on disk. Anything that is not a built-in, including
         an entry created this session, reads :attr:`Origin.USER`.
         """
+        if self.is_profile_entry(kind, uuid):
+            # Never built-in: a profile entry is always the user's own, and never reverts.
+            return Origin.USER
         slot = self._slots[kind]
         item = slot.items.get(uuid)
         if item is None:
@@ -341,16 +549,22 @@ class StrategyWorkingSet:
         return shipped is not None and item is not None and _snapshot(item) == _snapshot(shipped)
 
     def unique_name(self, kind: StrategyKind, base: str) -> str:
-        """``base`` made unique against every live name of that kind — see
-        :func:`bartlebot.strategy_store.unique_name`."""
-        return unique_name(base, (i.name for i in self._slots[kind].items.values()))
+        """``base`` made unique against every live name of that kind, profile entries
+        included — see :func:`bartlebot.strategy_store.unique_name`."""
+        names = [i.name for i in self._slots[kind].items.values()]
+        names += [i.name for i in self.profile_items(kind)]
+        return unique_name(base, names)
 
     # ------------------------------------------------------------------
     # Dirtiness
     # ------------------------------------------------------------------
 
     def changes(self, kind: StrategyKind | None = None) -> Changes:
-        """What Save would write. Derived by comparison — see the module docstring."""
+        """What Save would write. Derived by comparison — see the module docstring.
+
+        Counted per entry, the active profile's own included. An entry moved into the
+        library counts once, as created there, not also as deleted from the profile.
+        """
         kinds = EDITABLE_KINDS if kind is None else (kind,)
         created: list[str] = []
         modified: list[str] = []
@@ -364,11 +578,28 @@ class StrategyWorkingSet:
                 elif _snapshot(item) != baseline or uuid in slot.reverted:
                     modified.append(uuid)
             deleted.extend(slot.deleted)
+            for item in self.profile_items(k):
+                baseline = self._profile_entry_baselines.get(item.id)
+                if baseline is None:
+                    created.append(item.id)
+                elif _snapshot(item) != baseline:
+                    modified.append(item.id)
+        if kind is None:
+            live = {i.id for k in PROFILE_KINDS for i in self.profile_items(k)}
+            moved = {uuid for k in PROFILE_KINDS for uuid in self._slots[k].items}
+            deleted.extend(uuid for uuid in self._profile_entry_baselines if uuid not in live | moved)
         return Changes(created=created, modified=modified, deleted=deleted)
 
     @property
+    def profile_dirty(self) -> bool:
+        """Whether Save has to write the profile file: new, or changed in any way."""
+        if self._profile is None:
+            return False
+        return self._profile_baseline is None or _snapshot(self._profile) != self._profile_baseline
+
+    @property
     def is_dirty(self) -> bool:
-        return bool(self.changes())
+        return bool(self.changes()) or self.profile_dirty
 
     # ------------------------------------------------------------------
     # Committing
@@ -389,8 +620,14 @@ class StrategyWorkingSet:
         of the session's work is not forfeit because one file could not be
         written, and the entry keeps its old baseline, so it still reads as
         modified and Save can be tried again.
+
+        The active profile is written after the library and before any library
+        delete. If a library write failed, the profile is not written at all: it may
+        be the new home of an entry that just left the profile, and rewriting the
+        profile without it would leave no copy anywhere.
         """
         written = self.changes()
+        library_failed = False
         for kind in EDITABLE_KINDS:
             slot = self._slots[kind]
             save = _SAVERS[kind]
@@ -406,9 +643,15 @@ class StrategyWorkingSet:
                         save(item, root=self._root, user_root=self._user_root)
                 except Exception:
                     logger.exception("Failed to save %s strategy %s", kind.value, uuid)
+                    library_failed = True
                     continue
                 slot.baselines[uuid] = _snapshot(item)
                 slot.reverted.discard(uuid)
+        if self.profile_dirty:
+            if library_failed:
+                logger.warning("Not saving combat profile %s: a library strategy failed to save", self._profile.id)
+            else:
+                self._commit_profile()
         for kind in EDITABLE_KINDS:
             slot = self._slots[kind]
             delete = _DELETERS[kind]
@@ -422,6 +665,17 @@ class StrategyWorkingSet:
             slot.deleted.clear()
         return written
 
+    def _commit_profile(self) -> None:
+        try:
+            save_bot_strategy(self._profile, root=self._root, user_root=self._user_root)
+        except Exception:
+            logger.exception("Failed to save combat profile %s", self._profile.id)
+            return
+        self._profile_baseline = _snapshot(self._profile)
+        self._profile_entry_baselines = {
+            item.id: _snapshot(item) for kind in PROFILE_KINDS for item in _profile_list(self._profile, kind)
+        }
+
     # ------------------------------------------------------------------
     # References
     # ------------------------------------------------------------------
@@ -433,8 +687,52 @@ class StrategyWorkingSet:
         reason :func:`bartlebot.strategy_summary.find_references` takes lists:
         a player strategy linked into a duel a minute ago has no file saying so
         yet, and a delete confirmation that missed it would be wrong in exactly
-        the case the user most needs it to be right.
+        the case the user most needs it to be right. The active profile is counted
+        as its live copy, for the same reason.
         """
         from bartlebot.strategy_summary import find_references  # noqa: PLC0415 — avoids a cycle
 
-        return find_references(uuid, self._bot_strategies, self.duels)
+        return find_references(uuid, self.bot_strategies, self.duels)
+
+    def shared_uses(self, bot_name: Callable[[str], str | None] | None = None) -> list[SharedUse]:
+        """Every changed library entry used somewhere the user does not have open.
+
+        What the Save confirmation asks about (#118): an edit to a library entry
+        reaches every profile and library duel using it, and the dialog shows at most
+        one profile. "Not open" means any profile but the active one, of any bot,
+        plus any library duel that links a changed player strategy. With no profile
+        open — the library view — every profile counts.
+
+        *bot_name* turns a bot id into its name, so a profile reads as
+        ``'Solo' (Atlantea)``; without it, or when it has no answer, the profile's
+        name stands alone. Only edits count: a new entry has no uses yet, and a
+        delete has a confirmation of its own.
+        """
+        active_id = self._profile.id if self._profile is not None else None
+        others = [b for b in self._bot_strategies if b.id != active_id]
+        modified = set(self.changes().modified)
+        uses: list[SharedUse] = []
+        for kind in PROFILE_KINDS:
+            for item in self.items(kind):
+                if item.id not in modified:
+                    continue
+                profiles = [self._profile_label(b, bot_name) for b in others if _profile_uses(b, kind, item.id)]
+                duels = []
+                if kind is StrategyKind.PLAYER:
+                    duels = [f"'{d.name}'" for d in self.duels if item.id in d.linked_pcs_ids()]
+                if profiles or duels:
+                    uses.append(SharedUse(item.name, tuple(profiles), tuple(duels)))
+        return uses
+
+    @staticmethod
+    def _profile_label(bcs: BotCombatStrategy, bot_name: Callable[[str], str | None] | None) -> str:
+        name = bot_name(bcs.bot_id) if bot_name is not None else None
+        return f"'{bcs.name}' ({name})" if name else f"'{bcs.name}'"
+
+
+def _profile_uses(bcs: BotCombatStrategy, kind: StrategyKind, uuid: str) -> bool:
+    """Whether profile *bcs* uses *uuid*: a duel on a card or its default, or a player
+    strategy in one of its own duels."""
+    if kind is StrategyKind.DUEL:
+        return bcs.default_strategy_id == uuid or any(a.duel_combat_strategy_id == uuid for a in bcs.state_assignments)
+    return any(uuid in d.linked_pcs_ids() for d in bcs.duel_strategies)
