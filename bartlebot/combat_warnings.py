@@ -7,8 +7,9 @@ exception — the bot can always run on built-in defaults.
 
 Checks performed:
   - an active Bot Combat Strategy is set, and its file loads
-  - every referenced Duel Combat Strategy file loads
-  - every linked Player Combat Strategy file loads
+  - every referenced Duel Combat Strategy resolves, in the profile or the library
+  - every linked Player Combat Strategy resolves the same way
+  - no library duel links a strategy that belongs to the profile (#118)
   - enough clients are connected for each strategy's ``min_players``
   - every combat state that asked for its own strategy actually has one
   - every DSL that could actually run parses
@@ -22,12 +23,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from bartlebot.bot.strategy_models import BotCombatStrategy, DuelConfig, StateAssignment
+from bartlebot.combat_profile import StrategyLookup, profile_players_of
 from bartlebot.nodes.combat_runner import validate_dsl
-from bartlebot.strategy_store import (
-    load_bot_strategy,
-    load_duel_strategy,
-    load_player_strategy,
-)
+from bartlebot.strategy_store import load_bot_strategy
 from bartlebot.strategy_summary import format_players as _format_players
 
 if TYPE_CHECKING:
@@ -88,13 +86,22 @@ def collect_combat_warnings(
     # DSL string → the labels that use it, so a shared preset is parsed once and
     # reported once no matter how many strategies link it.
     dsl_sources: dict[str, list[str]] = {}
+    # The profile's own strategies first, then the library's -- see combat_profile.
+    lookup = StrategyLookup(bcs, root=root)
 
     for context_label, dcs_id in _duel_sources(bcs, config):
-        try:
-            duel_config = load_duel_strategy(dcs_id, root)
-        except Exception:
+        duel_config = lookup.duel(dcs_id)
+        if duel_config is None:
             warnings.append(f"{context_label} Duel Strategy file is missing (id: {_short(dcs_id)}).")
             continue
+        if lookup.profile_duel(dcs_id) is None:
+            # Only a hand-edited file gets here: the dialog never offers a profile
+            # strategy to a library duel, which every other profile shares.
+            for pcs in profile_players_of(duel_config, bcs):
+                warnings.append(
+                    f"Library duel strategy '{duel_config.name}' uses '{pcs.name}', which belongs to "
+                    f"this combat profile only — other profiles using '{duel_config.name}' won't have it."
+                )
         config_label = f"strategy '{duel_config.name}'"
         dsl_label = f"'{duel_config.name}'"  # the strategy's own name — a shared preset always reads the same
 
@@ -104,7 +111,7 @@ def collect_combat_warnings(
                 f"but only {num_clients} client(s) are connected."
             )
 
-        pcs_dsl = _load_linked_presets(duel_config, context_label, config_label, root, warnings)
+        pcs_dsl = _load_linked_presets(duel_config, context_label, config_label, lookup, warnings)
         _collect_dsls(duel_config, dsl_label, pcs_dsl, dsl_sources)
 
     if config is not None:
@@ -172,17 +179,18 @@ def _load_linked_presets(
     duel_config: DuelConfig,
     label: str,
     config_label: str,
-    root: str | Path | None,
+    lookup: StrategyLookup,
     warnings: list[str],
 ) -> dict[str, str]:
-    """Load every PlayerCombatStrategy this duel config links, warning about missing files."""
+    """Find every PlayerCombatStrategy this duel config links, warning about missing ones."""
     pcs_dsl: dict[str, str] = {}
     for pcs_id in duel_config.linked_pcs_ids():
         if pcs_id in pcs_dsl:
             continue
-        try:
-            pcs_dsl[pcs_id] = load_player_strategy(pcs_id, root).dsl
-        except Exception:
+        pcs = lookup.player(pcs_id)
+        if pcs is not None:
+            pcs_dsl[pcs_id] = pcs.dsl
+        else:
             warnings.append(f"Player strategy file missing in {label} {config_label} (id: {_short(pcs_id)}).")
     return pcs_dsl
 

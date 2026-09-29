@@ -448,7 +448,7 @@ def test_the_detail_pane_says_what_uses_this_strategy(qapp, roots):
     save_duel_strategy(dcs, shipped)
     dlg = _dialog(roots, kind=StrategyKind.PLAYER, current_id=pcs.id)
 
-    assert dlg._pages[StrategyKind.PLAYER].about.usage_text == "Used by 1 duel strategy"
+    assert dlg._pages[StrategyKind.PLAYER].about.usage_text == "Used by 'Boss — P1'"
 
 
 def test_the_usage_line_counts_a_link_made_a_minute_ago(qapp, roots):
@@ -464,7 +464,7 @@ def test_the_usage_line_counts_a_link_made_a_minute_ago(qapp, roots):
 
     dlg._pages[StrategyKind.PLAYER].select(pcs.id)
 
-    assert dlg._pages[StrategyKind.PLAYER].about.usage_text == "Used by 1 duel strategy"
+    assert dlg._pages[StrategyKind.PLAYER].about.usage_text == "Used by 'Boss — P1'"
 
 
 # ---------------------------------------------------------------------------

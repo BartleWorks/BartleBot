@@ -109,6 +109,7 @@ from bartlebot.combat_grouping import (
     group_bindings,
     state_label,
 )
+from bartlebot.combat_profile import StrategyLookup
 from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.credentials import CredentialStore
 from bartlebot.deck_io import resolve_apply_archmastery
@@ -1099,9 +1100,19 @@ class CombatTab(QWidget):
         if self._config is not None:
             self._all_bcs = list_bot_strategies(self._config.id)
         self._bcs_banner.set_strategy(self._bcs)
-        self._default_panel.set_libraries(self._all_dcs, self._all_pcs)
+        lookup = self._lookup()
+        self._default_panel.set_libraries(lookup.duels, lookup.players)
         for panel in self._group_panels():
-            panel.set_libraries(self._all_dcs, self._all_pcs)
+            panel.set_libraries(lookup.duels, lookup.players)
+
+    def _lookup(self) -> StrategyLookup:
+        """Every strategy in reach: the active profile's own first, then the library's.
+
+        The one rule for resolving an id, shared with ``resolve_combat`` -- see
+        ``bartlebot.combat_profile``. The cards and the fights popup both read from it,
+        so they cannot name a different strategy than the one the fight will run.
+        """
+        return StrategyLookup(self._bcs, self._all_dcs, self._all_pcs)
 
     def _group_panels(self) -> list[StrategyPanel]:
         """Each panel once — ``_state_panels`` maps every fight in a group to the
@@ -1336,7 +1347,8 @@ class CombatTab(QWidget):
         if self._bcs is None:
             self._default_panel.setVisible(False)
             return
-        self._default_panel.load(_DefaultBinding(self._bcs), self._all_dcs, self._all_pcs)
+        lookup = self._lookup()
+        self._default_panel.load(_DefaultBinding(self._bcs), lookup.duels, lookup.players)
         self._default_panel.set_editable(self._editable)
 
     def _refresh_deck_summaries(self) -> None:
@@ -1519,7 +1531,8 @@ class CombatTab(QWidget):
             role=PanelRole.SPECIALIZED,
         )
         panel.set_fights([(s.id, state_label(s)) for s in states])
-        panel.load(assignment, self._all_dcs, self._all_pcs)
+        lookup = self._lookup()
+        panel.load(assignment, lookup.duels, lookup.players)
         panel.set_fight_options(self._fight_sections(exposed), list(assignment.state_ids))
         panel.set_editable(self._editable)
         # Arrives coloured: the timer only repaints when the answer changes, so a card
@@ -1714,7 +1727,7 @@ class CombatTab(QWidget):
         """The same words the panel's own name line uses, so the dialog reads as
         the same thing — the constants come from ``strategy_panel`` for that reason."""
         if binding.is_linked:
-            dcs = next((d for d in self._all_dcs if d.id == binding.duel_combat_strategy_id), None)
+            dcs = self._lookup().duel(binding.duel_combat_strategy_id)
             return dcs.name if dcs is not None else MISSING_LABEL
         return STATE_INHERIT_LABEL
 

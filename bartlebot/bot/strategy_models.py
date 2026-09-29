@@ -5,7 +5,8 @@ PlayerCombatStrategy  — an optional *shared preset*: a named WizSprinter DSL
                         inline on PlayerAssignment instead; only strategies
                         used by several duels are worth promoting here.
 DuelCombatStrategy    — team-level config for one type of fight
-BotCombatStrategy     — bot-specific mapping of FSM states to strategies + deck data
+BotCombatStrategy     — one user's combat profile for a bot: FSM states to strategies,
+                        deck data, and duel/player strategies of its own
 DeckPreset            — named, reusable deck configuration in the global library
 
 Each top-level model is stored as an individual JSON file identified by UUID.
@@ -322,6 +323,10 @@ class BotCombatStrategy(BaseModel):
     default_strategy_id: str | None = None
     state_assignments: list[StateAssignment] = Field(default_factory=list)
     description: str = ""
+    # Strategies that belong to this profile alone, rather than to the library (#118).
+    # Linked by id like any library entry, and found first — see bartlebot.combat_profile.
+    duel_strategies: list[DuelCombatStrategy] = Field(default_factory=list)
+    player_strategies: list[PlayerCombatStrategy] = Field(default_factory=list)
 
     @classmethod
     def load(cls, path: str | Path) -> BotCombatStrategy:

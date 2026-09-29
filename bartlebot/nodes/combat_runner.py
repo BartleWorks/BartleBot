@@ -41,11 +41,11 @@ def resolve_combat(
     Resolution path:
       1. Get bot_id from machine.bot_config.id.
       2. Look up active BotCombatStrategy UUID in SettingsManager.
-      3. Load BotCombatStrategy; if use_default_strategy=True use the BCS default,
+      3. Load BotCombatStrategy (the active combat profile); if use_default_strategy=True use the BCS default,
          otherwise find the StateAssignment whose state_ids contains machine.state,
          falling back to the BCS default when no assignment covers the state.
-      4. Load the DuelCombatStrategy that one links; an unset one means the
-         built-in default.
+      4. Find the DuelCombatStrategy that one links -- in the profile first, then
+         the library; an unset one means the built-in default.
       5. For each 1-based player slot (1..num_clients) find the PlayerAssignment
          → its inline DSL, or the linked PlayerCombatStrategy preset's DSL if
          player_combat_strategy_id is set.
@@ -56,12 +56,9 @@ def resolve_combat(
     missing, no duel strategy is assigned, or an error occurs.
     """
     # Lazy imports to avoid circular imports and keep startup fast.
+    from bartlebot.combat_profile import StrategyLookup  # noqa: PLC0415
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
-    from bartlebot.strategy_store import (  # noqa: PLC0415
-        load_bot_strategy,
-        load_duel_strategy,
-        load_player_strategy,
-    )
+    from bartlebot.strategy_store import load_bot_strategy  # noqa: PLC0415
 
     bot_cfg = machine.bot_config
     if bot_cfg is None:
@@ -101,9 +98,10 @@ def resolve_combat(
     if not dcs_id:
         logger.debug("resolve_combat: no duel strategy assigned (%s) — using built-in default", assignment_source)
         return [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * num_clients, [], _BUILTIN_SOURCE
-    try:
-        dcs = load_duel_strategy(dcs_id)
-    except Exception:
+    # The profile's own strategies first, then the library's -- see combat_profile.
+    lookup = StrategyLookup(bcs)
+    dcs = lookup.duel(dcs_id)
+    if dcs is None:
         logger.warning("resolve_combat: failed to load DuelCombatStrategy %s — using built-in default", dcs_id)
         return [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * num_clients, [], _BUILTIN_SOURCE
     source_label = f"duel strategy '{dcs.name}' (via {assignment_source})"
@@ -113,10 +111,10 @@ def resolve_combat(
     pcs_map: dict[str, str] = {}
     for pcs_id in dcs.linked_pcs_ids():
         if pcs_id not in pcs_map:
-            try:
-                pcs = load_player_strategy(pcs_id)
+            pcs = lookup.player(pcs_id)
+            if pcs is not None:
                 pcs_map[pcs_id] = pcs.dsl
-            except Exception:
+            else:
                 logger.warning(
                     "resolve_combat: failed to load PlayerCombatStrategy %s — affected players use built-in default",
                     pcs_id,

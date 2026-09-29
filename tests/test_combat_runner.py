@@ -166,7 +166,8 @@ def test_mixed_inline_and_linked_assignments(tmp_path: Path):
         dsls, _order, _source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
     assert dsls == ["inline_dsl", "shared_dsl"]
-    load_pcs.assert_called_once_with(pcs.id)
+    load_pcs.assert_called_once()
+    assert load_pcs.call_args.args == (pcs.id,)
 
 
 def test_empty_inline_dsl_falls_back_to_builtin(tmp_path: Path):
@@ -352,3 +353,65 @@ def test_a_file_from_before_118_loads_with_its_inline_config_ignored(tmp_path: P
 
     assert dsls[0] == "linked_dsl"
     assert "Linked" in source
+
+
+# ---------------------------------------------------------------------------
+# Profile strategies (#118): the active profile first, then the library
+# ---------------------------------------------------------------------------
+
+
+def test_a_profile_duel_wins_over_a_library_duel_with_the_same_id(tmp_path: Path):
+    library = DuelCombatStrategy(name="Library", player_assignments=[PlayerAssignment(players=[1], dsl="lib")])
+    own = library.model_copy(update={"name": "Own", "player_assignments": [PlayerAssignment(players=[1], dsl="own")]})
+    bcs = BotCombatStrategy(name="B", bot_id="bot-1", default_strategy_id=library.id, duel_strategies=[own])
+    load_dcs = Mock(return_value=library)
+
+    with (
+        _patch_active_strategy("bot-1", bcs.id),
+        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.strategy_store.load_duel_strategy", load_dcs),
+    ):
+        dsls, _order, source = resolve_combat(_make_machine(), use_default_strategy=True, num_clients=1)
+
+    assert dsls == ["own"]
+    assert "'Own'" in source
+    load_dcs.assert_not_called()
+
+
+def test_a_profile_duel_links_a_profile_player_strategy(tmp_path: Path):
+    pcs = PlayerCombatStrategy(name="Frost Heal", dsl="heal")
+    own = DuelCombatStrategy(
+        name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
+    )
+    bcs = BotCombatStrategy(
+        name="B",
+        bot_id="bot-1",
+        state_assignments=[StateAssignment(state_ids=["boss"], duel_combat_strategy_id=own.id)],
+        duel_strategies=[own],
+        player_strategies=[pcs],
+    )
+    load_pcs = Mock(side_effect=AssertionError("a profile player strategy must not be loaded from the library"))
+
+    with (
+        _patch_active_strategy("bot-1", bcs.id),
+        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.strategy_store.load_player_strategy", load_pcs),
+    ):
+        dsls, _order, _source = resolve_combat(_make_machine(state="boss"), use_default_strategy=False, num_clients=1)
+
+    assert dsls == ["heal"]
+
+
+def test_an_id_in_neither_the_profile_nor_the_library_falls_back_to_the_builtin(tmp_path: Path):
+    bcs = BotCombatStrategy(name="B", bot_id="bot-1", default_strategy_id="nowhere")
+
+    with (
+        _patch_active_strategy("bot-1", bcs.id),
+        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.strategy_store.load_duel_strategy", side_effect=FileNotFoundError),
+    ):
+        dsls, order, source = resolve_combat(_make_machine(), use_default_strategy=True, num_clients=2)
+
+    assert dsls == [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * 2
+    assert order == []
+    assert source == _BUILTIN_SOURCE

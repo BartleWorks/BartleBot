@@ -238,7 +238,7 @@ def test_health_is_ok_true_only_when_not_invalid():
 def test_find_references_counts_a_bot_default():
     dcs = DuelCombatStrategy(name="Boss")
     bcs = BotCombatStrategy(name="Farm", bot_id="b", default_strategy_id=dcs.id)
-    assert find_references(dcs.id, [bcs], []) == UsageCount(bots=1)
+    assert find_references(dcs.id, [bcs], []) == UsageCount(bots=1, names=("profile 'Farm'",))
 
 
 def test_find_references_counts_a_state_override():
@@ -269,7 +269,7 @@ def test_find_references_counts_a_player_strategy_in_a_duel():
         name="Boss",
         player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)],
     )
-    assert find_references(pcs.id, [], [dcs]) == UsageCount(duels=1)
+    assert find_references(pcs.id, [], [dcs]) == UsageCount(duels=1, names=("'Boss — P1'",))
 
 
 def test_find_references_of_something_unused():
@@ -305,3 +305,27 @@ def test_a_duel_summary_carries_its_combat_order():
 
 def test_a_simultaneous_duel_has_no_combat_order():
     assert summarize_duel(DuelConfig(), []).combat_order == ()
+
+
+def test_find_references_counts_a_link_from_a_profiles_own_duel():
+    """#118: a library player strategy used only by a profile duel is not unused."""
+    pcs = PlayerCombatStrategy(name="Blade")
+    own = DuelCombatStrategy(
+        name="Own", player_assignments=[PlayerAssignment(players=[2, 3], player_combat_strategy_id=pcs.id)]
+    )
+    bcs = BotCombatStrategy(name="Solo", bot_id="b", duel_strategies=[own])
+
+    usage = find_references(pcs.id, [bcs], [])
+
+    assert usage.total == 1
+    assert usage.phrase() == "Used by 'Own — P2–P3'"
+
+
+def test_the_usage_phrase_names_the_duels():
+    usage = UsageCount(duels=2, names=("'Boss — P2'", "'Trash — P1'"))
+    assert usage.phrase() == "Used by 'Boss — P2' and 'Trash — P1'"
+
+
+def test_the_usage_phrase_counts_past_three_names():
+    usage = UsageCount(duels=5, names=tuple(f"'D{i}'" for i in range(5)))
+    assert usage.phrase() == "Used by 'D0', 'D1', 'D2' and 2 more"

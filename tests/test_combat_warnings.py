@@ -627,3 +627,55 @@ def test_a_file_from_before_118_is_not_warned_about_its_inline_config(tmp_path: 
     save_bot_strategy(bcs, tmp_path)
 
     assert collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# Profile strategies (#118)
+# ---------------------------------------------------------------------------
+
+
+def test_a_profile_duel_is_found_without_a_library_file(tmp_path: Path):
+    pcs = PlayerCombatStrategy(name="Own P1", dsl=_VALID_DSL)
+    own = DuelCombatStrategy(
+        name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
+    )
+    bcs = _bcs(tmp_path, default_strategy_id=own.id, duel_strategies=[own], player_strategies=[pcs])
+
+    assert collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path) == []
+
+
+def test_a_profile_player_strategys_dsl_is_checked(tmp_path: Path):
+    pcs = PlayerCombatStrategy(name="Own P1", dsl=_BROKEN_DSL)
+    own = DuelCombatStrategy(
+        name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
+    )
+    bcs = _bcs(tmp_path, default_strategy_id=own.id, duel_strategies=[own], player_strategies=[pcs])
+
+    warnings = collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path)
+
+    assert len(warnings) == 1
+    assert "does not parse" in warnings[0]
+
+
+def test_a_library_duel_linking_a_profile_player_strategy_is_flagged(tmp_path: Path):
+    """Only a hand-edited file gets one in; the dialog never offers it."""
+    pcs = PlayerCombatStrategy(name="Frost Heal", dsl=_VALID_DSL)
+    library = _dcs(
+        tmp_path, "Boss Burn", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
+    )
+    bcs = _bcs(tmp_path, default_strategy_id=library.id, player_strategies=[pcs])
+
+    warnings = collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path)
+
+    assert len(warnings) == 1
+    assert "Library duel strategy 'Boss Burn' uses 'Frost Heal'" in warnings[0]
+
+
+def test_a_profile_duel_linking_a_profile_player_strategy_is_not_flagged(tmp_path: Path):
+    pcs = PlayerCombatStrategy(name="Frost Heal", dsl=_VALID_DSL)
+    own = DuelCombatStrategy(
+        name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
+    )
+    bcs = _bcs(tmp_path, default_strategy_id=own.id, duel_strategies=[own], player_strategies=[pcs])
+
+    assert not any("belongs to" in w for w in collect_combat_warnings(bcs.id, 1, root=tmp_path))

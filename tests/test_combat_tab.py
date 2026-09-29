@@ -2231,3 +2231,33 @@ def test_a_locked_deck_does_not_move(qapp, store):
     _drag_onto(qapp, section.card(1), section.card(3), 1)
 
     assert _deck_names(tab._bcs.player_decks) == {1: "One", 2: "Two", 3: "Three"}
+
+
+# ---------------------------------------------------------------------------
+# Profile strategies (#118) — the tab resolves ids the way resolve_combat does
+# ---------------------------------------------------------------------------
+
+
+def test_a_card_naming_a_profile_duel_shows_it(qapp, store):
+    own = DuelCombatStrategy(name="Just This Fight")
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        default_strategy_id=own.id,
+        state_assignments=[StateAssignment(state_ids=["state_1"], duel_combat_strategy_id=own.id)],
+        duel_strategies=[own],
+    )
+    tab = _tab_for(bcs, _multi_config("A", "B"))
+
+    assert tab._default_panel._name.full_text() == "Just This Fight"
+    assert tab._state_panels["state_1"]._name.full_text() == "Just This Fight"
+    assert tab._describe_state_binding("state_1") == "Just This Fight"
+
+
+def test_a_profile_duel_shadows_a_library_duel_on_the_card(qapp, store):
+    library = _saved_dcs("Library Version")
+    own = library.model_copy(update={"name": "Profile Version"})
+    bcs = BotCombatStrategy(name="BCS", bot_id="bot-1", default_strategy_id=library.id, duel_strategies=[own])
+    tab = _tab_for(bcs, _config())
+
+    assert tab._default_panel._name.full_text() == "Profile Version"

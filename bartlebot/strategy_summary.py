@@ -84,24 +84,47 @@ class AssignmentLine:
     slots: tuple[int, ...] = ()
 
 
+#: How many uses a usage sentence names before it counts the rest.
+_NAMED_USES = 3
+
+
+def name_list(names: list[str] | tuple[str, ...], limit: int = _NAMED_USES) -> str:
+    """ "A", "A and B", "A, B and C", or "A, B, C and 2 more" — names already quoted."""
+    names = list(names)
+    if len(names) > limit:
+        return f"{', '.join(names[:limit])} and {len(names) - limit} more"
+    if len(names) <= 1:
+        return "".join(names)
+    return f"{', '.join(names[:-1])} and {names[-1]}"
+
+
 @dataclass(frozen=True)
 class UsageCount:
-    """Where a strategy is already referenced — a delete confirmation or detail pane."""
+    """Where a strategy is already referenced — a delete confirmation or detail pane.
+
+    ``names`` says *what* uses it, one entry per use, already quoted: a combat profile
+    as ``profile 'Solo'`` and a duel as ``'Boss — P2'``, the duel's name and the slots
+    that run this strategy in it. A count alone made a user go looking (#118).
+    """
 
     bots: int = 0
     duels: int = 0
+    names: tuple[str, ...] = ()
 
     @property
     def total(self) -> int:
         return self.bots + self.duels
 
     def phrase(self) -> str:
-        """ "Used by 3 bot strategies and 2 duel strategies" — one sentence, or "Not used yet".
+        """ "Used by 'Boss — P2' and 'Trash — P1'" — one sentence, or "Not used yet".
 
         Lives here rather than in the dialog because a delete confirmation and a
         detail pane both say it, and two surfaces counting the same references
-        differently is the drift :class:`StrategySummary` exists to prevent.
+        differently is the drift :class:`StrategySummary` exists to prevent. A count
+        with no names behind it is said as counts.
         """
+        if self.names:
+            return "Used by " + name_list(self.names)
         parts = []
         if self.bots:
             parts.append(f"{self.bots} bot strateg{'ies' if self.bots != 1 else 'y'}")
@@ -110,6 +133,14 @@ class UsageCount:
         if not parts:
             return "Not used yet"
         return "Used by " + " and ".join(parts)
+
+
+def _duel_use(duel, uuid: str) -> str | None:
+    """``'Boss — P2'`` if *duel* links *uuid*, naming the slots that run it; else None."""
+    players = sorted({p for a in duel.player_assignments if a.player_combat_strategy_id == uuid for p in a.players})
+    if not any(a.player_combat_strategy_id == uuid for a in duel.player_assignments):
+        return None
+    return f"'{duel.name} — {format_players(players)}'" if players else f"'{duel.name}'"
 
 
 def find_references(uuid: str, bot_strategies=(), duel_strategies=()) -> UsageCount:
@@ -125,18 +156,27 @@ def find_references(uuid: str, bot_strategies=(), duel_strategies=()) -> UsageCo
     - a ``BotCombatStrategy`` referencing a DuelCombatStrategy, as its default
       or through any state assignment
     - a ``DuelCombatStrategy`` referencing a PlayerCombatStrategy through an
-      assignment
+      assignment — a library duel, or one of a bot strategy's own (#118). Missing
+      the second kind would call a library player strategy that only a profile's
+      duel uses "Not used yet", and delete it without a warning.
 
     A bot strategy naming the same id twice — its default plus a state override
     — counts once. What the user is being told is how many *things* change, not
     how many fields do.
     """
     bots = 0
+    duels = 0
+    names: list[str] = []
     for bcs in bot_strategies:
         if bcs.default_strategy_id == uuid or any(a.duel_combat_strategy_id == uuid for a in bcs.state_assignments):
             bots += 1
-    duels = sum(1 for dcs in duel_strategies if uuid in dcs.linked_pcs_ids())
-    return UsageCount(bots=bots, duels=duels)
+            names.append(f"profile '{bcs.name}'")
+    for duel in [*(d for bcs in bot_strategies for d in bcs.duel_strategies), *duel_strategies]:
+        use = _duel_use(duel, uuid)
+        if use is not None:
+            duels += 1
+            names.append(use)
+    return UsageCount(bots=bots, duels=duels, names=tuple(names))
 
 
 @dataclass(frozen=True)
