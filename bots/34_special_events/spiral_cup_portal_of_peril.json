@@ -1,0 +1,1438 @@
+{
+  "id": "319081de-0bf4-415a-a778-4a571d35e4e8",
+  "name": "Spiral Cup (Portal of Peril)",
+  "description": "Endlessly farms the Spiral Cup Gauntlet.\n\nREQUIREMENTS: Set Friend Name in Setup to the friend who owns the gauntlet. Your players enter by porting to them rather than by walking in, so that friend must be standing on the gauntlet entrance sigil, and \"Double-click to teleport to friend\" must be turned off in the game's options.",
+  "version": "2.0",
+  "clients": "all",
+  "initial": "sync_players_1_state_2",
+  "recovery_state": "sync_players_1_state_2",
+  "drops": [
+    {
+      "name": "Angora Bunny Ears",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ape Grapes",
+      "category": "Snacks"
+    },
+    {
+      "name": "Avalon Abbey Road Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Avalon Combat Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Avalon Glorious Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Avalon Haunting Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Avalon Main Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Avalon Tense Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Avalon Wyrd Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Black Lotus",
+      "category": "Reagents"
+    },
+    {
+      "name": "Blizzard Lizard Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blue Huckleberries",
+      "category": "Seeds"
+    },
+    {
+      "name": "Blue Vine Wallpaper",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Bowl of Tomatoes",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Brass",
+      "category": "Reagents"
+    },
+    {
+      "name": "Broken Palm Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Broken Stump",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Bronze",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bronze Gear",
+      "category": "Reagents"
+    },
+    {
+      "name": "Caramel Popcorn",
+      "category": "Snacks"
+    },
+    {
+      "name": "Cauliflowers",
+      "category": "Snacks"
+    },
+    {
+      "name": "Celestian Tree Sprig",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Clear Accurate Sapphire +9%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Blocking Ruby +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Critical Citrine +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Clear Damage Onyx +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
+      "name": "Cross Section Floor Tile",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Crunch Apple",
+      "category": "Snacks"
+    },
+    {
+      "name": "Deadly Helephant Ears",
+      "category": "Seeds"
+    },
+    {
+      "name": "Death-Away Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Delicious Cookie",
+      "category": "Snacks"
+    },
+    {
+      "name": "Elm Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Fire Bush",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Fire Cracker",
+      "category": "Snacks"
+    },
+    {
+      "name": "Flapjacks",
+      "category": "Snacks"
+    },
+    {
+      "name": "Flowering Celestian Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Frost Flower",
+      "category": "Reagents"
+    },
+    {
+      "name": "Glowing Rock Candy",
+      "category": "Snacks"
+    },
+    {
+      "name": "Green Foodcart",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Greenwarden's Energetic Boots (Level 100+)",
+      "category": "Boots",
+      "match_name": "Greenwarden's Energetic Boots"
+    },
+    {
+      "name": "Greenwarden's Energetic Mask (Level 100+)",
+      "category": "Hats",
+      "match_name": "Greenwarden's Energetic Mask"
+    },
+    {
+      "name": "Greenwarden's Energetic Shroud (Level 100+)",
+      "category": "Robes",
+      "match_name": "Greenwarden's Energetic Shroud"
+    },
+    {
+      "name": "Greenwarden's Energetic Staff (Level 100+)",
+      "category": "Wands",
+      "match_name": "Greenwarden's Energetic Staff"
+    },
+    {
+      "name": "Greenwarden's Energetic Staff (Level 90+)",
+      "category": "Wands",
+      "match_name": "Greenwarden's Energetic Staff"
+    },
+    {
+      "name": "Gummy Bloodbat",
+      "category": "Snacks"
+    },
+    {
+      "name": "Ice Trap Sapphire (Triangle)",
+      "category": "Jewels",
+      "match_name": "Ice Trap Sapphire"
+    },
+    {
+      "name": "Large Cypress Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Large Evergreen Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Large Fir Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Large Fish",
+      "category": "Snacks"
+    },
+    {
+      "name": "Large Willow Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Leaning Palm Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Maple Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Mass Infection Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Meat Soup",
+      "category": "Snacks"
+    },
+    {
+      "name": "Medium Evergreen Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Medium Fir Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Medium Pine Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Ninja Fig",
+      "category": "Seeds"
+    },
+    {
+      "name": "Ninja Pig Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Red Huckleberries",
+      "category": "Seeds"
+    },
+    {
+      "name": "Red Leaf Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Red Mandrake",
+      "category": "Reagents"
+    },
+    {
+      "name": "Redskin Peanut",
+      "category": "Snacks"
+    },
+    {
+      "name": "Rude Goblin",
+      "category": "Pets"
+    },
+    {
+      "name": "Shh! Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Small Bush",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Small Cypress Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Small Maple Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Spicy Drumstick",
+      "category": "Snacks"
+    },
+    {
+      "name": "Square Root",
+      "category": "Snacks"
+    },
+    {
+      "name": "Stone Block Wallpaper",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Strawberry Cupcake",
+      "category": "Snacks"
+    },
+    {
+      "name": "Stucco Wallpaper",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Submarine Sandwich",
+      "category": "Snacks"
+    },
+    {
+      "name": "Sunflower",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Tall Palm Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Tall Pumpkin",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Tasty Biscuit",
+      "category": "Snacks"
+    },
+    {
+      "name": "Tree Fountain",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Unstoppable Talent Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Vestment of Chaos",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Earth",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Ember",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Equilibrium",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of Frost",
+      "category": "Robes"
+    },
+    {
+      "name": "Wheat Cracker",
+      "category": "Snacks"
+    },
+    {
+      "name": "Wooden Well",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Yellow Flowers Wallpaper",
+      "category": "Housing Items"
+    }
+  ],
+  "authors": "BartleBot",
+  "tags": [
+    "Gear",
+    "Spellements",
+    "Dungeon",
+    "Gauntlet",
+    "Team-Up"
+  ],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Greenwarden's Energetic Boots",
+        "Greenwarden's Energetic Mask",
+        "Greenwarden's Energetic Shroud"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "state_2",
+      "node_type": "interact",
+      "label": "Talk to Benedict Glendemming",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "interact_xyz": {
+          "x": -3.18,
+          "y": 290.17,
+          "z": 80.89
+        },
+        "reset_xyz": {
+          "x": -3.18,
+          "y": 842.77,
+          "z": 1.6
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_4",
+      "node_type": "enter_zone",
+      "label": "Enter Chamber of the Hydra",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "to_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_02",
+        "xyz": {
+          "x": -1482.77,
+          "y": -13.7,
+          "z": 20.97
+        },
+        "reset_xyz": {
+          "x": -990.95,
+          "y": -15.13,
+          "z": 1.23
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "handle_combat",
+      "label": "Defeat mobs in Chamber of the Hydra",
+      "position": {
+        "x": 2200,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "",
+        "wiki_page": "",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_6",
+      "node_type": "enter_zone",
+      "label": "Exit Chamber of the Hydra",
+      "position": {
+        "x": 2640,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_02",
+        "to_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "xyz": {
+          "x": 647.42,
+          "y": 1578.09,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 350.64,
+          "y": 825.16,
+          "z": 0.2
+        },
+        "stagger": false
+      }
+    },
+    {
+      "id": "state_7",
+      "node_type": "interact",
+      "label": "Talk to Benedict Glendemming",
+      "position": {
+        "x": 3520,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "interact_xyz": {
+          "x": -3.18,
+          "y": 290.17,
+          "z": 80.89
+        },
+        "reset_xyz": {
+          "x": -3.18,
+          "y": 842.77,
+          "z": 1.6
+        },
+        "interact_clients": [
+          1
+        ],
+        "has_dialogue": true,
+        "animation_delay": 0.0,
+        "sequential": false,
+        "object_use_delay": 1.0
+      }
+    },
+    {
+      "id": "state_8",
+      "node_type": "enter_zone",
+      "label": "Enter Hall of the Specter",
+      "position": {
+        "x": 3960,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "to_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_03",
+        "xyz": {
+          "x": -1039.09,
+          "y": -1057.99,
+          "z": 82.52
+        },
+        "reset_xyz": {
+          "x": -656.17,
+          "y": -678.95,
+          "z": 1.08
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "handle_combat",
+      "label": "Defeat mobs in Hall of the Specter",
+      "position": {
+        "x": 4400,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "",
+        "wiki_page": "",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "enter_zone",
+      "label": "Exit Hall of the Specter",
+      "position": {
+        "x": 4840,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_03",
+        "to_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "xyz": {
+          "x": 601.38,
+          "y": 1446.98,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 381.4,
+          "y": 918.21,
+          "z": 0.2
+        }
+      }
+    },
+    {
+      "id": "state_13",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
+      }
+    },
+    {
+      "id": "state_14",
+      "node_type": "interact",
+      "label": "Talk to Benedict Glendemming",
+      "position": {
+        "x": 5720,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "interact_xyz": {
+          "x": -3.18,
+          "y": 290.17,
+          "z": 80.89
+        },
+        "reset_xyz": {
+          "x": -3.18,
+          "y": 842.77,
+          "z": 1.6
+        },
+        "interact_clients": [
+          1
+        ]
+      }
+    },
+    {
+      "id": "state_15",
+      "node_type": "enter_zone",
+      "label": "Enter Hall of the Harpy",
+      "position": {
+        "x": 6160,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "to_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_04",
+        "xyz": {
+          "x": 1048.44,
+          "y": -1053.31,
+          "z": 82.52
+        },
+        "reset_xyz": {
+          "x": 692.82,
+          "y": -684.4,
+          "z": 1.15
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_16",
+      "node_type": "handle_combat",
+      "label": "Defeat mobs in Hall of the Harpy",
+      "position": {
+        "x": 6600,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "",
+        "wiki_page": "",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_17",
+      "node_type": "enter_zone",
+      "label": "Exit Hall of the Harpy",
+      "position": {
+        "x": 7040,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_04",
+        "to_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "xyz": {
+          "x": 605.41,
+          "y": 1406.74,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 316.82,
+          "y": 785.95,
+          "z": 0.2
+        }
+      }
+    },
+    {
+      "id": "state_18",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 5280,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
+      }
+    },
+    {
+      "id": "state_19",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 7480,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
+      }
+    },
+    {
+      "id": "state_20",
+      "node_type": "interact",
+      "label": "Talk to Benedict Glendemming",
+      "position": {
+        "x": 7920,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "interact_xyz": {
+          "x": -3.18,
+          "y": 290.17,
+          "z": 80.89
+        },
+        "reset_xyz": {
+          "x": -3.18,
+          "y": 842.77,
+          "z": 1.6
+        },
+        "interact_clients": [
+          1
+        ]
+      }
+    },
+    {
+      "id": "state_21",
+      "node_type": "enter_zone",
+      "label": "Enter Chamber of the Basilisk",
+      "position": {
+        "x": 8360,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "to_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_05",
+        "xyz": {
+          "x": 1488.28,
+          "y": -6.51,
+          "z": 20.96
+        },
+        "reset_xyz": {
+          "x": 1048.74,
+          "y": 12.46,
+          "z": 1.15
+        },
+        "stagger": true
+      }
+    },
+    {
+      "id": "state_22",
+      "node_type": "handle_combat",
+      "label": "Defeat Tamworth Brickhouse",
+      "position": {
+        "x": 8800,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "",
+        "wiki_page": "",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "state_23",
+      "node_type": "enter_zone",
+      "label": "Exit Chamber of the Basilisk",
+      "position": {
+        "x": 9240,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_05",
+        "to_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "xyz": {
+          "x": 605.41,
+          "y": 1406.74,
+          "z": 0.2
+        },
+        "reset_xyz": {
+          "x": 316.82,
+          "y": 785.95,
+          "z": 0.2
+        }
+      }
+    },
+    {
+      "id": "state_24",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 9680,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
+      }
+    },
+    {
+      "id": "state_25",
+      "node_type": "enter_zone_via_object",
+      "label": "Enter final boss room",
+      "position": {
+        "x": 10120,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "to_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_06",
+        "interact_xyz": {
+          "x": -17.35,
+          "y": -1310.53,
+          "z": 179.62
+        },
+        "reset_xyz": {
+          "x": -4.7,
+          "y": -660.85,
+          "z": 1.41
+        },
+        "sequential": true
+      }
+    },
+    {
+      "id": "state_26",
+      "node_type": "handle_combat",
+      "label": "Defeat mobs final in boss room",
+      "position": {
+        "x": 10560,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "",
+        "wiki_page": "",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "state_27",
+      "node_type": "teleport_to_coordinates",
+      "label": "Exit combat",
+      "position": {
+        "x": 11000,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_06",
+        "xyz": {
+          "x": -24.78,
+          "y": 832.96,
+          "z": 0.19
+        }
+      }
+    },
+    {
+      "id": "state_28",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
+      "position": {
+        "x": 11440,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 5.0
+      }
+    },
+    {
+      "id": "state_29",
+      "node_type": "handle_combat",
+      "label": "Defeat Barbarous Van Der Borst",
+      "position": {
+        "x": 11880,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "",
+        "wiki_page": "Creature:Barbarous Van Der Borst (Tier 5)",
+        "use_default_strategy": false,
+        "max_duration": 600.0
+      },
+      "notes": "Drops vary by tier"
+    },
+    {
+      "id": "sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": -439.9997804757768,
+        "y": -0.00036884030083594865
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "sync_players_1_state_2",
+      "node_type": "go_to_zone",
+      "label": "Go to zone",
+      "position": {
+        "x": 0.0002195242232119199,
+        "y": 89.99963115969916
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      }
+    },
+    {
+      "id": "sync_players_1_state_3",
+      "node_type": "change_realm",
+      "label": "Change to favorite realm",
+      "position": {
+        "x": 440.0002195242232,
+        "y": -0.00036884030083594865
+      },
+      "params": {
+        "use_favorite_realm": true
+      }
+    },
+    {
+      "id": "state_31",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": "WizardCity/WC_Hub"
+      }
+    },
+    {
+      "id": "state_32",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "state_33",
+      "node_type": "enter_dungeon",
+      "label": "Enter Spiral Cup",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "WizardCity/WC_Hub",
+        "dungeon_zone": "MonthlyEvents/ME_SpiralCup/Spiral_Cup_01",
+        "dungeon_name": "",
+        "sigil_xyz": {
+          "x": -5843.57,
+          "y": -438.08,
+          "z": 229.0
+        },
+        "reset_xyz": {
+          "x": -5687.84,
+          "y": -976.65,
+          "z": 229.0
+        },
+        "offers_challenge_mode": false,
+        "offers_team_up": false
+      }
+    },
+    {
+      "id": "state_34",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to The Commons",
+      "position": {
+        "x": 12320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_12",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_13",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_14",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_16",
+      "dest": "state_17",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "state_19",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "state_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_19",
+      "dest": "state_20",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_2",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_22",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_22",
+      "dest": "state_23",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_23",
+      "dest": "state_24",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "state_25",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "state_26",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "state_27",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_27",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_29",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_34",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_31",
+      "dest": "state_32",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_32",
+      "dest": "state_33",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_33",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_34",
+      "dest": "state_31",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_1",
+      "dest": "sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_2",
+      "dest": "sync_players_1_state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_3",
+      "dest": "state_31",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "c47780d8",
+      "label": "Chamber of the Hydra",
+      "members": [
+        "state_5",
+        "state_4",
+        "state_2",
+        "state_6",
+        "state_13"
+      ],
+      "color": 2,
+      "collapsed": true
+    },
+    {
+      "id": "427c45c4",
+      "label": "Hall of the Specter",
+      "members": [
+        "state_12",
+        "state_8",
+        "state_7",
+        "state_18",
+        "state_9"
+      ],
+      "color": 3,
+      "collapsed": true
+    },
+    {
+      "id": "f6e07e7d",
+      "label": "Hall of the Harpy",
+      "members": [
+        "state_15",
+        "state_14",
+        "state_19",
+        "state_17",
+        "state_16"
+      ],
+      "color": 4,
+      "collapsed": true
+    },
+    {
+      "id": "06d89e97",
+      "label": "Chamber of the Basilisk",
+      "members": [
+        "state_20",
+        "state_23",
+        "state_24",
+        "state_21",
+        "state_22"
+      ],
+      "color": 5,
+      "collapsed": true
+    },
+    {
+      "id": "f8c13b9f",
+      "label": "Final boss",
+      "members": [
+        "state_27",
+        "state_29",
+        "state_25",
+        "state_28",
+        "state_26",
+        "state_34"
+      ],
+      "color": 6,
+      "collapsed": true
+    },
+    {
+      "id": "sync_players_1",
+      "label": "Sync players",
+      "members": [
+        "sync_players_1_state_1",
+        "sync_players_1_state_2",
+        "sync_players_1_state_3"
+      ],
+      "color": 6,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 3,
+        "inputs": {
+          "state_2.zone": "WizardCity/WC_Hub"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_3",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": -439.9997804757768,
+          "y": -0.00036884030083594865
+        }
+      }
+    }
+  ]
+}

@@ -313,7 +313,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 0.0,
+        "x": -880.0,
         "y": 0.0
       },
       "params": {
@@ -328,7 +328,7 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 440.0,
+        "x": -440.0,
         "y": 0.0
       },
       "params": {}
@@ -338,7 +338,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Atlantea",
       "position": {
-        "x": 880.0,
+        "x": 0.0,
         "y": 0.0
       },
       "params": {
@@ -364,7 +364,7 @@
       "node_type": "relog",
       "label": "Relog",
       "position": {
-        "x": -440.0,
+        "x": -1320.0,
         "y": 0.0
       },
       "params": {
@@ -381,7 +381,7 @@
       "node_type": "go_to_zone",
       "label": "Go to zone",
       "position": {
-        "x": 0.0,
+        "x": -880.0,
         "y": 90.0
       },
       "params": {
@@ -393,7 +393,7 @@
       "node_type": "change_realm",
       "label": "Change to favorite realm",
       "position": {
-        "x": 440.0,
+        "x": -440.0,
         "y": 0.0
       },
       "params": {
@@ -405,7 +405,7 @@
       "node_type": "interact",
       "label": "Talk to Hermes Winged Wayfarer",
       "position": {
-        "x": 1320.0,
+        "x": 880.0,
         "y": 0.0
       },
       "params": {
@@ -434,7 +434,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Locate Voracious Legionnaires",
       "position": {
-        "x": 1760.0,
+        "x": 1320.0,
         "y": 0.0
       },
       "params": {
@@ -451,7 +451,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Voracious Legionnaires",
       "position": {
-        "x": 2640,
+        "x": 2200.0,
         "y": 0.0
       },
       "params": {
@@ -466,7 +466,7 @@
       "node_type": "interact",
       "label": "Talk to Hermes Winged Wayfarer",
       "position": {
-        "x": 3080,
+        "x": 3080.0,
         "y": 0.0
       },
       "params": {
@@ -1257,7 +1257,7 @@
         "interact_clients": [
           1
         ],
-        "has_dialogue": true,
+        "has_dialogue": false,
         "animation_delay": 0.0,
         "sequential": false,
         "object_use_delay": 1.0
@@ -1286,7 +1286,7 @@
         "interact_clients": [
           1
         ],
-        "has_dialogue": true,
+        "has_dialogue": false,
         "animation_delay": 0.0,
         "sequential": false,
         "object_use_delay": 1.0
@@ -1412,7 +1412,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 2200.0,
+        "x": 1760.0,
         "y": 0.0
       },
       "params": {
@@ -1596,6 +1596,45 @@
           "z": 94.35
         }
       }
+    },
+    {
+      "id": "state_71",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to safety",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "xyz": {
+          "x": 117.95,
+          "y": -5000.49,
+          "z": 333.77
+        }
+      }
+    },
+    {
+      "id": "state_72",
+      "node_type": "apply_level_scaling",
+      "label": "Apply level scaling",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "interact_xyz": {
+          "x": -385.1,
+          "y": -5711.43,
+          "z": 333.77
+        },
+        "reset_xyz": {
+          "x": -904.86,
+          "y": -7331.08,
+          "z": 504.2
+        }
+      }
     }
   ],
   "transitions": [
@@ -1622,7 +1661,7 @@
     {
       "trigger": "advance",
       "source": "state_14",
-      "dest": "state_15",
+      "dest": "state_71",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2221,8 +2260,28 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
+      "source": "state_71",
+      "dest": "state_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_72",
       "dest": "state_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_8",
+      "dest": "state_72",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2293,7 +2352,7 @@
           }
         },
         "anchor": {
-          "x": -440.0,
+          "x": -1320.0,
           "y": 0.0
         }
       }
@@ -2305,7 +2364,8 @@
         "state_5",
         "state_12",
         "state_8",
-        "state_4"
+        "state_4",
+        "state_72"
       ],
       "color": 1,
       "collapsed": true
@@ -2317,7 +2377,8 @@
         "state_14",
         "state_15",
         "state_13",
-        "state_63"
+        "state_63",
+        "state_71"
       ],
       "color": 4,
       "collapsed": true
