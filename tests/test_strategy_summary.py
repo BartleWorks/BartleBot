@@ -272,19 +272,6 @@ def test_find_references_counts_a_player_strategy_in_a_duel():
     assert find_references(pcs.id, [], [dcs]) == UsageCount(duels=1)
 
 
-def test_find_references_reaches_a_bots_inline_config():
-    """An inline DuelConfig on a bot strategy links presets too, and nothing else looks there."""
-    pcs = PlayerCombatStrategy(name="Blade")
-    bcs = BotCombatStrategy(
-        name="Farm",
-        bot_id="b",
-        default_duel_config=DuelConfig(
-            player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
-        ),
-    )
-    assert find_references(pcs.id, [bcs], []).bots == 1
-
-
 def test_find_references_of_something_unused():
     assert find_references("orphan-id", [], []) == UsageCount()
 

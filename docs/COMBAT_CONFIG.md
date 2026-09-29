@@ -29,9 +29,9 @@ PlayerCombatStrategy   library, shareable     one wizard's job, as DSL
 DeckPreset             library, personal      a deck to build before the fight
 ```
 
-`DuelCombatStrategy` **is-a** `DuelConfig`: the same shape, plus an id and a name. That is what lets a `StateAssignment` hold either a link to a library entry or an inline config of its own, with no second model and no conversion — `duel_combat_strategy_id` set means the inline `duel_config` is ignored.
+`DuelCombatStrategy` **is-a** `DuelConfig`: the same shape, plus an id and a name. A `StateAssignment` and the profile's `default_strategy_id` only ever *link* one, by id, and an unlinked one falls back a level. There is no inline duel config. `StateAssignment.duel_config` and `BotCombatStrategy.default_duel_config` were removed in #118 rather than migrated, because none existed and the editor for them was already gone. The models do not forbid extra fields, so a stray old file still loads, with those fields ignored.
 
-The link/inline pair repeats one level down: a `PlayerAssignment` carries either `player_combat_strategy_id` or its own `dsl`. **Linked wins, and an inline DSL is not a fallback for a broken link** — a link that cannot be resolved is a warning, not a silent reversion to whatever was typed before the link was made.
+The link/inline pair exists at the player level only: a `PlayerAssignment` carries either `player_combat_strategy_id` or its own `dsl`, which is the assignment card's `Custom DSL…`. **Linked wins, and an inline DSL is not a fallback for a broken link** — a link that cannot be resolved is a warning, not a silent reversion to whatever was typed before the link was made.
 
 `DeckData.tc` is legacy and is never read or applied. Treasure cards are deliberately absent from the deck editor; do not add them back without deciding what applying them would mean.
 
@@ -120,8 +120,8 @@ Filtering must never disturb the editor beside it. `QListWidget.clear()` emits `
 `resolve_combat()` in `bartlebot/nodes/combat_runner.py` returns `(per_client_dsl, combat_order, source_label)` and falls back to `BARTLEBOT_DEFAULT_COMBAT_CONFIG` at **every** level:
 
 1. `machine.bot_config.id` → `SettingsManager.get_active_strategy(bot_id)` → load the `BotCombatStrategy`.
-2. Either the BCS default (`use_default_strategy`) or the `StateAssignment` covering `machine.state`, falling back to the default when no assignment covers it. An assignment that is unlinked *and* empty counts as no assignment at all.
-3. That target is either linked to a library `DuelCombatStrategy` or inline.
+2. Either the BCS default (`use_default_strategy`) or the `StateAssignment` covering `machine.state`, falling back to the default when no assignment covers it. An unlinked assignment counts as no assignment at all.
+3. The `DuelCombatStrategy` that target links, or the built-in default when it links none.
 4. Per 1-based player slot, the matching `PlayerAssignment`'s inline DSL, or the linked Player Strategy's DSL.
 5. Anything unresolved gets the built-in default.
 

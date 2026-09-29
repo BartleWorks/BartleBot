@@ -100,7 +100,6 @@ from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DeckData,
     DuelCombatStrategy,
-    DuelConfig,
     PlayerCombatStrategy,
     StateAssignment,
 )
@@ -123,7 +122,6 @@ from bartlebot.gui.sidebar.sidebar_section import (
 )
 from bartlebot.gui.sidebar.strategy_panel import (
     BUILT_IN_LABEL,
-    CUSTOM_LABEL,
     LOCKED,
     MISSING_LABEL,
     NOT_CONFIGURED_LABEL,
@@ -155,7 +153,6 @@ from bartlebot.strategy_store import (
     list_duel_strategies,
     list_player_strategies,
     save_bot_strategy,
-    save_duel_strategy,
 )
 from bartlebot.strategy_summary import summarize_bot
 from bartlebot.strategy_workset import StrategyWorkingSet
@@ -730,22 +727,13 @@ class _PlayerDecksSection(SidebarSection):
 
 
 class _DefaultBinding:
-    """Adapts BotCombatStrategy's ``default_strategy_id`` / ``default_duel_config``
-    fields to the same shape as ``StateAssignment`` — ``duel_config``,
-    ``duel_combat_strategy_id`` (settable), ``is_linked`` — so one ``StrategyPanel``
-    class draws both the bot default and every per-fight override.
+    """Adapts BotCombatStrategy's ``default_strategy_id`` to the same shape as
+    ``StateAssignment`` — ``duel_combat_strategy_id`` (settable), ``is_linked`` — so one
+    ``StrategyPanel`` class draws both the bot default and every per-fight override.
     """
 
     def __init__(self, bcs: BotCombatStrategy):
         self._bcs = bcs
-
-    @property
-    def duel_config(self) -> DuelConfig:
-        return self._bcs.default_duel_config
-
-    @duel_config.setter
-    def duel_config(self, value: DuelConfig) -> None:
-        self._bcs.default_duel_config = value
 
     @property
     def duel_combat_strategy_id(self) -> str | None:
@@ -935,7 +923,7 @@ class CombatTab(QWidget):
         self._all_dcs: list[DuelCombatStrategy] = []
         self._all_pcs: list[PlayerCombatStrategy] = []
         # state_id → its StateAssignment (owned in-memory; flushed to BCS on save,
-        # dropped if it never ends up linked or holding real inline content)
+        # dropped if it never ends up linked)
         self._state_bindings: dict[str, StateAssignment] = {}
         self._state_panels: dict[str, StrategyPanel] = {}
         # A card made by the add-card and not yet given any fights. It exists only so the
@@ -944,7 +932,7 @@ class CombatTab(QWidget):
         self._pending_panel: StrategyPanel | None = None
         # The specialized cards' order, top to bottom: the user's, set by dragging, and
         # kept on disk as the order of ``state_assignments``. Identity, not equality --
-        # two inline assignments can hold the same config. See ``_set_bindings``.
+        # two unlinked placeholders compare equal. See ``_set_bindings``.
         self._card_order: list[StateAssignment] = []
         self._suppress = False
         self._editable = True
@@ -1005,7 +993,6 @@ class CombatTab(QWidget):
             BUILT_IN_LABEL, NOT_CONFIGURED_LABEL, parent=self._strategies_section, role=PanelRole.DEFAULT
         )
         self._default_panel.pick_requested.connect(partial(self._on_pick_duel, self._default_panel))
-        self._default_panel.promote_requested.connect(partial(self._on_promote, self._default_panel))
         self._default_panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
         self._default_panel.fight_pick_requested.connect(self._on_pick_for_fight)
         self._default_panel.setVisible(False)
@@ -1243,8 +1230,7 @@ class CombatTab(QWidget):
     def _ensure_state_binding(self, state_id: str) -> StateAssignment:
         """Return this state's binding, creating an empty in-memory one if absent.
 
-        Never persisted until it actually links a strategy or holds a non-empty
-        inline config — see ``_save_bcs``.
+        Never persisted until it actually links a strategy — see ``_save_bcs``.
         """
         existing = self._state_bindings.get(state_id)
         if existing is not None:
@@ -1256,12 +1242,12 @@ class CombatTab(QWidget):
     def _save_bcs(self) -> None:
         if self._bcs is None:
             return
-        # Only persist bindings that actually say something — an untouched
-        # placeholder (unlinked, empty) is indistinguishable from no binding at
-        # all, so writing it out would just be silent clutter in the file.
+        # Only persist bindings that actually say something — an unlinked
+        # placeholder is indistinguishable from no binding at all, so writing it
+        # out would just be silent clutter in the file.
         # dict keyed by id() in case a loaded file grouped several state_ids
         # under one shared StateAssignment object.
-        kept = {id(a): a for a in self._state_bindings.values() if a.is_linked or not a.duel_config.is_empty()}
+        kept = {id(a): a for a in self._state_bindings.values() if a.is_linked}
         # In card order, which is how the order survives a reload.
         ordered = sorted(kept.values(), key=self._card_rank)
         self._bcs.state_assignments = self._prune_orphans(ordered)
@@ -1540,7 +1526,6 @@ class CombatTab(QWidget):
         # built between two identical answers would otherwise stay plain.
         panel.set_player_colors(*self._player_colors)
         panel.pick_requested.connect(partial(self._on_pick_duel, panel))
-        panel.promote_requested.connect(partial(self._on_promote, panel))
         panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
         return panel
 
@@ -1665,32 +1650,6 @@ class CombatTab(QWidget):
         binding.duel_combat_strategy_id = dlg.selected_id()
         return True
 
-    def _on_promote(self, panel: StrategyPanel) -> None:
-        """Copy a binding's inline config into a new library entry and link to it.
-
-        Only reachable for a binding that already holds one, which since the
-        inline editor was removed means a configuration written before this tab
-        stopped offering to write them, or one authored in a bot file by hand.
-        Saving it as a preset is the way such a configuration becomes editable
-        again — in the combat strategy dialog, which is now the only place a
-        ``DuelConfig`` is edited.
-        """
-        binding = panel.binding
-        if binding is None or binding.duel_config.is_empty():
-            QMessageBox.information(self, "Nothing to save", "This entry has no inline configuration to save.")
-            return
-        name, ok = QInputDialog.getText(self, "Save as Preset", "Duel Combat Strategy name:")
-        if not ok or not name.strip():
-            return
-        # Dump over the DuelConfig field set (rather than listing fields by
-        # hand) so a field added later can't be silently dropped here.
-        dcs = DuelCombatStrategy(name=name.strip(), **binding.duel_config.model_dump())
-        save_duel_strategy(dcs)
-        self._all_dcs.append(dcs)
-        binding.duel_combat_strategy_id = dcs.id
-        self._after_linkage_change(panel)
-        self.refresh_strategy_data()
-
     def _after_linkage_change(self, panel: StrategyPanel) -> None:
         """A panel now names a different strategy: redraw, regroup, save.
 
@@ -1757,9 +1716,7 @@ class CombatTab(QWidget):
         if binding.is_linked:
             dcs = next((d for d in self._all_dcs if d.id == binding.duel_combat_strategy_id), None)
             return dcs.name if dcs is not None else MISSING_LABEL
-        if binding.duel_config.is_empty():
-            return STATE_INHERIT_LABEL
-        return CUSTOM_LABEL
+        return STATE_INHERIT_LABEL
 
     def _on_edit_dcs_in_library(self, dcs_id: str) -> None:
         self.open_combat_dialog(kind=StrategyKind.DUEL, mode=DialogMode.MANAGE, current_id=dcs_id)

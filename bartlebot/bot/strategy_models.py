@@ -168,13 +168,11 @@ class PlayerAssignment(BaseModel):
 
 
 class DuelConfig(BaseModel):
-    """The reusable shape of a duel-level combat config — no identity of its own.
+    """The shape of a duel-level combat config — no identity of its own.
 
-    Split out of :class:`DuelCombatStrategy` so the same shape can live either
-    as a named library entry, or inline on a single :class:`StateAssignment` /
-    :class:`BotCombatStrategy` default — a one-off tweak for one bot that isn't
-    worth promoting to a shared file.  Mirrors the inline-vs-linked split
-    :class:`PlayerAssignment` already uses one level down.
+    :class:`DuelCombatStrategy` is this plus an id and a name, and it is the only
+    thing that carries one: a fight always names a duel strategy by id, whether that
+    strategy lives in the library or inside one combat profile (#118).
     """
 
     min_players: int = 1
@@ -182,9 +180,7 @@ class DuelConfig(BaseModel):
     # None = all players enter combat simultaneously; list = sequential entry order (1-based)
     combat_order: list[int] | None = None
     player_assignments: list[PlayerAssignment] = Field(default_factory=list)
-    # Author-written: what this fight needs and why. Lives on the config itself
-    # (not the named DuelCombatStrategy wrapper) so an inline one-off gets a
-    # description too.
+    # Author-written: what this fight needs and why.
     description: str = ""
 
     @model_validator(mode="after")
@@ -195,8 +191,7 @@ class DuelConfig(BaseModel):
         it describes a duel that cannot be satisfied: combat_warnings demands four
         connected clients while the editor only lets P1 be assigned a strategy or
         placed in the combat order.  The editor now couples its two spin boxes, so
-        this catches the other door in: an inline DuelConfig hand-written into a bot
-        file.
+        this catches the other door in: a strategy file edited by hand.
 
         Repairs rather than rejects, because raising a ValidationError here would
         make such a file refuse to open at all.  max is the field that moves:
@@ -278,9 +273,8 @@ class DuelConfig(BaseModel):
     def is_empty(self) -> bool:
         """True if this config has no player assignments at all.
 
-        Used to tell "a deliberately inline config with real content" apart
-        from "no real config was ever entered" — the latter is worth flagging
-        even though both resolve to the same built-in-default runtime behavior.
+        Such a config runs the built-in default for everyone, which a summary says as
+        "nothing configured yet" rather than as a problem.
         """
         return not self.player_assignments
 
@@ -301,20 +295,20 @@ class DuelCombatStrategy(DuelConfig):
 
 
 class StateAssignment(BaseModel):
-    """One FSM state's combat override: inline, or linked to a library DuelCombatStrategy.
+    """A group of FSM states and the DuelCombatStrategy they fight with.
 
-    Mirrors :class:`PlayerAssignment`'s pattern one level up: ``duel_config`` is
-    always present and used when unlinked; set ``duel_combat_strategy_id`` to
-    point at a shared library entry instead, which then takes precedence.
+    Unlinked means the states fall back to the profile's default. There is no inline
+    config: a one-off strategy lives in the profile's own ``duel_strategies`` and is
+    linked by id like any other (#118). A file from before that still loads, because
+    the models do not forbid extra fields, and its stray ``duel_config`` is ignored.
     """
 
     state_ids: list[str]  # FSM state IDs this assignment covers
-    duel_config: DuelConfig = Field(default_factory=DuelConfig)  # inline; used when unlinked
-    duel_combat_strategy_id: str | None = None  # UUID of a DuelCombatStrategy; when set, duel_config is ignored
+    duel_combat_strategy_id: str | None = None  # UUID of a DuelCombatStrategy, in the profile or the library
 
     @property
     def is_linked(self) -> bool:
-        """True if this assignment points at a shared DuelCombatStrategy."""
+        """True if this assignment points at a DuelCombatStrategy."""
         return self.duel_combat_strategy_id is not None
 
 
@@ -324,11 +318,8 @@ class BotCombatStrategy(BaseModel):
     bot_id: str  # UUID of the BotConfig this strategy belongs to
     # 1-based player number → embedded deck data (not referenced by UUID)
     player_decks: dict[int, DeckData] = Field(default_factory=dict)
-    # Default duel config for unassigned states: linked library entry takes
-    # precedence over default_duel_config; an empty default_duel_config (the
-    # common case) degrades to the built-in default, same as DuelConfig.is_empty.
+    # The duel strategy for every state no assignment covers; None is the built-in default.
     default_strategy_id: str | None = None
-    default_duel_config: DuelConfig = Field(default_factory=DuelConfig)
     state_assignments: list[StateAssignment] = Field(default_factory=list)
     description: str = ""
 
@@ -348,13 +339,7 @@ class BotCombatStrategy(BaseModel):
         return None
 
     def find_dcs_id_for_state(self, state_id: str) -> str | None:
-        """Return the linked DCS UUID assigned to this FSM state, or None.
-
-        None covers both "no assignment exists" and "the assignment is inline"
-        — callers that only understand library ids can't do anything with an
-        inline config anyway.  Use :meth:`find_assignment_for_state` for the
-        full picture.
-        """
+        """Return the DCS UUID assigned to this FSM state, or None if no assignment links one."""
         assignment = self.find_assignment_for_state(state_id)
         return assignment.duel_combat_strategy_id if assignment else None
 

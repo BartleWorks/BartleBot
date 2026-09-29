@@ -89,20 +89,14 @@ def collect_combat_warnings(
     # reported once no matter how many strategies link it.
     dsl_sources: dict[str, list[str]] = {}
 
-    for context_label, dcs_id, inline_config in _duel_sources(bcs, config):
-        if dcs_id is not None:
-            try:
-                dcs = load_duel_strategy(dcs_id, root)
-            except Exception:
-                warnings.append(f"{context_label} Duel Strategy file is missing (id: {_short(dcs_id)}).")
-                continue
-            duel_config = dcs
-            config_label = f"strategy '{dcs.name}'"
-            dsl_label = f"'{dcs.name}'"  # the strategy's own name — a shared preset always reads the same either way
-        else:
-            duel_config = inline_config
-            config_label = "combat config"
-            dsl_label = context_label  # no name to fall back on — identify it by where it's used
+    for context_label, dcs_id in _duel_sources(bcs, config):
+        try:
+            duel_config = load_duel_strategy(dcs_id, root)
+        except Exception:
+            warnings.append(f"{context_label} Duel Strategy file is missing (id: {_short(dcs_id)}).")
+            continue
+        config_label = f"strategy '{duel_config.name}'"
+        dsl_label = f"'{duel_config.name}'"  # the strategy's own name — a shared preset always reads the same
 
         if num_clients < duel_config.min_players:
             warnings.append(
@@ -128,50 +122,37 @@ def _unassigned_state_warnings(config: BotConfig, bcs: BotCombatStrategy) -> lis
     as needing special handling, so silently running the generic strategy is
     almost never what the user wants, and nothing else surfaces it.
 
-    An assignment that exists but resolves to nothing (unlinked and empty) counts
-    as unassigned too — see ``resolve_combat``, which treats the two identically.
+    An assignment that exists but links nothing counts as unassigned too — see
+    ``resolve_combat``, which treats the two identically.
     """
-    fallback = "will use the bot's default strategy" if _has_default(bcs) else "will use built-in combat defaults"
+    fallback = "will use the bot's default strategy" if bcs.default_strategy_id else "will use built-in combat defaults"
     warnings = []
     for state in exposed_combat_states(config):
         assignment = bcs.find_assignment_for_state(state.id)
-        if assignment is not None and (assignment.is_linked or not assignment.duel_config.is_empty()):
+        if assignment is not None and assignment.is_linked:
             continue
         warnings.append(f"Combat state '{state.label or state.id}' has no Duel Strategy assigned — {fallback}.")
     return warnings
 
 
-def _has_default(bcs: BotCombatStrategy) -> bool:
-    return bool(bcs.default_strategy_id) or not bcs.default_duel_config.is_empty()
+def _duel_sources(bcs: BotCombatStrategy, config: BotConfig | None) -> list[tuple[str, str]]:
+    """Return (label, dcs_id) for every duel strategy this bot could use.
 
-
-def _duel_sources(bcs: BotCombatStrategy, config: BotConfig | None) -> list[tuple[str, str | None, DuelConfig | None]]:
-    """Return (label, dcs_id, inline_config) for every duel target this bot could use.
-
-    Exactly one of ``dcs_id`` / ``inline_config`` is set per entry — mirrors
-    ``StateAssignment.is_linked``.  Linked entries are deduplicated by id across
-    the default *and* every state (the same strategy assigned to five states
-    should not produce five identical warnings); inline entries have no shared
-    identity to dedupe by, so each is reported on its own.
+    Deduplicated by id across the default *and* every state: the same strategy
+    assigned to five states should not produce five identical warnings.
     """
-    sources: list[tuple[str, str | None, DuelConfig | None]] = []
+    sources: list[tuple[str, str]] = []
     seen: set[str] = set()
 
     if bcs.default_strategy_id:
-        sources.append(("Default", bcs.default_strategy_id, None))
+        sources.append(("Default", bcs.default_strategy_id))
         seen.add(bcs.default_strategy_id)
-    elif not bcs.default_duel_config.is_empty():
-        sources.append(("Default", None, bcs.default_duel_config))
 
     for assignment in bcs.state_assignments:
-        label = _state_context_label(assignment, config)
-        if assignment.is_linked:
-            dcs_id = assignment.duel_combat_strategy_id
-            if dcs_id not in seen:
-                seen.add(dcs_id)
-                sources.append((label, dcs_id, None))
-        elif not assignment.duel_config.is_empty():
-            sources.append((label, None, assignment.duel_config))
+        dcs_id = assignment.duel_combat_strategy_id
+        if dcs_id is not None and dcs_id not in seen:
+            seen.add(dcs_id)
+            sources.append((_state_context_label(assignment, config), dcs_id))
 
     return sources
 

@@ -8,11 +8,7 @@ sidebar draws and what "Applies to…" does, expressed without any widgets.
 from __future__ import annotations
 
 from bartlebot.bot.schema import StateModel
-from bartlebot.bot.strategy_models import (
-    DuelConfig,
-    PlayerAssignment,
-    StateAssignment,
-)
+from bartlebot.bot.strategy_models import StateAssignment
 from bartlebot.combat_grouping import (
     apply_membership,
     build_bindings,
@@ -29,13 +25,6 @@ _DCS_B = "dcs-bbbb"
 
 def _state(state_id: str, label: str | None = None) -> StateModel:
     return StateModel(id=state_id, node_type="handle_combat", label=label)
-
-
-def _inline(*state_ids: str, dsl: str = "any<blade>") -> StateAssignment:
-    return StateAssignment(
-        state_ids=list(state_ids),
-        duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=dsl)]),
-    )
 
 
 def _linked(dcs_id: str, *state_ids: str) -> StateAssignment:
@@ -74,9 +63,9 @@ def test_different_strategies_are_not_merged():
     assert len(merged) == 2
 
 
-def test_inline_assignments_never_merge_even_with_identical_content():
-    """Identical DSL is not shared identity — merging would be a guess."""
-    merged = merge_linked([_inline("state_1", dsl="any<blade>"), _inline("state_2", dsl="any<blade>")])
+def test_unlinked_assignments_never_merge():
+    """Each is one fight on the default; there is no shared identity to merge on."""
+    merged = merge_linked([_empty("state_1"), _empty("state_2")])
 
     assert len(merged) == 2
     assert [a.state_ids for a in merged] == [["state_1"], ["state_2"]]
@@ -111,7 +100,7 @@ def test_build_bindings_merges_before_mapping():
 
 
 def test_unrelated_states_get_distinct_objects():
-    bindings = build_bindings([_inline("state_1"), _inline("state_2")])
+    bindings = build_bindings([_linked(_DCS_A, "state_1"), _linked(_DCS_B, "state_2")])
 
     assert bindings["state_1"] is not bindings["state_2"]
 
@@ -144,7 +133,7 @@ def test_four_fights_sharing_a_strategy_collapse_to_one_group():
 
 def test_configured_groups_come_before_unassigned_fights():
     exposed = [_state("state_1"), _state("state_2"), _state("state_3")]
-    bindings = {"state_1": _empty("state_1"), "state_2": _inline("state_2"), "state_3": _empty("state_3")}
+    bindings = {"state_1": _empty("state_1"), "state_2": _linked(_DCS_A, "state_2"), "state_3": _empty("state_3")}
 
     groups = group_bindings(bindings, exposed)
 
@@ -232,28 +221,6 @@ def test_every_fight_in_a_group_is_nameable():
 # ---------------------------------------------------------------------------
 
 
-def test_detaching_from_an_inline_group_deep_copies_the_config():
-    """The departing fight keeps working, and can now diverge."""
-    shared = _inline("state_1", "state_2", dsl="any<blade>[sharp]")
-    bindings = build_bindings([shared])
-
-    detached = detach_state(bindings, shared, "state_2")
-
-    assert detached.duel_config.player_assignments[0].dsl == "any<blade>[sharp]"
-    assert shared.state_ids == ["state_1"]
-    assert bindings["state_2"] is detached
-
-
-def test_the_deep_copy_is_independent_of_the_group_it_left():
-    shared = _inline("state_1", "state_2")
-    bindings = build_bindings([shared])
-
-    detached = detach_state(bindings, shared, "state_2")
-    detached.duel_config.player_assignments[0].dsl = "changed"
-
-    assert shared.duel_config.player_assignments[0].dsl == "any<blade>"
-
-
 def test_detaching_from_a_linked_group_falls_back_to_the_bot_default():
     """It cannot keep the link — merge_linked would fold it straight back in."""
     shared = _linked(_DCS_A, "state_1", "state_2")
@@ -262,7 +229,8 @@ def test_detaching_from_a_linked_group_falls_back_to_the_bot_default():
     detached = detach_state(bindings, shared, "state_2")
 
     assert detached.is_linked is False
-    assert detached.duel_config.is_empty()
+    assert shared.state_ids == ["state_1"]
+    assert bindings["state_2"] is detached
 
 
 def test_a_detached_link_does_not_rejoin_the_group_it_left():
@@ -277,7 +245,7 @@ def test_a_detached_link_does_not_rejoin_the_group_it_left():
 
 def test_detaching_the_last_fight_leaves_the_group_empty():
     """An assignment nothing points at is dropped by _save_bcs / _prune_orphans."""
-    shared = _inline("state_1")
+    shared = _linked(_DCS_A, "state_1")
     bindings = build_bindings([shared])
 
     detach_state(bindings, shared, "state_1")
@@ -314,29 +282,29 @@ def test_a_fight_moving_between_groups_leaves_the_old_one():
 
 def test_a_fight_moving_between_groups_keeps_no_copy():
     """It is about to be given the destination's config; a copy would be an orphan."""
-    source = _inline("state_1", "state_2", dsl="source dsl")
-    dest = _inline("state_3", dsl="dest dsl")
+    source = _linked(_DCS_A, "state_1", "state_2")
+    dest = _linked(_DCS_B, "state_3")
     bindings = {"state_1": source, "state_2": source, "state_3": dest}
 
     apply_membership(bindings, dest, ["state_3", "state_2"])
 
     assert bindings["state_2"] is dest
-    assert bindings["state_2"].duel_config.player_assignments[0].dsl == "dest dsl"
+    assert bindings["state_2"].duel_combat_strategy_id == _DCS_B
 
 
-def test_unchecking_a_fight_detaches_it_with_a_copy():
-    group = _inline("state_1", "state_2", dsl="shared dsl")
+def test_unchecking_a_fight_sends_it_back_to_the_default():
+    group = _linked(_DCS_A, "state_1", "state_2")
     bindings = build_bindings([group])
 
     apply_membership(bindings, group, ["state_1"])
 
     assert group.state_ids == ["state_1"]
     assert bindings["state_2"] is not group
-    assert bindings["state_2"].duel_config.player_assignments[0].dsl == "shared dsl"
+    assert not bindings["state_2"].is_linked
 
 
 def test_membership_can_add_and_remove_in_one_pass():
-    group = _inline("state_1", "state_2")
+    group = _linked(_DCS_A, "state_1", "state_2")
     other = _empty("state_3")
     bindings = {"state_1": group, "state_2": group, "state_3": other}
 
@@ -398,16 +366,7 @@ def test_splitting_gives_each_fight_a_distinct_object():
     assert split[0] is not split[1]
 
 
-def test_a_configured_inline_group_is_left_alone():
-    group = _inline("state_1", "state_2")
-
-    split = split_unconfigured([group])
-
-    assert split == [group]
-
-
 def test_a_linked_group_is_left_alone():
-    """Linked is configured however empty its own duel_config looks."""
     group = _linked(_DCS_A, "state_1", "state_2")
 
     split = split_unconfigured([group])

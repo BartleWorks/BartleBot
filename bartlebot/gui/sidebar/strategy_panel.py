@@ -117,9 +117,6 @@ Two on the face, everything in the right-click menu, per ``card_frame.py``:
   library to open otherwise.
 - **Applies to…** is in the menu, and opens the same popup the pill row's own button
   does -- the menu is the keyboard route to a verb, not a second way of performing it.
-- **Save as preset…** is menu-only. It can only apply to an inline config, which this
-  surface can no longer create -- it is how a config from an older bot file gets into
-  the library so that it can be picked like everything else.
 
 None of them are implemented here. Each ``run`` is a signal the Combat tab wires, which
 is what keeps *which dialog opens* out of the card -- the thing the edit-dialog work
@@ -155,8 +152,8 @@ NOT_CONFIGURED_LABEL = "Not configured — built-in default for every player"
 # What an unset *state override* falls through to, which is not the same thing and the
 # distinction is not cosmetic: an empty state override does not reach the built-in
 # default, it reaches this bot strategy's own Default Combat Strategy -- see
-# resolve_combat(), which consults ``bcs.default_strategy_id`` /
-# ``bcs.default_duel_config`` first. Labelling both levels "BartleBot Default Combat
+# resolve_combat(), which consults ``bcs.default_strategy_id`` first. Labelling both
+# levels "BartleBot Default Combat
 # Strategy" told the user the bot default would be skipped, and contradicted the
 # pre-run warning text.
 STATE_INHERIT_LABEL = "(bot default)"
@@ -179,7 +176,6 @@ DEFAULT_PILL = "Default"
 DEFAULT_SCOPE_META = "Runs in every fight that has no strategy of its own"
 
 MISSING_LABEL = "(missing strategy)"
-CUSTOM_LABEL = "(custom)"
 
 #: Why every verb on a card goes dead mid-run. One string, because the Combat tab's deck
 #: cards say it too and two surfaces giving a user two different reasons for the same
@@ -190,7 +186,6 @@ LOCKED = "Locked while the bot is running"
 CHANGE = "Change…"
 EDIT_STRATEGY = "Edit…"
 APPLIES_TO = "Applies to…"
-SAVE_AS_PRESET = "Save as preset…"
 
 #: How many player assignments a duel config can carry, and so how many caption lines a
 #: card builds once and hides down to. Four, because a Wizard101 team is four wizards --
@@ -245,7 +240,7 @@ class _FightsButton(PickerButton):
 class StrategyPanel(CardFrame):
     """One binding -- the bot default, or one group of fights -- as a card.
 
-    Operates on any ``binding`` shaped like ``StateAssignment``: ``duel_config``,
+    Operates on any ``binding`` shaped like ``StateAssignment``:
     ``duel_combat_strategy_id`` (settable) and ``is_linked``. The Combat tab's
     ``_DefaultBinding`` adapts a ``BotCombatStrategy``'s own default fields to that
     shape, so one class draws both levels.
@@ -265,7 +260,6 @@ class StrategyPanel(CardFrame):
     #: Acting on each toggle would rebuild this card's own section while its popup is
     #: still open on top of it; see ``PickerButton.committed``.
     membership_changed = pyqtSignal(list)  # list[str] of state_ids
-    promote_requested = pyqtSignal()
     #: ``DEFAULT`` role only: one of this card's fight pills was clicked, so that fight
     #: wants a Duel Combat Strategy of its own.
     fight_pick_requested = pyqtSignal(str)  # state_id
@@ -577,7 +571,7 @@ class StrategyPanel(CardFrame):
 
     @property
     def linked_id(self) -> str | None:
-        """The library DuelCombatStrategy this binding names, or None if it is inline."""
+        """The DuelCombatStrategy this binding names, or None when it names none."""
         if self._binding is None or not self._binding.is_linked:
             return None
         return self._binding.duel_combat_strategy_id
@@ -624,15 +618,11 @@ class StrategyPanel(CardFrame):
             else:
                 self._render_summary(dcs.name, summarize_duel(dcs, self._all_pcs))
         else:
-            config = self._binding.duel_config
-            if config.is_empty():
-                self._render_bare(self._empty_label, self._empty_meta)
-            else:
-                self._render_summary(CUSTOM_LABEL, summarize_duel(config, self._all_pcs))
+            self._render_bare(self._empty_label, self._empty_meta)
 
-        # Withdrawn rather than greyed. A disabled pencil on an inline config would be an
-        # affordance offered and refused every time; there is simply nothing in the
-        # library to open, and the button holds its space either way.
+        # Withdrawn rather than greyed. A disabled pencil on an unset binding would be an
+        # affordance offered and refused every time; there is simply nothing to open,
+        # and the button holds its space either way.
         edit_btn = self.action_button(EDIT_STRATEGY)
         if edit_btn is not None:
             edit_btn.setVisible(self.linked_id is not None)
@@ -707,7 +697,7 @@ class StrategyPanel(CardFrame):
         """
         if not self._supports_membership or self._binding is None:
             return False
-        return self._binding.is_linked or not self._binding.duel_config.is_empty()
+        return self._binding.is_linked
 
     # ------------------------------------------------------------------
     # Verbs
@@ -729,13 +719,11 @@ class StrategyPanel(CardFrame):
     def _verbs(self) -> list[CardVerb]:
         """Everything this card can do *right now* -- what the right-click menu offers.
 
-        Rebuilt per click, so it names only what applies: no "Edit in Library…" for a
-        config that is not in the library, and no "Save as preset…" for one that already
-        is. The two face buttons are built from ``_face_verbs`` instead; see ``_build``.
+        Rebuilt per click, so it names only what applies: no "Edit…" for a binding that
+        names nothing. The two face buttons are built from ``_face_verbs`` instead; see
+        ``_build``.
         """
         verbs = [self._face_verbs()[0]]
-        # Only on a linked binding: there is nothing in the library to open for a config
-        # that lives inside this bot's own strategy file.
         if self.linked_id is not None:
             verbs.append(self._face_verbs()[1])
         if self._membership_allowed() and self._fights_btn is not None:
@@ -744,15 +732,6 @@ class StrategyPanel(CardFrame):
             # not an alternative way of performing it.
             verbs.append(
                 CardVerb(APPLIES_TO, "attach", "Choose which fights use this strategy", self._fights_btn.click)
-            )
-        if self._binding is not None and not self._binding.is_linked and not self._binding.duel_config.is_empty():
-            verbs.append(
-                CardVerb(
-                    SAVE_AS_PRESET,
-                    "save_done",
-                    "Copy this configuration into the library",
-                    self.promote_requested.emit,
-                )
             )
         return verbs
 

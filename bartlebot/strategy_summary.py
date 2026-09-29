@@ -124,9 +124,8 @@ def find_references(uuid: str, bot_strategies=(), duel_strategies=()) -> UsageCo
 
     - a ``BotCombatStrategy`` referencing a DuelCombatStrategy, as its default
       or through any state assignment
-    - a ``DuelConfig`` referencing a PlayerCombatStrategy through an assignment,
-      counted for the named library entries *and* for the inline configs
-      embedded on a bot strategy
+    - a ``DuelCombatStrategy`` referencing a PlayerCombatStrategy through an
+      assignment
 
     A bot strategy naming the same id twice — its default plus a state override
     — counts once. What the user is being told is how many *things* change, not
@@ -135,10 +134,6 @@ def find_references(uuid: str, bot_strategies=(), duel_strategies=()) -> UsageCo
     bots = 0
     for bcs in bot_strategies:
         if bcs.default_strategy_id == uuid or any(a.duel_combat_strategy_id == uuid for a in bcs.state_assignments):
-            bots += 1
-            continue
-        inline = [bcs.default_duel_config, *(a.duel_config for a in bcs.state_assignments)]
-        if any(uuid in config.linked_pcs_ids() for config in inline):
             bots += 1
     duels = sum(1 for dcs in duel_strategies if uuid in dcs.linked_pcs_ids())
     return UsageCount(bots=bots, duels=duels)
@@ -243,12 +238,7 @@ def _duel_health(config: DuelConfig, pcs_by_id: dict[str, PlayerCombatStrategy])
 
 
 def summarize_duel(config: DuelConfig, all_pcs: list[PlayerCombatStrategy], name: str = "") -> StrategySummary:
-    """Summarize a duel-level config — a linked DuelCombatStrategy or an inline one.
-
-    Takes a bare ``DuelConfig`` (rather than requiring a ``DuelCombatStrategy``)
-    so the same function covers an inline config with no name of its own; pass
-    ``name`` explicitly for a named library entry.
-    """
+    """Summarize a duel-level config. Pass ``name`` for a named DuelCombatStrategy."""
     pcs_by_id = {p.id: p for p in all_pcs}
     lines: list[AssignmentLine] = []
     for assignment in config.player_assignments:
@@ -315,8 +305,7 @@ def summarize_bot(bcs: BotCombatStrategy, config: BotConfig | None = None) -> St
     del config
     n = sum(len(a.state_ids) for a in bcs.state_assignments)
     facets = [f"{n} state override{'s' if n != 1 else ''}"] if n else ["Default strategy only"]
-    has_default = bool(bcs.default_strategy_id) or not bcs.default_duel_config.is_empty()
-    health = _OK if (has_default or bcs.state_assignments) else _EMPTY
+    health = _OK if (bcs.default_strategy_id or bcs.state_assignments) else _EMPTY
     return StrategySummary(name=bcs.name, description=bcs.description, facets=facets, health=health)
 
 

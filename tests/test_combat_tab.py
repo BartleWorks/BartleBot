@@ -18,7 +18,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from PyQt6.QtWidgets import QInputDialog, QMessageBox, QScrollArea
+from PyQt6.QtWidgets import QScrollArea
 
 from bartlebot import store_roots
 from bartlebot import strategy_store as store_mod
@@ -27,7 +27,6 @@ from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DeckData,
     DuelCombatStrategy,
-    DuelConfig,
     PlayerAssignment,
     StateAssignment,
 )
@@ -52,14 +51,12 @@ from bartlebot.gui.sidebar.strategy_panel import (
     APPLIES_TO,
     BUILT_IN_LABEL,
     CHANGE,
-    CUSTOM_LABEL,
     DEFAULT_PILL,
     DEFAULT_SCOPE_META,
     EDIT_STRATEGY,
     LOCKED,
     MISSING_LABEL,
     NOT_CONFIGURED_LABEL,
-    SAVE_AS_PRESET,
     STATE_INHERIT_LABEL,
     STATE_INHERIT_META,
     StrategyPanel,
@@ -157,54 +154,35 @@ def test_panel_shows_not_configured_when_unlinked_and_empty(qapp):
     assert panel._meta.full_text() == NOT_CONFIGURED_LABEL
 
 
-def test_panel_shows_custom_when_unlinked_and_nonempty(qapp):
-    binding = StateAssignment(
-        state_ids=["s1"], duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="blade")])
-    )
-    panel = StrategyPanel()
-    panel.load(binding, [], [])
-
-    assert panel._name.full_text() == CUSTOM_LABEL
-    assert _visible_lines(panel) == ["blade"]
-    assert panel._assignment_badges[0].players == [1]
-
-
 def test_every_assignment_gets_its_own_line(qapp):
     """The point of the rework: four short lines, not one elided line of four.
 
     The old panel joined every assignment with ``·`` into a single elided label, which
     at a 300px sidebar showed about one and a half of them.
     """
-    binding = StateAssignment(
-        state_ids=["s1"],
-        duel_config=DuelConfig(
-            player_assignments=[
-                PlayerAssignment(players=[1], dsl="one"),
-                PlayerAssignment(players=[2], dsl="two"),
-                PlayerAssignment(players=[3, 4], dsl="three"),
-            ]
-        ),
+    dcs = DuelCombatStrategy(
+        name="Three",
+        player_assignments=[
+            PlayerAssignment(players=[1], dsl="one"),
+            PlayerAssignment(players=[2], dsl="two"),
+            PlayerAssignment(players=[3, 4], dsl="three"),
+        ],
     )
     panel = StrategyPanel()
-    panel.load(binding, [], [])
+    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
 
-    assert len(_visible_lines(panel)) == 3
+    assert _visible_lines(panel) == ["one", "two", "three"]
+    assert panel._assignment_badges[0].players == [1]
 
 
 def test_surplus_assignment_lines_are_hidden_not_destroyed(qapp):
     """The binding is replaced under the card on every pick; rebuilding children
     mid-refresh is how the old per-state rebuild interrupted edits in progress."""
-    panel = StrategyPanel()
-    panel.load(
-        StateAssignment(
-            state_ids=["s1"],
-            duel_config=DuelConfig(
-                player_assignments=[PlayerAssignment(players=[i], dsl="x") for i in (1, 2, 3)],
-            ),
-        ),
-        [],
-        [],
+    dcs = DuelCombatStrategy(
+        name="Three", player_assignments=[PlayerAssignment(players=[i], dsl="x") for i in (1, 2, 3)]
     )
+    panel = StrategyPanel()
+    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
     first = panel._assignment_lbls[0]
 
     panel.load(StateAssignment(state_ids=["s1"]), [], [])
@@ -293,27 +271,6 @@ def test_edit_in_library_emits_the_linked_dcs_id(qapp):
     assert seen == [dcs.id]
 
 
-def test_save_as_preset_is_offered_only_for_an_inline_config(qapp):
-    dcs = DuelCombatStrategy(name="Frenzy AoE")
-    panel = StrategyPanel()
-
-    panel.load(StateAssignment(state_ids=["s1"]), [], [])
-    assert SAVE_AS_PRESET not in _verb_labels(panel)  # nothing in it to save
-
-    panel.load(
-        StateAssignment(
-            state_ids=["s1"],
-            duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="x")]),
-        ),
-        [],
-        [],
-    )
-    assert SAVE_AS_PRESET in _verb_labels(panel)
-
-    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
-    assert SAVE_AS_PRESET not in _verb_labels(panel)  # already there
-
-
 def test_a_locked_card_refuses_its_body_click(qapp):
     """There is no QPushButton here whose disabled state would swallow it."""
     panel = StrategyPanel()
@@ -357,21 +314,6 @@ def test_a_panel_holding_no_strategy_offers_no_applies_to(qapp):
 
     assert APPLIES_TO not in _verb_labels(panel)
     assert panel._pill_row.isHidden()
-
-
-def test_the_pill_row_appears_once_a_fight_has_an_inline_config(qapp):
-    panel = StrategyPanel(STATE_INHERIT_LABEL, "")
-    panel.load(
-        StateAssignment(
-            state_ids=["s1"],
-            duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="blade")]),
-        ),
-        [],
-        [],
-    )
-
-    assert not panel._pill_row.isHidden()
-    assert APPLIES_TO in _verb_labels(panel)
 
 
 def test_the_menu_verb_opens_the_same_popup_as_the_button(qapp):
@@ -536,12 +478,10 @@ def test_default_binding_reads_bcs_default_fields():
         name="B",
         bot_id="bot-1",
         default_strategy_id="dcs-1",
-        default_duel_config=DuelConfig(min_players=2),
     )
     binding = _DefaultBinding(bcs)
 
     assert binding.duel_combat_strategy_id == "dcs-1"
-    assert binding.duel_config.min_players == 2
     assert binding.is_linked
 
 
@@ -552,19 +492,6 @@ def test_default_binding_setter_writes_back_to_the_bcs():
     binding.duel_combat_strategy_id = "dcs-2"
 
     assert bcs.default_strategy_id == "dcs-2"
-
-
-def test_default_binding_duel_config_setter_writes_back_to_the_bcs():
-    """The adapter has to be writable in both fields, or anything that assigns a whole
-    new DuelConfig crashes against the Default panel specifically — StateAssignment
-    never catches it, its field being settable for free."""
-    bcs = BotCombatStrategy(name="B", bot_id="bot-1")
-    binding = _DefaultBinding(bcs)
-    new_config = DuelConfig(min_players=3)
-
-    binding.duel_config = new_config
-
-    assert bcs.default_duel_config is new_config
 
 
 def test_default_binding_is_linked_false_when_no_default_strategy_id():
@@ -659,7 +586,7 @@ def test_untouched_state_binding_is_not_persisted(qapp, store):
     assert store_mod.load_bot_strategy(tab._bcs.id).state_assignments == []
 
 
-def test_linked_state_binding_is_persisted_even_with_empty_duel_config(qapp, store):
+def test_linked_state_binding_is_persisted(qapp, store):
     dcs = DuelCombatStrategy(name="Frenzy AoE")
     store_mod.save_duel_strategy(dcs)
     bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
@@ -673,27 +600,6 @@ def test_linked_state_binding_is_persisted_even_with_empty_duel_config(qapp, sto
     reloaded = store_mod.load_bot_strategy(bcs.id)
     assert len(reloaded.state_assignments) == 1
     assert reloaded.state_assignments[0].duel_combat_strategy_id == dcs.id
-
-
-def test_inline_state_binding_with_content_is_persisted(qapp, store):
-    """Nothing on this tab can author one any more, but a bot file can carry one and
-    it has to survive a save rather than being pruned as empty."""
-    bcs = BotCombatStrategy(
-        name="BCS",
-        bot_id="bot-1",
-        state_assignments=[
-            StateAssignment(
-                state_ids=["state_9"],
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="blade")]),
-            )
-        ],
-    )
-    tab = _tab_for(bcs, _config())
-
-    tab._save_bcs()
-
-    reloaded = store_mod.load_bot_strategy(bcs.id)
-    assert reloaded.state_assignments[0].duel_config.player_assignments[0].dsl == "blade"
 
 
 def test_refresh_strategy_data_does_not_replace_card_widgets(qapp, store):
@@ -816,7 +722,7 @@ def test_the_default_card_stays_when_every_fight_has_a_strategy(qapp, store):
 
 
 def test_the_two_levels_fall_through_to_different_things(qapp, store):
-    """resolve_combat() reaches for bcs.default_strategy_id / default_duel_config before
+    """resolve_combat() reaches for bcs.default_strategy_id before
     the built-in strategy, and the pre-run warning says so too. Telling a fight it falls
     through to "BartleBot Default Combat Strategy" claimed the bot default was skipped."""
     dcs = _saved_dcs()
@@ -990,90 +896,6 @@ def test_the_picker_none_row_is_labelled_with_what_the_card_falls_through_to(qap
 
 
 # ---------------------------------------------------------------------------
-# CombatTab — saving an inline config into the library
-# ---------------------------------------------------------------------------
-
-
-def _inline_bcs(dsl: str = "custom") -> BotCombatStrategy:
-    return BotCombatStrategy(
-        name="BCS",
-        bot_id="bot-1",
-        default_duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=dsl)]),
-    )
-
-
-def test_promote_creates_a_library_entry_and_links_to_it(qapp, store):
-    tab = _tab_for(_inline_bcs(), _config())
-
-    with patch.object(QInputDialog, "getText", return_value=("My Preset", True)):
-        tab._on_promote(tab._default_panel)
-
-    saved = store_mod.load_duel_strategy(tab._bcs.default_strategy_id)
-    assert saved.name == "My Preset"
-    assert saved.player_assignments[0].dsl == "custom"
-
-
-def test_promote_carries_every_field_of_the_config(qapp, store):
-    """Regression: hand-listing fields silently drops any field added later."""
-    bcs = BotCombatStrategy(
-        name="BCS",
-        bot_id="bot-1",
-        default_duel_config=DuelConfig(
-            description="Farm loop, no adds",
-            player_assignments=[
-                PlayerAssignment(players=[1], dsl="custom", schools=["Life"], note="Heals through round 2"),
-            ],
-        ),
-    )
-    tab = _tab_for(bcs, _config())
-
-    with patch.object(QInputDialog, "getText", return_value=("My Preset", True)):
-        tab._on_promote(tab._default_panel)
-
-    saved = store_mod.load_duel_strategy(tab._bcs.default_strategy_id)
-    assert saved.description == "Farm loop, no adds"
-    assert saved.player_assignments[0].schools == ["Life"]
-    assert saved.player_assignments[0].note == "Heals through round 2"
-
-
-def test_promote_with_an_empty_config_is_refused(qapp, store):
-    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config())
-
-    with patch.object(QMessageBox, "information") as mock_info:
-        tab._on_promote(tab._default_panel)
-
-    mock_info.assert_called_once()
-    assert tab._bcs.default_strategy_id is None
-
-
-def test_promote_cancel_does_not_create_anything(qapp, store):
-    tab = _tab_for(_inline_bcs(), _config())
-
-    with patch.object(QInputDialog, "getText", return_value=("", False)):
-        tab._on_promote(tab._default_panel)
-
-    assert tab._bcs.default_strategy_id is None
-    assert store_mod.list_duel_strategies() == []
-
-
-def test_promote_reaches_every_cards_library(qapp, store):
-    """The new entry has to be pickable from the sibling cards immediately."""
-    bcs = _inline_bcs()
-    bcs.state_assignments = [
-        StateAssignment(
-            state_ids=["state_9"],
-            duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="blade")]),
-        )
-    ]
-    tab = _tab_for(bcs, _config())
-
-    with patch.object(QInputDialog, "getText", return_value=("Shared Preset", True)):
-        tab._on_promote(tab._default_panel)
-
-    assert any(d.name == "Shared Preset" for d in tab._state_panels["state_9"]._all_dcs)
-
-
-# ---------------------------------------------------------------------------
 # rebind_identity — Save As gives the loaded bot a new id
 # ---------------------------------------------------------------------------
 
@@ -1173,14 +995,8 @@ def test_save_prunes_assignments_for_states_the_bot_no_longer_has(qapp, store):
         name="BCS",
         bot_id="bot-1",
         state_assignments=[
-            StateAssignment(
-                state_ids=["state_9"],
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="live")]),
-            ),
-            StateAssignment(
-                state_ids=["state_404"],  # node was deleted from the bot
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="orphan")]),
-            ),
+            StateAssignment(state_ids=["state_9"], duel_combat_strategy_id="dcs-live"),
+            StateAssignment(state_ids=["state_404"], duel_combat_strategy_id="dcs-orphan"),  # node was deleted
         ],
     )
     tab = _tab_for(bcs, _config())
@@ -1195,12 +1011,7 @@ def test_save_prunes_only_the_dead_ids_from_a_shared_assignment(qapp, store):
     bcs = BotCombatStrategy(
         name="BCS",
         bot_id="bot-1",
-        state_assignments=[
-            StateAssignment(
-                state_ids=["state_9", "state_404"],
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="x")]),
-            )
-        ],
+        state_assignments=[StateAssignment(state_ids=["state_9", "state_404"], duel_combat_strategy_id="dcs-x")],
     )
     tab = _tab_for(bcs, _config())
 
@@ -1223,23 +1034,21 @@ def test_prune_is_skipped_when_no_config_is_loaded(qapp, store):
 
 
 def test_long_assignment_summaries_do_not_widen_the_tab(qapp, store):
-    """Regression: three duels of inline DSL demanded ~1173 px in a 220 px sidebar."""
+    """Regression: three assignments of long DSL demanded ~1173 px in a 220 px sidebar."""
     long_dsl = "{1} shatter@boss {2} empower {3} monster@boss {4} feint[potent]@boss"
+    dcs = DuelCombatStrategy(
+        name="Long",
+        player_assignments=[
+            PlayerAssignment(players=[1], dsl=long_dsl),
+            PlayerAssignment(players=[2, 3], dsl=long_dsl),
+            PlayerAssignment(players=[4], dsl=long_dsl),
+        ],
+    )
+    store_mod.save_duel_strategy(dcs)
     bcs = BotCombatStrategy(
         name="A rather long bot combat strategy name that goes on",
         bot_id="bot-1",
-        state_assignments=[
-            StateAssignment(
-                state_ids=["state_9"],
-                duel_config=DuelConfig(
-                    player_assignments=[
-                        PlayerAssignment(players=[1], dsl=long_dsl),
-                        PlayerAssignment(players=[2, 3], dsl=long_dsl),
-                        PlayerAssignment(players=[4], dsl=long_dsl),
-                    ]
-                ),
-            )
-        ],
+        state_assignments=[StateAssignment(state_ids=["state_9"], duel_combat_strategy_id=dcs.id)],
     )
     tab = _tab_for(bcs, _config())
 
@@ -1577,29 +1386,6 @@ def test_unchecking_the_last_fight_leaves_the_strategy_unused(qapp, store):
     assert store_mod.load_bot_strategy(bcs.id).state_assignments == []
 
 
-def test_removing_a_fight_from_an_inline_group_keeps_its_config(qapp, store):
-    """Decision: the departing fight deep-copies the DSL so it goes on working."""
-    bcs = BotCombatStrategy(
-        name="BCS",
-        bot_id="bot-1",
-        state_assignments=[
-            StateAssignment(
-                state_ids=["state_1", "state_2"],
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="blade")]),
-            )
-        ],
-    )
-    tab = _tab_for(bcs, _multi_config("A", "B"))
-    assignment = tab._state_bindings["state_1"]
-
-    tab._on_membership_changed(assignment, ["state_1"])
-
-    detached = tab._state_bindings["state_2"]
-    assert detached is not assignment
-    assert detached.duel_config.player_assignments[0].dsl == "blade"
-    assert [p.titles() for p in tab._group_panels()] == [["A"], ["B"]]
-
-
 def test_membership_edits_are_saved_immediately(qapp, store):
     dcs = _saved_dcs()
     bcs = _linked_bcs(dcs.id, ["state_1"])
@@ -1641,16 +1427,13 @@ def test_binding_descriptions_match_the_card_wording(qapp, store):
         bot_id="bot-1",
         state_assignments=[
             StateAssignment(state_ids=["state_1"], duel_combat_strategy_id=dcs.id),
-            StateAssignment(
-                state_ids=["state_2"],
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="x")]),
-            ),
+            StateAssignment(state_ids=["state_2"], duel_combat_strategy_id="gone"),
         ],
     )
     tab = _tab_for(bcs, _multi_config("A", "B", "C"))
 
     assert tab._describe_state_binding("state_1") == "Scald Incindiate"
-    assert tab._describe_state_binding("state_2") == CUSTOM_LABEL
+    assert tab._describe_state_binding("state_2") == MISSING_LABEL
     assert tab._describe_state_binding("state_3") == STATE_INHERIT_LABEL
 
 

@@ -246,7 +246,7 @@ def test_bcs_auto_uuid_distinct():
 
 
 def test_duel_config_repairs_an_inverted_player_range():
-    """A hand-written inline config is the door the editor's spin-box coupling misses.
+    """A hand-edited strategy file is the door the editor's spin-box coupling misses.
 
     An inverted range is unsatisfiable rather than merely odd: combat_warnings wants
     min_players clients connected, while only max_players of them can be assigned a
