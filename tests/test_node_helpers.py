@@ -1052,8 +1052,10 @@ async def test_resolve_friend_name_raises_when_the_name_is_absent(monkeypatch):
 
     _friends_list_patches("<icon>x</icon>Alice StormBlade", monkeypatch)
 
-    with pytest.raises(ValueError, match="Could not find friend"):
+    with pytest.raises(ValueError, match="Could not find friend") as raised:
         await nh_mod.resolve_friend_name(object(), "bob frostgem")
+    # Callers log this message, so it must not carry the wizard name (#121).
+    assert "frostgem" not in str(raised.value).casefold()
 
 
 # ---------------------------------------------------------------------------

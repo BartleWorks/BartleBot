@@ -883,14 +883,14 @@ class MainWindow(QMainWindow):
                 QMessageBox.critical(
                     self,
                     "Launch failed",
-                    f"No stored password for '{username}'.\nPlease add the account in Settings → Accounts.",
+                    f"No stored password for '{display_name}'.\nPlease add the account in Settings → Accounts.",
                 )
                 return
             # Claim the slot at the moment of launching, so launching two accounts
             # back-to-back orders them by when they were asked for, not by which one
             # happens to load in first.
             if not self._open_launch([username]):
-                logger.info("Account '%s' is already running or launching", username)
+                logger.info("Account '%s' is already running or launching", display_name)
                 QMessageBox.information(
                     self,
                     "Nothing to launch",

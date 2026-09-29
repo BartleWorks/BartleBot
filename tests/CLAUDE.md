@@ -78,8 +78,9 @@ two modules were found without a push. Where a test can sweep the styles itself 
 it exists because a 3px overflow reached CI the same way.
 
 Tests whose *subject* is elapsed time are the exception and should stay: the regroup-settle
-guards in `test_group_manager.py` assert a regroup pays one settle rather than three. Scale
-`_SETTLE` and `_BUDGET` together if they get slow — only their ratio carries the meaning.
+guards in `test_group_manager.py` assert a regroup pays no fixed settle, and confirms its
+joins together rather than once per invitee. Scale `_SETTLE` and `_BUDGET` together if they
+get slow — only their ratio carries the meaning.
 
 ## Widget lifetime
 

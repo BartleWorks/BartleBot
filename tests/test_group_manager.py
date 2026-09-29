@@ -6,6 +6,7 @@ therefore drive everything through a fake that models that UI.
 """
 
 import asyncio
+import logging
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
@@ -64,6 +65,15 @@ class FakeUI:
         # roster readable?" guard in same_group.
         self.roster_empty_slot_text = "Left"
         self.social_open: dict[FakeClient, bool] = {}
+        # The Group page is blank each time the social window opens, loads only once the
+        # Group tab is clicked, and is cleared again on close — as in the game. The load
+        # lands `tab_load_lag` roster reads after the click rather than on it, so a read
+        # taken straight after the click sees the blank page, which is what makes waiting
+        # for the load observable. `tab_loads` False models a page that never loads.
+        self.tab_loaded: dict[FakeClient, bool] = {}
+        self.tab_load_lag = 1
+        self.tab_loads = True
+        self._load_pending: dict[FakeClient, int] = {}
         # High-water mark of how many clients had the social window open at the same
         # moment. read_group_flags surveys concurrently, so this reaching N is the
         # observable proof that the checks overlapped rather than ran one after another.
@@ -104,9 +114,23 @@ class FakeUI:
         # modelling a competing invite accepted in the gap between our click and our read.
         self.joins_foreign_group_on_accept: set[FakeClient] = set()
         self._awaiting: dict[FakeClient, FakeClient] = {}  # target -> inviting leader
+        # Invite sends and accepts, in the order they happened, so tests can pin that every
+        # invitation goes out before any is accepted.
+        self.events: list[tuple[str, FakeClient]] = []
+        self.accept_clicks: list[FakeClient] = []
+        # Accept clicks the game ignores, per client: the prompt goes, but nobody joins.
+        self.drop_accepts: dict[FakeClient, int] = {}
+        # When the social window opens on the leader by itself: on the join that forms the
+        # group ("accept"), or on sending the first invitation ("send"). Both are modelled,
+        # so the leader's cleanup is proven against either.
+        self.leader_social_opens_on = "accept"
+        self.lookups_under_social_window: list[FakeClient] = []
         self._pending_name: str | None = None
 
     def _set_social_open(self, client, value: bool) -> None:
+        if value != self.social_open.get(client, False):
+            self.tab_loaded[client] = False
+            self._load_pending.pop(client, None)
         self.social_open[client] = value
         self.max_social_open_at_once = max(self.max_social_open_at_once, sum(self.social_open.values()))
 
@@ -165,10 +189,18 @@ class FakeUI:
     async def get_text_by_path(self, client, path) -> str:
         """Answer the roster reads, modelling the game's markup and self-first ordering.
 
-        Returns nothing unless the social window is open, so a roster read that happens
-        after the window is closed shows up as an empty roster rather than passing.
+        Returns nothing unless the social window is open and its Group page has loaded, so a
+        roster read that happens after the window is closed, or before the page loads, shows
+        up as an empty roster rather than passing.
         """
-        if not self.social_open.get(client, False):
+        pending = self._load_pending.get(client)
+        if pending is not None:
+            if pending <= 0:
+                self.tab_loaded[client] = True
+                del self._load_pending[client]
+            else:
+                self._load_pending[client] = pending - 1
+        if not self.social_open.get(client, False) or not self.tab_loaded.get(client, False):
             return ""
         for line in range(1, GROUP_ROSTER_LINES + 1):
             if path != group_member_name_path(line):
@@ -245,6 +277,7 @@ class FakeUI:
     async def click_by_path(self, client, path) -> bool:
         if path == INVITE_TO_GROUP_BUTTON_PATH:
             self.invite_sent = True
+            self.events.append(("invite", self._by_name.get(self._pending_name)))
         if path == LEAVE_GROUP_BUTTON_PATH:
             self.leave_clicks.append(client)
             if not self.leaving_works:
@@ -253,6 +286,9 @@ class FakeUI:
             return True
         if path == SOCIAL_GROUP_TAB_PATH:
             self.group_tab_clicks.append(client)
+            loaded = self.tab_loaded.get(client, False) or client in self._load_pending
+            if self.social_open.get(client, False) and self.tab_loads and not loaded:
+                self._load_pending[client] = self.tab_load_lag
             return True
         if path == SOCIAL_BUTTON_PATH:
             self.social_button_clicks.append(client)
@@ -272,19 +308,33 @@ class FakeUI:
             if target in self.already_in_other_group:
                 self.popup_showing[client] = True
             elif self.accepts_invites:
+                first = not self.grouped.get(client, False) and client not in self._awaiting.values()
+                if first and self.leader_social_opens_on == "send":
+                    self._set_social_open(client, True)
                 self._awaiting[target] = client
             return True
         if path == GROUP_INVITE_ACCEPT_PATH and client in self._awaiting:
+            self.accept_clicks.append(client)
+            self.events.append(("accept", client))
+            if self.drop_accepts.get(client, 0) > 0:
+                # The click landed but the game never acted on it, so the prompt goes.
+                self.drop_accepts[client] -= 1
+                del self._awaiting[client]
+                return True
             leader = self._awaiting.pop(client)
+            forms_group = not self.grouped.get(leader, False)
             # Forming a group puts the INVITER in it as well, not just the invitee, and
             # both end up on the SAME roster — which is what makes the post-invite roster
-            # confirmation in _invite_and_accept pass.
+            # confirmation in _accept_invite pass.
             if client in self.joins_foreign_group_on_accept:
                 self.put_in_foreign_group(client, "Stranger One")
             else:
                 self.put_in_group(leader, client)
-            for member in (client, leader):
-                self._set_social_open(member, True)  # the game opens it on joining
+            # The game opens the social window on whoever joins, and on the leader only
+            # when this join FORMS the group — not for later joins.
+            self._set_social_open(client, True)
+            if forms_group and self.leader_social_opens_on == "accept":
+                self._set_social_open(leader, True)
             return True
         if path == ALREADY_IN_GROUP_DISMISS_PATH:
             self.popup_showing[client] = False
@@ -304,6 +354,11 @@ class FakeUI:
         return True
 
     async def open_friend_profile(self, client, name):
+        if self.social_open.get(client, False):
+            # The social window sits on top of the friends list, so in the game this click
+            # lands on it instead. Recorded rather than modelled, so any test can assert it
+            # never happened.
+            self.lookups_under_social_window.append(client)
         self._pending_name = name
         self.profile_open[client] = True
         self.friends_list_stage[client] = "compact"
@@ -363,6 +418,7 @@ class FakeUI:
             base += (patch.object(nh, "close_friends_list", new=AsyncMock(side_effect=self._stub_close_friends_list)),)
         return base + (
             patch.object(gm, "GROUP_UI_SETTLE", 0),
+            patch.object(gm, "GROUP_TAB_LOAD_TIMEOUT", 0.05),
             patch.object(gm, "POLL_INTERVAL", 0),
             patch.object(gm, "GROUP_INVITE_TIMEOUT", 0.05),
             patch.object(gm, "GROUP_VERIFY_TIMEOUT", 0.05),
@@ -525,10 +581,12 @@ async def test_read_group_flags_is_positionally_aligned_with_clients(ui):
 async def test_read_group_flags_checks_clients_concurrently(ui):
     """Sequential checks would never have two social windows open at the same instant.
 
-    Overlap only exists where a check actually WAITS. Here that is the GROUP_UI_SETTLE
-    after the tab click — patched to 0 in the fixture, but asyncio.sleep(0) still yields,
-    which is all the overlap needs.
+    Overlap only exists where a check actually WAITS. Here that is the poll for the Group
+    page to load after the tab click. The page is made to take long enough that the poll
+    sleeps at least once — POLL_INTERVAL is patched to 0, but asyncio.sleep(0) still
+    yields, which is all the overlap needs.
     """
+    ui.tab_load_lag = 3
     clients = [ui.make_client(grouped=True) for _ in range(4)]
 
     await _run_with(ui, lambda: gm.read_group_flags(clients))
@@ -819,8 +877,8 @@ async def test_split_group_is_repaired_by_leaving_and_rejoining(ui):
     result = await _run_with(ui, lambda: gm.form_group([a, b], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert result.success is True
-    assert result.left == ["Bob Battlecaster"]
-    assert result.added == ["Bob Battlecaster"]
+    assert result.left == ["P2"]
+    assert result.added == ["P2"]
     assert ui.grouped[a] and ui.grouped[b]
     assert gm.same_group([gm.GroupState(True, ui.group_of[a]), gm.GroupState(True, ui.group_of[b])]) is True
 
@@ -836,8 +894,8 @@ async def test_two_pairs_need_only_one_wizard_to_leave(ui):
 
     assert result.success is True
     assert ui.leave_clicks == [c], f"only one wizard should have left, got {ui.leave_clicks}"
-    assert sorted(result.left) == ["Carol C", "Dave D"], "both are freed by the single leave"
-    assert sorted(result.added) == ["Carol C", "Dave D"]
+    assert sorted(result.left) == ["P3", "P4"], "both are freed by the single leave"
+    assert sorted(result.added) == ["P3", "P4"]
 
 
 async def test_the_larger_group_is_the_one_kept(ui):
@@ -853,7 +911,7 @@ async def test_the_larger_group_is_the_one_kept(ui):
 
     assert result.success is True
     assert ui.leave_clicks == [stray]
-    assert result.left == ["Dave D"]
+    assert result.left == ["P4"]
 
 
 async def test_a_client_that_cannot_leave_is_reported_once(ui):
@@ -869,7 +927,7 @@ async def test_a_client_that_cannot_leave_is_reported_once(ui):
     result = await _run_with(ui, lambda: gm.form_group([a, b], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert result.success is False
-    assert result.failed == ["Bob Battlecaster"]
+    assert result.failed == ["P2"]
     assert result.left == []
 
 
@@ -884,18 +942,6 @@ async def test_nothing_is_dissolved_when_the_leaders_roster_is_unreadable(ui):
     await _run_with(ui, lambda: gm.form_group([a, b], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert ui.leave_clicks == []
-
-
-async def test_split_group_report_lists_each_group_once(ui):
-    """Every member of a group reads the same roster, so one line per CLIENT showed four
-    rosters for two groups and buried the shape of the problem."""
-    a, b, c, d = (ui.make_client(n) for n in ("Alice A", "Bob B", "Carol C", "Dave D"))
-    ui.put_in_group(a, b)
-    ui.put_in_group(c, d)
-
-    states = await _run_with(ui, lambda: gm.read_group_states([a, b, c, d]))
-
-    assert gm.describe_groups(states).count("[") == 2
 
 
 async def test_all_grouped_together_still_makes_no_invites(ui):
@@ -949,7 +995,7 @@ async def test_client_grouped_with_strangers_is_invited_not_skipped(ui):
 
     assert "Carol Cloudrider" in ui.invited_names, "the client in the foreign group was skipped"
     assert result.success is False
-    assert "Carol Cloudrider" in result.failed
+    assert "P3" in result.failed
 
 
 async def test_join_into_a_group_without_the_leader_is_not_confirmed(ui):
@@ -965,7 +1011,7 @@ async def test_join_into_a_group_without_the_leader_is_not_confirmed(ui):
     result = await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert result.success is False
-    assert result.failed == ["Bob Battlecaster"]
+    assert result.failed == ["P2"]
 
 
 async def test_single_client_is_a_no_op(ui):
@@ -989,7 +1035,7 @@ async def test_ungrouped_client_is_invited_and_confirmed(ui):
     result = await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert result.success is True
-    assert result.added == ["Bob Battlecaster"]
+    assert result.added == ["P2"]
     assert ui.invited_names == ["Bob Battlecaster"]
     assert ui.grouped[joiner] is True
 
@@ -1001,7 +1047,7 @@ async def test_client_with_unknown_name_is_reported_not_skipped(ui):
     result = await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", None]))
 
     assert result.success is False
-    assert result.failed == ["client 1"]
+    assert result.failed == ["P2"]
     assert ui.invited_names == []
 
 
@@ -1014,7 +1060,7 @@ async def test_invite_never_accepted_fails(ui):
     result = await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert result.success is False
-    assert result.failed == ["Bob Battlecaster"]
+    assert result.failed == ["P2"]
 
 
 async def test_player_already_in_another_group_is_not_retried(ui):
@@ -1026,7 +1072,7 @@ async def test_player_already_in_another_group_is_not_retried(ui):
     result = await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert result.success is False
-    assert result.failed == ["Bob Battlecaster"]
+    assert result.failed == ["P2"]
     # One attempt only, despite GROUP_ADD_RETRIES being greater than 1.
     assert ui.invited_names == ["Bob Battlecaster"]
 
@@ -1054,8 +1100,217 @@ async def test_friend_not_in_list_fails_without_retrying(ui):
         result = await gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"])
 
     assert result.success is False
-    assert result.failed == ["Bob Battlecaster"]
+    assert result.failed == ["P2"]
     assert profile.call_count == 1
+
+
+# ---------------------------------------------------------------------------
+# Sending every invitation before any is accepted (#128)
+#
+# The leader sends one after another through its one friends list, then every invitee
+# accepts at once. The hazard is the social window the game opens on the leader when the
+# group forms: it sits on top of the friends list, so a lookup made under it clicks the
+# social window instead.
+# ---------------------------------------------------------------------------
+
+_FOUR = ["Alice A", "Bob B", "Carol C", "Dave D"]
+
+
+async def test_every_invitation_is_sent_before_any_is_accepted(ui):
+    """The first accept forms the group and opens the leader's social window over its lists."""
+    clients = [ui.make_client(n) for n in _FOUR]
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, list(_FOUR)))
+
+    assert result.success is True
+    assert result.added == ["P2", "P3", "P4"]
+    kinds = [kind for kind, _ in ui.events]
+    assert kinds == ["invite"] * 3 + ["accept"] * 3, f"an invitation was accepted mid-send: {ui.events}"
+
+
+@pytest.mark.parametrize("opens_on", ["accept", "send"])
+async def test_the_leader_never_looks_up_a_friend_under_its_social_window(ui, opens_on):
+    """Whichever moment the game opens it, the window is cleared before the next lookup.
+
+    One accept is dropped, so a second round runs after the group has formed — the case
+    where the leader's social window is certainly up when sending starts again.
+    """
+    ui.leader_social_opens_on = opens_on
+    clients = [ui.make_client(n) for n in _FOUR]
+    ui.drop_accepts[clients[2]] = 1
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, list(_FOUR)))
+
+    assert result.added == ["P2", "P3", "P4"]
+    assert ui.lookups_under_social_window == []
+    assert not any(ui.social_open.values()), "a social window was left open"
+    assert ui.profile_open.get(clients[0]) is False, "the friend profile was left open"
+
+
+async def test_only_the_invitee_that_did_not_join_is_invited_again(ui):
+    """A retry round re-sends to whoever is still missing, not to the whole list."""
+    clients = [ui.make_client(n) for n in _FOUR]
+    ui.drop_accepts[clients[2]] = 1
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, list(_FOUR)))
+
+    assert result.success is True
+    assert ui.invited_names == ["Bob B", "Carol C", "Dave D", "Carol C"]
+
+
+async def test_one_refusal_does_not_hold_back_the_other_invitees(ui):
+    """A refused invitee drops out of the round; the rest are still sent and accepted."""
+    clients = [ui.make_client(n) for n in _FOUR]
+    ui.already_in_other_group.add(clients[1])
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, list(_FOUR)))
+
+    assert result.added == ["P3", "P4"]
+    assert result.failed == ["P2"]
+    assert ui.invited_names.count("Bob B") == 1, "a refusal must not be retried"
+
+
+async def test_an_accept_that_raises_does_not_cancel_the_others(ui):
+    """The accepts run together, so one failing must be absorbed, not propagated."""
+    clients = [ui.make_client(n) for n in _FOUR]
+    real_confirm = gm._confirm_joined
+
+    async def confirm(target):
+        if target is clients[1]:
+            raise RuntimeError("client gone")
+        return await real_confirm(target)
+
+    with ExitStack() as stack:
+        for p in ui.patches():
+            stack.enter_context(p)
+        stack.enter_context(patch.object(gm, "_confirm_joined", new=confirm))
+        result = await gm.form_group(clients, list(_FOUR))
+
+    assert result.added == ["P3", "P4"]
+    assert result.failed == ["P2"]
+
+
+# ---------------------------------------------------------------------------
+# The states form_group leaves behind
+#
+# Handed to the pre-run port survey so it does not open every social window again to read
+# what the regroup just did. The port map keeps only pairs of our own clients, so what
+# matters is that our members share a roster naming each other, and nobody else is in it.
+# ---------------------------------------------------------------------------
+
+
+async def test_a_regroup_reports_everyone_in_one_group(ui):
+    clients = [ui.make_client(n) for n in _FOUR]
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, list(_FOUR)))
+
+    assert result.states is not None
+    assert all(state.grouped for state in result.states)
+    assert gm.same_group(result.states) is True
+    assert set(result.states[0].roster) == set(_FOUR)
+
+
+async def test_a_regroup_reports_what_the_game_would_show(ui):
+    """Pinned against the fake's own rosters, which is what a second survey would have read."""
+    clients = [ui.make_client(n) for n in _FOUR]
+    ui.put_in_group(clients[0], clients[1])
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, list(_FOUR)))
+    reread = await _run_with(ui, lambda: gm.read_group_states(clients))
+
+    assert [s.grouped for s in result.states] == [s.grouped for s in reread]
+    assert [gm._roster_key(s) for s in result.states] == [gm._roster_key(s) for s in reread]
+
+
+async def test_a_client_that_did_not_join_is_not_reported_in_the_group(ui):
+    clients = [ui.make_client(n) for n in _FOUR[:3]]
+    ui.already_in_other_group.add(clients[2])
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, _FOUR[:3]))
+
+    assert [s.grouped for s in result.states] == [True, True, False]
+    assert "Carol C" not in result.states[0].roster
+
+
+async def test_a_no_op_regroup_reports_the_survey_it_read(ui):
+    a = ui.make_client("Alice A", grouped=True)
+    b = ui.make_client("Bob B", grouped=True)
+
+    result = await _run_with(ui, lambda: gm.form_group([a, b], ["Alice A", "Bob B"]))
+
+    assert ui.invited_names == []
+    assert [s.grouped for s in result.states] == [True, True]
+    assert set(result.states[0].roster) == {"Alice A", "Bob B"}
+
+
+# ---------------------------------------------------------------------------
+# No wizard name reaches a log (#121)
+# ---------------------------------------------------------------------------
+
+_NAMES = ["Alice Ashblade", "Bob Battlecaster", "Carol Cloudrider"]
+_STRANGER = "Stranger One"
+
+
+def _split(ui, a, b, c):
+    ui.put_in_group(a, b)
+    ui.put_in_foreign_group(c, _STRANGER)
+
+
+def _refused(ui, a, b, c):
+    ui.already_in_other_group.add(b)
+
+
+def _never_accepted(ui, a, b, c):
+    ui.accepts_invites = False
+
+
+def _joins_elsewhere(ui, a, b, c):
+    ui.joins_foreign_group_on_accept.add(b)
+
+
+@pytest.mark.parametrize(
+    "setup",
+    [None, _split, _refused, _never_accepted, _joins_elsewhere],
+    ids=["invite", "dissolve", "refused", "never-accepted", "joins-elsewhere"],
+)
+async def test_no_wizard_name_is_logged(ui, caplog, setup):
+    """Session logs get pasted into bug reports, so every line names a slot, not a wizard.
+
+    Covers each path that used to write a name: the leader line, a dissolve (whose roster
+    includes a player who is not ours), each invite outcome, and the summary callers log.
+    DEBUG is captured too, since the session file records it.
+    """
+    a, b, c = (ui.make_client(n) for n in _NAMES)
+    if setup is not None:
+        setup(ui, a, b, c)
+    callback: list[str] = []
+
+    with caplog.at_level(logging.DEBUG):
+        result = await _run_with(
+            ui, lambda: gm.form_group([a, b, c], list(_NAMES), log=lambda m, _l: callback.append(m))
+        )
+        logging.getLogger("test").info(result.summary())
+
+    text = "\n".join([r.getMessage() for r in caplog.records] + callback)
+    assert "Rebuilding group" in text, "nothing was logged, so this proves nothing"
+    for name in [*_NAMES, _STRANGER]:
+        assert name not in text
+
+
+async def test_a_friends_list_miss_does_not_log_the_name_it_searched_for(ui, caplog):
+    """The friends-list helpers quote the name in their ValueError, so it is not passed on."""
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+    profile = AsyncMock(side_effect=ValueError("Could not find friend 'bob battlecaster' in online friends list"))
+
+    with caplog.at_level(logging.DEBUG), ExitStack() as stack:
+        for p in ui.patches():
+            stack.enter_context(p)
+        stack.enter_context(patch.object(nh, "open_friend_profile", new=profile))
+        result = await gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"])
+
+    assert "Could not find P2" in caplog.text
+    assert "battlecaster" not in (caplog.text + result.summary()).casefold()
 
 
 async def test_group_window_is_closed_on_both_players(ui):
@@ -1083,9 +1338,14 @@ async def test_friend_profile_is_closed_after_the_social_window(ui):
 async def test_profile_close_is_attempted_only_once_the_social_window_is_gone(ui):
     """Pins the ordering directly, independent of the fake's overlap modelling.
 
+    Run with the leader's social window opening on the send, the case where it is on top of
+    the profile when the profile is closed. Opening on the accept instead, the profile is
+    long closed by then and the order cannot matter.
+
     Only clicks made after the invite are considered: the membership checks that run
     beforehand also close the social window, and counting those hides the ordering.
     """
+    ui.leader_social_opens_on = "send"
     leader = ui.make_client("Alice Ashblade")
     joiner = ui.make_client("Bob Battlecaster")
     order: list[str] = []
@@ -1122,7 +1382,7 @@ async def test_friends_list_is_closed_once_for_the_whole_regroup(ui):
         stack.enter_context(patch.object(nh, "close_friends_list", new=close))
         result = await gm.form_group([leader, b, c], ["Alice Ashblade", "Bob Battlecaster", "Carol Cloudrider"])
 
-    assert result.added == ["Bob Battlecaster", "Carol Cloudrider"]
+    assert result.added == ["P2", "P3"]
     assert close.await_count == 1
 
 
@@ -1292,29 +1552,29 @@ async def _timed(coro_factory, patches):
         return result, loop.time() - start
 
 
-# The one settle a regroup still cannot poll away: nothing on the Group tab distinguishes
-# it from the other tabs, so the opening membership survey has to wait a fixed time before
-# reading. It is concurrent across clients, so a pair costs one of these, not two.
+# GROUP_UI_SETTLE, restored to a visible size. It is now paid only before a click on a Group
+# page that was already loaded when the window was found open (see _open_social_window); a
+# regroup from closed windows should pay none of it.
 #
-# Only the ratio to _BUDGET below matters, not the absolute value — the tests ask whether
-# the exchange paid one settle or three, and both sides scale together. Kept well above the
-# few milliseconds these fakes actually spend working, so scheduling noise cannot pass for
-# a settle, and low enough that the two tests do not dominate the file's runtime.
+# Kept well above the few milliseconds these fakes actually spend working, so scheduling
+# noise cannot pass for a settle, and low enough that these tests do not dominate the
+# file's runtime.
 _SETTLE = 0.5
 
-# Everything an invite exchange used to add on top of that — a sleep for the friend profile
-# to draw, a sleep to see whether the refusal popup appeared, and a second full settle to
-# confirm the join. Three settles' worth; the budget below allows for well under one.
-_BUDGET = _SETTLE * 2
+# What a regroup may spend in total. Well under one settle: everything it used to sleep
+# through — the opening survey's settle, a sleep for the friend profile to draw, a sleep to
+# see whether the refusal popup appeared, and a second settle to confirm the join — now has
+# something to watch for and is polled.
+_BUDGET = _SETTLE / 2
 
 
-async def test_a_successful_invite_pays_only_the_settle_that_cannot_be_polled_away(ui):
-    """Every wait in the invite exchange itself has something specific to watch for.
+async def test_a_successful_invite_pays_no_fixed_settle(ui):
+    """Every wait in a regroup has something specific to watch for.
 
-    The profile popup, the invitation prompt and the joined-a-group confirmation are all
-    observable, so all three are polled and a fast game ends each wait immediately. Only the
-    opening survey is blind, because there both answers are plausible and neither has a
-    signal — see the GROUP_UI_SETTLE note in timing.py.
+    The opening survey waits for the Group page to load, which its first roster line shows
+    whether or not the client is grouped. The profile popup, the invitation prompt and the
+    joined-a-group confirmation are all observable too. So all of them are polled, and a
+    fast game ends each wait immediately.
     """
     leader = ui.make_client("Alice Ashblade")
     joiner = ui.make_client("Bob Battlecaster")
@@ -1325,7 +1585,7 @@ async def test_a_successful_invite_pays_only_the_settle_that_cannot_be_polled_aw
     )
 
     assert result.success is True
-    assert result.added == ["Bob Battlecaster"]
+    assert result.added == ["P2"]
     assert elapsed < _BUDGET, f"the invite exchange slept through a fixed delay ({elapsed:.1f}s)"
 
 
@@ -1358,34 +1618,129 @@ async def test_a_refusal_is_noticed_as_soon_as_the_popup_is_drawn(ui):
     )
 
     assert result.success is False
-    assert result.failed == ["Bob Battlecaster"]
+    assert result.failed == ["P2"]
     assert ui.invited_names == ["Bob Battlecaster"], "a refusal must not be retried"
     assert ui.popup_showing.get(leader) is False, "the refusal popup was left blocking the next invite"
     assert elapsed < _BUDGET, f"the refusal was not acted on until a wait expired ({elapsed:.1f}s)"
 
 
-async def test_invite_cleanup_runs_on_both_clients_at_once(ui):
-    """Ordering matters within a client, not between them.
+def _with_settle(ui_obj):
+    return _patches_except(ui_obj, "GROUP_UI_SETTLE", extra=(patch.object(gm, "GROUP_UI_SETTLE", _SETTLE),))
 
-    The leader's social-window-then-profile order is load-bearing — the social window covers
-    the profile's close button — but the target shares nothing with it, so making the target
-    wait for the leader is pure latency, once per invite.
+
+def _open_with_page_loaded(ui_obj, client) -> None:
+    """Leave the social window open with its Group page loaded, as an earlier visit would."""
+    ui_obj._set_social_open(client, True)
+    ui_obj.tab_loaded[client] = True
+
+
+async def test_a_survey_waits_for_the_group_page_to_load_before_reading(ui):
+    """The page is blank until the tab is clicked, and does not fill in on the click itself.
+
+    A read taken straight after the click sees an empty roster and a membership that has
+    not loaded yet. Without the settle there is nothing else holding the read back.
     """
-    leader = ui.make_client("Alice Ashblade")
-    joiner = ui.make_client("Bob Battlecaster")
+    ui.tab_load_lag = 5
+    a = ui.make_client("Alice Ashblade", grouped=True)
+    ui.make_client("Bob Battlecaster", grouped=True)
 
-    async def _slow(_client):
-        await asyncio.sleep(0.3)
+    state = await _run_with(ui, lambda: gm.read_group_state(a))
 
-    loop = asyncio.get_event_loop()
-    with ExitStack() as stack:
-        stack.enter_context(patch.object(gm, "close_social_window", new=AsyncMock(side_effect=_slow)))
-        stack.enter_context(patch.object(gm, "_close_overlapping_windows", new=AsyncMock(side_effect=_slow)))
-        start = loop.time()
-        await gm._close_invite_windows(leader, joiner)
-        elapsed = loop.time() - start
+    assert state.grouped is True
+    assert set(state.roster) == {"Alice Ashblade", "Bob Battlecaster"}
 
-    assert elapsed < 0.5, f"the two clients were cleaned up one after the other ({elapsed:.2f}s)"
+
+async def test_an_ungrouped_survey_ends_as_soon_as_the_page_loads(ui):
+    """An ungrouped client has no member to wait for, but its first line is the placeholder.
+
+    That is the case the fixed settle existed for: the Leave Group button is hidden both
+    before the page loads and when ungrouped, so it cannot end the wait. The placeholder can.
+    """
+    clients = [ui.make_client(), ui.make_client()]
+
+    states, elapsed = await _timed(lambda: gm.read_group_states(clients), _with_settle(ui))
+
+    assert [s.grouped for s in states] == [False, False]
+    assert elapsed < _BUDGET, f"the survey slept through a fixed delay ({elapsed:.1f}s)"
+
+
+async def test_a_group_page_that_never_loads_is_read_anyway_with_a_warning(ui, caplog):
+    """Most likely a game update moved the roster path. The survey must still answer.
+
+    The Leave Group button is an independent read and may still work, so it is not thrown
+    away; the roster comes back empty, which every caller treats as "cannot tell".
+    """
+    ui.tab_loads = False
+    client = ui.make_client(grouped=True)
+
+    with caplog.at_level(logging.WARNING, logger=gm.__name__):
+        state = await _run_with(ui, lambda: gm.read_group_state(client))
+
+    assert state == gm.GroupState(grouped=True, roster=())
+    assert any("did not load" in r.getMessage() for r in caplog.records)
+
+
+async def test_a_read_from_a_window_already_on_the_loaded_page_does_not_wait(ui):
+    """A loaded page is readable from any tab, so whether the click landed does not matter."""
+    client = ui.make_client(grouped=True)
+    _open_with_page_loaded(ui, client)
+
+    state, elapsed = await _timed(lambda: gm.read_group_state(client), _with_settle(ui))
+
+    assert state.grouped is True
+    assert elapsed < _BUDGET, f"the read slept through a fixed delay ({elapsed:.1f}s)"
+
+
+async def test_leaving_from_a_freshly_opened_window_does_not_wait(ui):
+    """The page loading after our click is proof the click landed, so Leave is safe to press."""
+    a = ui.make_client(grouped=True)
+    ui.make_client(grouped=True)
+
+    left, elapsed = await _timed(lambda: gm.leave_group(a), _with_settle(ui))
+
+    assert left is True
+    assert ui.leave_clicks == [a]
+    assert elapsed < _BUDGET, f"leaving slept through a fixed delay ({elapsed:.1f}s)"
+
+
+async def test_leaving_from_a_window_already_on_the_loaded_page_waits_the_settle(ui):
+    """The one case the load signal cannot cover, when the next step is a CLICK.
+
+    The page read loaded before the tab click was processed, and stays loaded on the other
+    tabs, so it says nothing about which tab is showing. A click on Leave Group aimed at a
+    hidden tab lands on whatever the showing tab has there, so this still sleeps.
+    """
+    a = ui.make_client(grouped=True)
+    ui.make_client(grouped=True)
+    _open_with_page_loaded(ui, a)
+
+    left, elapsed = await _timed(lambda: gm.leave_group(a), _with_settle(ui))
+
+    assert left is True
+    # jitter() allows the settle to run 20% short.
+    assert elapsed >= _SETTLE * 0.8 - 0.01, f"clicked without waiting for the tab ({elapsed:.2f}s)"
+
+
+async def test_a_regroup_pays_the_join_confirmation_once_not_per_invitee(ui):
+    """The invitees accept and confirm together, not one after the other (#128).
+
+    Confirming a join is a server round trip, so it is made slow here: one invitee after
+    another would pay it three times.
+    """
+    clients = [ui.make_client(n) for n in ("Alice A", "Bob B", "Carol C", "Dave D")]
+    real_confirm = gm._confirm_joined
+
+    async def slow_confirm(target):
+        await asyncio.sleep(_SETTLE)
+        return await real_confirm(target)
+
+    result, elapsed = await _timed(
+        lambda: gm.form_group(clients, ["Alice A", "Bob B", "Carol C", "Dave D"]),
+        _patches_except(ui, extra=(patch.object(gm, "_confirm_joined", new=slow_confirm),)),
+    )
+
+    assert result.added == ["P2", "P3", "P4"]
+    assert elapsed < _SETTLE * 2, f"the joins were confirmed one after another ({elapsed:.2f}s)"
 
 
 async def test_already_grouped_client_is_not_reinvited(ui):
@@ -1400,5 +1755,5 @@ async def test_already_grouped_client_is_not_reinvited(ui):
     )
 
     assert result.success is True
-    assert result.added == ["Carol Cloudrider"]
+    assert result.added == ["P3"]
     assert ui.invited_names == ["Carol Cloudrider"]

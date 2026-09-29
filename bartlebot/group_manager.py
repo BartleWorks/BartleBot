@@ -66,6 +66,7 @@ from bartlebot.nodes.timing import (
     GROUP_INVITE_TIMEOUT,
     GROUP_JOIN_HINT_TIMEOUT,
     GROUP_PROFILE_TIMEOUT,
+    GROUP_TAB_LOAD_TIMEOUT,
     GROUP_UI_SETTLE,
     GROUP_VERIFY_TIMEOUT,
     POLL_INTERVAL,
@@ -129,9 +130,23 @@ class GroupState:
     roster: tuple[str, ...] = ()
 
 
+def slot_label(idx: int) -> str:
+    """Name a client by its player slot ("P2"), for anything that reaches a log line.
+
+    Never a wizard name: logs get pasted into bug reports, and a real name links the
+    account to whoever posted it. Callers pass their clients in slot order, so the index
+    into `clients` is the slot.
+    """
+    return f"P{idx + 1}"
+
+
 @dataclass
 class GroupResult:
-    """Outcome of a form_group call."""
+    """Outcome of a form_group call.
+
+    The lists hold slot labels (see slot_label), not wizard names, because summary() is
+    logged by every caller.
+    """
 
     success: bool
     added: list[str] = field(default_factory=list)
@@ -141,6 +156,11 @@ class GroupResult:
     # someone from a group they were happily in, including players who are not ours.
     left: list[str] = field(default_factory=list)
     reason: str = ""
+    # Every client's group state as form_group left it, positionally aligned with its
+    # clients, so a caller that needs membership next (the pre-run port survey) does not
+    # open every social window again to learn what this call just did. None when it read
+    # nothing. See _final_states for what is read and what is inferred.
+    states: list[GroupState] | None = None
 
     def summary(self) -> str:
         if self.success and not self.added and not self.left:
@@ -157,7 +177,7 @@ class GroupResult:
         return "; ".join(parts) or "nothing to do"
 
 
-async def _open_social_window(client, ready=None, ready_timeout: float = 0.0) -> bool:
+async def _open_social_window(client, ready=None, ready_timeout: float = 0.0, for_input: bool = False) -> bool:
     """Open the social window on the Group tab. Returns True if it is showing.
 
     The HUD button toggles the window, so it is only clicked when the window is not
@@ -167,22 +187,31 @@ async def _open_social_window(client, ready=None, ready_timeout: float = 0.0) ->
     send_hotkey does not reliably deliver the modifier: the game receives a bare "A" and
     the character strafes instead.
 
-    The tab click is followed by a fixed sleep rather than a poll for something on the
-    Group page, and neither is it skipped when the window may already be on that tab.
-    Both would need a way to tell which tab is showing, and there is none: GroupPageNumber
-    reads visible=True on every tab, and tools/probe_group_tab.py then swept all of them
-    without finding any property that separates Group from the rest (see paths.py). Do not
-    reintroduce either optimisation without a fresh probe run — an indicator that is
-    always true makes this function return immediately, so the window never reaches the
-    Group tab and membership is read off whichever page happened to be showing.
+    The tab is clicked unconditionally, because which tab is showing cannot be read:
+    GroupPageNumber reads visible=True on every tab, and tools/probe_group_tab.py then swept
+    all of them without finding any property that separates Group from the rest (see
+    paths.py). Do not skip the click on the strength of some indicator without a fresh
+    probe run.
 
-    `ready` escapes that sleep for the one caller that has something specific to wait for.
-    A membership *survey* does not: both answers are plausible, so no observation can end
-    the wait early and the fixed settle is the floor. Confirming a join is the opposite —
-    only "grouped" is being waited for, and its arrival is proof the page has populated —
-    so that caller passes the Leave Group button as `ready` and returns as soon as it
-    appears. Absence for the whole `ready_timeout` is then the answer too, not a read taken
-    too early, which is why the fixed settle is skipped rather than added afterwards.
+    What CAN be read is whether the Group page has loaded, and that is what the click is
+    followed by (_group_tab_loaded). The page is blank each time the window opens and fills
+    in only once the Group tab has been selected; the game clears it again when the window
+    closes. So on a window this function opened, "loaded" is proof the tab click landed,
+    grouped or not — which is what replaced the fixed GROUP_UI_SETTLE that used to follow
+    every click.
+
+    The one case that proof does not cover is a window that was already open with the page
+    loaded from earlier: the page then reads loaded before the click is processed, and stays
+    loaded if the window is switched to another tab. For a read that does not matter — the
+    loaded page is readable from any tab. For a click on something on the page it does,
+    because a control on a hidden tab still reports visible and the click lands on whatever
+    the showing tab has there. `for_input` callers therefore still pay the fixed settle in
+    that case, and only in that case.
+
+    `ready` replaces the load poll for the caller with something more specific to wait
+    for. Confirming a join waits for "grouped" only, and its arrival is proof the page has
+    populated, so that caller passes the Leave Group button and returns as soon as it
+    appears. Absence for the whole `ready_timeout` is then the answer too.
     """
     if not await node_helpers.is_visible_by_path(client, SOCIAL_WINDOW_PATH):
         # An open friends list covers the social HUD button, so the click lands on the list
@@ -203,12 +232,40 @@ async def _open_social_window(client, ready=None, ready_timeout: float = 0.0) ->
         if not opened:
             return False
 
+    loaded_before_click = await _group_tab_loaded(client)
     await node_helpers.click_by_path(client, SOCIAL_GROUP_TAB_PATH)
     if ready is not None:
         await node_helpers.poll_until(ready, timeout=ready_timeout, poll_interval=POLL_INTERVAL)
-    else:
+    elif for_input and loaded_before_click:
         await asyncio.sleep(jitter(GROUP_UI_SETTLE))
+    elif not await node_helpers.poll_until(
+        lambda: _group_tab_loaded(client),
+        timeout=GROUP_TAB_LOAD_TIMEOUT,
+        poll_interval=POLL_INTERVAL,
+    ):
+        # Carry on and read anyway, as the fixed settle did: the Leave Group button may still
+        # answer, and an empty roster already reads as "cannot tell". But say so, because a
+        # page that never loads is most likely a game update having moved the roster path.
+        logger.warning(
+            "Group tab did not load within %.0fs — reading it anyway (see tools/probe_group_roster.py)",
+            GROUP_TAB_LOAD_TIMEOUT,
+        )
     return True
+
+
+async def _group_tab_loaded(client) -> bool:
+    """Whether the Group page has loaded since the social window opened. Never raises.
+
+    Read off the first roster line, which is blank until the page loads and never blank
+    after: it holds a member when grouped, and the invitation placeholder
+    (_ROSTER_PLACEHOLDERS) when not. That makes it a load signal that works in both states,
+    which the Leave Group button — hidden when ungrouped — is not.
+    """
+    try:
+        return bool(wizard_names.strip_markup(await node_helpers.get_text_by_path(client, group_member_name_path(1))))
+    except Exception:
+        logger.debug("Could not read group roster line 1", exc_info=True)
+        return False
 
 
 async def close_social_window(client) -> None:
@@ -256,7 +313,9 @@ async def _roster_lines(client) -> list[tuple[int, str]]:
         if not name:
             continue
         if name.casefold() in _ROSTER_PLACEHOLDERS:
-            logger.debug("Ignoring placeholder text %r on group roster line %d", name, line)
+            # The text itself is not logged: this check is all that stands between a
+            # member's name and the log, and a new placeholder is found with the probe.
+            logger.debug("Ignoring placeholder text on group roster line %d", line)
             continue
         lines.append((line, name))
     return lines
@@ -282,7 +341,8 @@ async def _roster_lines(client) -> list[tuple[int, str]]:
 # reads has broken.
 #
 # If another placeholder turns up after a game update it will show up as a phantom member
-# in the split-group log line. tools/probe_group_roster.py prints the raw text of every
+# in the member counts the log reports, and in the roster-disagreement warning for an
+# ungrouped client. tools/probe_group_roster.py prints the raw text of every
 # line, which is how to identify it; add it here.
 _ROSTER_PLACEHOLDERS = frozenset({"left"})
 
@@ -300,17 +360,15 @@ async def read_group_state(client, confirm_grouped_timeout: float | None = None)
     client as grouped, always.
 
     The roster is read on the same visit because the expensive part is getting the window
-    open and settled — GROUP_UI_SETTLE dominates, and the roster adds only a handful of
-    memory reads on top of a window that is already showing. Reading it separately would
-    double the cost of the slowest and most failure-prone step for no benefit.
+    open and the Group page loaded, and the roster adds only a handful of memory reads on
+    top of a window that is already showing. Reading it separately would double the cost of
+    the slowest and most failure-prone step for no benefit.
 
     `confirm_grouped_timeout` says "I am expecting this client to be grouped, wait up to
-    this long for it". It replaces the fixed GROUP_UI_SETTLE with a poll for the Leave
-    Group button, so a join that has already landed is read at once instead of a second
-    later — see _open_social_window. Leave it None for a survey, where the answer is
-    genuinely unknown and there is nothing to poll for. Zero is distinct from None and
-    still means poll: it is what a caller whose deadline has run out passes, and reverting
-    it to the blind settle would hand back the second the caller was trying to save.
+    this long for it". It replaces the wait for the page to load with a poll for the Leave
+    Group button — see _open_social_window. Leave it None for a survey, where the answer is
+    genuinely unknown and the page loading is what to wait for. Zero is distinct from None
+    and still means poll the button: it is what a caller whose deadline has run out passes.
 
     Returns a blank state on any failure: the caller's next move is the same either way
     (try to add this client), and one unreadable client must not abort a regroup for the
@@ -377,7 +435,7 @@ async def read_group_states(clients: list) -> list[GroupState]:
     isolation that lets the pre-run deck applies run concurrently.
 
     The win is large because almost all of the elapsed time is asyncio.sleep, not blocking
-    memory reads: one GROUP_UI_SETTLE per client plus the retry pauses inside
+    memory reads: the window opening, the Group page loading, and the retry pauses inside
     close_social_window. Those overlap perfectly; only the ReadProcessMemory calls
     serialise on the loop thread.
 
@@ -420,24 +478,6 @@ def _roster_key(state: GroupState) -> frozenset[str]:
     return frozenset(name.casefold() for name in state.roster)
 
 
-def describe_groups(states: list[GroupState]) -> str:
-    """Render the distinct groups these clients are in, for a log line or an error.
-
-    Deduplicated by member set: every member of a group reads the same roster, so listing
-    one per client showed four rosters for two groups and buried the actual shape of the
-    problem. Ordering within a group is left as read (each client sees itself first).
-    """
-    distinct: list[tuple[str, ...]] = []
-    seen: set[frozenset[str]] = set()
-    for state in states:
-        key = _roster_key(state)
-        if key in seen:
-            continue
-        seen.add(key)
-        distinct.append(state.roster)
-    return " vs ".join("[" + ", ".join(roster) + "]" if roster else "[unreadable]" for roster in distinct)
-
-
 async def is_grouped(clients: list) -> bool:
     """Return True when every client is in a group, and in the same one where readable.
 
@@ -469,7 +509,7 @@ async def leave_group(client) -> bool:
     survey: the click that frees this client may have been made on a different one.
     """
     try:
-        if not await _open_social_window(client):
+        if not await _open_social_window(client, for_input=True):
             logger.debug("Social window did not open; cannot leave the group")
             return False
         if not await node_helpers.is_visible_by_path(client, LEAVE_GROUP_BUTTON_PATH):
@@ -605,6 +645,41 @@ def _in_leader_group(state: GroupState, leader_state: GroupState) -> bool:
     return _roster_key(state) == _roster_key(leader_state)
 
 
+def _final_states(
+    states: list[GroupState],
+    leader_idx: int,
+    joined: set[int],
+    names: list[str | None],
+) -> list[GroupState]:
+    """Every client's group state after a regroup, without opening a social window to read it.
+
+    `states` is the survey as _dissolve_other_groups left it. The leader's group is the
+    leader, the clients already in it, and the ones that joined — each join was confirmed
+    by the Leave Group button and a roster listing the leader, so nothing here is a guess
+    that the regroup did not check. They share one roster: the leader's as surveyed, plus
+    our own clients' names. That can miss a stranger who joined in the meantime, but the
+    port map, the one reader, keeps only pairs of our own clients.
+
+    Everyone else keeps the state already read for them: a client freed by a dissolve reads
+    ungrouped, and one whose invitation failed reads whatever it did before.
+    """
+    leader_state = states[leader_idx]
+    members = [
+        idx
+        for idx in range(len(states))
+        if idx == leader_idx or idx in joined or _in_leader_group(states[idx], leader_state)
+    ]
+    if len(members) < 2:
+        return list(states)
+
+    roster: list[str] = []
+    for name in (*leader_state.roster, *(names[idx] for idx in members)):
+        if name and not _lists(tuple(roster), name):
+            roster.append(name)
+    group = GroupState(grouped=True, roster=tuple(roster))
+    return [group if idx in members else state for idx, state in enumerate(states)]
+
+
 async def _dissolve_other_groups(
     clients: list,
     states: list[GroupState],
@@ -641,10 +716,14 @@ async def _dissolve_other_groups(
 
     updated = list(states)
     for members in doomed.values():
-        roster = states[members[0]].roster
+        size = len(states[members[0]].roster)
+        ours = ", ".join(slot_label(idx) for idx in members)
         # Worth saying out loud: a group can contain players who are not ours, and they
-        # lose their group here too.
-        _log(f"Dissolving group [{', '.join(roster)}] so its members can join the leader's", logging.WARNING)
+        # lose their group here too. Counted rather than listed, so no name reaches the log.
+        _log(
+            f"Dissolving the group holding {ours} ({size} members) so its members can join the leader's",
+            logging.WARNING,
+        )
         for idx in members:
             if await leave_group(clients[idx]):
                 updated[idx] = GroupState()
@@ -666,11 +745,11 @@ async def _form_group_locked(
         states = await read_group_states(clients)
     if all(state.grouped for state in states) and same_group(states) is not False:
         _log("All clients are already in a group — nothing to do", logging.DEBUG)
-        return GroupResult(success=True)
+        return GroupResult(success=True, states=list(states))
 
     leader_idx = _choose_leader(states, leader_index)
     leader = clients[leader_idx]
-    _log(f"Rebuilding group: leader is client {leader_idx} ({names[leader_idx] or 'unknown'})")
+    _log(f"Rebuilding group: leader is {slot_label(leader_idx)}")
 
     result = GroupResult(success=True)
 
@@ -678,35 +757,34 @@ async def _form_group_locked(
     # client sitting in a different group has to be freed before it can be invited across.
     before = states
     states = await _dissolve_other_groups(clients, states, leader_idx, _log)
-    result.left = [
-        names[i] or f"client {i}" for i in range(len(clients)) if before[i].grouped and not states[i].grouped
-    ]
+    result.left = [slot_label(i) for i in range(len(clients)) if before[i].grouped and not states[i].grouped]
     leader_state = states[leader_idx]
 
-    for idx, client in enumerate(clients):
+    to_invite: list[int] = []
+    for idx in range(len(clients)):
         if idx == leader_idx or _in_leader_group(states[idx], leader_state):
             continue
-
-        name = names[idx]
-        if not name:
-            _log(f"Client {idx} has no known wizard name — cannot invite it", logging.WARNING)
+        if not names[idx]:
+            _log(f"{slot_label(idx)} has no known wizard name — cannot invite it", logging.WARNING)
             result.success = False
-            result.failed.append(f"client {idx}")
+            result.failed.append(slot_label(idx))
             continue
+        to_invite.append(idx)
 
-        if await _add_one(leader, client, name, _log, names[leader_idx]):
-            result.added.append(name)
-        else:
-            result.success = False
-            result.failed.append(name)
+    joined = await _invite_all(leader, clients, names, to_invite, names[leader_idx], _log)
+    result.added = [slot_label(idx) for idx in to_invite if idx in joined]
+    result.failed += [slot_label(idx) for idx in to_invite if idx not in joined]
+    if len(joined) < len(to_invite):
+        result.success = False
+    result.states = _final_states(states, leader_idx, joined, names)
 
     # Close the friends list once, after every invite — it is reused between them, so
     # closing per-invite would mean reopening and re-paginating it for each client.
     #
     # The profile popup and the social window both sit on top of the friends list, and a
     # close click aimed at a covered button lands on whatever is above it. Clear them
-    # first: _close_invite_windows already tried, but it gives up after its own timeout
-    # and its failure must not silently strand the list underneath.
+    # first: the social window opened on the leader when the group formed, and nothing
+    # since has closed it.
     await _close_overlapping_windows(leader)
     if not await node_helpers.close_friends_list(leader):
         _log(
@@ -721,83 +799,175 @@ async def _form_group_locked(
     return result
 
 
-async def _add_one(leader, target, name: str, log, leader_name: str | None = None) -> bool:
-    """Invite one client into the leader's group. Returns True once the UI confirms it."""
+async def _invite_all(
+    leader,
+    clients: list,
+    names: list[str | None],
+    to_invite: list[int],
+    leader_name: str | None,
+    log,
+) -> set[int]:
+    """Invite every client in `to_invite` into the leader's group. Returns the ones that joined.
+
+    Each round runs in two phases (#128):
+
+      1. The leader sends every invitation, one after another, waiting only for each to
+         reach its target. It has one friends list and one mouse, so this part is serial.
+      2. Every invited client accepts and confirms, all at once. Accepts are independent
+         of each other, and each client's input goes to its own window.
+
+    Waiting for one invitee to join before inviting the next made every invite pay the
+    whole server round trip and join confirmation in turn; now a regroup pays it once.
+
+    Accepts are held back until every invitation is out, rather than each accepted as soon
+    as it lands, because the first accept forms the group, and the game opens the social
+    window on the leader when it does. Mid-send, that window would cover the friends list
+    and profile popup the leader is clicking through. The leader's windows are also cleared
+    before every send (see _send_invite), which covers the window opening on the send
+    itself, and a retry round starting after the group formed.
+
+    A client that did not join is retried in the next round, up to GROUP_ADD_RETRIES. One
+    the game refused, or that is not in the friends list, drops out at once: retrying cannot
+    fix either.
+    """
+    joined: set[int] = set()
+    pending = list(to_invite)
     for attempt in range(1, GROUP_ADD_RETRIES + 1):
-        try:
-            if await _invite_and_accept(leader, target, name, log, leader_name):
-                log(f"Added {name} to the group")
-                return True
-            log(f"Attempt {attempt}/{GROUP_ADD_RETRIES} to add {name} did not take effect", logging.DEBUG)
-        except AlreadyInAnotherGroup:
+        sent: list[int] = []
+        for idx in list(pending):
+            outcome = await _try_send(leader, clients[idx], names[idx], slot_label(idx), log)
+            if outcome is _SENT:
+                sent.append(idx)
+            elif outcome is _GIVE_UP:
+                pending.remove(idx)
+
+        accepted = await asyncio.gather(*(_accept_invite(clients[i], slot_label(i), log, leader_name) for i in sent))
+        for idx, ok in zip(sent, accepted):
+            if ok:
+                log(f"Added {slot_label(idx)} to the group")
+                joined.add(idx)
+                pending.remove(idx)
+
+        if not pending:
+            break
+        log(
+            f"Attempt {attempt}/{GROUP_ADD_RETRIES} to add {', '.join(slot_label(i) for i in pending)} "
+            "did not take effect",
+            logging.DEBUG,
+        )
+
+    for idx in pending:
+        log(f"Gave up adding {slot_label(idx)} to the group after {GROUP_ADD_RETRIES} attempts", logging.WARNING)
+    return joined
+
+
+# _try_send outcomes.
+_SENT = "sent"
+_RETRY = "retry"
+_GIVE_UP = "give up"
+
+
+async def _try_send(leader, target, name: str, label: str, log) -> str:
+    """Send one invitation, turning each way it can fail into what the round should do.
+
+    `name` is what the friends list is searched for; `label` is what the log calls the
+    target. They are kept apart so a wizard name never reaches a log line.
+    """
+    try:
+        return _SENT if await _send_invite(leader, target, name, label, log) else _RETRY
+    except AlreadyInAnotherGroup:
+        log(f"{label} is already in another group and must leave it before joining this one", logging.WARNING)
+        return _GIVE_UP
+    except ValueError:
+        # Raised by the friends-list helpers: name not present, or nobody online. Their
+        # message quotes the name searched for, so it is not passed on.
+        log(f"Could not find {label} in the leader's online friends list", logging.WARNING)
+        return _GIVE_UP
+    except Exception:
+        logger.warning("Unexpected error inviting %s to the group", label, exc_info=True)
+        return _RETRY
+
+
+async def _send_invite(leader, target, name: str, label: str, log) -> bool:
+    """Invite one client, and return True once the invitation is showing on it. Does not accept it.
+
+    The leader's social window and friend profile are cleared before the send as well as
+    after. The social window opens on the leader by itself when the group forms, and on top
+    of the friends list: left there, it takes the click meant for the next friend's row.
+    """
+    await _close_overlapping_windows(leader)
+    try:
+        async with leader.mouse_handler:
+            await node_helpers.open_friend_profile(leader, name)
+            # The profile popup is drawn locally, so it is normally up within a frame or
+            # two — polled rather than slept through. A timeout here is not fatal on its
+            # own: the click below then fails and reports what it actually found, which is a
+            # better diagnosis than "the popup was late".
+            if not await node_helpers.poll_until(
+                lambda: node_helpers.is_visible_by_path(leader, CHARACTER_PROFILE_PATH),
+                timeout=GROUP_PROFILE_TIMEOUT,
+                poll_interval=POLL_INTERVAL,
+            ):
+                log(f"Friend profile for {label} did not appear within {GROUP_PROFILE_TIMEOUT:.0f}s", logging.DEBUG)
+
+            if not await node_helpers.click_by_path(leader, INVITE_TO_GROUP_BUTTON_PATH):
+                diagnosis = await node_helpers.diagnose_path(leader, INVITE_TO_GROUP_BUTTON_PATH)
+                log(f"Group invite button unavailable for {label}: {diagnosis}", logging.DEBUG)
+                return False
+
+        invited, refused = await _await_invite_outcome(leader, target)
+        if refused:
+            # The game rejects the invite outright if that player is already in a group —
+            # someone else's, since form_group skips clients known to be in one. Dismiss the
+            # popup so it does not block the next invite, and stop: retrying cannot help.
+            await node_helpers.click_by_path(leader, ALREADY_IN_GROUP_DISMISS_PATH)
+            raise AlreadyInAnotherGroup(f"{label} is already in another group")
+        if not invited:
+            log(f"No group invitation appeared for {label} within {GROUP_INVITE_TIMEOUT:.0f}s", logging.DEBUG)
+            return False
+        return True
+    finally:
+        # The friends list is deliberately left open — it is reused for the next invite and
+        # closed once at the end of form_group.
+        await _close_overlapping_windows(leader)
+
+
+async def _accept_invite(target, label: str, log, leader_name: str | None) -> bool:
+    """Accept the invitation showing on `target` and report whether it joined the leader's group.
+
+    Never raises: this runs alongside the other invitees' accepts, and one failing must not
+    cancel the rest.
+    """
+    try:
+        # The prompt was showing when the invite was sent, but the other sends have run since.
+        # Checked so a prompt that has gone reads as a failed attempt, not a blind click.
+        if not await node_helpers.is_visible_by_path(target, GROUP_INVITE_ACCEPT_PATH):
+            log(f"The group invitation to {label} was gone before it could be accepted", logging.DEBUG)
+            return False
+        await node_helpers.click_by_path(target, GROUP_INVITE_ACCEPT_PATH)
+
+        # Authoritative check: the Leave Group button is only visible when actually grouped.
+        state = await _confirm_joined(target)
+        if not state.grouped:
+            return False
+
+        # Grouped is not the same as grouped WITH US. The target could have accepted
+        # somebody else's invitation in the moment between our click and this read, which
+        # the flag alone cannot see. The roster can: the leader has to be listed on it.
+        if leader_name and state.roster and not _lists(state.roster, leader_name):
             log(
-                f"{name} is already in another group and must leave it before joining this one",
+                f"{label} joined a group that does not contain the leader ({len(state.roster)} members)",
                 logging.WARNING,
             )
             return False
-        except ValueError as exc:
-            # Raised by the friends-list helpers: name not present, or nobody online.
-            log(f"Could not find {name} in the leader's friends list: {exc}", logging.WARNING)
-            return False
-        except Exception:
-            logger.warning("Unexpected error adding %s to the group", name, exc_info=True)
-        finally:
-            await _close_invite_windows(leader, target)
-
-    log(f"Gave up adding {name} to the group after {GROUP_ADD_RETRIES} attempts", logging.WARNING)
-    return False
-
-
-async def _invite_and_accept(leader, target, name: str, log, leader_name: str | None = None) -> bool:
-    """Run one full invite exchange and report whether the target joined the leader's group."""
-    async with leader.mouse_handler:
-        await node_helpers.open_friend_profile(leader, name)
-        # The profile popup is drawn locally, so it is normally up within a frame or two —
-        # polled rather than slept through. A timeout here is not fatal on its own: the
-        # click below then fails and reports what it actually found, which is a better
-        # diagnosis than "the popup was late".
-        if not await node_helpers.poll_until(
-            lambda: node_helpers.is_visible_by_path(leader, CHARACTER_PROFILE_PATH),
-            timeout=GROUP_PROFILE_TIMEOUT,
-            poll_interval=POLL_INTERVAL,
-        ):
-            log(f"Friend profile for {name} did not appear within {GROUP_PROFILE_TIMEOUT:.0f}s", logging.DEBUG)
-
-        if not await node_helpers.click_by_path(leader, INVITE_TO_GROUP_BUTTON_PATH):
-            diagnosis = await node_helpers.diagnose_path(leader, INVITE_TO_GROUP_BUTTON_PATH)
-            log(f"Group invite button unavailable for {name}: {diagnosis}", logging.DEBUG)
-            return False
-
-    invited, refused = await _await_invite_outcome(leader, target)
-    if refused:
-        # The game rejects the invite outright if that player is already in a group —
-        # someone else's, since form_group skips clients known to be in one. Dismiss the
-        # popup so it does not block the next invite, and stop: retrying cannot help.
-        await node_helpers.click_by_path(leader, ALREADY_IN_GROUP_DISMISS_PATH)
-        raise AlreadyInAnotherGroup(f"{name} is already in another group")
-    if not invited:
-        log(f"No group invitation appeared for {name} within {GROUP_INVITE_TIMEOUT:.0f}s", logging.DEBUG)
+        return True
+    except Exception:
+        logger.warning("Unexpected error accepting the group invitation on %s", label, exc_info=True)
         return False
-
-    await node_helpers.click_by_path(target, GROUP_INVITE_ACCEPT_PATH)
-
-    # Authoritative check: the Leave Group button is only visible when actually grouped.
-    # Cleanup is left to _add_one's `finally`, which runs on the failure paths too —
-    # closing here as well would double up and mask ordering bugs in the cleanup.
-    state = await _confirm_joined(target)
-    if not state.grouped:
-        return False
-
-    # Grouped is not the same as grouped WITH US. The target could have accepted somebody
-    # else's invitation in the moment between our click and this read, which the flag alone
-    # cannot see. The roster can: the leader has to be listed on it.
-    if leader_name and state.roster and not _lists(state.roster, leader_name):
-        log(
-            f"{name} joined a group that does not contain {leader_name} (roster: {', '.join(state.roster)})",
-            logging.WARNING,
-        )
-        return False
-    return True
+    finally:
+        # The game opens the social window on a client that joins, and it does not close
+        # itself. _confirm_joined's read closes it on the success path; this covers the rest.
+        await close_social_window(target)
 
 
 async def _await_invite_outcome(leader, target) -> tuple[bool, bool]:
@@ -891,7 +1061,21 @@ async def _visible_windows(client) -> str:
 
 
 async def _close_overlapping_windows(client) -> None:
-    """Close the windows that can sit on top of the friends list. Never raises."""
+    """Close the windows that can sit on top of the friends list. Never raises.
+
+    The friend profile popup, and the social window the game opens on its own when a group
+    forms. Left open they cover the HUD for every node that runs afterwards, and the
+    friends list for the next invite.
+
+    ORDER MATTERS. The social window opens on top of the friend profile, and it covers the
+    profile's close button — a click aimed at that button lands on the social window
+    instead, leaving the profile open. So the social window is closed first.
+
+    Each close retries until the window is actually gone rather than trusting one click,
+    because a click swallowed by an overlapping window leaves the next one aimed at the
+    wrong place too. Each also checks first, so a window that is not open costs a read and
+    no input.
+    """
     await close_social_window(client)
     try:
         await node_helpers.click_until_gone(
@@ -901,36 +1085,6 @@ async def _close_overlapping_windows(client) -> None:
         )
     except Exception:
         logger.debug("Could not close the friend profile popup", exc_info=True)
-
-
-async def _close_invite_windows(leader, target) -> None:
-    """Close the windows one invite leaves behind. Never raises.
-
-    Two windows are opened by an invite exchange and neither closes itself:
-      - the friend profile popup, on the leader;
-      - the social window, which the game opens on *both* players once the group is
-        created or joined.
-    Left open they cover the HUD for every node that runs afterwards, and they stack up
-    across a multi-client regroup.
-
-    ORDER MATTERS. The social window opens on top of the friend profile on the leader, and
-    it covers the profile's close button — a click aimed at that button lands on the social
-    window instead, leaving the profile open. So the social window is closed first on both
-    players, and only then the profile.
-
-    Each close retries until the window is actually gone rather than trusting one click,
-    because a click swallowed by an overlapping window leaves the next one aimed at the
-    wrong place too.
-
-    Order matters only WITHIN a client, so the two are cleaned up concurrently. Every input
-    here is addressed to one window handle — the same isolation that lets the membership
-    survey run concurrently, see read_group_states — and the leader's own social-then-profile
-    ordering is preserved inside _close_overlapping_windows.
-
-    The friends list is deliberately not closed here — it is reused for the next invite
-    and closed once at the end of form_group.
-    """
-    await asyncio.gather(close_social_window(target), _close_overlapping_windows(leader))
 
 
 async def teleport_to_group_member(client, name: str) -> None:
@@ -949,7 +1103,7 @@ async def teleport_to_group_member(client, name: str) -> None:
         async with lock:
             pass
 
-    if not await _open_social_window(client):
+    if not await _open_social_window(client, for_input=True):
         raise ValueError("the social window did not open")
     wanted = name.casefold()
     line = next((ln for ln, member in await _roster_lines(client) if member.casefold() == wanted), None)

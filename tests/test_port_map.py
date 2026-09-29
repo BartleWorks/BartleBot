@@ -103,6 +103,30 @@ def test_a_demoted_route_is_not_offered_again():
     assert pm.routes(b, a) == ["friend", "group"]
 
 
+def test_set_groups_replaces_the_group_routes_and_keeps_the_friend_routes():
+    """A recovery regroup: C crashed out of the group, and the group now holds A and B only."""
+    a, b, c = _clients(_A, _B, _C)
+    pm = PortMap.from_survey([_A, _B, _C], [[_C], [], [_A]], [(_A, _B, _C)] * 3)
+    pm.demote(a, c, "friend")
+
+    pm.set_groups([_A, _B, _C], [(_A, _B), (_A, _B), ()])
+
+    assert pm.routes(a, b) == ["group"]
+    assert pm.routes(a, c) == [], "a demoted friend route came back, or a stale group route stayed"
+    assert pm.routes(c, a) == ["friend"]
+    assert pm.routes(c, b) == []
+
+
+def test_set_groups_restores_a_group_route_demoted_against_the_old_group():
+    a, b = _clients(_A, _B)
+    pm = PortMap.from_survey([_A, _B], [[], []], [(_A, _B), (_A, _B)])
+    pm.demote(a, b, "group")
+
+    pm.set_groups([_A, _B], [(_A, _B), (_A, _B)])
+
+    assert pm.routes(a, b) == ["group"]
+
+
 def test_reach_counts_a_client_that_gets_there_through_another():
     """C is friends only with B, and B with A: C still reaches A, by porting to B once B is there."""
     a, b, c, d = _clients(_A, _B, _C, _D)

@@ -1096,7 +1096,7 @@ async def _attempt_zone_recovery(
     try:
         result = await port_to_friend(stragglers, target.name.lower(), poll_interval=poll_interval)
     except ValueError as exc:
-        machine.log(f"Recovery teleport failed: {exc}", logging.WARNING)
+        machine.log(f"Recovery teleport to P{target.index + 1} failed: {exc}", logging.WARNING)
         return
 
     if result.refusal:
@@ -1394,7 +1394,8 @@ async def resolve_friend_name(client, friend_name_lower: str) -> str:
         if name.lower() == friend_name_lower:
             return name
 
-    raise ValueError(f"Could not find friend matching {friend_name_lower!r} in online friends list")
+    # The name is not quoted: callers log this message, and a wizard name must not reach a log.
+    raise ValueError("Could not find friend in the online friends list")
 
 
 async def teleport_via_friends_list(client, friend_name_lower: str) -> None:
@@ -1768,7 +1769,8 @@ async def open_friend_profile(client, name: str):
         client, right_button, friends_list, None, None, exact_name, current_page
     )
     if friend is None:
-        raise ValueError(f"Could not find friend {exact_name!r} in online friends list")
+        # The name is not quoted: callers log this message, and a wizard name must not reach a log.
+        raise ValueError("Could not find friend in the online friends list")
 
     await _click_on_friend(client, friends_list, friend_index)
     return await _maybe_get_named_window(client.root_window, "wndCharacter")

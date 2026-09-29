@@ -35,6 +35,7 @@ class RegroupHarness:
     """Hosts the recovery regroup method without constructing a real ClientManager."""
 
     _regroup_after_recovery = ClientManager._regroup_after_recovery
+    _refresh_group_routes = ClientManager._refresh_group_routes
 
     def __init__(self, clients: list) -> None:
         self._clients = clients
@@ -173,6 +174,47 @@ async def test_recovery_queue_regroups_before_jumping_to_recovery_state(settings
     assert calls == ["regroup", "force_state", "resume"]
 
 
+async def test_a_recovery_regroup_updates_the_group_routes_in_the_runs_port_map(settings):
+    """The map was surveyed before the crash; the group it describes may be gone."""
+    harness = RegroupHarness(_clients())
+    after = [GroupState(True, ("W0", "W1")), GroupState(True, ("W0", "W1"))]
+
+    with (
+        patch.object(gm, "read_group_states", new=AsyncMock(return_value=UNGROUPED)),
+        patch.object(gm, "form_group", new=AsyncMock(return_value=GroupResult(success=True, states=after))),
+    ):
+        await harness._regroup_after_recovery()
+
+    harness._machine.port_map.set_groups.assert_called_once_with(["W0", "W1"], [("W0", "W1"), ("W0", "W1")])
+
+
+async def test_a_recovery_that_finds_the_group_intact_still_refreshes_the_routes(settings):
+    harness = RegroupHarness(_clients())
+
+    with patch.object(gm, "read_group_states", new=AsyncMock(return_value=ONE_GROUP)):
+        await harness._regroup_after_recovery()
+
+    harness._machine.port_map.set_groups.assert_called_once_with(["W0", "W1"], [s.roster for s in ONE_GROUP])
+
+
+async def test_a_run_with_no_port_map_yet_is_left_to_survey_for_itself(settings):
+    harness = RegroupHarness(_clients())
+    harness._machine.port_map = None
+
+    with patch.object(gm, "read_group_states", new=AsyncMock(return_value=ONE_GROUP)):
+        await harness._regroup_after_recovery()  # must not raise
+
+
+async def test_a_failed_recovery_regroup_leaves_the_port_map_alone(settings):
+    """Nothing trustworthy was read, so the routes are left for failed ports to demote."""
+    harness = RegroupHarness(_clients())
+
+    with patch.object(gm, "read_group_states", new=AsyncMock(side_effect=RuntimeError("boom"))):
+        await harness._regroup_after_recovery()
+
+    harness._machine.port_map.set_groups.assert_not_called()
+
+
 # ---------------------------------------------------------------------------
 # Pre-run grouping
 # ---------------------------------------------------------------------------
@@ -255,3 +297,33 @@ async def test_pre_run_grouping_failure_does_not_abort_the_run(app_settings):
         patch.object(gm, "form_group", new=AsyncMock()),
     ):
         await harness._form_pre_run_group()  # must not raise
+
+
+async def test_pre_run_grouping_hands_the_states_form_group_left_to_the_port_survey(app_settings):
+    """A regroup must not cost the port survey a second visit to every social window."""
+    harness = PreRunHarness(_clients())
+    after = [GroupState(True, ("A", "B")), GroupState(True, ("A", "B"))]
+
+    with (
+        patch.object(gm, "read_group_states", new=AsyncMock(return_value=UNGROUPED)),
+        patch.object(wn, "resolve_names", new=AsyncMock(return_value=["A", "B"])),
+        patch.object(gm, "form_group", new=AsyncMock(return_value=GroupResult(success=True, states=after))),
+    ):
+        assert await harness._form_pre_run_group() == after
+
+
+async def test_pre_run_grouping_hands_over_its_survey_when_nothing_changed(app_settings):
+    harness = PreRunHarness(_clients())
+
+    with patch.object(gm, "read_group_states", new=AsyncMock(return_value=ONE_GROUP)):
+        assert await harness._form_pre_run_group() == ONE_GROUP
+
+
+async def test_pre_run_grouping_hands_over_nothing_when_it_is_off_or_fails(app_settings):
+    """The survey then reads the Group tab itself — the only case it should."""
+    harness = PreRunHarness(_clients())
+    with patch.object(gm, "read_group_states", new=AsyncMock(side_effect=RuntimeError("boom"))):
+        assert await harness._form_pre_run_group() is None
+
+    app_settings.auto_group_players = False
+    assert await harness._form_pre_run_group() is None
