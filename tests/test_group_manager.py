@@ -65,6 +65,15 @@ class FakeUI:
         # roster readable?" guard in same_group.
         self.roster_empty_slot_text = "Left"
         self.social_open: dict[FakeClient, bool] = {}
+        # The Group page is blank each time the social window opens, loads only once the
+        # Group tab is clicked, and is cleared again on close — as in the game. The load
+        # lands `tab_load_lag` roster reads after the click rather than on it, so a read
+        # taken straight after the click sees the blank page, which is what makes waiting
+        # for the load observable. `tab_loads` False models a page that never loads.
+        self.tab_loaded: dict[FakeClient, bool] = {}
+        self.tab_load_lag = 1
+        self.tab_loads = True
+        self._load_pending: dict[FakeClient, int] = {}
         # High-water mark of how many clients had the social window open at the same
         # moment. read_group_flags surveys concurrently, so this reaching N is the
         # observable proof that the checks overlapped rather than ran one after another.
@@ -108,6 +117,9 @@ class FakeUI:
         self._pending_name: str | None = None
 
     def _set_social_open(self, client, value: bool) -> None:
+        if value != self.social_open.get(client, False):
+            self.tab_loaded[client] = False
+            self._load_pending.pop(client, None)
         self.social_open[client] = value
         self.max_social_open_at_once = max(self.max_social_open_at_once, sum(self.social_open.values()))
 
@@ -166,10 +178,18 @@ class FakeUI:
     async def get_text_by_path(self, client, path) -> str:
         """Answer the roster reads, modelling the game's markup and self-first ordering.
 
-        Returns nothing unless the social window is open, so a roster read that happens
-        after the window is closed shows up as an empty roster rather than passing.
+        Returns nothing unless the social window is open and its Group page has loaded, so a
+        roster read that happens after the window is closed, or before the page loads, shows
+        up as an empty roster rather than passing.
         """
-        if not self.social_open.get(client, False):
+        pending = self._load_pending.get(client)
+        if pending is not None:
+            if pending <= 0:
+                self.tab_loaded[client] = True
+                del self._load_pending[client]
+            else:
+                self._load_pending[client] = pending - 1
+        if not self.social_open.get(client, False) or not self.tab_loaded.get(client, False):
             return ""
         for line in range(1, GROUP_ROSTER_LINES + 1):
             if path != group_member_name_path(line):
@@ -254,6 +274,9 @@ class FakeUI:
             return True
         if path == SOCIAL_GROUP_TAB_PATH:
             self.group_tab_clicks.append(client)
+            loaded = self.tab_loaded.get(client, False) or client in self._load_pending
+            if self.social_open.get(client, False) and self.tab_loads and not loaded:
+                self._load_pending[client] = self.tab_load_lag
             return True
         if path == SOCIAL_BUTTON_PATH:
             self.social_button_clicks.append(client)
@@ -364,6 +387,7 @@ class FakeUI:
             base += (patch.object(nh, "close_friends_list", new=AsyncMock(side_effect=self._stub_close_friends_list)),)
         return base + (
             patch.object(gm, "GROUP_UI_SETTLE", 0),
+            patch.object(gm, "GROUP_TAB_LOAD_TIMEOUT", 0.05),
             patch.object(gm, "POLL_INTERVAL", 0),
             patch.object(gm, "GROUP_INVITE_TIMEOUT", 0.05),
             patch.object(gm, "GROUP_VERIFY_TIMEOUT", 0.05),
@@ -526,10 +550,12 @@ async def test_read_group_flags_is_positionally_aligned_with_clients(ui):
 async def test_read_group_flags_checks_clients_concurrently(ui):
     """Sequential checks would never have two social windows open at the same instant.
 
-    Overlap only exists where a check actually WAITS. Here that is the GROUP_UI_SETTLE
-    after the tab click — patched to 0 in the fixture, but asyncio.sleep(0) still yields,
-    which is all the overlap needs.
+    Overlap only exists where a check actually WAITS. Here that is the poll for the Group
+    page to load after the tab click. The page is made to take long enough that the poll
+    sleeps at least once — POLL_INTERVAL is patched to 0, but asyncio.sleep(0) still
+    yields, which is all the overlap needs.
     """
+    ui.tab_load_lag = 3
     clients = [ui.make_client(grouped=True) for _ in range(4)]
 
     await _run_with(ui, lambda: gm.read_group_flags(clients))
@@ -1351,29 +1377,29 @@ async def _timed(coro_factory, patches):
         return result, loop.time() - start
 
 
-# The one settle a regroup still cannot poll away: nothing on the Group tab distinguishes
-# it from the other tabs, so the opening membership survey has to wait a fixed time before
-# reading. It is concurrent across clients, so a pair costs one of these, not two.
+# GROUP_UI_SETTLE, restored to a visible size. It is now paid only before a click on a Group
+# page that was already loaded when the window was found open (see _open_social_window); a
+# regroup from closed windows should pay none of it.
 #
-# Only the ratio to _BUDGET below matters, not the absolute value — the tests ask whether
-# the exchange paid one settle or three, and both sides scale together. Kept well above the
-# few milliseconds these fakes actually spend working, so scheduling noise cannot pass for
-# a settle, and low enough that the two tests do not dominate the file's runtime.
+# Kept well above the few milliseconds these fakes actually spend working, so scheduling
+# noise cannot pass for a settle, and low enough that these tests do not dominate the
+# file's runtime.
 _SETTLE = 0.5
 
-# Everything an invite exchange used to add on top of that — a sleep for the friend profile
-# to draw, a sleep to see whether the refusal popup appeared, and a second full settle to
-# confirm the join. Three settles' worth; the budget below allows for well under one.
-_BUDGET = _SETTLE * 2
+# What a regroup may spend in total. Well under one settle: everything it used to sleep
+# through — the opening survey's settle, a sleep for the friend profile to draw, a sleep to
+# see whether the refusal popup appeared, and a second settle to confirm the join — now has
+# something to watch for and is polled.
+_BUDGET = _SETTLE / 2
 
 
-async def test_a_successful_invite_pays_only_the_settle_that_cannot_be_polled_away(ui):
-    """Every wait in the invite exchange itself has something specific to watch for.
+async def test_a_successful_invite_pays_no_fixed_settle(ui):
+    """Every wait in a regroup has something specific to watch for.
 
-    The profile popup, the invitation prompt and the joined-a-group confirmation are all
-    observable, so all three are polled and a fast game ends each wait immediately. Only the
-    opening survey is blind, because there both answers are plausible and neither has a
-    signal — see the GROUP_UI_SETTLE note in timing.py.
+    The opening survey waits for the Group page to load, which its first roster line shows
+    whether or not the client is grouped. The profile popup, the invitation prompt and the
+    joined-a-group confirmation are all observable too. So all of them are polled, and a
+    fast game ends each wait immediately.
     """
     leader = ui.make_client("Alice Ashblade")
     joiner = ui.make_client("Bob Battlecaster")
@@ -1421,6 +1447,103 @@ async def test_a_refusal_is_noticed_as_soon_as_the_popup_is_drawn(ui):
     assert ui.invited_names == ["Bob Battlecaster"], "a refusal must not be retried"
     assert ui.popup_showing.get(leader) is False, "the refusal popup was left blocking the next invite"
     assert elapsed < _BUDGET, f"the refusal was not acted on until a wait expired ({elapsed:.1f}s)"
+
+
+def _with_settle(ui_obj):
+    return _patches_except(ui_obj, "GROUP_UI_SETTLE", extra=(patch.object(gm, "GROUP_UI_SETTLE", _SETTLE),))
+
+
+def _open_with_page_loaded(ui_obj, client) -> None:
+    """Leave the social window open with its Group page loaded, as an earlier visit would."""
+    ui_obj._set_social_open(client, True)
+    ui_obj.tab_loaded[client] = True
+
+
+async def test_a_survey_waits_for_the_group_page_to_load_before_reading(ui):
+    """The page is blank until the tab is clicked, and does not fill in on the click itself.
+
+    A read taken straight after the click sees an empty roster and a membership that has
+    not loaded yet. Without the settle there is nothing else holding the read back.
+    """
+    ui.tab_load_lag = 5
+    a = ui.make_client("Alice Ashblade", grouped=True)
+    ui.make_client("Bob Battlecaster", grouped=True)
+
+    state = await _run_with(ui, lambda: gm.read_group_state(a))
+
+    assert state.grouped is True
+    assert set(state.roster) == {"Alice Ashblade", "Bob Battlecaster"}
+
+
+async def test_an_ungrouped_survey_ends_as_soon_as_the_page_loads(ui):
+    """An ungrouped client has no member to wait for, but its first line is the placeholder.
+
+    That is the case the fixed settle existed for: the Leave Group button is hidden both
+    before the page loads and when ungrouped, so it cannot end the wait. The placeholder can.
+    """
+    clients = [ui.make_client(), ui.make_client()]
+
+    states, elapsed = await _timed(lambda: gm.read_group_states(clients), _with_settle(ui))
+
+    assert [s.grouped for s in states] == [False, False]
+    assert elapsed < _BUDGET, f"the survey slept through a fixed delay ({elapsed:.1f}s)"
+
+
+async def test_a_group_page_that_never_loads_is_read_anyway_with_a_warning(ui, caplog):
+    """Most likely a game update moved the roster path. The survey must still answer.
+
+    The Leave Group button is an independent read and may still work, so it is not thrown
+    away; the roster comes back empty, which every caller treats as "cannot tell".
+    """
+    ui.tab_loads = False
+    client = ui.make_client(grouped=True)
+
+    with caplog.at_level(logging.WARNING, logger=gm.__name__):
+        state = await _run_with(ui, lambda: gm.read_group_state(client))
+
+    assert state == gm.GroupState(grouped=True, roster=())
+    assert any("did not load" in r.getMessage() for r in caplog.records)
+
+
+async def test_a_read_from_a_window_already_on_the_loaded_page_does_not_wait(ui):
+    """A loaded page is readable from any tab, so whether the click landed does not matter."""
+    client = ui.make_client(grouped=True)
+    _open_with_page_loaded(ui, client)
+
+    state, elapsed = await _timed(lambda: gm.read_group_state(client), _with_settle(ui))
+
+    assert state.grouped is True
+    assert elapsed < _BUDGET, f"the read slept through a fixed delay ({elapsed:.1f}s)"
+
+
+async def test_leaving_from_a_freshly_opened_window_does_not_wait(ui):
+    """The page loading after our click is proof the click landed, so Leave is safe to press."""
+    a = ui.make_client(grouped=True)
+    ui.make_client(grouped=True)
+
+    left, elapsed = await _timed(lambda: gm.leave_group(a), _with_settle(ui))
+
+    assert left is True
+    assert ui.leave_clicks == [a]
+    assert elapsed < _BUDGET, f"leaving slept through a fixed delay ({elapsed:.1f}s)"
+
+
+async def test_leaving_from_a_window_already_on_the_loaded_page_waits_the_settle(ui):
+    """The one case the load signal cannot cover, when the next step is a CLICK.
+
+    The page read loaded before the tab click was processed, and stays loaded on the other
+    tabs, so it says nothing about which tab is showing. A click on Leave Group aimed at a
+    hidden tab lands on whatever the showing tab has there, so this still sleeps.
+    """
+    a = ui.make_client(grouped=True)
+    ui.make_client(grouped=True)
+    _open_with_page_loaded(ui, a)
+
+    left, elapsed = await _timed(lambda: gm.leave_group(a), _with_settle(ui))
+
+    assert left is True
+    # jitter() allows the settle to run 20% short.
+    assert elapsed >= _SETTLE * 0.8 - 0.01, f"clicked without waiting for the tab ({elapsed:.2f}s)"
 
 
 async def test_invite_cleanup_runs_on_both_clients_at_once(ui):

@@ -30,12 +30,14 @@ Two details that make the difference between a useful answer and another false l
 
 RESULT (2026-08-11): none. Across every tab, nothing under SocialSystemsWindow holds a
 value on the Group tab that it does not also hold on some other tab. The selected tab is
-simply not readable, so _open_social_window clicks Tab_Group unconditionally and sleeps
-GROUP_UI_SETTLE. Shortening that sleep was considered and rejected — 1.0 s is what covers
-the page populating under load, and a misread makes the next regroup send spurious
-invites. The cost was addressed by running the whole survey concurrently instead
-(group_manager.read_group_flags), which turns it into one second for the fleet rather than
-one per client.
+simply not readable, so _open_social_window clicks Tab_Group unconditionally.
+
+The sleep after that click was later replaced anyway (#127), by a different signal: not
+WHICH tab is showing, but whether the Group page has LOADED. The page is blank until the
+tab is selected once per window open, and its first roster line is never blank after, so
+_open_social_window polls that instead. The fixed GROUP_UI_SETTLE survives only before a
+click on a page that was already loaded when the window was found open — the one case a
+tab indicator from this probe would still remove.
 
 This script is kept for re-running after a game update, when the tree may change.
 
@@ -256,12 +258,10 @@ def report(snapshots: dict[str, dict[str, dict[str, str]]], group_label: str, re
         return
     if not candidates:
         print("\nNO usable indicator found. Nothing under SocialSystemsWindow holds a value on")
-        print("the Group tab that it does not also hold on some other tab, so the fixed sleep")
-        print("in _open_social_window has to stay.")
-        print("\nThis matches the 2026-08-11 result, i.e. nothing has changed. Do NOT respond by")
-        print("shortening the sleep: it covers the page populating under load, and a misread")
-        print("makes the next regroup send spurious invites. read_group_flags already runs the")
-        print("survey concurrently, so the sleep costs one second for the fleet, not per client.")
+        print("the Group tab that it does not also hold on some other tab.")
+        print("\nThis matches the 2026-08-11 result, i.e. nothing has changed. Reads already wait")
+        print("for the Group page to load instead (#127); the fixed GROUP_UI_SETTLE stays only")
+        print("before a click on a page found already loaded, and should not be shortened.")
         print("=" * 78)
         return
 

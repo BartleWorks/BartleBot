@@ -347,8 +347,18 @@ GROUP_WINDOW_CLOSE_PATH = ["WorldView", "SocialSystemsWindow", "CloseSocialSyste
 # tools/probe_group_tab.py then swept EVERY tab, recording 13 properties for every window
 # under SocialSystemsWindow, and found nothing that holds a value on the Group tab it does
 # not also hold on some other tab (2026-08-11). So the selected tab cannot be read at all,
-# and _open_social_window clicks Tab_Group unconditionally and then sleeps. Re-run the
-# probe after a game update before assuming that is still true.
+# and _open_social_window clicks Tab_Group unconditionally. Re-run the probe after a game
+# update before assuming that is still true.
+#
+# Two related facts, checked in-game on 2026-09-29 (#127), and what the wait after the
+# click is built on instead:
+#   * The Group page's data does not exist until the tab has been selected once since the
+#     window opened: the roster reads blank before that, and is cleared again on close. So
+#     the page cannot be read without clicking the tab, however much of it sits in memory.
+#   * Once loaded, roster Line1 is never blank (a member, or the invitation placeholder),
+#     so "Line1 has text" is a load signal in both states. The probe's sweep did not
+#     contradict this: it clicked the Group tab first, so every tab it sampled after that
+#     showed the already-loaded page.
 
 # Whether this wizard is in a group is read from the Leave Group button: the game HIDES it
 # when ungrouped rather than graying it, so check visibility, not enabled-ness. Verified

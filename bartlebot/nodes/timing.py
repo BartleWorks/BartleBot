@@ -515,26 +515,27 @@ WINDOW_CLOSE_CONFIRM_INTERVAL = 0.1
 # costs in a regroup.
 
 GROUP_UI_SETTLE = 1.0
-# Pause after switching to the social window's Group tab, so the page is populated before
-# it is read. Matches the sleep WizWalker uses between its own friends-list clicks.
+# Pause after clicking the social window's Group tab, in the one case its arrival cannot be
+# observed: the window was already open with the Group page loaded from earlier, and the
+# caller is about to CLICK something on the page (leave_group, teleport_to_group_member).
+# Nothing distinguishes the Group tab from the others — tools/probe_group_tab.py swept every
+# tab and every window under the social window and came back empty (2026-08-11) — so a
+# click aimed at the page could otherwise land on whichever tab is still showing.
 #
-# One remaining use, and it is the one place with nothing to wait FOR: NO element
-# distinguishes the Group tab from the others. That is not an unexplored shortcut —
-# tools/probe_group_tab.py swept every tab and every window under the social window and
-# came back empty (2026-08-11, and see paths.py). A membership *survey* therefore cannot
-# conclude early, because either answer is plausible and neither has a signal.
+# Everywhere else this is polled away by GROUP_TAB_LOAD_TIMEOUT below. It used to follow
+# every tab click, which made it the fixed floor on every membership survey (#127).
+
+GROUP_TAB_LOAD_TIMEOUT = 3.0
+# Ceiling on waiting for the Group page to load after its tab is clicked. The page is blank
+# each time the social window opens, fills in only once the Group tab is selected, and is
+# cleared again when the window closes (checked in-game, 2026-09-29) — and its first roster
+# line is never blank once loaded, holding a member or the invitation placeholder. So the
+# load is observable whether or not the client is grouped, and group_manager polls for it.
 #
-# Confirming a JOIN is not that case and no longer pays this: only "grouped" is being
-# waited for there, so group_manager._confirm_joined polls the Leave Group button instead
-# and returns the moment it appears. Same for the two sleeps that used to sit in
-# _invite_and_accept — the friend profile popup and the "already in a group" refusal are
-# both polled now, the latter raced against the invitation prompt so its absence costs
-# nothing.
-#
-# What is left should not be shortened: 1.0 s is what reliably covers the page populating
-# under load, and a survey that misreads membership sends spurious invites. It is
-# concurrent across clients (see group_manager.read_group_flags), so a fleet pays it once
-# rather than once per client, which is where the win came from instead.
+# A ceiling, not a delay: a healthy page loads within a frame or two. It is reached only
+# when the page never loads, most likely because a game update moved the roster path, and
+# group_manager then logs a warning. Three times the 1.0 s that reliably covered the page
+# loading under load when this was a fixed sleep.
 
 
 HOUSING_EQUIP_TIMEOUT = 5.0

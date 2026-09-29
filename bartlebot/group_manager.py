@@ -66,6 +66,7 @@ from bartlebot.nodes.timing import (
     GROUP_INVITE_TIMEOUT,
     GROUP_JOIN_HINT_TIMEOUT,
     GROUP_PROFILE_TIMEOUT,
+    GROUP_TAB_LOAD_TIMEOUT,
     GROUP_UI_SETTLE,
     GROUP_VERIFY_TIMEOUT,
     POLL_INTERVAL,
@@ -171,7 +172,7 @@ class GroupResult:
         return "; ".join(parts) or "nothing to do"
 
 
-async def _open_social_window(client, ready=None, ready_timeout: float = 0.0) -> bool:
+async def _open_social_window(client, ready=None, ready_timeout: float = 0.0, for_input: bool = False) -> bool:
     """Open the social window on the Group tab. Returns True if it is showing.
 
     The HUD button toggles the window, so it is only clicked when the window is not
@@ -181,22 +182,31 @@ async def _open_social_window(client, ready=None, ready_timeout: float = 0.0) ->
     send_hotkey does not reliably deliver the modifier: the game receives a bare "A" and
     the character strafes instead.
 
-    The tab click is followed by a fixed sleep rather than a poll for something on the
-    Group page, and neither is it skipped when the window may already be on that tab.
-    Both would need a way to tell which tab is showing, and there is none: GroupPageNumber
-    reads visible=True on every tab, and tools/probe_group_tab.py then swept all of them
-    without finding any property that separates Group from the rest (see paths.py). Do not
-    reintroduce either optimisation without a fresh probe run — an indicator that is
-    always true makes this function return immediately, so the window never reaches the
-    Group tab and membership is read off whichever page happened to be showing.
+    The tab is clicked unconditionally, because which tab is showing cannot be read:
+    GroupPageNumber reads visible=True on every tab, and tools/probe_group_tab.py then swept
+    all of them without finding any property that separates Group from the rest (see
+    paths.py). Do not skip the click on the strength of some indicator without a fresh
+    probe run.
 
-    `ready` escapes that sleep for the one caller that has something specific to wait for.
-    A membership *survey* does not: both answers are plausible, so no observation can end
-    the wait early and the fixed settle is the floor. Confirming a join is the opposite —
-    only "grouped" is being waited for, and its arrival is proof the page has populated —
-    so that caller passes the Leave Group button as `ready` and returns as soon as it
-    appears. Absence for the whole `ready_timeout` is then the answer too, not a read taken
-    too early, which is why the fixed settle is skipped rather than added afterwards.
+    What CAN be read is whether the Group page has loaded, and that is what the click is
+    followed by (_group_tab_loaded). The page is blank each time the window opens and fills
+    in only once the Group tab has been selected; the game clears it again when the window
+    closes. So on a window this function opened, "loaded" is proof the tab click landed,
+    grouped or not — which is what replaced the fixed GROUP_UI_SETTLE that used to follow
+    every click.
+
+    The one case that proof does not cover is a window that was already open with the page
+    loaded from earlier: the page then reads loaded before the click is processed, and stays
+    loaded if the window is switched to another tab. For a read that does not matter — the
+    loaded page is readable from any tab. For a click on something on the page it does,
+    because a control on a hidden tab still reports visible and the click lands on whatever
+    the showing tab has there. `for_input` callers therefore still pay the fixed settle in
+    that case, and only in that case.
+
+    `ready` replaces the load poll for the caller with something more specific to wait
+    for. Confirming a join waits for "grouped" only, and its arrival is proof the page has
+    populated, so that caller passes the Leave Group button and returns as soon as it
+    appears. Absence for the whole `ready_timeout` is then the answer too.
     """
     if not await node_helpers.is_visible_by_path(client, SOCIAL_WINDOW_PATH):
         # An open friends list covers the social HUD button, so the click lands on the list
@@ -217,12 +227,40 @@ async def _open_social_window(client, ready=None, ready_timeout: float = 0.0) ->
         if not opened:
             return False
 
+    loaded_before_click = await _group_tab_loaded(client)
     await node_helpers.click_by_path(client, SOCIAL_GROUP_TAB_PATH)
     if ready is not None:
         await node_helpers.poll_until(ready, timeout=ready_timeout, poll_interval=POLL_INTERVAL)
-    else:
+    elif for_input and loaded_before_click:
         await asyncio.sleep(jitter(GROUP_UI_SETTLE))
+    elif not await node_helpers.poll_until(
+        lambda: _group_tab_loaded(client),
+        timeout=GROUP_TAB_LOAD_TIMEOUT,
+        poll_interval=POLL_INTERVAL,
+    ):
+        # Carry on and read anyway, as the fixed settle did: the Leave Group button may still
+        # answer, and an empty roster already reads as "cannot tell". But say so, because a
+        # page that never loads is most likely a game update having moved the roster path.
+        logger.warning(
+            "Group tab did not load within %.0fs — reading it anyway (see tools/probe_group_roster.py)",
+            GROUP_TAB_LOAD_TIMEOUT,
+        )
     return True
+
+
+async def _group_tab_loaded(client) -> bool:
+    """Whether the Group page has loaded since the social window opened. Never raises.
+
+    Read off the first roster line, which is blank until the page loads and never blank
+    after: it holds a member when grouped, and the invitation placeholder
+    (_ROSTER_PLACEHOLDERS) when not. That makes it a load signal that works in both states,
+    which the Leave Group button — hidden when ungrouped — is not.
+    """
+    try:
+        return bool(wizard_names.strip_markup(await node_helpers.get_text_by_path(client, group_member_name_path(1))))
+    except Exception:
+        logger.debug("Could not read group roster line 1", exc_info=True)
+        return False
 
 
 async def close_social_window(client) -> None:
@@ -317,17 +355,15 @@ async def read_group_state(client, confirm_grouped_timeout: float | None = None)
     client as grouped, always.
 
     The roster is read on the same visit because the expensive part is getting the window
-    open and settled — GROUP_UI_SETTLE dominates, and the roster adds only a handful of
-    memory reads on top of a window that is already showing. Reading it separately would
-    double the cost of the slowest and most failure-prone step for no benefit.
+    open and the Group page loaded, and the roster adds only a handful of memory reads on
+    top of a window that is already showing. Reading it separately would double the cost of
+    the slowest and most failure-prone step for no benefit.
 
     `confirm_grouped_timeout` says "I am expecting this client to be grouped, wait up to
-    this long for it". It replaces the fixed GROUP_UI_SETTLE with a poll for the Leave
-    Group button, so a join that has already landed is read at once instead of a second
-    later — see _open_social_window. Leave it None for a survey, where the answer is
-    genuinely unknown and there is nothing to poll for. Zero is distinct from None and
-    still means poll: it is what a caller whose deadline has run out passes, and reverting
-    it to the blind settle would hand back the second the caller was trying to save.
+    this long for it". It replaces the wait for the page to load with a poll for the Leave
+    Group button — see _open_social_window. Leave it None for a survey, where the answer is
+    genuinely unknown and the page loading is what to wait for. Zero is distinct from None
+    and still means poll the button: it is what a caller whose deadline has run out passes.
 
     Returns a blank state on any failure: the caller's next move is the same either way
     (try to add this client), and one unreadable client must not abort a regroup for the
@@ -394,7 +430,7 @@ async def read_group_states(clients: list) -> list[GroupState]:
     isolation that lets the pre-run deck applies run concurrently.
 
     The win is large because almost all of the elapsed time is asyncio.sleep, not blocking
-    memory reads: one GROUP_UI_SETTLE per client plus the retry pauses inside
+    memory reads: the window opening, the Group page loading, and the retry pauses inside
     close_social_window. Those overlap perfectly; only the ReadProcessMemory calls
     serialise on the loop thread.
 
@@ -468,7 +504,7 @@ async def leave_group(client) -> bool:
     survey: the click that frees this client may have been made on a different one.
     """
     try:
-        if not await _open_social_window(client):
+        if not await _open_social_window(client, for_input=True):
             logger.debug("Social window did not open; cannot leave the group")
             return False
         if not await node_helpers.is_visible_by_path(client, LEAVE_GROUP_BUTTON_PATH):
@@ -956,7 +992,7 @@ async def teleport_to_group_member(client, name: str) -> None:
         async with lock:
             pass
 
-    if not await _open_social_window(client):
+    if not await _open_social_window(client, for_input=True):
         raise ValueError("the social window did not open")
     wanted = name.casefold()
     line = next((ln for ln, member in await _roster_lines(client) if member.casefold() == wanted), None)
