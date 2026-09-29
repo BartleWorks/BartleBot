@@ -720,31 +720,30 @@ async def _form_group_locked(
     result.left = [slot_label(i) for i in range(len(clients)) if before[i].grouped and not states[i].grouped]
     leader_state = states[leader_idx]
 
-    for idx, client in enumerate(clients):
+    to_invite: list[int] = []
+    for idx in range(len(clients)):
         if idx == leader_idx or _in_leader_group(states[idx], leader_state):
             continue
-
-        name = names[idx]
-        label = slot_label(idx)
-        if not name:
-            _log(f"{label} has no known wizard name — cannot invite it", logging.WARNING)
+        if not names[idx]:
+            _log(f"{slot_label(idx)} has no known wizard name — cannot invite it", logging.WARNING)
             result.success = False
-            result.failed.append(label)
+            result.failed.append(slot_label(idx))
             continue
+        to_invite.append(idx)
 
-        if await _add_one(leader, client, name, label, _log, names[leader_idx]):
-            result.added.append(label)
-        else:
-            result.success = False
-            result.failed.append(label)
+    joined = await _invite_all(leader, clients, names, to_invite, names[leader_idx], _log)
+    result.added = [slot_label(idx) for idx in to_invite if idx in joined]
+    result.failed += [slot_label(idx) for idx in to_invite if idx not in joined]
+    if len(joined) < len(to_invite):
+        result.success = False
 
     # Close the friends list once, after every invite — it is reused between them, so
     # closing per-invite would mean reopening and re-paginating it for each client.
     #
     # The profile popup and the social window both sit on top of the friends list, and a
     # close click aimed at a covered button lands on whatever is above it. Clear them
-    # first: _close_invite_windows already tried, but it gives up after its own timeout
-    # and its failure must not silently strand the list underneath.
+    # first: the social window opened on the leader when the group formed, and nothing
+    # since has closed it.
     await _close_overlapping_windows(leader)
     if not await node_helpers.close_friends_list(leader):
         _log(
@@ -759,88 +758,175 @@ async def _form_group_locked(
     return result
 
 
-async def _add_one(leader, target, name: str, label: str, log, leader_name: str | None = None) -> bool:
-    """Invite one client into the leader's group. Returns True once the UI confirms it.
+async def _invite_all(
+    leader,
+    clients: list,
+    names: list[str | None],
+    to_invite: list[int],
+    leader_name: str | None,
+    log,
+) -> set[int]:
+    """Invite every client in `to_invite` into the leader's group. Returns the ones that joined.
+
+    Each round runs in two phases (#128):
+
+      1. The leader sends every invitation, one after another, waiting only for each to
+         reach its target. It has one friends list and one mouse, so this part is serial.
+      2. Every invited client accepts and confirms, all at once. Accepts are independent
+         of each other, and each client's input goes to its own window.
+
+    Waiting for one invitee to join before inviting the next made every invite pay the
+    whole server round trip and join confirmation in turn; now a regroup pays it once.
+
+    Accepts are held back until every invitation is out, rather than each accepted as soon
+    as it lands, because the first accept forms the group, and the game opens the social
+    window on the leader when it does. Mid-send, that window would cover the friends list
+    and profile popup the leader is clicking through. The leader's windows are also cleared
+    before every send (see _send_invite), which covers the window opening on the send
+    itself, and a retry round starting after the group formed.
+
+    A client that did not join is retried in the next round, up to GROUP_ADD_RETRIES. One
+    the game refused, or that is not in the friends list, drops out at once: retrying cannot
+    fix either.
+    """
+    joined: set[int] = set()
+    pending = list(to_invite)
+    for attempt in range(1, GROUP_ADD_RETRIES + 1):
+        sent: list[int] = []
+        for idx in list(pending):
+            outcome = await _try_send(leader, clients[idx], names[idx], slot_label(idx), log)
+            if outcome is _SENT:
+                sent.append(idx)
+            elif outcome is _GIVE_UP:
+                pending.remove(idx)
+
+        accepted = await asyncio.gather(*(_accept_invite(clients[i], slot_label(i), log, leader_name) for i in sent))
+        for idx, ok in zip(sent, accepted):
+            if ok:
+                log(f"Added {slot_label(idx)} to the group")
+                joined.add(idx)
+                pending.remove(idx)
+
+        if not pending:
+            break
+        log(
+            f"Attempt {attempt}/{GROUP_ADD_RETRIES} to add {', '.join(slot_label(i) for i in pending)} "
+            "did not take effect",
+            logging.DEBUG,
+        )
+
+    for idx in pending:
+        log(f"Gave up adding {slot_label(idx)} to the group after {GROUP_ADD_RETRIES} attempts", logging.WARNING)
+    return joined
+
+
+# _try_send outcomes.
+_SENT = "sent"
+_RETRY = "retry"
+_GIVE_UP = "give up"
+
+
+async def _try_send(leader, target, name: str, label: str, log) -> str:
+    """Send one invitation, turning each way it can fail into what the round should do.
 
     `name` is what the friends list is searched for; `label` is what the log calls the
     target. They are kept apart so a wizard name never reaches a log line.
     """
-    for attempt in range(1, GROUP_ADD_RETRIES + 1):
-        try:
-            if await _invite_and_accept(leader, target, name, label, log, leader_name):
-                log(f"Added {label} to the group")
-                return True
-            log(f"Attempt {attempt}/{GROUP_ADD_RETRIES} to add {label} did not take effect", logging.DEBUG)
-        except AlreadyInAnotherGroup:
+    try:
+        return _SENT if await _send_invite(leader, target, name, label, log) else _RETRY
+    except AlreadyInAnotherGroup:
+        log(f"{label} is already in another group and must leave it before joining this one", logging.WARNING)
+        return _GIVE_UP
+    except ValueError:
+        # Raised by the friends-list helpers: name not present, or nobody online. Their
+        # message quotes the name searched for, so it is not passed on.
+        log(f"Could not find {label} in the leader's online friends list", logging.WARNING)
+        return _GIVE_UP
+    except Exception:
+        logger.warning("Unexpected error inviting %s to the group", label, exc_info=True)
+        return _RETRY
+
+
+async def _send_invite(leader, target, name: str, label: str, log) -> bool:
+    """Invite one client, and return True once the invitation is showing on it. Does not accept it.
+
+    The leader's social window and friend profile are cleared before the send as well as
+    after. The social window opens on the leader by itself when the group forms, and on top
+    of the friends list: left there, it takes the click meant for the next friend's row.
+    """
+    await _close_overlapping_windows(leader)
+    try:
+        async with leader.mouse_handler:
+            await node_helpers.open_friend_profile(leader, name)
+            # The profile popup is drawn locally, so it is normally up within a frame or
+            # two — polled rather than slept through. A timeout here is not fatal on its
+            # own: the click below then fails and reports what it actually found, which is a
+            # better diagnosis than "the popup was late".
+            if not await node_helpers.poll_until(
+                lambda: node_helpers.is_visible_by_path(leader, CHARACTER_PROFILE_PATH),
+                timeout=GROUP_PROFILE_TIMEOUT,
+                poll_interval=POLL_INTERVAL,
+            ):
+                log(f"Friend profile for {label} did not appear within {GROUP_PROFILE_TIMEOUT:.0f}s", logging.DEBUG)
+
+            if not await node_helpers.click_by_path(leader, INVITE_TO_GROUP_BUTTON_PATH):
+                diagnosis = await node_helpers.diagnose_path(leader, INVITE_TO_GROUP_BUTTON_PATH)
+                log(f"Group invite button unavailable for {label}: {diagnosis}", logging.DEBUG)
+                return False
+
+        invited, refused = await _await_invite_outcome(leader, target)
+        if refused:
+            # The game rejects the invite outright if that player is already in a group —
+            # someone else's, since form_group skips clients known to be in one. Dismiss the
+            # popup so it does not block the next invite, and stop: retrying cannot help.
+            await node_helpers.click_by_path(leader, ALREADY_IN_GROUP_DISMISS_PATH)
+            raise AlreadyInAnotherGroup(f"{label} is already in another group")
+        if not invited:
+            log(f"No group invitation appeared for {label} within {GROUP_INVITE_TIMEOUT:.0f}s", logging.DEBUG)
+            return False
+        return True
+    finally:
+        # The friends list is deliberately left open — it is reused for the next invite and
+        # closed once at the end of form_group.
+        await _close_overlapping_windows(leader)
+
+
+async def _accept_invite(target, label: str, log, leader_name: str | None) -> bool:
+    """Accept the invitation showing on `target` and report whether it joined the leader's group.
+
+    Never raises: this runs alongside the other invitees' accepts, and one failing must not
+    cancel the rest.
+    """
+    try:
+        # The prompt was showing when the invite was sent, but the other sends have run since.
+        # Checked so a prompt that has gone reads as a failed attempt, not a blind click.
+        if not await node_helpers.is_visible_by_path(target, GROUP_INVITE_ACCEPT_PATH):
+            log(f"The group invitation to {label} was gone before it could be accepted", logging.DEBUG)
+            return False
+        await node_helpers.click_by_path(target, GROUP_INVITE_ACCEPT_PATH)
+
+        # Authoritative check: the Leave Group button is only visible when actually grouped.
+        state = await _confirm_joined(target)
+        if not state.grouped:
+            return False
+
+        # Grouped is not the same as grouped WITH US. The target could have accepted
+        # somebody else's invitation in the moment between our click and this read, which
+        # the flag alone cannot see. The roster can: the leader has to be listed on it.
+        if leader_name and state.roster and not _lists(state.roster, leader_name):
             log(
-                f"{label} is already in another group and must leave it before joining this one",
+                f"{label} joined a group that does not contain the leader ({len(state.roster)} members)",
                 logging.WARNING,
             )
             return False
-        except ValueError:
-            # Raised by the friends-list helpers: name not present, or nobody online. Their
-            # message quotes the name searched for, so it is not passed on.
-            log(f"Could not find {label} in the leader's online friends list", logging.WARNING)
-            return False
-        except Exception:
-            logger.warning("Unexpected error adding %s to the group", label, exc_info=True)
-        finally:
-            await _close_invite_windows(leader, target)
-
-    log(f"Gave up adding {label} to the group after {GROUP_ADD_RETRIES} attempts", logging.WARNING)
-    return False
-
-
-async def _invite_and_accept(leader, target, name: str, label: str, log, leader_name: str | None = None) -> bool:
-    """Run one full invite exchange and report whether the target joined the leader's group."""
-    async with leader.mouse_handler:
-        await node_helpers.open_friend_profile(leader, name)
-        # The profile popup is drawn locally, so it is normally up within a frame or two —
-        # polled rather than slept through. A timeout here is not fatal on its own: the
-        # click below then fails and reports what it actually found, which is a better
-        # diagnosis than "the popup was late".
-        if not await node_helpers.poll_until(
-            lambda: node_helpers.is_visible_by_path(leader, CHARACTER_PROFILE_PATH),
-            timeout=GROUP_PROFILE_TIMEOUT,
-            poll_interval=POLL_INTERVAL,
-        ):
-            log(f"Friend profile for {label} did not appear within {GROUP_PROFILE_TIMEOUT:.0f}s", logging.DEBUG)
-
-        if not await node_helpers.click_by_path(leader, INVITE_TO_GROUP_BUTTON_PATH):
-            diagnosis = await node_helpers.diagnose_path(leader, INVITE_TO_GROUP_BUTTON_PATH)
-            log(f"Group invite button unavailable for {label}: {diagnosis}", logging.DEBUG)
-            return False
-
-    invited, refused = await _await_invite_outcome(leader, target)
-    if refused:
-        # The game rejects the invite outright if that player is already in a group —
-        # someone else's, since form_group skips clients known to be in one. Dismiss the
-        # popup so it does not block the next invite, and stop: retrying cannot help.
-        await node_helpers.click_by_path(leader, ALREADY_IN_GROUP_DISMISS_PATH)
-        raise AlreadyInAnotherGroup(f"{label} is already in another group")
-    if not invited:
-        log(f"No group invitation appeared for {label} within {GROUP_INVITE_TIMEOUT:.0f}s", logging.DEBUG)
+        return True
+    except Exception:
+        logger.warning("Unexpected error accepting the group invitation on %s", label, exc_info=True)
         return False
-
-    await node_helpers.click_by_path(target, GROUP_INVITE_ACCEPT_PATH)
-
-    # Authoritative check: the Leave Group button is only visible when actually grouped.
-    # Cleanup is left to _add_one's `finally`, which runs on the failure paths too —
-    # closing here as well would double up and mask ordering bugs in the cleanup.
-    state = await _confirm_joined(target)
-    if not state.grouped:
-        return False
-
-    # Grouped is not the same as grouped WITH US. The target could have accepted somebody
-    # else's invitation in the moment between our click and this read, which the flag alone
-    # cannot see. The roster can: the leader has to be listed on it.
-    if leader_name and state.roster and not _lists(state.roster, leader_name):
-        log(
-            f"{label} joined a group that does not contain the leader ({len(state.roster)} members)",
-            logging.WARNING,
-        )
-        return False
-    return True
+    finally:
+        # The game opens the social window on a client that joins, and it does not close
+        # itself. _confirm_joined's read closes it on the success path; this covers the rest.
+        await close_social_window(target)
 
 
 async def _await_invite_outcome(leader, target) -> tuple[bool, bool]:
@@ -934,7 +1020,21 @@ async def _visible_windows(client) -> str:
 
 
 async def _close_overlapping_windows(client) -> None:
-    """Close the windows that can sit on top of the friends list. Never raises."""
+    """Close the windows that can sit on top of the friends list. Never raises.
+
+    The friend profile popup, and the social window the game opens on its own when a group
+    forms. Left open they cover the HUD for every node that runs afterwards, and the
+    friends list for the next invite.
+
+    ORDER MATTERS. The social window opens on top of the friend profile, and it covers the
+    profile's close button — a click aimed at that button lands on the social window
+    instead, leaving the profile open. So the social window is closed first.
+
+    Each close retries until the window is actually gone rather than trusting one click,
+    because a click swallowed by an overlapping window leaves the next one aimed at the
+    wrong place too. Each also checks first, so a window that is not open costs a read and
+    no input.
+    """
     await close_social_window(client)
     try:
         await node_helpers.click_until_gone(
@@ -944,36 +1044,6 @@ async def _close_overlapping_windows(client) -> None:
         )
     except Exception:
         logger.debug("Could not close the friend profile popup", exc_info=True)
-
-
-async def _close_invite_windows(leader, target) -> None:
-    """Close the windows one invite leaves behind. Never raises.
-
-    Two windows are opened by an invite exchange and neither closes itself:
-      - the friend profile popup, on the leader;
-      - the social window, which the game opens on *both* players once the group is
-        created or joined.
-    Left open they cover the HUD for every node that runs afterwards, and they stack up
-    across a multi-client regroup.
-
-    ORDER MATTERS. The social window opens on top of the friend profile on the leader, and
-    it covers the profile's close button — a click aimed at that button lands on the social
-    window instead, leaving the profile open. So the social window is closed first on both
-    players, and only then the profile.
-
-    Each close retries until the window is actually gone rather than trusting one click,
-    because a click swallowed by an overlapping window leaves the next one aimed at the
-    wrong place too.
-
-    Order matters only WITHIN a client, so the two are cleaned up concurrently. Every input
-    here is addressed to one window handle — the same isolation that lets the membership
-    survey run concurrently, see read_group_states — and the leader's own social-then-profile
-    ordering is preserved inside _close_overlapping_windows.
-
-    The friends list is deliberately not closed here — it is reused for the next invite
-    and closed once at the end of form_group.
-    """
-    await asyncio.gather(close_social_window(target), _close_overlapping_windows(leader))
 
 
 async def teleport_to_group_member(client, name: str) -> None:

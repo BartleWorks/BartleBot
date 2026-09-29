@@ -114,6 +114,17 @@ class FakeUI:
         # modelling a competing invite accepted in the gap between our click and our read.
         self.joins_foreign_group_on_accept: set[FakeClient] = set()
         self._awaiting: dict[FakeClient, FakeClient] = {}  # target -> inviting leader
+        # Invite sends and accepts, in the order they happened, so tests can pin that every
+        # invitation goes out before any is accepted.
+        self.events: list[tuple[str, FakeClient]] = []
+        self.accept_clicks: list[FakeClient] = []
+        # Accept clicks the game ignores, per client: the prompt goes, but nobody joins.
+        self.drop_accepts: dict[FakeClient, int] = {}
+        # When the social window opens on the leader by itself: on the join that forms the
+        # group ("accept"), or on sending the first invitation ("send"). Both are modelled,
+        # so the leader's cleanup is proven against either.
+        self.leader_social_opens_on = "accept"
+        self.lookups_under_social_window: list[FakeClient] = []
         self._pending_name: str | None = None
 
     def _set_social_open(self, client, value: bool) -> None:
@@ -266,6 +277,7 @@ class FakeUI:
     async def click_by_path(self, client, path) -> bool:
         if path == INVITE_TO_GROUP_BUTTON_PATH:
             self.invite_sent = True
+            self.events.append(("invite", self._by_name.get(self._pending_name)))
         if path == LEAVE_GROUP_BUTTON_PATH:
             self.leave_clicks.append(client)
             if not self.leaving_works:
@@ -296,19 +308,33 @@ class FakeUI:
             if target in self.already_in_other_group:
                 self.popup_showing[client] = True
             elif self.accepts_invites:
+                first = not self.grouped.get(client, False) and client not in self._awaiting.values()
+                if first and self.leader_social_opens_on == "send":
+                    self._set_social_open(client, True)
                 self._awaiting[target] = client
             return True
         if path == GROUP_INVITE_ACCEPT_PATH and client in self._awaiting:
+            self.accept_clicks.append(client)
+            self.events.append(("accept", client))
+            if self.drop_accepts.get(client, 0) > 0:
+                # The click landed but the game never acted on it, so the prompt goes.
+                self.drop_accepts[client] -= 1
+                del self._awaiting[client]
+                return True
             leader = self._awaiting.pop(client)
+            forms_group = not self.grouped.get(leader, False)
             # Forming a group puts the INVITER in it as well, not just the invitee, and
             # both end up on the SAME roster — which is what makes the post-invite roster
-            # confirmation in _invite_and_accept pass.
+            # confirmation in _accept_invite pass.
             if client in self.joins_foreign_group_on_accept:
                 self.put_in_foreign_group(client, "Stranger One")
             else:
                 self.put_in_group(leader, client)
-            for member in (client, leader):
-                self._set_social_open(member, True)  # the game opens it on joining
+            # The game opens the social window on whoever joins, and on the leader only
+            # when this join FORMS the group — not for later joins.
+            self._set_social_open(client, True)
+            if forms_group and self.leader_social_opens_on == "accept":
+                self._set_social_open(leader, True)
             return True
         if path == ALREADY_IN_GROUP_DISMISS_PATH:
             self.popup_showing[client] = False
@@ -328,6 +354,11 @@ class FakeUI:
         return True
 
     async def open_friend_profile(self, client, name):
+        if self.social_open.get(client, False):
+            # The social window sits on top of the friends list, so in the game this click
+            # lands on it instead. Recorded rather than modelled, so any test can assert it
+            # never happened.
+            self.lookups_under_social_window.append(client)
         self._pending_name = name
         self.profile_open[client] = True
         self.friends_list_stage[client] = "compact"
@@ -1074,6 +1105,92 @@ async def test_friend_not_in_list_fails_without_retrying(ui):
 
 
 # ---------------------------------------------------------------------------
+# Sending every invitation before any is accepted (#128)
+#
+# The leader sends one after another through its one friends list, then every invitee
+# accepts at once. The hazard is the social window the game opens on the leader when the
+# group forms: it sits on top of the friends list, so a lookup made under it clicks the
+# social window instead.
+# ---------------------------------------------------------------------------
+
+_FOUR = ["Alice A", "Bob B", "Carol C", "Dave D"]
+
+
+async def test_every_invitation_is_sent_before_any_is_accepted(ui):
+    """The first accept forms the group and opens the leader's social window over its lists."""
+    clients = [ui.make_client(n) for n in _FOUR]
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, list(_FOUR)))
+
+    assert result.success is True
+    assert result.added == ["P2", "P3", "P4"]
+    kinds = [kind for kind, _ in ui.events]
+    assert kinds == ["invite"] * 3 + ["accept"] * 3, f"an invitation was accepted mid-send: {ui.events}"
+
+
+@pytest.mark.parametrize("opens_on", ["accept", "send"])
+async def test_the_leader_never_looks_up_a_friend_under_its_social_window(ui, opens_on):
+    """Whichever moment the game opens it, the window is cleared before the next lookup.
+
+    One accept is dropped, so a second round runs after the group has formed — the case
+    where the leader's social window is certainly up when sending starts again.
+    """
+    ui.leader_social_opens_on = opens_on
+    clients = [ui.make_client(n) for n in _FOUR]
+    ui.drop_accepts[clients[2]] = 1
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, list(_FOUR)))
+
+    assert result.added == ["P2", "P3", "P4"]
+    assert ui.lookups_under_social_window == []
+    assert not any(ui.social_open.values()), "a social window was left open"
+    assert ui.profile_open.get(clients[0]) is False, "the friend profile was left open"
+
+
+async def test_only_the_invitee_that_did_not_join_is_invited_again(ui):
+    """A retry round re-sends to whoever is still missing, not to the whole list."""
+    clients = [ui.make_client(n) for n in _FOUR]
+    ui.drop_accepts[clients[2]] = 1
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, list(_FOUR)))
+
+    assert result.success is True
+    assert ui.invited_names == ["Bob B", "Carol C", "Dave D", "Carol C"]
+
+
+async def test_one_refusal_does_not_hold_back_the_other_invitees(ui):
+    """A refused invitee drops out of the round; the rest are still sent and accepted."""
+    clients = [ui.make_client(n) for n in _FOUR]
+    ui.already_in_other_group.add(clients[1])
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, list(_FOUR)))
+
+    assert result.added == ["P3", "P4"]
+    assert result.failed == ["P2"]
+    assert ui.invited_names.count("Bob B") == 1, "a refusal must not be retried"
+
+
+async def test_an_accept_that_raises_does_not_cancel_the_others(ui):
+    """The accepts run together, so one failing must be absorbed, not propagated."""
+    clients = [ui.make_client(n) for n in _FOUR]
+    real_confirm = gm._confirm_joined
+
+    async def confirm(target):
+        if target is clients[1]:
+            raise RuntimeError("client gone")
+        return await real_confirm(target)
+
+    with ExitStack() as stack:
+        for p in ui.patches():
+            stack.enter_context(p)
+        stack.enter_context(patch.object(gm, "_confirm_joined", new=confirm))
+        result = await gm.form_group(clients, list(_FOUR))
+
+    assert result.added == ["P3", "P4"]
+    assert result.failed == ["P2"]
+
+
+# ---------------------------------------------------------------------------
 # No wizard name reaches a log (#121)
 # ---------------------------------------------------------------------------
 
@@ -1168,9 +1285,14 @@ async def test_friend_profile_is_closed_after_the_social_window(ui):
 async def test_profile_close_is_attempted_only_once_the_social_window_is_gone(ui):
     """Pins the ordering directly, independent of the fake's overlap modelling.
 
+    Run with the leader's social window opening on the send, the case where it is on top of
+    the profile when the profile is closed. Opening on the accept instead, the profile is
+    long closed by then and the order cannot matter.
+
     Only clicks made after the invite are considered: the membership checks that run
     beforehand also close the social window, and counting those hides the ordering.
     """
+    ui.leader_social_opens_on = "send"
     leader = ui.make_client("Alice Ashblade")
     joiner = ui.make_client("Bob Battlecaster")
     order: list[str] = []
@@ -1546,28 +1668,26 @@ async def test_leaving_from_a_window_already_on_the_loaded_page_waits_the_settle
     assert elapsed >= _SETTLE * 0.8 - 0.01, f"clicked without waiting for the tab ({elapsed:.2f}s)"
 
 
-async def test_invite_cleanup_runs_on_both_clients_at_once(ui):
-    """Ordering matters within a client, not between them.
+async def test_a_regroup_pays_the_join_confirmation_once_not_per_invitee(ui):
+    """The invitees accept and confirm together, not one after the other (#128).
 
-    The leader's social-window-then-profile order is load-bearing — the social window covers
-    the profile's close button — but the target shares nothing with it, so making the target
-    wait for the leader is pure latency, once per invite.
+    Confirming a join is a server round trip, so it is made slow here: one invitee after
+    another would pay it three times.
     """
-    leader = ui.make_client("Alice Ashblade")
-    joiner = ui.make_client("Bob Battlecaster")
+    clients = [ui.make_client(n) for n in ("Alice A", "Bob B", "Carol C", "Dave D")]
+    real_confirm = gm._confirm_joined
 
-    async def _slow(_client):
-        await asyncio.sleep(0.3)
+    async def slow_confirm(target):
+        await asyncio.sleep(_SETTLE)
+        return await real_confirm(target)
 
-    loop = asyncio.get_event_loop()
-    with ExitStack() as stack:
-        stack.enter_context(patch.object(gm, "close_social_window", new=AsyncMock(side_effect=_slow)))
-        stack.enter_context(patch.object(gm, "_close_overlapping_windows", new=AsyncMock(side_effect=_slow)))
-        start = loop.time()
-        await gm._close_invite_windows(leader, joiner)
-        elapsed = loop.time() - start
+    result, elapsed = await _timed(
+        lambda: gm.form_group(clients, ["Alice A", "Bob B", "Carol C", "Dave D"]),
+        _patches_except(ui, extra=(patch.object(gm, "_confirm_joined", new=slow_confirm),)),
+    )
 
-    assert elapsed < 0.5, f"the two clients were cleaned up one after the other ({elapsed:.2f}s)"
+    assert result.added == ["P2", "P3", "P4"]
+    assert elapsed < _SETTLE * 2, f"the joins were confirmed one after another ({elapsed:.2f}s)"
 
 
 async def test_already_grouped_client_is_not_reinvited(ui):
