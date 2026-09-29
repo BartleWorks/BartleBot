@@ -23,18 +23,26 @@ from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY
 from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill, ProfilePill, TagPill
 from bartlebot.store_roots import SOURCE_LABELS, Origin
 from bartlebot.strategy_summary import HealthStatus, StrategySummary
+from bartlebot.strategy_tags import PROFILE_SOURCE
 
 ADD_FAVORITE_TIP = "Add to favorites"
 REMOVE_FAVORITE_TIP = "Remove from favorites"
 
 
 def profile_pill(profile_name: str) -> QLabel:
-    """The pill on an entry that belongs to one combat profile: the profile's full name (#118).
+    """The pill on an entry that belongs to one combat profile: "Profile" (#118).
 
     Separate from :func:`source_pill`, whose ``Origin`` describes the two storage roots; a
     profile entry lives in neither, but inside the profile's own file.
+
+    The word, not the profile's name. The name is already the heading of the section the
+    card sits in, and a pill carrying it both repeated that and was the one pill whose
+    width came from user text -- a long profile name squeezed the card's own name to a
+    word a line and widened the whole list past its column. "Profile" is also what the
+    Source filter calls these entries, so the pill reads as the chip it matches. The name
+    is still in the tooltip.
     """
-    pill = ProfilePill(profile_name)
+    pill = ProfilePill(PROFILE_SOURCE)
     pill.setToolTip(f"Belongs to the combat profile '{profile_name}' only")
     return pill
 

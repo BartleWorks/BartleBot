@@ -537,9 +537,8 @@ class NeutralPill(QLabel):
 class ProfilePill(NeutralPill):
     """:class:`NeutralPill` in ``pill_profile_bg``: this strategy belongs to one combat profile.
 
-    Carries the profile's full name rather than a word like "Profile", since naming the
-    actual container is what tells a user there are two places a strategy can live
-    (#118). Its own hue, not the error red — see ``pill_profile_bg``.
+    Says "Profile" -- the section heading above the card names which one (#118). Its own
+    hue, not the error red — see ``pill_profile_bg``.
     """
 
     def _restyle(self) -> None:

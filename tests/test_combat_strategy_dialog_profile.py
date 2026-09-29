@@ -209,14 +209,16 @@ def test_the_profile_section_goes_before_favorites(qapp, roots):
     assert page.section_headings()[:2] == ["Solo", FAVORITES_HEADING]
 
 
-def test_a_profile_entry_wears_the_profiles_name_and_no_star(qapp, roots):
+def test_a_profile_entry_wears_a_profile_pill_and_no_star(qapp, roots):
+    """The pill says "Profile"; the heading above it says which one, and the tooltip does too."""
     ws, own, library = _with_both(roots)
     dlg = _dialog(ws, mode=DialogMode.PROFILE)
     page = dlg.page(DUEL)
 
     card = page.card_for(own.id)
-    assert card.source_text == "Solo"
+    assert card.source_text == "Profile"
     assert isinstance(card._source_pill, ProfilePill)
+    assert "'Solo'" in card._source_pill.toolTip()
     assert card.star is None
     assert page.card_for(library.id).star is not None
 
