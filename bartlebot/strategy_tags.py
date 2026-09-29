@@ -10,8 +10,10 @@ Two kinds of group, and the difference is where the value comes from:
   set's :meth:`~bartlebot.strategy_workset.StrategyWorkingSet.status` and never
   stored. Stored, it would go stale on the first edit of a built-in, and a user copy
   would claim to be one. Its words are :data:`bartlebot.store_roots.SOURCE_LABELS`, so
-  a filter chip always says what the pill on the card it matches says. A
-  "Bot-specific" value slots in here once #118 lands.
+  a filter chip always says what the pill on the card it matches says. The one
+  exception is :data:`PROFILE_SOURCE`, for an entry that belongs to the active combat
+  profile (#118): its pill carries the profile's own name, which a fixed vocabulary
+  cannot, so the filter says what kind of place that is instead.
 - **Role** (Hitter, Support, Healer) is *stored*, in the file's ``tags``, on Player
   Strategies and Deck Presets only. A duel strategy is a whole team, so it has no
   single role, and carries no role group.
@@ -44,9 +46,15 @@ logger = logging.getLogger(__name__)
 SOURCE = "Source"
 ROLE = "Role"
 
+#: The Source value of an entry that belongs to the active combat profile, not the library.
+PROFILE_SOURCE = "Profile"
+
 #: The Source values, in the order a picker offers them. Missing is not one: a missing
 #: entry is never listed.
-SOURCE_TAGS: tuple[str, ...] = tuple(SOURCE_LABELS[o] for o in (Origin.SHIPPED, Origin.SHIPPED_OVERRIDE, Origin.USER))
+SOURCE_TAGS: tuple[str, ...] = (
+    PROFILE_SOURCE,
+    *(SOURCE_LABELS[o] for o in (Origin.SHIPPED, Origin.SHIPPED_OVERRIDE, Origin.USER)),
+)
 
 ROLE_TAGS: tuple[str, ...] = (
     "Hitter",  # deals the damage the fight is won with

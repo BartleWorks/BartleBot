@@ -110,6 +110,16 @@ class PlayerStrategyEditor(QWidget):
         self._validate_timer.stop()
         self._update_dsl_validation()
 
+    def set_editable(self, editable: bool) -> None:
+        """Read-only in the dialog's Pick mode, which selects and edits nothing (#123)."""
+        self._school_picker.setEnabled(editable)
+        self._dsl_edit.setReadOnly(not editable)
+
+    @property
+    def dsl_edit(self) -> DslPlainTextEdit:
+        """The DSL box. Public so a test can check it is read-only in Pick."""
+        return self._dsl_edit
+
     def focus_dsl(self) -> None:
         """Put the caret in the DSL box — the field someone arriving to edit a strategy wants."""
         self._dsl_edit.setFocus(Qt.FocusReason.OtherFocusReason)

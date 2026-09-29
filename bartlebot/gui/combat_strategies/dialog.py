@@ -13,16 +13,24 @@ the autosave.
 
 There used to be two overlapping windows doing most of this job with different
 vocabularies (a "Strategy Library" and a "Strategy Picker"). This is both, in
-two modes:
+three modes, one per way in (#118, #123):
 
-``MANAGE``  ``[Cancel] [Save]``                     — opened from the File menu.
-``PICK``    ``[Use built-in default] [Cancel] [Use this]`` — opened from a Change… button.
+``LIBRARY``  ``[Cancel] [Save]`` — **File → Combat Strategies**. The Duel, Player
+             and Deck tabs, library entries only. No profile section, even with a
+             bot loaded.
+``PROFILE``  ``[Cancel] [Save]`` — the ✏ on a Combat tab card. The Duel and Player
+             tabs, with the active combat profile's own strategies in a section at
+             the top. New and Duplicate create *in the profile*; library entries stay
+             editable too, and the Save confirmation says where else an edit reaches.
+``PICK``     ``[Use built-in default] [Cancel] [Use this]`` — 🔍 on a card, a fight's
+             pill, the add-card's "Choose an existing strategy…", and a deck slot's
+             "Load from library". Only the tab asked for, and **select-only**: no New,
+             Duplicate or Delete, and the detail pane is read-only. Before #123 Pick
+             edited everything, which made 🔍 and ✏ the same button.
 
-The detail pane is editable in *both*, which is what makes one window enough:
-picking a strategy and discovering it needs a tweak does not mean closing this
-and opening something else. One rule covers it — **Cancel discards every edit;
-Save and Use both commit every edit**, and Use additionally returns the
-selection.
+One rule covers the edge: **Cancel discards every edit; Save and Use both commit
+every edit**, and Use additionally returns the selection. In Pick there is nothing
+to commit but the selection.
 
 WHY MASTER-DETAIL RATHER THAN A POPUP
 -------------------------------------
@@ -43,6 +51,18 @@ freely, written only by ``commit()``. Nothing below this dialog decides when a
 file is written any more. See that module for why dirtiness is derived rather
 than reported.
 
+TWO PLACES A STRATEGY CAN LIVE (#118)
+-------------------------------------
+
+A strategy belongs to the library, which every bot and profile sees, or to one
+combat profile. Users who don't realise there are two places struggle, so the
+difference is drawn everywhere it can be: the profile's section is headed with its
+full name, each of its cards wears a pill with that name in its own colour (not the
+error red), an empty section says what it is for, and the About pane says "In
+profile 'Solo' only" beside **Add to library**. Creating locally and publishing
+separately is the shape design tools settled on — Figma's components, Illustrator's
+swatches — and it keeps the one-off from ever cluttering the shared list.
+
 TAGS, FILTERS AND FAVORITES (#125)
 ----------------------------------
 
@@ -53,15 +73,17 @@ across its top: facet pickers and the search box, with the selection as chips be
 Favorites are the one thing here that is *not* inside the Save/Cancel boundary. A
 star is saved to the user's settings on the click, because it is a preference about
 the library rather than a change to it. A favorite moves its card into a "★
-Favorites" section at the top. Each entry is in exactly one section, never both:
-selection is restored by id, so an entry drawn twice would make it ambiguous which
-row is selected. The headers only appear once something is a favorite, and a section
-that the filter empties hides its header.
+Favorites" section. Each entry is in exactly one section, never two: selection is
+restored by id, so an entry drawn twice would make it ambiguous which row is
+selected. Favorites are library-only, so a profile entry has no star. The headers
+only appear once there is more than one section, and a section that the filter
+empties hides its header.
 """
 
 from __future__ import annotations
 
 import logging
+from collections.abc import Callable
 from dataclasses import replace
 from enum import Enum
 
@@ -84,6 +106,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot.combat_profile import profile_players_of
 from bartlebot.gui.combat_strategies.deck_editor import DeckPresetEditor
 from bartlebot.gui.combat_strategies.duel_editor import DuelConfigEditor
 from bartlebot.gui.combat_strategies.filter_bar import KIND_NOUNS, StrategyFilterBar
@@ -101,26 +124,29 @@ from bartlebot.store_roots import SOURCE_LABELS
 from bartlebot.strategy_store import Origin, StrategyKind
 from bartlebot.strategy_summary import (
     StrategySummary,
+    name_list,
     summarize_deck,
     summarize_duel,
     summarize_player,
 )
 from bartlebot.strategy_tags import (
     KIND_GROUPS,
+    PROFILE_SOURCE,
     STORED_GROUPS,
     StrategyFacets,
     facets_match,
     normalize_strategy_tags,
 )
-from bartlebot.strategy_workset import StrategyWorkingSet
+from bartlebot.strategy_workset import PROFILE_KINDS, SharedUse, StrategyWorkingSet
 
 logger = logging.getLogger(__name__)
 
 
 class DialogMode(Enum):
-    """Which pair of buttons the dialog closes with — see the module docstring."""
+    """Which way in the dialog was opened by — see the module docstring for each."""
 
-    MANAGE = "manage"
+    LIBRARY = "library"
+    PROFILE = "profile"
     PICK = "pick"
 
 
@@ -131,6 +157,21 @@ KIND_LABELS = {
     StrategyKind.PLAYER: "Player Strategies",
     StrategyKind.DECK: "Deck Presets",
 }
+
+
+def tabs_for(mode: DialogMode, kind: StrategyKind) -> tuple[StrategyKind, ...]:
+    """The tabs a way in shows, in order — and no tab its row in the table doesn't list.
+
+    The library view has all three. The profile editor has Duel and Player, the two
+    kinds a profile can hold. Pick has only the kind it was asked for: a Player Strategy
+    tab while picking a duel is a place to edit things, and Pick edits nothing.
+    """
+    if mode is DialogMode.PICK:
+        return (kind,)
+    if mode is DialogMode.PROFILE:
+        return (StrategyKind.DUEL, StrategyKind.PLAYER)
+    return tuple(KIND_LABELS)
+
 
 #: What ``+ New`` names an entry before the user renames it.
 NEW_NAMES = {
@@ -149,8 +190,18 @@ _HAYSTACK_ROLE = Qt.ItemDataRole.UserRole + 1
 #: underneath the heading widget drawn over the row.
 _HEADING_ROLE = Qt.ItemDataRole.UserRole + 2
 
-#: The two section headers, shown only once something is a favorite.
+#: The section headers. Favorites and the library's are shown only once there is more
+#: than one section; the profile's is its full name.
 FAVORITES_HEADING = "★ Favorites"
+LIBRARY_HEADING = "Library"
+
+#: The one muted line an empty profile section shows (#118).
+PROFILE_EMPTY_NOTE = "Strategies made here belong to this profile. Use Add to library to share one."
+#: What the profile section says for a loaded bot that has no combat profile yet.
+NO_PROFILE_NOTE = "This bot has no combat profile yet."
+CREATE_PROFILE_TEXT = "Create one"
+#: The About pane's verb for a profile entry.
+ADD_TO_LIBRARY_TEXT = "Add to library"
 
 #: Origin.SHIPPED_OVERRIDE means the shipped file reappears underneath, so the
 #: honest verb is "revert" — see :class:`bartlebot.strategy_store.Origin`.
@@ -159,6 +210,8 @@ _DELETE_TEXT = "Delete"
 #: Why Delete is greyed out on an unedited built-in: removing only touches the user
 #: root, so the entry would be back on the next open (#124).
 _BUILT_IN_DELETE_TIP = "Built-in strategies can't be deleted. Duplicate one to make a copy of your own."
+#: Why New and Duplicate are greyed out in the profile editor before a profile exists.
+_NO_PROFILE_TIP = "Create a combat profile for this bot first"
 
 #: How far a tab's contents sit inside the tab pane, and how far *each* pane sits from
 #: the splitter between them. Two numbers rather than one because the splitter handle is
@@ -185,7 +238,10 @@ def summary_haystack(summary: StrategySummary) -> str:
     is only cheap relative to the summary it comes from — producing that summary
     parses every DSL the entry references.
     """
-    source = SOURCE_LABELS[summary.source] if summary.source is not None else ""
+    if summary.profile_name is not None:
+        source = f"{PROFILE_SOURCE} {summary.profile_name}"
+    else:
+        source = SOURCE_LABELS[summary.source] if summary.source is not None else ""
     tags = " ".join(summary.tags)
     return f"{summary.name} {summary.description} {summary.subtitle_line()} {source} {tags}".lower()
 
@@ -193,7 +249,9 @@ def summary_haystack(summary: StrategySummary) -> str:
 def summary_facets(summary: StrategySummary) -> StrategyFacets:
     """What the facet filter asks of an entry: its stored tags plus its derived source."""
     tags = set(summary.tags)
-    if summary.source is not None:
+    if summary.profile_name is not None:
+        tags.add(PROFILE_SOURCE)
+    elif summary.source is not None:
         tags.add(SOURCE_LABELS[summary.source])
     return StrategyFacets(tags=frozenset(tags), slot_schools=summary.slot_schools, player_range=summary.player_range)
 
@@ -220,6 +278,25 @@ def matches_filter(summary: StrategySummary, query: str) -> str | None:
     return haystack if matches_query(haystack, query) else None
 
 
+def move_confirmation(entry_name: str, moving: list[str]) -> str:
+    """What Add to library says before moving a duel that takes player strategies with it.
+
+    Numerals throughout, never "2" beside "three" (#118): *moving* are the names of the
+    profile's player strategies the duel uses.
+    """
+    count = len(moving)
+    noun = "player strategy" if count == 1 else "player strategies"
+    names = name_list([f"'{n}'" for n in moving], limit=len(moving))
+    return (
+        f"'{entry_name}' uses {count} {noun} from this profile: {names}. All {count + 1} will be moved to the library."
+    )
+
+
+def shared_edit_message(uses: list[SharedUse], *, other: bool) -> str:
+    """The Save confirmation's text: every shared use, then what saving means for them."""
+    return "\n\n".join(use.sentence(other=other) for use in uses) + "\n\nYour changes will apply there too."
+
+
 class AboutSection(QWidget):
     """What a library entry *is*: its name, its description, and what depends on it.
 
@@ -234,14 +311,16 @@ class AboutSection(QWidget):
     between tabs is what sits *below* it, which is the editor's business.
 
     The two muted lines under the fields are things the card list has no room for and the
-    old Strategy Library never said at all: how many things break if this goes, and
-    whether "delete" here means delete or means revert.
+    old Strategy Library never said at all: what breaks if this goes, and where the entry
+    lives — whether "delete" here means delete or means revert, or that it belongs to one
+    combat profile, with **Add to library** beside that line (#118).
 
     *tag_groups* are the stored tag groups this kind is tagged with — Role, on Player
     Strategies and Deck Presets — one picker row each (#125). Duels pass none.
     """
 
     changed = pyqtSignal()
+    add_to_library_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None, *, tag_groups: tuple[str, ...] = ()) -> None:
         super().__init__(parent)
@@ -284,12 +363,25 @@ class AboutSection(QWidget):
         layout.addLayout(grid)
 
         self._usage_lbl = QLabel(self)
+        self._usage_lbl.setWordWrap(True)
         apply_muted_color(self._usage_lbl)
         layout.addWidget(self._usage_lbl)
+
+        origin_row = QHBoxLayout()
+        origin_row.setContentsMargins(0, 0, 0, 0)
+        origin_row.setSpacing(6)
         self._origin_lbl = QLabel(self)
         self._origin_lbl.setWordWrap(True)
         apply_muted_color(self._origin_lbl)
-        layout.addWidget(self._origin_lbl)
+        origin_row.addWidget(self._origin_lbl, 1)
+        # Beside the line that says the entry lives in one profile, because that is the
+        # sentence it answers.
+        self._add_btn = ActionButton("upload", ADD_TO_LIBRARY_TEXT, style=ActionStyle.SECONDARY, fill=False)
+        self._add_btn.setToolTip("Move this into the library, where every bot and profile can use it")
+        self._add_btn.clicked.connect(self.add_to_library_requested)
+        self._add_btn.setVisible(False)
+        origin_row.addWidget(self._add_btn, 0, Qt.AlignmentFlag.AlignTop)
+        layout.addLayout(origin_row)
 
     def load(self, entry) -> None:
         self._entry = entry
@@ -311,13 +403,23 @@ class AboutSection(QWidget):
         self._usage_lbl.clear()
         self._origin_lbl.clear()
         self._origin_lbl.setVisible(False)
+        self._add_btn.setVisible(False)
         self._suppress = False
 
-    def set_notes(self, usage: str, origin: str) -> None:
-        """The two muted lines: what uses this entry, and where it came from."""
+    def set_editable(self, editable: bool) -> None:
+        """Read-only in Pick, which selects and edits nothing (#123)."""
+        self._name_edit.setReadOnly(not editable)
+        self._description_edit.setReadOnly(not editable)
+        for picker in self._tag_pickers:
+            picker.setEnabled(editable)
+
+    def set_notes(self, usage: str, origin: str, *, can_add_to_library: bool = False) -> None:
+        """The two muted lines — what uses this entry, and where it lives — and whether
+        **Add to library** sits beside the second."""
         self._usage_lbl.setText(usage)
         self._origin_lbl.setText(origin)
         self._origin_lbl.setVisible(bool(origin))
+        self._add_btn.setVisible(can_add_to_library)
 
     @property
     def tag_pickers(self) -> list[TagPickerButton]:
@@ -333,6 +435,16 @@ class AboutSection(QWidget):
     def origin_text(self) -> str:
         """What the origin line reads — empty for an entry with nothing to say."""
         return self._origin_lbl.text()
+
+    @property
+    def add_to_library_button(self) -> ActionButton:
+        """Add to library. Public so a test can press it and see whether it is offered."""
+        return self._add_btn
+
+    @property
+    def name_edit(self) -> QLineEdit:
+        """The name field. Public so a test can check it is read-only in Pick."""
+        return self._name_edit
 
     def _on_changed(self) -> None:
         if self._suppress or self._entry is None:
@@ -351,26 +463,46 @@ class _KindPage(QWidget):
 
     Every kind gets the same page. What differs is which editor sits in the
     detail pane and how an entry is summarized, and both are parameters.
+
+    *editable* is False in Pick: the button row is gone and the detail pane is
+    read-only (#123). *show_profile* draws the active profile's own entries in a
+    section at the top, and makes New and Duplicate create there (#118).
     """
 
-    #: The list's structure changed (created, duplicated, removed) — as opposed
+    #: The list's structure changed (created, duplicated, removed, moved) — as opposed
     #: to a field edit, which only ever redraws one card.
     structure_changed = pyqtSignal()
     promote_requested = pyqtSignal(object)
     #: The Duel tab's pencil asked to edit a Player Strategy, by id.
     open_pcs_requested = pyqtSignal(str)
+    #: The profile section's "Create one", on a bot with no combat profile yet.
+    create_profile_requested = pyqtSignal()
 
-    def __init__(self, kind: StrategyKind, ws: StrategyWorkingSet, parent=None):
+    def __init__(
+        self,
+        kind: StrategyKind,
+        ws: StrategyWorkingSet,
+        parent=None,
+        *,
+        editable: bool = True,
+        show_profile: bool = False,
+    ):
         super().__init__(parent)
         self._kind = kind
         self._ws = ws
+        self._editable = editable
+        self._show_profile = show_profile and kind in PROFILE_KINDS
         self._selected_id: str | None = None
         self._card_map: list[tuple[QListWidgetItem, StrategyCard]] = []
         #: Per entry id: what the facet filter asks of it, and which section it is in.
         self._facets: dict[str, StrategyFacets] = {}
+        self._section_of: dict[str, str] = {}
         self._favorite_ids: set[str] = set()
-        #: Section header rows, favorites first; empty when nothing is a favorite.
-        self._headers: list[QListWidgetItem] = []
+        #: Section header rows, top to bottom, each with the section it heads.
+        self._headers: list[tuple[QListWidgetItem, str]] = []
+        #: The profile section's note row — empty section, or no profile yet — if drawn.
+        self._note_item: QListWidgetItem | None = None
+        self._note_widget: QWidget | None = None
 
         layout = QVBoxLayout(self)
         # A real inset on all four sides. The page used to run edge to edge inside the tab
@@ -382,7 +514,7 @@ class _KindPage(QWidget):
 
         # Across the whole tab, not over the card list alone: four pickers and a search
         # box need more width than the list has, and the chips need a row of their own.
-        self._filter_bar = StrategyFilterBar(kind, self)
+        self._filter_bar = StrategyFilterBar(kind, self, profile=self._show_profile)
         # Filtering hides rows; it never rebuilds them. See _apply_filter.
         self._filter_bar.changed.connect(self._apply_filter)
         layout.addWidget(self._filter_bar)
@@ -416,7 +548,11 @@ class _KindPage(QWidget):
         self._list.viewport().installEventFilter(self)
         box.addWidget(self._list, 1)
 
-        buttons = QHBoxLayout()
+        # The same three buttons in the library view and the profile editor; what differs
+        # is where New and Duplicate put their entry. None at all in Pick (#123).
+        self._button_row = QWidget(panel)
+        buttons = QHBoxLayout(self._button_row)
+        buttons.setContentsMargins(0, 0, 0, 0)
         buttons.setSpacing(4)
         self._new_btn = ActionButton("plus", "New")
         self._new_btn.clicked.connect(self._on_new)
@@ -429,7 +565,8 @@ class _KindPage(QWidget):
         self._del_btn = ActionButton("trash", _DELETE_TEXT, style=ActionStyle.CAUTION)
         self._del_btn.clicked.connect(self._on_delete)
         buttons.addWidget(self._del_btn, 1)
-        box.addLayout(buttons)
+        box.addWidget(self._button_row)
+        self._button_row.setVisible(self._editable)
         return panel
 
     def _build_detail(self) -> QWidget:
@@ -440,6 +577,8 @@ class _KindPage(QWidget):
 
         self._about = AboutSection(tag_groups=tuple(g for g in KIND_GROUPS[self._kind] if g in STORED_GROUPS))
         self._about.changed.connect(self._on_edited)
+        self._about.add_to_library_requested.connect(self._on_add_to_library)
+        self._about.set_editable(self._editable)
         box.addWidget(self._about)
 
         if self._kind is StrategyKind.DUEL:
@@ -454,6 +593,7 @@ class _KindPage(QWidget):
         else:
             self._editor = DeckPresetEditor()
         self._editor.changed.connect(self._on_edited)
+        self._editor.set_editable(self._editable)
 
         # One outer scroll area, never a nested one: DuelConfigEditor grows its
         # rows to their full height on purpose and expects the page around them
@@ -467,7 +607,9 @@ class _KindPage(QWidget):
         self._scroll.setWidget(self._editor)
         box.addWidget(self._scroll, 1)
 
-        self._empty_lbl = QLabel("Select a strategy on the left, or press + New.")
+        self._empty_lbl = QLabel(
+            "Select a strategy on the left, or press + New." if self._editable else "Select a strategy on the left."
+        )
         apply_muted_color(self._empty_lbl)
         box.addWidget(self._empty_lbl)
         return panel
@@ -480,13 +622,50 @@ class _KindPage(QWidget):
     def selected_id(self) -> str | None:
         return self._selected_id
 
+    @property
+    def editable(self) -> bool:
+        """False in Pick, which selects and edits nothing."""
+        return self._editable
+
+    @property
+    def creates_in_profile(self) -> bool:
+        """Whether New and Duplicate put their entry in the profile rather than the library."""
+        return self._show_profile
+
+    @property
+    def new_button(self) -> ActionButton:
+        return self._new_btn
+
+    @property
+    def duplicate_button(self) -> ActionButton:
+        return self._dup_btn
+
+    @property
+    def delete_button(self) -> ActionButton:
+        return self._del_btn
+
+    @property
+    def button_row(self) -> QWidget:
+        """New, Duplicate and Delete. Public so a test can see Pick has none of them."""
+        return self._button_row
+
+    @property
+    def editor(self):
+        """The detail pane's editor. Public so a test can check it is read-only in Pick."""
+        return self._editor
+
     def summarize(self, item) -> StrategySummary:
         if self._kind is StrategyKind.DUEL:
-            summary = summarize_duel(item, self._ws.players, name=item.name)
+            # Resolved the way a run resolves them, profile first — so a profile duel
+            # names its own player strategies, and a library duel a profile one only when
+            # a hand-edited file broke the rule, which it then shows rather than hides.
+            summary = summarize_duel(item, self._ws.lookup().players, name=item.name)
         elif self._kind is StrategyKind.PLAYER:
             summary = summarize_player(item)
         else:
             summary = summarize_deck(item)
+        if self._ws.is_profile_entry(self._kind, item.id):
+            return replace(summary, profile_name=self._ws.profile.name)
         return replace(summary, source=self._ws.status(self._kind, item.id))
 
     @property
@@ -495,12 +674,27 @@ class _KindPage(QWidget):
         return self._filter_bar
 
     def section_headings(self) -> list[str]:
-        """The visible section headers, top to bottom. Empty when nothing is a favorite."""
-        return [h.data(_HEADING_ROLE) for h in self._headers if not h.isHidden()]
+        """The visible section headers, top to bottom. Empty when there is one section."""
+        return [h.data(_HEADING_ROLE) for h, _key in self._headers if not h.isHidden()]
 
     def visible_ids(self) -> list[str]:
         """The ids of the cards the filter leaves showing, top to bottom."""
         return [i.data(Qt.ItemDataRole.UserRole) for i, _c in self._card_map if not i.isHidden()]
+
+    def ids_in_section(self, section: str) -> list[str]:
+        """The ids drawn in *section* ("profile", "favorites" or "library"), top to bottom."""
+        return [
+            i.data(Qt.ItemDataRole.UserRole)
+            for i, _c in self._card_map
+            if self._section_of.get(i.data(Qt.ItemDataRole.UserRole)) == section
+        ]
+
+    def note_text(self) -> str:
+        """What the profile section's note row says, or empty when it has none."""
+        if self._note_widget is None or self._note_item is None or self._note_item.isHidden():
+            return ""
+        label = self._note_widget.findChild(QLabel)
+        return label.text() if label is not None else ""
 
     def card_for(self, uuid: str) -> StrategyCard | None:
         """The card drawn for ``uuid``, or None. Public so a test can read what a card says."""
@@ -510,6 +704,31 @@ class _KindPage(QWidget):
         return None
 
     # -- the card list --------------------------------------------------
+
+    def _sections(self) -> list[tuple[str, str, list]]:
+        """``(key, heading, entries)`` per section, top to bottom; a heading may be empty.
+
+        The profile first, then ★ Favorites, then the library (#118). Favorites are
+        library-only, and a library entry the profile shadows is not drawn twice: the
+        profile's copy is the one every lookup finds.
+        """
+        sections: list[tuple[str, str, list]] = []
+        own = self._ws.profile_items(self._kind) if self._show_profile else []
+        if self._show_profile:
+            heading = self._ws.profile.name if self._ws.profile is not None else "Combat profile"
+            sections.append(("profile", heading, own))
+        shadowed = {e.id for e in own}
+        library = [e for e in self._ws.items(self._kind) if e.id not in shadowed]
+        saved = set(SettingsManager.instance().favorite_strategies(self._kind.value))
+        self._favorite_ids = {e.id for e in library if e.id in saved}
+        favorites = [e for e in library if e.id in self._favorite_ids]
+        others = [e for e in library if e.id not in self._favorite_ids]
+        if favorites:
+            sections.append(("favorites", FAVORITES_HEADING, favorites))
+            sections.append(("library", others_heading(self._kind), others))
+        else:
+            sections.append(("library", LIBRARY_HEADING if self._show_profile else "", others))
+        return sections
 
     def rebuild_list(self) -> None:
         """Redraw every card. Selection is restored by id, not by row index.
@@ -526,22 +745,19 @@ class _KindPage(QWidget):
             self._list.clear()
             self._card_map.clear()
             self._facets.clear()
+            self._section_of.clear()
             self._headers.clear()
+            self._note_item = None
+            self._note_widget = None
             keep: QListWidgetItem | None = None
-            entries = self._ws.items(self._kind)
-            saved = set(SettingsManager.instance().favorite_strategies(self._kind.value))
-            self._favorite_ids = {e.id for e in entries if e.id in saved}
-            favorites = [e for e in entries if e.id in self._favorite_ids]
-            others = [e for e in entries if e.id not in self._favorite_ids]
-            sections = (
-                [(FAVORITES_HEADING, favorites), (others_heading(self._kind), others)] if favorites else [("", others)]
-            )
-            for heading, section in sections:
+            for key, heading, section in self._sections():
                 if heading:
-                    self._add_header(heading)
+                    self._add_header(heading, key)
+                if key == "profile" and not section:
+                    self._add_profile_note()
                 for entry in section:
                     summary = self.summarize(entry)
-                    card = self._make_card(entry.id, summary)
+                    card = self._make_card(entry.id, summary, favorable=key != "profile")
                     item = QListWidgetItem()
                     item.setData(Qt.ItemDataRole.UserRole, entry.id)
                     item.setData(_HAYSTACK_ROLE, summary_haystack(summary))
@@ -550,6 +766,7 @@ class _KindPage(QWidget):
                     self._list.setItemWidget(item, card)
                     self._card_map.append((item, card))
                     self._facets[entry.id] = summary_facets(summary)
+                    self._section_of[entry.id] = key
                     if entry.id == self._selected_id:
                         keep = item
                         card.set_selected(True)
@@ -562,6 +779,7 @@ class _KindPage(QWidget):
             self._list.blockSignals(blocked)
         self._filter_bar.set_counts(self._facets.values())
         self._apply_filter()
+        self._update_create_buttons()
         if keep is None:
             # Actually gone — deleted, or never there. Detach the editor. An entry
             # that is merely filtered out of view stays loaded: typing in the
@@ -590,12 +808,13 @@ class _KindPage(QWidget):
                 item.setHidden(not visible)
                 if visible:
                     shown.add(uuid)
-            if self._headers:
+            shown_sections = {self._section_of[uuid] for uuid in shown}
+            for header, key in self._headers:
                 # A section the filter has emptied loses its header too, or it would sit
-                # over nothing — or, worse, appear to head the section below it.
-                favorites, others = self._headers
-                favorites.setHidden(not (shown & self._favorite_ids))
-                others.setHidden(not (shown - self._favorite_ids))
+                # over nothing — or, worse, appear to head the section below it. The
+                # profile's stays when it is empty to begin with: its note row is under it.
+                keep_header = key in shown_sections or (key == "profile" and self._note_item is not None)
+                header.setHidden(not keep_header)
             current = self._current_item()
             if current is not None and self._list.currentItem() is not current:
                 self._list.setCurrentItem(current)
@@ -615,7 +834,7 @@ class _KindPage(QWidget):
 
     # -- sections and favorites -----------------------------------------
 
-    def _add_header(self, text: str) -> None:
+    def _add_header(self, text: str, key: str) -> None:
         """A section header row: not selectable, not focusable, skipped by the arrow keys."""
         item = QListWidgetItem()
         item.setData(_HEADING_ROLE, text)
@@ -624,7 +843,37 @@ class _KindPage(QWidget):
         item.setSizeHint(heading.sizeHint())
         self._list.addItem(item)
         self._list.setItemWidget(item, heading)
-        self._headers.append(item)
+        self._headers.append((item, key))
+
+    def _add_profile_note(self) -> None:
+        """The profile section's one row when it holds nothing: what it is for, or an offer.
+
+        With a profile, one muted line saying what the section is for. With none yet, the
+        same place says so, and — in the profile editor — offers to make one. Pick shows
+        the sentence without the button: it edits nothing.
+        """
+        row = QWidget()
+        box = QHBoxLayout(row)
+        box.setContentsMargins(4, 2, 4, 2)
+        box.setSpacing(6)
+        no_profile = self._ws.profile is None
+        label = QLabel(NO_PROFILE_NOTE if no_profile else PROFILE_EMPTY_NOTE, row)
+        label.setWordWrap(True)
+        apply_muted_color(label)
+        box.addWidget(label, 1)
+        if no_profile and self._editable:
+            button = ActionButton("plus", CREATE_PROFILE_TEXT, style=ActionStyle.SECONDARY, fill=False)
+            button.clicked.connect(self.create_profile_requested)
+            box.addWidget(button, 0, Qt.AlignmentFlag.AlignVCenter)
+        item = QListWidgetItem()
+        item.setFlags(Qt.ItemFlag.NoItemFlags)
+        width = self._list.viewport().width() - 2 * (self._list.spacing() + _ROW_PAD)
+        height = row.heightForWidth(width) if row.hasHeightForWidth() else -1
+        item.setSizeHint(QSize(row.minimumSizeHint().width(), height if height > 0 else row.sizeHint().height()))
+        self._list.addItem(item)
+        self._list.setItemWidget(item, row)
+        self._note_item = item
+        self._note_widget = row
 
     def _fit_row(self, item: QListWidgetItem, card: StrategyCard) -> None:
         """Size *item* to what *card* needs at the column's real width.
@@ -652,8 +901,9 @@ class _KindPage(QWidget):
                 self._refit_rows()
         return super().eventFilter(obj, event)
 
-    def _make_card(self, uuid: str, summary: StrategySummary) -> StrategyCard:
-        card = StrategyCard(summary, favorite=uuid in self._favorite_ids)
+    def _make_card(self, uuid: str, summary: StrategySummary, *, favorable: bool = True) -> StrategyCard:
+        # No star on a profile entry: favorites are a preference about the library.
+        card = StrategyCard(summary, favorite=(uuid in self._favorite_ids) if favorable else None)
         card.favorite_toggled.connect(lambda wanted, uuid=uuid: self.set_favorite(uuid, wanted))
         return card
 
@@ -715,7 +965,7 @@ class _KindPage(QWidget):
             if item.data(Qt.ItemDataRole.UserRole) != self._selected_id:
                 continue
             summary = self.summarize(entry)
-            card = self._make_card(entry.id, summary)
+            card = self._make_card(entry.id, summary, favorable=self._section_of.get(entry.id) != "profile")
             card.set_selected(True)
             self._fit_row(item, card)
             item.setData(_HAYSTACK_ROLE, summary_haystack(summary))
@@ -737,26 +987,55 @@ class _KindPage(QWidget):
         else:
             self._about.load(entry)
             if self._kind is StrategyKind.DUEL:
-                self._editor.load(entry, self._ws.players)
+                # What an assignment may link depends on where the duel lives: a library
+                # duel may not use a profile's own player strategies (#118).
+                self._editor.load(entry, self._ws.players_for_duel(entry.id))
             else:
                 self._editor.load(entry)
         self._about.setVisible(entry is not None)
         self._scroll.setVisible(entry is not None)
         self._empty_lbl.setVisible(entry is None)
-        self._dup_btn.setEnabled(entry is not None)
+        self._update_create_buttons()
         self._del_btn.setEnabled(entry is not None)
         if entry is not None:
             self._update_labels()
 
+    def _update_create_buttons(self) -> None:
+        """New needs somewhere to put its entry; Duplicate also needs something to copy."""
+        room = not self._show_profile or self._ws.profile is not None
+        self._new_btn.setEnabled(room)
+        self._dup_btn.setEnabled(room and self._ws.get(self._kind, self._selected_id) is not None)
+        tip = "" if room else _NO_PROFILE_TIP
+        self._new_btn.setToolTip(tip)
+        self._dup_btn.setToolTip(tip)
+
     def _update_labels(self) -> None:
         entry = self._ws.get(self._kind, self._selected_id)
         if entry is None:
+            return
+        usage = self._ws.usage(entry.id).phrase()
+        if self._ws.is_profile_entry(self._kind, entry.id):
+            # Never built-in and never reverted: a profile entry's Delete is a plain one.
+            self._set_delete_button(revert=False, built_in=False)
+            self._about.set_notes(
+                usage, f"In profile '{self._ws.profile.name}' only", can_add_to_library=self._editable
+            )
             return
         # The working set's status, not the file's origin: an edit made a moment ago
         # already makes a built-in revertible, before anything is written (#124).
         status = self._ws.status(self._kind, entry.id)
         revert = status is Origin.SHIPPED_OVERRIDE
         built_in = status is Origin.SHIPPED
+        self._set_delete_button(revert=revert, built_in=built_in)
+        if revert:
+            note = "Your copy of a strategy BartleBot ships — reverting restores the original."
+        elif built_in:
+            note = "Ships with BartleBot — editing it saves your own copy."
+        else:
+            note = ""
+        self._about.set_notes(usage, note)
+
+    def _set_delete_button(self, *, revert: bool, built_in: bool) -> None:
         self._del_btn.setText(_REVERT_TEXT if revert else _DELETE_TEXT)
         self._del_btn.set_icon_name("revert" if revert else "trash")
         # A revert is not a caution: the shipped version comes back, so there is nothing
@@ -764,22 +1043,15 @@ class _KindPage(QWidget):
         self._del_btn.set_action_style(ActionStyle.TERTIARY if revert else ActionStyle.CAUTION)
         self._del_btn.setEnabled(not built_in)
         self._del_btn.setToolTip(_BUILT_IN_DELETE_TIP if built_in else "")
-        if revert:
-            note = "Your copy of a strategy BartleBot ships — reverting restores the original."
-        elif built_in:
-            note = "Ships with BartleBot — editing it saves your own copy."
-        else:
-            note = ""
-        self._about.set_notes(self._ws.usage(entry.id).phrase(), note)
 
     def _on_edited(self) -> None:
         self._refresh_selected_card()
         self._update_labels()
 
-    # -- create / duplicate / remove ------------------------------------
+    # -- create / duplicate / remove / move -----------------------------
 
     def _on_new(self) -> None:
-        made = self._ws.create(self._kind, NEW_NAMES[self._kind])
+        made = self._ws.create(self._kind, NEW_NAMES[self._kind], in_profile=self.creates_in_profile)
         self._selected_id = made.id
         self.rebuild_list()
         self.select(made.id)
@@ -788,7 +1060,9 @@ class _KindPage(QWidget):
     def _on_duplicate(self) -> None:
         if self._selected_id is None:
             return
-        copy = self._ws.duplicate(self._kind, self._selected_id)
+        # In the profile editor a copy always lands in the profile, a library entry's
+        # included: that is how one fight gets something slightly different (#118).
+        copy = self._ws.duplicate(self._kind, self._selected_id, in_profile=self.creates_in_profile)
         if copy is None:
             return
         self._selected_id = copy.id
@@ -835,12 +1109,38 @@ class _KindPage(QWidget):
             self.rebuild_list()
         self.structure_changed.emit()
 
+    def _on_add_to_library(self) -> None:
+        """Move the selected profile entry into the library, keeping its id (#118).
+
+        A duel takes the profile's own player strategies it uses with it — a library duel
+        may not link profile content — and says so first, naming them. It is an edit like
+        any other: it reaches disk at Save, and Cancel undoes it.
+        """
+        entry = self._ws.get(self._kind, self._selected_id)
+        if entry is None or not self._ws.is_profile_entry(self._kind, entry.id):
+            return
+        moving = profile_players_of(entry, self._ws.profile) if self._kind is StrategyKind.DUEL else []
+        if moving:
+            answer = QMessageBox.question(
+                self,
+                "Add to library?",
+                move_confirmation(entry.name, [p.name for p in moving]),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.Yes,
+            )
+            if answer is not QMessageBox.StandardButton.Yes:
+                return
+        self._ws.move_to_library(self._kind, entry.id)
+        self.rebuild_list()
+        self.select(entry.id)
+        self.structure_changed.emit()
+
     # -- cross-tab refresh ----------------------------------------------
 
     def refresh_pcs_list(self) -> None:
         """Re-read the Player Strategies the duel editor offers. Duel tab only."""
         if self._kind is StrategyKind.DUEL:
-            self._editor.set_pcs_list(self._ws.players)
+            self._editor.set_pcs_list(self._ws.players_for_duel(self._selected_id))
 
     def set_player_color_keys(self, keys: list[int | None], labels: list[str] | None = None) -> None:
         """Colour the assignment cards' slot pills. Duel tab only; a no-op elsewhere."""
@@ -874,24 +1174,30 @@ class _KindPage(QWidget):
 
 
 class CombatStrategyDialog(QDialog):
-    """The combat edit surface. See the module docstring for the two modes."""
+    """The combat edit surface. See the module docstring for the three modes.
+
+    *bot_name* turns a bot id into its name for the Save confirmation, so another
+    profile reads as ``'Solo' (Atlantea)``; without it the profile's name stands alone.
+    """
 
     def __init__(
         self,
         ws: StrategyWorkingSet,
         kind: StrategyKind = StrategyKind.DUEL,
-        mode: DialogMode = DialogMode.MANAGE,
+        mode: DialogMode = DialogMode.LIBRARY,
         current_id: str | None = None,
         allow_none: bool = True,
         none_label: str = NONE_LABEL,
         player_color_keys: list[int | None] | None = None,
         player_account_labels: list[str] | None = None,
+        bot_name: Callable[[str], str | None] | None = None,
         parent=None,
     ):
         super().__init__(parent)
         self._ws = ws
         self._mode = mode
         self._pick_kind = kind
+        self._bot_name = bot_name
         # What falling through to nothing means is a property of the binding's
         # level, not of this dialog — "(built-in default)" at the top, "(inherit
         # from default)" at a fight — so the caller names it.
@@ -909,15 +1215,19 @@ class CombatStrategyDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.setSpacing(6)
 
+        # The profile section is for the ways in from the Combat tab, and only when a bot
+        # is loaded. The library view never shows it (#118).
+        show_profile = mode is not DialogMode.LIBRARY and ws.bot_id is not None
         self._tabs = QTabWidget()
         self._pages: dict[StrategyKind, _KindPage] = {}
-        for k, label in KIND_LABELS.items():
-            page = _KindPage(k, ws)
+        for k in tabs_for(mode, kind):
+            page = _KindPage(k, ws, editable=mode is not DialogMode.PICK, show_profile=show_profile)
             page.structure_changed.connect(self._on_structure_changed)
             page.promote_requested.connect(self._on_promote_requested)
             page.open_pcs_requested.connect(self._on_open_pcs_requested)
+            page.create_profile_requested.connect(self._on_create_profile)
             self._pages[k] = page
-            self._tabs.addTab(page, label)
+            self._tabs.addTab(page, KIND_LABELS[k])
         self._tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self._tabs, 1)
 
@@ -926,12 +1236,28 @@ class CombatStrategyDialog(QDialog):
         # Combat tab that opens it already has the ``ClientManager`` in reach. Empty is
         # the normal case — a duel is usually authored with nothing running — and the
         # pills simply go uncoloured. See gui/widgets/player_pills.py.
-        self._pages[StrategyKind.DUEL].set_player_color_keys(player_color_keys or [], player_account_labels or [])
+        if StrategyKind.DUEL in self._pages:
+            self._pages[StrategyKind.DUEL].set_player_color_keys(player_color_keys or [], player_account_labels or [])
 
-        self._tabs.setCurrentWidget(self._pages[kind])
-        self._pages[kind].select(current_id)
+        start = self._pages.get(kind) or next(iter(self._pages.values()))
+        self._tabs.setCurrentWidget(start)
+        start.select(current_id)
 
         layout.addLayout(self._build_buttons())
+
+    # -- reading --------------------------------------------------------
+
+    @property
+    def mode(self) -> DialogMode:
+        return self._mode
+
+    def tab_kinds(self) -> list[StrategyKind]:
+        """The kinds this dialog has a tab for, in tab order."""
+        return list(self._pages)
+
+    def page(self, kind: StrategyKind) -> _KindPage | None:
+        """The tab for *kind*, or None when this way in does not show it."""
+        return self._pages.get(kind)
 
     # -- buttons --------------------------------------------------------
 
@@ -964,12 +1290,8 @@ class CombatStrategyDialog(QDialog):
         self._commit_and_accept()
 
     def _on_commit(self) -> None:
-        page = self._tabs.currentWidget()
         if self._mode is DialogMode.PICK:
             source = self._pages[self._pick_kind]
-            # Whichever tab is showing, a pick always returns the kind that was
-            # asked for: a Player Strategy created while picking a duel is not
-            # an answer to the question the caller asked.
             self._selected_id = source.selected_id()
             if self._selected_id is None and not self._allow_none:
                 QMessageBox.information(
@@ -978,11 +1300,21 @@ class CombatStrategyDialog(QDialog):
                     f"Choose a strategy on the {KIND_LABELS[self._pick_kind]} tab, or cancel.",
                 )
                 return
-        elif isinstance(page, _KindPage):
-            self._selected_id = page.selected_id()
+        elif self._mode is DialogMode.PROFILE and self._pick_kind in self._pages:
+            # The kind the caller asked about, whichever tab is showing: the Combat tab
+            # links the card that opened this to the duel selected here, if it is new.
+            self._selected_id = self._pages[self._pick_kind].selected_id()
+        else:
+            page = self._tabs.currentWidget()
+            if isinstance(page, _KindPage):
+                self._selected_id = page.selected_id()
         self._commit_and_accept()
 
     def _commit_and_accept(self) -> None:
+        if self._mode is not DialogMode.PICK:
+            uses = self._ws.shared_uses(self._bot_name)
+            if uses and not self._confirm_shared_edits(uses):
+                return
         self._ws.commit()
         if self._ws.is_dirty:
             # commit() logs and skips a failed write, leaving the entry dirty.
@@ -995,6 +1327,23 @@ class CombatStrategyDialog(QDialog):
             )
             return
         self.accept()
+
+    def _confirm_shared_edits(self, uses: list[SharedUse]) -> bool:
+        """Ask once, at Save, before an edit reaches places the user can't see (#118).
+
+        At Save rather than on the first keystroke: typing into a shared entry is not yet
+        a decision, and a prompt per field would be one nobody reads.
+        """
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Question)
+        box.setWindowTitle("Save changes to shared strategies?")
+        other = self._mode is not DialogMode.LIBRARY and self._ws.profile is not None
+        box.setText(shared_edit_message(uses, other=other))
+        save = box.addButton("Save anyway", QMessageBox.ButtonRole.AcceptRole)
+        back = box.addButton("Go back", QMessageBox.ButtonRole.RejectRole)
+        box.setDefaultButton(back)
+        box.exec()
+        return box.clickedButton() is save
 
     # -- results --------------------------------------------------------
 
@@ -1013,29 +1362,46 @@ class CombatStrategyDialog(QDialog):
     # -- cross-tab plumbing ---------------------------------------------
 
     def _on_structure_changed(self) -> None:
-        self._pages[StrategyKind.DUEL].refresh_pcs_list()
+        # Another tab's list can change too: moving a duel into the library takes its
+        # player strategies with it, and a new profile gives every tab a section to fill.
+        sender = self.sender()
+        for page in self._pages.values():
+            if page is not sender and page.kind() in PROFILE_KINDS:
+                page.rebuild_list()
+        if StrategyKind.DUEL in self._pages:
+            self._pages[StrategyKind.DUEL].refresh_pcs_list()
 
     def _on_tab_changed(self, _index: int) -> None:
         # A Player Strategy renamed on its own tab has to show its new name in
         # every assignment selector, and this is the cheapest honest moment.
-        self._pages[StrategyKind.DUEL].refresh_pcs_list()
-        self._pages[StrategyKind.DUEL].rebuild_list()
+        duel = self._pages.get(StrategyKind.DUEL)
+        if duel is not None:
+            duel.refresh_pcs_list()
+            duel.rebuild_list()
 
     def _on_promote_requested(self, row) -> None:
-        """Turn one assignment row's custom DSL into a named Player Strategy."""
+        """Turn one assignment row's custom DSL into a named Player Strategy.
+
+        It lands where the duel lives: in the profile for a profile duel, in the library
+        for a library duel, which may only link library entries (#118).
+        """
         assignment = row.assignment()
         dsl = assignment.dsl.strip()
         if not dsl:
             return
+        duel = self._pages.get(StrategyKind.DUEL)
+        in_profile = duel is not None and self._ws.is_profile_entry(StrategyKind.DUEL, duel.selected_id())
         suggested = self._ws.unique_name(StrategyKind.PLAYER, "New Player Strategy")
         name, ok = QInputDialog.getText(self, "Save as Player Strategy", "Name:", text=suggested)
         if not ok or not name.strip():
             return
-        pcs = self._ws.create(StrategyKind.PLAYER, name.strip())
+        pcs = self._ws.create(StrategyKind.PLAYER, name.strip(), in_profile=in_profile)
         pcs.dsl = assignment.dsl
         pcs.schools = list(assignment.schools)
-        self._pages[StrategyKind.PLAYER].rebuild_list()
-        self._pages[StrategyKind.DUEL].refresh_pcs_list()
+        if StrategyKind.PLAYER in self._pages:
+            self._pages[StrategyKind.PLAYER].rebuild_list()
+        if duel is not None:
+            duel.refresh_pcs_list()
         row.link_to(pcs.id)
 
     def _on_open_pcs_requested(self, pcs_id: str) -> None:
@@ -1044,16 +1410,31 @@ class CombatStrategyDialog(QDialog):
         The filter is cleared first: ``_apply_filter`` keeps a selected row selected
         even when the query hides it, so a stale query would load the strategy into the
         editor with no visible card saying which one it is. Nothing is saved or lost on
-        the way — both tabs edit the one working set.
+        the way — both tabs edit the one working set. Pick has no Player tab, so there
+        the pencil has nowhere to go.
 
         Focus goes to the DSL box last: switching tabs hands it to the page's first
         focusable child, the filter, and the DSL is what the pencil promised.
         """
-        page = self._pages[StrategyKind.PLAYER]
+        page = self._pages.get(StrategyKind.PLAYER)
+        if page is None:
+            return
         page.clear_filter()
         self._tabs.setCurrentWidget(page)
         page.select(pcs_id)
         page.focus_editor()
+
+    def _on_create_profile(self) -> None:
+        """Make a combat profile for a bot that has none — inside the working set, so
+        Cancel discards it like any other edit."""
+        if self._ws.bot_id is None or self._ws.profile is not None:
+            return
+        name, ok = QInputDialog.getText(self, "New combat profile", "Name:", text="Default")
+        if not ok or not name.strip():
+            return
+        self._ws.create_profile(name.strip())
+        for page in self._pages.values():
+            page.rebuild_list()
 
     # -- closing --------------------------------------------------------
 
@@ -1064,12 +1445,13 @@ class CombatStrategyDialog(QDialog):
         of Cancel. The prompt exists only because the count is the one thing the
         user cannot see from the cards.
         """
-        changes = self._ws.changes()
-        if changes:
+        if self._ws.is_dirty:
+            # A profile made here with nothing in it yet is still one change to lose.
+            total = self._ws.changes().total or 1
             answer = QMessageBox.question(
                 self,
                 "Discard changes?",
-                f"{changes.total} change{'s' if changes.total != 1 else ''} will be lost.",
+                f"{total} change{'s' if total != 1 else ''} will be lost.",
                 QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
                 QMessageBox.StandardButton.Cancel,
             )

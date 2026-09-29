@@ -8,6 +8,7 @@ from bartlebot.store_roots import SOURCE_LABELS, Origin
 from bartlebot.strategy_store import StrategyKind
 from bartlebot.strategy_tags import (
     KIND_GROUPS,
+    PROFILE_SOURCE,
     ROLE,
     SCHOOL_KINDS,
     SOURCE,
@@ -37,8 +38,10 @@ def _f(*sets: set[str]) -> tuple[frozenset[str], ...]:
 
 
 def test_the_source_values_are_the_pill_labels():
-    """A Source chip must say what the pill on the card it matches says."""
+    """A Source chip must say what the pill on the card it matches says — except Profile,
+    whose pill carries the profile's own name, which a fixed vocabulary cannot (#118)."""
     assert SOURCE_TAGS == (
+        PROFILE_SOURCE,
         SOURCE_LABELS[Origin.SHIPPED],
         SOURCE_LABELS[Origin.SHIPPED_OVERRIDE],
         SOURCE_LABELS[Origin.USER],

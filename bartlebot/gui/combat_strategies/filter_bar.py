@@ -32,7 +32,9 @@ from bartlebot.gui.widgets.tag_pill import NeutralChip, TagChip
 from bartlebot.strategy_store import StrategyKind
 from bartlebot.strategy_tags import (
     KIND_GROUPS,
+    PROFILE_SOURCE,
     SCHOOL_KINDS,
+    SOURCE,
     TEAM_SIZE_KINDS,
     TEAM_SIZES,
     StrategyFacets,
@@ -69,11 +71,16 @@ class StrategyFilterBar(QWidget):
     #: The selection or the query changed.
     changed = pyqtSignal()
 
-    def __init__(self, kind: StrategyKind, parent: QWidget | None = None) -> None:
+    def __init__(self, kind: StrategyKind, parent: QWidget | None = None, *, profile: bool = False) -> None:
+        """*profile* offers the Source value for the active combat profile's own entries,
+        on a tab that shows them (#118); elsewhere there would never be one to find."""
         super().__init__(parent)
         self._kind = kind
         self._noun = KIND_NOUNS[kind]
-        self._vocabulary: TagVocabulary = replace(STRATEGY_VOCABULARY, noun=self._noun)
+        groups = dict(STRATEGY_VOCABULARY.groups)
+        if not profile:
+            groups[SOURCE] = tuple(t for t in groups[SOURCE] if t != PROFILE_SOURCE)
+        self._vocabulary: TagVocabulary = replace(STRATEGY_VOCABULARY, groups=groups, noun=self._noun)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)

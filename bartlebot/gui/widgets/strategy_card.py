@@ -20,12 +20,23 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import set_style_sheet
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY
-from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill, TagPill
+from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill, ProfilePill, TagPill
 from bartlebot.store_roots import SOURCE_LABELS, Origin
 from bartlebot.strategy_summary import HealthStatus, StrategySummary
 
 ADD_FAVORITE_TIP = "Add to favorites"
 REMOVE_FAVORITE_TIP = "Remove from favorites"
+
+
+def profile_pill(profile_name: str) -> QLabel:
+    """The pill on an entry that belongs to one combat profile: the profile's full name (#118).
+
+    Separate from :func:`source_pill`, whose ``Origin`` describes the two storage roots; a
+    profile entry lives in neither, but inside the profile's own file.
+    """
+    pill = ProfilePill(profile_name)
+    pill.setToolTip(f"Belongs to the combat profile '{profile_name}' only")
+    return pill
 
 
 def source_pill(source: Origin) -> QLabel:
@@ -91,14 +102,18 @@ class StrategyCard(QWidget):
         self._name_lbl = name_row
         self._source_pill: QLabel | None = None
         self._star: IconButton | None = None
-        if summary.source is None and favorite is None:
+        if summary.source is None and summary.profile_name is None and favorite is None:
             header.addWidget(name_row)
         else:
             row = QHBoxLayout()
             row.setContentsMargins(0, 0, 0, 0)
             row.setSpacing(6)
             row.addWidget(name_row, 1)
-            if summary.source is not None:
+            if summary.profile_name is not None:
+                pill = profile_pill(summary.profile_name)
+                row.addWidget(pill, 0, Qt.AlignmentFlag.AlignTop)
+                self._source_pill = pill
+            elif summary.source is not None:
                 # Always shown, and a pill of words rather than a glyph: no icon says
                 # "ships with the app" unaided (#124). Three weights, on ActionButton's
                 # model: a built-in filled with the accent, a modified built-in outlined

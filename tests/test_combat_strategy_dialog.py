@@ -187,16 +187,16 @@ def test_use_built_in_default_returns_none_and_says_so(qapp, roots):
     assert dlg.used_built_in_default()
 
 
-def test_a_pick_returns_the_kind_that_was_asked_for(qapp, roots):
-    """A Player Strategy made while picking a duel is not an answer to the question."""
+def test_a_pick_shows_only_the_kind_that_was_asked_for(qapp, roots):
+    """A Player Strategy tab while picking a duel is somewhere to edit things, and Pick
+    edits nothing (#123)."""
     dcs = DuelCombatStrategy(name="Frenzy AoE")
     save_duel_strategy(dcs, roots[0])
     dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.PICK, current_id=dcs.id)
-    dlg._tabs.setCurrentWidget(dlg._pages[StrategyKind.PLAYER])
-    dlg._pages[StrategyKind.PLAYER]._on_new()
 
     dlg._on_commit()
 
+    assert dlg.tab_kinds() == [StrategyKind.DUEL]
     assert dlg.selected_id() == dcs.id
 
 
@@ -213,7 +213,7 @@ def test_a_pick_that_may_not_be_empty_refuses_to_close_with_nothing(qapp, roots)
 
 
 def test_manage_mode_offers_no_built_in_default_button(qapp, roots):
-    dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.MANAGE)
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.LIBRARY)
 
     assert not hasattr(dlg, "_none_btn")
 

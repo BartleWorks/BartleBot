@@ -85,6 +85,10 @@ class DeckPresetEditor(QWidget):
         """The card list. Public for the same reason."""
         return self._cards
 
+    def set_editable(self, editable: bool) -> None:
+        """Read-only in the dialog's Pick mode, which selects and edits nothing (#123)."""
+        self._archmastery.setEnabled(editable)
+
     def load(self, preset: DeckPreset) -> None:
         self._preset = preset
         self._archmastery.load(preset.deck)

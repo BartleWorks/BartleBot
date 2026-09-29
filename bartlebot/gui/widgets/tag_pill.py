@@ -534,6 +534,24 @@ class NeutralPill(QLabel):
             self._restyle()
 
 
+class ProfilePill(NeutralPill):
+    """:class:`NeutralPill` in ``pill_profile_bg``: this strategy belongs to one combat profile.
+
+    Carries the profile's full name rather than a word like "Profile", since naming the
+    actual container is what tells a user there are two places a strategy can live
+    (#118). Its own hue, not the error red — see ``pill_profile_bg``.
+    """
+
+    def _restyle(self) -> None:
+        if self._applying_style:  # see TagPill._restyle
+            return
+        self._applying_style = True
+        try:
+            set_style_sheet(self, pill_style(THEME.pill_profile_bg, THEME.pill_text))
+        finally:
+            self._applying_style = False
+
+
 class AccentPill(QLabel):
     """An inert, accent-outlined pill marking what the row it leads is.
 

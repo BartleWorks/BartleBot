@@ -81,6 +81,7 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from functools import partial
+from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
@@ -109,7 +110,7 @@ from bartlebot.combat_grouping import (
     group_bindings,
     state_label,
 )
-from bartlebot.combat_profile import StrategyLookup
+from bartlebot.combat_profile import StrategyLookup, read_bot_names
 from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.credentials import CredentialStore
 from bartlebot.deck_io import resolve_apply_archmastery
@@ -146,6 +147,7 @@ from bartlebot.gui.widgets.player_pills import PlayerBadge
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.nodes.timing import PLAYER_COLOR_REFRESH_INTERVAL
+from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.strategy_store import (
     StrategyKind,
@@ -1311,7 +1313,7 @@ class CombatTab(QWidget):
     def open_combat_dialog(
         self,
         kind: StrategyKind = StrategyKind.DUEL,
-        mode: DialogMode = DialogMode.MANAGE,
+        mode: DialogMode = DialogMode.LIBRARY,
         current_id: str | None = None,
         allow_none: bool = True,
         none_label: str = "(built-in default)",
@@ -1332,10 +1334,14 @@ class CombatTab(QWidget):
         of every fight, *before* the caller acts on the result: a caller holding a
         binding from before the dialog must look it up again. Cancel writes nothing,
         so it only re-reads the library.
+
+        The library view — **File → Combat Strategies**, the default *mode* — gets no
+        profile at all, even with a bot loaded: it shows and edits the library alone.
         """
+        library_only = mode is DialogMode.LIBRARY or self._config is None
         ws = StrategyWorkingSet.from_store(
-            profile_id=self._bcs.id if self._bcs is not None else None,
-            bot_id=self._config.id if self._config is not None else None,
+            profile_id=None if library_only or self._bcs is None else self._bcs.id,
+            bot_id=None if library_only else self._config.id,
         )
         color_keys, account_labels = self._player_color_keys()
         dlg = CombatStrategyDialog(
@@ -1347,6 +1353,7 @@ class CombatTab(QWidget):
             none_label=none_label,
             player_color_keys=color_keys,
             player_account_labels=account_labels,
+            bot_name=self._bot_name_lookup(),
             parent=self,
         )
         accepted = bool(dlg.exec())
@@ -1366,6 +1373,25 @@ class CombatTab(QWidget):
             self.refresh_strategy_data()
         self.combat_config_changed.emit()
         return dlg
+
+    def _bot_name_lookup(self) -> Callable[[str], str | None]:
+        """Bot id to bot name, for the Save confirmation's "'Solo' (Atlantea)".
+
+        Lazy, and read once per dialog: the bot library is only scanned if a Save
+        actually has another profile to name.
+        """
+        names: dict[str, str] = {}
+        config = self._config
+
+        def lookup(bot_id: str) -> str | None:
+            if config is not None and bot_id == config.id:
+                return config.name
+            if not names:
+                configured = Path(SettingsManager.instance().get("canvas", "bot_library_path", default="bots"))
+                names.update(read_bot_names(configured if configured.is_absolute() else project_root() / configured))
+            return names.get(bot_id)
+
+        return lookup
 
     def _profile_changed_on_disk(self) -> bool:
         """Whether the active profile's file no longer matches ``self._bcs``."""
@@ -1786,7 +1812,7 @@ class CombatTab(QWidget):
         return STATE_INHERIT_LABEL
 
     def _on_edit_dcs_in_library(self, dcs_id: str) -> None:
-        self.open_combat_dialog(kind=StrategyKind.DUEL, mode=DialogMode.MANAGE, current_id=dcs_id)
+        self.open_combat_dialog(kind=StrategyKind.DUEL, mode=DialogMode.PROFILE, current_id=dcs_id)
 
     # ------------------------------------------------------------------
     # BCS picker / menu actions

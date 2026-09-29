@@ -198,6 +198,9 @@ class StrategySummary:
     #: does not arise. Supplied by whoever knows the working set — the summarize_*
     #: functions see one entry and cannot tell (#124).
     source: Origin | None = None
+    #: The combat profile's name when the entry belongs to that profile rather than the
+    #: library (#118); None for a library entry. A card shows it in place of ``source``.
+    profile_name: str | None = None
     #: Stored tags (the Role group of :mod:`bartlebot.strategy_tags`), in vocabulary order.
     tags: tuple[str, ...] = ()
     #: One school set per player slot, empty meaning any school — what the "works with"
