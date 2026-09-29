@@ -12,6 +12,7 @@ from bartlebot.gui.widgets.elided_label import (
     apply_muted_color,
     elide_long_words,
 )
+from bartlebot.gui.widgets.themed_label import ThemedWrappingElidedLabel
 
 _LONG = "P1: {1} shatter@boss {2} empower… · P2–P3: {1} pass {2} pass · P4: {1} weakness@boss"
 #: A zone path — the case that motivated left elision.  Every zone in a world
@@ -274,3 +275,19 @@ def test_wrapping_label_keeps_the_callers_tooltip_beside_the_full_text(qapp):
 def test_wrapping_label_is_plain_text(qapp):
     """A strategy name is user text: one containing markup must not render as HTML."""
     assert WrappingElidedLabel("<b>x</b>").textFormat() == Qt.TextFormat.PlainText
+
+
+def test_the_themed_wrapping_label_elides_as_the_plain_one_does(qapp):
+    lbl = ThemedWrappingElidedLabel(_UNBROKEN)
+
+    assert lbl.minimumSizeHint().width() < 50
+    assert lbl.text() == _UNBROKEN
+
+
+def test_the_themed_wrapping_label_reads_its_colour_from_the_token(qapp):
+    from bartlebot.gui.theme import THEME
+
+    lbl = ThemedWrappingElidedLabel("x", color="warning", css="font-weight: bold;")
+
+    assert THEME.warning in lbl.styleSheet()
+    assert "font-weight: bold;" in lbl.styleSheet()
