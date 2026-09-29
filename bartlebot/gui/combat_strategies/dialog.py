@@ -23,7 +23,7 @@ three modes, one per way in (#118, #123):
              the top. New and Duplicate create *in the profile*; library entries stay
              editable too, and the Save confirmation says where else an edit reaches.
 ``PICK``     ``[Use built-in default] [Cancel] [Use this]`` — 🔍 on a card, a fight's
-             pill, the add-card's "Choose an existing strategy…", and a deck slot's
+             pill, the add-card's "Select existing duel strategy…", and a deck slot's
              "Load from library". Only the tab asked for, and **select-only**: no New,
              Duplicate or Delete, and the detail pane is read-only. Before #123 Pick
              edited everything, which made 🔍 and ✏ the same button.

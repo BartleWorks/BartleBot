@@ -120,7 +120,6 @@ from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
 from bartlebot.gui.deck_content import ARCHMASTERY_MODES, archmastery_note, deck_groups
-from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
@@ -185,9 +184,11 @@ _BCS_CAPTION = "Bot Combat Strategy"
 _STRATEGIES_SECTION = "Duel Combat Strategies"
 
 #: The section's terminator, in the AddCard the launch columns end with.
-_ADD_STRATEGY = "Add a strategy for specific fights"
-#: The add-card menu's first item; the second names the profile.
-_ADD_EXISTING = "Choose an existing strategy…"
+_ADD_STRATEGY = "Add another duel strategy"
+#: The add-card menu's two items. The second does not name the profile it saves into:
+#: the Bot Combat Strategy banner already does, two cards up.
+_ADD_EXISTING = "Select existing duel strategy…"
+_ADD_CREATED = "Create a new duel strategy…"
 
 #: Verb labels for the Bot Combat Strategy banner, shared with its menu and the tests.
 _CHANGE_BCS = "Change…"
@@ -1649,8 +1650,8 @@ class CombatTab(QWidget):
         """Give some fights a strategy of their own — the add-card at the foot of the list.
 
         A menu of two, because the strategy can already exist or be made for these fights
-        (#118): **Choose an existing strategy…** opens the picker, and **Create one for
-        '<profile>'…** opens the profile editor with nothing selected, so New and
+        (#118): **Select existing duel strategy…** opens the picker, and **Create a new
+        duel strategy…** opens the profile editor with nothing selected, so New and
         Duplicate are both there. GitHub's sub-issues are the shape, "Create sub-issue"
         beside "Add existing issue"; so is the assignment card's own menu, which mixes
         picking a Player Strategy with "Custom DSL…".
@@ -1670,15 +1671,11 @@ class CombatTab(QWidget):
         """
         if self._config is None or self._bcs is None or not self._editable:
             return
-        menu = popup_menu(self._add_card)
-        for label, run in self._add_card_verbs():
-            menu.addAction(label).triggered.connect(lambda _checked=False, run=run: run())
-        menu.exec(self._add_card.mapToGlobal(self._add_card.rect().bottomLeft()))
+        self._add_card.open_menu(self._add_card_verbs())
 
-    def _add_card_verbs(self) -> list[tuple[str, Callable[[], None]]]:
-        """The add-card menu's two items, in order. Public-shaped so a test can read them."""
-        name = self._bcs.name if self._bcs is not None else ""
-        return [(_ADD_EXISTING, self._on_add_existing), (f"Create one for '{name}'…", self._on_add_created)]
+    def _add_card_verbs(self) -> list[tuple[str, str, Callable[[], None]]]:
+        """The add-card menu's two items as (icon, label, run), in order. Public-shaped so a test can read them."""
+        return [("search", _ADD_EXISTING, self._on_add_existing), ("plus", _ADD_CREATED, self._on_add_created)]
 
     def _on_add_existing(self) -> None:
         """The add-card's first item: pick a strategy that already exists."""

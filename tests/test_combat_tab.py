@@ -2344,9 +2344,9 @@ def test_a_cancelled_dialog_leaves_the_cards_alone(qapp, store):
 def test_the_add_card_offers_choosing_or_creating(qapp, store):
     tab = _tab_for(BotCombatStrategy(name="Solo", bot_id="bot-1"), _multi_config("A"))
 
-    assert [label for label, _run in tab._add_card_verbs()] == [
-        "Choose an existing strategy…",
-        "Create one for 'Solo'…",
+    assert [(icon, label) for icon, label, _run in tab._add_card_verbs()] == [
+        ("search", "Select existing duel strategy…"),
+        ("plus", "Create a new duel strategy…"),
     ]
 
 

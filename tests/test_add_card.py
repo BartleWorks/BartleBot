@@ -23,6 +23,7 @@ from bartlebot.gui.game_embed.card_columns import EMPTY_ACCOUNTS_HINT, EMPTY_PRO
 from bartlebot.gui.game_embed.game_view import GameView, _GamePlaceholder
 from bartlebot.gui.game_embed.launch_cards import ADD_CARD_BORDER_WIDTH, AccountCard, AddCard, ProfileCard
 from bartlebot.gui.settings import accounts_tab
+from bartlebot.gui.widgets.card_frame import GRIP_GUTTER
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 from tests.conftest import main_window_stub
@@ -265,6 +266,22 @@ def test_the_dashes_are_wide_enough_to_be_dashes(qapp):
 
     assert ADD_CARD_BORDER_WIDTH > 1
     assert f"{ADD_CARD_BORDER_WIDTH}px dashed" in card.styleSheet()
+
+
+def test_a_menu_opens_under_the_outline_not_the_gutter(qapp):
+    """The widget starts at the drag gutter, the dashed outline 22px later.
+
+    Anchored to the widget, the Combat tab's add-card menu opened that far left of the
+    card the user had just clicked.
+    """
+    card = AddCard("Add another duel strategy")
+    card.resize(300, 40)
+    card.layout().activate()
+
+    at = card.menu_position()
+
+    assert at.x() == card.mapToGlobal(QPoint(GRIP_GUTTER, 0)).x()
+    assert at.y() >= card.mapToGlobal(QPoint(0, card.height())).y()
 
 
 def test_a_theme_switch_restyles_the_add_card(qapp, theme):

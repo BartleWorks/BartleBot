@@ -545,19 +545,38 @@ class _Theme:
                 background: {self.accent};
                 color: #ffffff;
             }}
+            /* ── Popup menus ──
+               Drawn as PickerPopup is — the page's own fill, an inset list, and the
+               soft row hover every card and list row takes — so a menu and a picker
+               opened from the same sidebar read as one family.  A solid accent bar
+               under the pointer was the loudest thing on screen for a list of plain
+               verbs. */
             QMenu {{
-                background: {self.surface};
+                background: {self.bg};
                 color: {self.text};
                 border: 1px solid {self.border};
+                border-radius: 6px;
+                padding: 4px;
+            }}
+            QMenu::item {{
+                background: transparent;
+                padding: 5px 20px 5px 10px;
+                border-radius: 4px;
             }}
             QMenu::item:selected {{
-                background: {self.accent};
-                color: #ffffff;
+                background: {self.node_fill_hover};
+                color: {self.text};
+            }}
+            QMenu::item:disabled {{
+                color: {self.text_disabled};
+            }}
+            QMenu::icon, QMenu::indicator {{
+                padding-left: 8px;
             }}
             QMenu::separator {{
                 height: 1px;
                 background: {self.border};
-                margin: 4px 8px;
+                margin: 4px 6px;
             }}
 
             /* ── Tooltips ── */

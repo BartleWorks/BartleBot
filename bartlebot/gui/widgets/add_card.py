@@ -12,10 +12,13 @@ a test asserts, and it is a property of the card rather than of either caller.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from collections.abc import Callable
+
+from PyQt6.QtCore import QPoint, Qt, pyqtSignal
 from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
 
-from bartlebot.gui.icon_utils import svg_pixmap
+from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.card_frame import GRIP_GUTTER
@@ -27,6 +30,9 @@ from bartlebot.gui.widgets.card_frame import GRIP_GUTTER
 # reads at about the weight of the 1px solid border on the launch cards above it, because
 # the gaps give back what the extra pixel takes.
 ADD_CARD_BORDER_WIDTH = 2
+
+#: Gap between the dashed outline and a menu opened under it, in px.
+MENU_GAP = 2
 
 
 class AddCard(ThemedMixin, QWidget):
@@ -74,6 +80,26 @@ class AddCard(ThemedMixin, QWidget):
     def text(self) -> str:
         """What the card reads. Public so a test can name the collection it belongs to."""
         return self._text
+
+    def menu_position(self) -> QPoint:
+        """Where a menu opened from this card goes, in global coordinates.
+
+        Under the dashed outline's left edge, not the widget's: the widget starts at the
+        drag gutter, so a menu anchored to it opened twenty-two pixels left of the card
+        the user clicked.
+        """
+        return self._body.mapToGlobal(QPoint(0, self._body.height() + MENU_GAP))
+
+    def open_menu(self, items: list[tuple[str, str, Callable[[], None]]]) -> None:
+        """Offer a choice of ways to add, for a collection that has more than one.
+
+        *items* are ``(icon, label, run)``. Built on every click rather than once, so the
+        icons take whichever theme is current when it opens.
+        """
+        menu = popup_menu(self)
+        for icon, label, run in items:
+            menu.addAction(svg_icon(icon, size=14), label).triggered.connect(lambda _checked=False, run=run: run())
+        menu.exec(self.menu_position())
 
     def _build(self) -> None:
         row = QHBoxLayout(self)
