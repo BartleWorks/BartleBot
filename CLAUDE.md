@@ -58,7 +58,7 @@ read on purpose.
 | `tools/CLAUDE.md` | type dumps and `Root.wad` — read these before writing a probe |
 | `docs/WINDOW_SIZING.md` | the (resolution, UI size) ladder, which XML file holds which, and why an unfittable launch is refused |
 | `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value |
-| `docs/COMBAT_CONFIG.md` | the five strategy levels, the two storage roots, the pick/assemble/author split, and the Save/Cancel boundary |
+| `docs/COMBAT_CONFIG.md` | the five strategy levels, the two storage roots, a combat profile's own strategies and the profile-then-library lookup, the pick/assemble/author split, the dialog's ways in, and the Save/Cancel boundary |
 | `docs/SUBGRAPHS.md` | reusable subgraphs: definition vs. instance, derived member ids, follow-latest with snapshot fallback, the three param levels, instance-owned layout, the authoring verbs |
 | `docs/SUBGRAPH_CALLS.md` | a pointer to the plan for the successor epic to #37 (subgraph calls, ports, the definition document, the call node, the library rewrite), which lives on a claude.ai page — read that page before any subgraph work; it supersedes several of `SUBGRAPHS.md`'s sections |
 | `docs/LIBRARY_MIGRATION.md` | where all 82 bots stand against the four core templates: per-bot tier and divergence, the template input signature, the outlier bots |
