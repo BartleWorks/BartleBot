@@ -69,10 +69,11 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.dsl_edit import DslGrowingTextEdit
+from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
 from bartlebot.gui.widgets.icon_button import IconButton
 from bartlebot.gui.widgets.player_pills import PlayerPillBar
 from bartlebot.gui.widgets.rule_heading import RuleHeading
-from bartlebot.gui.widgets.school_combo import SchoolCombo
+from bartlebot.gui.widgets.school_picker import SchoolPickerButton
 from bartlebot.nodes.combat_runner import dsl_error, dsl_warning_text, dsl_warnings, validate_dsl
 
 #: The two answers in the strategy menu that are not a Player Strategy, and the sentinel
@@ -151,6 +152,9 @@ class AssignmentCard(CardFrame):
         self._updating = False  # suppresses re-entrant enforcement
         self._suppress = False
         self._editable = True
+        # Whether anything is listening for the pencil with somewhere to take it. Pick
+        # has no Player tab, so there the pencil is greyed rather than a dead button.
+        self._can_open_pcs = True
         self._expanded = False
         # The title without its warning mark. Set before ``_build`` because a theme pass
         # can arrive during construction and ``_restyle_content`` reads it.
@@ -198,12 +202,12 @@ class AssignmentCard(CardFrame):
         header.addWidget(self._chevron, 0, Qt.AlignmentFlag.AlignVCenter)
         inner.addLayout(header)
 
-        self._desc_lbl = QLabel(self)
-        self._desc_lbl.setWordWrap(True)
+        # Wrapping and elided, not plain word-wrapped: a DSL token has no spaces to wrap
+        # at, and one longer than the line made itself the card's minimum width (#118).
+        self._desc_lbl = WrappingElidedLabel(parent=self)
         inner.addWidget(self._desc_lbl)
 
-        self._dsl_lbl = QLabel(self)
-        self._dsl_lbl.setWordWrap(True)
+        self._dsl_lbl = WrappingElidedLabel(parent=self)
         inner.addWidget(self._dsl_lbl)
 
         # Everything the face no longer carries. Built once and hidden, rather than
@@ -219,13 +223,15 @@ class AssignmentCard(CardFrame):
         school_row = QHBoxLayout()
         school_row.setContentsMargins(0, 0, 0, 0)
         school_row.setSpacing(6)
-        self._school_label = QLabel("School:", self._details)
+        self._school_label = QLabel("Schools:", self._details)
         school_row.addWidget(self._school_label, 0)
-        self._school_combo = SchoolCombo()
-        self._school_combo.setToolTip("What this assignment needs, if any — descriptive only, never enforced")
-        self._school_combo.set_value(self._assignment.school)
-        self._school_combo.currentIndexChanged.connect(self._on_school_changed)
-        school_row.addWidget(self._school_combo, 0)
+        self._school_picker = SchoolPickerButton(parent=self._details)
+        self._school_picker.setToolTip(
+            "The schools these players can be, if it matters — descriptive only, never enforced"
+        )
+        self._school_picker.set_value(self._assignment.schools)
+        self._school_picker.selection_changed.connect(self._on_school_changed)
+        school_row.addWidget(self._school_picker, 0)
         school_row.addStretch(1)
         details.addLayout(school_row)
 
@@ -265,9 +271,18 @@ class AssignmentCard(CardFrame):
         ]
 
     def _verbs(self) -> list[CardVerb]:
-        """What the right-click menu offers now: the pencil only while there is a strategy to open."""
-        linked = self._linked_pcs() is not None
-        return [v for v in self._all_verbs() if v.label != EDIT_VERB or linked]
+        """What the right-click menu offers now: only the verbs whose face button is live.
+
+        The pencil needs a strategy to open and somewhere to open it; Change and Remove
+        need the card to be editable. The menu bypasses the buttons' enabled state, so
+        without this a read-only card's right-click could still remove an assignment.
+        """
+        return [v for v in self._all_verbs() if self._verb_enabled(v.label)]
+
+    def _verb_enabled(self, label: str) -> bool:
+        if label == EDIT_VERB:
+            return self._can_open_pcs and self._linked_pcs() is not None
+        return self._editable or label not in (CHANGE_VERB, REMOVE_VERB)
 
     # ------------------------------------------------------------------
     # Reading
@@ -282,6 +297,11 @@ class AssignmentCard(CardFrame):
         read and set from outside — the editor enforces exclusivity across cards.
         """
         return self._pills
+
+    @property
+    def school_picker(self) -> SchoolPickerButton:
+        """The schools control in the fold. Public so a test can pick a school as a user would."""
+        return self._school_picker
 
     def is_custom(self) -> bool:
         """Whether this card is answering with DSL of its own rather than a name."""
@@ -320,16 +340,27 @@ class AssignmentCard(CardFrame):
         if self.grip is not None:
             self.grip.set_locked(not editable, "Locked while the bot is running")
         self._pills.set_editable(editable)
-        self._school_combo.setEnabled(editable)
+        self._school_picker.setEnabled(editable)
         self._note_edit.setEnabled(editable)
-        for button, verb in ((self.action_button(v.label), v) for v in self._all_verbs()):
-            if button is not None:
-                # The pencil stays live while locked: it only navigates, and reading the
-                # strategy a running bot fights with is exactly what someone watching it
-                # wants to do. The chevron is never locked, for the same reason:
-                # everything the fold reveals is already read-only by then.
-                button.setEnabled(editable or verb.label == EDIT_VERB)
+        self._sync_verb_buttons()
         self._refresh()
+
+    def set_can_open_pcs(self, can_open: bool) -> None:
+        """Grey the pencil when nothing can take it anywhere (Pick has no Player tab)."""
+        self._can_open_pcs = can_open
+        self._sync_verb_buttons()
+
+    def _sync_verb_buttons(self) -> None:
+        # The pencil does not follow ``_editable``: it only navigates, so a locked card
+        # still opens its strategy wherever there is a Player tab to open it on. The
+        # chevron is never locked: everything the fold reveals is already read-only.
+        for verb in self._all_verbs():
+            button = self.action_button(verb.label)
+            if button is not None:
+                if verb.label == EDIT_VERB:
+                    button.setEnabled(self._can_open_pcs)
+                else:
+                    button.setEnabled(self._editable or verb.label not in (CHANGE_VERB, REMOVE_VERB))
 
     def set_max_players(self, n: int) -> None:
         """Hide slots beyond *n* and clamp ``assignment.players`` to 1..n."""
@@ -417,9 +448,9 @@ class AssignmentCard(CardFrame):
             # The assignment's own school already won over the linked one, so only fill in
             # where nothing was authored here: forking a Storm strategy into custom DSL
             # must not quietly drop the Storm.
-            if pcs is not None and self._assignment.school is None:
-                self._assignment.school = pcs.school
-                self._school_combo.set_value(self._assignment.school)
+            if pcs is not None and not self._assignment.schools:
+                self._assignment.schools = list(pcs.schools)
+                self._school_picker.set_value(self._assignment.schools)
             self._assignment.player_combat_strategy_id = None
             self._custom = True
             # Custom DSL is the one answer with nowhere to be typed on the face, so the
@@ -469,7 +500,7 @@ class AssignmentCard(CardFrame):
             self._dsl_lbl.setVisible(bool(self._dsl_lbl.text()))
 
             self._pills.set_value(self._assignment.players)
-            self._school_combo.set_value(self._assignment.school)
+            self._school_picker.set_value(self._assignment.schools)
             self._dsl_edit.setPlainText(self._assignment.dsl if custom else "")
             self._dsl_edit.setReadOnly(not self._editable)
             self._dsl_edit.setVisible(custom)
@@ -521,7 +552,7 @@ class AssignmentCard(CardFrame):
     def _on_school_changed(self) -> None:
         if self._suppress:
             return
-        self._assignment.school = self._school_combo.value()
+        self._assignment.schools = self._school_picker.value()
         self.changed.emit()
 
     def _on_note_changed(self) -> None:

@@ -2,5 +2,8 @@
   "id": "d99506cc-6276-4e7d-8ae0-11a69788fcd6",
   "name": "Default Single-target Hitter",
   "dsl": "feint[potent]@boss | any<trap>[potent]@boss | any<blade>[sharp]@self | any<aura & out_damage> | any<damage>[any<mod_damage>]@boss",
-  "description": "Default single-target hitter strategy for general use"
+  "description": "Default single-target hitter strategy for general use",
+  "tags": [
+    "Hitter"
+  ]
 }

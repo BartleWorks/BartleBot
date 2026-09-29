@@ -192,6 +192,7 @@ _DEFAULTS: dict[str, Any] = {
     "autosave_origins": {},
     "recently_used_nodes": [],
     "favorite_nodes": [],
+    "favorite_strategies": {},  # {StrategyKind value: [strategy id, …]}
     "favorited_hotkey_nodes": list(DEFAULT_HOTKEY_NODES),  # indices 0–9 → keys 1–9, 0
     # Whether an install has had DEFAULT_HOTKEY_NODES offered once. See _seed_hotkey_nodes.
     "hotkey_nodes_seeded": False,
@@ -774,6 +775,32 @@ class SettingsManager:
             favs.append(node_type)
             is_fav = True
         self.set("favorite_nodes", value=favs)
+        self.save()
+        return is_fav
+
+    def favorite_strategies(self, kind: str) -> list[str]:
+        """Favorited combat strategy ids of one kind (a ``StrategyKind`` value), in insertion order.
+
+        Per user, and saved on the click rather than with the strategy dialog's Save:
+        a favorite is a preference about the library, not a change to it (#125). An id
+        whose strategy has since been deleted is left in place and simply matches nothing.
+        """
+        favs = self.get("favorite_strategies", kind, default=[])
+        return [f for f in favs if isinstance(f, str)] if isinstance(favs, list) else []
+
+    def is_favorite_strategy(self, kind: str, strategy_id: str) -> bool:
+        return strategy_id in self.favorite_strategies(kind)
+
+    def toggle_favorite_strategy(self, kind: str, strategy_id: str) -> bool:
+        """Toggle one strategy in its kind's favorites and save. Returns True if now favorited."""
+        favs = self.favorite_strategies(kind)
+        if strategy_id in favs:
+            favs.remove(strategy_id)
+            is_fav = False
+        else:
+            favs.append(strategy_id)
+            is_fav = True
+        self.set("favorite_strategies", kind, value=favs)
         self.save()
         return is_fav
 

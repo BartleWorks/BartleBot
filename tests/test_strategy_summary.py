@@ -76,8 +76,8 @@ def test_summarize_duel_with_inline_assignments():
         combat_order=[1, 2],
         description="Boss fight — P1 tanks, P2 heals",
         player_assignments=[
-            PlayerAssignment(players=[1], dsl=_VALID_DSL, school="Storm"),
-            PlayerAssignment(players=[2], dsl="", school="Life"),
+            PlayerAssignment(players=[1], dsl=_VALID_DSL, schools=["Storm"]),
+            PlayerAssignment(players=[2], dsl="", schools=["Life"]),
         ],
     )
 
@@ -93,13 +93,13 @@ def test_summarize_duel_with_inline_assignments():
 
 
 def test_summarize_duel_school_requirement_covers_a_multi_player_assignment():
-    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1, 2], dsl=_VALID_DSL, school="Storm")])
+    config = DuelConfig(player_assignments=[PlayerAssignment(players=[1, 2], dsl=_VALID_DSL, schools=["Storm"])])
 
     assert summarize_duel(config, []).schools == {"Storm": 2}
 
 
 def test_summarize_duel_resolves_school_through_a_linked_preset():
-    pcs = PlayerCombatStrategy(name="Storm DPS", dsl=_VALID_DSL, school="Storm")
+    pcs = PlayerCombatStrategy(name="Storm DPS", dsl=_VALID_DSL, schools=["Storm"])
     config = DuelConfig(player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)])
 
     summary = summarize_duel(config, [pcs])
@@ -152,7 +152,7 @@ def test_summarize_empty_player_strategy():
 
 
 def test_summarize_player_strategy_with_school_and_dsl():
-    pcs = PlayerCombatStrategy(name="Storm DPS", dsl=_VALID_DSL, school="Storm", description="Blade + hit")
+    pcs = PlayerCombatStrategy(name="Storm DPS", dsl=_VALID_DSL, schools=["Storm"], description="Blade + hit")
 
     summary = summarize_player(pcs)
 
@@ -238,7 +238,7 @@ def test_health_is_ok_true_only_when_not_invalid():
 def test_find_references_counts_a_bot_default():
     dcs = DuelCombatStrategy(name="Boss")
     bcs = BotCombatStrategy(name="Farm", bot_id="b", default_strategy_id=dcs.id)
-    assert find_references(dcs.id, [bcs], []) == UsageCount(bots=1)
+    assert find_references(dcs.id, [bcs], []) == UsageCount(bots=1, names=("profile 'Farm'",))
 
 
 def test_find_references_counts_a_state_override():
@@ -269,20 +269,7 @@ def test_find_references_counts_a_player_strategy_in_a_duel():
         name="Boss",
         player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)],
     )
-    assert find_references(pcs.id, [], [dcs]) == UsageCount(duels=1)
-
-
-def test_find_references_reaches_a_bots_inline_config():
-    """An inline DuelConfig on a bot strategy links presets too, and nothing else looks there."""
-    pcs = PlayerCombatStrategy(name="Blade")
-    bcs = BotCombatStrategy(
-        name="Farm",
-        bot_id="b",
-        default_duel_config=DuelConfig(
-            player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
-        ),
-    )
-    assert find_references(pcs.id, [bcs], []).bots == 1
+    assert find_references(pcs.id, [], [dcs]) == UsageCount(duels=1, names=("'Boss — P1'",))
 
 
 def test_find_references_of_something_unused():
@@ -318,3 +305,27 @@ def test_a_duel_summary_carries_its_combat_order():
 
 def test_a_simultaneous_duel_has_no_combat_order():
     assert summarize_duel(DuelConfig(), []).combat_order == ()
+
+
+def test_find_references_counts_a_link_from_a_profiles_own_duel():
+    """#118: a library player strategy used only by a profile duel is not unused."""
+    pcs = PlayerCombatStrategy(name="Blade")
+    own = DuelCombatStrategy(
+        name="Own", player_assignments=[PlayerAssignment(players=[2, 3], player_combat_strategy_id=pcs.id)]
+    )
+    bcs = BotCombatStrategy(name="Solo", bot_id="b", duel_strategies=[own])
+
+    usage = find_references(pcs.id, [bcs], [])
+
+    assert usage.total == 1
+    assert usage.phrase() == "Used by 'Own — P2–P3'"
+
+
+def test_the_usage_phrase_names_the_duels():
+    usage = UsageCount(duels=2, names=("'Boss — P2'", "'Trash — P1'"))
+    assert usage.phrase() == "Used by 'Boss — P2' and 'Trash — P1'"
+
+
+def test_the_usage_phrase_counts_past_three_names():
+    usage = UsageCount(duels=5, names=tuple(f"'D{i}'" for i in range(5)))
+    assert usage.phrase() == "Used by 'D0', 'D1', 'D2' and 2 more"

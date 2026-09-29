@@ -5,7 +5,8 @@ PlayerCombatStrategy  — an optional *shared preset*: a named WizSprinter DSL
                         inline on PlayerAssignment instead; only strategies
                         used by several duels are worth promoting here.
 DuelCombatStrategy    — team-level config for one type of fight
-BotCombatStrategy     — bot-specific mapping of FSM states to strategies + deck data
+BotCombatStrategy     — one user's combat profile for a bot: FSM states to strategies,
+                        deck data, and duel/player strategies of its own
 DeckPreset            — named, reusable deck configuration in the global library
 
 Each top-level model is stored as an individual JSON file identified by UUID.
@@ -19,17 +20,50 @@ import tempfile
 from pathlib import Path
 from uuid import uuid4
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+
+def _schools_from_legacy(data: object) -> object:
+    """Lift a pre-#125 single ``school`` into ``schools``, so old files keep loading.
+
+    ``"school": "Fire"`` becomes ``["Fire"]`` and ``"school": null`` becomes ``[]``
+    (any school). A file carrying both keeps ``schools`` and drops the stray ``school``.
+    """
+    if isinstance(data, dict) and "school" in data:
+        data = dict(data)
+        school = data.pop("school")
+        if "schools" not in data:
+            data["schools"] = [school] if isinstance(school, str) and school else []
+    return data
+
+
+def _dedupe_schools(value: list[str]) -> list[str]:
+    """Drop blanks and repeats, keeping the author's order."""
+    return list(dict.fromkeys(s for s in value if s))
+
+
+def _normalize_tags(value: object) -> list[str]:
+    # Imported here: strategy_tags needs StrategyKind from strategy_store, which
+    # imports this module.
+    from bartlebot.strategy_tags import normalize_strategy_tags  # noqa: PLC0415
+
+    return normalize_strategy_tags(value)
 
 
 class PlayerCombatStrategy(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid4()))
     name: str
     dsl: str = ""
-    # One of deck_io.PIP_SCHOOLS, or None for "any school" — authored, never
+    # Each one of deck_io.PIP_SCHOOLS; empty means any school. Authored, never
     # inferred from dsl.  See DuelConfig.school_requirements.
-    school: str | None = None
+    schools: list[str] = Field(default_factory=list)
     description: str = ""
+    # Stored tags — the Role group of bartlebot.strategy_tags. Source is derived, never here.
+    tags: list[str] = Field(default_factory=list)
+
+    _legacy_school = model_validator(mode="before")(_schools_from_legacy)
+    _schools = field_validator("schools")(_dedupe_schools)
+    _tags = field_validator("tags", mode="before")(_normalize_tags)
 
     @classmethod
     def load(cls, path: str | Path) -> PlayerCombatStrategy:
@@ -91,6 +125,11 @@ class DeckPreset(BaseModel):
     name: str
     deck: DeckData = Field(default_factory=DeckData)
     description: str = ""
+    # Stored tags — the Role group of bartlebot.strategy_tags. No schools: most spells
+    # can be trained on any wizard, so a deck's school is not a real constraint.
+    tags: list[str] = Field(default_factory=list)
+
+    _tags = field_validator("tags", mode="before")(_normalize_tags)
 
     @classmethod
     def load(cls, path: str | Path) -> DeckPreset:
@@ -114,11 +153,14 @@ class PlayerAssignment(BaseModel):
     players: list[int]  # 1-based player numbers, e.g. [1, 2]
     dsl: str = ""  # inline DSL — used when player_combat_strategy_id is None
     player_combat_strategy_id: str | None = None  # UUID of a PlayerCombatStrategy preset
-    # One of deck_io.PIP_SCHOOLS, or None. Authored, never inferred from dsl —
-    # see DuelConfig.school_requirements. Takes precedence over a linked
-    # preset's own school when both are set.
-    school: str | None = None
+    # Each one of deck_io.PIP_SCHOOLS; empty means any. Authored, never inferred
+    # from dsl — see DuelConfig.school_requirements. A non-empty set takes
+    # precedence over a linked preset's own schools.
+    schools: list[str] = Field(default_factory=list)
     note: str = ""  # e.g. "P2 passes to bank pips for round 3"
+
+    _legacy_school = model_validator(mode="before")(_schools_from_legacy)
+    _schools = field_validator("schools")(_dedupe_schools)
 
     @property
     def is_linked(self) -> bool:
@@ -127,13 +169,11 @@ class PlayerAssignment(BaseModel):
 
 
 class DuelConfig(BaseModel):
-    """The reusable shape of a duel-level combat config — no identity of its own.
+    """The shape of a duel-level combat config — no identity of its own.
 
-    Split out of :class:`DuelCombatStrategy` so the same shape can live either
-    as a named library entry, or inline on a single :class:`StateAssignment` /
-    :class:`BotCombatStrategy` default — a one-off tweak for one bot that isn't
-    worth promoting to a shared file.  Mirrors the inline-vs-linked split
-    :class:`PlayerAssignment` already uses one level down.
+    :class:`DuelCombatStrategy` is this plus an id and a name, and it is the only
+    thing that carries one: a fight always names a duel strategy by id, whether that
+    strategy lives in the library or inside one combat profile (#118).
     """
 
     min_players: int = 1
@@ -141,9 +181,7 @@ class DuelConfig(BaseModel):
     # None = all players enter combat simultaneously; list = sequential entry order (1-based)
     combat_order: list[int] | None = None
     player_assignments: list[PlayerAssignment] = Field(default_factory=list)
-    # Author-written: what this fight needs and why. Lives on the config itself
-    # (not the named DuelCombatStrategy wrapper) so an inline one-off gets a
-    # description too.
+    # Author-written: what this fight needs and why.
     description: str = ""
 
     @model_validator(mode="after")
@@ -154,8 +192,7 @@ class DuelConfig(BaseModel):
         it describes a duel that cannot be satisfied: combat_warnings demands four
         connected clients while the editor only lets P1 be assigned a strategy or
         placed in the combat order.  The editor now couples its two spin boxes, so
-        this catches the other door in: an inline DuelConfig hand-written into a bot
-        file.
+        this catches the other door in: a strategy file edited by hand.
 
         Repairs rather than rejects, because raising a ValidationError here would
         make such a file refuse to open at all.  max is the field that moves:
@@ -189,34 +226,56 @@ class DuelConfig(BaseModel):
         """UUIDs of every PlayerCombatStrategy preset this duel links to."""
         return [a.player_combat_strategy_id for a in self.player_assignments if a.player_combat_strategy_id is not None]
 
-    def school_requirements(self, pcs_by_id: dict[str, PlayerCombatStrategy]) -> dict[str, int]:
-        """Count of players needed per school, e.g. {"Storm": 2, "Life": 1}.
+    @staticmethod
+    def assignment_schools(assignment: PlayerAssignment, pcs_by_id: dict[str, PlayerCombatStrategy]) -> list[str]:
+        """The schools ``assignment`` accepts: its own set, else its linked preset's, else [] (any)."""
+        if assignment.schools:
+            return list(assignment.schools)
+        if assignment.player_combat_strategy_id is not None:
+            pcs = pcs_by_id.get(assignment.player_combat_strategy_id)
+            if pcs is not None:
+                return list(pcs.schools)
+        return []
 
-        Resolved per assignment — the assignment's own school, else its linked
-        preset's, else none — and multiplied by how many players that
-        assignment covers.  Descriptive only: never gates a run, since a school
-        tag cannot be verified against the DSL it labels (see decision 01).
+    def slot_schools(self, pcs_by_id: dict[str, PlayerCombatStrategy]) -> list[frozenset[str]]:
+        """One school set per player slot, 1..max_players; empty means any school.
+
+        A slot no assignment covers is empty, since it falls back to the built-in
+        default, which any wizard can play. This is what "works with school X" asks.
+        """
+        slots: list[frozenset[str]] = [frozenset() for _ in range(self.max_players)]
+        for assignment in self.player_assignments:
+            schools = frozenset(self.assignment_schools(assignment, pcs_by_id))
+            for p in assignment.players:
+                if 1 <= p <= self.max_players:
+                    slots[p - 1] = schools
+        return slots
+
+    def school_requirements(self, pcs_by_id: dict[str, PlayerCombatStrategy]) -> dict[str, int]:
+        """Count of players needed per school set, e.g. {"Storm": 2, "Life/Myth": 1}.
+
+        Resolved per assignment by :meth:`assignment_schools`, and multiplied by how
+        many players that assignment covers. A slot accepting several schools is
+        keyed by them joined with "/", in the order they were authored. Descriptive
+        only: never gates a run, since a school tag cannot be verified against the
+        DSL it labels (see decision 01).
 
         ``pcs_by_id``: {pcs_uuid: PlayerCombatStrategy} — pre-loaded preset data.
         """
         counts: dict[str, int] = {}
         for assignment in self.player_assignments:
-            school = assignment.school
-            if school is None and assignment.player_combat_strategy_id is not None:
-                pcs = pcs_by_id.get(assignment.player_combat_strategy_id)
-                if pcs is not None:
-                    school = pcs.school
-            if school is None:
+            schools = self.assignment_schools(assignment, pcs_by_id)
+            if not schools:
                 continue
-            counts[school] = counts.get(school, 0) + len(assignment.players)
+            key = "/".join(schools)
+            counts[key] = counts.get(key, 0) + len(assignment.players)
         return counts
 
     def is_empty(self) -> bool:
         """True if this config has no player assignments at all.
 
-        Used to tell "a deliberately inline config with real content" apart
-        from "no real config was ever entered" — the latter is worth flagging
-        even though both resolve to the same built-in-default runtime behavior.
+        Such a config runs the built-in default for everyone, which a summary says as
+        "nothing configured yet" rather than as a problem.
         """
         return not self.player_assignments
 
@@ -237,20 +296,20 @@ class DuelCombatStrategy(DuelConfig):
 
 
 class StateAssignment(BaseModel):
-    """One FSM state's combat override: inline, or linked to a library DuelCombatStrategy.
+    """A group of FSM states and the DuelCombatStrategy they fight with.
 
-    Mirrors :class:`PlayerAssignment`'s pattern one level up: ``duel_config`` is
-    always present and used when unlinked; set ``duel_combat_strategy_id`` to
-    point at a shared library entry instead, which then takes precedence.
+    Unlinked means the states fall back to the profile's default. There is no inline
+    config: a one-off strategy lives in the profile's own ``duel_strategies`` and is
+    linked by id like any other (#118). A file from before that still loads, because
+    the models do not forbid extra fields, and its stray ``duel_config`` is ignored.
     """
 
     state_ids: list[str]  # FSM state IDs this assignment covers
-    duel_config: DuelConfig = Field(default_factory=DuelConfig)  # inline; used when unlinked
-    duel_combat_strategy_id: str | None = None  # UUID of a DuelCombatStrategy; when set, duel_config is ignored
+    duel_combat_strategy_id: str | None = None  # UUID of a DuelCombatStrategy, in the profile or the library
 
     @property
     def is_linked(self) -> bool:
-        """True if this assignment points at a shared DuelCombatStrategy."""
+        """True if this assignment points at a DuelCombatStrategy."""
         return self.duel_combat_strategy_id is not None
 
 
@@ -260,13 +319,14 @@ class BotCombatStrategy(BaseModel):
     bot_id: str  # UUID of the BotConfig this strategy belongs to
     # 1-based player number → embedded deck data (not referenced by UUID)
     player_decks: dict[int, DeckData] = Field(default_factory=dict)
-    # Default duel config for unassigned states: linked library entry takes
-    # precedence over default_duel_config; an empty default_duel_config (the
-    # common case) degrades to the built-in default, same as DuelConfig.is_empty.
+    # The duel strategy for every state no assignment covers; None is the built-in default.
     default_strategy_id: str | None = None
-    default_duel_config: DuelConfig = Field(default_factory=DuelConfig)
     state_assignments: list[StateAssignment] = Field(default_factory=list)
     description: str = ""
+    # Strategies that belong to this profile alone, rather than to the library (#118).
+    # Linked by id like any library entry, and found first — see bartlebot.combat_profile.
+    duel_strategies: list[DuelCombatStrategy] = Field(default_factory=list)
+    player_strategies: list[PlayerCombatStrategy] = Field(default_factory=list)
 
     @classmethod
     def load(cls, path: str | Path) -> BotCombatStrategy:
@@ -284,13 +344,7 @@ class BotCombatStrategy(BaseModel):
         return None
 
     def find_dcs_id_for_state(self, state_id: str) -> str | None:
-        """Return the linked DCS UUID assigned to this FSM state, or None.
-
-        None covers both "no assignment exists" and "the assignment is inline"
-        — callers that only understand library ids can't do anything with an
-        inline config anyway.  Use :meth:`find_assignment_for_state` for the
-        full picture.
-        """
+        """Return the DCS UUID assigned to this FSM state, or None if no assignment links one."""
         assignment = self.find_assignment_for_state(state_id)
         return assignment.duel_combat_strategy_id if assignment else None
 

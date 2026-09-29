@@ -21,7 +21,8 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from PyQt6.QtWidgets import QMessageBox
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import QLabel, QMessageBox, QSplitter
 
 from bartlebot import store_roots
 from bartlebot.bot.strategy_models import (
@@ -40,6 +41,7 @@ from bartlebot.gui.combat_strategies.dialog import (
     _KindPage,
 )
 from bartlebot.gui.widgets.scroll_gutter import is_gutter_reserved
+from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill
 from bartlebot.strategy_store import (
     StrategyKind,
     list_duel_strategies,
@@ -185,16 +187,16 @@ def test_use_built_in_default_returns_none_and_says_so(qapp, roots):
     assert dlg.used_built_in_default()
 
 
-def test_a_pick_returns_the_kind_that_was_asked_for(qapp, roots):
-    """A Player Strategy made while picking a duel is not an answer to the question."""
+def test_a_pick_shows_only_the_kind_that_was_asked_for(qapp, roots):
+    """A Player Strategy tab while picking a duel is somewhere to edit things, and Pick
+    edits nothing (#123)."""
     dcs = DuelCombatStrategy(name="Frenzy AoE")
     save_duel_strategy(dcs, roots[0])
     dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.PICK, current_id=dcs.id)
-    dlg._tabs.setCurrentWidget(dlg._pages[StrategyKind.PLAYER])
-    dlg._pages[StrategyKind.PLAYER]._on_new()
 
     dlg._on_commit()
 
+    assert dlg.tab_kinds() == [StrategyKind.DUEL]
     assert dlg.selected_id() == dcs.id
 
 
@@ -211,7 +213,7 @@ def test_a_pick_that_may_not_be_empty_refuses_to_close_with_nothing(qapp, roots)
 
 
 def test_manage_mode_offers_no_built_in_default_button(qapp, roots):
-    dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.MANAGE)
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.LIBRARY)
 
     assert not hasattr(dlg, "_none_btn")
 
@@ -278,6 +280,185 @@ def test_reverting_an_override_restores_the_shipped_version_on_save(qapp, roots)
     assert list_duel_strategies(shipped, user)[0].name == "Frenzy AoE"
 
 
+def test_an_untouched_built_in_offers_no_delete(qapp, roots):
+    """Removing only touches the user root, so a deleted built-in was back on the next open (#124)."""
+    dcs = DuelCombatStrategy(name="Frenzy AoE")
+    save_duel_strategy(dcs, roots[0])
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
+    button = dlg._pages[StrategyKind.DUEL]._del_btn
+
+    assert not button.isEnabled()
+    assert "Duplicate" in button.toolTip()
+
+
+def test_editing_a_built_in_offers_revert_before_anything_is_saved(qapp, roots):
+    pcs = PlayerCombatStrategy(name="Support", dsl="pass")
+    save_player_strategy(pcs, roots[0])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER, current_id=pcs.id)
+    page = dlg._pages[StrategyKind.PLAYER]
+
+    page.about._description_edit.setText("tweaked")
+
+    assert page._del_btn.isEnabled()
+    assert page._del_btn.text() == "Revert to default"
+
+
+def test_a_revert_keeps_the_entry_listed_selected_and_loaded(qapp, roots):
+    """#124's fourth point: the reverted entry used to vanish until the dialog was reopened."""
+    shipped, user = roots
+    pcs = PlayerCombatStrategy(name="Support", dsl="pass")
+    save_player_strategy(pcs, shipped)
+    save_player_strategy(pcs.model_copy(update={"name": "Mine"}), user)
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER, current_id=pcs.id)
+    page = dlg._pages[StrategyKind.PLAYER]
+
+    with patch.object(QMessageBox, "question", return_value=QMessageBox.StandardButton.Yes):
+        page._on_delete()
+
+    assert page.selected_id() == pcs.id
+    assert page.card_for(pcs.id).source_text == "Built-in"
+    assert page.about._name_edit.text() == "Support"
+    assert not page._del_btn.isEnabled()
+
+
+@pytest.mark.parametrize(
+    ("where", "label"),
+    [("shipped", "Built-in"), ("override", "Built-in (modified)"), ("user", "Custom")],
+)
+def test_every_card_says_where_its_entry_comes_from(qapp, roots, where, label):
+    shipped, user = roots
+    pcs = PlayerCombatStrategy(name="Support")
+    if where in ("shipped", "override"):
+        save_player_strategy(pcs, shipped)
+    if where in ("override", "user"):
+        save_player_strategy(pcs.model_copy(update={"dsl": "pass"}), user)
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+
+    assert dlg._pages[StrategyKind.PLAYER].card_for(pcs.id).source_text == label
+
+
+def test_the_source_pill_follows_an_unsaved_edit(qapp, roots):
+    pcs = PlayerCombatStrategy(name="Support")
+    save_player_strategy(pcs, roots[0])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER, current_id=pcs.id)
+    page = dlg._pages[StrategyKind.PLAYER]
+
+    page.about._description_edit.setText("tweaked")
+
+    assert page.card_for(pcs.id).source_text == "Built-in (modified)"
+
+
+@pytest.mark.parametrize(
+    ("where", "pill_type", "filled"),
+    [("shipped", AccentPill, True), ("override", AccentPill, False), ("user", NeutralPill, None)],
+)
+def test_the_source_pill_is_weighted_like_a_button(qapp, roots, where, pill_type, filled):
+    """Built-in filled with the accent, modified built-in outlined in it, custom grey."""
+    shipped, user = roots
+    pcs = PlayerCombatStrategy(name="Support")
+    if where in ("shipped", "override"):
+        save_player_strategy(pcs, shipped)
+    if where in ("override", "user"):
+        save_player_strategy(pcs.model_copy(update={"dsl": "pass"}), user)
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+    card = dlg._pages[StrategyKind.PLAYER].card_for(pcs.id)
+
+    pills = [p for p in card.findChildren(QLabel) if isinstance(p, AccentPill | NeutralPill)]
+    assert [type(p) for p in pills] == [pill_type]
+    if filled is not None:
+        assert pills[0].filled is filled
+
+
+def test_a_source_pill_edit_keeps_the_card_height(qapp, roots):
+    """The filled and outlined pills are one size, so the card does not jump on an edit."""
+    assert AccentPill("Built-in", filled=True).sizeHint().height() == AccentPill("Built-in").sizeHint().height()
+    assert AccentPill("Built-in").sizeHint().height() == NeutralPill("Custom").sizeHint().height()
+
+
+def _row(page, uuid):
+    return next((item, card) for item, card in page._card_map if item.data(Qt.ItemDataRole.UserRole) == uuid)
+
+
+def test_a_row_is_as_tall_as_its_card_needs_at_the_columns_width(qapp, roots):
+    """Not the card's own size hint, which wraps the name at a width Qt guesses.
+
+    A one-line name was given a two-line row, and the slack spread between the card's
+    lines — so the card's spacing visibly changed when an edit made the name wrap.
+    """
+    pcs = PlayerCombatStrategy(name="Frenzy Blade Stack Hitter With A Long Name", description="tank and spank")
+    save_player_strategy(pcs, roots[0])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+    page = dlg._pages[StrategyKind.PLAYER]
+    splitter = page.findChild(QSplitter)
+    dlg.resize(1400, 720)
+    dlg.show()
+    qapp.processEvents()
+
+    item, card = _row(page, pcs.id)
+    wide = item.sizeHint().height()
+    assert wide == card.heightForWidth(card.width())
+
+    splitter.setSizes([splitter.widget(0).minimumSizeHint().width(), 2000])
+    qapp.processEvents()
+
+    item, card = _row(page, pcs.id)
+    assert item.sizeHint().height() == card.heightForWidth(card.width())
+    assert item.sizeHint().height() > wide
+    dlg.close()
+
+
+def test_a_card_never_asks_for_more_width_than_the_column(qapp, roots):
+    """A row asking for its card's preferred width gives the list a horizontal scrollbar."""
+    pcs = PlayerCombatStrategy(name="Frenzy Blade Stack Hitter With A Long Name")
+    save_player_strategy(pcs, roots[0])
+    save_player_strategy(pcs.model_copy(update={"dsl": "pass"}), roots[1])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+    page = dlg._pages[StrategyKind.PLAYER]
+    dlg.resize(dlg.minimumSize())
+    dlg.show()
+    qapp.processEvents()
+
+    assert page._list.horizontalScrollBar().maximum() == 0
+    dlg.close()
+
+
+def test_no_row_is_wider_than_the_column_even_when_its_card_cannot_fit(qapp, roots):
+    """A list's rows are as wide as its widest: one card that could not fit clipped every card's star."""
+    wide = PlayerCombatStrategy(name="Frenzy" * 40)
+    save_player_strategy(wide, roots[1])
+    save_player_strategy(PlayerCombatStrategy(name="Short"), roots[1])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+    page = dlg._pages[StrategyKind.PLAYER]
+    dlg.resize(dlg.minimumSize())
+    dlg.show()
+    qapp.processEvents()
+
+    viewport = page._list.viewport().width()
+    for item, _card in page._card_map:
+        assert item.sizeHint().width() <= viewport
+    assert page._list.horizontalScrollBar().maximum() == 0
+    assert page._list.horizontalScrollBarPolicy() == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    dlg.close()
+
+
+def test_a_name_with_one_long_word_is_elided_to_the_column(qapp, roots):
+    """Word wrap cannot break a word, so the card elides it rather than outgrowing the column (#118)."""
+    name = "Frenzy" * 40
+    save_player_strategy(PlayerCombatStrategy(name=name), roots[1])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+    page = dlg._pages[StrategyKind.PLAYER]
+    dlg.resize(dlg.minimumSize())
+    dlg.show()
+    qapp.processEvents()
+
+    [(_item, card)] = page._card_map
+    assert card.minimumSizeHint().width() <= page._list.viewport().width()
+    assert card._name_lbl.text() == name
+    assert card._name_lbl.shown_text().endswith("…")
+    assert card._name_lbl.toolTip() == name
+    dlg.close()
+
+
 def test_a_declined_delete_removes_nothing(qapp, roots):
     dcs = DuelCombatStrategy(name="Mine")
     save_duel_strategy(dcs, roots[1])
@@ -304,7 +485,7 @@ def test_the_detail_pane_says_what_uses_this_strategy(qapp, roots):
     save_duel_strategy(dcs, shipped)
     dlg = _dialog(roots, kind=StrategyKind.PLAYER, current_id=pcs.id)
 
-    assert dlg._pages[StrategyKind.PLAYER].about.usage_text == "Used by 1 duel strategy"
+    assert dlg._pages[StrategyKind.PLAYER].about.usage_text == "Used by 'Boss — P1'"
 
 
 def test_the_usage_line_counts_a_link_made_a_minute_ago(qapp, roots):
@@ -320,7 +501,7 @@ def test_the_usage_line_counts_a_link_made_a_minute_ago(qapp, roots):
 
     dlg._pages[StrategyKind.PLAYER].select(pcs.id)
 
-    assert dlg._pages[StrategyKind.PLAYER].about.usage_text == "Used by 1 duel strategy"
+    assert dlg._pages[StrategyKind.PLAYER].about.usage_text == "Used by 'Boss — P1'"
 
 
 # ---------------------------------------------------------------------------
@@ -330,7 +511,9 @@ def test_the_usage_line_counts_a_link_made_a_minute_ago(qapp, roots):
 
 def test_promoting_a_rows_dsl_makes_a_player_strategy_and_links_it(qapp, roots):
     shipped, _user = roots
-    dcs = DuelCombatStrategy(name="Boss", player_assignments=[PlayerAssignment(players=[1], dsl="blade", school="Ice")])
+    dcs = DuelCombatStrategy(
+        name="Boss", player_assignments=[PlayerAssignment(players=[1], dsl="blade", schools=["Ice"])]
+    )
     save_duel_strategy(dcs, shipped)
     dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
     row = dlg._pages[StrategyKind.DUEL]._editor.cards[0]
@@ -340,7 +523,7 @@ def test_promoting_a_rows_dsl_makes_a_player_strategy_and_links_it(qapp, roots):
 
     made = next(p for p in dlg._ws.players if p.name == "Ice Blade")
     assert made.dsl == "blade"
-    assert made.school == "Ice"
+    assert made.schools == ["Ice"]
     assert row.assignment().player_combat_strategy_id == made.id
     assert not row.is_custom()
 
@@ -420,13 +603,24 @@ def test_the_pencil_clears_a_filter_that_would_hide_the_strategy(qapp, roots):
     dcs, pcs = _linked_duel(roots)
     dlg = _dialog(roots, kind=StrategyKind.DUEL, current_id=dcs.id)
     player = dlg._pages[StrategyKind.PLAYER]
-    player._filter.setText("Aoe")
+    player.filter_bar.search.setText("Aoe")
 
     dlg._pages[StrategyKind.DUEL]._editor.cards[0].action_button(EDIT_VERB).click()
 
-    assert player._filter.text() == ""
+    assert player.filter_bar.search.text() == ""
     assert player.selected_id() == pcs.id
     assert not player._list.currentItem().isHidden()
+
+
+def test_a_pick_greys_the_pencil_it_has_nowhere_to_send(qapp, roots):
+    """Pick has only the Duel tab, so there is no Player tab for the pencil to open."""
+    dcs, _pcs = _linked_duel(roots)
+    dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.PICK, current_id=dcs.id)
+
+    pencil = dlg._pages[StrategyKind.DUEL]._editor.cards[0].action_button(EDIT_VERB)
+
+    assert not pencil.isHidden()
+    assert not pencil.isEnabled()
 
 
 def test_the_duel_tab_keeps_its_selection_across_the_round_trip(qapp, roots):

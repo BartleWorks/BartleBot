@@ -114,6 +114,7 @@ class DuelConfigEditor(QWidget):
         self._suppress = False
         self._cards: list[AssignmentCard] = []
         self._editable = True
+        self._can_open_pcs = True
         self._color_keys: list[int | None] = []
         self._account_labels: list[str] = []
 
@@ -232,6 +233,12 @@ class DuelConfigEditor(QWidget):
             card.set_editable(editable)
         self._update_add_card()
 
+    def set_can_open_pcs(self, can_open: bool) -> None:
+        """Whether the cards' pencils have a Player tab to open on, including cards added later."""
+        self._can_open_pcs = can_open
+        for card in self._cards:
+            card.set_can_open_pcs(can_open)
+
     # ------------------------------------------------------------------
     # Reading
     # ------------------------------------------------------------------
@@ -255,8 +262,12 @@ class DuelConfigEditor(QWidget):
     # ------------------------------------------------------------------
 
     def _rebuild_cards(self) -> None:
-        # Before the cards go: a drag in flight would otherwise be left holding one.
-        self._drag.cancel()
+        # Before the cards go, not after: the drag holds their grips until it is handed a
+        # new list, and ``_add_card_for`` is the only thing that hands it one. A config
+        # with no assignments never calls it, so the discarded grips outlived their
+        # deferred delete and the next load touched them — New, then any other duel.
+        # ``set_cards`` also cancels a drag in flight.
+        self._drag.set_cards([])
         for card in self._cards:
             discard_widget(card, self._cards_layout)
         self._cards.clear()
@@ -268,6 +279,7 @@ class DuelConfigEditor(QWidget):
         card = AssignmentCard(assignment, self._all_pcs, parent=self._cards_container)
         card.set_player_color_keys(self._color_keys, self._account_labels)
         card.set_editable(self._editable)
+        card.set_can_open_pcs(self._can_open_pcs)
         card.changed.connect(self._on_changed)
         card.remove_requested.connect(self._on_remove_card)
         card.players_changed.connect(self._enforce_exclusivity)
@@ -373,7 +385,7 @@ class DuelConfigEditor(QWidget):
         if not reqs:
             self._requirements_lbl.hide()
             return
-        self._requirements_lbl.setText(" · ".join(f"{school} ×{n}" for school, n in reqs.items()))
+        self._requirements_lbl.setText(" · ".join(f"{schools} ×{n}" for schools, n in reqs.items()))
         self._requirements_lbl.show()
 
     def _on_min_players_changed(self, value: int) -> None:

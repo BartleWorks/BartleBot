@@ -15,6 +15,7 @@ from bartlebot.bot.strategy_models import (
     PlayerCombatStrategy,
 )
 from bartlebot.strategy_store import (
+    Origin,
     StrategyKind,
     list_duel_strategies,
     list_player_strategies,
@@ -266,3 +267,147 @@ def test_items_are_name_sorted(tmp_path: Path):
         players=[PlayerCombatStrategy(name="zeta"), PlayerCombatStrategy(name="Alpha")],
     )
     assert [p.name for p in ws.players] == ["Alpha", "zeta"]
+
+
+# ---------------------------------------------------------------------------
+# Built-ins: status, revert, and never delete (#124)
+# ---------------------------------------------------------------------------
+
+
+def _two_roots(tmp_path: Path, *shipped_items: PlayerCombatStrategy) -> tuple[Path, Path]:
+    shipped, user = tmp_path / "shipped", tmp_path / "user"
+    for item in shipped_items:
+        save_player_strategy(item, shipped)
+    (user / "strategies" / "player").mkdir(parents=True, exist_ok=True)
+    return shipped, user
+
+
+def _reopen(shipped: Path, user: Path) -> StrategyWorkingSet:
+    return StrategyWorkingSet.from_store(root=shipped, user_root=user)
+
+
+def test_an_untouched_built_in_reads_as_built_in(tmp_path: Path):
+    pcs = PlayerCombatStrategy(name="Support", dsl="any<blade> @ ally")
+    ws = _reopen(*_two_roots(tmp_path, pcs))
+
+    assert ws.status(StrategyKind.PLAYER, pcs.id) is Origin.SHIPPED
+
+
+def test_an_unsaved_edit_to_a_built_in_already_reads_as_modified(tmp_path: Path):
+    """The defect behind #124's third point: disk said unedited, so Revert was not offered."""
+    pcs = PlayerCombatStrategy(name="Support")
+    ws = _reopen(*_two_roots(tmp_path, pcs))
+
+    ws.get(StrategyKind.PLAYER, pcs.id).dsl = "pass"
+
+    assert ws.status(StrategyKind.PLAYER, pcs.id) is Origin.SHIPPED_OVERRIDE
+
+
+def test_an_entry_made_here_reads_as_custom(tmp_path: Path):
+    ws = _reopen(*_two_roots(tmp_path))
+
+    made = ws.create(StrategyKind.PLAYER, "Mine")
+
+    assert ws.status(StrategyKind.PLAYER, made.id) is Origin.USER
+
+
+def test_one_root_means_nothing_is_built_in(tmp_path: Path):
+    """Developer mode, where the repo is both roots: everything is the author's own."""
+    pcs = PlayerCombatStrategy(name="Support")
+    save_player_strategy(pcs, tmp_path)
+    ws = StrategyWorkingSet.from_store(root=tmp_path)
+
+    assert ws.status(StrategyKind.PLAYER, pcs.id) is Origin.USER
+    ws.remove(StrategyKind.PLAYER, pcs.id)
+    assert ws.changes().deleted == [pcs.id]
+
+
+def test_a_built_in_cannot_be_removed(tmp_path: Path):
+    """Removing only touches the user root, so it would be back on the next open."""
+    pcs = PlayerCombatStrategy(name="Support")
+    ws = _reopen(*_two_roots(tmp_path, pcs))
+
+    ws.remove(StrategyKind.PLAYER, pcs.id)
+
+    assert ws.get(StrategyKind.PLAYER, pcs.id) is not None
+    assert not ws.is_dirty
+
+
+def test_reverting_a_saved_override_keeps_the_entry_in_the_set(tmp_path: Path):
+    """The defect behind #124's fourth point: the entry vanished until reopen."""
+    pcs = PlayerCombatStrategy(name="Support", dsl="shipped")
+    shipped, user = _two_roots(tmp_path, pcs)
+    save_player_strategy(pcs.model_copy(update={"name": "Mine", "dsl": "mine"}), user)
+    ws = _reopen(shipped, user)
+
+    restored = ws.revert(StrategyKind.PLAYER, pcs.id)
+
+    assert ws.get(StrategyKind.PLAYER, pcs.id) is restored
+    assert (restored.name, restored.dsl) == ("Support", "shipped")
+    assert ws.status(StrategyKind.PLAYER, pcs.id) is Origin.SHIPPED
+    assert ws.changes().modified == [pcs.id]
+
+
+def test_saving_a_revert_removes_the_user_copy(tmp_path: Path):
+    pcs = PlayerCombatStrategy(name="Support", dsl="shipped")
+    shipped, user = _two_roots(tmp_path, pcs)
+    save_player_strategy(pcs.model_copy(update={"dsl": "mine"}), user)
+    ws = _reopen(shipped, user)
+
+    ws.revert(StrategyKind.PLAYER, pcs.id)
+    ws.commit()
+
+    assert list((user / "strategies" / "player").glob("*.json")) == []
+    assert ws.origin(StrategyKind.PLAYER, pcs.id) is Origin.SHIPPED
+    assert not ws.is_dirty
+
+
+def test_reverting_an_unsaved_edit_leaves_the_set_clean(tmp_path: Path):
+    """With no user copy on disk, a revert only undoes the edit — there is nothing to write."""
+    pcs = PlayerCombatStrategy(name="Support", dsl="shipped")
+    ws = _reopen(*_two_roots(tmp_path, pcs))
+    ws.get(StrategyKind.PLAYER, pcs.id).dsl = "edited"
+
+    ws.revert(StrategyKind.PLAYER, pcs.id)
+
+    assert ws.get(StrategyKind.PLAYER, pcs.id).dsl == "shipped"
+    assert not ws.is_dirty
+
+
+def test_editing_after_a_revert_saves_an_override_again(tmp_path: Path):
+    pcs = PlayerCombatStrategy(name="Support", dsl="shipped")
+    shipped, user = _two_roots(tmp_path, pcs)
+    save_player_strategy(pcs.model_copy(update={"dsl": "mine"}), user)
+    ws = _reopen(shipped, user)
+
+    ws.revert(StrategyKind.PLAYER, pcs.id).dsl = "second thoughts"
+    ws.commit()
+
+    assert _reopen(shipped, user).get(StrategyKind.PLAYER, pcs.id).dsl == "second thoughts"
+
+
+def test_editing_an_override_back_to_the_shipped_content_removes_the_copy(tmp_path: Path):
+    """However the content got back, a copy identical to the shipped one would only shadow updates."""
+    pcs = PlayerCombatStrategy(name="Support", dsl="shipped")
+    shipped, user = _two_roots(tmp_path, pcs)
+    save_player_strategy(pcs.model_copy(update={"dsl": "mine"}), user)
+    ws = _reopen(shipped, user)
+
+    ws.get(StrategyKind.PLAYER, pcs.id).dsl = "shipped"
+    ws.commit()
+
+    assert ws.origin(StrategyKind.PLAYER, pcs.id) is Origin.SHIPPED
+
+
+def test_an_identical_copy_on_disk_still_reads_as_modified(tmp_path: Path):
+    """It shadows every future update to the built-in, so Revert has to stay on offer."""
+    pcs = PlayerCombatStrategy(name="Support", dsl="shipped")
+    shipped, user = _two_roots(tmp_path, pcs)
+    save_player_strategy(pcs, user)
+    ws = _reopen(shipped, user)
+
+    assert ws.status(StrategyKind.PLAYER, pcs.id) is Origin.SHIPPED_OVERRIDE
+    ws.revert(StrategyKind.PLAYER, pcs.id)
+    assert ws.is_dirty
+    ws.commit()
+    assert ws.origin(StrategyKind.PLAYER, pcs.id) is Origin.SHIPPED

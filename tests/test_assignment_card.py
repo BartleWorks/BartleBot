@@ -27,6 +27,7 @@ from bartlebot.gui.combat_strategies.assignment_card import (
     dsl_preview,
     strategy_menu_entries,
 )
+from tests.picker_helpers import pick
 
 _BROKEN_DSL = "any<"
 
@@ -85,6 +86,16 @@ def test_a_linked_card_is_titled_with_the_strategy_it_names(qapp):
     assert card.title_text() == "Ice Blade"
     assert card._desc_lbl.text() == "Blades then traps"
     assert "any<blade>" in card._dsl_lbl.text()
+
+
+def test_a_long_dsl_token_does_not_widen_the_card(qapp):
+    """A DSL token has no spaces to wrap at; one wider than the line was the card's minimum width (#118)."""
+    # Both fail to parse, so both carry the error marker and only the token's length differs.
+    short = _card(PlayerAssignment(players=[1], dsl="any<zz>"))
+    long = _card(PlayerAssignment(players=[1], dsl="any<" + "z" * 100 + ">"))
+
+    assert long.minimumSizeHint().width() == short.minimumSizeHint().width()
+    assert "z" * 100 in long._dsl_lbl.text()  # still whole when read back
 
 
 def test_a_default_card_says_so_rather_than_being_blank(qapp):
@@ -253,19 +264,19 @@ def test_the_school_and_note_in_the_fold_still_write_through(qapp):
     card = _card(assignment)
     card.toggle_expanded()
 
-    card._school_combo.setCurrentIndex(1)
+    pick(card.school_picker, "Fire")
     card._note_edit.setText("Passes to bank pips")
 
-    assert assignment.school is not None
+    assert assignment.schools
     assert assignment.note == "Passes to bank pips"
 
 
 def test_a_folded_card_still_loads_its_school_and_note(qapp):
     """Nothing is deferred to first expand: the fold hides built widgets, it does not
     postpone building them."""
-    card = _card(PlayerAssignment(players=[1], dsl="x", school="Storm", note="Kites adds"))
+    card = _card(PlayerAssignment(players=[1], dsl="x", schools=["Storm"], note="Kites adds"))
 
-    assert card._school_combo.value() == "Storm"
+    assert card.school_picker.value() == ["Storm"]
     assert card._note_edit.text() == "Kites adds"
 
 
@@ -351,6 +362,27 @@ def test_locking_leaves_the_pencil_live_since_it_only_navigates(qapp):
     card.set_editable(False)
 
     assert card.action_button(EDIT_VERB).isEnabled()
+
+
+def test_a_card_with_nowhere_to_open_its_strategy_greys_the_pencil(qapp):
+    """Pick has no Player tab, so the pencil there would be a live button that does nothing."""
+    pcs = PlayerCombatStrategy(name="Blade")
+    card = _card(PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id), [pcs])
+
+    card.set_can_open_pcs(False)
+
+    assert not card.action_button(EDIT_VERB).isEnabled()
+    assert EDIT_VERB not in _menu_labels(card)
+
+
+def test_a_locked_card_offers_nothing_editing_by_right_click(qapp):
+    """The menu does not consult the buttons' enabled state, so it has to leave them out."""
+    card = _card(PlayerAssignment(players=[1]))
+
+    card.set_editable(False)
+
+    assert CHANGE_VERB not in _menu_labels(card)
+    assert REMOVE_VERB not in _menu_labels(card)
 
 
 def test_a_locked_card_refuses_to_change_its_strategy_by_menu(qapp):

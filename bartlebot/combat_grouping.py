@@ -17,10 +17,8 @@ matching :mod:`bartlebot.combat_warnings` next door.
 
 Grouping key
 ------------
-Linked bindings group by ``duel_combat_strategy_id``; inline bindings never
-group with anything.  Two fights that happen to hold identical inline DSL are
-still two independent configs, and merging them would be a guess about intent
-that nothing in the file supports.
+Linked bindings group by ``duel_combat_strategy_id``; unlinked ones never group
+with anything, each being one fight on the profile's default.
 """
 
 from __future__ import annotations
@@ -46,10 +44,10 @@ class BindingGroup:
         """True if this group actually says something.
 
         Matches ``resolve_combat`` and ``_unassigned_state_warnings``: an
-        unlinked assignment with an empty ``duel_config`` is indistinguishable
-        from no assignment at all, and falls back the same way.
+        unlinked assignment is indistinguishable from no assignment at all, and
+        falls back the same way.
         """
-        return self.assignment.is_linked or not self.assignment.duel_config.is_empty()
+        return self.assignment.is_linked
 
     @property
     def state_ids(self) -> list[str]:
@@ -66,7 +64,7 @@ def merge_linked(assignments: list[StateAssignment]) -> list[StateAssignment]:
     they are folded together on read.
 
     The *first* occurrence survives and absorbs the others' state ids, so
-    ordering follows the file.  Inline assignments are passed through untouched:
+    ordering follows the file.  Unlinked assignments are passed through untouched:
     they have no shared identity to merge on.
 
     Mutates the surviving assignments' ``state_ids`` in place — callers pass
@@ -103,14 +101,13 @@ def split_unconfigured(assignments: list[StateAssignment]) -> list[StateAssignme
     to…" first.
 
     Reachable by clearing a multi-fight group's chip — the whole group unlinks
-    together — and from a file holding a grouped assignment that was emptied.
+    together — and from a file holding a grouped assignment that was unlinked.
     Costs nothing on disk either way: ``_save_bcs`` already drops bindings that
-    are neither linked nor holding real inline content.
+    are not linked.
     """
     split: list[StateAssignment] = []
     for assignment in assignments:
-        says_nothing = not assignment.is_linked and assignment.duel_config.is_empty()
-        if says_nothing and len(assignment.state_ids) > 1:
+        if not assignment.is_linked and len(assignment.state_ids) > 1:
             split.extend(StateAssignment(state_ids=[sid]) for sid in assignment.state_ids)
         else:
             split.append(assignment)
@@ -223,26 +220,14 @@ def detach_state(
 ) -> StateAssignment:
     """Split one fight out of a group and return its new standalone binding.
 
-    What the departing fight keeps depends on how the group was configured, and
-    the asymmetry is forced rather than chosen:
-
-    * **inline** — the config is deep-copied onto the new binding, so the fight
-      goes on working exactly as before and can now be edited independently.
-      Nothing else holds that config; dropping it would destroy work.
-    * **linked** — the fight falls back to the bot default.  It cannot keep the
-      link: a separate assignment naming the same strategy is precisely what
-      :func:`merge_linked` folds back together, so it would rejoin the group it
-      just left.  Nothing is lost either way — the strategy is still in the
-      library, one click away on the fight's own chip.
+    The departing fight falls back to the bot default.  It cannot keep the link:
+    a separate assignment naming the same strategy is precisely what
+    :func:`merge_linked` folds back together, so it would rejoin the group it just
+    left.  Nothing is lost — the strategy is still there, one click away on the
+    fight's own chip.
     """
     _remove_state(assignment, state_id)
-    if assignment.is_linked:
-        detached = StateAssignment(state_ids=[state_id])
-    else:
-        detached = StateAssignment(
-            state_ids=[state_id],
-            duel_config=assignment.duel_config.model_copy(deep=True),
-        )
+    detached = StateAssignment(state_ids=[state_id])
     bindings[state_id] = detached
     return detached
 

@@ -7,8 +7,9 @@ exception — the bot can always run on built-in defaults.
 
 Checks performed:
   - an active Bot Combat Strategy is set, and its file loads
-  - every referenced Duel Combat Strategy file loads
-  - every linked Player Combat Strategy file loads
+  - every referenced Duel Combat Strategy resolves, in the profile or the library
+  - every linked Player Combat Strategy resolves the same way
+  - no library duel links a strategy that belongs to the profile (#118)
   - enough clients are connected for each strategy's ``min_players``
   - every combat state that asked for its own strategy actually has one
   - every DSL that could actually run parses
@@ -22,12 +23,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from bartlebot.bot.strategy_models import BotCombatStrategy, DuelConfig, StateAssignment
+from bartlebot.combat_profile import StrategyLookup, profile_players_of
 from bartlebot.nodes.combat_runner import validate_dsl
-from bartlebot.strategy_store import (
-    load_bot_strategy,
-    load_duel_strategy,
-    load_player_strategy,
-)
+from bartlebot.strategy_store import load_bot_strategy
 from bartlebot.strategy_summary import format_players as _format_players
 
 if TYPE_CHECKING:
@@ -88,21 +86,24 @@ def collect_combat_warnings(
     # DSL string → the labels that use it, so a shared preset is parsed once and
     # reported once no matter how many strategies link it.
     dsl_sources: dict[str, list[str]] = {}
+    # The profile's own strategies first, then the library's -- see combat_profile.
+    lookup = StrategyLookup(bcs, root=root)
 
-    for context_label, dcs_id, inline_config in _duel_sources(bcs, config):
-        if dcs_id is not None:
-            try:
-                dcs = load_duel_strategy(dcs_id, root)
-            except Exception:
-                warnings.append(f"{context_label} Duel Strategy file is missing (id: {_short(dcs_id)}).")
-                continue
-            duel_config = dcs
-            config_label = f"strategy '{dcs.name}'"
-            dsl_label = f"'{dcs.name}'"  # the strategy's own name — a shared preset always reads the same either way
-        else:
-            duel_config = inline_config
-            config_label = "combat config"
-            dsl_label = context_label  # no name to fall back on — identify it by where it's used
+    for context_label, dcs_id in _duel_sources(bcs, config):
+        duel_config = lookup.duel(dcs_id)
+        if duel_config is None:
+            warnings.append(f"{context_label} Duel Strategy file is missing (id: {_short(dcs_id)}).")
+            continue
+        if lookup.profile_duel(dcs_id) is None:
+            # Only a hand-edited file gets here: the dialog never offers a profile
+            # strategy to a library duel, which every other profile shares.
+            for pcs in profile_players_of(duel_config, bcs):
+                warnings.append(
+                    f"Library duel strategy '{duel_config.name}' uses '{pcs.name}', which belongs to "
+                    f"this combat profile only — other profiles using '{duel_config.name}' won't have it."
+                )
+        config_label = f"strategy '{duel_config.name}'"
+        dsl_label = f"'{duel_config.name}'"  # the strategy's own name — a shared preset always reads the same
 
         if num_clients < duel_config.min_players:
             warnings.append(
@@ -110,7 +111,7 @@ def collect_combat_warnings(
                 f"but only {num_clients} client(s) are connected."
             )
 
-        pcs_dsl = _load_linked_presets(duel_config, context_label, config_label, root, warnings)
+        pcs_dsl = _load_linked_presets(duel_config, context_label, config_label, lookup, warnings)
         _collect_dsls(duel_config, dsl_label, pcs_dsl, dsl_sources)
 
     if config is not None:
@@ -128,50 +129,37 @@ def _unassigned_state_warnings(config: BotConfig, bcs: BotCombatStrategy) -> lis
     as needing special handling, so silently running the generic strategy is
     almost never what the user wants, and nothing else surfaces it.
 
-    An assignment that exists but resolves to nothing (unlinked and empty) counts
-    as unassigned too — see ``resolve_combat``, which treats the two identically.
+    An assignment that exists but links nothing counts as unassigned too — see
+    ``resolve_combat``, which treats the two identically.
     """
-    fallback = "will use the bot's default strategy" if _has_default(bcs) else "will use built-in combat defaults"
+    fallback = "will use the bot's default strategy" if bcs.default_strategy_id else "will use built-in combat defaults"
     warnings = []
     for state in exposed_combat_states(config):
         assignment = bcs.find_assignment_for_state(state.id)
-        if assignment is not None and (assignment.is_linked or not assignment.duel_config.is_empty()):
+        if assignment is not None and assignment.is_linked:
             continue
         warnings.append(f"Combat state '{state.label or state.id}' has no Duel Strategy assigned — {fallback}.")
     return warnings
 
 
-def _has_default(bcs: BotCombatStrategy) -> bool:
-    return bool(bcs.default_strategy_id) or not bcs.default_duel_config.is_empty()
+def _duel_sources(bcs: BotCombatStrategy, config: BotConfig | None) -> list[tuple[str, str]]:
+    """Return (label, dcs_id) for every duel strategy this bot could use.
 
-
-def _duel_sources(bcs: BotCombatStrategy, config: BotConfig | None) -> list[tuple[str, str | None, DuelConfig | None]]:
-    """Return (label, dcs_id, inline_config) for every duel target this bot could use.
-
-    Exactly one of ``dcs_id`` / ``inline_config`` is set per entry — mirrors
-    ``StateAssignment.is_linked``.  Linked entries are deduplicated by id across
-    the default *and* every state (the same strategy assigned to five states
-    should not produce five identical warnings); inline entries have no shared
-    identity to dedupe by, so each is reported on its own.
+    Deduplicated by id across the default *and* every state: the same strategy
+    assigned to five states should not produce five identical warnings.
     """
-    sources: list[tuple[str, str | None, DuelConfig | None]] = []
+    sources: list[tuple[str, str]] = []
     seen: set[str] = set()
 
     if bcs.default_strategy_id:
-        sources.append(("Default", bcs.default_strategy_id, None))
+        sources.append(("Default", bcs.default_strategy_id))
         seen.add(bcs.default_strategy_id)
-    elif not bcs.default_duel_config.is_empty():
-        sources.append(("Default", None, bcs.default_duel_config))
 
     for assignment in bcs.state_assignments:
-        label = _state_context_label(assignment, config)
-        if assignment.is_linked:
-            dcs_id = assignment.duel_combat_strategy_id
-            if dcs_id not in seen:
-                seen.add(dcs_id)
-                sources.append((label, dcs_id, None))
-        elif not assignment.duel_config.is_empty():
-            sources.append((label, None, assignment.duel_config))
+        dcs_id = assignment.duel_combat_strategy_id
+        if dcs_id is not None and dcs_id not in seen:
+            seen.add(dcs_id)
+            sources.append((_state_context_label(assignment, config), dcs_id))
 
     return sources
 
@@ -191,17 +179,18 @@ def _load_linked_presets(
     duel_config: DuelConfig,
     label: str,
     config_label: str,
-    root: str | Path | None,
+    lookup: StrategyLookup,
     warnings: list[str],
 ) -> dict[str, str]:
-    """Load every PlayerCombatStrategy this duel config links, warning about missing files."""
+    """Find every PlayerCombatStrategy this duel config links, warning about missing ones."""
     pcs_dsl: dict[str, str] = {}
     for pcs_id in duel_config.linked_pcs_ids():
         if pcs_id in pcs_dsl:
             continue
-        try:
-            pcs_dsl[pcs_id] = load_player_strategy(pcs_id, root).dsl
-        except Exception:
+        pcs = lookup.player(pcs_id)
+        if pcs is not None:
+            pcs_dsl[pcs_id] = pcs.dsl
+        else:
             warnings.append(f"Player strategy file missing in {label} {config_label} (id: {_short(pcs_id)}).")
     return pcs_dsl
 

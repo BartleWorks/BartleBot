@@ -46,8 +46,9 @@ _FAKED_METHODS = frozenset(
         "has_potion",
         "use_potion_if_needed",
         "use_potion",
-        "tp_to_closest_health_wisp",
-        "tp_to_closest_mana_wisp",
+        "get_health_wisps",
+        "get_mana_wisps",
+        "get_mobs",
         "backpack_space",
         "get_base_entities_with_vague_name",
         "get_base_entities_with_predicate",
@@ -105,8 +106,9 @@ class FakeClient:
         self.stats = MagicMock()
         self.stats.potion_max = AsyncMock(return_value=10)
         self.stats.potion_charge = AsyncMock(return_value=10)
-        self.tp_to_closest_health_wisp = AsyncMock(return_value=False)
-        self.tp_to_closest_mana_wisp = AsyncMock(return_value=False)
+        self.get_health_wisps = AsyncMock(return_value=[])
+        self.get_mana_wisps = AsyncMock(return_value=[])
+        self.get_mobs = AsyncMock(return_value=[])
         self.backpack_space = AsyncMock(return_value=(0, 100))  # (used, total)
         self.mouse_handler = MagicMock()
         self.mouse_handler.__aenter__ = AsyncMock(return_value=None)

@@ -15,7 +15,6 @@ from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DuelCombatStrategy,
-    DuelConfig,
     PlayerAssignment,
     PlayerCombatStrategy,
     StateAssignment,
@@ -565,244 +564,118 @@ def test_exposed_combat_states_defaults_missing_param_to_using_the_default():
 
 
 # ---------------------------------------------------------------------------
-# Inline DuelConfig (no library DuelCombatStrategy involved)
+# Unlinked assignments, and the inline configs removed in #118
 # ---------------------------------------------------------------------------
 
 
-def test_inline_default_produces_no_file_lookup_warning(tmp_path: Path):
-    bcs = _bcs(
-        tmp_path,
-        default_duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)]),
-    )
-    assert collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path) == []
-
-
-def test_inline_default_min_players_shortfall_warns(tmp_path: Path):
-    """An inline config with no player_assignments is indistinguishable from no
-    config at all (see test_empty_inline_default_is_not_reported_as_a_default), so
-    the min_players check only fires once there is real content to gate.
-    """
-    bcs = _bcs(
-        tmp_path,
-        default_duel_config=DuelConfig(
-            min_players=4, player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)]
-        ),
-    )
-
-    warnings = collect_combat_warnings(bcs.id, num_clients=2, root=tmp_path)
-
-    assert len(warnings) == 1
-    assert "Default combat config requires ≥4 players" in warnings[0]
-
-
-def test_inline_default_broken_dsl_is_reported(tmp_path: Path):
-    bcs = _bcs(
-        tmp_path,
-        default_duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=_BROKEN_DSL)]),
-    )
-
-    warnings = collect_combat_warnings(bcs.id, 1, root=tmp_path)
-
-    assert len(warnings) == 1
-    assert "does not parse" in warnings[0]
-    assert "Default" in warnings[0]
-
-
-def test_inline_default_missing_linked_pcs_is_reported(tmp_path: Path):
-    bcs = _bcs(
-        tmp_path,
-        default_duel_config=DuelConfig(
-            player_assignments=[
-                PlayerAssignment(players=[1], player_combat_strategy_id="99999999-0000-0000-0000-000000000000")
-            ]
-        ),
-    )
-
-    warnings = collect_combat_warnings(bcs.id, 1, root=tmp_path)
-
-    assert len(warnings) == 1
-    assert "Player strategy file missing in Default combat config" in warnings[0]
-
-
-def test_empty_inline_default_is_not_reported_as_a_default(tmp_path: Path):
-    """An untouched default_duel_config is indistinguishable from no default at all."""
-    bcs = _bcs(tmp_path)  # default_duel_config defaults to an empty DuelConfig
-    assert collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path) == []
-
-
-def test_inline_state_assignment_produces_no_file_lookup_warning(tmp_path: Path):
-    bcs = _bcs(
-        tmp_path,
-        state_assignments=[
-            StateAssignment(
-                state_ids=["s1"],
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)]),
-            )
+def _boss_bot() -> BotConfig:
+    return BotConfig(
+        id="test-bot",
+        name="Bot",
+        initial="s0",
+        recovery_state="s0",
+        states=[
+            StateModel(id="s0", node_type="sleep"),
+            StateModel(
+                id="state_9",
+                node_type="handle_combat",
+                label="Defeat Howling Chaney",
+                params={"use_default_strategy": False},
+            ),
         ],
+        transitions=[],
     )
+
+
+def test_an_unset_default_is_not_reported_as_a_default(tmp_path: Path):
+    bcs = _bcs(tmp_path)
     assert collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path) == []
 
 
-def test_inline_state_assignment_min_players_shortfall_warns(tmp_path: Path):
-    bcs = _bcs(
-        tmp_path,
-        state_assignments=[
-            StateAssignment(
-                state_ids=["boss"],
-                duel_config=DuelConfig(
-                    min_players=4, player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)]
-                ),
-            )
-        ],
+def test_state_assignment_that_links_nothing_is_reported_as_unassigned(tmp_path: Path):
+    """An assignment row exists but was never filled in — same as not being there."""
+    bcs = _bcs(tmp_path, state_assignments=[StateAssignment(state_ids=["state_9"])])
+
+    warnings = collect_combat_warnings(bcs.id, 1, _boss_bot(), root=tmp_path)
+
+    assert len(warnings) == 1
+    assert "'Defeat Howling Chaney' has no Duel Strategy assigned" in warnings[0]
+    assert "will use built-in combat defaults" in warnings[0]
+
+
+def test_unassigned_fallback_message_names_a_linked_default(tmp_path: Path):
+    dcs = _dcs(tmp_path, player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)])
+    bcs = _bcs(tmp_path, default_strategy_id=dcs.id, state_assignments=[StateAssignment(state_ids=["state_9"])])
+
+    warnings = collect_combat_warnings(bcs.id, 1, _boss_bot(), root=tmp_path)
+
+    assert "will use the bot's default strategy" in warnings[0]
+
+
+def test_a_file_from_before_118_is_not_warned_about_its_inline_config(tmp_path: Path):
+    """A stray inline config still parses, is never run, and so is never checked."""
+    bcs = BotCombatStrategy.model_validate(
+        {
+            "name": "Old",
+            "bot_id": "bot-1",
+            "default_duel_config": {"player_assignments": [{"players": [1], "dsl": _BROKEN_DSL}]},
+            "state_assignments": [
+                {"state_ids": ["s1"], "duel_config": {"player_assignments": [{"players": [1], "dsl": _BROKEN_DSL}]}}
+            ],
+        }
     )
+    save_bot_strategy(bcs, tmp_path)
+
+    assert collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# Profile strategies (#118)
+# ---------------------------------------------------------------------------
+
+
+def test_a_profile_duel_is_found_without_a_library_file(tmp_path: Path):
+    pcs = PlayerCombatStrategy(name="Own P1", dsl=_VALID_DSL)
+    own = DuelCombatStrategy(
+        name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
+    )
+    bcs = _bcs(tmp_path, default_strategy_id=own.id, duel_strategies=[own], player_strategies=[pcs])
+
+    assert collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path) == []
+
+
+def test_a_profile_player_strategys_dsl_is_checked(tmp_path: Path):
+    pcs = PlayerCombatStrategy(name="Own P1", dsl=_BROKEN_DSL)
+    own = DuelCombatStrategy(
+        name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
+    )
+    bcs = _bcs(tmp_path, default_strategy_id=own.id, duel_strategies=[own], player_strategies=[pcs])
 
     warnings = collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path)
 
     assert len(warnings) == 1
-    assert "'boss' combat config requires ≥4 players" in warnings[0]
-
-
-def test_inline_state_assignment_broken_dsl_is_reported(tmp_path: Path):
-    bcs = _bcs(
-        tmp_path,
-        state_assignments=[
-            StateAssignment(
-                state_ids=["boss"],
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=_BROKEN_DSL)]),
-            )
-        ],
-    )
-
-    warnings = collect_combat_warnings(bcs.id, 1, root=tmp_path)
-
-    assert len(warnings) == 1
     assert "does not parse" in warnings[0]
-    assert "'boss'" in warnings[0]
 
 
-def test_inline_state_assignment_label_uses_the_state_label_when_config_is_given(tmp_path: Path):
-    bcs = _bcs(
-        tmp_path,
-        state_assignments=[
-            StateAssignment(
-                state_ids=["state_9"],
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=_BROKEN_DSL)]),
-            )
-        ],
+def test_a_library_duel_linking_a_profile_player_strategy_is_flagged(tmp_path: Path):
+    """Only a hand-edited file gets one in; the dialog never offers it."""
+    pcs = PlayerCombatStrategy(name="Frost Heal", dsl=_VALID_DSL)
+    library = _dcs(
+        tmp_path, "Boss Burn", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
     )
-    config = BotConfig(
-        id="test-bot",
-        name="Bot",
-        initial="s0",
-        recovery_state="s0",
-        states=[
-            StateModel(id="s0", node_type="sleep"),
-            StateModel(id="state_9", node_type="handle_combat", label="Defeat Howling Chaney"),
-        ],
-        transitions=[],
-    )
+    bcs = _bcs(tmp_path, default_strategy_id=library.id, player_strategies=[pcs])
 
-    warnings = collect_combat_warnings(bcs.id, 1, config, root=tmp_path)
-
-    assert "'Defeat Howling Chaney'" in warnings[0]
-
-
-def test_linked_state_assignment_ignores_its_stale_inline_config(tmp_path: Path):
-    """duel_combat_strategy_id set means duel_config is dead weight — must not warn on it."""
-    dcs = _dcs(tmp_path, player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)])
-    bcs = _bcs(
-        tmp_path,
-        state_assignments=[
-            StateAssignment(
-                state_ids=["s1"],
-                duel_combat_strategy_id=dcs.id,
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=_BROKEN_DSL)]),
-            )
-        ],
-    )
-    assert collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path) == []
-
-
-def test_state_assignment_with_empty_inline_config_is_reported_as_unassigned(tmp_path: Path):
-    """An assignment row exists but was never filled in — same as not being there."""
-    bcs = _bcs(tmp_path, state_assignments=[StateAssignment(state_ids=["state_9"])])
-    config = BotConfig(
-        id="test-bot",
-        name="Bot",
-        initial="s0",
-        recovery_state="s0",
-        states=[
-            StateModel(id="s0", node_type="sleep"),
-            StateModel(
-                id="state_9",
-                node_type="handle_combat",
-                label="Defeat Howling Chaney",
-                params={"use_default_strategy": False},
-            ),
-        ],
-        transitions=[],
-    )
-
-    warnings = collect_combat_warnings(bcs.id, 1, config, root=tmp_path)
+    warnings = collect_combat_warnings(bcs.id, num_clients=1, root=tmp_path)
 
     assert len(warnings) == 1
-    assert "'Defeat Howling Chaney' has no Duel Strategy assigned" in warnings[0]
+    assert "Library duel strategy 'Boss Burn' uses 'Frost Heal'" in warnings[0]
 
 
-def test_state_with_nonempty_inline_config_is_not_reported_as_unassigned(tmp_path: Path):
-    bcs = _bcs(
-        tmp_path,
-        state_assignments=[
-            StateAssignment(
-                state_ids=["state_9"],
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)]),
-            )
-        ],
+def test_a_profile_duel_linking_a_profile_player_strategy_is_not_flagged(tmp_path: Path):
+    pcs = PlayerCombatStrategy(name="Frost Heal", dsl=_VALID_DSL)
+    own = DuelCombatStrategy(
+        name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
     )
-    config = BotConfig(
-        id="test-bot",
-        name="Bot",
-        initial="s0",
-        recovery_state="s0",
-        states=[
-            StateModel(id="s0", node_type="sleep"),
-            StateModel(
-                id="state_9",
-                node_type="handle_combat",
-                label="Defeat Howling Chaney",
-                params={"use_default_strategy": False},
-            ),
-        ],
-        transitions=[],
-    )
+    bcs = _bcs(tmp_path, default_strategy_id=own.id, duel_strategies=[own], player_strategies=[pcs])
 
-    assert collect_combat_warnings(bcs.id, 1, config, root=tmp_path) == []
-
-
-def test_unassigned_fallback_message_reflects_inline_default(tmp_path: Path):
-    """An inline (unlinked) default still counts as 'has a default' for the fallback wording."""
-    bcs = _bcs(
-        tmp_path,
-        default_duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)]),
-        state_assignments=[StateAssignment(state_ids=["state_9"])],  # empty inline — unassigned
-    )
-    config = BotConfig(
-        id="test-bot",
-        name="Bot",
-        initial="s0",
-        recovery_state="s0",
-        states=[
-            StateModel(id="s0", node_type="sleep"),
-            StateModel(
-                id="state_9",
-                node_type="handle_combat",
-                label="Boss",
-                params={"use_default_strategy": False},
-            ),
-        ],
-        transitions=[],
-    )
-
-    warnings = collect_combat_warnings(bcs.id, 1, config, root=tmp_path)
-
-    assert "will use the bot's default strategy" in warnings[0]
+    assert not any("belongs to" in w for w in collect_combat_warnings(bcs.id, 1, root=tmp_path))

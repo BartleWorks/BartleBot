@@ -113,6 +113,20 @@ def test_a_card_shows_the_generated_description_in_italics(qapp):
     assert "italic" in card._desc_lbl.styleSheet()  # noqa: SLF001
 
 
+def test_a_long_word_in_a_description_does_not_widen_the_card(qapp):
+    """A description is user text, and word wrap cannot break a word (#118)."""
+    short = _BotCard(_meta("Nightshade", description="Farms it."))
+    long = _BotCard(_meta("Nightshade", description="Farms " + "Nightshade" * 30 + "."))
+
+    assert long.minimumSizeHint().width() == short.minimumSizeHint().width()
+
+
+def test_a_generated_description_keeps_its_tooltip(qapp):
+    card = _BotCard(_meta("Nightshade", generated="Defeats Lord Nightshade."))
+
+    assert card._desc_lbl.toolTip() == "Generated from the graph: this bot has no description."  # noqa: SLF001
+
+
 def test_a_card_shows_an_authored_description_upright(qapp):
     card = _BotCard(WATER)
 

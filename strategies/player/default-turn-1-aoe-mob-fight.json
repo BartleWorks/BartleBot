@@ -2,5 +2,8 @@
   "id": "1337f552-1404-4411-9c35-eb9b4f18d149",
   "name": "Default Turn 1 AoE mob fight",
   "dsl": "any<aoe & damage>[any<mod_damage>]",
-  "description": "Default Turn 1 AoE mob fight strategy for general use"
+  "description": "Default Turn 1 AoE mob fight strategy for general use",
+  "tags": [
+    "Hitter"
+  ]
 }

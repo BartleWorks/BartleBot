@@ -22,6 +22,11 @@ from PyQt6.QtWidgets import QLabel, QWidget
 
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
+from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
+
+
+def _token_sheet(color_token: str, css: str) -> str:
+    return f"color: {getattr(THEME, color_token)}; {css}"
 
 
 class ThemedTextLabel(ThemedMixin, QLabel):
@@ -42,4 +47,30 @@ class ThemedTextLabel(ThemedMixin, QLabel):
         self.refresh_theme_styles()
 
     def apply_theme_styles(self) -> None:
-        set_style_sheet(self, f"color: {getattr(THEME, self._color_token)}; {self._css}")
+        set_style_sheet(self, _token_sheet(self._color_token, self._css))
+
+
+class ThemedWrappingElidedLabel(ThemedMixin, WrappingElidedLabel):
+    """:class:`ThemedTextLabel` for text that wraps, and may hold a word too long to.
+
+    User text in a narrow panel -- a subgraph's description, or its id on the line
+    above -- can hold a word no line fits, which a word-wrapped label turns into its
+    minimum width. See :class:`~bartlebot.gui.widgets.elided_label.WrappingElidedLabel`.
+    """
+
+    def __init__(
+        self,
+        text: str = "",
+        *,
+        color: str = "text_muted",
+        css: str = "",
+        parent: QWidget | None = None,
+    ) -> None:
+        """*color* is a ``THEME`` token name; *css* is appended verbatim."""
+        super().__init__(text, parent)
+        self._color_token = color
+        self._css = css
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        set_style_sheet(self, _token_sheet(self._color_token, self._css))

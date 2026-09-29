@@ -18,6 +18,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from bartlebot.nodes.combat_runner import validate_dsl
+from bartlebot.store_roots import Origin
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -83,24 +84,47 @@ class AssignmentLine:
     slots: tuple[int, ...] = ()
 
 
+#: How many uses a usage sentence names before it counts the rest.
+_NAMED_USES = 3
+
+
+def name_list(names: list[str] | tuple[str, ...], limit: int = _NAMED_USES) -> str:
+    """ "A", "A and B", "A, B and C", or "A, B, C and 2 more" — names already quoted."""
+    names = list(names)
+    if len(names) > limit:
+        return f"{', '.join(names[:limit])} and {len(names) - limit} more"
+    if len(names) <= 1:
+        return "".join(names)
+    return f"{', '.join(names[:-1])} and {names[-1]}"
+
+
 @dataclass(frozen=True)
 class UsageCount:
-    """Where a strategy is already referenced — a delete confirmation or detail pane."""
+    """Where a strategy is already referenced — a delete confirmation or detail pane.
+
+    ``names`` says *what* uses it, one entry per use, already quoted: a combat profile
+    as ``profile 'Solo'`` and a duel as ``'Boss — P2'``, the duel's name and the slots
+    that run this strategy in it. A count alone made a user go looking (#118).
+    """
 
     bots: int = 0
     duels: int = 0
+    names: tuple[str, ...] = ()
 
     @property
     def total(self) -> int:
         return self.bots + self.duels
 
     def phrase(self) -> str:
-        """ "Used by 3 bot strategies and 2 duel strategies" — one sentence, or "Not used yet".
+        """ "Used by 'Boss — P2' and 'Trash — P1'" — one sentence, or "Not used yet".
 
         Lives here rather than in the dialog because a delete confirmation and a
         detail pane both say it, and two surfaces counting the same references
-        differently is the drift :class:`StrategySummary` exists to prevent.
+        differently is the drift :class:`StrategySummary` exists to prevent. A count
+        with no names behind it is said as counts.
         """
+        if self.names:
+            return "Used by " + name_list(self.names)
         parts = []
         if self.bots:
             parts.append(f"{self.bots} bot strateg{'ies' if self.bots != 1 else 'y'}")
@@ -109,6 +133,14 @@ class UsageCount:
         if not parts:
             return "Not used yet"
         return "Used by " + " and ".join(parts)
+
+
+def _duel_use(duel, uuid: str) -> str | None:
+    """``'Boss — P2'`` if *duel* links *uuid*, naming the slots that run it; else None."""
+    players = sorted({p for a in duel.player_assignments if a.player_combat_strategy_id == uuid for p in a.players})
+    if not any(a.player_combat_strategy_id == uuid for a in duel.player_assignments):
+        return None
+    return f"'{duel.name} — {format_players(players)}'" if players else f"'{duel.name}'"
 
 
 def find_references(uuid: str, bot_strategies=(), duel_strategies=()) -> UsageCount:
@@ -123,24 +155,28 @@ def find_references(uuid: str, bot_strategies=(), duel_strategies=()) -> UsageCo
 
     - a ``BotCombatStrategy`` referencing a DuelCombatStrategy, as its default
       or through any state assignment
-    - a ``DuelConfig`` referencing a PlayerCombatStrategy through an assignment,
-      counted for the named library entries *and* for the inline configs
-      embedded on a bot strategy
+    - a ``DuelCombatStrategy`` referencing a PlayerCombatStrategy through an
+      assignment — a library duel, or one of a bot strategy's own (#118). Missing
+      the second kind would call a library player strategy that only a profile's
+      duel uses "Not used yet", and delete it without a warning.
 
     A bot strategy naming the same id twice — its default plus a state override
     — counts once. What the user is being told is how many *things* change, not
     how many fields do.
     """
     bots = 0
+    duels = 0
+    names: list[str] = []
     for bcs in bot_strategies:
         if bcs.default_strategy_id == uuid or any(a.duel_combat_strategy_id == uuid for a in bcs.state_assignments):
             bots += 1
-            continue
-        inline = [bcs.default_duel_config, *(a.duel_config for a in bcs.state_assignments)]
-        if any(uuid in config.linked_pcs_ids() for config in inline):
-            bots += 1
-    duels = sum(1 for dcs in duel_strategies if uuid in dcs.linked_pcs_ids())
-    return UsageCount(bots=bots, duels=duels)
+            names.append(f"profile '{bcs.name}'")
+    for duel in [*(d for bcs in bot_strategies for d in bcs.duel_strategies), *duel_strategies]:
+        use = _duel_use(duel, uuid)
+        if use is not None:
+            duels += 1
+            names.append(use)
+    return UsageCount(bots=bots, duels=duels, names=tuple(names))
 
 
 @dataclass(frozen=True)
@@ -158,6 +194,21 @@ class StrategySummary:
     #: other kind. The facet already says it in words; this is for a surface that draws
     #: the order as coloured pills and has to leave that facet out when it does.
     combat_order: tuple[int, ...] = ()
+    #: Built-in, modified or custom, for a surface that shows it; None where the question
+    #: does not arise. Supplied by whoever knows the working set — the summarize_*
+    #: functions see one entry and cannot tell (#124).
+    source: Origin | None = None
+    #: The combat profile's name when the entry belongs to that profile rather than the
+    #: library (#118); None for a library entry. A card shows it in place of ``source``.
+    profile_name: str | None = None
+    #: Stored tags (the Role group of :mod:`bartlebot.strategy_tags`), in vocabulary order.
+    tags: tuple[str, ...] = ()
+    #: One school set per player slot, empty meaning any school — what the "works with"
+    #: filter asks. One slot for a Player Strategy, ``max_players`` for a duel, none for a
+    #: deck, which is never asked (#125).
+    slot_schools: tuple[frozenset[str], ...] = ()
+    #: A duel's ``(min_players, max_players)``, for the team-size filter; None otherwise.
+    player_range: tuple[int, int] | None = None
 
     def subtitle_line(self) -> str:
         """One line for a compact card: the facets, plus a bare DSL preview if
@@ -230,12 +281,7 @@ def _duel_health(config: DuelConfig, pcs_by_id: dict[str, PlayerCombatStrategy])
 
 
 def summarize_duel(config: DuelConfig, all_pcs: list[PlayerCombatStrategy], name: str = "") -> StrategySummary:
-    """Summarize a duel-level config — a linked DuelCombatStrategy or an inline one.
-
-    Takes a bare ``DuelConfig`` (rather than requiring a ``DuelCombatStrategy``)
-    so the same function covers an inline config with no name of its own; pass
-    ``name`` explicitly for a named library entry.
-    """
+    """Summarize a duel-level config. Pass ``name`` for a named DuelCombatStrategy."""
     pcs_by_id = {p.id: p for p in all_pcs}
     lines: list[AssignmentLine] = []
     for assignment in config.player_assignments:
@@ -265,6 +311,8 @@ def summarize_duel(config: DuelConfig, all_pcs: list[PlayerCombatStrategy], name
         lines=lines,
         health=_duel_health(config, pcs_by_id),
         combat_order=tuple(config.combat_order or ()),
+        slot_schools=tuple(config.slot_schools(pcs_by_id)),
+        player_range=(config.min_players, config.max_players),
     )
 
 
@@ -272,14 +320,22 @@ def summarize_player(pcs: PlayerCombatStrategy) -> StrategySummary:
     """Summarize a shared Player Combat Strategy preset."""
     dsl = pcs.dsl.strip()
     preview = _truncate(dsl, _DSL_PREVIEW_CHARS) if dsl else "(empty DSL)"
-    facets = [pcs.school] if pcs.school else []
+    facets = ["/".join(pcs.schools)] if pcs.schools else []
     lines = [AssignmentLine(players="", label=preview, is_linked=False)]
     if not dsl:
         health = _EMPTY
     else:
         error = validate_dsl(dsl)
         health = Health(HealthStatus.INVALID_DSL, error) if error else _OK
-    return StrategySummary(name=pcs.name, description=pcs.description, facets=facets, lines=lines, health=health)
+    return StrategySummary(
+        name=pcs.name,
+        description=pcs.description,
+        facets=facets,
+        lines=lines,
+        health=health,
+        tags=tuple(pcs.tags),
+        slot_schools=(frozenset(pcs.schools),),
+    )
 
 
 def summarize_bot(bcs: BotCombatStrategy, config: BotConfig | None = None) -> StrategySummary:
@@ -292,8 +348,7 @@ def summarize_bot(bcs: BotCombatStrategy, config: BotConfig | None = None) -> St
     del config
     n = sum(len(a.state_ids) for a in bcs.state_assignments)
     facets = [f"{n} state override{'s' if n != 1 else ''}"] if n else ["Default strategy only"]
-    has_default = bool(bcs.default_strategy_id) or not bcs.default_duel_config.is_empty()
-    health = _OK if (has_default or bcs.state_assignments) else _EMPTY
+    health = _OK if (bcs.default_strategy_id or bcs.state_assignments) else _EMPTY
     return StrategySummary(name=bcs.name, description=bcs.description, facets=facets, health=health)
 
 
@@ -302,4 +357,6 @@ def summarize_deck(preset: DeckPreset) -> StrategySummary:
     total = preset.deck.total_cards()
     facets = [f"{total} cards"] if total else ["empty"]
     health = _EMPTY if preset.deck.is_empty() else _OK
-    return StrategySummary(name=preset.name, description=preset.description, facets=facets, health=health)
+    return StrategySummary(
+        name=preset.name, description=preset.description, facets=facets, health=health, tags=tuple(preset.tags)
+    )

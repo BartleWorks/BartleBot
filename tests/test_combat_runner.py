@@ -6,7 +6,6 @@ from unittest.mock import Mock, patch
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DuelCombatStrategy,
-    DuelConfig,
     PlayerAssignment,
     PlayerCombatStrategy,
     StateAssignment,
@@ -167,7 +166,8 @@ def test_mixed_inline_and_linked_assignments(tmp_path: Path):
         dsls, _order, _source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
 
     assert dsls == ["inline_dsl", "shared_dsl"]
-    load_pcs.assert_called_once_with(pcs.id)
+    load_pcs.assert_called_once()
+    assert load_pcs.call_args.args == (pcs.id,)
 
 
 def test_empty_inline_dsl_falls_back_to_builtin(tmp_path: Path):
@@ -277,67 +277,12 @@ def test_missing_pcs_file_uses_builtin_for_that_player():
 
 
 # ---------------------------------------------------------------------------
-# Inline DuelConfig (no library DuelCombatStrategy at all)
+# Unset links, and the inline configs removed in #118
 # ---------------------------------------------------------------------------
 
 
-def test_inline_default_duel_config_resolves_without_loading_a_dcs(tmp_path: Path):
-    """default_strategy_id unset + default_duel_config populated: no DCS file touched."""
-    bcs = BotCombatStrategy(
-        name="Farm",
-        bot_id="bot-1",
-        default_duel_config=DuelConfig(
-            combat_order=[2, 1],
-            player_assignments=[
-                PlayerAssignment(players=[1], dsl="p1_inline"),
-                PlayerAssignment(players=[2], dsl="p2_inline"),
-            ],
-        ),
-    )
-    machine = _make_machine(bot_id="bot-1")
-    load_dcs = Mock(side_effect=AssertionError("inline default must not load a DCS file"))
-
-    with (
-        _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", load_dcs),
-    ):
-        dsls, order, source = resolve_combat(machine, use_default_strategy=True, num_clients=2)
-
-    assert dsls == ["p1_inline", "p2_inline"]
-    assert order == [2, 1]
-    assert "inline" in source
-    load_dcs.assert_not_called()
-
-
-def test_inline_state_assignment_resolves_without_loading_a_dcs(tmp_path: Path):
-    bcs = BotCombatStrategy(
-        name="Farm",
-        bot_id="bot-1",
-        state_assignments=[
-            StateAssignment(
-                state_ids=["boss_state"],
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="boss_inline")]),
-            )
-        ],
-    )
-    machine = _make_machine(bot_id="bot-1", state="boss_state")
-    load_dcs = Mock(side_effect=AssertionError("inline state assignment must not load a DCS file"))
-
-    with (
-        _patch_active_strategy("bot-1", bcs.id),
-        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
-        patch("bartlebot.strategy_store.load_duel_strategy", load_dcs),
-    ):
-        dsls, _order, source = resolve_combat(machine, use_default_strategy=False, num_clients=1)
-
-    assert dsls[0] == "boss_inline"
-    assert "state assignment for 'boss_state'" in source
-    load_dcs.assert_not_called()
-
-
-def test_empty_inline_default_falls_back_to_builtin(tmp_path: Path):
-    """An untouched default_duel_config (no player_assignments) means no default at all."""
+def test_an_unset_default_falls_back_to_builtin(tmp_path: Path):
+    """No default_strategy_id means no default at all."""
     bcs = BotCombatStrategy(name="Farm", bot_id="bot-1")
     machine = _make_machine(bot_id="bot-1")
 
@@ -352,10 +297,9 @@ def test_empty_inline_default_falls_back_to_builtin(tmp_path: Path):
     assert source == _BUILTIN_SOURCE
 
 
-def test_empty_inline_state_assignment_falls_back_to_bcs_default(tmp_path: Path):
-    """An assignment exists for the state but its inline config is empty — falls through
-    to the BCS default exactly as if the state had no assignment at all, since an empty
-    DuelConfig carries no information either way.
+def test_an_unlinked_state_assignment_falls_back_to_bcs_default(tmp_path: Path):
+    """An assignment exists for the state but links nothing — falls through to the BCS
+    default exactly as if the state had no assignment at all.
     """
     dcs_default = DuelCombatStrategy(
         name="Default DCS", player_assignments=[PlayerAssignment(players=[1], dsl="default_dsl")]
@@ -364,7 +308,7 @@ def test_empty_inline_state_assignment_falls_back_to_bcs_default(tmp_path: Path)
         name="Farm",
         bot_id="bot-1",
         default_strategy_id=dcs_default.id,
-        state_assignments=[StateAssignment(state_ids=["boss_state"])],  # inline, empty
+        state_assignments=[StateAssignment(state_ids=["boss_state"])],  # unlinked
     )
     machine = _make_machine(bot_id="bot-1", state="boss_state")
 
@@ -379,20 +323,25 @@ def test_empty_inline_state_assignment_falls_back_to_bcs_default(tmp_path: Path)
     assert "default strategy" in source
 
 
-def test_linked_state_assignment_takes_precedence_over_its_own_inline_config(tmp_path: Path):
-    """duel_combat_strategy_id set means duel_config is ignored, mirroring PlayerAssignment."""
+def test_a_file_from_before_118_loads_with_its_inline_config_ignored(tmp_path: Path):
+    """The inline duel configs were removed outright (#118). A stray one still parses —
+    the models do not forbid extra fields — and never runs."""
     dcs = DuelCombatStrategy(name="Linked", player_assignments=[PlayerAssignment(players=[1], dsl="linked_dsl")])
-    bcs = BotCombatStrategy(
-        name="Farm",
-        bot_id="bot-1",
-        state_assignments=[
-            StateAssignment(
-                state_ids=["boss_state"],
-                duel_combat_strategy_id=dcs.id,
-                duel_config=DuelConfig(player_assignments=[PlayerAssignment(players=[1], dsl="stale_inline")]),
-            )
-        ],
+    bcs = BotCombatStrategy.model_validate(
+        {
+            "name": "Farm",
+            "bot_id": "bot-1",
+            "default_duel_config": {"player_assignments": [{"players": [1], "dsl": "stale_default"}]},
+            "state_assignments": [
+                {
+                    "state_ids": ["boss_state"],
+                    "duel_combat_strategy_id": dcs.id,
+                    "duel_config": {"player_assignments": [{"players": [1], "dsl": "stale_inline"}]},
+                }
+            ],
+        }
     )
+    assert "duel_config" not in bcs.state_assignments[0].model_dump()
     machine = _make_machine(bot_id="bot-1", state="boss_state")
 
     with (
@@ -404,3 +353,65 @@ def test_linked_state_assignment_takes_precedence_over_its_own_inline_config(tmp
 
     assert dsls[0] == "linked_dsl"
     assert "Linked" in source
+
+
+# ---------------------------------------------------------------------------
+# Profile strategies (#118): the active profile first, then the library
+# ---------------------------------------------------------------------------
+
+
+def test_a_profile_duel_wins_over_a_library_duel_with_the_same_id(tmp_path: Path):
+    library = DuelCombatStrategy(name="Library", player_assignments=[PlayerAssignment(players=[1], dsl="lib")])
+    own = library.model_copy(update={"name": "Own", "player_assignments": [PlayerAssignment(players=[1], dsl="own")]})
+    bcs = BotCombatStrategy(name="B", bot_id="bot-1", default_strategy_id=library.id, duel_strategies=[own])
+    load_dcs = Mock(return_value=library)
+
+    with (
+        _patch_active_strategy("bot-1", bcs.id),
+        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.strategy_store.load_duel_strategy", load_dcs),
+    ):
+        dsls, _order, source = resolve_combat(_make_machine(), use_default_strategy=True, num_clients=1)
+
+    assert dsls == ["own"]
+    assert "'Own'" in source
+    load_dcs.assert_not_called()
+
+
+def test_a_profile_duel_links_a_profile_player_strategy(tmp_path: Path):
+    pcs = PlayerCombatStrategy(name="Frost Heal", dsl="heal")
+    own = DuelCombatStrategy(
+        name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
+    )
+    bcs = BotCombatStrategy(
+        name="B",
+        bot_id="bot-1",
+        state_assignments=[StateAssignment(state_ids=["boss"], duel_combat_strategy_id=own.id)],
+        duel_strategies=[own],
+        player_strategies=[pcs],
+    )
+    load_pcs = Mock(side_effect=AssertionError("a profile player strategy must not be loaded from the library"))
+
+    with (
+        _patch_active_strategy("bot-1", bcs.id),
+        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.strategy_store.load_player_strategy", load_pcs),
+    ):
+        dsls, _order, _source = resolve_combat(_make_machine(state="boss"), use_default_strategy=False, num_clients=1)
+
+    assert dsls == ["heal"]
+
+
+def test_an_id_in_neither_the_profile_nor_the_library_falls_back_to_the_builtin(tmp_path: Path):
+    bcs = BotCombatStrategy(name="B", bot_id="bot-1", default_strategy_id="nowhere")
+
+    with (
+        _patch_active_strategy("bot-1", bcs.id),
+        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.strategy_store.load_duel_strategy", side_effect=FileNotFoundError),
+    ):
+        dsls, order, source = resolve_combat(_make_machine(), use_default_strategy=True, num_clients=2)
+
+    assert dsls == [BARTLEBOT_DEFAULT_COMBAT_CONFIG] * 2
+    assert order == []
+    assert source == _BUILTIN_SOURCE

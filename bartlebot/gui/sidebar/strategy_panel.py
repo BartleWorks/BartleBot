@@ -27,9 +27,8 @@ WHAT IT NO LONGER CARRIES
 No disclosure arrow, no inline ``DuelConfigEditor``. Editing combat is a user-owned
 edit with an explicit Save/Cancel boundary, and it is moving into a dialog of its own;
 a Run-mode surface that autosaved a DSL edit on every keystroke was the one place in
-the app that wrote a strategy file while the user was still typing into it. Until that
-dialog exists, ``Edit in Library…`` is the way in -- which is the route a *linked*
-binding already offered, so it is not a new path, only the only one.
+the app that wrote a strategy file while the user was still typing into it. The pencil
+opens that dialog, ``CombatStrategyDialog``, as the combat profile's editor.
 
 No ``_GroupRail`` either. The rail was a vertical rule bracketing a panel whose fights
 share one strategy, invented because several fight names stacked in a header read as a
@@ -113,13 +112,12 @@ Two on the face, everything in the right-click menu, per ``card_frame.py``:
 - **Change…** is also the *body* verb. The card is the active configuration and the
   card is how you replace it, so the whole frame is the pick affordance rather than a
   chip inside it that had to be found first.
-- **Edit in Library…** appears only on a linked binding, there being nothing in the
-  library to open otherwise.
+- **Edit…** (the pencil) is on every card, the built-in default's included. It opens
+  the profile editor on this card's strategy, and a strategy made there with New or
+  Duplicate is linked to this card on Save -- so pencil, New, Save is the whole of
+  giving a card a strategy of its own (#118).
 - **Applies to…** is in the menu, and opens the same popup the pill row's own button
   does -- the menu is the keyboard route to a verb, not a second way of performing it.
-- **Save as preset…** is menu-only. It can only apply to an inline config, which this
-  surface can no longer create -- it is how a config from an older bot file gets into
-  the library so that it can be picked like everything else.
 
 None of them are implemented here. Each ``run`` is a signal the Combat tab wires, which
 is what keeps *which dialog opens* out of the card -- the thing the edit-dialog work
@@ -132,7 +130,6 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.gui.theme import THEME
@@ -155,8 +152,8 @@ NOT_CONFIGURED_LABEL = "Not configured — built-in default for every player"
 # What an unset *state override* falls through to, which is not the same thing and the
 # distinction is not cosmetic: an empty state override does not reach the built-in
 # default, it reaches this bot strategy's own Default Combat Strategy -- see
-# resolve_combat(), which consults ``bcs.default_strategy_id`` /
-# ``bcs.default_duel_config`` first. Labelling both levels "BartleBot Default Combat
+# resolve_combat(), which consults ``bcs.default_strategy_id`` first. Labelling both
+# levels "BartleBot Default Combat
 # Strategy" told the user the bot default would be skipped, and contradicted the
 # pre-run warning text.
 STATE_INHERIT_LABEL = "(bot default)"
@@ -179,7 +176,6 @@ DEFAULT_PILL = "Default"
 DEFAULT_SCOPE_META = "Runs in every fight that has no strategy of its own"
 
 MISSING_LABEL = "(missing strategy)"
-CUSTOM_LABEL = "(custom)"
 
 #: Why every verb on a card goes dead mid-run. One string, because the Combat tab's deck
 #: cards say it too and two surfaces giving a user two different reasons for the same
@@ -190,7 +186,6 @@ LOCKED = "Locked while the bot is running"
 CHANGE = "Change…"
 EDIT_STRATEGY = "Edit…"
 APPLIES_TO = "Applies to…"
-SAVE_AS_PRESET = "Save as preset…"
 
 #: How many player assignments a duel config can carry, and so how many caption lines a
 #: card builds once and hides down to. Four, because a Wizard101 team is four wizards --
@@ -245,7 +240,7 @@ class _FightsButton(PickerButton):
 class StrategyPanel(CardFrame):
     """One binding -- the bot default, or one group of fights -- as a card.
 
-    Operates on any ``binding`` shaped like ``StateAssignment``: ``duel_config``,
+    Operates on any ``binding`` shaped like ``StateAssignment``:
     ``duel_combat_strategy_id`` (settable) and ``is_linked``. The Combat tab's
     ``_DefaultBinding`` adapts a ``BotCombatStrategy``'s own default fields to that
     shape, so one class draws both levels.
@@ -260,12 +255,13 @@ class StrategyPanel(CardFrame):
     FRAME_NAME = "StrategyPanel"
 
     pick_requested = pyqtSignal()
-    edit_in_library_requested = pyqtSignal(str)  # dcs_id
+    #: The pencil: open this card's strategy in the profile editor, or — on a card with
+    #: none, the built-in default included — open the editor to make one for it (#118).
+    edit_requested = pyqtSignal()
     #: The complete desired membership, once the popup has closed -- not per toggle.
     #: Acting on each toggle would rebuild this card's own section while its popup is
     #: still open on top of it; see ``PickerButton.committed``.
     membership_changed = pyqtSignal(list)  # list[str] of state_ids
-    promote_requested = pyqtSignal()
     #: ``DEFAULT`` role only: one of this card's fight pills was clicked, so that fight
     #: wants a Duel Combat Strategy of its own.
     fight_pick_requested = pyqtSignal(str)  # state_id
@@ -326,13 +322,11 @@ class StrategyPanel(CardFrame):
         header.addWidget(self._name, 1)
         # Built here rather than through ``_add_face_verbs``, which reads ``_verbs()``.
         # ``CardFrame`` builds a card's face buttons exactly once, and this card's verb
-        # list is not fixed: whether "Edit in Library…" applies depends on whether the
-        # binding is linked, and the binding is replaced under the card on every pick. So
-        # both buttons are made once and ``refresh`` shows or hides the second, while
-        # ``_verbs()`` stays dynamic for the right-click menu -- which ``contextMenuEvent``
-        # rebuilds per click and can therefore be honest about what applies right now.
-        # Hiding costs no layout: a face button holds its space (``retainSizeWhenHidden``),
-        # so the name does not lengthen and re-shorten as bindings change under it.
+        # list is not fixed -- "Applies to…" depends on the binding, which is replaced
+        # under the card on every pick -- so the two face buttons are made once from
+        # ``_face_verbs`` and ``_verbs()`` stays dynamic for the right-click menu, which
+        # ``contextMenuEvent`` rebuilds per click. ``refresh`` retunes the pencil's
+        # tooltip, which says something different on a card with no strategy.
         for verb in self._face_verbs():
             header.addWidget(self._make_verb_button(verb), 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
@@ -577,7 +571,7 @@ class StrategyPanel(CardFrame):
 
     @property
     def linked_id(self) -> str | None:
-        """The library DuelCombatStrategy this binding names, or None if it is inline."""
+        """The DuelCombatStrategy this binding names, or None when it names none."""
         if self._binding is None or not self._binding.is_linked:
             return None
         return self._binding.duel_combat_strategy_id
@@ -624,18 +618,14 @@ class StrategyPanel(CardFrame):
             else:
                 self._render_summary(dcs.name, summarize_duel(dcs, self._all_pcs))
         else:
-            config = self._binding.duel_config
-            if config.is_empty():
-                self._render_bare(self._empty_label, self._empty_meta)
-            else:
-                self._render_summary(CUSTOM_LABEL, summarize_duel(config, self._all_pcs))
+            self._render_bare(self._empty_label, self._empty_meta)
 
-        # Withdrawn rather than greyed. A disabled pencil on an inline config would be an
-        # affordance offered and refused every time; there is simply nothing in the
-        # library to open, and the button holds its space either way.
+        # Always shown, even on a card running the built-in default: the profile editor
+        # is where a card gets a strategy made for it, and New there, then Save, is the
+        # whole of that (#118). What the tooltip promises is what differs.
         edit_btn = self.action_button(EDIT_STRATEGY)
         if edit_btn is not None:
-            edit_btn.setVisible(self.linked_id is not None)
+            edit_btn.setToolTip(self._edit_tooltip())
         self._sync_pill_row()
         self.refresh_theme_styles()
 
@@ -707,7 +697,7 @@ class StrategyPanel(CardFrame):
         """
         if not self._supports_membership or self._binding is None:
             return False
-        return self._binding.is_linked or not self._binding.duel_config.is_empty()
+        return self._binding.is_linked
 
     # ------------------------------------------------------------------
     # Verbs
@@ -717,27 +707,21 @@ class StrategyPanel(CardFrame):
         """The two verbs that get a button, in header order. Fixed for the card's life."""
         return [
             CardVerb(CHANGE, "search", "Pick a different Duel Combat Strategy", self.pick_requested.emit, on_face=True),
-            CardVerb(
-                EDIT_STRATEGY,
-                "pencil",
-                "Open this strategy in the combat strategy editor",
-                self._emit_edit_in_library,
-                on_face=True,
-            ),
+            CardVerb(EDIT_STRATEGY, "pencil", self._edit_tooltip(), self.edit_requested.emit, on_face=True),
         ]
+
+    def _edit_tooltip(self) -> str:
+        if self.linked_id is not None:
+            return "Edit this strategy, or make one of this profile's own for these fights"
+        return "Make a strategy of this profile's own for these fights"
 
     def _verbs(self) -> list[CardVerb]:
         """Everything this card can do *right now* -- what the right-click menu offers.
 
-        Rebuilt per click, so it names only what applies: no "Edit in Library…" for a
-        config that is not in the library, and no "Save as preset…" for one that already
-        is. The two face buttons are built from ``_face_verbs`` instead; see ``_build``.
+        Rebuilt per click, so it names only what applies. The two face buttons are built
+        from ``_face_verbs`` instead; see ``_build``.
         """
-        verbs = [self._face_verbs()[0]]
-        # Only on a linked binding: there is nothing in the library to open for a config
-        # that lives inside this bot's own strategy file.
-        if self.linked_id is not None:
-            verbs.append(self._face_verbs()[1])
+        verbs = self._face_verbs()
         if self._membership_allowed() and self._fights_btn is not None:
             # Opens the same popup the pill row's button does, rather than a second
             # membership surface of its own -- the menu is the keyboard route to a verb,
@@ -745,21 +729,7 @@ class StrategyPanel(CardFrame):
             verbs.append(
                 CardVerb(APPLIES_TO, "attach", "Choose which fights use this strategy", self._fights_btn.click)
             )
-        if self._binding is not None and not self._binding.is_linked and not self._binding.duel_config.is_empty():
-            verbs.append(
-                CardVerb(
-                    SAVE_AS_PRESET,
-                    "save_done",
-                    "Copy this configuration into the library",
-                    self.promote_requested.emit,
-                )
-            )
         return verbs
-
-    def _emit_edit_in_library(self) -> None:
-        dcs_id = self.linked_id
-        if dcs_id is not None:
-            self.edit_in_library_requested.emit(dcs_id)
 
     def _refuses_activation(self) -> bool:
         """Swallow a body click while the bot is running.
@@ -775,19 +745,11 @@ class StrategyPanel(CardFrame):
     # ------------------------------------------------------------------
 
     def _restyle_content(self) -> None:
-        """Recolour the name and every caption -- see :func:`_set_text_color`."""
-        _set_text_color(self._name, THEME.error if self._invalid else THEME.text)
+        """Recolour the name and every caption.
+
+        Through :meth:`ElidedLabel.set_text_color` rather than a stylesheet: an
+        ``ElidedLabel`` paints its own text, so a QSS ``color:`` rule never reaches it.
+        """
+        self._name.set_text_color(THEME.error if self._invalid else THEME.text)
         for label in (self._scope, self._meta, *self._assignment_lbls):
-            _set_text_color(label, THEME.text_muted)
-
-
-def _set_text_color(label: ElidedLabel, color: str) -> None:
-    """Recolour an ``ElidedLabel``, which paints its own text.
-
-    A QSS ``color:`` rule never reaches one, so the colour has to go through the
-    palette -- which is why the cards here restyle by looping over palettes rather than
-    by the single stylesheet write every other card does.
-    """
-    palette = label.palette()
-    palette.setColor(label.foregroundRole(), QColor(color))
-    label.setPalette(palette)
+            label.set_text_color(THEME.text_muted)

@@ -85,6 +85,22 @@ class Origin(Enum):
     MISSING = "missing"
 
 
+#: What every surface calls where an item comes from. One map for both libraries, so a
+#: subgraph and a combat strategy never describe the same origin in two vocabularies.
+#: "Custom" rather than "User": it is the user's own, and the pill has to say so in one word.
+SOURCE_LABELS = {
+    Origin.SHIPPED: "Built-in",
+    Origin.SHIPPED_OVERRIDE: "Built-in (modified)",
+    Origin.USER: "Custom",
+    Origin.MISSING: "Missing",
+}
+
+
+def source_label(origin: Origin) -> str:
+    """``Source: <label>`` for an item's origin, as shown to the user."""
+    return f"Source: {SOURCE_LABELS.get(origin, origin.value)}"
+
+
 def resolve_roots(root: str | Path | None, user_root: str | Path | None) -> tuple[Path, Path]:
     """``(shipped, user)`` for the argument convention every store function shares."""
     shipped = Path(root) if root is not None else project_root()

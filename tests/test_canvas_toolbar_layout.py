@@ -218,9 +218,9 @@ def test_the_bar_is_as_tall_in_a_definition_as_in_the_bot_it_was_opened_from(can
 
     doc = canvas.take_document()
     canvas.setup(_definition(), mode=BotMode.EDIT)
-    canvas.set_definition_context(["Example"], origin="Source: User", used_by=2)
+    canvas.set_definition_context(["Example"], origin="Source: Custom", used_by=2)
     inside = _header_height(canvas)
-    assert canvas.header.definition_text == "Source: User · Used by 2 bots"
+    assert canvas.header.definition_text == "Source: Custom · Used by 2 bots"
 
     canvas.restore_document(doc)
     back = _header_height(canvas)

@@ -36,7 +36,7 @@ from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.player_picker import pick_player
 from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.rule_heading import RuleHeading
-from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.themed_label import ThemedTextLabel, ThemedWrappingElidedLabel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 from bartlebot.subgraph_store import source_label
 from bartlebot.subgraphs import RegionStatus, exposed_key, local_id, member_id, port_name, promoted_param_type
@@ -153,10 +153,10 @@ class CallNodePage(ThemedMixin, QWidget):
         self._status: RegionStatus | None = None
 
         self._name_lbl = QLabel()
-        self._sub_lbl = ThemedTextLabel("", color="text_muted")
-        self._sub_lbl.setWordWrap(True)
-        self._desc_lbl = ThemedTextLabel("", color="text_muted")
-        self._desc_lbl.setWordWrap(True)
+        # Both carry user text -- the subgraph's name or id, its description -- and either
+        # can hold a word too long for the panel, so they elide it rather than widen it.
+        self._sub_lbl = ThemedWrappingElidedLabel("", color="text_muted")
+        self._desc_lbl = ThemedWrappingElidedLabel("", color="text_muted")
         self._status_lbl = ThemedTextLabel("", color="warning")
         self._status_lbl.setWordWrap(True)
         self._label_edit = QLineEdit()

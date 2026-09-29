@@ -85,6 +85,7 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.card_art_tile import art_icon
+from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
 from bartlebot.gui.widgets.icon_button import IconButton
 from bartlebot.gui.widgets.picker_popup import SECTION_ICON_PX
 from bartlebot.gui.widgets.search_field import SearchLineEdit
@@ -416,15 +417,14 @@ class _BotCard(ThemedMixin, QWidget):
         header.addStretch()
         layout.addLayout(header)
 
+        # Wrapping and elided: a description is user text, and one word too long for the
+        # card would otherwise become the card's minimum width.
         if self._meta.description:
-            self._desc_lbl = QLabel(self._meta.description)
-            self._desc_lbl.setWordWrap(True)
+            self._desc_lbl = WrappingElidedLabel(self._meta.description)
             layout.addWidget(self._desc_lbl)
         elif self._meta.generated:
             # In italics, so a sentence the app wrote never reads as one the author did.
-            self._desc_lbl = QLabel(self._meta.generated)
-            self._desc_lbl.setTextFormat(Qt.TextFormat.PlainText)
-            self._desc_lbl.setWordWrap(True)
+            self._desc_lbl = WrappingElidedLabel(self._meta.generated)
             self._desc_lbl.setToolTip("Generated from the graph: this bot has no description.")
             layout.addWidget(self._desc_lbl)
 
