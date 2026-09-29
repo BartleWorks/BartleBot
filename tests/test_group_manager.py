@@ -6,6 +6,7 @@ therefore drive everything through a fake that models that UI.
 """
 
 import asyncio
+import logging
 from contextlib import ExitStack
 from unittest.mock import AsyncMock, patch
 
@@ -819,8 +820,8 @@ async def test_split_group_is_repaired_by_leaving_and_rejoining(ui):
     result = await _run_with(ui, lambda: gm.form_group([a, b], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert result.success is True
-    assert result.left == ["Bob Battlecaster"]
-    assert result.added == ["Bob Battlecaster"]
+    assert result.left == ["P2"]
+    assert result.added == ["P2"]
     assert ui.grouped[a] and ui.grouped[b]
     assert gm.same_group([gm.GroupState(True, ui.group_of[a]), gm.GroupState(True, ui.group_of[b])]) is True
 
@@ -836,8 +837,8 @@ async def test_two_pairs_need_only_one_wizard_to_leave(ui):
 
     assert result.success is True
     assert ui.leave_clicks == [c], f"only one wizard should have left, got {ui.leave_clicks}"
-    assert sorted(result.left) == ["Carol C", "Dave D"], "both are freed by the single leave"
-    assert sorted(result.added) == ["Carol C", "Dave D"]
+    assert sorted(result.left) == ["P3", "P4"], "both are freed by the single leave"
+    assert sorted(result.added) == ["P3", "P4"]
 
 
 async def test_the_larger_group_is_the_one_kept(ui):
@@ -853,7 +854,7 @@ async def test_the_larger_group_is_the_one_kept(ui):
 
     assert result.success is True
     assert ui.leave_clicks == [stray]
-    assert result.left == ["Dave D"]
+    assert result.left == ["P4"]
 
 
 async def test_a_client_that_cannot_leave_is_reported_once(ui):
@@ -869,7 +870,7 @@ async def test_a_client_that_cannot_leave_is_reported_once(ui):
     result = await _run_with(ui, lambda: gm.form_group([a, b], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert result.success is False
-    assert result.failed == ["Bob Battlecaster"]
+    assert result.failed == ["P2"]
     assert result.left == []
 
 
@@ -884,18 +885,6 @@ async def test_nothing_is_dissolved_when_the_leaders_roster_is_unreadable(ui):
     await _run_with(ui, lambda: gm.form_group([a, b], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert ui.leave_clicks == []
-
-
-async def test_split_group_report_lists_each_group_once(ui):
-    """Every member of a group reads the same roster, so one line per CLIENT showed four
-    rosters for two groups and buried the shape of the problem."""
-    a, b, c, d = (ui.make_client(n) for n in ("Alice A", "Bob B", "Carol C", "Dave D"))
-    ui.put_in_group(a, b)
-    ui.put_in_group(c, d)
-
-    states = await _run_with(ui, lambda: gm.read_group_states([a, b, c, d]))
-
-    assert gm.describe_groups(states).count("[") == 2
 
 
 async def test_all_grouped_together_still_makes_no_invites(ui):
@@ -949,7 +938,7 @@ async def test_client_grouped_with_strangers_is_invited_not_skipped(ui):
 
     assert "Carol Cloudrider" in ui.invited_names, "the client in the foreign group was skipped"
     assert result.success is False
-    assert "Carol Cloudrider" in result.failed
+    assert "P3" in result.failed
 
 
 async def test_join_into_a_group_without_the_leader_is_not_confirmed(ui):
@@ -965,7 +954,7 @@ async def test_join_into_a_group_without_the_leader_is_not_confirmed(ui):
     result = await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert result.success is False
-    assert result.failed == ["Bob Battlecaster"]
+    assert result.failed == ["P2"]
 
 
 async def test_single_client_is_a_no_op(ui):
@@ -989,7 +978,7 @@ async def test_ungrouped_client_is_invited_and_confirmed(ui):
     result = await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert result.success is True
-    assert result.added == ["Bob Battlecaster"]
+    assert result.added == ["P2"]
     assert ui.invited_names == ["Bob Battlecaster"]
     assert ui.grouped[joiner] is True
 
@@ -1001,7 +990,7 @@ async def test_client_with_unknown_name_is_reported_not_skipped(ui):
     result = await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", None]))
 
     assert result.success is False
-    assert result.failed == ["client 1"]
+    assert result.failed == ["P2"]
     assert ui.invited_names == []
 
 
@@ -1014,7 +1003,7 @@ async def test_invite_never_accepted_fails(ui):
     result = await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert result.success is False
-    assert result.failed == ["Bob Battlecaster"]
+    assert result.failed == ["P2"]
 
 
 async def test_player_already_in_another_group_is_not_retried(ui):
@@ -1026,7 +1015,7 @@ async def test_player_already_in_another_group_is_not_retried(ui):
     result = await _run_with(ui, lambda: gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"]))
 
     assert result.success is False
-    assert result.failed == ["Bob Battlecaster"]
+    assert result.failed == ["P2"]
     # One attempt only, despite GROUP_ADD_RETRIES being greater than 1.
     assert ui.invited_names == ["Bob Battlecaster"]
 
@@ -1054,8 +1043,78 @@ async def test_friend_not_in_list_fails_without_retrying(ui):
         result = await gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"])
 
     assert result.success is False
-    assert result.failed == ["Bob Battlecaster"]
+    assert result.failed == ["P2"]
     assert profile.call_count == 1
+
+
+# ---------------------------------------------------------------------------
+# No wizard name reaches a log (#121)
+# ---------------------------------------------------------------------------
+
+_NAMES = ["Alice Ashblade", "Bob Battlecaster", "Carol Cloudrider"]
+_STRANGER = "Stranger One"
+
+
+def _split(ui, a, b, c):
+    ui.put_in_group(a, b)
+    ui.put_in_foreign_group(c, _STRANGER)
+
+
+def _refused(ui, a, b, c):
+    ui.already_in_other_group.add(b)
+
+
+def _never_accepted(ui, a, b, c):
+    ui.accepts_invites = False
+
+
+def _joins_elsewhere(ui, a, b, c):
+    ui.joins_foreign_group_on_accept.add(b)
+
+
+@pytest.mark.parametrize(
+    "setup",
+    [None, _split, _refused, _never_accepted, _joins_elsewhere],
+    ids=["invite", "dissolve", "refused", "never-accepted", "joins-elsewhere"],
+)
+async def test_no_wizard_name_is_logged(ui, caplog, setup):
+    """Session logs get pasted into bug reports, so every line names a slot, not a wizard.
+
+    Covers each path that used to write a name: the leader line, a dissolve (whose roster
+    includes a player who is not ours), each invite outcome, and the summary callers log.
+    DEBUG is captured too, since the session file records it.
+    """
+    a, b, c = (ui.make_client(n) for n in _NAMES)
+    if setup is not None:
+        setup(ui, a, b, c)
+    callback: list[str] = []
+
+    with caplog.at_level(logging.DEBUG):
+        result = await _run_with(
+            ui, lambda: gm.form_group([a, b, c], list(_NAMES), log=lambda m, _l: callback.append(m))
+        )
+        logging.getLogger("test").info(result.summary())
+
+    text = "\n".join([r.getMessage() for r in caplog.records] + callback)
+    assert "Rebuilding group" in text, "nothing was logged, so this proves nothing"
+    for name in [*_NAMES, _STRANGER]:
+        assert name not in text
+
+
+async def test_a_friends_list_miss_does_not_log_the_name_it_searched_for(ui, caplog):
+    """The friends-list helpers quote the name in their ValueError, so it is not passed on."""
+    leader = ui.make_client("Alice Ashblade")
+    joiner = ui.make_client("Bob Battlecaster")
+    profile = AsyncMock(side_effect=ValueError("Could not find friend 'bob battlecaster' in online friends list"))
+
+    with caplog.at_level(logging.DEBUG), ExitStack() as stack:
+        for p in ui.patches():
+            stack.enter_context(p)
+        stack.enter_context(patch.object(nh, "open_friend_profile", new=profile))
+        result = await gm.form_group([leader, joiner], ["Alice Ashblade", "Bob Battlecaster"])
+
+    assert "Could not find P2" in caplog.text
+    assert "battlecaster" not in (caplog.text + result.summary()).casefold()
 
 
 async def test_group_window_is_closed_on_both_players(ui):
@@ -1122,7 +1181,7 @@ async def test_friends_list_is_closed_once_for_the_whole_regroup(ui):
         stack.enter_context(patch.object(nh, "close_friends_list", new=close))
         result = await gm.form_group([leader, b, c], ["Alice Ashblade", "Bob Battlecaster", "Carol Cloudrider"])
 
-    assert result.added == ["Bob Battlecaster", "Carol Cloudrider"]
+    assert result.added == ["P2", "P3"]
     assert close.await_count == 1
 
 
@@ -1325,7 +1384,7 @@ async def test_a_successful_invite_pays_only_the_settle_that_cannot_be_polled_aw
     )
 
     assert result.success is True
-    assert result.added == ["Bob Battlecaster"]
+    assert result.added == ["P2"]
     assert elapsed < _BUDGET, f"the invite exchange slept through a fixed delay ({elapsed:.1f}s)"
 
 
@@ -1358,7 +1417,7 @@ async def test_a_refusal_is_noticed_as_soon_as_the_popup_is_drawn(ui):
     )
 
     assert result.success is False
-    assert result.failed == ["Bob Battlecaster"]
+    assert result.failed == ["P2"]
     assert ui.invited_names == ["Bob Battlecaster"], "a refusal must not be retried"
     assert ui.popup_showing.get(leader) is False, "the refusal popup was left blocking the next invite"
     assert elapsed < _BUDGET, f"the refusal was not acted on until a wait expired ({elapsed:.1f}s)"
@@ -1400,5 +1459,5 @@ async def test_already_grouped_client_is_not_reinvited(ui):
     )
 
     assert result.success is True
-    assert result.added == ["Carol Cloudrider"]
+    assert result.added == ["P3"]
     assert ui.invited_names == ["Carol Cloudrider"]

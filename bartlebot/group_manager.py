@@ -129,9 +129,23 @@ class GroupState:
     roster: tuple[str, ...] = ()
 
 
+def slot_label(idx: int) -> str:
+    """Name a client by its player slot ("P2"), for anything that reaches a log line.
+
+    Never a wizard name: logs get pasted into bug reports, and a real name links the
+    account to whoever posted it. Callers pass their clients in slot order, so the index
+    into `clients` is the slot.
+    """
+    return f"P{idx + 1}"
+
+
 @dataclass
 class GroupResult:
-    """Outcome of a form_group call."""
+    """Outcome of a form_group call.
+
+    The lists hold slot labels (see slot_label), not wizard names, because summary() is
+    logged by every caller.
+    """
 
     success: bool
     added: list[str] = field(default_factory=list)
@@ -256,7 +270,9 @@ async def _roster_lines(client) -> list[tuple[int, str]]:
         if not name:
             continue
         if name.casefold() in _ROSTER_PLACEHOLDERS:
-            logger.debug("Ignoring placeholder text %r on group roster line %d", name, line)
+            # The text itself is not logged: this check is all that stands between a
+            # member's name and the log, and a new placeholder is found with the probe.
+            logger.debug("Ignoring placeholder text on group roster line %d", line)
             continue
         lines.append((line, name))
     return lines
@@ -282,7 +298,8 @@ async def _roster_lines(client) -> list[tuple[int, str]]:
 # reads has broken.
 #
 # If another placeholder turns up after a game update it will show up as a phantom member
-# in the split-group log line. tools/probe_group_roster.py prints the raw text of every
+# in the member counts the log reports, and in the roster-disagreement warning for an
+# ungrouped client. tools/probe_group_roster.py prints the raw text of every
 # line, which is how to identify it; add it here.
 _ROSTER_PLACEHOLDERS = frozenset({"left"})
 
@@ -418,24 +435,6 @@ def same_group(states: list[GroupState]) -> bool | None:
 def _roster_key(state: GroupState) -> frozenset[str]:
     """Return a roster as a case-insensitive set, for comparison between clients."""
     return frozenset(name.casefold() for name in state.roster)
-
-
-def describe_groups(states: list[GroupState]) -> str:
-    """Render the distinct groups these clients are in, for a log line or an error.
-
-    Deduplicated by member set: every member of a group reads the same roster, so listing
-    one per client showed four rosters for two groups and buried the actual shape of the
-    problem. Ordering within a group is left as read (each client sees itself first).
-    """
-    distinct: list[tuple[str, ...]] = []
-    seen: set[frozenset[str]] = set()
-    for state in states:
-        key = _roster_key(state)
-        if key in seen:
-            continue
-        seen.add(key)
-        distinct.append(state.roster)
-    return " vs ".join("[" + ", ".join(roster) + "]" if roster else "[unreadable]" for roster in distinct)
 
 
 async def is_grouped(clients: list) -> bool:
@@ -641,10 +640,14 @@ async def _dissolve_other_groups(
 
     updated = list(states)
     for members in doomed.values():
-        roster = states[members[0]].roster
+        size = len(states[members[0]].roster)
+        ours = ", ".join(slot_label(idx) for idx in members)
         # Worth saying out loud: a group can contain players who are not ours, and they
-        # lose their group here too.
-        _log(f"Dissolving group [{', '.join(roster)}] so its members can join the leader's", logging.WARNING)
+        # lose their group here too. Counted rather than listed, so no name reaches the log.
+        _log(
+            f"Dissolving the group holding {ours} ({size} members) so its members can join the leader's",
+            logging.WARNING,
+        )
         for idx in members:
             if await leave_group(clients[idx]):
                 updated[idx] = GroupState()
@@ -670,7 +673,7 @@ async def _form_group_locked(
 
     leader_idx = _choose_leader(states, leader_index)
     leader = clients[leader_idx]
-    _log(f"Rebuilding group: leader is client {leader_idx} ({names[leader_idx] or 'unknown'})")
+    _log(f"Rebuilding group: leader is {slot_label(leader_idx)}")
 
     result = GroupResult(success=True)
 
@@ -678,9 +681,7 @@ async def _form_group_locked(
     # client sitting in a different group has to be freed before it can be invited across.
     before = states
     states = await _dissolve_other_groups(clients, states, leader_idx, _log)
-    result.left = [
-        names[i] or f"client {i}" for i in range(len(clients)) if before[i].grouped and not states[i].grouped
-    ]
+    result.left = [slot_label(i) for i in range(len(clients)) if before[i].grouped and not states[i].grouped]
     leader_state = states[leader_idx]
 
     for idx, client in enumerate(clients):
@@ -688,17 +689,18 @@ async def _form_group_locked(
             continue
 
         name = names[idx]
+        label = slot_label(idx)
         if not name:
-            _log(f"Client {idx} has no known wizard name — cannot invite it", logging.WARNING)
+            _log(f"{label} has no known wizard name — cannot invite it", logging.WARNING)
             result.success = False
-            result.failed.append(f"client {idx}")
+            result.failed.append(label)
             continue
 
-        if await _add_one(leader, client, name, _log, names[leader_idx]):
-            result.added.append(name)
+        if await _add_one(leader, client, name, label, _log, names[leader_idx]):
+            result.added.append(label)
         else:
             result.success = False
-            result.failed.append(name)
+            result.failed.append(label)
 
     # Close the friends list once, after every invite — it is reused between them, so
     # closing per-invite would mean reopening and re-paginating it for each client.
@@ -721,34 +723,39 @@ async def _form_group_locked(
     return result
 
 
-async def _add_one(leader, target, name: str, log, leader_name: str | None = None) -> bool:
-    """Invite one client into the leader's group. Returns True once the UI confirms it."""
+async def _add_one(leader, target, name: str, label: str, log, leader_name: str | None = None) -> bool:
+    """Invite one client into the leader's group. Returns True once the UI confirms it.
+
+    `name` is what the friends list is searched for; `label` is what the log calls the
+    target. They are kept apart so a wizard name never reaches a log line.
+    """
     for attempt in range(1, GROUP_ADD_RETRIES + 1):
         try:
-            if await _invite_and_accept(leader, target, name, log, leader_name):
-                log(f"Added {name} to the group")
+            if await _invite_and_accept(leader, target, name, label, log, leader_name):
+                log(f"Added {label} to the group")
                 return True
-            log(f"Attempt {attempt}/{GROUP_ADD_RETRIES} to add {name} did not take effect", logging.DEBUG)
+            log(f"Attempt {attempt}/{GROUP_ADD_RETRIES} to add {label} did not take effect", logging.DEBUG)
         except AlreadyInAnotherGroup:
             log(
-                f"{name} is already in another group and must leave it before joining this one",
+                f"{label} is already in another group and must leave it before joining this one",
                 logging.WARNING,
             )
             return False
-        except ValueError as exc:
-            # Raised by the friends-list helpers: name not present, or nobody online.
-            log(f"Could not find {name} in the leader's friends list: {exc}", logging.WARNING)
+        except ValueError:
+            # Raised by the friends-list helpers: name not present, or nobody online. Their
+            # message quotes the name searched for, so it is not passed on.
+            log(f"Could not find {label} in the leader's online friends list", logging.WARNING)
             return False
         except Exception:
-            logger.warning("Unexpected error adding %s to the group", name, exc_info=True)
+            logger.warning("Unexpected error adding %s to the group", label, exc_info=True)
         finally:
             await _close_invite_windows(leader, target)
 
-    log(f"Gave up adding {name} to the group after {GROUP_ADD_RETRIES} attempts", logging.WARNING)
+    log(f"Gave up adding {label} to the group after {GROUP_ADD_RETRIES} attempts", logging.WARNING)
     return False
 
 
-async def _invite_and_accept(leader, target, name: str, log, leader_name: str | None = None) -> bool:
+async def _invite_and_accept(leader, target, name: str, label: str, log, leader_name: str | None = None) -> bool:
     """Run one full invite exchange and report whether the target joined the leader's group."""
     async with leader.mouse_handler:
         await node_helpers.open_friend_profile(leader, name)
@@ -761,11 +768,11 @@ async def _invite_and_accept(leader, target, name: str, log, leader_name: str | 
             timeout=GROUP_PROFILE_TIMEOUT,
             poll_interval=POLL_INTERVAL,
         ):
-            log(f"Friend profile for {name} did not appear within {GROUP_PROFILE_TIMEOUT:.0f}s", logging.DEBUG)
+            log(f"Friend profile for {label} did not appear within {GROUP_PROFILE_TIMEOUT:.0f}s", logging.DEBUG)
 
         if not await node_helpers.click_by_path(leader, INVITE_TO_GROUP_BUTTON_PATH):
             diagnosis = await node_helpers.diagnose_path(leader, INVITE_TO_GROUP_BUTTON_PATH)
-            log(f"Group invite button unavailable for {name}: {diagnosis}", logging.DEBUG)
+            log(f"Group invite button unavailable for {label}: {diagnosis}", logging.DEBUG)
             return False
 
     invited, refused = await _await_invite_outcome(leader, target)
@@ -774,9 +781,9 @@ async def _invite_and_accept(leader, target, name: str, log, leader_name: str | 
         # someone else's, since form_group skips clients known to be in one. Dismiss the
         # popup so it does not block the next invite, and stop: retrying cannot help.
         await node_helpers.click_by_path(leader, ALREADY_IN_GROUP_DISMISS_PATH)
-        raise AlreadyInAnotherGroup(f"{name} is already in another group")
+        raise AlreadyInAnotherGroup(f"{label} is already in another group")
     if not invited:
-        log(f"No group invitation appeared for {name} within {GROUP_INVITE_TIMEOUT:.0f}s", logging.DEBUG)
+        log(f"No group invitation appeared for {label} within {GROUP_INVITE_TIMEOUT:.0f}s", logging.DEBUG)
         return False
 
     await node_helpers.click_by_path(target, GROUP_INVITE_ACCEPT_PATH)
@@ -793,7 +800,7 @@ async def _invite_and_accept(leader, target, name: str, log, leader_name: str | 
     # cannot see. The roster can: the leader has to be listed on it.
     if leader_name and state.roster and not _lists(state.roster, leader_name):
         log(
-            f"{name} joined a group that does not contain {leader_name} (roster: {', '.join(state.roster)})",
+            f"{label} joined a group that does not contain the leader ({len(state.roster)} members)",
             logging.WARNING,
         )
         return False

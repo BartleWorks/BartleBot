@@ -224,7 +224,7 @@ class ClientManager(QObject):
             try:
                 has_password = bool(CredentialStore.retrieve(username))
             except Exception:
-                logger.exception("Could not check the stored password for '%s'", username)
+                logger.exception("Could not check the stored password for P%d's account", position)
                 continue  # Credential Manager is unhappy; do not claim a gap we cannot verify
             if not has_password:
                 display = CredentialStore.display_name(username, self._alias_for(username))
@@ -1464,9 +1464,10 @@ class ClientManager(QObject):
         machine = self._machine
         password = CredentialStore.retrieve(username)
         if not password:
-            logger.error("No stored password for '%s' — stopping bot", username)
+            logger.error("No stored password for P%d's account — stopping bot", orig_pos + 1)
+            display = CredentialStore.display_name(username, self._alias_for(username))
             self.recovery_error.emit(
-                f"No stored password for account '{username}'.\n\n"
+                f"No stored password for account '{display}'.\n\n"
                 "Open Settings → Accounts and save the password, then restart the bot."
             )
             if machine:

@@ -510,17 +510,21 @@ class TestReconnectClients:
         # Should return without touching any external deps — no patches needed.
         await harness._reconnect_clients({0: "user1"})
 
-    async def test_missing_password_emits_error_signal_and_stops(self, harness: RecoveryHarness) -> None:
+    async def test_missing_password_emits_error_signal_and_stops(self, harness: RecoveryHarness, caplog) -> None:
         machine = _make_machine()
         harness._machine = machine
 
         with patch("bartlebot.client_manager.CredentialStore") as mock_creds:
             mock_creds.retrieve.return_value = None
+            mock_creds.display_name.return_value = "u***1"
             await harness._reconnect_clients({0: "user1"})
 
         harness.recovery_error.emit.assert_called_once()
         emitted_msg: str = harness.recovery_error.emit.call_args[0][0]
-        assert "user1" in emitted_msg
+        # The account's display name, never its username — in the dialog or the log (#121).
+        assert "u***1" in emitted_msg
+        assert "user1" not in emitted_msg + caplog.text
+        assert "P1's account" in caplog.text
         assert "Settings" in emitted_msg  # actionable hint
         machine.stop.assert_called_once()
 
