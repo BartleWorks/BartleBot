@@ -19,6 +19,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import set_style_sheet
 from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
+from bartlebot.gui.widgets.flow_layout import flow_container
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY
 from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill, ProfilePill, TagPill
@@ -170,17 +171,18 @@ class StrategyCard(QWidget):
         # Stored tags — the roles — as pills under everything else, rather than beside
         # the name: the name row already carries the source pill and the star, and a
         # 350px card list cannot fit three pills there without wrapping every name.
+        # A flow rather than a QHBoxLayout: a box row never wraps, so its minimum is every
+        # pill end to end, and at a narrow column or a large font that outgrew the card.
+        # Pills are never elided, so they wrap instead (#118).
         self._tag_pills: list[TagPill] = []
         if summary.tags:
-            tag_row = QHBoxLayout()
+            tag_box, tag_row = flow_container(spacing=4)
             tag_row.setContentsMargins(0, 2, 0, 0)
-            tag_row.setSpacing(4)
             for tag in summary.tags:
                 pill = TagPill(tag, vocabulary=STRATEGY_VOCABULARY)
                 tag_row.addWidget(pill)
                 self._tag_pills.append(pill)
-            tag_row.addStretch(1)
-            header.addLayout(tag_row)
+            header.addWidget(tag_box)
 
         layout.addLayout(header)
         self._update_star()
