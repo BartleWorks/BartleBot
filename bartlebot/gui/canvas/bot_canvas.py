@@ -212,6 +212,7 @@ class CanvasDocument:
     camera: tuple | None
     report: ComposeReport
     mode: BotMode
+    edit_baseline: dict | None = None
 
 
 @dataclass
@@ -1076,6 +1077,9 @@ class BotCanvas(QWidget):
         # canvas. See "The panel floors" in game_sizing.py.
         self.setMinimumSize(BOTCANVAS_MIN_WIDTH, BOTCANVAS_MIN_HEIGHT)
         self._config: BotConfig | None = None
+        # The config as the current Edit session found it, so Done announces a change
+        # only when there is one (#122). None when unknown, and Done then announces.
+        self._edit_baseline: dict | None = None
         self._mode = BotMode.RUN
         self._run_state = _IDLE
         self._start_time: float | None = None
@@ -1440,6 +1444,7 @@ class BotCanvas(QWidget):
         self._load(config, ComposeReport())
         self._view.fit_scene()
         self._minimap.fit_to_scene()
+        self._edit_baseline = config.model_dump()
         self._apply_mode(mode)
         self.mode_changed.emit(mode)
 
@@ -1497,6 +1502,7 @@ class BotCanvas(QWidget):
             camera=self._view.camera_state(),
             report=self._compose_report,
             mode=self._mode,
+            edit_baseline=self._edit_baseline,
         )
         self._undo_mgr = UndoManager()
         return doc
@@ -1509,6 +1515,7 @@ class BotCanvas(QWidget):
         if doc.camera is not None:
             self._view.restore_camera(doc.camera)
         self._minimap.fit_to_scene()
+        self._edit_baseline = doc.edit_baseline
         self._apply_mode(doc.mode)
         self.mode_changed.emit(doc.mode)
 
@@ -1978,6 +1985,7 @@ class BotCanvas(QWidget):
         """Switch to Edit mode (no-op if the bot is currently running)."""
         if self._run_state != _IDLE:
             return
+        self._edit_baseline = self._config.model_dump() if self._config is not None else None
         self._apply_mode(BotMode.EDIT)
         self.mode_changed.emit(BotMode.EDIT)
 
@@ -1995,12 +2003,15 @@ class BotCanvas(QWidget):
 
         *saved* is Save & Done's way out, taken after the save has been written: there
         is no change to announce, and announcing one would mark the bot unsaved again.
+        Nor is there after a session that left the config as it found it -- every edit
+        announced itself as it landed, so this only catches one that did not (#122).
         """
         if self.is_definition:
             return False
         self._apply_mode(BotMode.RUN)
         self.mode_changed.emit(BotMode.RUN)
-        if not saved:
+        changed = self._config is None or self._edit_baseline != self._config.model_dump()
+        if not saved and changed:
             self.config_changed.emit()
         return True
 

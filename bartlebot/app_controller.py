@@ -76,6 +76,35 @@ class _DocumentFrame:
     doc: CanvasDocument
     path: str | None
     unsaved: bool
+    clean: dict | None = None
+
+
+def _file_snapshot(config: BotConfig | None) -> dict | None:
+    """What ``config`` would write to disk: the baseline an autosave is compared against.
+
+    Taken wherever a document is opened or saved. The dirty flag alone cannot say
+    whether anything changed -- leaving Edit mode, or an edit typed and reverted,
+    raises it too (#122) -- so an autosave that would only restate this is skipped.
+    """
+    return config.file_dump() if config is not None else None
+
+
+def _matches_clean(config: BotConfig | None, snapshot: dict | None) -> bool:
+    """Whether ``config`` is still what was last opened or saved. False when there is no snapshot."""
+    return snapshot is not None and _file_snapshot(config) == snapshot
+
+
+def _same_bot_content(autosave_path: Path, original_path: Path) -> bool:
+    """Whether a recovery file holds the same bot as its original. False when either will not load.
+
+    Both go through ``BotConfig`` rather than being compared as text, so a file an
+    older version wrote -- different formatting, a default spelled out -- still matches.
+    """
+    try:
+        return BotConfig.load(autosave_path).file_dump() == BotConfig.load(original_path).file_dump()
+    except Exception:
+        logger.debug("Could not compare %s with %s", autosave_path, original_path, exc_info=True)
+        return False
 
 
 def merge_zone_choices(client_zones: Sequence[str], recent_zones: Sequence[str]) -> tuple[list[str], list[str]]:
@@ -146,6 +175,9 @@ class AppController(QObject):
 
         # Auto-save state
         self._has_unsaved_changes: bool = False
+        # The open document as last opened or saved; None when there is no such state
+        # to return to (a recovered file). See _file_snapshot.
+        self._clean_snapshot: dict | None = None
         # The id of the open bot whose author chose Save Without at the Rewards prompt:
         # asked once per open, and remembered nowhere else. See rewards_tag_dialog.
         self._rewards_declined_for: str | None = None
@@ -665,6 +697,7 @@ class AppController(QObject):
         self._rewards_declined_for = None
         self._window.set_bot_name(config.name, "Untitled")
         self._window.bot_canvas.setup(config, mode=BotMode.EDIT)
+        self._clean_snapshot = _file_snapshot(config)
         self._window.left_sidebar.set_config(config)
         self._window.right_sidebar.set_config(config)
         self._window.set_save_enabled(True)
@@ -692,6 +725,8 @@ class AppController(QObject):
         self._rewards_declined_for = None
         self._window.set_bot_name(config.name, Path(path).name)
         self._window.bot_canvas.setup(config)
+        # After setup and compose, which the open does not count as edits either.
+        self._clean_snapshot = _file_snapshot(config)
         self._window.bot_canvas.set_compose_report(report)
         self._window.left_sidebar.set_config(config)
         self._window.right_sidebar.set_config(config)
@@ -708,7 +743,8 @@ class AppController(QObject):
             # Close is the document on top: a definition goes back to what it was opened from.
             self._definition_back()
             return
-        if self._has_unsaved_changes:
+        # The flag is raised by edits that change nothing, too: ask only when one did.
+        if self._has_unsaved_changes and not _matches_clean(self._loaded_config, self._clean_snapshot):
             reply = QMessageBox.question(
                 self._window,
                 "Close Bot",
@@ -727,6 +763,7 @@ class AppController(QObject):
         self._loaded_config = None
         self._last_save_path = None
         self._has_unsaved_changes = False
+        self._clean_snapshot = None
         self._rewards_declined_for = None
         self._window.bot_canvas.close_bot()
         self._window.left_sidebar.set_config(None)
@@ -778,6 +815,7 @@ class AppController(QObject):
         try:
             self._loaded_config.save(self._last_save_path)
             self._has_unsaved_changes = False
+            self._clean_snapshot = _file_snapshot(self._loaded_config)
             self._delete_autosave()
         except Exception as e:
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
@@ -819,6 +857,7 @@ class AppController(QObject):
             self._rewards_declined_for = self._loaded_config.id
         self._last_save_path = path
         self._has_unsaved_changes = False
+        self._clean_snapshot = _file_snapshot(self._loaded_config)
         self._delete_autosave(old_save_path)
         self._window.set_bot_name(self._loaded_config.name, Path(path).name)
         self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
@@ -877,7 +916,9 @@ class AppController(QObject):
         self._do_autosave()
         doc = self._window.bot_canvas.take_document()
         if doc is not None:
-            self._doc_stack.append(_DocumentFrame(doc, self._last_save_path, self._has_unsaved_changes))
+            self._doc_stack.append(
+                _DocumentFrame(doc, self._last_save_path, self._has_unsaved_changes, self._clean_snapshot)
+            )
 
     def _show_definition(self, config: BotConfig, *, unsaved: bool) -> None:
         canvas = self._window.bot_canvas
@@ -886,6 +927,8 @@ class AppController(QObject):
         self._last_save_path = None
         self._has_unsaved_changes = unsaved
         canvas.setup(config, mode=BotMode.EDIT)
+        # A recovered definition has no saved state here to fall back to.
+        self._clean_snapshot = None if unsaved else _file_snapshot(config)
         canvas.set_compose_report(report)
         self._refresh_definition_context()
         # The sidebars describe a bot: its options, combat, drops. A definition has none.
@@ -956,6 +999,7 @@ class AppController(QObject):
             return False
         config.definition.version = version
         self._has_unsaved_changes = False
+        self._clean_snapshot = _file_snapshot(config)
         self._delete_autosave(stem=self._autosave_stem())
         self._refresh_definition_context()
         logger.info("Saved subgraph '%s' version %d to the library", defn.name, version)
@@ -1074,7 +1118,7 @@ class AppController(QObject):
         config = self._loaded_config
         if config is None or config.definition is None:
             return True
-        if self._has_unsaved_changes:
+        if self._has_unsaved_changes and not _matches_clean(config, self._clean_snapshot):
             reply = QMessageBox.question(
                 self._window,
                 "Close Definition",
@@ -1100,6 +1144,7 @@ class AppController(QObject):
             self._loaded_config = None
             self._last_save_path = None
             self._has_unsaved_changes = False
+            self._clean_snapshot = None
             canvas.close_bot()
             self._window.set_bot_name(None, None)
             self._window.set_save_enabled(False)
@@ -1112,6 +1157,7 @@ class AppController(QObject):
         self._loaded_config = config
         self._last_save_path = frame.path
         self._has_unsaved_changes = frame.unsaved
+        self._clean_snapshot = frame.clean
         # What was just edited is linked from here, most likely: take it now, as a
         # run would, so the call node shows the new ports straight away.
         composed, report = self._compose(config)
@@ -2045,6 +2091,12 @@ class AppController(QObject):
         # The config is read-only while the bot is running, nothing new to save.
         if self._current_machine is not None:
             return
+        if _matches_clean(self._loaded_config, self._clean_snapshot):
+            # Nothing to recover: no edit was made, or every one was undone. A copy
+            # identical to the file would only be offered back at the next launch (#122).
+            self._has_unsaved_changes = False
+            self._delete_autosave(stem=self._autosave_stem())
+            return
         try:
             self._loaded_config.save(self._autosave_path())
             logger.debug("Auto-saved recovery file: %s", self._autosave_path())
@@ -2081,6 +2133,10 @@ class AppController(QObject):
                 original_path = self._find_original_for_stem(stem)
                 if original_path and original_path.exists():
                     is_candidate = autosave_path.stat().st_mtime > original_path.stat().st_mtime
+                    if is_candidate and _same_bot_content(autosave_path, original_path):
+                        # Newer, but restating the file: nothing to offer (#122).
+                        self._delete_autosave(stem=stem)
+                        continue
                 else:
                     is_candidate = True
             if is_candidate:
@@ -2155,6 +2211,7 @@ class AppController(QObject):
             self._window.set_start_enabled(self._start_enabled())
             # Mark dirty so the user is reminded to save and autosave continues.
             self._has_unsaved_changes = True
+            self._clean_snapshot = None
 
         # Delete autosave files that were not chosen (discarded by the user).
         for c in candidates:

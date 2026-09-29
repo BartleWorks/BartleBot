@@ -54,6 +54,12 @@ INSTANCE_EXIT = "InstanceExit"
 DUNGEON_ENTRY = "WizardInstancePromptText:00000000"
 """Stepping on a dungeon sigil. Confirm to enter."""
 
+DUNGEON_LOGOUT = "DungeonLogout"
+"""Logging out from inside a dungeon loses its progress. Confirm to proceed."""
+
+DUNGEON_RECALL_LOGOUT = "GUI:00007243"
+"""Logging out closes Dungeon Recall. Confirm to proceed."""
+
 FRIEND_BUSY = "GUI:00006574"
 """'Your friend is busy right now.' Teleport refused -- dismiss and fail."""
 
@@ -115,6 +121,8 @@ LOGIN_LOCKED = "LockFailed"
 KNOWN_KEYS: tuple[str, ...] = (
     INSTANCE_EXIT,
     DUNGEON_ENTRY,
+    DUNGEON_LOGOUT,
+    DUNGEON_RECALL_LOGOUT,
     FRIEND_BUSY,
     FRIEND_CROSS_REALM,
     REALM_RESETS_DUNGEON,
@@ -150,6 +158,8 @@ CONFIRM_TO_PROCEED = frozenset(
         REALM_RESETS_DUNGEON,
         FRIEND_CROSS_REALM,
         DUNGEON_ENTRY,
+        DUNGEON_LOGOUT,
+        DUNGEON_RECALL_LOGOUT,
     }
 )
 """Questions. Click the centre (confirm) button and the action goes ahead."""

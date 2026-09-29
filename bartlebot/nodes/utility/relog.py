@@ -24,7 +24,7 @@ middle of a dungeon run.
 import asyncio
 import logging
 
-from bartlebot import group_manager, wizard_names
+from bartlebot import dialog_captions, group_manager, wizard_names
 from bartlebot.launcher import auto_select
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
@@ -77,8 +77,9 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("SUCCESS", "Every selected player logged out and is back in the world."),
         ReturnSpec(
             "FAILURE",
-            "The spellbook or its settings page did not open, the character select screen "
-            "never appeared after Quit, or a player did not finish loading back in.",
+            "The spellbook or its settings page did not open, the game refused the logout, the "
+            "character select screen never appeared after Quit, or a player did not finish "
+            "loading back in.",
         ),
     ],
     max_consecutive_retries=2,
@@ -153,14 +154,25 @@ async def _relog_one(machine, client) -> bool:
 
     await node_helpers.click_by_path(client, SETTINGS_QUIT_BUTTON_PATH)
 
-    # No confirmation dialog follows Quit, so this waits on the screen itself rather than
-    # spending a Safety Delay looking for a modal that never appears.
-    if not await node_helpers.poll_until(
-        lambda: auto_select.at_character_select(client),
-        RELOG_CHAR_SELECT_TIMEOUT,
-        POLL_INTERVAL,
-    ):
+    # Quit usually goes straight to character select, but inside a dungeon, or with Dungeon
+    # Recall open, the game first asks whether to log out anyway (#108). The wait answers
+    # that each tick rather than spending a Safety Delay up front on a dialog that is
+    # normally absent.
+    refusal: str | None = None
+
+    async def _reached_char_select() -> bool:
+        nonlocal refusal
+        if await auto_select.at_character_select(client):
+            return True
+        outcome = await node_helpers.resolve_modal(client)
+        refusal = outcome.refusal
+        return refusal is not None
+
+    if not await node_helpers.poll_until(_reached_char_select, RELOG_CHAR_SELECT_TIMEOUT, POLL_INTERVAL):
         machine.log("relog: character select never appeared after Quit", logging.WARNING)
+        return False
+    if refusal:
+        machine.log(f"relog: the game refused the logout — {dialog_captions.describe(refusal)}", logging.WARNING)
         return False
 
     machine.log("relog: at character select — playing the same character back in", logging.DEBUG)
@@ -204,7 +216,7 @@ async def _regroup(machine, clients: list) -> None:
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: node_helpers.click_by_path(), node_helpers.poll_until(),
+    APIs: node_helpers.click_by_path(), node_helpers.poll_until(), node_helpers.resolve_modal(),
           node_helpers.is_visible_by_path(), auto_select.at_character_select(),
           auto_select.press_character_select_play(), client.is_loading(), client.zone_name(),
           machine.suspend_health_checks_for() / resume_health_checks_for()
@@ -215,13 +227,14 @@ async def run(machine, clients: list, params: dict) -> str:
          crash those watchers exist to catch — without this the monitor force-closes a
          client that is relogging perfectly well.
       2. Open the spellbook, open Preferences, and make sure the Quit button is showing.
-      3. Click Quit and wait for the character select screen.
+      3. Click Quit and wait for the character select screen, confirming the warning the
+         game raises when logging out of a dungeon or with Dungeon Recall open.
       4. Press Play, and keep pressing while the screen is still up.
       5. Wait for the world to be readable again.
       6. Put health monitoring back, then re-form the group.
 
-    FAILURE: the spellbook or its settings page did not open; character select never
-    appeared; or a player did not finish loading back in.
+    FAILURE: the spellbook or its settings page did not open; the game refused the logout;
+    character select never appeared; or a player did not finish loading back in.
     """
     raw: list[int] = params.get("relog_clients") or []
     indices = [n - 1 for n in raw if 0 < n <= len(clients)] if raw else list(range(len(clients)))

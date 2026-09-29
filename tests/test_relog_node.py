@@ -16,6 +16,9 @@ import pytest
 
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
+    MESSAGE_BOX_CAPTION_PATH,
+    MESSAGE_BOX_CENTER,
+    MESSAGE_BOX_RIGHT,
     REALM_CURRENT_NAME_PATH,
     SETTINGS_QUIT_BUTTON_PATH,
     SPELLBOOK_BUTTON_PATH,
@@ -30,11 +33,23 @@ class FakeGame:
 
     Screens: ``world`` -> ``spellbook`` -> ``settings`` -> ``char_select`` -> ``loading``
     -> ``world``. ``opens_on_realms`` reproduces the one tab that hides the Quit button.
+
+    ``quit_dialog`` puts a modal between Quit and character select, as the game does when
+    logging out of a dungeon: its caption, and which buttons it shows. The centre button
+    goes on to character select; the right one backs out to the settings page.
     """
 
-    def __init__(self, *, opens_on_realms: bool = False, loads_in: bool = True, reaches_char_select: bool = True):
+    def __init__(
+        self,
+        *,
+        opens_on_realms: bool = False,
+        loads_in: bool = True,
+        reaches_char_select: bool = True,
+        quit_dialog: tuple[str, tuple] | None = None,
+    ):
         self.screen = "world"
         self.opens_on_realms = opens_on_realms
+        self.quit_dialog = quit_dialog
         self.loads_in = loads_in
         self.reaches_char_select = reaches_char_select
         self.clicks: list[list[str]] = []
@@ -50,7 +65,14 @@ class FakeGame:
             return self.screen == "settings" and not self.opens_on_realms
         if path == REALM_CURRENT_NAME_PATH:
             return self.screen == "settings" and self.opens_on_realms
+        if path in (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT):
+            return self.screen == "dialog" and path in self.quit_dialog[1]
         return False
+
+    def text(self, path: list[str]) -> str:
+        if path == MESSAGE_BOX_CAPTION_PATH and self.screen == "dialog":
+            return self.quit_dialog[0]
+        return ""
 
     def at_character_select(self) -> bool:
         return self.screen == "char_select"
@@ -76,7 +98,14 @@ class FakeGame:
             self.opens_on_realms = False
             self.screen = "world"
         elif path == SETTINGS_QUIT_BUTTON_PATH and self.screen == "settings":
-            self.screen = "char_select" if self.reaches_char_select else "settings"
+            if self.quit_dialog:
+                self.screen = "dialog"
+            else:
+                self.screen = "char_select" if self.reaches_char_select else "settings"
+        elif path == MESSAGE_BOX_CENTER and self.screen == "dialog":
+            self.screen = "char_select"
+        elif path == MESSAGE_BOX_RIGHT and self.screen == "dialog":
+            self.screen = "settings"
 
     def press_play(self) -> None:
         self.plays += 1
@@ -111,11 +140,15 @@ def games(monkeypatch):
     async def _press_play(hwnd):
         registry[hwnd].press_play()
 
+    async def _text(client, path):
+        return registry[client.window_handle].text(list(path))
+
     import bartlebot.nodes.node_helpers as nh
     from bartlebot.launcher import auto_select
 
     monkeypatch.setattr(nh, "is_visible_by_path", _is_visible)
     monkeypatch.setattr(nh, "click_by_path", _click)
+    monkeypatch.setattr(nh, "get_text_by_path", _text)
     monkeypatch.setattr(auto_select, "at_character_select", _at_char_select)
     monkeypatch.setattr(auto_select, "press_character_select_play", _press_play)
     # Cadences, never ceilings — the fakes count polls, not seconds.
@@ -190,6 +223,33 @@ class TestRealmsTabGuard:
         assert game.opens == 2  # closed and reopened, rather than clicking around the tabs
         assert BACKPACK_CLOSE_BUTTON_PATH in game.clicks
         assert game.clicks[-1] == SETTINGS_QUIT_BUTTON_PATH
+
+
+# The game's own en-US text for the two logout warnings, as the snapshot holds it.
+DUNGEON_LOGOUT_CAPTION = (
+    "If you log out in a Dungeon you will lose all your progress in the Dungeon and will have "
+    "to start over at the beginning.<br>Are you sure you want to log out now?"
+)
+DUNGEON_RECALL_LOGOUT_CAPTION = "If you log out, Dungeon Recall will close.<br>Are you sure you want to log out now?"
+
+
+class TestLogoutWarnings:
+    """#108: Quit from inside a dungeon asks first, and the relog stalled on the question."""
+
+    @pytest.mark.parametrize("caption", [DUNGEON_LOGOUT_CAPTION, DUNGEON_RECALL_LOGOUT_CAPTION])
+    async def test_the_warning_is_confirmed_and_the_relog_carries_on(self, machine, games, caption):
+        clients, (game,) = games({"quit_dialog": (caption, (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.clicks[-1] == MESSAGE_BOX_CENTER
+        assert game.screen == "world"
+
+    async def test_a_dismiss_only_dialog_fails_fast_as_a_refusal(self, machine, games):
+        """A dialog offering no way on is the game saying no; waiting out the timeout says nothing more."""
+        clients, (game,) = games({"quit_dialog": ("Wording nobody has catalogued", (MESSAGE_BOX_RIGHT,))})
+        assert await relog_node.run(machine, clients, {}) == "FAILURE"
+        assert MESSAGE_BOX_CENTER not in game.clicks
+        assert any("refused the logout" in msg for msg, _ in machine.logs)
+        assert not any("never appeared" in msg for msg, _ in machine.logs)
 
 
 class TestFailurePaths:
