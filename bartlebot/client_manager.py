@@ -1439,10 +1439,11 @@ class ClientManager(QObject):
             # Survey once and hand the result to form_group — see the matching comment in
             # AppController._form_pre_run_group.
             states = await group_manager.read_group_states(clients)
+            names = await wizard_names.resolve_names(clients)
             if all(s.grouped for s in states) and group_manager.same_group(states) is not False:
                 logger.debug("Skipping post-recovery grouping — all clients are already in one group")
+                self._refresh_group_routes(names, states)
                 return
-            names = await wizard_names.resolve_names(clients)
             result = await group_manager.form_group(clients, names, states=states)
             if result.success:
                 logger.info("Post-recovery grouping: %s", result.summary())
@@ -1451,8 +1452,23 @@ class ClientManager(QObject):
                     "Post-recovery grouping did not fully succeed (%s) — the bot will resume ungrouped",
                     result.summary(),
                 )
+            self._refresh_group_routes(names, result.states)
         except Exception:
             logger.warning("Post-recovery grouping failed — the bot will resume ungrouped", exc_info=True)
+
+    def _refresh_group_routes(self, names: list, states: list | None) -> None:
+        """Bring the run's port map up to date with the group a recovery regroup left.
+
+        The map is surveyed before the run, and a crash drops a client from its group, so
+        without this a route plan can count on a group port that no longer exists — found
+        out only when the port fails and is demoted. Only the group routes move: friendships
+        survive a crash. A run with no map yet is left alone; navigation surveys when it
+        first needs one.
+        """
+        ports = self._machine.port_map if self._machine is not None else None
+        if ports is None or states is None:
+            return
+        ports.set_groups(names, [state.roster for state in states])
 
     def _recovery_target(self, orig_pos: int, username: str) -> "_RecoveryTarget | None":
         """Everything needed to relaunch one slot, or None if it cannot be relaunched.

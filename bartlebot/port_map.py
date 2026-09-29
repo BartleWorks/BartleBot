@@ -39,6 +39,22 @@ def _key(name: str | None) -> str | None:
     return name.casefold() if name else None
 
 
+def _group_pairs(names: Sequence[str | None], rosters: Sequence[Sequence[str]]) -> set[tuple[str, str]]:
+    """Every (src, dst) pair of our own clients that a Group tab roster puts in one group.
+
+    A client's roster counts only if it lists that client itself, so a stale or foreign
+    roster cannot vouch for a group the client is not in.
+    """
+    ours = {key for name in names if (key := _key(name))}
+    pairs: set[tuple[str, str]] = set()
+    for name, roster in zip(names, rosters):
+        src = _key(name)
+        members = {key for member in roster if (key := _key(member))}
+        if src is not None and src in members:
+            pairs.update((src, dst) for dst in (members & ours) - {src})
+    return pairs
+
+
 class PortMap:
     """The routes each of our clients has to each of the others."""
 
@@ -67,11 +83,22 @@ class PortMap:
                 dst = _key(friend)
                 if dst in ours and dst != src:
                     routes.setdefault((src, dst), set()).add(FRIEND)
-            members = {key for member in rosters[i] if (key := _key(member))}
-            if src in members:
-                for dst in (members & ours) - {src}:
-                    routes.setdefault((src, dst), set()).add(GROUP)
+        for pair in _group_pairs(names, rosters):
+            routes.setdefault(pair, set()).add(GROUP)
         return cls(routes)
+
+    def set_groups(self, names: Sequence[str | None], rosters: Sequence[Sequence[str]]) -> None:
+        """Replace every group route with the ones these rosters give, mid-run.
+
+        For after a regroup: a crash drops a client from its group, so the group routes the
+        run started with no longer hold, while its friendships do. Friend routes are kept as
+        they are, demotions included; group routes are rebuilt from scratch, since a demoted
+        one failed against a group that no longer exists.
+        """
+        for kinds in self._routes.values():
+            kinds.discard(GROUP)
+        for pair in _group_pairs(names, rosters):
+            self._routes.setdefault(pair, set()).add(GROUP)
 
     def routes(self, src, dst) -> list[str]:
         """The routes client `src` has to client `dst`, preferred first; [] if either name is unknown."""

@@ -1191,6 +1191,59 @@ async def test_an_accept_that_raises_does_not_cancel_the_others(ui):
 
 
 # ---------------------------------------------------------------------------
+# The states form_group leaves behind
+#
+# Handed to the pre-run port survey so it does not open every social window again to read
+# what the regroup just did. The port map keeps only pairs of our own clients, so what
+# matters is that our members share a roster naming each other, and nobody else is in it.
+# ---------------------------------------------------------------------------
+
+
+async def test_a_regroup_reports_everyone_in_one_group(ui):
+    clients = [ui.make_client(n) for n in _FOUR]
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, list(_FOUR)))
+
+    assert result.states is not None
+    assert all(state.grouped for state in result.states)
+    assert gm.same_group(result.states) is True
+    assert set(result.states[0].roster) == set(_FOUR)
+
+
+async def test_a_regroup_reports_what_the_game_would_show(ui):
+    """Pinned against the fake's own rosters, which is what a second survey would have read."""
+    clients = [ui.make_client(n) for n in _FOUR]
+    ui.put_in_group(clients[0], clients[1])
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, list(_FOUR)))
+    reread = await _run_with(ui, lambda: gm.read_group_states(clients))
+
+    assert [s.grouped for s in result.states] == [s.grouped for s in reread]
+    assert [gm._roster_key(s) for s in result.states] == [gm._roster_key(s) for s in reread]
+
+
+async def test_a_client_that_did_not_join_is_not_reported_in_the_group(ui):
+    clients = [ui.make_client(n) for n in _FOUR[:3]]
+    ui.already_in_other_group.add(clients[2])
+
+    result = await _run_with(ui, lambda: gm.form_group(clients, _FOUR[:3]))
+
+    assert [s.grouped for s in result.states] == [True, True, False]
+    assert "Carol C" not in result.states[0].roster
+
+
+async def test_a_no_op_regroup_reports_the_survey_it_read(ui):
+    a = ui.make_client("Alice A", grouped=True)
+    b = ui.make_client("Bob B", grouped=True)
+
+    result = await _run_with(ui, lambda: gm.form_group([a, b], ["Alice A", "Bob B"]))
+
+    assert ui.invited_names == []
+    assert [s.grouped for s in result.states] == [True, True]
+    assert set(result.states[0].roster) == {"Alice A", "Bob B"}
+
+
+# ---------------------------------------------------------------------------
 # No wizard name reaches a log (#121)
 # ---------------------------------------------------------------------------
 

@@ -156,6 +156,11 @@ class GroupResult:
     # someone from a group they were happily in, including players who are not ours.
     left: list[str] = field(default_factory=list)
     reason: str = ""
+    # Every client's group state as form_group left it, positionally aligned with its
+    # clients, so a caller that needs membership next (the pre-run port survey) does not
+    # open every social window again to learn what this call just did. None when it read
+    # nothing. See _final_states for what is read and what is inferred.
+    states: list[GroupState] | None = None
 
     def summary(self) -> str:
         if self.success and not self.added and not self.left:
@@ -640,6 +645,41 @@ def _in_leader_group(state: GroupState, leader_state: GroupState) -> bool:
     return _roster_key(state) == _roster_key(leader_state)
 
 
+def _final_states(
+    states: list[GroupState],
+    leader_idx: int,
+    joined: set[int],
+    names: list[str | None],
+) -> list[GroupState]:
+    """Every client's group state after a regroup, without opening a social window to read it.
+
+    `states` is the survey as _dissolve_other_groups left it. The leader's group is the
+    leader, the clients already in it, and the ones that joined — each join was confirmed
+    by the Leave Group button and a roster listing the leader, so nothing here is a guess
+    that the regroup did not check. They share one roster: the leader's as surveyed, plus
+    our own clients' names. That can miss a stranger who joined in the meantime, but the
+    port map, the one reader, keeps only pairs of our own clients.
+
+    Everyone else keeps the state already read for them: a client freed by a dissolve reads
+    ungrouped, and one whose invitation failed reads whatever it did before.
+    """
+    leader_state = states[leader_idx]
+    members = [
+        idx
+        for idx in range(len(states))
+        if idx == leader_idx or idx in joined or _in_leader_group(states[idx], leader_state)
+    ]
+    if len(members) < 2:
+        return list(states)
+
+    roster: list[str] = []
+    for name in (*leader_state.roster, *(names[idx] for idx in members)):
+        if name and not _lists(tuple(roster), name):
+            roster.append(name)
+    group = GroupState(grouped=True, roster=tuple(roster))
+    return [group if idx in members else state for idx, state in enumerate(states)]
+
+
 async def _dissolve_other_groups(
     clients: list,
     states: list[GroupState],
@@ -705,7 +745,7 @@ async def _form_group_locked(
         states = await read_group_states(clients)
     if all(state.grouped for state in states) and same_group(states) is not False:
         _log("All clients are already in a group — nothing to do", logging.DEBUG)
-        return GroupResult(success=True)
+        return GroupResult(success=True, states=list(states))
 
     leader_idx = _choose_leader(states, leader_index)
     leader = clients[leader_idx]
@@ -736,6 +776,7 @@ async def _form_group_locked(
     result.failed += [slot_label(idx) for idx in to_invite if idx not in joined]
     if len(joined) < len(to_invite):
         result.success = False
+    result.states = _final_states(states, leader_idx, joined, names)
 
     # Close the friends list once, after every invite — it is reused between them, so
     # closing per-invite would mean reopening and re-paginating it for each client.

@@ -1706,8 +1706,10 @@ class AppController(QObject):
         guarantees the first turn in combat, so it is re-established at the start of every
         run rather than assumed to have survived from the last one.
 
-        Returns the group states it read when it left membership as it found it, so the port
-        survey can reuse them; None when it read nothing, or changed the group.
+        Returns every client's group state as grouping left it, so the port survey can reuse
+        them rather than opening every social window a second time: what the survey read when
+        nothing needed changing, and GroupResult.states when form_group changed something.
+        None when grouping is off or failed outright, and the survey then reads for itself.
         """
         if not SettingsManager.instance().auto_group_players:
             return None
@@ -1734,8 +1736,10 @@ class AppController(QObject):
                     "Pre-run grouping did not fully succeed (%s) — the run will continue ungrouped",
                     result.summary(),
                 )
+            return result.states
         except Exception:
             logger.warning("Pre-run grouping failed — the run will continue ungrouped", exc_info=True)
+            return None
 
     async def _apply_pre_run_decks(self) -> None:
         """Apply saved deck presets to each connected client before the FSM starts."""
