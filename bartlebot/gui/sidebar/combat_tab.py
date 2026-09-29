@@ -7,8 +7,10 @@ Picking, and reading what was picked. It holds the run-time truth -- which strat
 active, which fights it covers, per-client deck state -- and it no longer holds an
 editor. There is no disclosure arrow into a DSL box on any card here: combat editing is
 a user-owned edit that wants an explicit Save/Cancel boundary, and it lives in
-``CombatStrategyDialog``. ``Change…`` on a card opens that dialog in pick mode; ``Edit…``
-opens the same window on the same strategy in manage mode.
+``CombatStrategyDialog``. ``Change…`` (🔍) on a card opens that dialog in Pick mode,
+which selects and edits nothing (#123); ``Edit…`` (✏) opens it as the active combat
+profile's editor, on every card, the built-in default's included. A strategy made there
+on that visit is linked to the card that opened it on Save (#118).
 
 A BANNER, THEN THE SECTIONS
 ---------------------------
@@ -62,8 +64,9 @@ caption. Condensing them is the move the section already makes for fights that s
 strategy, applied to the one they share by default.
 
 The section ends with the same dashed ``AddCard`` the launch columns end with, and it is
-the second way in. Its flow is two chained dialogs -- pick a strategy, then pick its
-fights -- because a card holding a strategy and no fights forms no group, draws nothing
+the second way in. It opens a menu of two -- choose an existing strategy, or create one
+for this profile -- and either way the flow is two chained dialogs, the strategy and
+then its fights, because a card holding a strategy and no fights forms no group, draws nothing
 on the next rebuild and is pruned by ``_prune_orphans`` on the next save; it cannot be
 left on screen to be filled in later. A single fight is still quicker through its own
 pill on the default card. The add-card is what pays when several are to share one
@@ -83,7 +86,6 @@ from collections.abc import Callable
 from functools import partial
 from pathlib import Path
 from typing import TYPE_CHECKING
-from uuid import uuid4
 
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QColor
@@ -110,7 +112,7 @@ from bartlebot.combat_grouping import (
     group_bindings,
     state_label,
 )
-from bartlebot.combat_profile import StrategyLookup, read_bot_names
+from bartlebot.combat_profile import StrategyLookup, duplicate_profile, read_bot_names
 from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.credentials import CredentialStore
 from bartlebot.deck_io import resolve_apply_archmastery
@@ -118,6 +120,7 @@ from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
 from bartlebot.gui.deck_content import ARCHMASTERY_MODES, archmastery_note, deck_groups
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.sidebar.player_card import STRIPE_WIDTH, account_stripe_keys
 from bartlebot.gui.sidebar.sidebar_section import (
     SidebarSection,
@@ -183,6 +186,8 @@ _STRATEGIES_SECTION = "Duel Combat Strategies"
 
 #: The section's terminator, in the AddCard the launch columns end with.
 _ADD_STRATEGY = "Add a strategy for specific fights"
+#: The add-card menu's first item; the second names the profile.
+_ADD_EXISTING = "Choose an existing strategy…"
 
 #: Verb labels for the Bot Combat Strategy banner, shared with its menu and the tests.
 _CHANGE_BCS = "Change…"
@@ -999,7 +1004,7 @@ class CombatTab(QWidget):
             BUILT_IN_LABEL, NOT_CONFIGURED_LABEL, parent=self._strategies_section, role=PanelRole.DEFAULT
         )
         self._default_panel.pick_requested.connect(partial(self._on_pick_duel, self._default_panel))
-        self._default_panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
+        self._default_panel.edit_requested.connect(partial(self._on_edit_strategy, self._default_panel))
         self._default_panel.fight_pick_requested.connect(self._on_pick_for_fight)
         self._default_panel.setVisible(False)
 
@@ -1603,7 +1608,7 @@ class CombatTab(QWidget):
         # built between two identical answers would otherwise stay plain.
         panel.set_player_colors(*self._player_colors)
         panel.pick_requested.connect(partial(self._on_pick_duel, panel))
-        panel.edit_in_library_requested.connect(self._on_edit_dcs_in_library)
+        panel.edit_requested.connect(partial(self._on_edit_strategy, panel))
         return panel
 
     # ------------------------------------------------------------------
@@ -1643,28 +1648,64 @@ class CombatTab(QWidget):
     def _on_add_strategy(self) -> None:
         """Give some fights a strategy of their own — the add-card at the foot of the list.
 
-        Two dialogs, chained, and the chaining is what keeps the invariant that a card on
-        screen is a card in the file. A ``StateAssignment`` with no ``state_ids`` forms no
-        group, so it would draw no card on the next rebuild, and ``_prune_orphans`` drops
-        it outright on the next save: an empty card cannot be left lying about for the
-        user to fill in later, because nothing would bring it back. So the strategy is
-        picked first, the card is made, its own membership popup opens on it immediately,
-        and the card is dropped again if that popup closes with nothing chosen.
+        A menu of two, because the strategy can already exist or be made for these fights
+        (#118): **Choose an existing strategy…** opens the picker, and **Create one for
+        '<profile>'…** opens the profile editor with nothing selected, so New and
+        Duplicate are both there. GitHub's sub-issues are the shape, "Create sub-issue"
+        beside "Add existing issue"; so is the assignment card's own menu, which mixes
+        picking a Player Strategy with "Custom DSL…".
+
+        Either way it is two dialogs, chained, and the chaining is what keeps the
+        invariant that a card on screen is a card in the file. A ``StateAssignment`` with
+        no ``state_ids`` forms no group, so it would draw no card on the next rebuild, and
+        ``_prune_orphans`` drops it outright on the next save: an empty card cannot be left
+        lying about for the user to fill in later, because nothing would bring it back. So
+        the strategy comes first, the card is made, its own membership popup opens on it
+        immediately, and the card is dropped again if that popup closes with nothing
+        chosen. A strategy made for it is kept regardless: it is in the profile, and Save
+        put it there.
 
         The pill route on the default card is the other way in, and stays the shorter one
         for a single fight. This is the one that pays when several fights are to share.
         """
         if self._config is None or self._bcs is None or not self._editable:
             return
+        menu = popup_menu(self._add_card)
+        for label, run in self._add_card_verbs():
+            menu.addAction(label).triggered.connect(lambda _checked=False, run=run: run())
+        menu.exec(self._add_card.mapToGlobal(self._add_card.rect().bottomLeft()))
+
+    def _add_card_verbs(self) -> list[tuple[str, Callable[[], None]]]:
+        """The add-card menu's two items, in order. Public-shaped so a test can read them."""
+        name = self._bcs.name if self._bcs is not None else ""
+        return [(_ADD_EXISTING, self._on_add_existing), (f"Create one for '{name}'…", self._on_add_created)]
+
+    def _on_add_existing(self) -> None:
+        """The add-card's first item: pick a strategy that already exists."""
+        if self._config is None or self._bcs is None or not self._editable:
+            return
         # No "none" option: picking nothing here would make a card that says nothing,
         # which is what the default card already is.
         dlg = self.open_combat_dialog(kind=StrategyKind.DUEL, mode=DialogMode.PICK, allow_none=False)
-        if dlg is None:
-            return
-        chosen = dlg.selected_id()
-        if not chosen:
-            return
+        if dlg is not None and dlg.selected_id():
+            self._start_pending_card(dlg.selected_id())
 
+    def _on_add_created(self) -> None:
+        """The add-card's second item: make a strategy for these fights, in the profile.
+
+        The profile editor opens with nothing selected. On Save, the new card takes
+        whatever is selected — made there, or not — and goes on to its fights.
+        """
+        if self._config is None or self._bcs is None or not self._editable:
+            return
+        dlg = self.open_combat_dialog(kind=StrategyKind.DUEL, mode=DialogMode.PROFILE)
+        if dlg is not None and dlg.selected_id():
+            self._start_pending_card(dlg.selected_id())
+
+    def _start_pending_card(self, chosen: str) -> None:
+        """Make the add flow's card for *chosen*, and ask for its fights."""
+        if self._config is None:
+            return
         exposed = exposed_combat_states(self._config)
         assignment = StateAssignment(state_ids=[], duel_combat_strategy_id=chosen)
         panel = self._make_group_panel(assignment, exposed, [])
@@ -1811,8 +1852,23 @@ class CombatTab(QWidget):
             return dcs.name if dcs is not None else MISSING_LABEL
         return STATE_INHERIT_LABEL
 
-    def _on_edit_dcs_in_library(self, dcs_id: str) -> None:
-        self.open_combat_dialog(kind=StrategyKind.DUEL, mode=DialogMode.PROFILE, current_id=dcs_id)
+    def _on_edit_strategy(self, panel: StrategyPanel) -> None:
+        """The pencil: open the profile editor on this card's strategy (#118).
+
+        On every card, the built-in default's included. If the strategy selected at Save
+        was made on this visit — New or Duplicate — the card now points at it; otherwise
+        the card's link is left as it was. So pencil, New, Save is the whole flow for
+        giving a card a strategy of its own.
+        """
+        binding = panel.binding
+        if binding is None or self._bcs is None:
+            return
+        key = self._binding_key(binding)
+        dlg = self.open_combat_dialog(
+            kind=StrategyKind.DUEL, mode=DialogMode.PROFILE, current_id=binding.duel_combat_strategy_id
+        )
+        if dlg is not None and dlg.selected_id() and dlg.selected_was_created():
+            self._link(key, dlg.selected_id())
 
     # ------------------------------------------------------------------
     # BCS picker / menu actions
@@ -1871,7 +1927,10 @@ class CombatTab(QWidget):
         name, ok = QInputDialog.getText(self, "Duplicate Strategy", "New name:", text=f"{self._bcs.name} copy")
         if not ok or not name.strip():
             return
-        new_bcs = self._bcs.model_copy(deep=True, update={"id": str(uuid4()), "name": name.strip()})
+        # Fresh ids for the copy's own strategies, and every link inside it rewritten to
+        # follow: sharing them, one profile's copy would hide the library's the day the
+        # other moved its copy there, lookup checking the profile first (#118).
+        new_bcs = duplicate_profile(self._bcs, name.strip())
         save_bot_strategy(new_bcs)
         self._all_bcs.append(new_bcs)
         self._bcs = new_bcs

@@ -1204,6 +1204,7 @@ class CombatStrategyDialog(QDialog):
         self._allow_none = allow_none
         self._none_label = none_label
         self._selected_id: str | None = current_id
+        self._selected_was_created = False
         self._used_none = False
         self.setWindowTitle("Pick a Combat Strategy" if mode is DialogMode.PICK else "Combat Strategies")
         self.setMinimumSize(880, 560)
@@ -1315,6 +1316,8 @@ class CombatStrategyDialog(QDialog):
             uses = self._ws.shared_uses(self._bot_name)
             if uses and not self._confirm_shared_edits(uses):
                 return
+        # Asked before the commit, which baselines everything and so forgets what was new.
+        self._selected_was_created = self._ws.was_created(self._pick_kind, self._selected_id)
         self._ws.commit()
         if self._ws.is_dirty:
             # commit() logs and skips a failed write, leaving the entry dirty.
@@ -1350,6 +1353,12 @@ class CombatStrategyDialog(QDialog):
     def selected_id(self) -> str | None:
         """The picked id. ``None`` means the built-in default."""
         return self._selected_id
+
+    def selected_was_created(self) -> bool:
+        """Whether the returned selection was made on this visit — by New, Duplicate or a
+        promotion. What lets the Combat tab link the card that opened the profile editor to
+        a strategy made for it, and leave the card alone otherwise (#118)."""
+        return self._selected_was_created
 
     def used_built_in_default(self) -> bool:
         """Whether the user chose the built-in default rather than a strategy.

@@ -18,7 +18,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from PyQt6.QtWidgets import QScrollArea
+from PyQt6.QtWidgets import QInputDialog, QScrollArea
 
 from bartlebot import store_roots
 from bartlebot import strategy_store as store_mod
@@ -28,9 +28,11 @@ from bartlebot.bot.strategy_models import (
     DeckData,
     DuelCombatStrategy,
     PlayerAssignment,
+    PlayerCombatStrategy,
     StateAssignment,
 )
 from bartlebot.combat_warnings import exposed_combat_states
+from bartlebot.gui.combat_strategies.dialog import DialogMode
 from bartlebot.gui.sidebar.combat_tab import (
     _APPLY_DECK,
     _CHANGE_BCS,
@@ -229,46 +231,30 @@ def test_change_is_the_body_verb(qapp):
     assert CHANGE in _verb_labels(panel)
 
 
-def test_edit_in_library_is_offered_only_for_a_linked_binding(qapp):
-    dcs = DuelCombatStrategy(name="Frenzy AoE")
-    panel = StrategyPanel()
-
-    panel.load(StateAssignment(state_ids=["s1"]), [dcs], [])
-    assert EDIT_STRATEGY not in _verb_labels(panel)
-
-    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
-    assert EDIT_STRATEGY in _verb_labels(panel)
-
-
-def test_the_edit_button_exists_from_the_start_and_is_shown_when_it_applies(qapp):
-    """CardFrame builds face buttons once, before any binding is loaded.
-
-    A conditional face verb would therefore never get a button at all, and could never
-    appear when the binding later became linked — which is why the two face buttons are
-    built from ``_face_verbs`` and this one is shown and hidden instead.
-    """
+def test_the_pencil_is_on_every_card_including_the_built_in_default(qapp):
+    """#118: the profile editor is where a card gets a strategy made for it."""
     dcs = DuelCombatStrategy(name="Frenzy AoE")
     panel = StrategyPanel()
     button = panel.action_button(EDIT_STRATEGY)
-    assert button is not None
 
     panel.load(StateAssignment(state_ids=["s1"]), [dcs], [])
-    assert not button.isVisibleTo(panel)
+    assert EDIT_STRATEGY in _verb_labels(panel)
+    assert button.isVisibleTo(panel)
 
     panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
+    assert EDIT_STRATEGY in _verb_labels(panel)
     assert button.isVisibleTo(panel)
 
 
-def test_edit_in_library_emits_the_linked_dcs_id(qapp):
-    dcs = DuelCombatStrategy(name="Frenzy AoE")
+def test_the_pencil_asks_the_tab_to_edit(qapp):
     panel = StrategyPanel()
-    panel.load(StateAssignment(state_ids=["s1"], duel_combat_strategy_id=dcs.id), [dcs], [])
+    panel.load(StateAssignment(state_ids=["s1"]), [], [])
 
-    seen: list[str] = []
-    panel.edit_in_library_requested.connect(seen.append)
-    panel._emit_edit_in_library()
+    seen: list[bool] = []
+    panel.edit_requested.connect(lambda: seen.append(True))
+    panel.action_button(EDIT_STRATEGY).click()
 
-    assert seen == [dcs.id]
+    assert seen == [True]
 
 
 def test_a_locked_card_refuses_its_body_click(qapp):
@@ -1174,7 +1160,7 @@ def _add_strategy(tab: CombatTab, dcs_id: str | None) -> None:
     ):
         MockDlg.return_value.exec.return_value = dcs_id is not None
         MockDlg.return_value.selected_id.return_value = dcs_id
-        tab._on_add_strategy()
+        tab._on_add_existing()
 
 
 def test_adding_a_strategy_asks_for_its_fights_straight_away(qapp, store):
@@ -1190,7 +1176,7 @@ def test_adding_a_strategy_asks_for_its_fights_straight_away(qapp, store):
     ):
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
-        tab._on_add_strategy()
+        tab._on_add_existing()
         # The popup is deferred a turn: it positions itself against the button's place on
         # screen, which the layout has not given the card just inserted above it.
         qapp.processEvents()
@@ -2090,7 +2076,7 @@ def test_a_card_still_choosing_its_fights_cannot_be_dragged(qapp, store):
     ):
         MockDlg.return_value.exec.return_value = True
         MockDlg.return_value.selected_id.return_value = dcs.id
-        tab._on_add_strategy()
+        tab._on_add_existing()
 
     assert not tab._pending_panel.grip.isEnabled()
     assert tab._pending_panel not in tab._strategy_drag.cards
@@ -2329,7 +2315,7 @@ def test_a_strategy_made_in_the_dialog_survives_the_add_card(qapp, store):
     ):
         MockDlg.return_value.exec.side_effect = run
         MockDlg.return_value.selected_id.return_value = made.id
-        tab._on_add_strategy()
+        tab._on_add_existing()
     pending = tab._pending_panel
     pending.membership_changed.emit(["state_2"])
 
@@ -2348,3 +2334,181 @@ def test_a_cancelled_dialog_leaves_the_cards_alone(qapp, store):
         tab._on_pick_duel(before)
 
     assert tab._state_panels["state_1"] is before
+
+
+# ---------------------------------------------------------------------------
+# Getting from the tab to "create" (#118)
+# ---------------------------------------------------------------------------
+
+
+def test_the_add_card_offers_choosing_or_creating(qapp, store):
+    tab = _tab_for(BotCombatStrategy(name="Solo", bot_id="bot-1"), _multi_config("A"))
+
+    assert [label for label, _run in tab._add_card_verbs()] == [
+        "Choose an existing strategy…",
+        "Create one for 'Solo'…",
+    ]
+
+
+def test_creating_from_the_add_card_opens_the_profile_editor_with_nothing_selected(qapp, store):
+    bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
+    tab = _tab_for(bcs, _multi_config("A", "B"))
+
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = False
+        tab._on_add_created()
+
+    kwargs = MockDlg.call_args.kwargs
+    assert kwargs["mode"] is DialogMode.PROFILE
+    assert kwargs["current_id"] is None
+
+
+def _made_in_the_editor(bcs_id: str, name: str = "Made Here"):
+    """What the profile editor's Save does after New: the profile file gains the entry."""
+    made = DuelCombatStrategy(name=name)
+
+    def _exec():
+        profile = store_mod.load_bot_strategy(bcs_id)
+        profile.duel_strategies.append(made)
+        store_mod.save_bot_strategy(profile)
+        return True
+
+    return made, _exec
+
+
+def test_a_strategy_created_from_the_add_card_is_linked_and_given_its_fights(qapp, store):
+    bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
+    tab = _tab_for(bcs, _multi_config("A", "B"))
+    made, run = _made_in_the_editor(bcs.id)
+
+    with (
+        patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
+        patch("bartlebot.gui.sidebar.combat_tab.QTimer.singleShot"),
+    ):
+        MockDlg.return_value.exec.side_effect = run
+        MockDlg.return_value.selected_id.return_value = made.id
+        tab._on_add_created()
+    tab._pending_panel.membership_changed.emit(["state_1", "state_2"])
+
+    saved = store_mod.load_bot_strategy(bcs.id)
+    assert [(a.state_ids, a.duel_combat_strategy_id) for a in saved.state_assignments] == [
+        (["state_1", "state_2"], made.id)
+    ]
+
+
+def test_closing_the_fights_popup_empty_drops_the_card_but_keeps_the_strategy(qapp, store):
+    bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
+    tab = _tab_for(bcs, _multi_config("A", "B"))
+    made, run = _made_in_the_editor(bcs.id)
+
+    with (
+        patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg,
+        patch("bartlebot.gui.sidebar.combat_tab.QTimer.singleShot"),
+    ):
+        MockDlg.return_value.exec.side_effect = run
+        MockDlg.return_value.selected_id.return_value = made.id
+        tab._on_add_created()
+    tab._pending_panel.membership_changed.emit([])
+
+    saved = store_mod.load_bot_strategy(bcs.id)
+    assert saved.state_assignments == []
+    assert [d.id for d in saved.duel_strategies] == [made.id]
+    assert tab._pending_panel is None
+
+
+def test_the_pencil_on_the_built_in_default_links_a_strategy_made_for_it(qapp, store):
+    """Pencil, New, Save: the whole flow for giving a card a strategy of its own."""
+    bcs = BotCombatStrategy(name="BCS", bot_id="bot-1")
+    tab = _tab_for(bcs, _config())
+    made, run = _made_in_the_editor(bcs.id)
+
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
+        MockDlg.return_value.exec.side_effect = run
+        MockDlg.return_value.selected_id.return_value = made.id
+        MockDlg.return_value.selected_was_created.return_value = True
+        tab._default_panel.action_button(EDIT_STRATEGY).click()
+
+    assert MockDlg.call_args.kwargs["mode"] is DialogMode.PROFILE
+    assert store_mod.load_bot_strategy(bcs.id).default_strategy_id == made.id
+    assert tab._default_panel._name.full_text() == "Made Here"
+
+
+def test_the_pencil_on_a_fight_card_links_a_strategy_made_for_it(qapp, store):
+    dcs = _saved_dcs("Old")
+    bcs = _linked_bcs(dcs.id, ["state_1", "state_2"])
+    tab = _tab_for(bcs, _multi_config("A", "B"))
+    made, run = _made_in_the_editor(bcs.id)
+
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
+        MockDlg.return_value.exec.side_effect = run
+        MockDlg.return_value.selected_id.return_value = made.id
+        MockDlg.return_value.selected_was_created.return_value = True
+        tab._on_edit_strategy(tab._state_panels["state_1"])
+
+    assert MockDlg.call_args.kwargs["current_id"] == dcs.id
+    saved = store_mod.load_bot_strategy(bcs.id)
+    assert [(a.state_ids, a.duel_combat_strategy_id) for a in saved.state_assignments] == [
+        (["state_1", "state_2"], made.id)
+    ]
+
+
+def test_the_pencil_leaves_the_card_alone_when_nothing_was_made(qapp, store):
+    """Selecting some other existing strategy in the editor is not a pick."""
+    dcs = _saved_dcs("Old")
+    other = _saved_dcs("Other")
+    bcs = _linked_bcs(dcs.id, ["state_1"])
+    tab = _tab_for(bcs, _multi_config("A"))
+
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = True
+        MockDlg.return_value.selected_id.return_value = other.id
+        MockDlg.return_value.selected_was_created.return_value = False
+        tab._on_edit_strategy(tab._state_panels["state_1"])
+
+    assert store_mod.load_bot_strategy(bcs.id).state_assignments[0].duel_combat_strategy_id == dcs.id
+
+
+def test_file_combat_strategies_opens_the_library_without_the_profile(qapp, store):
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config())
+
+    with patch("bartlebot.gui.sidebar.combat_tab.CombatStrategyDialog") as MockDlg:
+        MockDlg.return_value.exec.return_value = False
+        tab.open_combat_dialog()
+
+    ws = MockDlg.call_args.args[0]
+    assert MockDlg.call_args.kwargs["mode"] is DialogMode.LIBRARY
+    assert ws.profile is None and ws.bot_id is None
+
+
+# ---------------------------------------------------------------------------
+# Duplicating a profile (#118)
+# ---------------------------------------------------------------------------
+
+
+def test_duplicating_a_profile_gives_its_own_strategies_fresh_ids(qapp, store):
+    pcs = PlayerCombatStrategy(name="Own P")
+    own = DuelCombatStrategy(
+        name="Own", player_assignments=[PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)]
+    )
+    bcs = BotCombatStrategy(
+        name="Solo",
+        bot_id="bot-1",
+        default_strategy_id=own.id,
+        state_assignments=[StateAssignment(state_ids=["state_9"], duel_combat_strategy_id=own.id)],
+        duel_strategies=[own],
+        player_strategies=[pcs],
+    )
+    tab = _tab_for(bcs, _config())
+
+    with patch.object(QInputDialog, "getText", return_value=("Solo copy", True)):
+        tab._on_duplicate_bcs()
+
+    copy = store_mod.load_bot_strategy(tab._bcs.id)
+    assert copy.id != bcs.id
+    new_duel, new_pcs = copy.duel_strategies[0], copy.player_strategies[0]
+    assert new_duel.id != own.id and new_pcs.id != pcs.id
+    assert copy.default_strategy_id == new_duel.id
+    assert copy.state_assignments[0].duel_combat_strategy_id == new_duel.id
+    assert new_duel.player_assignments[0].player_combat_strategy_id == new_pcs.id
+    # The source profile is untouched on disk.
+    assert store_mod.load_bot_strategy(bcs.id).duel_strategies[0].id == own.id

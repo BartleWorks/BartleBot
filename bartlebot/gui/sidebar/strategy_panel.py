@@ -27,9 +27,8 @@ WHAT IT NO LONGER CARRIES
 No disclosure arrow, no inline ``DuelConfigEditor``. Editing combat is a user-owned
 edit with an explicit Save/Cancel boundary, and it is moving into a dialog of its own;
 a Run-mode surface that autosaved a DSL edit on every keystroke was the one place in
-the app that wrote a strategy file while the user was still typing into it. Until that
-dialog exists, ``Edit in Library…`` is the way in -- which is the route a *linked*
-binding already offered, so it is not a new path, only the only one.
+the app that wrote a strategy file while the user was still typing into it. The pencil
+opens that dialog, ``CombatStrategyDialog``, as the combat profile's editor.
 
 No ``_GroupRail`` either. The rail was a vertical rule bracketing a panel whose fights
 share one strategy, invented because several fight names stacked in a header read as a
@@ -113,8 +112,10 @@ Two on the face, everything in the right-click menu, per ``card_frame.py``:
 - **Change…** is also the *body* verb. The card is the active configuration and the
   card is how you replace it, so the whole frame is the pick affordance rather than a
   chip inside it that had to be found first.
-- **Edit in Library…** appears only on a linked binding, there being nothing in the
-  library to open otherwise.
+- **Edit…** (the pencil) is on every card, the built-in default's included. It opens
+  the profile editor on this card's strategy, and a strategy made there with New or
+  Duplicate is linked to this card on Save -- so pencil, New, Save is the whole of
+  giving a card a strategy of its own (#118).
 - **Applies to…** is in the menu, and opens the same popup the pill row's own button
   does -- the menu is the keyboard route to a verb, not a second way of performing it.
 
@@ -255,7 +256,9 @@ class StrategyPanel(CardFrame):
     FRAME_NAME = "StrategyPanel"
 
     pick_requested = pyqtSignal()
-    edit_in_library_requested = pyqtSignal(str)  # dcs_id
+    #: The pencil: open this card's strategy in the profile editor, or — on a card with
+    #: none, the built-in default included — open the editor to make one for it (#118).
+    edit_requested = pyqtSignal()
     #: The complete desired membership, once the popup has closed -- not per toggle.
     #: Acting on each toggle would rebuild this card's own section while its popup is
     #: still open on top of it; see ``PickerButton.committed``.
@@ -320,13 +323,11 @@ class StrategyPanel(CardFrame):
         header.addWidget(self._name, 1)
         # Built here rather than through ``_add_face_verbs``, which reads ``_verbs()``.
         # ``CardFrame`` builds a card's face buttons exactly once, and this card's verb
-        # list is not fixed: whether "Edit in Library…" applies depends on whether the
-        # binding is linked, and the binding is replaced under the card on every pick. So
-        # both buttons are made once and ``refresh`` shows or hides the second, while
-        # ``_verbs()`` stays dynamic for the right-click menu -- which ``contextMenuEvent``
-        # rebuilds per click and can therefore be honest about what applies right now.
-        # Hiding costs no layout: a face button holds its space (``retainSizeWhenHidden``),
-        # so the name does not lengthen and re-shorten as bindings change under it.
+        # list is not fixed -- "Applies to…" depends on the binding, which is replaced
+        # under the card on every pick -- so the two face buttons are made once from
+        # ``_face_verbs`` and ``_verbs()`` stays dynamic for the right-click menu, which
+        # ``contextMenuEvent`` rebuilds per click. ``refresh`` retunes the pencil's
+        # tooltip, which says something different on a card with no strategy.
         for verb in self._face_verbs():
             header.addWidget(self._make_verb_button(verb), 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addLayout(header)
@@ -620,12 +621,12 @@ class StrategyPanel(CardFrame):
         else:
             self._render_bare(self._empty_label, self._empty_meta)
 
-        # Withdrawn rather than greyed. A disabled pencil on an unset binding would be an
-        # affordance offered and refused every time; there is simply nothing to open,
-        # and the button holds its space either way.
+        # Always shown, even on a card running the built-in default: the profile editor
+        # is where a card gets a strategy made for it, and New there, then Save, is the
+        # whole of that (#118). What the tooltip promises is what differs.
         edit_btn = self.action_button(EDIT_STRATEGY)
         if edit_btn is not None:
-            edit_btn.setVisible(self.linked_id is not None)
+            edit_btn.setToolTip(self._edit_tooltip())
         self._sync_pill_row()
         self.refresh_theme_styles()
 
@@ -707,25 +708,21 @@ class StrategyPanel(CardFrame):
         """The two verbs that get a button, in header order. Fixed for the card's life."""
         return [
             CardVerb(CHANGE, "search", "Pick a different Duel Combat Strategy", self.pick_requested.emit, on_face=True),
-            CardVerb(
-                EDIT_STRATEGY,
-                "pencil",
-                "Open this strategy in the combat strategy editor",
-                self._emit_edit_in_library,
-                on_face=True,
-            ),
+            CardVerb(EDIT_STRATEGY, "pencil", self._edit_tooltip(), self.edit_requested.emit, on_face=True),
         ]
+
+    def _edit_tooltip(self) -> str:
+        if self.linked_id is not None:
+            return "Edit this strategy, or make one of this profile's own for these fights"
+        return "Make a strategy of this profile's own for these fights"
 
     def _verbs(self) -> list[CardVerb]:
         """Everything this card can do *right now* -- what the right-click menu offers.
 
-        Rebuilt per click, so it names only what applies: no "Edit…" for a binding that
-        names nothing. The two face buttons are built from ``_face_verbs`` instead; see
-        ``_build``.
+        Rebuilt per click, so it names only what applies. The two face buttons are built
+        from ``_face_verbs`` instead; see ``_build``.
         """
-        verbs = [self._face_verbs()[0]]
-        if self.linked_id is not None:
-            verbs.append(self._face_verbs()[1])
+        verbs = self._face_verbs()
         if self._membership_allowed() and self._fights_btn is not None:
             # Opens the same popup the pill row's button does, rather than a second
             # membership surface of its own -- the menu is the keyboard route to a verb,
@@ -734,11 +731,6 @@ class StrategyPanel(CardFrame):
                 CardVerb(APPLIES_TO, "attach", "Choose which fights use this strategy", self._fights_btn.click)
             )
         return verbs
-
-    def _emit_edit_in_library(self) -> None:
-        dcs_id = self.linked_id
-        if dcs_id is not None:
-            self.edit_in_library_requested.emit(dcs_id)
 
     def _refuses_activation(self) -> bool:
         """Swallow a body click while the bot is running.
