@@ -10,7 +10,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from PyQt6.QtWidgets import QInputDialog, QMessageBox
+from PyQt6.QtWidgets import QInputDialog, QMessageBox, QSplitter
 
 from bartlebot import store_roots
 from bartlebot.bot.strategy_models import (
@@ -245,6 +245,27 @@ def test_an_empty_profile_section_says_what_it_is_for(qapp, roots):
 
     assert page.note_text() == PROFILE_EMPTY_NOTE
     assert page.section_headings()[0] == "Solo"
+
+
+def test_the_empty_profile_note_wraps_when_the_column_narrows(qapp, roots):
+    """Its row is refitted like a card's, or the sentence is cut off past the first line."""
+    dlg = _dialog(_ws(roots, _profile()), mode=DialogMode.PROFILE)
+    page = dlg.page(DUEL)
+    splitter = page.findChild(QSplitter)
+    dlg.resize(1400, 720)
+    dlg.show()
+    qapp.processEvents()
+
+    item, row = page._note_item, page._note_widget
+    wide = item.sizeHint().height()
+    assert wide == row.heightForWidth(row.width())
+
+    splitter.setSizes([splitter.widget(0).minimumSizeHint().width(), 2000])
+    qapp.processEvents()
+
+    assert item.sizeHint().height() == row.heightForWidth(row.width())
+    assert item.sizeHint().height() > wide
+    dlg.close()
 
 
 def test_a_bot_with_no_profile_is_offered_one(qapp, roots):

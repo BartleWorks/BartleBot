@@ -867,15 +867,13 @@ class _KindPage(QWidget):
             box.addWidget(button, 0, Qt.AlignmentFlag.AlignVCenter)
         item = QListWidgetItem()
         item.setFlags(Qt.ItemFlag.NoItemFlags)
-        width = self._list.viewport().width() - 2 * (self._list.spacing() + _ROW_PAD)
-        height = row.heightForWidth(width) if row.hasHeightForWidth() else -1
-        item.setSizeHint(QSize(row.minimumSizeHint().width(), height if height > 0 else row.sizeHint().height()))
+        self._fit_row(item, row)
         self._list.addItem(item)
         self._list.setItemWidget(item, row)
         self._note_item = item
         self._note_widget = row
 
-    def _fit_row(self, item: QListWidgetItem, card: StrategyCard) -> None:
+    def _fit_row(self, item: QListWidgetItem, card: QWidget) -> None:
         """Size *item* to what *card* needs at the column's real width.
 
         Not ``card.sizeHint()``: its height wraps the name at whatever width Qt's own
@@ -886,6 +884,9 @@ class _KindPage(QWidget):
 
         The width asked for is only the card's minimum: a list row fills the viewport
         anyway, and asking for more is what gives the list a horizontal scrollbar.
+
+        The profile section's note row is fitted the same way: its sentence wraps too,
+        and a row left at the height it had when the column was wider cuts it off.
         """
         width = self._list.viewport().width() - 2 * (self._list.spacing() + _ROW_PAD)
         height = card.heightForWidth(width)
@@ -894,6 +895,8 @@ class _KindPage(QWidget):
     def _refit_rows(self) -> None:
         for item, card in self._card_map:
             self._fit_row(item, card)
+        if self._note_item is not None and self._note_widget is not None:
+            self._fit_row(self._note_item, self._note_widget)
 
     def eventFilter(self, obj: QObject, event: QEvent) -> bool:
         if obj is self._list.viewport() and event.type() == QEvent.Type.Resize:
