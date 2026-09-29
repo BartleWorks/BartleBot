@@ -88,6 +88,16 @@ def test_a_linked_card_is_titled_with_the_strategy_it_names(qapp):
     assert "any<blade>" in card._dsl_lbl.text()
 
 
+def test_a_long_dsl_token_does_not_widen_the_card(qapp):
+    """A DSL token has no spaces to wrap at; one wider than the line was the card's minimum width (#118)."""
+    # Both fail to parse, so both carry the error marker and only the token's length differs.
+    short = _card(PlayerAssignment(players=[1], dsl="any<zz>"))
+    long = _card(PlayerAssignment(players=[1], dsl="any<" + "z" * 100 + ">"))
+
+    assert long.minimumSizeHint().width() == short.minimumSizeHint().width()
+    assert "z" * 100 in long._dsl_lbl.text()  # still whole when read back
+
+
 def test_a_default_card_says_so_rather_than_being_blank(qapp):
     card = _card(PlayerAssignment(players=[1]))
 

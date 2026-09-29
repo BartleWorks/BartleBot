@@ -69,6 +69,7 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.dsl_edit import DslGrowingTextEdit
+from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
 from bartlebot.gui.widgets.icon_button import IconButton
 from bartlebot.gui.widgets.player_pills import PlayerPillBar
 from bartlebot.gui.widgets.rule_heading import RuleHeading
@@ -201,12 +202,12 @@ class AssignmentCard(CardFrame):
         header.addWidget(self._chevron, 0, Qt.AlignmentFlag.AlignVCenter)
         inner.addLayout(header)
 
-        self._desc_lbl = QLabel(self)
-        self._desc_lbl.setWordWrap(True)
+        # Wrapping and elided, not plain word-wrapped: a DSL token has no spaces to wrap
+        # at, and one longer than the line made itself the card's minimum width (#118).
+        self._desc_lbl = WrappingElidedLabel(parent=self)
         inner.addWidget(self._desc_lbl)
 
-        self._dsl_lbl = QLabel(self)
-        self._dsl_lbl.setWordWrap(True)
+        self._dsl_lbl = WrappingElidedLabel(parent=self)
         inner.addWidget(self._dsl_lbl)
 
         # Everything the face no longer carries. Built once and hidden, rather than

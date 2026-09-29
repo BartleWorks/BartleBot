@@ -441,6 +441,24 @@ def test_no_row_is_wider_than_the_column_even_when_its_card_cannot_fit(qapp, roo
     dlg.close()
 
 
+def test_a_name_with_one_long_word_is_elided_to_the_column(qapp, roots):
+    """Word wrap cannot break a word, so the card elides it rather than outgrowing the column (#118)."""
+    name = "Frenzy" * 40
+    save_player_strategy(PlayerCombatStrategy(name=name), roots[1])
+    dlg = _dialog(roots, kind=StrategyKind.PLAYER)
+    page = dlg._pages[StrategyKind.PLAYER]
+    dlg.resize(dlg.minimumSize())
+    dlg.show()
+    qapp.processEvents()
+
+    [(_item, card)] = page._card_map
+    assert card.minimumSizeHint().width() <= page._list.viewport().width()
+    assert card._name_lbl.text() == name
+    assert card._name_lbl.shown_text().endswith("…")
+    assert card._name_lbl.toolTip() == name
+    dlg.close()
+
+
 def test_a_declined_delete_removes_nothing(qapp, roots):
     dcs = DuelCombatStrategy(name="Mine")
     save_duel_strategy(dcs, roots[1])

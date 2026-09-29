@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import set_style_sheet
+from bartlebot.gui.widgets.elided_label import WrappingElidedLabel
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.tag_picker import STRATEGY_VOCABULARY
 from bartlebot.gui.widgets.tag_pill import AccentPill, NeutralPill, ProfilePill, TagPill
@@ -96,7 +97,9 @@ class StrategyCard(QWidget):
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(2)
 
-        name_row = QLabel()
+        # Wrapping and elided rather than a plain QLabel: a name with one long unbroken
+        # word made that word the card's minimum width, and the list's (#118).
+        name_row = WrappingElidedLabel()
         f = name_row.font()
         f.setBold(True)
         name_row.setFont(f)
@@ -106,7 +109,6 @@ class StrategyCard(QWidget):
             name_row.setToolTip(f"Does not parse: {summary.health.reason}")
         else:
             name_row.setText(summary.name)
-        name_row.setWordWrap(True)
         self._name_lbl = name_row
         self._source_pill: QLabel | None = None
         self._star: IconButton | None = None
@@ -190,14 +192,15 @@ class StrategyCard(QWidget):
 
         Word-wrapped so a long line — a Player Strategy's DSL preview, in
         particular — never forces the card, and the sidebar it sits in, to grow
-        a horizontal scrollbar. See issue #44.
+        a horizontal scrollbar. See issue #44. Wrapping alone stops at a single
+        word longer than the line, which a DSL token can be, so that word is
+        elided (#118).
 
         No stylesheet is written here: ``_apply_style`` runs at the end of ``__init__``
         and again on every theme change, and a size set in both places is a size that
         can disagree with itself.
         """
-        label = QLabel(text)
-        label.setWordWrap(True)
+        label = WrappingElidedLabel(text)
         header.addWidget(label)
         self._sub_lbls.append(label)
         return label

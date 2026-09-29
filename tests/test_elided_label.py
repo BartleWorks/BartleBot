@@ -1,4 +1,4 @@
-"""Tests for ElidedLabel — the widget that keeps long text from widening a sidebar."""
+"""Tests for ElidedLabel and WrappingElidedLabel — the labels that keep long text from widening a sidebar."""
 
 from __future__ import annotations
 
@@ -6,7 +6,12 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFontMetrics
 from PyQt6.QtWidgets import QLabel, QSizePolicy
 
-from bartlebot.gui.widgets.elided_label import ElidedLabel, apply_muted_color
+from bartlebot.gui.widgets.elided_label import (
+    ElidedLabel,
+    WrappingElidedLabel,
+    apply_muted_color,
+    elide_long_words,
+)
 
 _LONG = "P1: {1} shatter@boss {2} empower… · P2–P3: {1} pass {2} pass · P4: {1} weakness@boss"
 #: A zone path — the case that motivated left elision.  Every zone in a world
@@ -136,3 +141,136 @@ def test_apply_muted_color_uses_the_palette_not_a_stylesheet(qapp):
 
     assert lbl.styleSheet() == ""
     assert lbl.palette().color(lbl.foregroundRole()).name().lower() == THEME.text_muted.lower()
+
+
+# -- WrappingElidedLabel ----------------------------------------------------------
+
+#: Wraps anywhere a line needs it: no word in it is wider than the narrowest test width.
+_SENTENCE = "Duel strategy for a two to four player team boss duel with blades then traps"
+#: One word, far wider than any card, between two that fit.
+_UNBROKEN = "Poseidon " + "BossDuel" * 20 + " v2"
+
+
+def _metrics() -> QFontMetrics:
+    return QFontMetrics(WrappingElidedLabel().font())
+
+
+def _at_width(lbl: WrappingElidedLabel, width: int) -> WrappingElidedLabel:
+    """Lay *lbl* out *width* wide, as a visible label would be.
+
+    Shown, offscreen: a hidden widget's resize is held as pending until it is shown,
+    so a bare ``resize`` never reaches the ``resizeEvent`` that elides.
+    """
+    lbl.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen)
+    lbl.show()
+    lbl.resize(width, 60)
+    return lbl
+
+
+def test_elide_long_words_leaves_text_that_wraps_untouched(qapp):
+    assert elide_long_words(_SENTENCE, _metrics(), 120) == _SENTENCE
+
+
+def test_elide_long_words_elides_only_the_word_that_cannot_fit(qapp):
+    metrics = _metrics()
+
+    out = elide_long_words(_UNBROKEN, metrics, 150)
+
+    first, middle, last = out.split(" ")
+    assert (first, last) == ("Poseidon", "v2")
+    assert middle.endswith("…")
+    assert metrics.horizontalAdvance(middle) <= 150
+
+
+def test_elide_long_words_keeps_the_whitespace(qapp):
+    """Line breaks and double spaces are part of what a caller wrote -- the DSL line uses "  ·  "."""
+    text = "a  ·  " + "x" * 200 + "\nnext"
+
+    out = elide_long_words(text, _metrics(), 100)
+
+    assert out.startswith("a  ·  ")
+    assert out.endswith("\nnext")
+
+
+def test_elide_long_words_returns_the_text_whole_before_layout(qapp):
+    """Width 0 is a label not laid out yet, not a label to reduce to ellipses."""
+    assert elide_long_words(_UNBROKEN, _metrics(), 0) == _UNBROKEN
+
+
+def test_elide_long_words_never_drops_a_word_entirely(qapp):
+    assert elide_long_words("x" * 50, _metrics(), 1) == "…"
+
+
+def test_wrapping_label_does_not_demand_its_longest_word(qapp):
+    """The bug: a word-wrapped QLabel's minimum width is its longest word (#118)."""
+    plain = QLabel(_UNBROKEN)
+    plain.setWordWrap(True)
+
+    assert plain.minimumSizeHint().width() > 400  # guards the premise
+    assert WrappingElidedLabel(_UNBROKEN).minimumSizeHint().width() < 50
+
+
+def test_wrapping_label_measures_like_a_qlabel_when_nothing_is_elided(qapp):
+    """Same text, same height at every width -- only the too-long word may change anything."""
+    ours = WrappingElidedLabel(_SENTENCE)
+    plain = QLabel(_SENTENCE)
+    plain.setWordWrap(True)
+
+    for width in (120, 200, 320, 800):
+        assert ours.heightForWidth(width) == plain.heightForWidth(width)
+
+
+def test_wrapping_label_measures_the_text_it_would_show_at_that_width(qapp):
+    """Not the text it shows now: a list sizes its rows before the card has its width."""
+    ours = WrappingElidedLabel(_UNBROKEN)
+    _at_width(ours, 2000)  # shown unelided at this width
+    shown_at_150 = QLabel(ours.elided_text(150))
+    shown_at_150.setWordWrap(True)
+
+    assert ours.heightForWidth(150) == shown_at_150.heightForWidth(150)
+
+
+def test_wrapping_label_elides_on_resize_and_restores_on_widening(qapp):
+    lbl = WrappingElidedLabel(_UNBROKEN)
+
+    _at_width(lbl, 150)
+    assert lbl.is_elided()
+    assert "…" in lbl.shown_text()
+
+    _at_width(lbl, 4000)
+    assert not lbl.is_elided()
+    assert lbl.shown_text() == _UNBROKEN
+
+
+def test_wrapping_label_reads_back_the_full_text(qapp):
+    """A caller reading text() back -- the assignment card splits its DSL line -- never sees an ellipsis."""
+    lbl = WrappingElidedLabel(_UNBROKEN)
+    _at_width(lbl, 150)
+
+    assert lbl.text() == _UNBROKEN
+    assert lbl.full_text() == _UNBROKEN
+
+
+def test_wrapping_label_tooltip_is_the_full_text_only_while_elided(qapp):
+    lbl = WrappingElidedLabel(_UNBROKEN)
+    _at_width(lbl, 4000)
+    assert lbl.toolTip() == ""
+
+    _at_width(lbl, 150)
+    assert lbl.toolTip() == _UNBROKEN
+
+
+def test_wrapping_label_keeps_the_callers_tooltip_beside_the_full_text(qapp):
+    """An invalid strategy's name already says why; eliding it must not replace that."""
+    lbl = WrappingElidedLabel(_UNBROKEN)
+    lbl.setToolTip("Does not parse: nope")
+    _at_width(lbl, 4000)
+    assert lbl.toolTip() == "Does not parse: nope"
+
+    _at_width(lbl, 150)
+    assert lbl.toolTip() == f"{_UNBROKEN}\n\nDoes not parse: nope"
+
+
+def test_wrapping_label_is_plain_text(qapp):
+    """A strategy name is user text: one containing markup must not render as HTML."""
+    assert WrappingElidedLabel("<b>x</b>").textFormat() == Qt.TextFormat.PlainText
