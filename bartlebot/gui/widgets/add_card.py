@@ -15,7 +15,7 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from PyQt6.QtCore import QPoint, Qt, pyqtSignal
-from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QWidget
+from PyQt6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMenu, QWidget
 
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
 from bartlebot.gui.menu_utils import popup_menu
@@ -96,10 +96,20 @@ class AddCard(ThemedMixin, QWidget):
         *items* are ``(icon, label, run)``. Built on every click rather than once, so the
         icons take whichever theme is current when it opens.
         """
+        self.build_menu(items).exec(self.menu_position())
+
+    def build_menu(self, items: list[tuple[str, str, Callable[[], None]]]) -> QMenu:
+        """The menu :meth:`open_menu` shows, unshown. Public so a test can measure it.
+
+        At least as wide as the dashed outline, so it reads as dropping out of the card
+        rather than as a short list parked under its corner. A minimum, not a fixed
+        width: a label longer than a narrow sidebar's card still gets its room.
+        """
         menu = popup_menu(self)
+        menu.setMinimumWidth(self._body.width())
         for icon, label, run in items:
             menu.addAction(svg_icon(icon, size=14), label).triggered.connect(lambda _checked=False, run=run: run())
-        menu.exec(self.menu_position())
+        return menu
 
     def _build(self) -> None:
         row = QHBoxLayout(self)

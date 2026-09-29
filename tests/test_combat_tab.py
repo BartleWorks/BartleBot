@@ -2346,7 +2346,7 @@ def test_the_add_card_offers_choosing_or_creating(qapp, store):
 
     assert [(icon, label) for icon, label, _run in tab._add_card_verbs()] == [
         ("search", "Select existing duel strategy…"),
-        ("plus", "Create a new duel strategy…"),
+        ("plus", "Create new duel strategy…"),
     ]
 
 

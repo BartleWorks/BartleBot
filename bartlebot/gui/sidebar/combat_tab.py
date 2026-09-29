@@ -188,7 +188,7 @@ _ADD_STRATEGY = "Add another duel strategy"
 #: The add-card menu's two items. The second does not name the profile it saves into:
 #: the Bot Combat Strategy banner already does, two cards up.
 _ADD_EXISTING = "Select existing duel strategy…"
-_ADD_CREATED = "Create a new duel strategy…"
+_ADD_CREATED = "Create new duel strategy…"
 
 #: Verb labels for the Bot Combat Strategy banner, shared with its menu and the tests.
 _CHANGE_BCS = "Change…"
@@ -1650,8 +1650,8 @@ class CombatTab(QWidget):
         """Give some fights a strategy of their own — the add-card at the foot of the list.
 
         A menu of two, because the strategy can already exist or be made for these fights
-        (#118): **Select existing duel strategy…** opens the picker, and **Create a new
-        duel strategy…** opens the profile editor with nothing selected, so New and
+        (#118): **Select existing duel strategy…** opens the picker, and **Create new duel
+        strategy…** opens the profile editor with nothing selected, so New and
         Duplicate are both there. GitHub's sub-issues are the shape, "Create sub-issue"
         beside "Add existing issue"; so is the assignment card's own menu, which mixes
         picking a Player Strategy with "Custom DSL…".

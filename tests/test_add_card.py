@@ -284,6 +284,17 @@ def test_a_menu_opens_under_the_outline_not_the_gutter(qapp):
     assert at.y() >= card.mapToGlobal(QPoint(0, card.height())).y()
 
 
+def test_the_menu_is_at_least_as_wide_as_the_outline(qapp):
+    card = AddCard("Add another duel strategy")
+    card.resize(300, 40)
+    card.layout().activate()
+
+    menu = card.build_menu([("plus", "Short", lambda: None)])
+
+    assert menu.minimumWidth() == 300 - GRIP_GUTTER
+    assert menu.sizeHint().width() >= 300 - GRIP_GUTTER
+
+
 def test_a_theme_switch_restyles_the_add_card(qapp, theme):
     card = AddCard("Add account")
     theme("light")
