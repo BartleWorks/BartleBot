@@ -88,7 +88,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -530,12 +529,8 @@ class _DeckCard(CardFrame):
         return not self.has_deck
 
     def _restyle_content(self) -> None:
-        palette = self._summary.palette()
-        palette.setColor(self._summary.foregroundRole(), QColor(THEME.text_muted))
-        self._summary.setPalette(palette)
-        palette = self._archmastery.palette()
-        palette.setColor(self._archmastery.foregroundRole(), QColor(THEME.text_muted))
-        self._archmastery.setPalette(palette)
+        self._summary.set_text_color(THEME.text_muted)
+        self._archmastery.set_text_color(THEME.text_muted)
 
 
 class _PlayerDecksSection(SidebarSection):
@@ -907,10 +902,8 @@ class _BotStrategyBanner(CardFrame):
         return True
 
     def _restyle_content(self) -> None:
-        for label, color in ((self._name, THEME.text), (self._meta, THEME.text_muted)):
-            palette = label.palette()
-            palette.setColor(label.foregroundRole(), QColor(color))
-            label.setPalette(palette)
+        self._name.set_text_color(THEME.text)
+        self._meta.set_text_color(THEME.text_muted)
 
 
 # ---------------------------------------------------------------------------

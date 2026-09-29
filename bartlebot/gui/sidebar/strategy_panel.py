@@ -130,7 +130,6 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QColor
 from PyQt6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 
 from bartlebot.gui.theme import THEME
@@ -746,19 +745,11 @@ class StrategyPanel(CardFrame):
     # ------------------------------------------------------------------
 
     def _restyle_content(self) -> None:
-        """Recolour the name and every caption -- see :func:`_set_text_color`."""
-        _set_text_color(self._name, THEME.error if self._invalid else THEME.text)
+        """Recolour the name and every caption.
+
+        Through :meth:`ElidedLabel.set_text_color` rather than a stylesheet: an
+        ``ElidedLabel`` paints its own text, so a QSS ``color:`` rule never reaches it.
+        """
+        self._name.set_text_color(THEME.error if self._invalid else THEME.text)
         for label in (self._scope, self._meta, *self._assignment_lbls):
-            _set_text_color(label, THEME.text_muted)
-
-
-def _set_text_color(label: ElidedLabel, color: str) -> None:
-    """Recolour an ``ElidedLabel``, which paints its own text.
-
-    A QSS ``color:`` rule never reaches one, so the colour has to go through the
-    palette -- which is why the cards here restyle by looping over palettes rather than
-    by the single stylesheet write every other card does.
-    """
-    palette = label.palette()
-    palette.setColor(label.foregroundRole(), QColor(color))
-    label.setPalette(palette)
+            label.set_text_color(THEME.text_muted)

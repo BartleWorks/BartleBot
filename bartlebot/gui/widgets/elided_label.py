@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtCore import QEvent, QSize, Qt
 from PyQt6.QtGui import QColor, QFontMetrics, QPainter
 from PyQt6.QtWidgets import QLabel, QSizePolicy
 
@@ -18,6 +18,9 @@ def apply_muted_color(lbl: QLabel) -> None:
     this again from ``changeEvent`` on ``QEvent.Type.StyleChange``, the same as
     any other theme-dependent styling.
     """
+    if isinstance(lbl, ElidedLabel):
+        lbl.set_text_color(THEME.text_muted)
+        return
     pal = lbl.palette()
     pal.setColor(lbl.foregroundRole(), QColor(THEME.text_muted))
     lbl.setPalette(pal)
@@ -69,6 +72,7 @@ class ElidedLabel(QLabel):
         super().__init__(parent)
         self._full_text = ""
         self._elide_mode = elide_mode
+        self._text_color: str | None = None
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
         self.setText(text)
 
@@ -78,6 +82,36 @@ class ElidedLabel(QLabel):
         self.setToolTip(self._full_text)
         super().setText(self._full_text)
         self.update()
+
+    def set_text_color(self, color: str) -> None:
+        """Paint the text in *color*, and keep painting it in that colour across a theme switch.
+
+        Held rather than just written to the palette, because a palette written from
+        outside does not survive the switch. ``QApplication.setStyleSheet`` repolishes
+        every widget, and the stylesheet style's repolish of *this* label restores the
+        palette it saved at the previous polish -- the old theme's colour. The card that
+        recoloured the label is usually repolished first, so its write is undone and the
+        text stays in the old theme until something restyles the card again (a hover).
+        The label's own ``StyleChange`` arrives after its repolish, so re-applying from
+        there is the one moment the colour sticks whatever order Qt visits them in.
+        """
+        self._text_color = color
+        self._apply_text_color()
+
+    def _apply_text_color(self) -> None:
+        if self._text_color is None:
+            return
+        color = QColor(self._text_color)
+        palette = self.palette()
+        if palette.color(self.foregroundRole()) == color:
+            return
+        palette.setColor(self.foregroundRole(), color)
+        self.setPalette(palette)
+
+    def changeEvent(self, event) -> None:  # noqa: N802 — Qt naming
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._apply_text_color()
 
     def full_text(self) -> str:
         """The complete, untruncated text — what ``text()`` would return on a plain QLabel."""

@@ -46,6 +46,7 @@ from bartlebot.gui.sidebar.combat_tab import (
     _RENAME_BCS,
     CombatTab,
     _BotStrategyBanner,
+    _DeckCard,
     _DefaultBinding,
     _PlayerDecksSection,
 )
@@ -2512,3 +2513,51 @@ def test_duplicating_a_profile_gives_its_own_strategies_fresh_ids(qapp, store):
     assert new_duel.player_assignments[0].player_combat_strategy_id == new_pcs.id
     # The source profile is untouched on disk.
     assert store_mod.load_bot_strategy(bcs.id).duel_strategies[0].id == own.id
+
+
+# ---------------------------------------------------------------------------
+# Theme switch
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def switch_theme(qapp):
+    """Switch the whole app the way ``AppController._apply_theme`` does, then put it back.
+
+    The app stylesheet is restored by conftest; the theme and the palette are not.
+    """
+    from bartlebot.gui import theme as theme_mod
+
+    before, palette = theme_mod.active_theme(), qapp.palette()
+
+    def switch(mode: str) -> None:
+        theme_mod.set_theme(mode)
+        qapp.setPalette(theme_mod.THEME.build_palette())
+        qapp.setStyleSheet(theme_mod.THEME.global_stylesheet())
+        qapp.processEvents()
+
+    yield switch
+    theme_mod.set_theme_instance(before)
+    qapp.setPalette(palette)
+
+
+@pytest.mark.parametrize("make", [_BotStrategyBanner, lambda: _DeckCard(0)], ids=["banner", "deck"])
+def test_card_text_takes_the_new_theme_without_a_hover(qapp, switch_theme, make):
+    """The card recoloured its labels, and then the stylesheet repolish of each label
+    restored the palette it saved under the old theme -- so the text stayed in the old
+    colours until a hover restyled the card again."""
+    from bartlebot.gui.theme import THEME
+    from bartlebot.gui.widgets.elided_label import ElidedLabel
+
+    switch_theme("dark")
+    card = make()
+    card.show()
+    qapp.processEvents()
+
+    switch_theme("light")
+
+    labels = card.findChildren(ElidedLabel)
+    assert labels
+    for label in labels:
+        assert label.palette().color(label.foregroundRole()).name() in (THEME.text, THEME.text_muted)
+    card.close()
