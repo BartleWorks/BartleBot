@@ -9,8 +9,8 @@ They are bot options now, and this covers the half of that which only shows up
 once a real surface renders them:
 
 * the keep-list picker is reached through the shared option-type mapping, not a
-  branch of its own, and lands last so a 220px table does not push the short rows
-  off the bottom of the sidebar;
+  branch of its own, and lands last in its card so a 220px table does not push the
+  short rows out of sight;
 * the three sell flags are separate rows on this same surface, and each of them
   changes what the picker says will happen -- so flipping one has to reach the
   table;
@@ -33,6 +33,7 @@ from bartlebot.gui.sidebar.option_gutter import CHILD_INDENT_PX, ChildBranch
 from bartlebot.gui.sidebar.sections.setup_section import SetupSection
 from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.nodes.utility import quicksell as qs
+from bartlebot.nodes.zone_entry.enter_dungeon import OPTION_MINIMUM_TEAM_SIZE, OPTION_TEAM_UP, PARAM_OFFERS_TEAM_UP
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -63,10 +64,22 @@ def _config(options=None, drops=None) -> BotConfig:
     )
 
 
-def _section(settings, config) -> SetupSection:
+def _section(settings, config, *, expanded: bool = True) -> SetupSection:
+    """A Setup section for *config*, every card expanded unless asked otherwise.
+
+    Quicksell and General start collapsed on a first run, and a row in a collapsed card
+    is neither visible nor laid out -- which is beside the point of every test here.
+    """
     section = SetupSection(settings=settings)
     section.set_config(config)
+    if expanded:
+        section.expand_all()
     return section
+
+
+def _rows(section) -> list[str]:
+    """The options drawn as rows -- every one but the Quicksell card's header switch."""
+    return list(section._chrome)
 
 
 def _picker(section) -> DropKeepListWidget:
@@ -90,13 +103,16 @@ def test_every_quicksell_option_gets_a_row(qapp, settings):
     assert names >= {qs.OPTION_ENABLED, qs.OPTION_KEEP_LIST, *qs.SELL_FLAG_OPTIONS.values()}
 
 
-def test_the_keep_list_is_the_picker_and_it_comes_last(qapp, settings):
+def test_the_keep_list_is_the_picker_and_it_comes_last_in_its_card(qapp, settings):
     """Reached through the shared option-type mapping — the picker is what
-    ``drop_keep_list`` means — and put last because it is a table, not a field."""
+    ``drop_keep_list`` means — and put last because it is a table, not a field. Last
+    in the Quicksell card, not the whole tab: it used to be moved past every other
+    group's rows, away from the four quicksell options it belongs with."""
     section = _section(settings, _config())
+    quicksell_rows = [n for n in _rows(section) if section._group_of[n] == "quicksell"]
 
     assert isinstance(_picker(section), DropKeepListWidget)
-    assert list(section.option_widgets)[-1] == qs.OPTION_KEEP_LIST
+    assert quicksell_rows == [*qs.SELL_FLAG_OPTIONS.values(), qs.OPTION_KEEP_LIST]
 
 
 def test_the_picker_lists_this_bots_drops(qapp, settings):
@@ -231,7 +247,7 @@ def test_the_gutter_buttons_line_up_across_every_shape_of_row(qapp, settings):
     section.show()
     qapp.processEvents()
     try:
-        rows = [qs.OPTION_ENABLED, "Safety Delay", qs.OPTION_KEEP_LIST]  # bool, float, tall
+        rows = [_sell_flag(), "Safety Delay", qs.OPTION_KEEP_LIST]  # bool, float, tall
         revert_x = {_x(section, _revert_button(section, name)) for name in rows}
         help_x = {_x(section, section._chrome[name].help_btn) for name in rows}
 
@@ -281,13 +297,28 @@ def test_reverting_still_drops_the_override(qapp, settings):
     config = _config()
     section = _section(settings, config)
 
-    section.option_widgets[qs.OPTION_ENABLED].setChecked(False)
-    assert settings.get_option_override(config.id, qs.OPTION_ENABLED) is False
+    section.option_widgets[_sell_flag()].setChecked(False)
+    assert settings.get_option_override(config.id, _sell_flag()) is False
 
-    _revert_button(section, qs.OPTION_ENABLED).click()
+    _revert_button(section, _sell_flag()).click()
 
     assert not settings.get("bot_option_overrides", default={}).get(config.id, {})
-    assert section.option_widgets[qs.OPTION_ENABLED].isChecked() is True
+    assert section.option_widgets[_sell_flag()].isChecked() is True
+
+
+def test_flipping_the_quicksell_switch_back_is_its_reset(qapp, settings):
+    """The switch has no revert button: with two states, setting it back to the one it
+    inherits is the same act, and has to leave the same state behind."""
+    config = _config()
+    section = _section(settings, config)
+    switch = section.option_widgets[qs.OPTION_ENABLED]
+
+    switch.setChecked(False)
+    assert settings.get_option_override(config.id, qs.OPTION_ENABLED) is False
+
+    switch.setChecked(True)
+
+    assert not settings.get("bot_option_overrides", default={}).get(config.id, {})
 
 
 # ---------------------------------------------------------------------------
@@ -309,7 +340,7 @@ def test_descriptions_are_folded_away_until_asked_for(qapp, settings):
     section.show()
     qapp.processEvents()
     try:
-        assert not any(_description(section, n).isVisible() for n in section.option_widgets)
+        assert not any(_description(section, n).isVisible() for n in _rows(section))
     finally:
         section.hide()
 
@@ -319,10 +350,10 @@ def test_the_help_button_unfolds_one_row_and_only_that_row(qapp, settings):
     section.show()
     qapp.processEvents()
     try:
-        _help_button(section, qs.OPTION_ENABLED).setChecked(True)
+        _help_button(section, _sell_flag()).setChecked(True)
 
-        assert _description(section, qs.OPTION_ENABLED).isVisible()
-        assert not _description(section, "Sell Pets").isVisible()
+        assert _description(section, _sell_flag()).isVisible()
+        assert not _description(section, "Safety Delay").isVisible()
     finally:
         section.hide()
 
@@ -333,7 +364,7 @@ def test_a_description_is_read_at_the_base_font(qapp, settings):
     for, so it has no reason to be the smallest text on the surface."""
     section = _section(settings, _config())
 
-    assert "font-size" not in _description(section, qs.OPTION_ENABLED).styleSheet()
+    assert "font-size" not in _description(section, _sell_flag()).styleSheet()
 
 
 def test_the_switch_shows_every_description_and_is_remembered(qapp, settings):
@@ -343,7 +374,7 @@ def test_the_switch_shows_every_description_and_is_remembered(qapp, settings):
     try:
         section.set_descriptions_visible(True)
 
-        assert all(_description(section, n).isVisible() for n in section.option_widgets)
+        assert all(_description(section, n).isVisible() for n in _rows(section))
         assert settings.get("general", "show_option_descriptions") is True
     finally:
         section.hide()
@@ -382,16 +413,16 @@ def test_a_switch_still_acts_on_rows_the_help_button_moved(qapp, settings):
     section.show()
     qapp.processEvents()
     try:
-        _help_button(section, qs.OPTION_ENABLED).setChecked(True)
+        _help_button(section, _sell_flag()).setChecked(True)
 
         section.set_descriptions_visible(False)
 
-        assert not any(_description(section, n).isVisible() for n in section.option_widgets)
+        assert not any(_description(section, n).isVisible() for n in _rows(section))
 
-        _help_button(section, qs.OPTION_ENABLED).setChecked(False)
+        _help_button(section, _sell_flag()).setChecked(False)
         section.set_descriptions_visible(True)
 
-        assert all(_description(section, n).isVisible() for n in section.option_widgets)
+        assert all(_description(section, n).isVisible() for n in _rows(section))
     finally:
         section.hide()
 
@@ -403,8 +434,8 @@ def test_a_remembered_switch_builds_the_rows_already_unfolded(qapp, settings):
     section.show()
     qapp.processEvents()
     try:
-        assert all(_description(section, n).isVisible() for n in section.option_widgets)
-        assert all(_help_button(section, n).isChecked() for n in section.option_widgets)
+        assert all(_description(section, n).isVisible() for n in _rows(section))
+        assert all(_help_button(section, n).isChecked() for n in _rows(section))
     finally:
         section.hide()
 
@@ -478,9 +509,20 @@ def test_reverting_the_parent_reaches_the_children(qapp, settings):
     section.option_widgets[qs.OPTION_ENABLED].setChecked(False)
     assert not section._chrome[_sell_flag()].body.isEnabled()
 
-    _revert_button(section, qs.OPTION_ENABLED).click()
+    section._on_reset(qs.OPTION_ENABLED)
 
     assert section._chrome[_sell_flag()].body.isEnabled()
+    assert section.option_widgets[qs.OPTION_ENABLED].isChecked() is True
+
+
+def test_turning_quicksell_off_grays_the_keep_list_too(qapp, settings):
+    """The keep list has no parent of its own, but it is on the Quicksell card, and with
+    nothing sold it is only a list."""
+    section = _section(settings, _config())
+
+    section.option_widgets[qs.OPTION_ENABLED].setChecked(False)
+
+    assert not section._chrome[qs.OPTION_KEEP_LIST].body.isEnabled()
 
 
 def test_a_bot_opened_with_quicksell_already_off_builds_its_children_grayed(qapp, settings):
@@ -521,17 +563,29 @@ def test_the_gutter_stays_live_on_a_grayed_child(qapp, settings):
     assert settings.get_option_override(config.id, _sell_flag()) is UNSET
 
 
+def _team_up_config() -> BotConfig:
+    """A bot whose dungeon offers Team-Up, so Minimum Team Size is a child row."""
+    return BotConfig(
+        id="team-up-bot",
+        name="Team-Up Bot",
+        initial="a",
+        recovery_state="a",
+        states=[StateModel(id="a", node_type="enter_dungeon", params={PARAM_OFFERS_TEAM_UP: True})],
+        transitions=[],
+    )
+
+
 def test_a_child_row_is_indented_but_its_gutter_is_not(qapp, settings):
     """The indent says what the row belongs to and the gutter says what can be done
     to it. Indenting the chrome as well would cost the one property the gutter
     exists for -- see ``test_the_gutter_buttons_line_up_across_every_shape_of_row``."""
-    section = _section(settings, _config())
+    section = _section(settings, _team_up_config())
     section.resize(400, 900)
     section.show()
     qapp.processEvents()
     try:
-        parent = section._chrome[qs.OPTION_ENABLED]
-        child = section._chrome[_sell_flag()]
+        parent = section._chrome[OPTION_TEAM_UP]
+        child = section._chrome[OPTION_MINIMUM_TEAM_SIZE]
 
         assert _x(section, child.revert_btn) == _x(section, parent.revert_btn)
         assert _x(section, child.help_btn) == _x(section, parent.help_btn)
@@ -542,7 +596,24 @@ def test_a_child_row_is_indented_but_its_gutter_is_not(qapp, settings):
 
 def test_a_child_row_draws_the_branch_rule_in_its_indent(qapp, settings):
     """Indentation alone is only visible while two left edges are being compared."""
-    section = _section(settings, _config())
+    section = _section(settings, _team_up_config())
 
-    assert section._chrome[_sell_flag()].outer.findChildren(ChildBranch)
-    assert not section._chrome[qs.OPTION_ENABLED].outer.findChildren(ChildBranch)
+    assert section._chrome[OPTION_MINIMUM_TEAM_SIZE].outer.findChildren(ChildBranch)
+    assert not section._chrome[OPTION_TEAM_UP].outer.findChildren(ChildBranch)
+
+
+def test_a_row_whose_parent_heads_its_card_is_not_indented(qapp, settings):
+    """The sell flags are Enable Quicksell's children, and Enable Quicksell is their
+    card's header switch -- the card already says what they belong to."""
+    section = _section(settings, _config())
+    section.resize(400, 900)
+    section.show()
+    qapp.processEvents()
+    try:
+        flag = section._chrome[_sell_flag()]
+        keep_list = section._chrome[qs.OPTION_KEEP_LIST]
+
+        assert not flag.outer.findChildren(ChildBranch)
+        assert _x(section, flag.body) == _x(section, keep_list.body)
+    finally:
+        section.hide()

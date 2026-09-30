@@ -43,9 +43,10 @@ WHAT IT DOES NOT DO
 -------------------
 
 It holds no option state and builds no rows: the surface fills ``body_layout`` and
-drives ``set_collapsed``, ``set_marked``, ``set_summary`` and ``set_warning``. A click on
-the band asks; the surface answers. That keeps one owner for the fold state, which is
-remembered across bots and shared by both surfaces.
+drives ``set_marked``, ``set_summary`` and ``set_warning``. Nor does a card fold itself:
+a click on the band asks, and ``CardFolds`` below -- one per surface -- answers. That
+keeps one owner for the fold state, which is remembered across bots and shared by both
+surfaces.
 
 Painted from ``THEME`` at paint time -- the frame, the band, the stripe and the rule --
 so a theme switch needs nothing re-derived but the fold button's glyph.
@@ -53,23 +54,32 @@ so a theme switch needs nothing re-derived but the fold button's glyph.
 
 from __future__ import annotations
 
+import logging
+from collections.abc import Callable
+from typing import Any
+
 from PyQt6.QtCore import QPoint, QRectF, QSize, Qt, pyqtSignal
 from PyQt6.QtGui import QColor, QFontMetrics, QIcon, QPainter, QPainterPath, QPen
 from PyQt6.QtWidgets import (
     QApplication,
     QFrame,
     QHBoxLayout,
+    QMenu,
     QPushButton,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
 
-from bartlebot.gui.sidebar.sidebar_section import DISCLOSURE_PX, disclosure_pixmap
+from bartlebot import option_groups
+from bartlebot.gui.menu_utils import popup_menu
+from bartlebot.gui.sidebar.sidebar_section import DISCLOSURE_PX, HeadingAction, disclosure_pixmap
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.option_groups import SummaryPart, summary_text
+
+logger = logging.getLogger(__name__)
 
 #: The card's outline and corner, ``CardFrame``'s.
 CARD_RADIUS_PX = 4
@@ -466,3 +476,145 @@ class OptionCard(QFrame):
         painter.setBrush(QColor(THEME.bg))
         painter.drawRoundedRect(rect, CARD_RADIUS_PX, CARD_RADIUS_PX)
         painter.end()
+
+
+# ---------------------------------------------------------------------------
+# Folding, for a whole surface of cards
+# ---------------------------------------------------------------------------
+
+#: The heading's two actions and the card menu's entries, so the menu, the tooltips and
+#: the tests name them from one place. The verbs are Expand and Collapse -- the pair
+#: VS Code, JetBrains, Visual Studio, Word and Unreal all use -- and each names what it
+#: acts on, because an icon-only button has nothing else to say it.
+COLLAPSE_ALL = "Collapse all groups"
+EXPAND_ALL = "Expand all groups"
+COLLAPSE_OTHERS = "Collapse others"
+#: The menu's hint for the gesture that does the same thing (Blender's Ctrl+click).
+COLLAPSE_OTHERS_HINT = "Ctrl+click"
+
+
+class CardFolds:
+    """Which of a surface's cards are folded, and every way there is to change it.
+
+    Setup and Options each hold one. The answer is the *reader's*: one ``{group:
+    collapsed}`` in ``settings.json`` (``option_groups.COLLAPSED_SETTING``), the same for
+    every bot and shared by both surfaces. Only one of the two is on screen at a time, so
+    each re-reads it on the way in (``reload``) rather than the two being wired together.
+
+    The ways to change it:
+
+    * a click on a card's band, or its title from the keyboard -- that card;
+    * Ctrl+click on a band -- that card open, every other one folded (Blender's panels);
+    * the section heading's **Collapse all** and **Expand all**, Bar B's pair for
+      regions with the same icons in the same order, drawn while the heading is hovered
+      or focused and each enabled only while it has something to do;
+    * the band's right-click menu, which holds all of the above and is the keyboard's
+      route to the two heading actions.
+    """
+
+    def __init__(self, section, settings: Callable[[], Any]) -> None:
+        self._settings = settings
+        self._cards: dict[str, OptionCard] = {}
+        self._folds = self._read()
+
+        self.collapse_all_button = HeadingAction("region_collapse", tooltip=COLLAPSE_ALL)
+        self.collapse_all_button.clicked.connect(self.collapse_all)
+        self.expand_all_button = HeadingAction("region_expand", tooltip=EXPAND_ALL)
+        self.expand_all_button.clicked.connect(self.expand_all)
+        section.add_header_action(self.collapse_all_button)
+        section.add_header_action(self.expand_all_button)
+        self._refresh_buttons()
+
+    @property
+    def cards(self) -> dict[str, OptionCard]:
+        return dict(self._cards)
+
+    def set_cards(self, cards: dict[str, OptionCard]) -> None:
+        """Take over a freshly built set of cards: wire them, and fold them as remembered."""
+        self._cards = dict(cards)
+        for group, card in self._cards.items():
+            card.fold_requested.connect(lambda solo, g=group: self._on_fold_requested(g, solo))
+            card.menu_requested.connect(lambda pos, g=group: self._show_menu(g, pos))
+        self._apply()
+
+    def reload(self) -> None:
+        """Re-read the remembered answer -- the other surface may have changed it."""
+        self._folds = self._read()
+        self._apply()
+
+    def set_group_collapsed(self, group: str, collapsed: bool) -> None:
+        self._update({group: collapsed})
+
+    def collapse_all(self) -> None:
+        self._update(dict.fromkeys(self._cards, True))
+
+    def expand_all(self) -> None:
+        self._update(dict.fromkeys(self._cards, False))
+
+    def collapse_others(self, keep: str) -> None:
+        self._update({group: group != keep for group in self._cards})
+
+    def card_menu(self, group: str) -> QMenu | None:
+        """The menu a right-click on *group*'s band opens, built but not shown."""
+        card = self._cards.get(group)
+        if card is None:
+            return None
+        menu = popup_menu(card)
+        verb = "Expand" if card.is_collapsed else "Collapse"
+        menu.addAction(f"{verb} {card.title}").triggered.connect(
+            lambda: self.set_group_collapsed(group, not card.is_collapsed)
+        )
+        menu.addAction(f"{COLLAPSE_OTHERS}\t{COLLAPSE_OTHERS_HINT}").triggered.connect(
+            lambda: self.collapse_others(group)
+        )
+        menu.addSeparator()
+        collapse = menu.addAction(COLLAPSE_ALL)
+        collapse.setEnabled(self.collapse_all_button.isEnabled())
+        collapse.triggered.connect(self.collapse_all)
+        expand = menu.addAction(EXPAND_ALL)
+        expand.setEnabled(self.expand_all_button.isEnabled())
+        expand.triggered.connect(self.expand_all)
+        return menu
+
+    def _on_fold_requested(self, group: str, solo: bool) -> None:
+        if solo:
+            self.collapse_others(group)
+            return
+        card = self._cards.get(group)
+        if card is not None:
+            self.set_group_collapsed(group, not card.is_collapsed)
+
+    def _show_menu(self, group: str, pos: QPoint) -> None:
+        # A synchronous slot, so exec() is safe here -- see the qasync rule in CLAUDE.md.
+        menu = self.card_menu(group)
+        if menu is not None:
+            menu.exec(pos)
+
+    def _update(self, changes: dict[str, bool]) -> None:
+        if not changes:
+            return
+        self._folds.update(changes)
+        try:
+            self._settings().set("general", option_groups.COLLAPSED_SETTING, value=dict(self._folds))
+        except Exception:
+            logger.exception("Failed to remember which option groups are collapsed")
+        self._apply()
+
+    def _apply(self) -> None:
+        for group, card in self._cards.items():
+            card.set_collapsed(self._folds.get(group, group in option_groups.FIRST_RUN_COLLAPSED))
+        self._refresh_buttons()
+
+    def _read(self) -> dict[str, bool]:
+        try:
+            stored = self._settings().get("general", option_groups.COLLAPSED_SETTING, default=None)
+        except Exception:
+            logger.exception("Failed to read which option groups are collapsed")
+            stored = None
+        return option_groups.collapsed_groups(stored)
+
+    def _refresh_buttons(self) -> None:
+        """Enable each heading action only while it has a card to act on, as Bar B does."""
+        cards = list(self._cards.values())
+        self.collapse_all_button.setEnabled(any(not c.is_collapsed for c in cards))
+        self.expand_all_button.setEnabled(any(c.is_collapsed for c in cards))
