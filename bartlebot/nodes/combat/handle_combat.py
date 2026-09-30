@@ -117,6 +117,10 @@ async def run(machine, clients: list, params: dict) -> str:
            until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires.
          Either way, once any client is in battle its fight centre is published, and every
          later teleport goes there instead of to the mob (see _FightCentre).
+         Player Realms: Together -- before anyone teleports, ensure_together() ports anyone not
+         confirmed with the others to the leader; FAILURE if that port fails. Once all are in
+         battle, one realm and one duel circle are checked; a split is fought out, then
+         repaired after step 8 (FAILURE if that port fails).
       6. If max_duration is set and has elapsed, return FAILURE.
       7. Run SprintyCombat for all clients in parallel until combat ends.
       8. Start a background poll of chat for drop announcements, which reports each via
@@ -186,8 +190,15 @@ async def run(machine, clients: list, params: dict) -> str:
     # that fight's poll window is still ahead of the baseline and gets caught below.
     await seed_chat_baselines(machine, clients)
 
-    # 3. Teleport clients to their target (sequential or simultaneous). A Separate bot shares
-    # a fight centre only between players seen on one realm, so look before anyone moves.
+    # 3. Teleport clients to their target (sequential or simultaneous). A Together bot
+    # does everything it can not to fight split: anyone not confirmed with the others ports
+    # to the leader before anyone engages, and the node fails if that port fails. A Separate
+    # bot shares a fight centre only between players seen on one realm, so look before
+    # anyone moves.
+    if await node_helpers.ensure_together(machine, clients, where="before the fight") is (
+        node_helpers.TogetherOutcome.FAILED
+    ):
+        return "FAILURE"
     share = None
     if player_realms.machine_is_separate(machine):
         await node_helpers.read_sightings(clients, machine)
@@ -234,6 +245,11 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
+    # A Together bot's players should be in one fight now. If they are not -- one on
+    # another realm after all, or pulled into a second duel -- the fights are finished
+    # rather than abandoned mid-duel, and the players brought together afterwards.
+    split = not await _in_one_fight(machine, clients)
+
     machine.log("All clients in combat — running SprintyCombat")
 
     # 5. Run SprintyCombat in parallel using the per-client DSL resolved earlier.
@@ -259,6 +275,13 @@ async def run(machine, clients: list, params: dict) -> str:
     # round-trip that lands after the duel has locally ended, so this polls rather
     # than reading once -- in the background, so the next node need not wait for it.
     start_combat_drop_poll(machine, clients, list(range(len(clients))))
+
+    # 7. After a split fight, bring everyone back to the leader before the bot moves on.
+    if split:
+        outcome = await node_helpers.ensure_together(machine, clients, where="after the fight")
+        if outcome is node_helpers.TogetherOutcome.FAILED:
+            machine.log("FAILURE: the players fought apart and could not be brought together", logging.WARNING)
+            return "FAILURE"
 
     machine.log("SUCCESS: combat complete")
     return "SUCCESS"
@@ -389,6 +412,36 @@ async def _tp_and_wait_for_combat(
             break
 
     return False
+
+
+async def _in_one_fight(machine, clients: list) -> bool:
+    """Whether a Together bot's players, all in battle, are in one fight. True when Separate.
+
+    Seeing each other proves one realm, not one duel: two duels can sit side by side. One
+    realm and one duel circle does. A centre that cannot be read is no evidence of a split.
+    """
+    if len(clients) < 2 or player_realms.machine_is_separate(machine):
+        return True
+    check = await node_helpers.read_sightings(clients, machine)
+    centres = [c for c in await asyncio.gather(*(_duel_centre(c) for c in clients)) if c is not None]
+    one_circle = all(node_helpers.distance(c, centres[0]) <= node_helpers.POSITION_MARGIN for c in centres)
+    if check.all_together() and one_circle:
+        return True
+    groups = [[i + 1 for i in group] for group in check.groups()]
+    machine.log(
+        f"The players are in separate fights (seen together: {groups}); finishing them, then bringing "
+        "everyone together",
+        logging.WARNING,
+    )
+    return False
+
+
+async def _duel_centre(client):
+    """The centre of *client*'s duel, or None when it cannot be read."""
+    try:
+        return await client.duel.position()
+    except Exception:
+        return None
 
 
 async def _log_re_teleport(machine, client, index: int, attempt: int, before) -> None:

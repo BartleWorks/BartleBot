@@ -489,14 +489,24 @@ async def test_a_separate_bot_still_shares_the_centre_on_one_realm():
 
 
 async def test_the_centre_is_never_read_from_a_client_not_in_battle():
+    """Outside a fight the duel struct still holds the last fight's data."""
     leader, follower = _leader_and_follower()
+    read_outside_battle: list = []
+    for client in (leader, follower):
+        centre = client.duel.position.return_value
+
+        async def position(c=client, centre=centre):
+            if not await c.in_battle():
+                read_outside_battle.append(c)
+            return centre
+
+        client.duel.position.side_effect = position
     p1, p2, p3, p4 = _patches_for_fast_retry()
     with p1, p2, p3, p4:
         await hc.run(FakeMachine(), [leader, follower], _DEFAULT_PARAMS)
 
-    leader.duel.position.assert_awaited_once()
-    # The follower got in only after the centre was published, so it never read its own.
-    follower.duel.position.assert_not_called()
+    assert leader.duel.position.await_count >= 1
+    assert read_outside_battle == []
 
 
 async def test_with_no_client_in_battle_every_attempt_still_aims_at_the_mob():
@@ -527,3 +537,93 @@ async def test_an_unreadable_centre_leaves_the_follower_aiming_at_the_mob():
     assert result == "SUCCESS"
     follower.teleport.assert_not_called()
     assert len(_log_lines(machine, "Client 0: fight centre unreadable")) == 1
+
+
+# ---------------------------------------------------------------------------
+# One realm, one fight (#130)
+#
+# A Together bot does everything it can not to fight split; a split that happens anyway is
+# fought out and repaired afterwards.
+# ---------------------------------------------------------------------------
+
+
+def _in_battle_pair():
+    a, b = FakeClient(), FakeClient()
+    for client in (a, b):
+        client.find_closest_mob.return_value = FakeEntity()
+        client.in_battle.return_value = True
+    return a, b
+
+
+async def _fight(clients, together_outcomes):
+    ensure = AsyncMock(side_effect=list(together_outcomes))
+    run_combat, snapshot, poll, retry = _patches_for_fast_retry()
+    with run_combat as run_combat_mock, snapshot, poll, retry, patch.object(hc.node_helpers, "ensure_together", ensure):
+        machine = FakeMachine()
+        result = await hc.run(machine, clients, _DEFAULT_PARAMS)
+    return result, ensure, run_combat_mock, machine
+
+
+async def test_players_who_cannot_be_brought_together_never_engage():
+    a, b = _in_battle_pair()
+    result, ensure, run_combat, _machine = await _fight([a, b], [hc.node_helpers.TogetherOutcome.FAILED])
+
+    assert result == "FAILURE"
+    assert ensure.await_args.kwargs["where"] == "before the fight"
+    a.tp_to.assert_not_called()
+    run_combat.assert_not_awaited()
+
+
+async def test_players_in_one_fight_are_not_checked_again_afterwards():
+    a, b = _in_battle_pair()
+    result, ensure, _run_combat, _machine = await _fight([a, b], [hc.node_helpers.TogetherOutcome.ALREADY])
+
+    assert result == "SUCCESS"
+    assert ensure.await_count == 1
+
+
+async def test_a_split_fight_is_finished_then_repaired():
+    a, b = _in_battle_pair()
+    see_each_other(a)
+    see_each_other(b)
+    result, ensure, run_combat, machine = await _fight(
+        [a, b], [hc.node_helpers.TogetherOutcome.ALREADY, hc.node_helpers.TogetherOutcome.GATHERED]
+    )
+
+    assert result == "SUCCESS"
+    assert run_combat.await_count == 2, "both fights are fought, not abandoned"
+    assert ensure.await_args.kwargs["where"] == "after the fight"
+    assert _log_lines(machine, "separate fights")
+
+
+async def test_one_realm_but_two_duel_circles_is_a_split():
+    """Seeing each other proves one realm, not one duel."""
+    a, b = _in_battle_pair()
+    b.duel.position = AsyncMock(return_value=XYZ(2000.0, 600.0, 0.0))
+    result, ensure, _run_combat, _machine = await _fight(
+        [a, b], [hc.node_helpers.TogetherOutcome.ALREADY, hc.node_helpers.TogetherOutcome.GATHERED]
+    )
+
+    assert result == "SUCCESS"
+    assert ensure.await_count == 2
+
+
+async def test_a_split_fight_that_cannot_be_repaired_fails():
+    a, b = _in_battle_pair()
+    see_each_other(a)
+    see_each_other(b)
+    result, _ensure, run_combat, machine = await _fight(
+        [a, b], [hc.node_helpers.TogetherOutcome.ALREADY, hc.node_helpers.TogetherOutcome.FAILED]
+    )
+
+    assert result == "FAILURE"
+    assert run_combat.await_count == 2
+    assert _log_lines(machine, "could not be brought together")
+
+
+async def test_a_separate_bot_is_never_checked_for_one_fight():
+    a, b = _in_battle_pair()
+    see_each_other(a)
+    see_each_other(b)
+    assert await hc._in_one_fight(FakeMachine(options={"Player Realms": "Separate"}), [a, b])
+    a.get_base_entity_list.assert_not_awaited()
