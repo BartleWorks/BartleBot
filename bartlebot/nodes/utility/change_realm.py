@@ -144,7 +144,7 @@ async def run(machine, clients: list, params: dict) -> str:
             )
             return "FAILURE"
         machine.log(f"{_TAG}: switching every player to {realms.label(favorite)!r}")
-        coros = [_to_favorite_realm(machine, c, favorite, safety_delay) for c in clients]
+        coros = [to_realm(machine, c, favorite, safety_delay) for c in clients]
     else:
         machine.log(f"{_TAG}: cycling realms on pages {NEXT_REALM_FIRST_PAGE}–{NEXT_REALM_LAST_PAGE}")
         coros = [_to_next_realm(machine, c, NEXT_REALM_FIRST_PAGE, NEXT_REALM_LAST_PAGE, safety_delay) for c in clients]
@@ -155,8 +155,11 @@ async def run(machine, clients: list, params: dict) -> str:
     return "SUCCESS"
 
 
-async def _to_favorite_realm(machine, client, favorite: str, safety_delay: float) -> str:
-    """Find *favorite* in the realm list and hop to it, for one client.
+async def to_realm(machine, client, favorite: str, safety_delay: float) -> str:
+    """Find the realm keyed *favorite* in the realm list and hop to it, for one client.
+
+    Public because sync_in_zone (#133) hops its leader, and a player who cannot port to the
+    leader, the same way. *favorite* is any realm key, not only the Favorite Realm option's.
 
     Flow:
       1. Open the spellbook to the Realms tab and wait for the list to render.

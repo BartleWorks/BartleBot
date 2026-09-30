@@ -146,6 +146,15 @@ class NavMap:
                 finish = replace(step, from_zone=ride_zone, params={**step.params, "board_zone": step.from_zone})
                 self._out[ride_zone].append(finish)
 
+    def allows_realm_change(self, zone: str) -> bool:
+        """Whether the game lets a player switch realms in *zone*. Undeclared zones are assumed to.
+
+        A zone refusing it is declared ``"realm_change": false`` (Eerem Palace). Dungeons,
+        gauntlets and houses refuse too, but no route ends in one.
+        """
+        world = self.world_of(zone)
+        return world is None or world.zones.get(zone, {}).get("realm_change", True)
+
     def world_of(self, zone: str) -> World | None:
         """The world a zone belongs to: the one declaring it, else the one its path starts with.
 
@@ -447,6 +456,8 @@ def _parse_gate(spec: dict, where: str, problems: list[str]) -> dict | None:
 def _check_zone_attrs(attrs: dict, where: str, problems: list[str]) -> None:
     if not isinstance(attrs.get("destination", True), bool):
         problems.append(f"{where}: destination must be true or false")
+    if not isinstance(attrs.get("realm_change", True), bool):
+        problems.append(f"{where}: realm_change must be true or false")
     if not isinstance(attrs.get("label", ""), str):
         problems.append(f"{where}: label must be a string")
     arrivals = attrs.get("arrivals", {})

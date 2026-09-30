@@ -360,7 +360,7 @@ async def _enter_teamup(machine, clients: list, from_zone: str, team_size: int, 
 
 async def _all_seen(machine, clients: list) -> bool:
     """Whether every player is seen with every other: one realm and one instance. True when Separate."""
-    if player_realms.machine_is_separate(machine):
+    if len(clients) < 2 or player_realms.machine_is_separate(machine):
         return True
     return (await node_helpers.read_sightings(clients, machine)).all_together()
 

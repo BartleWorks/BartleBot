@@ -122,14 +122,14 @@ async def test_an_unknown_realm_fails_before_touching_the_client():
 
 
 async def test_run_fails_if_any_client_fails():
-    with patch.object(cr, "_to_favorite_realm", new=AsyncMock(side_effect=["SUCCESS", "FAILURE"])):
+    with patch.object(cr, "to_realm", new=AsyncMock(side_effect=["SUCCESS", "FAILURE"])):
         result = await cr.run(_machine("Wraith"), [FakeClient(), FakeClient()], {})
 
     assert result == "FAILURE"
 
 
 # ---------------------------------------------------------------------------
-# _to_favorite_realm
+# to_realm
 # ---------------------------------------------------------------------------
 
 
@@ -141,7 +141,7 @@ async def test_hops_to_the_favorite_on_a_later_page():
     machine = _machine("Wraith")
 
     with _faked(realm_list):
-        result = await cr._to_favorite_realm(machine, client, "Wraith", 0.0)
+        result = await cr.to_realm(machine, client, "Wraith", 0.0)
 
     assert result == "SUCCESS"
     assert realm_list.clicked.count(REALM_NEXT_PAGE_PATH) == 2
@@ -158,7 +158,7 @@ async def test_matches_the_row_in_the_clients_own_locale():
     realm_list = _RealmList(pages, current="Ambrose")
 
     with _faked(realm_list):
-        result = await cr._to_favorite_realm(_machine("Balestrom"), client, "Balestrom", 0.0)
+        result = await cr.to_realm(_machine("Balestrom"), client, "Balestrom", 0.0)
 
     assert result == "SUCCESS"
     assert realm_button_path(1) in realm_list.clicked
@@ -170,7 +170,7 @@ async def test_already_on_the_favorite_closes_the_spellbook_without_hopping():
     machine = _machine("Banshee")
 
     with _faked(realm_list):
-        result = await cr._to_favorite_realm(machine, client, "Banshee", 0.0)
+        result = await cr.to_realm(machine, client, "Banshee", 0.0)
 
     assert result == "SUCCESS"
     assert REALM_GO_TO_BUTTON_PATH not in realm_list.clicked
@@ -185,7 +185,7 @@ async def test_already_on_the_favorite_is_detected_from_txtyourrealmname_without
     machine = _machine("Banshee")
 
     with _faked(realm_list):
-        result = await cr._to_favorite_realm(machine, client, "Banshee", 0.0)
+        result = await cr.to_realm(machine, client, "Banshee", 0.0)
 
     assert result == "SUCCESS"
     assert REALM_PREV_PAGE_PATH not in realm_list.clicked  # no page-1 anchor
@@ -203,7 +203,7 @@ async def test_anchors_to_page_1_before_scanning():
     realm_list.page = 2
 
     with _faked(realm_list):
-        result = await cr._to_favorite_realm(_machine("Ambrose"), client, "Ambrose", 0.0)
+        result = await cr.to_realm(_machine("Ambrose"), client, "Ambrose", 0.0)
 
     assert result == "SUCCESS"
     assert realm_list.clicked.count(REALM_PREV_PAGE_PATH) == 2
@@ -216,7 +216,7 @@ async def test_a_realm_missing_from_every_page_fails_and_closes_the_spellbook():
     machine = _machine("Unicorn")
 
     with _faked(realm_list):
-        result = await cr._to_favorite_realm(machine, client, "Unicorn", 0.0)
+        result = await cr.to_realm(machine, client, "Unicorn", 0.0)
 
     assert result == "FAILURE"
     assert realm_list.clicked.count(REALM_NEXT_PAGE_PATH) == 2  # every page was looked at
@@ -233,7 +233,7 @@ async def test_spellbook_never_opens():
         patch.object(nh, "click_by_path", new=AsyncMock()),
         patch.object(nh, "poll_until", new=AsyncMock(return_value=False)),
     ):
-        result = await cr._to_favorite_realm(_machine("Wraith"), client, "Wraith", 0.0)
+        result = await cr.to_realm(_machine("Wraith"), client, "Wraith", 0.0)
 
     assert result == "FAILURE"
 
@@ -252,7 +252,7 @@ async def test_realm_hop_timeout_fails():
     realm_list.enabled = enabled
 
     with patch.object(rl, "REALM_HOP_TIMEOUT", -1), _faked(realm_list):
-        result = await cr._to_favorite_realm(_machine("Wraith"), client, "Wraith", 0.0)
+        result = await cr.to_realm(_machine("Wraith"), client, "Wraith", 0.0)
 
     assert result == "FAILURE"
     assert realm_list.clicked[-1] == BACKPACK_CLOSE_BUTTON_PATH
@@ -446,7 +446,7 @@ async def test_favorite_mode_is_the_default():
     """A node with no use_favorite_realm param runs the favourite flow."""
     favorite = AsyncMock(return_value="SUCCESS")
     nxt = AsyncMock(return_value="SUCCESS")
-    with patch.object(cr, "_to_favorite_realm", new=favorite), patch.object(cr, "_to_next_realm", new=nxt):
+    with patch.object(cr, "to_realm", new=favorite), patch.object(cr, "_to_next_realm", new=nxt):
         result = await cr.run(_machine("Wraith"), [FakeClient()], {})
 
     assert result == "SUCCESS"
@@ -458,7 +458,7 @@ async def test_next_realm_mode_cycles_the_fixed_page_range_for_every_client():
     favorite = AsyncMock(return_value="SUCCESS")
     nxt = AsyncMock(return_value="SUCCESS")
     clients = [FakeClient(), FakeClient()]
-    with patch.object(cr, "_to_favorite_realm", new=favorite), patch.object(cr, "_to_next_realm", new=nxt):
+    with patch.object(cr, "to_realm", new=favorite), patch.object(cr, "_to_next_realm", new=nxt):
         result = await cr.run(FakeMachine(), clients, {cr.PARAM_USE_FAVORITE_REALM: False})
 
     assert result == "SUCCESS"
@@ -513,3 +513,37 @@ def test_setup_offers_favorite_realm_only_to_a_bot_using_favorite_mode():
 
 def test_the_page_range_is_no_longer_a_param():
     assert [f.key for f in cr.PARAM_SCHEMA] == [cr.PARAM_USE_FAVORITE_REALM]
+
+
+# ---------------------------------------------------------------------------
+# realm_list.read_current_realm -- which realm the leader is on (#133)
+# ---------------------------------------------------------------------------
+
+
+async def test_the_current_realm_is_read_from_the_greyed_out_row_on_any_page():
+    realm_list = _RealmList(_PAGES, current="Drake")
+    realm_list.page = 2
+
+    with _faked(realm_list):
+        key = await rl.read_current_realm(FakeMachine(), FakeClient(), 0.0, "test")
+
+    assert key == "Drake"
+    assert realm_list.clicked[-1] == BACKPACK_CLOSE_BUTTON_PATH
+
+
+async def test_a_realm_no_row_is_greyed_for_is_unknown():
+    realm_list = _RealmList(_PAGES, current="")
+
+    with _faked(realm_list):
+        assert await rl.read_current_realm(FakeMachine(), FakeClient(), 0.0, "test") is None
+
+    assert realm_list.clicked[-1] == BACKPACK_CLOSE_BUTTON_PATH
+
+
+async def test_a_spellbook_that_never_opens_is_unknown():
+    with (
+        patch.object(rl, "open_realm_list", new=AsyncMock(return_value=False)),
+        patch.object(rl, "close_spellbook", new=AsyncMock()) as close,
+    ):
+        assert await rl.read_current_realm(FakeMachine(), FakeClient(), 0.0, "test") is None
+    close.assert_not_awaited()  # open_realm_list closes what it opened on its own failures
