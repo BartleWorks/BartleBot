@@ -216,7 +216,7 @@ and avoiding `home` keeps a route to the gates it can reach without pressing HOM
 | `door` | world | the zone its World Gate stands in and drops arriving players in, if the world has one |
 | `gate` | world | the World Gate in `door`: `{interact_xyz, reset_xyz, verified, source, note}`. Only a world with a `door` may have one; it generates a `gate` link to every other world's door |
 | `entered_from` | world | for a side world, the world whose zones its entry links start in |
-| `zones` | world | every zone a route may start, pass through or end in. `{"destination": false}` keeps a connector (a dojo, a school) out of the picker |
+| `zones` | world | every zone a route may start, pass through or end in. `{"destination": false}` keeps a connector (a dojo, a school) out of the picker; `{"realm_change": false}` marks a zone the game will not switch realms in (Eerem Palace) |
 | `label` | zone | the name to show when the game's is ambiguous: `EM_Z02_Sewers` is "Zanadu" in game, "Zanadu Sewers" here |
 | `arrivals` | zone | `{from zone: xyz}`: where a player lands coming from that zone. A walk from here to there with no `reset_xyz` uses it |
 | `kind`, `from`, `to` | link | one direction of one zone change |
@@ -291,8 +291,9 @@ together.
 | in one zone | is longer, or takes a teleporter | follow one client: it travels, the rest port to it |
 | in several zones | — | follow one client |
 
-The client that travels is the one the most others can port to, then the one with the cheapest
-route, then the lowest player number; a client already in the target zone has the cheapest route of
+The client that travels -- the leader -- is one in the largest group that already sees itself (see
+below), then the one the most others can port to, then the one with the cheapest route, then the
+lowest player number; a client already in the target zone has the cheapest route of
 all. Nobody else moves until it arrives, so no two clients ever use an object at once. Clients that
 cannot port to one another travel together instead, regrouping first if they are split: at the hub
 within one world, at home across worlds.
@@ -316,6 +317,16 @@ into a zone the others are about to leave. A step nobody makes is planned around
 `enter_zone_via_object` itself: when some clients go through and the rest are still standing there,
 the rest take turns, and a warning names the link so it can be marked. The flag still matters,
 because the planner only costs a teleporter per client when it is set.
+
+**One zone is not one realm (#133).** `sync_in_zone` ends with every player beside the leader,
+on one realm, confirmed by sight (`docs/PLAYER_REALMS.md`). The leader hops to the realm asked for
+(`navigate(realm=...)`, the Favorite Realm unless the node keeps the current one) once it arrives,
+or, when the target refuses a realm change (`"realm_change": false`, Eerem Palace), before the step
+into it: a door keeps each player's realm, so the hop carries through. Everyone the leader does not
+see then ports to it -- `port_map._port_batch` counts a landing only once the target sees it. A
+player that cannot port travels, is teleported beside the leader, and only if still unseen reads
+the leader's realm from its spellbook and hops to it. A leader that misses a step is replaced by
+one who made it. Under `Player Realms: Separate` every player travels, and nobody ports or hops.
 
 ## Mapping it: the tester
 

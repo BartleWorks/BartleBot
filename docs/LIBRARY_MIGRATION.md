@@ -286,9 +286,11 @@ themselves, that is wrong**, and the plan now treats several entry points as in 
 - In **spellement**, `relog --SUCCESS-->` goes to `check_level_scaling`, not to `sync_in_zone`, and
   the loop re-enters at `sync_in_zone` by an edge.
 - In **reagent**, the loop re-enters at `change_realm` (`state_6 → state_3`), mid-way through
-  Player Sync.
+  Player Sync. **Settled (#133):** `change_realm` is no longer in Player Sync, which is now
+  `relog → sync_in_zone`, so the reagent template places its own `change_realm` straight after
+  the subgraph node and its loop comes back in there. No extra entry is needed.
 
-Whether those two templates are restructured or Player Sync gains extra entries is decided at
+Whether the spellement template is restructured or Player Sync gains an extra entry is decided at
 the start of the plan's Stage 8. The farming loop is no longer a planned definition — it stays
 template structure, and reaches existing bots through template provenance (Stage 10).
 
