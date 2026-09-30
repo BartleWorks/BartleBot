@@ -1,4 +1,4 @@
-"""Unit tests for the zone navigation tester's world tree and map colours."""
+"""Unit tests for the zone navigation tester's world tree and map colors."""
 
 from bartlebot import zone_nav
 from tools.zone_nav_tester import tree
@@ -15,7 +15,7 @@ _GRAPH = {
 }
 
 
-def _neighbours(zone: str) -> set[str]:
+def _neighbors(zone: str) -> set[str]:
     return _GRAPH.get(zone, set())
 
 
@@ -44,7 +44,7 @@ def _nav(*links, extra_worlds=None) -> zone_nav.NavMap:
 
 
 def test_a_zone_hangs_under_the_zone_it_is_reached_from():
-    built = tree.build(_nav(), "W", _neighbours)
+    built = tree.build(_nav(), "W", _neighbors)
 
     assert built.parent[_S1] == _HUB
     assert built.parent[_S2] == _S1
@@ -52,35 +52,35 @@ def test_a_zone_hangs_under_the_zone_it_is_reached_from():
 
 def test_streets_are_preferred_over_a_shortcut_through_an_interior():
     """The dojo reaches Street2 in two hops, the street in two as well -- the street wins."""
-    assert tree.build(_nav(), "W", _neighbours).parent[_S2] == _S1
+    assert tree.build(_nav(), "W", _neighbors).parent[_S2] == _S1
 
 
 def test_a_zone_only_reachable_through_an_interior_hangs_under_the_zone_before_it():
-    assert tree.build(_nav(), "W", _neighbours).parent[_S3] == _HUB
+    assert tree.build(_nav(), "W", _neighbors).parent[_S3] == _HUB
 
 
 def test_a_map_link_joins_zones_the_game_graph_does_not():
     """A teleporter can reach a zone zonemap.nav has no edge to."""
-    assert tree.build(_nav(), "W", _neighbours).parent[_ISLAND] == _HUB
+    assert tree.build(_nav(), "W", _neighbors).parent[_ISLAND] == _HUB
 
 
 def test_a_zone_nothing_leads_to_is_listed_apart():
-    built = tree.build(_nav(), "W", _neighbours)
+    built = tree.build(_nav(), "W", _neighbors)
 
     assert built.unattached == [_LOST]
     assert built.path_to(_LOST) == []
 
 
-def test_colours_follow_verified_and_tentative_routes_from_the_hub():
-    colours = tree.statuses(_nav(_walk(_HUB, _S1), _walk(_S1, _S2, verified=False)), "W")
+def test_colors_follow_verified_and_tentative_routes_from_the_hub():
+    colors = tree.statuses(_nav(_walk(_HUB, _S1), _walk(_S1, _S2, verified=False)), "W")
 
-    assert colours[_HUB] == tree.VERIFIED
-    assert colours[_S1] == tree.VERIFIED
-    assert colours[_S2] == tree.TENTATIVE
-    assert colours[_S3] == tree.NO_DATA
+    assert colors[_HUB] == tree.VERIFIED
+    assert colors[_S1] == tree.VERIFIED
+    assert colors[_S2] == tree.TENTATIVE
+    assert colors[_S3] == tree.NO_DATA
 
 
-def test_avoiding_teleporters_colours_what_is_mapped_on_foot():
+def test_avoiding_teleporters_colors_what_is_mapped_on_foot():
     """The Island is only reachable by teleporter, so on foot it has no route."""
     nav = _nav(_walk(_HUB, _S1))
 
@@ -99,7 +99,7 @@ def test_an_avoided_link_does_not_count_for_a_hop():
 def test_the_hops_down_the_tree_say_what_to_record():
     nav = _nav(_walk(_HUB, _S1, verified=False))
 
-    assert tree.hops_to(nav, tree.build(nav, "W", _neighbours), _S2) == [
+    assert tree.hops_to(nav, tree.build(nav, "W", _neighbors), _S2) == [
         (_HUB, _S1, tree.TENTATIVE),
         (_S1, _S2, tree.NO_DATA),
     ]

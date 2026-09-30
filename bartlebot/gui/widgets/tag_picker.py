@@ -55,7 +55,7 @@ def _tag_icon(tag: str, _generation: int) -> QIcon | None:
     return None if path is None else art_icon(path)
 
 
-#: Dot colour per group. Two hues, so "is this a reward or an activity" is legible
+#: Dot color per group. Two hues, so "is this a reward or an activity" is legible
 #: on a single row without reading the section header above it. Activities is not
 #: ``warning``: its gold swallowed the gold ring of the medallion leading each pill.
 GROUP_ACCENT: dict[str, str] = {
@@ -65,7 +65,7 @@ GROUP_ACCENT: dict[str, str] = {
 
 
 def group_accent(group: str, accents: Mapping[str, str] = GROUP_ACCENT) -> str:
-    """Resolve a group's dot colour against the live theme."""
+    """Resolve a group's dot color against the live theme."""
     return getattr(THEME, accents.get(group, "text_muted"))
 
 
@@ -83,7 +83,7 @@ class TagVocabulary:
     """Everything a picker, pill or chip needs to know about one set of tags.
 
     ``groups`` is the ordered vocabulary, ``accents`` names the ``THEME`` attribute
-    each group is coloured with (resolved at paint time, so a theme switch reaches
+    each group is colored with (resolved at paint time, so a theme switch reaches
     it), and ``noun`` is what a count counts, singular and plural.
     """
 
@@ -104,13 +104,13 @@ class TagVocabulary:
         return ""
 
     def accent(self, tag: str) -> str:
-        """*tag*'s colour against the live theme."""
+        """*tag*'s color against the live theme."""
         return group_accent(self.group_of(tag), self.accents)
 
 
 BOT_VOCABULARY = TagVocabulary(TAG_GROUPS, GROUP_ACCENT)
 
-#: The combat strategy dialog's vocabulary (#125). Source is grey, the colour of the
+#: The combat strategy dialog's vocabulary (#125). Source is gray, the color of the
 #: source pill on each card, so a Source chip reads as the pill it matches; Role takes
 #: the second pill hue. The noun is replaced per tab — duels, strategies, presets.
 STRATEGY_VOCABULARY = TagVocabulary(
@@ -137,7 +137,7 @@ def tag_sections(
     will actually read it.
 
     *group* narrows the popup to one group's tags. The library opens one button per
-    group, so that each is labelled with the facet it filters — "Rewards", "Activities"
+    group, so that each is labeled with the facet it filters — "Rewards", "Activities"
     — and the vocabulary is legible without opening anything. Bot Info passes None
     and gets the whole thing, because tagging a bot is one decision across both.
     """
@@ -214,7 +214,7 @@ class TagPickerButton(PickerButton):
         return self._group
 
     def format_text(self, labels: list[str]) -> str:
-        """Keep a grouped button labelled with its group, plus a count when active.
+        """Keep a grouped button labeled with its group, plus a count when active.
 
         A grouped picker is one of a row of facets, so its name has to stay legible
         whether or not anything is selected — that name is the only thing advertising

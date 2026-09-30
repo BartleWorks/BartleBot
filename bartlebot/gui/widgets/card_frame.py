@@ -51,7 +51,7 @@ ones above it.
 
 HOVER IS STATE, NOT A PSEUDO-CLASS
 
-``_hovered`` picks which colours the theme pass uses, and the pass restyles the frame and
+``_hovered`` picks which colors the theme pass uses, and the pass restyles the frame and
 its labels together. A ``:hover`` pseudo-class would restyle the frame alone and leave
 every child label in the old palette after a theme switch, which is the same finding
 ``_BotCard`` in gui/canvas/bot_canvas.py reached.
@@ -70,10 +70,10 @@ card is on -- and three of the four things a card varies by are read off it:
 - ``pins_chrome`` -- whether the grip and the face buttons are pinned open or revealed on
   hover. Hover is right where the card's job is to be picked out by name; the other two
   surfaces exist to run the verbs, and hiding them there is backwards.
-- ``refuses_when_unfit`` -- whether a card that will not fit goes grey and stops taking
+- ``refuses_when_unfit`` -- whether a card that will not fit goes gray and stops taking
   clicks. True only on the launch screen, where a click starts what does not fit.
-  Elsewhere it is **noted, not greyed**: greying out the row the user came here to fix is
-  hostile. The refusal itself is ``_LaunchCard``'s; this is only which surface honours it.
+  Elsewhere it is **noted, not grayed**: graying out the row the user came here to fix is
+  hostile. The refusal itself is ``_LaunchCard``'s; this is only which surface honors it.
 - ``_verbs()`` -- the list below.
 
 VERBS ARE DATA
@@ -183,10 +183,10 @@ class CardMode(Enum):
     """
 
     #: The Quick Launch screen. A body click launches, the chrome is revealed on hover,
-    #: and a card that will not fit goes grey and refuses its clicks.
+    #: and a card that will not fit goes gray and refuses its clicks.
     LAUNCH = "launch"
     #: The Game settings tab. A body click edits, the chrome is pinned open, and a card
-    #: that will not fit is noted rather than greyed.
+    #: that will not fit is noted rather than grayed.
     MANAGE = "manage"
     #: A card whose body is not a button. The chrome is pinned open and nothing refuses,
     #: exactly as in MANAGE, and the body has no verb at all -- so no pointing-hand cursor,
@@ -319,7 +319,7 @@ class GripHandle(ThemedMixin, QWidget):
 
         Disabled and dimmed rather than hidden: a handle that vanishes moves nothing (its
         size is retained) but leaves the user wondering where the gesture went, while a
-        greyed one with a reason in its tooltip answers that. ``DragReorder`` reads
+        grayed one with a reason in its tooltip answers that. ``DragReorder`` reads
         ``isEnabled`` before starting a drag, so this is the only lock there is.
         """
         self.setEnabled(not locked)
@@ -344,13 +344,13 @@ class CardFrame(ThemedMixin, QWidget):
     Subclass it, call :meth:`_build_frame` to get the frame's layout, fill that layout,
     and return the card's verbs from :meth:`_verbs`. Three hooks shape the theme pass
     without reimplementing it: :meth:`_frame_extra_qss` adds to the frame's own rule,
-    :meth:`_restyle_content` recolours whatever the subclass put in it, and
+    :meth:`_restyle_content` recolors whatever the subclass put in it, and
     :meth:`_apply_state_palette` takes the pass over entirely for a state this class knows
     nothing about.
 
     Hover is state rather than a QSS pseudo-class for the same reason as ``_BotCard``:
     the frame and the labels are restyled by one pass, and ``_hovered`` picks which
-    colours that pass uses. A pseudo-class would restyle the frame and leave every label
+    colors that pass uses. A pseudo-class would restyle the frame and leave every label
     in the old palette after a theme switch.
     """
 
@@ -397,7 +397,7 @@ class CardFrame(ThemedMixin, QWidget):
         self._extra_face_btns: list[IconButton] = []
         self._dragging = False
         self._shadow: QGraphicsDropShadowEffect | None = None
-        # Where the left button went down, and whether it has travelled since. A card
+        # Where the left button went down, and whether it has traveled since. A card
         # activates on release and only if the pointer stayed put, so that the drag its
         # column turns a press-and-move into cannot also activate what it was reordering.
         self._press_pos: QPoint | None = None
@@ -417,7 +417,7 @@ class CardFrame(ThemedMixin, QWidget):
 
     @property
     def refuses_when_unfit(self) -> bool:
-        """Whether a card that cannot be used goes grey and stops taking clicks.
+        """Whether a card that cannot be used goes gray and stops taking clicks.
 
         True on the launch screen, where a click starts what does not fit. False on the
         other two, where the same card is a thing being edited or a row being assembled,
@@ -464,7 +464,7 @@ class CardFrame(ThemedMixin, QWidget):
         The gutter stays, holding a spacer of exactly the handle's width: a card built
         without one is not a card that has moved twenty-two pixels left of the ones above
         it. ``DragReorder`` reads ``grip`` and skips a card that has none, so this is also
-        what makes such a card undraggable rather than merely unlabelled -- the same
+        what makes such a card undraggable rather than merely unlabeled -- the same
         arrangement ``AddCard`` uses for the column's terminator.
 
         *gutter* False drops even that spacer, for a card that is not in a column at all
@@ -590,7 +590,7 @@ class CardFrame(ThemedMixin, QWidget):
         """Write the frame's own rule: a fill, a 1px border, and whatever a subclass adds.
 
         *extra* defaults to :meth:`_frame_extra_qss` and is passed explicitly only by a
-        palette that means to drop it -- a greyed card, say, whose stripe names an account
+        palette that means to drop it -- a grayed card, say, whose stripe names an account
         rather than a state.
 
         Anything *extra* touches has to come after the border shorthand, which sets all
@@ -636,7 +636,7 @@ class CardFrame(ThemedMixin, QWidget):
         return ""
 
     def _restyle_content(self) -> None:
-        """Recolour whatever the subclass put inside the frame. Called by every palette."""
+        """Recolor whatever the subclass put inside the frame. Called by every palette."""
 
     def _restyle_action_icons(self) -> None:
         """Re-render every face icon in the current theme.
@@ -764,7 +764,7 @@ class CardFrame(ThemedMixin, QWidget):
 
         Offered on a card that is refusing its clicks too, for the same reason the pencil
         is: editing the thing -- lowering its resolution, dropping an account -- is exactly
-        what the greyed card is telling the user to do.
+        what the grayed card is telling the user to do.
         """
         menu = self._build_verbs_menu()
         if menu is None:
@@ -876,7 +876,7 @@ class CardFrame(ThemedMixin, QWidget):
         start on the grip now (``GripHandle``), so the body no longer competes with a
         drag — but the stayed-put test earns its keep twice over regardless. It is what
         makes a press-and-sweep across the card do *nothing* rather than activate on the
-        far side of it, which is the behaviour a user who has not found the grip yet will
+        far side of it, which is the behavior a user who has not found the grip yet will
         try first; and activating on press would fire on the first pixel of any pointer
         wobble, launching four game clients on a hand that had not decided yet. Qt's own
         buttons activate on release for the same reason.

@@ -5,7 +5,7 @@ not "Together, unticked". Speaks the get/set/changed protocol every node-only op
 shares, so ``option_widgets`` dispatches to it without naming the class.
 
 A bot holding a node that merges players cannot be Separate (:mod:`bartlebot.player_realms`),
-and :meth:`PlayerRealmsChoice.block_separate` is how a row says so: the Separate radio greys
+and :meth:`PlayerRealmsChoice.block_separate` is how a row says so: the Separate radio grays
 out and its tooltip names the nodes responsible. A value that already says Separate -- an
 override from before the node was added -- stays shown rather than being rewritten behind
 the user's back; the run refuses to start on it, and picking Together clears it.
@@ -48,7 +48,7 @@ class PlayerRealmsChoice(QWidget):
         return player_realms.SEPARATE if self._separate.isChecked() else player_realms.TOGETHER
 
     def set_value(self, value) -> None:
-        # Anything unrecognised reads as Together, as it does at run time.
+        # Anything unrecognized reads as Together, as it does at run time.
         (self._separate if player_realms.is_separate(value) else self._together).setChecked(True)
 
     # ------------------------------------------------------------------
@@ -56,7 +56,7 @@ class PlayerRealmsChoice(QWidget):
     # ------------------------------------------------------------------
 
     def block_separate(self, reason: str) -> None:
-        """Grey out Separate, saying why. An empty *reason* offers it again."""
+        """Gray out Separate, saying why. An empty *reason* offers it again."""
         self._separate.setEnabled(not reason)
         self._separate.setToolTip(reason)
 
@@ -64,5 +64,5 @@ class PlayerRealmsChoice(QWidget):
         return not self._separate.isEnabled()
 
     def blocked_reason(self) -> str:
-        """Why Separate is greyed out, or "" while it is offered."""
+        """Why Separate is grayed out, or "" while it is offered."""
         return self._separate.toolTip() if self.separate_blocked() else ""

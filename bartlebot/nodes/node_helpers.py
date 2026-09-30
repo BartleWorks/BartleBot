@@ -192,16 +192,16 @@ async def identify_modal(client) -> str | None:
     key constants to compare against (INSTANCE_EXIT, FRIEND_BUSY, …) and for how the match
     survives markup, substitution slots, and all seven locales.
 
-    None means *no recognised dialog* — either nothing is showing, or something the
+    None means *no recognized dialog* — either nothing is showing, or something the
     snapshot has not seen. The two are deliberately not distinguished: callers should have
     a button-based fallback for both, so a caption we do not know degrades to the previous
-    behaviour rather than hanging. Use modal_showing() to tell them apart when it matters.
+    behavior rather than hanging. Use modal_showing() to tell them apart when it matters.
     """
     return dialog_captions.identify_caption(await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH))
 
 
 async def modal_showing(client) -> bool:
-    """Return True when any modal message box is on screen, recognised or not.
+    """Return True when any modal message box is on screen, recognized or not.
 
     Reads the caption rather than the modal window itself: a window's is_visible() flag is
     its own and ignores its parents (see is_visible_by_path), whereas CaptionText only
@@ -239,14 +239,14 @@ async def resolve_modal(client) -> ModalOutcome:
       * a refusal (dialog_captions.REFUSALS) — dismissed, and returned, so the node can
         fail immediately: the game has said no, and waiting out a timeout only delays the
         same answer while reporting it as the wrong cause;
-      * nothing recognised — falls back to the button layout, which still separates the
-        two kinds: a centre button offers a way to proceed, so it is confirmed; a right
-        button with no centre offers only a way out, so it is dismissed and reported as
-        dialog_captions.UNRECOGNISED_REFUSAL. Without that second half a dialog reworded
+      * nothing recognized — falls back to the button layout, which still separates the
+        two kinds: a center button offers a way to proceed, so it is confirmed; a right
+        button with no center offers only a way out, so it is dismissed and reported as
+        dialog_captions.UNRECOGNIZED_REFUSAL. Without that second half a dialog reworded
         by a game patch would stop failing fast and start timing out instead.
 
-    Refusals are dismissed with the right button where it exists and the centre otherwise:
-    a one-button refusal puts OK in the centre, and a two-button one puts cancel on the
+    Refusals are dismissed with the right button where it exists and the center otherwise:
+    a one-button refusal puts OK in the center, and a two-button one puts cancel on the
     right, which is the answer that leaves the game alone.
     """
     key = await identify_modal(client)
@@ -257,7 +257,7 @@ async def resolve_modal(client) -> ModalOutcome:
             return ModalOutcome(answered=True)
         if await is_visible_by_path(client, MESSAGE_BOX_RIGHT):
             await click_by_path(client, MESSAGE_BOX_RIGHT)
-            return ModalOutcome(answered=True, refusal=dialog_captions.UNRECOGNISED_REFUSAL)
+            return ModalOutcome(answered=True, refusal=dialog_captions.UNRECOGNIZED_REFUSAL)
         return _NOTHING
 
     if key in dialog_captions.CONFIRM_TO_PROCEED:
@@ -271,7 +271,7 @@ async def resolve_modal(client) -> ModalOutcome:
             await click_by_path(client, MESSAGE_BOX_CENTER)
         return ModalOutcome(answered=True, refusal=key)
 
-    # Recognised, but somebody else's dialog — leave it alone rather than click blind.
+    # Recognized, but somebody else's dialog — leave it alone rather than click blind.
     logger.debug("resolve_modal: leaving %s to its own handler", key)
     return _NOTHING
 
@@ -669,12 +669,12 @@ async def take_turns(
     that has begun. It returns truthy when that got as far as it needed to. Making it a
     callback rather than a fixed sequence is the point: the release moment is exactly what
     varies between the nodes that need this, and getting it wrong in either direction
-    either serialises nothing useful or holds the object long after it is free.
+    either serializes nothing useful or holds the object long after it is free.
 
     `park_after_turn` sends each client back to `reset_xyz` once it is done, so the object
     is genuinely free for the next one. Leave it on for interactions the client walks away
     from — standing in range is enough to swallow the next client's keypress, so a client
-    left at the object undoes the serialisation for everyone after it. Turn it off only
+    left at the object undoes the serialization for everyone after it. Turn it off only
     when the interaction removes the client itself, as a zone transition does: there the
     teleport lands on a client that is mid-loading-screen or already elsewhere.
 
@@ -884,7 +884,7 @@ def zone_matches(actual: str, pattern: str) -> bool:
     If pattern contains glob metacharacters (* ? [), fnmatch is used so callers
     can write patterns like "WizardCity/*" to match any WizardCity sub-zone.
     Plain strings (no metacharacters) fall through to exact equality, preserving
-    the previous behaviour for all existing bot files.
+    the previous behavior for all existing bot files.
 
     A malformed glob does not raise: fnmatch treats an unbalanced bracket as a
     literal character, so "[unclosed" matches the zone of that exact name and
@@ -1496,6 +1496,32 @@ on the player you port to, and a teleport exactly on its XYZ; this is only room 
 def distance(a, b) -> float:
     """Straight-line distance between two XYZ-shaped points."""
     return math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
+
+
+SAFE_RADIUS = 1500.0
+"""How far a point must be from every mob to count as safe to stand on.
+
+A battle triggers at a fixed radius on the server, but the client shows a mob walking toward
+the wizard trailing where it really is, so a fast mob pulls the wizard in from further off than
+it looks: up to 886 units measured (#117, tools/probe_aggro_radius.py). WizSprinter's default of
+700 did not cover that; this also leaves room for a mob to close in while a player waits there.
+"""
+
+
+async def mob_clearances(client, points: list) -> list[float]:
+    """The distance from each of *points* to the nearest mob *client* has loaded.
+
+    Infinite where no mob is loaded. Only loaded mobs count -- roughly 3800 units around the
+    client -- so a point far from *client* can read clear when it is not. One read of the
+    entity list serves every point.
+    """
+    mobs = [await m.location() for m in await client.get_mobs()]
+    return [min((distance(point, mob) for mob in mobs), default=math.inf) for point in points]
+
+
+async def mob_clearance(client, point) -> float:
+    """The distance from *point* to the nearest mob *client* has loaded. See :func:`mob_clearances`."""
+    return (await mob_clearances(client, [point]))[0]
 
 
 async def _position_or_none(client):

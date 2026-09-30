@@ -160,7 +160,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
         return self._profiles_col
 
     def apply_theme_styles(self) -> None:
-        """The one piece that is not a label -- the rest own their own colour."""
+        """The one piece that is not a label -- the rest own their own color."""
         self._logo.setStyleSheet(f"QFrame {{ border: 2px solid {THEME.border}; border-radius: {_LOGO_SIZE // 2}px; }}")
 
     def set_roster_source(self, source) -> None:
@@ -177,7 +177,7 @@ class _GamePlaceholder(ThemedMixin, QWidget):
     def refresh(self) -> None:
         """Rebuild the account and profile cards from current settings.
 
-        Each card is asked whether what it would launch fits this screen, and greyed out
+        Each card is asked whether what it would launch fits this screen, and grayed out
         with the reason if it does not -- see bartlebot/gui/screen_fit.py for why an
         unfittable launch is refused rather than warned about. The screen is only known
         once the widget is on one, so a card built before the window is shown is measured
@@ -387,10 +387,10 @@ class GameView(ThemedMixin, QWidget):
         # Captions and names are refreshed even when nothing moved: a client hooking gives
         # a tile that is already on screen its player number for the first time.
         self._tile_players = {t.slot: t.player for t in tiles}
-        # Account colours ride the same per-tick push, because a window's account is learned
+        # Account colors ride the same per-tick push, because a window's account is learned
         # from its title after the tile exists and nothing announces it. Resolved over the
-        # whole account list, for the reason account_stripe_keys gives: a colour is only
-        # distinct with respect to the others. A tile with no account gets no colour.
+        # whole account list, for the reason account_stripe_keys gives: a color is only
+        # distinct with respect to the others. A tile with no account gets no color.
         color_keys = account_color_keys(SettingsManager.instance().accounts)
         for t in tiles:
             widget = self._widget_at(t.slot)
@@ -826,7 +826,7 @@ class GameView(ThemedMixin, QWidget):
         self._detached_hwnds[idx] = hwnd
         self._create_detached_tile(idx, label)
         # Carried across rather than waiting for the next sync, so the pill does not
-        # flash grey for a tick on the way out.
+        # flash gray for a tick on the way out.
         self._detached_tiles[idx].set_color_key(self._tiles[idx].color_key)
         # Unembed the ClientTile without clearing the DetachedTile
         tile = self._tiles.pop(idx)

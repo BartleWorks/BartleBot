@@ -2,7 +2,7 @@
 
 The vocabulary tests are the drift guard the module docstring promises: each word list
 is checked against wizsprinter's grammar or combat code, so a keyword added upstream
-fails here rather than going uncoloured and unoffered.
+fails here rather than going uncolored and unoffered.
 """
 
 import inspect
@@ -112,7 +112,7 @@ def _spans(line: str, stack=(Context.MOVE,)) -> list[tuple[str, Kind]]:
 P, K, T, TG, N, S = Kind.PUNCT, Kind.KEYWORD, Kind.TYPE, Kind.TARGET, Kind.NUMBER, Kind.STRING
 
 
-def test_one_word_is_coloured_by_where_it_sits():
+def test_one_word_is_colored_by_where_it_sits():
     assert _spans("any<aoe> @ aoe") == [("any", K), ("<", P), ("aoe", T), (">", P), ("@", P), ("aoe", TG)]
 
 
@@ -181,7 +181,7 @@ def test_a_pipe_or_an_ampersand_starts_the_next_move():
     assert _spans("Tempest @ aoe & draw")[-1] == ("draw", K)
 
 
-def test_discard_is_a_keyword_and_its_spell_list_colours_like_any_other():
+def test_discard_is_a_keyword_and_its_spell_list_colors_like_any_other():
     assert _spans("discard @ spell(Tempest, any<aoe>)") == [
         ("discard", K),
         ("@", P),
@@ -216,11 +216,11 @@ def test_an_open_bracket_carries_to_the_next_line_and_a_finished_line_does_not()
 
     finished = ds.scan_line("pass @ self")
     assert finished.stack == (Context.TARGET,)
-    # Carried over, the @ would colour a spell named Self on the next line as a target.
+    # Carried over, the @ would color a spell named Self on the next line as a target.
     assert ds.next_line_stack(finished.stack) == (Context.MOVE,)
 
 
-def test_a_bang_is_punctuation_and_colours_a_type_after_it_but_not_a_name():
+def test_a_bang_is_punctuation_and_colors_a_type_after_it_but_not_a_name():
     assert _spans("any<trap & !aoe>")[2:6] == [("trap", T), ("&", P), ("!", P), ("aoe", T)]
     assert _spans("any<trap & !feint>")[2:5] == [("trap", T), ("&", P), ("!", P)]
     assert _spans('any<trap & !"Feint">')[4:6] == [("!", P), ('"Feint"', S)]

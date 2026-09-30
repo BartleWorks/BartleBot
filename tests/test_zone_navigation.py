@@ -562,7 +562,7 @@ _LONG = (_walk(_HUB, _S1), _walk(_S1, _S2), _walk(_S2, _ISLAND))
 """Three transitions: past the limit for travelling together."""
 
 
-async def test_a_short_route_on_foot_is_travelled_together_without_a_survey(monkeypatch):
+async def test_a_short_route_on_foot_is_traveled_together_without_a_survey(monkeypatch):
     game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
 
     outcome = await _go(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2)
@@ -573,7 +573,7 @@ async def test_a_short_route_on_foot_is_travelled_together_without_a_survey(monk
     game.survey.assert_not_awaited()
 
 
-async def test_a_long_route_is_travelled_by_one_client_and_the_rest_port_to_it(monkeypatch):
+async def test_a_long_route_is_traveled_by_one_client_and_the_rest_port_to_it(monkeypatch):
     game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
 
     outcome = await _go(game, _nav(*_LONG), _ISLAND)
@@ -584,7 +584,7 @@ async def test_a_long_route_is_travelled_by_one_client_and_the_rest_port_to_it(m
     assert all(c.where == _ISLAND for c in game.clients)
 
 
-async def test_a_route_through_a_teleporter_is_travelled_by_one_client(monkeypatch):
+async def test_a_route_through_a_teleporter_is_traveled_by_one_client(monkeypatch):
     game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
 
     outcome = await _go(game, _nav(_teleporter(_HUB, _ISLAND)), _ISLAND)

@@ -26,12 +26,12 @@ def bots_dir(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_never_sold_categories_are_recognised():
+def test_never_sold_categories_are_recognized():
     assert classify("Reagents") == "never sold"
     assert classify("Spellements") == "never sold"
 
 
-def test_sellable_categories_are_recognised():
+def test_sellable_categories_are_recognized():
     assert classify("Hats") == "sellable"
     # Pins go through the jewel quicksell, so they are sellable despite the name.
     assert classify("Pins") == "sellable"

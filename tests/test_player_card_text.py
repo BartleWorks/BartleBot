@@ -1,6 +1,6 @@
 """The player card's pure parts, tested without a QApplication.
 
-What a card *says* and what colour it wears are decidable from a username, an index and
+What a card *says* and what color it wears are decidable from a username, an index and
 the account list, so they live outside the ``QWidget`` subclass and are asked here.
 ``tests/test_player_card_widgets.py`` has the half that genuinely needs a widget.
 
@@ -57,7 +57,7 @@ def test_each_client_takes_the_slot_its_own_account_takes():
 def test_a_client_with_no_account_gets_no_stripe():
     """A window BartleBot did not launch, or one whose identity has not arrived yet.
 
-    ``None`` and not a default colour: the stripe is a claim about which account is
+    ``None`` and not a default color: the stripe is a claim about which account is
     running, and there is nothing here to claim. It is also the *normal* state for the
     first moments of a client's life, since ``account_for`` is filled from inside the
     client loop.
@@ -72,8 +72,8 @@ def test_a_client_with_no_account_gets_no_stripe():
 def test_a_username_no_longer_in_the_account_list_gets_no_stripe():
     """An account deleted while its client is still running has no slot to point at.
 
-    Falling back to ``account_color_key``'s per-username derivation would put a colour on
-    the card that matches nothing anywhere else on screen — which is worse than no colour,
+    Falling back to ``account_color_key``'s per-username derivation would put a color on
+    the card that matches nothing anywhere else on screen — which is worse than no color,
     for the same reason a repeating palette is: it invites a match that is wrong.
     """
     assert account_stripe_keys(["gone@example.com"], ACCOUNTS) == [None]

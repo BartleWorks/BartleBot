@@ -59,7 +59,7 @@ Options. The author sets the default; the user may overrule it.
 is the one -- and a bot holding one cannot be Separate. `separate_blocked_by` is the rule, and three
 places enforce it, as with restricted zones:
 
-1. the Setup and Options rows grey out Separate, naming the nodes;
+1. the Setup and Options rows gray out Separate, naming the nodes;
 2. the canvas marks the node an error while the bot's file declares Separate;
 3. `AppController._check_player_realms` refuses the run, which is what a hand-edited file or an
    override from before the node was added reaches.
@@ -72,7 +72,7 @@ places enforce it, as with restricted zones:
 | `gather_at_player`, `teleport_to_friend`, `port_map._port_batch` | arrival includes being seen | the same: these merge on purpose |
 | straggler recovery | any arrived player | only one that shared the straggler's realm before the transition |
 | `enter_dungeon` | on the sigil before X, and at the entrance after | nothing |
-| `handle_combat` | together before anyone engages; one realm and one duel circle once in battle; a split fight is finished, then repaired | a fight centre is shared only within a realm |
+| `handle_combat` | together before anyone engages; one realm and one duel circle once in battle; a split fight is finished, then repaired | a fight center is shared only within a realm |
 | `change_realm` | favorite: all to it; next: the leader, then the rest to its realm; checked after | favorite: P1 to it, the rest the rows after; next: one block of fresh rows (below); a collision is logged |
 | `sync_in_zone` | leader travels, hops, everyone it does not see ports to it, confirmed by sight | everyone travels; nobody ports or hops |
 

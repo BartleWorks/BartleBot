@@ -1,4 +1,4 @@
-"""Dialog shown before a bot run when the bot contains nodes with potentially risky behaviour."""
+"""Dialog shown before a bot run when the bot contains nodes with potentially risky behavior."""
 
 from __future__ import annotations
 

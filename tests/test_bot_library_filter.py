@@ -173,7 +173,7 @@ def test_tags_within_one_group_or_together():
     """Two buttons make this a faceted filter, and a facet ORs inside itself.
 
     ANDing here would ask for a bot dropping both Gear and Reagents, which is a
-    question almost nothing answers — the old behaviour, and why one combined
+    question almost nothing answers — the old behavior, and why one combined
     picker could produce an empty list from two reasonable-looking clicks.
     """
     results, _ = filter_bot_metas(ALL, "", {"Gear", "Reagents"})
@@ -504,7 +504,7 @@ def _pill_styles(card: _BotCard) -> str:
     return " ".join(lbl.styleSheet() for lbl in card.findChildren(QLabel))
 
 
-def test_a_tag_pill_is_coloured_by_its_group(qapp):
+def test_a_tag_pill_is_colored_by_its_group(qapp):
     """One palette for a tag everywhere: picker dot, filter chip, card pill.
 
     JADE carries Gear (Rewards) and Boss (Activities), so both hues appear.
@@ -516,10 +516,10 @@ def test_a_tag_pill_is_coloured_by_its_group(qapp):
 
 
 def test_the_version_pill_is_neutral_rather_than_the_accent(qapp):
-    """Colour on the card means "tag group" now, and a version is not one — the
+    """Color on the card means "tag group" now, and a version is not one — the
     accent was being spent on the pill carrying the least information.
 
-    Tagless, because the accent doubles as the Rewards group's colour: on a bot
+    Tagless, because the accent doubles as the Rewards group's color: on a bot
     carrying one, finding it in the stylesheets proves nothing about the version.
     """
     styles = _pill_styles(_BotCard(_meta("Untagged")))
@@ -532,9 +532,9 @@ def test_the_version_pill_is_neutral_rather_than_the_accent(qapp):
 # Following a theme switch
 #
 # The reported bug: card text kept the old palette, and the search bar and
-# category list did not recolour at all until the app was restarted. Only the
+# category list did not recolor at all until the app was restarted. Only the
 # card *frame* appeared to work, because hover was the one thing re-reading
-# THEME — so a card recoloured when the mouse crossed it and not otherwise.
+# THEME — so a card recolored when the mouse crossed it and not otherwise.
 # ---------------------------------------------------------------------------
 
 
@@ -551,7 +551,7 @@ def _switch(qapp, widget, theme, mode: str) -> None:
     qapp.sendEvent(widget, QEvent(QEvent.Type.StyleChange))
 
 
-def test_a_card_recolours_its_text_on_a_theme_switch(qapp, theme):
+def test_a_card_recolors_its_text_on_a_theme_switch(qapp, theme):
     theme("light")
     card = _BotCard(_meta("Nightside Flax", description="Flax farm", authors="BartleBot"))
     before = [lbl.styleSheet() for lbl in card.findChildren(QLabel)]
@@ -563,7 +563,7 @@ def test_a_card_recolours_its_text_on_a_theme_switch(qapp, theme):
     assert THEME.text_muted in card._desc_lbl.styleSheet()
 
 
-def test_a_card_not_hovered_still_recolours(qapp, theme):
+def test_a_card_not_hovered_still_recolors(qapp, theme):
     """The frame used to follow the theme only via enterEvent/leaveEvent, so an
     untouched card stayed stale until the mouse crossed it."""
     theme("light")
@@ -578,7 +578,7 @@ def test_a_card_not_hovered_still_recolours(qapp, theme):
 
 def test_hover_survives_a_theme_switch(qapp, theme):
     """Hover is state now, not a separate stylesheet, so a switch while hovered
-    must keep the hover colours rather than reverting to the resting ones."""
+    must keep the hover colors rather than reverting to the resting ones."""
     theme("light")
     card = _BotCard(_meta("Nightside Flax"))
     card.enterEvent(QEnterEvent(QPointF(1, 1), QPointF(1, 1), QPointF(1, 1)))
@@ -589,7 +589,7 @@ def test_hover_survives_a_theme_switch(qapp, theme):
     assert THEME.accent in card.styleSheet()
 
 
-def test_the_panel_chrome_recolours_on_a_theme_switch(qapp, theme):
+def test_the_panel_chrome_recolors_on_a_theme_switch(qapp, theme):
     """The search bar, category list and card area — none of which rebuild
     themselves, and all of which needed a restart before."""
     theme("light")
@@ -603,7 +603,7 @@ def test_the_panel_chrome_recolours_on_a_theme_switch(qapp, theme):
     assert THEME.surface in panel._top_bar.styleSheet()
 
 
-def test_the_clear_button_recolours_while_it_exists(qapp, theme):
+def test_the_clear_button_recolors_while_it_exists(qapp, theme):
     """It is rebuilt on every selection change, so it is absent most of the time
     and stale in between."""
     theme("light")

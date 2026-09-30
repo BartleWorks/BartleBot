@@ -2,7 +2,7 @@
 
 The adoption tests stub SettingsManager, so they prove the learn/adopt logic but say
 nothing about whether a fingerprint actually lands on disk — and a fingerprint that does
-not survive the process is worthless, since recognising a window a *previous* session
+not survive the process is worthless, since recognizing a window a *previous* session
 launched is the entire reason it exists.
 
 The file is the shared account store's, not settings.json: the account records moved to

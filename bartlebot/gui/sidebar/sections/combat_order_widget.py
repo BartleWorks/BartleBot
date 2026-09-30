@@ -48,7 +48,7 @@ class _PlayerChip(QFrame):
         self._drag_start_pos: QPoint | None = None
         self._drop_highlight = False
         self._enabled_visual = True
-        # The account currently in this slot, as a palette slot rather than a colour, so a
+        # The account currently in this slot, as a palette slot rather than a color, so a
         # theme switch re-resolves. ``None`` is the normal case — nothing hooked — and
         # draws the chip exactly as it always did. See gui/account_accent.py.
         self._color_key = color_key
@@ -72,8 +72,8 @@ class _PlayerChip(QFrame):
             border = THEME.surface_disabled
             border_width = "1px"
         else:
-            # Tinted and outlined in the account's colour rather than filled with it. That
-            # is the app's whole convention for account colour -- see ``AccountPill`` --
+            # Tinted and outlined in the account's color rather than filled with it. That
+            # is the app's whole convention for account color -- see ``AccountPill`` --
             # and it matters more here than anywhere: four saturated fills in a row would
             # make the combat order the loudest thing on the panel, when what it is
             # actually saying is an *order*, which the positions already say.
@@ -236,7 +236,7 @@ class CombatOrderWidget(QWidget):
         self._chips: list[_PlayerChip] = []
         # A palette slot per player, or empty when nothing is hooked. Held rather than
         # applied, because the chips are rebuilt on every reorder and every max-players
-        # change and each rebuild has to arrive already coloured.
+        # change and each rebuild has to arrive already colored.
         self._color_keys: list[int | None] = []
         outer.addWidget(self._chip_row)
 
@@ -253,7 +253,7 @@ class CombatOrderWidget(QWidget):
             cell.setVisible(slot <= self._max_players)
 
     def _build_header_cell(self, slot: int) -> tuple[QWidget, QLabel]:
-        """One position's header: its gem and its ordinal, centred over the chip below.
+        """One position's header: its gem and its ordinal, centered over the chip below.
 
         The ordinal stays beside the gem rather than being replaced by it. The gems are
         the *game's* vocabulary — nothing on this screen teaches a user who has never
@@ -278,9 +278,9 @@ class CombatOrderWidget(QWidget):
     # ------------------------------------------------------------------
 
     def set_player_color_keys(self, keys: list[int | None]) -> None:
-        """Colour each chip by the account currently in that player slot.
+        """Color each chip by the account currently in that player slot.
 
-        Shorter lists are the normal case and are fine: two clients hooked colours P1 and
+        Shorter lists are the normal case and are fine: two clients hooked colors P1 and
         P2 and leaves the rest plain, which is the truth about what is running.
         """
         self._color_keys = list(keys)

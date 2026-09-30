@@ -632,7 +632,7 @@ async def test_write_deck_skips_when_current_deck_already_matches(monkeypatch):
     db = FakeDeckBuilder()
     deck = DeckData(normal={"Tempest": 2}, item={"Sharpened Blade - Tear": 1})
     await write_deck(db, deck)
-    # No builder calls at all: the matching deck is recognised from two memory
+    # No builder calls at all: the matching deck is recognized from two memory
     # reads, without touching the UI.
     assert db.calls == []
     assert db.added is None
@@ -3158,7 +3158,7 @@ async def test_the_menu_is_left_closed_when_the_school_cannot_be_set(school_menu
     assert not school_menu.open
 
 
-async def test_a_greyed_looking_sprite_is_still_clicked():
+async def test_a_grayed_looking_sprite_is_still_clicked():
     """The gauge is a sprite, and is_control_grayed() is only a real field on the
     button classes — reading it there lands on whatever sits at the offset and
     can refuse a perfectly good click. Every other click in deck_io skips it too.

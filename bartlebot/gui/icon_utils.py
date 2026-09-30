@@ -21,7 +21,7 @@ def svg_icon(name: str, size: int = 20, tint: str | None = None) -> QIcon:
     An explicit ``QIcon.Mode.Disabled`` pixmap is always attached.  Qt would
     otherwise synthesise one by desaturating and lightening the Normal pixmap —
     a near no-op here, because every icon has already been flattened to a single
-    tint colour, which left icon-only buttons looking identical enabled and
+    tint color, which left icon-only buttons looking identical enabled and
     disabled.
     """
     if tint is None:
@@ -54,7 +54,7 @@ def svg_pixmap(name: str, size: int, tint: str | None = None, opacity: float = 1
 
     The keying is on the arguments as passed, so the tint must be resolved by the
     caller; :func:`svg_icon` already does that. Unbounded is deliberate: the key
-    space is the icon set times a handful of sizes and theme colours, and a bound
+    space is the icon set times a handful of sizes and theme colors, and a bound
     would evict exactly the marks a repaint is about to ask for again.
     """
     return _svg_pixmap_cached(name, size, tint, opacity)
@@ -91,9 +91,9 @@ def _svg_pixmap_cached(name: str, size: int, tint: str | None, opacity: float) -
 def svg_qss_url(name: str, tint: str, size: int = 24) -> str | None:
     """A ``url(...)`` token naming a tinted PNG of *name*, or None if one cannot be made.
 
-    QSS has no way to recolour an image, and it will not take a ``data:`` URI either,
+    QSS has no way to recolor an image, and it will not take a ``data:`` URI either,
     so a themed icon used inside a stylesheet has to exist on disk as a file per
-    colour.  The render goes through :func:`svg_pixmap`, so the tinting is the same
+    color.  The render goes through :func:`svg_pixmap`, so the tinting is the same
     code path every other icon in the app uses; only the destination is new.
 
     Written once per (name, tint, size) into the platform cache directory and reused,

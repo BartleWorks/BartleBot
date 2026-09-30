@@ -176,7 +176,7 @@ MAX_WINDOWS = 50000
 #
 # This was 0x30000 and it produced two false positives on a surname search -- both landed
 # past 0x26000, in a cinematic asset filename that happens to share the surname. A window
-# loose enough to swallow neighbouring allocations turns a
+# loose enough to swallow neighboring allocations turns a
 # coincidence into a "field candidate", which is the one thing this probe must not do.
 GAME_CLIENT_WINDOW = 0x23000
 
@@ -266,7 +266,7 @@ class FieldCandidate:
 
     This is the shape the answer actually took, and the shape the probe originally could
     not see. A long name does not fit in a std::string's inline buffer, so the *payload*
-    ends up on the heap far from anything recognisable -- but the string object owning it
+    ends up on the heap far from anything recognizable -- but the string object owning it
     sits in the parent struct at a fixed offset. Classifying only payload addresses meant
     the real field looked like unreachable heap.
     """
@@ -679,7 +679,7 @@ def print_verdict(
     if candidates:
         report.line(
             f"VERDICT: {len(candidates)} owning string(s) sit at a fixed offset, but none read back as\n"
-            f"  {name!r}. Either the offset is a near-miss on a neighbouring field, or the\n"
+            f"  {name!r}. Either the offset is a near-miss on a neighboring field, or the\n"
             "  string layout differs from what read_string/read_wide_string assume. The hex\n"
             "  context above shows which."
         )

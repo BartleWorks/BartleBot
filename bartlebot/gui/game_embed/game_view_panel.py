@@ -35,7 +35,7 @@ def client_summary(connected: int, profile: str | None) -> str:
 
 
 #: Each utility's glyph. Icons, not labels: Bar A's height is a term in the window-sizing
-#: arithmetic (``game_sizing.GAME_PANEL_CHROME_PX``), and a labelled button is taller than
+#: arithmetic (``game_sizing.GAME_PANEL_CHROME_PX``), and a labeled button is taller than
 #: the caption row it would sit in.
 #: The pin is the node params' TP glyph, since XYZ sync is a teleport to a spot; porting to
 #: a friend and fighting take the game's own teleport and damage icons.
@@ -56,7 +56,7 @@ AUTHORING_GROUPS: tuple[tuple[AuthoringAction, ...], ...] = (
     (AuthoringAction.TOGGLE_SPEED_AUTHORING,),
 )
 
-# The divider's box: the rule is drawn centred in it, so the width beyond its 1px is the
+# The divider's box: the rule is drawn centered in it, so the width beyond its 1px is the
 # padding either side, added to the row's spacing. Shorter than the 24px buttons, so it
 # reads as a break in the row rather than a wall.
 _DIVIDER_SIZE = (9, 16)
@@ -99,7 +99,7 @@ class AuthoringBar(ThemedMixin, QWidget):
     """The authoring utilities as icon buttons, in the middle of Bar A (#81, #85).
 
     Bar A, because the utilities are about the clients, not the bot. A toggle that is on
-    draws its glyph in the accent, the same way the node browser's favourite star reports
+    draws its glyph in the accent, the same way the node browser's favorite star reports
     its state. The buttons sit in AUTHORING_GROUPS, with a divider between groups.
     """
 
@@ -175,7 +175,7 @@ class AuthoringBar(ThemedMixin, QWidget):
 
 
 def _side_policy() -> QSizePolicy:
-    """The size policy of Bar A's two captions, which is what keeps the buttons centred.
+    """The size policy of Bar A's two captions, which is what keeps the buttons centered.
 
     Equal shares of the row regardless of text: ``Ignored`` so a long node title clips at
     its half rather than pushing the buttons left, and space kept while hidden so the node
@@ -291,7 +291,7 @@ class GameViewPanel(ThemedMixin, QWidget):
         self.authoring_bar = AuthoringBar()
         self.authoring_bar.action_requested.connect(self.authoring_action_requested)
 
-        # The buttons stay dead centre, whatever the two captions say: each side gets the
+        # The buttons stay dead center, whatever the two captions say: each side gets the
         # same stretch and neither one's text width counts (see _side_policy).
         layout.addWidget(self._clients_lbl, stretch=1)
         layout.addWidget(self.authoring_bar)

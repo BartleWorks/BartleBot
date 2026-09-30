@@ -23,7 +23,7 @@ from bartlebot.gui.themed import ThemedMixin
 
 
 class LinkButton(ThemedMixin, QPushButton):
-    """A flat, accent-coloured button sized to its own text."""
+    """A flat, accent-colored button sized to its own text."""
 
     def __init__(self, text: str = "", *, font_size: int | None = None, parent: QWidget | None = None) -> None:
         super().__init__(text, parent)

@@ -209,7 +209,7 @@ _TEXT_OFFSETS = (712, 736)
 # (csv column name, key in a sample row). ONE source of truth for both the header and the
 # rows, because keeping two literals in step failed twice: the header said 11 columns while
 # the rows wrote 17, and a later edit added a column to neither. Anything read by name out
-# of this file was silently mislabelled in between.
+# of this file was silently mislabeled in between.
 _CSV_FIELDS: tuple[tuple[str, str], ...] = (
     ("elapsed_s", "elapsed_s"),
     ("pid", "pid"),
@@ -755,7 +755,7 @@ async def main() -> int:
     if handle and handle.tell() == 0:
         # Must match the row write below field for field. It did not, once: the rows grew
         # to 17 columns while this line still named 11, so every column past read_ms was
-        # mislabelled in the file even though the printed table was right.
+        # mislabeled in the file even though the printed table was right.
         handle.write(",".join(name for name, _ in _CSV_FIELDS) + "\n")
 
     world = not args.no_world

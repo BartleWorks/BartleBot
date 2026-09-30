@@ -721,7 +721,7 @@ class EditScene(QGraphicsScene):
 
         states = config.states
         sources = {self.display_id(t.source) for t in config.transitions}
-        # (item, stored left x, stored centre y) for everything placed through the fold.
+        # (item, stored left x, stored center y) for everything placed through the fold.
         placed: list[tuple[NodeItem, float, float]] = []
         for i, state in enumerate(states):
             if state.id in self._call_of:
@@ -1279,7 +1279,7 @@ class EditScene(QGraphicsScene):
             node.set_link_state(_LINK_STATE_FOR_KIND.get(kind, "linked"))
 
     def refresh_call_nodes(self) -> None:
-        """Re-read every folded node's title (and a collapsed region's colour) from its region, after a page changed it."""
+        """Re-read every folded node's title (and a collapsed region's color) from its region, after a page changed it."""
         for rid, node in self.folded_nodes().items():
             region = self._region_by_id(rid)
             if region is None:
@@ -1292,7 +1292,7 @@ class EditScene(QGraphicsScene):
         """Place a new instance of ``subgraph_id`` with its call node at ``pos``. Returns the region id.
 
         ``pos`` is the item position the other insert paths use (top-left of a node),
-        so the anchor is stored in the model convention: left edge, vertical centre.
+        so the anchor is stored in the model convention: left edge, vertical center.
         Inputs start unset, following the definition's defaults. With ``into_region`` the members also
         join that (plain) region.
 
@@ -2965,7 +2965,7 @@ class EditScene(QGraphicsScene):
         self._edge_items[record_idx] = (s, new_when_str, d, edge_item)
 
         # Parallel edges between the same pair are laned by `when`, so the whole
-        # group's offsets shift when one of them is relabelled.
+        # group's offsets shift when one of them is relabeled.
         self._recompute_offsets()
 
         self._update_scene_rect()
@@ -3075,7 +3075,7 @@ class EditScene(QGraphicsScene):
         """The nearest free on-grid position to *seed*, preferring *seed*'s own column.
 
         Every insert path needs this: the space an inserted node logically wants is
-        the space its neighbours are already in. One column to the left of a node is
+        the space its neighbors are already in. One column to the left of a node is
         exactly where that node's sources sit, and the midpoint of an edge between
         adjacent columns is 220 px from each -- less than the 300 px a node is wide.
         Left alone, 78% of port inserts and 90% of edge inserts landed on top of an
@@ -3085,10 +3085,10 @@ class EditScene(QGraphicsScene):
         cell they round to; cell-occupancy alone still left 7% overlapping.
 
         *seed* and the result are an item's top-left, as ``setPos`` takes it. Rows are
-        snapped so the node's *centre* sits on a whole multiple of GRID_H, because a
-        stored position's y is the centre and that is where the shipped bots put every
+        snapped so the node's *center* sits on a whole multiple of GRID_H, because a
+        stored position's y is the center and that is where the shipped bots put every
         one of their nodes -- the same rows ``find_empty_grid_cell`` returns. Snapping
-        the top edge instead put every insert one row above its neighbours (#85).
+        the top edge instead put every insert one row above its neighbors (#85).
         """
         boxes = [QRectF(n.pos().x(), n.pos().y(), NODE_W, n.body_height) for n in self._node_items.values()]
         cell_x = round(seed.x() / GRID_W)
@@ -3105,7 +3105,7 @@ class EditScene(QGraphicsScene):
         Shared by every insert path. The caller owns the undo snapshot and all the
         transition wiring; this only brings the state into existence.
 
-        *pos* is the item's top-left; the stored y is its centre, as ``_flush_positions``
+        *pos* is the item's top-left; the stored y is its center, as ``_flush_positions``
         writes it and ``setup`` reads it. Storing the top-left put a node saved before
         anything flushed it back half a node higher than it was drawn.
         """
@@ -3415,7 +3415,7 @@ class _ColorPickerDialog(QWidget):
 
         # The swatches are the six ``QPushButton``s above, and the footer's sweep clears
         # ``autoDefault`` on every one of them — without it the first swatch built would
-        # hold Enter, and picking a colour with the keyboard would never close the dialog.
+        # hold Enter, and picking a color with the keyboard would never close the dialog.
         footer = dialog_footer(self._dialog)
 
         layout = QVBoxLayout(self._dialog)

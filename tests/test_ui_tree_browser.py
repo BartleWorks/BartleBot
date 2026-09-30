@@ -17,7 +17,7 @@ from bartlebot.gui.ui_tree_browser import (
     decode_flags,
     format_state,
     format_text,
-    has_greyed_field,
+    has_grayed_field,
     row_matches,
     subtree_items,
 )
@@ -55,19 +55,19 @@ def test_decode_flags_ignores_unrelated_bits():
 
 
 # ----------------------------------------------------------------------
-# has_greyed_field
+# has_grayed_field
 # ----------------------------------------------------------------------
 
 
 @pytest.mark.parametrize("type_name", ["ControlButton", "ControlCheckBox", "BadgeButton", "SpellCheckBox"])
-def test_has_greyed_field_true_for_button_classes(type_name):
-    assert has_greyed_field(type_name) is True
+def test_has_grayed_field_true_for_button_classes(type_name):
+    assert has_grayed_field(type_name) is True
 
 
 @pytest.mark.parametrize("type_name", ["Window", "ControlText", "", "ControlSprite"])
-def test_has_greyed_field_false_for_classes_without_it(type_name):
+def test_has_grayed_field_false_for_classes_without_it(type_name):
     """Reading offset 808 on these returns unrelated bytes, so they must be skipped."""
-    assert has_greyed_field(type_name) is False
+    assert has_grayed_field(type_name) is False
 
 
 # ----------------------------------------------------------------------

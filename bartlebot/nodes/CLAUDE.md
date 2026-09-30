@@ -16,6 +16,26 @@ the run to the bot's recovery state, so a node inventing `"ERROR"` gets no defau
 spins to the no-match limit instead. `docs/RETURN_ROUTING.md` has the rest, including how
 an author marks a return value fatal.
 
+## A node can be cancelled at any await
+
+Two things cancel a running node: `stop()` after its grace period, and the ambient combat
+watcher when a client is pulled into a fight mid-node (#116). The watcher's cancel is not an
+end: the run loop runs the same state again from the start once the fight is over, with no
+result counted. So:
+
+- **Never swallow `CancelledError`.** Catch `Exception`, not `BaseException`, and never a bare
+  `except:`. A node that turns the cancel into a return value is treated as having finished,
+  so the FSM moves on as if the step had worked, and the watcher fights beside a node that
+  never actually stopped.
+- **Clean up in `finally` or `async with`**, which run on a cancel. WizWalker's
+  `mouse_handler` is an `async with`, so a click cut short still releases the hook.
+- **Expect to be run again from a half-done state.** A client may be somewhere else, or a
+  window may still be open. A node that cannot pick up from there should fail, which sends
+  the run to recovery; it must not assume the world is as it was before its first run.
+
+`handle_combat` and `relog` are never cancelled this way (`machine.NEVER_PREEMPTED`).
+`docs/AMBIENT_COMBAT.md` has the rest of what the watcher does once the node is out of the way.
+
 ## Multi-client coordination
 Use `poll_each_until_seen()` from `bartlebot/nodes/node_helpers.py` for operations that must complete across all clients (zone changes, prompts, loading screens).
 
@@ -169,7 +189,7 @@ Captions come from `bartlebot/data/dialog_captions.json`, all seven locales per 
 any other locale. To add a dialog: append to `KNOWN_KEYS`, run
 `uv run python tools/dump_dialog_captions.py`, and commit the regenerated JSON.
 `--verify` re-checks the snapshot for keys whose text no longer identifies them
-uniquely. An unrecognised caption returns `None`, and callers must fall back rather
+uniquely. An unrecognized caption returns `None`, and callers must fall back rather
 than treat it as "no dialog".
 
 ## NPC dialogue, and side quests

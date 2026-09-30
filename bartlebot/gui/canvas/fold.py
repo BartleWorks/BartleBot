@@ -48,11 +48,11 @@ class FoldMap:
         return math.floor(x / self.col_w)
 
     def row_of(self, y: float) -> int:
-        """The row a centre ``y`` lies in; rows are centred on multiples of ``row_h``."""
+        """The row a center ``y`` lies in; rows are centered on multiples of ``row_h``."""
         return math.floor(y / self.row_h + 0.5)
 
     def rows_covered(self, y: float, height: float) -> range:
-        """Rows a body centred on ``y`` and ``height`` tall reaches into."""
+        """Rows a body centered on ``y`` and ``height`` tall reaches into."""
         top = math.floor((y - height / 2) / self.row_h + 0.5)
         bottom = math.ceil((y + height / 2) / self.row_h - 0.5)
         return range(top, max(top, bottom) + 1)

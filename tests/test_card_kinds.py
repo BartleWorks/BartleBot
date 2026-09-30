@@ -126,12 +126,12 @@ def test_a_spell_is_named_for_its_first_classifiable_effect():
     assert kind == BLADE
 
 
-def test_a_spell_with_no_classifiable_effect_is_unlabelled():
+def test_a_spell_with_no_classifiable_effect_is_unlabeled():
     """An attack spell -- and there is no stand-in for one, so saying nothing is right."""
     assert classify_effects([(SpellEffects.damage, _ENEMY, 500, 0)]) is None
 
 
-def test_a_spell_with_no_effects_at_all_is_unlabelled():
+def test_a_spell_with_no_effects_at_all_is_unlabeled():
     assert classify_effects([]) is None
 
 
@@ -145,7 +145,7 @@ def test_kinds_are_described_for_a_message():
     assert describe_kind(AURA) == "an aura"
 
 
-def test_an_unlabelled_card_describes_as_nothing():
+def test_an_unlabeled_card_describes_as_nothing():
     """Callers concatenate this, so it must be empty rather than "None"."""
     assert describe_kind(None) == ""
     assert describe_kind("nonsense") == ""

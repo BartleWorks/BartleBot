@@ -42,16 +42,16 @@ def tile_pill_colors(color_key: int | None) -> tuple[QColor, QColor, QColor]:
     """``(fill, border, text)`` for a tile's caption pill, read from the live theme.
 
     The same claim the ``P{n}`` pills make on the player cards and the Combat tab (#40):
-    outlined and tinted in the account's colour when the account is known, and the neutral
-    grey pill when it is not -- never a default hue, because a colour here says which
-    account is in the window. The text and icon take the same colour as each other.
+    outlined and tinted in the account's color when the account is known, and the neutral
+    gray pill when it is not -- never a default hue, because a color here says which
+    account is in the window. The text and icon take the same color as each other.
 
     Read at paint time, like everything else a tile draws, so a theme switch needs nothing
     re-applied.
     """
     if color_key is None:
-        grey = THEME.qcolor("pill_neutral_bg")
-        return grey, grey, THEME.qcolor("pill_text")
+        gray = THEME.qcolor("pill_neutral_bg")
+        return gray, gray, THEME.qcolor("pill_text")
     accent = THEME.account_color(color_key)
     fill = QColor(accent)
     fill.setAlpha(round(255 * TINT_ALPHA_PERCENT / 100))
@@ -59,14 +59,14 @@ def tile_pill_colors(color_key: int | None) -> tuple[QColor, QColor, QColor]:
 
 
 def tile_focus_color(color_key: int | None) -> QColor:
-    """The highlight round a focused game window: its account's colour, else the accent."""
+    """The highlight round a focused game window: its account's color, else the accent."""
     return THEME.account_color(color_key) if color_key is not None else THEME.qcolor("accent")
 
 
 def _draw_pill(painter: QPainter, rect: QRect, color_key: int | None) -> QColor:
-    """Paint the capsule behind a tile caption, and hand back the colour to write in.
+    """Paint the capsule behind a tile caption, and hand back the color to write in.
 
-    *rect* is the pill's size exactly as it always was; only the shape and the colours
+    *rect* is the pill's size exactly as it always was; only the shape and the colors
     changed. The 1px outline is stroked half a pixel inside the rect, so the outer edge is
     still *rect* and nothing next to the pill moves.
     """
@@ -212,7 +212,7 @@ class ClientTile(QWidget):
         return self._color_key
 
     def set_color_key(self, key: int | None) -> None:
-        """Colour the pill and the focus border by an account, repainting if it changed."""
+        """Color the pill and the focus border by an account, repainting if it changed."""
         if key != self._color_key:
             self._color_key = key
             self.update()
@@ -294,7 +294,7 @@ class ClientTile(QWidget):
         gy = LABEL_RESERVE + max(0, (self.height() - LABEL_RESERVE - gh) // 2)
 
         # Focus highlight — filled rectangle behind the game window, in the account's
-        # colour (the accent when none is known). The Win32 child covers the game area,
+        # color (the accent when none is known). The Win32 child covers the game area,
         # leaving only the surrounding _FOCUS_BORDER-wide strip visible as the highlight.
         if self._focused:
             painter.setBrush(tile_focus_color(self._color_key))
@@ -333,7 +333,7 @@ class ClientTile(QWidget):
             text,
         )
 
-        # Detach icon (right side of pill, in the text's colour)
+        # Detach icon (right side of pill, in the text's color)
         icon_pm = svg_pixmap("detach", _ICON_SIZE, tint=text_color.name())
         ix = pill_x + 8 + text_w + _ICON_GAP
         iy = pill_y + (pill_h - _ICON_SIZE) // 2
@@ -382,7 +382,7 @@ class _WindowlessTile(QWidget):
         return self._color_key
 
     def set_color_key(self, key: int | None) -> None:
-        """Colour the pill by an account, repainting if it changed."""
+        """Color the pill by an account, repainting if it changed."""
         if key != self._color_key:
             self._color_key = key
             self.update()
@@ -664,9 +664,9 @@ class PendingTile(_WindowlessTile):
     def _paint_body(self, painter: QPainter) -> None:
         """Draw the spinner with the caption beneath it, together in the tile's body.
 
-        Overridden rather than added to: the base centres its one line in the whole body,
+        Overridden rather than added to: the base centers its one line in the whole body,
         and a spinner drawn independently would either sit on top of that line or push it
-        off centre. Laying both out here keeps the pair centred as a unit.
+        off center. Laying both out here keeps the pair centered as a unit.
         """
         body_top = LABEL_RESERVE
         body_h = self.height() - body_top
@@ -701,7 +701,7 @@ class PendingTile(_WindowlessTile):
             )
 
     def _paint_spinner(self, painter: QPainter, cx: int, cy: int) -> None:
-        """Draw the busy ring centred on (cx, cy): a faint full circle under a bright arc."""
+        """Draw the busy ring centered on (cx, cy): a faint full circle under a bright arc."""
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setBrush(Qt.BrushStyle.NoBrush)

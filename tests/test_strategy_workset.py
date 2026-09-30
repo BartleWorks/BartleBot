@@ -189,7 +189,7 @@ def test_commit_re_baselines_so_a_second_save_writes_nothing(tmp_path: Path):
 
 
 def test_commit_writes_only_to_the_user_root(tmp_path: Path):
-    """Copy-on-write falls out of the store; this checks the set honours both roots."""
+    """Copy-on-write falls out of the store; this checks the set honors both roots."""
     shipped, user = tmp_path / "shipped", tmp_path / "user"
     dcs = DuelCombatStrategy(name="Shipped")
     save_duel_strategy(dcs, shipped)

@@ -6,7 +6,7 @@ forward was a small underlined link between them, a dialog, the right tab, and a
 under a list. The Add card replaces that hint outright and is the whole first-run path.
 
 Three things it has to be, and each of them is one of the sections below: last in its
-column and never a member of it, immune to the fit pass that greys the cards above it,
+column and never a member of it, immune to the fit pass that grays the cards above it,
 and a route to the same editor the Game tab's Add button opens.
 """
 
@@ -28,7 +28,7 @@ from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.settings_manager import SettingsManager
 from tests.conftest import main_window_stub
 
-# A 4K screen at the default layout: everything fits, so a card is greyed only when a
+# A 4K screen at the default layout: everything fits, so a card is grayed only when a
 # test asks for it to be.
 _4K = ((3840, 2160), 1.0)
 # Small enough that nothing this app launches fits inside it.
@@ -56,7 +56,7 @@ def _populate(accounts: list[str], profiles: list[str]) -> None:
     """Store *accounts* and *profiles*, every profile launching every account.
 
     A profile with no accounts launches nothing, so it fits any screen -- which would
-    quietly defeat the test that needs the cards above the Add card to be greyed out.
+    quietly defeat the test that needs the cards above the Add card to be grayed out.
     """
     sm = SettingsManager.instance()
     usernames = [f"{name}@example.com" for name in accounts]
@@ -166,10 +166,10 @@ def test_no_column_still_says_none_of_these(qapp, screen, column):
 # ---------------------------------------------------------------------------
 
 
-def test_a_screen_too_small_for_the_game_greys_the_cards_but_not_the_add_card(qapp, screen):
+def test_a_screen_too_small_for_the_game_grays_the_cards_but_not_the_add_card(qapp, screen):
     """It launches nothing and has no resolution to judge.
 
-    Greying it out would tell a user whose screen is too small for Wizard101 that it is
+    Graying it out would tell a user whose screen is too small for Wizard101 that it is
     also too small to type a username into -- on the one screen whose whole job is to get
     them out of that state. ``refresh_fit`` walks the launch cards, and the Add card is
     kept out of that list rather than skipped inside it, so nothing can put it back.
@@ -258,7 +258,7 @@ def test_hovering_restyles_the_card(qapp):
 def test_the_dashes_are_wide_enough_to_be_dashes(qapp):
     """Qt scales a dash pattern by the pen width, so 1px dashed draws as 1px dots.
 
-    At the subtle border colour that is a line you have to look for, and on a dark card's
+    At the subtle border color that is a line you have to look for, and on a dark card's
     top and left edges it was not visible at all -- which loses the outline that is the
     whole reason this reads as an empty slot rather than a card.
     """

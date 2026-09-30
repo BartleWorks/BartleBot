@@ -1,7 +1,7 @@
 """Tests for post-fight drop recording.
 
 Drops are announced by the server after the duel has already ended locally, and
-end-of-fight is exactly when a long-running session lags hardest. Two behaviours keep
+end-of-fight is exactly when a long-running session lags hardest. Two behaviors keep
 that from losing drops, and both are tested here:
 
   * the post-fight read *polls* instead of looking once, so an announcement that lands
@@ -23,7 +23,7 @@ from tests.conftest import FakeClient, FakeMachine
 
 _SNAP = "bartlebot.utils.drop_detection.snapshot_chat"
 
-# A chat line drop_detection.extract_new_drops recognises as a Reagent drop.
+# A chat line drop_detection.extract_new_drops recognizes as a Reagent drop.
 _DROP = "Art_Chat_System.dds> <>Iron Bloom<;Reagent>"
 _DROP2 = "Art_Chat_System.dds> <>Sandstone<;Reagent>"
 

@@ -45,7 +45,7 @@ Two rules about the settings dialog itself:
   that carries the layout's stretch, as the Game tab's two card columns do:
   inside a scroll area they collapse to a couple of visible rows, and a column
   that scrolls inside a page that scrolls is two bars for one list. `_fit_to_screen` caps the
-  dialog at `screen_fit.size_within_screen` on the way up as the last defence, and
+  dialog at `screen_fit.size_within_screen` on the way up as the last defense, and
   a wrapper forwards `apply()` so the tab in the bar is still one `apply_all` can
   call.
 

@@ -59,7 +59,7 @@ CHILD_INDENT_PX = 14
 class OverrideBar(ThemedMixin, QFrame):
     """The gutter marking a row that departs from the level beneath it.
 
-    Always present and always the same width: it changes *colour* rather than
+    Always present and always the same width: it changes *color* rather than
     appearing, so a row does not shift sideways the moment a value is typed.
     Left inactive for good on a surface with nothing to mark.
     """
@@ -77,8 +77,8 @@ class OverrideBar(ThemedMixin, QFrame):
         self.refresh_theme_styles()
 
     def apply_theme_styles(self) -> None:
-        colour = THEME.accent if self._active else "transparent"
-        self.setStyleSheet(f"background: {colour}; border: none;")
+        color = THEME.accent if self._active else "transparent"
+        self.setStyleSheet(f"background: {color}; border: none;")
 
 
 class HelpToggle(ThemedMixin, QPushButton):

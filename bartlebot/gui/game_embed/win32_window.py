@@ -103,7 +103,7 @@ def restored_parent(orig_parent: int, orig_style: int) -> int:
 
     ``GetParent`` returns the *owner* for a top-level window, not a parent. Passing
     that owner back to ``SetParent`` would make the window a genuine child of it —
-    clipped to the owner and undraggable. Only honour the saved handle when the
+    clipped to the owner and undraggable. Only honor the saved handle when the
     window really was a child; otherwise return 0, which means the desktop.
     """
     return orig_parent if orig_style & WS_CHILD else 0

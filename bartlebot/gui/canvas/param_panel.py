@@ -117,12 +117,12 @@ logger = logging.getLogger(__name__)
 class _WikiPageLineEdit(QLineEdit):
     """Line edit for a 'wiki_page' param.
 
-    Stores a bare page title. A pasted URL is normalised to its title on edit, so
+    Stores a bare page title. A pasted URL is normalized to its title on edit, so
     whichever form the user has to hand produces the same thing on disk — and a bot
     file never carries a host of its own. See bartlebot/wiki_pages.py.
     """
 
-    def normalise(self) -> None:
+    def normalize(self) -> None:
         """Rewrite a pasted URL as its page title, leaving anything else alone."""
         raw = self.text().strip()
         if "://" not in raw:
@@ -141,7 +141,7 @@ class _StrListLineEdit(QLineEdit):
     """QLineEdit variant used for 'str_list' param fields.
 
     Stores values as a comma-separated string (e.g. "IronBloom, GoldKey") and
-    is identified by get_params() to deserialise back to list[str].
+    is identified by get_params() to deserialize back to list[str].
     """
 
 
@@ -662,7 +662,7 @@ class _NavZoneField(QWidget):
             try:
                 self.go_btn.setEnabled(True)
             except RuntimeError:
-                pass  # the panel was rebuilt while the players travelled
+                pass  # the panel was rebuilt while the players traveled
 
 
 class _IntChoiceComboBox(QComboBox):
@@ -710,14 +710,14 @@ class _LinkChip(ThemedMixin, QToolButton):
     """A linked param's status, which turns into its Unlink action under the pointer.
 
     At rest it reads as a status -- a chain and what the param is linked to, in the
-    accent colour. Hovered or focused it becomes the action: a broken chain in the
-    warning colour, "Unlink". A *locked* chip (a param of a promoted node) never
+    accent color. Hovered or focused it becomes the action: a broken chain in the
+    warning color, "Unlink". A *locked* chip (a param of a promoted node) never
     turns: its node's input group owns it, and the tooltip says how to let go.
 
     Painted here rather than styled, at one size worked out for both states. A
     stylesheet swapped on hover re-polishes the button and re-queues its layout, and
     somewhere in that the old outline's bottom edge was left on screen. Now a hover
-    changes two colours and repaints the chip, and nothing else.
+    changes two colors and repaints the chip, and nothing else.
     """
 
     _PAD_X = 5
@@ -778,7 +778,7 @@ class _LinkChip(ThemedMixin, QToolButton):
         return font
 
     def apply_theme_styles(self) -> None:
-        """Work out the one size both states share, and repaint in the theme's colours."""
+        """Work out the one size both states share, and repaint in the theme's colors."""
         fm = QFontMetrics(self._font())
         chrome = 2 * self._PAD_X + self._ICON + self._GAP + 2
         self._shown_name = self._text
@@ -867,7 +867,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._form.addStretch()
         self._widgets: dict[str, Any] = {}
         self._required_widgets: dict[str, Any] = {}
-        # Per-row controls, all THEME-coloured: in a definition, a Link button that
+        # Per-row controls, all THEME-colored: in a definition, a Link button that
         # shows on hover, or for a linked param its chip; on a subgraph node, a Reset
         # for a value changed from the definition's.
         self._link_btns: dict[str, QToolButton] = {}
@@ -875,9 +875,9 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._reset_btns: dict[str, QToolButton] = {}
         self._hover_rows: dict[str, _HoverRow] = {}
         self._schema: list = []
-        # Every label load_schema builds that carries a THEME colour, cleared and
+        # Every label load_schema builds that carries a THEME color, cleared and
         # refilled alongside _widgets. Field labels keep their ParamField because the
-        # required marker is a colour baked into *rich text* rather than a stylesheet,
+        # required marker is a color baked into *rich text* rather than a stylesheet,
         # so restyling one means rebuilding its text.
         self._field_labels: list[tuple[QLabel, Any, bool]] = []
         self._muted_labels: list[QLabel] = []
@@ -1156,7 +1156,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
 
     @staticmethod
     def _style_field_label(label: QLabel, field: Any, spaced: bool) -> None:
-        """Set a field label's text and colour together.
+        """Set a field label's text and color together.
 
         They cannot be separated: the required marker is a ``<span>`` carrying
         ``THEME.error`` inside the label's own text, so a theme switch has to rewrite
@@ -1289,7 +1289,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             w.setPlaceholderText("Creature:Lost Soul")
             if help_text:
                 w.setToolTip(help_text)
-            w.editingFinished.connect(w.normalise)
+            w.editingFinished.connect(w.normalize)
             w.textChanged.connect(self._emit_changed)
             return w
         if field_type == "str_list":
@@ -1768,7 +1768,7 @@ class _RegionColorRow(ThemedMixin, QWidget):
             btn = QPushButton()
             btn.setFixedSize(22, 22)
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn.setToolTip(f"Region colour {key}")
+            btn.setToolTip(f"Region color {key}")
             btn.clicked.connect(lambda _=None, k=key: self._on_clicked(k))
             self._btns[key] = btn
             row.addWidget(btn)
@@ -1857,7 +1857,7 @@ class _ParamPanel(ThemedMixin, QWidget):
     # always names the state taking the role.
     initial_state_requested = pyqtSignal(str)  # state ID
     recovery_state_requested = pyqtSignal(str)  # state ID
-    # The region or call node page wrote into the shown RegionModel (label, colour,
+    # The region or call node page wrote into the shown RegionModel (label, color,
     # inputs). Its undo step is already open: a typed edit announced itself with
     # edit_starting, a discrete one pushed through structural_property_changed.
     region_property_changed = pyqtSignal()
@@ -1912,7 +1912,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._node_id_lbl = QLabel()
         self._node_label_edit = QLineEdit()
         self._node_type_combo = QComboBox()
-        # The category headers carry a THEME colour on the model item rather than a
+        # The category headers carry a THEME color on the model item rather than a
         # stylesheet, so apply_theme_styles re-sets their foreground by hand.
         self._node_type_headers: list[QStandardItem] = []
         _model = QStandardItemModel()
@@ -2132,7 +2132,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         edge_vbox.addStretch()
         self._stack.addWidget(edge_outer)
 
-        # Page 3 — region. Label and colour for every region; the subgraph section
+        # Page 3 — region. Label and color for every region; the subgraph section
         # for a linked one.
         region_outer = QWidget()
         region_vbox = QVBoxLayout(region_outer)
@@ -2250,7 +2250,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._flags_lbl.setStyleSheet(
             f"color: {THEME.text_muted}; font-size: {THEME.font_small_px}px; font-weight: 600; margin-top: 4px;"
         )
-        # Connection rows are built per selection and hold four THEME colours each
+        # Connection rows are built per selection and hold four THEME colors each
         # (chip background, accent link, hover surface), so replaying the build is
         # both shorter and more complete than holding a reference to every label.
         # It deletes the old rows, which must not happen while
@@ -2308,7 +2308,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._signature_page.set_zone_suggestions_getter(fn)
 
     def refresh_player_availability(self) -> None:
-        """Re-grey the player checkboxes — call when clients connect or disconnect.
+        """Re-gray the player checkboxes — call when clients connect or disconnect.
 
         findChildren rather than a widget registry: player checkboxes appear at several
         depths inside the param form, and this needs no bookkeeping for any of them.
@@ -2434,7 +2434,7 @@ class _ParamPanel(ThemedMixin, QWidget):
         collapse_blocker: str | None = None,
         fights: list[str] | None = None,
     ) -> None:
-        """Show a plain region's page: its label, colour, and Collapse / Expand. Edits ``region`` in place.
+        """Show a plain region's page: its label, color, and Collapse / Expand. Edits ``region`` in place.
 
         ``collapsed`` is whether it is drawn collapsed, which in Run mode can differ
         from its saved flag; it defaults to the flag. ``collapse_blocker`` is why the

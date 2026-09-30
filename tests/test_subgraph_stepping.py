@@ -84,7 +84,7 @@ def doc(qapp, library):
     c.prepare_for_shutdown()
 
 
-def _centre(c):
+def _center(c):
     return c.view.mapToScene(c.view.viewport().rect().center())
 
 
@@ -176,9 +176,9 @@ def test_leaving_the_view_lights_the_call_node_again(canvas):
 
 
 def test_esc_steps_out_and_puts_the_camera_back(canvas):
-    before = _centre(canvas)
+    before = _center(canvas)
     canvas.view_instance(REGION)
-    assert _centre(canvas) != before
+    assert _center(canvas) != before
 
     _key(canvas, Qt.Key.Key_Escape)
 
@@ -186,7 +186,7 @@ def test_esc_steps_out_and_puts_the_camera_back(canvas):
     assert isinstance(canvas.scene.node_items[REGION], CallNodeItem)
     assert not canvas.crumb_bar.isVisibleTo(canvas)
     assert not canvas.shared_frame.isVisibleTo(canvas)
-    after = _centre(canvas)
+    after = _center(canvas)
     scale = canvas.view.transform().m11()
     assert abs(after.x() - before.x()) * scale <= 1.0 + 1e-6
     assert abs(after.y() - before.y()) * scale <= 1.0 + 1e-6
@@ -310,7 +310,7 @@ def test_the_crumb_verbs_ask_the_controller(doc):
     assert asked == [("save", False), "save as", "revert"]
 
 
-def test_a_region_focused_in_a_definition_is_a_final_segment_in_its_colour(doc):
+def test_a_region_focused_in_a_definition_is_a_final_segment_in_its_color(doc):
     doc.enter_focus_mode("rg")
 
     bar = doc.crumb_bar

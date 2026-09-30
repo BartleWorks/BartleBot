@@ -1,4 +1,4 @@
-"""Recognise which account a running client belongs to, without keeping the id.
+"""Recognize which account a running client belongs to, without keeping the id.
 
 Recovery has to get from a dead window to a login:
 

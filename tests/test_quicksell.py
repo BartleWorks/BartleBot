@@ -338,7 +338,7 @@ async def test_a_full_backpack_is_sold_and_the_backpack_closed():
 
 
 async def test_every_post_sell_dialog_is_confirmed_before_the_backpack_closes():
-    """Answering No to any of them cancels the whole sale, so each one gets the centre button."""
+    """Answering No to any of them cancels the whole sale, so each one gets the center button."""
     screen = _SellScreen(post_sell_dialogs=2)
 
     result = await screen.sell(_machine())

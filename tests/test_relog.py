@@ -29,7 +29,7 @@ class TestRelogDue:
     def test_a_negative_interval_from_a_hand_edited_file_is_also_off(self, interval):
         assert relog_due(now=100.0 * HOUR, last_relog_at=0.0, interval_hours=interval) is False
 
-    def test_a_fractional_interval_is_honoured(self):
+    def test_a_fractional_interval_is_honored(self):
         # 0.1 hours is what the feature is verified with by hand.
         assert relog_due(now=359.0, last_relog_at=0.0, interval_hours=0.1) is False
         assert relog_due(now=360.0, last_relog_at=0.0, interval_hours=0.1) is True

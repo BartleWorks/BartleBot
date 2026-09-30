@@ -220,7 +220,7 @@ class TestRehookAll:
 
 
 # ---------------------------------------------------------------------------
-# Single-client paths (unchanged behaviour, refactored onto shared helpers)
+# Single-client paths (unchanged behavior, refactored onto shared helpers)
 # ---------------------------------------------------------------------------
 
 

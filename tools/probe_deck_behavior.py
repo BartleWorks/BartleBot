@@ -612,13 +612,13 @@ async def section_e(client, items: list[tuple[str, int, bool]], names: dict[int,
 
     layout, hits, decoded = best
     if hits == 0:
-        print("   >> No layout produced a single recognisable template id. Either the")
+        print("   >> No layout produced a single recognizable template id. Either the")
         print("      map is not at +0x88, or it does not hold what we think. The raw")
         print("      node bytes above are the evidence to work from.")
         print()
         return
 
-    print(f"   BEST: {layout[0]} ({hits} recognisable id(s))")
+    print(f"   BEST: {layout[0]} ({hits} recognizable id(s))")
     print()
     print(f"   {'template_id':>11}  {'map':>4}  {'OFF':>4}  name")
     print("   " + "-" * 52)

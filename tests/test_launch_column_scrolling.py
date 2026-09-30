@@ -8,12 +8,12 @@ One host is the point of that sharing: the fix below cannot now be kept on the l
 screen and lost in the tab, which is what a second implementation of the same column
 would have made possible.
 
-It used to fail as soon as a card was greyed out -- which is to say whenever the game
+It used to fail as soon as a card was grayed out -- which is to say whenever the game
 resolution did not fit the space the launch screen had -- because ``set_unavailable``
 turns word wrap on for the refusal line, and a wrapping ``QLabel``'s sizeHint height is
 computed at a width unrelated to the column's. The cards were vertically ``Fixed``, so
 that phantom height became their minimum, and ``setWidgetResizable`` will not let the
-container be shorter than the sum of those minima. Two greyed cards drawing 208px asked
+container be shorter than the sum of those minima. Two grayed cards drawing 208px asked
 for a 468px container inside a 278px viewport: a scroll bar over 190px of nothing.
 
 The tests measure what the cards actually draw rather than pinning any pixel count, so
@@ -98,20 +98,20 @@ def _drawn_height(area) -> int:
 @pytest.mark.parametrize("kind", ["account", "profile"])
 @pytest.mark.parametrize("count", [1, 2, 3])
 # Room to spare *below what the rows draw*, rather than a pinned column height: how tall
-# a card is comes off the font, so a literal that left three greyed cards room at one
+# a card is comes off the font, so a literal that left three grayed cards room at one
 # body size is shorter than they draw at the next -- which is how this test came to fail
 # its own premise instead of its subject. Zero is the interesting one: the bar must hold
 # off right up to the pixel where the rows fill the viewport exactly.
 @pytest.mark.parametrize("slack", [0, 100, 500])
 def test_a_column_with_room_to_spare_shows_no_scroll_bar(qapp, kind, count, slack):
-    """The bug itself: greyed cards that fit still raised a bar."""
+    """The bug itself: grayed cards that fit still raised a bar."""
     cards = _cards(kind, count, REASON)
     _host, area = _column_with_slack(qapp, cards, slack)
 
     drawn = _drawn_height(area)
     assert drawn <= area.viewport().height(), "test needs a column its rows fit inside"
     assert not area.verticalScrollBar().isVisible(), (
-        f"{count} greyed {kind} cards draw {drawn}px in a {area.viewport().height()}px "
+        f"{count} grayed {kind} cards draw {drawn}px in a {area.viewport().height()}px "
         f"viewport, yet the column asked for {area.widget().height()}px"
     )
 
@@ -135,7 +135,7 @@ _ROOMY = 2000
 
 
 @pytest.mark.parametrize("kind", ["account", "profile"])
-@pytest.mark.parametrize("reason", [None, REASON], ids=["launchable", "greyed"])
+@pytest.mark.parametrize("reason", [None, REASON], ids=["launchable", "grayed"])
 def test_a_column_that_overflows_still_scrolls(qapp, kind, reason):
     """The half a policy flag would have broken: a real overflow must stay reachable."""
     cards = _cards(kind, 20, reason)
@@ -150,7 +150,7 @@ def test_a_column_that_overflows_still_scrolls(qapp, kind, reason):
 
 
 @pytest.mark.parametrize("kind", ["account", "profile"])
-@pytest.mark.parametrize("reason", [None, REASON], ids=["launchable", "greyed"])
+@pytest.mark.parametrize("reason", [None, REASON], ids=["launchable", "grayed"])
 @pytest.mark.parametrize("count", [0, 1, 2, 5, 20])
 @pytest.mark.parametrize("column_height", [200, 900])
 def test_the_bar_appears_exactly_when_the_cards_overflow(qapp, kind, reason, count, column_height):
@@ -167,7 +167,7 @@ def test_the_bar_appears_exactly_when_the_cards_overflow(qapp, kind, reason, cou
 def test_a_narrow_column_wraps_the_refusal_without_inventing_scroll(qapp, width):
     """Narrower means more wrapped lines, which is what used to inflate the phantom.
 
-    The card has to grow to hold them -- the refusal is the thing the greyed card is for
+    The card has to grow to hold them -- the refusal is the thing the grayed card is for
     -- but the column must still be exactly as tall as what the cards draw.
 
     Profile cards, because they are the ones that still draw a refusal: an account card's

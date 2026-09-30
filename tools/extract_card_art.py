@@ -220,7 +220,7 @@ RING_FRAME_TEXTURE = "GUI/Art/Art_Character_Cover.dds"
 GAUNTLET_BADGE_TEXTURE = "GUI/BadgeCategory/Badge_Category_Housing_Gauntlets.dds"
 
 #: Where the skull sits on the sigil, as fractions of the medallion's width: its size, and
-#: its centre's offset from the medallion's centre (negative is left and up). No ``.gui``
+#: its center's offset from the medallion's center (negative is left and up). No ``.gui``
 #: file references either texture, so these were matched by eye against the game's button,
 #: keeping the skull clear of the gold ring.
 SKULL_SIZE = 0.378
@@ -228,18 +228,18 @@ SKULL_OFFSET = (-0.05, -0.13)
 
 #: The Gauntlet medallion's disc, which is green because Dungeon, Challenge Mode, Team-Up
 #: and Gauntlet are all entered through a four-player sigil. It is an orange radial
-#: gradient recoloured to the sigil's hue rather than a green one painted directly: the
+#: gradient recolored to the sigil's hue rather than a green one painted directly: the
 #: game's medallions are shaded that way, and a gradient chosen in green read pale.
-DISC_CENTRE = (255, 190, 70)
+DISC_CENTER = (255, 190, 70)
 DISC_EDGE = (170, 70, 10)
 DISC_CURVE = 1.4
 DISC_HUE = colorsys.rgb_to_hls(41 / 255, 243 / 255, 33 / 255)[0]  # the sigil's green
-DISC_LIGHTNESS = (1.15, 1.15 * 0.75)  # centre, and where the band starts
+DISC_LIGHTNESS = (1.15, 1.15 * 0.75)  # center, and where the band starts
 #: A solid near-black band between the disc and the gold. Solid, not a fade to black: a
 #: fade reads as a second, dark-green ring inside the gold one.
 BAND_PX = 2
 BAND_BLEND_PX = 1.5
-BAND_COLOUR = (6, 20, 6)
+BAND_COLOR = (6, 20, 6)
 #: The disc overlaps the ring's inner edge by this much, so no gap shows under the gold.
 DISC_OVERLAP_PX = 1.5
 #: How much of the disc's diameter the gauntlet badge fills, and how far down it sits.
@@ -248,7 +248,7 @@ GAUNTLET_DROP = 0.01  # of the frame's width
 
 
 def ring_inner_radius(frame: Image.Image) -> float:
-    """The radius of *frame*'s transparent centre, read along its middle row.
+    """The radius of *frame*'s transparent center, read along its middle row.
 
     The first fully transparent pixel after the opaque gold, walking in from the left.
     """
@@ -260,7 +260,7 @@ def ring_inner_radius(frame: Image.Image) -> float:
             seen_ring = True
         elif seen_ring and alpha == 0:
             return frame.width / 2 - x
-    raise ValueError("the ring frame has no transparent centre")
+    raise ValueError("the ring frame has no transparent center")
 
 
 def challenge_icon(sigil: Image.Image, skull: Image.Image) -> Image.Image:
@@ -293,14 +293,14 @@ def gauntlet_disc(size: int, inner: float) -> Image.Image:
                 continue
             reach = min(1.0, r / end)
             t = reach**DISC_CURVE
-            red, green, blue = (a + (b - a) * t for a, b in zip(DISC_CENTRE, DISC_EDGE))
+            red, green, blue = (a + (b - a) * t for a, b in zip(DISC_CENTER, DISC_EDGE))
             red, green, blue = (round(v) for v in (red, green, blue))
             _, light, sat = colorsys.rgb_to_hls(red / 255, green / 255, blue / 255)
             light = min(1.0, light * (start_l + (end_l - start_l) * reach))
             rgb = [round(v * 255) for v in colorsys.hls_to_rgb(DISC_HUE, light, sat)]
             if r > band_start:
                 k = min(1.0, (r - band_start) / BAND_BLEND_PX)
-                rgb = [round(v + (b - v) * k) for v, b in zip(rgb, BAND_COLOUR)]
+                rgb = [round(v + (b - v) * k) for v, b in zip(rgb, BAND_COLOR)]
             px[x, y] = (*rgb, 255)
     return disc
 
@@ -339,7 +339,7 @@ TAG_ICON_SOURCES: dict[str, str] = {tag_icon_name(tag): texture for tag, texture
 #: spellement, so Spellements takes the reward-category one the Spellements tag uses.
 #:
 #: Pins has an icon per kind (``PIN_TEXTURES``); its entry here is only for a pin whose
-#: kind is not recognised, and is the Jewels medallion because quicksell sells pins as
+#: kind is not recognized, and is the Jewels medallion because quicksell sells pins as
 #: jewels.
 DROP_TEXTURES: dict[str, str] = {
     "Hats": "GUI/QuestPage/Art_Quest_Hat.dds",

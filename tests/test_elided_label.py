@@ -284,7 +284,7 @@ def test_the_themed_wrapping_label_elides_as_the_plain_one_does(qapp):
     assert lbl.text() == _UNBROKEN
 
 
-def test_the_themed_wrapping_label_reads_its_colour_from_the_token(qapp):
+def test_the_themed_wrapping_label_reads_its_color_from_the_token(qapp):
     from bartlebot.gui.theme import THEME
 
     lbl = ThemedWrappingElidedLabel("x", color="warning", css="font-weight: bold;")

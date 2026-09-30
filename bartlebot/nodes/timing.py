@@ -149,7 +149,7 @@ COMBAT_DROP_MESSAGE_TIMEOUT = 15.0
 # The poll runs in the background (combat_runner.start_combat_drop_poll), so this
 # window never holds up the next node, even on a fight that drops nothing and waits
 # all of it out; only check_if_dropped waits for it. Nor is it the last line of
-# defence: the caller carries its chat baseline between fights, so a message that
+# defense: the caller carries its chat baseline between fights, so a message that
 # beats even this window is recorded late by the next fight's poll rather than lost.
 # That makes this value an attribution-latency knob, not a correctness one.
 
@@ -375,8 +375,8 @@ AUTO_SELECT_CLEANUP_INTERVAL = 2.0
 LEVEL_SCALING_STAGGER_DELAY = 1.0
 # Seconds between one client finishing with the level-scaling station and the next one
 # starting on it. Several clients using it at once intermittently leaves some of them
-# without the elixir, so the uses are serialised and spaced out. The whole interaction
-# is serialised rather than only the clicks: the station's menu closes on every client
+# without the elixir, so the uses are serialized and spaced out. The whole interaction
+# is serialized rather than only the clicks: the station's menu closes on every client
 # that has not clicked yet as soon as one of them does, so overlapping the menus and
 # staggering only the clicks loses the elixir for everyone after the first. Anyone still
 # missing it is retried rather than failed, so this only has to cover the common case.
@@ -586,6 +586,48 @@ SHOP_EXIT_CLICK_INTERVAL = 0.125
 COMBAT_TP_RETRY_INTERVAL = 5.0
 # How often handle_combat re-teleports to its target while the clients are still not in
 # battle. A teleport that missed leaves nothing to poll for, so the action is repeated.
+
+FLEE_AFTER_ROUNDS = 3
+# Planning phases in a row a fight must look unwinnable before our players flee it (#111):
+# none of them holds a castable damage card, and no damage over time is on the enemies. One
+# round is not enough, because a card grayed out for want of pips reads the same as one that
+# can never be cast, and round one rarely has the pips for a big hit.
+
+FLEE_VOTE_TIMEOUT = 5.0
+# Seconds a player waits, at the start of a planning phase, for the rest of our players in
+# its fight to report whether they can still deal damage. A report that has not arrived by
+# then counts as "can", so a slow read never causes a flee. Well inside the 30s planning
+# timer, which is spent only once the wait is over.
+
+FLEE_CONFIRM_TIMEOUT = 3.0
+# Seconds to wait for the flee confirmation to appear after clicking Flee. A miss is retried
+# at the next planning phase.
+
+FLEE_TIMEOUT = 90.0
+# Seconds a fight has to end after a flee is called for because it ran past its maximum
+# duration. The flee lands at the next planning phase, which can sit behind a full round of
+# animations. Past this the combat is cancelled, with the players still in the fight.
+
+AMBIENT_COMBAT_MAX_DURATION = 600.0
+# The ambient combat watcher's counterpart to handle_combat's max_duration param: a fight
+# no node started is fled once it has run this long.
+
+AMBIENT_HELP_HOLD = 20.0
+# Longest the ambient combat watcher holds a fighter's first cast while players who can help
+# teleport into its fight (#116). Counted from the later of the fighter's first planning phase
+# and the most recent join, since the game restarts its 30s planning timer whenever a player
+# joins. Under 30s, so the fighter still casts in round one.
+
+AMBIENT_FLEE_LIMIT = 3
+AMBIENT_FLEE_WINDOW = 600.0
+# The third flee within this many seconds stops the bot, whether handle_combat or the ambient
+# watcher fought it. Fight, flee, recovery, fight never trips the same-state or no-match
+# limits, because the states keep changing.
+
+PREEMPT_PARK_TIMEOUT = 5.0
+# Seconds the ambient combat watcher waits for a node it cancelled to unwind and the run
+# loop to park. A cancel lands at the node's next await, so this is normally a moment; past
+# it the fight is fought anyway, since a fighter left alone is worse than a node still running.
 
 POST_MARK_WAIT = 2.0
 # Seconds to wait after PAGE_DOWN for the UI to reflect the new mark state.

@@ -182,7 +182,7 @@ class MainWindow(QMainWindow):
         # Launch menu
         self._launch_menu = menu_bar.addMenu("Launch")
         # Qt suppresses action tooltips in menus unless asked. A disabled entry here
-        # carries the reason it is disabled, and a greyed row with no way to read why is
+        # carries the reason it is disabled, and a grayed row with no way to read why is
         # the thing the disabled-not-hidden rule exists to avoid.
         self._launch_menu.setToolTipsVisible(True)
         # Rebuilt on every open: whether a launch fits depends on the client count and
@@ -306,7 +306,7 @@ class MainWindow(QMainWindow):
         self.action_stop_bot.triggered.connect(lambda: self.bot_canvas.stop_button.click())
 
     def _apply_minimum_size(self) -> None:
-        """Declare the floor the panes below are built to honour.
+        """Declare the floor the panes below are built to honor.
 
         Measured at this window's own scale factor: a resolution is physical pixels while
         everything else in the sum is logical ones, so on a 150% display the undivided
@@ -530,7 +530,7 @@ class MainWindow(QMainWindow):
 
     @staticmethod
     def _disable_if_unfittable(action: QAction, reason: str | None) -> None:
-        """Grey *action* out and explain, or leave it alone when *reason* is None."""
+        """Gray *action* out and explain, or leave it alone when *reason* is None."""
         if reason is None:
             return
         action.setEnabled(False)

@@ -25,7 +25,7 @@ class PortSim:
 
     A port lands on `target` (a hooked player) when one is set, else on `friend`: a
     (zone, xyz, realm) triple for a friend who is not one of ours. It shows a loading screen when
-    the zone or realm changes and nothing otherwise, which is the game's behaviour.
+    the zone or realm changes and nothing otherwise, which is the game's behavior.
 
     Each player's `port` says how its ports go:
 

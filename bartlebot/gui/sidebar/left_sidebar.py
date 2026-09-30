@@ -306,7 +306,7 @@ class LeftSidebar(QTabWidget):
         self.options.set_clients_getter(fn)
 
     def refresh_player_availability(self) -> None:
-        """Re-grey the player checkboxes in both option surfaces."""
+        """Re-gray the player checkboxes in both option surfaces."""
         self.setup.refresh_player_availability()
         self.options.refresh_player_availability()
 

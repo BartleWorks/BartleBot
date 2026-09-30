@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import QComboBox
 
 from bartlebot import realms
 
-#: What the empty choice reads as. Empty is a real value -- "no favourite" -- and the
+#: What the empty choice reads as. Empty is a real value -- "no favorite" -- and the
 #: node fails plainly on it rather than guessing a realm.
 NOT_SET_TEXT = "Not set"
 

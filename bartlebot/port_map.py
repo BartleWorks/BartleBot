@@ -160,9 +160,15 @@ async def survey(clients: list, names: list[str | None] | None = None, states: l
 
 
 async def _online_friends(client) -> list[str] | None:
-    """This client's online friends, [] when nobody is online, None when the list cannot be read."""
+    """This client's online friends, [] when nobody is online, None when the list cannot be read.
+
+    Opening the list is a click, and every click needs the mouseless cursor hook: without it
+    the read raised HookNotActive on every client, so no friend route was ever surveyed and
+    every port fell back to the slower group route (#139). The close is a key press.
+    """
     try:
-        return await node_helpers.list_online_friends(client)
+        async with client.mouse_handler:
+            return await node_helpers.list_online_friends(client)
     except ValueError:
         return []
     except Exception:

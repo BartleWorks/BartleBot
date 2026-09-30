@@ -73,8 +73,8 @@ class AssignmentLine:
     to carry its DSL preview instead.
 
     ``slots`` is the same players as numbers, sorted, for a surface that draws one
-    account-coloured pill per slot -- a range like ``P1–P3`` cannot wear three
-    accounts' colours, so the Combat tab needs the members rather than the phrase.
+    account-colored pill per slot -- a range like ``P1–P3`` cannot wear three
+    accounts' colors, so the Combat tab needs the members rather than the phrase.
     """
 
     players: str
@@ -192,7 +192,7 @@ class StrategySummary:
     usage: UsageCount | None = None
     #: A duel's combat order as slot numbers, empty for simultaneous entry or for any
     #: other kind. The facet already says it in words; this is for a surface that draws
-    #: the order as coloured pills and has to leave that facet out when it does.
+    #: the order as colored pills and has to leave that facet out when it does.
     combat_order: tuple[int, ...] = ()
     #: Built-in, modified or custom, for a surface that shows it; None where the question
     #: does not arise. Supplied by whoever knows the working set — the summarize_*

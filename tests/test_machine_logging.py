@@ -1,6 +1,6 @@
 """Tests for what BotMachine writes to the log.
 
-The subject here is attribution and landmarks, not FSM behaviour: which logger a
+The subject here is attribution and landmarks, not FSM behavior: which logger a
 node's own messages are filed under, and the pass/summary lines that give a
 five-hour log something to navigate by. Both are invisible to every other test —
 a run can be perfectly correct and still produce a log nobody can read.
@@ -179,7 +179,7 @@ async def test_a_self_loop_on_the_first_state_still_counts_as_a_pass(logs):
 
     Worth stating rather than assuming: a bot stuck retrying its first state
     produces rising pass numbers with no progress behind them, which is a
-    recognisable shape in a log rather than a miscount.
+    recognizable shape in a log rather than a miscount.
     """
     calls = [0]
 

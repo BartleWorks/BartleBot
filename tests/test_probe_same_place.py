@@ -18,7 +18,7 @@ from tools.probe_same_place import (
     pair_observations,
     read_csv,
     read_csvs,
-    summarise,
+    summarize,
     write_reading,
 )
 
@@ -252,7 +252,7 @@ def test_pooled_runs_do_not_overlap_in_time(tmp_path):
 
 
 def test_summary_covers_every_question_and_names_no_one():
-    text = summarise(_walk_away([1000, 3000, 4000, 4300, 5000, 4300, 4000, 3000], seen_until=4142))
+    text = summarize(_walk_away([1000, 3000, 4000, 4300, 5000, 4300, 4000, 3000], seen_until=4142))
 
     for heading in ("1. RADIUS", "REALM", "SYMMETRY", "2. BATTLE", "3. ARRIVAL", "4. COST", "GID STABILITY"):
         assert heading in text

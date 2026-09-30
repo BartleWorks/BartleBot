@@ -13,9 +13,9 @@ WHY EVERY LOCALE
 WHY A SNAPSHOT IS SAFE
     Unlike the name tables, nothing here is index-based: a caption is looked up by its
     own key, so a stale snapshot cannot mis-identify a dialog. It can only fail to
-    recognise one whose wording changed, and bartlebot.dialog_captions reports an
-    unrecognised caption as None rather than guessing -- callers then fall back to their
-    previous button-based behaviour.
+    recognize one whose wording changed, and bartlebot.dialog_captions reports an
+    unrecognized caption as None rather than guessing -- callers then fall back to their
+    previous button-based behavior.
 
     The one real risk is a *shortened* caption: if new wording is a substring of the old,
     the old fingerprint still matches. The --verify pass below re-reads the snapshot it

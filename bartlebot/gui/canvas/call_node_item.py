@@ -1,18 +1,18 @@
 """The node shapes a group of states is drawn as, and the Entry/Exit pills.
 
 ``FoldedNodeItem`` is any group of states drawn as one node: its entry ports down the
-left edge and its exit ports down the right, labelled by name. Nothing in it assumes a
+left edge and its exit ports down the right, labeled by name. Nothing in it assumes a
 definition exists; its two shapes do:
 
 - ``CallNodeItem`` is a subgraph instance. What marks it as a call is its *shape* --
   double side bars, the flowchart "predefined process", which has always meant a call
   to something defined elsewhere -- and a link badge in its corner carrying the status
-  dot. Colour is only a supporting cue: region colour 5 is too close to the accent for
-  colour alone to tell a call from a region.
+  dot. Color is only a supporting cue: region color 5 is too close to the accent for
+  color alone to tell a call from a region.
 - ``CollapsedRegionItem`` is a plain region folded away (#67), after BPMN's collapsed
-  embedded sub-process: a single border in the region's own colour and a boxed-plus
+  embedded sub-process: a single border in the region's own color and a boxed-plus
   marker, no side bars and no badge. Ordinary nodes, calls and collapsed regions differ
-  by shape, never by colour alone.
+  by shape, never by color alone.
 
 ``PortNodeItem`` is an Entry or Exit node inside a definition: a pill in the accent,
 with an output port only (Entry) or an input port only (Exit).
@@ -59,7 +59,7 @@ _ROLE_BADGE_GAP = 3  # between two badges on one port, and before its name
 def canvas_edge_color() -> QColor:
     """The edge of an accent-filled shape over the canvas: the Entry/Exit pills and the crumb bar.
 
-    It is the canvas's own text colour, so it stands off the canvas in either theme (light in
+    It is the canvas's own text color, so it stands off the canvas in either theme (light in
     the dark one, dark in the light one) and between two accent fills that touch, which a
     darker accent did against neither.
     """
@@ -83,9 +83,9 @@ def paint_link_glyph(painter: QPainter, x: float, y: float, size: float, color: 
     """Two overlapping squares -- an instance of something -- with a status dot.
 
     The dot is what changes with the state, so the glyph is one shape to learn: no
-    dot for a clean link, the warning colour when the update is held, the error
-    colour when the library cannot supply it, the accent while its definition is
-    open. Colours are read from THEME here, at paint time, so a theme switch needs no
+    dot for a clean link, the warning color when the update is held, the error
+    color when the library cannot supply it, the accent while its definition is
+    open. Colors are read from THEME here, at paint time, so a theme switch needs no
     bookkeeping.
     """
     sq = size * 0.68
@@ -110,7 +110,7 @@ class FoldedNodeItem(NodeItem):
     ``_returns`` holds the exit port ids, so everything that asks a node for its
     output ports -- starting a drag, routing an edge, the port hit-test -- asks it
     of the exits without knowing it is talking to a folded node. Subclasses give the
-    shape: the frame's colour, what marks it, and the corner marker.
+    shape: the frame's color, what marks it, and the corner marker.
     """
 
     #: How far in from each side the content starts: past a call's side bars.
@@ -220,7 +220,7 @@ class FoldedNodeItem(NodeItem):
         return None
 
     def _frame_color(self) -> QColor:
-        """The border's colour when nothing is wrong."""
+        """The border's color when nothing is wrong."""
         return THEME.qcolor("accent")
 
     def _paint_shape_marks(self, painter: QPainter, rect: QRectF, border: QColor) -> None:
@@ -442,10 +442,10 @@ def paint_collapse_marker(painter: QPainter, x: float, y: float, size: float, co
 
 
 class CollapsedRegionItem(FoldedNodeItem):
-    """A plain region folded into one node (#67): a single border in its own colour, and a boxed plus.
+    """A plain region folded into one node (#67): a single border in its own color, and a boxed plus.
 
-    The colour is a palette slot read from THEME at paint time, like the region's own
-    frame, so a theme switch needs no bookkeeping and a recolour only ``set_color``.
+    The color is a palette slot read from THEME at paint time, like the region's own
+    frame, so a theme switch needs no bookkeeping and a recolor only ``set_color``.
     """
 
     def __init__(self, *args, color: int, **kwargs) -> None:

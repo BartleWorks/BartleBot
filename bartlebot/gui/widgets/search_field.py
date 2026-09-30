@@ -26,7 +26,7 @@ class SearchLineEdit(QLineEdit):
     """``QLineEdit`` with a leading search icon that tracks the theme.
 
     Everything else — the clear button, signal wiring, width — is left to the caller,
-    so this can replace an existing field without changing its behaviour.
+    so this can replace an existing field without changing its behavior.
     """
 
     def __init__(self, placeholder: str = "Search…", parent: QWidget | None = None) -> None:

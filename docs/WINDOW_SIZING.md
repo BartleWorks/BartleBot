@@ -80,9 +80,9 @@ is relaxing a conservative floor by controlling the pairing ourselves.
 
 **The failure is a click that silently misses, not a rendering glitch.** The HUD anchors
 the compass and teleporter buttons (`compassAndTeleporterButtons`) to a screen edge and
-centres the interact prompt. On a narrow client the prompt is wide enough to cover the hub
+centers the interact prompt. On a narrow client the prompt is wide enough to cover the hub
 and dorm buttons — and those buttons are clicked *by coordinate*: `node_helpers.click_by_path`
-resolves the window and hands its centre to wizwalker's `mouse_handler.click_window`, so
+resolves the window and hands its center to wizwalker's `mouse_handler.click_window`, so
 whatever is drawn on top takes the click. A covered button therefore fails **quietly**:
 `click_by_path` returns True (the window exists and is not grayed), the click lands on the
 prompt, and the node burns its `TRIGGER_TIMEOUT` waiting for a loading screen that never
@@ -145,7 +145,7 @@ clear. A settings file that still holds 400x300 is migrated on read by the
 ### Wide: take the width instead
 
 `widescreen_form` derives a second resolution per rung — **the same height, the width
-widened to 16:9** — which moves the edge-anchored buttons away from the centred prompt, so
+widened to 16:9** — which moves the edge-anchored buttons away from the centered prompt, so
 the rung pays no steps and keeps the render floor's scale:
 
 | UI size | 16:9 | scale |
@@ -329,10 +329,10 @@ Once resolutions are capped to the screen, the minimum the second one derives is
 satisfiable, so it stops being able to refuse to open a usable window and does its real
 job: stopping the window and the splitters being dragged to where the game gets clipped.
 The splitter half of that works only because `GameViewPanel` wraps `GameView` in a layout,
-so the view's minimum becomes the panel's and `QSplitter` honours it —
+so the view's minimum becomes the panel's and `QSplitter` honors it —
 `test_the_game_view_s_minimum_reaches_the_panel_that_sits_in_the_splitter` is the guard.
 
-### The floor is only a floor if the panes honour it
+### The floor is only a floor if the panes honor it
 
 `required_window_size` is not a description of the window — it is a *claim* about it, and
 Qt holds the window to the larger of the claim and what the layout inside actually needs.
@@ -460,13 +460,13 @@ Both surfaces check the *resulting* client count:
 
 Resolution is fixed at launch and a running client cannot be resized without relaunching
 it, so the client arriving is the one that has to be refused. This is what removes the
-need for the overflow behaviours considered earlier — warn-and-proceed, auto-detach,
+need for the overflow behaviors considered earlier — warn-and-proceed, auto-detach,
 relaunch-everything-smaller. Nothing has to degrade gracefully into a state that cannot
 be reached.
 
 **An entry that cannot launch is disabled with the reason, never hidden.** A profile that
 silently vanishes leaves the user hunting for it with nothing on screen saying why, which
-is worse than a greyed row reading "2 clients at 800×600 needs 1624×651; there is
+is worse than a grayed row reading "2 clients at 800×600 needs 1624×651; there is
 1304×800 available — lower the resolution, launch fewer clients, or make the game area
 larger." That third way out is real, not padding: the budget includes the live game area,
 so dragging a sidebar narrower widens it there and then. The same applies to
@@ -487,7 +487,7 @@ refuse different things:
 
 | column | the banner says | the cards say |
 |---|---|---|
-| Accounts | "Your default game resolution (2048×1536) needs 1650×1279, but only 1200×800 is available. Either lower the default game resolution or increase the size of the game view panel." | nothing — they stay grey and keep showing their characters |
+| Accounts | "Your default game resolution (2048×1536) needs 1650×1279, but only 1200×800 is available. Either lower the default game resolution or increase the size of the game view panel." | nothing — they stay gray and keep showing their characters |
 | Launch Profiles, none fitting | "No launch profiles fit in the game view panel at its current size (1304×800). Lower the resolution they launch at, increase the size of the game view panel, or launch fewer clients." | each its own "Needs …" |
 | Launch Profiles, some fitting | "Some launch profiles do not fit in the game view panel at its current size (1304×800) and have been disabled." | each its own "Needs …" |
 
@@ -512,11 +512,11 @@ The surfaces that must stay consistent: `ProfileCard`/`AccountCard`
 `gui/settings/profile_editor.py`, which share `mark_unfittable_resolutions`.
 
 The cards themselves are drawn on three surfaces, and only one of them refuses. The Quick
-Launch screen greys an unfittable card and swallows its clicks; the Game settings tab and
+Launch screen grays an unfittable card and swallows its clicks; the Game settings tab and
 the profile editor show the same card at full contrast with the banner above it, because
 a click there edits — or, in the editor, does nothing at all — and editing is what the
 refusal is asking for. That split is the card's `CardMode`, and `refuses_when_unfit` is
-what reads it — never condition on the fit result itself to decide whether to grey
+what reads it — never condition on the fit result itself to decide whether to gray
 something.
 
 ### Which client count the settings combos judge against
@@ -530,7 +530,7 @@ The two settings combos have no such moment, and they answer it differently:
 | the global default | **one client** | the common case, and the only one it is the sole answer for |
 
 The global one used to be sized against the largest profile that inherits it. That is
-defensible — those are launches this value decides — but it greys out most of the list for
+defensible — those are launches this value decides — but it grays out most of the list for
 anyone who merely keeps a four-account profile around, and four accounts is rare where one
 or two is not. A user running several clients has a launch profile, and that profile has
 its own combo judged against its own accounts. Judging the global default by the rarer case

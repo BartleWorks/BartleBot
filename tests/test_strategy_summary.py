@@ -284,7 +284,7 @@ def test_usage_phrase_reads_as_a_sentence():
 
 
 def test_an_assignment_line_carries_its_slots_as_numbers():
-    """A range like P1–P3 cannot wear three accounts' colours, so the members travel too."""
+    """A range like P1–P3 cannot wear three accounts' colors, so the members travel too."""
     config = DuelConfig(player_assignments=[PlayerAssignment(players=[3, 1, 2], dsl="x")])
 
     line = summarize_duel(config, []).lines[0]

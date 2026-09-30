@@ -36,18 +36,18 @@ FINDINGS (r800294, AllPageSpellList, 12-page spellbook)
     * Writing it turns the page: the game draws it, keeps the value, a click
       lands on the predicted card, and PageDown continues from it.
     * The game also keeps a second page counter that only the buttons update,
-      outside the scanned range.  Two symptoms: PageUp still reads greyed on a
+      outside the scanned range.  Two symptoms: PageUp still reads grayed on a
       written page 11, and closing a tier flyout restores the list from that
       counter -- to page 1 after a write, but to the right page after PageDown.
       deck_io's _close_tier_flyout ("the close button leaves the page alone")
       is therefore correct for the click-driven sweep it was written for.
     * Writing 0x388 again after the close recovers fully.  So a write-driven
       sweep must re-write the page after every flyout close, and must not rely
-      on the page buttons' greyed state.
+      on the page buttons' grayed state.
     * ItemSpells (18 cards, 2 pages): 0x320 is the only field that follows the
       page, as page * 16.  Writing 16 draws page 2 and a click toggles entry 16.
     * The buttons are enabled by the hidden counter, not by 0x388 / 0x320.
-      After writing page 2, PrevItemSpells stayed greyed and a click on it did
+      After writing page 2, PrevItemSpells stayed grayed and a click on it did
       nothing; PageDown from a written spell page worked only because the hidden
       counter still said page 1, where PageDown is enabled.  So a write-driven
       sweep must never mix in button clicks -- move by writing, including back
@@ -79,7 +79,7 @@ HOW TO RUN
     After a written page, closing a flyout has been seen to reset it to page 1.
     If the page moved, the probe writes it again and checks that recovers it.
     --via-buttons reaches the page with PageDown instead of a write, as a control:
-    if the reset happens there too it is the game's behaviour on every close
+    if the reset happens there too it is the game's behavior on every close
     (and deck_io's _close_tier_flyout, which assumes the page is kept, is wrong);
     if not, the game restores the page from a copy the write does not update.
 
@@ -204,7 +204,7 @@ class Probe:
             except ValueError:
                 parts.append(f"{name}=missing")
                 continue
-            parts.append(f"{name} greyed={await _safe(button.is_control_grayed(), '?')}")
+            parts.append(f"{name} grayed={await _safe(button.is_control_grayed(), '?')}")
         return ", ".join(parts)
 
     # --- clicks ------------------------------------------------------------
@@ -222,7 +222,7 @@ class Probe:
             await self.client.mouse_handler.click(x, y)
 
     async def rewind(self) -> None:
-        # Prev on the first page is a no-op, so a fixed count needs no greyed read.
+        # Prev on the first page is a no-op, so a fixed count needs no grayed read.
         # One hold for the run of clicks; the handler is ref-counted.
         async with self.client.mouse_handler:
             for _ in range(await self.pages() - 1):

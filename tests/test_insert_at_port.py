@@ -343,7 +343,7 @@ def test_the_new_state_appears_on_the_canvas(canvas):
 
 
 def test_the_stored_position_matches_where_the_node_is_drawn(canvas):
-    """A stored y is the node's centre, as _flush_positions writes it and setup reads it.
+    """A stored y is the node's center, as _flush_positions writes it and setup reads it.
 
     Storing the item's top-left instead put a node saved before anything flushed it
     back half a node higher than it was drawn.
@@ -504,7 +504,7 @@ def test_placement_holds_the_column_and_moves_the_row(canvas):
 
 
 def test_placement_lands_on_the_same_grid_the_bots_use(canvas):
-    """The shipped library's nodes sit with their left edge on GRID_W and centre on GRID_H multiples."""
+    """The shipped library's nodes sit with their left edge on GRID_W and center on GRID_H multiples."""
     from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H
 
     c = canvas(_grid_config())

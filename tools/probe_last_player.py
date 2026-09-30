@@ -30,7 +30,7 @@ unique -- and names the one remaining lever:
     <LastPlayer TYPE="GID">12345678901234567</LastPlayer>   in Bin/config.xml
 
 Character select preselects whoever that names, and ``auto_select`` presses Enter, so if
-the game honours a value *we* wrote then choosing a character costs one config patch and
+the game honors a value *we* wrote then choosing a character costs one config patch and
 no change to the drive at all.
 
 The catch is that there is one config.xml for the whole install. A per-account choice
@@ -62,7 +62,7 @@ HOW TO RUN
 
     The account has to have been played through BartleBot at least twice, on two different
     characters -- the roster is only learned from clients that connect, and a one-character
-    roster cannot tell a honoured patch from a coincidence.
+    roster cannot tell a honored patch from a coincidence.
 
     config.xml's original LastPlayer is restored on the way out unless --keep is passed.
 
@@ -249,9 +249,9 @@ async def probe(args) -> None:
         print(f"Preselected at character select: {banner or '(could not read the banner)'}")
         print(f"Requested:                       {target['name']}")
         if banner and banner == target["name"]:
-            print("-> LastPlayer was honoured.")
+            print("-> LastPlayer was honored.")
         elif banner:
-            print("-> NOT honoured, or the account has two wizards sharing this name.")
+            print("-> NOT honored, or the account has two wizards sharing this name.")
             print("   Names are not unique; --play settles it by gid.")
 
         if not args.play:

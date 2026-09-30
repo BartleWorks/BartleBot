@@ -5,16 +5,9 @@ import logging
 
 from wizwalker import XYZ
 
+from bartlebot.nodes.node_helpers import SAFE_RADIUS, mob_clearances
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
-
-# How far a wisp must be from every enemy to count as safe. A battle triggers at a fixed
-# radius on the server, but the client shows a mob walking toward the wizard trailing
-# where it really is, so a fast mob pulls the wizard in from further off than it looks:
-# up to 886 units measured (#117, tools/probe_aggro_radius.py). WizSprinter's default of
-# 700 did not cover that; this also leaves room for a mob to close in while the group
-# waits at the wisp.
-SAFE_WISP_RADIUS = 1500.0
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -84,7 +77,7 @@ PARAM_SCHEMA: list[ParamField] = [
         type="bool",
         label="Only Collect Safe Wisps",
         help=(
-            f"Skip wisps that are within {SAFE_WISP_RADIUS:.0f} units of an enemy. Prevents "
+            f"Skip wisps that are within {SAFE_RADIUS:.0f} units of an enemy. Prevents "
             "accidentally entering combat while collecting wisps after a fight. Disable only "
             "if you need to collect wisps in areas where enemies are always nearby."
         ),
@@ -100,7 +93,7 @@ NODE_SPEC = NodeSpec(
         "once, so a player who is already full passes through without using it up and nobody "
         "is left behind on their own. Repeats until every player meets its thresholds, no "
         "wisp is left, or the timeout expires. "
-        f"By default, skips wisps within {SAFE_WISP_RADIUS:.0f} units of an enemy to avoid "
+        f"By default, skips wisps within {SAFE_RADIUS:.0f} units of an enemy to avoid "
         "re-entering combat. Returns FAILURE if any player is still below the configured fail "
         "thresholds after collection — useful for routing to a potion fallback node."
     ),
@@ -126,7 +119,7 @@ async def run(machine, clients: list, params: dict) -> str:
       1. Read every client's ratios. Health wisps are wanted if any client is below
          if_health_below, mana wisps if any is below if_mana_below. If neither is wanted,
          stop — nobody moves.
-      2. List the wanted wisps not visited yet, drop any within SAFE_WISP_RADIUS of an
+      2. List the wanted wisps not visited yet, drop any within SAFE_RADIUS of an
          enemy (when only_safe), and pick the one nearest the group.
       3. Teleport every client to it at once. Stop when no wisp is left or the timeout
          expires.
@@ -153,7 +146,7 @@ async def run(machine, clients: list, params: dict) -> str:
         f"only_safe={only_safe}"
     )
 
-    await _collect_as_group(machine, clients, if_health_below, if_mana_below, timeout_val, only_safe)
+    await collect_as_group(machine, clients, if_health_below, if_mana_below, timeout_val, only_safe)
 
     # Post-collection check: return FAILURE if any client is still below a fail threshold.
     final_health, final_mana = zip(*await asyncio.gather(*[_get_ratios(c) for c in clients]))
@@ -191,7 +184,7 @@ async def run(machine, clients: list, params: dict) -> str:
 # ---------------------------------------------------------------------------
 
 
-async def _collect_as_group(
+async def collect_as_group(
     machine, clients: list, if_health_below: float, if_mana_below: float, timeout_val: float | None, only_safe: bool
 ) -> None:
     """Hop the whole group from wisp to wisp until nobody needs one, none is left, or time runs out.
@@ -252,20 +245,18 @@ async def _pick_wisp(
         return None
 
     located = [(w, await w.location()) for w in wisps]
-    mob_positions = [await m.location() for m in await lead.get_mobs()] if only_safe else []
-
-    def clearance(location: XYZ) -> float:
-        return min((location.distance(p) for p in mob_positions), default=float("inf"))
-
     if only_safe:
-        located = [(w, loc) for w, loc in located if clearance(loc) >= SAFE_WISP_RADIUS]
+        clearances = await mob_clearances(lead, [loc for _w, loc in located])
+        located = [(w, loc, c) for (w, loc), c in zip(located, clearances) if c >= SAFE_RADIUS]
         if not located:
             return None
+    else:
+        located = [(w, loc, None) for w, loc in located]
 
     positions = [await c.body.position() for c in clients]
-    wisp, location = min(located, key=lambda wl: sum(wl[1].distance(p) for p in positions))
+    wisp, location, clearance = min(located, key=lambda wl: sum(wl[1].distance(p) for p in positions))
     if only_safe:
-        note = f"{len(located)} of {len(wisps)} wisps safe, nearest enemy {clearance(location):.0f}"
+        note = f"{len(located)} of {len(wisps)} wisps safe, nearest enemy {clearance:.0f}"
     else:
         note = f"{len(wisps)} wisps, safety check off"
     return await wisp.global_id_full(), location, note

@@ -21,7 +21,7 @@ fit at the resolution those two are already running at.
 
 The entry that cannot launch stays visible and disabled carrying its reason. Hiding it
 leaves the user hunting for a profile that has vanished with no indication why, which is
-strictly worse than a greyed row that says what would bring it back.
+strictly worse than a grayed row that says what would bring it back.
 
 That reason comes in two halves — see ``game_sizing.FitProblem``. A surface showing many
 entries at once puts the numbers on each and the advice once for the lot; a surface
@@ -67,7 +67,7 @@ def right_sidebar_floor() -> int:
     two numbers derived here have to be the same number: the width ``RightSidebar``
     enforces, and the width ``layout_budget`` subtracts before deciding what may launch.
     A floor the arithmetic does not know about is the whole failure this guards against
-    -- see "The floor is only a floor if the panes honour it" in docs/WINDOW_SIZING.md.
+    -- see "The floor is only a floor if the panes honor it" in docs/WINDOW_SIZING.md.
 
     Measured rather than a constant because the row is a caption beside controls, and
     both the font and the resolved style move it: the same layout wants 281px here and
@@ -158,7 +158,7 @@ def size_within_screen(
     """*preferred*, shrunk to fit *available* less *margin*, but never below *minimum*.
 
     The minimum wins over the screen on purpose. A window squeezed under its own minimum
-    is one Qt will hand back a size it cannot honour anyway, and clamping past it is a
+    is one Qt will hand back a size it cannot honor anyway, and clamping past it is a
     second way to lose the buttons rather than a fix for the first.
     """
     return (

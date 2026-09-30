@@ -99,7 +99,7 @@ APP_SETTING_KEYS: dict[str, str] = {
     # A character name is never the bot's to carry, so the app setting is
     # the shared level under a per-bot override.
     "Friend Name": "default_friend_name",
-    # A favourite realm is where *this user* farms; a bot naming one would herd every
+    # A favorite realm is where *this user* farms; a bot naming one would herd every
     # user who runs it into the same realm.
     "Favorite Realm": "favorite_realm",
 }
@@ -140,7 +140,7 @@ def is_user_owned(name: str) -> bool:
     """Whether *name* is a value only the user may set, never the bot's author.
 
     The Options surface omits these rows, so nothing the app writes can produce
-    such a declaration.  A hand-edited file carrying one is still honoured -- the
+    such a declaration.  A hand-edited file carrying one is still honored -- the
     resolution stays a plain four levels, and silently deleting a value on save
     would be worse than the leak it prevents -- and
     ``test_no_bot_declares_a_user_owned_option`` keeps the shipped library clean

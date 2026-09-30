@@ -40,7 +40,7 @@ class FakeUI:
     """Models the group-related UI across several clients.
 
     Tracks per-client group membership and answers the window queries group_manager makes,
-    so tests can assert on real behaviour (who got invited, what got closed) rather than on
+    so tests can assert on real behavior (who got invited, what got closed) rather than on
     call counts against opaque mocks.
 
     Clicking the social HUD button *toggles* the window, as in the game. That toggle is
@@ -57,11 +57,11 @@ class FakeUI:
         # alone cannot see.
         self.group_of: dict[FakeClient, tuple[str, ...]] = {}
         self.name_of: dict[FakeClient, str] = {}
-        # Wraps every roster name in KI colour markup, as the game does.
+        # Wraps every roster name in KI color markup, as the game does.
         self.roster_markup = True
         # The first EMPTY roster slot does not read blank. It is an invitation prompt, and
         # its NameText carries the game's leftover placeholder "Left" — on every client, in
-        # every group. Modelled because a constant entry is what would defeat the "is this
+        # every group. Modeled because a constant entry is what would defeat the "is this
         # roster readable?" guard in same_group.
         self.roster_empty_slot_text = "Left"
         self.social_open: dict[FakeClient, bool] = {}
@@ -121,7 +121,7 @@ class FakeUI:
         # Accept clicks the game ignores, per client: the prompt goes, but nobody joins.
         self.drop_accepts: dict[FakeClient, int] = {}
         # When the social window opens on the leader by itself: on the join that forms the
-        # group ("accept"), or on sending the first invitation ("send"). Both are modelled,
+        # group ("accept"), or on sending the first invitation ("send"). Both are modeled,
         # so the leader's cleanup is proven against either.
         self.leader_social_opens_on = "accept"
         self.lookups_under_social_window: list[FakeClient] = []
@@ -161,7 +161,7 @@ class FakeUI:
     def remove_from_group(self, client: FakeClient) -> None:
         """Take a client out of its group, dissolving the group if one member would remain.
 
-        The dissolve is the game's own behaviour and the reason a 2+2 split needs only ONE
+        The dissolve is the game's own behavior and the reason a 2+2 split needs only ONE
         leave click: the partner is dropped out with it.
         """
         members = self._members.get(client, [client])
@@ -356,7 +356,7 @@ class FakeUI:
     async def open_friend_profile(self, client, name):
         if self.social_open.get(client, False):
             # The social window sits on top of the friends list, so in the game this click
-            # lands on it instead. Recorded rather than modelled, so any test can assert it
+            # lands on it instead. Recorded rather than modeled, so any test can assert it
             # never happened.
             self.lookups_under_social_window.append(client)
         self._pending_name = name
@@ -365,7 +365,7 @@ class FakeUI:
         return None
 
     async def _is_named_window_visible(self, client, name: str) -> bool:
-        """Stands in for is_named_window_visible; only the friends lists are modelled.
+        """Stands in for is_named_window_visible; only the friends lists are modeled.
 
         The two lists answer to different names, so a caller that asks about just one of
         them will see "closed" while the other is still on screen.
@@ -380,7 +380,7 @@ class FakeUI:
     async def _stub_close_friends_list(self, client) -> bool:
         """Stand in for the real F-cycling close, succeeding at once.
 
-        It must still update the modelled state: the friends list covers the social button
+        It must still update the modeled state: the friends list covers the social button
         here, so a stub that reported success without closing anything would leave every
         later social-window open blocked.
         """
@@ -469,7 +469,7 @@ async def test_is_in_group_uses_visibility_not_enabled_state(ui):
     with ExitStack() as stack:
         for p in ui.patches():
             stack.enter_context(p)
-        # Stand in for the real helper's behaviour on a hidden-but-present button.
+        # Stand in for the real helper's behavior on a hidden-but-present button.
         enabled = AsyncMock(return_value=True)
         stack.enter_context(patch.object(nh, "is_enabled_by_path", new=enabled))
         assert await gm.is_in_group(client) is False
@@ -650,7 +650,7 @@ async def test_read_group_state_returns_the_roster(ui):
 
 
 async def test_roster_names_have_markup_stripped(ui):
-    """Names arrive wrapped in KI colour tags; comparing them raw would never match."""
+    """Names arrive wrapped in KI color tags; comparing them raw would never match."""
     a = ui.make_client("Wolf Deathblade", grouped=True)
     ui.make_client("Iridian Spellthief", grouped=True)
 
@@ -786,7 +786,7 @@ async def test_is_grouped_false_when_clients_are_split(ui):
 
 
 async def test_is_grouped_falls_back_to_flags_when_rosters_are_unreadable(ui):
-    """If a game update breaks the roster path, behaviour must degrade to the old check,
+    """If a game update breaks the roster path, behavior must degrade to the old check,
     not to a permanent "everyone is split" that regroups on every single run."""
     a = ui.make_client("Wolf Deathblade", grouped=True)
     b = ui.make_client("Iridian Spellthief", grouped=True)
@@ -957,7 +957,7 @@ async def test_all_grouped_together_still_makes_no_invites(ui):
 
 
 async def test_all_grouped_with_unreadable_rosters_stays_a_no_op(ui):
-    """Degrade to the pre-roster behaviour rather than regrouping on every run."""
+    """Degrade to the pre-roster behavior rather than regrouping on every run."""
     a = ui.make_client("Alice Ashblade", grouped=True)
     b = ui.make_client("Bob Battlecaster", grouped=True)
     ui.group_of[a] = ()

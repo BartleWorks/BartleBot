@@ -18,7 +18,7 @@ _CHAT_PATH = [
     "chatLog",
 ]
 
-# System-recognised drop categories (from Deimos drop_logger.py)
+# System-recognized drop categories (from Deimos drop_logger.py)
 _DROP_TYPES = {
     "PetSnack",
     "Reagent",
@@ -195,7 +195,7 @@ def _suffix_prefix_overlap(left: list[str], right: list[str]) -> int:
 
 
 def _filter_drops(lines: list[str]) -> list[str]:
-    """Parse raw chat lines and return item names that are recognised drops.
+    """Parse raw chat lines and return item names that are recognized drops.
 
     System messages are identified by the 'Art_Chat_System.dds' marker.
     The item type (Reagent, Weapon, etc.) and name are extracted via regex,

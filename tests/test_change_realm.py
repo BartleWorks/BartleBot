@@ -205,7 +205,7 @@ async def test_already_on_the_favorite_is_detected_from_txtyourrealmname_without
 
 
 async def test_anchors_to_page_1_before_scanning():
-    """The list opens on whatever page was last visited; a favourite on page 1 must still be found."""
+    """The list opens on whatever page was last visited; a favorite on page 1 must still be found."""
     client = FakeClient()
     client.is_loading.side_effect = [True, False]
     realm_list = _RealmList(_PAGES, current="Wraith")
@@ -418,7 +418,7 @@ async def test_refusal_from_inside_a_dungeon_fails_immediately():
 
     assert result == "FAILURE"
     assert any("cannot be switched from inside a dungeon" in msg for msg, _lvl in machine.logs)
-    # A one-button refusal is dismissed with the centre button, and Go To Realm is not
+    # A one-button refusal is dismissed with the center button, and Go To Realm is not
     # re-clicked afterwards.
     assert clicked[-1] == MESSAGE_BOX_CENTER
 
@@ -452,7 +452,7 @@ async def test_dungeon_reset_warning_is_confirmed_and_the_hop_proceeds():
 
 
 async def test_favorite_mode_is_the_default():
-    """A node with no use_favorite_realm param runs the favourite flow."""
+    """A node with no use_favorite_realm param runs the favorite flow."""
     favorite = AsyncMock(return_value="SUCCESS")
     nxt = AsyncMock(return_value="SUCCESS")
     with patch.object(cr, "to_realm", new=favorite), patch.object(cr, "_to_next_realm", new=nxt):
@@ -502,7 +502,7 @@ async def test_next_realm_together_fails_when_the_leaders_realm_cannot_be_read()
         ([0, 1, 2, 3], [4, 5, 6, 7]),  # the reported bug: this gave 1, 3, 5, 7
         ([12, 12, 12, 12], [13, 14, 15, 16]),  # one realm fans out
         ([19, 20, 0, 1], [2, 3, 4, 5]),  # a block that wrapped
-        ([None, None, None, None], [0, 1, 2, 3]),  # nobody in the range, e.g. after a favourite on page 1
+        ([None, None, None, None], [0, 1, 2, 3]),  # nobody in the range, e.g. after a favorite on page 1
         ([4, 5, 6, 3], [7, 8, 9, 10]),  # player 4's last hop failed
         ([17, 18, 19, 20], [0, 1, 2, 3]),  # the end of the range wraps to its start
         ([5, None], [6, 7]),  # a player outside the range holds no row

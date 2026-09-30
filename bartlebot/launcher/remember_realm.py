@@ -1,7 +1,7 @@
 """Turn the game's "Remember Realm" option on in a client that has just logged in.
 
 With it on, the game logs a character into the realm it last left, so a player that
-relogs mid-run comes back to the favourite realm instead of wherever the login server
+relogs mid-run comes back to the favorite realm instead of wherever the login server
 puts it. There is no tag for it in config.xml or preferences.xml -- both were searched
 -- so unlike quick friend teleport it cannot be patched before launch and has to be
 toggled through the settings page once the client is in-game.
@@ -12,7 +12,7 @@ in between, on the window that first ESC opened, rather than opening the spellbo
 second time afterwards -- which is why it takes the page as given and never opens it.
 ``clean_up_after_auto_select`` is the only caller.
 
-Only worth doing when a favourite realm is set, which is how the caller gates it:
+Only worth doing when a favorite realm is set, which is how the caller gates it:
 without one the option changes nothing a bot relies on.
 
 Best-effort throughout, like the rest of the cleanup: the option is a convenience, and

@@ -159,7 +159,7 @@ async def test_a_terminal_state_still_stops_rather_than_recovering():
     assert machine.is_stopped
 
 
-async def test_a_config_without_a_recovery_state_keeps_the_old_no_match_behaviour():
+async def test_a_config_without_a_recovery_state_keeps_the_old_no_match_behavior():
     """A hand-built config (a test, a fixture) simply has the default switched off."""
     config = {k: v for k, v in CONFIG.items() if k != "recovery_state"}
     seen = []

@@ -18,14 +18,14 @@ verbs-as-data machinery with the right-click menu built from it. Read that modul
 click model and the reasoning behind the gutter -- it is shared with a second family of
 cards outside this package, which is why it is not in this file.
 
-What is left here is what a *launch* card is: the fit refusal, the account colour stripe,
+What is left here is what a *launch* card is: the fit refusal, the account color stripe,
 and a content shape of a bold name row, one detail line and one quiet line.
 
 REFUSING A CARD THAT WILL NOT FIT
 
-``set_unavailable`` greys a card and says why, rather than dropping it from the list. A
+``set_unavailable`` grays a card and says why, rather than dropping it from the list. A
 profile that silently vanishes leaves the user hunting for it with nothing on screen
-saying what happened. Whether a surface honours that refusal is ``refuses_when_unfit`` --
+saying what happened. Whether a surface honors that refusal is ``refuses_when_unfit`` --
 the launch screen does, because a click there starts what does not fit; the Game tab does
 not, because a click there is the user going to fix it.
 
@@ -36,7 +36,7 @@ as ``QListWidget`` rows of formatted text -- so the surface where accounts are *
 said strictly less about them than the surface where they are merely launched --
 and the launch profile editor, which had the same fault one dialog deeper: it is the
 surface where a profile's membership is *decided*, and it named its accounts in a list of
-bare strings, with none of the colour, roster or fit the cards behind it were showing.
+bare strings, with none of the color, roster or fit the cards behind it were showing.
 
 ``CardMode`` is what varies between the three. It was a ``manage`` boolean while there
 were two, and that held only because those two happened to agree on all four of the
@@ -73,16 +73,16 @@ A launch profile's pills are its accounts, in launch order. That ordering is rea
 decides which window becomes Player 1 -- so the pills are laid out in it rather than
 sorted for looks.
 
-Each pill is outlined in its account's colour, and the account card carrying that
-colour wears it as a stripe down its left edge. The pair is the point: a colour on the
+Each pill is outlined in its account's color, and the account card carrying that
+color wears it as a stripe down its left edge. The pair is the point: a color on the
 profile pills alone would be decoration, because nothing else on the screen would say
 which account it stands for. bartlebot/gui/account_accent.py owns the mapping and
-explains where a colour comes from.
+explains where a color comes from.
 
 Both card types are therefore handed the *whole* account list, not just the account
-they draw: a colour is only distinct with respect to the others on screen, and a card
+they draw: a color is only distinct with respect to the others on screen, and a card
 that resolved its own hue in isolation is how the first version of this shipped three
-colours for six accounts.
+colors for six accounts.
 """
 
 from __future__ import annotations
@@ -135,9 +135,9 @@ NO_CHARACTERS_HINT = "No characters known yet — launch one to learn them"
 _SEP = " · "
 _MORE_GAP = "  "
 
-# Width of an account card's colour stripe. Wide enough to be a colour rather than a
+# Width of an account card's color stripe. Wide enough to be a color rather than a
 # line at a glance down the column, narrow enough that the card still reads as a card
-# and not as a labelled swatch.
+# and not as a labeled swatch.
 STRIPE_WIDTH = 3
 
 # ---------------------------------------------------------------------------
@@ -147,7 +147,7 @@ STRIPE_WIDTH = 3
 
 
 def character_names(roster: list[dict]) -> list[str]:
-    """The names to show for *roster*, honouring Streamer Mode.
+    """The names to show for *roster*, honoring Streamer Mode.
 
     Positions come from the roster's own order, so a character reads the same way every
     time the card is rebuilt -- which is the only thing that makes the placeholder usable
@@ -252,7 +252,7 @@ def fit_character_summary(
 
 
 class PillSpec(NamedTuple):
-    """What one account pill needs: what it says, and which colour says whose it is."""
+    """What one account pill needs: what it says, and which color says whose it is."""
 
     display: str
     color_key: int
@@ -264,13 +264,13 @@ def account_pill_specs(usernames: list[str], accounts: list[dict]) -> list[PillS
     Order is preserved because a profile's account order decides which window becomes
     Player 1 — sorting these for looks would misreport the launch.
 
-    Colours come from the whole account list rather than one username at a time, so
+    Colors come from the whole account list rather than one username at a time, so
     that two pills on one profile can never share a hue while a slot is going spare.
 
     A username the accounts list no longer holds still gets a pill, built from the raw
     username: dropping it would make a profile referring to a deleted account look
-    complete, and that profile will fail to launch. It keeps a colour too — a grey pill
-    would read as "no account colour" rather than as the missing account it is. That
+    complete, and that profile will fail to launch. It keeps a color too — a gray pill
+    would read as "no account color" rather than as the missing account it is. That
     one is the bare derived slot, and so may repeat a real account's: it is outside the
     set being de-duplicated, and there is no card left for it to match anyway.
     """
@@ -335,7 +335,7 @@ class _LaunchCard(CardFrame):
 
     ``CardFrame`` is the frame, the grip, the hover, the picked-up state and the verbs.
     What this adds is what makes one of those a *launch* card: the state a card that will
-    not fit is put into, the account colour its left edge is striped with, and the three
+    not fit is put into, the account color its left edge is striped with, and the three
     labels the two subclasses below fill.
     """
 
@@ -346,7 +346,7 @@ class _LaunchCard(CardFrame):
 
     def __init__(self, parent=None, *, mode: CardMode = CardMode.LAUNCH) -> None:
         super().__init__(parent, mode=mode)
-        # Every plain label is held so _restyle_content can re-derive its colour.
+        # Every plain label is held so _restyle_content can re-derive its color.
         # The pills are not: NeutralPill owns its own.
         self._name_lbl: QLabel | None = None
         self._detail_lbl: QLabel | None = None
@@ -356,15 +356,15 @@ class _LaunchCard(CardFrame):
         self._unavailable: str | None = None
         # The account palette slot this card's left edge is striped with, when it stands
         # for a single account. None means no stripe -- a profile brings several accounts
-        # and has no one colour, which is what its pills are for.
+        # and has no one color, which is what its pills are for.
         self._stripe_key: int | None = None
 
     def set_unavailable(self, reason: FitProblem | str | None) -> None:
-        """Grey the card out and say why, or None to make it launchable again.
+        """Gray the card out and say why, or None to make it launchable again.
 
         Disabled rather than hidden. A profile that silently vanishes from the list
         leaves the user hunting for it with nothing on screen saying what happened,
-        whereas a greyed row carrying "Needs 1624×651 …" says both that it still exists
+        whereas a grayed row carrying "Needs 1624×651 …" says both that it still exists
         and that its size is what is wrong. The reason goes in the card's quiet line and
         in its tooltip, so it is readable without hovering.
 
@@ -422,8 +422,8 @@ class _LaunchCard(CardFrame):
         """What the card's middle line reads — an account card's characters, or "".
 
         Public alongside ``quiet_text`` because what survives a refusal is part of this
-        card's contract: an account card that goes grey keeps this line, since the reason
-        it went grey is its column's and not its own.
+        card's contract: an account card that goes gray keeps this line, since the reason
+        it went gray is its column's and not its own.
         """
         return "" if self._detail_lbl is None else self._detail_lbl.text()
 
@@ -441,7 +441,7 @@ class _LaunchCard(CardFrame):
         """The account stripe down the card's left edge, or "" for a card without one.
 
         Handed to the frame rule rather than written into one, so that the resting palette
-        and the dragging palette both keep it and neither has to remember to. The greyed
+        and the dragging palette both keep it and neither has to remember to. The grayed
         palette is the one that drops it, and it drops it by writing its own rule: the
         stripe names an account, not a state.
         """
@@ -458,14 +458,14 @@ class _LaunchCard(CardFrame):
                 lbl.setStyleSheet(f"color: {color}; font-size: {THEME.font_subtext_px}px; background: transparent;")
 
     def _apply_state_palette(self) -> bool:
-        """Grey a card that cannot launch, on a surface that refuses one."""
+        """Gray a card that cannot launch, on a surface that refuses one."""
         if self._unavailable is None or not self.refuses_when_unfit:
             return False
         self._apply_unavailable_styles()
         return True
 
     def _apply_unavailable_styles(self) -> None:
-        """The greyed-out palette. The stripe goes too: it names an account, not a state.
+        """The grayed-out palette. The stripe goes too: it names an account, not a state.
 
         Fill and text both move, because either alone reads as enabled — the same finding
         as the app-wide disabled palette (tests/test_disabled_affordance.py).
@@ -480,7 +480,7 @@ class _LaunchCard(CardFrame):
                 )
         # The face icons are not tinted down with them, and are restyled by the base pass
         # after this returns: the pencil is the way out of the state the rest of the card
-        # is greyed to report, so it stays at full contrast.
+        # is grayed to report, so it stays at full contrast.
 
     def _make_name_label(self, text: str) -> QLabel:
         label = QLabel(text, self)
@@ -527,11 +527,11 @@ class AccountCard(_LaunchCard):
     names come from ``character_roster`` — learned as clients connect and persisted per
     account.
 
-    The left edge carries the account's colour, which is what the outlined pills on the
-    profile cards beside it point at. A stripe rather than a coloured name: the name is
+    The left edge carries the account's color, which is what the outlined pills on the
+    profile cards beside it point at. A stripe rather than a colored name: the name is
     the thing you read, and it should stay at full contrast.
 
-    That colour is chosen against every other account, so the card is given the list it
+    That color is chosen against every other account, so the card is given the list it
     belongs to as well as its own entry.
     """
 
@@ -563,7 +563,7 @@ class AccountCard(_LaunchCard):
         # -- and position in a column is a weak way to say a number the user has to count.
         # None everywhere else: on the launch screen an account card is not in an order.
         self._position = position
-        # The list this account sits in, because its colour is chosen against the others
+        # The list this account sits in, because its color is chosen against the others
         # rather than from its username alone. Defaulting to the account by itself is for
         # the caller that genuinely has one — there is nothing for it to collide with.
         siblings = [account] if accounts is None else accounts
@@ -592,7 +592,7 @@ class AccountCard(_LaunchCard):
         screen, so all of them get the same numbers as well as the same advice, and the
         column banner already carries both. Repeating them here would put four identical
         lines under four different account names -- the whole bug -- and it would cost the
-        card the line it is actually for, which is its characters. So the card stays grey
+        card the line it is actually for, which is its characters. So the card stays gray
         and keeps its own summary, and the tooltip still holds the full sentence for
         anyone who asks a specific card.
 
@@ -708,7 +708,7 @@ class ProfileCard(_LaunchCard):
     which is the single hardest thing to see on the old screen — you had to open Settings
     to find out what a profile would do.
 
-    Each pill is outlined in its account's colour, matching the stripe on that account's
+    Each pill is outlined in its account's color, matching the stripe on that account's
     own card in the column beside it, so "which accounts is this?" can be answered by
     looking rather than by reading four censored usernames. The resolution pill stays
     neutral: it names a setting, not an account, and giving it a hue would put the one

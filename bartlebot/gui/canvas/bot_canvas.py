@@ -174,7 +174,7 @@ def _stored_failure_edge_mode(sm) -> str:
     """The saved mode, falling back to the bool this setting used to be.
 
     A settings.json written before the third state existed carries only
-    ``show_failure_edges``, and reading it is the difference between honouring a
+    ``show_failure_edges``, and reading it is the difference between honoring a
     user's hidden edges and silently turning them back on.
     """
     mode = sm.get("canvas", "failure_edge_mode", default=None)
@@ -328,7 +328,7 @@ def filter_bot_metas(metas: list[_BotMeta], query: str, tags: set[str]) -> tuple
     list explains itself.
 
     Tags **OR within a group and AND across groups**: "Gear or Jewels, *and* Dungeon".
-    That is the faceted model two labelled buttons imply, and it is the only one that
+    That is the faceted model two labeled buttons imply, and it is the only one that
     stays useful — the groups answer different questions (:mod:`bartlebot.bot_tags`:
     Rewards is what a run yields, Activities is what it does), so ANDing across them
     narrows, while ANDing *within* one asks for a bot that drops both Gear and Jewels
@@ -379,10 +379,10 @@ class _BotCard(ThemedMixin, QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         # Every *plain* label the card builds is held, because each carries a THEME
-        # colour that apply_theme_styles has to re-derive. Several are conditional, so
+        # color that apply_theme_styles has to re-derive. Several are conditional, so
         # the attributes are declared up front rather than only where they are built.
         # The pills are absent from this list deliberately: TagPill and NeutralPill own
-        # their own colour, so there is nothing here to re-derive for them.
+        # their own color, so there is nothing here to re-derive for them.
         self._hovered = False
         self._desc_lbl: QLabel | None = None
         self._meta_lbl: QLabel | None = None
@@ -405,7 +405,7 @@ class _BotCard(ThemedMixin, QWidget):
         self._name_lbl.setFont(f)
         header.addWidget(self._name_lbl, 0)
 
-        # Neutral grey rather than an accent, and NeutralPill rather than a label this
+        # Neutral gray rather than an accent, and NeutralPill rather than a label this
         # card restyles: see its docstring for both halves of the reasoning.
         if self._meta.version:
             header.addWidget(NeutralPill(f"v{self._meta.version}"), 0, Qt.AlignmentFlag.AlignVCenter)
@@ -464,7 +464,7 @@ class _BotCard(ThemedMixin, QWidget):
         """Restyle the frame and every label on it.
 
         Hover is state rather than a QSS pseudo-class because the frame and the
-        labels are restyled by the same pass; ``_hovered`` picks which frame colours
+        labels are restyled by the same pass; ``_hovered`` picks which frame colors
         that pass uses. Before this was one method, hover was the *only* thing that
         re-read THEME, so a theme switch left a card's text in the old palette until
         the mouse crossed it — and even then only the frame followed.
@@ -588,7 +588,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             top_layout.addWidget(picker, 0)
 
         # Stretch 1, not a fixed width flanked by two stretches: the search field then
-        # fills whatever the two clusters leave, so it *sits* centred without being
+        # fills whatever the two clusters leave, so it *sits* centered without being
         # anchored there, and narrowing the window shortens it instead of colliding.
         self._search = SearchLineEdit("Search bots by name, author, or drop…")
         self._search.setClearButtonEnabled(True)
@@ -833,7 +833,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
 
         selected = self._selected_tag_list()
         for tag in selected:
-            # Coloured by group, matching the dot in the popup and the button it came
+            # Colored by group, matching the dot in the popup and the button it came
             # from — with two pickers feeding one chip bar, a chip has to say which.
             chip = TagChip(tag, tooltip=f"Remove the {tag} filter")
             chip.removed.connect(self._remove_tag)
@@ -1072,7 +1072,7 @@ class BotCanvas(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         # The floor the bottom pane may be dragged to, set explicitly so that the header
-        # and the favourites bar -- which hint 536px and 844px wide -- cannot raise the
+        # and the favorites bar -- which hint 536px and 844px wide -- cannot raise the
         # window's own minimum past what the screen-fit arithmetic budgeted for the
         # canvas. See "The panel floors" in game_sizing.py.
         self.setMinimumSize(BOTCANVAS_MIN_WIDTH, BOTCANVAS_MIN_HEIGHT)
@@ -1118,7 +1118,7 @@ class BotCanvas(QWidget):
         self._doc_path: list[str] = []
         # Whether the open definition is a modified built-in, which the crumb offers to revert.
         self._can_revert = False
-        # Region colour the focus overlays are painted in, or None if never focused.
+        # Region color the focus overlays are painted in, or None if never focused.
         self._focus_color: QColor | None = None
 
         self._undo_mgr = UndoManager()
@@ -1176,7 +1176,7 @@ class BotCanvas(QWidget):
         self._save_done_btn = _icon_btn("save_done", "Save to disk and return to Run mode")
         self._save_done_btn.clicked.connect(self._on_save_done_clicked)
 
-        # ── Centre zone: the transport, in Edit mode as well ─────────
+        # ── Center zone: the transport, in Edit mode as well ─────────
         # A transport is a landmark: people aim at it without looking, so it stays put
         # and is *disabled* when it cannot be used rather than swapped for something
         # else. Add State and Auto-Layout used to occupy these exact pixels in Edit
@@ -1861,7 +1861,7 @@ class BotCanvas(QWidget):
         self._param_panel.set_preferred_player_getter(fn)
 
     def refresh_player_availability(self) -> None:
-        """Re-grey player checkboxes for the current client count."""
+        """Re-gray player checkboxes for the current client count."""
         self._param_panel.refresh_player_availability()
 
     def set_zone_getter(self, fn: Callable[[], list[str]]) -> None:
@@ -1882,7 +1882,7 @@ class BotCanvas(QWidget):
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
             self._apply_pill_stylesheets()
-            # The dot's colour is resolved here, not in the header, so a theme
+            # The dot's color is resolved here, not in the header, so a theme
             # switch has to hand it over again.
             self._emit_bot_status()
             if self.focus_region_id is not None:
@@ -2198,7 +2198,7 @@ class BotCanvas(QWidget):
 
     @property
     def focus_color(self) -> QColor | None:
-        """Colour the focus overlays are painted in, or None if never focused."""
+        """Color the focus overlays are painted in, or None if never focused."""
         return self._focus_color
 
     @property
@@ -2381,10 +2381,10 @@ class BotCanvas(QWidget):
     def _refresh_crumb(self) -> None:
         """Draw the crumb bar and the frames for where the canvas is now.
 
-        A bot with one region focused keeps Focus Mode's own look -- its colour, a
+        A bot with one region focused keeps Focus Mode's own look -- its color, a
         single line, "Focus Mode — <region>". Anything involving a subgraph is a path
         in the accent with the double line: the documents under this one, this one,
-        then each level in, a focused region's segment wearing its colour.
+        then each level in, a focused region's segment wearing its color.
         """
         if not hasattr(self, "_crumb"):
             return
@@ -2783,7 +2783,7 @@ class BotCanvas(QWidget):
             self._show_region_page(region)
 
     def _on_region_property_changed(self) -> None:
-        """The region or call node page wrote into the shown region: label, colour, or an instance's inputs."""
+        """The region or call node page wrote into the shown region: label, color, or an instance's inputs."""
         region = self._param_panel.shown_region
         config = self._scene.config
         if region is None or config is None:
@@ -3157,7 +3157,7 @@ class BotCanvas(QWidget):
         self._update_validation_badge()
 
     def _on_select_edge_requested(self, transition) -> None:
-        """Select the edge on the canvas that corresponds to *transition* and centre it."""
+        """Select the edge on the canvas that corresponds to *transition* and center it."""
         self._scene.clearSelection()
         edge = self._scene.edge_for(transition)
         if edge is not None:
@@ -3165,7 +3165,7 @@ class BotCanvas(QWidget):
             self._view.centerOn(edge)
 
     def select_state(self, state_id: str) -> None:
-        """Select the node for *state_id* and centre the view on it.
+        """Select the node for *state_id* and center the view on it.
 
         Selecting is what loads the state into the properties panel, via
         ``_on_selection_changed``.
@@ -3177,7 +3177,7 @@ class BotCanvas(QWidget):
             self._view.centerOn(node)
 
     def _on_select_state_requested(self, state_id: str) -> None:
-        """Select the node on the canvas that corresponds to *state_id* and centre it."""
+        """Select the node on the canvas that corresponds to *state_id* and center it."""
         self.select_state(state_id)
 
     def undo(self) -> None:
@@ -3220,7 +3220,7 @@ class BotCanvas(QWidget):
 
     def _restore(self, config: BotConfig) -> None:
         self._config = config
-        # Undo hands back a freshly-deserialised BotConfig, so every surface holding
+        # Undo hands back a freshly-deserialized BotConfig, so every surface holding
         # the old object has to be re-bound or its edits go nowhere.
         self._toolbar.set_config(config)
         self._toolbar.set_editable(self._mode == BotMode.EDIT)

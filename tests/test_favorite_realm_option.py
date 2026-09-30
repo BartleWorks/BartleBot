@@ -49,7 +49,7 @@ def _field(tab, label: str):
             item = form.itemAt(i, QFormLayout.ItemRole.LabelRole)
             if item is not None and item.widget() is not None and item.widget().text() == label:
                 return form.itemAt(i, QFormLayout.ItemRole.FieldRole).widget()
-    raise AssertionError(f"no settings row labelled {label!r}")
+    raise AssertionError(f"no settings row labeled {label!r}")
 
 
 # ---------------------------------------------------------------------------
@@ -73,7 +73,7 @@ def test_the_picker_offers_every_realm_and_an_empty_choice_first(qapp):
     assert combo.itemText(combo.findData("Balestrom")) == "Balestrom"
 
 
-def test_the_picker_keeps_a_value_it_does_not_recognise(qapp):
+def test_the_picker_keeps_a_value_it_does_not_recognize(qapp):
     """A retired realm in settings.json is shown as such, not silently reset."""
     combo = RealmCombo()
     combo.set_value("Wu")

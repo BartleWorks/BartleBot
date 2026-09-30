@@ -18,13 +18,13 @@ def _no_drop_wait(monkeypatch):
     Every test in this file either has its drop line present on the very first read or
     has none at all, so there is nothing here to wait for; a zero ceiling makes
     poll_new_drops take exactly one look. Without this the file pays
-    COMBAT_DROP_MESSAGE_TIMEOUT (15 s) per test. The late-arrival behaviour that ceiling
+    COMBAT_DROP_MESSAGE_TIMEOUT (15 s) per test. The late-arrival behavior that ceiling
     exists for is what tests/test_combat_drop_recording.py covers, with a real window.
     """
     monkeypatch.setattr(combat_runner, "COMBAT_DROP_MESSAGE_TIMEOUT", 0)
 
 
-# A chat line that drop_detection.extract_new_drops recognises as a Reagent drop.
+# A chat line that drop_detection.extract_new_drops recognizes as a Reagent drop.
 _DROP_LINE = "Art_Chat_System.dds> <>IronBloom<;Reagent>"
 
 # Params that exercise the default bot-level combat DSL path.
@@ -45,7 +45,7 @@ def _patch_resolve_combat(combat_order: list[int]):
 
 # Convenience context manager: no-op _run_combat so SprintyCombat is never called.
 _patch_run_combat = lambda: patch(  # noqa: E731
-    "bartlebot.nodes.combat.handle_combat._run_combat", new_callable=AsyncMock
+    "bartlebot.nodes.combat_runner._run_combat", new_callable=AsyncMock
 )
 
 
@@ -57,7 +57,7 @@ async def test_no_dsl_fails():
     with (
         _patch_run_combat(),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
-        patch.object(hc, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         result = await hc.run(
             FakeMachine(),
@@ -87,7 +87,7 @@ async def test_named_enemy_is_found_as_a_fight_target():
     with (
         _patch_run_combat(),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
-        patch.object(hc, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
         patch.object(
             hc.node_helpers, "find_closest_fight_target", new=AsyncMock(return_value=FakeEntity("Cyclops"))
         ) as find,
@@ -99,8 +99,8 @@ async def test_named_enemy_is_found_as_a_fight_target():
         )
 
     assert result == "SUCCESS"
-    # _find_target is called in step 1 (target check) and again inside _tp_and_wait_for_combat,
-    # until some client is in battle: from then on every teleport goes to the fight centre.
+    # _find_target is called in step 1 (target check) and again inside join_fight,
+    # until some client is in battle: from then on every teleport goes to the fight center.
     assert find.await_count >= 1
     assert all(c == call(client, "Cyclops") for c in find.await_args_list)
     client.find_closest_mob.assert_not_called()
@@ -116,7 +116,7 @@ async def test_wildcard_enemy_name_searches_by_predicate():
     with (
         _patch_run_combat(),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
-        patch.object(hc, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         result = await hc.run(
             FakeMachine(),
@@ -141,7 +141,7 @@ async def test_timeout_entering_combat_fails():
     with (
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(hc, "ENTER_COMBAT_TIMEOUT", 0.01),
-        patch.object(hc, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         result = await hc.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
@@ -149,18 +149,19 @@ async def test_timeout_entering_combat_fails():
 
 
 async def test_timeout_during_sprinty_combat_fails():
-    """Players enter combat but SprintyCombat itself outlasts max_duration → FAILURE."""
+    """Players enter combat, SprintyCombat outlasts max_duration, and the called-for flee never lands → FAILURE."""
     client = FakeClient()
     client.find_closest_mob.return_value = FakeEntity()
     client.in_battle.return_value = True
 
-    async def _hang_combat(_client, _dsl):
+    async def _hang_combat(_client, _dsl, _watch):
         await asyncio.sleep(10)
 
     with (
-        patch("bartlebot.nodes.combat.handle_combat._run_combat", new=AsyncMock(side_effect=_hang_combat)),
+        patch("bartlebot.nodes.combat_runner._run_combat", new=AsyncMock(side_effect=_hang_combat)),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
-        patch.object(hc, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "FLEE_TIMEOUT", 0.05),
     ):
         result = await hc.run(
             FakeMachine(),
@@ -180,7 +181,7 @@ async def test_success_no_drops():
     with (
         _patch_run_combat(),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
-        patch.object(hc, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         machine = FakeMachine()
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
@@ -215,17 +216,17 @@ async def test_combat_order_sequential():
         _patch_run_combat(),
         _patch_resolve_combat([2, 1]),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
-        patch.object(hc, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         result = await hc.run(FakeMachine(), [c1, c2], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
     assert tp_order == [2, 1]
-    # The first in order goes to the mob; the next joins at the centre it published.
+    # The first in order goes to the mob; the next joins at the center it published.
     c2.tp_to.assert_awaited_once()
     c1.tp_to.assert_not_called()
     c1.teleport.assert_awaited_once()
-    assert _xyz(c1.teleport.await_args.args[0]) == _xyz(_CENTRE)
+    assert _xyz(c1.teleport.await_args.args[0]) == _xyz(_CENTER)
 
 
 async def test_combat_order_invalid_client_number_skipped():
@@ -242,7 +243,7 @@ async def test_combat_order_invalid_client_number_skipped():
             return_value=([BARTLEBOT_DEFAULT_COMBAT_CONFIG], [5], "test"),
         ),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
-        patch.object(hc, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         result = await hc.run(FakeMachine(), [client], _DEFAULT_PARAMS)
 
@@ -264,7 +265,7 @@ async def test_success_with_drops():
     with (
         _patch_run_combat(),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=mock_snap),
-        patch.object(hc, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         machine = FakeMachine()
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
@@ -297,7 +298,7 @@ async def test_success_does_not_wait_for_the_drop_poll():
         _patch_run_combat(),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(combat_runner, "poll_combat_drops", new=_poll),
-        patch.object(hc, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
     ):
         machine = FakeMachine()
         result = await asyncio.wait_for(hc.run(machine, [client], _DEFAULT_PARAMS), timeout=2.0)
@@ -315,7 +316,7 @@ async def test_success_does_not_wait_for_the_drop_poll():
 # ---------------------------------------------------------------------------
 
 
-_CENTRE = XYZ(500.0, 600.0, 0.0)  # FakeClient's duel.position()
+_CENTER = XYZ(500.0, 600.0, 0.0)  # FakeClient's duel.position()
 
 
 def _xyz(point: XYZ) -> tuple[float, float, float]:
@@ -350,8 +351,8 @@ async def test_a_target_that_disappears_is_waited_out_until_the_fight_starts():
     with (
         _patch_run_combat(),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
-        patch.object(hc, "POLL_INTERVAL", 0),
-        patch.object(hc, "COMBAT_TP_RETRY_INTERVAL", 0.001),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.001),
     ):
         machine = FakeMachine()
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
@@ -375,8 +376,8 @@ async def test_a_target_that_never_returns_fails_at_the_timeout_and_says_so_once
     with (
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(hc, "ENTER_COMBAT_TIMEOUT", 0.2),
-        patch.object(hc, "POLL_INTERVAL", 0),
-        patch.object(hc, "COMBAT_TP_RETRY_INTERVAL", 0.01),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.01),
     ):
         machine = FakeMachine()
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
@@ -404,8 +405,8 @@ async def test_a_re_teleport_logs_how_far_it_moved_the_player():
     with (
         _patch_run_combat(),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
-        patch.object(hc, "POLL_INTERVAL", 0),
-        patch.object(hc, "COMBAT_TP_RETRY_INTERVAL", 0.001),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.001),
     ):
         machine = FakeMachine()
         result = await hc.run(machine, [client], _DEFAULT_PARAMS)
@@ -418,15 +419,15 @@ async def test_a_re_teleport_logs_how_far_it_moved_the_player():
 
 
 # ---------------------------------------------------------------------------
-# Joining at the fight centre (#110)
+# Joining at the fight center (#110)
 # ---------------------------------------------------------------------------
 
 
 def _leader_and_follower():
-    """A leader, and a follower pulled in only by a teleport to the centre.
+    """A leader, and a follower pulled in only by a teleport to the center.
 
     The leader gets in once both have made their first mob teleport, so the follower is
-    already aiming at the mob when the centre is published. The follower's mob teleport
+    already aiming at the mob when the center is published. The follower's mob teleport
     never joins it, as when the mob has walked to its seat.
     """
     leader, follower = FakeClient(), FakeClient()
@@ -441,12 +442,12 @@ def _patches_for_fast_retry():
     return (
         _patch_run_combat(),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
-        patch.object(hc, "POLL_INTERVAL", 0),
-        patch.object(hc, "COMBAT_TP_RETRY_INTERVAL", 0.01),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.01),
     )
 
 
-async def test_a_follower_teleports_to_the_leaders_fight_centre_not_the_mob():
+async def test_a_follower_teleports_to_the_leaders_fight_center_not_the_mob():
     leader, follower = _leader_and_follower()
     p1, p2, p3, p4 = _patches_for_fast_retry()
     with p1, p2, p3, p4:
@@ -454,14 +455,14 @@ async def test_a_follower_teleports_to_the_leaders_fight_centre_not_the_mob():
         result = await hc.run(machine, [leader, follower], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
-    follower.tp_to.assert_awaited_once()  # the first attempt, before any centre existed
+    follower.tp_to.assert_awaited_once()  # the first attempt, before any center existed
     follower.teleport.assert_awaited_once()
-    assert _xyz(follower.teleport.await_args.args[0]) == _xyz(_CENTRE)
-    assert len(_log_lines(machine, "Client 1: teleporting to the fight centre")) == 1
+    assert _xyz(follower.teleport.await_args.args[0]) == _xyz(_CENTER)
+    assert len(_log_lines(machine, "Client 1: teleporting to the fight center")) == 1
 
 
-async def test_a_separate_bot_shares_the_centre_only_within_a_realm():
-    """On another realm the leader's centre is a fight the follower is not in (#132)."""
+async def test_a_separate_bot_shares_the_center_only_within_a_realm():
+    """On another realm the leader's center is a fight the follower is not in (#132)."""
     leader, follower = _leader_and_follower()
     # The follower gets in on its own mob, at its second attempt, if it keeps aiming there.
     follower.in_battle.side_effect = lambda: follower.tp_to.await_count > 1
@@ -475,30 +476,30 @@ async def test_a_separate_bot_shares_the_centre_only_within_a_realm():
     assert result == "SUCCESS"
     follower.teleport.assert_not_called()
     assert follower.tp_to.await_count > 1
-    follower.duel.position.assert_awaited_once()  # it published a centre of its own
+    follower.duel.position.assert_awaited_once()  # it published a center of its own
 
 
-async def test_a_separate_bot_still_shares_the_centre_on_one_realm():
+async def test_a_separate_bot_still_shares_the_center_on_one_realm():
     leader, follower = _leader_and_follower()
     p1, p2, p3, p4 = _patches_for_fast_retry()
     with p1, p2, p3, p4:
         result = await hc.run(FakeMachine(options={"Player Realms": "Separate"}), [leader, follower], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
-    assert _xyz(follower.teleport.await_args.args[0]) == _xyz(_CENTRE)
+    assert _xyz(follower.teleport.await_args.args[0]) == _xyz(_CENTER)
 
 
-async def test_the_centre_is_never_read_from_a_client_not_in_battle():
+async def test_the_center_is_never_read_from_a_client_not_in_battle():
     """Outside a fight the duel struct still holds the last fight's data."""
     leader, follower = _leader_and_follower()
     read_outside_battle: list = []
     for client in (leader, follower):
-        centre = client.duel.position.return_value
+        center = client.duel.position.return_value
 
-        async def position(c=client, centre=centre):
+        async def position(c=client, center=center):
             if not await c.in_battle():
                 read_outside_battle.append(c)
-            return centre
+            return center
 
         client.duel.position.side_effect = position
     p1, p2, p3, p4 = _patches_for_fast_retry()
@@ -524,7 +525,7 @@ async def test_with_no_client_in_battle_every_attempt_still_aims_at_the_mob():
     client.duel.position.assert_not_called()
 
 
-async def test_an_unreadable_centre_leaves_the_follower_aiming_at_the_mob():
+async def test_an_unreadable_center_leaves_the_follower_aiming_at_the_mob():
     leader, follower = _leader_and_follower()
     leader.duel.position.side_effect = RuntimeError("duel read failed")
     follower.in_battle.side_effect = lambda: follower.tp_to.await_count >= 2
@@ -536,7 +537,7 @@ async def test_an_unreadable_centre_leaves_the_follower_aiming_at_the_mob():
 
     assert result == "SUCCESS"
     follower.teleport.assert_not_called()
-    assert len(_log_lines(machine, "Client 0: fight centre unreadable")) == 1
+    assert len(_log_lines(machine, "Client 0: fight center unreadable")) == 1
 
 
 # ---------------------------------------------------------------------------
@@ -627,3 +628,99 @@ async def test_a_separate_bot_is_never_checked_for_one_fight():
     see_each_other(b)
     assert await hc._in_one_fight(FakeMachine(options={"Player Realms": "Separate"}), [a, b])
     a.get_base_entity_list.assert_not_awaited()
+
+
+# ---------------------------------------------------------------------------
+# Fleeing, and refusing a fight with no mana (#111)
+# ---------------------------------------------------------------------------
+
+
+async def test_a_player_with_no_mana_never_starts_a_fight():
+    a, b = FakeClient(), FakeClient()
+    for c in (a, b):
+        c.find_closest_mob.return_value = FakeEntity()
+    b.calc_mana_ratio.return_value = 0.0
+    machine = FakeMachine()
+    with _patch_run_combat() as run_combat:
+        result = await hc.run(machine, [a, b], _DEFAULT_PARAMS)
+
+    assert result == "FAILURE"
+    assert _log_lines(machine, "P2 has no mana")
+    for c in (a, b):
+        c.tp_to.assert_not_awaited()
+    run_combat.assert_not_awaited()
+
+
+async def test_an_unreadable_mana_reading_does_not_stop_the_fight():
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = True
+    client.calc_mana_ratio.side_effect = RuntimeError("unreadable")
+    with (
+        _patch_run_combat(),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+    ):
+        result = await hc.run(FakeMachine(), [client], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+
+
+@pytest.mark.parametrize(
+    ("end", "errors", "line"),
+    [
+        (combat_runner.FightEnd.FLED, [], "fled the fight"),
+        (combat_runner.FightEnd.FINISHED, [(1, RuntimeError("boom"))], "P1: combat raised"),
+    ],
+)
+async def test_a_fled_or_broken_fight_fails_without_polling_for_drops(end, errors, line):
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = True
+    machine = FakeMachine()
+    with (
+        patch.object(hc, "run_fight", AsyncMock(return_value=combat_runner.FightResult(end, errors))),
+        patch.object(hc, "start_combat_drop_poll") as drop_poll,
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+    ):
+        result = await hc.run(machine, [client], _DEFAULT_PARAMS)
+
+    assert result == "FAILURE"
+    assert _log_lines(machine, line)
+    drop_poll.assert_not_called()
+
+
+async def test_the_fight_is_given_what_is_left_of_max_duration():
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = True
+    finished = combat_runner.FightResult(combat_runner.FightEnd.FINISHED, [])
+    with (
+        patch.object(hc, "run_fight", AsyncMock(return_value=finished)) as run_fight,
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+    ):
+        await hc.run(FakeMachine(), [client], {**_DEFAULT_PARAMS, "max_duration": 600.0})
+        limited = run_fight.await_args.kwargs["time_limit"]
+        await hc.run(FakeMachine(), [client], {**_DEFAULT_PARAMS, "max_duration": 0})
+        unlimited = run_fight.await_args.kwargs["time_limit"]
+
+    assert 590 < limited <= 600
+    assert unlimited is None
+
+
+async def test_a_fled_fight_counts_toward_the_flee_limit():
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = True
+    machine = FakeMachine()
+    fled = combat_runner.FightResult(combat_runner.FightEnd.FLED, [])
+    with (
+        patch.object(hc, "run_fight", AsyncMock(return_value=fled)),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+    ):
+        await hc.run(machine, [client], _DEFAULT_PARAMS)
+
+    assert machine.flees == 1

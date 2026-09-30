@@ -40,7 +40,7 @@ def test_an_old_settings_file_with_edges_shown_shows_them_all():
     assert _stored_failure_edge_mode(sm) == FAILURE_EDGES_ALL
 
 
-def test_an_unrecognised_mode_falls_back_rather_than_raising():
+def test_an_unrecognized_mode_falls_back_rather_than_raising():
     """A hand-edited settings.json must not take the canvas down with it."""
     sm = _FakeSettings({"failure_edge_mode": "sideways", "show_failure_edges": True})
     assert _stored_failure_edge_mode(sm) == FAILURE_EDGES_ALL

@@ -88,14 +88,14 @@ def test_the_wash_is_picked_off_lightness_not_a_literal_background(qapp, theme):
     assert f"background: {_mix(off_white.bg, off_white.accent, 0.10)};" in sheet
 
 
-def test_caution_is_filled_with_the_error_colour(qapp):
+def test_caution_is_filled_with_the_error_color(qapp):
     style = ActionButton("trash", "Delete", style=ActionStyle.CAUTION).styleSheet()
 
     assert f"background: {THEME.error};" in style
 
 
 def test_every_style_shares_the_same_metrics(qapp):
-    """A weight varies colour. A style that also changed the padding would stop being a
+    """A weight varies color. A style that also changed the padding would stop being a
     weight and start being a shape."""
     styles = [ActionButton("plus", "x", style=s).styleSheet() for s in ActionStyle]
 

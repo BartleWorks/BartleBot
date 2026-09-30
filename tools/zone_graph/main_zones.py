@@ -111,7 +111,7 @@ def propose(world: str, hubs: set[str], doors: set[str], graph, names, deseriali
     zones = {n for n in graph.names if n.startswith(f"{world}/")}
     # WorldHubZones.xml names some hubs zonemap.nav does not have (Grizzleheim/GH_HFjord).
     hubs, doors = hubs & zones, doors & zones
-    same_world = {z: graph.neighbours(z) & zones for z in zones}
+    same_world = {z: graph.neighbors(z) & zones for z in zones}
     candidates = {z for z in zones if not is_minor(z) and not check_zone(z) and same_world[z]} | hubs
 
     # Walk from the hubs through any zone of the world, because some areas are only

@@ -17,16 +17,16 @@ the widest thing in the row.
 WHY THE PILL STILL READS "P1"
 -----------------------------
 
-The colour is the account's; the *text* is not. A ``DuelConfig`` stores player slots,
+The color is the account's; the *text* is not. A ``DuelConfig`` stores player slots,
 not accounts — it is authored offline, shared between bots, and outlives whichever
 account happens to be in slot 1 tonight. A pill reading ``Malvin`` would be a claim the
 stored data does not make, and the same card would read differently depending on whether
 anything was hooked when it was opened.
 
-So the slot is the label, always, and the account is the *colour* — which is exactly the
-job colour is doing everywhere else in this app (see gui/account_accent.py): a match
+So the slot is the label, always, and the account is the *color* — which is exactly the
+job color is doing everywhere else in this app (see gui/account_accent.py): a match
 target, not an identifier. Hook four clients and the pills pick up the same four hues as
-the player cards and the launch profile; hook nothing and they are simply uncoloured.
+the player cards and the launch profile; hook nothing and they are simply uncolored.
 The account's name is in the tooltip, which is where a claim that can go stale belongs.
 """
 
@@ -51,19 +51,19 @@ _PILL_MIN_WIDTH = 30
 
 
 class PlayerSlotPill(QLabel):
-    """One ``P{n}`` pill: on or off, and coloured by whoever is in that slot.
+    """One ``P{n}`` pill: on or off, and colored by whoever is in that slot.
 
     Three states, and each is one the user has to be able to tell apart at 9px:
 
-    * **on** — outlined and tinted, in the slot's account colour when there is one and in
+    * **on** — outlined and tinted, in the slot's account color when there is one and in
       the theme accent when there is not. This assignment covers that player.
     * **off** — a hairline in ``border`` over nothing, with muted text. Still legible as
       a slot that exists and could be turned on, which a hidden pill would not be.
     * **unavailable** — hidden outright, for a slot past the duel's ``max_players``.
-      That is a *hard* limit, unlike the advisory "not currently connected" greying
+      That is a *hard* limit, unlike the advisory "not currently connected" graying
       ``PlayerListWidget`` does: a two-player duel has no third player at all.
 
-    Holds the palette slot rather than a colour, like ``AccountPill``, so a theme switch
+    Holds the palette slot rather than a color, like ``AccountPill``, so a theme switch
     re-resolves instead of repainting a stale hex.
     """
 
@@ -218,10 +218,10 @@ class PlayerPillBar(QWidget):
             pill.setVisible(pill.player <= n)
 
     def set_color_keys(self, keys: list[int | None]) -> None:
-        """Colour each slot by the account behind it, ``None`` where nobody is known.
+        """Color each slot by the account behind it, ``None`` where nobody is known.
 
-        Shorter lists are fine and are the normal case: two clients hooked colours P1 and
-        P2 and leaves P3/P4 uncoloured, which is the truth about what is running.
+        Shorter lists are fine and are the normal case: two clients hooked colors P1 and
+        P2 and leaves P3/P4 uncolored, which is the truth about what is running.
         """
         for index, pill in enumerate(self._pills):
             pill.set_color_key(keys[index] if index < len(keys) else None)
@@ -246,7 +246,7 @@ class PlayerPillBar(QWidget):
 #: 14 there until the body text moved, and then this one clipped its own text while the
 #: pill it is meant to match grew.
 #: One pixel less than ``NeutralPill``'s padding, because a badge always draws a 1px
-#: border -- in the fill colour when uncoloured -- so the text sits at the same x whether
+#: border -- in the fill color when uncolored -- so the text sits at the same x whether
 #: or not an account is known, and a badge does not change width when one arrives.
 _BADGE_PAD_X = 5
 
@@ -255,17 +255,17 @@ _MAX_SLOTS = 4
 
 
 class PlayerBadge(QLabel):
-    """An inert ``P{n}`` pill, coloured by whoever is in that slot right now.
+    """An inert ``P{n}`` pill, colored by whoever is in that slot right now.
 
     The read-only form of :class:`PlayerSlotPill`: the same claim -- the text is the slot,
-    the colour is the account -- with nothing to toggle. The Combat tab wears it on its
+    the color is the account -- with nothing to toggle. The Combat tab wears it on its
     order, assignment lines and deck cards, and the Players tab on each player card, so a
     slot reads the same pill in both places. Two states rather than three:
 
-    * **coloured** -- outlined and tinted in the account's colour, as ``AccountPill`` is.
-    * **uncoloured** -- the grey ``NeutralPill`` look. Nothing hooked, or an identity not
+    * **colored** -- outlined and tinted in the account's color, as ``AccountPill`` is.
+    * **uncolored** -- the gray ``NeutralPill`` look. Nothing hooked, or an identity not
       learned yet, is a normal state, and it must not pick a default hue (gui/CLAUDE.md,
-      *Account colours*).
+      *Account colors*).
     """
 
     def __init__(self, player: int, parent: QWidget | None = None) -> None:
@@ -287,7 +287,7 @@ class PlayerBadge(QLabel):
 
     @property
     def color_key(self) -> int | None:
-        """The account palette slot it wears, or None for the uncoloured look."""
+        """The account palette slot it wears, or None for the uncolored look."""
         return self._color_key
 
     def set_player(self, player: int) -> None:
@@ -344,8 +344,8 @@ class PlayerBadgeRow(QWidget):
     Combat tab redraws its cards on every pick, and destroying children mid-refresh is how
     that tab used to delete a widget a click was still travelling to.
 
-    Colours are held per *slot*, not per position, so a combat order of ``P1 ← P3`` puts
-    slot 3's account colour on the right-hand badge -- the same hue P3 wears everywhere else.
+    Colors are held per *slot*, not per position, so a combat order of ``P1 ← P3`` puts
+    slot 3's account color on the right-hand badge -- the same hue P3 wears everywhere else.
 
     ``duel_order`` makes the row a *combat order* rather than a set of players: it is drawn
     right to left, and each position wears the game's own gem, exactly as

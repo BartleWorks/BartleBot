@@ -32,7 +32,7 @@ the base order statically instead.
 
 PyQt6 handles cooperative multiple inheritance only while a single base derives
 from ``QObject``, which is why this one derives from ``object`` and defines no Qt
-behaviour of its own beyond the override.
+behavior of its own beyond the override.
 
 **No ``__init__``.** The guard is a *class* attribute, so an instance that has
 never assigned it still reads ``False``. That keeps the mixin out of the

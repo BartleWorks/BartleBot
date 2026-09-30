@@ -83,7 +83,7 @@ def test_the_crop_takes_the_top_left_quarter_at_native_size():
     the GUI wants."""
     sheet = Image.new("RGBA", (256, 256), (0, 0, 0, 255))
     sheet.paste((255, 0, 0, 255), (0, 0, 128, 128))  # the normal state
-    sheet.paste((9, 9, 9, 255), (128, 128, 256, 256))  # the greyed one
+    sheet.paste((9, 9, 9, 255), (128, 128, 256, 256))  # the grayed one
 
     quadrant = top_left_quadrant(sheet)
 

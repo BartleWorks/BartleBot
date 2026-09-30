@@ -79,7 +79,7 @@ def test_the_rebuild_does_not_happen_inside_the_style_change_handler(qapp, theme
     assert panel.widget() is not before
 
 
-def test_the_placeholder_recolours_before_any_node_is_shown(qapp, theme):
+def test_the_placeholder_recolors_before_any_node_is_shown(qapp, theme):
     """A panel opened and left alone is the state the dialog starts in."""
     theme("light")
     panel = _DetailPanel()
@@ -116,7 +116,7 @@ def test_a_theme_switch_keeps_the_scroll_position(qapp, theme):
     panel.close()
 
 
-def test_the_dialog_chrome_recolours(qapp, theme):
+def test_the_dialog_chrome_recolors(qapp, theme):
     theme("light")
     dlg = NodeBrowserDialog(mode="add")
     before = (dlg._search.styleSheet(), dlg._list.styleSheet(), dlg._add_btn.styleSheet())

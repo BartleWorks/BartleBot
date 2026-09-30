@@ -2,7 +2,7 @@
 
 The Fusion style's default ``QPushButton`` chrome (a beveled 3D frame sized to its
 own label) is what every icon-and-text row in this app has been fighting: SVG
-icons drawn against that frame read as flattened and off-centre, and a row of
+icons drawn against that frame read as flattened and off-center, and a row of
 such buttons naturally sizes each one to its own text rather than sharing the
 row evenly. ``ActionButton`` is the reusable replacement — flat, theme-tinted,
 and set to expand — so a row of them (``buttons.addWidget(btn, 1)`` each) splits
@@ -26,7 +26,7 @@ a primary action — a dialog's commit button.
 
 Fills are lightened or darkened from the token rather than given hover tokens of their
 own. ``accent`` and ``error`` are Tier 1/2 tokens a custom theme is expected to change,
-and a hover colour stored beside them is a second thing to keep in step; derived, the
+and a hover color stored beside them is a second thing to keep in step; derived, the
 hover follows whatever the theme says the fill is.
 """
 
@@ -48,7 +48,7 @@ _HOVER_SHIFT = 118
 _PRESS_SHIFT = 88
 
 #: How much ``accent`` shows through ``SECONDARY``'s background, as a fraction of the way
-#: from the page colour to the accent. A dark page needs more of it: the same 10% that
+#: from the page color to the accent. A dark page needs more of it: the same 10% that
 #: reads as a tint against white is all but invisible against ``#1e1e1e``.
 _WASH_ON_LIGHT = 0.10
 _WASH_ON_DARK = 0.18
@@ -75,7 +75,7 @@ class ActionStyle(Enum):
     here", which is as true beside a commit as it is with no commit in sight.
 
     ``TERTIARY`` is everything else, and the default: no accent at all.
-    ``CAUTION`` is a verb that costs something to undo: filled with the error colour.
+    ``CAUTION`` is a verb that costs something to undo: filled with the error color.
     """
 
     PRIMARY = "primary"
@@ -96,7 +96,7 @@ def _shift(color: str, percent: int) -> str:
 def _mix(base: str, over: str, amount: float) -> str:
     """*base* blended *amount* of the way toward *over*, as a hex string.
 
-    Kept beside :func:`_shift` and used for the same reason: a derived colour follows
+    Kept beside :func:`_shift` and used for the same reason: a derived color follows
     whatever a custom theme sets its tokens to, where a stored one is a second thing to
     keep in step.
     """
@@ -168,8 +168,8 @@ class ActionButton(ThemedMixin, QPushButton):
         self.refresh_theme_styles()
 
     def _icon_tint(self, text: str) -> str:
-        """The glyph's colour, given the style's text colour: the same, unless a subclass
-        has a glyph whose colour is its meaning — ``RecordButton``'s red dot."""
+        """The glyph's color, given the style's text color: the same, unless a subclass
+        has a glyph whose color is its meaning — ``RecordButton``'s red dot."""
         return text
 
     def _palette(self) -> tuple[str, str, str, str, str]:
@@ -177,7 +177,7 @@ class ActionButton(ThemedMixin, QPushButton):
 
         A tuple rather than five branches inside ``apply_theme_styles`` so that the rule
         each style follows is readable as one line, and so that the only thing varying
-        between them is colour: every style shares the same metrics, and a style that
+        between them is color: every style shares the same metrics, and a style that
         also changed the padding would stop being a weight and start being a shape.
         """
         if self._style is ActionStyle.PRIMARY and self._on_accent:
@@ -192,7 +192,7 @@ class ActionButton(ThemedMixin, QPushButton):
             fill = THEME.error
             return fill, THEME.pill_text, fill, _shift(fill, _HOVER_SHIFT), _shift(fill, _PRESS_SHIFT)
         if self._style is ActionStyle.SECONDARY:
-            # A faint wash of the accent over the page colour rather than a stored tint,
+            # A faint wash of the accent over the page color rather than a stored tint,
             # so a theme that changes ``accent`` moves the wash with it. How much of it
             # shows through is read off ``bg``'s own lightness, not off a comparison with
             # a literal — a custom light theme is not required to be ``#ffffff``.
@@ -212,9 +212,9 @@ class ActionButton(ThemedMixin, QPushButton):
 
     def apply_theme_styles(self) -> None:
         background, text, border, hover, pressed = self._palette()
-        # Tinted with the button's own text colour rather than the theme's default icon
+        # Tinted with the button's own text color rather than the theme's default icon
         # tint: on a filled PRIMARY or CAUTION the default is drawn nearly invisible
-        # against the accent, and on the other two it is the colour it would have picked
+        # against the accent, and on the other two it is the color it would have picked
         # anyway. An empty name means a button with no glyph — a dialog's Cancel — and
         # clearing the icon is how it stays that way across a theme pass.
         self.setIcon(
@@ -232,7 +232,7 @@ class ActionButton(ThemedMixin, QPushButton):
             f"QPushButton:pressed:enabled {{ background: {pressed}; }}"
             # One disabled look for all four: a disabled button is not a weaker version of
             # its style, it is the same "off" every disabled control on the screen wears.
-            # The border is the fill colour, i.e. no visible outline at all — an enabled
+            # The border is the fill color, i.e. no visible outline at all — an enabled
             # ``TERTIARY`` sits only ~3% off ``surface_disabled`` in the light theme, so
             # losing the outline is what actually separates off from on.
             f"QPushButton:disabled {{ color: {THEME.text_disabled}; background: {THEME.surface_disabled};"

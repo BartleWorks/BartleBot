@@ -65,7 +65,7 @@ async def test_only_one_client_at_the_object_at_a_time():
     """The whole point: no other client is standing at interact_xyz during a turn.
 
     This is what a contended object needs — a client merely waiting in range is enough to
-    swallow the next one's keypress, so it is not sufficient to serialise only the presses.
+    swallow the next one's keypress, so it is not sufficient to serialize only the presses.
     """
     clients = [_positional_client() for _ in range(3)]
     overlaps: list[int] = []

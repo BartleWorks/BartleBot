@@ -17,7 +17,7 @@ from bartlebot.nodes.paths import (
 from tests.conftest import FakeClient, FakeMachine
 
 
-async def _centre_button_visible(_client, path):
+async def _center_button_visible(_client, path):
     """Only the dungeon warning's confirm button is showing."""
     return path == MESSAGE_BOX_CENTER
 
@@ -218,7 +218,7 @@ async def test_dungeon_warning_dialog_confirmed():
         patch.object(ed, "POLL_INTERVAL", 0),
         patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
         patch.object(nh, "none_at_dungeon_entrance", new=AsyncMock(return_value=True)),
-        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_centre_button_visible)),
+        patch.object(nh, "is_visible_by_path", new=AsyncMock(side_effect=_center_button_visible)),
         patch.object(nh, "click_by_path", click_by_path_mock),
     ):
         result = await ed.run(FakeMachine(), [client], _PARAMS)

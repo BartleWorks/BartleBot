@@ -68,7 +68,7 @@ class ArchmasteryBadge(QWidget):
     """The archmastery mark and the school medallion, side by side.
 
     Reads no ``THEME`` value, so it needs neither ``ThemedMixin`` nor a
-    ``changeEvent``: both icons are the game's own artwork and keep their own colours
+    ``changeEvent``: both icons are the game's own artwork and keep their own colors
     in either theme, exactly as the card art tiles do.
     """
 

@@ -5,7 +5,7 @@ the deck (the working copy the dialog's Save commits), the caption names what th
 setting will do and *only* while the deck defers to it, and a deck with no captured
 school gets no controls at all.
 
-The icons come out of a tmp art cache in distinguishable colours, the way
+The icons come out of a tmp art cache in distinguishable colors, the way
 ``test_archmastery_badge.py`` does, which is how "drew the school" is told from "drew
 the universal mark".
 """
@@ -26,7 +26,7 @@ from bartlebot.gui.widgets.archmastery_editor import (
     ArchmasteryEditor,
 )
 
-COLOURS = {
+COLORS = {
     card_art.ARCHMASTERY_ICON: QColor("red"),
     card_art.UNIVERSAL_ICON: QColor("blue"),
     "school_fire": QColor("green"),
@@ -52,17 +52,17 @@ def app_setting(monkeypatch):
     return _set
 
 
-def _extract_icons(keys=tuple(COLOURS)) -> None:
+def _extract_icons(keys=tuple(COLORS)) -> None:
     card_art.icons_dir().mkdir(parents=True, exist_ok=True)
     icons = {key: f"{key}.png" for key in keys}
     card_art.index_path().write_text(json.dumps({"images": {}, "icons": icons}), encoding="utf-8")
     for key in keys:
         pixmap = QPixmap(32, 32)
-        pixmap.fill(COLOURS[key])
+        pixmap.fill(COLORS[key])
         assert pixmap.save(str(card_art.icons_dir() / f"{key}.png"), "PNG")
 
 
-def _colour_of(icon: QIcon) -> QColor:
+def _color_of(icon: QIcon) -> QColor:
     image = icon.pixmap(16).toImage()
     return image.pixelColor(image.width() // 2, image.height() // 2)
 
@@ -214,7 +214,7 @@ def test_the_school_medallion_is_drawn_when_the_school_will_be_set(art_home, qap
     editor.load(DeckData(normal={"Test Card": 1}, archmastery_school="Fire", apply_archmastery=True))
 
     assert not editor._icons.isHidden()
-    assert _colour_of(editor._icons._school.icon()) == COLOURS["school_fire"]
+    assert _color_of(editor._icons._school.icon()) == COLORS["school_fire"]
 
 
 def test_the_medallion_follows_the_mode_the_user_just_picked(art_home, qapp, app_setting):
@@ -226,7 +226,7 @@ def test_the_medallion_follows_the_mode_the_user_just_picked(art_home, qapp, app
 
     _click(editor, "Never set")
 
-    assert _colour_of(editor._icons._school.icon()) == COLOURS[card_art.UNIVERSAL_ICON]
+    assert _color_of(editor._icons._school.icon()) == COLORS[card_art.UNIVERSAL_ICON]
 
 
 def test_the_school_is_named_in_words_whether_or_not_there_are_icons(art_home, qapp, app_setting):

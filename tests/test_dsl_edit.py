@@ -1,7 +1,7 @@
-"""Tests for the DSL text boxes: colouring, the parse-error underline, and completion.
+"""Tests for the DSL text boxes: coloring, the parse-error underline, and completion.
 
 What each word *is* is tested in ``test_dsl_syntax.py``; these check that the widgets
-draw it, follow a theme switch, never count colouring as an edit, and hand the keys
+draw it, follow a theme switch, never count coloring as an edit, and hand the keys
 around the completion popup the way Qt's completer expects.
 """
 
@@ -37,7 +37,7 @@ def _format_at(edit, column: int, line: int = 0) -> QTextCharFormat | None:
     return None
 
 
-def _colour_at(edit, column: int, line: int = 0) -> str | None:
+def _color_at(edit, column: int, line: int = 0) -> str | None:
     fmt = _format_at(edit, column, line)
     return fmt.foreground().color().name() if fmt is not None else None
 
@@ -59,23 +59,23 @@ def _offered(edit) -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# Colours
+# Colors
 # ---------------------------------------------------------------------------
 
 
-def _luminance(hex_colour: str) -> float:
-    colour = QColor(hex_colour)
+def _luminance(hex_color: str) -> float:
+    color = QColor(hex_color)
 
     def channel(c: int) -> float:
         c = c / 255
         return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
 
-    return 0.2126 * channel(colour.red()) + 0.7152 * channel(colour.green()) + 0.0722 * channel(colour.blue())
+    return 0.2126 * channel(color.red()) + 0.7152 * channel(color.green()) + 0.0722 * channel(color.blue())
 
 
 @pytest.mark.parametrize("palette", [LIGHT, DARK], ids=["light", "dark"])
 @pytest.mark.parametrize("ground", ["bg", "surface"])
-def test_dsl_syntax_colours_are_legible(palette, ground):
+def test_dsl_syntax_colors_are_legible(palette, ground):
     """4.5:1 on both grounds — an editable DSL box is drawn on ``bg``, a read-only one on ``surface``."""
     for token in [kind.value for kind in dsl_syntax.Kind] + ["syntax_warning"]:
         lighter, darker = sorted((_luminance(getattr(palette, token)), _luminance(getattr(palette, ground))))
@@ -83,28 +83,28 @@ def test_dsl_syntax_colours_are_legible(palette, ground):
 
 
 @pytest.mark.parametrize("editor_class", [DslPlainTextEdit, DslGrowingTextEdit])
-def test_each_word_is_drawn_in_its_theme_colour(qapp, light, editor_class):
+def test_each_word_is_drawn_in_its_theme_color(qapp, light, editor_class):
     edit = editor_class()
     edit.setPlainText("any<aoe> @ aoe")
 
-    assert _colour_at(edit, 0) == LIGHT.syntax_keyword.lower()
-    assert _colour_at(edit, 4) == LIGHT.syntax_type.lower()
-    assert _colour_at(edit, 9) == LIGHT.syntax_punct.lower()
-    assert _colour_at(edit, 11) == LIGHT.syntax_target.lower()
+    assert _color_at(edit, 0) == LIGHT.syntax_keyword.lower()
+    assert _color_at(edit, 4) == LIGHT.syntax_type.lower()
+    assert _color_at(edit, 9) == LIGHT.syntax_punct.lower()
+    assert _color_at(edit, 11) == LIGHT.syntax_target.lower()
 
 
-def test_a_theme_switch_recolours_the_text(qapp, light):
+def test_a_theme_switch_recolors_the_text(qapp, light):
     edit = DslPlainTextEdit()
     edit.setPlainText("pass")
-    assert _colour_at(edit, 0) == LIGHT.syntax_keyword.lower()
+    assert _color_at(edit, 0) == LIGHT.syntax_keyword.lower()
 
     set_theme_instance(DARK)
     QApplication.sendEvent(edit, QEvent(QEvent.Type.StyleChange))
 
-    assert _colour_at(edit, 0) == DARK.syntax_keyword.lower()
+    assert _color_at(edit, 0) == DARK.syntax_keyword.lower()
 
 
-def test_colouring_and_underlining_never_count_as_an_edit(qapp):
+def test_coloring_and_underlining_never_count_as_an_edit(qapp):
     """Both editors write the DSL back to the strategy on ``textChanged``."""
     edit = DslPlainTextEdit()
     edits = []
@@ -146,7 +146,7 @@ def test_the_underline_lands_on_the_line_the_error_is_on(qapp):
     assert _underlined(edit, 4, line=1)
 
 
-def test_clearing_the_error_removes_the_underline_but_keeps_the_colours(qapp, light):
+def test_clearing_the_error_removes_the_underline_but_keeps_the_colors(qapp, light):
     edit = DslPlainTextEdit()
     edit.setPlainText(_BROKEN)
     edit.set_dsl_error(dsl_error(_BROKEN))
@@ -154,7 +154,7 @@ def test_clearing_the_error_removes_the_underline_but_keeps_the_colours(qapp, li
     edit.set_dsl_error(None)
 
     assert not _underlined(edit, 4)
-    assert _colour_at(edit, 0) == LIGHT.syntax_keyword.lower()
+    assert _color_at(edit, 0) == LIGHT.syntax_keyword.lower()
 
 
 def test_the_player_editor_underlines_after_validating_and_clears_on_an_edit(qapp):
@@ -258,21 +258,21 @@ def test_choosing_an_opener_queues_what_goes_inside_it(qapp, qtbot):
 _UNKNOWN = "Strom Lord @ aoe"  # the name is columns 0-9
 
 
-def _underline_colour(edit, column: int, line: int = 0) -> str | None:
+def _underline_color(edit, column: int, line: int = 0) -> str | None:
     fmt = _format_at(edit, column, line)
     if fmt is None or fmt.underlineStyle() != QTextCharFormat.UnderlineStyle.WaveUnderline:
         return None
     return fmt.underlineColor().name()
 
 
-def test_an_unknown_spell_name_is_underlined_in_the_warning_colour(qapp, light):
+def test_an_unknown_spell_name_is_underlined_in_the_warning_color(qapp, light):
     edit = DslPlainTextEdit()
     edit.setPlainText(_UNKNOWN)
 
     edit.set_dsl_warnings(dsl_warnings(_UNKNOWN))
 
-    assert all(_underline_colour(edit, column) == LIGHT.syntax_warning.lower() for column in range(10))
-    assert _underline_colour(edit, 11) is None
+    assert all(_underline_color(edit, column) == LIGHT.syntax_warning.lower() for column in range(10))
+    assert _underline_color(edit, 11) is None
 
 
 def test_the_player_editor_lists_unknown_names_and_clears_them_on_an_edit(qapp):

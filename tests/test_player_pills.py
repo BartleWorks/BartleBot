@@ -3,8 +3,8 @@
 Two things matter here and neither is which hue a pill gets. The first is that the pill
 keeps saying ``P1`` whatever is hooked — a DuelConfig stores slots, not accounts, and a
 pill that renamed itself would be a claim the stored data does not make. The second is
-that the colour degrades to *nothing* rather than to a default when no account is known:
-a colour on this pill is a claim about which account is in that slot, and a wrong match
+that the color degrades to *nothing* rather than to a default when no account is known:
+a color on this pill is a claim about which account is in that slot, and a wrong match
 target is worse than no match target.
 """
 
@@ -26,7 +26,7 @@ def test_every_pill_reads_its_slot_number(qapp):
 
 
 def test_a_pill_still_reads_its_slot_number_once_an_account_is_behind_it(qapp):
-    """The colour is the account's; the text is not. See the module docstring."""
+    """The color is the account's; the text is not. See the module docstring."""
     bar = PlayerPillBar()
 
     bar.set_color_keys([3, 4, 1, 2])
@@ -120,11 +120,11 @@ def test_raising_max_players_brings_the_slots_back_switched_off(qapp):
 
 
 # ---------------------------------------------------------------------------
-# Colour
+# Color
 # ---------------------------------------------------------------------------
 
 
-def test_an_uncoloured_pill_wears_no_account_colour_at_all(qapp):
+def test_an_uncolored_pill_wears_no_account_color_at_all(qapp):
     """Nothing hooked is the normal authoring case, and it must not pick a default."""
     bar = PlayerPillBar()
     bar.set_value([1])
@@ -135,7 +135,7 @@ def test_an_uncoloured_pill_wears_no_account_colour_at_all(qapp):
     assert account_accent(1) not in style
 
 
-def test_a_coloured_pill_wears_that_account_s_outline_and_tint(qapp):
+def test_a_colored_pill_wears_that_account_s_outline_and_tint(qapp):
     bar = PlayerPillBar()
     bar.set_value([1])
     bar.set_color_keys([3])
@@ -146,8 +146,8 @@ def test_a_coloured_pill_wears_that_account_s_outline_and_tint(qapp):
     assert account_tint(3) in style
 
 
-def test_a_short_colour_list_leaves_the_remaining_slots_plain(qapp):
-    """Two clients hooked colours P1 and P2 and says nothing about P3 and P4."""
+def test_a_short_color_list_leaves_the_remaining_slots_plain(qapp):
+    """Two clients hooked colors P1 and P2 and says nothing about P3 and P4."""
     bar = PlayerPillBar()
     bar.set_value([1, 2, 3, 4])
 
@@ -159,8 +159,8 @@ def test_a_short_colour_list_leaves_the_remaining_slots_plain(qapp):
 
 
 def test_a_pill_that_is_off_is_drawn_as_a_slot_rather_than_as_an_account(qapp):
-    """Colour on this pill means "this assignment covers that player". An off pill
-    covers nobody, so it claims no colour even when the slot has an account."""
+    """Color on this pill means "this assignment covers that player". An off pill
+    covers nobody, so it claims no color even when the slot has an account."""
     bar = PlayerPillBar()
     bar.set_color_keys([3])
     bar.set_value([])
@@ -193,7 +193,7 @@ def test_a_pill_holds_its_slot_not_a_hex_so_a_theme_switch_re_resolves(qapp):
 # ---------------------------------------------------------------------------
 
 
-def test_an_uncoloured_badge_is_the_neutral_grey_pill(qapp):
+def test_an_uncolored_badge_is_the_neutral_gray_pill(qapp):
     from bartlebot.gui.widgets.player_pills import PlayerBadge  # noqa: PLC0415
 
     badge = PlayerBadge(2)
@@ -203,7 +203,7 @@ def test_an_uncoloured_badge_is_the_neutral_grey_pill(qapp):
     assert account_accent(1) not in badge.styleSheet()
 
 
-def test_a_coloured_badge_is_outlined_and_tinted_and_names_the_account_in_its_tooltip(qapp):
+def test_a_colored_badge_is_outlined_and_tinted_and_names_the_account_in_its_tooltip(qapp):
     from bartlebot.gui.widgets.player_pills import PlayerBadge  # noqa: PLC0415
 
     badge = PlayerBadge(1)
@@ -236,7 +236,7 @@ def test_a_badge_row_hides_surplus_badges_and_separators_rather_than_destroying_
     assert all(b.isHidden() for b in row._badges)
 
 
-def test_a_badge_row_colours_by_slot_and_leaves_unknown_slots_plain(qapp):
+def test_a_badge_row_colors_by_slot_and_leaves_unknown_slots_plain(qapp):
     from bartlebot.gui.widgets.player_pills import PlayerBadgeRow  # noqa: PLC0415
 
     row = PlayerBadgeRow()

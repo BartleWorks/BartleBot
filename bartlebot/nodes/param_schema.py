@@ -104,7 +104,7 @@ class ParamField:
         default:      Value used when no existing param data is present.
         minimum:      Lowest value a numeric param may take, or None for no floor.
         maximum:      Highest value a numeric param may take, or None for no ceiling.
-        default_hint: Short description of the default behaviour shown as a dimmed hint
+        default_hint: Short description of the default behavior shown as a dimmed hint
                       below the input widget when the field is optional. Leave blank for
                       required fields or fields where the default needs no explanation.
         placeholder:  Ghost text shown inside an empty text widget. Useful for multi-line

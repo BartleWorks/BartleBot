@@ -100,7 +100,7 @@ def declares_separate(config) -> bool:
 
 
 def is_separate(value) -> bool:
-    """Whether a resolved option value asks for Separate. Anything unrecognised is Together."""
+    """Whether a resolved option value asks for Separate. Anything unrecognized is Together."""
     return value == SEPARATE
 
 

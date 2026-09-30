@@ -30,7 +30,7 @@ QUESTIONS THIS ANSWERS
       this is the check that would justify it.
 
   Q4. Is the name text clean, or does it carry markup or decoration (a level, a leader
-      crown, "(Leader)")? strip_markup handles KI colour tags; anything else would need
+      crown, "(Leader)")? strip_markup handles KI color tags; anything else would need
       handling before names can be compared between clients.
 
       One answer is already in: the first EMPTY slot is an invitation prompt whose NameText

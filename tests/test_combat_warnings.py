@@ -456,7 +456,7 @@ def test_unassigned_state_names_the_builtin_fallback_when_there_is_no_default(tm
     ]
 
 
-def test_unlabelled_state_falls_back_to_its_id(tmp_path):
+def test_unlabeled_state_falls_back_to_its_id(tmp_path):
     bcs = _bcs(tmp_path)
     config = _config(("state_9", None, False))
 

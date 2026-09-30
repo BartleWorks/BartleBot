@@ -3,7 +3,7 @@
 Replaces DeckBuilder.get_deck_preset() / set_deck_preset(), both of which are
 unusable: they reach the treasure card view (which leaves the spell list in a
 state that breaks normal card restore) and they enumerate item cards by paging
-until ``is_control_grayed()`` reports the next-page button greyed — a read that
+until ``is_control_grayed()`` reports the next-page button grayed — a read that
 is unreliable, so the loop can page forward forever.
 
 Instead, both card lists are read straight out of memory.  ``CardsInDeck`` and
@@ -641,7 +641,7 @@ async def _control_for(client, deck_window, window_name: str):
 async def _template_kind(template) -> str | None:
     """Classify a spell from its template's effects, or None if it cannot be read.
 
-    Never raises: a card whose kind we cannot work out is simply unlabelled, and
+    Never raises: a card whose kind we cannot work out is simply unlabeled, and
     losing a label is not worth failing a deck import over.
     """
     try:
@@ -1727,9 +1727,9 @@ async def _click(client, window) -> bool:
     """Click a resolved window. False if the click could not be issued.
 
     Deliberately not ``node_helpers.click_window``: that refuses to click
-    anything ``is_control_grayed()`` reports as greyed, and the greyed byte is
+    anything ``is_control_grayed()`` reports as grayed, and the grayed byte is
     only a real field on the button classes (see ui_tree_browser's
-    ``has_greyed_field``).  The gauge and the school icons are sprites, so that
+    ``has_grayed_field``).  The gauge and the school icons are sprites, so that
     read lands on whatever happens to sit at the offset and can refuse a
     perfectly good click without ever saying why.
 

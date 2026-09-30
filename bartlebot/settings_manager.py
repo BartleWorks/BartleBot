@@ -557,7 +557,7 @@ class SettingsManager:
 
         A game client degrades the longer it stays logged in and a relog is the only
         thing that clears it, so this is a maintenance interval rather than a preference
-        about behaviour.
+        about behavior.
         """
         return float(self.get_general("relog_interval_hours", default=4.0))
 
@@ -623,7 +623,7 @@ class SettingsManager:
 
         Machine configuration, like the friend name above: a shared bot file naming a
         realm would herd every user who runs it into one place, which is the opposite of
-        what a favourite realm is for. The node reads it as the ``Favorite Realm`` bot
+        what a favorite realm is for. The node reads it as the ``Favorite Realm`` bot
         option, so a per-bot override in Setup still wins over this.
         """
         return str(self.get_general("favorite_realm", default="") or "")
@@ -1002,7 +1002,7 @@ class SettingsManager:
 
         *client_count* is 1 by default because that is the floor the window is *given*:
         embedding more raises the game view's own minimum and Qt grows the window to
-        match, which is the documented behaviour that lets a launch bigger than the
+        match, which is the documented behavior that lets a launch bigger than the
         current window correct itself.
         """
         return required_window_size(self.game_resolution, client_count, dpr, right_sidebar_floor, left_sidebar_floor)

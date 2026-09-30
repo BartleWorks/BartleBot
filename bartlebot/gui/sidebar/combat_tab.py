@@ -271,7 +271,7 @@ class _DeckCard(CardFrame):
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(6)
-        # A pill, coloured by the account in this slot, where a bold "P1" used to be (#40).
+        # A pill, colored by the account in this slot, where a bold "P1" used to be (#40).
         self._name = PlayerBadge(self._slot)
         header.addWidget(self._name, 0, Qt.AlignmentFlag.AlignVCenter)
         # The deck's archmastery as the game's own two icons, beside the pill: the facts
@@ -405,7 +405,7 @@ class _DeckCard(CardFrame):
         return self._color_key
 
     def set_player_color(self, key: int | None, account_label: str = "") -> None:
-        """Stripe the card and colour its pill by the account in this slot, or None for neither."""
+        """Stripe the card and color its pill by the account in this slot, or None for neither."""
         self._name.set_color_key(key)
         self._name.set_account_label(account_label)
         if key == self._color_key:
@@ -587,7 +587,7 @@ class _PlayerDecksSection(SidebarSection):
         all_row.addWidget(self._apply_all_btn, 1)
         layout.addLayout(all_row)
 
-        # The account colour per slot, held so a card that moves into a slot mid-drag can
+        # The account color per slot, held so a card that moves into a slot mid-drag can
         # be striped for it. See ``set_player_colors``.
         self._color_keys: list[int | None] = []
         self._color_labels: list[str] = []
@@ -890,7 +890,7 @@ class _BotStrategyBanner(CardFrame):
 
         Hover lights it the way it lights a card -- ``node_fill`` and an accent line --
         because the body click is the same promise here as there. There is no dragging
-        branch to honour: with no grip, nothing can pick the banner up.
+        branch to honor: with no grip, nothing can pick the banner up.
         """
         lit = self._hovered and self.has_body_verb
         set_style_sheet(
@@ -1153,8 +1153,8 @@ class CombatTab(QWidget):
 
         ``None`` (the default) means nobody has installed one, which is the normal state
         in tests and in a session with nothing running: the dialog's player pills simply
-        go uncoloured. See gui/widgets/player_pills.py for why that degrades cleanly
-        rather than falling back to a colour.
+        go uncolored. See gui/widgets/player_pills.py for why that degrades cleanly
+        rather than falling back to a color.
 
         The tab's own player pills and deck stripes ask the same source, on a timer while
         the tab is visible -- see ``refresh_player_colors``.
@@ -1163,7 +1163,7 @@ class CombatTab(QWidget):
         self.refresh_player_colors()
 
     def refresh_player_colors(self) -> None:
-        """Re-ask which account is behind each slot, and recolour the tab if that changed.
+        """Re-ask which account is behind each slot, and recolor the tab if that changed.
 
         Public because it is what the timer, a client-count change and the tests call.
         Polled rather than signalled for the reason ``set_player_account_source`` gives:
@@ -1186,7 +1186,7 @@ class CombatTab(QWidget):
         """A palette slot and a display name per player slot, both possibly empty.
 
         Resolved through ``account_stripe_keys`` over the *whole* account list rather than
-        per username, because a colour is only distinct with respect to the others — see
+        per username, because a color is only distinct with respect to the others — see
         gui/account_accent.py. An unidentified client gets no slot and no name, which is
         the truth about it.
         """
@@ -1598,7 +1598,7 @@ class CombatTab(QWidget):
         panel.load(assignment, lookup.duels, lookup.players)
         panel.set_fight_options(self._fight_sections(exposed), list(assignment.state_ids))
         panel.set_editable(self._editable)
-        # Arrives coloured: the timer only repaints when the answer changes, so a card
+        # Arrives colored: the timer only repaints when the answer changes, so a card
         # built between two identical answers would otherwise stay plain.
         panel.set_player_colors(*self._player_colors)
         panel.pick_requested.connect(partial(self._on_pick_duel, panel))
@@ -1967,7 +1967,7 @@ class CombatTab(QWidget):
     # ThemedTextLabel does -- so there is nothing left here for a StyleChange to chase.
 
     def showEvent(self, event) -> None:  # noqa: N802 - Qt override
-        """Start asking about account colours, and ask once now rather than a second late."""
+        """Start asking about account colors, and ask once now rather than a second late."""
         super().showEvent(event)
         self.refresh_player_colors()
         self._color_timer.start()
@@ -1979,5 +1979,5 @@ class CombatTab(QWidget):
 
     @property
     def is_polling_player_colors(self) -> bool:
-        """Whether the colour timer is running. Public for the tests."""
+        """Whether the color timer is running. Public for the tests."""
         return self._color_timer.isActive()

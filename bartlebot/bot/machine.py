@@ -34,6 +34,10 @@ if TYPE_CHECKING:
 
 _QTY_PREFIX = re.compile(r"^(\d+)\s+(.+)$")
 
+# Node types the ambient combat watcher never cancels. handle_combat is already fighting
+# (the watcher leaves its fights alone entirely); relog is itself the recovery.
+NEVER_PREEMPTED = frozenset({"handle_combat", "relog"})
+
 
 class BotMachine:
     """
@@ -58,6 +62,7 @@ class BotMachine:
         on_client_disconnected: Callable[[int], None] | None = None,
         on_restricted_zone: Callable[[str], None] | None = None,
         on_explicit_stop: Callable[[str, str, str], None] | None = None,
+        on_stopped: Callable[[str], None] | None = None,
         stop_grace_period: float = 1.0,
     ) -> None:
         self.clients = clients
@@ -70,6 +75,11 @@ class BotMachine:
         self._on_client_disconnected = on_client_disconnected
         self._on_restricted_zone = on_restricted_zone
         self._on_explicit_stop = on_explicit_stop
+        self._on_stopped = on_stopped
+        # When each recent flee happened (monotonic), for the flee limit. See note_flee.
+        self._flees: list[float] = []
+        # True while run()'s loop is live, so the ambient watcher knows whether a park can come.
+        self._running: bool = False
         self._stop_flag = asyncio.Event()
         self._stop_grace_period = stop_grace_period
         self._current_node_task: asyncio.Task | None = None
@@ -91,6 +101,13 @@ class BotMachine:
         self._parked = asyncio.Event()
         self._ambient_combat_lock = asyncio.Lock()
         self._combat_auto_paused: bool = False  # True while watcher has auto-paused the FSM
+        # Set when the ambient combat watcher cancels the running node to take over a fight.
+        # The run loop then runs that state again rather than counting a result. See
+        # _preempt_node.
+        self._preempted: bool = False
+        # True while the loop is running a state again after a preemption, so the rerun is
+        # not logged as a new pass.
+        self._rerunning: bool = False
         self._ambient_dialog_last_seen: float = 0.0  # monotonic timestamp of last dismissed banner
         self.last_result: str | None = None
         self._no_match_count: int = 0
@@ -370,15 +387,19 @@ class BotMachine:
 
         False on timeout, and False when no run loop is active at all: a machine that was
         never started, or one already past its loop, never parks and callers must not wait
-        out the timeout expecting otherwise.
+        out the timeout expecting otherwise. A stop while waiting returns False at once, since
+        a loop that stops breaks out without parking.
         """
         if self._stop_flag.is_set():
             return False
+        parked = asyncio.ensure_future(self._parked.wait())
+        stopped = asyncio.ensure_future(self._stop_flag.wait())
         try:
-            await asyncio.wait_for(self._parked.wait(), timeout)
-        except TimeoutError:
-            return False
-        return True
+            await asyncio.wait({parked, stopped}, timeout=timeout, return_when=asyncio.FIRST_COMPLETED)
+        finally:
+            parked.cancel()
+            stopped.cancel()
+        return self._parked.is_set() and not self._stop_flag.is_set()
 
     def suspend_health_checks_for(self, hwnds: Iterable[int]) -> None:
         """Stop ClientHealthMonitor reacting to these clients until the run resumes.
@@ -489,6 +510,7 @@ class BotMachine:
         # The watcher now says when a sighting goes stale, so older ones can be kept.
         self._together.retain = True
         _run_start = time.monotonic()
+        self._running = True
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
         health_task = asyncio.create_task(self._health_monitor.run())
@@ -513,7 +535,9 @@ class BotMachine:
                         logger.exception("on_state_change callback raised in state %s", self._fmt_state(state_id))
 
                 node_type = state_def["node_type"]
-                self._note_pass(state_id)
+                if not self._rerunning:
+                    self._note_pass(state_id)
+                self._rerunning = False
                 self._current_node_type = node_type
                 self._states_executed += 1
                 self._log_machine(f"Executing state {self._fmt_state(state_id)} (node_type={node_type})", logging.DEBUG)
@@ -527,6 +551,17 @@ class BotMachine:
                         # Our deferred_cancel fired after the grace period elapsed.
                         self._log_machine("Node forcibly cancelled after grace period.", logging.WARNING)
                         break
+                    if self._preempted and not asyncio.current_task().cancelling():
+                        # The ambient combat watcher took the node's clients for a fight.
+                        # No result and no transition: park, and on resume run this state
+                        # again from the start. The counters are left alone.
+                        self._preempted = False
+                        self._rerunning = True
+                        self._log_machine(
+                            f"State {self._fmt_state(state_id)} interrupted by a fight; it runs again afterwards",
+                            logging.INFO,
+                        )
+                        continue
                     # run() was cancelled from outside — propagate.
                     raise
                 except (ClientClosedError, ExceptionalTimeout, MemoryReadError) as exc:
@@ -642,6 +677,7 @@ class BotMachine:
                     else:
                         self._consecutive_same_state_count = 0
         finally:
+            self._running = False
             self._current_node_type = None
             self._log_run_summary(time.monotonic() - _run_start)
             watcher.cancel()
@@ -689,18 +725,16 @@ class BotMachine:
     async def _ambient_combat_watcher(self) -> None:
         """Background task: detect and handle unexpected combat on any client.
 
-        Runs SprintyCombat using the bot's default combat config whenever a client
-        enters combat outside of an explicit handle_combat node. Guarded against
+        Whenever a client is in battle outside a handle_combat node, pauses the FSM, cancels
+        the running node, and hands the fight to an AmbientSession: helpers join, every
+        fighter's combat runs with its own slot's strategy, and everyone ends somewhere safe
+        (bartlebot/bot/ambient_combat.py). Then the interrupted state runs again, or the bot
+        goes to its recovery state if anyone was left out of place. Guarded against
         re-entry and against conflicting with intentional combat nodes.
         """
+        from bartlebot.bot import ambient_combat
         from bartlebot.nodes import node_helpers
-        from bartlebot.nodes.combat_runner import (
-            _run_combat,
-            resolve_combat,
-            seed_chat_baselines,
-            slots_in_battle,
-            start_combat_drop_poll,
-        )
+        from bartlebot.nodes.combat_runner import slots_in_battle
 
         while not self._stop_flag.is_set():
             await asyncio.sleep(node_helpers.POLL_INTERVAL)
@@ -714,7 +748,7 @@ class BotMachine:
             try:
                 state_def = self._state_map.get(self.state, {})
             except AttributeError:
-                continue  # self.state not yet initialised
+                continue  # self.state not yet initialized
             if state_def.get("node_type") == "handle_combat":
                 continue
 
@@ -745,49 +779,121 @@ class BotMachine:
                     # Pause only after confirming inside the lock that we need to handle combat,
                     # so a spurious pause never happens if the FSM slipped into handle_combat
                     # while we were awaiting in_battle_flags.
+                    may_move = False
                     if self._resume_event.is_set():
                         self._combat_auto_paused = True
                         self.pause()
                         self._log_machine("Ambient combat: FSM paused — waiting for combat to finish", logging.INFO)
+                        may_move = await self._preempt_node()
 
                     self._log_machine(
                         f"Ambient combat detected on client(s) {battling_slots} — handling",
                         logging.WARNING,
                     )
-
-                    # Resolve for every client so per_client_dsl is indexed by slot;
-                    # resolving for only the battling ones would give client 3 the
-                    # DSL configured for player 1.
-                    per_client_dsl, _combat_order, dsl_source = resolve_combat(
-                        self, use_default_strategy=True, num_clients=len(clients)
+                    session = ambient_combat.AmbientSession(
+                        self, clients, [clients[i] for i in battling_slots], may_move=may_move
                     )
+                    try:
+                        end = await session.run()
+                    except Exception:
+                        logger.exception("Ambient combat session raised")
+                        if may_move:
+                            self._recover_after_ambient()
+                        continue
 
-                    self._log_machine(f"Ambient combat: DSL source={dsl_source!r}", logging.DEBUG)
-
-                    battling = [clients[i] for i in battling_slots]
-                    # Seed only clients with no baseline yet; one carried from an earlier
-                    # fight is what recovers an announcement that arrived too late for it.
-                    await seed_chat_baselines(self, battling)
-                    results = await asyncio.gather(
-                        *[_run_combat(clients[i], per_client_dsl[i]) for i in battling_slots],
-                        return_exceptions=True,
-                    )
-                    for pos, r in enumerate(results):
-                        if isinstance(r, Exception):
-                            self._log_machine(
-                                f"Ambient combat: error on client {battling_slots[pos]}: {r}",
-                                logging.DEBUG,
-                            )
-
-                    self._log_machine("Ambient combat: SprintyCombat finished", logging.DEBUG)
-
-                    # In the background, so the FSM resumes as soon as the fight is over.
-                    start_combat_drop_poll(self, battling, battling_slots)
+                    for _ in range(end.fled):
+                        if self.note_flee():
+                            break
+                    if may_move and end.recover and not self._stop_flag.is_set():
+                        self._recover_after_ambient()
             finally:
                 if self._combat_auto_paused:
                     self._combat_auto_paused = False
                     self.resume()
                     self._log_machine("Ambient combat: FSM resumed", logging.INFO)
+
+    def _recover_after_ambient(self) -> None:
+        """Send the FSM to its recovery state: the players are not where the interrupted state left them."""
+        dest = self._recovery_state
+        if dest is None or dest not in self._state_map:
+            self._log_machine(
+                "Ambient combat: the players are not where the interrupted state left them, and this bot"
+                " has no recovery state; running the interrupted state again",
+                logging.WARNING,
+            )
+            return
+        self.force_state(
+            dest,
+            reason=(
+                "Ambient combat: the players are not where the interrupted state left them"
+                f" — recovering to {self._fmt_state(dest)}"
+            ),
+        )
+
+    def note_flee(self) -> bool:
+        """Count one fled fight toward the flee limit. True when this one stopped the bot.
+
+        handle_combat and the ambient watcher both call it. Fight, flee, recovery, fight never
+        trips the same-state or no-match limits, because the states keep changing; this does.
+        """
+        from bartlebot.nodes.timing import AMBIENT_FLEE_LIMIT, AMBIENT_FLEE_WINDOW
+
+        now = time.monotonic()
+        self._flees = [t for t in self._flees if now - t < AMBIENT_FLEE_WINDOW] + [now]
+        if len(self._flees) < AMBIENT_FLEE_LIMIT:
+            return False
+        minutes = AMBIENT_FLEE_WINDOW / 60
+        self._stop_with_reason(
+            f"The players fled {len(self._flees)} fights within {minutes:.0f} minutes. Fleeing means none"
+            " of them could still deal damage: check their decks, their mana and the combat strategy"
+            " before running the bot again."
+        )
+        return True
+
+    def _stop_with_reason(self, reason: str) -> None:
+        """Stop the run for a reason the user should see, and tell them why."""
+        self._log_machine(f"Bot stopped: {reason}", logging.WARNING)
+        self.stop()
+        if self._on_stopped:
+            try:
+                self._on_stopped(reason)
+            except Exception:
+                logger.exception("on_stopped callback raised")
+
+    async def _preempt_node(self) -> bool:
+        """Cancel the running node so the ambient watcher has the clients to itself.
+
+        True once no node is running, so the watcher may move players; False when the node
+        is one that is never cancelled, or would not stop in time.
+
+        Pausing alone only stops the loop at the next node boundary, leaving the node free to
+        move a client the watcher is fighting with. The cancelled state runs again from the
+        start once the watcher resumes (see the loop's CancelledError branch). This waits for
+        the loop to park, so nothing the node started is still running and a node helper the
+        watcher reuses logs as the machine rather than as the cancelled node.
+
+        Never cancels a node in NEVER_PREEMPTED: relog is itself the recovery, and a logout
+        ends the fight anyway. Cancellation is not new to nodes: stop() already does it after
+        its grace period.
+        """
+        from bartlebot.nodes.timing import PREEMPT_PARK_TIMEOUT
+
+        if not self._running:
+            return True  # no loop, so no node to get out of the way
+        task = self._current_node_task
+        if task is not None and not task.done():
+            if self._state_map.get(self.state, {}).get("node_type") in NEVER_PREEMPTED:
+                return False
+            self._preempted = True
+            task.cancel()
+        if not await self.wait_until_parked(PREEMPT_PARK_TIMEOUT):
+            self._log_machine(
+                f"Ambient combat: the interrupted state did not stop within {PREEMPT_PARK_TIMEOUT:.0f}s;"
+                " fighting without moving anyone",
+                logging.WARNING,
+            )
+            return False
+        return True
 
     # --- Unrouted return values ---
 
@@ -898,6 +1004,9 @@ class BotMachine:
         """Resume a paused FSM."""
         if self._health_monitor is not None:
             self._health_monitor.clear_flagged()  # allow re-detection after client recovery
+        # A preemption whose node finished before the cancel landed is never consumed by the
+        # loop. The FSM has already moved on then, and the next state is the right one to run.
+        self._preempted = False
         self._parked.clear()
         self._resume_event.set()
 
@@ -921,6 +1030,7 @@ class BotMachine:
         one for the same event.
         """
         self.machine.set_state(state_id)  # sets self.state via the transitions machine
+        self._rerunning = False
         self._consecutive_same_state_count = 0
         self._no_match_count = 0
         if reason is None:

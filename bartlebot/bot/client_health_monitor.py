@@ -52,7 +52,7 @@ async def _players_on_both_teams(client) -> bool:
     ``original_team`` on purpose: a mind-controlled *enemy* is an NPC either way,
     and reading the team it is fighting for now is the honest answer to "who is on
     each side". A participant that cannot be read is skipped rather than counted,
-    so a partly-readable duel fails open, matching the watcher's own behaviour.
+    so a partly-readable duel fails open, matching the watcher's own behavior.
     """
     teams: set[int] = set()
     for participant in await client.duel.participant_list():
@@ -355,7 +355,7 @@ class ClientHealthMonitor:
 
         # Identify it properly first: this works in every locale the game ships, and it
         # distinguishes an actual disconnect from the other modals that mention a
-        # connection. A recognised non-disconnect dialog is a definite no, so it returns
+        # connection. A recognized non-disconnect dialog is a definite no, so it returns
         # here rather than falling through to the keyword guess.
         key = dialog_captions.identify_caption(text)
         if key is not None:

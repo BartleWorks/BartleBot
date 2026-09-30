@@ -56,7 +56,7 @@ class SettingsDialog(QDialog):
 
         # The four form tabs are as tall as their rows make them -- every setting is a
         # row plus a visible description under it -- so each is wrapped in a scroll area.
-        # Theme scrolls its own colour grid already, and Game is elastic.
+        # Theme scrolls its own color grid already, and Game is elastic.
 
         # General tab
         self._general_tab = ScrollableTab(GeneralTab())
@@ -106,7 +106,7 @@ class SettingsDialog(QDialog):
 
         The bug this exists for: with no maximum, the dialog was as tall as its tallest
         tab asked to be, which on a 1080p screen put OK and Cancel under the taskbar with
-        no way to reach them. The cap is the last line of defence -- the scroll
+        no way to reach them. The cap is the last line of defense -- the scroll
         areas are what keep it from being needed -- so it is deliberately not conditional
         on which tabs happen to be present.
 

@@ -1,4 +1,4 @@
-"""Pinning an account's colour instead of deriving it from the username.
+"""Pinning an account's color instead of deriving it from the username.
 
 The mechanism was already there and nothing wrote it: ``pinned_color_key`` has always
 read a ``color`` slot off the account record, and ``account_color_keys`` has always
@@ -6,7 +6,7 @@ claimed pins first. So what is new is a picker, and what these tests are about i
 things that make a picker safe rather than the swatches themselves:
 
 * **Automatic is a choice, not the absence of one.** It removes the key. A user who picks
-  once has to be able to get a derived colour back, or the de-duplication that keeps a
+  once has to be able to get a derived color back, or the de-duplication that keeps a
   fleet distinct stops applying to that account forever.
 * **The picker says which slots are taken.** Independent choices colliding is the bug
   ``account_accent`` exists to fix; a picker that hid the current assignment would invite
@@ -45,7 +45,7 @@ class _FakeAccountDialog:
     """Stands in for _AccountDialog: exec() is the one thing a test cannot run.
 
     The constructor signature matches the keyword call in the card actions, which is what
-    keeps the stub honest about what the editor is opened on — the colour it was handed
+    keeps the stub honest about what the editor is opened on — the color it was handed
     included.
     """
 
@@ -97,7 +97,7 @@ def _record(username: str) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def test_a_picked_colour_is_written_to_the_account(store, account_editor):
+def test_a_picked_color_is_written_to_the_account(store, account_editor):
     account_editor.result_color = 5
 
     assert accounts_tab.edit_account(ONE) is True
@@ -115,7 +115,7 @@ def test_automatic_removes_the_key_rather_than_storing_a_sentinel(store, account
     assert "color" not in _record(ONE)
 
 
-def test_the_editor_opens_on_the_colour_the_account_already_pins(store, account_editor):
+def test_the_editor_opens_on_the_color_the_account_already_pins(store, account_editor):
     _record(ONE)["color"] = 4
 
     accounts_tab.edit_account(ONE)
@@ -129,14 +129,14 @@ def test_an_account_that_pins_nothing_opens_on_automatic(store, account_editor):
 
 def test_a_stored_pin_outside_the_palette_opens_on_automatic(store, account_editor):
     """``pinned_color_key`` ignores it rather than clamping, and the picker has to agree —
-    otherwise the dialog shows a selection the reader would never honour."""
+    otherwise the dialog shows a selection the reader would never honor."""
     _record(ONE)["color"] = 12
 
     accounts_tab.edit_account(ONE)
     assert account_editor.seen["color"] is None
 
 
-def test_a_new_account_stores_a_colour_only_when_one_was_picked(store, account_editor):
+def test_a_new_account_stores_a_color_only_when_one_was_picked(store, account_editor):
     account_editor.result_color = None
     assert accounts_tab.add_account() is True
     assert "color" not in _record("new@example.com")
@@ -202,9 +202,9 @@ def test_a_slot_outside_the_palette_falls_back_to_automatic(qapp):
     assert _AccountColorPicker(selected=0).selected is None
 
 
-def test_automatic_is_reachable_again_after_a_colour_is_picked(qapp):
+def test_automatic_is_reachable_again_after_a_color_is_picked(qapp):
     """The whole reason Automatic is a swatch of its own: without it a user who pins once
-    can never get a derived colour back."""
+    can never get a derived color back."""
     picker = _AccountColorPicker(selected=2)
     picker.set_selected(None)
     assert picker.selected is None
@@ -226,7 +226,7 @@ def test_one_swatch_is_checked_at_a_time(qapp):
 
 
 def test_taken_slots_are_marked_and_named(qapp):
-    """A marker rather than a disabled swatch: two accounts sharing a colour is the
+    """A marker rather than a disabled swatch: two accounts sharing a color is the
     user's call, but reproducing a collision unknowingly is the bug this module exists
     to prevent."""
     picker = _AccountColorPicker(taken={3: ["One", "Two"]})
@@ -244,10 +244,10 @@ def test_the_dialog_carries_the_pick_back_out(qapp):
     assert dlg.color is None
 
 
-def test_the_marker_is_painted_at_the_centre_of_the_swatch(qapp):
+def test_the_marker_is_painted_at_the_center_of_the_swatch(qapp):
     """It used to be a "•" set as the button's text, which draws on the text baseline and
     lands a pixel or two above the middle of a round swatch. Rendered and measured rather
-    than asserted on a stylesheet, because being centred is the whole claim."""
+    than asserted on a stylesheet, because being centered is the whole claim."""
     picker = _AccountColorPicker(taken={3: ["One"]})
     image = picker.swatches[3].grab().toImage()
     dot = QColor(THEME.pill_text).rgb()
@@ -256,11 +256,11 @@ def test_the_marker_is_painted_at_the_centre_of_the_swatch(qapp):
     assert lit, "no marker was painted"
     # Measured against the grabbed image rather than SWATCH_SIZE: grab() renders at the
     # screen's device pixel ratio, so on a scaled display the two differ. One device
-    # pixel of slack, because an odd ratio cannot land an even-diameter dot dead centre.
+    # pixel of slack, because an odd ratio cannot land an even-diameter dot dead center.
     for extent, axis in ((image.width(), 0), (image.height(), 1)):
         low = min(p[axis] for p in lit)
         high = max(p[axis] for p in lit)
-        assert abs((low + high) - (extent - 1)) <= 1, f"marker off centre on axis {axis}"
+        assert abs((low + high) - (extent - 1)) <= 1, f"marker off center on axis {axis}"
 
 
 def test_a_taken_slot_can_still_be_chosen(qapp):

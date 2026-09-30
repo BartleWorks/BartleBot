@@ -305,10 +305,10 @@ async def test_disconnect_is_detected_in_every_locale(locale):
     assert await ClientHealthMonitor._is_disconnect_modal_visible(_make_client(root_window=root)) is True
 
 
-async def test_a_recognised_non_disconnect_modal_is_not_a_disconnect():
+async def test_a_recognized_non_disconnect_modal_is_not_a_disconnect():
     """The dungeon exit warning is a normal part of running a bot, not a dead client.
 
-    Being catalogued is what settles it: the answer comes from the key, so the caption
+    Being cataloged is what settles it: the answer comes from the key, so the caption
     never reaches the keyword guess.
     """
     root = _make_disconnect_tree(
@@ -321,7 +321,7 @@ async def test_a_recognised_non_disconnect_modal_is_not_a_disconnect():
     assert await ClientHealthMonitor._is_disconnect_modal_visible(_make_client(root_window=root)) is False
 
 
-async def test_an_uncatalogued_caption_still_falls_back_to_keywords():
+async def test_an_uncataloged_caption_still_falls_back_to_keywords():
     """A disconnect dialog reworded by a patch must not stop being detected."""
     root = _make_disconnect_tree(caption_text="Brand new wording about your connection")
 

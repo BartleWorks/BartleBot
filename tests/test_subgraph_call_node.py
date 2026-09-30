@@ -249,13 +249,13 @@ def test_a_new_subgraph_node_follows_the_definitions_defaults(canvas):
 # ---------------------------------------------------------------------------
 
 
-def test_snapping_centres_a_call_node_on_the_grid_row(canvas):
+def test_snapping_centers_a_call_node_on_the_grid_row(canvas):
     from bartlebot.gui.canvas.node_item import GRID_H, GRID_W, NODE_H  # noqa: PLC0415
 
     node = canvas.scene.node_items[REGION]
     assert node.body_height > NODE_H  # or this proves nothing
     node.set_snap_enabled(True)
-    # Centre 17px below row 3: a snap by NODE_H/2 would land it a row out.
+    # Center 17px below row 3: a snap by NODE_H/2 would land it a row out.
     node.setPos(QPointF(GRID_W * 2 + 30, GRID_H * 3 + 17 - node.body_height / 2))
     assert node.pos().x() == GRID_W * 2
     assert node.pos().y() + node.body_height / 2 == pytest.approx(GRID_H * 3)

@@ -8,7 +8,7 @@ menu parented to a button inside one of those then hands Qt a non-top-level
     QWidgetWindow(0x..., name="LeftSidebarClassWindow") must be a top level window.
 
 Real widget tests (QApplication required), in the style of
-test_initial_state_warnings.  The first test pins the Qt behaviour the fix works
+test_initial_state_warnings.  The first test pins the Qt behavior the fix works
 around, so a Qt upgrade that removes it shows up here rather than as a silently
 pointless helper.
 """

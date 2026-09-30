@@ -73,7 +73,7 @@ def edit_drop(entries: list[DropModel], index: int, new_text: str, category: str
 
     Blank text or an out-of-range index leaves the list unchanged. If the new name
     already appears elsewhere the two entries collapse into one, matching the dedup
-    behaviour of adding a drop that is already listed; the first of the two in list
+    behavior of adding a drop that is already listed; the first of the two in list
     order is the one kept, along with its category.
     """
     new_text = new_text.strip()

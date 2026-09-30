@@ -246,7 +246,7 @@ async def test_no_keys_before_the_first_screen_delay(monkeypatch, keys, game):
 
 
 async def test_falls_back_to_blind_when_the_tree_never_reads(keys, fast):
-    """An unreadable tree degrades to the old behaviour rather than failing the launch."""
+    """An unreadable tree degrades to the old behavior rather than failing the launch."""
     blind = FakeGameClient(root_ready=False)
     reached = await auto_select_character(TITLE, Hooked(after=40), lambda: blind)
     assert reached is True

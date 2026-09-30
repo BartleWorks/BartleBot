@@ -42,7 +42,7 @@ class ElidedLabel(QLabel):
 
     A plain QLabel reports its *full* untruncated text width as both its size
     hint and its minimum size hint, and ``QScrollArea(widgetResizable=True)``
-    honours that minimum — so a single long summary line inside a sidebar forces
+    honors that minimum — so a single long summary line inside a sidebar forces
     a horizontal scrollbar across the whole panel.  The combat tab's per-duel
     assignment summaries were asking for ~1157 px inside a sidebar whose minimum
     is 220.
@@ -95,16 +95,16 @@ class ElidedLabel(QLabel):
         self.update()
 
     def set_text_color(self, color: str) -> None:
-        """Paint the text in *color*, and keep painting it in that colour across a theme switch.
+        """Paint the text in *color*, and keep painting it in that color across a theme switch.
 
         Held rather than just written to the palette, because a palette written from
         outside does not survive the switch. ``QApplication.setStyleSheet`` repolishes
         every widget, and the stylesheet style's repolish of *this* label restores the
-        palette it saved at the previous polish -- the old theme's colour. The card that
-        recoloured the label is usually repolished first, so its write is undone and the
+        palette it saved at the previous polish -- the old theme's color. The card that
+        recolored the label is usually repolished first, so its write is undone and the
         text stays in the old theme until something restyles the card again (a hover).
         The label's own ``StyleChange`` arrives after its repolish, so re-applying from
-        there is the one moment the colour sticks whatever order Qt visits them in.
+        there is the one moment the color sticks whatever order Qt visits them in.
         """
         self._text_color = color
         self._apply_text_color()
@@ -193,7 +193,7 @@ class WrappingElidedLabel(QLabel):
     * The full text is the tooltip while a word is elided, ahead of any tooltip the
       caller set; with nothing elided, only the caller's shows.
 
-    Colour and font come from the stylesheet as on any ``QLabel`` -- this paints nothing
+    Color and font come from the stylesheet as on any ``QLabel`` -- this paints nothing
     of its own, unlike :class:`ElidedLabel`.
     """
 

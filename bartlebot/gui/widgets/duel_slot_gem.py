@@ -18,7 +18,7 @@ a user who has never opened that dialog that a purple moon means "last".
 Two places draw this, and both have to agree or the mirroring is worse than not doing it
 at all: :class:`~bartlebot.gui.sidebar.sections.combat_order_widget.CombatOrderWidget`
 where the order is set, and
-:class:`~bartlebot.gui.widgets.player_pills.PlayerBadgeRow` where it is summarised.
+:class:`~bartlebot.gui.widgets.player_pills.PlayerBadgeRow` where it is summarized.
 
 EVERY GEM MAY BE NONE
     The art is extracted per machine (see :mod:`bartlebot.card_art`), so most installs
@@ -39,7 +39,7 @@ from bartlebot.gui.widgets.card_art_tile import ArtIconView, art_icon
 
 #: How big a gem is drawn beside a label. The textures are 64px, so this is a preference
 #: rather than a ceiling -- but below about 20px the four symbols stop resolving and the
-#: gems read as four coloured lozenges, which is still the whole of what they have to say
+#: gems read as four colored lozenges, which is still the whole of what they have to say
 #: on a row that also carries the ordinal.
 GEM_PX = 20
 
@@ -76,7 +76,7 @@ class DuelSlotGem(ArtIconView):
     """One slot's gem, sized to :data:`GEM_PX` and tooltipped with its symbol.
 
     Reads no ``THEME`` value and so needs no ``changeEvent``: the gem is the game's own
-    artwork and keeps its colours in either theme, exactly as ``ArchmasteryBadge`` does.
+    artwork and keeps its colors in either theme, exactly as ``ArchmasteryBadge`` does.
 
     Hidden outright when there is no art, rather than left as a :data:`GEM_PX` hole: the
     row it sits on is four columns wide and an empty column would push the ordinals out

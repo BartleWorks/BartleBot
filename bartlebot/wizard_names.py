@@ -32,7 +32,7 @@ from bartlebot.nodes.timing import CHARACTER_PAGE_SETTLE, TRIGGER_TIMEOUT, jitte
 
 logger = logging.getLogger(__name__)
 
-# Window text arrives wrapped in KI colour markup, e.g.
+# Window text arrives wrapped in KI color markup, e.g.
 #   "<Color;255,255,255>Wolf Deathblade</Color>"
 # Deimos strips this with a fixed [8:-9] slice, which breaks the moment the tag carries
 # different attributes. Strip every <...> tag instead and keep what is left.
@@ -40,7 +40,7 @@ _MARKUP_TAG = re.compile(r"<[^>]*>")
 
 
 def strip_markup(raw: str | None) -> str:
-    """Return window text with KI colour markup removed and whitespace collapsed.
+    """Return window text with KI color markup removed and whitespace collapsed.
 
     Public because every wizard name read out of the UI needs the same treatment wherever
     it comes from — the character page here, the combat nameplate below, and the group
@@ -329,7 +329,7 @@ async def resolve_names(clients: list) -> list[str | None]:
     contend over. Each client is its own process with its own UI, and send_key posts to a
     single window handle, so the keypresses cannot cross. Almost all of the elapsed time is
     the CHARACTER_PAGE_SETTLE sleep plus the poll pauses in _read_title_scroll, and those
-    overlap perfectly; only the ReadProcessMemory calls serialise on the loop thread.
+    overlap perfectly; only the ReadProcessMemory calls serialize on the loop thread.
 
     Three routes are tried in order, cheapest first:
 

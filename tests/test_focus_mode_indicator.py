@@ -6,11 +6,11 @@ three months earlier, so the interesting part is *why* that failed to register:
 
 * it was styled exactly like every other piece of chrome, so it read as furniture
 * it never named a mode, and never said how to leave
-* the camera did not move, so a small or off-centre region stayed small and
-  off-centre while the rest of the graph vanished — the canvas simply looked empty
+* the camera did not move, so a small or off-center region stayed small and
+  off-center while the rest of the graph vanished — the canvas simply looked empty
 
 So the indicator is three reinforcing signals: the camera frames the region, a border
-in the region's own colour surrounds the viewport, and the pill names the mode.
+in the region's own color surrounds the viewport, and the pill names the mode.
 
 Real widget tests (QApplication required). Nothing reads pixels; these check the
 wiring, the text, and the camera.
@@ -141,7 +141,7 @@ def test_the_pill_says_how_to_leave(canvas):
 # ---------------------------------------------------------------------------
 
 
-def test_the_frame_is_painted_in_the_focused_region_colour(canvas):
+def test_the_frame_is_painted_in_the_focused_region_color(canvas):
     from bartlebot.gui.theme import THEME
 
     c = canvas()
@@ -219,8 +219,8 @@ def test_the_camera_lands_on_the_focused_region(canvas):
 
     c.enter_focus_mode("r2")
 
-    centre = c.view.mapToScene(c.view.viewport().rect().center())
-    assert c.scene.region_items["r2"].scene_bounds.contains(centre)
+    center = c.view.mapToScene(c.view.viewport().rect().center())
+    assert c.scene.region_items["r2"].scene_bounds.contains(center)
 
 
 def test_leaving_focus_mode_puts_the_camera_back(canvas):

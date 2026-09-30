@@ -1,9 +1,9 @@
 """Tests for the app-wide "this control is disabled" signal.
 
 Disabled state used to be carried entirely by ``QPalette.Disabled.ButtonText``
-set to ``text_muted`` — the same colour as *enabled* secondary text — on an
-otherwise unchanged button, and by icons that Qt could not meaningfully grey out
-because they had already been flattened to a single tint colour.  The result was
+set to ``text_muted`` — the same color as *enabled* secondary text — on an
+otherwise unchanged button, and by icons that Qt could not meaningfully gray out
+because they had already been flattened to a single tint color.  The result was
 readable either way, so "disabled" was indistinguishable from "enabled".
 """
 
@@ -49,7 +49,7 @@ def test_disabled_button_differs_from_enabled_button_in_both_roles(qapp, theme):
 
 
 def test_svg_icon_carries_an_explicit_disabled_pixmap(qapp):
-    """Qt's generated disabled variant is a near no-op on a flat single-colour icon."""
+    """Qt's generated disabled variant is a near no-op on a flat single-color icon."""
     icon = svg_icon("more_vert", 16)
 
     normal = icon.pixmap(16, 16, QIcon.Mode.Normal).toImage()

@@ -53,7 +53,7 @@ def source_pill(source: Origin) -> QLabel:
     """The pill naming where a strategy comes from, weighted like ``ActionButton``.
 
     A built-in is filled with the accent (``PRIMARY``), a modified built-in outlined in
-    it (``SECONDARY``) and anything else grey (``TERTIARY``). All three are the same
+    it (``SECONDARY``) and anything else gray (``TERTIARY``). All three are the same
     height, so a card does not change size when an edit turns one into another.
     """
     text = SOURCE_LABELS[source]
@@ -128,7 +128,7 @@ class StrategyCard(QWidget):
                 # Always shown, and a pill of words rather than a glyph: no icon says
                 # "ships with the app" unaided (#124). Three weights, on ActionButton's
                 # model: a built-in filled with the accent, a modified built-in outlined
-                # in it, and a custom one grey.
+                # in it, and a custom one gray.
                 pill = source_pill(summary.source)
                 row.addWidget(pill, 0, Qt.AlignmentFlag.AlignTop)
                 self._source_pill = pill
@@ -155,7 +155,7 @@ class StrategyCard(QWidget):
         # THEME.font_subtext_px — so they are held as one list rather than as three
         # named attributes each restyled by its own line of _apply_style. The three
         # copies were identical apart from the attribute they wrote to, and one of them
-        # had already been given a colour the other two lacked.
+        # had already been given a color the other two lacked.
         self._sub_lbls: list[QLabel] = []
 
         if summary.description:

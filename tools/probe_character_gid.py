@@ -56,7 +56,7 @@ It also dumps the bytes around each roster hit. If name keys or a level sit besi
 gid, then enumerating an account's characters for the launch cards falls out for free;
 name keys are the one encoding bartlebot.name_tables can already decode. And because a
 selection held as an *index* rather than a gid would never show up in step 3, the same
-neighbourhood snapshot is re-read after the desk click, so a small integer changing
+neighborhood snapshot is re-read after the desk click, so a small integer changing
 beside the roster is caught without a second full scan.
 
 WHAT THIS DOES NOT ANSWER
@@ -107,8 +107,8 @@ from bartlebot.nodes.paths import CHAR_SELECT_PLAY_PATH
 
 # Bytes either side of a hit to snapshot. A roster entry is the thing we hope to find
 # structure in -- a name key triple is 12 bytes, a level is 4 -- so this is sized to
-# bracket one entry and its neighbours rather than to be read in full by eye.
-NEIGHBOURHOOD = 256
+# bracket one entry and its neighbors rather than to be read in full by eye.
+NEIGHBORHOOD = 256
 
 # How long to wait for character select before giving up, and how often to look.
 CHAR_SELECT_TIMEOUT = 300.0
@@ -195,7 +195,7 @@ async def _snapshot(client, addresses: list[int]) -> dict[int, bytes]:
     out: dict[int, bytes] = {}
     for address in addresses:
         try:
-            out[address] = await client.hook_handler.read_bytes(address - NEIGHBOURHOOD, NEIGHBOURHOOD * 2 + 8)
+            out[address] = await client.hook_handler.read_bytes(address - NEIGHBORHOOD, NEIGHBORHOOD * 2 + 8)
         except Exception:
             continue
     return out
@@ -215,10 +215,10 @@ def _changed_spans(before: bytes, after: bytes) -> list[tuple[int, bytes, bytes]
         if differs and start is None:
             start = i
         elif not differs and start is not None:
-            spans.append((start - NEIGHBOURHOOD, before[start:i], after[start:i]))
+            spans.append((start - NEIGHBORHOOD, before[start:i], after[start:i]))
             start = None
     if start is not None:
-        spans.append((start - NEIGHBOURHOOD, before[start:], after[start:]))
+        spans.append((start - NEIGHBORHOOD, before[start:], after[start:]))
     return spans
 
 
@@ -317,7 +317,7 @@ async def probe(hwnd: int, report: _Report) -> None:
         report.say("The new value is character B's id, learned without ever playing B.")
     else:
         report.say("Nothing changed. The selection is not stored as a gid.")
-        report.say("If an index changes beside the roster, the neighbourhood diff below finds it.")
+        report.say("If an index changes beside the roster, the neighborhood diff below finds it.")
 
     if unchanged:
         report.say("")
@@ -325,7 +325,7 @@ async def probe(hwnd: int, report: _Report) -> None:
         for address in unchanged:
             report.say(f"    0x{address:x}  [{_module_of(client.hook_handler.process, address) or 'heap'}]")
 
-    # ── 4b. Neighbourhood diff — catches an index, and shows roster structure ─
+    # ── 4b. Neighborhood diff — catches an index, and shows roster structure ─
     after = await _snapshot(client, candidates)
     report.say("")
     report.say("Bytes that changed near each hit (offset relative to the hit):")
@@ -348,7 +348,7 @@ async def probe(hwnd: int, report: _Report) -> None:
     if unchanged and unchanged[0] in after:
         block = after[unchanged[0]]
         for row in range(0, len(block), 32):
-            report.say(f"    {row - NEIGHBOURHOOD:+5d}  {block[row : row + 32].hex()}")
+            report.say(f"    {row - NEIGHBORHOOD:+5d}  {block[row : row + 32].hex()}")
 
     # ── 5. The kill test ─────────────────────────────────────────────────────
     if not changed:

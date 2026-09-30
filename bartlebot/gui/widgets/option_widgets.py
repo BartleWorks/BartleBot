@@ -81,7 +81,7 @@ class BoolChoice(QWidget):
 
     A checkbox is the right control in a *list* of options, where the caption is
     the option's name and a tick plainly means yes.  On its own, under a field
-    labelled "Default", a lone box captioned "True" reads as though False were
+    labeled "Default", a lone box captioned "True" reads as though False were
     unavailable -- and now that a declaration can also be *absent*, an unticked
     box is genuinely ambiguous between "False" and "nothing chosen".  Two radios
     say all three states without a word of explanation: True, False, or neither.
@@ -171,7 +171,7 @@ def make_option_widget(
 ) -> QWidget:
     """Build the control that edits an option of *opt_type*, showing *value*.
 
-    *connected* is how many clients are hooked right now; it only greys the player
+    *connected* is how many clients are hooked right now; it only grays the player
     checkboxes that have nobody behind them.  *label* is the checkbox caption a
     ``bool`` carries instead of a separate field label.  Pass *explicit_bool* where
     a bool is not sitting in a list of named options and needs to state both
@@ -243,7 +243,7 @@ def make_option_widget(
 
 
 def block_separate_if_merging(widget: QWidget, config) -> None:
-    """Grey out a Player Realms control's Separate choice when *config* cannot be Separate.
+    """Gray out a Player Realms control's Separate choice when *config* cannot be Separate.
 
     A no-op for any other control, so both surfaces can call it on every row. See
     :mod:`bartlebot.player_realms` for the rule; this is the first of its three enforcers.

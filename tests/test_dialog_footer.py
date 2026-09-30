@@ -140,7 +140,7 @@ def test_a_button_built_before_the_footer_gives_up_its_claim_on_enter(qapp):
 def test_the_claim_is_renewed_when_the_dialog_is_shown(qapp):
     """The half a build-time sweep alone gets wrong. A widget in a free-standing layout
     has no parent until that layout is installed, so at footer-build time most of a
-    dialog's buttons are not its children yet — the region colour picker's six swatches
+    dialog's buttons are not its children yet — the region color picker's six swatches
     are none of them. Worse, ``autoDefault`` is *acquired* on reparenting: Qt reports it
     for any button whose parent is a dialog, so a button the sweep could not see does not
     merely keep an old answer, it turns into a rival for Enter afterwards."""

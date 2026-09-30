@@ -364,7 +364,7 @@ class AppController(QObject):
         # ClientManager.reorder_clients.
         w.right_sidebar.clients.reordered.connect(self._client_manager.reorder_clients)
 
-        # Which account a client belongs to, for the colour stripe down its card. Injected
+        # Which account a client belongs to, for the color stripe down its card. Injected
         # rather than signalled: identities are learned inside the client loop and nothing
         # announces one arriving, so the section re-asks on each refresh tick.
         w.right_sidebar.clients.set_account_source(self._client_manager.account_for)
@@ -417,7 +417,7 @@ class AppController(QObject):
         # The canvas is never closed: Qt delivers QCloseEvent to the window being
         # closed, not to its children, so its own closeEvent never fires in the app.
         self._app.aboutToQuit.connect(self._window.bot_canvas.prepare_for_shutdown)
-        # Last line of defence for a quit that never reached closeEvent (a session logout,
+        # Last line of defense for a quit that never reached closeEvent (a session logout,
         # an app.quit() from elsewhere): releasing the windows is synchronous, so it still
         # works here, where there is no loop left to await an unhook on.
         self._app.aboutToQuit.connect(self._window.game_view.unembed_all)
@@ -1678,6 +1678,7 @@ class AppController(QObject):
             on_client_disconnected=self._on_machine_client_disconnected,
             on_restricted_zone=self._on_machine_restricted_zone,
             on_explicit_stop=self._on_machine_explicit_stop,
+            on_stopped=self._on_machine_stopped,
         )
         self._current_machine = machine
         self._client_manager.set_machine(machine)
@@ -1931,6 +1932,14 @@ class AppController(QObject):
             body += "\n\n" + reason
         QTimer.singleShot(0, lambda: QMessageBox.information(self._window, "Bot Stopped", body))
 
+    def _on_machine_stopped(self, reason: str) -> None:
+        """Called when the machine stops itself for a reason the user should see (the flee limit).
+
+        Deferred through the event loop for the same re-entrancy reason as
+        _on_machine_explicit_stop.
+        """
+        QTimer.singleShot(0, lambda: QMessageBox.information(self._window, "Bot Stopped", reason))
+
     def _on_machine_restricted_zone(self, description: str) -> None:
         """Called by the health monitor when a client reaches a restricted zone.
 
@@ -2055,7 +2064,7 @@ class AppController(QObject):
         self._window.set_client_summary(len(clients))
         self._window.left_sidebar.combat_tab.set_client_count(len(clients))
         self._refresh_authoring_bar()
-        # Player checkboxes grey out the players nobody is behind; both panels build
+        # Player checkboxes gray out the players nobody is behind; both panels build
         # them once and would otherwise stay stale until the next node selection.
         self._window.bot_canvas.refresh_player_availability()
         self._window.left_sidebar.refresh_player_availability()

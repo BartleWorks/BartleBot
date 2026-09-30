@@ -25,7 +25,7 @@ from bartlebot.gui.widgets.card_frame import GRIP_GUTTER
 
 # Border width of the Add card's dashed outline. Two, not one, because Qt scales a dash
 # pattern by the pen width: a 1px dashed border draws as a row of 1px dots, which at the
-# subtle border colour is a line you have to look for -- on the top and left edges of a
+# subtle border color is a line you have to look for -- on the top and left edges of a
 # dark-theme card it was not visible at all. At 2px the dashes are dashes, and the card
 # reads at about the weight of the 1px solid border on the launch cards above it, because
 # the gaps give back what the extra pixel takes.
@@ -48,7 +48,7 @@ class AddCard(ThemedMixin, QWidget):
 
     Deliberately *not* a ``CardFrame`` subclass. It launches nothing and has no
     resolution to judge, so keeping it outside that hierarchy is what makes the launch
-    columns' fit pass unable to grey it: ``refresh_fit`` walks the launch cards and calls
+    columns' fit pass unable to gray it: ``refresh_fit`` walks the launch cards and calls
     ``set_unavailable`` on each, and this class does not have that method to call. It is
     also not a member of any ordered list -- nothing is dragged onto it and nothing is
     dropped after it. It is the collection's terminator.

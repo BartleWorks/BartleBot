@@ -28,7 +28,7 @@ THE VERBS
   with that strategy selected. Only on a card that links one. A pencil that merely
   unfolded the card read as "edit this strategy's DSL" and did nothing of the kind
   (#112), and nothing else here led to the DSL a linked card runs. Default, custom and
-  missing cards have nothing to open, so the button is withdrawn rather than greyed —
+  missing cards have nothing to open, so the button is withdrawn rather than grayed —
   the same call ``StrategyBindingCard`` makes for an inline config.
 * **dismiss** — remove the assignment.
 * **chevron** — the rest of the form, unfolded in place: the school, the note, and (only
@@ -153,7 +153,7 @@ class AssignmentCard(CardFrame):
         self._suppress = False
         self._editable = True
         # Whether anything is listening for the pencil with somewhere to take it. Pick
-        # has no Player tab, so there the pencil is greyed rather than a dead button.
+        # has no Player tab, so there the pencil is grayed rather than a dead button.
         self._can_open_pcs = True
         self._expanded = False
         # The title without its warning mark. Set before ``_build`` because a theme pass
@@ -346,7 +346,7 @@ class AssignmentCard(CardFrame):
         self._refresh()
 
     def set_can_open_pcs(self, can_open: bool) -> None:
-        """Grey the pencil when nothing can take it anywhere (Pick has no Player tab)."""
+        """Gray the pencil when nothing can take it anywhere (Pick has no Player tab)."""
         self._can_open_pcs = can_open
         self._sync_verb_buttons()
 
@@ -371,7 +371,7 @@ class AssignmentCard(CardFrame):
             self.changed.emit()
 
     def set_player_color_keys(self, keys: list[int | None], labels: list[str] | None = None) -> None:
-        """Colour the pills by the account in each slot — see gui/widgets/player_pills.py."""
+        """Color the pills by the account in each slot — see gui/widgets/player_pills.py."""
         self._pills.set_color_keys(keys)
         self._pills.set_account_labels(labels or [])
 
@@ -509,7 +509,7 @@ class AssignmentCard(CardFrame):
             self._details.setVisible(self._expanded)
             self._chevron.set_icon_name("chevron_up" if self._expanded else "chevron_down")
             self._chevron.setToolTip(HIDE_DETAILS if self._expanded else SHOW_DETAILS)
-            # Withdrawn rather than greyed, as on ``StrategyBindingCard``: with no linked
+            # Withdrawn rather than grayed, as on ``StrategyBindingCard``: with no linked
             # strategy there is nothing to open, and the button holds its space either way.
             pencil = self.action_button(EDIT_VERB)
             if pencil is not None:

@@ -36,8 +36,8 @@ class GameData:
         except Exception:
             logger.exception("Could not read zonemap.nav; the world tree will only follow recorded links")
 
-    def neighbours(self, zone: str) -> set[str]:
-        return self._graph.neighbours(zone) if self._graph is not None else set()
+    def neighbors(self, zone: str) -> set[str]:
+        return self._graph.neighbors(zone) if self._graph is not None else set()
 
     def volumes(self, zone: str) -> list[Point]:
         """(name, position) of each volume in `zone`."""

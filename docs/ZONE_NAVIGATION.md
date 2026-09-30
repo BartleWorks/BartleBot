@@ -75,7 +75,7 @@ of this one list, not the zone's actual display name in any language.
 Sometimes the zone's own display name is worse than merely absent from the list: it is
 *another* zone's real row. Empyrea's hub list has two separate rows that both lead to a
 zone called "Chaos Jungle" in the game's own data (`EM_Z12_LandingZone` and
-`EM_Z14_ChaosJungle`), but only one of them, the actual Chaos Jungle, is labelled that in
+`EM_Z14_ChaosJungle`), but only one of them, the actual Chaos Jungle, is labeled that in
 the list — the other's row reads "Mandalla". Adding "Mandalla" as an ordinary `list_aliases`
 entry is not enough: the search tries every candidate against every row on the page, so the
 locale names for "Chaos Jungle" would still match the *other* zone's row before "Mandalla"
@@ -184,7 +184,7 @@ beat, but never to a route with more transitions.
 `plan()` and `navigate()` take `avoid`, a set of kinds the route must not use. Avoiding
 `object` and `list` gives the route on foot, which is how a street route gets tested when a
 teleporter always wins, and how to skip a teleporter whose cooldown makes walking faster;
-cooldowns between uses are not modelled yet. Avoiding `hub` does the same for the hub button,
+cooldowns between uses are not modeled yet. Avoiding `hub` does the same for the hub button,
 and avoiding `home` keeps a route to the gates it can reach without pressing HOME. Regrouping
 (the hub button, or HOME for a group split across worlds) is not affected.
 
@@ -331,7 +331,7 @@ one who made it. Under `Player Realms: Separate` every player travels, and nobod
 ## Mapping it: the tester
 
 `uv run python -m tools.zone_nav_tester` hooks one client and shows a tree of the current world
-rooted at its hub, coloured by whether each zone has a verified route, a tentative one, or
+rooted at its hub, colored by whether each zone has a verified route, a tentative one, or
 none. Its Map tab records zone changes as you play, detects the kind, fills in coordinates,
 matches a walk to its volume and the landing to an arrival point, and saves the result into
 `zone_nav.json` as a verified link — without replacing a verified link that already exists

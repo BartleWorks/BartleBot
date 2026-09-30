@@ -299,7 +299,7 @@ class DropSection(QWidget):
         """Enable the filter only when there is a keep list, and say so either way.
 
         Ticked with nothing to filter to, the box would hide every row, which reads
-        as a broken table rather than as an answer — so it goes grey, its tooltip
+        as a broken table rather than as an answer — so it goes gray, its tooltip
         says why, and a tick left over from the previous bot is dropped.
         """
         has_keep_list = bool(self._keep_list)

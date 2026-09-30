@@ -10,7 +10,7 @@ from bartlebot.launcher import launch_profile
 from bartlebot.settings_manager import SettingsManager
 
 # Shaped like the game's own file: a declaration it parses strictly, tags carrying
-# attributes, and neighbours that must survive untouched.
+# attributes, and neighbors that must survive untouched.
 CONFIG_XML = (
     '<?xml version="1.0" encoding="utf-8"?>\n'
     "<config>\n"
@@ -41,7 +41,7 @@ def test_patch_rewrites_only_the_named_tag_text(config):
     launch_profile._patch_xml_fields(config, {"WindowedX": "50"})
     text = config.read_text(encoding="utf-8")
     assert '<WindowedX TYPE="INT">50</WindowedX>' in text
-    # Declaration, attributes and neighbours are byte-identical.
+    # Declaration, attributes and neighbors are byte-identical.
     assert text == CONFIG_XML.replace(">258<", ">50<")
 
 

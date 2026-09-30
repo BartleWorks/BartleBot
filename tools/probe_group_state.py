@@ -90,7 +90,7 @@ def _fmt_row(label: str, state: dict) -> str:
 
 
 def _verdict(states: list[dict]) -> str:
-    """Summarise what the current readings imply, so the answers are not left to eyeballing."""
+    """Summarize what the current readings imply, so the answers are not left to eyeballing."""
     gids = [s["group_gid"] for s in states]
     numeric = [g for g in gids if isinstance(g, int)]
     if not numeric:

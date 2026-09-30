@@ -156,7 +156,7 @@ def test_a_world_gate_is_reported_as_one():
     assert spot.world_gate is True
 
 
-def test_the_hub_button_greying_out_makes_it_the_hub_button():
+def test_the_hub_button_graying_out_makes_it_the_hub_button():
     [t] = _feed(
         Recorder(),
         [_at(0.0, _A, 0, hub_enabled=True), _at(0.2, _A, 0, hub_enabled=False), _load(0.4, 0), _at(3, _B, 0)],
@@ -171,7 +171,7 @@ def test_a_button_already_cooling_down_does_not_make_a_walk_a_hub_use():
     assert t.kind == WALK
 
 
-def test_the_speedhack_greying_the_hub_button_for_one_tick_does_not_make_a_walk_a_hub_use():
+def test_the_speedhack_graying_the_hub_button_for_one_tick_does_not_make_a_walk_a_hub_use():
     """Confirmed live: under the speedhack, a plain walk reads hub_enabled True for the whole
     signal window and then False on the single sample just before loading, every time -- the
     same shape a real click leaves. speed_boosted on that last sample is what tells them apart.

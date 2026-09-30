@@ -96,7 +96,7 @@ def _player_card_needs(sidebar: RightSidebar) -> int:
 
 
 def _row_floor(row: QBoxLayout) -> int:
-    """The narrowest *row* can be laid out at without a widget clipping its neighbour.
+    """The narrowest *row* can be laid out at without a widget clipping its neighbor.
 
     A widget whose horizontal policy carries ``ShrinkFlag`` is taken at its minimum hint
     and everything else at its natural one, which is what a ``QBoxLayout`` itself does —
@@ -357,7 +357,7 @@ def test_the_player_card_fits_the_right_sidebar_at_its_floor(qapp):
     CI, which resolves the ``windows11`` style where a button's minimum is 81px rather
     than 75, needed 303px inside the 300 it was promised.
 
-    The floor itself did not move when the Players tab card rework replaced the labelled tool row with icon
+    The floor itself did not move when the Players tab card rework replaced the labeled tool row with icon
     verbs. The card only ever needs less than it did, so the margin here got wider rather
     than the number getting smaller — see ``RightSidebar._apply_width_floor``.
     """

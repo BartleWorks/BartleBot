@@ -131,7 +131,7 @@ def _field(tab, label: str):
             item = form.itemAt(i, QFormLayout.ItemRole.LabelRole)
             if item is not None and item.widget() is not None and item.widget().text() == label:
                 return form.itemAt(i, QFormLayout.ItemRole.FieldRole).widget()
-    raise AssertionError(f"no settings row labelled {label!r}")
+    raise AssertionError(f"no settings row labeled {label!r}")
 
 
 def _rows(tab) -> list[list]:

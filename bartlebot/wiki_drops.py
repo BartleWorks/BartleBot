@@ -17,9 +17,9 @@ drops collapse to one in-game name, keeping one of them keeps all six. No amount
 of care in the keep list can separate them, because the text the node reads is
 the same for all six.
 
-Normalisation is deliberately conservative. A suffix is stripped only when it
-appears in the table below; anything unrecognised is left exactly as it is, which
-degrades to the behaviour that predates this module rather than to a wrong guess.
+Normalization is deliberately conservative. A suffix is stripped only when it
+appears in the table below; anything unrecognized is left exactly as it is, which
+degrades to the behavior that predates this module rather than to a wrong guess.
 ``tools/drop_name_patterns.py`` reports any suffix in the library that no rule
 here accounts for, so a new one shows up as a failing check rather than as an
 item that quietly sells.

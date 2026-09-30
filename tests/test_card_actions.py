@@ -378,8 +378,8 @@ def test_a_profile_card_menu_names_the_profile(qapp, label, signal_name):
 # already owned them for ProfileCard and now runs them over both card types.
 
 
-def test_a_greyed_card_still_offers_its_menu(qapp):
-    """Editing the profile is exactly what the greyed card is telling the user to do."""
+def test_a_grayed_card_still_offers_its_menu(qapp):
+    """Editing the profile is exactly what the grayed card is telling the user to do."""
     card = ProfileCard({"name": "Solo", "accounts": [ONE]}, _accounts(ONE))
     card.set_unavailable("Needs a bigger screen")
 

@@ -5,7 +5,7 @@ apply, so the medallion names the school only when the apply will actually set i
 the universal mark stands in otherwise -- naming a school there would be a claim about
 the wizard the deck does not make.
 
-Icons are written into a tmp art cache in distinguishable colours, which is how these
+Icons are written into a tmp art cache in distinguishable colors, which is how these
 tell "drew the school" from "drew the universal mark" apart.
 """
 
@@ -21,8 +21,8 @@ from bartlebot.bot.strategy_models import DeckData
 from bartlebot.gui.sidebar.combat_tab import _PlayerDecksSection
 from bartlebot.gui.widgets.archmastery_badge import ArchmasteryBadge, extracted_icon, school_icon_for
 
-#: A colour per icon key, so a pixmap can be identified by reading a pixel out of it.
-COLOURS = {
+#: A color per icon key, so a pixmap can be identified by reading a pixel out of it.
+COLORS = {
     card_art.ARCHMASTERY_ICON: QColor("red"),
     card_art.UNIVERSAL_ICON: QColor("blue"),
     "school_fire": QColor("green"),
@@ -38,18 +38,18 @@ def art_home(tmp_path, monkeypatch):
     card_art.forget_cache()
 
 
-def _extract_icons(keys=tuple(COLOURS), *, images: dict[str, str] | None = None) -> None:
+def _extract_icons(keys=tuple(COLORS), *, images: dict[str, str] | None = None) -> None:
     """Stand in for a real extraction: an index with an ``icons`` map, and a PNG each."""
     card_art.icons_dir().mkdir(parents=True, exist_ok=True)
     icons = {key: f"{key}.png" for key in keys}
     card_art.index_path().write_text(json.dumps({"images": images or {}, "icons": icons}), encoding="utf-8")
     for key in keys:
         pixmap = QPixmap(32, 32)
-        pixmap.fill(COLOURS[key])
+        pixmap.fill(COLORS[key])
         assert pixmap.save(str(card_art.icons_dir() / f"{key}.png"), "PNG")
 
 
-def _colour_of(icon: QIcon) -> QColor:
+def _color_of(icon: QIcon) -> QColor:
     image = icon.pixmap(16).toImage()
     return image.pixelColor(image.width() // 2, image.height() // 2)
 
@@ -63,7 +63,7 @@ def test_the_school_medallion_is_drawn_when_the_school_will_be_set(art_home, qap
     icon = school_icon_for("Fire", will_set=True)
 
     assert icon is not None
-    assert _colour_of(icon) == COLOURS["school_fire"]
+    assert _color_of(icon) == COLORS["school_fire"]
 
 
 def test_the_universal_mark_stands_in_when_the_school_will_not_be_set(art_home, qapp):
@@ -74,7 +74,7 @@ def test_the_universal_mark_stands_in_when_the_school_will_not_be_set(art_home, 
     icon = school_icon_for("Fire", will_set=False)
 
     assert icon is not None
-    assert _colour_of(icon) == COLOURS[card_art.UNIVERSAL_ICON]
+    assert _color_of(icon) == COLORS[card_art.UNIVERSAL_ICON]
 
 
 def test_a_school_is_found_whatever_case_the_deck_stored_it_in(art_home, qapp):
@@ -103,8 +103,8 @@ def test_the_badge_draws_both_icons(art_home, qapp):
     badge.set_archmastery("Fire", will_set=True, tooltip="Archmastery: Fire · always set")
 
     assert badge.has_icons()
-    assert _colour_of(badge._mark.icon()) == COLOURS[card_art.ARCHMASTERY_ICON]
-    assert _colour_of(badge._school.icon()) == COLOURS["school_fire"]
+    assert _color_of(badge._mark.icon()) == COLORS[card_art.ARCHMASTERY_ICON]
+    assert _color_of(badge._school.icon()) == COLORS["school_fire"]
     assert "always set" in badge.toolTip()
 
 
@@ -181,7 +181,7 @@ def test_a_deck_that_will_not_set_its_school_shows_the_universal_mark(art_home, 
 
     badge = section.card(1)._archmastery_icons
     assert badge.has_icons()
-    assert _colour_of(badge._school.icon()) == COLOURS[card_art.UNIVERSAL_ICON]
+    assert _color_of(badge._school.icon()) == COLORS[card_art.UNIVERSAL_ICON]
 
 
 def test_neither_form_appears_without_a_school(art_home, qapp):

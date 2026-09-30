@@ -1,6 +1,6 @@
-"""A ``QLabel`` whose colour follows the theme, for the many small captions.
+"""A ``QLabel`` whose color follows the theme, for the many small captions.
 
-Most themed labels in the app say the same thing: one ``THEME`` colour, plus a size
+Most themed labels in the app say the same thing: one ``THEME`` color, plus a size
 and weight that never change. Written inline that is a one-line ``setStyleSheet``
 that silently goes stale, and written correctly it is a ``changeEvent`` override per
 label. This is the third option.
@@ -11,7 +11,7 @@ the staleness lands on whichever widget happened to call them. Returning one of 
 fixes every caller at once, which is why the player card, ``SidebarField`` and
 ``OptionsSection`` needed no changes of their own.
 
-The colour is named rather than resolved, because a resolved value is exactly the
+The color is named rather than resolved, because a resolved value is exactly the
 snapshot this exists to avoid: ``THEME`` is a proxy, and the token has to be read
 again on each apply.
 """
@@ -30,7 +30,7 @@ def _token_sheet(color_token: str, css: str) -> str:
 
 
 class ThemedTextLabel(ThemedMixin, QLabel):
-    """A label that re-reads its colour token whenever the theme changes."""
+    """A label that re-reads its color token whenever the theme changes."""
 
     def __init__(
         self,

@@ -5,7 +5,7 @@
        separate the rows within a tile. At the old 6/12/18 the seam was a 12-unit gap and
        the stack read as bands of six rather than one continuous handle.
 
-       Every centre and radius is a whole fraction of the box that lands on a whole pixel
+       Every center and radius is a whole fraction of the box that lands on a whole pixel
        at the size this is drawn at (_GRIP_DOTS, a multiple of 6): 4/12/20 and 8/16 of 24
        become 2/6/10 and 4/8 of 12, with a 1px radius. Off the pixel grid a 2px dot
        straddles a boundary and antialiases to a smear, and half a column doing that reads

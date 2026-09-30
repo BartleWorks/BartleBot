@@ -1,7 +1,7 @@
 """The in-game realm list: opening it, paging it, and hopping to a row.
 
 Shared by ``change_realm``'s two modes. Next-realm mode walks a page range and picks
-the row after the current one; favourite mode walks every page looking for one name.
+the row after the current one; favorite mode walks every page looking for one name.
 Everything between -- the spellbook, the Preferences tab, the Realms tab, the render
 wait, the page arrows, the cooldown on Go To Realm, the two modals that can interrupt
 it -- is the same in both and lives here once.

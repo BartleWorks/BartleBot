@@ -3,7 +3,7 @@
 The Quick Launch screen and the Game settings tab describe the same two things --
 accounts and launch profiles -- and used to do it in two unrelated visual languages: a
 column of cards on one, a ``QListWidget`` of formatted strings on the other. Nothing
-about an account's colour, its roster or whether it would fit survived the trip to the
+about an account's color, its roster or whether it would fit survived the trip to the
 surface where accounts are actually *edited*.
 
 They draw the same cards now, out of this one widget, which owns everything a column has
@@ -29,8 +29,8 @@ one place where it cannot be fixed on one surface and left broken on the other.
 THE TWO SURFACES ARE STILL DIFFERENT
 
 Same cards, two verbs. A body click launches on the launch screen and edits in the tab,
-and a card that will not fit is greyed and refuses its clicks there but is only *noted*
-in the tab -- greying out the row the user came here to fix is hostile, and the tab is
+and a card that will not fit is grayed and refuses its clicks there but is only *noted*
+in the tab -- graying out the row the user came here to fix is hostile, and the tab is
 where they fix it. Both of those are the card's own flags (see ``launch_cards``); what
 this module varies is the banner's "Change resolution" link, which the tab omits because
 the combo box it would point at is already on screen above the columns.
@@ -113,7 +113,7 @@ def profile_banner_text(problems: list[FitProblem], total: int) -> str:
 
     Whether some or all of them fail changes what the user needs to be told. All of them
     is a fact about the panel and comes with the ways out. Some of them is a fact about
-    those profiles -- the column still works, and each greyed card carries its own numbers
+    those profiles -- the column still works, and each grayed card carries its own numbers
     saying what it wanted -- so the banner says which state the list is in and leaves the
     per-profile detail on the per-profile cards.
     """
@@ -182,7 +182,7 @@ class _FitBanner(QWidget):
 
         self.setVisible(False)
 
-    # No ``apply_theme_styles``: the banner holds no colour of its own any more. Both of
+    # No ``apply_theme_styles``: the banner holds no color of its own any more. Both of
     # its children re-derive their own on a theme switch, which is the whole point of
     # them being ``ThemedTextLabel`` and ``LinkButton`` rather than styled in here.
 
@@ -205,7 +205,7 @@ class _FitBanner(QWidget):
 class CardColumn(QWidget):
     """A titled, scrolling, drag-reorderable column of cards with an Add card at its foot.
 
-    Not a ``ThemedMixin``, and deliberately: every coloured thing in here owns its own
+    Not a ``ThemedMixin``, and deliberately: every colored thing in here owns its own
     palette already -- the heading is a ``ThemedTextLabel``, the rule is drawn by the
     style, the banner and the cards restyle themselves. A mixin here would be an
     ``apply_theme_styles`` with nothing to put in it.
@@ -440,7 +440,7 @@ def refresh_column_fit(
 
     Shared by both surfaces because it is the same question on each. What differs is only
     what a card *does* with the answer, which is that card's own ``refuses_when_unfit``:
-    the launch screen greys and refuses, the settings tab merely notes. The launch screen
+    the launch screen grays and refuses, the settings tab merely notes. The launch screen
     measures itself and the settings tab is handed the panel's live size, so the
     measurement arrives as an argument either way.
     """

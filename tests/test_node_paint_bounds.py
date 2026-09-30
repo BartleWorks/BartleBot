@@ -2,7 +2,7 @@
 
 Qt repaints an item only inside its bounds, so whatever it draws past them is never
 erased when the item moves or the thing drawn goes away, and is painted over, not
-redrawn, when a neighbour repaints across it -- the stale-pixel kind #73 is about.
+redrawn, when a neighbor repaints across it -- the stale-pixel kind #73 is about.
 """
 
 import pytest

@@ -202,7 +202,7 @@ Every member param is in one of three states, and the author decides which while
 
 Free and Input differ in where the value is set and whether it fans out, not in who owns
 it. The rule of thumb for an author: if two members must agree, make it an input; if only
-one member cares, free is enough; everything the subgraph's behaviour depends on stays
+one member cares, free is enough; everything the subgraph's behavior depends on stays
 locked. "Sync players" frees or exposes almost everything, since it runs at the start of
 nearly every bot in any world; "MooShu level scaling" locks everything, since its values
 *are* the subgraph.
@@ -362,7 +362,7 @@ the body, and the open one is that shackle mirrored about its right foot, so its
 end hangs beside the body — a small gap between shackle and body is easy to miss.
 
 Clicking the **pill** selects the whole region and shows the **region page**. Every
-region gets it (label and colour, and the same goes for an ordinary region — one surface,
+region gets it (label and color, and the same goes for an ordinary region — one surface,
 not two); a linked one adds the definition's name and description, `Version N` with the
 library's version beside it when the update is held, where the definition comes from,
 the **inputs** form, the **override list** with a Reset per entry, and **Detach from
@@ -371,7 +371,7 @@ library**. The inputs form is a `_DynamicParamForm` built from the definition's
 — a widget always holds *some* value, and writing every key would turn each untouched
 input into an empty override of the definition — and then re-resolves every direct
 member's params in place through `reresolve_member_params`, under the same debounced
-undo step a param edit takes. A colour change is one immediate undo step, as a node-type
+undo step a param edit takes. A color change is one immediate undo step, as a node-type
 switch is.
 
 Which page a whole-instance selection shows is decided by where the press landed:

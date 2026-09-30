@@ -35,7 +35,7 @@ OWN_FRAME = '  File "bartlebot/qt_paint_debug.py", line 130, in _handler\n'
 # ---------------------------------------------------------------------------
 
 
-def test_every_message_in_the_reported_burst_is_recognised():
+def test_every_message_in_the_reported_burst_is_recognized():
     assert all(is_painter_message(m) for m in BURST)
 
 
@@ -58,7 +58,7 @@ DISPLAY_NOISE = [
 ]
 
 
-def test_every_monitor_asleep_message_is_recognised():
+def test_every_monitor_asleep_message_is_recognized():
     assert all(is_display_noise(m) for m in DISPLAY_NOISE)
 
 
@@ -111,7 +111,7 @@ FONT_NOISE = [
 ]
 
 
-def test_every_legacy_font_warning_in_the_report_is_recognised():
+def test_every_legacy_font_warning_in_the_report_is_recognized():
     assert len(FONT_NOISE) == 10
     assert all(is_legacy_font_noise(m) for m in FONT_NOISE)
 

@@ -338,7 +338,7 @@ def test_tags_from_both_pickers_come_back_in_vocabulary_order(qapp):
     assert config.tags == ["Gear", "Jewels", "Boss"]
 
 
-def test_a_chip_is_coloured_by_its_group(qapp):
+def test_a_chip_is_colored_by_its_group(qapp):
     """Same palette as the picker dot and the library card — one module owns it."""
     field, _section = _field(["Gear", "Boss"], editable=True)
     styles = " ".join(c.styleSheet() for c in field.findChildren(TagChip))
@@ -374,7 +374,7 @@ def test_a_picker_returns_tags_in_its_own_vocabularys_order(qapp):
     assert btn.tags() == ["Hitter", "Healer"]
 
 
-def test_a_strategy_chip_and_pill_take_their_colour_from_the_strategy_vocabulary(qapp):
+def test_a_strategy_chip_and_pill_take_their_color_from_the_strategy_vocabulary(qapp):
     chip = TagChip("Custom", vocabulary=STRATEGY_VOCABULARY)
     pill = TagPill("Hitter", vocabulary=STRATEGY_VOCABULARY)
     assert STRATEGY_VOCABULARY.accent("Custom") in chip.styleSheet()

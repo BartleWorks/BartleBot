@@ -2,9 +2,9 @@
 
 Recording is how most node params get filled, so the button has to be found without
 being looked for (#106). The glyph does that work: a red circle reads as "record" in
-any language, and it keeps its red in both themes rather than taking the text colour
+any language, and it keeps its red in both themes rather than taking the text color
 the way every other ``ActionButton`` glyph does. While a recording runs the button
-reads *Stop* and the dot becomes a square in the ordinary text colour — a red dot
+reads *Stop* and the dot becomes a square in the ordinary text color — a red dot
 beside *Stop* would say the opposite of the label.
 
 Given the connected players, it reads *Record ▾* while idle with two or more of them:
@@ -21,7 +21,7 @@ from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.player_picker import picker_label
 
 #: The conventional recorder red. Fixed rather than a theme token: it is a convention
-#: the glyph borrows, not a colour of this app, and it reads on light and dark surfaces.
+#: the glyph borrows, not a color of this app, and it reads on light and dark surfaces.
 RECORD_RED = "#e53935"
 
 IDLE_TEXT = "Record"

@@ -482,7 +482,7 @@ class _Trip:
         return await self.confirm()
 
     async def join(self, travellers: list) -> bool:
-        """Bring players who travelled on their own to the leader: beside it, then onto its realm.
+        """Bring players who traveled on their own to the leader: beside it, then onto its realm.
 
         They are in its zone, so a teleport puts them beside it. Seen there, they share its realm
         already; not seen, they hop to it, reading which realm that is from the leader's spellbook
