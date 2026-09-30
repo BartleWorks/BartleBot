@@ -70,13 +70,19 @@ class _RealmList:
         return True
 
 
+async def _poll_once(condition, *_args, **_kwargs) -> bool:
+    """poll_until with no waiting: ask once, so the reads behind it happen, then say it came true."""
+    await condition()
+    return True
+
+
 @contextlib.contextmanager
 def _faked(realm_list: _RealmList):
     """Stand *realm_list* in for the game's UI reads, with every wait compressed."""
     with contextlib.ExitStack() as stack:
         for p in (
             patch.object(rl, "POLL_INTERVAL", 0),
-            patch.object(nh, "poll_until", new=AsyncMock(return_value=True)),
+            patch.object(nh, "poll_until", new=_poll_once),
             patch.object(nh, "is_visible_by_path", new=AsyncMock(return_value=True)),
             patch.object(nh, "get_text_by_path", new=AsyncMock(side_effect=realm_list.text)),
             patch.object(nh, "is_enabled_by_path", new=AsyncMock(side_effect=realm_list.enabled)),
@@ -184,6 +190,7 @@ async def test_already_on_the_favorite_is_detected_from_txtyourrealmname_without
     """The current realm is read straight from the settings text, skipping the scan entirely."""
     client = FakeClient()
     realm_list = _RealmList(_PAGES, current="Banshee", current_name_text="Banshee")
+    realm_list.page = 2  # a scan would have to page back to find it
     machine = _machine("Banshee")
 
     with _faked(realm_list):
@@ -698,19 +705,20 @@ def test_the_page_range_is_no_longer_a_param():
 # ---------------------------------------------------------------------------
 
 
-async def test_the_current_realm_is_read_from_the_greyed_out_row_on_any_page():
-    realm_list = _RealmList(_PAGES, current="Drake")
+async def test_the_current_realm_is_read_from_txtyourrealmname_without_paging():
+    realm_list = _RealmList(_PAGES, current="Drake", current_name_text="Drake")
     realm_list.page = 2
 
     with _faked(realm_list):
         key = await rl.read_current_realm(FakeMachine(), FakeClient(), 0.0, "test")
 
     assert key == "Drake"
+    assert REALM_PREV_PAGE_PATH not in realm_list.clicked
     assert realm_list.clicked[-1] == BACKPACK_CLOSE_BUTTON_PATH
 
 
-async def test_a_realm_no_row_is_greyed_for_is_unknown():
-    realm_list = _RealmList(_PAGES, current="")
+async def test_a_blank_txtyourrealmname_is_unknown():
+    realm_list = _RealmList(_PAGES, current="Drake")
 
     with _faked(realm_list):
         assert await rl.read_current_realm(FakeMachine(), FakeClient(), 0.0, "test") is None

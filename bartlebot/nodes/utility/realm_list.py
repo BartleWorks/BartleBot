@@ -34,9 +34,6 @@ from bartlebot.nodes.timing import POLL_INTERVAL, REALM_HOP_TIMEOUT, TRIGGER_TIM
 #: Rows the realm panel shows per page (btnRealm0 .. btnRealm6).
 REALMS_PER_PAGE = 7
 
-#: More pages than the realm list has ever had: a guard on read_current_realm's scan, not a limit.
-_MAX_READ_PAGES = 10
-
 _strip_html = node_helpers.strip_html
 
 
@@ -76,31 +73,15 @@ async def wait_for_current_realm_name(client, timeout: float) -> str:
 async def read_current_realm(machine, client, safety_delay: float, tag: str) -> str | None:
     """The key of the realm *client* is on, read from its spellbook, or None if it cannot be told.
 
-    txtYourRealmName first, then, if that never renders, the list itself: the current
-    realm's row is the one whose button is greyed out. Opens and closes the spellbook.
+    Read from txtYourRealmName, so no page is turned. Opens and closes the spellbook.
     """
     if not await open_realm_list(machine, client, safety_delay, tag):
         return None
     try:
         shown = await wait_for_current_realm_name(client, safety_delay)
-        if not shown and await navigate_to_page_1(machine, client, safety_delay, tag):
-            shown = await _current_row_name(machine, client, safety_delay, tag)
     finally:
         await close_spellbook(client)
     return realms.key_for(shown) if shown else None
-
-
-async def _current_row_name(machine, client, safety_delay: float, tag: str) -> str:
-    """The name on the greyed-out row, paging right from wherever the list is showing."""
-    for _page in range(_MAX_READ_PAGES):
-        for row in range(REALMS_PER_PAGE):
-            if not await row_name(client, row):
-                break
-            if await is_current_realm(client, row):
-                return await row_name(client, row)
-        if not await has_next_page(client) or not await navigate_pages(machine, client, 1, safety_delay, tag):
-            break
-    return ""
 
 
 async def close_spellbook(client) -> None:
@@ -186,7 +167,6 @@ async def open_realm_list(machine, client, safety_delay: float, tag: str) -> boo
         POLL_INTERVAL,
     )
 
-    # REALM_CURRENT_NAME_PATH is a presence check only -- its text is not readable.
     machine.log(f"{tag}: opening Realms tab", logging.DEBUG)
     await node_helpers.click_by_path(client, SPELLBOOK_REALMS_BUTTON_PATH)
     if not await node_helpers.poll_until(
