@@ -73,8 +73,18 @@ places enforce it, as with restricted zones:
 | straggler recovery | any arrived player | only one that shared the straggler's realm before the transition |
 | `enter_dungeon` | on the sigil before X, and at the entrance after | nothing |
 | `handle_combat` | together before anyone engages; one realm and one duel circle once in battle; a split fight is finished, then repaired | a fight centre is shared only within a realm |
-| `change_realm` | favorite: all to it; next: the leader, then the rest to its realm; checked after | favorite: P1 to it, the rest the rows after; next: player N, N rows along; a collision is logged |
+| `change_realm` | favorite: all to it; next: the leader, then the rest to its realm; checked after | favorite: P1 to it, the rest the rows after; next: one block of fresh rows (below); a collision is logged |
 | `sync_in_zone` | leader travels, hops, everyone it does not see ports to it, confirmed by sight | everyone travels; nobody ports or hops |
+
+**Next realm, Separate** is for a resource that respawns slowly and per realm, so each hop must
+land every player on a realm nobody has visited recently. Next realm cycles the 21 realms of
+pages 3-5 -- the quiet ones, and deliberately no more, out of respect for other players. Every
+player finds its row first; then `change_realm.next_block` gives them consecutive rows from the
+start of the longest run nobody is on: 0-3 goes to 4-7, four on 12 go to 13-16, a wrapped 19,
+20, 0, 1 goes to 2-5, and a player whose last hop failed does not drag the block back. While the
+players stay a block, the next is always the one left longest ago; four players come back round
+every 5 hops. A player hopping "N rows after its own" -- the first design -- only spread a group
+that started on one realm, and doubled the spacing of one already spread.
 
 **Repair** is `node_helpers.ensure_together`: the record first, then one check; everyone the leader
 does not see -- Apart and Unknown alike -- ports to it through `gather_at_player`, which confirms by

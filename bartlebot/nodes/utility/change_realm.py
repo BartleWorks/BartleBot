@@ -30,8 +30,8 @@ param says where the players go; the option says whether they go there together:
 ======================  ==================================  =====================================
 on                      every player to the favourite       player 1 to the favourite, the rest
                                                             to the rows after it
-off (next realm)        the leader to the next realm, and   player N to the realm N rows after
-                        the others to the leader's          its own, within pages 3-5
+off (next realm)        the leader to the next realm, and   one block of fresh rows, one each:
+                        the others to the leader's          see :func:`next_block`
 ======================  ==================================  =====================================
 
 A split param here would let a bot say Together on the bot and split on the node, which
@@ -42,6 +42,7 @@ landed on one realm, which is logged rather than failed.
 
 import asyncio
 import logging
+from dataclasses import dataclass
 
 from bartlebot import player_realms, realms, sightings
 from bartlebot.nodes import node_helpers
@@ -61,6 +62,9 @@ PARAM_USE_FAVORITE_REALM = "use_favorite_realm"
 #: The page range next-realm mode cycles through. See the module docstring.
 NEXT_REALM_FIRST_PAGE = 3
 NEXT_REALM_LAST_PAGE = 5
+
+#: Realms in that range. Pages 3-5 are always full, so the ring is fixed.
+NEXT_REALM_RING = (NEXT_REALM_LAST_PAGE - NEXT_REALM_FIRST_PAGE + 1) * REALMS_PER_PAGE
 
 #: More pages than the realm list has ever had. A guard, not a limit: paging stops at
 #: the disabled right arrow, and this only keeps a list that never disables it from
@@ -187,10 +191,9 @@ async def run(machine, clients: list, params: dict) -> str:
         machine.log(
             f"{_TAG}: spreading the players across pages {NEXT_REALM_FIRST_PAGE}–{NEXT_REALM_LAST_PAGE}, one realm each"
         )
-        coros = [
-            _to_next_realm(machine, c, NEXT_REALM_FIRST_PAGE, NEXT_REALM_LAST_PAGE, safety_delay, offset=i + 1)
-            for i, c in enumerate(clients)
-        ]
+        if await _spread_to_next_realms(machine, clients, safety_delay) == "FAILURE":
+            return "FAILURE"
+        coros = []
     else:
         machine.log(
             f"{_TAG}: moving the players to the next realm on pages {NEXT_REALM_FIRST_PAGE}–{NEXT_REALM_LAST_PAGE}"
@@ -323,12 +326,83 @@ async def to_realm(machine, client, favorite: str, safety_delay: float) -> str:
     return "FAILURE"
 
 
-async def _to_next_realm(
-    machine, client, start_page: int, end_page: int, safety_delay: float, *, offset: int = 1
-) -> str:
-    """Hop to the realm *offset* rows after the current one within pages *start_page*..*end_page*.
+@dataclass
+class _Place:
+    """Where one client stands in the next-realm range, with its realm list left open."""
 
-    *offset* is 1 for the next realm; a Separate bot spreading its players passes each its own.
+    #: Its row in the range, counted across pages 3-5 from 0; None when it is on no row there.
+    position: int | None
+    #: The page the list is showing.
+    page: int
+    #: The current realm's row text, for hop_to_row's log; empty when not in the range.
+    name: str
+
+
+def next_block(positions: list[int | None], ring: int = NEXT_REALM_RING) -> list[int]:
+    """Separate, next realm: the row each player hops to, in player order.
+
+    *positions* are the players' rows in the range, None for one outside it. The players
+    take consecutive rows from the start of the longest run of rows nobody is on, so a block
+    moves on to the block after it (0-3 to 4-7), a group on one realm fans out from it, and a
+    block that wrapped, or a player whose last hop failed, still gets rows nobody holds. While
+    the players stay a block, the ring order makes the next one the block left longest ago.
+    Each player decides nothing alone: from a spread start, "the row N after my own" doubled
+    the spacing onto realms the others had just left.
+    """
+    occupied = sorted({p for p in positions if p is not None})
+    start, longest = 0, -1
+    for i, row in enumerate(occupied):
+        gap = (occupied[(i + 1) % len(occupied)] - row - 1) % ring
+        if gap > longest:
+            start, longest = (row + 1) % ring, gap
+    return [(start + i) % ring for i in range(len(positions))]
+
+
+async def _spread_to_next_realms(machine, clients: list, safety_delay: float) -> str:
+    """Next-realm mode, Separate: find where every player is, then hop each to its row of one block.
+
+    Every list stays open between the two, so the look costs nothing extra.
+    """
+    first, last = NEXT_REALM_FIRST_PAGE, NEXT_REALM_LAST_PAGE
+    places = await asyncio.gather(
+        *(_find_place(machine, c, first, last, safety_delay) for c in clients), return_exceptions=True
+    )
+    if not all(isinstance(p, _Place) for p in places):
+        for client, place in zip(clients, places):
+            if isinstance(place, _Place):
+                await realm_list.close_spellbook(client)
+        machine.log("FAILURE: not every player's current realm could be found, so none was moved", logging.WARNING)
+        return "FAILURE"
+    targets = next_block([p.position for p in places])
+    machine.log(
+        f"{_TAG}: rows {[p.position for p in places]} -> {targets} of the {NEXT_REALM_RING} on pages {first}–{last}",
+        logging.DEBUG,
+    )
+    results = await asyncio.gather(
+        *(_hop_in_range(machine, c, p, t, first) for c, p, t in zip(clients, places, targets)),
+        return_exceptions=True,
+    )
+    return "FAILURE" if any(isinstance(r, Exception) or r == "FAILURE" for r in results) else "SUCCESS"
+
+
+async def _to_next_realm(machine, client, start_page: int, end_page: int, safety_delay: float) -> str:
+    """Hop to the realm after the current one within pages *start_page*..*end_page*, wrapping.
+
+    A player on no row in the range takes the range's first realm.
+    """
+    place = await _find_place(machine, client, start_page, end_page, safety_delay)
+    if place is None:
+        return "FAILURE"
+    ring = (end_page - start_page + 1) * REALMS_PER_PAGE
+    target = 0 if place.position is None else (place.position + 1) % ring
+    return await _hop_in_range(machine, client, place, target, start_page)
+
+
+async def _find_place(machine, client, start_page: int, end_page: int, safety_delay: float) -> _Place | None:
+    """Open the realm list and find the current realm's row within pages *start_page*..*end_page*.
+
+    None, with the spellbook closed, when the list could not be opened or paged. Otherwise the
+    list is left open on the page where the scan stopped.
 
     Flow:
       1. Open the spellbook to the Realms tab and wait for the list to render.
@@ -336,75 +410,57 @@ async def _to_next_realm(
          right to start_page, verifying each flip.
       3. Scan pages start_page..end_page for the current realm, identified by its
          grayed-out (disabled) button.
-      4. The target is the entry *offset* rows after the current one, counted across the
-         range's pages and wrapping back to start_page. A blank target row (a short page)
-         wraps to start_page row 0. If the current realm was not found, count from just
-         before start_page row 0.
-      5. Navigate to the target page, select the row, wait out the realm-hop cooldown,
-         press Go To Realm, and wait for the loading screen to start and clear.
     """
     if not await realm_list.open_realm_list(machine, client, safety_delay, _TAG):
-        return "FAILURE"
+        return None
 
     machine.log(f"{_TAG}: anchoring to page 1", logging.DEBUG)
     if not await realm_list.navigate_to_page_1(machine, client, TRIGGER_TIMEOUT, _TAG):
         machine.log("FAILURE: could not anchor to page 1", logging.WARNING)
         await realm_list.close_spellbook(client)
-        return "FAILURE"
+        return None
 
     if start_page > 1:
         machine.log(f"{_TAG}: navigating to page {start_page}", logging.DEBUG)
         if not await realm_list.navigate_pages(machine, client, start_page - 1, TRIGGER_TIMEOUT, _TAG):
             machine.log(f"FAILURE: could not navigate to start page {start_page}", logging.WARNING)
             await realm_list.close_spellbook(client)
-            return "FAILURE"
+            return None
 
-    current_scan_page = start_page
-    found_page: int | None = None
-    found_row: int | None = None
     for page in range(start_page, end_page + 1):
         machine.log(f"{_TAG}: scanning page {page} for current realm", logging.DEBUG)
         for row in range(REALMS_PER_PAGE):
             if await realm_list.is_current_realm(client, row):
-                found_page, found_row = page, row
-                break
-        if found_page is not None:
-            break
-        if page < end_page:
-            if not await realm_list.navigate_pages(machine, client, 1, TRIGGER_TIMEOUT, _TAG):
-                machine.log(f"FAILURE: could not advance past page {page}", logging.WARNING)
-                await realm_list.close_spellbook(client)
-                return "FAILURE"
-            current_scan_page = page + 1
+                name = await realm_list.row_name(client, row)
+                machine.log(f"{_TAG}: current realm is {name!r} (page {page}, row {row})", logging.DEBUG)
+                return _Place((page - start_page) * REALMS_PER_PAGE + row, page, name)
+        if page < end_page and not await realm_list.navigate_pages(machine, client, 1, TRIGGER_TIMEOUT, _TAG):
+            machine.log(f"FAILURE: could not advance past page {page}", logging.WARNING)
+            await realm_list.close_spellbook(client)
+            return None
 
-    if found_page is not None:
-        assert found_row is not None
-        current_realm_name = await realm_list.row_name(client, found_row)
-        machine.log(
-            f"{_TAG}: current realm is {current_realm_name!r} (page {found_page}, row {found_row})",
-            logging.DEBUG,
-        )
-        position = (found_page - start_page) * REALMS_PER_PAGE + found_row
-    else:
-        machine.log(
-            f"{_TAG}: current realm not found in pages {start_page}–{end_page}; "
-            f"counting from the first realm on page {start_page}",
-            logging.DEBUG,
-        )
-        current_realm_name = ""
-        position = -1
-    target = (position + offset) % ((end_page - start_page + 1) * REALMS_PER_PAGE)
+    machine.log(f"{_TAG}: current realm not found in pages {start_page}–{end_page}", logging.DEBUG)
+    return _Place(None, end_page, "")
+
+
+async def _hop_in_range(machine, client, place: _Place, target: int, start_page: int) -> str:
+    """From *place*, with the list still open, hop to row *target* of the range starting at *start_page*.
+
+    Flow:
+      1. Navigate to the target's page. A blank target row (a short page) wraps to
+         start_page row 0 -- a guard only: pages 3-5 are always full.
+      2. Select the row, wait out the realm-hop cooldown, press Go To Realm, and wait for
+         the loading screen to start and clear.
+    """
     target_page, target_row = start_page + target // REALMS_PER_PAGE, target % REALMS_PER_PAGE
-
     machine.log(f"{_TAG}: target page {target_page}, row {target_row}", logging.DEBUG)
 
-    steps = target_page - current_scan_page
+    steps = target_page - place.page
     if steps != 0 and not await realm_list.navigate_pages(machine, client, steps, TRIGGER_TIMEOUT, _TAG):
         machine.log(f"FAILURE: could not navigate to target page {target_page}", logging.WARNING)
         await realm_list.close_spellbook(client)
         return "FAILURE"
     if not await realm_list.row_name(client, target_row):
-        # A short page: wrap to the start of the range.
         if target_page != start_page and not await realm_list.navigate_pages(
             machine, client, start_page - target_page, TRIGGER_TIMEOUT, _TAG
         ):
@@ -413,7 +469,7 @@ async def _to_next_realm(
             return "FAILURE"
         target_row = 0
 
-    return await realm_list.hop_to_row(machine, client, target_row, _TAG, current_name=current_realm_name)
+    return await realm_list.hop_to_row(machine, client, target_row, _TAG, current_name=place.name)
 
 
 async def _to_realm_after(machine, client, favorite: str, offset: int, safety_delay: float) -> str:

@@ -9,6 +9,8 @@ reads the node relies on.
 import contextlib
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
 import bartlebot.nodes.node_helpers as nh
 import bartlebot.nodes.utility.change_realm as cr
 import bartlebot.nodes.utility.realm_list as rl
@@ -487,21 +489,72 @@ async def test_next_realm_together_fails_when_the_leaders_realm_cannot_be_read()
     follow.assert_not_awaited()
 
 
-async def test_next_realm_separate_spreads_player_n_n_realms_along():
-    nxt = AsyncMock(return_value="SUCCESS")
-    clients = [FakeClient(), FakeClient(), FakeClient()]
-    for client in clients:
-        see_each_other(client)
+@pytest.mark.parametrize(
+    ("positions", "targets"),
+    [
+        ([0, 1, 2, 3], [4, 5, 6, 7]),  # the reported bug: this gave 1, 3, 5, 7
+        ([12, 12, 12, 12], [13, 14, 15, 16]),  # one realm fans out
+        ([19, 20, 0, 1], [2, 3, 4, 5]),  # a block that wrapped
+        ([None, None, None, None], [0, 1, 2, 3]),  # nobody in the range, e.g. after a favourite on page 1
+        ([4, 5, 6, 3], [7, 8, 9, 10]),  # player 4's last hop failed
+        ([17, 18, 19, 20], [0, 1, 2, 3]),  # the end of the range wraps to its start
+        ([5, None], [6, 7]),  # a player outside the range holds no row
+    ],
+)
+def test_separate_next_realms_are_one_block_after_everyone(positions, targets):
+    assert cr.next_block(positions) == targets
+
+
+def test_the_next_realm_ring_is_pages_3_to_5():
+    assert cr.NEXT_REALM_RING == 21
+
+
+async def test_next_realm_separate_finds_everyone_before_anyone_hops():
+    """#131: each player hopping from its own realm doubled a spread start's spacing."""
+    order: list[str] = []
+    rows = iter([0, 1, 2, 3])
+
+    async def find(_machine, client, *_args):
+        order.append("find")
+        return cr._Place(next(rows), 3, "")
+
+    async def hop(_machine, client, _place, target, _start):
+        order.append("hop")
+        return "SUCCESS"
+
+    hop_mock = AsyncMock(side_effect=hop)
+    clients = [FakeClient(), FakeClient(), FakeClient(), FakeClient()]
     machine = FakeMachine(options={"Player Realms": "Separate"})
-    with patch.object(cr, "_to_next_realm", new=nxt):
+    with patch.object(cr, "_find_place", new=find), patch.object(cr, "_hop_in_range", new=hop_mock):
         result = await cr.run(machine, clients, {cr.PARAM_USE_FAVORITE_REALM: False})
 
     assert result == "SUCCESS"
-    assert [(call.args[1], call.kwargs["offset"]) for call in nxt.await_args_list] == [
-        (clients[0], 1),
-        (clients[1], 2),
-        (clients[2], 3),
+    assert order == ["find"] * 4 + ["hop"] * 4
+    assert [(call.args[1], call.args[3]) for call in hop_mock.await_args_list] == [
+        (clients[0], 4),
+        (clients[1], 5),
+        (clients[2], 6),
+        (clients[3], 7),
     ]
+
+
+async def test_next_realm_separate_moves_nobody_when_a_player_cannot_be_found():
+    """The block depends on every player's row; guessing one risks landing two players together."""
+    places = iter([cr._Place(0, 3, ""), None])
+    hop = AsyncMock(return_value="SUCCESS")
+    close = AsyncMock()
+    clients = [FakeClient(), FakeClient()]
+    machine = FakeMachine(options={"Player Realms": "Separate"})
+    with (
+        patch.object(cr, "_find_place", new=AsyncMock(side_effect=lambda *_a: next(places))),
+        patch.object(cr, "_hop_in_range", new=hop),
+        patch.object(rl, "close_spellbook", new=close),
+    ):
+        result = await cr.run(machine, clients, {cr.PARAM_USE_FAVORITE_REALM: False})
+
+    assert result == "FAILURE"
+    hop.assert_not_awaited()
+    close.assert_awaited_once_with(clients[0])  # the one left open; the other closed its own
 
 
 async def test_favorite_separate_puts_player_1_on_the_favorite_and_the_rest_after_it():
@@ -522,7 +575,7 @@ async def test_favorite_separate_puts_player_1_on_the_favorite_and_the_rest_afte
 async def test_separate_players_who_land_together_are_reported_not_failed():
     clients = [FakeClient(), FakeClient()]
     machine = FakeMachine(options={"Player Realms": "Separate"})
-    with patch.object(cr, "_to_next_realm", new=AsyncMock(return_value="SUCCESS")):
+    with patch.object(cr, "_spread_to_next_realms", new=AsyncMock(return_value="SUCCESS")):
         result = await cr.run(machine, clients, {cr.PARAM_USE_FAVORITE_REALM: False})
 
     assert result == "SUCCESS"
@@ -541,16 +594,41 @@ async def test_together_players_are_checked_and_gathered_after_the_change():
     assert ensure.await_args.kwargs["where"] == "after the realm change"
 
 
-async def test_the_offset_counts_across_the_ranges_pages_and_wraps():
-    """Current on page 3 row 5; three along is page 4 row 1. Pages here are the fixed range, 3-5."""
-    pages = [["x"] * 7, ["y"] * 7] + [[f"r{p}{r}" for r in range(7)] for p in (3, 4, 5)]
-    realm_list = _RealmList(pages, current="r35")
+_RANGE_PAGES = [["x"] * 7, ["y"] * 7] + [[f"r{p}{r}" for r in range(7)] for p in (3, 4, 5)]
+
+
+@pytest.mark.parametrize(
+    ("current", "page", "row"),
+    [
+        ("r36", 3, 0),  # the last row of page 3 carries onto page 4 (0-based page 3)
+        ("r56", 2, 0),  # the last row of the range wraps to page 3
+        ("x0", 2, 0),  # a realm outside the range starts it
+    ],
+)
+async def test_the_next_realm_counts_across_the_ranges_pages_and_wraps(current, page, row):
+    realm_list = _RealmList(_RANGE_PAGES, current=current)
     client = FakeClient()
     client.is_loading.side_effect = [True, False]
 
     with _faked(realm_list):
-        result = await cr._to_next_realm(FakeMachine(), client, 3, 5, 0.0, offset=3)
+        result = await cr._to_next_realm(FakeMachine(), client, 3, 5, 0.0)
 
+    assert result == "SUCCESS"
+    assert realm_list.page == page
+    assert realm_button_path(row) in realm_list.clicked
+
+
+async def test_a_spread_hop_pages_from_where_the_scan_stopped():
+    """Current on page 3 row 5; row 8 of the range is page 4 row 1."""
+    realm_list = _RealmList(_RANGE_PAGES, current="r35")
+    client = FakeClient()
+    client.is_loading.side_effect = [True, False]
+
+    with _faked(realm_list):
+        place = await cr._find_place(FakeMachine(), client, 3, 5, 0.0)
+        result = await cr._hop_in_range(FakeMachine(), client, place, 8, 3)
+
+    assert place == cr._Place(5, 3, "r35")
     assert result == "SUCCESS"
     assert realm_list.page == 3  # 0-based: page 4
     assert realm_button_path(1) in realm_list.clicked
