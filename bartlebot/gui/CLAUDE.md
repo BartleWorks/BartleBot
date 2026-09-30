@@ -254,11 +254,12 @@ what would break it. Leave the literal colors and the comment above them alone;
 
 ## Section headings
 
-Three, and they are not interchangeable:
+Four, and they are not interchangeable:
 
 | widget | look | for |
 |---|---|---|
 | `SidebarSection` | disclosure triangle + bold label | a region that **folds** |
+| `OptionCard`'s band (`sidebar/option_card.py`) | bordered card, surface band, muted triangle + semibold title | a **group of options that folds**, inside a section |
 | `CardColumn`'s heading | centered bold label + full-width rule | a **column of cards** |
 | `RuleHeading` (`widgets/rule_heading.py`) | left bold label + rule to the right | the regions of a **form** |
 
@@ -974,6 +975,34 @@ inside one panel (Unity's Prefab Mode, Unreal's Class Defaults, VS Code's
 settings UI against `package.json`), and edit mode is the context this app
 already has.
 
+- **Both surfaces draw their rows in folding cards** (#138): *This dungeon*, *Team*,
+  *Quicksell*, *General*, in that order in every bot. `bartlebot/option_groups.py`
+  decides which option goes where (`BotOptionSpec.group`), `sidebar/option_card.py` draws
+  a card, and `CardFolds` there owns the folding for a surface. The rules a later change
+  is most likely to break:
+  - **The fold state is the reader's, and one answer.** Per group, in `settings.json`
+    (`option_group_collapsed`), the same for every bot and shared by both tabs. Only one
+    tab is on screen at a time, so each re-reads it in `showEvent` rather than the two
+    being wired together. A card never folds itself: a click on its band *asks*.
+  - **A fold never hides something the user must see.** The band's stripe is lit while
+    any value on the card is the user's, folded or not (Unity's rule for a component
+    with prefab overrides), and a row's warning — pets the keep list cannot spare —
+    becomes a `⚠` on the band, folded or not, as on the assignment card.
+  - **Card headers have no option gutter; rows keep theirs.** A header holding only a
+    title would carry fifty pixels of empty gutter before it, while every row's revert
+    and `?` still sit in one column.
+  - **Enable Quicksell is a switch in the Quicksell band, not a row** (`heads_group`).
+    A switch turns a feature on or off; a check box is an option in a form. It has no
+    revert — flipping a two-state control back to the inherited value already drops the
+    override — and no `?`: its description is its tooltip, and the top of the card while
+    descriptions are shown. Options has no switch, since Enable Quicksell is user-owned.
+  - **Collapse all and Expand all are drawn, not shown, on hover.** `HeadingAction`
+    blanks its glyph rather than hiding, because a hidden widget leaves the Tab order and
+    could never be focused into view. Hidden outright only while the section is folded.
+  - **The pages reserve their scrollbar gutter, with no gap** (`gap=0`): a fold would
+    otherwise jolt every card sideways (#112), and the page's own content margin already
+    keeps the cards off the bar. The card's 14px of border and padding is on the left
+    sidebar's floor — see `docs/WINDOW_SIZING.md`.
 - **Setup writes `settings.json`, never the bot file.** `values_changed` is
   deliberately *not* wired to `config_changed`: an override is not an edit to
   the bot, and a shared bot must stay byte-identical however its users tune it.
@@ -1124,8 +1153,13 @@ already has.
   Four things that are load-bearing, and all four are the same rule the rest of
   this surface follows:
 
-  - **Only Setup indents.** Options edits declarations, and `Enable Quicksell` is
-    user-owned, so the parent has no row there to be a child of.
+  - **Only Setup indents, and only under a parent that is a row.** Options edits
+    declarations, and `Enable Quicksell` is user-owned, so the parent has no row there
+    to be a child of. On Setup the sell flags are not indented either: their parent is
+    the switch heading their card, and the card already says what they belong to.
+    Minimum Team Size, under Team-Up, is the child that is. A row whose parent heads
+    its card is still disabled while the switch is off, and so is every other row on
+    that card — the keep list has no parent and is only a list while nothing is sold.
   - **The indent is applied to the row's *body*, past the gutter, and the gutter
     is untouched** — `build_gutter_row(..., child=True)`. The indent says what the
     row belongs to and the gutter says what can be done to it; indenting both
@@ -1162,8 +1196,8 @@ already has.
   `required_unless` is the mirror, for an option one mode of a node ignores:
   `teleport_to_friend` composes Friend Name only while some state is *not* porting to a
   hooked player, so a bot mixing the two modes keeps the row.
-- **The list is ordered by where an option comes from, not by whether it is in
-  the file.** The author's own options first, then the derived ones grouped by the
+- **Within a card, the list is ordered by where an option comes from, not by
+  whether it is in the file** (tall controls, the keep list, go last in their card). The author's own options first, then the derived ones grouped by the
   node that requires them. Ordering the file's options first instead made a row
   move the moment its value was edited — editing a derived default materialises a
   declaration, so the row the user had just touched jumped to the top — and it

@@ -9,6 +9,10 @@ Conventions for everything under `bartlebot/nodes/`, plus the two game-facing pr
 3. Register in `bartlebot/nodes/registry.py` — add to both `NODE_REGISTRY` and `NODE_SPECS`
 4. Action nodes return `"SUCCESS"` / `"FAILURE"`; condition nodes return `"TRUE"` / `"FALSE"`
 5. The GUI auto-generates parameter forms and tooltips from `NODE_SPEC`
+6. Every `BotOptionSpec` in `required_bot_options` names its `group` — the card it is drawn
+   in on Setup and Options (`bartlebot/option_groups.py`). Reuse the group an existing
+   declaration of the same option uses; `test_every_declaration_of_one_option_agrees_on_its_card`
+   fails otherwise
 
 Use those four names and no others unless the node genuinely has a third outcome. The
 failure pair is `schema.FALLTHROUGH_RETURNS`: a graph that routes neither of them sends
