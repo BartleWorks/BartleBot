@@ -146,7 +146,7 @@ async def run(machine, clients: list, params: dict) -> str:
         f"only_safe={only_safe}"
     )
 
-    await _collect_as_group(machine, clients, if_health_below, if_mana_below, timeout_val, only_safe)
+    await collect_as_group(machine, clients, if_health_below, if_mana_below, timeout_val, only_safe)
 
     # Post-collection check: return FAILURE if any client is still below a fail threshold.
     final_health, final_mana = zip(*await asyncio.gather(*[_get_ratios(c) for c in clients]))
@@ -184,7 +184,7 @@ async def run(machine, clients: list, params: dict) -> str:
 # ---------------------------------------------------------------------------
 
 
-async def _collect_as_group(
+async def collect_as_group(
     machine, clients: list, if_health_below: float, if_mana_below: float, timeout_val: float | None, only_safe: bool
 ) -> None:
     """Hop the whole group from wisp to wisp until nobody needs one, none is left, or time runs out.

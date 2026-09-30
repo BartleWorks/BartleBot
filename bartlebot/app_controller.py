@@ -1678,6 +1678,7 @@ class AppController(QObject):
             on_client_disconnected=self._on_machine_client_disconnected,
             on_restricted_zone=self._on_machine_restricted_zone,
             on_explicit_stop=self._on_machine_explicit_stop,
+            on_stopped=self._on_machine_stopped,
         )
         self._current_machine = machine
         self._client_manager.set_machine(machine)
@@ -1930,6 +1931,14 @@ class AppController(QObject):
         if reason:
             body += "\n\n" + reason
         QTimer.singleShot(0, lambda: QMessageBox.information(self._window, "Bot Stopped", body))
+
+    def _on_machine_stopped(self, reason: str) -> None:
+        """Called when the machine stops itself for a reason the user should see (the flee limit).
+
+        Deferred through the event loop for the same re-entrancy reason as
+        _on_machine_explicit_stop.
+        """
+        QTimer.singleShot(0, lambda: QMessageBox.information(self._window, "Bot Stopped", reason))
 
     def _on_machine_restricted_zone(self, description: str) -> None:
         """Called by the health monitor when a client reaches a restricted zone.

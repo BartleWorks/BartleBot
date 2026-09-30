@@ -287,6 +287,7 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
     if fought.end is FightEnd.FLED:
         machine.log("FAILURE: fled the fight", logging.WARNING)
+        machine.note_flee()  # the third in AMBIENT_FLEE_WINDOW stops the bot
         return "FAILURE"
     if fought.errors:
         machine.log("FAILURE: combat raised on some players", logging.WARNING)

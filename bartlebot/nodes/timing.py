@@ -612,6 +612,18 @@ AMBIENT_COMBAT_MAX_DURATION = 600.0
 # The ambient combat watcher's counterpart to handle_combat's max_duration param: a fight
 # no node started is fled once it has run this long.
 
+AMBIENT_HELP_HOLD = 20.0
+# Longest the ambient combat watcher holds a fighter's first cast while players who can help
+# teleport into its fight (#116). Counted from the later of the fighter's first planning phase
+# and the most recent join, since the game restarts its 30s planning timer whenever a player
+# joins. Under 30s, so the fighter still casts in round one.
+
+AMBIENT_FLEE_LIMIT = 3
+AMBIENT_FLEE_WINDOW = 600.0
+# The third flee within this many seconds stops the bot, whether handle_combat or the ambient
+# watcher fought it. Fight, flee, recovery, fight never trips the same-state or no-match
+# limits, because the states keep changing.
+
 PREEMPT_PARK_TIMEOUT = 5.0
 # Seconds the ambient combat watcher waits for a node it cancelled to unwind and the run
 # loop to park. A cancel lands at the node's next await, so this is normally a moment; past

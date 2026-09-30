@@ -708,3 +708,19 @@ async def test_the_fight_is_given_what_is_left_of_max_duration():
 
     assert 590 < limited <= 600
     assert unlimited is None
+
+
+async def test_a_fled_fight_counts_toward_the_flee_limit():
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = True
+    machine = FakeMachine()
+    fled = combat_runner.FightResult(combat_runner.FightEnd.FLED, [])
+    with (
+        patch.object(hc, "run_fight", AsyncMock(return_value=fled)),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(combat_runner, "POLL_INTERVAL", 0),
+    ):
+        await hc.run(machine, [client], _DEFAULT_PARAMS)
+
+    assert machine.flees == 1

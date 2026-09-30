@@ -218,6 +218,10 @@ class FakeMachine:
     def log(self, msg: str, level: int = logging.INFO) -> None:
         self.logs.append((msg, level))
 
+    def note_flee(self) -> bool:
+        self.flees = getattr(self, "flees", 0) + 1
+        return False
+
     def on_drop(self, item: str, qty: int, client_index: int = 0) -> None:
         self.drops.append((item, qty, client_index))
 

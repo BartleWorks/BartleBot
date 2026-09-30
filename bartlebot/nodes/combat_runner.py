@@ -7,6 +7,7 @@ import asyncio
 import contextlib
 import enum
 import logging
+import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from functools import lru_cache
@@ -605,6 +606,86 @@ def _watched_combat_class():
     return _WatchedCombat
 
 
+class CombatRun:
+    """Every combat task of one fight session, sharing one FightWatch.
+
+    :func:`run_fight` starts everyone at once. The ambient watcher starts each player as it
+    is seen in battle, which is what lets a helper, or a bystander pulled into a fight of its
+    own, have its combat run whenever it gets there.
+
+    *numbers* maps every client that may fight to its 1-based player number, so the watch
+    can group players by fight whichever of them turn up. The time limit runs from creation.
+    """
+
+    def __init__(self, numbers: dict, log: Callable[..., None], time_limit: float | None):
+        self.watch = FightWatch(numbers, log)
+        self._numbers = numbers
+        self._deadline = None if time_limit is None else time.monotonic() + time_limit
+        self._tasks: list[tuple[int, asyncio.Task]] = []
+        self._live: dict = {}  # client -> its latest combat task
+        self.stuck = False
+
+    async def identify(self) -> None:
+        await self.watch.identify()
+
+    def start(self, client, dsl: str) -> bool:
+        """Start *client*'s combat unless it is already running. True when it was started."""
+        if self.fighting(client):
+            return False
+        task = asyncio.create_task(_run_combat(client, dsl, self.watch))
+        self._live[client] = task
+        self._tasks.append((self._numbers[client], task))
+        return True
+
+    def fighting(self, client) -> bool:
+        task = self._live.get(client)
+        return task is not None and not task.done()
+
+    @property
+    def tasks(self) -> list[asyncio.Task]:
+        return [task for _number, task in self._tasks]
+
+    @property
+    def busy(self) -> bool:
+        return any(not task.done() for task in self.tasks)
+
+    def check_time_limit(self) -> bool:
+        """Enforce the time limit; call it as the fight goes on. True once combat is cancelled.
+
+        Past the limit every fight is fled; FLEE_TIMEOUT after that, combat still running is
+        cancelled and the run counts as stuck.
+        """
+        if self._deadline is None or self.stuck:
+            return self.stuck
+        now = time.monotonic()
+        if now >= self._deadline:
+            self.watch.flee_all("The fight ran past its time limit")
+        if now >= self._deadline + FLEE_TIMEOUT and self.busy:
+            self.cancel()
+            self.stuck = True
+        return self.stuck
+
+    def cancel(self) -> None:
+        for task in self.tasks:
+            if not task.done():
+                task.cancel()
+
+    def result(self) -> FightResult:
+        """How the run ended. Call once every task is done."""
+        errors = [
+            (number, task.exception())
+            for number, task in self._tasks
+            if task.done() and not task.cancelled() and task.exception() is not None
+        ]
+        if self.stuck:
+            end = FightEnd.STUCK
+        elif self.watch.fled:
+            end = FightEnd.FLED
+        else:
+            end = FightEnd.FINISHED
+        return FightResult(end, errors)
+
+
 async def run_fight(
     clients: list,
     dsls: list[str],
@@ -618,44 +699,28 @@ async def run_fight(
     ``clients``, ``dsls`` and ``numbers`` are parallel; ``numbers`` are 1-based player numbers,
     used in log lines. *time_limit* is how many seconds from now every fight is fled, or None
     for no limit; zero or less flees at the first planning phase. *log* takes ``(message,
-    level)``, so the caller decides whose logger the lines are filed under: a node passes
-    ``machine.log``, the ambient watcher the machine's own.
+    level)``, so the caller decides whose logger the lines are filed under.
 
     One player's combat raising does not stop the others; it is reported in the result.
     """
     if not clients:
         return FightResult(FightEnd.FINISHED, [])
-    watch = FightWatch(dict(zip(clients, numbers)), log)
-    await watch.identify()
-    tasks = [asyncio.create_task(_run_combat(c, dsl, watch)) for c, dsl in zip(clients, dsls)]
-    stuck = False
+    run = CombatRun(dict(zip(clients, numbers)), log, time_limit)
+    await run.identify()
+    for client, dsl in zip(clients, dsls):
+        run.start(client, dsl)
     try:
-        _done, pending = await asyncio.wait(tasks, timeout=time_limit)
+        _done, pending = await asyncio.wait(run.tasks, timeout=time_limit)
         if pending:
-            watch.flee_all("The fight ran past its time limit")
+            run.watch.flee_all("The fight ran past its time limit")
             _done, pending = await asyncio.wait(pending, timeout=FLEE_TIMEOUT)
         if pending:
-            stuck = True
-            for task in pending:
-                task.cancel()
+            run.stuck = True
+            run.cancel()
             await asyncio.gather(*pending, return_exceptions=True)
     finally:
-        for task in tasks:  # only still running when this was cancelled from outside
-            if not task.done():
-                task.cancel()
-
-    errors = [
-        (number, task.exception())
-        for number, task in zip(numbers, tasks)
-        if not task.cancelled() and task.exception() is not None
-    ]
-    if stuck:
-        end = FightEnd.STUCK
-    elif watch.fled:
-        end = FightEnd.FLED
-    else:
-        end = FightEnd.FINISHED
-    return FightResult(end, errors)
+        run.cancel()  # only anything left when this was cancelled from outside
+    return run.result()
 
 
 async def seed_chat_baselines(machine, clients: list) -> None:
@@ -781,11 +846,22 @@ class FightCentre:
         self._share = share
         self._fights: list[_Fight] = []
 
+    def _shares(self, fight: _Fight, client) -> bool:
+        return self._share is None or fight.publisher is client or self._share(fight.publisher, client)
+
     def _fight_for(self, client) -> _Fight | None:
+        """The fight *client* is in, else the first on its realm: the one it would join."""
         for fight in self._fights:
-            if self._share is None or fight.publisher is client or self._share(fight.publisher, client):
+            if client in fight.members:
+                return fight
+        for fight in self._fights:
+            if self._shares(fight, client):
                 return fight
         return None
+
+    def groups(self) -> list[list]:
+        """Every fight's members, each list in the order they were seen in battle."""
+        return [list(fight.members) for fight in self._fights]
 
     def centre_for(self, client):
         """The centre *client* should aim at, or None while nobody it shares a realm with has one."""
@@ -797,20 +873,24 @@ class FightCentre:
 
         Call only while *client* is in battle.
         """
-        if (fight := self._fight_for(client)) is not None:
-            _join(fight, client)
+        if any(client in fight.members for fight in self._fights):
             return
         try:
             centre = await client.duel.position()
         except Exception as exc:
+            if (fight := self._fight_for(client)) is not None:
+                _join(fight, client)  # nothing better to go on than the realm
+                return
             machine.log(
                 f"Client {index}: fight centre unreadable ({exc!r}); late clients keep aiming at the mob",
                 logging.DEBUG,
             )
             return
-        if (fight := self._fight_for(client)) is not None:  # another client published while this one read
-            _join(fight, client)
-            return
+        # A second fight on one realm has a circle of its own; one within a hair is this one.
+        for fight in self._fights:
+            if self._shares(fight, client) and _distance(fight.centre, centre) <= _SAME_CIRCLE:
+                _join(fight, client)
+                return
         self._fights.append(_Fight(client, centre, [client]))
         where = await _position(client)
         machine.log(
@@ -840,6 +920,15 @@ class FightCentre:
 def _join(fight: _Fight, client) -> None:
     if client not in fight.members:
         fight.members.append(client)
+
+
+#: Two duel centres this close are one circle. A centre is read from the duel itself, so every
+#: client in one fight reads the same point; this is only room for float noise.
+_SAME_CIRCLE = 10.0
+
+
+def _distance(a, b) -> float:
+    return ((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2) ** 0.5
 
 
 async def join_fight(
