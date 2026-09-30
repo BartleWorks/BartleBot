@@ -4,8 +4,8 @@
   "description": "Collects Ore and Diamonds in Mirkholm Keep in Grizzleheim. Optionally also collects Cattails/Water Lillies/Kelp and Frost Flowers/Grendelweed.",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_3",
-  "recovery_state": "state_3",
+  "initial": "sync_players_1_state_2",
+  "recovery_state": "sync_players_1_state_1",
   "drops": [
     {
       "name": "Cattail"
@@ -48,41 +48,6 @@
     }
   ],
   "states": [
-    {
-      "id": "state_3",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Northguard",
-      "position": {
-        "x": 0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Grizzleheim/GH_MainHub"
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "enter_zone",
-      "label": "Enter Mirkholm Keep",
-      "position": {
-        "x": 440,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Grizzleheim/GH_MainHub",
-        "to_zone": "Grizzleheim/GH_Wolf",
-        "xyz": {
-          "x": 8877.82,
-          "y": 6011.34,
-          "z": 727.68
-        },
-        "reset_xyz": {
-          "x": 8771.38,
-          "y": 5437.32,
-          "z": 575.09
-        }
-      }
-    },
     {
       "id": "state_2",
       "node_type": "change_realm",
@@ -261,6 +226,35 @@
           "Cattail"
         ]
       }
+    },
+    {
+      "id": "sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 439.9996141268803,
+        "y": -3.1393067366103367e-05
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 879.9996141268803,
+        "y": 89.99996860693264
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf"
+      }
     }
   ],
   "transitions": [
@@ -396,36 +390,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_5",
       "dest": "state_15",
       "when": "SUCCESS",
@@ -463,7 +427,64 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_1",
+      "dest": "sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_2",
+      "dest": "state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "sync_players_1",
+      "label": "Sync players in Mirkholm Keep",
+      "members": [
+        "sync_players_1_state_1",
+        "sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Grizzleheim/GH_Wolf"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 439.9996141268803,
+          "y": -3.1393067366103367e-05
+        }
+      }
+    }
+  ]
 }

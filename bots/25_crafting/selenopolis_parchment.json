@@ -4,8 +4,8 @@
   "description": "Endlessly collects Parchment and Ancient Scroll reagents in Selenopolis, Krokotopia",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "sync_players_1_state_2",
+  "recovery_state": "sync_players_1_state_1",
   "drops": [
     {
       "name": "Ancient Scroll"
@@ -19,43 +19,14 @@
     "Reagents",
     "Collecting"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Player Realms",
+      "type": "player_realms",
+      "default": "Separate"
+    }
+  ],
   "states": [
-    {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to the Oasis",
-      "position": {
-        "x": 0.0,
-        "y": 90.0
-      },
-      "params": {
-        "zone": "Krokotopia/KT_Hub"
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "enter_zone_via_object",
-      "label": "Take ferry to Selenopolis",
-      "position": {
-        "x": 440.0,
-        "y": 90.0
-      },
-      "params": {
-        "from_zone": "Krokotopia/KT_Hub",
-        "to_zone": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis",
-        "interact_xyz": {
-          "x": 2103.48,
-          "y": -1887.55,
-          "z": -121.98
-        },
-        "reset_xyz": {
-          "x": 2495.26,
-          "y": -859.24,
-          "z": -89.77
-        }
-      }
-    },
     {
       "id": "state_3",
       "node_type": "collect_reagent",
@@ -95,39 +66,50 @@
           "Parchment"
         ]
       }
+    },
+    {
+      "id": "sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": -0.000400261608888286,
+        "y": 89.99984826684107
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 439.9995997383911,
+        "y": 179.99984826684107
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis"
+      }
+    },
+    {
+      "id": "state_5",
+      "node_type": "change_realm",
+      "label": "Change players to separate realms",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "use_favorite_realm": true
+      }
     }
   ],
   "transitions": [
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
     {
       "trigger": "advance",
       "source": "state_3",
@@ -147,7 +129,74 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_1",
+      "dest": "sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_2",
+      "dest": "state_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_5",
+      "dest": "state_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "sync_players_1",
+      "label": "Sync players",
+      "members": [
+        "sync_players_1_state_1",
+        "sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Krokotopia/KT_Selenopolis/KT_Z04_Selenopolis"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": -0.000400261608888286,
+          "y": 89.99984826684107
+        }
+      }
+    }
+  ]
 }

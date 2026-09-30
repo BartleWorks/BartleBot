@@ -38,6 +38,7 @@ SHIPPED_SEPARATE = {
     "bots/25_crafting/the_wild_deep_mushroom.json",
     "bots/25_crafting/the_zocalo_red_mandrake.json",
     "bots/25_crafting/scrap_iron_collector.json",
+    "bots/25_crafting/selenopolis_parchment.json",
     "bots/templates/reagent_collector_template.json",
 }
 
