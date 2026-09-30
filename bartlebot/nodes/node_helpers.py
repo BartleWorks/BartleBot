@@ -1592,6 +1592,7 @@ async def port_to_friend(
     ceiling: float = ZONE_CHANGE_TIMEOUT,
     poll_interval: float = POLL_INTERVAL,
     maybe_there: Collection[int] = (),
+    target=None,
 ) -> PortToFriendResult:
     """Teleport clients_to_move to friend_name_lower via the friends list, and wait for each
     to enter a loading screen.
@@ -1618,6 +1619,7 @@ async def port_to_friend(
         ceiling=ceiling,
         poll_interval=poll_interval,
         maybe_there=maybe_there,
+        target=target,
     )
 
 
@@ -1630,6 +1632,7 @@ async def port_clients(
     poll_interval: float = POLL_INTERVAL,
     maybe_there: Collection[int] = (),
     quiet_grace: float | None = None,
+    target=None,
 ) -> PortToFriendResult:
     """Start a port on every client with `initiate`, and wait for each port to show itself.
 
@@ -1651,6 +1654,12 @@ async def port_clients(
     for `quiet_grace` has its port re-issued once, in case the first never registered, and
     after another `quiet_grace` is presumed there. Every other quiet client is re-issued once
     per `trigger_timeout` -- once per window, not every poll -- until `ceiling`.
+
+    With `target`, the hooked client being ported to, a presumption has to be seen: the
+    client must have the target loaded (#130), which proves the same zone, realm and
+    instance where standing beside it proves only the zone. One that does not is on another
+    realm, where the port would have loaded, so it goes back to being re-issued like any
+    other quiet client.
 
     Raises whatever `initiate` raises; both starters raise ValueError when they cannot begin.
     """
@@ -1708,9 +1717,11 @@ async def port_clients(
             if now - last_attempt[i] < grace:
                 continue
             if i in maybe_there and reissued[i]:
-                presumed.add(i)
-            else:
-                due.append(i)
+                if target is None or await _sees_each_other(target, clients_to_move[i]):
+                    presumed.add(i)
+                    continue
+                maybe_there.discard(i)
+            due.append(i)
 
         if len(seen_loading | jumped | presumed) == count or now - loop_start > ceiling:
             return result()
@@ -1723,6 +1734,11 @@ async def port_clients(
                 reissued[i] = True
 
         await asyncio.sleep(poll_interval)
+
+
+async def _sees_each_other(a, b) -> bool:
+    """Whether a check proves *a* and *b* share a zone, realm and instance."""
+    return (await read_sightings([a, b])).pair(0, 1) is sightings.Sight.TOGETHER
 
 
 async def gather_at_player(
@@ -1745,9 +1761,9 @@ async def gather_at_player(
       it than to be wrong about skipping it.
     * A mover already in the target's zone within POSITION_MARGIN of it is the one case whose
       port shows nothing, so it is the only one passed to port_clients as `maybe_there`.
-    * Arrival is every mover in the target's zone and within POSITION_MARGIN of it. That still
-      cannot see realm, but a mover on another realm loads when ported, so the only way through
-      it is two re-issued ports that both failed silently.
+    * Arrival is every mover in the target's zone, within POSITION_MARGIN of it, and seen with
+      it (#130): standing beside the target proves the zone, and only the sighting proves the
+      realm. A mover presumed already there has to be seen too (port_clients' `target`).
 
     Logs its own reasons, naming players by number and never by name, and returns False on any
     failure: a player still loading, a friend not found, a refusal, a port that never showed
@@ -1790,6 +1806,7 @@ async def gather_at_player(
             ceiling=ZONE_CHANGE_TIMEOUT,
             poll_interval=poll_interval,
             maybe_there=beside,
+            target=target,
         )
     except ValueError:
         # The message names the player it could not find, so it stays out of the log.
@@ -1815,10 +1832,17 @@ async def gather_at_player(
 
     await poll_until(lambda: none_loading(movers), None, poll_interval)
 
-    if await poll_until(lambda: _all_beside(target, movers), ZONE_CHANGE_TIMEOUT, poll_interval):
+    if await poll_until(lambda: _all_beside(machine, target, movers), ZONE_CHANGE_TIMEOUT, poll_interval):
         return True
     target_zone = await target.zone_name()
     zones = await asyncio.gather(*[c.zone_name() for c in movers])
+    if all(z == target_zone for z in zones):
+        machine.log(
+            f"FAILURE: not every player ended up with P{target_no}: all are in its zone, but not all "
+            "beside it and on its realm",
+            logging.WARNING,
+        )
+        return False
     machine.log(
         f"FAILURE: not every player ended up with P{target_no} (its zone {target_zone!r}, theirs {sorted(set(zones))})",
         logging.WARNING,
@@ -1826,17 +1850,19 @@ async def gather_at_player(
     return False
 
 
-async def _all_beside(target, movers: list) -> bool:
-    """Whether every mover is in the target's zone and within POSITION_MARGIN of it."""
+async def _all_beside(machine, target, movers: list) -> bool:
+    """Whether every mover is in the target's zone, within POSITION_MARGIN of it, and seen with it."""
     target_zone, target_pos = await asyncio.gather(target.zone_name(), _position_or_none(target))
     if target_pos is None:
         return False
     zones = await asyncio.gather(*[c.zone_name() for c in movers])
     positions = await asyncio.gather(*[_position_or_none(c) for c in movers])
-    return all(
+    if not all(
         zone == target_zone and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
         for zone, pos in zip(zones, positions)
-    )
+    ):
+        return False
+    return (await read_sightings([target, *movers], machine)).all_together()
 
 
 async def open_friend_profile(client, name: str):

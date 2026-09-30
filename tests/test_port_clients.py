@@ -117,6 +117,32 @@ async def test_an_unreadable_position_is_not_mistaken_for_a_jump():
     assert result.missing(1) == [0]
 
 
+async def test_with_a_target_a_quiet_client_is_presumed_only_once_seen():
+    sim = _sim()
+    mover = sim.player("Dst", _BESIDE)
+
+    result = await _port(sim, [mover], maybe_there={0}, target=sim.target)
+
+    assert result.presumed == {0}
+
+
+async def test_with_a_target_a_quiet_client_on_another_realm_is_never_presumed():
+    """Beside the target on another realm, with a port that never registers (#130).
+
+    Standing beside it is the zone and the spot; only being seen is the realm. Without the
+    target this is presumed there, and the player goes on to fight or enter alone.
+    """
+    sim = _sim()
+    mover = sim.player("Dst", _BESIDE, realm="elsewhere", port="ignored")
+
+    blind = await _port(sim, [mover], maybe_there={0}, ceiling=0.3)
+    seen = await _port(sim, [mover], maybe_there={0}, ceiling=0.3, target=sim.target)
+
+    assert blind.presumed == {0}
+    assert not seen.presumed and seen.missing(1) == [0]
+    assert sim.times_ported(mover) > 4, "not presumed, so re-issued once per window like any other"
+
+
 def test_missing_lists_only_clients_that_showed_nothing():
     result = nh.PortToFriendResult({0}, jumped=frozenset({1}), presumed=frozenset({2}))
     assert result.missing(4) == [3]
@@ -159,6 +185,27 @@ async def test_gather_fails_when_a_player_lands_somewhere_else(fast, monkeypatch
         assert not await nh.gather_at_player(machine, [sim.target, lost], 0, _NAME, poll_interval=0.001)
 
     assert any("not every player ended up with P1" in msg for msg, _ in machine.logs)
+
+
+async def test_gather_fails_when_a_player_beside_the_target_is_on_another_realm(fast, monkeypatch):
+    monkeypatch.setattr(nh, "ZONE_CHANGE_TIMEOUT", 0.3)
+    sim = _sim()
+    other_realm = sim.player("Dst", _BESIDE, realm="elsewhere", port="ignored")
+    machine = FakeMachine()
+
+    with patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)):
+        assert not await nh.gather_at_player(machine, [sim.target, other_realm], 0, _NAME, poll_interval=0.001)
+
+
+async def test_gather_records_the_players_it_saw_together(fast):
+    sim = _sim()
+    mover = sim.player("Src", _FAR)
+    machine = FakeMachine()
+
+    with patch.object(nh, "teleport_via_friends_list", new=AsyncMock(side_effect=sim.teleport)):
+        assert await nh.gather_at_player(machine, [sim.target, mover], 0, _NAME, poll_interval=0.001)
+
+    assert machine.are_together([sim.target, mover])
 
 
 async def test_gather_fails_without_naming_a_friend_it_cannot_find(fast):

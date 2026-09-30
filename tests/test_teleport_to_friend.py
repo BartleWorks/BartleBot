@@ -121,6 +121,19 @@ async def test_players_who_end_up_apart_fail(monkeypatch):
     assert any("did not end up together" in msg for msg, _ in machine.logs)
 
 
+async def test_players_in_one_zone_on_different_realms_fail(monkeypatch):
+    """One zone is not one realm: a player whose port never registered, standing in the friend's
+    house on its own realm, used to count as with the others (#130)."""
+    monkeypatch.setattr(ttf, "ZONE_CHANGE_TIMEOUT", 0.2)
+    sim = _friend_sim()
+    clients = [sim.player(_HUB, _FAR), sim.player(_HOUSE, _AT_FRIEND, realm="elsewhere", port="ignored")]
+
+    result, machine = await _run(sim, clients)
+
+    assert result == "FAILURE"
+    assert any("on one realm" in msg for msg, _ in machine.logs)
+
+
 async def test_to_zone_when_set_must_match_where_everyone_ended_up(monkeypatch):
     monkeypatch.setattr(ttf, "ZONE_CHANGE_TIMEOUT", 0.2)
     sim = _friend_sim()
