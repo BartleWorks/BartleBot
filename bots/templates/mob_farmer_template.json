@@ -32,7 +32,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to mob spawn zone",
       "position": {
         "x": 1320.0,

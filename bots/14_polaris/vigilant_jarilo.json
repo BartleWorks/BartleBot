@@ -649,7 +649,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to River of Frozen Tears",
       "position": {
         "x": 440,

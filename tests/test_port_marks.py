@@ -17,7 +17,7 @@ from bartlebot.gui.canvas.edit_scene import (
 from bartlebot.gui.canvas.node_item import PORT_MARK_RECOVERY, PORT_MARK_STOP
 
 
-def _state(sid: str, node_type: str = "go_to_zone", **kwargs) -> StateModel:
+def _state(sid: str, node_type: str = "sync_in_zone", **kwargs) -> StateModel:
     return StateModel(id=sid, node_type=node_type, params={"zone": "WizardCity/WC_Hub"}, **kwargs)
 
 

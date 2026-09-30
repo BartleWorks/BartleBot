@@ -922,7 +922,7 @@
     },
     {
       "id": "sync_players_1_state_2",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to zone",
       "position": {
         "x": 0.0002195242232119199,

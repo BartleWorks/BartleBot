@@ -282,7 +282,7 @@ def _required_field_empty(field, params: dict) -> bool:
 
 
 def _nav_zone_reachable(value) -> bool:
-    """Whether a ``nav_zone`` value is somewhere Go To Zone can go. An empty one, or an unloadable map, passes.
+    """Whether a ``nav_zone`` value is somewhere Sync In Zone can go. An empty one, or an unloadable map, passes.
 
     The picker offers only destinations, but a value can arrive another way: a file,
     or Record writing a zone param a ``nav_zone`` one is linked to.

@@ -1,6 +1,6 @@
 """Take clients to any zone on the navigation map, one planned step at a time.
 
-The Go To Zone node is a thin wrapper around ``navigate()``, and ``tools/zone_nav_tester`` runs it
+The Sync In Zone node is a thin wrapper around ``navigate()``, and ``tools/zone_nav_tester`` runs it
 directly, so the tester exercises the code the node does.
 
 Getting to another world is part of the plan, not a separate trip first: a World Gate is a step

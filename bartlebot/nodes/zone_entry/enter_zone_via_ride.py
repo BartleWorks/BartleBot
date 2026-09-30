@@ -2,8 +2,8 @@
 
 Not a node in the library: it is how a planned ``ride`` step is run
 (``nodes/zone_navigation.step_call``), which resolves every param below from the navigation
-map. Go To Zone is what a bot author reaches for instead. A ride only ever stands in a zone
-the map declares, so there is nothing this could be pointed at that Go To Zone cannot
+map. Sync In Zone is what a bot author reaches for instead. A ride only ever stands in a zone
+the map declares, so there is nothing this could be pointed at that Sync In Zone cannot
 already plan a route to -- the same reason ``enter_zone_via_list`` was retired as a node
 (#36). This one was retired in the node audit, with no bot left using it.
 

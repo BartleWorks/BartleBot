@@ -34,7 +34,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to dungeon entrance zone",
       "position": {
         "x": 1320.0,
@@ -154,7 +154,7 @@
     },
     {
       "id": "state_13",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to level scaling dungeon entrance zone",
       "position": {
         "x": 0.0,

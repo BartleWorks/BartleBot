@@ -736,7 +736,7 @@
     },
     {
       "id": "state_11",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to Graveholm",
       "position": {
         "x": 440.0,

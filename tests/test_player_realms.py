@@ -70,7 +70,7 @@ def _config(*node_types: str, separate: bool | None = None) -> BotConfig:
         "enter_dungeon",
         "enter_zone",
         "enter_zone_via_object",
-        "go_to_zone",
+        "sync_in_zone",
         "handle_combat",
         "teleport_to_marked_location",
         "teleport_to_world_hub",
@@ -81,7 +81,7 @@ def test_every_node_that_moves_players_declares_the_one_shared_spec(node_type):
 
 
 def test_the_option_defaults_to_together():
-    config = _config("go_to_zone")
+    config = _config("sync_in_zone")
     resolution = bot_options.resolve_for_config(config, player_realms.OPTION)
     assert resolution.value == player_realms.TOGETHER
 
@@ -98,8 +98,8 @@ def test_only_the_two_values_are_valid():
 
 
 def test_a_separate_declaration_survives_a_save_and_a_together_one_is_pruned():
-    separate = _config("go_to_zone", separate=True).file_dump()["options"]
-    together = _config("go_to_zone", separate=False).file_dump()["options"]
+    separate = _config("sync_in_zone", separate=True).file_dump()["options"]
+    together = _config("sync_in_zone", separate=False).file_dump()["options"]
     assert separate == [{"name": player_realms.OPTION, "type": player_realms.OPTION_TYPE, "default": "Separate"}]
     assert together == []
 
@@ -110,11 +110,11 @@ def test_a_separate_declaration_survives_a_save_and_a_together_one_is_pruned():
 
 
 def test_a_bot_without_a_merging_node_may_be_separate():
-    assert player_realms.separate_blocked_by(_config("go_to_zone", "handle_combat")) == []
+    assert player_realms.separate_blocked_by(_config("sync_in_zone", "handle_combat")) == []
 
 
 def test_every_merging_node_is_named():
-    config = _config("go_to_zone", "teleport_to_friend", "teleport_to_friend")
+    config = _config("sync_in_zone", "teleport_to_friend", "teleport_to_friend")
     assert player_realms.separate_blocked_by(config) == ["Node 1", "Node 2"]
     assert player_realms.blocked_reason(["Node 1"]) == (
         "This bot cannot be Separate: its node 'Node 1' puts every player on one realm."
@@ -123,10 +123,10 @@ def test_every_merging_node_is_named():
 
 
 def test_the_run_refuses_separate_only_with_a_merging_node():
-    merging = _config("go_to_zone", "teleport_to_friend")
+    merging = _config("sync_in_zone", "teleport_to_friend")
     assert player_realms.run_refusal(merging, player_realms.SEPARATE) is not None
     assert player_realms.run_refusal(merging, player_realms.TOGETHER) is None
-    assert player_realms.run_refusal(_config("go_to_zone"), player_realms.SEPARATE) is None
+    assert player_realms.run_refusal(_config("sync_in_zone"), player_realms.SEPARATE) is None
 
 
 def test_unrecognised_values_read_as_together():
@@ -146,16 +146,16 @@ def _merging_error(config: BotConfig, index: int) -> bool:
 
 
 def test_a_merging_node_is_an_error_in_a_bot_declared_separate():
-    assert _merging_error(_config("go_to_zone", "teleport_to_friend", separate=True), 1)
+    assert _merging_error(_config("sync_in_zone", "teleport_to_friend", separate=True), 1)
 
 
 def test_a_merging_node_is_fine_in_a_together_bot():
-    assert not _merging_error(_config("go_to_zone", "teleport_to_friend"), 1)
-    assert not _merging_error(_config("go_to_zone", "teleport_to_friend", separate=False), 1)
+    assert not _merging_error(_config("sync_in_zone", "teleport_to_friend"), 1)
+    assert not _merging_error(_config("sync_in_zone", "teleport_to_friend", separate=False), 1)
 
 
 def test_only_the_merging_node_is_marked():
-    assert not _merging_error(_config("go_to_zone", "teleport_to_friend", separate=True), 0)
+    assert not _merging_error(_config("sync_in_zone", "teleport_to_friend", separate=True), 0)
 
 
 # ---------------------------------------------------------------------------
@@ -177,7 +177,7 @@ def test_an_unset_value_shows_together(qapp):
 
 def test_a_merging_node_greys_separate_and_says_why(qapp):
     widget = make_option_widget(player_realms.OPTION_TYPE, player_realms.TOGETHER)
-    block_separate_if_merging(widget, _config("go_to_zone", "teleport_to_friend"))
+    block_separate_if_merging(widget, _config("sync_in_zone", "teleport_to_friend"))
     assert widget.separate_blocked()
     assert "'Node 1'" in widget.blocked_reason()
 
@@ -185,13 +185,13 @@ def test_a_merging_node_greys_separate_and_says_why(qapp):
 def test_a_blocked_separate_value_is_still_shown(qapp):
     # An override from before the node was added is the user's to clear, not ours.
     widget = make_option_widget(player_realms.OPTION_TYPE, player_realms.SEPARATE)
-    block_separate_if_merging(widget, _config("go_to_zone", "teleport_to_friend"))
+    block_separate_if_merging(widget, _config("sync_in_zone", "teleport_to_friend"))
     assert widget_value(widget) == player_realms.SEPARATE
 
 
 def test_without_a_merging_node_separate_is_offered(qapp):
     widget = make_option_widget(player_realms.OPTION_TYPE, player_realms.TOGETHER)
-    block_separate_if_merging(widget, _config("go_to_zone"))
+    block_separate_if_merging(widget, _config("sync_in_zone"))
     assert not widget.separate_blocked()
     assert widget.blocked_reason() == ""
 

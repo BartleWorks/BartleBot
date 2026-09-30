@@ -102,7 +102,7 @@ def test_an_enter_gauntlet_node_suggests_gauntlet():
 
 
 def test_a_reagent_route_with_no_combat_suggests_reagents_and_collecting():
-    assert suggested_tags(_states("collect_reagent", "go_to_zone")) == ["Reagents", "Collecting"]
+    assert suggested_tags(_states("collect_reagent", "sync_in_zone")) == ["Reagents", "Collecting"]
 
 
 def test_a_reagent_node_in_a_combat_bot_suggests_reagents_but_not_collecting():
@@ -124,7 +124,7 @@ def test_one_dungeon_offering_team_up_is_enough_for_the_bot():
 
 
 def test_a_graph_implying_nothing_suggests_nothing():
-    assert suggested_tags(_states("handle_combat", "go_to_zone", "not_a_node")) == []
+    assert suggested_tags(_states("handle_combat", "sync_in_zone", "not_a_node")) == []
 
 
 def test_every_implied_tag_is_in_the_vocabulary():

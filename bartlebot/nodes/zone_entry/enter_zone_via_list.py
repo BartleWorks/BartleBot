@@ -6,8 +6,8 @@ hand over a row already resolved -- the text to match in every locale it might r
 to stand -- because only they know what the row is: ``zone_lists.resolve`` for a zone list,
 ``worlds.display_names`` for a gate, whose rows are worlds rather than zones.
 
-Go To Zone is what a bot author reaches for instead. A list object only ever stands in a zone
-the navigation map declares, so there is nothing this could be pointed at that Go To Zone
+Sync In Zone is what a bot author reaches for instead. A list object only ever stands in a zone
+the navigation map declares, so there is nothing this could be pointed at that Sync In Zone
 cannot already plan a route to -- which is why it was retired as a node (#36).
 """
 

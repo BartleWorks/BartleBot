@@ -3,7 +3,7 @@
 How BartleBot gets every client from wherever they are to a named zone, without the bot
 author recording each gate along the way. The map lives in `bartlebot/data/zone_nav.json`;
 `bartlebot/zone_nav.py` loads it and plans routes over it, and
-`bartlebot/nodes/zone_navigation.py` runs a route. The Go To Zone node and the tester both run it.
+`bartlebot/nodes/zone_navigation.py` runs a route. The Sync In Zone node and the tester both run it.
 
 The research behind the zone list — which zones count as main zones, and how they were
 picked from the game files — is in `tools/zone_graph/`.
@@ -56,7 +56,7 @@ parallel.
 `enter_zone_via_list` is not a node a bot author places (#36). A list object only ever stands
 in a zone the map declares — a network naming an undeclared zone is a load error, and the
 tester refuses to record one it cannot place in a network — so there is nowhere it could be
-pointed that Go To Zone cannot already plan a route to. It survives as the step runner behind a
+pointed that Sync In Zone cannot already plan a route to. It survives as the step runner behind a
 planned `list` or `gate` step, and its caller hands it a row it resolved itself:
 `zone_lists.resolve` for a zone list, `worlds.display_names` for a gate, whose rows are worlds
 rather than zones. That is also why no bot file holds a row's text.
@@ -274,7 +274,7 @@ where it stopped. A list step matches the destination's name in every locale fro
 `bartlebot/data/zone_names.json` (`tools/dump_zone_names.py`), and a gate step matches the
 world's name the same way from `world_names.json`.
 
-The Go To Zone node (`nodes/teleportation/go_to_zone.py`) is `navigate()` with the zone as its one
+The Sync In Zone node (`nodes/teleportation/sync_in_zone.py`) is `navigate()` with the zone as its one
 param, chosen in a picker grouped by world (`gui/widgets/zone_picker.py`). Only the zone path is
 stored: the map already says which world it is in. The `go_to_world` node is unchanged: bots that
 use it still go home and through the World Tree.

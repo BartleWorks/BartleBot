@@ -1,4 +1,4 @@
-"""go_to_zone node — take every player to any zone on the navigation map, from wherever they are."""
+"""sync_in_zone node — take every player to any zone on the navigation map, from wherever they are."""
 
 import logging
 
@@ -82,6 +82,6 @@ async def run(machine, clients: list, params: dict) -> str:
     if not zone:
         machine.log("FAILURE: no zone chosen", logging.WARNING)
         return "FAILURE"
-    machine.log(f"go_to_zone: {zone_names.label(zone)} ({zone})")
+    machine.log(f"sync_in_zone: {zone_names.label(zone)} ({zone})")
     outcome = await zone_navigation.navigate(machine, clients, zone)
     return "SUCCESS" if outcome.success else "FAILURE"

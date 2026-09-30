@@ -342,7 +342,7 @@ def test_node_panel_rules():
         name="D",
         states=[
             StateModel(id="a", node_type="enter_dungeon"),
-            StateModel(id="b", node_type="go_to_zone"),
+            StateModel(id="b", node_type="sync_in_zone"),
             _entry("e", "S"),
         ],
         transitions=[_t("e", "a", None), _t("a", "b")],
@@ -489,12 +489,12 @@ def test_a_set_input_reaches_every_bound_member(library):
 
 
 def _panel_definition() -> SubgraphDefinition:
-    """``enter_dungeon`` exposed whole, with ``go_to_zone.zone`` sharing its ``from_zone``."""
+    """``enter_dungeon`` exposed whole, with ``sync_in_zone.zone`` sharing its ``from_zone``."""
     return SubgraphDefinition(
         id="dungeon",
         name="Dungeon",
         states=[
-            StateModel(id="go", node_type="go_to_zone", params={"zone": ""}),
+            StateModel(id="go", node_type="sync_in_zone", params={"zone": ""}),
             StateModel(id="enter", node_type="enter_dungeon", params={"from_zone": "", "dungeon_zone": "Old/Z"}),
             _entry("entry_start", "Start"),
         ],

@@ -551,7 +551,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to Tanglewood Way",
       "position": {
         "x": 1320.0,
@@ -612,7 +612,7 @@
     },
     {
       "id": "state_7",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to Tanglewood Way",
       "position": {
         "x": 3520.0,

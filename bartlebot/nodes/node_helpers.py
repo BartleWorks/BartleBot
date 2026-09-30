@@ -1063,7 +1063,7 @@ class ZoneTarget:
     Mirrors teleport_to_friend's TargetResolution -- same shape, different resolution rule:
     the first client already in the zone, by player order, rather than a configured name or
     slot. It outlived the teleport_to_player_if_in_zone node it was written for, removed
-    once go_to_zone superseded it; zone-arrival recovery is its one caller now.
+    once sync_in_zone superseded it; zone-arrival recovery is its one caller now.
     """
 
     index: int | None = None

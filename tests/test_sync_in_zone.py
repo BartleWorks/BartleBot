@@ -1,4 +1,4 @@
-"""Unit tests for the go_to_zone node.
+"""Unit tests for the sync_in_zone node.
 
 Route planning is zone_navigation's and is tested there. This node only has to refuse an
 empty zone and report navigate()'s outcome.
@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-import bartlebot.nodes.teleportation.go_to_zone as gtz
+import bartlebot.nodes.teleportation.sync_in_zone as gtz
 from bartlebot.nodes.zone_navigation import Outcome
 from tests.conftest import FakeClient, FakeMachine
 
