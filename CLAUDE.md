@@ -64,6 +64,7 @@ read on purpose.
 | `docs/LIBRARY_MIGRATION.md` | where all 82 bots stand against the four core templates: per-bot tier and divergence, the template input signature, the outlier bots |
 | `docs/RETURN_ROUTING.md` | the default failure edge, the explicit stop, why neither is drawn, and the three-mode failure-edge toggle |
 | `docs/RELOGGING.md` | why a client slows down, and the two ways to clear it |
+| `docs/PLAYER_REALMS.md` | telling whether players share a realm by sight, the record of who does, the Player Realms option (Together/Separate) and what blocks Separate, and where each node checks and repairs |
 | `docs/RESTRICTED_ZONES.md` | the PvP policy and its three enforcement points |
 | `docs/ZONE_NAVIGATION.md` | the zone navigation map: link kinds, list networks, doors and side worlds, and routes costed in seconds |
 | `docs/UPSTREAM.md` | wizwalker/wizsprinter forks, offset fixes, bumping a pin |

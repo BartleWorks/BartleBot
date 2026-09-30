@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from bartlebot import dialog_captions
+from bartlebot import dialog_captions, realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
@@ -68,6 +68,20 @@ async def wait_for_current_realm_name(client, timeout: float) -> str:
 
     await node_helpers.poll_until(_ready, timeout, POLL_INTERVAL)
     return name
+
+
+async def read_current_realm(machine, client, safety_delay: float, tag: str) -> str | None:
+    """The key of the realm *client* is on, read from its spellbook, or None if it cannot be told.
+
+    Read from txtYourRealmName, so no page is turned. Opens and closes the spellbook.
+    """
+    if not await open_realm_list(machine, client, safety_delay, tag):
+        return None
+    try:
+        shown = await wait_for_current_realm_name(client, safety_delay)
+    finally:
+        await close_spellbook(client)
+    return realms.key_for(shown) if shown else None
 
 
 async def close_spellbook(client) -> None:
@@ -153,7 +167,6 @@ async def open_realm_list(machine, client, safety_delay: float, tag: str) -> boo
         POLL_INTERVAL,
     )
 
-    # REALM_CURRENT_NAME_PATH is a presence check only -- its text is not readable.
     machine.log(f"{tag}: opening Realms tab", logging.DEBUG)
     await node_helpers.click_by_path(client, SPELLBOOK_REALMS_BUTTON_PATH)
     if not await node_helpers.poll_until(

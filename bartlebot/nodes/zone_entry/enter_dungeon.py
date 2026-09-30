@@ -5,7 +5,7 @@ import logging
 
 from wizwalker import XYZ, Keycode
 
-from bartlebot import dialog_captions
+from bartlebot import dialog_captions, player_realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
@@ -126,6 +126,7 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     required_bot_options=[
+        player_realms.SPEC,
         BotOptionSpec(
             name="Safety Delay",
             type="float",
@@ -177,9 +178,9 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     safety_warning=(
-        "Team-Up is on with more than one player hooked. Each player queues on their own, and the "
-        "node can only check that they all reached the dungeon zone — not that they were matched "
-        "into the same instance of it. A split party would still be reported as a successful entry."
+        "Team-Up is on with more than one player hooked. Each player queues on their own, so they "
+        "can be matched into different instances of the dungeon. The node checks on arrival, ports "
+        "anyone in another instance to the others, and fails if the game refuses the port."
     ),
     max_consecutive_retries=10,
     usage_notes=(
@@ -194,6 +195,7 @@ NODE_SPEC = NodeSpec(
 from bartlebot.nodes.timing import (  # noqa: E402
     AFK_INTERVAL,
     POLL_INTERVAL,
+    SIGHTING_SETTLE_TIMEOUT,
     TEAMUP_QUEUE_TIMEOUT,
     ZONE_CHANGE_TIMEOUT,
 )
@@ -356,6 +358,13 @@ async def _enter_teamup(machine, clients: list, from_zone: str, team_size: int, 
         await asyncio.sleep(POLL_INTERVAL)
 
 
+async def _all_seen(machine, clients: list) -> bool:
+    """Whether every player is seen with every other: one realm and one instance. True when Separate."""
+    if len(clients) < 2 or player_realms.machine_is_separate(machine):
+        return True
+    return (await node_helpers.read_sightings(clients, machine)).all_together()
+
+
 async def run(machine, clients: list, params: dict) -> str:
     """
     APIs: client.zone_name(), client.teleport(XYZ), client.is_loading(),
@@ -369,8 +378,13 @@ async def run(machine, clients: list, params: dict) -> str:
            instance prompt, wait to leave from_zone.
          - team-up: click Team-Up, tick the team size, join the queue, and wait up to an
            hour with anti-AFK keypresses.
+      1b. Player Realms: Together -- ensure_together() on the sigil: anyone not seen with the
+          others ports to the leader, and everyone reaches the prompt again. FAILURE if that
+          port fails.
       3. Wait for all loading screens to finish.
       4. Wait for all clients to arrive in dungeon_zone. Return FAILURE if any are not.
+      5. Player Realms: Together -- confirm by sight that everyone is in one instance, and port
+         anyone who is not to the leader. FAILURE if that port fails (Team-Up's instances).
 
     FAILURE: clients not in from_zone; entrance prompt never appeared; Challenge Mode
     requested but the sigil could not be toggled into it; the Team-Up window never opened;
@@ -401,6 +415,19 @@ async def run(machine, clients: list, params: dict) -> str:
     ):
         return "FAILURE"
 
+    # Everyone is on the sigil, so this is definite. For straggler recovery in a Separate bot.
+    await node_helpers.note_realm_peers(machine, clients)
+
+    # 1b. Everyone is on the sigil, where seeing each other is definite. A Together bot enters
+    #     as one party or not at all: players on different realms enter separate dungeons.
+    gathered = await node_helpers.ensure_together(machine, clients, where="on the sigil")
+    if gathered is node_helpers.TogetherOutcome.FAILED:
+        return "FAILURE"
+    if gathered is node_helpers.TogetherOutcome.GATHERED and not await node_helpers.reach_sigil_prompt(
+        machine, clients, from_zone, sigil, reset, safety_delay, POLL_INTERVAL
+    ):
+        return "FAILURE"
+
     # 2. The two tails share nothing past this point.
     if team_up:
         entered = await _enter_teamup(machine, clients, from_zone, team_size, safety_delay)
@@ -425,6 +452,15 @@ async def run(machine, clients: list, params: dict) -> str:
             logging.WARNING,
         )
         return "FAILURE"
+
+    # 5. Everyone starts at the dungeon's entrance, so a check there is definite. The check on
+    #    the sigil makes a split here rare, except through Team-Up, which matches each player on
+    #    its own and can put them in different instances.
+    if not await node_helpers.poll_until(lambda: _all_seen(machine, clients), SIGHTING_SETTLE_TIMEOUT, POLL_INTERVAL):
+        outcome = await node_helpers.ensure_together(machine, clients, where="in the dungeon")
+        if outcome is node_helpers.TogetherOutcome.FAILED:
+            machine.log("FAILURE: the players entered separate instances of the dungeon", logging.WARNING)
+            return "FAILURE"
 
     machine.log(f"SUCCESS: all clients in {dungeon_zone!r}")
     return "SUCCESS"

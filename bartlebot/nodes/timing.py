@@ -53,6 +53,11 @@ PORT_QUIET_GRACE = 5.0
 # Sized like ZONE_SETTLE_GRACE: long enough for a cross-realm port's loading screen to appear,
 # since re-issuing a port that was about to start is what undoes an arrival (#70).
 
+SIGHTING_SETTLE_TIMEOUT = 3.0
+# Seconds an arrival check waits for players who have landed together to see each other in
+# their entity lists (#130). The probe saw arrivals 1-2 s before their own loading screen
+# ended, so they are usually seen at once; this covers a slow list, not a slow port.
+
 MAX_RETRIES = 3
 # Default number of attempts for recoverable operations (teleport-and-check loops).
 

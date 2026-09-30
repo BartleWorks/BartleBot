@@ -93,7 +93,7 @@
     },
     {
       "id": "state_5",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Take Demox to Scholomance",
       "position": {
         "x": 1320.0,

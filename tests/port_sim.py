@@ -11,7 +11,8 @@ from unittest.mock import AsyncMock
 from wizwalker import XYZ
 
 from bartlebot import wizard_names
-from tests.conftest import FakeClient
+from bartlebot.sightings import SIGHT_RANGE
+from tests.conftest import FakeClient, FakeGidEntity
 
 LOAD_READS = 2
 """How many is_loading() reads a loading screen stays up for."""
@@ -32,6 +33,9 @@ class PortSim:
     * ``"ignored"`` -- never registers: no loading screen, no movement.
     * ``"ignored_once"`` -- the first does not register, the next does.
     * ``"lost"`` -- loads, and lands somewhere other than the target.
+
+    Each player's entity list follows the simulation too, as the game's does (#130): it holds
+    every player in its zone and realm within SIGHT_RANGE, and nobody while it is loading.
     """
 
     def __init__(self, friend: tuple[str, tuple, str] | None = None) -> None:
@@ -39,6 +43,7 @@ class PortSim:
         self.target: FakeClient | None = None
         self.ported: list[FakeClient] = []
         self.fail_from_call: int | None = None
+        self.players: list[FakeClient] = []
 
     def player(self, zone: str, xyz: tuple = (0.0, 0.0, 0.0), *, realm: str = HOME, port: str = "lands", name=None):
         c = FakeClient()
@@ -62,9 +67,21 @@ class PortSim:
         c.zone_name = AsyncMock(side_effect=zone_name)
         c.body.position = AsyncMock(side_effect=position)
         c.is_loading = AsyncMock(side_effect=is_loading)
+        c.get_base_entity_list = AsyncMock(side_effect=lambda: self._loaded_by(c))
+        self.players.append(c)
         if name:
             wizard_names.remember(c, name)
         return c
+
+    def _loaded_by(self, viewer) -> list:
+        if viewer.loading:
+            return []
+        zone, xyz = viewer.where
+        return [
+            FakeGidEntity(other.gid)
+            for other in self.players
+            if other.where[0] == zone and other.realm == viewer.realm and xyz.distance(other.where[1]) <= SIGHT_RANGE
+        ]
 
     def destination(self) -> tuple[str, XYZ, str]:
         if self.target is not None:

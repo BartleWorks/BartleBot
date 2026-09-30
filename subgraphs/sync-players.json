@@ -1,14 +1,14 @@
 {
   "id": "45419e29-77a2-4923-b779-a0ab2d948878",
   "name": "Sync players",
-  "description": "Syncs players in the same zone and realm, guaranteed. Most bots should start with this subgraph.",
-  "version": 3,
+  "description": "Brings every player to one zone, one realm and one area, confirmed by sight. Most bots should start with this subgraph.",
+  "version": 4,
   "inputs": [],
   "panels": [
     {
       "id": "node_state_2",
       "kind": "node",
-      "label": "Go to zone",
+      "label": "Sync in zone",
       "default_closed": false,
       "member": "state_2",
       "bindings": {}
@@ -34,26 +34,14 @@
     },
     {
       "id": "state_2",
-      "node_type": "go_to_zone",
-      "label": "Go to zone",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
         "x": 440.0,
         "y": 90.0
       },
       "params": {
         "zone": ""
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
-      "position": {
-        "x": 880.0,
-        "y": 0.0
-      },
-      "params": {
-        "use_favorite_realm": true
       }
     },
     {
@@ -81,7 +69,7 @@
       "node_type": "subgraph_exit",
       "label": "Exit",
       "position": {
-        "x": 1320.0,
+        "x": 880.0,
         "y": 0.0
       },
       "params": {}
@@ -119,16 +107,6 @@
     {
       "trigger": "advance",
       "source": "state_2",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
       "dest": "exit_1",
       "when": "SUCCESS",
       "flags": [],

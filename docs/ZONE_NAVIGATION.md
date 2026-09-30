@@ -3,7 +3,7 @@
 How BartleBot gets every client from wherever they are to a named zone, without the bot
 author recording each gate along the way. The map lives in `bartlebot/data/zone_nav.json`;
 `bartlebot/zone_nav.py` loads it and plans routes over it, and
-`bartlebot/nodes/zone_navigation.py` runs a route. The Go To Zone node and the tester both run it.
+`bartlebot/nodes/zone_navigation.py` runs a route. The Sync In Zone node and the tester both run it.
 
 The research behind the zone list — which zones count as main zones, and how they were
 picked from the game files — is in `tools/zone_graph/`.
@@ -56,7 +56,7 @@ parallel.
 `enter_zone_via_list` is not a node a bot author places (#36). A list object only ever stands
 in a zone the map declares — a network naming an undeclared zone is a load error, and the
 tester refuses to record one it cannot place in a network — so there is nowhere it could be
-pointed that Go To Zone cannot already plan a route to. It survives as the step runner behind a
+pointed that Sync In Zone cannot already plan a route to. It survives as the step runner behind a
 planned `list` or `gate` step, and its caller hands it a row it resolved itself:
 `zone_lists.resolve` for a zone list, `worlds.display_names` for a gate, whose rows are worlds
 rather than zones. That is also why no bot file holds a row's text.
@@ -216,7 +216,7 @@ and avoiding `home` keeps a route to the gates it can reach without pressing HOM
 | `door` | world | the zone its World Gate stands in and drops arriving players in, if the world has one |
 | `gate` | world | the World Gate in `door`: `{interact_xyz, reset_xyz, verified, source, note}`. Only a world with a `door` may have one; it generates a `gate` link to every other world's door |
 | `entered_from` | world | for a side world, the world whose zones its entry links start in |
-| `zones` | world | every zone a route may start, pass through or end in. `{"destination": false}` keeps a connector (a dojo, a school) out of the picker |
+| `zones` | world | every zone a route may start, pass through or end in. `{"destination": false}` keeps a connector (a dojo, a school) out of the picker; `{"realm_change": false}` marks a zone the game will not switch realms in (Eerem Palace) |
 | `label` | zone | the name to show when the game's is ambiguous: `EM_Z02_Sewers` is "Zanadu" in game, "Zanadu Sewers" here |
 | `arrivals` | zone | `{from zone: xyz}`: where a player lands coming from that zone. A walk from here to there with no `reset_xyz` uses it |
 | `kind`, `from`, `to` | link | one direction of one zone change |
@@ -274,7 +274,7 @@ where it stopped. A list step matches the destination's name in every locale fro
 `bartlebot/data/zone_names.json` (`tools/dump_zone_names.py`), and a gate step matches the
 world's name the same way from `world_names.json`.
 
-The Go To Zone node (`nodes/teleportation/go_to_zone.py`) is `navigate()` with the zone as its one
+The Sync In Zone node (`nodes/teleportation/sync_in_zone.py`) is `navigate()` with the zone as its one
 param, chosen in a picker grouped by world (`gui/widgets/zone_picker.py`). Only the zone path is
 stored: the map already says which world it is in. The `go_to_world` node is unchanged: bots that
 use it still go home and through the World Tree.
@@ -291,8 +291,9 @@ together.
 | in one zone | is longer, or takes a teleporter | follow one client: it travels, the rest port to it |
 | in several zones | — | follow one client |
 
-The client that travels is the one the most others can port to, then the one with the cheapest
-route, then the lowest player number; a client already in the target zone has the cheapest route of
+The client that travels -- the leader -- is one in the largest group that already sees itself (see
+below), then the one the most others can port to, then the one with the cheapest route, then the
+lowest player number; a client already in the target zone has the cheapest route of
 all. Nobody else moves until it arrives, so no two clients ever use an object at once. Clients that
 cannot port to one another travel together instead, regrouping first if they are split: at the hub
 within one world, at home across worlds.
@@ -316,6 +317,16 @@ into a zone the others are about to leave. A step nobody makes is planned around
 `enter_zone_via_object` itself: when some clients go through and the rest are still standing there,
 the rest take turns, and a warning names the link so it can be marked. The flag still matters,
 because the planner only costs a teleporter per client when it is set.
+
+**One zone is not one realm (#133).** `sync_in_zone` ends with every player beside the leader,
+on one realm, confirmed by sight (`docs/PLAYER_REALMS.md`). The leader hops to the realm asked for
+(`navigate(realm=...)`, the Favorite Realm unless the node keeps the current one) once it arrives,
+or, when the target refuses a realm change (`"realm_change": false`, Eerem Palace), before the step
+into it: a door keeps each player's realm, so the hop carries through. Everyone the leader does not
+see then ports to it -- `port_map._port_batch` counts a landing only once the target sees it. A
+player that cannot port travels, is teleported beside the leader, and only if still unseen reads
+the leader's realm from its spellbook and hops to it. A leader that misses a step is replaced by
+one who made it. Under `Player Realms: Separate` every player travels, and nobody ports or hops.
 
 ## Mapping it: the tester
 

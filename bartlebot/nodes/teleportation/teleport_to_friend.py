@@ -84,6 +84,7 @@ NODE_SPEC = NodeSpec(
             "or not every player ended up with the target.",
         ),
     ],
+    merges_players=True,
     required_bot_options=[
         BotOptionSpec(
             name=OPTION_FRIEND_NAME,
@@ -298,11 +299,15 @@ async def _port_to_named_friend(machine, clients: list, target: TargetResolution
     # b. Nobody knows the friend's zone, but everyone who ported to them shares it.
     async def _together() -> bool:
         zones = await asyncio.gather(*[c.zone_name() for c in clients])
-        return len(set(zones)) == 1 and (not to_zone or node_helpers.zone_matches(zones[0], to_zone))
+        if len(set(zones)) != 1 or (to_zone and not node_helpers.zone_matches(zones[0], to_zone)):
+            return False
+        # One zone is not one realm. Everyone ported onto the friend, so everyone is standing
+        # together, where seeing each other is the proof (#130).
+        return (await node_helpers.read_sightings(clients, machine)).all_together()
 
     if not await node_helpers.poll_until(_together, ZONE_CHANGE_TIMEOUT, POLL_INTERVAL):
         zones = await asyncio.gather(*[c.zone_name() for c in clients])
-        expected = f"all in {to_zone!r}" if to_zone else "all in one zone"
+        expected = f"all in {to_zone!r}, on one realm" if to_zone else "all in one zone, on one realm"
         machine.log(f"FAILURE: players did not end up together (expected {expected}, got {zones})", logging.WARNING)
         return "FAILURE"
 

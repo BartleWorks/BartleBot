@@ -19,8 +19,8 @@ def _config() -> BotConfig:
         initial="state_a",
         recovery_state="state_r",
         states=[
-            StateModel(id="state_a", node_type="go_to_zone", params={"zone": "WizardCity/WC_Hub"}),
-            StateModel(id="state_b", node_type="go_to_zone", params={"zone": "WizardCity/WC_Hub"}),
+            StateModel(id="state_a", node_type="sync_in_zone", params={"zone": "WizardCity/WC_Hub"}),
+            StateModel(id="state_b", node_type="sync_in_zone", params={"zone": "WizardCity/WC_Hub"}),
             StateModel(id="state_r", node_type="teleport_to_world_hub", params={}),
         ],
         transitions=[

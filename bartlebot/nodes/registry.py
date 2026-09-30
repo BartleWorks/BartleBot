@@ -21,10 +21,10 @@ from bartlebot.nodes.interaction.wait_for_dialogue import run as wait_for_dialog
 from bartlebot.nodes.param_schema import NodeSpec, ParamField
 from bartlebot.nodes.teleportation.go_to_world import NODE_SPEC as _go_to_world_spec
 from bartlebot.nodes.teleportation.go_to_world import run as go_to_world_run
-from bartlebot.nodes.teleportation.go_to_zone import NODE_SPEC as _go_to_zone_spec
-from bartlebot.nodes.teleportation.go_to_zone import run as go_to_zone_run
 from bartlebot.nodes.teleportation.mark_location import NODE_SPEC as _mark_location_spec
 from bartlebot.nodes.teleportation.mark_location import run as mark_location_run
+from bartlebot.nodes.teleportation.sync_in_zone import NODE_SPEC as _sync_in_zone_spec
+from bartlebot.nodes.teleportation.sync_in_zone import run as sync_in_zone_run
 from bartlebot.nodes.teleportation.teleport_to_coordinates import NODE_SPEC as _teleport_to_coordinates_spec
 from bartlebot.nodes.teleportation.teleport_to_coordinates import run as teleport_to_coordinates_run
 from bartlebot.nodes.teleportation.teleport_to_friend import NODE_SPEC as _teleport_to_friend_spec
@@ -66,7 +66,7 @@ NODE_REGISTRY: dict = {
     "handle_potions": handle_potions_run,
     "teleport_to_world_hub": teleport_to_world_hub_run,
     "go_to_world": go_to_world_run,
-    "go_to_zone": go_to_zone_run,
+    "sync_in_zone": sync_in_zone_run,
     "teleport_to_coordinates": teleport_to_coordinates_run,
     "enter_dungeon": enter_dungeon_run,
     "enter_gauntlet": enter_gauntlet_run,
@@ -98,7 +98,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "handle_potions": _handle_potions_spec,
     "teleport_to_world_hub": _teleport_to_world_hub_spec,
     "go_to_world": _go_to_world_spec,
-    "go_to_zone": _go_to_zone_spec,
+    "sync_in_zone": _sync_in_zone_spec,
     "teleport_to_coordinates": _teleport_to_coordinates_spec,
     "enter_dungeon": _enter_dungeon_spec,
     "enter_gauntlet": _enter_gauntlet_spec,
@@ -141,8 +141,8 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         "Teleportation",
         [
             "go_to_world",
-            "go_to_zone",
             "mark_location",
+            "sync_in_zone",
             "teleport_to_coordinates",
             "teleport_to_friend",
             "teleport_to_marked_location",

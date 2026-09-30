@@ -25,7 +25,7 @@ from collections.abc import Sequence
 
 from bartlebot import dialog_captions, group_manager, wizard_names
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.timing import POLL_INTERVAL
+from bartlebot.nodes.timing import POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT
 
 logger = logging.getLogger(__name__)
 
@@ -210,7 +210,12 @@ async def port_waves(machine, clients: list, waiting: list, arrived: list, port_
 
 
 async def _port_batch(machine, movers: list, target, route: str, port_map: PortMap, number) -> list:
-    """Port `movers` to `target` along `route`, and return the ones that landed in its zone."""
+    """Port `movers` to `target` along `route`, and return the ones that landed with it.
+
+    Landing is the target's zone *and* its realm, the second told by the two seeing each
+    other (#130): a port that fails silently can leave a mover in the right zone on the
+    wrong realm, which would enter the next dungeon or battle on its own.
+    """
     who, to = [number(c) for c in movers], number(target)
     machine.log(f"Porting player(s) {who} to player {to} through the {'friends list' if route == FRIEND else 'group'}")
     start = node_helpers.port_to_friend if route == FRIEND else group_manager.port_to_group_member
@@ -228,10 +233,24 @@ async def _port_batch(machine, movers: list, target, route: str, port_map: PortM
     await node_helpers.poll_until(lambda: node_helpers.none_loading(movers), None, POLL_INTERVAL)
     goal = await target.zone_name()
     zones = await asyncio.gather(*(c.zone_name() for c in movers))
-    landed = [c for c, zone in zip(movers, zones) if zone == goal]
+    in_zone = [c for c, zone in zip(movers, zones) if zone == goal]
+
+    async def all_seen() -> bool:
+        check = await node_helpers.read_sightings([target, *in_zone], machine)
+        return check.all_together()
+
+    landed = in_zone
+    if in_zone and not await node_helpers.poll_until(all_seen, SIGHTING_SETTLE_TIMEOUT, POLL_INTERVAL):
+        check = await node_helpers.read_sightings([target, *in_zone], machine)
+        group = check.group_of(0)
+        landed = [c for i, c in enumerate(in_zone, start=1) if i in group]
+        machine.log(
+            f"Player(s) {[number(c) for c in in_zone if c not in landed]} reached player {to}'s zone but not its realm",
+            logging.WARNING,
+        )
     if not result.refusal:
         # A refusal is the moment (a friend busy), not the route; anything else that did not land is.
-        for client, zone in zip(movers, zones):
-            if zone != goal:
+        for client in movers:
+            if not any(client is c for c in landed):
                 port_map.demote(client, target, route)
     return landed

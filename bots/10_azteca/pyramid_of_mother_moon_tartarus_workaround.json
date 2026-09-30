@@ -869,7 +869,7 @@
     },
     {
       "id": "state_36",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to Garden of Hesperides",
       "position": {
         "x": 8360.0,
@@ -915,7 +915,7 @@
     },
     {
       "id": "state_39",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to Pitch Black Lake",
       "position": {
         "x": 6600.0,

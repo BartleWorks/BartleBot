@@ -1,6 +1,6 @@
 """Take clients to any zone on the navigation map, one planned step at a time.
 
-The Go To Zone node is a thin wrapper around ``navigate()``, and ``tools/zone_nav_tester`` runs it
+The Sync In Zone node is a thin wrapper around ``navigate()``, and ``tools/zone_nav_tester`` runs it
 directly, so the tester exercises the code the node does.
 
 Getting to another world is part of the plan, not a separate trip first: a World Gate is a step
@@ -23,6 +23,12 @@ clients, while a group making a transition is still loaded in one player at a ti
 the shortest routes -- or wherever a teleporter would have to be taken in turns -- one client
 travels and the rest port to it on arrival. That also keeps every object to one user. See
 docs/ZONE_NAVIGATION.md, "Running a route with several clients".
+
+Arriving in one zone is not arriving on one realm (#133). A Together bot's players end up
+with one of them -- the leader, from the largest group that already sees itself -- on one
+realm and in one area: the leader hops to the realm it was asked for, everyone it does not
+see ports to it, and the trip ends with a check by sight (#130). A Separate bot's players
+all travel, and nobody ports or hops (#132).
 """
 
 from __future__ import annotations
@@ -33,12 +39,12 @@ from collections.abc import Collection
 from dataclasses import dataclass, field
 from typing import Protocol
 
-from bartlebot import port_map, worlds, zone_lists, zone_nav
+from bartlebot import player_realms, port_map, sightings, worlds, zone_lists, zone_nav
 from bartlebot.nodes import node_helpers, wizard_city
 from bartlebot.nodes.interaction import interact
 from bartlebot.nodes.teleportation import teleport_to_world_hub
-from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL
-from bartlebot.nodes.utility import sleep
+from bartlebot.nodes.timing import LOADING_SCREEN_TIMEOUT, POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT
+from bartlebot.nodes.utility import change_realm, realm_list, sleep
 from bartlebot.nodes.zone_entry import enter_zone, enter_zone_via_list, enter_zone_via_object, enter_zone_via_ride
 from bartlebot.restricted_zones import check_zone
 
@@ -216,18 +222,22 @@ async def navigate(
     include_unverified: bool = False,
     avoid: Collection[str] = (),
     nav: zone_nav.NavMap | None = None,
+    realm: str | None = None,
 ) -> Outcome:
     """Move every client to `target`. See the module docstring for the approach.
 
     `avoid` is passed to the planner: the kinds of link the route must not use. It does not
     cover regrouping, which has no alternative to the hub button and HOME.
+
+    `realm` is the key of the realm the leader hops to, or None to keep the one it is on.
+    Either way a Together bot's players end on one realm; a Separate bot ignores it.
     """
     nav = zone_nav.load() if nav is None else nav
     world = nav.world_of(target)
     if world is None or target not in world.zones:
         machine.log(f"FAILURE: {target!r} is not on the navigation map", logging.WARNING)
         return Outcome(False, f"{target!r} is not on the navigation map")
-    trip = _Trip(machine, clients, target, nav, include_unverified, avoid)
+    trip = _Trip(machine, clients, target, nav, include_unverified, avoid, realm)
     try:
         return await trip.run()
     except _ZoneUnreadable as error:
@@ -237,7 +247,16 @@ async def navigate(
 class _Trip:
     """One navigate() call: where it is going, and what it has learned on the way."""
 
-    def __init__(self, machine, clients: list, target: str, nav: zone_nav.NavMap, include_unverified: bool, avoid):
+    def __init__(
+        self,
+        machine,
+        clients: list,
+        target: str,
+        nav: zone_nav.NavMap,
+        include_unverified: bool,
+        avoid,
+        realm: str | None = None,
+    ):
         self.machine = machine
         self.clients = list(clients)
         self.target = target
@@ -248,6 +267,11 @@ class _Trip:
         self.arrivals = {target, *(zone for s in nav.links if s.to_zone == target for zone in s.also_arrives_in)}
         self.taken: list[zone_nav.Step] = []
         self._ports: port_map.PortMap | None = None
+        self.separate = player_realms.machine_is_separate(machine)
+        self.realm = None if self.separate else realm
+        # The player everyone ends up with, once chosen; and whether it has hopped yet.
+        self.leader = None
+        self.hopped = False
 
     # ── helpers ──────────────────────────────────────────────────────────────
 
@@ -293,65 +317,159 @@ class _Trip:
 
     async def run(self) -> Outcome:
         zones = await _zones(self.clients)
-        if all(self.arrived(zone) for zone in zones):
+        there = all(self.arrived(zone) for zone in zones)
+        if there and self.realm is None and (self.separate or await self.all_seen()):
             return self.succeeded()
         if hit := next((h for z in zones if (h := check_zone(z))), None):
             return self.failed(f"a client is in a restricted zone: {hit.describe()}")
+        if self.separate:
+            return await self.separately(there)
         if len(self.clients) == 1:
-            outcome, _ = await self.travel(self.clients, defer=False)
-            return self.succeeded() if outcome.success else outcome
+            self.leader = self.clients[0]
+            if not there:
+                outcome, _ = await self.travel(self.clients, defer=False)
+                if not outcome.success:
+                    return outcome
+            return await self.finish()
 
+        check = await node_helpers.read_sightings(self.clients, self.machine)
         split = len(set(zones)) > 1
-        if not split:
+        if not there and not split and check.all_together():
             route = self.plan(zones[0], len(self.clients), await _teleport_cooldown(self.clients))
             if route is None:
                 return self.failed(f"no route from {zones[0]!r} to {self.target!r}")
             if travels_together(route, len(self.clients)):
+                self.leader = self.clients[sightings.choose_leader(check)]
                 return await self.together()
 
         ports = await self.ports()
-        navigator = self.choose_navigator(zones, ports)
-        if navigator is None:
+        leader = self.choose_leader(zones, ports, check)
+        if leader is None:
             return self.failed(f"no route to {self.target!r} from where any client is: {sorted(set(zones))}")
-        reach = ports.reach(navigator, self.clients)
+        self.leader = leader
+        if there:
+            return await self.finish()
+        reach = ports.reach(leader, self.clients)
         # Following one client only pays when the others can port to it. Together, nobody may be
         # left out; split, anyone left out still has to travel, but nobody reachable is the old
         # regroup-and-go.
         if not reach or (not split and len(reach) < len(self.clients) - 1):
             self.machine.log("The clients cannot all port to one another; they travel together")
             return await self.together()
-        return await self.solo(navigator)
+        return await self.solo(leader)
 
-    def choose_navigator(self, zones: list[str], ports: port_map.PortMap):
-        """The client the most others can port to, then the one with the cheapest route, then player order."""
+    def choose_leader(self, zones: list[str], ports: port_map.PortMap, check: sightings.Sightings):
+        """The client in the largest group that already sees itself, then the one the most others
+        can port to, then the one with the cheapest route, then player order.
+
+        The largest group first because everyone the leader does not see has to move; the rest is
+        choose_navigator's old ranking, for who can reach the target and be reached.
+        """
         best = None
         for index, (client, zone) in enumerate(zip(self.clients, zones)):
             route = [] if self.arrived(zone) else self.plan(zone, 1)
             if route is None:
                 continue
-            key = (-len(ports.reach(client, self.clients)), route_cost(route), index)
+            key = (-len(check.group_of(index)), -len(ports.reach(client, self.clients)), route_cost(route), index)
             if best is None or key < best[0]:
                 best = (key, client)
         return None if best is None else best[1]
 
-    async def solo(self, navigator) -> Outcome:
-        self.machine.log(f"Player {self.who([navigator])[0]} travels; the others port to it once it arrives")
-        outcome, _ = await self.travel([navigator], defer=False)
+    async def solo(self, leader) -> Outcome:
+        self.machine.log(f"Player {self.who([leader])[0]} travels; the others port to it once it arrives")
+        outcome, _ = await self.travel([leader], defer=False)
         if not outcome.success:
             return outcome
-        return await self.gather()
+        return await self.finish()
 
     async def together(self) -> Outcome:
-        outcome, deferred = await self.travel(self.clients, defer=True)
+        outcome, _deferred = await self.travel(self.clients, defer=True)
         if not outcome.success:
             return outcome
-        return await self.gather() if deferred else self.succeeded()
+        return await self.finish()
+
+    async def separately(self, there: bool) -> Outcome:
+        """A Separate bot: everyone travels, and nobody ports or changes realm."""
+        self.machine.log(
+            f"{player_realms.OPTION} is {player_realms.SEPARATE}: every player travels, and nobody ports or "
+            "changes realm"
+        )
+        if not there:
+            outcome, _ = await self.travel(self.clients, defer=False)
+            if not outcome.success:
+                return outcome
+        return self.succeeded()
+
+    async def finish(self) -> Outcome:
+        """Once the leader is at the target: its realm, then everyone to it, then a check by sight."""
+        await self.settle_leader()
+        if not await self.hop():
+            return self.failed(f"player {self.who([self.leader])[0]} could not change realm")
+        return await self.gather()
+
+    async def settle_leader(self) -> None:
+        """Keep the leader if it arrived; one that missed a step is replaced by one who made it."""
+        zones = await _zones(self.clients)
+        arrived = [i for i, zone in enumerate(zones) if self.arrived(zone)]
+        if self.leader is not None and any(self.clients[i] is self.leader for i in arrived):
+            return
+        check = await node_helpers.read_sightings(self.clients, self.machine)
+        groups = [[i for i in group if i in arrived] for group in check.groups()]
+        best = max((g for g in groups if g), key=lambda g: (len(g), -g[0]))
+        self.leader = self.clients[best[0]]
+
+    # ── the realm ────────────────────────────────────────────────────────────
+
+    async def hop(self) -> bool:
+        """Move the leader to `realm`, if it was asked for and has not happened on the way."""
+        if self.realm is None or self.hopped:
+            return True
+        zone = await self.leader.zone_name()
+        if not self.nav.allows_realm_change(zone):
+            self.machine.log(
+                f"Realms cannot be changed in {zone!r}; everyone joins player {self.who([self.leader])[0]} "
+                "on the realm it is on"
+            )
+            return True
+        return await self.hop_now()
+
+    async def hop_now(self) -> bool:
+        self.machine.log(f"Player {self.who([self.leader])[0]} changes realm; the others will join it")
+        safety_delay = self.machine.get_option("Safety Delay", 3.0)
+        if await change_realm.to_realm(self.machine, self.leader, self.realm, safety_delay) != "SUCCESS":
+            return False
+        self.hopped = True
+        # The loading watcher would say so too, but not before the next check reads the record.
+        forget = getattr(self.machine, "forget_sightings", None)
+        if forget is not None:
+            forget(self.leader)
+        return True
+
+    def hop_before(self, step: zone_nav.Step, here: str, group: list) -> bool:
+        """Whether the leader must hop before `step`: the last chance, when the target refuses it."""
+        return (
+            self.realm is not None
+            and not self.hopped
+            and any(c is self.leader for c in group)
+            and not self.nav.allows_realm_change(self.target)
+            and self.nav.allows_realm_change(here)
+            and any(self.arrived(zone) for zone in step.arrives_in)
+        )
+
+    # ── everyone to the leader ───────────────────────────────────────────────
+
+    async def all_seen(self) -> bool:
+        return (await node_helpers.read_sightings(self.clients, self.machine)).all_together()
 
     async def gather(self) -> Outcome:
-        """Port everyone not yet at the target to someone who is; whoever cannot, travels."""
+        """Port everyone the leader does not see to it; whoever cannot port travels, then joins it."""
+        await node_helpers.poll_until(lambda: node_helpers.none_loading(self.clients), None, POLL_INTERVAL)
         zones = await _zones(self.clients)
-        arrived = [c for c, zone in zip(self.clients, zones) if self.arrived(zone)]
-        waiting = [c for c, zone in zip(self.clients, zones) if not self.arrived(zone)]
+        check = await node_helpers.read_sightings(self.clients, self.machine)
+        leader_index = next(i for i, c in enumerate(self.clients) if c is self.leader)
+        with_leader = set(check.group_of(leader_index))
+        arrived = [c for i, c in enumerate(self.clients) if i in with_leader and self.arrived(zones[i])]
+        waiting = [c for c in self.clients if not any(c is a for a in arrived)]
         if waiting:
             left = await port_map.port_waves(self.machine, self.clients, waiting, arrived, await self.ports())
             if left:
@@ -359,7 +477,50 @@ class _Trip:
                 outcome, _ = await self.travel(left, defer=False)
                 if not outcome.success:
                     return outcome
-        return self.succeeded()
+                if not await self.join(left):
+                    return self.failed(f"player(s) {self.who(left)} could not join player {self.who([self.leader])[0]}")
+        return await self.confirm()
+
+    async def join(self, travellers: list) -> bool:
+        """Bring players who travelled on their own to the leader: beside it, then onto its realm.
+
+        They are in its zone, so a teleport puts them beside it. Seen there, they share its realm
+        already; not seen, they hop to it, reading which realm that is from the leader's spellbook
+        when the trip has not set it, and are put beside it again.
+        """
+        await self.stand_beside_leader(travellers)
+        check = await node_helpers.read_sightings([self.leader, *travellers], self.machine)
+        if check.all_together():
+            return True
+        safety_delay = self.machine.get_option("Safety Delay", 3.0)
+        realm = self.realm if self.hopped else None
+        if realm is None:
+            realm = await realm_list.read_current_realm(self.machine, self.leader, safety_delay, "sync_in_zone")
+        if realm is None:
+            self.machine.log(f"Player {self.who([self.leader])[0]}'s realm could not be read", logging.WARNING)
+            return False
+        self.machine.log(f"Player(s) {self.who(travellers)} change to player {self.who([self.leader])[0]}'s realm")
+        results = await asyncio.gather(
+            *(change_realm.to_realm(self.machine, c, realm, safety_delay) for c in travellers)
+        )
+        if any(r != "SUCCESS" for r in results):
+            return False
+        await self.stand_beside_leader(travellers)
+        return True
+
+    async def stand_beside_leader(self, clients: list) -> None:
+        where = await self.leader.body.position()
+        await asyncio.gather(*(c.teleport(where) for c in clients))
+
+    async def confirm(self) -> Outcome:
+        """Succeed only once every player is seen with the leader: one zone, realm and area."""
+        if await node_helpers.poll_until(self.all_seen, SIGHTING_SETTLE_TIMEOUT, POLL_INTERVAL):
+            return self.succeeded()
+        check = await node_helpers.read_sightings(self.clients, self.machine)
+        groups = [self.who([self.clients[i] for i in group]) for group in check.groups()]
+        return self.failed(
+            f"not every player is with player {self.who([self.leader])[0]} after the sync (seen together: {groups})"
+        )
 
     # ── travelling ───────────────────────────────────────────────────────────
 
@@ -399,6 +560,8 @@ class _Trip:
             calls = step_call(step)
             if isinstance(calls, str):
                 return self.failed(calls), deferred
+            if self.hop_before(step, zones[0], group) and not await self.hop_now():
+                return self.failed(f"player {self.who([self.leader])[0]} could not change realm"), deferred
             self.machine.log(f"Step {len(self.taken) + 1}: {step.kind} {step.from_zone!r} -> {step.to_zone!r}")
             start = zones[0]
             await self.run_calls(calls, group)

@@ -176,6 +176,10 @@ def value_matches_type(value: Any, declared_type: str | None) -> bool:
         return isinstance(value, int) and not isinstance(value, bool)
     if declared_type == "float":
         return isinstance(value, (int, float)) and not isinstance(value, bool)
+    if declared_type == "player_realms":
+        from bartlebot.player_realms import VALUES  # noqa: PLC0415 - keeps this module importable alone
+
+        return value in VALUES
     if declared_type in ("str", "friend_name", "realm"):
         return isinstance(value, str)
     if declared_type == "player_list":

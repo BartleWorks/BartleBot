@@ -10,7 +10,7 @@ client is, and a tree of the current world rooted at its hub:
 TEST tab
     Pick a world and a zone. Preview lists the steps the navigator would take, or -- when
     there is no route -- the hops down the tree that still need recording. Execute runs
-    bartlebot.nodes.zone_navigation.navigate(), the code the Go To Zone node runs. When a
+    bartlebot.nodes.zone_navigation.navigate(), the code the Sync In Zone node runs. When a
     run over tentative links succeeds, one click marks them verified.
 
     Walk only and No hub button leave those links out of routes and out of the tree colours.

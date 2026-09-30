@@ -5,7 +5,7 @@ import logging
 
 from wizwalker import XYZ, Keycode
 
-from bartlebot import dialog_captions
+from bartlebot import dialog_captions, player_realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import (
@@ -104,6 +104,7 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     required_bot_options=[
+        player_realms.SPEC,
         BotOptionSpec(
             name="Safety Delay",
             type="float",
@@ -288,6 +289,9 @@ async def run(machine, clients: list, params: dict) -> str:
         return "FAILURE"
 
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
+
+    # Who shares whose realm, for straggler recovery in a Separate bot.
+    await node_helpers.note_realm_peers(machine, clients)
 
     # 2s. Sequential mode replaces steps 2–5 entirely: each client approaches, interacts and
     #     commits to the transition alone. Steps 6–7 below are shared by both modes.

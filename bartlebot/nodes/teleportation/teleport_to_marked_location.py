@@ -5,7 +5,7 @@ import logging
 
 from wizwalker import XYZ
 
-from bartlebot import dialog_captions
+from bartlebot import dialog_captions, player_realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.node_helpers import POSITION_MARGIN, TRIGGER_MARGIN
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
@@ -48,6 +48,7 @@ NODE_SPEC = NodeSpec(
             "expected zone and position after recalling.",
         ),
     ],
+    required_bot_options=[player_realms.SPEC],
     max_consecutive_retries=5,
     usage_notes=(
         "If some but not all players end up in the expected zone, the node first tries "
@@ -106,6 +107,9 @@ async def run(machine, clients: list, params: dict) -> str:
     # 3. Snapshot starting positions so a same-zone recall (no loading screen) can be detected
     #    by XYZ movement instead.
     start_positions = await asyncio.gather(*[c.body.position() for c in clients])
+
+    # Who shares whose realm, for straggler recovery in a Separate bot. A recall keeps realms.
+    await node_helpers.note_realm_peers(machine, clients)
 
     # 4. Click the RecallButton on all clients to recall to the marked location.
     machine.log("Clicking RecallButton on all clients…", logging.DEBUG)

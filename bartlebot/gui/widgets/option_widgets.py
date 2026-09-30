@@ -45,7 +45,7 @@ OPTION_TYPES: tuple[str, ...] = ("bool", "int", "float", "str", "str_list", "pla
 #: the generic one cannot: this bot's own drop table, this machine's friends list, the
 #: game's realm table.  Not offered for hand-adding, because a hand-added option has
 #: none of those behind it.
-NODE_ONLY_TYPES: tuple[str, ...] = ("drop_keep_list", "friend_name", "realm")
+NODE_ONLY_TYPES: tuple[str, ...] = ("drop_keep_list", "friend_name", "realm", "player_realms")
 
 #: Types whose control is a table rather than a field, so a list of rows reads better
 #: with them at the bottom than with the short rows arranged around them.
@@ -72,6 +72,7 @@ TYPE_LABELS: dict[str, str] = {
     "drop_keep_list": "Keep list",
     "friend_name": "Wizard name",
     "realm": "Realm",
+    "player_realms": "Together / Separate",
 }
 
 
@@ -203,6 +204,10 @@ def make_option_widget(
         from bartlebot.gui.widgets.realm_combo import RealmCombo  # noqa: PLC0415
 
         widget = RealmCombo()
+    elif opt_type == "player_realms":
+        from bartlebot.gui.widgets.player_realms_choice import PlayerRealmsChoice  # noqa: PLC0415
+
+        widget = PlayerRealmsChoice()
     elif opt_type == "bool":
         widget = BoolChoice() if explicit_bool else QCheckBox(label)
     elif opt_type == "int":
@@ -235,6 +240,20 @@ def make_option_widget(
     if tooltip:
         widget.setToolTip(tooltip)
     return widget
+
+
+def block_separate_if_merging(widget: QWidget, config) -> None:
+    """Grey out a Player Realms control's Separate choice when *config* cannot be Separate.
+
+    A no-op for any other control, so both surfaces can call it on every row. See
+    :mod:`bartlebot.player_realms` for the rule; this is the first of its three enforcers.
+    """
+    if config is None or not hasattr(widget, "block_separate"):
+        return
+    from bartlebot import player_realms  # noqa: PLC0415
+
+    blockers = player_realms.separate_blocked_by(config)
+    widget.block_separate(player_realms.blocked_reason(blockers) if blockers else "")
 
 
 def set_widget_value(widget: QWidget, value: Any) -> None:

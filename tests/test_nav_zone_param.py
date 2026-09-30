@@ -1,4 +1,4 @@
-"""Widget tests for the 'nav_zone' param, driven through the real Go To Zone schema (QApplication required).
+"""Widget tests for the 'nav_zone' param, driven through the real Sync In Zone schema (QApplication required).
 
 The point of the type is that the bot file stores a zone path and nothing else: the button shows
 the zone's world, name and id, but a world written back into the bot would be a second value
@@ -15,16 +15,16 @@ _ENTRANCE = "Krokotopia/KT_Krokosphinx/KT_EntranceHall"
 
 def _form(params, clients=()):
     from bartlebot.gui.canvas.param_panel import _DynamicParamForm
-    from bartlebot.nodes.teleportation import go_to_zone
+    from bartlebot.nodes.teleportation import sync_in_zone
 
     form = _DynamicParamForm()
     form.set_clients_getter(lambda: list(clients))
-    form.load_schema(go_to_zone.PARAM_SCHEMA, params)
+    form.load_schema(sync_in_zone.PARAM_SCHEMA, params)
     return form
 
 
 def test_the_zone_path_round_trips(qapp):
-    assert _form({"zone": _ENTRANCE}).get_params() == {"zone": _ENTRANCE}
+    assert _form({"zone": _ENTRANCE}).get_params()["zone"] == _ENTRANCE
 
 
 def test_the_button_names_the_world_the_zone_and_its_id_but_stores_only_the_path(qapp):
@@ -97,7 +97,7 @@ async def test_a_failed_trip_is_logged_and_gives_the_button_back(qapp, monkeypat
         field.go_btn.click()
         await asyncio.gather(*param_panel._NAV_TASKS)
 
-    assert "Go To Zone from the properties panel failed" in caplog.text
+    assert "Sync In Zone from the properties panel failed" in caplog.text
     assert field.go_btn.isEnabled()
 
 

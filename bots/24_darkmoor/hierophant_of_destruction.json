@@ -854,7 +854,7 @@
     },
     {
       "id": "state_4",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Take Demox to Black Lagoon",
       "position": {
         "x": 880.0,

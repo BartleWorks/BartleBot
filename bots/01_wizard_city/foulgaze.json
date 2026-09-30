@@ -553,7 +553,7 @@
     },
     {
       "id": "state_8",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to Olde Town",
       "position": {
         "x": 440.0,

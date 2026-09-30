@@ -8,7 +8,8 @@ Five polling loops run concurrently:
 - _client_status_watcher: calls zone_name() every few seconds to detect
   clients that have crashed or are unresponsive.
 - _loading_screen_watcher: calls is_loading() every poll interval to detect
-  clients stuck in an infinite loading screen.
+  clients stuck in an infinite loading screen, and reports every client it sees
+  loading through on_loading, flagged or not.
 - _restricted_zone_watcher: polls zone_name() -- and the duel's own PvP flags
   once a client is in combat -- to stop the bot outright in PvP zones.
 
@@ -207,12 +208,15 @@ class ClientHealthMonitor:
         on_pause: Callable[[], None],
         on_client_disconnected: Callable[[int], None] | None = None,
         on_restricted_zone: Callable[[restricted_zones.Restriction], None] | None = None,
+        on_loading: Callable[[object], None] | None = None,
     ) -> None:
         self._clients_ref = clients_ref
         self._stop_flag = stop_flag
         self._on_pause = on_pause
         self._on_client_disconnected = on_client_disconnected
         self._on_restricted_zone = on_restricted_zone
+        # Told of every client seen loading, or unreadable, on every poll. See _note_loading.
+        self._on_loading = on_loading
         self._flagged: set[int] = set()  # HWNDs already flagged as unresponsive
 
     def clear_flagged(self) -> None:
@@ -267,6 +271,19 @@ class ClientHealthMonitor:
                 self._on_client_disconnected(hwnd)
             except Exception:
                 logger.exception("on_client_disconnected callback raised for hwnd=%d", hwnd)
+
+    def _note_loading(self, client) -> None:
+        """Tell the machine *client* is loading, or could not be read.
+
+        Ahead of the flagged check on purpose: a relog flags its clients, and a relog is
+        exactly when a realm can change. The machine's record of who shares a realm only
+        stays true while nobody it names loads (``bartlebot.sightings.TogetherRecord``).
+        """
+        if self._on_loading:
+            try:
+                self._on_loading(client)
+            except Exception:
+                logger.exception("on_loading callback raised for hwnd=%s", getattr(client, "window_handle", "?"))
 
     @staticmethod
     def _force_kill_process(pid: int) -> None:
@@ -502,14 +519,17 @@ class ClientHealthMonitor:
             await asyncio.sleep(POLL_INTERVAL)
             for client in list(self._clients_ref()):
                 hwnd = client.window_handle
-                if hwnd in self._flagged:
-                    loading_since.pop(hwnd, None)
-                    continue
                 try:
                     is_loading = await client.is_loading()
                 except Exception:
+                    self._note_loading(client)
                     loading_since.pop(hwnd, None)
                     continue  # let _client_status_watcher handle dead clients
+                if is_loading:
+                    self._note_loading(client)
+                if hwnd in self._flagged:
+                    loading_since.pop(hwnd, None)
+                    continue
 
                 if is_loading:
                     now = time.monotonic()

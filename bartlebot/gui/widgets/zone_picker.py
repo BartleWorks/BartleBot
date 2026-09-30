@@ -112,7 +112,7 @@ def zone_sections(nav: zone_nav.NavMap, suggested: Iterable[str] = ()) -> list[S
 def is_destination(nav: zone_nav.NavMap, zone: str) -> bool:
     """Whether `zone` is in the picker's list: on the map, and not a zone routes only pass through.
 
-    Go To Zone fails on anything else, so a zone that arrives some other way -- filled from where
+    Sync In Zone fails on anything else, so a zone that arrives some other way -- filled from where
     a player stands -- is checked against this.
     """
     world = nav.world_of(zone)

@@ -1,11 +1,11 @@
 {
   "id": "b1e327d2-53f4-4ac0-baea-73b5f62fa967",
-  "name": "Aethyr Burst Collector",
+  "name": "Empyrea Aethyr Burst Collector",
   "description": "Collects Aethyr Bursts (Aethyr Dust and Aethyr Ore) in Aeriel Shores and Aeriel Jungle, Empyrea",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_29",
-  "recovery_state": "state_29",
+  "initial": "sync_players_1_state_2",
+  "recovery_state": "sync_players_1_state_1",
   "drops": [
     {
       "name": "Shocked Key",
@@ -21,32 +21,14 @@
     "Reagents",
     "Collecting"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Player Realms",
+      "type": "player_realms",
+      "default": "Separate"
+    }
+  ],
   "states": [
-    {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Aeriel Shores",
-      "position": {
-        "x": 0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Empyrea/EM_Z00_Aeriel_HUB"
-      }
-    },
-    {
-      "id": "state_28",
-      "node_type": "change_realm",
-      "label": "Change realm",
-      "position": {
-        "x": 440,
-        "y": 0.0
-      },
-      "params": {
-        "use_favorite_realm": false
-      }
-    },
     {
       "id": "state_4",
       "node_type": "collect_reagent",
@@ -326,74 +308,65 @@
       }
     },
     {
-      "id": "state_29",
-      "node_type": "go_to_world",
-      "label": "Go to Empyrea",
+      "id": "sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": -440.0,
+        "x": 0.00018770438191495487,
         "y": 0.0
       },
       "params": {
-        "world": "Empyrea"
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0001877043819,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Empyrea/EM_Z00_Aeriel_HUB"
+      }
+    },
+    {
+      "id": "state_28",
+      "node_type": "change_realm",
+      "label": "Change realm",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "use_favorite_realm": false
+      }
+    },
+    {
+      "id": "state_29",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to Aeriel Shore",
+      "position": {
+        "x": 7040.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Empyrea/EM_Z00_Aeriel_HUB"
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_28",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_28",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_28",
-      "dest": "state_28",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_4",
       "dest": "state_9",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -411,29 +384,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_11",
       "dest": "state_13",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -451,29 +404,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_15",
       "dest": "state_17",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -491,29 +424,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_2",
       "dest": "state_8",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -531,29 +444,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_19",
       "dest": "state_27",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -571,29 +464,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_27",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_21",
       "dest": "state_23",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -611,16 +484,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_23",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_25",
       "dest": "state_7",
       "when": "SUCCESS",
@@ -631,9 +494,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_25",
-      "dest": "state_1",
-      "when": "FAILURE",
+      "source": "sync_players_1_state_1",
+      "dest": "sync_players_1_state_2",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -641,8 +504,18 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_1",
+      "source": "sync_players_1_state_2",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -652,28 +525,18 @@
     {
       "trigger": "advance",
       "source": "state_7",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_29",
-      "dest": "state_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_29",
       "dest": "state_29",
-      "when": "FAILURE",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_29",
+      "dest": "state_28",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -715,6 +578,42 @@
         "state_27"
       ],
       "color": 3
+    },
+    {
+      "id": "sync_players_1",
+      "label": "Sync players",
+      "members": [
+        "sync_players_1_state_1",
+        "sync_players_1_state_2"
+      ],
+      "color": 4,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Empyrea/EM_Z00_Aeriel_HUB"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.00018770438191495487,
+          "y": 0.0
+        }
+      }
     }
   ]
 }

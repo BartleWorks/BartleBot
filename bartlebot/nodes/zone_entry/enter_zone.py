@@ -3,7 +3,7 @@ import logging
 
 from wizwalker import XYZ
 
-from bartlebot import dialog_captions
+from bartlebot import dialog_captions, player_realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
@@ -84,6 +84,7 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     required_bot_options=[
+        player_realms.SPEC,
         BotOptionSpec(
             name="Safety Delay",
             type="float",
@@ -301,6 +302,9 @@ async def run(machine, clients: list, params: dict) -> str:
     else:
         resets = list(await asyncio.gather(*[c.body.position() for c in clients]))
         machine.log("No reset_xyz; a retry resets each client to where it started", logging.DEBUG)
+
+    # Who shares whose realm, for straggler recovery in a Separate bot.
+    await node_helpers.note_realm_peers(machine, clients)
 
     if stagger:
         machine.log("enter_zone: staggering — sending lead client through first", logging.DEBUG)

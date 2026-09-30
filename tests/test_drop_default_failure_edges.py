@@ -9,7 +9,7 @@ from bartlebot.bot.schema import BotConfig, FlagCondition, RegionModel, StateMod
 from tools.drop_default_failure_edges import redundant_edges
 
 
-def _state(sid: str, node_type: str = "go_to_zone") -> StateModel:
+def _state(sid: str, node_type: str = "sync_in_zone") -> StateModel:
     return StateModel(id=sid, node_type=node_type, params={"zone": "WizardCity/WC_Hub"})
 
 

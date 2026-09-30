@@ -34,7 +34,13 @@
     "Reagents",
     "Collecting"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Player Realms",
+      "type": "player_realms",
+      "default": "Separate"
+    }
+  ],
   "states": [
     {
       "id": "state_7",
@@ -204,7 +210,7 @@
     },
     {
       "id": "state_26",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to Mirkholm Keep",
       "position": {
         "x": 1760.0,

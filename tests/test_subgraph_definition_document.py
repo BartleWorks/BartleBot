@@ -449,13 +449,13 @@ def test_promoting_a_node_drops_the_inputs_only_it_was_linked_to(doc):
 # ---------------------------------------------------------------------------
 
 
-def _add_go_to_zone(doc, zone="WizardCity/WC_Hub"):
-    doc.config.states.append(StateModel(id="nav", node_type="go_to_zone", params={"zone": zone}))
+def _add_sync_in_zone(doc, zone="WizardCity/WC_Hub"):
+    doc.config.states.append(StateModel(id="nav", node_type="sync_in_zone", params={"zone": zone}))
     doc.scene.setup(doc.config)
 
 
 def test_a_zone_input_linked_with_a_nav_zone_becomes_a_nav_zone(doc):
-    _add_go_to_zone(doc)
+    _add_sync_in_zone(doc)
     assert _input(doc, "hub").type == "zone"
     assert doc.link_param("nav", "zone", existing="hub")
     assert _input(doc, "hub").type == "nav_zone"
@@ -472,7 +472,7 @@ def test_a_promoted_zone_linked_by_a_nav_zone_keeps_its_record_button(doc):
     from bartlebot.subgraphs import promoted_param_type  # noqa: PLC0415
 
     doc.config.states.append(StateModel(id="mark", node_type="mark_location", params={"zone": ""}))
-    _add_go_to_zone(doc)
+    _add_sync_in_zone(doc)
     assert "mark_location" in recording.RECORDABLE_NODES
     assert doc.set_node_promoted("mark", True)
     panel = next(p for p in _meta(doc).panels if p.member == "mark")
@@ -498,7 +498,7 @@ def test_record_into_a_destination_picker_is_never_refused(qapp):
 
 
 def test_a_nav_zone_that_is_not_a_destination_is_an_error(doc):
-    _add_go_to_zone(doc, "Nowhere/Somewhere")
+    _add_sync_in_zone(doc, "Nowhere/Somewhere")
     assert any("not a destination on the zone map" in e for e in doc.validation_errors())
 
 

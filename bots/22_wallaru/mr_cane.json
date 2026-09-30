@@ -777,7 +777,7 @@
     },
     {
       "id": "state_2",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Take Traveler's Truck to Billabong Resort",
       "position": {
         "x": 440.0,

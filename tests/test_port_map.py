@@ -8,7 +8,7 @@ from bartlebot import group_manager, port_map, wizard_names
 from bartlebot.group_manager import GroupState
 from bartlebot.nodes import node_helpers
 from bartlebot.port_map import PortMap
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, see_each_other
 
 # Synthetic names from tools/name_key_samples.json -- never a real player's.
 _A, _B, _C, _D = "Luke SkullHunter", "Misha SkullSeer", "Michelle HistoryBond", "Naomi HexPaint"
@@ -236,6 +236,34 @@ async def test_a_port_that_does_not_land_is_demoted(monkeypatch):
 
     assert await port_map.port_waves(FakeMachine(), [a, b], [b], [a], pm) == [b]
     assert pm.routes(b, a) == []
+
+
+async def test_a_port_that_lands_in_the_zone_but_not_the_realm_is_demoted(monkeypatch):
+    """The zone matches and nobody is seen: the port left the mover on its own realm (#130)."""
+    a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
+    see_each_other(a)
+    see_each_other(b)
+    pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(), ()])
+    port, _ = _fake_port([a, b])
+    monkeypatch.setattr(node_helpers, "port_to_friend", port)
+    monkeypatch.setattr(port_map, "SIGHTING_SETTLE_TIMEOUT", 0.05)
+    machine = FakeMachine()
+
+    assert await port_map.port_waves(machine, [a, b], [b], [a], pm) == [b]
+    assert b.where == "Alpha/S1"
+    assert pm.routes(b, a) == []
+    assert any("not its realm" in msg for msg, _ in machine.logs)
+
+
+async def test_a_port_that_lands_with_the_target_is_recorded_together(monkeypatch):
+    a, b = _clients(_A, _B, zones=["Alpha/S1", "Beta/Hub"])
+    pm = PortMap.from_survey([_A, _B], [[_B], [_A]], [(), ()])
+    port, _ = _fake_port([a, b])
+    monkeypatch.setattr(node_helpers, "port_to_friend", port)
+    machine = FakeMachine()
+
+    assert await port_map.port_waves(machine, [a, b], [b], [a], pm) == []
+    assert machine.are_together([a, b])
 
 
 async def test_a_client_with_no_route_is_left_without_an_attempt(monkeypatch):

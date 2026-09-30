@@ -1,6 +1,7 @@
 """Shared async helpers for node implementations."""
 
 import asyncio
+import enum
 import fnmatch
 import logging
 import math
@@ -15,7 +16,7 @@ from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 logger = logging.getLogger(__name__)
 
-from bartlebot import dialog_captions, wizard_names
+from bartlebot import dialog_captions, player_realms, sightings, wizard_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
     DECLINE_QUEST_PATH,
@@ -952,6 +953,32 @@ def without_straggler_recovery():
         _straggler_recovery.reset(token)
 
 
+#: Under Player Realms: Separate, who shares whose realm as a zone change begins. See note_realm_peers.
+_realm_peers: contextvars.ContextVar[dict | None] = contextvars.ContextVar("realm_peers", default=None)
+
+
+async def note_realm_peers(machine, clients: list) -> None:
+    """Remember who shares whose realm, just before a zone change that keeps realms.
+
+    Only a Separate bot (#132) needs this, and for anything else it costs nothing. Straggler
+    recovery ports a player who missed a transition to one who made it, and a friends-list
+    port moves the porter onto the target's realm -- so in a Separate bot the target has to
+    be someone already on the straggler's realm. The machine's record cannot say who that
+    is once the transition is under way: everyone who went through the door loaded, and a
+    load is when the record forgets. A door keeps each player's own realm, though, so who
+    shared a realm *before* the transition is who shares one after it.
+
+    Call it as close to the transition as the node allows, once the players are standing at
+    the door or sigil, where a check is definite. Kept in a context variable, like
+    straggler_recovery, so it reaches wait_for_zone_with_recovery through whatever the node
+    calls in between; each node runs in its own task, so it never outlives the node.
+    """
+    if not player_realms.machine_is_separate(machine):
+        return
+    await read_sightings(clients, machine)
+    _realm_peers.set({c: [p for p in machine.together_with(c, clients) if p is not c] for c in clients})
+
+
 async def wait_for_zone_with_recovery(
     machine,
     clients: list,
@@ -1036,7 +1063,7 @@ class ZoneTarget:
     Mirrors teleport_to_friend's TargetResolution -- same shape, different resolution rule:
     the first client already in the zone, by player order, rather than a configured name or
     slot. It outlived the teleport_to_player_if_in_zone node it was written for, removed
-    once go_to_zone superseded it; zone-arrival recovery is its one caller now.
+    once sync_in_zone superseded it; zone-arrival recovery is its one caller now.
     """
 
     index: int | None = None
@@ -1068,35 +1095,81 @@ async def find_target_in_zone(clients: list, target_zone: str, zones: list[str] 
     return ZoneTarget(index=target_index, name=target_name)
 
 
+def _recovery_batches(machine, clients: list, zone: str, zones: list[str], first: int) -> list[tuple[int, list]]:
+    """``(target index, stragglers)`` for each port straggler recovery should make.
+
+    Together, every straggler ports to *first*, the first client to arrive. Separate, each
+    ports only to an arrived client that shared its realm as the transition began (see
+    note_realm_peers), and one with nobody like that is left where it is.
+    """
+    behind = [c for c, z in zip(clients, zones) if not zone_matches(z, zone)]
+    if not player_realms.machine_is_separate(machine):
+        return [(first, behind)]
+    peers = _realm_peers.get()
+    if peers is None:
+        machine.log(
+            f"{player_realms.OPTION} is {player_realms.SEPARATE} and nobody was seen sharing a realm "
+            "before the transition, so no straggler is ported",
+            logging.DEBUG,
+        )
+        return []
+    arrived = {i for i, z in enumerate(zones) if zone_matches(z, zone)}
+    batches: dict[int, list] = {}
+    for straggler in behind:
+        target = next(
+            (i for i, c in enumerate(clients) if i in arrived and any(c is p for p in peers.get(straggler, []))),
+            None,
+        )
+        if target is None:
+            machine.log(
+                f"P{clients.index(straggler) + 1} shares a realm with nobody who arrived; not porting it across realms",
+                logging.INFO,
+            )
+            continue
+        batches.setdefault(target, []).append(straggler)
+    return sorted(batches.items())
+
+
 async def _attempt_zone_recovery(
     machine, clients: list, zone: str, zones: list[str], poll_interval: float = POLL_INTERVAL
 ) -> None:
     """Best-effort teleport-to-player recovery for wait_for_zone_with_recovery.
 
     Ports whichever clients are not yet in `zone` (per the already-read `zones` snapshot) to
-    whichever hooked client already is. Never raises and does not itself report success —
-    the caller's own polling loop re-reads zones right after this returns and decides that.
-    A recovery that cannot even get started (no client's name cached yet, no friends online,
-    the friend-busy dialog, …) is logged and left for the caller's normal timeout to report.
+    a hooked client that already is -- under Player Realms: Separate, only one on the
+    straggler's own realm (_recovery_batches). Never raises and does not itself report
+    success — the caller's own polling loop re-reads zones right after this returns and
+    decides that. A recovery that cannot even get started (no client's name cached yet, no
+    friends online, the friend-busy dialog, …) is logged and left for the caller's normal
+    timeout to report.
     """
     target = await find_target_in_zone(clients, zone, zones=zones)
     if target.error:
         machine.log(f"Recovery not possible: {target.error}", logging.DEBUG)
         return
 
-    stragglers = [c for i, c in enumerate(clients) if i != target.index and not zone_matches(zones[i], zone)]
-    if not stragglers:
-        return
+    for index, stragglers in _recovery_batches(machine, clients, zone, zones, target.index):
+        if not stragglers:
+            continue
+        name = target.name if index == target.index else wizard_names.cached_name(clients[index])
+        await _port_stragglers(machine, index, name, stragglers, zone, poll_interval)
 
+
+async def _port_stragglers(machine, index: int, name: str, stragglers: list, zone: str, poll_interval) -> None:
+    """Port *stragglers* to P(*index* + 1), whose wizard name is *name*, and wait out their loading."""
+    if not name:
+        machine.log(f"Recovery not possible: P{index + 1}'s wizard name has not been detected yet", logging.DEBUG)
+        return
     machine.log(
         f"Some clients did not reach {zone!r} but at least one did; attempting a "
-        f"teleport-to-player recovery for {len(stragglers)} client(s)…",
+        f"teleport-to-player recovery for {len(stragglers)} client(s) to P{index + 1}…",
         logging.INFO,
     )
     try:
-        result = await port_to_friend(stragglers, target.name.lower(), poll_interval=poll_interval)
-    except ValueError as exc:
-        machine.log(f"Recovery teleport to P{target.index + 1} failed: {exc}", logging.WARNING)
+        result = await port_to_friend(stragglers, name.lower(), poll_interval=poll_interval)
+    except ValueError:
+        # The message names the player it could not find, so it stays out of the log.
+        machine.log(f"Recovery teleport to P{index + 1} failed: it is not on every straggler's friends list")
         return
 
     if result.refusal:
@@ -1434,6 +1507,55 @@ async def _position_or_none(client):
         return None
 
 
+async def _or_none(awaitable):
+    """*awaitable*'s result, or None if it raised. For reads a check can do without."""
+    try:
+        return await awaitable
+    except Exception:
+        return None
+
+
+async def _entity_gids(client) -> frozenset[int] | None:
+    """The global ids *client* has loaded, or None if its entity list could not be read."""
+    try:
+        entities = await client.get_base_entity_list()
+    except Exception:
+        logger.debug("Could not read a client's entity list", exc_info=True)
+        return None
+    gids = await asyncio.gather(*(_or_none(e.global_id_full()) for e in entities))
+    return frozenset(g for g in gids if g is not None)
+
+
+async def _reading(client) -> sightings.Reading:
+    gid, zone, position, loading, seen = await asyncio.gather(
+        _or_none(client.client_object.global_id_full()),
+        _or_none(client.zone_name()),
+        _position_or_none(client),
+        _or_none(client.is_loading()),
+        _entity_gids(client),
+    )
+    # An unreadable loading flag is treated as loading: nothing else it reports can be trusted.
+    return sightings.Reading(gid=gid, zone=zone, position=position, loading=loading is not False, seen=seen)
+
+
+async def read_sightings(clients: list, machine=None) -> sightings.Sightings:
+    """Check which of *clients* share a zone, realm and instance. See :mod:`bartlebot.sightings`.
+
+    One id read, one entity-list read and one set intersection per client, about 5 ms each.
+    Nothing here raises: a read that fails makes its pairs Unknown.
+
+    With *machine*, the check is also folded into its record of who has been seen together
+    (``BotMachine.note_sightings``), which is what lets a later check answer for players
+    who have since walked out of each other's sight.
+    """
+    readings = await asyncio.gather(*(_reading(c) for c in clients))
+    result = sightings.Sightings(clients, readings)
+    note = getattr(machine, "note_sightings", None)
+    if note is not None:
+        note(result)
+    return result
+
+
 class PortToFriendResult(NamedTuple):
     """Outcome of port_clients()'s wait for every port to start.
 
@@ -1471,6 +1593,7 @@ async def port_to_friend(
     ceiling: float = ZONE_CHANGE_TIMEOUT,
     poll_interval: float = POLL_INTERVAL,
     maybe_there: Collection[int] = (),
+    target=None,
 ) -> PortToFriendResult:
     """Teleport clients_to_move to friend_name_lower via the friends list, and wait for each
     to enter a loading screen.
@@ -1497,6 +1620,7 @@ async def port_to_friend(
         ceiling=ceiling,
         poll_interval=poll_interval,
         maybe_there=maybe_there,
+        target=target,
     )
 
 
@@ -1509,6 +1633,7 @@ async def port_clients(
     poll_interval: float = POLL_INTERVAL,
     maybe_there: Collection[int] = (),
     quiet_grace: float | None = None,
+    target=None,
 ) -> PortToFriendResult:
     """Start a port on every client with `initiate`, and wait for each port to show itself.
 
@@ -1530,6 +1655,12 @@ async def port_clients(
     for `quiet_grace` has its port re-issued once, in case the first never registered, and
     after another `quiet_grace` is presumed there. Every other quiet client is re-issued once
     per `trigger_timeout` -- once per window, not every poll -- until `ceiling`.
+
+    With `target`, the hooked client being ported to, a presumption has to be seen: the
+    client must have the target loaded (#130), which proves the same zone, realm and
+    instance where standing beside it proves only the zone. One that does not is on another
+    realm, where the port would have loaded, so it goes back to being re-issued like any
+    other quiet client.
 
     Raises whatever `initiate` raises; both starters raise ValueError when they cannot begin.
     """
@@ -1587,9 +1718,11 @@ async def port_clients(
             if now - last_attempt[i] < grace:
                 continue
             if i in maybe_there and reissued[i]:
-                presumed.add(i)
-            else:
-                due.append(i)
+                if target is None or await _sees_each_other(target, clients_to_move[i]):
+                    presumed.add(i)
+                    continue
+                maybe_there.discard(i)
+            due.append(i)
 
         if len(seen_loading | jumped | presumed) == count or now - loop_start > ceiling:
             return result()
@@ -1604,6 +1737,58 @@ async def port_clients(
         await asyncio.sleep(poll_interval)
 
 
+class TogetherOutcome(enum.Enum):
+    """What ensure_together found, and did."""
+
+    #: Every player already shared one zone, realm and instance; nobody moved.
+    ALREADY = "already"
+    #: Some did not, and were ported to the leader, and are now seen with it.
+    GATHERED = "gathered"
+    #: Some did not, and could not be brought to the leader.
+    FAILED = "failed"
+
+
+async def ensure_together(machine, clients: list, *, where: str) -> TogetherOutcome:
+    """Make sure every player shares one zone, realm and instance, porting stragglers to the leader.
+
+    For a bot whose ``Player Realms`` is Together (#132); a Separate bot always answers
+    ALREADY, since its players are meant to be apart. The machine's record answers first, so
+    a group seen together since anyone last loaded costs nothing. Otherwise one check decides:
+    everyone the leader (sightings.choose_leader) does not see -- Apart, and Unknown too, since
+    a player too far away to tell may be on another realm -- ports to it through
+    gather_at_player, which confirms by sight that they arrived.
+
+    *where* names the moment in the log ("on the sigil", "before the fight"). Logs its own
+    reasons, players by number.
+    """
+    if len(clients) < 2 or player_realms.machine_is_separate(machine) or machine.are_together(clients):
+        return TogetherOutcome.ALREADY
+    check = await read_sightings(clients, machine)
+    if check.all_together():
+        return TogetherOutcome.ALREADY
+
+    leader = sightings.choose_leader(check)
+    group = check.group_of(leader)
+    movers = [i for i in range(len(clients)) if i not in group]
+    machine.log(
+        f"Player(s) {[i + 1 for i in movers]} are not with P{leader + 1} {where} "
+        f"({player_realms.OPTION} is {player_realms.TOGETHER}); porting them to it",
+        logging.WARNING,
+    )
+    name = wizard_names.cached_name(clients[leader])
+    if not name:
+        machine.log(f"FAILURE: P{leader + 1}'s wizard name has not been detected yet", logging.WARNING)
+        return TogetherOutcome.FAILED
+    if not await gather_at_player(machine, clients, leader, name, only=movers):
+        return TogetherOutcome.FAILED
+    return TogetherOutcome.GATHERED
+
+
+async def _sees_each_other(a, b) -> bool:
+    """Whether a check proves *a* and *b* share a zone, realm and instance."""
+    return (await read_sightings([a, b])).pair(0, 1) is sightings.Sight.TOGETHER
+
+
 async def gather_at_player(
     machine,
     clients: list,
@@ -1611,8 +1796,12 @@ async def gather_at_player(
     target_name: str,
     *,
     poll_interval: float = POLL_INTERVAL,
+    only: Collection[int] | None = None,
 ) -> bool:
     """Port every client but `clients[target_index]` onto that player, and confirm they are with it.
+
+    `only` narrows the movers to those indices, for a caller that knows the rest are already
+    with the target; players keep their numbers in the log either way.
 
     The hooked-player half of teleport_to_friend.
     Because the target is one of ours, its zone and position are readable, which makes this
@@ -1624,9 +1813,9 @@ async def gather_at_player(
       it than to be wrong about skipping it.
     * A mover already in the target's zone within POSITION_MARGIN of it is the one case whose
       port shows nothing, so it is the only one passed to port_clients as `maybe_there`.
-    * Arrival is every mover in the target's zone and within POSITION_MARGIN of it. That still
-      cannot see realm, but a mover on another realm loads when ported, so the only way through
-      it is two re-issued ports that both failed silently.
+    * Arrival is every mover in the target's zone, within POSITION_MARGIN of it, and seen with
+      it (#130): standing beside the target proves the zone, and only the sighting proves the
+      realm. A mover presumed already there has to be seen too (port_clients' `target`).
 
     Logs its own reasons, naming players by number and never by name, and returns False on any
     failure: a player still loading, a friend not found, a refusal, a port that never showed
@@ -1634,8 +1823,9 @@ async def gather_at_player(
     """
     target = clients[target_index]
     target_no = target_index + 1
-    numbers = [i + 1 for i in range(len(clients)) if i != target_index]
-    movers = [c for i, c in enumerate(clients) if i != target_index]
+    moving = [i for i in range(len(clients)) if i != target_index and (only is None or i in only)]
+    numbers = [i + 1 for i in moving]
+    movers = [clients[i] for i in moving]
     if not movers:
         machine.log(f"No other players to port to P{target_no}")
         return True
@@ -1669,6 +1859,7 @@ async def gather_at_player(
             ceiling=ZONE_CHANGE_TIMEOUT,
             poll_interval=poll_interval,
             maybe_there=beside,
+            target=target,
         )
     except ValueError:
         # The message names the player it could not find, so it stays out of the log.
@@ -1694,10 +1885,17 @@ async def gather_at_player(
 
     await poll_until(lambda: none_loading(movers), None, poll_interval)
 
-    if await poll_until(lambda: _all_beside(target, movers), ZONE_CHANGE_TIMEOUT, poll_interval):
+    if await poll_until(lambda: _all_beside(machine, target, movers), ZONE_CHANGE_TIMEOUT, poll_interval):
         return True
     target_zone = await target.zone_name()
     zones = await asyncio.gather(*[c.zone_name() for c in movers])
+    if all(z == target_zone for z in zones):
+        machine.log(
+            f"FAILURE: not every player ended up with P{target_no}: all are in its zone, but not all "
+            "beside it and on its realm",
+            logging.WARNING,
+        )
+        return False
     machine.log(
         f"FAILURE: not every player ended up with P{target_no} (its zone {target_zone!r}, theirs {sorted(set(zones))})",
         logging.WARNING,
@@ -1705,17 +1903,19 @@ async def gather_at_player(
     return False
 
 
-async def _all_beside(target, movers: list) -> bool:
-    """Whether every mover is in the target's zone and within POSITION_MARGIN of it."""
+async def _all_beside(machine, target, movers: list) -> bool:
+    """Whether every mover is in the target's zone, within POSITION_MARGIN of it, and seen with it."""
     target_zone, target_pos = await asyncio.gather(target.zone_name(), _position_or_none(target))
     if target_pos is None:
         return False
     zones = await asyncio.gather(*[c.zone_name() for c in movers])
     positions = await asyncio.gather(*[_position_or_none(c) for c in movers])
-    return all(
+    if not all(
         zone == target_zone and pos is not None and distance(pos, target_pos) <= POSITION_MARGIN
         for zone, pos in zip(zones, positions)
-    )
+    ):
+        return False
+    return (await read_sightings([target, *movers], machine)).all_together()
 
 
 async def open_friend_profile(client, name: str):

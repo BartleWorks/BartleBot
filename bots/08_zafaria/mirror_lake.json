@@ -2197,7 +2197,7 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to Baobab Crossroads",
       "position": {
         "x": 0.0,

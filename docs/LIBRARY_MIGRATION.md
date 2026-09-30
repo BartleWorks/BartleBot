@@ -24,14 +24,14 @@ the split is the whole point — only the third is a blocker:
 
 | bucket | meaning | what it costs |
 |---|---|---|
-| **nav to fold** | `teleport_to_world_hub`, `go_to_world`, `enter_zone_via_object`, `check_zone`, `teleport_to_friend`, `teleport_to_player_if_in_zone`, `change_to_next_realm` | mechanical — `go_to_zone` plans all of it |
+| **nav to fold** | `teleport_to_world_hub`, `go_to_world`, `enter_zone_via_object`, `check_zone`, `teleport_to_friend`, `teleport_to_player_if_in_zone`, `change_to_next_realm` | mechanical — `sync_in_zone` plans all of it |
 | **slot** | the bot's own content: combats, interacts, coordinate teleports, room-to-room `enter_zone`, extra reagent spawns | irreducible; it is what the template's slot is for |
 | **outlier** | a node no template can express | a design decision, per node |
 
 Two of those types are gone since the measurement: `teleport_to_player_if_in_zone` was removed
 and `change_to_next_realm` merged into `change_realm`. Both were nav either way.
 
-`teleport_to_coordinates` is deliberately *not* nav: `go_to_zone`'s own usage note says
+`teleport_to_coordinates` is deliberately *not* nav: `sync_in_zone`'s own usage note says
 players "arrive wherever the last zone change puts them", so a bot that needs a position
 keeps it.
 
@@ -86,7 +86,7 @@ stops the refill. It does not: with no `mark_zone`, `handle_potions` marks where
 stand and refuses only a transit zone (Dorm, Ravenwood). The field only enforces an origin zone,
 so leaving it empty is valid, and the wait was as redundant there as in `monkey_spiders`.
 
-`queen_calypso` lost its wait in Part A, when it was rebuilt around `relog → go_to_zone →
+`queen_calypso` lost its wait in Part A, when it was rebuilt around `relog → sync_in_zone →
 change_realm`, and did not gain `handle_potions` then. It is a boss bot, so the farming loop's
 top-up phase gives it one in the Stage 9 rewrite.
 
@@ -194,7 +194,7 @@ and the GDI ceiling.
 
 - **`teleport_to_player_if_in_zone` is removed**, not retired as first planned. Retiring it
   would have kept it as a step for `foulgaze`, its only consumer; once `foulgaze` opened with
-  `go_to_zone` there was no step left for it to be. Its target-picking helper,
+  `sync_in_zone` there was no step left for it to be. Its target-picking helper,
   `find_target_in_zone`, moved to `node_helpers`, where zone-arrival recovery uses it.
   `form_group` is removed too; `enter_zone_via_ride` is retired from the browser and kept as a
   `zone_navigation` step. The plan's Stage 2 records all three.
@@ -257,8 +257,8 @@ All nine are done.
 
 | bot | change | landed |
 |---|---|---|
-| `queen_calypso` | add `handle_potions`; drop `wait_for_health` | wait dropped with its hand-rolled navigation, for `relog → go_to_zone → change_realm`; `handle_potions` left to Stage 9 |
-| `secret_tunnel` | add `handle_potions`; drop `wait_for_health` | as planned, opening with `relog → go_to_zone → change_realm` |
+| `queen_calypso` | add `handle_potions`; drop `wait_for_health` | wait dropped with its hand-rolled navigation, for `relog → sync_in_zone → change_realm`; `handle_potions` left to Stage 9 |
+| `secret_tunnel` | add `handle_potions`; drop `wait_for_health` | as planned, opening with `relog → sync_in_zone → change_realm` |
 | `valerik_brightsword` | drop `wait_for_health` | as planned, same opening; `mark_zone` stays empty, which is valid (see *Decisions taken*) |
 | `monkey_spiders` | drop `wait_for_health` — the existing interior `mark_zone` already works | as planned |
 | `spiral_cup_gauntlet` | **keep** `wait_for_health`; cap the retry so the self-loop terminates | capped at 5 on the node |
@@ -283,12 +283,14 @@ fan-in are gone, and the only shapes left are the templates'. An earlier draft c
 that that roles were the only source of multiple entries. **Measured against the templates
 themselves, that is wrong**, and the plan now treats several entry points as in scope:
 
-- In **spellement**, `relog --SUCCESS-->` goes to `check_level_scaling`, not to `go_to_zone`, and
-  the loop re-enters at `go_to_zone` by an edge.
+- In **spellement**, `relog --SUCCESS-->` goes to `check_level_scaling`, not to `sync_in_zone`, and
+  the loop re-enters at `sync_in_zone` by an edge.
 - In **reagent**, the loop re-enters at `change_realm` (`state_6 → state_3`), mid-way through
-  Player Sync.
+  Player Sync. **Settled (#133):** `change_realm` is no longer in Player Sync, which is now
+  `relog → sync_in_zone`, so the reagent template places its own `change_realm` straight after
+  the subgraph node and its loop comes back in there. No extra entry is needed.
 
-Whether those two templates are restructured or Player Sync gains extra entries is decided at
+Whether the spellement template is restructured or Player Sync gains an extra entry is decided at
 the start of the plan's Stage 8. The farming loop is no longer a planned definition — it stays
 template structure, and reaches existing bots through template provenance (Stage 10).
 
@@ -337,24 +339,24 @@ baseline.
 
 | tier | bot | world | nodes | nav to fold | slot | outliers | notes |
 |---|---|---|---|---|---|---|---|
-| A | `crash_the_bandit_coot` | Wallaru | 9 | 2 | 0 | — | uses `go_to_zone` |
-| A | `lord_nightshade` | Wizard City | 9 | 0 | 0 | — | 2nd-tier recovery (3 edges); 1 region; uses `go_to_zone` |
-| A | `prince_gobblestone` | Wizard City | 8 | 0 | 0 | — | 1 region; uses `go_to_zone` |
+| A | `crash_the_bandit_coot` | Wallaru | 9 | 2 | 0 | — | uses `sync_in_zone` |
+| A | `lord_nightshade` | Wizard City | 9 | 0 | 0 | — | 2nd-tier recovery (3 edges); 1 region; uses `sync_in_zone` |
+| A | `prince_gobblestone` | Wizard City | 8 | 0 | 0 | — | 1 region; uses `sync_in_zone` |
 | A | `achaelos` | Celestia | 7 | 1 | 1 | — | — |
 | A | `cronus` | Aquila | 6 | 1 | 1 | — | — |
 | A | `jabberwock` | Avalon | 10 | 3 | 1 | — | — |
-| A | `lord_bramble` | Wysteria | 11 | 1 | 1 | — | 2nd-tier recovery (3 edges); uses `go_to_zone` |
-| A | `lord_graustark` | Wysteria | 11 | 1 | 1 | — | 2nd-tier recovery (3 edges); uses `go_to_zone` |
-| A | `mr_cane` | Wallaru | 9 | 1 | 1 | — | uses `go_to_zone` |
+| A | `lord_bramble` | Wysteria | 11 | 1 | 1 | — | 2nd-tier recovery (3 edges); uses `sync_in_zone` |
+| A | `lord_graustark` | Wysteria | 11 | 1 | 1 | — | 2nd-tier recovery (3 edges); uses `sync_in_zone` |
+| A | `mr_cane` | Wallaru | 9 | 1 | 1 | — | uses `sync_in_zone` |
 | A | `mr_stone` | Arcanum | 9 | 3 | 1 | — | — |
 | A | `scion_of_the_old_one` | Lemuria | 9 | 3 | 1 | — | 2nd-tier recovery (7 edges) |
-| A | `sister_sanderson` | Darkmoor | 9 | 0 | 1 | — | uses `go_to_zone` |
+| A | `sister_sanderson` | Darkmoor | 9 | 0 | 1 | — | uses `sync_in_zone` |
 | A | `advisor_fancy_fries` | Mirage | 10 | 2 | 2 | — | — |
 | A | `bellows` | Marleybone | 6 | 1 | 2 | — | — |
 | A | `big_salgio` | Celestia | 7 | 1 | 2 | — | — |
 | A | `foulgaze` | Wizard City | 14 | 4 | 2 | — | 2nd-tier recovery (4 edges); 2 regions; **2 linked instances, both definitions lost** |
 | A | `guillermo_shatterer` | Azteca | 7 | 1 | 2 | — | — |
-| A | `hierophant_of_destruction` | Darkmoor | 12 | 3 | 2 | — | uses `go_to_zone` |
+| A | `hierophant_of_destruction` | Darkmoor | 12 | 3 | 2 | — | uses `sync_in_zone` |
 | A | `prince_viggor` | Catacombs | 10 | 3 | 2 | — | — |
 | A | `sprockets` | Marleybone | 6 | 1 | 2 | — | — |
 | A | `vigilant_jarilo` | Polaris | 9 | 2 | 2 | — | — |
@@ -381,16 +383,16 @@ baseline.
 | C | `barkingham_palace_state_wing` | Four Dungeons | 19 | 1 | 15 | — | 3 combats |
 | C | `tree_of_life` | MooShu | 23 | 4 | 16 | — | 3 combats |
 | C | `barkingham_palace_rooftop` | Four Dungeons | 21 | 1 | 17 | — | 5 regions; 3 combats |
-| C | `mirror_lake` | Zafaria | 23 | 0 | 17 | — | 2nd-tier recovery (19 edges); 5 regions; uses `go_to_zone`; 4 combats |
+| C | `mirror_lake` | Zafaria | 23 | 0 | 17 | — | 2nd-tier recovery (19 edges); 5 regions; uses `sync_in_zone`; 4 combats |
 | C | `katzensteins_lab` | Marleybone | 29 | 1 | 25 | — | 6 regions; 4 combats |
 | D | `castle_darkmoor` | Four Dungeons | 34 | 4 | 26 | — | 5 regions; 2 combats |
-| D | `heretical_academy` | Darkmoor | 37 | 3 | 29 | — | uses `go_to_zone`; 3 combats |
+| D | `heretical_academy` | Darkmoor | 37 | 3 | 29 | — | uses `sync_in_zone`; 3 combats |
 | D | `house_of_scales` | Four Dungeons | 44 | 7 | 34 | — | 2nd-tier recovery (4 edges); 5 regions; 6 combats |
 | D | `ironworks` | Marleybone | 42 | 2 | 37 | — | 8 regions; 5 combats |
 | D | `trial_of_the_spheres` | Celestia | 42 | 1 | 38 | — | 2nd-tier recovery (6 edges); 4 regions; 3 combats |
 | D | `five_boxes_avalon` | Five Boxes | 46 | 2 | 39 | — | 2nd-tier recovery (44 edges); 3 regions; 4 combats |
 | D | `crimson_fields` | MooShu | 48 | 1 | 44 | — | 2nd-tier recovery (4 edges); 8 regions; 6 combats |
-| D | `waterworks` | Wizard City | 53 | 0 | 47 | — | 7 regions; uses `go_to_zone`; 8 combats |
+| D | `waterworks` | Wizard City | 53 | 0 | 47 | — | 7 regions; uses `sync_in_zone`; 8 combats |
 
 ### Spellement — 15 bots
 
@@ -406,9 +408,9 @@ baseline.
 | B | `barkingham_palace_ransacked_throne_room` | Four Dungeons | 20 | 3 | 6 | interact_menux3 | 2nd-tier recovery (3 edges); 3 regions |
 | B | `krokopatra` | Krokotopia | 15 | 3 | 6 | — | 2 regions |
 | B | `oyotomi_the_defiler` | MooShu | 21 | 7 | 6 | — | 2nd-tier recovery (7 edges); 4 regions |
-| C | `copy_qhat` | Karamelle | 21 | 4 | 6 | check_health, check_mana | 2nd-tier recovery (10 edges); uses `go_to_zone` |
+| C | `copy_qhat` | Karamelle | 21 | 4 | 6 | check_health, check_mana | 2nd-tier recovery (10 edges); uses `sync_in_zone` |
 | C | `biti_nirini` | Krokotopia | 23 | 3 | 12 | — | 2nd-tier recovery (9 edges); 3 regions |
-| C | `pyramid_of_mother_moon_tartarus_workaround` | Azteca | 33 | 9 | 14 | check_mana | 2nd-tier recovery (12 edges); 3 regions; uses `go_to_zone` |
+| C | `pyramid_of_mother_moon_tartarus_workaround` | Azteca | 33 | 9 | 14 | check_mana | 2nd-tier recovery (12 edges); 3 regions; uses `sync_in_zone` |
 | C | `the_great_spyre` | Dragonspyre | 30 | 4 | 19 | — | 2nd-tier recovery (8 edges); 5 regions; 4 combats |
 | D | `mt_olympus` | Aquila | 67 | 2 | 57 | — | 5 regions; 7 combats |
 
@@ -421,7 +423,7 @@ baseline.
 | A | `the_zocalo_red_mandrake` | Crafting | 7 | 1 | 2 | — | — |
 | A | `nightside_flax` | Crafting | 7 | 3 | 3 | — | 2nd-tier recovery (3 edges) |
 | A | `the_wild_deep_mushroom` | Crafting | 7 | 2 | 3 | — | — |
-| B | `mirkholm_keep_reagents` | Crafting | 10 | 0 | 4 | — | 2 regions; uses `go_to_zone` |
+| B | `mirkholm_keep_reagents` | Crafting | 10 | 0 | 4 | — | 2 regions; uses `sync_in_zone` |
 | B | `scrap_iron_collector` | Crafting | 8 | 3 | 4 | — | 2nd-tier recovery (5 edges) |
 | B | `the_necropolis_deep_mushroom` | Crafting | 10 | 2 | 4 | — | — |
 | B | `crab_alley_stone_block` | Crafting | 12 | 3 | 5 | — | 2 regions |

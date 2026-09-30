@@ -4865,6 +4865,7 @@
           }
         },
         "Mirage/MR_Z08_EeremPalace": {
+          "realm_change": false,
           "arrivals": {
             "Mirage/MR_Z00_Hub": {"x": -1827.74, "y": -14.64, "z": 51.25}
           }

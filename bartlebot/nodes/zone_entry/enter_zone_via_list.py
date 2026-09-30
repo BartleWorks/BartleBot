@@ -6,8 +6,8 @@ hand over a row already resolved -- the text to match in every locale it might r
 to stand -- because only they know what the row is: ``zone_lists.resolve`` for a zone list,
 ``worlds.display_names`` for a gate, whose rows are worlds rather than zones.
 
-Go To Zone is what a bot author reaches for instead. A list object only ever stands in a zone
-the navigation map declares, so there is nothing this could be pointed at that Go To Zone
+Sync In Zone is what a bot author reaches for instead. A list object only ever stands in a zone
+the navigation map declares, so there is nothing this could be pointed at that Sync In Zone
 cannot already plan a route to -- which is why it was retired as a node (#36).
 """
 
@@ -298,6 +298,9 @@ async def run(machine, clients: list, params: dict) -> str:
             logging.WARNING,
         )
         return "FAILURE"
+
+    # Who shares whose realm, for straggler recovery in a Separate bot.
+    await node_helpers.note_realm_peers(machine, clients)
 
     # 2s. Sequential mode replaces steps 2–7b; step 8 runs either way.
     if params.get("sequential", False):

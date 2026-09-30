@@ -620,7 +620,7 @@
     },
     {
       "id": "state_16",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to Crustacean Empire",
       "position": {
         "x": 1760.0,

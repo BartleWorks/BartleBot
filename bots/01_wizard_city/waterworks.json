@@ -627,7 +627,7 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "go_to_zone",
+      "node_type": "sync_in_zone",
       "label": "Go to Crab Alley",
       "position": {
         "x": 1320.0,

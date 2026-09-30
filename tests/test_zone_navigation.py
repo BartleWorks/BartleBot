@@ -8,9 +8,9 @@ from bartlebot import port_map, wizard_names, worlds, zone_names, zone_nav
 from bartlebot.nodes import node_helpers, wizard_city, zone_navigation
 from bartlebot.nodes.interaction import interact
 from bartlebot.nodes.teleportation import teleport_to_world_hub
-from bartlebot.nodes.utility import sleep
+from bartlebot.nodes.utility import change_realm, realm_list, sleep
 from bartlebot.nodes.zone_entry import enter_zone, enter_zone_via_list, enter_zone_via_object, enter_zone_via_ride
-from tests.conftest import FakeClient, FakeMachine
+from tests.conftest import FakeClient, FakeMachine, see_each_other
 
 _HUB, _DOOR, _S1, _S2, _ISLAND = "Alpha/Hub", "Alpha/Door", "Alpha/S1", "Alpha/S2", "Alpha/Island"
 _HOME = "Alpha/Dorm"
@@ -34,8 +34,11 @@ def _teleporter(src: str, dst: str) -> dict:
     return {"kind": "object", "from": src, "to": dst, "interact_xyz": _xyz(3), "reset_xyz": _xyz(4), "verified": True}
 
 
-def _nav(*links, networks=(), beta_links=()) -> zone_nav.NavMap:
-    """Alpha, with HOME's dorm a walk from its hub; Beta, a side world entered from it; and Delta, with a gate."""
+def _nav(*links, networks=(), beta_links=(), no_realm_change=()) -> zone_nav.NavMap:
+    """Alpha, with HOME's dorm a walk from its hub; Beta, a side world entered from it; and Delta, with a gate.
+
+    `no_realm_change` names Alpha zones that refuse a realm change, as Eerem Palace does.
+    """
     return zone_nav.parse(
         {
             "home": _HOME,
@@ -43,7 +46,10 @@ def _nav(*links, networks=(), beta_links=()) -> zone_nav.NavMap:
                 "Alpha": {
                     "hub": _HUB,
                     "door": _DOOR,
-                    "zones": {z: {} for z in (_HUB, _DOOR, _S1, _S2, _ISLAND, _HOME)},
+                    "zones": {
+                        z: ({"realm_change": False} if z in no_realm_change else {})
+                        for z in (_HUB, _DOOR, _S1, _S2, _ISLAND, _HOME)
+                    },
                     "links": [*links, _walk(_HOME, _HUB)],
                     "list_networks": list(networks),
                 },
@@ -120,6 +126,15 @@ class _Game:
         monkeypatch.setattr(sleep, "run", fake("sleep", None))
         monkeypatch.setattr(teleport_to_world_hub, "run", fake("hub", lambda p: p["zone"]))
         monkeypatch.setattr(node_helpers, "teleport_cooldown", AsyncMock(return_value=0.0))
+
+        async def to_realm(machine, client, realm, safety_delay):
+            self.calls.append(("hop", {"player": self.number(client), "realm": realm}))
+            # A hop leaves the hopper alone on its new realm, out of everyone else's sight.
+            see_each_other(client)
+            see_each_other(*[c for c in self.clients if c is not client])
+            return "SUCCESS"
+
+        monkeypatch.setattr(change_realm, "to_realm", to_realm)
         monkeypatch.setattr(worlds, "display_names", lambda world: [world, world.lower()])
         go_home = fake("home", lambda p: _HOME)
         monkeypatch.setattr(
@@ -148,6 +163,8 @@ class _Game:
             for c in waiting:
                 if self.number(c) not in unported:
                     c.where = arrived[0].where
+            # A port puts the porter on the target's realm and beside it: everyone there sees everyone.
+            see_each_other(*[c for c in self.clients if c.where == arrived[0].where and c not in left])
             return left
 
         monkeypatch.setattr(port_map, "port_waves", port_waves)
@@ -637,3 +654,173 @@ async def test_a_client_that_makes_the_retry_carries_on_with_the_group(monkeypat
     assert outcome.success
     assert game.groups == [[1, 2], [2], [1, 2]]
     assert game.waves == []
+
+
+# ── One realm and one area (#133) ────────────────────────────────────────────
+
+
+def _hops(game: _Game) -> list[dict]:
+    return [params for name, params in game.calls if name == "hop"]
+
+
+async def _sync(game: _Game, nav, target: str, *, machine=None, realm=None) -> zone_navigation.Outcome:
+    return await zone_navigation.navigate(machine or FakeMachine(), game.clients, target, nav=nav, realm=realm)
+
+
+async def test_players_together_in_the_zone_with_no_realm_to_reach_do_nothing(monkeypatch):
+    game = _Game(monkeypatch, [_S2, _S2], friends=True)
+
+    outcome = await _sync(game, _nav(_walk(_HUB, _S2)), _S2)
+
+    assert outcome.success
+    assert game.calls == [] and game.waves == []
+    game.survey.assert_not_awaited()
+
+
+async def test_players_in_the_zone_on_different_realms_port_to_the_larger_group(monkeypatch):
+    game = _Game(monkeypatch, [_S2, _S2, _S2], friends=True)
+    see_each_other(game.clients[0])
+    see_each_other(game.clients[1], game.clients[2])
+
+    outcome = await _sync(game, _nav(_walk(_HUB, _S2)), _S2)
+
+    assert outcome.success
+    assert game.calls == []
+    assert game.waves == [([1], [2, 3])]
+
+
+async def test_the_leader_hops_on_arrival_and_the_others_port_to_it(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
+
+    outcome = await _sync(game, _nav(*_LONG), _ISLAND, realm="Balestrom")
+
+    assert outcome.success
+    assert game.names == ["walk", "walk", "walk", "hop"]
+    assert _hops(game) == [{"player": 1, "realm": "Balestrom"}]
+    assert game.waves == [([2], [1])]
+
+
+async def test_players_already_there_still_join_the_leader_on_the_favorite_realm(monkeypatch):
+    game = _Game(monkeypatch, [_S2, _S2], friends=True)
+
+    outcome = await _sync(game, _nav(_walk(_HUB, _S2)), _S2, realm="Balestrom")
+
+    assert outcome.success
+    assert _hops(game) == [{"player": 1, "realm": "Balestrom"}]
+    assert game.waves == [([2], [1])]
+
+
+async def test_a_target_that_refuses_a_realm_change_is_hopped_for_on_the_way(monkeypatch):
+    """Eerem Palace: the leader hops in the last zone that allows it, then walks in."""
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
+
+    outcome = await _sync(game, _nav(*_LONG, no_realm_change=(_ISLAND,)), _ISLAND, realm="Balestrom")
+
+    assert outcome.success
+    assert game.names == ["walk", "walk", "hop", "walk"]
+    assert game.calls[1][1]["to_zone"] == _S2
+
+
+async def test_a_leader_already_where_realms_cannot_change_keeps_its_realm(monkeypatch):
+    game = _Game(monkeypatch, [_S2, _S2], friends=True)
+    machine = FakeMachine()
+
+    outcome = await _sync(game, _nav(_walk(_HUB, _S2), no_realm_change=(_S2,)), _S2, machine=machine, realm="Balestrom")
+
+    assert outcome.success
+    assert _hops(game) == []
+    assert any("Realms cannot be changed" in msg for msg, _ in machine.logs)
+
+
+async def test_a_leader_that_cannot_hop_fails_the_sync(monkeypatch):
+    game = _Game(monkeypatch, [_S2, _S2], friends=True)
+    monkeypatch.setattr(change_realm, "to_realm", AsyncMock(return_value="FAILURE"))
+
+    outcome = await _sync(game, _nav(_walk(_HUB, _S2)), _S2, realm="Balestrom")
+
+    assert not outcome.success
+    assert game.waves == []
+
+
+async def test_a_player_who_cannot_port_travels_then_joins_the_leaders_realm(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True, cannot_port={2})
+    see_each_other(game.clients[0])
+    see_each_other(game.clients[1])
+    read = AsyncMock(return_value="Wraith")
+    monkeypatch.setattr(realm_list, "read_current_realm", read)
+
+    async def to_realm(machine, client, realm, safety_delay):
+        game.calls.append(("hop", {"player": game.number(client), "realm": realm}))
+        see_each_other(*game.clients)
+        return "SUCCESS"
+
+    monkeypatch.setattr(change_realm, "to_realm", to_realm)
+
+    outcome = await _sync(game, _nav(*_LONG), _ISLAND)
+
+    assert outcome.success
+    assert game.groups[-3:] == [[2], [2], [2]], "it travels the route itself"
+    assert _hops(game) == [{"player": 2, "realm": "Wraith"}]
+    assert read.await_args.args[1] is game.clients[0], "the realm is read from the leader's spellbook"
+    game.clients[1].teleport.assert_awaited()
+
+
+async def test_a_traveller_seen_beside_the_leader_needs_no_realm_change(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True, cannot_port={2})
+    read = AsyncMock()
+    monkeypatch.setattr(realm_list, "read_current_realm", read)
+
+    outcome = await _sync(game, _nav(*_LONG), _ISLAND)
+
+    assert outcome.success
+    assert _hops(game) == []
+    read.assert_not_awaited()
+
+
+async def test_a_player_never_seen_with_the_leader_fails_the_sync(monkeypatch):
+    monkeypatch.setattr(zone_navigation, "SIGHTING_SETTLE_TIMEOUT", 0.01)
+    game = _Game(monkeypatch, [_S2, _S2], friends=True, cannot_port={2})
+    see_each_other(game.clients[0])
+    see_each_other(game.clients[1])
+    monkeypatch.setattr(realm_list, "read_current_realm", AsyncMock(return_value="Wraith"))
+    machine = FakeMachine()
+
+    outcome = await _sync(game, _nav(_walk(_HUB, _S2)), _S2, machine=machine)
+
+    assert not outcome.success
+    assert "not every player is with player 1" in outcome.reason
+
+
+async def test_a_leader_that_misses_a_step_is_replaced_by_one_who_made_it(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True, misses={1: 2})
+
+    outcome = await _sync(game, _nav(_walk(_HUB, _S1), _walk(_S1, _S2)), _S2, realm="Balestrom")
+
+    assert outcome.success
+    assert _hops(game) == [{"player": 2, "realm": "Balestrom"}]
+    assert game.waves == [([1], [2])]
+
+
+async def test_a_separate_bot_travels_everyone_and_never_ports_or_hops(monkeypatch):
+    game = _Game(monkeypatch, [_HUB, _HUB], friends=True)
+    see_each_other(game.clients[0])
+    see_each_other(game.clients[1])
+    machine = FakeMachine(options={"Player Realms": "Separate"})
+
+    outcome = await _sync(game, _nav(*_LONG), _ISLAND, machine=machine, realm="Balestrom")
+
+    assert outcome.success
+    assert game.groups == [[1, 2], [1, 2], [1, 2]]
+    assert game.waves == [] and _hops(game) == []
+    game.survey.assert_not_awaited()
+
+
+async def test_a_separate_bot_already_there_does_nothing(monkeypatch):
+    game = _Game(monkeypatch, [_S2, _S2], friends=True)
+    see_each_other(game.clients[0])
+    see_each_other(game.clients[1])
+
+    outcome = await _sync(game, _nav(_walk(_HUB, _S2)), _S2, machine=FakeMachine(options={"Player Realms": "Separate"}))
+
+    assert outcome.success
+    assert game.calls == [] and game.waves == []

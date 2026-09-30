@@ -675,3 +675,69 @@ async def test_the_param_alone_does_not_queue():
     assert Keycode.X in [call.args[0] for call in client.send_key.call_args_list]
     teamup_clicks = [c for c in click_by_path_mock.call_args_list if c.args[1] == ENTER_TEAMUP_BUTTON_PATH]
     assert teamup_clicks == []
+
+
+# ---------------------------------------------------------------------------
+# One realm, one instance (#130)
+#
+# A Together bot enters as one party. The steps around the two checks are stubbed, so what
+# is under test is what each check decides.
+# ---------------------------------------------------------------------------
+
+
+async def _run_checks(together_outcomes, *, all_seen=True):
+    ensure = AsyncMock(side_effect=list(together_outcomes))
+    reach = AsyncMock(return_value=True)
+    enter = AsyncMock(return_value=True)
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(ed, "SIGHTING_SETTLE_TIMEOUT", 0.01),
+        patch.object(nh, "ensure_together", ensure),
+        patch.object(nh, "reach_sigil_prompt", reach),
+        patch.object(ed, "_enter_normal", enter),
+        patch.object(nh, "wait_for_zone_with_recovery", AsyncMock(return_value=None)),
+        patch.object(ed, "_all_seen", AsyncMock(return_value=all_seen)),
+    ):
+        result = await ed.run(FakeMachine(), [FakeClient(), FakeClient()], _PARAMS)
+    return result, ensure, reach, enter
+
+
+async def test_players_together_on_the_sigil_enter_without_a_port():
+    result, ensure, reach, _enter = await _run_checks([nh.TogetherOutcome.ALREADY])
+    assert result == "SUCCESS"
+    assert ensure.await_args.kwargs["where"] == "on the sigil"
+    reach.assert_awaited_once()
+
+
+async def test_players_gathered_on_the_sigil_reach_the_prompt_again():
+    result, _ensure, reach, _enter = await _run_checks([nh.TogetherOutcome.GATHERED])
+    assert result == "SUCCESS"
+    assert reach.await_count == 2
+
+
+async def test_players_who_cannot_be_gathered_on_the_sigil_never_press_x():
+    result, _ensure, _reach, enter = await _run_checks([nh.TogetherOutcome.FAILED])
+    assert result == "FAILURE"
+    enter.assert_not_awaited()
+
+
+async def test_players_in_separate_instances_are_ported_together():
+    result, ensure, _reach, _enter = await _run_checks(
+        [nh.TogetherOutcome.ALREADY, nh.TogetherOutcome.GATHERED], all_seen=False
+    )
+    assert result == "SUCCESS"
+    assert ensure.await_args.kwargs["where"] == "in the dungeon"
+
+
+async def test_players_left_in_separate_instances_fail():
+    result, _ensure, _reach, _enter = await _run_checks(
+        [nh.TogetherOutcome.ALREADY, nh.TogetherOutcome.FAILED], all_seen=False
+    )
+    assert result == "FAILURE"
+
+
+async def test_a_separate_bot_counts_as_together_in_the_dungeon():
+    machine = FakeMachine(options={"Player Realms": "Separate"})
+    a, b = FakeClient(), FakeClient()
+    assert await ed._all_seen(machine, [a, b])
+    a.get_base_entity_list.assert_not_awaited()

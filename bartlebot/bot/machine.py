@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from transitions.extensions.asyncio import AsyncMachine
 from wizwalker.errors import ClientClosedError, ExceptionalTimeout, MemoryReadError
 
-from bartlebot import bot_options, option_values, restricted_zones
+from bartlebot import bot_options, option_values, restricted_zones, sightings
 from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 from bartlebot.bot.schema import FALLTHROUGH_RETURNS
 
@@ -99,6 +99,9 @@ class BotMachine:
         self._health_monitor: ClientHealthMonitor | None = None
         # Who can port to whom, surveyed before the run. See the port_map property.
         self._port_map: PortMap | None = None
+        # Which clients have been seen sharing a zone, realm and instance. Keeps only the
+        # latest check until run() starts the loading watcher that says when one goes stale.
+        self._together = sightings.TogetherRecord(retain=False)
         # Which node's log() calls are currently being attributed. See log().
         self._current_node_type: str | None = None
         # Run bookkeeping, for the summary logged when run() returns.
@@ -393,9 +396,32 @@ class BotMachine:
         for hwnd in hwnds:
             self._health_monitor.flag(hwnd)
 
+    # --- Who shares a realm ---
+
+    def note_sightings(self, result: "sightings.Sightings") -> None:
+        """Fold a check from ``node_helpers.read_sightings`` into the record of who is together."""
+        self._together.note(result)
+
+    def are_together(self, clients: list) -> bool:
+        """Whether every one of *clients* has been seen sharing one zone, realm and instance,
+        with none of them loading since. True for a single client.
+
+        False means "not known to be", not "known not to be": ask ``read_sightings`` for that.
+        """
+        return self._together.are_together(clients)
+
+    def together_with(self, client, clients: list) -> list:
+        """Those of *clients* known to share *client*'s zone, realm and instance, itself included."""
+        return self._together.together_with(client, clients)
+
+    def forget_sightings(self, client) -> None:
+        """Drop *client* from the record of who is together: it has loaded, so its realm may have changed."""
+        self._together.forget(client)
+
     def set_clients(self, clients: list) -> None:
         """Replace the active client list."""
         self.clients = clients
+        self._together.drop_clients(clients)
         # Drop baselines for clients that are gone would otherwise accumulate for the
         # life of the run. Surviving clients keep theirs, which is the point — a
         # reconnect elsewhere in the group must not cost the others their history.
@@ -458,7 +484,10 @@ class BotMachine:
             on_pause=self.pause,
             on_client_disconnected=self._on_client_disconnected,
             on_restricted_zone=self._handle_restricted_zone,
+            on_loading=self.forget_sightings,
         )
+        # The watcher now says when a sighting goes stale, so older ones can be kept.
+        self._together.retain = True
         _run_start = time.monotonic()
         watcher = asyncio.create_task(self._ambient_dialog_watcher())
         combat_watcher = asyncio.create_task(self._ambient_combat_watcher())
@@ -618,6 +647,8 @@ class BotMachine:
             watcher.cancel()
             combat_watcher.cancel()
             health_task.cancel()
+            # With the watcher gone nothing can say when a sighting goes stale.
+            self._together = sightings.TogetherRecord(retain=False)
             if self._drop_poll is not None:
                 self._drop_poll.cancel()
             for t in (watcher, combat_watcher, health_task):

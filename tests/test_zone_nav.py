@@ -507,6 +507,28 @@ def test_a_home_that_is_not_declared_is_refused():
         zone_nav.parse(raw)
 
 
+def test_a_zone_may_refuse_realm_changes():
+    raw = _raw()
+    raw["worlds"]["Alpha"]["zones"][_S3] = {"realm_change": False}
+    nav = zone_nav.parse(raw)
+
+    assert not nav.allows_realm_change(_S3)
+    assert nav.allows_realm_change(_S1)
+    assert nav.allows_realm_change("Nowhere/On/The/Map")
+
+
+def test_realm_change_must_be_true_or_false():
+    raw = _raw()
+    raw["worlds"]["Alpha"]["zones"][_S3] = {"realm_change": "no"}
+
+    with pytest.raises(ValueError, match="realm_change must be true or false"):
+        zone_nav.parse(raw)
+
+
+def test_the_shipped_map_knows_eerem_palace_refuses_realm_changes():
+    assert not zone_nav.load().allows_realm_change("Mirage/MR_Z08_EeremPalace")
+
+
 def test_connectors_are_not_destinations():
     raw = _raw()
     raw["worlds"]["Alpha"]["zones"][_S3] = {"destination": False}

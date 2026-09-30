@@ -12,6 +12,7 @@ import pytest
 from wizwalker import XYZ
 from wizwalker.extensions.wizsprinter import SprintyClient
 
+from bartlebot import sightings
 from bartlebot.paths import project_root
 
 # ---------------------------------------------------------------------------
@@ -52,6 +53,7 @@ _FAKED_METHODS = frozenset(
         "backpack_space",
         "get_base_entities_with_vague_name",
         "get_base_entities_with_predicate",
+        "get_base_entity_list",
     }
 )
 for _method in _FAKED_METHODS:
@@ -61,6 +63,22 @@ for _method in _FAKED_METHODS:
             "Update FakeClient to match the current WizSprinter API."
         )
 del _method
+
+
+#: Every FakeClient the running test has made. See FakeClient.get_base_entity_list.
+_clients_in_this_test: list = []
+
+
+async def _everyone_in_this_test() -> list:
+    return [FakeGidEntity(c.gid) for c in _clients_in_this_test]
+
+
+@pytest.fixture(autouse=True)
+def _forget_fake_clients():
+    """Start each test with no FakeClients sharing its realm. A list clear: costs nothing."""
+    _clients_in_this_test.clear()
+    yield
+    _clients_in_this_test.clear()
 
 
 class FakeClient:
@@ -125,6 +143,13 @@ class FakeClient:
         # fall through to the character-page route. Tests that want the memory route give
         # this a behavior — see tests/test_wizard_names.py.
         self.client_object.inactive_behaviors = AsyncMock(return_value=[])
+        # This character's global id, and what it has loaded. By default every FakeClient
+        # a test makes has every other loaded -- one zone, realm and instance, which is
+        # what node tests written before realm checks assume. see_each_other() splits them.
+        self.gid = FakeClient._next_handle * 1000 + 1
+        self.client_object.global_id_full = AsyncMock(return_value=self.gid)
+        self.get_base_entity_list = AsyncMock(side_effect=_everyone_in_this_test)
+        _clients_in_this_test.append(self)
 
 
 class FakeEntity:
@@ -138,6 +163,24 @@ class FakeEntity:
         template = MagicMock()
         template.object_name = self.object_name
         self.object_template = AsyncMock(return_value=template)
+
+
+class FakeGidEntity:
+    """An entity-list entry that is only a global id: another player, as a client sees it."""
+
+    def __init__(self, gid: int):
+        self.global_id_full = AsyncMock(return_value=gid)
+
+
+def see_each_other(*clients: "FakeClient") -> None:
+    """Make *clients* have each other loaded, and nobody else: one zone, realm and instance.
+
+    By default a test's FakeClients all see each other; calling this once per group is how
+    a test splits them, e.g. ``see_each_other(a, b); see_each_other(c)``.
+    """
+    for viewer in clients:
+        viewer.get_base_entity_list.side_effect = None
+        viewer.get_base_entity_list.return_value = [FakeGidEntity(c.gid) for c in clients]
 
 
 class FakeMachine:
@@ -157,6 +200,20 @@ class FakeMachine:
         self.health_checks_resumed: set[int] = set()
         # Mirrors BotMachine.port_map: None until something surveys who can port to whom.
         self.port_map = None
+        # The real record, retaining as it does mid-run, so node tests exercise its rules.
+        self.together = sightings.TogetherRecord()
+
+    def note_sightings(self, result) -> None:
+        self.together.note(result)
+
+    def are_together(self, clients) -> bool:
+        return self.together.are_together(clients)
+
+    def together_with(self, client, clients) -> list:
+        return self.together.together_with(client, clients)
+
+    def forget_sightings(self, client) -> None:
+        self.together.forget(client)
 
     def log(self, msg: str, level: int = logging.INFO) -> None:
         self.logs.append((msg, level))
