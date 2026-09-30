@@ -34,6 +34,7 @@ result counted. So:
   the run to recovery; it must not assume the world is as it was before its first run.
 
 `handle_combat` and `relog` are never cancelled this way (`machine.NEVER_PREEMPTED`).
+`docs/AMBIENT_COMBAT.md` has the rest of what the watcher does once the node is out of the way.
 
 ## Multi-client coordination
 Use `poll_each_until_seen()` from `bartlebot/nodes/node_helpers.py` for operations that must complete across all clients (zone changes, prompts, loading screens).
