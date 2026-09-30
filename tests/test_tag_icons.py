@@ -74,7 +74,7 @@ def test_dungeon_and_challenge_mode_share_the_sigil():
 
 
 def _ring(size: int = 128, inner: int = 51) -> Image.Image:
-    """A gold ring with a transparent centre of radius *inner*."""
+    """A gold ring with a transparent center of radius *inner*."""
     frame = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     c = (size - 1) / 2
     px = frame.load()
@@ -94,7 +94,7 @@ def test_a_frame_with_no_hole_is_refused():
         ring_inner_radius(Image.new("RGBA", (64, 64), (200, 200, 0, 255)))
 
 
-def test_the_skull_lands_above_and_left_of_centre():
+def test_the_skull_lands_above_and_left_of_center():
     sigil = Image.new("RGBA", (128, 128), (0, 128, 0, 255))
     skull = Image.new("RGBA", (32, 32), (255, 0, 0, 255))
 

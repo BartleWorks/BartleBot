@@ -588,7 +588,7 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             top_layout.addWidget(picker, 0)
 
         # Stretch 1, not a fixed width flanked by two stretches: the search field then
-        # fills whatever the two clusters leave, so it *sits* centred without being
+        # fills whatever the two clusters leave, so it *sits* centerd without being
         # anchored there, and narrowing the window shortens it instead of colliding.
         self._search = SearchLineEdit("Search bots by name, author, or drop…")
         self._search.setClearButtonEnabled(True)
@@ -1176,7 +1176,7 @@ class BotCanvas(QWidget):
         self._save_done_btn = _icon_btn("save_done", "Save to disk and return to Run mode")
         self._save_done_btn.clicked.connect(self._on_save_done_clicked)
 
-        # ── Centre zone: the transport, in Edit mode as well ─────────
+        # ── Center zone: the transport, in Edit mode as well ─────────
         # A transport is a landmark: people aim at it without looking, so it stays put
         # and is *disabled* when it cannot be used rather than swapped for something
         # else. Add State and Auto-Layout used to occupy these exact pixels in Edit
@@ -3157,7 +3157,7 @@ class BotCanvas(QWidget):
         self._update_validation_badge()
 
     def _on_select_edge_requested(self, transition) -> None:
-        """Select the edge on the canvas that corresponds to *transition* and centre it."""
+        """Select the edge on the canvas that corresponds to *transition* and center it."""
         self._scene.clearSelection()
         edge = self._scene.edge_for(transition)
         if edge is not None:
@@ -3165,7 +3165,7 @@ class BotCanvas(QWidget):
             self._view.centerOn(edge)
 
     def select_state(self, state_id: str) -> None:
-        """Select the node for *state_id* and centre the view on it.
+        """Select the node for *state_id* and center the view on it.
 
         Selecting is what loads the state into the properties panel, via
         ``_on_selection_changed``.
@@ -3177,7 +3177,7 @@ class BotCanvas(QWidget):
             self._view.centerOn(node)
 
     def _on_select_state_requested(self, state_id: str) -> None:
-        """Select the node on the canvas that corresponds to *state_id* and centre it."""
+        """Select the node on the canvas that corresponds to *state_id* and center it."""
         self.select_state(state_id)
 
     def undo(self) -> None:

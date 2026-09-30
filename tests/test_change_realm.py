@@ -418,7 +418,7 @@ async def test_refusal_from_inside_a_dungeon_fails_immediately():
 
     assert result == "FAILURE"
     assert any("cannot be switched from inside a dungeon" in msg for msg, _lvl in machine.logs)
-    # A one-button refusal is dismissed with the centre button, and Go To Realm is not
+    # A one-button refusal is dismissed with the center button, and Go To Realm is not
     # re-clicked afterwards.
     assert clicked[-1] == MESSAGE_BOX_CENTER
 

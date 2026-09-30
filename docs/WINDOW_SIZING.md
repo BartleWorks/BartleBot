@@ -80,9 +80,9 @@ is relaxing a conservative floor by controlling the pairing ourselves.
 
 **The failure is a click that silently misses, not a rendering glitch.** The HUD anchors
 the compass and teleporter buttons (`compassAndTeleporterButtons`) to a screen edge and
-centres the interact prompt. On a narrow client the prompt is wide enough to cover the hub
+centers the interact prompt. On a narrow client the prompt is wide enough to cover the hub
 and dorm buttons — and those buttons are clicked *by coordinate*: `node_helpers.click_by_path`
-resolves the window and hands its centre to wizwalker's `mouse_handler.click_window`, so
+resolves the window and hands its center to wizwalker's `mouse_handler.click_window`, so
 whatever is drawn on top takes the click. A covered button therefore fails **quietly**:
 `click_by_path` returns True (the window exists and is not grayed), the click lands on the
 prompt, and the node burns its `TRIGGER_TIMEOUT` waiting for a loading screen that never
@@ -145,7 +145,7 @@ clear. A settings file that still holds 400x300 is migrated on read by the
 ### Wide: take the width instead
 
 `widescreen_form` derives a second resolution per rung — **the same height, the width
-widened to 16:9** — which moves the edge-anchored buttons away from the centred prompt, so
+widened to 16:9** — which moves the edge-anchored buttons away from the centerd prompt, so
 the rung pays no steps and keeps the render floor's scale:
 
 | UI size | 16:9 | scale |

@@ -2,7 +2,7 @@
 
 THE PROBLEM
     Every Wizard101 modal is the same window tree -- MessageBoxModalWindow, with left /
-    centre / right buttons -- so "a modal is up" says nothing about which one. Nodes used
+    center / right buttons -- so "a modal is up" says nothing about which one. Nodes used
     to infer identity from which buttons were showing, which works only while no two
     dialogs a node can hit share a button layout. teleport_to_friend broke that: the
     dungeon exit warning and the friend-busy dialog both show a right button, so the
@@ -162,7 +162,7 @@ CONFIRM_TO_PROCEED = frozenset(
         DUNGEON_RECALL_LOGOUT,
     }
 )
-"""Questions. Click the centre (confirm) button and the action goes ahead."""
+"""Questions. Click the center (confirm) button and the action goes ahead."""
 
 REFUSALS = frozenset(
     {
@@ -196,7 +196,7 @@ UNRECOGNISED_REFUSAL = "<unrecognised>"
 """Not a lang key: a dismiss-only dialog whose caption the snapshot does not know.
 
 Returned by node_helpers.resolve_modal() when caption matching finds nothing but the
-button layout says refusal -- a right button with no centre one, meaning the dialog offers
+button layout says refusal -- a right button with no center one, meaning the dialog offers
 no way to proceed. It keeps a node failing fast on a dialog reworded by a game patch,
 instead of silently waiting out its timeout, and the log line says plainly that the bot
 could not identify it.

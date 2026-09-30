@@ -56,7 +56,7 @@ AUTHORING_GROUPS: tuple[tuple[AuthoringAction, ...], ...] = (
     (AuthoringAction.TOGGLE_SPEED_AUTHORING,),
 )
 
-# The divider's box: the rule is drawn centred in it, so the width beyond its 1px is the
+# The divider's box: the rule is drawn centerd in it, so the width beyond its 1px is the
 # padding either side, added to the row's spacing. Shorter than the 24px buttons, so it
 # reads as a break in the row rather than a wall.
 _DIVIDER_SIZE = (9, 16)
@@ -175,7 +175,7 @@ class AuthoringBar(ThemedMixin, QWidget):
 
 
 def _side_policy() -> QSizePolicy:
-    """The size policy of Bar A's two captions, which is what keeps the buttons centred.
+    """The size policy of Bar A's two captions, which is what keeps the buttons centerd.
 
     Equal shares of the row regardless of text: ``Ignored`` so a long node title clips at
     its half rather than pushing the buttons left, and space kept while hidden so the node
@@ -291,7 +291,7 @@ class GameViewPanel(ThemedMixin, QWidget):
         self.authoring_bar = AuthoringBar()
         self.authoring_bar.action_requested.connect(self.authoring_action_requested)
 
-        # The buttons stay dead centre, whatever the two captions say: each side gets the
+        # The buttons stay dead center, whatever the two captions say: each side gets the
         # same stretch and neither one's text width counts (see _side_policy).
         layout.addWidget(self._clients_lbl, stretch=1)
         layout.addWidget(self.authoring_bar)

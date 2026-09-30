@@ -819,27 +819,27 @@ def start_combat_drop_poll(machine, clients: list, slots: list[int]) -> None:
 @dataclass
 class _Fight:
     publisher: object
-    centre: object
+    center: object
     members: list = field(default_factory=list)
     """Every client seen in battle in this fight, the publisher first."""
 
 
-class FightCentre:
-    """The centre of each fight our players are joining, published by the first of them seen in battle.
+class FightCenter:
+    """The center of each fight our players are joining, published by the first of them seen in battle.
 
     Once a fight starts its mob walks to its seat, or is hidden or swapped, so a late client
-    re-aiming at the mob aims at a moving or absent target (#110). The centre of the duel
+    re-aiming at the mob aims at a moving or absent target (#110). The center of the duel
     circle stays put, and teleporting there joins the fight just as teleporting onto an
     engaged mob does.
 
-    The centre is read from the duel the client is in, and only once in_battle() has read
+    The center is read from the duel the client is in, and only once in_battle() has read
     true: outside a fight the duel struct still holds the last fight's data.
 
-    *share* says whether one client's centre is any use to another. None shares it with
+    *share* says whether one client's center is any use to another. None shares it with
     everybody, which is right when every player is on one realm. Otherwise pass the machine's
-    record of who shares a realm: a centre on another realm is the coordinates of a fight the
+    record of who shares a realm: a center on another realm is the coordinates of a fight the
     client is not in, and teleporting there starts a second one. Each group then publishes a
-    centre of its own.
+    center of its own.
     """
 
     def __init__(self, share: Callable[[object, object], bool] | None = None):
@@ -863,46 +863,46 @@ class FightCentre:
         """Every fight's members, each list in the order they were seen in battle."""
         return [list(fight.members) for fight in self._fights]
 
-    def centre_for(self, client):
-        """The centre *client* should aim at, or None while nobody it shares a realm with has one."""
+    def center_for(self, client):
+        """The center *client* should aim at, or None while nobody it shares a realm with has one."""
         fight = self._fight_for(client)
-        return fight.centre if fight is not None else None
+        return fight.center if fight is not None else None
 
     async def publish(self, machine, client, index: int) -> None:
-        """Record *client* as in its group's fight, publishing the centre if there is none yet.
+        """Record *client* as in its group's fight, publishing the center if there is none yet.
 
         Call only while *client* is in battle.
         """
         if any(client in fight.members for fight in self._fights):
             return
         try:
-            centre = await client.duel.position()
+            center = await client.duel.position()
         except Exception as exc:
             if (fight := self._fight_for(client)) is not None:
                 _join(fight, client)  # nothing better to go on than the realm
                 return
             machine.log(
-                f"Client {index}: fight centre unreadable ({exc!r}); late clients keep aiming at the mob",
+                f"Client {index}: fight center unreadable ({exc!r}); late clients keep aiming at the mob",
                 logging.DEBUG,
             )
             return
         # A second fight on one realm has a circle of its own; one within a hair is this one.
         for fight in self._fights:
-            if self._shares(fight, client) and _distance(fight.centre, centre) <= _SAME_CIRCLE:
+            if self._shares(fight, client) and _distance(fight.center, center) <= _SAME_CIRCLE:
                 _join(fight, client)
                 return
-        self._fights.append(_Fight(client, centre, [client]))
+        self._fights.append(_Fight(client, center, [client]))
         where = await _position(client)
         machine.log(
-            f"Client {index} is in battle; publishing its fight centre"
-            + (f" ({where.distance(centre):.1f} units from it)" if where is not None else ""),
+            f"Client {index} is in battle; publishing its fight center"
+            + (f" ({where.distance(center):.1f} units from it)" if where is not None else ""),
             logging.DEBUG,
         )
 
     async def is_over(self, client) -> bool:
         """Whether the fight *client* would join has ended: nobody seen in it is still in battle.
 
-        False while *client* has no centre to aim at, and False when a read fails: giving up on
+        False while *client* has no center to aim at, and False when a read fails: giving up on
         a fight still going leaves a player out of it, which is worse than one wasted teleport.
         """
         fight = self._fight_for(client)
@@ -922,7 +922,7 @@ def _join(fight: _Fight, client) -> None:
         fight.members.append(client)
 
 
-#: Two duel centres this close are one circle. A centre is read from the duel itself, so every
+#: Two duel centers this close are one circle. A center is read from the duel itself, so every
 #: client in one fight reads the same point; this is only room for float noise.
 _SAME_CIRCLE = 10.0
 
@@ -935,21 +935,21 @@ async def join_fight(
     machine,
     client,
     index: int,
-    fight: FightCentre,
+    fight: FightCenter,
     timeout: float,
     *,
     find_target: Callable[[object], Awaitable[object]] | None = None,
 ) -> bool:
     """Teleport *client* into a fight, retrying every COMBAT_TP_RETRY_INTERVAL until it is in battle.
 
-    Once *fight* has a centre for the client, each attempt teleports there, and a client that
-    gets in first publishes its own centre for the rest. Before that, *find_target* says what
+    Once *fight* has a center for the client, each attempt teleports there, and a client that
+    gets in first publishes its own center for the rest. Before that, *find_target* says what
     to aim at: handle_combat passes its find-the-mob, which is how a fight starts at all. The
-    ambient watcher passes nothing, so a client only ever teleports to a published centre: a
+    ambient watcher passes nothing, so a client only ever teleports to a published center: a
     teleport to "the closest mob" could start a second fight.
 
     Gives up, returning False, at *timeout* or once the fight it would join is over (see
-    FightCentre.is_over): a late client teleporting onto an empty circle joins nothing.
+    FightCenter.is_over): a late client teleporting onto an empty circle joins nothing.
 
     A target that disappears is waited out rather than given up on: an encounter that swaps
     or hides its mob as its fight starts may still pull the player in before the timeout.
@@ -957,33 +957,33 @@ async def join_fight(
     of the wait with no line in the log to say why.
 
     Each re-teleport logs how far it moved the player. Zero means the player was already
-    on the mob or the centre, so the retry could not have started the fight.
+    on the mob or the center, so the retry could not have started the fight.
     """
     loop = asyncio.get_event_loop()
     deadline = loop.time() + timeout
     attempt = 0
     target_lost = False
-    aimed_at_centre = False
+    aimed_at_center = False
     waiting_noted = False
     while True:
         attempt += 1
-        if (centre := fight.centre_for(client)) is not None:
+        if (center := fight.center_for(client)) is not None:
             if await fight.is_over(client):
                 machine.log(f"Client {index}: the fight ended before it could join", logging.DEBUG)
                 return False
-            if not aimed_at_centre:
-                machine.log(f"Client {index}: teleporting to the fight centre on attempt {attempt}", logging.DEBUG)
-                aimed_at_centre = True
+            if not aimed_at_center:
+                machine.log(f"Client {index}: teleporting to the fight center on attempt {attempt}", logging.DEBUG)
+                aimed_at_center = True
             before = await _position(client) if attempt > 1 else None
             try:
-                await client.teleport(centre)
+                await client.teleport(center)
             except Exception as exc:
-                machine.log(f"Client {index}: teleport to the fight centre failed ({exc!r})", logging.DEBUG)
+                machine.log(f"Client {index}: teleport to the fight center failed ({exc!r})", logging.DEBUG)
             else:
                 await _log_re_teleport(machine, client, index, attempt, before)
         elif find_target is None:
             if not waiting_noted:
-                machine.log(f"Client {index}: no fight centre yet; waiting without teleporting", logging.DEBUG)
+                machine.log(f"Client {index}: no fight center yet; waiting without teleporting", logging.DEBUG)
                 waiting_noted = True
         elif (target := await find_target(client)) is None:
             if not target_lost:
@@ -1014,8 +1014,8 @@ async def join_fight(
     return False
 
 
-async def duel_centre(client):
-    """The centre of *client*'s duel, or None when it cannot be read."""
+async def duel_center(client):
+    """The center of *client*'s duel, or None when it cannot be read."""
     try:
         return await client.duel.position()
     except Exception:

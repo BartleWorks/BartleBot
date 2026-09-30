@@ -10,8 +10,8 @@ uninitialised storage and the process dies inside Qt6Gui (#95).
 The workaround is to fill that storage once, on show.  Two things about it are
 load-bearing and are what these tests pin: it happens on *every* view attached to the
 scene, because ``unsetCursor()`` walks all of them, and it lands on the real pointer
-rather than the viewport centre, because the move is dispatched into the scene as hover
-and a centre point would light up whichever node happens to sit there.
+rather than the viewport center, because the move is dispatched into the scene as hover
+and a center point would light up whichever node happens to sit there.
 """
 
 import pytest
@@ -100,11 +100,11 @@ def test_the_primed_move_carries_no_buttons(view):
 
 
 def test_the_primed_move_lands_on_the_real_pointer(view, pinned_pointer):
-    """The failure path this guards: a viewport-centre point hovers whatever is there.
+    """The failure path this guards: a viewport-center point hovers whatever is there.
 
     ``GraphView.mouseMoveEvent`` falls through to ``QGraphicsView``'s, which dispatches
     hover into the scene and applies the hovered item's cursor -- so priming at the
-    centre leaves a node showing its hover highlight and grab cursor with the pointer
+    center leaves a node showing its hover highlight and grab cursor with the pointer
     somewhere else entirely.
     """
     rec = _recorded(view)
@@ -158,7 +158,7 @@ def test_the_minimap_is_primed_too(qapp, scene, view):
     mini.close()
 
 
-def test_priming_does_not_hover_a_node_sitting_at_the_viewport_centre(qapp):
+def test_priming_does_not_hover_a_node_sitting_at_the_viewport_center(qapp):
     """The property the real-pointer position buys, measured on a real canvas.
 
     Shown while already in Edit mode, which is the one ordering where the nodes are

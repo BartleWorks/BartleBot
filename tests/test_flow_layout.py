@@ -41,7 +41,7 @@ def test_the_row_height_is_the_tallest_item_in_it():
     assert height == 40
 
 
-def test_a_short_item_is_centred_in_a_row_a_taller_one_set_the_height_of():
+def test_a_short_item_is_centerd_in_a_row_a_taller_one_set_the_height_of():
     """The byline puts 18px tag chips beside a 27px "Rewards" button.  Hung from
     the top of the row the chips read as misaligned rather than as a row of two
     different things."""
@@ -178,31 +178,31 @@ def test_an_inserted_widget_is_reparented_like_an_added_one(qapp):
 
 def test_rows_stay_at_the_top_by_default():
     """A keyword list or a card grid handed a tall panel belongs at the top of it."""
-    assert block_offset(40, 100, centre=False) == 0
+    assert block_offset(40, 100, center=False) == 0
 
 
-def test_rows_centre_in_the_slack_when_asked():
-    assert block_offset(40, 100, centre=True) == 30
+def test_rows_center_in_the_slack_when_asked():
+    assert block_offset(40, 100, center=True) == 30
 
 
 def test_a_block_that_exactly_fills_its_rect_is_not_moved():
     """Which is the normal case: ``flow_container`` sizes the widget to its own wrapped
     height, so the offset only ever comes up where a parent deliberately gave it more."""
-    assert block_offset(40, 40, centre=True) == 0
+    assert block_offset(40, 40, center=True) == 0
 
 
 def test_a_block_taller_than_its_rect_is_never_pulled_up_off_the_top():
     """Clipping the last row is visible; hiding the first one is not."""
-    assert block_offset(100, 40, centre=True) == 0
+    assert block_offset(100, 40, center=True) == 0
 
 
-def test_a_centred_flow_puts_its_single_row_on_the_rect_s_centre(qapp):
+def test_a_centerd_flow_puts_its_single_row_on_the_rect_s_center(qapp):
     """The bot header's byline: pills a few pixels shorter than the rect they are given.
 
     Three spare pixels all landing below them left the pill above the author text beside
     it, which reads as a misalignment rather than as a row of two different things.
     """
-    host, layout = flow_container(centre_rows=True)
+    host, layout = flow_container(center_rows=True)
     for _ in range(2):
         child = QWidget()
         child.setFixedSize(40, 20)
@@ -214,7 +214,7 @@ def test_a_centred_flow_puts_its_single_row_on_the_rect_s_centre(qapp):
     assert tops == {5}
 
 
-def test_the_same_flow_left_uncentred_hangs_from_the_top(qapp):
+def test_the_same_flow_left_uncenterd_hangs_from_the_top(qapp):
     host, layout = flow_container()
     for _ in range(2):
         child = QWidget()

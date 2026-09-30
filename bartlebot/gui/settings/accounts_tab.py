@@ -125,7 +125,7 @@ class _Swatch(QToolButton):
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(THEME.pill_text))
         # QRectF, not the widget's QRect: an integer rect's center() floors to half a
-        # pixel above and left of true centre, which is the bug this replaced.
+        # pixel above and left of true center, which is the bug this replaced.
         radius = self.DOT_SIZE / 2
         painter.drawEllipse(QRectF(self.rect()).center(), radius, radius)
 

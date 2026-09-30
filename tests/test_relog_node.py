@@ -35,7 +35,7 @@ class FakeGame:
     -> ``world``. ``opens_on_realms`` reproduces the one tab that hides the Quit button.
 
     ``quit_dialog`` puts a modal between Quit and character select, as the game does when
-    logging out of a dungeon: its caption, and which buttons it shows. The centre button
+    logging out of a dungeon: its caption, and which buttons it shows. The center button
     goes on to character select; the right one backs out to the settings page.
     """
 

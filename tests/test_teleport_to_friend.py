@@ -245,7 +245,7 @@ async def test_unrecognised_dismiss_only_dialog_still_fails_fast():
     """A dialog reworded by a game patch must not quietly become a presumed arrival.
 
     Caption matching finds nothing, so the button layout decides: a right button with no
-    centre offers no way to proceed, which is a refusal whatever it says.
+    center offers no way to proceed, which is a refusal whatever it says.
     """
     sim = _friend_sim()
     client = sim.player(_HUB, _FAR, port="ignored")
@@ -291,12 +291,12 @@ async def test_dungeon_exit_warning_is_not_mistaken_for_a_busy_friend():
     """Porting to a friend out of a dungeon failed outright before this.
 
     The warning also shows a right button, so the busy check matched it and reported an
-    unreachable friend on every dungeon exit. The centre button is what separates them.
+    unreachable friend on every dungeon exit. The center button is what separates them.
     """
     sim = _friend_sim()
     client = sim.player(_HUB, _FAR, port="ignored")
 
-    # The warning is up until its centre button is clicked; confirming it lets the port go.
+    # The warning is up until its center button is clicked; confirming it lets the port go.
     showing = [MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT]
     clicked: list[list[str]] = []
 

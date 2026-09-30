@@ -1,7 +1,7 @@
-"""Tests for combat_runner.join_fight and FightCentre, shared by handle_combat and the ambient watcher.
+"""Tests for combat_runner.join_fight and FightCenter, shared by handle_combat and the ambient watcher.
 
 handle_combat's own tests cover joining with a mob to aim at; these cover what the ambient
-watcher relies on: never teleporting before a centre exists, and giving up on a fight that
+watcher relies on: never teleporting before a center exists, and giving up on a fight that
 has already ended.
 """
 
@@ -9,7 +9,7 @@ import pytest
 from wizwalker import XYZ
 
 from bartlebot.nodes import combat_runner, node_helpers
-from bartlebot.nodes.combat_runner import FightCentre, join_fight
+from bartlebot.nodes.combat_runner import FightCenter, join_fight
 from tests.conftest import FakeClient, FakeEntity, FakeMachine
 
 
@@ -20,20 +20,20 @@ def fast(monkeypatch):
     monkeypatch.setattr(combat_runner, "COMBAT_TP_RETRY_INTERVAL", 0.01)
 
 
-async def test_with_nothing_to_aim_at_a_client_never_teleports_before_a_centre_exists():
+async def test_with_nothing_to_aim_at_a_client_never_teleports_before_a_center_exists():
     client = FakeClient()
-    joined = await join_fight(FakeMachine(), client, 1, FightCentre(), timeout=0.1)
+    joined = await join_fight(FakeMachine(), client, 1, FightCenter(), timeout=0.1)
 
     assert joined is False
     client.teleport.assert_not_awaited()
     client.tp_to.assert_not_awaited()
 
 
-async def test_with_nothing_to_aim_at_a_client_teleports_to_a_published_centre():
+async def test_with_nothing_to_aim_at_a_client_teleports_to_a_published_center():
     machine = FakeMachine()
     fighter, helper = FakeClient(), FakeClient()
     fighter.in_battle.return_value = True
-    fight = FightCentre()
+    fight = FightCenter()
     await fight.publish(machine, fighter, 0)
 
     async def teleport(_where):
@@ -42,14 +42,14 @@ async def test_with_nothing_to_aim_at_a_client_teleports_to_a_published_centre()
     helper.teleport.side_effect = teleport
     assert await join_fight(machine, helper, 1, fight, timeout=1.0) is True
     (where,) = helper.teleport.await_args.args
-    assert (where.x, where.y, where.z) == (500.0, 600.0, 0.0)  # the fighter's duel centre
+    assert (where.x, where.y, where.z) == (500.0, 600.0, 0.0)  # the fighter's duel center
 
 
 async def test_a_client_gives_up_once_the_fight_is_over():
     machine = FakeMachine()
     fighter, late = FakeClient(), FakeClient()
     fighter.in_battle.return_value = True
-    fight = FightCentre()
+    fight = FightCenter()
     await fight.publish(machine, fighter, 0)
     fighter.in_battle.return_value = False  # the fight ended before the late client arrived
 
@@ -64,7 +64,7 @@ async def test_a_fight_is_not_over_while_anyone_who_joined_it_is_still_in_battle
     publisher, joiner, late = FakeClient(), FakeClient(), FakeClient()
     publisher.in_battle.return_value = True
     joiner.in_battle.return_value = True
-    fight = FightCentre()
+    fight = FightCenter()
     await fight.publish(machine, publisher, 0)
     await fight.publish(machine, joiner, 1)
     publisher.in_battle.return_value = False
@@ -74,14 +74,14 @@ async def test_a_fight_is_not_over_while_anyone_who_joined_it_is_still_in_battle
     assert await fight.is_over(late) is True
 
 
-async def test_a_centre_is_never_shared_across_realms():
+async def test_a_center_is_never_shared_across_realms():
     machine = FakeMachine()
     fighter, elsewhere = FakeClient(), FakeClient()
     fighter.in_battle.return_value = True
-    fight = FightCentre(share=lambda _a, _b: False)
+    fight = FightCenter(share=lambda _a, _b: False)
     await fight.publish(machine, fighter, 0)
 
-    assert fight.centre_for(elsewhere) is None
+    assert fight.center_for(elsewhere) is None
     assert await join_fight(machine, elsewhere, 1, fight, timeout=0.05) is False
     elsewhere.teleport.assert_not_awaited()
 

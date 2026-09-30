@@ -664,9 +664,9 @@ class PendingTile(_WindowlessTile):
     def _paint_body(self, painter: QPainter) -> None:
         """Draw the spinner with the caption beneath it, together in the tile's body.
 
-        Overridden rather than added to: the base centres its one line in the whole body,
+        Overridden rather than added to: the base centers its one line in the whole body,
         and a spinner drawn independently would either sit on top of that line or push it
-        off centre. Laying both out here keeps the pair centred as a unit.
+        off center. Laying both out here keeps the pair centerd as a unit.
         """
         body_top = LABEL_RESERVE
         body_h = self.height() - body_top
@@ -701,7 +701,7 @@ class PendingTile(_WindowlessTile):
             )
 
     def _paint_spinner(self, painter: QPainter, cx: int, cy: int) -> None:
-        """Draw the busy ring centred on (cx, cy): a faint full circle under a bright arc."""
+        """Draw the busy ring centerd on (cx, cy): a faint full circle under a bright arc."""
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setBrush(Qt.BrushStyle.NoBrush)

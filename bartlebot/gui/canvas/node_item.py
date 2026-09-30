@@ -314,7 +314,7 @@ class NodeItem(QGraphicsItem):
         nr = self._node_rect()
         badged = self._is_initial or self._is_terminal or self._is_recovery
         top_extra = _BADGE_R if badged else 0
-        # The first badge is centred on the left edge, so it reaches half a badge (and
+        # The first badge is centerd on the left edge, so it reaches half a badge (and
         # its pen) past it. Anything painted outside these bounds is never erased.
         left = max(margin, _BADGE_R + 1) if badged else margin
         return QRectF(nr.x() - left, -(margin + top_extra), NODE_W + left + margin, NODE_H + margin * 2 + top_extra)
@@ -543,7 +543,7 @@ class NodeItem(QGraphicsItem):
 
     def itemChange(self, change, value):
         if change == QGraphicsItem.GraphicsItemChange.ItemPositionChange and self._snap_enabled:
-            # The grid row is the body's vertical centre, as the anchor is: a call node
+            # The grid row is the body's vertical center, as the anchor is: a call node
             # is taller than NODE_H, so its own height has to be used here too.
             half = self.body_height / 2
             return QPointF(

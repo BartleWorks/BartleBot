@@ -2,9 +2,9 @@
 
 The heading a *detail pane* wants, as opposed to the two the app already had. A
 ``SidebarSection`` header is a control — it carries a disclosure triangle and folds what
-is under it — and a ``CardColumn``'s heading is centred over a column of cards. Neither
+is under it — and a ``CardColumn``'s heading is centerd over a column of cards. Neither
 is right for naming the regions of a form: a triangle promises a fold nobody asked for,
-and a centred heading over left-aligned fields reads as belonging to something else.
+and a centerd heading over left-aligned fields reads as belonging to something else.
 
 So: the label at the left margin where the fields below it start, and a hairline filling
 whatever width is left. The rule is what makes it a *section* rather than a bold line of

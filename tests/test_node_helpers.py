@@ -843,8 +843,8 @@ async def test_resolve_modal_dismisses_a_refusal_and_names_it():
     assert "not accepting teleports" in dialog_captions.describe(outcome.refusal)
 
 
-async def test_resolve_modal_dismisses_a_one_button_refusal_with_the_centre():
-    """A refusal with only an OK button puts it in the centre, not the right."""
+async def test_resolve_modal_dismisses_a_one_button_refusal_with_the_center():
+    """A refusal with only an OK button puts it in the center, not the right."""
     from bartlebot import dialog_captions
 
     outcome, clicked = await _resolve_with(
@@ -865,7 +865,7 @@ async def test_resolve_modal_reports_nothing_when_no_dialog_is_up():
 async def test_resolve_modal_treats_an_unknown_dismiss_only_dialog_as_a_refusal():
     """A dialog reworded by a patch must keep failing fast rather than start timing out.
 
-    No centre button means the game offers no way to proceed, whatever the words say.
+    No center button means the game offers no way to proceed, whatever the words say.
     """
     from bartlebot import dialog_captions
 

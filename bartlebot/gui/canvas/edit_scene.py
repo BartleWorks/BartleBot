@@ -721,7 +721,7 @@ class EditScene(QGraphicsScene):
 
         states = config.states
         sources = {self.display_id(t.source) for t in config.transitions}
-        # (item, stored left x, stored centre y) for everything placed through the fold.
+        # (item, stored left x, stored center y) for everything placed through the fold.
         placed: list[tuple[NodeItem, float, float]] = []
         for i, state in enumerate(states):
             if state.id in self._call_of:
@@ -1292,7 +1292,7 @@ class EditScene(QGraphicsScene):
         """Place a new instance of ``subgraph_id`` with its call node at ``pos``. Returns the region id.
 
         ``pos`` is the item position the other insert paths use (top-left of a node),
-        so the anchor is stored in the model convention: left edge, vertical centre.
+        so the anchor is stored in the model convention: left edge, vertical center.
         Inputs start unset, following the definition's defaults. With ``into_region`` the members also
         join that (plain) region.
 
@@ -3085,8 +3085,8 @@ class EditScene(QGraphicsScene):
         cell they round to; cell-occupancy alone still left 7% overlapping.
 
         *seed* and the result are an item's top-left, as ``setPos`` takes it. Rows are
-        snapped so the node's *centre* sits on a whole multiple of GRID_H, because a
-        stored position's y is the centre and that is where the shipped bots put every
+        snapped so the node's *center* sits on a whole multiple of GRID_H, because a
+        stored position's y is the center and that is where the shipped bots put every
         one of their nodes -- the same rows ``find_empty_grid_cell`` returns. Snapping
         the top edge instead put every insert one row above its neighbours (#85).
         """
@@ -3105,7 +3105,7 @@ class EditScene(QGraphicsScene):
         Shared by every insert path. The caller owns the undo snapshot and all the
         transition wiring; this only brings the state into existence.
 
-        *pos* is the item's top-left; the stored y is its centre, as ``_flush_positions``
+        *pos* is the item's top-left; the stored y is its center, as ``_flush_positions``
         writes it and ``setup`` reads it. Storing the top-left put a node saved before
         anything flushed it back half a node higher than it was drawn.
         """

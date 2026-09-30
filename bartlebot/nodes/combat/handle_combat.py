@@ -7,9 +7,9 @@ import time
 from bartlebot import player_realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import (
-    FightCentre,
+    FightCenter,
     FightEnd,
-    duel_centre,
+    duel_center,
     join_fight,
     resolve_combat,
     run_fight,
@@ -118,8 +118,8 @@ async def run(machine, clients: list, params: dict) -> str:
            a time in that order, waiting for each to report in_battle().
          - Otherwise: teleport all clients simultaneously, retrying every COMBAT_TP_RETRY_INTERVAL
            until all report in_battle(). Return FAILURE if ENTER_COMBAT_TIMEOUT expires.
-         Either way, once any client is in battle its fight centre is published, and every
-         later teleport goes there instead of to the mob (see combat_runner.FightCentre).
+         Either way, once any client is in battle its fight center is published, and every
+         later teleport goes there instead of to the mob (see combat_runner.FightCenter).
          Player Realms: Together -- before anyone teleports, ensure_together() ports anyone not
          confirmed with the others to the leader; FAILURE if that port fails. Once all are in
          battle, one realm and one duel circle are checked; a split is fought out, then
@@ -208,7 +208,7 @@ async def run(machine, clients: list, params: dict) -> str:
     # 3. Teleport clients to their target (sequential or simultaneous). A Together bot
     # does everything it can not to fight split: anyone not confirmed with the others ports
     # to the leader before anyone engages, and the node fails if that port fails. A Separate
-    # bot shares a fight centre only between players seen on one realm, so look before
+    # bot shares a fight center only between players seen on one realm, so look before
     # anyone moves.
     if await node_helpers.ensure_together(machine, clients, where="before the fight") is (
         node_helpers.TogetherOutcome.FAILED
@@ -218,7 +218,7 @@ async def run(machine, clients: list, params: dict) -> str:
     if player_realms.machine_is_separate(machine):
         await node_helpers.read_sightings(clients, machine)
         share = lambda a, b: machine.are_together([a, b])  # noqa: E731
-    fight = FightCentre(share)
+    fight = FightCenter(share)
 
     async def find_target(client):
         return await _find_target(client, enemy_name)
@@ -333,13 +333,13 @@ async def _in_one_fight(machine, clients: list) -> bool:
     """Whether a Together bot's players, all in battle, are in one fight. True when Separate.
 
     Seeing each other proves one realm, not one duel: two duels can sit side by side. One
-    realm and one duel circle does. A centre that cannot be read is no evidence of a split.
+    realm and one duel circle does. A center that cannot be read is no evidence of a split.
     """
     if len(clients) < 2 or player_realms.machine_is_separate(machine):
         return True
     check = await node_helpers.read_sightings(clients, machine)
-    centres = [c for c in await asyncio.gather(*(duel_centre(c) for c in clients)) if c is not None]
-    one_circle = all(node_helpers.distance(c, centres[0]) <= node_helpers.POSITION_MARGIN for c in centres)
+    centers = [c for c in await asyncio.gather(*(duel_center(c) for c in clients)) if c is not None]
+    one_circle = all(node_helpers.distance(c, centers[0]) <= node_helpers.POSITION_MARGIN for c in centers)
     if check.all_together() and one_circle:
         return True
     groups = [[i + 1 for i in group] for group in check.groups()]

@@ -35,9 +35,9 @@ def prime_last_mouse_event(view: QGraphicsView) -> None:
     One synthetic move fixes it for good: Leave clears the ``useLastMouseEvent`` flag
     but never the storage, and the unguarded reader only looks at the storage.
 
-    The position has to be the real pointer, not the viewport centre.  This falls
+    The position has to be the real pointer, not the viewport center.  This falls
     through to ``QGraphicsView::mouseMoveEvent``, which dispatches hover into the scene
-    and applies the hovered item's cursor, so a centre point would leave a node showing
+    and applies the hovered item's cursor, so a center point would leave a node showing
     its hover highlight and grab cursor with the pointer somewhere else entirely.
     """
     vp = view.viewport()
@@ -146,7 +146,7 @@ class GraphView(QGraphicsView):
     def camera_state(self) -> tuple[QTransform, int, int]:
         """Zoom and scroll offsets, enough to put the camera back exactly.
 
-        Scroll positions rather than a scene centre point: ``centerOn`` goes through
+        Scroll positions rather than a scene center point: ``centerOn`` goes through
         integer scrollbars, so round-tripping a scene coordinate loses up to half a
         device pixel -- which at a zoomed-out fit is several scene units, and visibly
         shifts the graph when focus mode exits.

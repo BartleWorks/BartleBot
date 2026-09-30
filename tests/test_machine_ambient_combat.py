@@ -5,7 +5,7 @@ node (tests/test_machine_preempt.py covers that half), and hands the fight to an
 AmbientSession. These cover the session: who helps, when the fighter casts, who fights, where
 everyone ends up, and whether the interrupted state runs again or the bot recovers.
 
-SprintyCombat, the hub trip and wisp collection are patched out. Sightings, fight centres and
+SprintyCombat, the hub trip and wisp collection are patched out. Sightings, fight centers and
 joining are real, driven through FakeClients: by default every FakeClient sees every other,
 so they share a realm; ``see_each_other`` splits them.
 """
@@ -123,7 +123,7 @@ def _teleports(client) -> list[tuple[float, float, float]]:
 
 
 def _join_on_teleport(helper) -> None:
-    """A teleport to the fight's centre (FakeClient's duel position) puts *helper* in the fight."""
+    """A teleport to the fight's center (FakeClient's duel position) puts *helper* in the fight."""
 
     async def teleport(where):
         if (where.x, where.y) == (500.0, 600.0):
@@ -186,7 +186,7 @@ async def test_an_eligible_helper_joins_and_the_fighter_waits_for_it(fast, comba
 
     assert set(combat.fights.fought()) == {fighter, helper}
     assert helper_in_when_fighter_started == [True]
-    assert _teleports(helper)[0] == (500.0, 600.0, 0.0)  # the fighter's duel centre
+    assert _teleports(helper)[0] == (500.0, 600.0, 0.0)  # the fighter's duel center
 
 
 async def test_a_client_on_another_realm_or_in_another_zone_is_left_alone(fast, combat):

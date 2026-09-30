@@ -100,7 +100,7 @@ async def test_named_enemy_is_found_as_a_fight_target():
 
     assert result == "SUCCESS"
     # _find_target is called in step 1 (target check) and again inside join_fight,
-    # until some client is in battle: from then on every teleport goes to the fight centre.
+    # until some client is in battle: from then on every teleport goes to the fight center.
     assert find.await_count >= 1
     assert all(c == call(client, "Cyclops") for c in find.await_args_list)
     client.find_closest_mob.assert_not_called()
@@ -222,11 +222,11 @@ async def test_combat_order_sequential():
 
     assert result == "SUCCESS"
     assert tp_order == [2, 1]
-    # The first in order goes to the mob; the next joins at the centre it published.
+    # The first in order goes to the mob; the next joins at the center it published.
     c2.tp_to.assert_awaited_once()
     c1.tp_to.assert_not_called()
     c1.teleport.assert_awaited_once()
-    assert _xyz(c1.teleport.await_args.args[0]) == _xyz(_CENTRE)
+    assert _xyz(c1.teleport.await_args.args[0]) == _xyz(_CENTER)
 
 
 async def test_combat_order_invalid_client_number_skipped():
@@ -316,7 +316,7 @@ async def test_success_does_not_wait_for_the_drop_poll():
 # ---------------------------------------------------------------------------
 
 
-_CENTRE = XYZ(500.0, 600.0, 0.0)  # FakeClient's duel.position()
+_CENTER = XYZ(500.0, 600.0, 0.0)  # FakeClient's duel.position()
 
 
 def _xyz(point: XYZ) -> tuple[float, float, float]:
@@ -419,15 +419,15 @@ async def test_a_re_teleport_logs_how_far_it_moved_the_player():
 
 
 # ---------------------------------------------------------------------------
-# Joining at the fight centre (#110)
+# Joining at the fight center (#110)
 # ---------------------------------------------------------------------------
 
 
 def _leader_and_follower():
-    """A leader, and a follower pulled in only by a teleport to the centre.
+    """A leader, and a follower pulled in only by a teleport to the center.
 
     The leader gets in once both have made their first mob teleport, so the follower is
-    already aiming at the mob when the centre is published. The follower's mob teleport
+    already aiming at the mob when the center is published. The follower's mob teleport
     never joins it, as when the mob has walked to its seat.
     """
     leader, follower = FakeClient(), FakeClient()
@@ -447,7 +447,7 @@ def _patches_for_fast_retry():
     )
 
 
-async def test_a_follower_teleports_to_the_leaders_fight_centre_not_the_mob():
+async def test_a_follower_teleports_to_the_leaders_fight_center_not_the_mob():
     leader, follower = _leader_and_follower()
     p1, p2, p3, p4 = _patches_for_fast_retry()
     with p1, p2, p3, p4:
@@ -455,14 +455,14 @@ async def test_a_follower_teleports_to_the_leaders_fight_centre_not_the_mob():
         result = await hc.run(machine, [leader, follower], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
-    follower.tp_to.assert_awaited_once()  # the first attempt, before any centre existed
+    follower.tp_to.assert_awaited_once()  # the first attempt, before any center existed
     follower.teleport.assert_awaited_once()
-    assert _xyz(follower.teleport.await_args.args[0]) == _xyz(_CENTRE)
-    assert len(_log_lines(machine, "Client 1: teleporting to the fight centre")) == 1
+    assert _xyz(follower.teleport.await_args.args[0]) == _xyz(_CENTER)
+    assert len(_log_lines(machine, "Client 1: teleporting to the fight center")) == 1
 
 
-async def test_a_separate_bot_shares_the_centre_only_within_a_realm():
-    """On another realm the leader's centre is a fight the follower is not in (#132)."""
+async def test_a_separate_bot_shares_the_center_only_within_a_realm():
+    """On another realm the leader's center is a fight the follower is not in (#132)."""
     leader, follower = _leader_and_follower()
     # The follower gets in on its own mob, at its second attempt, if it keeps aiming there.
     follower.in_battle.side_effect = lambda: follower.tp_to.await_count > 1
@@ -476,30 +476,30 @@ async def test_a_separate_bot_shares_the_centre_only_within_a_realm():
     assert result == "SUCCESS"
     follower.teleport.assert_not_called()
     assert follower.tp_to.await_count > 1
-    follower.duel.position.assert_awaited_once()  # it published a centre of its own
+    follower.duel.position.assert_awaited_once()  # it published a center of its own
 
 
-async def test_a_separate_bot_still_shares_the_centre_on_one_realm():
+async def test_a_separate_bot_still_shares_the_center_on_one_realm():
     leader, follower = _leader_and_follower()
     p1, p2, p3, p4 = _patches_for_fast_retry()
     with p1, p2, p3, p4:
         result = await hc.run(FakeMachine(options={"Player Realms": "Separate"}), [leader, follower], _DEFAULT_PARAMS)
 
     assert result == "SUCCESS"
-    assert _xyz(follower.teleport.await_args.args[0]) == _xyz(_CENTRE)
+    assert _xyz(follower.teleport.await_args.args[0]) == _xyz(_CENTER)
 
 
-async def test_the_centre_is_never_read_from_a_client_not_in_battle():
+async def test_the_center_is_never_read_from_a_client_not_in_battle():
     """Outside a fight the duel struct still holds the last fight's data."""
     leader, follower = _leader_and_follower()
     read_outside_battle: list = []
     for client in (leader, follower):
-        centre = client.duel.position.return_value
+        center = client.duel.position.return_value
 
-        async def position(c=client, centre=centre):
+        async def position(c=client, center=center):
             if not await c.in_battle():
                 read_outside_battle.append(c)
-            return centre
+            return center
 
         client.duel.position.side_effect = position
     p1, p2, p3, p4 = _patches_for_fast_retry()
@@ -525,7 +525,7 @@ async def test_with_no_client_in_battle_every_attempt_still_aims_at_the_mob():
     client.duel.position.assert_not_called()
 
 
-async def test_an_unreadable_centre_leaves_the_follower_aiming_at_the_mob():
+async def test_an_unreadable_center_leaves_the_follower_aiming_at_the_mob():
     leader, follower = _leader_and_follower()
     leader.duel.position.side_effect = RuntimeError("duel read failed")
     follower.in_battle.side_effect = lambda: follower.tp_to.await_count >= 2
@@ -537,7 +537,7 @@ async def test_an_unreadable_centre_leaves_the_follower_aiming_at_the_mob():
 
     assert result == "SUCCESS"
     follower.teleport.assert_not_called()
-    assert len(_log_lines(machine, "Client 0: fight centre unreadable")) == 1
+    assert len(_log_lines(machine, "Client 0: fight center unreadable")) == 1
 
 
 # ---------------------------------------------------------------------------

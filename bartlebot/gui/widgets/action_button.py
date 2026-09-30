@@ -2,7 +2,7 @@
 
 The Fusion style's default ``QPushButton`` chrome (a beveled 3D frame sized to its
 own label) is what every icon-and-text row in this app has been fighting: SVG
-icons drawn against that frame read as flattened and off-centre, and a row of
+icons drawn against that frame read as flattened and off-center, and a row of
 such buttons naturally sizes each one to its own text rather than sharing the
 row evenly. ``ActionButton`` is the reusable replacement — flat, theme-tinted,
 and set to expand — so a row of them (``buttons.addWidget(btn, 1)`` each) splits

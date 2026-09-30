@@ -36,7 +36,7 @@ def flow_geometry(
     or shrunk — a pill for a long tag name is better clipped by the sidebar than
     absent from it, and the alternative is an item that never places at all.
 
-    Items shorter than their row are **centred** in it rather than hung from its top.
+    Items shorter than their row are **centerd** in it rather than hung from its top.
     The bot header's tag row is the case: an 18px tag chip beside a 27px "Rewards"
     button sat four pixels high, which reads as a misalignment rather than as a row of
     two different things.  That is also why the rows are collected before any position
@@ -67,17 +67,17 @@ def flow_geometry(
     return positions, max(y - v_spacing, 0)
 
 
-def block_offset(content_height: int, available_height: int, *, centre: bool) -> int:
+def block_offset(content_height: int, available_height: int, *, center: bool) -> int:
     """How far down to push a block of rows in the space it was given.
 
-    Zero unless *centre*, and zero anyway whenever the flow got exactly the height its
+    Zero unless *center*, and zero anyway whenever the flow got exactly the height its
     rows came to -- which is the normal case, because :func:`flow_container` sizes the
     widget to its own wrapped height.
 
     Top is the right default and most callers want it: a keyword list or a card grid
     handed a panel taller than it needs should stay at the top of it, not float in the
     middle.  Centring is for a flow whose rect is taller than its rows for a reason of
-    its own, and which therefore has to find the rect's centre rather than its top.  The
+    its own, and which therefore has to find the rect's center rather than its top.  The
     bot header's tag row is that case -- its tag field reserves the height of its
     *editable* form in both modes so the bar does not change height when the mode does,
     and the grid row is taller still while the button clusters span it, so in Run mode
@@ -89,7 +89,7 @@ def block_offset(content_height: int, available_height: int, *, centre: bool) ->
     Never negative: a block taller than its rect is clipped at the bottom, which is
     visible, rather than pulled up off the top, which hides the first row entirely.
     """
-    if not centre:
+    if not center:
         return 0
     return max((available_height - content_height) // 2, 0)
 
@@ -103,14 +103,14 @@ class FlowLayout(QLayout):
         *,
         margin: int = 0,
         spacing: int = 4,
-        centre_rows: bool = False,
+        center_rows: bool = False,
     ) -> None:
         super().__init__(parent)
         self._items: list[QLayoutItem] = []
         self._spacing = spacing
-        #: Centre the rows in a rect taller than they need, rather than hanging them from
+        #: Center the rows in a rect taller than they need, rather than hanging them from
         #: its top.  Off by default -- see :func:`block_offset` for which case wants it.
-        self._centre_rows = centre_rows
+        self._center_rows = center_rows
         self.setContentsMargins(margin, margin, margin, margin)
 
     # -- QLayout plumbing ----------------------------------------------
@@ -155,7 +155,7 @@ class FlowLayout(QLayout):
         super().setGeometry(rect)
         left, top, right, bottom = self.getContentsMargins()
         positions, height = self._geometry(rect.width() - left - right)
-        offset = block_offset(height + top + bottom, rect.height(), centre=self._centre_rows)
+        offset = block_offset(height + top + bottom, rect.height(), center=self._center_rows)
         for item, pos in zip(self._live(), positions):
             size = item.sizeHint()
             item.setGeometry(
@@ -209,7 +209,7 @@ class FlowLayout(QLayout):
         )
 
 
-def flow_container(spacing: int = 4, *, centre_rows: bool = False) -> tuple[QWidget, FlowLayout]:
+def flow_container(spacing: int = 4, *, center_rows: bool = False) -> tuple[QWidget, FlowLayout]:
     """A widget whose height follows its :class:`FlowLayout`'s wrapping.
 
     ``heightForWidth`` alone is not enough inside a ``QVBoxLayout``: the parent asks
@@ -218,7 +218,7 @@ def flow_container(spacing: int = 4, *, centre_rows: bool = False) -> tuple[QWid
     ask again once the width is settled.
     """
     w = QWidget()
-    layout = FlowLayout(w, spacing=spacing, centre_rows=centre_rows)
+    layout = FlowLayout(w, spacing=spacing, center_rows=center_rows)
     policy = w.sizePolicy()
     policy.setHeightForWidth(True)
     policy.setVerticalPolicy(QSizePolicy.Policy.Minimum)

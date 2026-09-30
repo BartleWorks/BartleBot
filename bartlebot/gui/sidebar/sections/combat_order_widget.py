@@ -253,7 +253,7 @@ class CombatOrderWidget(QWidget):
             cell.setVisible(slot <= self._max_players)
 
     def _build_header_cell(self, slot: int) -> tuple[QWidget, QLabel]:
-        """One position's header: its gem and its ordinal, centred over the chip below.
+        """One position's header: its gem and its ordinal, centerd over the chip below.
 
         The ordinal stays beside the gem rather than being replaced by it. The gems are
         the *game's* vocabulary — nothing on this screen teaches a user who has never

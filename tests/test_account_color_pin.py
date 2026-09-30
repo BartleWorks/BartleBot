@@ -244,10 +244,10 @@ def test_the_dialog_carries_the_pick_back_out(qapp):
     assert dlg.color is None
 
 
-def test_the_marker_is_painted_at_the_centre_of_the_swatch(qapp):
+def test_the_marker_is_painted_at_the_center_of_the_swatch(qapp):
     """It used to be a "•" set as the button's text, which draws on the text baseline and
     lands a pixel or two above the middle of a round swatch. Rendered and measured rather
-    than asserted on a stylesheet, because being centred is the whole claim."""
+    than asserted on a stylesheet, because being centerd is the whole claim."""
     picker = _AccountColorPicker(taken={3: ["One"]})
     image = picker.swatches[3].grab().toImage()
     dot = QColor(THEME.pill_text).rgb()
@@ -256,11 +256,11 @@ def test_the_marker_is_painted_at_the_centre_of_the_swatch(qapp):
     assert lit, "no marker was painted"
     # Measured against the grabbed image rather than SWATCH_SIZE: grab() renders at the
     # screen's device pixel ratio, so on a scaled display the two differ. One device
-    # pixel of slack, because an odd ratio cannot land an even-diameter dot dead centre.
+    # pixel of slack, because an odd ratio cannot land an even-diameter dot dead center.
     for extent, axis in ((image.width(), 0), (image.height(), 1)):
         low = min(p[axis] for p in lit)
         high = max(p[axis] for p in lit)
-        assert abs((low + high) - (extent - 1)) <= 1, f"marker off centre on axis {axis}"
+        assert abs((low + high) - (extent - 1)) <= 1, f"marker off center on axis {axis}"
 
 
 def test_a_taken_slot_can_still_be_chosen(qapp):

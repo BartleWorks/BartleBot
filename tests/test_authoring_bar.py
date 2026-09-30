@@ -1,4 +1,4 @@
-"""Bar A's authoring buttons (#81): grouped by what they do, and centred whatever the captions say."""
+"""Bar A's authoring buttons (#81): grouped by what they do, and centerd whatever the captions say."""
 
 from __future__ import annotations
 
@@ -8,20 +8,20 @@ from bartlebot.authoring_tools import AuthoringAction
 from bartlebot.gui.game_embed.game_view_panel import AUTHORING_GROUPS, AuthoringBar, GameViewPanel
 
 
-def _bar_centre_offset(panel: GameViewPanel) -> int:
-    """How far the buttons' centre sits from the panel's, in pixels."""
+def _bar_center_offset(panel: GameViewPanel) -> int:
+    """How far the buttons' center sits from the panel's, in pixels."""
     panel.layout().activate()
     panel.authoring_bar.parentWidget().layout().activate()
     bar = panel.authoring_bar
-    centre = bar.mapTo(panel, bar.rect().center()).x()
-    return centre - panel.width() // 2
+    center = bar.mapTo(panel, bar.rect().center()).x()
+    return center - panel.width() // 2
 
 
 @pytest.mark.parametrize(
     "node_title",
     ["", "Fight", "A node title long enough to be wider than its half of the bar, and then some more"],
 )
-def test_the_buttons_are_centred_with_or_without_a_node_title(qapp, node_title):
+def test_the_buttons_are_centerd_with_or_without_a_node_title(qapp, node_title):
     panel = GameViewPanel()
     panel.resize(900, 400)
     panel.show()
@@ -29,7 +29,7 @@ def test_the_buttons_are_centred_with_or_without_a_node_title(qapp, node_title):
     panel.set_active_node(node_title)
     qapp.processEvents()
 
-    assert abs(_bar_centre_offset(panel)) <= 2
+    assert abs(_bar_center_offset(panel)) <= 2
     panel.close()
 
 

@@ -43,7 +43,7 @@ def test_every_rung_is_a_step_of_eighty_by_sixty_and_four_by_three():
 
 
 # Every (resolution, UI size) pairing driven in a live client on a sigil, checking whether
-# the centred interact prompt covered the compass and teleporter buttons. This is the table
+# the centerd interact prompt covered the compass and teleporter buttons. This is the table
 # the model exists to reproduce; if a change here and a measurement disagree, the
 # measurement wins. Do not add a row that was reasoned rather than driven -- 1280x1024 was
 # recorded as Huge on the reasoning that 5:4 was "close enough to 4:3", and it is Regular.
@@ -214,7 +214,7 @@ def test_every_offered_sub_floor_resolution_is_a_ladder_pairing():
 # The 16:9 forms
 #
 # Their reason for existing is not screen space: the HUD anchors the compass and
-# teleporter buttons to an edge and centres the interact prompt, so at 400x300 the prompt
+# teleporter buttons to an edge and centers the interact prompt, so at 400x300 the prompt
 # covers the hub and dorm buttons, and those are clicked by coordinate.
 # ---------------------------------------------------------------------------
 

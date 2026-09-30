@@ -1,7 +1,7 @@
 """How Bar B's button clusters are arranged, and what must not move.
 
 Two rules the arrangement encodes.  A transport is a landmark -- people aim at it
-without looking -- so it stays in the centre in both modes and is *disabled* when it
+without looking -- so it stays in the center in both modes and is *disabled* when it
 cannot be used, rather than being swapped for a pair of graph-editing tools that
 happened to fit the same pixels.  And the clusters at the right-hand end are
 fixed-width slots, so switching mode does not slide them around under the pointer.
@@ -62,7 +62,7 @@ def test_the_transport_is_in_the_same_place_in_both_modes(canvas):
     assert _left_edge(canvas, canvas._run_pause_btn) == run_x
 
 
-def test_the_transport_stays_centred_on_a_narrow_bar(canvas):
+def test_the_transport_stays_centerd_on_a_narrow_bar(canvas):
     """The centring is equal stretch on the two side columns, and a stretch factor
     only divides what is left after every column's *minimum*.  Edit mode grew the
     metadata's minimum past half the bar -- a fixed-width author field and the two

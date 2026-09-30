@@ -495,7 +495,7 @@ def test_leaving_the_players_tab_lets_the_client_poll_slow_down(qapp):
 # A SidebarSection whose content is height-for-width -- which an option row's
 # word-wrapped description makes it -- asks the layout for a cell taller than its
 # own sizeHint.  Capped at that sizeHint by a Maximum size policy it could not
-# fill the cell, and QWidgetItem centres what cannot fill: the section, and its
+# fill the cell, and QWidgetItem centers what cannot fill: the section, and its
 # body inside it, slid *down* as they grew.
 
 

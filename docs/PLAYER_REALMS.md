@@ -72,7 +72,7 @@ places enforce it, as with restricted zones:
 | `gather_at_player`, `teleport_to_friend`, `port_map._port_batch` | arrival includes being seen | the same: these merge on purpose |
 | straggler recovery | any arrived player | only one that shared the straggler's realm before the transition |
 | `enter_dungeon` | on the sigil before X, and at the entrance after | nothing |
-| `handle_combat` | together before anyone engages; one realm and one duel circle once in battle; a split fight is finished, then repaired | a fight centre is shared only within a realm |
+| `handle_combat` | together before anyone engages; one realm and one duel circle once in battle; a split fight is finished, then repaired | a fight center is shared only within a realm |
 | `change_realm` | favorite: all to it; next: the leader, then the rest to its realm; checked after | favorite: P1 to it, the rest the rows after; next: one block of fresh rows (below); a collision is logged |
 | `sync_in_zone` | leader travels, hops, everyone it does not see ports to it, confirmed by sight | everyone travels; nobody ports or hops |
 

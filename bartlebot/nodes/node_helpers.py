@@ -240,13 +240,13 @@ async def resolve_modal(client) -> ModalOutcome:
         fail immediately: the game has said no, and waiting out a timeout only delays the
         same answer while reporting it as the wrong cause;
       * nothing recognised — falls back to the button layout, which still separates the
-        two kinds: a centre button offers a way to proceed, so it is confirmed; a right
-        button with no centre offers only a way out, so it is dismissed and reported as
+        two kinds: a center button offers a way to proceed, so it is confirmed; a right
+        button with no center offers only a way out, so it is dismissed and reported as
         dialog_captions.UNRECOGNISED_REFUSAL. Without that second half a dialog reworded
         by a game patch would stop failing fast and start timing out instead.
 
-    Refusals are dismissed with the right button where it exists and the centre otherwise:
-    a one-button refusal puts OK in the centre, and a two-button one puts cancel on the
+    Refusals are dismissed with the right button where it exists and the center otherwise:
+    a one-button refusal puts OK in the center, and a two-button one puts cancel on the
     right, which is the answer that leaves the game alone.
     """
     key = await identify_modal(client)

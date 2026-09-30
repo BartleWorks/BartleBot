@@ -4,7 +4,7 @@
 running node and waits for the loop to park. Everything after that is here:
 
 1. Players proven to share a fighter's realm are its **helpers**. Each records where it stands
-   (zone, position, mob clearance) and teleports to the fight's centre. Nobody else moves.
+   (zone, position, mob clearance) and teleports to the fight's center. Nobody else moves.
 2. The fighter's first cast is **held** until its helpers are in, or have given up, or
    AMBIENT_HELP_HOLD has passed since the later of its first planning phase and the latest
    join. The game restarts its 30s planning timer on every join, so the fighter still casts
@@ -125,18 +125,18 @@ class AmbientSession:
 
         zones = await asyncio.gather(*(_zone(c) for c in clients))
         self.start_zones = dict(zip(clients, zones))
-        centres = combat_runner.FightCentre(share=lambda a, b: machine.are_together([a, b]))
+        centers = combat_runner.FightCenter(share=lambda a, b: machine.are_together([a, b]))
         if self.may_move:
             await self._find_helpers()
         for fighter in self.fighters:
-            await centres.publish(machine, fighter, self._slot[fighter])
+            await centers.publish(machine, fighter, self._slot[fighter])
 
         run = combat_runner.CombatRun({c: self._slot[c] + 1 for c in clients}, machine.log, AMBIENT_COMBAT_MAX_DURATION)
         await run.identify()
         holds = {f: _Hold([h for h, hf in self.helpers.items() if hf is f]) for f in self.fighters}
-        joins = {h: asyncio.create_task(self._join(h, centres)) for h in self.helpers}
+        joins = {h: asyncio.create_task(self._join(h, centers)) for h in self.helpers}
         try:
-            await self._fight(run, centres, dsls, holds, joins)
+            await self._fight(run, centers, dsls, holds, joins)
         finally:
             for task in joins.values():
                 task.cancel()
@@ -155,7 +155,7 @@ class AmbientSession:
             return SessionEnd(fight, fled=int(fight.end is combat_runner.FightEnd.FLED))
         if fight.end is combat_runner.FightEnd.STUCK:
             return SessionEnd(fight, recover=True)  # players still in battle: moving them does nothing
-        fled = await self._leave(centres, run.watch.fled)
+        fled = await self._leave(centers, run.watch.fled)
         return SessionEnd(fight, fled=fled, recover=self.force_recovery or not await self._all_home())
 
     async def _find_helpers(self) -> None:
@@ -182,8 +182,8 @@ class AmbientSession:
             names = ", ".join(self._p(h) for h in self.helpers)
             self._log(f"{names} {'is' if len(self.helpers) == 1 else 'are'} joining the fight")
 
-    async def _join(self, helper, centres) -> bool:
-        joined = await combat_runner.join_fight(self.machine, helper, self._slot[helper], centres, ENTER_COMBAT_TIMEOUT)
+    async def _join(self, helper, centers) -> bool:
+        joined = await combat_runner.join_fight(self.machine, helper, self._slot[helper], centers, ENTER_COMBAT_TIMEOUT)
         if joined:
             self.joined_at[helper] = self.clock()
             self._log(f"{self._p(helper)} joined the fight")
@@ -191,7 +191,7 @@ class AmbientSession:
             self._log(f"{self._p(helper)} did not get into the fight", logging.DEBUG)
         return joined
 
-    async def _fight(self, run, centres, dsls: list[str], holds: dict, joins: dict) -> None:
+    async def _fight(self, run, centers, dsls: list[str], holds: dict, joins: dict) -> None:
         """Start each client's combat once it is in battle, until no one is and every task is done."""
         while True:
             flags = await asyncio.gather(*(c.in_battle() for c in self.clients), return_exceptions=True)
@@ -201,7 +201,7 @@ class AmbientSession:
                     continue
                 if client in holds and not await self._released(client, holds[client], joins):
                     continue
-                await centres.publish(self.machine, client, self._slot[client])
+                await centers.publish(self.machine, client, self._slot[client])
                 if client not in self.participants:
                     self.participants.append(client)
                     await combat_runner.seed_chat_baselines(self.machine, [client])
@@ -238,9 +238,9 @@ class AmbientSession:
 
     # ------------------------------------------------------------------ afterwards
 
-    async def _leave(self, centres, fled_numbers: set[int]) -> int:
+    async def _leave(self, centers, fled_numbers: set[int]) -> int:
         """Move everyone somewhere safe after the fight. Returns how many fights were fled."""
-        fights = [[m for m in group if m in self.participants] for group in centres.groups()]
+        fights = [[m for m in group if m in self.participants] for group in centers.groups()]
         fights = [f for f in fights if f]
         fled = [f for f in fights if any(self._slot[m] + 1 in fled_numbers for m in f)]
         won = [f for f in fights if f not in fled]

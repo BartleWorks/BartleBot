@@ -20,7 +20,7 @@ THE ART IS NOT CROPPED
     by colour.
 
 THE BADGE SITS ON THE RING
-    Top right, centred on the ring's 45-degree point, so it overlaps the frame rather
+    Top right, centerd on the ring's 45-degree point, so it overlaps the frame rather
     than the portrait inside it. It is drawn in ``THEME.text`` with ``THEME.bg`` text
     -- inverted against the theme rather than coloured -- because it lands on artwork
     of every hue and an accent-coloured badge is legible against some of it.
@@ -160,7 +160,7 @@ class CardArtTile(QWidget):
     def paintEvent(self, event) -> None:  # noqa: N802  (Qt override)
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        # Centred, aspect kept: QIcon.paint does both, for a non-square source too.
+        # Centerd, aspect kept: QIcon.paint does both, for a non-square source too.
         self._icon.paint(painter, QRect(0, 0, self._size, self._size))
         if self._entry.count > 1:
             self._paint_badge(painter)
@@ -183,7 +183,7 @@ class CardArtTile(QWidget):
 def badge_rect(size: int, digits: int = 1) -> QRectF:
     """Where the count badge goes on a *size* tile holding a *digits*-long number.
 
-    Centred on the ring's top-right 45-degree point -- ``r/sqrt(2)`` along each axis
+    Centerd on the ring's top-right 45-degree point -- ``r/sqrt(2)`` along each axis
     from the middle -- then pulled back inside the tile's edges, so a two-digit badge
     grows leftwards instead of off the widget.
     """

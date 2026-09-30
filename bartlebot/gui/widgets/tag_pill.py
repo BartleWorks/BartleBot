@@ -97,7 +97,7 @@ def paint_medallion_pill(painter: QPainter, width: int, icon: QIcon, text: str, 
 
     The pill is exactly as tall as the medallion and every medallion fills its square, so
     the ring and the pill's round end are the same circle. The fill starts at the
-    medallion's centre rather than at its edge: a rounded rectangle starting at the edge
+    medallion's center rather than at its edge: a rounded rectangle starting at the edge
     would curve away under the ring and leave a notch where the top and bottom edges meet
     it. The right end is a half circle of the same radius.
     """

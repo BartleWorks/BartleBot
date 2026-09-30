@@ -259,11 +259,11 @@ Three, and they are not interchangeable:
 | widget | look | for |
 |---|---|---|
 | `SidebarSection` | disclosure triangle + bold label | a region that **folds** |
-| `CardColumn`'s heading | centred bold label + full-width rule | a **column of cards** |
+| `CardColumn`'s heading | centerd bold label + full-width rule | a **column of cards** |
 | `RuleHeading` (`widgets/rule_heading.py`) | left bold label + rule to the right | the regions of a **form** |
 
 A triangle promises a fold, so do not use `SidebarSection` for a region that does not
-have one; a centred heading over left-aligned fields reads as belonging to something
+have one; a centerd heading over left-aligned fields reads as belonging to something
 else. `RuleHeading` draws its rule from `THEME.border` rather than as a sunken `QFrame`
 on purpose — Qt draws a sunken HLine from the palette's Mid/Light pair, which the dark
 theme leaves all but invisible against `surface`.
@@ -428,7 +428,7 @@ Bot tags use them too (`card_art.tag_icon_path`, drawn at `TAG_ICON_PX` = 20 —
 too small to read). Each surface degrades to what it was before: a picker row shows its
 group dot, and a `TagChip` or `TagPill` its plain text form. With a medallion, both are
 **drawn** by `paint_medallion_pill`: exactly `TAG_ICON_PX` tall, so the medallion *is* the
-rounded left end, and the group-coloured body starts at its centre and carries the name.
+rounded left end, and the group-coloured body starts at its center and carries the name.
 An icon-only pill was tried and dropped, because the art alone was not enough to read a
 card by. A stylesheet cannot do this shape: padding and border-radius will not put an icon
 flush with a rounded end. The Type tags have no art, so they are always text, and a mixed
@@ -805,16 +805,16 @@ left, the run controls in the middle with the clock and the run state either sid
 them, and the tools that act on the *view* — fit, failure-edge toggle — out on the
 right with the mode toggle. Only the metadata column is two rows deep; both control
 clusters span those two rows, which is what puts them on the bar's own vertical
-centre and level with each other.
+center and level with each other.
 
-**Nothing is stacked in the centre or on the right, and that is the point.** The
+**Nothing is stacked in the center or on the right, and that is the point.** The
 status used to be a caption beneath the transport, which left the view tools as the
-only cluster with an empty row under them — they centred in row 1 and read as
+only cluster with an empty row under them — they centerd in row 1 and read as
 sitting high. Fixing that by spanning only the right column would put the two
 clusters at different heights, which is worse. So the status moved onto the button
 row and both columns span.
 
-**The transport is a landmark: it stays in the centre in both modes, and is disabled
+**The transport is a landmark: it stays in the center in both modes, and is disabled
 rather than replaced.** Add State and Auto-Layout used to occupy its exact pixels in
 Edit mode, so the same target did two different things with no cue at the target
 saying which. Every production tool with a transport treats it this way — Unity,
@@ -869,11 +869,11 @@ Two consequences worth knowing before touching a wrapping widget:
   overloads — and gives a page its natural height at the *top* of the cell. Invisible for
   a page as tall as the cell, wrong for one that is not: a slot sized to the editor it is
   not showing left the 13px version pill four and a half pixels above the bot name. A
-  one-child box layout (`_centred`) is the alignment the stack will not do.
+  one-child box layout (`_centerd`) is the alignment the stack will not do.
 - **A `FlowLayout` hangs its rows from the top of whatever rect it is given**, so a flow
   handed more height than its rows need leaves the slack underneath. That is the right
   default — a keyword list or a card grid in a tall panel belongs at the top of it — so
-  centring is opt-in, via `flow_container(centre_rows=True)`. Reach for it only where the
+  centring is opt-in, via `flow_container(center_rows=True)`. Reach for it only where the
   rect is taller than the rows for a reason of its own, as Bar B's tag row is: the field
   reserves the editable form's height in both modes, and the spanning button clusters make
   the grid row taller still.
@@ -887,9 +887,9 @@ called `addSpacing(4)` came to 80px inside a 68px slot and clipped the Save butt
 off its right-hand end. `tests/test_canvas_toolbar_layout.py` checks that no button
 overruns the slot it sits in, in either mode.
 
-The two side columns take **equal stretch**, which is what keeps the centre column
+The two side columns take **equal stretch**, which is what keeps the center column
 near mid-bar. That equality *is* the centring — it is not a stretch factor to retune, and
-any weight that favours the metadata moves the transport off centre by half the
+any weight that favours the metadata moves the transport off center by half the
 difference. The cost is that the metadata is capped at roughly half the bar, so a long
 filename elides and a heavily tagged bot wraps its tag row in Edit mode. Both degrade
 quietly; a Run button that drifts with the length of the bot's name does not.
@@ -909,7 +909,7 @@ The clock is **zeroed, not hidden**, while idle, and the clock and the status
 Both are the same concern: anything either side of those buttons that grows or
 appears shoves them sideways at the one moment the user is watching them, and the
 status word cycles `Editing` / `Idle` / `Running` / `Paused` as the run goes on.
-Equal slots are also what centre the transport within its own column. The slot is a
+Equal slots are also what center the transport within its own column. The slot is a
 *minimum* width, so an unforeseen longer word widens it rather than being clipped,
 and it is re-measured on a theme switch because the clock is in `THEME.font_mono()`.
 The status label's font size is set on the widget rather than in its stylesheet — a
