@@ -96,3 +96,26 @@ def test_the_favorite_realm_is_offered_only_while_the_node_may_hop():
     spec = next(o for o in siz.NODE_SPEC.required_bot_options if o.name == "Favorite Realm")
     assert spec.default is None
     assert spec.required_unless == siz.PARAM_KEEP_CURRENT_REALM
+
+
+# ---------------------------------------------------------------------------
+# Player Sync, the shipped definition built on this node (#133)
+# ---------------------------------------------------------------------------
+
+
+def test_player_sync_is_a_relog_then_a_sync_and_nothing_else():
+    from bartlebot.bot.schema import SubgraphDefinition  # noqa: PLC0415
+    from bartlebot.paths import project_root  # noqa: PLC0415
+
+    defn = SubgraphDefinition.load(project_root() / "subgraphs" / "sync-players.json")
+    members = {s.id: s.node_type for s in defn.states if not s.node_type.startswith("subgraph_")}
+    ports = {s.label: s.id for s in defn.states if s.node_type.startswith("subgraph_")}
+    edges = {(t.source, t.dest) for t in defn.transitions}
+
+    assert sorted(members.values()) == ["relog", "sync_in_zone"], "change_realm left Player Sync (#133)"
+    sync = next(sid for sid, kind in members.items() if kind == "sync_in_zone")
+    relog = next(sid for sid, kind in members.items() if kind == "relog")
+    assert (ports["Start"], sync) in edges
+    assert (ports["Recover"], relog) in edges
+    assert (relog, sync) in edges
+    assert (sync, ports["Exit"]) in edges
