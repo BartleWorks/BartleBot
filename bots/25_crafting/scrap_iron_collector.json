@@ -19,7 +19,13 @@
     "Reagents",
     "Collecting"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Player Realms",
+      "type": "player_realms",
+      "default": "Separate"
+    }
+  ],
   "states": [
     {
       "id": "state_2",

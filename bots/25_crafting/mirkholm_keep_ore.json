@@ -40,6 +40,11 @@
       "type": "bool",
       "default": true,
       "description": "If checked, collects Frost Flowers and Cattails before changing realms. Usually worth doing, since there is extra time before the realm timer countdown is complete."
+    },
+    {
+      "name": "Player Realms",
+      "type": "player_realms",
+      "default": "Separate"
     }
   ],
   "states": [

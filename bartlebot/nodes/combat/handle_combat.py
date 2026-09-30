@@ -4,6 +4,7 @@ import asyncio
 import logging
 import time
 
+from bartlebot import player_realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import (
     _run_combat,
@@ -82,7 +83,7 @@ NODE_SPEC = NodeSpec(
             "No valid target found, or players failed to enter and complete combat within the timeout.",
         ),
     ],
-    required_bot_options=[],
+    required_bot_options=[player_realms.SPEC],
     max_consecutive_retries=5,
 )
 

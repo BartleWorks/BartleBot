@@ -63,15 +63,15 @@ def _section(config):
 
 
 def test_the_config_tab_shows_an_option_the_file_does_not_hold(qapp):
-    """The bot file is empty of options; the node still requires two.
+    """The bot file is empty of options; the node still requires three.
 
-    Only one of the two is on *this* surface. ``enter_dungeon`` also requires Safety
+    Only two of the three are on *this* surface. ``enter_dungeon`` also requires Safety
     Delay, which is the user's value and so has no declaration to edit here."""
     config = _config()
 
     section = _section(config)
 
-    assert set(section.option_widgets) == {"Challenge Mode"}
+    assert set(section.option_widgets) == {"Challenge Mode", "Player Realms"}
     assert config.options == []
 
 

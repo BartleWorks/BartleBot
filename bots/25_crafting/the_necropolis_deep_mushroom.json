@@ -25,6 +25,11 @@
       "type": "bool",
       "default": true,
       "description": "Whether or not to collect ore in Plaza of Conquests while waiting for the realm change cooldown timer to clear."
+    },
+    {
+      "name": "Player Realms",
+      "type": "player_realms",
+      "default": "Separate"
     }
   ],
   "states": [

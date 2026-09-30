@@ -67,6 +67,7 @@ from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.option_widgets import (
     TALL_TYPES,
+    block_separate_if_merging,
     connect_widget,
     make_option_widget,
     set_widget_value,
@@ -391,6 +392,7 @@ class SetupSection(SidebarSection):
             get_drops=self._drops,
             get_clients=lambda: self._get_clients(),
         )
+        block_separate_if_merging(widget, self._config)
         is_bool = opt.type == "bool"
         caption = _SourceCaption()
 

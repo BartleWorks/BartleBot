@@ -84,6 +84,7 @@ NODE_SPEC = NodeSpec(
             "or not every player ended up with the target.",
         ),
     ],
+    merges_players=True,
     required_bot_options=[
         BotOptionSpec(
             name=OPTION_FRIEND_NAME,

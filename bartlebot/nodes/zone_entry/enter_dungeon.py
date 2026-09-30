@@ -5,7 +5,7 @@ import logging
 
 from wizwalker import XYZ, Keycode
 
-from bartlebot import dialog_captions
+from bartlebot import dialog_captions, player_realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
@@ -126,6 +126,7 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     required_bot_options=[
+        player_realms.SPEC,
         BotOptionSpec(
             name="Safety Delay",
             type="float",

@@ -16,7 +16,7 @@ from PyQt6.QtCore import QObject, Qt, QTimer
 from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot import group_manager, recovery_readiness, restricted_zones, wizard_names
+from bartlebot import group_manager, option_values, player_realms, recovery_readiness, restricted_zones, wizard_names
 from bartlebot.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
@@ -1538,6 +1538,8 @@ class AppController(QObject):
             return
         if not self._check_restricted_zones():
             return
+        if not self._check_player_realms():
+            return
         from bartlebot.gui.safety_warning_dialog import SafetyWarningDialog, collect_safety_warnings  # noqa: PLC0415
 
         safety_warnings = collect_safety_warnings(self._loaded_config, self._client_manager.clients)
@@ -1593,6 +1595,24 @@ class AppController(QObject):
             "BartleBot is for PvE. PvP zones and Beastmoon are off limits, and this "
             "is not something that can be turned off.",
         )
+        return False
+
+    def _check_player_realms(self) -> bool:
+        """Refuse to run a Separate bot holding a node that merges players. Returns whether to proceed.
+
+        Like the restricted-zone check it tells rather than asks: the run would contradict
+        itself, porting everyone onto one realm in a bot that says they keep to their own.
+        The Options and Setup rows already refuse the choice, so this is what a hand-edited
+        file or an override from before the node was added reaches.
+        """
+        if self._loaded_config is None:
+            return True
+        value = option_values.option_value(self._loaded_config, player_realms.OPTION, player_realms.TOGETHER)
+        reason = player_realms.run_refusal(self._loaded_config, value)
+        if reason is None:
+            return True
+        logger.warning("Refusing to run: %s is Separate in a bot with a merging node", player_realms.OPTION)
+        QMessageBox.critical(self._window, player_realms.OPTION, reason)
         return False
 
     def _confirm_recovery_gaps(self) -> bool:

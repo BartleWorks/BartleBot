@@ -228,3 +228,9 @@ class NodeSpec:
     The ``BotOptionSpec.required_when`` idiom, for the same reason: the node alone does not
     say whether this dungeon offers Team-Up, the author's param does.
     """
+    merges_players: bool = False
+    """Whether this node puts every player on one realm by its nature -- a port onto one player.
+
+    A bot holding such a node cannot be ``Player Realms: Separate``. See
+    :mod:`bartlebot.player_realms` for the three places that is enforced.
+    """

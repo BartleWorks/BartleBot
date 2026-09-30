@@ -3,7 +3,7 @@
 import asyncio
 import logging
 
-from bartlebot import dialog_captions
+from bartlebot import dialog_captions, player_realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import HUB_BUTTON_PATH
@@ -34,6 +34,7 @@ NODE_SPEC = NodeSpec(
             "before this is reported).",
         ),
     ],
+    required_bot_options=[player_realms.SPEC],
     max_consecutive_retries=10,
     usage_notes=(
         "If some but not all players reach the hub zone, the node first tries teleporting the "

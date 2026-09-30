@@ -28,7 +28,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import zone_nav
+from bartlebot import player_realms, zone_nav
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -364,6 +364,13 @@ def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bo
             error_reasons.append(f"Required param '{field.key}' is empty")
         elif field.type == "nav_zone" and not _nav_zone_reachable(state.params.get(field.key)):
             error_reasons.append(f"'{field.key}' is not a destination on the zone map")
+
+    merging = NODE_SPECS.get(state.node_type)
+    if merging is not None and merging.merges_players and player_realms.declares_separate(config):
+        error_reasons.append(
+            f"This node puts every player on one realm, and this bot's {player_realms.OPTION} is "
+            f"{player_realms.SEPARATE}"
+        )
 
     state_ids = {s.id for s in config.states}
     outgoing = [t for t in config.transitions if t.source == state.id]

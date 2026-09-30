@@ -59,6 +59,7 @@ from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.option_widgets import (
     OPTION_TYPES,
     TYPE_LABELS,
+    block_separate_if_merging,
     connect_widget,
     empty_value,
     make_option_widget,
@@ -536,6 +537,7 @@ class OptionsSection(SidebarSection):
             label=opt.name,
             get_drops=self._drops,
         )
+        block_separate_if_merging(widget, self._config)
         is_bool = isinstance(widget, QCheckBox)
 
         # A bool has no separate label: its own caption is the name, so the checkbox

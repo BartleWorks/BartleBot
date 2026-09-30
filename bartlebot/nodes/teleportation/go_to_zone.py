@@ -2,7 +2,7 @@
 
 import logging
 
-from bartlebot import zone_names
+from bartlebot import player_realms, zone_names
 from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 
@@ -38,6 +38,7 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     required_bot_options=[
+        player_realms.SPEC,
         BotOptionSpec(
             name="Safety Delay",
             type="float",

@@ -26,7 +26,7 @@ spam-click to reach the emptiest ones.
 import asyncio
 import logging
 
-from bartlebot import realms
+from bartlebot import player_realms, realms
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import TRIGGER_TIMEOUT
 from bartlebot.nodes.utility import realm_list
@@ -81,6 +81,7 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     required_bot_options=[
+        player_realms.SPEC,
         BotOptionSpec(
             name="Safety Delay",
             type="float",
