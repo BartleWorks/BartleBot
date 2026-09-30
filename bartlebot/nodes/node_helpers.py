@@ -15,7 +15,7 @@ from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 logger = logging.getLogger(__name__)
 
-from bartlebot import dialog_captions, sightings, wizard_names
+from bartlebot import dialog_captions, player_realms, sightings, wizard_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
     DECLINE_QUEST_PATH,
@@ -952,6 +952,32 @@ def without_straggler_recovery():
         _straggler_recovery.reset(token)
 
 
+#: Under Player Realms: Separate, who shares whose realm as a zone change begins. See note_realm_peers.
+_realm_peers: contextvars.ContextVar[dict | None] = contextvars.ContextVar("realm_peers", default=None)
+
+
+async def note_realm_peers(machine, clients: list) -> None:
+    """Remember who shares whose realm, just before a zone change that keeps realms.
+
+    Only a Separate bot (#132) needs this, and for anything else it costs nothing. Straggler
+    recovery ports a player who missed a transition to one who made it, and a friends-list
+    port moves the porter onto the target's realm -- so in a Separate bot the target has to
+    be someone already on the straggler's realm. The machine's record cannot say who that
+    is once the transition is under way: everyone who went through the door loaded, and a
+    load is when the record forgets. A door keeps each player's own realm, though, so who
+    shared a realm *before* the transition is who shares one after it.
+
+    Call it as close to the transition as the node allows, once the players are standing at
+    the door or sigil, where a check is definite. Kept in a context variable, like
+    straggler_recovery, so it reaches wait_for_zone_with_recovery through whatever the node
+    calls in between; each node runs in its own task, so it never outlives the node.
+    """
+    if not player_realms.machine_is_separate(machine):
+        return
+    await read_sightings(clients, machine)
+    _realm_peers.set({c: [p for p in machine.together_with(c, clients) if p is not c] for c in clients})
+
+
 async def wait_for_zone_with_recovery(
     machine,
     clients: list,
@@ -1068,35 +1094,81 @@ async def find_target_in_zone(clients: list, target_zone: str, zones: list[str] 
     return ZoneTarget(index=target_index, name=target_name)
 
 
+def _recovery_batches(machine, clients: list, zone: str, zones: list[str], first: int) -> list[tuple[int, list]]:
+    """``(target index, stragglers)`` for each port straggler recovery should make.
+
+    Together, every straggler ports to *first*, the first client to arrive. Separate, each
+    ports only to an arrived client that shared its realm as the transition began (see
+    note_realm_peers), and one with nobody like that is left where it is.
+    """
+    behind = [c for c, z in zip(clients, zones) if not zone_matches(z, zone)]
+    if not player_realms.machine_is_separate(machine):
+        return [(first, behind)]
+    peers = _realm_peers.get()
+    if peers is None:
+        machine.log(
+            f"{player_realms.OPTION} is {player_realms.SEPARATE} and nobody was seen sharing a realm "
+            "before the transition, so no straggler is ported",
+            logging.DEBUG,
+        )
+        return []
+    arrived = {i for i, z in enumerate(zones) if zone_matches(z, zone)}
+    batches: dict[int, list] = {}
+    for straggler in behind:
+        target = next(
+            (i for i, c in enumerate(clients) if i in arrived and any(c is p for p in peers.get(straggler, []))),
+            None,
+        )
+        if target is None:
+            machine.log(
+                f"P{clients.index(straggler) + 1} shares a realm with nobody who arrived; not porting it across realms",
+                logging.INFO,
+            )
+            continue
+        batches.setdefault(target, []).append(straggler)
+    return sorted(batches.items())
+
+
 async def _attempt_zone_recovery(
     machine, clients: list, zone: str, zones: list[str], poll_interval: float = POLL_INTERVAL
 ) -> None:
     """Best-effort teleport-to-player recovery for wait_for_zone_with_recovery.
 
     Ports whichever clients are not yet in `zone` (per the already-read `zones` snapshot) to
-    whichever hooked client already is. Never raises and does not itself report success —
-    the caller's own polling loop re-reads zones right after this returns and decides that.
-    A recovery that cannot even get started (no client's name cached yet, no friends online,
-    the friend-busy dialog, …) is logged and left for the caller's normal timeout to report.
+    a hooked client that already is -- under Player Realms: Separate, only one on the
+    straggler's own realm (_recovery_batches). Never raises and does not itself report
+    success — the caller's own polling loop re-reads zones right after this returns and
+    decides that. A recovery that cannot even get started (no client's name cached yet, no
+    friends online, the friend-busy dialog, …) is logged and left for the caller's normal
+    timeout to report.
     """
     target = await find_target_in_zone(clients, zone, zones=zones)
     if target.error:
         machine.log(f"Recovery not possible: {target.error}", logging.DEBUG)
         return
 
-    stragglers = [c for i, c in enumerate(clients) if i != target.index and not zone_matches(zones[i], zone)]
-    if not stragglers:
-        return
+    for index, stragglers in _recovery_batches(machine, clients, zone, zones, target.index):
+        if not stragglers:
+            continue
+        name = target.name if index == target.index else wizard_names.cached_name(clients[index])
+        await _port_stragglers(machine, index, name, stragglers, zone, poll_interval)
 
+
+async def _port_stragglers(machine, index: int, name: str, stragglers: list, zone: str, poll_interval) -> None:
+    """Port *stragglers* to P(*index* + 1), whose wizard name is *name*, and wait out their loading."""
+    if not name:
+        machine.log(f"Recovery not possible: P{index + 1}'s wizard name has not been detected yet", logging.DEBUG)
+        return
     machine.log(
         f"Some clients did not reach {zone!r} but at least one did; attempting a "
-        f"teleport-to-player recovery for {len(stragglers)} client(s)…",
+        f"teleport-to-player recovery for {len(stragglers)} client(s) to P{index + 1}…",
         logging.INFO,
     )
     try:
-        result = await port_to_friend(stragglers, target.name.lower(), poll_interval=poll_interval)
-    except ValueError as exc:
-        machine.log(f"Recovery teleport to P{target.index + 1} failed: {exc}", logging.WARNING)
+        result = await port_to_friend(stragglers, name.lower(), poll_interval=poll_interval)
+    except ValueError:
+        # The message names the player it could not find, so it stays out of the log.
+        machine.log(f"Recovery teleport to P{index + 1} failed: it is not on every straggler's friends list")
         return
 
     if result.refusal:

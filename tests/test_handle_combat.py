@@ -8,7 +8,7 @@ from wizwalker import XYZ
 
 import bartlebot.nodes.combat.handle_combat as hc
 from bartlebot.nodes import combat_runner
-from tests.conftest import FakeClient, FakeEntity, FakeMachine
+from tests.conftest import FakeClient, FakeEntity, FakeMachine, see_each_other
 
 
 @pytest.fixture(autouse=True)
@@ -458,6 +458,34 @@ async def test_a_follower_teleports_to_the_leaders_fight_centre_not_the_mob():
     follower.teleport.assert_awaited_once()
     assert _xyz(follower.teleport.await_args.args[0]) == _xyz(_CENTRE)
     assert len(_log_lines(machine, "Client 1: teleporting to the fight centre")) == 1
+
+
+async def test_a_separate_bot_shares_the_centre_only_within_a_realm():
+    """On another realm the leader's centre is a fight the follower is not in (#132)."""
+    leader, follower = _leader_and_follower()
+    # The follower gets in on its own mob, at its second attempt, if it keeps aiming there.
+    follower.in_battle.side_effect = lambda: follower.tp_to.await_count > 1
+    see_each_other(leader)
+    see_each_other(follower)
+    p1, p2, p3, p4 = _patches_for_fast_retry()
+    with p1, p2, p3, p4:
+        machine = FakeMachine(options={"Player Realms": "Separate"})
+        result = await hc.run(machine, [leader, follower], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    follower.teleport.assert_not_called()
+    assert follower.tp_to.await_count > 1
+    follower.duel.position.assert_awaited_once()  # it published a centre of its own
+
+
+async def test_a_separate_bot_still_shares_the_centre_on_one_realm():
+    leader, follower = _leader_and_follower()
+    p1, p2, p3, p4 = _patches_for_fast_retry()
+    with p1, p2, p3, p4:
+        result = await hc.run(FakeMachine(options={"Player Realms": "Separate"}), [leader, follower], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+    assert _xyz(follower.teleport.await_args.args[0]) == _xyz(_CENTRE)
 
 
 async def test_the_centre_is_never_read_from_a_client_not_in_battle():

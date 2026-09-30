@@ -290,6 +290,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
 
+    # Who shares whose realm, for straggler recovery in a Separate bot.
+    await node_helpers.note_realm_peers(machine, clients)
+
     # 2s. Sequential mode replaces steps 2–5 entirely: each client approaches, interacts and
     #     commits to the transition alone. Steps 6–7 below are shared by both modes.
     if params.get("sequential", False):

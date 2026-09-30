@@ -212,6 +212,9 @@ async def run(machine, clients: list, params: dict) -> str:
 
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
 
+    # Who shares whose realm, for straggler recovery in a Separate bot.
+    await node_helpers.note_realm_peers(machine, clients)
+
     # 2. Board.
     async def _boarded(index: int, client) -> bool:
         if not node_helpers.zone_matches(zones[index], from_zone):

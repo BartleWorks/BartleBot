@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import time
+from collections.abc import Callable
 
 from bartlebot import player_realms
 from bartlebot.nodes import node_helpers
@@ -185,8 +186,13 @@ async def run(machine, clients: list, params: dict) -> str:
     # that fight's poll window is still ahead of the baseline and gets caught below.
     await seed_chat_baselines(machine, clients)
 
-    # 3. Teleport clients to their target (sequential or simultaneous).
-    fight = _FightCentre()
+    # 3. Teleport clients to their target (sequential or simultaneous). A Separate bot shares
+    # a fight centre only between players seen on one realm, so look before anyone moves.
+    share = None
+    if player_realms.machine_is_separate(machine):
+        await node_helpers.read_sightings(clients, machine)
+        share = lambda a, b: machine.are_together([a, b])  # noqa: E731
+    fight = _FightCentre(share)
     if combat_order:
         machine.log(f"Entering combat sequentially: order={combat_order}", logging.DEBUG)
         for client_num in combat_order:
@@ -280,14 +286,28 @@ class _FightCentre:
 
     The centre is read from the duel the client is in, and only once in_battle() has read
     true: outside a fight the duel struct still holds the last fight's data.
+
+    *share* says whether one client's centre is any use to another. None shares it with
+    everybody, which is right when every player is on one realm. A Separate bot (#132)
+    passes the machine's record of who shares a realm: a centre on another realm is the
+    coordinates of a fight the client is not in, and teleporting there starts a second one.
+    Each group then publishes a centre of its own.
     """
 
-    def __init__(self):
-        self.centre = None
+    def __init__(self, share: Callable[[object, object], bool] | None = None):
+        self._share = share
+        self._centres: list[tuple[object, object]] = []  # (publisher, centre)
+
+    def centre_for(self, client):
+        """The centre *client* should aim at, or None while nobody it shares a realm with has one."""
+        for publisher, centre in self._centres:
+            if self._share is None or publisher is client or self._share(publisher, client):
+                return centre
+        return None
 
     async def publish(self, machine, client, index: int) -> None:
-        """Record *client*'s fight centre if none is recorded yet. Call only while it is in battle."""
-        if self.centre is not None:
+        """Record *client*'s fight centre if its group has none yet. Call only while it is in battle."""
+        if self.centre_for(client) is not None:
             return
         try:
             centre = await client.duel.position()
@@ -297,9 +317,9 @@ class _FightCentre:
                 logging.DEBUG,
             )
             return
-        if self.centre is not None:  # another client published while this one read
+        if self.centre_for(client) is not None:  # another client published while this one read
             return
-        self.centre = centre
+        self._centres.append((client, centre))
         where = await _position(client)
         machine.log(
             f"Client {index} is in battle; publishing its fight centre"
@@ -331,13 +351,13 @@ async def _tp_and_wait_for_combat(
     aimed_at_centre = False
     while True:
         attempt += 1
-        if fight.centre is not None:
+        if (centre := fight.centre_for(client)) is not None:
             if not aimed_at_centre:
                 machine.log(f"Client {index}: teleporting to the fight centre on attempt {attempt}", logging.DEBUG)
                 aimed_at_centre = True
             before = await _position(client) if attempt > 1 else None
             try:
-                await client.teleport(fight.centre)
+                await client.teleport(centre)
             except Exception as exc:
                 machine.log(f"Client {index}: teleport to the fight centre failed ({exc!r})", logging.DEBUG)
             else:

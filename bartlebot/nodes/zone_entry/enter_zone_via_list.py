@@ -299,6 +299,9 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
+    # Who shares whose realm, for straggler recovery in a Separate bot.
+    await node_helpers.note_realm_peers(machine, clients)
+
     # 2s. Sequential mode replaces steps 2–7b; step 8 runs either way.
     if params.get("sequential", False):
         failure = await _use_list_sequentially(

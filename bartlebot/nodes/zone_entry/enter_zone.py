@@ -303,6 +303,9 @@ async def run(machine, clients: list, params: dict) -> str:
         resets = list(await asyncio.gather(*[c.body.position() for c in clients]))
         machine.log("No reset_xyz; a retry resets each client to where it started", logging.DEBUG)
 
+    # Who shares whose realm, for straggler recovery in a Separate bot.
+    await node_helpers.note_realm_peers(machine, clients)
+
     if stagger:
         machine.log("enter_zone: staggering — sending lead client through first", logging.DEBUG)
         lead_result = await _transition_group(machine, clients[:1], from_zone, to_zone, target, resets[:1])

@@ -108,6 +108,9 @@ async def run(machine, clients: list, params: dict) -> str:
     #    by XYZ movement instead.
     start_positions = await asyncio.gather(*[c.body.position() for c in clients])
 
+    # Who shares whose realm, for straggler recovery in a Separate bot. A recall keeps realms.
+    await node_helpers.note_realm_peers(machine, clients)
+
     # 4. Click the RecallButton on all clients to recall to the marked location.
     machine.log("Clicking RecallButton on all clients…", logging.DEBUG)
     await asyncio.gather(*[node_helpers.click_by_path(c, RECALL_BUTTON_PATH) for c in clients])

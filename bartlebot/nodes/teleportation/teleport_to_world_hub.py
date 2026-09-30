@@ -97,6 +97,9 @@ async def run(machine, clients: list, params: dict) -> str:
         )
         return "FAILURE"
 
+    # Who shares whose realm, for straggler recovery in a Separate bot. The hub keeps realms.
+    await node_helpers.note_realm_peers(machine, clients)
+
     # 3. Click the hub button on clients that need to move; re-click for any that haven't started loading.
     machine.log("Clicking hub teleport button…", logging.DEBUG)
     await asyncio.gather(*[node_helpers.click_by_path(c, HUB_BUTTON_PATH) for c in clients_to_move])

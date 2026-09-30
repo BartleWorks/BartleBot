@@ -402,6 +402,9 @@ async def run(machine, clients: list, params: dict) -> str:
     ):
         return "FAILURE"
 
+    # Everyone is on the sigil, so this is definite. For straggler recovery in a Separate bot.
+    await node_helpers.note_realm_peers(machine, clients)
+
     # 2. The two tails share nothing past this point.
     if team_up:
         entered = await _enter_teamup(machine, clients, from_zone, team_size, safety_delay)
