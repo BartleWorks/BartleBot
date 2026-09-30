@@ -116,7 +116,7 @@ class _AddOptionDialog(ThemedMixin, QDialog):
     from the text because reverting has no undo; deleting an option is strictly
     worse -- it takes the declaration, both transition flag forms, and the user's
     stored value -- so a 20px icon-only target a few pixels from the ``?`` was the
-    wrong home for it.  Behind Edit it gets a labelled button, a confirmation, and
+    wrong home for it.  Behind Edit it gets a labeled button, a confirmation, and
     a Cancel, and the gutter is left holding one thing.
     """
 
@@ -190,7 +190,7 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         self._err_lbl.setVisible(False)
 
         # Left of the stretch, away from Save: the destructive action does not sit
-        # next to the one the Return key presses. CAUTION says the same thing in colour —
+        # next to the one the Return key presses. CAUTION says the same thing in color —
         # deleting an option takes every bot file's value for it with it.
         extras = []
         if edit_mode:
@@ -232,7 +232,7 @@ class _AddOptionDialog(ThemedMixin, QDialog):
         self._err_lbl.setStyleSheet(f"color: {THEME.error}; font-size: {THEME.font_small_px}px;")
         # The app stylesheet's input rule covers QLineEdit and QComboBox, not
         # QTextEdit, so this field drew Fusion's own derived frame beside two
-        # neighbours drawing the real token.  Same treatment description_section
+        # neighbors drawing the real token.  Same treatment description_section
         # gives its editor, and no font-size: that is set on the widget, which is
         # the only place GrowingTextEdit's line-height measurement reads it from.
         self._desc_edit.setStyleSheet(
@@ -449,7 +449,7 @@ class OptionsSection(SidebarSection):
         self.refresh_player_availability()
 
     def refresh_player_availability(self) -> None:
-        """Re-grey the player checkboxes — call when clients connect or disconnect."""
+        """Re-gray the player checkboxes — call when clients connect or disconnect."""
         connected = len(self._get_clients())
         for w in self.findChildren(PlayerListWidget):
             w.set_available_players(connected)

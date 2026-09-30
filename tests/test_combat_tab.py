@@ -3,7 +3,7 @@ that groups fights across them.
 
 Rewritten for the card rework. The tab used to hold an inline ``DuelConfigEditor``
 behind a disclosure arrow on every binding, and most of what was tested here was that
-editor's expand/collapse/unlink/keystroke-debounce behaviour. All of it is gone: the
+editor's expand/collapse/unlink/keystroke-debounce behavior. All of it is gone: the
 tab picks and reads, editing goes through the Strategy Library, and the widgets are
 ``CardFrame`` subclasses whose verbs are data. So these tests read verb lists and card
 lines rather than chips, rails and disclosure rows.
@@ -393,7 +393,7 @@ def test_the_pill_row_is_hidden_where_membership_is_not_supported(qapp):
 # ---------------------------------------------------------------------------
 
 
-def test_bot_card_names_the_strategy_and_summarises_it(qapp):
+def test_bot_card_names_the_strategy_and_summarizes_it(qapp):
     bcs = BotCombatStrategy(name="Four wizards", bot_id="bot-1")
     card = _BotStrategyBanner()
 
@@ -866,7 +866,7 @@ def test_pick_none_unlinks(qapp, store):
     assert tab._default_panel._name.full_text() == BUILT_IN_LABEL
 
 
-def test_the_picker_none_row_is_labelled_with_what_the_card_falls_through_to(qapp, store):
+def test_the_picker_none_row_is_labeled_with_what_the_card_falls_through_to(qapp, store):
     """Choosing nothing in the dialog and reading the card afterwards say the same
     words — and the two levels say different words."""
     tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _config())
@@ -1735,7 +1735,7 @@ def test_a_busy_deck_job_holds_every_deck_verb(qapp):
 # ---------------------------------------------------------------------------
 
 
-def test_a_tab_with_no_account_source_resolves_to_no_colours(qapp):
+def test_a_tab_with_no_account_source_resolves_to_no_colors(qapp):
     """The normal state in tests and in a session with nothing running."""
     tab = CombatTab()
 
@@ -1768,7 +1768,7 @@ def test_a_known_account_resolves_to_its_palette_slot(qapp):
 
 
 def test_an_unidentified_client_gets_no_slot_rather_than_a_default(qapp):
-    """A colour here is a claim about which account is running, and there is none."""
+    """A color here is a claim about which account is running, and there is none."""
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
 
     SettingsManager.instance().accounts = [{"username": "a@example.com"}]
@@ -1782,7 +1782,7 @@ def test_an_unidentified_client_gets_no_slot_rather_than_a_default(qapp):
 
 
 def test_a_deleted_account_gets_no_slot_either(qapp):
-    """It has no colour anywhere else on screen, so one here would match nothing."""
+    """It has no color anywhere else on screen, so one here would match nothing."""
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
 
     SettingsManager.instance().accounts = [{"username": "a@example.com"}]
@@ -1809,7 +1809,7 @@ def test_the_label_is_the_account_s_alias_when_it_has_one(qapp):
 # ---------------------------------------------------------------------------
 # The tab's own player pills and deck stripes (#40)
 #
-# Every P# on the tab is a pill wearing the colour of the account in that slot, and each
+# Every P# on the tab is a pill wearing the color of the account in that slot, and each
 # deck card is striped like the player card for the same slot, so a deck, an assignment
 # and a wizard are matched by hue rather than by reading.
 # ---------------------------------------------------------------------------
@@ -1839,7 +1839,7 @@ def test_a_deck_card_is_striped_by_the_account_in_its_slot(qapp):
 
 
 def test_a_deck_card_with_nobody_known_in_its_slot_has_no_stripe(qapp):
-    """An unidentified client and an empty slot are the same answer: no colour at all."""
+    """An unidentified client and an empty slot are the same answer: no color at all."""
     _two_accounts()
     tab = CombatTab()
 
@@ -1887,9 +1887,9 @@ def test_a_simultaneous_duel_keeps_the_word_and_draws_no_order_pills(qapp):
     assert panel._meta.full_text().endswith("Simultaneous")
 
 
-def test_pills_are_coloured_by_slot_not_by_position(qapp):
-    """P2 leads a 2, 1 order, so the *rightmost* order pill wears slot 2's colour -- the
-    row being mirrored moves which pill it is, and must not change which colour it takes."""
+def test_pills_are_colored_by_slot_not_by_position(qapp):
+    """P2 leads a 2, 1 order, so the *rightmost* order pill wears slot 2's color -- the
+    row being mirrored moves which pill it is, and must not change which color it takes."""
     dcs = DuelCombatStrategy(
         name="Ordered",
         min_players=2,
@@ -1906,7 +1906,7 @@ def test_pills_are_coloured_by_slot_not_by_position(qapp):
     assert [b.color_key for b in panel._assignment_badges[0].badges] == [4]
 
 
-def test_colours_survive_a_redraw_of_the_card(qapp):
+def test_colors_survive_a_redraw_of_the_card(qapp):
     """A pick replaces the binding under the card; the pills must not come back plain."""
     first = DuelCombatStrategy(name="One", player_assignments=[PlayerAssignment(players=[1], dsl="x")])
     second = DuelCombatStrategy(name="Two", player_assignments=[PlayerAssignment(players=[1], dsl="y")])
@@ -1919,7 +1919,7 @@ def test_colours_survive_a_redraw_of_the_card(qapp):
     assert panel._assignment_badges[0].badges[0].color_key == 5
 
 
-def test_the_tab_polls_for_colours_only_while_it_is_visible(qapp):
+def test_the_tab_polls_for_colors_only_while_it_is_visible(qapp):
     tab = CombatTab()
     assert not tab.is_polling_player_colors
 
@@ -1938,10 +1938,10 @@ def test_an_unchanged_answer_repaints_nothing(qapp):
     tab.set_player_account_source(lambda: ["a@example.com"])
     card = tab._decks_section.card(1)
 
-    with patch.object(card, "set_player_color") as recolour:
+    with patch.object(card, "set_player_color") as recolor:
         tab.refresh_player_colors()
 
-    recolour.assert_not_called()
+    recolor.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -2543,9 +2543,9 @@ def switch_theme(qapp):
 
 @pytest.mark.parametrize("make", [_BotStrategyBanner, lambda: _DeckCard(0)], ids=["banner", "deck"])
 def test_card_text_takes_the_new_theme_without_a_hover(qapp, switch_theme, make):
-    """The card recoloured its labels, and then the stylesheet repolish of each label
+    """The card recolored its labels, and then the stylesheet repolish of each label
     restored the palette it saved under the old theme -- so the text stayed in the old
-    colours until a hover restyled the card again."""
+    colors until a hover restyled the card again."""
     from bartlebot.gui.theme import THEME
     from bartlebot.gui.widgets.elided_label import ElidedLabel
 

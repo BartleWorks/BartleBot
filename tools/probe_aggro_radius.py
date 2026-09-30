@@ -47,7 +47,7 @@ Each run writes its samples to its own tools/probe_aggro_radius.<time>.local.csv
 
          uv run python tools/probe_aggro_radius.py --analyse tools/probe_aggro_radius.*.local.csv
 
-Distances are 3D unless labelled 2D. WizWalker's XYZ.distance, which the safety check in
+Distances are 3D unless labeled 2D. WizWalker's XYZ.distance, which the safety check in
 WizSprinter uses, is 2D: it ignores height.
 
 Wizard names and ids are never read or printed. Mob template names are game data and are.
@@ -69,7 +69,7 @@ from pathlib import Path
 
 SAMPLE_INTERVAL = 0.25
 KEY_POLL = 0.02
-# get_mobs() reads every entity's behaviours, so the mob list is refreshed rarely and
+# get_mobs() reads every entity's behaviors, so the mob list is refreshed rarely and
 # only positions are read every sample.
 MOB_REFRESH = 2.0
 NEAREST = 3
@@ -302,7 +302,7 @@ def _stats(values: list[float]) -> str:
     )
 
 
-def summarise(samples: list[Sample], events: Events, reaction: float) -> str:
+def summarize(samples: list[Sample], events: Events, reaction: float) -> str:
     trials, discarded = build_trials(events, reaction, samples)
     lines = ["=" * 78, "SUMMARY", f"  {len(samples)} samples, {len(trials)} battle(s)"]
 
@@ -545,7 +545,7 @@ async def main(args: argparse.Namespace) -> int:
             return 2
         print("Pooling " + ", ".join(p.name for p in paths))
         samples, events = read_csvs(paths)
-        print(summarise(samples, events, args.reaction))
+        print(summarize(samples, events, args.reaction))
         return 0
 
     csv_path = (
@@ -589,7 +589,7 @@ async def main(args: argparse.Namespace) -> int:
                 pass
 
     print(f"Samples written to {csv_path}")
-    print(summarise(samples, events, args.reaction))
+    print(summarize(samples, events, args.reaction))
     return 0
 
 
@@ -610,7 +610,7 @@ def _parse_args() -> argparse.Namespace:
         "--analyse",
         metavar="CSV",
         nargs="+",
-        help="Summarise saved CSVs (globs allowed), pooled, instead of recording.",
+        help="Summarize saved CSVs (globs allowed), pooled, instead of recording.",
     )
     return parser.parse_args()
 

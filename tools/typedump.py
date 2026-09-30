@@ -254,7 +254,7 @@ def cmd_gaps(dump: TypeDump, args) -> int:
 
     The dump only lists reflected PropertyClass properties. Raw C++ members --
     the entry vectors and manager pointers the probe scripts hunt for -- live in
-    the gaps between them. Bracketing a gap between two named neighbours turns
+    the gaps between them. Bracketing a gap between two named neighbors turns
     "poke at a live client until something looks right" into a short list of
     candidate offsets, and a 24-byte gap is very often a std::vector triple.
     """

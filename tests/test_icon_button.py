@@ -2,7 +2,7 @@
 
 ``IconButton`` is the half of the button vocabulary ``ActionButton`` is not: a fixed
 square with a glyph and no label. What is worth testing is therefore the boundary
-between them — that this one does *not* expand and does honour the size its caller
+between them — that this one does *not* expand and does honor the size its caller
 asked for — plus the two things it owns, the toggle glyph and the tint.
 """
 
@@ -35,14 +35,14 @@ def _image(button: IconButton):
 
 
 def test_it_does_not_expand(qapp):
-    """The distinguishing behaviour: an ActionButton shares its row, this one does not."""
+    """The distinguishing behavior: an ActionButton shares its row, this one does not."""
     button = IconButton("dismiss", tooltip="Remove")
 
     assert button.sizePolicy().horizontalPolicy() is not QSizePolicy.Policy.Expanding
     assert button.sizePolicy().verticalPolicy() is not QSizePolicy.Policy.Expanding
 
 
-def test_it_honours_the_size_its_caller_asked_for(qapp):
+def test_it_honors_the_size_its_caller_asked_for(qapp):
     """Sized by the caller, because a toolbar's 32px and a flag row's 24px are both right."""
     button = IconButton("dismiss", tooltip="Remove", size=28, icon_size=18)
 
@@ -68,12 +68,12 @@ def test_the_tooltip_is_what_was_asked_for(qapp):
 
 
 def test_a_plain_icon_button_is_not_checkable(qapp):
-    """Checkable is what the favourite star needs, not what every ✕ needs."""
+    """Checkable is what the favorite star needs, not what every ✕ needs."""
     assert not IconButton("dismiss", tooltip="Remove").isCheckable()
 
 
 def test_the_toggle_form_swaps_its_glyph(qapp):
-    button = IconButton("star_outline", checked_icon_name="star_filled", tooltip="Favourite")
+    button = IconButton("star_outline", checked_icon_name="star_filled", tooltip="Favorite")
     outline = _image(button)
 
     button.setChecked(True)
@@ -84,7 +84,7 @@ def test_the_toggle_form_swaps_its_glyph(qapp):
 
 def test_the_toggle_form_swaps_back(qapp):
     """A star that filled and never emptied again would be a one-way switch."""
-    button = IconButton("star_outline", checked_icon_name="star_filled", tooltip="Favourite")
+    button = IconButton("star_outline", checked_icon_name="star_filled", tooltip="Favorite")
     outline = _image(button)
 
     button.setChecked(True)
@@ -161,7 +161,7 @@ def test_it_re_renders_its_glyph_on_a_theme_switch(qapp, theme):
     assert _image(button) != light
 
 
-def test_the_danger_tint_follows_the_theme_error_colour(qapp, theme):
+def test_the_danger_tint_follows_the_theme_error_color(qapp, theme):
     """Derived, never stored: a theme that changes ``error`` moves the ✕ with it."""
     theme(replace(LIGHT, error="#aa0000"))
     red = _image(IconButton("dismiss", tooltip="Remove", tint=IconTint.DANGER))

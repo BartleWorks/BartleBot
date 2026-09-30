@@ -115,7 +115,7 @@ def test_zone_matches_malformed_pattern_is_literal_not_an_error():
 
 
 def test_entity_name_plain_is_substring():
-    # The long-standing behaviour every existing bot file depends on.
+    # The long-standing behavior every existing bot file depends on.
     assert entity_name_matches("Cyclops/CyclopsMinion", "Cyclops") is True
     assert entity_name_matches("Cyclops/CyclopsMinion", "Minion") is True
 
@@ -793,15 +793,15 @@ async def test_identify_modal_names_the_dialog_on_screen():
 async def test_identify_modal_returns_none_for_an_unknown_caption():
     import bartlebot.nodes.node_helpers as nh_mod
 
-    with _caption_patch("A dialog nobody has catalogued"):
+    with _caption_patch("A dialog nobody has cataloged"):
         assert await nh_mod.identify_modal(FakeClient()) is None
 
 
-async def test_modal_showing_is_true_for_an_unrecognised_dialog():
+async def test_modal_showing_is_true_for_an_unrecognized_dialog():
     """identify_modal() conflates 'nothing up' with 'not in the snapshot'; this separates them."""
     import bartlebot.nodes.node_helpers as nh_mod
 
-    with _caption_patch("A dialog nobody has catalogued"):
+    with _caption_patch("A dialog nobody has cataloged"):
         assert await nh_mod.modal_showing(FakeClient()) is True
     with _caption_patch(""):
         assert await nh_mod.modal_showing(FakeClient()) is False
@@ -869,14 +869,14 @@ async def test_resolve_modal_treats_an_unknown_dismiss_only_dialog_as_a_refusal(
     """
     from bartlebot import dialog_captions
 
-    outcome, clicked = await _resolve_with("Wording nobody has catalogued", (MESSAGE_BOX_RIGHT,))
+    outcome, clicked = await _resolve_with("Wording nobody has cataloged", (MESSAGE_BOX_RIGHT,))
 
-    assert outcome.refusal == dialog_captions.UNRECOGNISED_REFUSAL
+    assert outcome.refusal == dialog_captions.UNRECOGNIZED_REFUSAL
     assert clicked == [MESSAGE_BOX_RIGHT]
 
 
 async def test_resolve_modal_confirms_an_unknown_dialog_that_offers_a_way_forward():
-    outcome, clicked = await _resolve_with("Wording nobody has catalogued", (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
+    outcome, clicked = await _resolve_with("Wording nobody has cataloged", (MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT))
 
     assert outcome.answered is True
     assert outcome.refusal is None
@@ -884,9 +884,9 @@ async def test_resolve_modal_confirms_an_unknown_dialog_that_offers_a_way_forwar
 
 
 async def test_resolve_modal_leaves_another_handlers_dialog_alone():
-    """A recognised dialog that belongs to somebody else is not clicked at all.
+    """A recognized dialog that belongs to somebody else is not clicked at all.
 
-    "already in a group" is group_manager's to answer. Being recognised is what protects
+    "already in a group" is group_manager's to answer. Being recognized is what protects
     it: an unknown dismiss-only dialog would be treated as a refusal and dismissed, which
     is the right default but the wrong answer here.
     """
@@ -1330,7 +1330,7 @@ async def test_wait_for_zone_with_recovery_tries_recovery_as_soon_as_its_viable(
 
 async def test_wait_for_zone_with_recovery_reports_failure_when_recovery_does_not_help():
     """Recovery is attempted exactly once; if the straggler still never arrives, the
-    deadline is honoured and the final zones are reported."""
+    deadline is honored and the final zones are reported."""
     arrived = FakeClient()
     arrived.zone_name.return_value = "Dst"
     straggler = FakeClient()

@@ -94,7 +94,7 @@ NODE_SPEC = NodeSpec(
         "this node with Teleport To Coordinates when the position matters.\n\n"
         "Players already together in the zone are left where they are, so this is cheap at the top of a "
         "bot: one look at who sees whom, and one spellbook read by the leader when it has a realm to check.\n\n"
-        "A short route is travelled together. For a longer one, or one through a teleporter, the leader "
+        "A short route is traveled together. For a longer one, or one through a teleporter, the leader "
         "travels and the others port to it when it arrives, through the friends list or else the group: a "
         "port is one loading screen for everybody, and it puts the porter on the leader's realm. A player "
         "who cannot port travels on its own, then changes to the leader's realm. The leader cannot change "

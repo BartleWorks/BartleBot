@@ -1,4 +1,4 @@
-"""Bar A's authoring buttons (#81): grouped by what they do, and centerd whatever the captions say."""
+"""Bar A's authoring buttons (#81): grouped by what they do, and centered whatever the captions say."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ def _bar_center_offset(panel: GameViewPanel) -> int:
     "node_title",
     ["", "Fight", "A node title long enough to be wider than its half of the bar, and then some more"],
 )
-def test_the_buttons_are_centerd_with_or_without_a_node_title(qapp, node_title):
+def test_the_buttons_are_centered_with_or_without_a_node_title(qapp, node_title):
     panel = GameViewPanel()
     panel.resize(900, 400)
     panel.show()

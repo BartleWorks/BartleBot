@@ -99,7 +99,7 @@ def test_the_dungeon_worlds_are_dungeons_and_not_on_the_door():
     assert not set(worlds.DUNGEON_WORLDS) & set(worlds.SPIRAL_DOOR_WORLDS)
 
 
-def test_zigazag_is_labelled_though_the_game_never_names_it():
+def test_zigazag_is_labeled_though_the_game_never_names_it():
     """G14_HS has no WorldNames entry, so without a fallback its picker section read
     "G14_HS"."""
     assert worlds.label("G14_HS") == "Zigazag"

@@ -10,7 +10,7 @@ three months earlier, so the interesting part is *why* that failed to register:
   off-center while the rest of the graph vanished — the canvas simply looked empty
 
 So the indicator is three reinforcing signals: the camera frames the region, a border
-in the region's own colour surrounds the viewport, and the pill names the mode.
+in the region's own color surrounds the viewport, and the pill names the mode.
 
 Real widget tests (QApplication required). Nothing reads pixels; these check the
 wiring, the text, and the camera.
@@ -141,7 +141,7 @@ def test_the_pill_says_how_to_leave(canvas):
 # ---------------------------------------------------------------------------
 
 
-def test_the_frame_is_painted_in_the_focused_region_colour(canvas):
+def test_the_frame_is_painted_in_the_focused_region_color(canvas):
     from bartlebot.gui.theme import THEME
 
     c = canvas()

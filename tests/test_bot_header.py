@@ -5,7 +5,7 @@ the bar over the game windows owns the *clients*.  Name and run status used to b
 in the second one, where they disappeared with the game view.
 
 ``BotHeader`` also absorbed what the Bot tab used to hold, so the metadata
-behaviour that lived in ``test_tag_picker`` — pills in Run mode, chips in Edit —
+behavior that lived in ``test_tag_picker`` — pills in Run mode, chips in Edit —
 is still exercised there against this class.
 """
 
@@ -77,7 +77,7 @@ def test_loading_a_bot_fills_both_lines(header):
 
 
 def test_a_bot_with_no_version_gets_no_pill(header):
-    """An empty pill is a grey smudge that reads as a missing value rather than none."""
+    """An empty pill is a gray smudge that reads as a missing value rather than none."""
     header.set_config(_config(version=""))
 
     assert not header._version_pill.isVisibleTo(header)
@@ -240,7 +240,7 @@ def test_the_clock_zeroes_rather_than_disappearing_when_the_run_stops(header):
 
 
 def test_a_theme_switch_keeps_the_status_it_was_last_told(header, qapp):
-    """The dot's colour is resolved by the canvas, so a restyle must not clear it."""
+    """The dot's color is resolved by the canvas, so a restyle must not clear it."""
     header.set_status("#00ff00", "Running", "00:00:07")
 
     header.refresh_theme_styles()
@@ -303,7 +303,7 @@ def test_the_author_shares_line_1_and_the_tags_get_line_2_to_themselves(header):
 
 def test_the_two_button_clusters_are_level_with_each_other(header):
     """The status used to sit under the transport, which left the view tools as the
-    only cluster with an empty row beneath them -- so they centerd in row 1 and read
+    only cluster with an empty row beneath them -- so they centered in row 1 and read
     as sitting high.  Neither column stacks anything now, so both span the metadata's
     two rows and land on the bar's own center."""
     grid = header.layout()
@@ -342,7 +342,7 @@ def test_a_longer_status_word_does_not_move_the_run_buttons(qapp):
     header.layout().activate()
 
     assert transport.mapTo(header, transport.rect().topLeft()).x() == idle_x
-    # And centerd *within its own column*, which is what the equal slots buy: where
+    # And centered *within its own column*, which is what the equal slots buy: where
     # that column then sits is the side columns' business, not this one's.
     column = transport.parentWidget()
     assert abs(transport.geometry().center().x() - column.rect().center().x()) <= 1
@@ -417,18 +417,18 @@ def test_the_tag_row_centers_in_its_row_however_tall_the_row_gets(qapp):
     tags = header._tags_field
     top = tags.mapTo(header, tags.rect().topLeft()).y()
 
-    assert tags.height() == tags.sizeHint().height(), "stretched, not centerd"
+    assert tags.height() == tags.sizeHint().height(), "stretched, not centered"
     assert abs((top + tags.height() / 2) - (row.y() + row.height() / 2)) <= 1
 
 
 def test_the_filename_and_author_sit_on_the_bot_name_s_baseline(qapp):
     """Centring matches the boxes, and a font box is mostly ascent -- so the smaller
-    of two texts centerd in one row carries its baseline a pixel above the other's.
+    of two texts centered in one row carries its baseline a pixel above the other's.
     The eye compares baselines, so that reads as a filename floating off the line.
 
     The author is the same size as the filename, so those two out of line with *each
     other* is the more jarring of the two: nothing about them says they should sit
-    differently.  It read a pixel high because it is centerd inside a ``_Swappable``
+    differently.  It read a pixel high because it is centered inside a ``_Swappable``
     rather than in the row, which the original shift missed."""
     from PyQt6.QtGui import QFontMetrics
 
@@ -442,8 +442,8 @@ def test_the_filename_and_author_sit_on_the_bot_name_s_baseline(qapp):
     def baseline(widget: QWidget) -> float:
         metrics = QFontMetrics(widget.font())
         pad = widget.contentsMargins().top()
-        centerd = (widget.height() - pad - metrics.height()) // 2 if pad == 0 else 0
-        return widget.mapTo(header, widget.rect().topLeft()).y() + pad + centerd + metrics.ascent()
+        centered = (widget.height() - pad - metrics.height()) // 2 if pad == 0 else 0
+        return widget.mapTo(header, widget.rect().topLeft()).y() + pad + centered + metrics.ascent()
 
     assert baseline(header._file_lbl) == baseline(header._name_lbl)
     assert baseline(header._authors_lbl) == baseline(header._name_lbl)
@@ -605,7 +605,7 @@ def test_the_version_pill_centers_against_the_bot_name(header):
     name_center = header._name_lbl.mapTo(title, header._name_lbl.rect().center()).y()
 
     # Both halves, because each fails a different way.  Stretched to fill the cell, the
-    # pill lands near the right center but reads as a tall grey smudge rather than a
+    # pill lands near the right center but reads as a tall gray smudge rather than a
     # pill; kept to its own height but hung from the top, it reads as misaligned.
     assert pill.height() == pill.sizeHint().height(), "the pill was stretched to fill its slot"
     assert abs(pill_center - name_center) <= 1, "the pill did not center against the name"

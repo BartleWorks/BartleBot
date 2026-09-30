@@ -69,7 +69,7 @@ Five things that are not obvious:
   because nothing can catch it at runtime.
 - **A bare `svg_icon(name)` is themed.** Its `tint` defaults to `THEME.icon_tint`, so
   an icon set once and kept goes stale with no stylesheet anywhere to grep for. Pass
-  `tint=""` for an icon that should keep its own colours.
+  `tint=""` for an icon that should keep its own colors.
 - **Write the rule through `set_style_sheet(widget, sheet)`, not `setStyleSheet`.**
   A re-assignment is never local: Qt re-parses the rule and delivers `StyleChange` to
   the whole subtree, every themed child answers by re-deriving *its* rule and setting
@@ -85,7 +85,7 @@ Five things that are not obvious:
   caller that has nothing to re-apply, so the staleness lands on the *caller* — which
   is why the guard blames a themed helper's callers. Return a
   `ThemedTextLabel` (`bartlebot/gui/widgets/themed_label.py`) instead; it owns its own
-  colour, named by token so it is re-read rather than snapshotted.
+  color, named by token so it is re-read rather than snapshotted.
 
 Widgets that read `THEME` at paint time (e.g. `QGraphicsItem.paint()`, `_RowWidget`)
 hold no baked value and need none of this.
@@ -100,7 +100,7 @@ instead of firing into a destroyed widget.
 
 Two failure modes the guard cannot see, so check them by hand:
 
-- **A colour inside rich text.** The required-field marker in `param_panel` is a
+- **A color inside rich text.** The required-field marker in `param_panel` is a
   `<span>` carrying `THEME.error` in the label's own *text*, so restyling means
   rewriting the text. The guard looks for `setStyleSheet`.
 - **A widget styled only on the next switch.** The guard checks that
@@ -159,13 +159,13 @@ Five rules that are easy to get wrong:
   Most of them sit on surfaces that have no commit at all (`assignment_card`'s *Save as
   Player Strategy…*, the toolbar's *New Bot*): the weight means "worth reaching for, but
   not the default thing to do here", which needs nothing beside it to be true.
-- **A weight varies colour and nothing else.** Every style shares the padding, the
+- **A weight varies color and nothing else.** Every style shares the padding, the
   radius, the height and one disabled look. A style that also changed the shape would
   stop being a weight. That rule is why `SECONDARY` carries a wash rather than a 2px
   outline: drawn unfilled it read as a tinted `TERTIARY` on the light theme's near-white
   field, and thickening the border to fix it would have been a shape change.
 - **A disabled button has no outline.** Its border is drawn in `surface_disabled`, the
-  same colour as its fill, because an enabled `TERTIARY` (`surface`) sits only ~3% off
+  same color as its fill, because an enabled `TERTIARY` (`surface`) sits only ~3% off
   that fill — losing the outline is what actually separates off from on. It matters most
   on the inspector surfaces, where most buttons start disabled.
 - **Derive, never hardcode.** `SECONDARY`'s wash is mixed from `THEME.accent` over
@@ -212,7 +212,7 @@ Two things follow:
 
 ### What is *not* an `ActionButton`
 
-`ActionButton` is specifically *a labelled verb that expands to share a row*. Roughly a
+`ActionButton` is specifically *a labeled verb that expands to share a row*. Roughly a
 seventh of this app's buttons are none of those, and forcing one into the action
 vocabulary stretches a 22px affordance across a toolbar. Two other named classes cover
 them, and both follow the same conventions — `ThemedMixin` first in the base list, all
@@ -220,15 +220,15 @@ them, and both follow the same conventions — `ThemedMixin` first in the base l
 
 | widget | look | for |
 |---|---|---|
-| `IconButton` (`widgets/icon_button.py`) | fixed square, glyph, no label | a remove `✕`, a close `×`, a help `?`, a favourite star |
+| `IconButton` (`widgets/icon_button.py`) | fixed square, glyph, no label | a remove `✕`, a close `×`, a help `?`, a favorite star |
 | `LinkButton` (`widgets/link_button.py`) | accent text, no frame, underline on hover | a control sitting inline in prose or under a card |
 
 Three things about them:
 
 - **An `IconButton`'s tooltip is a required keyword argument.** It carries no label, so
-  without one it is unusable to anyone who does not already recognise the glyph, and
+  without one it is unusable to anyone who does not already recognize the glyph, and
   making it required is what stops that being an oversight rather than a decision.
-- **`IconTint` varies colour and nothing else**, the same rule the four weights follow:
+- **`IconTint` varies color and nothing else**, the same rule the four weights follow:
   the size is the caller's to choose, because a toolbar's 44px and a flag row's 24px are
   both right. `DANGER` is what makes a remove read as one; `ACCENT_WHEN_ENABLED` is the
   Setup gutter's revert, where *being* enabled is the signal.
@@ -237,7 +237,7 @@ Three things about them:
 
 Four `QPushButton`s stay bare on purpose, and the reason is the same for all of them:
 **their background is the data they display.** Any shared class writes `background`,
-which paints over the one thing they exist to show. Those are the colour swatches in
+which paints over the one thing they exist to show. Those are the color swatches in
 `settings/theme_tab.py`, `canvas/param_panel.py` and `canvas/edit_scene.py`, and
 `bot_canvas`'s `_warning_pill` — a status pill that happens to be clickable.
 
@@ -249,7 +249,7 @@ not to the button vocabulary.
 case**: it keeps a hardcoded stylesheet so that it stays legible *whatever* the user has
 done to the running theme. It is the escape hatch from a custom theme that has made the
 app unreadable, and `ActionButton` derives everything from `THEME` — which is precisely
-what would break it. Leave the literal colours and the comment above them alone;
+what would break it. Leave the literal colors and the comment above them alone;
 `tests/test_surface_button_weights.py` says so too.
 
 ## Section headings
@@ -259,11 +259,11 @@ Three, and they are not interchangeable:
 | widget | look | for |
 |---|---|---|
 | `SidebarSection` | disclosure triangle + bold label | a region that **folds** |
-| `CardColumn`'s heading | centerd bold label + full-width rule | a **column of cards** |
+| `CardColumn`'s heading | centered bold label + full-width rule | a **column of cards** |
 | `RuleHeading` (`widgets/rule_heading.py`) | left bold label + rule to the right | the regions of a **form** |
 
 A triangle promises a fold, so do not use `SidebarSection` for a region that does not
-have one; a centerd heading over left-aligned fields reads as belonging to something
+have one; a centered heading over left-aligned fields reads as belonging to something
 else. `RuleHeading` draws its rule from `THEME.border` rather than as a sunken `QFrame`
 on purpose — Qt draws a sunken HLine from the palette's Mid/Light pair, which the dark
 theme leaves all but invisible against `surface`.
@@ -290,9 +290,9 @@ nothing beside them. Two rules:
   detail pane, because the gap the eye sees beside a splitter handle is the handle plus
   the margin while the gap beside a border is only the margin.
 
-## Account colours, and what a coloured thing may claim
+## Account colors, and what a colored thing may claim
 
-A palette slot per account (`shared/account_slots.py`), resolved to a colour against the
+A palette slot per account (`shared/account_slots.py`), resolved to a color against the
 live theme (`gui/account_accent.py`). It is a **match target** — find the card wearing
 the same hue — never an identifier, and three rules keep it one:
 
@@ -301,12 +301,12 @@ the same hue — never an identifier, and three rules keep it one:
 - **Outline and tint, not a saturated fill.** Four filled pills in a row make the row
   the loudest thing on the screen when the point of the surface is a *name*. See
   `AccountPill`.
-- **No account known means no colour, never a default one.** A colour is a claim about
+- **No account known means no color, never a default one.** A color is a claim about
   which account is behind something; picking one for an unidentified client, or for an
   account that has been deleted, puts a hue on screen that matches nothing anywhere
   else. `account_stripe_keys` returns `None` for exactly these, and callers must keep it.
 
-A **player slot** is coloured but never renamed: `P1` stays `P1` on the pill and the
+A **player slot** is colored but never renamed: `P1` stays `P1` on the pill and the
 combat-order chip, with the account's name in the tooltip. A `DuelConfig` stores slots,
 is authored offline and outlives whichever account is in slot 1 tonight — a pill reading
 `Malvin` would be a claim the stored data does not make, and the same card would read
@@ -314,7 +314,7 @@ differently depending on what happened to be hooked. Issue #40 is the rollout.
 
 On the Combat tab every `P#` is a `PlayerBadge` (`widgets/player_pills.py`) — the deck
 cards, each assignment line and the combat order — and each deck card carries the same
-left stripe as the player card for its slot. Colours are held **per slot, not per
+left stripe as the player card for its slot. Colors are held **per slot, not per
 position**, so a `P3 → P1` order puts slot 3's hue first. The tab polls its account
 source on a timer (`PLAYER_COLOR_REFRESH_INTERVAL`) only while it is visible, because an
 identity arrives after its client and nothing announces it; a card built between ticks
@@ -323,8 +323,8 @@ nothing.
 
 The Players tab's `P#` pill is the same `PlayerBadge`, keyed off the card's stripe. The
 game view's tile caption is painted (`client_tile.tile_pill_colors`) in the same capsule
-shape and colours at its original size, and a focused window's border is its account's
-colour, falling back to the accent. `GameView.sync_tiles` pushes the key from
+shape and colors at its original size, and a focused window's border is its account's
+color, falling back to the accent. `GameView.sync_tiles` pushes the key from
 `TileSlot.username` on every tick, alongside the captions.
 
 ## Never show a widget before it has a parent
@@ -385,7 +385,7 @@ works without it, and must never log the absence as an error.
 `_DeckCard` is the worked example: the strip is hidden outright when nothing resolves,
 the summary line carries the counts either way, and a single card with no art is
 skipped rather than given a placeholder — a placeholder per missing card turns an
-install with no art at all into a grid of grey squares.
+install with no art at all into a grid of gray squares.
 
 **A deck is listed by `DeckCardList` (`widgets/deck_card_list.py`), on both surfaces
 that list one** — the sidebar card's unfolded rows and the dialog's Deck Presets page.
@@ -428,7 +428,7 @@ Bot tags use them too (`card_art.tag_icon_path`, drawn at `TAG_ICON_PX` = 20 —
 too small to read). Each surface degrades to what it was before: a picker row shows its
 group dot, and a `TagChip` or `TagPill` its plain text form. With a medallion, both are
 **drawn** by `paint_medallion_pill`: exactly `TAG_ICON_PX` tall, so the medallion *is* the
-rounded left end, and the group-coloured body starts at its center and carries the name.
+rounded left end, and the group-colored body starts at its center and carries the name.
 An icon-only pill was tried and dropped, because the art alone was not enough to read a
 card by. A stylesheet cannot do this shape: padding and border-radius will not put an icon
 flush with a rounded end. The Type tags have no art, so they are always text, and a mixed
@@ -446,7 +446,7 @@ four wizards around a circle and turns run clockwise, which puts a team's own pl
 right to left: slot 1 is the rightmost, and the game's own "Set Sigil Slot Preference"
 dialog lists 4, 3, 2, 1 in that order with a gold gem on each. `duel_slot_gem.py` holds
 the reasoning and the lookup; `CombatOrderWidget` (where an order is set) and
-`PlayerBadgeRow(duel_order=True)` (where it is summarised) both mirror, and
+`PlayerBadgeRow(duel_order=True)` (where it is summarized) both mirror, and
 `strategy_summary.format_combat_order` mirrors the text with them. **All four have to
 agree** — a half-mirrored app is worse than the unmirrored one, because two surfaces then
 disagree about which end enters first.
@@ -472,7 +472,7 @@ one pre-scaled for a single ratio is wrong on every other. So lay out by the siz
 (`TAG_ICON_PX`, `ROW_ICON_PX`, `SECTION_ICON_PX`), not by the image's own size, and where a
 `QLabel` would have held the pixmap use `ArtIconView`.
 
-An icon is artwork in its own colours, so a widget drawing one reads no `THEME` value
+An icon is artwork in its own colors, so a widget drawing one reads no `THEME` value
 and needs neither `ThemedMixin` nor a `changeEvent` — the guard test agrees, and this is
 the same exemption the card art tiles take.
 
@@ -660,7 +660,7 @@ so the swap is one undoable step; in RUN mode there is no stack and none is push
 Two kinds of region are drawn as one `FoldedNodeItem`, keyed in `EditScene.node_items`
 by its *region* id, with members in the config but no item at all: a subgraph instance
 (`CallNodeItem`: side bars and link badge) and a collapsed plain region (#67,
-`CollapsedRegionItem`: a single border in the region's colour and a boxed plus). Which
+`CollapsedRegionItem`: a single border in the region's color and a boxed plus). Which
 regions fold is `subgraphs.folded_regions`. So an item lookup by state id misses every
 member. Ask the scene instead: `display_id(state_id)` is the id it is drawn as,
 `folded_node_of(state_id)` its node, and `state_ids_of(display_ids)` expands a
@@ -745,7 +745,7 @@ Two bars, and which one a thing belongs to is decided by what it is *about*:
 
 The **properties panel** (`canvas/param_panel.py`) is a page per selection: a node, an
 edge, a plain *region* (reached by selecting a whole region's members, the pill click,
-or its collapsed node; label, colour, Collapse / Expand -- disabled with the reason when
+or its collapsed node; label, color, Collapse / Expand -- disabled with the reason when
 `collapse_blocker` refuses -- and a collapsed region's fights), a *call node* (`canvas/call_page.py`: label, roles by entry port, inputs and node panels
 with Record, Open definition, Detach), or in a definition document with nothing selected
 the *signature* (`canvas/signature_page.py`: ports, inputs, panels). A definition's node
@@ -767,7 +767,7 @@ laid the canvas out in Run mode first.
 ## One crumb bar, and the levels behind it
 
 `canvas/subgraph_widgets.CrumbBar` is the one overlay that says where the canvas is, in
-three states (`CrumbMode`): **Focus Mode** on a region of a bot (the region's colour, a
+three states (`CrumbMode`): **Focus Mode** on a region of a bot (the region's color, a
 single-line `ViewFrame`, "Focus Mode — <region>"), a subgraph node's **body viewed in Run
 mode** (read-only), and a **definition** open as a document. The last two are a path in
 the accent with the link glyph and a double-line frame, which the call node's side bars
@@ -809,7 +809,7 @@ center and level with each other.
 
 **Nothing is stacked in the center or on the right, and that is the point.** The
 status used to be a caption beneath the transport, which left the view tools as the
-only cluster with an empty row under them — they centerd in row 1 and read as
+only cluster with an empty row under them — they centered in row 1 and read as
 sitting high. Fixing that by spanning only the right column would put the two
 clusters at different heights, which is worse. So the status moved onto the button
 row and both columns span.
@@ -858,7 +858,7 @@ Two consequences worth knowing before touching a wrapping widget:
 - **`QWidgetItem` answers `heightForWidth` from the widget's *layout*, never from the
   widget's own override.** So a widget holding a `FlowLayout` — `_TagsField`, any pill or
   chip flow — cannot floor its height through `sizeHint` or a `heightForWidth` override;
-  the parent reads straight past both. `setMinimumHeight` is the floor a parent honours,
+  the parent reads straight past both. `setMinimumHeight` is the floor a parent honors,
   and `_TagsField` sets it on every rebuild because the buttons are sized by the theme's
   font.
 - **A pill or chip flow is the one thing that legitimately changes the bar's height**, when
@@ -869,7 +869,7 @@ Two consequences worth knowing before touching a wrapping widget:
   overloads — and gives a page its natural height at the *top* of the cell. Invisible for
   a page as tall as the cell, wrong for one that is not: a slot sized to the editor it is
   not showing left the 13px version pill four and a half pixels above the bot name. A
-  one-child box layout (`_centerd`) is the alignment the stack will not do.
+  one-child box layout (`_centered`) is the alignment the stack will not do.
 - **A `FlowLayout` hangs its rows from the top of whatever rect it is given**, so a flow
   handed more height than its rows need leaves the slack underneath. That is the right
   default — a keyword list or a card grid in a tall panel belongs at the top of it — so
@@ -982,7 +982,7 @@ already has.
   display too, through `bot_options.resolve_for_config` — the same gatherer
   `BotMachine.get_option` uses, so the panel and the run cannot disagree. The
   caption under a row names the level that answered, the gutter bar is the
-  accent colour when the user is that level, and Reset's tooltip names what a
+  accent color when the user is that level, and Reset's tooltip names what a
   reset falls back to. That tooltip is the mitigation for storing overrides as
   bare values: an author who later improves a declaration is outranked
   silently, so the one-way door has to be visibly openable.
@@ -1013,14 +1013,14 @@ already has.
   concern: a spin box whose row is rebuilt on `valueChanged` vanishes from under
   the pointer on the first arrow click, and a revert button that only exists once
   a value is overridden moves everything under it as you type. So the bar
-  changes colour rather than appearing, revert greys out rather than vanishing,
+  changes color rather than appearing, revert grays out rather than vanishing,
   every level including the user's own has a caption, and `_refresh_row` is what
   a value edit calls.
 - **A row is a head line and a control, and the prose folds.** Measured on a
   shipped bot at a 400px sidebar, an ordinary option row was 41% node-authored
   description and 17% source caption, leaving the control the minority of its own
   row -- all of it at 9px, three quarters of the base size and small enough that
-  Windows' subpixel antialiasing colours the strokes. So the caption moved onto
+  Windows' subpixel antialiasing colors the strokes. So the caption moved onto
   the name's line, where it costs nothing, and the description folds behind a `?`
   and is read at the base font. This is the one thing on the surface that appears
   and disappears, and it does not contradict the rule above: it moves on a
@@ -1064,7 +1064,7 @@ already has.
   value — it takes the declaration, both transition flag forms, and the user's
   stored override. A 20px icon-only target a few pixels from the `?` was the wrong
   home for that, so the row's one button leads to both outcomes and the dialog
-  gives Delete a labelled button, a confirmation and a Cancel. `_AddOptionDialog`
+  gives Delete a labeled button, a confirmation and a Cancel. `_AddOptionDialog`
   accepts on delete too, so callers read `was_deleted` before `get_option`: an
   accepted dialog means the user *finished*, not that they saved.
 - **Revert is furthest from the text, `?` is nearest it.** Two small targets a few
@@ -1112,7 +1112,7 @@ already has.
   `NeutralChip`s in a `FlowLayout`. Presentation only — nothing reading
   `_VALUE_PARAM_KEY` changed.
 - **An option that another option switches off is a child of it: indented,
-  greyed, never hidden.** `BotOptionSpec.depends_on` names a bool option on the
+  grayed, never hidden.** `BotOptionSpec.depends_on` names a bool option on the
   same bot, and `compose_options` carries it onto the composed declaration the way
   it carries `type` and the bounds — derived, never persisted, and dropped when
   the named parent is not in this graph, because a row indented under a row that
@@ -1131,7 +1131,7 @@ already has.
     row belongs to and the gutter says what can be done to it; indenting both
     costs the one column property the gutter exists for.
     `test_a_child_row_is_indented_but_its_gutter_is_not` is the guard.
-  - **Greyed, never hidden, and the value is never cleared.** Hiding moves every
+  - **Grayed, never hidden, and the value is never cleared.** Hiding moves every
     row beneath it the moment the parent is ticked, and it hides the fact that the
     user still has a value stored there. Only the body is disabled, so the
     override bar still says whose value it is and revert can still discard it.
@@ -1143,7 +1143,7 @@ already has.
   control itself.
 - **Descriptions fold on both surfaces, at the base font, behind one remembered
   switch.** Options used to show every description unconditionally and at 9px —
-  75% of base, where Windows subpixel antialiasing starts colouring the strokes —
+  75% of base, where Windows subpixel antialiasing starts coloring the strokes —
   while Setup showed the identical node-authored prose folded and at full size.
   Two tabs disagreeing about the size of the same text reads as a disagreement
   about what the text *is*. `show_option_descriptions` is the one setting behind
@@ -1184,7 +1184,7 @@ already has.
   underlevelled is a fact about their team, so all eleven were dropped; the option
   stays editable anyway, because a wrong answer there costs an elixir rather than
   an item, a name, or a run. Nothing prunes such a declaration on save: the
-  resolution stays a plain four levels, a hand-edited file is still honoured, and
+  resolution stays a plain four levels, a hand-edited file is still honored, and
   `test_no_bot_declares_a_user_owned_option` is what keeps the library clean.
 - **Renaming an option is three fixups, not one.** The flat `flags` list, the
   `flag_groups` the edge editor actually writes — which take precedence at run
@@ -1199,7 +1199,7 @@ already has.
   Safety Delay rewrote it as a checkbox.
 - **A bool is a checkbox in a list and a radio pair on its own.** In a row the
   caption is the option's name and a tick plainly means yes; under a field
-  labelled `Default` a lone box captioned "True" reads as though False were
+  labeled `Default` a lone box captioned "True" reads as though False were
   unavailable. `BoolChoice` is the second form, and its third state — neither
   radio — is how a null declaration is shown rather than silently rewritten.
 - **The Add Option dialog never creates a null declaration.** Null means "use

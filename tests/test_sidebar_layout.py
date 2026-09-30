@@ -1,4 +1,4 @@
-"""Which panel holds what, after the layout reorganisation.
+"""Which panel holds what, after the layout reorganization.
 
 The left sidebar is now two tabs whose *identity* depends on the mode — Setup and
 Combat while running, Options and Properties while editing — which is §3.5 of the

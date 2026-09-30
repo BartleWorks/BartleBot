@@ -23,8 +23,8 @@ def prime_last_mouse_event(view: QGraphicsView) -> None:
     ``QGraphicsViewPrivate::_q_unsetViewportCursor()`` reads
     ``lastMouseEvent->position()`` without the ``useLastMouseEvent`` guard that every
     other reader of that member has.  ``lastMouseEvent`` is absent from the private
-    class's initialiser list, so on a view that has never received a mouse event it
-    holds uninitialised storage and ``QEventPoint::position()`` dereferences garbage.
+    class's initializer list, so on a view that has never received a mouse event it
+    holds uninitialized storage and ``QEventPoint::position()`` dereferences garbage.
 
     ``QGraphicsItem::unsetCursor()`` reaches that function whenever the view is under
     the mouse and the item being unset is the one under the pointer -- which is exactly

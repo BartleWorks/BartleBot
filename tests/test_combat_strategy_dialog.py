@@ -353,7 +353,7 @@ def test_the_source_pill_follows_an_unsaved_edit(qapp, roots):
     [("shipped", AccentPill, True), ("override", AccentPill, False), ("user", NeutralPill, None)],
 )
 def test_the_source_pill_is_weighted_like_a_button(qapp, roots, where, pill_type, filled):
-    """Built-in filled with the accent, modified built-in outlined in it, custom grey."""
+    """Built-in filled with the accent, modified built-in outlined in it, custom gray."""
     shipped, user = roots
     pcs = PlayerCombatStrategy(name="Support")
     if where in ("shipped", "override"):
@@ -612,7 +612,7 @@ def test_the_pencil_clears_a_filter_that_would_hide_the_strategy(qapp, roots):
     assert not player._list.currentItem().isHidden()
 
 
-def test_a_pick_greys_the_pencil_it_has_nowhere_to_send(qapp, roots):
+def test_a_pick_grays_the_pencil_it_has_nowhere_to_send(qapp, roots):
     """Pick has only the Duel tab, so there is no Player tab for the pencil to open."""
     dcs, _pcs = _linked_duel(roots)
     dlg = _dialog(roots, kind=StrategyKind.DUEL, mode=DialogMode.PICK, current_id=dcs.id)
@@ -863,11 +863,11 @@ def test_deselecting_empties_the_about_section_with_the_editor(qapp, roots):
 
 
 # ---------------------------------------------------------------------------
-# Account colours reach the duel tab's slot pills and combat-order chips (#40)
+# Account colors reach the duel tab's slot pills and combat-order chips (#40)
 # ---------------------------------------------------------------------------
 
 
-def test_the_slot_colours_the_dialog_was_given_reach_the_assignment_cards(qapp, roots):
+def test_the_slot_colors_the_dialog_was_given_reach_the_assignment_cards(qapp, roots):
     from bartlebot.gui.account_accent import account_accent  # noqa: PLC0415
 
     dcs = DuelCombatStrategy(name="Boss", player_assignments=[PlayerAssignment(players=[1])])
@@ -879,8 +879,8 @@ def test_the_slot_colours_the_dialog_was_given_reach_the_assignment_cards(qapp, 
     assert account_accent(4) in card.pills.pills[0].styleSheet()
 
 
-def test_a_dialog_given_no_colours_draws_uncoloured_pills(qapp, roots):
-    """Authoring with nothing hooked is the normal case and must not invent a colour."""
+def test_a_dialog_given_no_colors_draws_uncolored_pills(qapp, roots):
+    """Authoring with nothing hooked is the normal case and must not invent a color."""
     from bartlebot.gui.account_accent import account_accent  # noqa: PLC0415
 
     dcs = DuelCombatStrategy(name="Boss", player_assignments=[PlayerAssignment(players=[1])])
@@ -892,7 +892,7 @@ def test_a_dialog_given_no_colours_draws_uncoloured_pills(qapp, roots):
     assert account_accent(4) not in card.pills.pills[0].styleSheet()
 
 
-def test_an_assignment_added_later_gets_the_colours_too(qapp, roots):
+def test_an_assignment_added_later_gets_the_colors_too(qapp, roots):
     """The keys are held, not just applied: cards are built long after the dialog opens."""
     from bartlebot.gui.account_accent import account_accent  # noqa: PLC0415
 
@@ -906,7 +906,7 @@ def test_an_assignment_added_later_gets_the_colours_too(qapp, roots):
     assert account_accent(4) in editor.cards[0].pills.pills[0].styleSheet()
 
 
-def test_the_colours_reach_the_combat_order_chips_as_well(qapp, roots):
+def test_the_colors_reach_the_combat_order_chips_as_well(qapp, roots):
     from bartlebot.gui.account_accent import account_accent  # noqa: PLC0415
 
     dcs = DuelCombatStrategy(name="Boss", combat_order=[1, 2, 3, 4])

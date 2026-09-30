@@ -175,7 +175,7 @@ class SidebarSection(QWidget):
         else:
             # Switch to Maximum so the parent layout stops allocating extra space
             # to this widget; without this the section holds its large allocated
-            # cell and the header appears centerd within it.
+            # cell and the header appears centered within it.
             self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
             h = self._header.height() or self._header.sizeHint().height() or 24
             self.setMaximumHeight(h)
@@ -208,7 +208,7 @@ def field_label(text: str) -> QLabel:
     """The small muted caption above a sidebar field.
 
     Returns a ``ThemedTextLabel`` rather than styling a bare ``QLabel``: a factory
-    cannot restyle what it has handed back, so the colour would otherwise go stale on
+    cannot restyle what it has handed back, so the color would otherwise go stale on
     every caller — which is exactly what the player card and ``SidebarField`` were
     doing.
 

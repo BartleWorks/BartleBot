@@ -364,7 +364,7 @@ def test_locking_leaves_the_pencil_live_since_it_only_navigates(qapp):
     assert card.action_button(EDIT_VERB).isEnabled()
 
 
-def test_a_card_with_nowhere_to_open_its_strategy_greys_the_pencil(qapp):
+def test_a_card_with_nowhere_to_open_its_strategy_grays_the_pencil(qapp):
     """Pick has no Player tab, so the pencil there would be a live button that does nothing."""
     pcs = PlayerCombatStrategy(name="Blade")
     card = _card(PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id), [pcs])

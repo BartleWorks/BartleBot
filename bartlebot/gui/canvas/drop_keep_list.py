@@ -177,7 +177,7 @@ class DropKeepListWidget(QWidget):
         outer.setSpacing(3)
 
         # The keep list is a *set of keywords*, and it used to be shown as the
-        # comma-separated string those keywords serialise to. At a 400px sidebar a
+        # comma-separated string those keywords serialize to. At a 400px sidebar a
         # 32-keyword list showed the middle of a scrolled string — "electable Hooves,
         # Skyscream, Frostbit, …" — which is neither readable nor safely editable,
         # while the table underneath already says the same thing better. So the field
@@ -360,7 +360,7 @@ class DropKeepListWidget(QWidget):
             counts[entry.category or ""] = counts.get(entry.category or "", 0) + 1
 
         # The default entry counts what it actually shows — never-sold categories are
-        # filtered out of it, so labelling it with the full drop total would lie.
+        # filtered out of it, so labeling it with the full drop total would lie.
         never = sum(n for c, n in counts.items() if c in quicksell.NEVER_QUICKSOLD_CATEGORIES)
         default_label = f"All sellable ({len(entries) - never})" if never else f"All categories ({len(entries)})"
 
@@ -667,9 +667,9 @@ class DropKeepListWidget(QWidget):
 
     @staticmethod
     def _emphasis(text: object) -> str:
-        """Bold *text* at full text colour, for use inside the muted summary lines.
+        """Bold *text* at full text color, for use inside the muted summary lines.
 
-        The colour has to be inline: a Qt style sheet selects widgets, so it cannot
+        The color has to be inline: a Qt style sheet selects widgets, so it cannot
         reach the <b> spans inside a QLabel's rich text.
         """
         return f'<b style="color: {THEME.text}">{text}</b>'
@@ -694,7 +694,7 @@ class DropKeepListWidget(QWidget):
         super().changeEvent(event)
         if event.type() == QEvent.Type.StyleChange:
             self._apply_styles()
-            # Only the summary needs redoing: its bold spans carry an inline colour,
+            # Only the summary needs redoing: its bold spans carry an inline color,
             # which a style sheet cannot reach. Re-deriving every row's keep state
             # for a palette change would be wasted work on a 600-row table. Guarded
             # because the no-drops message lives in the same label.

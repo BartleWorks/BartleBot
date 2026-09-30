@@ -24,7 +24,7 @@ Two things to know before trusting it:
 
 - **It covers reflected PropertyClass properties only.** Raw C++ members — child
   pointers, manager handles, the entry vectors `deck_io.py` reads — never appear.
-  `gaps` is the workaround: it brackets those between named neighbours, which is
+  `gaps` is the workaround: it brackets those between named neighbors, which is
   how `deck_io`'s `0x300` entry vector shows up as a 40-byte hole between
   `m_treasureFrame` and `m_cardSize`.
 - **A class name is not the runtime behavior template name**, and the difference
@@ -130,7 +130,7 @@ The same run also writes 163 UI icons into `art/icons/`, and they are keyed by a
 `badge_4dungeons`, `tag_team_up`, `drop_treasure_cards`, `pin_shield`, `duel_slot_1` — rather
 than by the texture they came from, so neither the extractor's caller nor the GUI ever
 spells a KingsIsle filename. `ICON_SOURCES` is the one place the two meet. What they
-resolve to, and why each was picked over its neighbours:
+resolve to, and why each was picked over its neighbors:
 
 | key | texture | why this one |
 |---|---|---|
@@ -175,7 +175,7 @@ derived from a texture that is not there. `Art_Target_Sun` is the one of the fou
 kinds, one filter button each, and `wiki_drops.PIN_KINDS` maps the type word in a pin's name
 to its kind: Accurate and Conversion are Power; Blocking, Resist and Mending are Shield;
 Punishing, Disabling and Crushing are Sword. The buttons are 2x2 sheets of 64px states, so
-they are cropped and come out at 64px. A pin with no recognised type word gets `drop_pins`,
+they are cropped and come out at 64px. A pin with no recognized type word gets `drop_pins`,
 which `DROP_TEXTURES` points at the Jewels medallion. The fallback is the table's to state,
 as the dungeon stand-in is for worlds.
 
@@ -188,7 +188,7 @@ where the game's own Challenge Mode button puts it. **Gauntlet** is the Housing 
 badge on a green disc inside `Art_Character_Cover`, a bare gold ring from `Root.wad`.
 The constants beside `gauntlet_disc` are the tuned recipe. Two of them are easy to "tidy"
 wrongly: the band between the disc and the gold is **solid**, because a fade to black
-reads as a second, dark-green ring; and the disc is an orange gradient **recoloured** to
+reads as a second, dark-green ring; and the disc is an orange gradient **recolored** to
 the sigil's hue, because a gradient chosen directly in green read pale. The green groups
 the four activities entered through a four-player sigil.
 
@@ -208,7 +208,7 @@ sheet. `SINGLE_IMAGE_BADGES` names them, and cropping either keeps a quarter of 
 holds four 128px quadrants — normal, two hover/pressed variants, and a desaturated one for
 a world the player cannot reach — and so does every `Badge_Category_`. Only the top-left
 is wanted, which is what `top_left_quadrant` takes and `STATE_SHEET_ICONS` decides. Saved
-whole they render at quarter size with three ghosts around them. The greyed quadrant is a
+whole they render at quarter size with three ghosts around them. The grayed quadrant is a
 free "unavailable" affordance if a surface ever wants one; nothing draws it today.
 
 Three traps in the world table, and all three are why `WORLD_TEXTURES` is written out by
@@ -366,5 +366,5 @@ One Qt trap the tool was built around, worth knowing before reading a trace:
 **`QWidgetItem` answers `heightForWidth` from the widget's *layout*, never from the
 widget's own override.** So a wrapping widget — anything holding a `FlowLayout` — cannot
 floor its height by overriding `sizeHint` or `heightForWidth`; the parent reads straight
-past both. `setMinimumHeight` is the floor a parent honours. `_TagsField` in
+past both. `setMinimumHeight` is the floor a parent honors. `_TagsField` in
 `bartlebot/gui/canvas/bot_header.py` sets both, and the comment there says why.

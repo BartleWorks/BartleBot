@@ -106,7 +106,7 @@ _NO_VALUE = "—"
 #
 # Regenerate with:
 #   uv run python tools/typedump.py prop m_bGreyed
-_GREYED_TYPES = frozenset(
+_GRAYED_TYPES = frozenset(
     {
         "BadgeButton",
         "ChatPopupButton",
@@ -139,9 +139,9 @@ def decode_flags(flags_value: int) -> tuple[bool, bool]:
     return (WindowFlags.visible in flags, WindowFlags.disabled not in flags)
 
 
-def has_greyed_field(type_name: str) -> bool:
+def has_grayed_field(type_name: str) -> bool:
     """Whether ``is_control_grayed()`` reads a real field on this class."""
-    return type_name in _GREYED_TYPES
+    return type_name in _GRAYED_TYPES
 
 
 def format_state(value: bool | None) -> str:
@@ -455,7 +455,7 @@ class UITreeBrowserDialog(QDialog):
             pass
 
         grayed: bool | None = None
-        if has_greyed_field(type_name):
+        if has_grayed_field(type_name):
             try:
                 grayed = await window.is_control_grayed()
             except Exception:

@@ -35,7 +35,7 @@ has a grip at all, and that is fixed at construction.
 Survivors are re-parented off the column's layout *before* ``set_cards`` runs, because
 that method ``deleteLater``s everything it finds there.
 
-WHAT COLOURS A CARD
+WHAT COLORS A CARD
 -------------------
 
 ``ClientManager.account_for`` says which account a client was launched under, and the
@@ -111,7 +111,7 @@ class ClientSection(QWidget):
         self._refresh_interval: float = client_refresh_interval(False, True)
         # How a client is turned into an account username. Injected rather than imported,
         # so this widget does not reach for a ClientManager it has no business holding;
-        # left unset it simply colours nothing, which is the same answer as "not known
+        # left unset it simply colors nothing, which is the same answer as "not known
         # yet" and so needs no branch anywhere else.
         self._account_for = None
 

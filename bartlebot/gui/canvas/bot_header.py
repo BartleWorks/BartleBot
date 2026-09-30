@@ -69,7 +69,7 @@ _COL_RUN = 1
 _COL_TOOLS = 2
 
 
-def _centerd(w: QWidget) -> QWidget:
+def _centered(w: QWidget) -> QWidget:
     """*w* in a host that centers it vertically and lets it fill horizontally.
 
     ``QStackedLayout`` has no alignment of its own -- it ignores both
@@ -131,8 +131,8 @@ class _Swappable(QWidget):
         self._showing_label = True
         lay = QStackedLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
-        self._label_page = _centerd(label_w)
-        self._edit_page = _centerd(edit_w)
+        self._label_page = _centered(label_w)
+        self._edit_page = _centered(edit_w)
         lay.addWidget(self._label_page)
         lay.addWidget(self._edit_page)
         self._stack = lay
@@ -179,7 +179,7 @@ class _Swappable(QWidget):
     def minimumSizeHint(self) -> QSize:  # noqa: N802 - Qt override
         """The same split as ``sizeHint``: width from the page on show, height from both.
 
-        Needed as well as the hint, because a minimum is what a layout honours when it
+        Needed as well as the hint, because a minimum is what a layout honors when it
         is short of room -- and the stack's own minimum carries the hidden page's width
         for exactly the same reason.
         """
@@ -218,7 +218,7 @@ class _ElidedLabel(ThemedMixin, QLabel):
 
     The author and the filename share line 1 with the bot name, and either of them
     long enough to push the rest off the end would make the whole header claim a
-    minimum width the canvas has to honour.  ``QLabel`` has no elide mode of its own,
+    minimum width the canvas has to honor.  ``QLabel`` has no elide mode of its own,
     so the text is elided against the width Qt actually gave us, on every resize.
     """
 
@@ -328,7 +328,7 @@ class _TagsField(QWidget):
         self._empty_lbl.setText(_PLACEHOLDER)
         root.addWidget(self._empty_lbl)
 
-        # Centerd, because the field reserves the editable form's height in both modes
+        # Centered, because the field reserves the editable form's height in both modes
         # -- that is what keeps the bar's height off the mode -- so in Run mode the
         # pills are shorter than the rect they are handed, and the grid row is taller
         # still while the button clusters span it.  A flow hangs its rows from the top
@@ -478,7 +478,7 @@ class _TagsField(QWidget):
         self._buttons.setVisible(self._editable)
         self._pill_host.updateGeometry()
         # Both halves of the floor ``sizeHint`` documents.  ``minimumHeight`` is the one
-        # a wrapping widget's parent actually honours: the pill flow reports
+        # a wrapping widget's parent actually honors: the pill flow reports
         # height-for-width, and ``QWidgetItem`` answers that from this widget's *layout*
         # rather than from the widget, so the hint alone was read straight past.  Set
         # here rather than once in ``__init__`` because the buttons are sized by the
@@ -502,7 +502,7 @@ class BotHeader(ThemedMixin, QWidget):
 
     The status used to be a caption *beneath* the transport.  That read well on its
     own, but it left the right-hand cluster as the only thing in the bar with an
-    empty row under it, so those buttons centerd themselves in row 1 and sat visibly
+    empty row under it, so those buttons centered themselves in row 1 and sat visibly
     high.  Stacking nothing is what lets both clusters span the full height and come
     out level with each other; ``_size_status_slots`` is what stops the status word
     dragging the transport off center now that it shares the row.
@@ -529,7 +529,7 @@ class BotHeader(ThemedMixin, QWidget):
         # and the header starts there with no bot loaded.
         self._label_mode = True
         # Last status handed to set_status, replayed on a theme switch: the dot's
-        # colour is a THEME value the caller resolved, so this widget cannot
+        # color is a THEME value the caller resolved, so this widget cannot
         # re-derive it without being told again.
         self._status = (THEME.text_muted, "Idle", "")
 
@@ -611,7 +611,7 @@ class BotHeader(ThemedMixin, QWidget):
         tag_row.setContentsMargins(0, 0, 0, 0)
         tag_row.setSpacing(6)
         tag_row.addWidget(self._definition_lbl, 0, Qt.AlignmentFlag.AlignVCenter)
-        # Centerd rather than stretched.  A box layout hands a stretched child the
+        # Centered rather than stretched.  A box layout hands a stretched child the
         # whole row, and ``FlowLayout`` then lays its rows from the top of what it was
         # given -- so whenever the grid row is taller than the byline itself (the
         # spanning button clusters are what make it so), the pills sat against the
@@ -653,7 +653,7 @@ class BotHeader(ThemedMixin, QWidget):
         run_row.addWidget(self._status_side, 0, Qt.AlignmentFlag.AlignVCenter)
 
         # -- Assemble -------------------------------------------------
-        centerd = Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
+        centered = Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
         grid = QGridLayout(self)
         grid.setContentsMargins(8, 3, 8, 3)
         grid.setHorizontalSpacing(8)
@@ -664,7 +664,7 @@ class BotHeader(ThemedMixin, QWidget):
         # the bar's own vertical center rather than on the center of row 1.  Nothing is
         # stacked in either column any more, so they are level with each other -- which
         # they would not be if only one of them spanned.
-        grid.addWidget(run, 0, _COL_RUN, 2, 1, centerd)
+        grid.addWidget(run, 0, _COL_RUN, 2, 1, centered)
         grid.addWidget(tools, 0, _COL_TOOLS, 2, 1, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         # The two side columns take equal stretch, which is the only arrangement that
         # centers the Run button exactly: the center lands in the middle of the bar
@@ -832,7 +832,7 @@ class BotHeader(ThemedMixin, QWidget):
     # ------------------------------------------------------------------
 
     def _apply_version(self, version: str | None) -> None:
-        """Show the version pill, or hide it — an empty pill is a grey smudge."""
+        """Show the version pill, or hide it — an empty pill is a gray smudge."""
         self._version_pill.setText(f"v{version}" if version else "")
         self._apply_version_slot()
 
@@ -907,7 +907,7 @@ class BotHeader(ThemedMixin, QWidget):
     def _align_meta_baselines(self) -> None:
         """Sit the filename and the author on the bot name's baseline, not the row's center.
 
-        Two texts of different sizes centerd in the same row do not share a baseline.
+        Two texts of different sizes centered in the same row do not share a baseline.
         Centring matches the *boxes*, and a font box is mostly ascent -- so the smaller
         of the two carries its baseline higher, and the filename read as a pixel above
         the line the name sets.  The eye compares baselines, not boxes.
@@ -922,7 +922,7 @@ class BotHeader(ThemedMixin, QWidget):
         The shift is the difference between the two fonts' ascents, less the
         difference their box heights already account for.  The row's height cancels
         out of that, which is what makes one number right in both modes: in Edit mode
-        the name is a QLineEdit, but its text is the same font box centerd in the same
+        the name is a QLineEdit, but its text is the same font box centered in the same
         row, so it sets the same baseline.
 
         The half-pixel is rounded *away from zero* rather than with ``round``, which

@@ -435,7 +435,7 @@ def test_the_source_caption_shares_the_name_line(qapp, settings):
 # The three sell flags say nothing at all while Enable Quicksell is off -- nothing
 # is sold, so there is nothing for them to spare -- and before ``depends_on`` they
 # stayed live and unmarked, three tick boxes that could not affect the run and gave
-# no sign of it. They are indented under the parent now and greyed while it is off.
+# no sign of it. They are indented under the parent now and grayed while it is off.
 
 
 def _sell_flag(name: str = "sell_pets") -> str:
@@ -449,7 +449,7 @@ def test_the_sell_flags_are_children_of_enable_quicksell(qapp, settings):
     assert all(section._parent_of(n) == qs.OPTION_ENABLED for n in qs.SELL_FLAG_OPTIONS.values())
 
 
-def test_turning_quicksell_off_greys_its_children(qapp, settings):
+def test_turning_quicksell_off_grays_its_children(qapp, settings):
     """The point of the whole change: a control that cannot affect the run says so."""
     section = _section(settings, _config())
     assert all(section._chrome[n].body.isEnabled() for n in qs.SELL_FLAG_OPTIONS.values())
@@ -483,7 +483,7 @@ def test_reverting_the_parent_reaches_the_children(qapp, settings):
     assert section._chrome[_sell_flag()].body.isEnabled()
 
 
-def test_a_bot_opened_with_quicksell_already_off_builds_its_children_greyed(qapp, settings):
+def test_a_bot_opened_with_quicksell_already_off_builds_its_children_grayed(qapp, settings):
     """The state is refreshed on a rebuild, not only when the parent is clicked."""
     settings.set_general("default_quicksell_enabled", False)
 
@@ -493,7 +493,7 @@ def test_a_bot_opened_with_quicksell_already_off_builds_its_children_greyed(qapp
 
 
 def test_a_childs_value_survives_the_parent_going_off_and_back_on(qapp, settings):
-    """Greyed, never hidden and never cleared: the user's answer is still theirs, and
+    """Grayed, never hidden and never cleared: the user's answer is still theirs, and
     a disabled row is what says it will be waiting."""
     config = _config()
     section = _section(settings, config)
@@ -506,8 +506,8 @@ def test_a_childs_value_survives_the_parent_going_off_and_back_on(qapp, settings
     assert section.option_widgets[_sell_flag()].isChecked() is False
 
 
-def test_the_gutter_stays_live_on_a_greyed_child(qapp, settings):
-    """Only the body is greyed. The bar still says whose value it is and revert can
+def test_the_gutter_stays_live_on_a_grayed_child(qapp, settings):
+    """Only the body is grayed. The bar still says whose value it is and revert can
     still discard it -- a value the user cannot see the provenance of, or take back,
     is worse than one that is merely inactive."""
     config = _config()

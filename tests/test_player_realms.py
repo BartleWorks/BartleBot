@@ -2,7 +2,7 @@
 
 A node param says where the players go; this option says how they are arranged. A node that
 merges players by nature (teleport_to_friend) rules Separate out, enforced three ways: the
-option rows grey the choice, the canvas marks the node, and the run refuses to start.
+option rows gray the choice, the canvas marks the node, and the run refuses to start.
 """
 
 from __future__ import annotations
@@ -130,7 +130,7 @@ def test_the_run_refuses_separate_only_with_a_merging_node():
     assert player_realms.run_refusal(_config("sync_in_zone"), player_realms.SEPARATE) is None
 
 
-def test_unrecognised_values_read_as_together():
+def test_unrecognized_values_read_as_together():
     assert not player_realms.is_separate(None)
     assert not player_realms.is_separate("separate")
     assert player_realms.is_separate(player_realms.SEPARATE)
@@ -176,7 +176,7 @@ def test_an_unset_value_shows_together(qapp):
     assert widget_value(widget) == player_realms.TOGETHER
 
 
-def test_a_merging_node_greys_separate_and_says_why(qapp):
+def test_a_merging_node_grays_separate_and_says_why(qapp):
     widget = make_option_widget(player_realms.OPTION_TYPE, player_realms.TOGETHER)
     block_separate_if_merging(widget, _config("sync_in_zone", "teleport_to_friend"))
     assert widget.separate_blocked()

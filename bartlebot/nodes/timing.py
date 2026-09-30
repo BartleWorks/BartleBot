@@ -149,7 +149,7 @@ COMBAT_DROP_MESSAGE_TIMEOUT = 15.0
 # The poll runs in the background (combat_runner.start_combat_drop_poll), so this
 # window never holds up the next node, even on a fight that drops nothing and waits
 # all of it out; only check_if_dropped waits for it. Nor is it the last line of
-# defence: the caller carries its chat baseline between fights, so a message that
+# defense: the caller carries its chat baseline between fights, so a message that
 # beats even this window is recorded late by the next fight's poll rather than lost.
 # That makes this value an attribution-latency knob, not a correctness one.
 
@@ -375,8 +375,8 @@ AUTO_SELECT_CLEANUP_INTERVAL = 2.0
 LEVEL_SCALING_STAGGER_DELAY = 1.0
 # Seconds between one client finishing with the level-scaling station and the next one
 # starting on it. Several clients using it at once intermittently leaves some of them
-# without the elixir, so the uses are serialised and spaced out. The whole interaction
-# is serialised rather than only the clicks: the station's menu closes on every client
+# without the elixir, so the uses are serialized and spaced out. The whole interaction
+# is serialized rather than only the clicks: the station's menu closes on every client
 # that has not clicked yet as soon as one of them does, so overlapping the menus and
 # staggering only the clicks loses the elixir for everyone after the first. Anyone still
 # missing it is retried rather than failed, so this only has to cover the common case.
@@ -590,7 +590,7 @@ COMBAT_TP_RETRY_INTERVAL = 5.0
 FLEE_AFTER_ROUNDS = 3
 # Planning phases in a row a fight must look unwinnable before our players flee it (#111):
 # none of them holds a castable damage card, and no damage over time is on the enemies. One
-# round is not enough, because a card greyed out for want of pips reads the same as one that
+# round is not enough, because a card grayed out for want of pips reads the same as one that
 # can never be cast, and round one rarely has the pips for a big hit.
 
 FLEE_VOTE_TIMEOUT = 5.0

@@ -208,17 +208,17 @@ class DuelConfigEditor(QWidget):
         self._update_requirements_label()
 
     def set_player_color_keys(self, keys: list[int | None], labels: list[str] | None = None) -> None:
-        """Colour every card's slot pills by the account currently in each slot.
+        """Color every card's slot pills by the account currently in each slot.
 
         Held as well as applied, because cards are built and rebuilt long after this
         arrives: an assignment added five minutes into a session has to get the same
-        colours as the ones that were there when the dialog opened.
+        colors as the ones that were there when the dialog opened.
         """
         self._color_keys = list(keys)
         self._account_labels = list(labels or [])
         # The combat-order chips too, not just the assignment cards: both are references
         # to a player slot, and the point of issue #40 is that a slot reads the same
-        # colour everywhere it is named.
+        # color everywhere it is named.
         self._order_widget.set_player_color_keys(self._color_keys)
         for card in self._cards:
             card.set_player_color_keys(self._color_keys, self._account_labels)
@@ -305,7 +305,7 @@ class DuelConfigEditor(QWidget):
         if self._config is None:
             return
         # No editable guard: the Add card is *hidden* while a bot runs rather than
-        # greyed, so there is no click to refuse -- and a card that did arrive by some
+        # grayed, so there is no click to refuse -- and a card that did arrive by some
         # other route is built locked, which is the state that actually matters.
         max_p = self._max_spin.value()
         if len(self._cards) >= max_p:
@@ -419,7 +419,7 @@ class DuelConfigEditor(QWidget):
 
         There are only two, and neither is guessable from a card that simply stops
         responding: the player slots are all spoken for, or the whole editor is locked
-        because a bot is running. Hidden rather than greyed — an ``AddCard`` is a dashed
+        because a bot is running. Hidden rather than grayed — an ``AddCard`` is a dashed
         *slot*, and a slot that cannot be filled is not a slot.
         """
         max_p = self._max_spin.value()
@@ -443,5 +443,5 @@ class DuelConfigEditor(QWidget):
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
-        # No stylesheet-dependent styling in this widget: every coloured thing in it —
+        # No stylesheet-dependent styling in this widget: every colored thing in it —
         # the headings, the cards, the Add card — owns its own theme pass.

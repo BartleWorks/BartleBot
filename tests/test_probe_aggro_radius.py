@@ -14,7 +14,7 @@ from tools.probe_aggro_radius import (
     find_run_onset,
     read_csv,
     read_csvs,
-    summarise,
+    summarize,
     write_event,
     write_sample,
 )
@@ -147,8 +147,8 @@ def test_the_csv_round_trips_into_the_same_summary(tmp_path):
 
     assert read_samples == samples
     assert read_events == events
-    assert summarise(read_samples, read_events, 0.2) == summarise(samples, events, 0.2)
-    assert "current radius 700 covers" not in summarise(samples, events, 0.2)
+    assert summarize(read_samples, read_events, 0.2) == summarize(samples, events, 0.2)
+    assert "current radius 700 covers" not in summarize(samples, events, 0.2)
 
 
 def test_pooled_runs_keep_each_battle_with_its_own_mark(tmp_path):

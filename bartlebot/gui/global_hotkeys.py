@@ -8,7 +8,7 @@ Two decisions follow from that key being system-wide:
 
 * **Registered only while a game window holds the keyboard.** Registered any longer, F1
   would stop reaching every other application on the machine, and a binding on a digit
-  would take the canvas's favourites keys and every text field in BartleBot with it.
+  would take the canvas's favorites keys and every text field in BartleBot with it.
   ``GameView.game_focus_changed`` says when; ``set_armed`` follows it.
 * **Read through a Qt native event filter, not WizWalker's ``HotkeyListener``.** That
   listener takes ``WM_HOTKEY`` off the thread queue with its own ``PeekMessage`` loop, and

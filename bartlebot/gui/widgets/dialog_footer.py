@@ -27,7 +27,7 @@ every dialog it touches. Three jobs, and this helper takes over all three:
   worth knowing: a widget added to a free-standing layout has no parent until that
   layout is installed on the dialog, so at the moment the footer is built most of the
   dialog's buttons are not its children yet and ``findChildren`` cannot see them. The
-  region colour picker is the clearest case — six swatch buttons, none of them a child
+  region color picker is the clearest case — six swatch buttons, none of them a child
   of anything until the last line of ``__init__``.
 - **Esc.** ``QDialog`` rejects on Esc by itself; the box never added that. What can take
   it away is a button holding ``autoDefault``, so the same sweep is what keeps it.
@@ -35,7 +35,7 @@ every dialog it touches. Three jobs, and this helper takes over all three:
 Every button is built ``fill=False``. This is the rule ``action_button.py`` documents and
 the one most easily lost in a copy: these expand by default, and an expanding button
 placed *after* a stretch eats the stretch and spreads the pair across the whole footer.
-Extras are normalised too, rather than trusted, since they arrive already constructed.
+Extras are normalized too, rather than trusted, since they arrive already constructed.
 
 THE CANCEL SLOT IS THE REJECT SIDE, NOT THE WORD "CANCEL"
 ----------------------------------------------------------
@@ -90,14 +90,14 @@ def dialog_footer(
     on_cancel: Callable[[], None] | None = None,
     extras: Sequence[ActionButton] = (),
 ) -> DialogFooter:
-    """Build *dialog*'s footer row and wire its keyboard behaviour.
+    """Build *dialog*'s footer row and wire its keyboard behavior.
 
     *on_commit* defaults to ``dialog.accept`` and *on_cancel* to ``dialog.reject``; pass
     one where the dialog validates first, or where rejecting means something more than
     closing (``recovery_dialog`` unchecks every row on the way out).
 
     *extras* are buttons that sit **left of the stretch** — a second way forward that is
-    not the commit. They are re-normalised to ``fill=False`` and stripped of
+    not the commit. They are re-normalized to ``fill=False`` and stripped of
     ``autoDefault`` here, so a caller cannot accidentally hand one the Enter key.
 
     The order the footer is built in does not matter: the sweep that hands Enter to the

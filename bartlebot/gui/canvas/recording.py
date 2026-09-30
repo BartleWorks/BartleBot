@@ -152,9 +152,9 @@ _ZONE_SEGMENT_LABEL = re.compile(r"^\w+_\w+$")
 def is_recorded_label(label: str) -> bool:
     """Whether *label* has the shape of one Record wrote, so recording again may replace it.
 
-    Recognised by shape rather than remembered, so a label recorded in an earlier session,
+    Recognized by shape rather than remembered, so a label recorded in an earlier session,
     or before this rule existed, is still replaced; one the author typed is kept. A bare
-    zone is recognised by being some zone's name.
+    zone is recognized by being some zone's name.
     """
     label = label.strip()
     return (

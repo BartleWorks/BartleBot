@@ -228,7 +228,7 @@ SKULL_OFFSET = (-0.05, -0.13)
 
 #: The Gauntlet medallion's disc, which is green because Dungeon, Challenge Mode, Team-Up
 #: and Gauntlet are all entered through a four-player sigil. It is an orange radial
-#: gradient recoloured to the sigil's hue rather than a green one painted directly: the
+#: gradient recolored to the sigil's hue rather than a green one painted directly: the
 #: game's medallions are shaded that way, and a gradient chosen in green read pale.
 DISC_CENTER = (255, 190, 70)
 DISC_EDGE = (170, 70, 10)
@@ -239,7 +239,7 @@ DISC_LIGHTNESS = (1.15, 1.15 * 0.75)  # center, and where the band starts
 #: fade reads as a second, dark-green ring inside the gold one.
 BAND_PX = 2
 BAND_BLEND_PX = 1.5
-BAND_COLOUR = (6, 20, 6)
+BAND_COLOR = (6, 20, 6)
 #: The disc overlaps the ring's inner edge by this much, so no gap shows under the gold.
 DISC_OVERLAP_PX = 1.5
 #: How much of the disc's diameter the gauntlet badge fills, and how far down it sits.
@@ -300,7 +300,7 @@ def gauntlet_disc(size: int, inner: float) -> Image.Image:
             rgb = [round(v * 255) for v in colorsys.hls_to_rgb(DISC_HUE, light, sat)]
             if r > band_start:
                 k = min(1.0, (r - band_start) / BAND_BLEND_PX)
-                rgb = [round(v + (b - v) * k) for v, b in zip(rgb, BAND_COLOUR)]
+                rgb = [round(v + (b - v) * k) for v, b in zip(rgb, BAND_COLOR)]
             px[x, y] = (*rgb, 255)
     return disc
 
@@ -339,7 +339,7 @@ TAG_ICON_SOURCES: dict[str, str] = {tag_icon_name(tag): texture for tag, texture
 #: spellement, so Spellements takes the reward-category one the Spellements tag uses.
 #:
 #: Pins has an icon per kind (``PIN_TEXTURES``); its entry here is only for a pin whose
-#: kind is not recognised, and is the Jewels medallion because quicksell sells pins as
+#: kind is not recognized, and is the Jewels medallion because quicksell sells pins as
 #: jewels.
 DROP_TEXTURES: dict[str, str] = {
     "Hats": "GUI/QuestPage/Art_Quest_Hat.dds",

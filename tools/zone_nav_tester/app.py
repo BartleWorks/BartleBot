@@ -5,7 +5,7 @@ client is, and a tree of the current world rooted at its hub:
 
     green   a route exists on verified links
     amber   a route exists only over tentative links: guessed from game data, never run
-    grey    no route yet
+    gray    no route yet
 
 TEST tab
     Pick a world and a zone. Preview lists the steps the navigator would take, or -- when
@@ -13,7 +13,7 @@ TEST tab
     bartlebot.nodes.zone_navigation.navigate(), the code the Sync In Zone node runs. When a
     run over tentative links succeeds, one click marks them verified.
 
-    Walk only and No hub button leave those links out of routes and out of the tree colours.
+    Walk only and No hub button leave those links out of routes and out of the tree colors.
     A teleporter usually wins, so this is how a street route gets previewed, run and seen as
     mapped. Regrouping still uses the hub button, or HOME for a group split across worlds.
 
@@ -33,7 +33,7 @@ MAP tab
     A list object is recorded without using it: open the list and the List object card holds
     the zone, where the list opened (its interact point) and the last spot clear of its prompt
     (its reset). A zone change never replaces that card. Close the list, and Verify both points
-    live checks both from inside the same zone before you save. A World Gate is recognised by
+    live checks both from inside the same zone before you save. A World Gate is recognized by
     its window title and recorded the same way, but saved as its world's gate rather than into
     a list network. It must stand in the world's door zone.
 
@@ -316,7 +316,7 @@ class TesterWindow(QMainWindow):
         self.no_hub_check = QCheckBox("No hub button")
         for box in (self.walk_only_check, self.no_hub_check):
             box.setToolTip(
-                "Leaves these links out of routes and of the tree colours, so you can see what is mapped on foot."
+                "Leaves these links out of routes and of the tree colors, so you can see what is mapped on foot."
             )
             box.toggled.connect(self._avoid_changed)
             avoid_row.addWidget(box)
@@ -439,11 +439,11 @@ class TesterWindow(QMainWindow):
         if key is None:
             return
         world = nav.worlds[key]
-        colours = tree.statuses(nav, key, self._avoid())
+        colors = tree.statuses(nav, key, self._avoid())
         for zone in sorted(world.destinations(), key=_label):
             self.zone_combo.addItem(self._zone_text(world, zone), zone)
             self.zone_combo.setItemData(
-                self.zone_combo.count() - 1, QBrush(QColor(STATUS_COLORS[colours[zone]])), 9
+                self.zone_combo.count() - 1, QBrush(QColor(STATUS_COLORS[colors[zone]])), 9
             )  # 9 = Qt.ItemDataRole.ForegroundRole
         self.zone_combo.setCurrentIndex(max(self.zone_combo.findData(chosen), 0))
 
@@ -579,13 +579,13 @@ class TesterWindow(QMainWindow):
             self.tree_widget.addTopLevelItem(QTreeWidgetItem([f"{zone or '—'} is not in a mapped world"]))
             return
 
-        built = tree.build(nav, world.key, self.game.neighbours)
-        colours = tree.statuses(nav, world.key, self._avoid())
+        built = tree.build(nav, world.key, self.game.neighbors)
+        colors = tree.statuses(nav, world.key, self._avoid())
 
         def item_for(z: str) -> QTreeWidgetItem:
             item = QTreeWidgetItem([self._zone_text(world, z)])
-            item.setForeground(0, QBrush(QColor(STATUS_COLORS[colours[z]])))
-            item.setToolTip(0, f"{z}\n{colours[z]}")
+            item.setForeground(0, QBrush(QColor(STATUS_COLORS[colors[z]])))
+            item.setToolTip(0, f"{z}\n{colors[z]}")
             if z == zone:
                 self._highlight(item)
             for child in sorted(built.children.get(z, []), key=_label):
@@ -623,7 +623,7 @@ class TesterWindow(QMainWindow):
         self.test_output.setPlainText("\n".join(self._describe_route(target)))
 
     def _avoid(self) -> set[str]:
-        """The kinds of link the Test tab's checkboxes leave out of routes and colours."""
+        """The kinds of link the Test tab's checkboxes leave out of routes and colors."""
         avoid = {zone_nav.OBJECT, zone_nav.LIST} if self.walk_only_check.isChecked() else set()
         return avoid | ({zone_nav.HUB} if self.no_hub_check.isChecked() else set())
 
@@ -672,7 +672,7 @@ class TesterWindow(QMainWindow):
 
     def _explain_missing(self, nav: zone_nav.NavMap, world: zone_nav.World, target: str, include: bool) -> list[str]:
         lines = ["No route. Nothing will be executed.", ""]
-        built = tree.build(nav, world.key, self.game.neighbours)
+        built = tree.build(nav, world.key, self.game.neighbors)
         hops = tree.hops_to(nav, built, target, self._avoid())
         if not hops and target != built.root:
             lines.append(f"{_label(target)} is not linked to {_label(world.hub)} in the game's zone graph.")

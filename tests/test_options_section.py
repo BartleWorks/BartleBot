@@ -603,7 +603,7 @@ def test_a_description_is_read_at_the_base_font(qapp, settings):
 
 def test_the_dialog_offers_delete_only_when_editing(qapp):
     """There is nothing to delete while adding, and Add is where a stray click on a
-    button labelled Delete would be most surprising."""
+    button labeled Delete would be most surprising."""
     assert _AddOptionDialog([])._delete_btn is None
     assert _AddOptionDialog([], existing_option=_repeat())._delete_btn is not None
 

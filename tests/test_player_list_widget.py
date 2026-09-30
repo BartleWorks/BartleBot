@@ -7,7 +7,7 @@ whole point is that they behave differently:
   There is no third player, so the box is hidden and its value cleared.
 - ``set_available_players`` is advisory — how many clients happen to be hooked
   right now.  Bots are authored offline, so a four-client bot opened with two
-  clients running must keep P3/P4 checked and still report them.  Greying is the
+  clients running must keep P3/P4 checked and still report them.  Graying is the
   only thing that changes.
 
 Real widget tests (QApplication required), in the style of test_menu_anchoring.
@@ -32,7 +32,7 @@ class TestAvailability:
         assert widget.get_value() == [1, 3, 4]
 
     def test_a_stored_value_still_loads_past_the_available_count(self, widget) -> None:
-        """Order matters too — set_value after the grey-out must not be filtered."""
+        """Order matters too — set_value after the gray-out must not be filtered."""
         widget.set_available_players(2)
         widget.set_value([1, 3, 4])
         assert widget.get_value() == [1, 3, 4]
@@ -41,27 +41,27 @@ class TestAvailability:
         widget.set_available_players(1)
         assert all(chk.isEnabled() for chk in widget._checks)
 
-    def test_unavailable_players_are_greyed_and_explained(self, widget) -> None:
+    def test_unavailable_players_are_grayed_and_explained(self, widget) -> None:
         widget.set_available_players(2)
-        greyed = [bool(chk.styleSheet()) for chk in widget._checks]
-        assert greyed == [False, False, True, True]
+        grayed = [bool(chk.styleSheet()) for chk in widget._checks]
+        assert grayed == [False, False, True, True]
         assert "not connected" in widget._checks[2].toolTip()
         assert widget._checks[1].toolTip() == ""
 
-    def test_reconnecting_clears_the_greying(self, widget) -> None:
+    def test_reconnecting_clears_the_graying(self, widget) -> None:
         widget.set_available_players(1)
         widget.set_available_players(4)
         assert [chk.styleSheet() for chk in widget._checks] == ["", "", "", ""]
         assert [chk.toolTip() for chk in widget._checks] == ["", "", "", ""]
 
-    def test_all_button_selects_greyed_players_too(self, widget) -> None:
+    def test_all_button_selects_grayed_players_too(self, widget) -> None:
         """Advisory means advisory: a 4-client bot is still authorable on 2 clients."""
         widget.set_available_players(2)
         widget._select_all()
         assert widget.get_value() == [1, 2, 3, 4]
 
-    def test_style_change_reapplies_the_greying(self, widget) -> None:
-        """Theme switches restyle every widget; the grey must survive one."""
+    def test_style_change_reapplies_the_graying(self, widget) -> None:
+        """Theme switches restyle every widget; the gray must survive one."""
         widget.set_available_players(2)
         widget._checks[3].setStyleSheet("")  # simulate the stylesheet being blown away
         widget.changeEvent(QEvent(QEvent.Type.StyleChange))

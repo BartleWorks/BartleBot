@@ -48,7 +48,7 @@ def _switch_app(qapp, theme, mode: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_it_recolours(qapp, theme):
+def test_it_recolors(qapp, theme):
     theme("light")
     lbl = ThemedTextLabel("hi")
     assert THEME.text_muted in lbl.styleSheet()
@@ -61,8 +61,8 @@ def test_it_recolours(qapp, theme):
 
 
 def test_it_keeps_its_extra_css(qapp, theme):
-    """The size and weight live in the same string as the colour, so a restyle that
-    rebuilt only the colour would silently drop them."""
+    """The size and weight live in the same string as the color, so a restyle that
+    rebuilt only the color would silently drop them."""
     theme("light")
     lbl = ThemedTextLabel("hi", css="font-size: 9px;")
 
@@ -71,8 +71,8 @@ def test_it_keeps_its_extra_css(qapp, theme):
     assert "font-size: 9px" in lbl.styleSheet()
 
 
-def test_the_colour_token_is_resolved_at_apply_time(qapp, theme):
-    """Storing the token name rather than the colour is the whole mechanism: a
+def test_the_color_token_is_resolved_at_apply_time(qapp, theme):
+    """Storing the token name rather than the color is the whole mechanism: a
     resolved value would be the snapshot this exists to avoid."""
     theme("light")
     lbl = ThemedTextLabel("hi", color="error")
@@ -115,7 +115,7 @@ def test_field_label_still_reads_as_a_caption(qapp, theme):
     assert lbl.sizePolicy().verticalPolicy() == QSizePolicy.Policy.Preferred
 
 
-def test_a_sidebar_field_recolours_its_caption(qapp, theme):
+def test_a_sidebar_field_recolors_its_caption(qapp, theme):
     """SidebarField never referenced THEME — it was stale purely through field_label."""
     theme("light")
     field = SidebarField("Zone", ThemedTextLabel("value"))
@@ -128,7 +128,7 @@ def test_a_sidebar_field_recolours_its_caption(qapp, theme):
     assert caption.styleSheet() != before
 
 
-def test_an_option_description_recolours(qapp, theme):
+def test_an_option_description_recolors(qapp, theme):
     theme("light")
     opt = BotOptionModel(name="Farm", type="bool", description="Keep farming", default=True)
     section = OptionsSection()
@@ -150,7 +150,7 @@ def test_an_option_description_recolours(qapp, theme):
 # ---------------------------------------------------------------------------
 
 
-def test_the_add_option_error_label_recolours(qapp, theme):
+def test_the_add_option_error_label_recolors(qapp, theme):
     theme("light")
     dlg = _AddOptionDialog([])
     light = THEME.error
@@ -179,7 +179,7 @@ def test_the_add_option_dialog_still_builds_completely(qapp):
 # ---------------------------------------------------------------------------
 
 
-def test_the_link_button_recolours(qapp, theme):
+def test_the_link_button_recolors(qapp, theme):
     from bartlebot.gui.widgets.link_button import LinkButton
 
     theme("light")
@@ -219,9 +219,9 @@ def test_the_revert_button_spends_the_accent_only_while_it_can_act(qapp, theme):
     assert btn.icon().pixmap(16, 16).toImage() != enabled
 
 
-def test_the_add_option_description_editor_recolours(qapp, theme):
+def test_the_add_option_description_editor_recolors(qapp, theme):
     """A QTextEdit is not covered by the app stylesheet's input rule, so it drew
-    Fusion's own derived frame beside two neighbours drawing the real token."""
+    Fusion's own derived frame beside two neighbors drawing the real token."""
     theme("light")
     dlg = _AddOptionDialog([])
     light = THEME.surface

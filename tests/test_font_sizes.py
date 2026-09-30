@@ -144,7 +144,7 @@ def test_no_font_token_varies_by_theme() -> None:
     """Sizes are the same in every theme, which is what lets a widget bake one in.
 
     ``test_theme_refresh_guard`` demands that a widget re-derive any ``THEME`` value it
-    writes into its own stylesheet, because a colour set under one theme is stale under
+    writes into its own stylesheet, because a color set under one theme is stale under
     the next. It excuses the font tokens on the strength of this: a size is the same
     whichever theme is active, so there is nothing to go stale. Give a theme a font size
     of its own and that exemption turns into a bug this test fails first.

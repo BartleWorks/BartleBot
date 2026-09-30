@@ -1,8 +1,8 @@
 """The two shapes a bot tag takes on screen, and the one palette behind both.
 
-A tag is coloured by its group everywhere it appears — the dot in the picker, the
+A tag is colored by its group everywhere it appears — the dot in the picker, the
 pill on a library card, the chip in a filter bar, the chip in Bot Info. Someone who
-filters by Rewards and scans the results should be matching a colour rather than
+filters by Rewards and scans the results should be matching a color rather than
 re-reading every pill, and that only holds if one module owns the mapping.
 
 Two shapes, because they do different jobs:
@@ -12,24 +12,24 @@ Two shapes, because they do different jobs:
 * :class:`TagChip` — interactive. Larger, with a ✕ and a real hit target, because
   removing the filter or the tag it stands for is the whole point of it being there.
 
-Both take their colour from the same call, so the sizes differ and the hues never do.
+Both take their color from the same call, so the sizes differ and the hues never do.
 
 Both are also led by the tag's game medallion where the user has extracted one (#29),
 at ``TAG_ICON_PX``: the pill is exactly as tall as the medallion, so the ring forms its
-rounded left end and the coloured body runs on from it, name included. Without extracted
+rounded left end and the colored body runs on from it, name included. Without extracted
 art, which is most installs, both are exactly the text forms above.
 
 :class:`NeutralPill` is the odd one out and lives here for the shape rather than the
-palette: a caption that wants to look like a pill without claiming a tag colour.
+palette: a caption that wants to look like a pill without claiming a tag color.
 :class:`ActionPill` is that one with a click behind it -- same metrics, so a pill that
 leads somewhere and a pill that only names something are not two different shapes.
 
 :class:`AccentPill` is a third: the same metrics again, outlined in the accent, for a
 badge that has to be told apart from the pills it shares a row with.
 
-:class:`AccountPill` is the other odd one: it claims a colour, but from the account
+:class:`AccountPill` is the other odd one: it claims a color, but from the account
 palette rather than the tag one, and it wears it as an outline instead of a fill.
-See its docstring for why the two colour systems can share a screen without reading
+See its docstring for why the two color systems can share a screen without reading
 as one.
 """
 
@@ -123,7 +123,7 @@ class TagPill(QLabel):
     """A small, inert pill naming one tag, led by its medallion where one was extracted.
 
     The medallion form is drawn rather than styled (see :func:`paint_medallion_pill`): a
-    stylesheet cannot put an icon flush with a rounded end. The text form, group-coloured,
+    stylesheet cannot put an icon flush with a rounded end. The text form, group-colored,
     is every other case: an install with no extracted art.
 
     The name stays beside the medallion. The art alone was tried and was not enough to
@@ -188,7 +188,7 @@ class TagPill(QLabel):
 
 
 class TagChip(QPushButton):
-    """A group-coloured chip that removes its tag when clicked.
+    """A group-colored chip that removes its tag when clicked.
 
     Led by the tag's medallion where one was extracted, in the same shape as
     :class:`TagPill`'s, so a tag reads the same in the filter bar as on the cards below it.
@@ -268,7 +268,7 @@ class TagChip(QPushButton):
 
 
 class SuggestedTagPill(QPushButton):
-    """A tag the bot does not carry yet, outlined in its group's colour: ``+ Reagents``.
+    """A tag the bot does not carry yet, outlined in its group's color: ``+ Reagents``.
 
     :class:`TagChip`'s metrics, one pixel of the padding given to the border so the two
     sit level in a row. Outlined rather than filled because it is not a tag yet — a
@@ -370,10 +370,10 @@ def paint_pill_outline(painter: QPainter, rect: QRectF, color: str) -> None:
 
 
 class NeutralChip(QPushButton):
-    """A grey chip that removes the word it names when clicked.
+    """A gray chip that removes the word it names when clicked.
 
-    :class:`TagChip`'s shape without a tag's colour, for a list of plain strings the
-    user assembled: the quicksell keep list's keywords are the case. Colour on a chip
+    :class:`TagChip`'s shape without a tag's color, for a list of plain strings the
+    user assembled: the quicksell keep list's keywords are the case. Color on a chip
     means "tag group" everywhere else in the app, so a keyword that borrowed one
     would read as a tag.
 
@@ -421,9 +421,9 @@ class NeutralChip(QPushButton):
 
 
 class ActionPill(QPushButton):
-    """A grey pill that runs a verb when clicked, and wears no ✕.
+    """A gray pill that runs a verb when clicked, and wears no ✕.
 
-    :class:`NeutralPill`'s exact shape and colour with a hit target behind it, so a row
+    :class:`NeutralPill`'s exact shape and color with a hit target behind it, so a row
     of these and a row of inert pills read as the same kind of thing. The Combat tab's
     Bot Default Strategy card is the case: it condenses every fight that has no override
     of its own into one card, one pill each, and a click on a pill opens the strategy
@@ -497,17 +497,17 @@ class ActionPill(QPushButton):
 
 
 class NeutralPill(QLabel):
-    """A small, inert, grey pill for a caption that is not a tag.
+    """A small, inert, gray pill for a caption that is not a tag.
 
     A bot card's version, a launch profile's resolution — descriptive text that wants
-    the pill *shape* without claiming a tag colour. Colour on these cards means "tag
+    the pill *shape* without claiming a tag color. Color on these cards means "tag
     group", and spending an accent on a version number made the loudest pill the one
     carrying the least information.
 
-    ``pill_neutral_bg`` is a true grey on purpose: the blue-grey ``chip_neutral_bg``
-    read as a third tag colour beside the blue Rewards pill.
+    ``pill_neutral_bg`` is a true gray on purpose: the blue-gray ``chip_neutral_bg``
+    read as a third tag color beside the blue Rewards pill.
 
-    Owns its own colour, like :class:`TagPill`. The predecessor was a factory returning
+    Owns its own color, like :class:`TagPill`. The predecessor was a factory returning
     a bare ``QLabel`` for the caller to restyle from ``apply_theme_styles``, which put
     the staleness on every caller — see the themed-helper note in CLAUDE.md.
     """
@@ -554,7 +554,7 @@ class ProfilePill(NeutralPill):
 class AccentPill(QLabel):
     """An inert, accent-outlined pill marking what the row it leads is.
 
-    :class:`NeutralPill`'s metrics with the accent's outline instead of a grey fill, for
+    :class:`NeutralPill`'s metrics with the accent's outline instead of a gray fill, for
     a badge that shares a row with pills naming *things*. The Combat tab's default
     strategy card is the case: its pill row is ``Default`` followed by a pill per fight,
     and the two have to be told apart at a glance because they are different kinds of
@@ -562,14 +562,14 @@ class AccentPill(QLabel):
 
     Outlined rather than filled, for :class:`AccountPill`'s reason turned around. There
     the outline keeps four saturated fills off one row; here it is that a *filled* accent
-    pill beside grey ones reads as the loudest item in the list rather than as a label on
+    pill beside gray ones reads as the loudest item in the list rather than as a label on
     it. It is also the affordance boundary on that card, where the fight pills are
     :class:`ActionPill`\\ s: no fill, no hover, no pointing hand, nothing to click.
 
     ``filled=True`` is the heavier rung, filled with the accent -- ``ActionButton``'s
     ``PRIMARY`` to the outline's ``SECONDARY``. The strategy cards' source pill uses both,
     so the three sources read as three weights: a built-in filled, a modified built-in
-    outlined, a custom one grey.
+    outlined, a custom one gray.
     """
 
     def __init__(self, text: str, parent: QWidget | None = None, *, filled: bool = False) -> None:
@@ -591,7 +591,7 @@ class AccentPill(QLabel):
         try:
             # One pixel of the padding goes to the border, so the text sits at the same
             # x inside this pill as inside the filled ones beside it. The filled form
-            # keeps the border, in its own fill colour, so both forms are the same size.
+            # keeps the border, in its own fill color, so both forms are the same size.
             bg, fg = (THEME.accent, THEME.pill_text) if self._filled else ("transparent", THEME.accent)
             set_style_sheet(
                 self,
@@ -609,21 +609,21 @@ class AccentPill(QLabel):
 
 
 class AccountPill(QLabel):
-    """A pill naming one account, outlined in that account's colour.
+    """A pill naming one account, outlined in that account's color.
 
-    Outlined rather than filled, and with ordinary text rather than coloured text.
+    Outlined rather than filled, and with ordinary text rather than colored text.
     Both follow from where it is used: a launch profile shows one of these per
     account, so four of them sit in a row, and four saturated fills make the row
-    the loudest thing on a screen whose point is the profile's *name*. The colour
+    the loudest thing on a screen whose point is the profile's *name*. The color
     is a match target — you find the account card carrying the same hue — and an
     outline plus a low-alpha tint is enough to match on while leaving the name at
-    full contrast, which coloured text at 9px is not.
+    full contrast, which colored text at 9px is not.
 
     That the shape differs from :class:`TagPill` is the other half of it: tags mean
-    something different by colour, and the two palettes never have to be told apart
+    something different by color, and the two palettes never have to be told apart
     because a filled pill and an outlined one are not the same object.
 
-    Holds the palette *slot*, not a colour — like :class:`TagPill` holding its tag —
+    Holds the palette *slot*, not a color — like :class:`TagPill` holding its tag —
     so a theme switch re-resolves rather than repainting a stale hex.
     """
 

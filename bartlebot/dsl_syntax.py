@@ -20,7 +20,7 @@ innermost.
 The word lists are copied here rather than read from wizsprinter at run time,
 because importing the grammar module imports wizwalker. ``tests/test_dsl_syntax.py``
 checks each list against the grammar and the combat code, so a keyword added
-upstream fails a test rather than going quietly uncoloured.
+upstream fails a test rather than going quietly uncolored.
 """
 
 from __future__ import annotations
@@ -138,7 +138,7 @@ class Context(IntEnum):
     DISCARD_TARGET = 12
 
 
-#: The contexts right after ``@``. They colour alike and differ only in what is offered.
+#: The contexts right after ``@``. They color alike and differ only in what is offered.
 _AFTER_AT = (Context.TARGET, Context.DISCARD_TARGET)
 
 
@@ -316,7 +316,7 @@ def next_line_stack(stack: tuple[Context, ...]) -> tuple[Context, ...]:
 
     An open bracket carries over — the grammar allows a newline almost anywhere
     inside one. A line with nothing open is a finished line, and the next one
-    starts a new move: carrying an ``@`` over would colour every spell name on
+    starts a new move: carrying an ``@`` over would color every spell name on
     the following line as a target.
     """
     return stack if len(stack) > 1 else _BASE

@@ -341,13 +341,13 @@ def test_clear_empties_the_selection_and_the_checkboxes(qapp):
 
 
 def _colors(row) -> set[str]:
-    """Every colour the row actually paints, as hex."""
+    """Every color the row actually paints, as hex."""
     img = row.grab().toImage()
     return {img.pixelColor(x, y).name() for y in range(img.height()) for x in range(img.width())}
 
 
 def _luminance(c) -> float:
-    """WCAG relative luminance, for asking whether two colours are told apart."""
+    """WCAG relative luminance, for asking whether two colors are told apart."""
 
     def channel(v: float) -> float:
         v /= 255
@@ -357,7 +357,7 @@ def _luminance(c) -> float:
 
 
 def _contrast(a, b) -> float:
-    """Contrast ratio between two colours, 1.0 (identical) to 21.0 (black on white)."""
+    """Contrast ratio between two colors, 1.0 (identical) to 21.0 (black on white)."""
     lo, hi = sorted((_luminance(a), _luminance(b)))
     return (hi + 0.05) / (lo + 0.05)
 
@@ -369,7 +369,7 @@ def _indicator_contrast(row) -> float:
     and the wrong one twice over. The outline is a 1px antialiased stroke, so in the
     light theme it blends and *no* pixel carries the token exactly — the test passed
     only because the machine happened to be in dark mode, and it is a screenshot
-    assertion for a claim about visibility rather than about a colour.
+    assertion for a claim about visibility rather than about a color.
     """
     img = row.grab().toImage()
     bg = img.pixelColor(img.width() - 1, img.height() // 2)  # past the text, plain row
@@ -402,7 +402,7 @@ def test_an_unselected_row_is_not_tinted(qapp):
 
 @pytest.mark.parametrize("mode", ["light", "dark"])
 def test_the_checkbox_is_visible_against_the_row(qapp, theme, mode):
-    """It went the colour of the background once, when a stylesheet on the QCheckBox
+    """It went the color of the background once, when a stylesheet on the QCheckBox
     cost it the platform's own indicator and the palette drew the replacement.
 
     Both themes, because the failure being guarded against is one theme's border
@@ -683,7 +683,7 @@ def test_the_flip_is_not_taken_when_right_alignment_fits():
 
 
 def test_a_popup_wider_than_the_screen_is_clamped_rather_than_pushed_off_screen():
-    # Neither alignment can be honoured, so the screen edge wins.
+    # Neither alignment can be honored, so the screen edge wins.
     pos = popup_position(QRect(120, 200, 90, 24), QSize(2400, 560), _SCREEN)
 
     assert pos.x() == _SCREEN.left()

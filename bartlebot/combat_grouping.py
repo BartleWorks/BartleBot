@@ -3,7 +3,7 @@
 One Duel Strategy is shown once, however many fights use it.  That is the whole
 idea here, and it is a *display* rule with an editing rule attached: because the
 group is the unit on screen, editing it edits every fight in it — which is the
-intended behaviour, not an accident to be defended against.
+intended behavior, not an accident to be defended against.
 
 The previous arrangement drew one panel per exposed combat state and handed
 several of them the *same* ``StateAssignment`` object.  Mirror Lake rendered
@@ -178,7 +178,7 @@ def state_label(state: StateModel) -> str:
     membership list is the one thing this panel must not do: a fight you cannot
     see is bound to a strategy you are about to edit.  One line each also means a
     long name elides against its own width and carries its own tooltip, instead
-    of consuming the space its neighbours needed.
+    of consuming the space its neighbors needed.
     """
     return state.label or state.id
 

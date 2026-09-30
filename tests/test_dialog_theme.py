@@ -35,12 +35,12 @@ def _switch_app(qapp, theme, mode: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# WikiImportDialog — the only one with state-dependent colour
+# WikiImportDialog — the only one with state-dependent color
 # ---------------------------------------------------------------------------
 
 
-def test_an_error_status_stays_an_error_colour_after_a_switch(qapp, theme):
-    """The status colour says whether the last message was an error. Restyling from
+def test_an_error_status_stays_an_error_color_after_a_switch(qapp, theme):
+    """The status color says whether the last message was an error. Restyling from
     the stylesheet already on the label would have to parse it back out; the flag is
     what the restyle re-derives from instead."""
     theme("light")
@@ -68,7 +68,7 @@ def test_a_normal_status_stays_muted_after_a_switch(qapp, theme):
     dlg.deleteLater()
 
 
-def test_the_select_buttons_recolour(qapp, theme):
+def test_the_select_buttons_recolor(qapp, theme):
     """They are ``ActionButton``s now (#90), so they restyle *themselves* rather than
     being restyled by the dialog. That is a broadcast to every widget rather than one
     event delivered to this dialog, which is what an app-wide switch actually is."""
@@ -100,7 +100,7 @@ def test_setting_a_status_does_not_lose_the_message(qapp, theme):
 # ---------------------------------------------------------------------------
 
 
-def test_the_strategy_list_recolours(qapp, theme):
+def test_the_strategy_list_recolors(qapp, theme):
     """Checked on the fill rather than the border: the list is borderless now — the cards
     in it draw their own edges, and a box around a column of boxes was one line too many.
     The fill is the one THEME-derived value left, so it is what proves the re-derive."""

@@ -17,7 +17,7 @@ from bartlebot import card_art
 from bartlebot.bot_tags import BOT_TAGS
 from bartlebot.card_art import tag_icon_name
 from tools.extract_card_art import (
-    BAND_COLOUR,
+    BAND_COLOR,
     ICON_SOURCES,
     STATE_SHEET_ICONS,
     TAG_COMPOSITES,
@@ -115,7 +115,7 @@ def test_the_disc_is_green_with_a_dark_band_and_nothing_outside():
     r, g, b, a = disc.getpixel((64, 64))
     assert a == 255 and g > r and g > b
     edge = disc.getpixel((round(63.5 + 51.5), 64))  # on the band
-    assert edge[:3] == pytest.approx(BAND_COLOUR, abs=3)
+    assert edge[:3] == pytest.approx(BAND_COLOR, abs=3)
     assert disc.getpixel((0, 0))[3] == 0
 
 
@@ -123,7 +123,7 @@ def test_the_gauntlet_is_framed_by_the_ring():
     frame = _ring()
     sheet = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
     sheet.paste((0, 0, 255, 255), (20, 20, 108, 108))  # the normal state's artwork
-    sheet.paste((255, 0, 255, 255), (148, 148, 236, 236))  # a greyed state, never drawn
+    sheet.paste((255, 0, 255, 255), (148, 148, 236, 236))  # a grayed state, never drawn
 
     icon = gauntlet_icon(frame, sheet)
 

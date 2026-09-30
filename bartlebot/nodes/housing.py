@@ -179,7 +179,7 @@ async def _set_equipped(client, row: int, equipped: bool) -> bool:
         return True
 
     # Selecting the row is what enables Equip_Item. The probe read the button as already
-    # ungrayed with no row selected, which contradicts the observed UI behaviour and is
+    # ungrayed with no row selected, which contradicts the observed UI behavior and is
     # probably the same unreliable is_control_grayed seen elsewhere on this page — so this
     # poll may pass trivially. It is kept as a cheap guard, but the icon check below is the
     # real confirmation, and nothing here concludes success without it.

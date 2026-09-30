@@ -53,7 +53,7 @@ def test_streamer_mode_drops_the_name_and_keeps_the_label():
 
 
 def test_an_unknown_account_gets_the_neutral_pill_and_the_accent_focus_border():
-    """No account known means no colour, never a default one (#40)."""
+    """No account known means no color, never a default one (#40)."""
     from bartlebot.gui.game_embed.client_tile import tile_focus_color, tile_pill_colors  # noqa: PLC0415
     from bartlebot.gui.theme import THEME  # noqa: PLC0415
 
@@ -65,7 +65,7 @@ def test_an_unknown_account_gets_the_neutral_pill_and_the_accent_focus_border():
     assert tile_focus_color(None).name() == THEME.accent.lower()
 
 
-def test_a_known_account_outlines_and_tints_the_pill_and_colours_the_focus_border():
+def test_a_known_account_outlines_and_tints_the_pill_and_colors_the_focus_border():
     from bartlebot.gui.account_accent import account_accent  # noqa: PLC0415
     from bartlebot.gui.game_embed.client_tile import tile_focus_color, tile_pill_colors  # noqa: PLC0415
 

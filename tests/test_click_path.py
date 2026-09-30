@@ -330,7 +330,7 @@ async def test_click_clients_limits_the_node_to_the_selected_clients():
 
 
 async def test_click_clients_empty_means_every_client():
-    """No selection keeps the old behaviour: every client must find the path."""
+    """No selection keeps the old behavior: every client must find the path."""
     client1 = FakeClient()
     client2 = FakeClient()
 

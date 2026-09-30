@@ -15,7 +15,7 @@ ORDER AND GROUPING COME FROM ``deck_groups``
 THE ART IS OPTIONAL, AND ITS ABSENCE IS THE ORDINARY CASE
     A row whose card has no extracted art is the row without the tile, never a row with
     a placeholder in it: most installs never run the extractor, so a placeholder per
-    card would turn the whole list into a column of grey squares. The name and the count
+    card would turn the whole list into a column of gray squares. The name and the count
     carry the row either way. See "Card art is optional" in ``gui/CLAUDE.md``.
 
 ``empty_text`` is what a surface says about a deck holding nothing. The sidebar passes

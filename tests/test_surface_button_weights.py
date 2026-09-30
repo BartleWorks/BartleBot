@@ -78,7 +78,7 @@ def test_the_bot_library_toolbar_has_no_primary(qapp):
 
 def test_reset_to_system_default_keeps_its_literal_styling(qapp):
     """The one deliberate exception in the rollout. This button is the escape hatch from
-    a custom theme that has made the app unreadable, so it is styled in fixed colours that
+    a custom theme that has made the app unreadable, so it is styled in fixed colors that
     no theme can reach — which is exactly what an ``ActionButton`` would undo."""
     from bartlebot.gui.settings.theme_tab import ThemeTab
 

@@ -7,7 +7,7 @@ _HUB, _A, _C = "Alpha/Hub", "Alpha/A", "Alpha/C"
 _EMPYREA_HUB = "Empyrea/EM_Z00_Aeriel_HUB"
 _NIMBUS = "Empyrea/EM_Z06_NimbusHanger"
 _MANDALLA = "Empyrea/EM_Z12_LandingZone"
-"""Empyrea's two quirks: a row truncated to "Nimbus", and one labelled with another zone's name."""
+"""Empyrea's two quirks: a row truncated to "Nimbus", and one labeled with another zone's name."""
 
 
 def _xyz(x: float) -> dict:

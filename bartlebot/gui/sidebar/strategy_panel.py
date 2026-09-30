@@ -152,7 +152,7 @@ NOT_CONFIGURED_LABEL = "Not configured — built-in default for every player"
 # What an unset *state override* falls through to, which is not the same thing and the
 # distinction is not cosmetic: an empty state override does not reach the built-in
 # default, it reaches this bot strategy's own Default Combat Strategy -- see
-# resolve_combat(), which consults ``bcs.default_strategy_id`` first. Labelling both
+# resolve_combat(), which consults ``bcs.default_strategy_id`` first. Labeling both
 # levels "BartleBot Default Combat
 # Strategy" told the user the bot default would be skipped, and contradicted the
 # pre-run warning text.
@@ -313,7 +313,7 @@ class StrategyPanel(CardFrame):
         header.setSpacing(6)
         # Elided, and not a plain QLabel: strategy names are user-supplied and routinely
         # long ("Heretical Academy 4-player single decks"), and a QLabel reports its full
-        # text width as its minimum, which a widgetResizable QScrollArea honours -- one
+        # text width as its minimum, which a widgetResizable QScrollArea honors -- one
         # long name would put a horizontal scrollbar across the whole sidebar.
         self._name = ElidedLabel()
         font = self._name.font()
@@ -371,7 +371,7 @@ class StrategyPanel(CardFrame):
         # The facets -- "4 players ·" then the combat order as P4 ← P3 ← P2 ← P1 pills -- or,
         # when nothing is configured, the sentence naming what this binding falls through
         # to instead. The order is pills rather than text so each slot wears its account's
-        # colour (#40); "Simultaneous" has no slots and stays a word.
+        # color (#40); "Simultaneous" has no slots and stays a word.
         #
         # ``duel_order`` mirrors the row and gems each position, so this summary and the
         # editor that sets the value are laid out the same way round (#29). The arrow turns
@@ -394,14 +394,14 @@ class StrategyPanel(CardFrame):
             self._assignment_rows.append(row)
             self._assignment_lbls.append(label)
             self._assignment_badges.append(badges)
-        # Per player slot, index 0 being P1. Held so a refresh re-colours what it redraws.
+        # Per player slot, index 0 being P1. Held so a refresh re-colors what it redraws.
         self._color_keys: list[int | None] = []
         self._account_labels: list[str] = []
 
     def _sub_line(self, layout: QVBoxLayout) -> ElidedLabel:
         """One muted caption inside the frame, elided to whatever width the sidebar has.
 
-        Elided rather than wrapped: these lines summarise DSL that runs to well over a
+        Elided rather than wrapped: these lines summarize DSL that runs to well over a
         hundred characters, and wrapping would trade the horizontal scrollbar for three
         or four stacked lines per card -- the opposite of what a summary is for. The full
         text is always in the tooltip.
@@ -439,10 +439,10 @@ class StrategyPanel(CardFrame):
         return row, label, badges
 
     def set_player_colors(self, keys: list[int | None], labels: list[str]) -> None:
-        """Colour every player pill on the card by the account in that slot right now.
+        """Color every player pill on the card by the account in that slot right now.
 
         ``keys`` and ``labels`` are per slot, index 0 being P1; shorter lists leave the
-        rest uncoloured. Held on the card, so a pick that redraws the lines keeps them.
+        rest uncolored. Held on the card, so a pick that redraws the lines keeps them.
         """
         self._color_keys = list(keys)
         self._account_labels = list(labels)
@@ -563,7 +563,7 @@ class StrategyPanel(CardFrame):
     def empty_label(self) -> str:
         """What this card falls through to when nothing is picked.
 
-        The picker's "none" row is labelled with it, so choosing nothing in the dialog
+        The picker's "none" row is labeled with it, so choosing nothing in the dialog
         and reading the card afterwards say the same words -- and the two levels say
         *different* words, which is the distinction ``STATE_INHERIT_LABEL`` exists for.
         """
@@ -745,7 +745,7 @@ class StrategyPanel(CardFrame):
     # ------------------------------------------------------------------
 
     def _restyle_content(self) -> None:
-        """Recolour the name and every caption.
+        """Recolor the name and every caption.
 
         Through :meth:`ElidedLabel.set_text_color` rather than a stylesheet: an
         ``ElidedLabel`` paints its own text, so a QSS ``color:`` rule never reaches it.

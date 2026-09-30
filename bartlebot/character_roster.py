@@ -103,7 +103,7 @@ def upsert(roster: list[dict] | None, gid: int, name: str) -> list[dict]:
 
     Appends a character not seen before, and updates the name of one that was -- a rename
     is a real thing the game allows, and the gid outlives it. Returns the input unchanged
-    (normalised) when nothing would move, so a caller can compare and skip the write:
+    (normalized) when nothing would move, so a caller can compare and skip the write:
     this runs on the client loop, and keyring writes are not free.
     """
     current = entries(roster)

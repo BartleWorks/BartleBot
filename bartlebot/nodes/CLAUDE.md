@@ -188,7 +188,7 @@ Captions come from `bartlebot/data/dialog_captions.json`, all seven locales per 
 any other locale. To add a dialog: append to `KNOWN_KEYS`, run
 `uv run python tools/dump_dialog_captions.py`, and commit the regenerated JSON.
 `--verify` re-checks the snapshot for keys whose text no longer identifies them
-uniquely. An unrecognised caption returns `None`, and callers must fall back rather
+uniquely. An unrecognized caption returns `None`, and callers must fall back rather
 than treat it as "no dialog".
 
 ## NPC dialogue, and side quests

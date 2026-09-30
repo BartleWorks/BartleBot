@@ -2,10 +2,10 @@
 
 Leaving Edit mode calls ``unsetCursor()`` on every node, and Qt answers that by asking
 the view what is under the pointer -- through ``lastMouseEvent``, which its private
-class never initialises and which only a real mouse move fills in.  The one reader that
+class never initializes and which only a real mouse move fills in.  The one reader that
 consults it, ``_q_unsetViewportCursor()``, is also the only one missing the
 ``useLastMouseEvent`` guard, so on a view that has never seen a mouse event it reads
-uninitialised storage and the process dies inside Qt6Gui (#95).
+uninitialized storage and the process dies inside Qt6Gui (#95).
 
 The workaround is to fill that storage once, on show.  Two things about it are
 load-bearing and are what these tests pin: it happens on *every* view attached to the

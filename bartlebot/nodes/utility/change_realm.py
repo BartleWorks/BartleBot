@@ -1,4 +1,4 @@
-"""Node: change every player's realm, to the favourite or to the next one.
+"""Node: change every player's realm, to the favorite or to the next one.
 
 Merged from ``change_to_favorite_realm`` and ``change_to_next_realm`` (both since
 removed, once every bot had been migrated off them): two node types for one act, and a
@@ -7,10 +7,10 @@ is what lets every template share a single Player Sync. The mode is the
 ``use_favorite_realm`` param; the UI plumbing both modes share is
 :mod:`bartlebot.nodes.utility.realm_list`.
 
-Favourite mode reads the ``Favorite Realm`` bot option -- the user's, never the bot's: it
+Favorite mode reads the ``Favorite Realm`` bot option -- the user's, never the bot's: it
 is declared null here, answered by the Favorite Realm setting on the Bot settings tab,
 and a per-bot override in Setup sits above that. A bot file naming a realm would send
-everyone who runs it to the same place, which is the crowding a favourite realm exists to
+everyone who runs it to the same place, which is the crowding a favorite realm exists to
 escape, so ``Favorite Realm`` is in ``bot_options.USER_OWNED_OPTIONS`` and the Options
 surface has no row for it. The stored value is the realm's *key* (its English name); the
 in-game list shows the client's own locale, so a row is matched through
@@ -28,7 +28,7 @@ param says where the players go; the option says whether they go there together:
 ======================  ==================================  =====================================
 ``use_favorite_realm``  Together                            Separate
 ======================  ==================================  =====================================
-on                      every player to the favourite       player 1 to the favourite, the rest
+on                      every player to the favorite       player 1 to the favorite, the rest
                                                             to the rows after it
 off (next realm)        the leader to the next realm, and   one block of fresh rows, one each:
                         the others to the leader's          see :func:`next_block`
@@ -272,9 +272,9 @@ async def to_realm(machine, client, favorite: str, safety_delay: float) -> str:
     Flow:
       1. Open the spellbook to the Realms tab and wait for the list to render.
       2. Read the current realm directly from txtYourRealmName. If it matches the
-         favourite already, close the spellbook and report SUCCESS without paging.
+         favorite already, close the spellbook and report SUCCESS without paging.
       3. Otherwise anchor to page 1.
-      4. On each page, read every row's name and match it against the favourite in
+      4. On each page, read every row's name and match it against the favorite in
          every locale. A blank row ends the page.
       5. If the matching row's button is disabled the player is already there: close the
          spellbook and report SUCCESS. Otherwise select it, wait out the cooldown, press
@@ -475,7 +475,7 @@ async def _hop_in_range(machine, client, place: _Place, target: int, start_page:
 async def _to_realm_after(machine, client, favorite: str, offset: int, safety_delay: float) -> str:
     """Hop to the realm *offset* rows after *favorite* in the list, for one client.
 
-    Separate and favourite mode: player 1 takes the favourite, and each other player the row
+    Separate and favorite mode: player 1 takes the favorite, and each other player the row
     its number past it. Past the end of the list it wraps to page 1.
     """
     if not await realm_list.open_realm_list(machine, client, safety_delay, _TAG):

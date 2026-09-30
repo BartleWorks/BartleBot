@@ -47,8 +47,8 @@ def test_hooked_player_mode_offers_the_player_picker(qapp):
     assert form.widget("target_player").isEnabled()
 
 
-def test_name_mode_greys_the_player_picker(qapp):
-    """The two targets are mutually exclusive, and greying is the loudest way the panel
+def test_name_mode_grays_the_player_picker(qapp):
+    """The two targets are mutually exclusive, and graying is the loudest way the panel
     can say so. Only one side of the pair is a param now -- the name is a bot option,
     edited in Setup -- so this is the half the panel can still show."""
     form = _form({"target_hooked_player": False, "to_zone": "Z"})

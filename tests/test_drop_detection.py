@@ -116,7 +116,7 @@ def test_find_new_stuff_survives_the_log_trimming_from_the_front():
     assert drop_detection._find_new_stuff(old, new) == "fresh 1\nfresh 2"
 
 
-def test_find_new_stuff_treats_a_wholly_unrecognisable_log_as_new():
+def test_find_new_stuff_treats_a_wholly_unrecognizable_log_as_new():
     """No overlap at all — a fresh window, or a trim larger than the whole baseline."""
     assert drop_detection._find_new_stuff("a\nb\nc", "x\ny") == "x\ny"
 
@@ -140,7 +140,7 @@ def test_find_new_stuff_prefers_the_longest_overlap_when_lines_repeat():
 def test_find_new_stuff_is_linear_on_a_large_trimmed_log():
     """Guards the end-of-fight lag regression: the old sliding-window version took ~127 ms here.
 
-    A generous ceiling — the point is to catch a return to quadratic behaviour, not to
+    A generous ceiling — the point is to catch a return to quadratic behavior, not to
     pin down a wall-clock figure on a loaded CI runner.
     """
     import time

@@ -13,7 +13,7 @@ LAYOUT (reverse-engineered; see CLAUDE.md in this folder for what is still unkno
 USAGE
     uv run python tools/zone_graph/zonemap_nav.py stats
     uv run python tools/zone_graph/zonemap_nav.py find "WizardCity/WC_Streets"
-    uv run python tools/zone_graph/zonemap_nav.py neighbours WizardCity/WC_Hub
+    uv run python tools/zone_graph/zonemap_nav.py neighbors WizardCity/WC_Hub
     uv run python tools/zone_graph/zonemap_nav.py export --out zonemap.local.json
 """
 
@@ -50,7 +50,7 @@ class ZoneGraph:
             adj[self.names[b]].add(self.names[a])
         self._adjacency = adj
 
-    def neighbours(self, zone: str) -> set[str]:
+    def neighbors(self, zone: str) -> set[str]:
         return set(self._adjacency.get(zone, ()))
 
     def linked(self, a: str, b: str) -> bool:
@@ -105,7 +105,7 @@ def main() -> int:
     sub.add_parser("stats", help="counts, and how much of the layout is still unexplained")
     p_find = sub.add_parser("find", help="zone paths matching a regex")
     p_find.add_argument("pattern")
-    p_nb = sub.add_parser("neighbours", help="zones linked to one zone")
+    p_nb = sub.add_parser("neighbors", help="zones linked to one zone")
     p_nb.add_argument("zone")
     p_ex = sub.add_parser("export", help="write names and edges as JSON")
     p_ex.add_argument("--out", type=Path, required=True)
@@ -117,7 +117,7 @@ def main() -> int:
         worlds = defaultdict(int)
         for name in graph.names:
             worlds[name.split("/")[0]] += 1
-        linked = sum(1 for n in graph.names if graph.neighbours(n))
+        linked = sum(1 for n in graph.names if graph.neighbors(n))
         print(f"zones: {len(graph.names)} ({linked} with at least one link)")
         print(f"edge pairs: {len(graph.pairs)}")
         print(f"node records with non-zero unknown bytes: {graph.unknown_node_bytes}")
@@ -130,11 +130,11 @@ def main() -> int:
         for name in graph.names:
             if rx.search(name):
                 print(name)
-    elif args.cmd == "neighbours":
+    elif args.cmd == "neighbors":
         if args.zone not in graph.names:
             print(f"{args.zone!r} is not in zonemap.nav; try `find`")
             return 1
-        for name in sorted(graph.neighbours(args.zone)):
+        for name in sorted(graph.neighbors(args.zone)):
             print(name)
     elif args.cmd == "export":
         payload = {"names": graph.names, "pairs": graph.pairs}

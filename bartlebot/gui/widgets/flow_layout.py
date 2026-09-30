@@ -36,7 +36,7 @@ def flow_geometry(
     or shrunk — a pill for a long tag name is better clipped by the sidebar than
     absent from it, and the alternative is an item that never places at all.
 
-    Items shorter than their row are **centerd** in it rather than hung from its top.
+    Items shorter than their row are **centered** in it rather than hung from its top.
     The bot header's tag row is the case: an 18px tag chip beside a 27px "Rewards"
     button sat four pixels high, which reads as a misalignment rather than as a row of
     two different things.  That is also why the rows are collected before any position

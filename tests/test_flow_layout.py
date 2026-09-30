@@ -41,7 +41,7 @@ def test_the_row_height_is_the_tallest_item_in_it():
     assert height == 40
 
 
-def test_a_short_item_is_centerd_in_a_row_a_taller_one_set_the_height_of():
+def test_a_short_item_is_centered_in_a_row_a_taller_one_set_the_height_of():
     """The byline puts 18px tag chips beside a 27px "Rewards" button.  Hung from
     the top of the row the chips read as misaligned rather than as a row of two
     different things."""
@@ -196,7 +196,7 @@ def test_a_block_taller_than_its_rect_is_never_pulled_up_off_the_top():
     assert block_offset(100, 40, center=True) == 0
 
 
-def test_a_centerd_flow_puts_its_single_row_on_the_rect_s_center(qapp):
+def test_a_centered_flow_puts_its_single_row_on_the_rect_s_center(qapp):
     """The bot header's byline: pills a few pixels shorter than the rect they are given.
 
     Three spare pixels all landing below them left the pill above the author text beside
@@ -214,7 +214,7 @@ def test_a_centerd_flow_puts_its_single_row_on_the_rect_s_center(qapp):
     assert tops == {5}
 
 
-def test_the_same_flow_left_uncenterd_hangs_from_the_top(qapp):
+def test_the_same_flow_left_uncentered_hangs_from_the_top(qapp):
     host, layout = flow_container()
     for _ in range(2):
         child = QWidget()

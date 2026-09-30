@@ -46,7 +46,7 @@ def warning_text(gaps: list[str], total: int) -> str:
         f"{len(gaps)} of {total} clients cannot be recovered automatically if they crash:\n\n"
         f"{listed}\n\n"
         f"{subject} be relaunched, so a crash will leave the bot paused until you return.\n\n"
-        "Launching an account from BartleBot once is enough for it to be recognised from "
+        "Launching an account from BartleBot once is enough for it to be recognized from "
         "then on, however it is started.\n\n"
         "Start the run anyway?"
     )

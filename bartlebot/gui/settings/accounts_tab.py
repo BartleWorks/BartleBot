@@ -94,7 +94,7 @@ def _slots_in_use(exclude: str = "") -> dict[int, list[str]]:
 
 
 class _Swatch(QToolButton):
-    """One palette colour, with a dot when another account already holds that slot.
+    """One palette color, with a dot when another account already holds that slot.
 
     The dot is *painted* rather than set as the button's text. A "•" glyph sits on the
     text baseline and is drawn around its own x-height, neither of which is the middle of
@@ -104,7 +104,7 @@ class _Swatch(QToolButton):
     """
 
     #: Diameter of the marker, in px. Big enough to see against eight hues, small enough
-    #: not to read as a second colour inside the swatch.
+    #: not to read as a second color inside the swatch.
     DOT_SIZE = 6
 
     def __init__(self, taken: bool = False, parent=None) -> None:
@@ -131,25 +131,25 @@ class _Swatch(QToolButton):
 
 
 class _AccountColorPicker(ThemedMixin, QWidget):
-    """Automatic, then one swatch per palette slot — the colour row in ``_AccountDialog``.
+    """Automatic, then one swatch per palette slot — the color row in ``_AccountDialog``.
 
     Two things about it are the point rather than the decoration:
 
     * **Automatic stays selectable, and is the default.** It clears the pin rather than
-      writing a value. Without it a user who picks once could never get a derived colour
+      writing a value. Without it a user who picks once could never get a derived color
       back, and the de-duplication in ``account_color_keys`` — the thing that keeps a
-      fleet's colours distinct as it grows — would stop applying to that account forever.
+      fleet's colors distinct as it grows — would stop applying to that account forever.
     * **A slot another account holds is marked, not disabled.** Independent choices
       colliding is the bug ``account_accent`` was written to fix, so a picker that hid the
       current assignment would invite the user to reproduce it by hand. Two accounts
-      sharing a colour is still their call to make.
+      sharing a color is still their call to make.
 
     The whole appearance is derived from the theme and the selection, so
     :meth:`apply_theme_styles` paints both and :meth:`set_selected` just asks for a
     repaint. That keeps the theme hook complete by construction rather than by care.
     """
 
-    #: Side of a swatch, in px. Large enough to read the colour and the taken marker at
+    #: Side of a swatch, in px. Large enough to read the color and the taken marker at
     #: once, small enough that eight of them plus Automatic fit the dialog's 300px floor.
     SWATCH_SIZE = 22
 
@@ -165,7 +165,7 @@ class _AccountColorPicker(ThemedMixin, QWidget):
         self._auto_btn = QToolButton()
         self._auto_btn.setText("Automatic")
         self._auto_btn.setCheckable(True)
-        self._auto_btn.setToolTip("Choose a colour from the username, kept distinct from the other accounts.")
+        self._auto_btn.setToolTip("Choose a color from the username, kept distinct from the other accounts.")
         self._auto_btn.clicked.connect(lambda _=False: self.set_selected(None))
         row.addWidget(self._auto_btn)
 
@@ -190,7 +190,7 @@ class _AccountColorPicker(ThemedMixin, QWidget):
 
     @property
     def swatches(self) -> dict[int, _Swatch]:
-        """The colour buttons, by palette slot. Read-only view for callers and tests."""
+        """The color buttons, by palette slot. Read-only view for callers and tests."""
         return dict(self._swatches)
 
     @property
@@ -230,12 +230,12 @@ class _AccountDialog(QDialog):
     left blank to keep the stored one, and the username itself is read-only. The username
     is this account's key everywhere — the Credential Manager entry, the character roster
     file, and every launch profile's membership list — so it is not something an alias
-    field's neighbour can quietly change. It used to be editable and silently ignored,
+    field's neighbor can quietly change. It used to be editable and silently ignored,
     which is the worse of the two: the user types a correction, presses OK, and the list
     comes back unchanged with nothing saying why. The alias is the field for what the
     account is *called*.
 
-    The colour row is here for the same reason: a pinned colour is a property of
+    The color row is here for the same reason: a pinned color is a property of
     the account record, and this is where a record is edited.
     """
 
@@ -267,14 +267,14 @@ class _AccountDialog(QDialog):
         form.addRow("Username:", self._username_edit)
         form.addRow("Alias:", self._alias_edit)
         form.addRow("Password:", self._password_edit)
-        form.addRow("Colour:", self._color_picker)
-        colour_hint = ThemedTextLabel(
+        form.addRow("Color:", self._color_picker)
+        color_hint = ThemedTextLabel(
             "Shown on this account's card and on the profile pills that name it. "
-            "A dot marks a colour another account already uses.",
+            "A dot marks a color another account already uses.",
             css=f"font-size: {THEME.font_small_px}px;",
         )
-        colour_hint.setWordWrap(True)
-        form.addRow("", colour_hint)
+        color_hint.setWordWrap(True)
+        form.addRow("", color_hint)
 
         footer = dialog_footer(self)
 
@@ -620,8 +620,8 @@ class AccountsTab(QWidget):
 
     What differs is the verbs, and they differ because this is the editing surface: a body
     click edits rather than launches, the pencil and trash sit on the card face rather
-    than behind hover, and a card that will not fit is noted rather than greyed out —
-    greying out the row the user came here to fix is hostile. All three ride on the cards'
+    than behind hover, and a card that will not fit is noted rather than grayed out —
+    graying out the row the user came here to fix is hostile. All three ride on the cards'
     ``manage`` flag; see ``launch_cards``.
 
     So there are no Add / Edit / Delete button rows and no selection: selection existed
@@ -746,11 +746,11 @@ class AccountsTab(QWidget):
             self._refresh_fit()
 
     def _refresh_resolution_fit(self) -> None:
-        """Grey out the resolutions a *single* client could not fit at.
+        """Gray out the resolutions a *single* client could not fit at.
 
         One client, deliberately, even though this setting is also what a profile without
         its own resolution launches at. Sizing it against the largest such profile is
-        defensible and was what this did, but it greys out most of the list for anyone who
+        defensible and was what this did, but it grays out most of the list for anyone who
         happens to keep a four-account profile around — and a user running several clients
         is a user who has a launch profile, which carries its own resolution combo sized
         against its own accounts. Judging the global default by the rarer case made the
@@ -834,7 +834,7 @@ class AccountsTab(QWidget):
     def _on_accounts_reordered(self, order: list) -> None:
         if reorder_accounts(list(order)):
             # Both columns: an account's position moves the pills on every profile card
-            # that carries it into a different colour slot.
+            # that carries it into a different color slot.
             self._refresh()
 
     def _on_profiles_reordered(self, order: list) -> None:

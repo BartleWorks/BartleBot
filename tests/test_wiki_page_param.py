@@ -66,7 +66,7 @@ def test_a_pasted_url_is_stored_as_a_title(qapp):
     form = _form()
     w = _widget(form)
     w.setText(f"https://{WIKI_HOST}/wiki/Creature:Lost_Soul")
-    w.normalise()
+    w.normalize()
     assert form.get_params()[WIKI_PAGE_PARAM] == "Creature:Lost Soul"
 
 
@@ -76,7 +76,7 @@ def test_an_offsite_url_is_left_for_the_user_to_see_and_fix(qapp):
     form = _form()
     w = _widget(form)
     w.setText("https://evil.co/wiki/Creature:X")
-    w.normalise()
+    w.normalize()
     assert not w.is_usable()
     assert resolve_wiki_page(form.get_params()) is None
 

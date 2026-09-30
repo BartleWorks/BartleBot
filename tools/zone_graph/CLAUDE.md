@@ -10,7 +10,7 @@ Run from the repo root; the scripts import `wad_common.py` from their own folder
 
 | script | does |
 |---|---|
-| `zonemap_nav.py` | decodes `Root.wad/zonemap.nav`: `stats`, `find`, `neighbours`, `export` |
+| `zonemap_nav.py` | decodes `Root.wad/zonemap.nav`: `stats`, `find`, `neighbors`, `export` |
 | `zone_data.py` | one zone's wad: `list`, `summary` (arrival points, tagged objects), `dump` to JSON, `strings`, `hubs`; `names` for every zone's English name |
 | `main_zones.py` | proposes each world's main zones for hand review (folder filter, hops from hub, interiors on the way) |
 | `compare_traversal_data.py` | scores a world's Deimos files against the game data |

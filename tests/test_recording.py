@@ -74,7 +74,7 @@ _TEMPLE, _WELL = "Krokotopia/KT_Tomb/KT_TempleOfStorms", "Krokotopia/KT_Tomb/KT_
 _TRITON, _TRITON_TOWER = "WizardCity/WC_Streets/WC_Triton", "WizardCity/WC_Streets/Interiors/WC_Triton_T1"
 
 
-def test_a_zone_change_between_differently_named_zones_is_labelled_by_name():
+def test_a_zone_change_between_differently_named_zones_is_labeled_by_name():
     assert recording._transition_label(_TEMPLE, _WELL) == "Temple of Storms → Well of Spirits"
 
 
@@ -85,7 +85,7 @@ def test_a_zone_change_between_differently_named_zones_is_labelled_by_name():
         (_TEMPLE, "Nowhere/NW_Hub", "KT_TempleOfStorms → NW_Hub"),  # one has no game name
     ],
 )
-def test_a_zone_change_names_cannot_tell_apart_is_labelled_by_path_segment(from_zone, to_zone, expected):
+def test_a_zone_change_names_cannot_tell_apart_is_labeled_by_path_segment(from_zone, to_zone, expected):
     assert recording._transition_label(from_zone, to_zone) == expected
 
 
@@ -1217,7 +1217,7 @@ async def test_handle_combat_read_failure_reports_and_restores():
         "(unknown zone)",
     ],
 )
-def test_labels_record_writes_are_recognised(label):
+def test_labels_record_writes_are_recognized(label):
     assert is_recorded_label(label)
 
 

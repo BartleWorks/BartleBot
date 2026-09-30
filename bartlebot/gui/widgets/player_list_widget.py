@@ -16,7 +16,7 @@ class PlayerListWidget(QWidget):
 
     - ``set_max_players(n)`` is a *hard* limit — a duel strategy configured for two
       players has no third player, so the box is hidden and its value cleared.
-    - ``set_available_players(n)`` is *advisory* — it greys the label for players who
+    - ``set_available_players(n)`` is *advisory* — it grays the label for players who
       are not currently connected, and nothing else. It never clears a value and
       never blocks a click, because bots are authored offline: hiding or unchecking
       P3/P4 because only two clients happen to be running would silently rewrite a
@@ -56,7 +56,7 @@ class PlayerListWidget(QWidget):
             chk.setChecked(i < self._max_players and (i + 1) in value)
 
     def set_available_players(self, n: int) -> None:
-        """Grey the label of every player past *n* as not currently connected.
+        """Gray the label of every player past *n* as not currently connected.
 
         Advisory: the box stays clickable and its value untouched, so a four-client
         bot can still be edited with two clients running.
@@ -149,7 +149,7 @@ class PlayerSlotWidget(QWidget):
             btn.blockSignals(False)
 
     def set_available_players(self, n: int) -> None:
-        """Grey the label of every player past *n*. Advisory only; see PlayerListWidget."""
+        """Gray the label of every player past *n*. Advisory only; see PlayerListWidget."""
         self._available = n
         self._apply_availability()
 

@@ -99,7 +99,7 @@ def is_valid_title(title: str) -> bool:
 
 
 def page_title(value: str) -> str | None:
-    """Normalise *value* to a bare page title, or None if it is not usable.
+    """Normalize *value* to a bare page title, or None if it is not usable.
 
     Accepts either a title already (``Creature:Lost Soul``) or a full wiki
     URL, so a user can paste whatever the browser gave them and the stored form is

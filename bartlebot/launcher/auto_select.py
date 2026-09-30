@@ -50,7 +50,7 @@ one's hooks jump into — corrupting live hooks in the game process. ``ClientMan
 registers a ``Client`` and installs its hooks the moment the window appears (see
 ``_start_activation``), so by the time the tree is readable there is always one to borrow.
 
-If the tree never becomes readable, the driver falls back to the old blind behaviour
+If the tree never becomes readable, the driver falls back to the old blind behavior
 rather than failing the launch.
 
 Keystrokes go out via ``PostMessageW``, not ``SendMessageW``: it is fire-and-forget, so it
@@ -347,7 +347,7 @@ async def _drive_by_sight(
                 )
                 enters += 1  # log once, then keep waiting
         elif not seen_character_select:
-            # A loading screen, or something we do not recognise. Space rather than Enter:
+            # A loading screen, or something we do not recognize. Space rather than Enter:
             # both dismiss a loading screen, but Space is far less likely to confirm a
             # dialog we have not identified.
             await _try_press(expected_title, _VK_SPACE, lambda: client)
@@ -433,7 +433,7 @@ async def clean_up_after_auto_select(client, *, remember_realm: bool = False) ->
     *remember_realm* turns the game's Remember Realm option on while that settings window
     is up, between the two ESC loops — the one moment per launch it is already open, so
     the player is not seen closing settings and reopening it a moment later. The caller
-    passes it when a favourite realm is set, since that is the only time the option
+    passes it when a favorite realm is set, since that is the only time the option
     changes anything a bot relies on.
 
     Best-effort throughout: a leftover window is cosmetic, and nothing here should be able
@@ -501,7 +501,7 @@ async def drive_client_in(
     returned; cleanup failures do not change it.
 
     *remember_realm* is handed to the cleanup, which turns the game's Remember Realm
-    option on while it has the settings window open — passed when a favourite realm is
+    option on while it has the settings window open — passed when a favorite realm is
     set, since that is the only time the option changes anything a bot relies on.
     """
     reached = await auto_select_character(expected_title, is_hooked, get_client, timeout=timeout)

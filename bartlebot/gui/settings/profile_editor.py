@@ -5,7 +5,7 @@ the worst place for it to have survived. This is where a profile's membership is
 account than the read-only cards behind it: a ``QListWidget`` of display strings, a pair
 of ↑/↓ buttons, and an ``Add ▾`` menu that repopulated itself on every open and offered
 "(no more accounts)" once it ran dry. A user picked accounts here and then went back to a
-screen where those same accounts carry a colour, a roster and a fit verdict, with nothing
+screen where those same accounts carry a color, a roster and a fit verdict, with nothing
 teaching them to read one surface from the other.
 
 It draws the same ``AccountCard``s in the same ``CardColumn`` now, in ``CardMode.MEMBER``:
@@ -50,7 +50,7 @@ WHAT STAYED A COMBO BOX
 
 The resolution. It is not card-shaped, ``PickerPopup`` is multi-select to its bones, and
 the Game tab's global resolution is the same control -- so making this one a popup would
-either split the two or drag a second surface along. The greyed-out entries and the
+either split the two or drag a second surface along. The grayed-out entries and the
 sentence beneath it say the same things they always did, judged against this profile's own
 account count, which is what makes a fourth account visibly cost a resolution tier.
 
@@ -130,11 +130,11 @@ def mark_unfittable_resolutions(
     widget: QWidget,
     live_area: tuple[int, int] | None = None,
 ) -> None:
-    """Grey out every entry in *combo* that *client_count* clients could not fit at.
+    """Gray out every entry in *combo* that *client_count* clients could not fit at.
 
     Disabled and explained rather than dropped from the list, which is the same rule the
     launch surfaces follow: a user who cannot find 1920x1080 in the list learns nothing,
-    while one who sees it greyed out learns that their screen is the reason and that
+    while one who sees it grayed out learns that their screen is the reason and that
     fewer clients would bring it back.
 
     The item's own resolution is read from its ``userData``, so the "Use global setting"
@@ -195,12 +195,12 @@ def roster_label(count: int) -> str:
 
 
 def account_sections(accounts: list[dict], rosters: dict[str, list[dict]]) -> list[Section]:
-    """The picker's rows: every stored account, coloured and counted.
+    """The picker's rows: every stored account, colored and counted.
 
-    The dot is the account's own colour -- the same one striping its card in the column
+    The dot is the account's own color -- the same one striping its card in the column
     below and outlining its pill on every profile card elsewhere -- so the popup, the
     column and the cards behind the dialog are all naming accounts in one language.
-    Resolved against the whole list, because a colour is only distinct with respect to
+    Resolved against the whole list, because a color is only distinct with respect to
     the others (see gui/account_accent.py).
 
     Nothing is dimmed. ``dim`` means present-but-empty, and an account with no known

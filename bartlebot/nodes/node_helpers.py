@@ -192,16 +192,16 @@ async def identify_modal(client) -> str | None:
     key constants to compare against (INSTANCE_EXIT, FRIEND_BUSY, …) and for how the match
     survives markup, substitution slots, and all seven locales.
 
-    None means *no recognised dialog* — either nothing is showing, or something the
+    None means *no recognized dialog* — either nothing is showing, or something the
     snapshot has not seen. The two are deliberately not distinguished: callers should have
     a button-based fallback for both, so a caption we do not know degrades to the previous
-    behaviour rather than hanging. Use modal_showing() to tell them apart when it matters.
+    behavior rather than hanging. Use modal_showing() to tell them apart when it matters.
     """
     return dialog_captions.identify_caption(await get_text_by_path(client, MESSAGE_BOX_CAPTION_PATH))
 
 
 async def modal_showing(client) -> bool:
-    """Return True when any modal message box is on screen, recognised or not.
+    """Return True when any modal message box is on screen, recognized or not.
 
     Reads the caption rather than the modal window itself: a window's is_visible() flag is
     its own and ignores its parents (see is_visible_by_path), whereas CaptionText only
@@ -239,10 +239,10 @@ async def resolve_modal(client) -> ModalOutcome:
       * a refusal (dialog_captions.REFUSALS) — dismissed, and returned, so the node can
         fail immediately: the game has said no, and waiting out a timeout only delays the
         same answer while reporting it as the wrong cause;
-      * nothing recognised — falls back to the button layout, which still separates the
+      * nothing recognized — falls back to the button layout, which still separates the
         two kinds: a center button offers a way to proceed, so it is confirmed; a right
         button with no center offers only a way out, so it is dismissed and reported as
-        dialog_captions.UNRECOGNISED_REFUSAL. Without that second half a dialog reworded
+        dialog_captions.UNRECOGNIZED_REFUSAL. Without that second half a dialog reworded
         by a game patch would stop failing fast and start timing out instead.
 
     Refusals are dismissed with the right button where it exists and the center otherwise:
@@ -257,7 +257,7 @@ async def resolve_modal(client) -> ModalOutcome:
             return ModalOutcome(answered=True)
         if await is_visible_by_path(client, MESSAGE_BOX_RIGHT):
             await click_by_path(client, MESSAGE_BOX_RIGHT)
-            return ModalOutcome(answered=True, refusal=dialog_captions.UNRECOGNISED_REFUSAL)
+            return ModalOutcome(answered=True, refusal=dialog_captions.UNRECOGNIZED_REFUSAL)
         return _NOTHING
 
     if key in dialog_captions.CONFIRM_TO_PROCEED:
@@ -271,7 +271,7 @@ async def resolve_modal(client) -> ModalOutcome:
             await click_by_path(client, MESSAGE_BOX_CENTER)
         return ModalOutcome(answered=True, refusal=key)
 
-    # Recognised, but somebody else's dialog — leave it alone rather than click blind.
+    # Recognized, but somebody else's dialog — leave it alone rather than click blind.
     logger.debug("resolve_modal: leaving %s to its own handler", key)
     return _NOTHING
 
@@ -669,12 +669,12 @@ async def take_turns(
     that has begun. It returns truthy when that got as far as it needed to. Making it a
     callback rather than a fixed sequence is the point: the release moment is exactly what
     varies between the nodes that need this, and getting it wrong in either direction
-    either serialises nothing useful or holds the object long after it is free.
+    either serializes nothing useful or holds the object long after it is free.
 
     `park_after_turn` sends each client back to `reset_xyz` once it is done, so the object
     is genuinely free for the next one. Leave it on for interactions the client walks away
     from — standing in range is enough to swallow the next client's keypress, so a client
-    left at the object undoes the serialisation for everyone after it. Turn it off only
+    left at the object undoes the serialization for everyone after it. Turn it off only
     when the interaction removes the client itself, as a zone transition does: there the
     teleport lands on a client that is mid-loading-screen or already elsewhere.
 
@@ -884,7 +884,7 @@ def zone_matches(actual: str, pattern: str) -> bool:
     If pattern contains glob metacharacters (* ? [), fnmatch is used so callers
     can write patterns like "WizardCity/*" to match any WizardCity sub-zone.
     Plain strings (no metacharacters) fall through to exact equality, preserving
-    the previous behaviour for all existing bot files.
+    the previous behavior for all existing bot files.
 
     A malformed glob does not raise: fnmatch treats an unbalanced bracket as a
     literal character, so "[unclosed" matches the zone of that exact name and

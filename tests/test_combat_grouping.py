@@ -1,7 +1,7 @@
 """Tests for bartlebot.combat_grouping.
 
 Pure functions over strategy models — no QApplication, same as the
-combat_warnings tests next door.  The behaviour under test is what the combat
+combat_warnings tests next door.  The behavior under test is what the combat
 sidebar draws and what "Applies to…" does, expressed without any widgets.
 """
 
@@ -195,7 +195,7 @@ def test_a_fight_is_named_by_its_label():
     assert state_label(_state("state_1", "Defeat Balaur")) == "Defeat Balaur"
 
 
-def test_an_unlabelled_state_falls_back_to_its_id():
+def test_an_unlabeled_state_falls_back_to_its_id():
     assert state_label(_state("state_7")) == "state_7"
 
 

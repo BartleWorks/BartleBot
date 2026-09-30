@@ -310,7 +310,7 @@ def test_the_crumb_verbs_ask_the_controller(doc):
     assert asked == [("save", False), "save as", "revert"]
 
 
-def test_a_region_focused_in_a_definition_is_a_final_segment_in_its_colour(doc):
+def test_a_region_focused_in_a_definition_is_a_final_segment_in_its_color(doc):
     doc.enter_focus_mode("rg")
 
     bar = doc.crumb_bar

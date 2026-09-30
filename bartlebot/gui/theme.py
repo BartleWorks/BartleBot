@@ -65,7 +65,7 @@ class _Theme:
     text_muted: str = "#6b6b6b"  # secondary text: labels, hints, descriptions
     text_subtle: str = "#555555"  # sub-headers, third-level text
     # Disabled controls.  Deliberately dimmer than ``text_muted``: that token is
-    # the colour of *enabled* secondary text, so reusing it for the disabled
+    # the color of *enabled* secondary text, so reusing it for the disabled
     # palette group made a disabled button indistinguishable from an enabled one
     # carrying a hint label.  Pairing it with ``surface_disabled`` means disabled
     # reads as a change of shape (flatter, recessed), not just a change of shade.
@@ -121,7 +121,7 @@ class _Theme:
     pill_text: str = "#ffffff"
     # A true neutral: R=G=B, so it cannot be mistaken for a hue that means something.
     # A bot card's version pill uses it, sitting inches from the blue Rewards pill —
-    # the blue-grey it borrowed from ``chip_neutral_bg`` read as a third tag colour.
+    # the blue-gray it borrowed from ``chip_neutral_bg`` read as a third tag color.
     # 5.3:1 against ``pill_text``.
     pill_neutral_bg: str = "#6b6b6b"
     # Activities tags. Purple rather than ``warning``: a tag pill is led by a gold-ringed
@@ -140,7 +140,7 @@ class _Theme:
     chip_success_bg: str = "#2e7d32"  # SUCCESS / TRUE — dark green, readable against white text
     chip_failure_bg: str = "#b71c1c"  # FAILURE / FALSE — dark red, readable against white text
     chip_failure_loop_bg: str = "#7f0000"  # FAILURE / FALSE self-loop — darker red for retry-in-place edges
-    chip_neutral_bg: str = "#546e7a"  # any other return value — blue-grey
+    chip_neutral_bg: str = "#546e7a"  # any other return value — blue-gray
     chip_text: str = "#ffffff"  # label text on all chip variants
 
     # ------------------------------------------------------------------
@@ -177,7 +177,7 @@ class _Theme:
     # Account palette (numbered — one hue per account, on the launch cards)
     #
     # Its own tokens rather than a second use of the region palette: regions are
-    # user-customizable, and recolouring a canvas region must not silently move
+    # user-customizable, and recoloring a canvas region must not silently move
     # which account is blue.  Hues are only ever drawn as a border, a stripe or a
     # low-alpha tint, never under text, so they can stay vivid enough to tell
     # apart at pill size on both the light and the dark surface.
@@ -199,10 +199,10 @@ class _Theme:
     # ------------------------------------------------------------------
     # Combat DSL syntax (gui/widgets/dsl_edit.py)
     #
-    # VS Code's Light+ and Dark+ hues, so the colours mean what they mean in the
+    # VS Code's Light+ and Dark+ hues, so the colors mean what they mean in the
     # editor most people already know. The light type and number hues are darkened:
     # Light+'s own miss 4.5:1 on ``surface``, which a read-only DSL box is drawn on.
-    # ``test_dsl_syntax_colours_are_legible`` holds both themes to that.
+    # ``test_dsl_syntax_colors_are_legible`` holds both themes to that.
     # ------------------------------------------------------------------
     syntax_keyword: str = "#0000ff"  # pass, willcast, any, select, gambit
     syntax_type: str = "#1b6a80"  # spell types, condition attributes, hanging kinds
@@ -433,7 +433,7 @@ class _Theme:
         """
         return f"""{self._combo_arrow_qss()}
             /* ── Text inputs and dropdowns ──
-               Fusion draws an input's frame in a colour it derives itself, as
+               Fusion draws an input's frame in a color it derives itself, as
                ``palette.window().darker(140)`` — so ``border`` was a dead token for
                every field in the app, and a custom theme changing it moved nothing.
                In the light theme that derivation lands within a shade of the token by

@@ -76,7 +76,7 @@ from bartlebot.nodes.timing import (
 
 logger = logging.getLogger(__name__)
 
-# Serialises form_group across its three callers: the relog node, pre-run setup, and
+# Serializes form_group across its three callers: the relog node, pre-run setup, and
 # post-recovery regrouping.
 #
 # Without this, two calls can overlap and each elect a different leader, producing two
@@ -437,7 +437,7 @@ async def read_group_states(clients: list) -> list[GroupState]:
     The win is large because almost all of the elapsed time is asyncio.sleep, not blocking
     memory reads: the window opening, the Group page loading, and the retry pauses inside
     close_social_window. Those overlap perfectly; only the ReadProcessMemory calls
-    serialise on the loop thread.
+    serialize on the loop thread.
 
     No return_exceptions is needed — read_group_state already absorbs every failure and
     answers a blank state, so one unreadable client cannot cancel the survey for the rest.
@@ -603,7 +603,7 @@ async def form_group(
     Returns a GroupResult instead of raising. Callers decide what a partial failure means:
     the node fails the run, the automatic hooks log and carry on.
 
-    Serialised against other form_group calls — see _form_group_lock. Callers may await
+    Serialized against other form_group calls — see _form_group_lock. Callers may await
     this concurrently; the second simply waits and then finds the group already built.
     """
 
@@ -635,7 +635,7 @@ def _in_leader_group(state: GroupState, leader_state: GroupState) -> bool:
     """Whether this client is demonstrably in the leader's group, not merely in *a* group.
 
     Falls back to the plain membership flag when either roster is unreadable, which is the
-    behaviour this had before rosters existed: assume a grouped client is in our group.
+    behavior this had before rosters existed: assume a grouped client is in our group.
     Guessing the other way would tear down a working group whenever a roster read failed.
     """
     if not state.grouped:

@@ -56,7 +56,7 @@ SCHEMA = [
 # ---------------------------------------------------------------------------
 
 
-def test_the_required_marker_colour_is_rebuilt(qapp, theme):
+def test_the_required_marker_color_is_rebuilt(qapp, theme):
     """The marker is THEME.error inside rich text, not a stylesheet — a restyle that
     only re-set stylesheets would leave the asterisk in the old palette."""
     theme("light")
@@ -73,7 +73,7 @@ def test_the_required_marker_colour_is_rebuilt(qapp, theme):
     assert light_error not in label.text()
 
 
-def test_field_labels_recolour(qapp, theme):
+def test_field_labels_recolor(qapp, theme):
     theme("light")
     form = _DynamicParamForm()
     form.load_schema(SCHEMA, {})
@@ -86,7 +86,7 @@ def test_field_labels_recolour(qapp, theme):
 
 def test_the_second_field_keeps_its_top_margin(qapp, theme):
     """The margin distinguishes the first field from the rest, and is part of the
-    same string as the colour — so a careless restyle drops the spacing."""
+    same string as the color — so a careless restyle drops the spacing."""
     theme("light")
     form = _DynamicParamForm()
     form.load_schema(SCHEMA, {})
@@ -98,7 +98,7 @@ def test_the_second_field_keeps_its_top_margin(qapp, theme):
     assert "margin-top: 8px" in second
 
 
-def test_the_default_hint_recolours(qapp, theme):
+def test_the_default_hint_recolors(qapp, theme):
     theme("light")
     form = _DynamicParamForm()
     form.load_schema(SCHEMA, {})
@@ -126,7 +126,7 @@ def test_the_empty_required_border_is_re_derived(qapp, theme):
     assert light_error not in zone.styleSheet()
 
 
-def test_a_placeholder_form_recolours(qapp, theme):
+def test_a_placeholder_form_recolors(qapp, theme):
     theme("light")
     form = _DynamicParamForm()
     form.load_schema([], {})
@@ -142,7 +142,7 @@ def test_a_placeholder_form_recolours(qapp, theme):
 # ---------------------------------------------------------------------------
 
 
-def test_the_flag_widget_recolours(qapp, theme):
+def test_the_flag_widget_recolors(qapp, theme):
     theme("light")
     w = _FlagConditionsWidget()
     before = w.styleSheet()
@@ -181,8 +181,8 @@ def _panel(theme, mode: str = "light") -> "_ParamPanel":
     return _ParamPanel()
 
 
-def test_the_node_help_button_recolours(qapp, theme):
-    """The '?' beside the node type dropdown: three THEME colours in one sheet set
+def test_the_node_help_button_recolors(qapp, theme):
+    """The '?' beside the node type dropdown: three THEME colors in one sheet set
     once in __init__, which is what kept it in the old palette across a switch."""
     panel = _panel(theme)
     before = panel._node_help_btn.styleSheet()
@@ -195,8 +195,8 @@ def test_the_node_help_button_recolours(qapp, theme):
     assert light_accent not in panel._node_help_btn.styleSheet()
 
 
-def test_the_node_type_category_headers_recolour(qapp, theme):
-    """These carry their colour as a model item foreground, not a stylesheet, so
+def test_the_node_type_category_headers_recolor(qapp, theme):
+    """These carry their color as a model item foreground, not a stylesheet, so
     they need re-setting by hand rather than falling out of a sheet rewrite."""
     panel = _panel(theme)
     assert panel._node_type_headers, "the dropdown should have category headers"
@@ -209,7 +209,7 @@ def test_the_node_type_category_headers_recolour(qapp, theme):
     assert panel._node_type_headers[0].foreground().color() == QColor(THEME.text_muted)
 
 
-def test_the_idle_page_and_section_titles_recolour(qapp, theme):
+def test_the_idle_page_and_section_titles_recolor(qapp, theme):
     panel = _panel(theme)
     before = [
         panel._idle_lbl.styleSheet(),
@@ -231,7 +231,7 @@ def test_the_idle_page_and_section_titles_recolour(qapp, theme):
 
 
 def test_the_connection_rows_are_rebuilt_after_a_switch(qapp, theme):
-    """Rows are built per selection and hold a chip colour and an accent link, so
+    """Rows are built per selection and hold a chip color and an accent link, so
     the restyle replays the build — on the next event-loop turn, because it deletes
     the rows it replaces."""
     panel = _panel(theme)

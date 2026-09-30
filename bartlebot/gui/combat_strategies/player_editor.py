@@ -152,10 +152,10 @@ class PlayerStrategyEditor(QWidget):
         self.changed.emit()
 
     def _update_dsl_validation(self) -> None:
-        """Re-parse the DSL and reflect it as a border colour, a line of text and underlines.
+        """Re-parse the DSL and reflect it as a border color, a line of text and underlines.
 
         A parse error takes the line; otherwise it lists the spell names no card has.
-        Only the error colours the border — an unknown name still runs.
+        Only the error colors the border — an unknown name still runs.
         """
         dsl = self._dsl_edit.toPlainText()
         error = dsl_error(dsl)

@@ -748,7 +748,7 @@ class BotMachine:
             try:
                 state_def = self._state_map.get(self.state, {})
             except AttributeError:
-                continue  # self.state not yet initialised
+                continue  # self.state not yet initialized
             if state_def.get("node_type") == "handle_combat":
                 continue
 

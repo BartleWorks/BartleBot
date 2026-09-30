@@ -15,7 +15,7 @@ offers. So 400x300 *renders* perfectly well paired with Micro and is broken at t
 default UI size, and the two must never be independently selectable.
 
 A rendering HUD is not the same as a reachable one, though. The interact prompt is
-centerd and the compass and teleporter buttons are anchored to an edge, so on a narrow
+centered and the compass and teleporter buttons are anchored to an edge, so on a narrow
 client the prompt covers them -- and those buttons are clicked by coordinate, so a
 covered one swallows the click. Narrowness therefore costs ladder steps off the render
 floor: none at 16:10 or wider, one at 4:3, two below that. It is why 400x300 is not
@@ -231,7 +231,7 @@ WIDESCREEN_RATIO: tuple[int, int] = ASPECT_BAND_STEPS[0][0]
 def scale_steps(resolution: tuple[int, int]) -> int:
     """How many ladder steps below its render floor *resolution* has to run.
 
-    Zero for anything 16:10 or wider, where the centerd prompt clears the edge-anchored
+    Zero for anything 16:10 or wider, where the centered prompt clears the edge-anchored
     buttons on its own and the render floor is the only thing that binds.
     """
     width, height = resolution
@@ -242,7 +242,7 @@ def scale_steps(resolution: tuple[int, int]) -> int:
 
 
 def is_widescreen(resolution: tuple[int, int]) -> bool:
-    """Whether *resolution* is wide enough for the centerd prompt to clear the HUD edges."""
+    """Whether *resolution* is wide enough for the centered prompt to clear the HUD edges."""
     return scale_steps(resolution) == 0
 
 
@@ -252,7 +252,7 @@ def widescreen_form(resolution: tuple[int, int]) -> tuple[int, int]:
     Widening rather than shortening is what lets this be offered without re-driving every
     control in a live client. A HUD cannot be broken by being handed more room on one axis
     and the same on the other, so the 16:9 form of a rung inherits the verification of that
-    rung's render floor -- and, by moving the edge-anchored buttons away from the centerd
+    rung's render floor -- and, by moving the edge-anchored buttons away from the centered
     prompt, pays no narrowness steps rather than having to clear a higher floor. Holding
     the *width* and deriving the height instead (400x300 -> 400x225) would drop below the
     render floor, which is the broken pairing the ladder exists to prevent.
@@ -360,7 +360,7 @@ def ui_size_for(preferred_value: int | None, resolution: tuple[int, int]) -> int
     allowed_index = order[allowed_value] if allowed_value is not None else order[allowed.value]
     preferred_index = order.get(preferred_value)
     if preferred_index is None:
-        # A value outside the enum: the file is not saying anything that can be honoured,
+        # A value outside the enum: the file is not saying anything that can be honored,
         # so take the ceiling rather than pass an unknown number back to the game.
         return allowed_value if allowed_value is not None else allowed.value
     if preferred_index <= allowed_index:
@@ -594,7 +594,7 @@ def fit_details(
 
     An entry that cannot launch is shown disabled carrying this rather than hidden: a
     profile that has vanished leaves the user hunting for it with no indication of why,
-    which is worse than a greyed row that says what would bring it back.
+    which is worse than a grayed row that says what would bring it back.
     """
     if fits(resolution, client_count, budget, dpr):
         return None

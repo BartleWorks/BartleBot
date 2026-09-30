@@ -148,7 +148,7 @@ class EdgeItem(QGraphicsPathItem):
     def set_when(self, when: str | None) -> None:
         """Change the return value this edge fires on and reroute it.
 
-        ``when`` picks the source port, the pen colour and, for a backward edge,
+        ``when`` picks the source port, the pen color and, for a backward edge,
         whether it routes above or below the node row — so it cannot be changed
         on the model alone.
         """

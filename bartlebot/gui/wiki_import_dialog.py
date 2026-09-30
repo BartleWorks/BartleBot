@@ -235,7 +235,7 @@ class WikiImportDialog(ThemedMixin, QDialog):
         layout.addLayout(url_row)
 
         # Status
-        # The colour says whether the last message was an error, so the flag is what
+        # The color says whether the last message was an error, so the flag is what
         # apply_theme_styles re-derives from — not the stylesheet already on the label.
         self._status_error = False
         self._status_lbl = QLabel(f"Enter a {_WIKI_PREFIX}Creature:… URL and click Fetch.")
@@ -322,7 +322,7 @@ class WikiImportDialog(ThemedMixin, QDialog):
     def _on_fetch_done(self, drops: dict[str, list[str]]) -> None:
         self._btn_fetch.setEnabled(True)
         if not drops:
-            self._set_status("No recognisable item drops found on this page.", error=True)
+            self._set_status("No recognizable item drops found on this page.", error=True)
             return
         total = sum(len(v) for v in drops.values())
         cats = len(drops)

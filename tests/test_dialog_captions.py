@@ -77,7 +77,7 @@ def test_identifies_a_templated_caption_after_substitution():
 
 @pytest.mark.parametrize("text", ["", None, "   ", "A dialog the snapshot has never seen"])
 def test_unknown_and_empty_captions_return_none(text):
-    """None means 'nothing recognised', so callers fall back rather than guess."""
+    """None means 'nothing recognized', so callers fall back rather than guess."""
     assert dc.identify_caption(text) is None
 
 

@@ -57,7 +57,7 @@ TWO PLACES A STRATEGY CAN LIVE (#118)
 A strategy belongs to the library, which every bot and profile sees, or to one
 combat profile. Users who don't realise there are two places struggle, so the
 difference is drawn everywhere it can be: the profile's section is headed with its
-full name, each of its cards wears a pill with that name in its own colour (not the
+full name, each of its cards wears a pill with that name in its own color (not the
 error red), an empty section says what it is for, and the About pane says "In
 profile 'Solo' only" beside **Add to library**. Creating locally and publishing
 separately is the shape design tools settled on — Figma's components, Illustrator's
@@ -207,10 +207,10 @@ ADD_TO_LIBRARY_TEXT = "Add to library"
 #: honest verb is "revert" — see :class:`bartlebot.strategy_store.Origin`.
 _REVERT_TEXT = "Revert to default"
 _DELETE_TEXT = "Delete"
-#: Why Delete is greyed out on an unedited built-in: removing only touches the user
+#: Why Delete is grayed out on an unedited built-in: removing only touches the user
 #: root, so the entry would be back on the next open (#124).
 _BUILT_IN_DELETE_TIP = "Built-in strategies can't be deleted. Duplicate one to make a copy of your own."
-#: Why New and Duplicate are greyed out in the profile editor before a profile exists.
+#: Why New and Duplicate are grayed out in the profile editor before a profile exists.
 _NO_PROFILE_TIP = "Create a combat profile for this bot first"
 
 #: How far a tab's contents sit inside the tab pane, and how far *each* pane sits from
@@ -1158,7 +1158,7 @@ class _KindPage(QWidget):
             self._editor.set_pcs_list(self._ws.players_for_duel(self._selected_id))
 
     def set_player_color_keys(self, keys: list[int | None], labels: list[str] | None = None) -> None:
-        """Colour the assignment cards' slot pills. Duel tab only; a no-op elsewhere."""
+        """Color the assignment cards' slot pills. Duel tab only; a no-op elsewhere."""
         if self._kind is StrategyKind.DUEL:
             self._editor.set_player_color_keys(keys, labels)
 
@@ -1245,7 +1245,7 @@ class CombatStrategyDialog(QDialog):
             self._pages[k] = page
             self._tabs.addTab(page, KIND_LABELS[k])
         # The Duel tab's pencil opens a Player Strategy on the Player tab; without one
-        # (Pick) it has nowhere to go, so it is greyed rather than a dead button.
+        # (Pick) it has nowhere to go, so it is grayed rather than a dead button.
         duel = self._pages.get(StrategyKind.DUEL)
         if duel is not None:
             duel.editor.set_can_open_pcs(StrategyKind.PLAYER in self._pages)
@@ -1256,7 +1256,7 @@ class CombatStrategyDialog(QDialog):
         # caller rather than read here: this dialog knows nothing about clients, and the
         # Combat tab that opens it already has the ``ClientManager`` in reach. Empty is
         # the normal case — a duel is usually authored with nothing running — and the
-        # pills simply go uncoloured. See gui/widgets/player_pills.py.
+        # pills simply go uncolored. See gui/widgets/player_pills.py.
         if StrategyKind.DUEL in self._pages:
             self._pages[StrategyKind.DUEL].set_player_color_keys(player_color_keys or [], player_account_labels or [])
 

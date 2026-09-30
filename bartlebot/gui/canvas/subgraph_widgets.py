@@ -57,7 +57,7 @@ class CrumbMode(Enum):
     """The three things the crumb bar can be saying.
 
     ``FOCUS`` is Focus Mode on a region of a bot: a view filter, in the region's own
-    colour, with a single-line frame. ``VIEW`` is a subgraph node's body in Run mode,
+    color, with a single-line frame. ``VIEW`` is a subgraph node's body in Run mode,
     read-only. ``DEFINITION`` is a definition open as a document, with the verbs that
     end the visit. The last two wear the accent, the link glyph and a double-line
     frame, which the call node's double side bars echo: double means shared.
@@ -69,7 +69,7 @@ class CrumbMode(Enum):
 
 
 class _LinkGlyph(QWidget):
-    """The two overlapping squares of a subgraph node's link badge, in the crumb's text colour.
+    """The two overlapping squares of a subgraph node's link badge, in the crumb's text color.
 
     Read from THEME at paint time, so it holds nothing a theme switch could stale.
     """
@@ -171,7 +171,7 @@ class CrumbBar(ThemedMixin, QWidget):
         can_revert: bool = False,
         close_tip: str = "Step out",
     ) -> None:
-        """Draw ``segments`` in ``mode``. ``color_slot`` is the region colour a ``FOCUS`` bar is painted in."""
+        """Draw ``segments`` in ``mode``. ``color_slot`` is the region color a ``FOCUS`` bar is painted in."""
         self._mode = mode
         self._color_slot = color_slot if mode == CrumbMode.FOCUS else None
         self._segments = list(segments)
@@ -252,14 +252,14 @@ class CrumbBar(ThemedMixin, QWidget):
         return self._close_btn
 
     def background(self) -> QColor:
-        """The bar's own colour: the focused region's, or the accent for a subgraph."""
+        """The bar's own color: the focused region's, or the accent for a subgraph."""
         if self._color_slot is not None:
             return THEME.region_color(self._color_slot)
         return THEME.qcolor("accent")
 
     def apply_theme_styles(self) -> None:
         bg = self.background()
-        # An edge in the canvas's own text colour, not a self-coloured one: the bar floats
+        # An edge in the canvas's own text color, not a self-colored one: the bar floats
         # over the graph, and an Entry/Exit pill in the same accent otherwise merges into it.
         edge = canvas_edge_color()
         edge_rgba = f"rgba({edge.red()}, {edge.green()}, {edge.blue()}, {edge.alpha()})"
@@ -279,7 +279,7 @@ class CrumbBar(ThemedMixin, QWidget):
             slot = self._segments[i].region_color
             if slot is not None and self._mode != CrumbMode.FOCUS:
                 # A region focused inside a subgraph: its segment wears the region's
-                # colour, the one thing on the bar that says a filter is on as well.
+                # color, the one thing on the bar that says a filter is on as well.
                 region = THEME.region_color(slot).name()
                 set_style_sheet(
                     seg,
@@ -303,10 +303,10 @@ class CrumbBar(ThemedMixin, QWidget):
 class ViewFrame(ThemedMixin, QWidget):
     """The border round the whole viewport while the canvas is anywhere but the plain bot.
 
-    Single, in a region's colour, for Focus Mode; double, in the accent, for a
+    Single, in a region's color, for Focus Mode; double, in the accent, for a
     subgraph -- its body viewed in Run mode, or its definition open. Transparent to
     the mouse, so it never eats a click on the canvas. It holds the palette slot, not
-    the colour, so a theme switch repaints it.
+    the color, so a theme switch repaints it.
     """
 
     def __init__(self, parent: QWidget | None = None) -> None:

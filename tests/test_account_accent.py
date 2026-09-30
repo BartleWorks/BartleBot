@@ -1,9 +1,9 @@
-"""Tests for the account colour mapping.
+"""Tests for the account color mapping.
 
 What matters about this mapping is not which hue an account gets — nobody can name
-that — but that it is the *same* hue everywhere and every time. A colour that moves
+that — but that it is the *same* hue everywhere and every time. A color that moves
 between restarts, or that differs between a profile pill and the account card it is
-supposed to point at, is worse than no colour at all: it invites a match that is wrong.
+supposed to point at, is worse than no color at all: it invites a match that is wrong.
 """
 
 from bartlebot.gui import account_accent
@@ -27,7 +27,7 @@ def test_the_same_username_always_gets_the_same_slot():
 
 
 def test_the_derived_slot_is_stable_across_releases():
-    """Pinned deliberately. Changing the derivation is allowed, but it recolours every
+    """Pinned deliberately. Changing the derivation is allowed, but it recolors every
     account of every existing user, so it should be a decision rather than a side effect."""
     assert account_color_key("someone@example.com") == 1
 
@@ -43,13 +43,13 @@ def test_the_palette_is_actually_used():
 # ---------------------------------------------------------------------------
 
 
-def test_a_full_fleet_gets_a_colour_each():
+def test_a_full_fleet_gets_a_color_each():
     """The bug this function exists for: derived slots collide like birthdays, and six
-    accounts dropped independently into six slots averaged under four distinct colours.
+    accounts dropped independently into six slots averaged under four distinct colors.
     A palette that repeats is worse than no palette — the repeat invites a wrong match."""
     for count in range(1, ACCOUNT_PALETTE_SIZE + 1):
         keys = account_color_keys(_accounts(count))
-        assert len(set(keys.values())) == count, f"{count} accounts did not get {count} colours"
+        assert len(set(keys.values())) == count, f"{count} accounts did not get {count} colors"
 
 
 def test_every_account_gets_a_slot():
@@ -59,7 +59,7 @@ def test_every_account_gets_a_slot():
 
 
 def test_more_accounts_than_slots_repeat_as_evenly_as_possible():
-    """One colour doubled rather than one colour tripled."""
+    """One color doubled rather than one color tripled."""
     keys = account_color_keys(_accounts(ACCOUNT_PALETTE_SIZE + 2))
     counts = {slot: list(keys.values()).count(slot) for slot in set(keys.values())}
     assert set(counts.values()) <= {1, 2}
@@ -68,7 +68,7 @@ def test_more_accounts_than_slots_repeat_as_evenly_as_possible():
 
 def test_reordering_the_accounts_repaints_nothing():
     """Accounts can be dragged into any order in Settings. That is a presentational act
-    and must not recolour the launch screen, which is why assignment sorts usernames."""
+    and must not recolor the launch screen, which is why assignment sorts usernames."""
     accounts = _accounts(6)
     assert account_color_keys(accounts) == account_color_keys(list(reversed(accounts)))
 
@@ -79,9 +79,9 @@ def _uncontested(accounts: list[dict]) -> set[str]:
     return {a["username"] for a, p in zip(accounts, prefs) if prefs.count(p) == 1}
 
 
-def test_an_uncontested_preference_is_always_honoured():
-    """The guarantee that makes the colours stable: an account moves only when something
-    else wants its slot, so adding or deleting one recolours nothing it does not collide
+def test_an_uncontested_preference_is_always_honored():
+    """The guarantee that makes the colors stable: an account moves only when something
+    else wants its slot, so adding or deleting one recolors nothing it does not collide
     with. It fails without the second pass — a displaced account probing forward takes a
     slot some account further down the list was about to derive, and displaces it too."""
     for count in range(1, ACCOUNT_PALETTE_SIZE + 3):
@@ -103,7 +103,7 @@ def test_adding_an_account_leaves_the_ones_it_does_not_collide_with_alone():
 
 
 def test_a_pin_outranks_a_derived_preference():
-    """An account that says which colour it is beats one that merely wanted the slot."""
+    """An account that says which color it is beats one that merely wanted the slot."""
     wanted = account_color_key("someone@example.com")
     accounts = [{"username": "pinner@example.com", "color": wanted}, {"username": "someone@example.com"}]
     keys = account_color_keys(accounts)
@@ -111,9 +111,9 @@ def test_a_pin_outranks_a_derived_preference():
     assert keys["someone@example.com"] != wanted
 
 
-def test_pinning_a_colour_repaints_nothing_it_does_not_collide_with():
+def test_pinning_a_color_repaints_nothing_it_does_not_collide_with():
     """The same guarantee as adding an account, now that a picker can trigger it.
-    A user correcting one account's colour must not find the rest of the fleet rearranged
+    A user correcting one account's color must not find the rest of the fleet rearranged
     underneath them — only the account whose slot was actually taken may move."""
     accounts = _accounts(5)
     before = account_color_keys(accounts)
@@ -145,7 +145,7 @@ def test_pinning_onto_a_taken_slot_moves_only_the_account_that_held_it():
     assert all(after[u] == before[u] for u in settled)
 
 
-def test_two_accounts_may_pin_the_same_colour():
+def test_two_accounts_may_pin_the_same_color():
     """A pin is the user saying what they want. Nothing here overrules it — if two
     accounts are told to be blue, they are blue."""
     accounts = [{"username": "a@example.com", "color": 2}, {"username": "b@example.com", "color": 2}]
@@ -156,11 +156,11 @@ def test_an_empty_list_assigns_nothing():
     assert account_color_keys([]) == {}
 
 
-def test_an_account_can_pin_its_colour():
+def test_an_account_can_pin_its_color():
     assert account_color_key("someone@example.com", {"color": 2}) == 2
 
 
-def test_a_pinned_colour_outside_the_palette_is_ignored():
+def test_a_pinned_color_outside_the_palette_is_ignored():
     """A stored 12 is a bug or a palette that shrank, and deriving says more than
     clamping every such account onto the last slot."""
     derived = account_color_key("someone@example.com")
@@ -169,24 +169,24 @@ def test_a_pinned_colour_outside_the_palette_is_ignored():
     assert account_color_key("someone@example.com", {"color": "blue"}) == derived
 
 
-def test_a_boolean_is_not_a_colour():
+def test_a_boolean_is_not_a_color():
     """True is an int in Python and 1 is a valid slot, so a stray flag would silently
     pin every account it touched to the same hue."""
     assert account_color_key("someone@example.com", {"color": True}) == account_color_key("someone@example.com")
 
 
-def test_every_slot_resolves_to_a_colour():
+def test_every_slot_resolves_to_a_color():
     for key in range(1, ACCOUNT_PALETTE_SIZE + 1):
         assert accent(key).startswith("#")
 
 
 def test_the_palette_has_no_duplicate_hues():
     """Two accounts sharing a slot is a collision the derivation accepts; two slots
-    sharing a colour is one nothing can tell apart."""
+    sharing a color is one nothing can tell apart."""
     assert len({accent(k) for k in range(1, ACCOUNT_PALETTE_SIZE + 1)}) == ACCOUNT_PALETTE_SIZE
 
 
-def test_a_tint_is_the_slot_colour_at_low_alpha():
-    """Alpha rather than a colour pre-blended against the surface: a launch card changes
+def test_a_tint_is_the_slot_color_at_low_alpha():
+    """Alpha rather than a color pre-blended against the surface: a launch card changes
     its background on hover, and a blended fill would show as a rectangle inside it."""
     assert account_accent.account_tint(1) == "rgba(59, 130, 246, 22%)"

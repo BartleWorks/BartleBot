@@ -1,9 +1,9 @@
 """``IconButton`` — a fixed-square, icon-only button that re-tints itself.
 
 The counterpart to ``ActionButton``, and the reason both exist: an ``ActionButton``
-is *a labelled verb that expands to share a row*, so it sets ``Expanding``, a minimum
+is *a labeled verb that expands to share a row*, so it sets ``Expanding``, a minimum
 height and a text label. Roughly a seventh of this app's buttons are none of those —
-a remove ``✕``, a close ``×``, a help ``?``, a favourite star. Forcing them into the
+a remove ``✕``, a close ``×``, a help ``?``, a favorite star. Forcing them into the
 action vocabulary would stretch a 22px affordance across a toolbar; leaving them bare
 leaves every one of them a bespoke ``setFixedSize`` plus an inline stylesheet.
 
@@ -20,7 +20,7 @@ tint when there is nothing to revert -- which means the icon has to be re-render
 on ``setEnabled`` as well as on a theme switch.
 
 A tooltip is required rather than optional. An icon-only control carries no label,
-so without one it is unusable to anyone who does not already recognise the glyph;
+so without one it is unusable to anyone who does not already recognize the glyph;
 making it a keyword argument with no default is what stops that being an oversight.
 """
 
@@ -37,17 +37,17 @@ from bartlebot.gui.themed import ThemedMixin
 
 
 class IconTint(Enum):
-    """What colour the glyph is drawn in — the only thing an ``IconButton`` varies.
+    """What color the glyph is drawn in — the only thing an ``IconButton`` varies.
 
-    The same rule ``ActionStyle`` follows: a variant changes colour and nothing else,
+    The same rule ``ActionStyle`` follows: a variant changes color and nothing else,
     because the size is the caller's to choose and everything else is shared.
 
     ``DEFAULT`` is ordinary chrome. ``ACCENT`` is a button whose glyph is the state it
-    reports (the node browser's favourite star). ``ACCENT_WHEN_ENABLED`` spends the
+    reports (the node browser's favorite star). ``ACCENT_WHEN_ENABLED`` spends the
     accent only while the button can act, for a row where *being* enabled is the
     signal. ``DANGER`` is a remove — the red is what separates it from the controls it
     sits beside in a flag row. ``ON_ACCENT`` is a glyph drawn *over* an accent fill (the
-    crumb bar's close), in the colour text on that fill already uses.
+    crumb bar's close), in the color text on that fill already uses.
     """
 
     DEFAULT = "default"
@@ -61,7 +61,7 @@ class IconButton(ThemedMixin, QPushButton):
     """A fixed-size, icon-only button whose glyph follows the theme.
 
     Pass *checked_icon_name* for a toggle: the button becomes checkable and swaps
-    glyphs on state change, which is what the favourite star needs. For a swap that
+    glyphs on state change, which is what the favorite star needs. For a swap that
     is not a toggle — one driven by something other than this button's own checked
     state — use :meth:`set_icon_name`, as ``ActionButton`` does.
     """
@@ -101,7 +101,7 @@ class IconButton(ThemedMixin, QPushButton):
         self.refresh_theme_styles()
 
     def set_tint(self, tint: IconTint) -> None:
-        """Change the glyph's colour — a toggle whose state lives elsewhere, spending the
+        """Change the glyph's color — a toggle whose state lives elsewhere, spending the
         accent while it is on (the authoring bar's toggles)."""
         if tint is self._tint:
             return

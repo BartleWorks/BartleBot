@@ -127,7 +127,7 @@ def drop_icon_name(category: str, item_name: str = "") -> str:
     ``("Treasure Cards", ...)`` -> ``"drop_treasure_cards"``. A pin is the one category
     whose icon depends on the item: ``("Pins", "Fire Blocking Pin (150)")`` ->
     ``"pin_shield"``, the game's own filter button for that kind. A pin whose kind is not
-    recognised keeps ``"drop_pins"``, which the extractor points at the Jewels medallion
+    recognized keeps ``"drop_pins"``, which the extractor points at the Jewels medallion
     -- the fallback is its table's to state, as the dungeon stand-in for worlds is.
     """
     if category == PIN_CATEGORY and (kind := pin_kind(item_name)):

@@ -184,7 +184,7 @@ async def _trigger_sequentially(
         await client.send_key(Keycode.X, 0.1)
         # Costs the full Safety Delay per client when no dialog appears, which is the common
         # case — affordable only because _loading_or_arrived also accepts "already in
-        # to_zone", so a loading screen missed during the wait is still recognised.
+        # to_zone", so a loading screen missed during the wait is still recognized.
         if refusal := await node_helpers.answer_instance_prompts([client], safety_delay, POLL_INTERVAL):
             refusals.append(refusal)
             return False

@@ -1,7 +1,7 @@
-"""Behavioural tests for the Quick Launch cards as widgets.
+"""Behavioral tests for the Quick Launch cards as widgets.
 
 The text they build is covered in test_launch_cards.py without a QApplication. What
-needs one is the part that is genuinely widget behaviour: that clicking a card launches
+needs one is the part that is genuinely widget behavior: that clicking a card launches
 the thing it stands for, that the edit button does *not* launch, and that a theme switch
 reaches a card's labels.
 """
@@ -213,7 +213,7 @@ def test_an_account_card_uses_more_rows_before_dropping_a_name(qapp):
 
 
 # ---------------------------------------------------------------------------
-# Account colour
+# Account color
 # ---------------------------------------------------------------------------
 
 
@@ -221,7 +221,7 @@ def _pills(card) -> list[AccountPill]:
     return card.findChildren(AccountPill)
 
 
-def test_an_account_card_is_striped_with_its_colour(qapp):
+def test_an_account_card_is_striped_with_its_color(qapp):
     card = AccountCard(ACCOUNT, ROSTER)
     assert f"border-left: 3px solid {account_accent(card.color_key)}" in card.styleSheet()
 
@@ -235,7 +235,7 @@ def test_the_stripe_survives_the_frame_shorthand(qapp):
 
 
 def test_a_profile_pill_matches_that_account_card(qapp):
-    """The pair is the whole feature: a colour on the pills alone would be decoration,
+    """The pair is the whole feature: a color on the pills alone would be decoration,
     because nothing else on the screen would say which account it stands for."""
     account_card = AccountCard(ACCOUNT, ROSTER)
     profile_card = ProfileCard(PROFILE, [ACCOUNT])
@@ -253,7 +253,7 @@ def test_the_resolution_pill_stays_neutral(qapp):
 
 
 def test_a_theme_switch_restyles_an_account_pill(qapp, theme):
-    """The pill holds its palette slot, not a colour, so this is a re-resolve rather
+    """The pill holds its palette slot, not a color, so this is a re-resolve rather
     than a repaint of a stale hex — and a card's stylesheet does not reach its pills."""
     theme("light")
     pill = AccountPill("Main", 1)

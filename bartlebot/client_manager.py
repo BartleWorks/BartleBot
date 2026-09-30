@@ -301,7 +301,7 @@ class ClientManager(QObject):
             )
         self._drops_widget.swap_clients(idx_a, idx_b)
         # Both numbers moved — the slots the tiles sit in and the player indices their
-        # captions read from — so the view is re-derived rather than relabelled. The tiles
+        # captions read from — so the view is re-derived rather than relabeled. The tiles
         # themselves are re-keyed, not rebuilt, so no game window is re-parented.
         self._sync_tiles()
         self.clients_changed.emit(self._clients)
@@ -342,7 +342,7 @@ class ClientManager(QObject):
             self._client_order[: len(order)] = head
         self._drops_widget.reorder_clients(order)
         # Both numbers moved -- the slots the tiles sit in and the player indices their
-        # captions read from -- so the view is re-derived rather than relabelled.
+        # captions read from -- so the view is re-derived rather than relabeled.
         self._sync_tiles()
         self.clients_changed.emit(self._clients)
         self.all_clients_changed.emit(list(self._clients), list(self._unhooked_clients))
@@ -830,11 +830,11 @@ class ClientManager(QObject):
                     accounts = account_identity.with_fingerprint(accounts, known, fp)
                     # The setter writes the shared account store through, so no explicit
                     # save follows. The association has to outlive the process: it exists
-                    # so a later session can recognise a window this one launched.
+                    # so a later session can recognize a window this one launched.
                     settings.accounts = accounts
                     logger.info(
                         "Learned the identity of account '%s' (user id %s) — clients adopted from "
-                        "outside BartleBot can now be recognised as this account",
+                        "outside BartleBot can now be recognized as this account",
                         known,
                         account_identity.mask(user_id),
                     )
@@ -882,7 +882,7 @@ class ClientManager(QObject):
         return user_id or 0
 
     def _refresh_account_map(self, live_clients: list) -> None:
-        """For each live client with an unrecognised HWND, try to match window title to an account."""
+        """For each live client with an unrecognized HWND, try to match window title to an account."""
         import ctypes  # noqa: PLC0415
         import ctypes.wintypes  # noqa: PLC0415
 
@@ -1048,7 +1048,7 @@ class ClientManager(QObject):
 
         An account is rejected for either of two reasons, and they are different states:
         a launch is already running for it, or it is already *here* -- a window open and
-        recognised, whether hooked, embedded, or set aside unhooked. The second is the one
+        recognized, whether hooked, embedded, or set aside unhooked. The second is the one
         a profile hits: a profile lists accounts, not windows, so starting a four-account
         profile with two of them already up would spawn a second window for each of those
         two, logged into the same account as the one on screen. The in-flight tracker
@@ -1220,7 +1220,7 @@ class ClientManager(QObject):
         logger.info("Reserved slot order for launch: %s", self._client_order)
 
     def _place_account(self, username: str) -> None:
-        """Give *username* its slot, honouring a recovery that is holding one for it.
+        """Give *username* its slot, honoring a recovery that is holding one for it.
 
         A client coming back from a crash goes to the slot it left, not to the first free
         one — the ordering is the user's, and recovery is meant to be invisible in it.

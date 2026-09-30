@@ -15,6 +15,6 @@ installable package — without dragging a bot canvas and an FSM along with it.
 The seam that decides most cases: a *record* is shared, a *judgement about it made
 against this app's window* is not. A launch profile's resolution override lives here;
 ``screen_fit``'s verdict on whether it fits, which measures this app's sidebars and bot
-canvas, stays in ``gui/``. Same shape for account colours: the slot arithmetic is here
+canvas, stays in ``gui/``. Same shape for account colors: the slot arithmetic is here
 in ``account_slots``, resolving a slot against the live theme is ``gui/account_accent``.
 """

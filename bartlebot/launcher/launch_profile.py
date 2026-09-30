@@ -166,7 +166,7 @@ def _read_prefs_field(tag: str) -> str | None:
 def _prefs_update(width: int, height: int) -> dict[str, str]:
     """The preferences.xml patch for a launch at *width* x *height*.
 
-    Forces windowed mode alongside the resolution: the game only honours <Resolution>
+    Forces windowed mode alongside the resolution: the game only honors <Resolution>
     when it is not fullscreen, so patching one without the other produces a window at
     the wrong size and a tile that cannot hold it, with nothing saying why.
 

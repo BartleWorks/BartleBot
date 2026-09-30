@@ -1,14 +1,14 @@
 """The Players tab as widgets: the drag, the buckets, the stripe, the copy.
 
 ``tests/test_player_card_text.py`` has everything decidable from a username and an index.
-What needs a ``QApplication`` is the part that is genuinely widget behaviour, and it is
+What needs a ``QApplication`` is the part that is genuinely widget behavior, and it is
 where the sharp edges of this issue are:
 
 - ``ClientManager.clients`` is hooked-only and contiguous, so a drag must not be able to
   land an active card among the unhooked ones. That is enforced by *which container holds
   what*, and by an unhooked card having no grip to press.
 - the stripe has to arrive **late** — the account identity is learned inside the client
-  loop and nothing signals it — so a card coloured once in its constructor is the bug.
+  loop and nothing signals it — so a card colored once in its constructor is the bug.
 - a rebuild must not reset live state, because with a drag it is one gesture away.
 - the copy affordance has to copy the value the row *displays*, and say that it did.
 
@@ -244,7 +244,7 @@ def test_the_stripe_appears_when_the_account_is_known(qapp, section):
 
 
 def test_there_is_no_stripe_while_the_identity_is_unknown(qapp, section):
-    """A window BartleBot did not launch gets no colour, not a default one."""
+    """A window BartleBot did not launch gets no color, not a default one."""
     host, clients = section(active=1)
     SettingsManager.instance().accounts = ACCOUNTS
     clients.set_account_source(lambda client: None)
@@ -256,7 +256,7 @@ def test_there_is_no_stripe_while_the_identity_is_unknown(qapp, section):
 
 def test_a_stripe_that_arrives_late_still_lands(qapp, section):
     """The one that matters. The identity is learned inside the client loop and signals
-    nothing, so a card that resolved its colour in its constructor never recovers."""
+    nothing, so a card that resolved its color in its constructor never recovers."""
     host, clients = section(active=1)
     SettingsManager.instance().accounts = ACCOUNTS
     known: dict[int, str] = {}
@@ -271,7 +271,7 @@ def test_a_stripe_that_arrives_late_still_lands(qapp, section):
     assert host
 
 
-def test_the_player_pill_wears_the_stripe_s_colour_and_keeps_its_text(qapp, section):
+def test_the_player_pill_wears_the_stripe_s_color_and_keeps_its_text(qapp, section):
     """The same pill the Combat tab's deck card for this slot wears (#40)."""
     host, clients = section(active=1)
     SettingsManager.instance().accounts = ACCOUNTS
@@ -279,7 +279,7 @@ def test_the_player_pill_wears_the_stripe_s_colour_and_keeps_its_text(qapp, sect
     clients.set_account_source(lambda client: known.get(client.window_handle))
     card = clients.cards[0]
 
-    assert card._pill.color_key is None, "grey until the account is known"
+    assert card._pill.color_key is None, "gray until the account is known"
 
     known[1] = "two@example.com"
     clients.refresh_account_colors()
@@ -292,7 +292,7 @@ def test_the_player_pill_wears_the_stripe_s_colour_and_keeps_its_text(qapp, sect
 
 
 def test_an_unhooked_card_keeps_its_stripe(qapp, section):
-    """Greyed, but the stripe names an account rather than a state, so it survives."""
+    """Grayed, but the stripe names an account rather than a state, so it survives."""
     host, clients = section(active=0, unhooked=1)
     SettingsManager.instance().accounts = ACCOUNTS
     clients.set_account_source(lambda client: "three@example.com")

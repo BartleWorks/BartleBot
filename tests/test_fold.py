@@ -49,7 +49,7 @@ def test_a_two_row_region_hides_its_second_row_too():
 
 
 def test_a_row_a_tall_node_reaches_into_stays():
-    tall = [(0.0, 0.0, 70.0), (W, 0.0, 170.0)]  # 170 tall, centerd on row 0: reaches rows -1..1
+    tall = [(0.0, 0.0, 70.0), (W, 0.0, 170.0)]  # 170 tall, centered on row 0: reaches rows -1..1
     fold = _fold([Span(2, 2, 0, 2)], tall)
     assert fold.hidden_rows == (2,)
 

@@ -62,7 +62,7 @@ def game_view(qapp):
 # ---------------------------------------------------------------------------
 
 
-def test_the_logo_and_link_recolour(qapp, theme):
+def test_the_logo_and_link_recolor(qapp, theme):
     theme("light")
     ph = _GamePlaceholder()
     light_border, light_muted = THEME.border, THEME.text_muted
@@ -88,7 +88,7 @@ def test_the_column_headers_follow_the_theme(qapp, theme):
     assert [h.styleSheet() for h in headers] != before
 
 
-def test_an_empty_list_hint_recolours_after_a_refresh(qapp, theme):
+def test_an_empty_list_hint_recolors_after_a_refresh(qapp, theme):
     """The hints are rebuilt by a *static* helper on every refresh, so there is
     nothing for the placeholder to hold a reference to."""
     theme("light")

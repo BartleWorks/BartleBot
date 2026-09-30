@@ -1,6 +1,6 @@
 """The app stylesheet's frame for text inputs and dropdowns.
 
-Fusion derives an input's frame colour itself, as ``palette.window().darker(140)``,
+Fusion derives an input's frame color itself, as ``palette.window().darker(140)``,
 and no ``QPalette`` role feeds it.  So until the rule in ``global_stylesheet`` existed,
 ``THEME.border`` was a token no field in the app drew: in the light theme Fusion's
 derivation lands within a shade of it by luck, and in the dark theme it lands on
@@ -75,7 +75,7 @@ def _fill(image: QImage) -> str:
 def _right_edge_px(image: QImage) -> int:
     """Device pixels of non-fill at the right edge of the middle row.
 
-    Counted against the fill rather than matched to a colour name: the tests run on
+    Counted against the fill rather than matched to a color name: the tests run on
     the real platform plugin, so at a display scale of 125% a one-pixel border is
     1.25 device pixels and its outer column is a blend rather than the token.  Device
     pixels, not logical ones, because the caller compares two controls rendered at the
@@ -98,11 +98,11 @@ def _right_edge_px(image: QImage) -> int:
 _ARROW_TOLERANCE = 10
 
 
-def _arrow_pixels(widget: QWidget, colour: str) -> int:
-    """Pixels close to *colour* in the right-hand end of *widget*.
+def _arrow_pixels(widget: QWidget, color: str) -> int:
+    """Pixels close to *color* in the right-hand end of *widget*.
 
-    The arrow is a solid triangle in a colour nothing else in the control uses, so it
-    is counted by matching that colour rather than by subtracting a background.
+    The arrow is a solid triangle in a color nothing else in the control uses, so it
+    is counted by matching that color rather than by subtracting a background.
 
     Near, not exact, because the triangle is an image scaled from 18px into a 9px box
     and these tests run on the real platform plugin: how much of it survives as the
@@ -114,7 +114,7 @@ def _arrow_pixels(widget: QWidget, colour: str) -> int:
     no arrow, which is the distinction being drawn.
     """
     image = _render(widget)
-    want = QColor(colour)
+    want = QColor(color)
     return sum(
         1
         for y in range(image.height())
@@ -154,7 +154,7 @@ def test_a_focused_field_is_still_marked_out(themed_app):
     ``show()`` only asks Windows to activate the host, and under ``-n auto`` the answer
     can land after the grab — so ``:focus`` never matched and the frame was the plain
     border.  ``setActiveWindow`` hands the activation over synchronously, and the focus
-    is asserted so a miss fails as that rather than as a colour.
+    is asserted so a miss fails as that rather than as a color.
     """
     host = QWidget()
     layout = QVBoxLayout(host)
@@ -174,7 +174,7 @@ def test_a_focused_field_is_still_marked_out(themed_app):
 def test_a_disabled_field_still_reads_as_recessed(themed_app):
     """Claiming the frame reaches the fill under :disabled, so the rule restates it.
 
-    Left unsaid, a disabled field keeps the enabled ``Base`` colour and the Disabled
+    Left unsaid, a disabled field keeps the enabled ``Base`` color and the Disabled
     palette group's recessed look is lost for every input in the app.
     """
     field = QLineEdit("Sample")

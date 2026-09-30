@@ -28,9 +28,9 @@ MATCHING
     what the client is showing. The longest run is used because short fragments collide:
     "Are you sure you want to" opens three unrelated dialogs.
 
-    An unrecognised caption returns None rather than a guess. Callers treat that as
+    An unrecognized caption returns None rather than a guess. Callers treat that as
     "some other dialog" and fall back to whatever they did before, so a caption the
-    snapshot has not seen degrades to the old behaviour instead of hanging.
+    snapshot has not seen degrades to the old behavior instead of hanging.
 """
 
 from __future__ import annotations
@@ -192,7 +192,7 @@ DISCONNECTS = frozenset(
 can usefully click, so resolve_modal leaves these alone and ClientHealthMonitor kills the
 process instead, letting the relaunch and re-hook path recover it."""
 
-UNRECOGNISED_REFUSAL = "<unrecognised>"
+UNRECOGNIZED_REFUSAL = "<unrecognized>"
 """Not a lang key: a dismiss-only dialog whose caption the snapshot does not know.
 
 Returned by node_helpers.resolve_modal() when caption matching finds nothing but the
@@ -213,8 +213,8 @@ REASONS: dict[str, str] = {
     REALM_DOES_NOT_EXIST: "the chosen realm no longer exists",
     FRIEND_NOT_ON_LIST: "that wizard is no longer on the friends list",
     ALREADY_IN_GROUP: "that player is already in a group",
-    UNRECOGNISED_REFUSAL: (
-        "the game refused with a dialog this build does not recognise — if this is "
+    UNRECOGNIZED_REFUSAL: (
+        "the game refused with a dialog this build does not recognize — if this is "
         "reproducible, add its lang key to KNOWN_KEYS and re-run tools/dump_dialog_captions.py"
     ),
 }
@@ -258,7 +258,7 @@ def literal_runs(text: str) -> list[str]:
 
 
 def _fingerprint(text: str) -> str | None:
-    """The one literal run used to recognise this caption, or None if none is long enough."""
+    """The one literal run used to recognize this caption, or None if none is long enough."""
     for run in literal_runs(text):
         if len(run) >= MIN_LITERAL_LEN:
             return run

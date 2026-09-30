@@ -69,7 +69,7 @@ with a castle equipped, one with none.
       is_control_grayed and maybe_checked on that same icon ALSO differed between the two
       runs, and both are traps. The full-page dump is what caught them: unrelated hidden
       windows (crafted2, crowns0, pvp0, lock0) flipped their grayed values between two
-      otherwise identical read-only runs, so those properties are uninitialised memory on
+      otherwise identical read-only runs, so those properties are uninitialized memory on
       hidden windows rather than state. Had this probe dumped only Item_1, there would have
       been three plausible-looking candidates and no way to tell them apart.
 

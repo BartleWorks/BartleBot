@@ -34,7 +34,7 @@ _BADGE_GAP = 4  # gap between adjacent badge circles
 _BADGE_ICON_PAD = 3  # inset padding when rendering SVG icons inside badge circles
 
 # What a port with no edge on it does anyway. A marked port is drawn as a filled
-# badge in place of the plain dot, reusing the node-badge colour and glyph of
+# badge in place of the plain dot, reusing the node-badge color and glyph of
 # whatever it stands for, so the two ends of an undrawn route carry one symbol.
 PORT_MARK_RECOVERY = "recovery"
 PORT_MARK_STOP = "stop"
@@ -314,7 +314,7 @@ class NodeItem(QGraphicsItem):
         nr = self._node_rect()
         badged = self._is_initial or self._is_terminal or self._is_recovery
         top_extra = _BADGE_R if badged else 0
-        # The first badge is centerd on the left edge, so it reaches half a badge (and
+        # The first badge is centered on the left edge, so it reaches half a badge (and
         # its pen) past it. Anything painted outside these bounds is never erased.
         left = max(margin, _BADGE_R + 1) if badged else margin
         return QRectF(nr.x() - left, -(margin + top_extra), NODE_W + left + margin, NODE_H + margin * 2 + top_extra)
@@ -572,7 +572,7 @@ class NodeItem(QGraphicsItem):
     def _paint_port_mark(self, painter: QPainter, center: QPointF, mark: str, lod: float) -> None:
         """Draw a port that routes without an edge, as a badge in place of the dot.
 
-        Same colour and glyph as the node badge for the thing it stands for: the
+        Same color and glyph as the node badge for the thing it stands for: the
         amber recovery arrow for a failure that falls through to the recovery node,
         the red stop square for a return the author marked fatal. Reading the pair
         as one route is the whole point of not drawing the edge.
@@ -586,7 +586,7 @@ class NodeItem(QGraphicsItem):
         painter.setPen(QPen(color.darker(140), 1.0))
         painter.setBrush(QBrush(color))
         painter.drawEllipse(center, float(PORT_R), float(PORT_R))
-        # Below a couple of device pixels the glyph is mush; the coloured disc still
+        # Below a couple of device pixels the glyph is mush; the colored disc still
         # distinguishes the two marks, so it is dropped rather than drawn illegibly.
         if lod >= 0.75:
             icon.render(

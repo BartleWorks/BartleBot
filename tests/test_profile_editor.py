@@ -114,7 +114,7 @@ def test_every_account_is_offered_and_none_is_dimmed():
     assert [row.label for row in rows] == ["One", "Two", "Three"]
     assert [row.meta for row in rows] == ["1 character", "no characters yet", "no characters yet"]
     assert not any(row.dim for row in rows)
-    # A colour each, and each one distinct: the dot is the same hue as the account's
+    # A color each, and each one distinct: the dot is the same hue as the account's
     # stripe on the card below it and its pill on every profile card elsewhere.
     assert len({row.accent for row in rows}) == 3
 

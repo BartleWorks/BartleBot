@@ -39,7 +39,7 @@ def _sidebar_excess() -> int:
     and font metrics: the same layout leaves 1214px of game width under ``windowsvista``,
     the style a dev box resolves, and 33 fewer under ``windows11``, the one CI resolves.
     A literal budget therefore asserts which style the runner happens to have rather than
-    the behaviour this test names — see "One QApplication per worker" in tests/CLAUDE.md.
+    the behavior this test names — see "One QApplication per worker" in tests/CLAUDE.md.
     """
     return (screen_fit.left_sidebar_floor() - game_sizing.LEFT_SIDEBAR_MIN_WIDTH) + (
         screen_fit.right_sidebar_floor() - game_sizing.RIGHT_SIDEBAR_MIN_WIDTH
@@ -205,7 +205,7 @@ def test_the_game_view_s_minimum_reaches_the_panel_that_sits_in_the_splitter(qap
 
     ``GameView`` sets a minimum from the grid it is holding; the clamp only works because
     ``GameViewPanel`` wraps it in a layout, so that minimum becomes the panel's own and
-    ``QSplitter`` — which honours a child's minimum — refuses to drag past it. Nothing
+    ``QSplitter`` — which honors a child's minimum — refuses to drag past it. Nothing
     else enforces this, so a panel that stopped propagating would silently reopen the
     path into a clipped layout.
     """
@@ -366,7 +366,7 @@ def test_an_account_card_keeps_its_characters_and_carries_no_numbers(qapp, scree
     card.set_unavailable(screen_fit.fit_details((800, 600), 1))
 
     assert card.unavailable_reason is not None
-    # Nothing is added: not the numbers, not the advice. The card goes grey and goes on
+    # Nothing is added: not the numbers, not the advice. The card goes gray and goes on
     # showing the one thing it is for.
     assert card.quiet_text == ""
     assert card.detail_text == character_summary(roster)
@@ -446,7 +446,7 @@ def test_the_banner_goes_away_once_everything_fits(qapp, monkeypatch):
 
 
 def test_a_partly_fitting_profile_column_says_some_rather_than_none(qapp, monkeypatch):
-    """Counting greyed rows is not how the user should learn that one of them still works."""
+    """Counting grayed rows is not how the user should learn that one of them still works."""
     from bartlebot.gui.game_embed.game_view import GameView
 
     monkeypatch.setattr(screen_fit, "screen_metrics", lambda _widget=None: _1080P)

@@ -432,7 +432,7 @@ def _pct(values: list[float], q: float) -> float:
     return ordered[min(len(ordered) - 1, int(q * len(ordered)))]
 
 
-def summarise(readings: list[Reading], near: float = DEFAULT_NEAR) -> str:
+def summarize(readings: list[Reading], near: float = DEFAULT_NEAR) -> str:
     ticks = group_ticks(readings)
     obs = pair_observations(ticks)
     slots = sorted({r.slot for r in readings})
@@ -767,7 +767,7 @@ async def main(args: argparse.Namespace) -> int:
             print(f"No CSV matches {args.analyse}")
             return 2
         print("Pooling " + ", ".join(p.name for p in paths))
-        print(summarise(read_csvs(paths), args.near))
+        print(summarize(read_csvs(paths), args.near))
         return 0
 
     csv_path = (
@@ -809,7 +809,7 @@ async def main(args: argparse.Namespace) -> int:
                 pass
 
     print(f"Readings written to {csv_path}")
-    print(summarise(readings, args.near))
+    print(summarize(readings, args.near))
     return 0
 
 
@@ -831,7 +831,7 @@ def _parse_args() -> argparse.Namespace:
         "--analyse",
         metavar="CSV",
         nargs="+",
-        help="Summarise saved CSVs (globs allowed), pooled, instead of recording.",
+        help="Summarize saved CSVs (globs allowed), pooled, instead of recording.",
     )
     return parser.parse_args()
 

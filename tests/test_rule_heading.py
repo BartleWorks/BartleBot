@@ -20,14 +20,14 @@ def test_the_label_is_bold_so_it_reads_as_a_heading(qapp):
     assert heading._label.font().bold()
 
 
-def test_the_rule_takes_the_theme_border_colour(qapp):
+def test_the_rule_takes_the_theme_border_color(qapp):
     heading = RuleHeading("About")
 
     assert THEME.border in heading._rule.styleSheet()
 
 
 def test_the_rule_is_repainted_on_a_theme_switch(qapp):
-    """A colour resolved once in __init__ would go stale with nothing to grep for."""
+    """A color resolved once in __init__ would go stale with nothing to grep for."""
     set_theme("light")
     try:
         heading = RuleHeading("About")

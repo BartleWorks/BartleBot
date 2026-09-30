@@ -25,14 +25,14 @@ def theme():
 
 
 def test_it_draws_no_border_and_no_fill(qapp):
-    """The distinguishing behaviour: anything framed or filled is a button, not a link."""
+    """The distinguishing behavior: anything framed or filled is a button, not a link."""
     style = LinkButton("Game settings").styleSheet()
 
     assert "border: none;" in style
     assert "background: transparent;" in style
 
 
-def test_it_is_accent_coloured(qapp):
+def test_it_is_accent_colored(qapp):
     """The accent alone is what says "clickable" before the pointer arrives."""
     assert f"color: {THEME.accent};" in LinkButton("Game settings").styleSheet()
 
@@ -61,7 +61,7 @@ def test_it_takes_a_font_size_token(qapp):
     assert f"font-size: {THEME.font_body_px}px;" in LinkButton("See also", font_size=THEME.font_body_px).styleSheet()
 
 
-def test_it_recolours_on_a_theme_switch(qapp, theme):
+def test_it_recolors_on_a_theme_switch(qapp, theme):
     theme(LIGHT)
     button = LinkButton("Game settings")
     light = button.styleSheet()
@@ -73,7 +73,7 @@ def test_it_recolours_on_a_theme_switch(qapp, theme):
     assert THEME.accent in button.styleSheet()
 
 
-def test_the_colour_follows_the_theme_accent(qapp, theme):
+def test_the_color_follows_the_theme_accent(qapp, theme):
     """Derived, never stored: a custom theme moves the link with it."""
     theme(replace(LIGHT, accent="#aa00aa"))
     button = LinkButton("Game settings")

@@ -45,7 +45,7 @@ def enabled() -> bool:
 
 
 def display_name(name: str | None, position: int, *, placeholder: str = "—") -> str:
-    """The name to show for the character at *position*, honouring Streamer Mode.
+    """The name to show for the character at *position*, honoring Streamer Mode.
 
     *position* is zero-based; the placeholder counts from one, because it is read by
     people. *placeholder* is what to show when the name is not known yet -- that case is

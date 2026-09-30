@@ -8,7 +8,7 @@ WHY A KEY, AND WHY EVERY LOCALE
     machine, and the node matches a list row against every locale's text for that key.
 
     Yes/No is the same problem one page over: the Remember Realm option shows its value
-    as localized text, and telling which way to toggle it means recognising both words
+    as localized text, and telling which way to toggle it means recognizing both words
     in all seven locales. They ride along in the same snapshot.
 
 WHY A SNAPSHOT

@@ -576,7 +576,7 @@ def test_the_region_page_shows_run_modes_view(canvas):
 
 
 def _shown_at(canvas, qtbot, item, scale: float):
-    """The canvas on screen at ``scale``, centerd on ``item``, painted -- minimap and all -- and its view."""
+    """The canvas on screen at ``scale``, centered on ``item``, painted -- minimap and all -- and its view."""
     from PyQt6.QtGui import QTransform  # noqa: PLC0415
 
     canvas.resize(1400, 700)

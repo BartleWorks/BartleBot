@@ -392,7 +392,7 @@ class TestGameViewPendingTiles:
         assert view.tile_geometry(0) != view.tile_geometry(1)
         view.deleteLater()
 
-    def test_a_tile_takes_its_account_colour_on_sync_and_none_without_an_account(self, qapp) -> None:
+    def test_a_tile_takes_its_account_color_on_sync_and_none_without_an_account(self, qapp) -> None:
         from bartlebot.gui.account_accent import account_color_keys
         from bartlebot.gui.game_embed.game_view import GameView
         from bartlebot.settings_manager import SettingsManager

@@ -4,7 +4,7 @@ The node drives a short UI sequence — spellbook, Preferences, Quit, character 
 — and then waits for the world to come back. A fake game stands in for all of it, so these
 run with no Wizard101 process and no real timing.
 
-The one behaviour worth stating up front: health monitoring is suspended for the players
+The one behavior worth stating up front: health monitoring is suspended for the players
 being relogged and put back afterwards, *including* when the relog fails. A client at
 character select fails ``zone_name()`` and shows loading screens, which is exactly what the
 crash watchers look for.
@@ -245,7 +245,7 @@ class TestLogoutWarnings:
 
     async def test_a_dismiss_only_dialog_fails_fast_as_a_refusal(self, machine, games):
         """A dialog offering no way on is the game saying no; waiting out the timeout says nothing more."""
-        clients, (game,) = games({"quit_dialog": ("Wording nobody has catalogued", (MESSAGE_BOX_RIGHT,))})
+        clients, (game,) = games({"quit_dialog": ("Wording nobody has cataloged", (MESSAGE_BOX_RIGHT,))})
         assert await relog_node.run(machine, clients, {}) == "FAILURE"
         assert MESSAGE_BOX_CENTER not in game.clicks
         assert any("refused the logout" in msg for msg, _ in machine.logs)

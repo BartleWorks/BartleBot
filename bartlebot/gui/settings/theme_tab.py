@@ -216,7 +216,7 @@ class ThemeTab(QWidget):
             hint(
                 "System follows the Windows light/dark setting and re-reads it while the app is "
                 "open. Custom starts from whichever of Light or Dark Windows is on now, and "
-                "reveals the colour list below."
+                "reveals the color list below."
             )
         )
         outer.addLayout(mode_form)

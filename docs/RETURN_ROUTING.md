@@ -39,7 +39,7 @@ bot does:
 - **A state with no outgoing transitions at all.** That is a terminal state and stops the
   run cleanly; the terminal check runs before the fall-through and stays that way.
 - **A config with no `recovery_state`.** Only a hand-built one in a test. The default is
-  simply off, and the old no-match behaviour stands.
+  simply off, and the old no-match behavior stands.
 
 An explicit edge always wins: the default is what happens when nothing is routed, never an
 override. That includes a flag-guarded edge whose guard is false at run time -- the guard

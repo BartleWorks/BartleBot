@@ -76,7 +76,7 @@ AUTOSCROLL_INTERVAL_MS = 16
 
 # The dashed outline of the hole a lifted card leaves behind, matching the Add card's
 # border for the same reason it is 2px there: Qt scales a dash pattern by the pen width,
-# so a 1px dashed rounded rect draws as a row of dots that at this colour is a line you
+# so a 1px dashed rounded rect draws as a row of dots that at this color is a line you
 # have to look for.
 PLACEHOLDER_BORDER_WIDTH = 2
 PLACEHOLDER_RADIUS = 4
@@ -94,7 +94,7 @@ class DropPlaceholder(QWidget):
 
     It is drawn as an outline rather than filled: what the user is looking for is where
     the card will land, and an empty dashed frame the exact size of the card in their
-    hand says that more plainly than a block of colour, which reads as a card of its own.
+    hand says that more plainly than a block of color, which reads as a card of its own.
 
     No theming ceremony -- ``THEME`` is read in ``paintEvent``, so there is no baked
     value to go stale and nothing for a theme switch to have to re-derive.
@@ -143,7 +143,7 @@ class DragReorder(QObject):
         self._baseline: list[QWidget] = []
         self._cards: list[QWidget] = []
         # The in-flight drag: which card the button went down on, where, and whether the
-        # pointer has since travelled far enough for it to be a drag and not a click.
+        # pointer has since traveled far enough for it to be a drag and not a click.
         self._press_card: QWidget | None = None
         self._press_pos = QPoint()
         # How far down the card the button went down. A drag moves the card, not the

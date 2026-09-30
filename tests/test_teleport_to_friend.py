@@ -241,7 +241,7 @@ async def test_friend_busy_dialog_returns_failure():
     assert any("not accepting teleports" in msg for msg, _lvl in machine.logs)
 
 
-async def test_unrecognised_dismiss_only_dialog_still_fails_fast():
+async def test_unrecognized_dismiss_only_dialog_still_fails_fast():
     """A dialog reworded by a game patch must not quietly become a presumed arrival.
 
     Caption matching finds nothing, so the button layout decides: a right button with no
@@ -262,7 +262,7 @@ async def test_unrecognised_dismiss_only_dialog_still_fails_fast():
 
     assert result == "FAILURE"
     assert clicked == [MESSAGE_BOX_RIGHT]
-    assert any("does not recognise" in msg for msg, _lvl in machine.logs)
+    assert any("does not recognize" in msg for msg, _lvl in machine.logs)
 
 
 async def test_friend_busy_dialog_only_checked_for_not_yet_ported():

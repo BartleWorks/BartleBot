@@ -43,10 +43,10 @@ WizardCity/WC_Streets/WC_Cyclops
 ...
 ```
 
-**`neighbours <zone>`**: every zone linked to this one. Links are treated as two-way.
+**`neighbors <zone>`**: every zone linked to this one. Links are treated as two-way.
 
 ```bash
-uv run python tools/zone_graph/zonemap_nav.py neighbours WizardCity/WC_Hub
+uv run python tools/zone_graph/zonemap_nav.py neighbors WizardCity/WC_Hub
 ```
 ```
 WizardCity/Interiors/WC_Library

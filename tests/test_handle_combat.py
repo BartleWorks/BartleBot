@@ -18,13 +18,13 @@ def _no_drop_wait(monkeypatch):
     Every test in this file either has its drop line present on the very first read or
     has none at all, so there is nothing here to wait for; a zero ceiling makes
     poll_new_drops take exactly one look. Without this the file pays
-    COMBAT_DROP_MESSAGE_TIMEOUT (15 s) per test. The late-arrival behaviour that ceiling
+    COMBAT_DROP_MESSAGE_TIMEOUT (15 s) per test. The late-arrival behavior that ceiling
     exists for is what tests/test_combat_drop_recording.py covers, with a real window.
     """
     monkeypatch.setattr(combat_runner, "COMBAT_DROP_MESSAGE_TIMEOUT", 0)
 
 
-# A chat line that drop_detection.extract_new_drops recognises as a Reagent drop.
+# A chat line that drop_detection.extract_new_drops recognizes as a Reagent drop.
 _DROP_LINE = "Art_Chat_System.dds> <>IronBloom<;Reagent>"
 
 # Params that exercise the default bot-level combat DSL path.

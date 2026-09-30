@@ -3,7 +3,7 @@
 ``QApplication.setStyleSheet`` does not recompute a stylesheet a widget set on
 itself earlier, and ``svg_icon`` bakes its tint in at render time. So a value
 built from ``THEME`` at construction is a frozen snapshot of whatever theme was
-active then, and the widget shows stale colours until the app restarts. The fix
+active then, and the widget shows stale colors until the app restarts. The fix
 is one ``changeEvent`` override per widget (see CLAUDE.md, *GUI theming*).
 
 That convention is documented, has a worked code sample, and is on the PR
@@ -39,7 +39,7 @@ GUI_ROOT = pathlib.Path(__file__).resolve().parent.parent / "bartlebot" / "gui"
 
 # A call is "themed" when its argument mentions one of these. Several are indirect:
 # pill_style, group_accent, account_accent and account_tint resolve THEME internally,
-# so the call site names neither THEME nor a colour.
+# so the call site names neither THEME nor a color.
 THEME_MARKERS = (
     "THEME.",
     "pill_style(",
@@ -52,7 +52,7 @@ THEME_MARKERS = (
 # Font sizes are tokens too, and they are *not* what this guard is about: every theme
 # carries the same ones, so a stylesheet that bakes in ``THEME.font_small_px`` shows
 # the right size after a switch — there is nothing to re-derive. Stripped before the
-# markers are matched, so a widget is blamed for a colour and not for a size.
+# markers are matched, so a widget is blamed for a color and not for a size.
 # ``test_font_sizes.test_no_font_token_varies_by_theme`` is what keeps that true.
 FONT_TOKEN = re.compile(r"THEME\.font_\w+")
 
@@ -193,7 +193,7 @@ def test_every_themed_widget_refreshes_on_theme_change():
 
     lines = [
         f"{len(offenders)} class(es) bake in a THEME-derived value but never re-derive it.",
-        "They will show stale colours until the app is restarted.",
+        "They will show stale colors until the app is restarted.",
         "",
         "Fix: inherit ThemedMixin and implement apply_theme_styles(), or override",
         "changeEvent to re-apply on QEvent.Type.StyleChange. See CLAUDE.md, 'GUI theming'.",
@@ -256,7 +256,7 @@ def test_every_mixin_user_applies_its_styles_at_construction():
     ``__init__`` never runs, so the dialog opened unstyled. Tightening it to "called
     from ``__init__``, or from something ``__init__`` calls" would fail
     ``_DynamicParamForm``, which legitimately styles from ``load_schema`` and has
-    nothing to style before one is loaded. The behavioural tests per widget are what
+    nothing to style before one is loaded. The behavioral tests per widget are what
     close this; do not trust a green here to mean a widget is styled on open.
     """
     missing = []

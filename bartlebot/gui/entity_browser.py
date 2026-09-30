@@ -120,7 +120,7 @@ class EntityBrowserDialog(QDialog):
         # Button row: copy buttons (right-aligned) + status label. All TERTIARY, Teleport
         # included: these are four equal reads on one selection, and the most *interesting*
         # verb in a row is not the same thing as the one the surface expects. Nothing in an
-        # equal-weight row outranks its neighbours — see gui/CLAUDE.md.
+        # equal-weight row outranks its neighbors — see gui/CLAUDE.md.
         btn_row = QHBoxLayout()
 
         self._status = ThemedTextLabel("Loading…", css=f"font-size: {THEME.font_small_px}px;")

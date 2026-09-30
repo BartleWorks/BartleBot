@@ -252,7 +252,7 @@ class TestSetStyleSheet:
 
         Each StyleChange a themed child answers re-derives *its* rule and sets it,
         which broadcasts again. That is the cascade the helper exists to cut, so the
-        absence of the event is the behaviour under test, not an implementation detail.
+        absence of the event is the behavior under test, not an implementation detail.
         """
         seen: list[int] = []
 

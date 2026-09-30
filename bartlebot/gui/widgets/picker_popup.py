@@ -78,7 +78,7 @@ class PickerRow:
     "0 bots" is an answer.
 
     ``icon`` is drawn where the dot would be, and replaces it: a row with artwork does not
-    also need a colour swatch, and is drawn :data:`ROW_ICON_PX` square. Left out of equality
+    also need a color swatch, and is drawn :data:`ROW_ICON_PX` square. Left out of equality
     and hashing, since an icon is neither.
     """
 
@@ -272,8 +272,8 @@ class _RowWidget(QWidget):
 
     Everything here was child widgets once — a QCheckBox, two QLabels, a dot — and
     every one of them was a way for the platform style, the app palette or fractional
-    display scaling to put something on screen this module did not ask for: a grey
-    slab behind the checkbox, an indicator the same colour as the background, hairlines
+    display scaling to put something on screen this module did not ask for: a gray
+    slab behind the checkbox, an indicator the same color as the background, hairlines
     under each child's bottom edge. Painting it directly is both smaller and
     deterministic, and since it reads ``THEME`` at paint time it follows a theme change
     with no ``changeEvent`` plumbing (see CLAUDE.md, GUI theming).
@@ -390,7 +390,7 @@ class _RowWidget(QWidget):
 
         Deliberately not a QCheckBox: touching one with a stylesheet at all forfeits
         the platform's own indicator, and what replaces it is drawn from the palette —
-        which is how it ended up the same colour as the background.
+        which is how it ended up the same color as the background.
         """
         fill = QColor(THEME.accent) if self._selected else QColor(THEME.bg)
         edge = QColor(THEME.accent if self._selected else THEME.border)
@@ -451,9 +451,9 @@ class _SectionHeader(QWidget):
     the design did not ask for. It also means the icon and the text are one widget rather
     than a layout of two, so nothing can wrap or drift between them.
 
-    An icon is artwork in its own colours, so this reads no ``THEME`` value for it and
+    An icon is artwork in its own colors, so this reads no ``THEME`` value for it and
     needs neither ``ThemedMixin`` nor a ``changeEvent`` -- the same exemption the card art
-    tiles take. The text colour *is* a ``THEME`` value and is read at paint time.
+    tiles take. The text color *is* a ``THEME`` value and is read at paint time.
     """
 
     def __init__(self, title: str, icon: QIcon | None = None, parent: QWidget | None = None) -> None:
@@ -853,7 +853,7 @@ class PickerPopup(QWidget):
                 f"#PickerBody {{ background: {THEME.bg}; }}"
                 f"QScrollArea {{ background: transparent; border: none; }}"
                 # A QCheckBox left to the palette paints a Button/Base block behind
-                # both its indicator and its empty text area, which shows up as a grey
+                # both its indicator and its empty text area, which shows up as a gray
                 # slab beside every row under some themes and platform styles. Only the
                 # background is wrong, so only the background is overridden — the
                 # indicator keeps the platform's own checkmark. spacing: 0 removes the

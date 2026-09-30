@@ -6,17 +6,17 @@ arrows for order, sitting next to accounts and launch profiles that had become c
 
 What is new here beyond the frame:
 
-**The colour is the account's.** Launch the blue account and its player card is blue,
+**The color is the account's.** Launch the blue account and its player card is blue,
 striped down the left edge with the same slot the blue pill on that launch profile card
 names. An account runs one character at a time, so one client is one account and the
 stripe is unambiguous. ``None`` means *no stripe* -- a game window BartleBot did not
 launch, or an identity not learned yet -- and because that identity arrives late (it is
 filled by ``ClientManager``'s own loop, see ``account_for``) the key is re-applied on
-every refresh tick rather than resolved once in the constructor. A card coloured only at
-construction is an uncoloured card that never recovers.
+every refresh tick rather than resolved once in the constructor. A card colored only at
+construction is an uncolored card that never recovers.
 
 **The value is the button.** The old row was ``Zone: <value>  [ Copy ]`` -- a 48px
-labelled button per row, four of them down a 300px panel, and pressing one changed
+labeled button per row, four of them down a 300px panel, and pressing one changed
 nothing on screen. Here the value itself is the hit target and a 16px glyph sits at the
 end of the row, swapping to a checkmark for a moment on copy. The noise drops and the hit
 target grows, which is the usual failure mode of icon-ifying a button and is worth having
@@ -38,7 +38,7 @@ mean it.
 THE SIDEBAR FLOOR IS NOT TOUCHED
 
 This card needs *less* than the one it replaced -- three 22px icon buttons where there
-were three labelled ones, and elided rows where there were labelled rows each closed by a
+were three labeled ones, and elided rows where there were labeled rows each closed by a
 48px ``Copy``. The floor it left behind was measured from that old tool row, and stayed
 as a conservative bound until the window-sizing change it was waiting for arrived: the
 right sidebar's floor is now measured from the Log tab's header row, the widest row the
@@ -123,13 +123,13 @@ def account_stripe_keys(usernames: list[str | None], accounts: list[dict]) -> li
 
     *usernames* is what ``ClientManager.account_for`` said about each client in display
     order, ``None`` for one it could not name. The answer keeps that ``None``: an
-    unidentified window gets **no stripe** rather than a default colour, because a colour
+    unidentified window gets **no stripe** rather than a default color, because a color
     on this card is a claim about which account is running and there is nothing to claim.
 
     Resolved through :func:`account_color_keys` over the *whole* account list rather than
-    per username, because a colour is a property of the list -- see account_accent.py.
+    per username, because a color is a property of the list -- see account_accent.py.
     A username no longer in that list also falls through to ``None``: an account that has
-    been deleted has no slot, and picking one for it would put a colour on the card that
+    been deleted has no slot, and picking one for it would put a color on the card that
     matches nothing anywhere else on screen.
     """
     keys = account_color_keys(accounts)
@@ -137,7 +137,7 @@ def account_stripe_keys(usernames: list[str | None], accounts: list[dict]) -> li
 
 
 def player_name_text(cached_name: str | None, index: int) -> str:
-    """What the card's header reads, honouring Streamer Mode.
+    """What the card's header reads, honoring Streamer Mode.
 
     Streamer Mode substitutes "Character N" rather than blanking the header: the card's
     pill already says which player this is, so the substitute is redundant -- but blanking
@@ -263,7 +263,7 @@ class CopyValue(ThemedMixin, QWidget):
     def copy(self) -> bool:
         """Put the value on the clipboard and confirm it. False if there was nothing to copy.
 
-        Public because it is the whole behaviour of this widget, and a test asserting that
+        Public because it is the whole behavior of this widget, and a test asserting that
         a click copies the value the row displays should be able to ask for the copy
         without synthesising a mouse.
         """
@@ -304,10 +304,10 @@ class CopyValue(ThemedMixin, QWidget):
     # -- painting ------------------------------------------------------
 
     def apply_theme_styles(self) -> None:
-        """The row's own fill, and the value's colour.
+        """The row's own fill, and the value's color.
 
         Hover is state rather than a ``:hover`` pseudo-class, the same finding as
-        ``CardFrame``: this pass colours the fill and the label together, and a
+        ``CardFrame``: this pass colors the fill and the label together, and a
         pseudo-class would restyle one of them and leave the other in the old palette
         after a theme switch.
         """
@@ -397,7 +397,7 @@ class PlayerCard(CardFrame):
         header.setSpacing(6)
         # Ahead of the name, where an ordinal belongs, and only on a hooked card: an
         # unhooked client is not Player anything until it is hooked back in. The same
-        # account-coloured pill the Combat tab's deck card for this slot wears (#40).
+        # account-colored pill the Combat tab's deck card for this slot wears (#40).
         self._pill = PlayerBadge(self._index + 1) if not self._is_unhooked else None
         if self._pill is not None:
             header.addWidget(self._pill, 0, Qt.AlignmentFlag.AlignVCenter)
@@ -411,7 +411,7 @@ class PlayerCard(CardFrame):
         self._zone = self._data_row(layout, "Zone", "Click to copy this zone name", Qt.TextElideMode.ElideLeft)
         # An ElidedLabel and not a word-wrapped QLabel, for XYZ as for the rest: a wrapped
         # QLabel reports a 26px sizeHint for a single 12px line, which made this row
-        # visibly taller than its neighbours and pushed the value below its prefix.
+        # visibly taller than its neighbors and pushed the value below its prefix.
         self._xyz = self._data_row(layout, "XYZ", "Click to copy this position as JSON")
         self._mob = self._data_row(layout, "Enemy", "Click to copy the closest enemy's name")
         self._xyz.set_value(XYZ_PLACEHOLDER, PLACEHOLDER)
@@ -469,7 +469,7 @@ class PlayerCard(CardFrame):
     def _verbs(self) -> list[CardVerb]:
         """Entities, UI Tree, and the hook toggle -- all three on the face.
 
-        The three that were labelled ``QPushButton``s in a row of their own. They are the
+        The three that were labeled ``QPushButton``s in a row of their own. They are the
         card's whole verb list, none of them is destructive, and this surface exists to
         run them, so all three are pinned open on the face and all three are in the menu
         as well. The tooltips carry the full names the labels could not: "Entity Browser"
@@ -575,11 +575,11 @@ class PlayerCard(CardFrame):
             self._pill.set_player(index + 1)
 
     def set_color_key(self, key: int | None) -> None:
-        """Stripe the card's left edge with an account's colour, or None to drop the stripe.
+        """Stripe the card's left edge with an account's color, or None to drop the stripe.
 
         Re-applied on every refresh tick rather than resolved once: ``account_for`` learns
         an identity from inside ``ClientManager``'s loop and signals nothing when it does,
-        so a card coloured in its constructor is one that was built before the answer
+        so a card colored in its constructor is one that was built before the answer
         existed and never asks again.
 
         The ``P{n}`` pill takes the same key, so the pill and the stripe cannot disagree.
@@ -631,7 +631,7 @@ class PlayerCard(CardFrame):
     def _apply_state_palette(self) -> bool:
         """Sit an unhooked card back on the disabled surface, keeping its stripe.
 
-        Greyed, but not by the launch cards' rule: this state is not a refusal. The client
+        Grayed, but not by the launch cards' rule: this state is not a refusal. The client
         is still a real client on a real account and its card still says which, so the
         stripe survives -- what has changed is that nothing on it is live any more. The
         fill and the captions both move, because either alone reads as enabled
@@ -701,7 +701,7 @@ class PlayerCard(CardFrame):
         try:
             free = await self._client.game_client.free_camera_controller()
             pos = await free.position()
-            # Exit freecam before teleporting — matches Deimos behaviour.
+            # Exit freecam before teleporting — matches Deimos behavior.
             await self._client.camera_elastic()
             self._set_freecam(False)
             await self._client.teleport(pos, wait_on_inuse=True, purge_on_after_unuser_fixer=True)

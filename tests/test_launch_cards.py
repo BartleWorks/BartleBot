@@ -13,7 +13,7 @@ MISHA = {"gid": 1002, "name": "Misha SkullSeer"}
 
 
 def _displays(usernames, accounts):
-    """Just the pill captions — most of these tests are about the text, not the colour."""
+    """Just the pill captions — most of these tests are about the text, not the color."""
     return [spec.display for spec in launch_cards.account_pill_specs(usernames, accounts)]
 
 
@@ -117,13 +117,13 @@ def test_fitting_falls_back_to_the_count_with_no_width():
     assert launch_cards.fit_character_summary(names, 0, _measure) == " · ".join(names)
 
 
-def test_fitting_honours_streamer_mode_through_character_names():
+def test_fitting_honors_streamer_mode_through_character_names():
     SettingsManager.instance().streamer_mode = True
     names = launch_cards.character_names([LUKE, MISHA])
     assert launch_cards.fit_character_summary(names, 100, _measure) == "Character 1 · Character 2"
 
 
-def test_character_summary_honours_streamer_mode():
+def test_character_summary_honors_streamer_mode():
     SettingsManager.instance().streamer_mode = True
     summary = launch_cards.character_summary([LUKE, MISHA])
     assert summary == "Character 1 · Character 2"
@@ -166,22 +166,22 @@ def test_an_account_without_an_alias_is_censored():
     assert _displays(["someone@example.com"], accounts) == ["s***m"]
 
 
-def test_a_profile_pill_is_coloured_by_its_account():
-    """The whole point of the colour: the pill and that account's own card match, so a
+def test_a_profile_pill_is_colored_by_its_account():
+    """The whole point of the color: the pill and that account's own card match, so a
     profile's membership can be read by looking rather than by parsing four names."""
     account = {"username": "someone@example.com", "alias": "Main"}
     (spec,) = launch_cards.account_pill_specs(["someone@example.com"], [account])
     assert spec.color_key == account_accent.account_color_key("someone@example.com", account)
 
 
-def test_a_pinned_colour_beats_the_derived_one():
+def test_a_pinned_color_beats_the_derived_one():
     account = {"username": "someone@example.com", "alias": "Main", "color": 4}
     (spec,) = launch_cards.account_pill_specs(["someone@example.com"], [account])
     assert spec.color_key == 4
 
 
-def test_a_deleted_account_still_gets_a_colour():
-    """A grey pill would read as "no account colour" rather than as the missing account
+def test_a_deleted_account_still_gets_a_color():
+    """A gray pill would read as "no account color" rather than as the missing account
     it is, and there is no card left to match it against either way."""
     (spec,) = launch_cards.account_pill_specs(["gone@example.com"], [])
     assert 1 <= spec.color_key <= account_accent.ACCOUNT_PALETTE_SIZE

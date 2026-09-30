@@ -1,4 +1,4 @@
-"""Text boxes for the combat DSL: syntax colouring, underlines, and completion.
+"""Text boxes for the combat DSL: syntax coloring, underlines, and completion.
 
 Two kinds of underline: a parse error, in ``error``, and a spell name no card has, in
 ``syntax_warning`` — ``combat_runner.dsl_error`` and ``dsl_warnings`` decide both.
@@ -20,8 +20,8 @@ keyword (``@``, ``any<``, ``?(``, ``.`` in a condition), and as soon as a typed 
 matches a keyword. Never at the start of a move with nothing typed, where the
 likeliest thing coming is a spell name. Ctrl+Space asks for it anywhere.
 
-Colours are read from ``THEME`` each time a line is coloured, so nothing is baked
-in; a theme switch arrives as a ``StyleChange``, and the editor re-colours.
+Colors are read from ``THEME`` each time a line is colored, so nothing is baked
+in; a theme switch arrives as a ``StyleChange``, and the editor re-colors.
 """
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ _NON_SPACE = re.compile(r"\S*")
 
 
 class DslHighlighter(QSyntaxHighlighter):
-    """Colours each line of a DSL document, and underlines where it stops parsing."""
+    """Colors each line of a DSL document, and underlines where it stops parsing."""
 
     def __init__(self, document: QTextDocument) -> None:
         super().__init__(document)
@@ -62,14 +62,14 @@ class DslHighlighter(QSyntaxHighlighter):
         return self._warnings
 
     def set_error(self, error: DslError | None) -> None:
-        """Underline *error*'s position, or nothing. Re-colours only the lines involved."""
+        """Underline *error*'s position, or nothing. Re-colors only the lines involved."""
         if error == self._error:
             return
         previous, self._error = self._error, error
         self._rehighlight_lines(e.line for e in (previous, error) if e is not None)
 
     def set_warnings(self, warnings: tuple[DslWarning, ...]) -> None:
-        """Underline each of *warnings* in place of the last set. Re-colours only the lines involved."""
+        """Underline each of *warnings* in place of the last set. Re-colors only the lines involved."""
         warnings = tuple(warnings)
         if warnings == self._warnings:
             return
@@ -78,7 +78,7 @@ class DslHighlighter(QSyntaxHighlighter):
 
     def highlightBlock(self, text: str | None) -> None:  # noqa: N802 - Qt override
         # PyQt6 aborts the process when an exception escapes a virtual method, and
-        # colouring is cosmetic: a line drawn plain is always better than no app.
+        # coloring is cosmetic: a line drawn plain is always better than no app.
         try:
             self._highlight(text or "")
         except Exception:
@@ -122,11 +122,11 @@ class DslHighlighter(QSyntaxHighlighter):
         self._underline(start, end, "error")
 
     def _underline(self, start: int, end: int, token: str) -> None:
-        colour = THEME.qcolor(token)
+        color = THEME.qcolor(token)
         for position in range(start, end):
             fmt = self.format(position)
             fmt.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
-            fmt.setUnderlineColor(colour)
+            fmt.setUnderlineColor(color)
             self.setFormat(position, 1, fmt)
 
 
@@ -179,13 +179,13 @@ class _DslEditMixin:
         """Underline where *error* says the DSL stops parsing; ``None`` clears it."""
         highlighter = self._dsl_highlighter
         if highlighter is not None:
-            self._recolour_quietly(lambda: highlighter.set_error(error))
+            self._recolor_quietly(lambda: highlighter.set_error(error))
 
     def set_dsl_warnings(self, warnings: tuple[DslWarning, ...]) -> None:
         """Underline each spell name in *warnings*; an empty tuple clears them."""
         highlighter = self._dsl_highlighter
         if highlighter is not None:
-            self._recolour_quietly(lambda: highlighter.set_warnings(warnings))
+            self._recolor_quietly(lambda: highlighter.set_warnings(warnings))
 
     def show_completions(self, *, forced: bool, may_open: bool) -> bool:
         """Offer what can go at the cursor, and return whether the popup is showing.
@@ -253,7 +253,7 @@ class _DslEditMixin:
         if event.type() != QEvent.Type.StyleChange or self._dsl_highlighter is None:
             return
         try:
-            self._recolour_quietly(self._dsl_highlighter.rehighlight)
+            self._recolor_quietly(self._dsl_highlighter.rehighlight)
         except Exception:
             logger.exception("DSL re-highlight on theme change failed")
 
@@ -261,8 +261,8 @@ class _DslEditMixin:
     # Internals
     # ------------------------------------------------------------------
 
-    def _recolour_quietly(self, recolour) -> None:  # noqa: ANN001
-        """Run a re-colouring without it reaching ``textChanged``.
+    def _recolor_quietly(self, recolor) -> None:  # noqa: ANN001
+        """Run a re-coloring without it reaching ``textChanged``.
 
         Outside an edit, Qt reports a highlighter's format change as a change to the
         document's contents, so ``textChanged`` fires with the text untouched. Both
@@ -272,7 +272,7 @@ class _DslEditMixin:
         """
         blocked = self.blockSignals(True)
         try:
-            recolour()
+            recolor()
         finally:
             self.blockSignals(blocked)
 

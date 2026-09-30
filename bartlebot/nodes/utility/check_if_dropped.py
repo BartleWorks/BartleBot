@@ -68,7 +68,7 @@ async def run(machine, clients: list, params: dict) -> str:
 
     await machine.wait_for_drop_poll()
 
-    # Normalise item names for case-insensitive comparison.
+    # Normalize item names for case-insensitive comparison.
     items = [n.strip().lower() for n in item_names if n.strip()]
     if not items:
         machine.log("check_if_dropped: item_names is empty — returning FALSE")

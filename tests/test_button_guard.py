@@ -46,27 +46,27 @@ GUI_ROOT = pathlib.Path(__file__).resolve().parent.parent / "bartlebot" / "gui"
 #: The reason is printed when the check fails, so adding an entry means writing a
 #: sentence the next person can act on.
 #:
-#: The bar is "this is not a labelled verb sharing a row". Two shapes qualify
+#: The bar is "this is not a labeled verb sharing a row". Two shapes qualify
 #: today: a button whose *background is the data* it displays, and a button that
 #: belongs to some other vocabulary (a status pill, a section-heading toggle).
 #: "It would be fiddly to convert" is not a reason.
 ALLOWED_PUSH_BUTTONS: dict[str, str] = {
     "settings/theme_tab.py:_reset_btn": (
-        "Reset to System Default, styled with hardcoded colours on purpose — it is the "
+        "Reset to System Default, styled with hardcoded colors on purpose — it is the "
         "way out of a custom theme that has broken its own tokens, so it has to stay "
         "legible exactly when THEME is what cannot be trusted. An ActionButton derives "
-        "every colour it draws from THEME and so cannot promise that."
+        "every color it draws from THEME and so cannot promise that."
     ),
     "settings/theme_tab.py:btn": (
-        "A colour swatch in the token editor: the background *is* the data — it shows "
+        "A color swatch in the token editor: the background *is* the data — it shows "
         "the value of the token the label names, and its text is that hex value."
     ),
     "canvas/param_panel.py:btn": (
-        "A region colour swatch in the inspector — the background is the data. 22px "
+        "A region color swatch in the inspector — the background is the data. 22px "
         "square, no label, one of six in a palette row."
     ),
     "canvas/edit_scene.py:btn": (
-        "The same region colour swatch, in the region-properties dialog — the background is the data."
+        "The same region color swatch, in the region-properties dialog — the background is the data."
     ),
     "canvas/bot_canvas.py:_warning_pill": (
         "A status pill in the toolbar that happens to be clickable, not a verb. It "
@@ -180,7 +180,7 @@ def _push_button_sites() -> tuple[tuple[str, str, int], ...]:
 
     Direct instantiation only. ``IconButton`` and ``LinkButton`` both subclass
     ``QPushButton``, and they are the sanctioned answer for the buttons that are
-    not labelled verbs — a check that caught subclasses would flag every correct
+    not labeled verbs — a check that caught subclasses would flag every correct
     conversion the rollout made.
 
     A call that is never bound to a name still gets a key, off its line number, so
@@ -248,7 +248,7 @@ def test_no_new_bare_push_buttons() -> None:
     lines = [
         f"{len(offenders)} bare QPushButton(s) under gui/ are not on the allowlist.",
         "",
-        "Use ActionButton for a labelled verb sharing a row, IconButton for a glyph",
+        "Use ActionButton for a labeled verb sharing a row, IconButton for a glyph",
         "with no label, or LinkButton for a control inline in prose or under a card.",
         "See gui/CLAUDE.md, 'Buttons'.",
         "",

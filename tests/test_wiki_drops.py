@@ -149,7 +149,7 @@ def test_a_name_with_no_suffix_is_returned_unchanged():
     assert in_game_name("No Pain, No Gain Onyx") == "No Pain, No Gain Onyx"
 
 
-def test_normalising_is_idempotent():
+def test_normalizing_is_idempotent():
     once = in_game_name("Balance Crushing Pin (60, Death)")
     assert in_game_name(once) == once
 
@@ -168,7 +168,7 @@ def test_match_name_is_the_in_game_form_when_they_differ():
 
 
 def test_pins_of_different_levels_stay_distinct():
-    # The level *is* shown in-game, so it must survive normalisation: nine shipped
+    # The level *is* shown in-game, so it must survive normalization: nine shipped
     # bots drop the same pin at two levels, and collapsing them would mean keeping
     # one level silently kept the other.
     names = {in_game_name(f"Fire Conversion Pin ({level})") for level in (140, 150, 160, 170)}

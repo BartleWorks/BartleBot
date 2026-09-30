@@ -11,7 +11,7 @@ Two markings, both borrowed from the systems that solved this before us:
 
 * an **inherited** caption naming the level that answered -- the safety dialog's
   ``(app setting)`` suffix generalised to all four levels;
-* a coloured **left bar** plus an enabled **revert** button on any row the user
+* a colored **left bar** plus an enabled **revert** button on any row the user
   has overridden, following VS Code's settings gutter and Unity's prefab
   overrides.
 
@@ -29,7 +29,7 @@ Descriptions are folded away behind a ``?`` and shown at the base font when
 asked for.  Measured on a shipped bot, node-authored prose was 41% of an
 ordinary row's height and the source caption another 17%, leaving the control
 itself the minority of its own row -- at 9px, three quarters of the base size,
-which is where Windows' subpixel antialiasing starts colouring the strokes.
+which is where Windows' subpixel antialiasing starts coloring the strokes.
 Every settings surface that shows help inline keeps it to a single line;
 the ones whose prose runs this long put it behind an affordance instead.
 
@@ -165,7 +165,7 @@ class _RowChrome:
     body: QWidget
     description: QWidget | None = None
     #: The bool option this row is a child of, or ``None``.  A child is indented
-    #: under its parent and greyed while the parent is off.
+    #: under its parent and grayed while the parent is off.
     depends_on: str | None = None
 
 
@@ -233,7 +233,7 @@ class SetupSection(SidebarSection):
         self.refresh_player_availability()
 
     def refresh_player_availability(self) -> None:
-        """Re-grey the player checkboxes — call when clients connect or disconnect."""
+        """Re-gray the player checkboxes — call when clients connect or disconnect."""
         connected = len(self._get_clients())
         for w in self.findChildren(PlayerListWidget):
             w.set_available_players(connected)
@@ -365,7 +365,7 @@ class SetupSection(SidebarSection):
         text being read.
 
         Nothing here appears or disappears with the override state: the bar keeps its
-        width and changes colour, revert keeps its slot and greys out, and the
+        width and changes color, revert keeps its slot and grays out, and the
         caption always names a level.  Chrome that comes and goes as you type moves
         everything under it, which on a spin box means the second click of a pair
         lands somewhere else.
@@ -521,13 +521,13 @@ class SetupSection(SidebarSection):
         return [child for child, chrome in self._chrome.items() if chrome.depends_on == name]
 
     def _refresh_children_of(self, name: str) -> None:
-        """Grey or restore every row hanging off *name*, from its resolved value.
+        """Gray or restore every row hanging off *name*, from its resolved value.
 
         A child is disabled rather than hidden.  Hiding it would move every row
         beneath it the moment the parent is ticked -- the thing this surface avoids
         everywhere else -- and it would hide the fact that the user still has a
         value stored there, which comes back untouched when the parent comes back
-        on.  Only the *body* is greyed: the gutter stays live, so the override bar
+        on.  Only the *body* is grayed: the gutter stays live, so the override bar
         still says whose value it is and revert can still discard it.
         """
         resolution = self.resolution_for(name)

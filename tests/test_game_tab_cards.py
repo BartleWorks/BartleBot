@@ -2,7 +2,7 @@
 
 It used to draw the identical two lists as ``QListWidget`` rows of formatted text: an
 account was a display string, a profile was ``f"{name} ({n} accounts, WxH)"``. Nothing
-about the accent colour, the character roster or whether the thing would fit survived the
+about the accent color, the character roster or whether the thing would fit survived the
 trip — so the surface where accounts are *edited* said strictly less about them than the
 surface where they are merely launched, and neither taught you to read the other.
 
@@ -10,7 +10,7 @@ Same cards now. What these tests hold is the three ways the tab's copy has to di
 each of which is a deliberate decision rather than an accident of reuse:
 
 * a body click **edits**, this being the editing surface;
-* a card that will not fit is **noted, not greyed out** — greying out the row the user
+* a card that will not fit is **noted, not grayed out** — graying out the row the user
   came here to fix is hostile;
 * the verbs are **on the card face**, trash included, which is only safe because of the
   first point.
@@ -162,9 +162,9 @@ def test_clicking_a_profile_card_edits_it_rather_than_launching_it(qapp, screen,
 
 
 def test_a_card_that_would_not_fit_is_noted_and_still_editable(qapp, screen, populated, monkeypatch):
-    """Greying out the row the user came here to fix is hostile.
+    """Graying out the row the user came here to fix is hostile.
 
-    On the launch screen a card goes grey because clicking it would launch something that
+    On the launch screen a card goes gray because clicking it would launch something that
     cannot fit. Here, clicking it is how the user fixes that — so the refusal reaches the
     column banner and the card's tooltip, and stops there.
     """
