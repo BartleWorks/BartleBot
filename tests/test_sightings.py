@@ -1,12 +1,17 @@
 """Tests for telling whether clients share a zone, realm and instance (#130).
 
-The rules are pure (bartlebot.sightings), and read_sightings takes the readings from FakeClients.
+The rules are pure (bartlebot.sightings), read_sightings takes the readings from FakeClients,
+BotMachine owns the record, and ClientHealthMonitor's loading watcher is what clears it.
 """
 
-from unittest.mock import AsyncMock
+import asyncio
+from unittest.mock import AsyncMock, patch
 
 from wizwalker import XYZ
 
+import bartlebot.bot.client_health_monitor as health_module
+from bartlebot.bot.client_health_monitor import ClientHealthMonitor
+from bartlebot.bot.machine import BotMachine
 from bartlebot.nodes import node_helpers
 from bartlebot.sightings import SIGHT_RANGE, Reading, Sight, Sightings, TogetherRecord, classify
 from tests.conftest import FakeClient, FakeMachine, see_each_other
@@ -223,3 +228,85 @@ async def test_far_apart_and_unseen_reads_unknown():
     b.body.position = AsyncMock(return_value=FAR)
     result = await node_helpers.read_sightings([a, b])
     assert result.pair(0, 1) is Sight.UNKNOWN
+
+
+# ---------------------------------------------------------------------------
+# BotMachine and the loading watcher
+# ---------------------------------------------------------------------------
+
+
+def _machine(clients) -> BotMachine:
+    config = {
+        "initial": "s",
+        "states": [{"id": "s", "node_type": "mock", "params": {}}],
+        "transitions": [{"trigger": "advance", "source": "s", "dest": "s"}],
+    }
+    return BotMachine(clients=clients, config=config, node_registry={"mock": AsyncMock()})
+
+
+async def test_a_machine_outside_a_run_keeps_only_the_latest_check():
+    a, b = FakeClient(), FakeClient()
+    machine = _machine([a, b])
+    await node_helpers.read_sightings([a, b], machine)
+    assert machine.are_together([a, b])
+    b.body.position = AsyncMock(return_value=FAR)
+    see_each_other(a)
+    see_each_other(b)
+    await node_helpers.read_sightings([a, b], machine)
+    assert not machine.are_together([a, b])
+
+
+async def test_forget_sightings_and_set_clients_drop_a_client():
+    a, b, c = FakeClient(), FakeClient(), FakeClient()
+    machine = _machine([a, b, c])
+    await node_helpers.read_sightings([a, b, c], machine)
+    machine.forget_sightings(a)
+    assert machine.are_together([b, c]) and not machine.are_together([a, b])
+    machine.set_clients([b])
+    assert not machine.are_together([b, c])
+    assert machine.together_with(b, [b, c]) == [b]
+
+
+async def _run_loading_watcher(monitor: ClientHealthMonitor) -> None:
+    with patch.object(health_module, "POLL_INTERVAL", 0.0):
+        task = asyncio.create_task(monitor._loading_screen_watcher())
+        await asyncio.sleep(0.05)
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+
+async def test_the_loading_watcher_reports_loading_clients_even_when_flagged():
+    # A relog flags its clients, and a relog is exactly when a realm can change.
+    loading, flagged_loading, idle, dead = FakeClient(), FakeClient(), FakeClient(), FakeClient()
+    loading.is_loading.return_value = True
+    flagged_loading.is_loading.return_value = True
+    dead.is_loading.side_effect = RuntimeError("gone")
+    reported: list = []
+    monitor = ClientHealthMonitor(
+        clients_ref=lambda: [loading, flagged_loading, idle, dead],
+        stop_flag=asyncio.Event(),
+        on_pause=lambda: None,
+        on_loading=reported.append,
+    )
+    monitor.flag(flagged_loading.window_handle)
+    await _run_loading_watcher(monitor)
+    assert {id(c) for c in reported} == {id(loading), id(flagged_loading), id(dead)}
+
+
+async def test_a_raising_on_loading_does_not_stop_the_watcher():
+    client = FakeClient()
+    client.is_loading.return_value = True
+    calls: list = []
+
+    def boom(c):
+        calls.append(c)
+        raise RuntimeError("gui")
+
+    monitor = ClientHealthMonitor(
+        clients_ref=lambda: [client], stop_flag=asyncio.Event(), on_pause=lambda: None, on_loading=boom
+    )
+    await _run_loading_watcher(monitor)
+    assert len(calls) > 1
