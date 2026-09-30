@@ -265,6 +265,154 @@ async def test_a_fight_that_raises_on_one_client_still_collects_drops_and_resume
 
 
 # ---------------------------------------------------------------------------
+# Help from another zone or realm: porting to a fighter (Phase B)
+# ---------------------------------------------------------------------------
+
+
+def _ports(machine: BotMachine, fighter, *, refused=()):
+    """Stands in for port_waves: every porter not in *refused* lands in *fighter*'s zone and realm."""
+
+    async def port_waves(_machine, _clients, waiting, arrived, _port_map):
+        assert arrived == [fighter]
+        landed = [c for c in waiting if c not in refused]
+        for client in landed:
+            client.zone_name.return_value = HOME
+        see_each_other(fighter, *landed)
+        await node_helpers.read_sightings([fighter, *landed], machine)
+        return [c for c in waiting if c in refused]
+
+    return AsyncMock(side_effect=port_waves)
+
+
+def _separate(machine: BotMachine) -> None:
+    from bartlebot import player_realms
+
+    machine.get_option = lambda name, default=None: player_realms.SEPARATE if name == player_realms.OPTION else default
+
+
+async def test_a_helper_from_another_zone_ports_in_joins_and_the_bot_recovers(fast, combat, monkeypatch):
+    """Its start is coordinates in a zone it has left, so it follows the fighter's choice; then recovery."""
+    fighter, helper = _client(x=0.0), _client(x=7777.0)
+    see_each_other(fighter)
+    see_each_other(helper)
+    helper.zone_name.return_value = "Elsewhere"
+    fighter.in_battle.return_value = True
+    _join_on_teleport(helper)
+    helper_in_when_fighter_started: list[bool] = []
+
+    def on_start(client, _watch):
+        if client is fighter:
+            helper_in_when_fighter_started.append(helper.in_battle.return_value)
+
+    combat.fights.on_start = on_start
+    machine = BotMachine(clients=[fighter, helper], config=_config(), node_registry={})
+    machine.port_map = MagicMock()
+    ports = _ports(machine, fighter)
+    monkeypatch.setattr(ambient_combat.port_map, "port_waves", ports)
+
+    await _session(machine, combat)
+
+    ports.assert_awaited_once()
+    assert combat.fights.started == [(fighter, "dsl-0"), (helper, "dsl-1")]
+    assert helper_in_when_fighter_started == [True]  # a porter counts toward the hold
+    assert (7777.0, 0.0, 0.0) not in _teleports(helper)
+    assert machine.state == "recover"
+
+
+async def test_a_helper_from_another_realm_of_the_zone_goes_home_and_the_state_runs_again(fast, combat, monkeypatch):
+    """It goes back to its starting point, now on the fighter's realm: in a Together bot, where it belongs."""
+    fighter, helper = _client(x=0.0), _client(x=2000.0)
+    see_each_other(fighter)
+    see_each_other(helper)
+    fighter.in_battle.return_value = True
+    _join_on_teleport(helper)
+    machine = BotMachine(clients=[fighter, helper], config=_config(), node_registry={})
+    machine.port_map = MagicMock()
+    monkeypatch.setattr(ambient_combat.port_map, "port_waves", _ports(machine, fighter))
+
+    await _session(machine, combat)
+
+    assert set(combat.fights.fought()) == {fighter, helper}
+    assert _teleports(helper)[-1] == (2000.0, 0.0, 0.0)
+    combat.hub.assert_not_awaited()
+    assert machine.state == "roam"
+
+
+async def test_a_helper_landed_in_the_fight_by_its_port_is_not_teleported(fast, combat, monkeypatch):
+    fighter, helper = _client(), _client()
+    see_each_other(fighter)
+    see_each_other(helper)
+    fighter.in_battle.return_value = True
+    machine = BotMachine(clients=[fighter, helper], config=_config(), node_registry={})
+    machine.port_map = MagicMock()
+    ports = _ports(machine, fighter)
+
+    async def into_the_circle(*args):
+        left = await ports.side_effect(*args)
+        helper.in_battle.return_value = True
+        return left
+
+    monkeypatch.setattr(ambient_combat.port_map, "port_waves", AsyncMock(side_effect=into_the_circle))
+
+    await _session(machine, combat)
+
+    assert set(combat.fights.fought()) == {fighter, helper}
+    assert (500.0, 600.0, 0.0) not in _teleports(helper)
+
+
+async def test_a_refused_port_is_dropped_and_the_fight_goes_ahead(fast, combat, monkeypatch):
+    fighter, refused = _client(x=0.0), _client(x=3000.0)
+    see_each_other(fighter)
+    see_each_other(refused)
+    refused.zone_name.return_value = "Elsewhere"
+    fighter.in_battle.return_value = True
+    machine = BotMachine(clients=[fighter, refused], config=_config(), node_registry={})
+    machine.port_map = MagicMock()
+    monkeypatch.setattr(ambient_combat.port_map, "port_waves", _ports(machine, fighter, refused=[refused]))
+
+    await _session(machine, combat)
+
+    assert combat.fights.fought() == [fighter]
+    refused.teleport.assert_not_awaited()
+
+
+async def test_a_separate_bot_never_ports(fast, combat, monkeypatch):
+    """A port would move the player onto the fighter's realm, breaking the split the bot is built on."""
+    fighter, other_realm = _client(), _client()
+    see_each_other(fighter)
+    see_each_other(other_realm)
+    fighter.in_battle.return_value = True
+    machine = BotMachine(clients=[fighter, other_realm], config=_config(), node_registry={})
+    machine.port_map = MagicMock()
+    _separate(machine)
+    ports = _ports(machine, fighter)
+    monkeypatch.setattr(ambient_combat.port_map, "port_waves", ports)
+
+    await _session(machine, combat)
+
+    ports.assert_not_awaited()
+    assert combat.fights.fought() == [fighter]
+    other_realm.teleport.assert_not_awaited()
+
+
+async def test_no_port_map_skips_porting(fast, combat, monkeypatch):
+    fighter, other_zone = _client(), _client()
+    see_each_other(fighter)
+    see_each_other(other_zone)
+    other_zone.zone_name.return_value = "Elsewhere"
+    fighter.in_battle.return_value = True
+    machine = BotMachine(clients=[fighter, other_zone], config=_config(), node_registry={})
+    assert machine.port_map is None
+    ports = _ports(machine, fighter)
+    monkeypatch.setattr(ambient_combat.port_map, "port_waves", ports)
+
+    await _session(machine, combat)
+
+    ports.assert_not_awaited()
+    assert combat.fights.fought() == [fighter]
+
+
+# ---------------------------------------------------------------------------
 # Holding the fighter's first cast
 # ---------------------------------------------------------------------------
 
