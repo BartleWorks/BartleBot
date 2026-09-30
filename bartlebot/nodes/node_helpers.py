@@ -15,7 +15,7 @@ from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 logger = logging.getLogger(__name__)
 
-from bartlebot import dialog_captions, wizard_names
+from bartlebot import dialog_captions, sightings, wizard_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
     DECLINE_QUEST_PATH,
@@ -1432,6 +1432,55 @@ async def _position_or_none(client):
     except Exception:
         logger.debug("Could not read a client's position", exc_info=True)
         return None
+
+
+async def _or_none(awaitable):
+    """*awaitable*'s result, or None if it raised. For reads a check can do without."""
+    try:
+        return await awaitable
+    except Exception:
+        return None
+
+
+async def _entity_gids(client) -> frozenset[int] | None:
+    """The global ids *client* has loaded, or None if its entity list could not be read."""
+    try:
+        entities = await client.get_base_entity_list()
+    except Exception:
+        logger.debug("Could not read a client's entity list", exc_info=True)
+        return None
+    gids = await asyncio.gather(*(_or_none(e.global_id_full()) for e in entities))
+    return frozenset(g for g in gids if g is not None)
+
+
+async def _reading(client) -> sightings.Reading:
+    gid, zone, position, loading, seen = await asyncio.gather(
+        _or_none(client.client_object.global_id_full()),
+        _or_none(client.zone_name()),
+        _position_or_none(client),
+        _or_none(client.is_loading()),
+        _entity_gids(client),
+    )
+    # An unreadable loading flag is treated as loading: nothing else it reports can be trusted.
+    return sightings.Reading(gid=gid, zone=zone, position=position, loading=loading is not False, seen=seen)
+
+
+async def read_sightings(clients: list, machine=None) -> sightings.Sightings:
+    """Check which of *clients* share a zone, realm and instance. See :mod:`bartlebot.sightings`.
+
+    One id read, one entity-list read and one set intersection per client, about 5 ms each.
+    Nothing here raises: a read that fails makes its pairs Unknown.
+
+    With *machine*, the check is also folded into its record of who has been seen together
+    (``BotMachine.note_sightings``), which is what lets a later check answer for players
+    who have since walked out of each other's sight.
+    """
+    readings = await asyncio.gather(*(_reading(c) for c in clients))
+    result = sightings.Sightings(clients, readings)
+    note = getattr(machine, "note_sightings", None)
+    if note is not None:
+        note(result)
+    return result
 
 
 class PortToFriendResult(NamedTuple):
