@@ -45,7 +45,7 @@ HOW TO RUN
 Each run writes its samples to its own tools/probe_aggro_radius.<time>.local.csv
 (gitignored). Re-read one or several, pooled, without the game running:
 
-         uv run python tools/probe_aggro_radius.py --analyse tools/probe_aggro_radius.*.local.csv
+         uv run python tools/probe_aggro_radius.py --analyze tools/probe_aggro_radius.*.local.csv
 
 Distances are 3D unless labeled 2D. WizWalker's XYZ.distance, which the safety check in
 WizSprinter uses, is 2D: it ignores height.
@@ -254,7 +254,7 @@ def _find(sample: Sample, gid: int) -> MobPos | None:
     return next((m for m in sample.mobs if m.gid == gid), None)
 
 
-def analyse_trial(samples: list[Sample], trial: Trial) -> TrialResult | None:
+def analyze_trial(samples: list[Sample], trial: Trial) -> TrialResult | None:
     """The mob nearest the wizard at the trigger, how far it was, and how it was moving."""
     before = [s for s in samples if s.t <= trial.trigger_t]
     if not before:
@@ -308,7 +308,7 @@ def summarize(samples: list[Sample], events: Events, reaction: float) -> str:
 
     results = []
     for n, trial in enumerate(trials, start=1):
-        result = analyse_trial(samples, trial)
+        result = analyze_trial(samples, trial)
         lines.append("")
         if result is None:
             lines.append(f"  battle {n} at t={trial.battle_start:.1f}s: no mob sample before the trigger")
@@ -538,10 +538,10 @@ async def record(client, args, writer, samples: list[Sample], events: Events) ->
 
 
 async def main(args: argparse.Namespace) -> int:
-    if args.analyse:
-        paths = [Path(p) for pattern in args.analyse for p in sorted(glob.glob(pattern))]
+    if args.analyze:
+        paths = [Path(p) for pattern in args.analyze for p in sorted(glob.glob(pattern))]
         if not paths:
-            print(f"No CSV matches {args.analyse}")
+            print(f"No CSV matches {args.analyze}")
             return 2
         print("Pooling " + ", ".join(p.name for p in paths))
         samples, events = read_csvs(paths)
@@ -607,7 +607,7 @@ def _parse_args() -> argparse.Namespace:
         help=f"Seconds subtracted from a mark when no forced run is found (default {DEFAULT_REACTION}).",
     )
     parser.add_argument(
-        "--analyse",
+        "--analyze",
         metavar="CSV",
         nargs="+",
         help="Summarize saved CSVs (globs allowed), pooled, instead of recording.",
