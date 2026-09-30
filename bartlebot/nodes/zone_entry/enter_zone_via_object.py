@@ -15,6 +15,7 @@ from bartlebot.nodes.timing import (
     TRIGGER_TIMEOUT,
     ZONE_CHANGE_TIMEOUT,
 )
+from bartlebot.option_groups import GROUP_GENERAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -107,6 +108,7 @@ NODE_SPEC = NodeSpec(
         player_realms.SPEC,
         BotOptionSpec(
             name="Safety Delay",
+            group=GROUP_GENERAL,
             type="float",
             default=3.0,
             minimum=0.0,

@@ -17,6 +17,7 @@ from bartlebot.nodes.paths import (
     TEAMUP_3_PLAYER_CHECKBOX,
     TEAMUP_4_PLAYER_CHECKBOX,
 )
+from bartlebot.option_groups import GROUP_DUNGEON, GROUP_GENERAL, GROUP_TEAM
 
 #: Option names, so the safety dialog and the tests name them from one place.
 OPTION_TEAM_UP = "Team-Up"
@@ -129,6 +130,7 @@ NODE_SPEC = NodeSpec(
         player_realms.SPEC,
         BotOptionSpec(
             name="Safety Delay",
+            group=GROUP_GENERAL,
             type="float",
             default=3.0,
             minimum=0.0,
@@ -140,6 +142,7 @@ NODE_SPEC = NodeSpec(
         ),
         BotOptionSpec(
             name="Challenge Mode",
+            group=GROUP_DUNGEON,
             type="bool",
             default=False,
             description=(
@@ -152,6 +155,7 @@ NODE_SPEC = NodeSpec(
         ),
         BotOptionSpec(
             name=OPTION_TEAM_UP,
+            group=GROUP_TEAM,
             type="bool",
             default=False,
             description=(
@@ -164,6 +168,7 @@ NODE_SPEC = NodeSpec(
         ),
         BotOptionSpec(
             name=OPTION_MINIMUM_TEAM_SIZE,
+            group=GROUP_TEAM,
             type="int",
             default=2,
             minimum=2,

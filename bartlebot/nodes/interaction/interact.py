@@ -14,6 +14,7 @@ from bartlebot.nodes.timing import (
     OBJECT_USE_DELAY,
     POLL_INTERVAL,
 )
+from bartlebot.option_groups import GROUP_GENERAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -129,6 +130,7 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[
         BotOptionSpec(
             name="Safety Delay",
+            group=GROUP_GENERAL,
             type="float",
             default=3.0,
             minimum=0.0,

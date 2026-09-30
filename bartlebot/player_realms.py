@@ -24,6 +24,7 @@ leftover override). :func:`separate_blocked_by` is the one rule all three read.
 from __future__ import annotations
 
 from bartlebot.nodes.param_schema import BotOptionSpec
+from bartlebot.option_groups import GROUP_TEAM
 
 OPTION = "Player Realms"
 OPTION_TYPE = "player_realms"
@@ -34,6 +35,7 @@ VALUES: tuple[str, ...] = (TOGETHER, SEPARATE)
 
 SPEC = BotOptionSpec(
     name=OPTION,
+    group=GROUP_TEAM,
     type=OPTION_TYPE,
     default=TOGETHER,
     description=(

@@ -12,6 +12,7 @@ from bartlebot import player_realms, realms, zone_names
 from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM
+from bartlebot.option_groups import GROUP_GENERAL
 
 PARAM_KEEP_CURRENT_REALM = "keep_current_realm"
 
@@ -65,6 +66,7 @@ NODE_SPEC = NodeSpec(
         player_realms.SPEC,
         BotOptionSpec(
             name="Safety Delay",
+            group=GROUP_GENERAL,
             type="float",
             default=3.0,
             minimum=0.0,
@@ -76,6 +78,7 @@ NODE_SPEC = NodeSpec(
         ),
         BotOptionSpec(
             name=OPTION_FAVORITE_REALM,
+            group=GROUP_GENERAL,
             type="realm",
             # Null, always: the author has no opinion about which realm you farm in, and
             # cannot have one. The level below is your app setting.
