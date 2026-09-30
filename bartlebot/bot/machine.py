@@ -34,6 +34,10 @@ if TYPE_CHECKING:
 
 _QTY_PREFIX = re.compile(r"^(\d+)\s+(.+)$")
 
+# Node types the ambient combat watcher never cancels. handle_combat is already fighting
+# (the watcher leaves its fights alone entirely); relog is itself the recovery.
+NEVER_PREEMPTED = frozenset({"handle_combat", "relog"})
+
 
 class BotMachine:
     """
@@ -91,6 +95,13 @@ class BotMachine:
         self._parked = asyncio.Event()
         self._ambient_combat_lock = asyncio.Lock()
         self._combat_auto_paused: bool = False  # True while watcher has auto-paused the FSM
+        # Set when the ambient combat watcher cancels the running node to take over a fight.
+        # The run loop then runs that state again rather than counting a result. See
+        # _preempt_node.
+        self._preempted: bool = False
+        # True while the loop is running a state again after a preemption, so the rerun is
+        # not logged as a new pass.
+        self._rerunning: bool = False
         self._ambient_dialog_last_seen: float = 0.0  # monotonic timestamp of last dismissed banner
         self.last_result: str | None = None
         self._no_match_count: int = 0
@@ -370,15 +381,19 @@ class BotMachine:
 
         False on timeout, and False when no run loop is active at all: a machine that was
         never started, or one already past its loop, never parks and callers must not wait
-        out the timeout expecting otherwise.
+        out the timeout expecting otherwise. A stop while waiting returns False at once, since
+        a loop that stops breaks out without parking.
         """
         if self._stop_flag.is_set():
             return False
+        parked = asyncio.ensure_future(self._parked.wait())
+        stopped = asyncio.ensure_future(self._stop_flag.wait())
         try:
-            await asyncio.wait_for(self._parked.wait(), timeout)
-        except TimeoutError:
-            return False
-        return True
+            await asyncio.wait({parked, stopped}, timeout=timeout, return_when=asyncio.FIRST_COMPLETED)
+        finally:
+            parked.cancel()
+            stopped.cancel()
+        return self._parked.is_set() and not self._stop_flag.is_set()
 
     def suspend_health_checks_for(self, hwnds: Iterable[int]) -> None:
         """Stop ClientHealthMonitor reacting to these clients until the run resumes.
@@ -513,7 +528,9 @@ class BotMachine:
                         logger.exception("on_state_change callback raised in state %s", self._fmt_state(state_id))
 
                 node_type = state_def["node_type"]
-                self._note_pass(state_id)
+                if not self._rerunning:
+                    self._note_pass(state_id)
+                self._rerunning = False
                 self._current_node_type = node_type
                 self._states_executed += 1
                 self._log_machine(f"Executing state {self._fmt_state(state_id)} (node_type={node_type})", logging.DEBUG)
@@ -527,6 +544,17 @@ class BotMachine:
                         # Our deferred_cancel fired after the grace period elapsed.
                         self._log_machine("Node forcibly cancelled after grace period.", logging.WARNING)
                         break
+                    if self._preempted and not asyncio.current_task().cancelling():
+                        # The ambient combat watcher took the node's clients for a fight.
+                        # No result and no transition: park, and on resume run this state
+                        # again from the start. The counters are left alone.
+                        self._preempted = False
+                        self._rerunning = True
+                        self._log_machine(
+                            f"State {self._fmt_state(state_id)} interrupted by a fight; it runs again afterwards",
+                            logging.INFO,
+                        )
+                        continue
                     # run() was cancelled from outside — propagate.
                     raise
                 except (ClientClosedError, ExceptionalTimeout, MemoryReadError) as exc:
@@ -752,6 +780,7 @@ class BotMachine:
                         self._combat_auto_paused = True
                         self.pause()
                         self._log_machine("Ambient combat: FSM paused — waiting for combat to finish", logging.INFO)
+                        await self._preempt_node()
 
                     self._log_machine(
                         f"Ambient combat detected on client(s) {battling_slots} — handling",
@@ -798,6 +827,35 @@ class BotMachine:
                     self._combat_auto_paused = False
                     self.resume()
                     self._log_machine("Ambient combat: FSM resumed", logging.INFO)
+
+    async def _preempt_node(self) -> None:
+        """Cancel the running node so the ambient watcher has the clients to itself.
+
+        Pausing alone only stops the loop at the next node boundary, leaving the node free to
+        move a client the watcher is fighting with. The cancelled state runs again from the
+        start once the watcher resumes (see the loop's CancelledError branch). This waits for
+        the loop to park, so nothing the node started is still running and a node helper the
+        watcher reuses logs as the machine rather than as the cancelled node.
+
+        Never cancels a node in NEVER_PREEMPTED: relog is itself the recovery, and a logout
+        ends the fight anyway. Cancellation is not new to nodes: stop() already does it after
+        its grace period.
+        """
+        from bartlebot.nodes.timing import PREEMPT_PARK_TIMEOUT
+
+        task = self._current_node_task
+        if task is None or task.done():
+            return
+        if self._state_map.get(self.state, {}).get("node_type") in NEVER_PREEMPTED:
+            return
+        self._preempted = True
+        task.cancel()
+        if not await self.wait_until_parked(PREEMPT_PARK_TIMEOUT):
+            self._log_machine(
+                f"Ambient combat: the interrupted state did not stop within {PREEMPT_PARK_TIMEOUT:.0f}s;"
+                " fighting anyway",
+                logging.WARNING,
+            )
 
     # --- Unrouted return values ---
 
@@ -908,6 +966,9 @@ class BotMachine:
         """Resume a paused FSM."""
         if self._health_monitor is not None:
             self._health_monitor.clear_flagged()  # allow re-detection after client recovery
+        # A preemption whose node finished before the cancel landed is never consumed by the
+        # loop. The FSM has already moved on then, and the next state is the right one to run.
+        self._preempted = False
         self._parked.clear()
         self._resume_event.set()
 

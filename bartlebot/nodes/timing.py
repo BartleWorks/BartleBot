@@ -612,6 +612,11 @@ AMBIENT_COMBAT_MAX_DURATION = 600.0
 # The ambient combat watcher's counterpart to handle_combat's max_duration param: a fight
 # no node started is fled once it has run this long.
 
+PREEMPT_PARK_TIMEOUT = 5.0
+# Seconds the ambient combat watcher waits for a node it cancelled to unwind and the run
+# loop to park. A cancel lands at the node's next await, so this is normally a moment; past
+# it the fight is fought anyway, since a fighter left alone is worse than a node still running.
+
 POST_MARK_WAIT = 2.0
 # Seconds to wait after PAGE_DOWN for the UI to reflect the new mark state.
 

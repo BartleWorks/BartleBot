@@ -71,6 +71,25 @@ class TestWaitUntilParked:
 
         await _finish(machine, task)
 
+    async def test_a_stop_while_waiting_returns_at_once(self):
+        """A loop that stops breaks out without parking, so waiting on would cost the whole timeout."""
+        release = asyncio.Event()
+
+        async def slow_node(*_args):
+            await release.wait()
+            return "SUCCESS"
+
+        machine = make_machine(slow_node)
+        task = await _run_briefly(machine)
+        await asyncio.sleep(0.02)  # let the node start
+        machine.pause()
+        waiting = asyncio.create_task(machine.wait_until_parked(30.0))
+        await asyncio.sleep(0)
+
+        machine.stop()
+        assert await asyncio.wait_for(waiting, timeout=1.0) is False
+        await _finish(machine, task)
+
     async def test_resume_unparks(self):
         machine = make_machine(quick_node)
         task = await _run_briefly(machine)
