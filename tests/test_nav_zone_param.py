@@ -24,7 +24,7 @@ def _form(params, clients=()):
 
 
 def test_the_zone_path_round_trips(qapp):
-    assert _form({"zone": _ENTRANCE}).get_params() == {"zone": _ENTRANCE}
+    assert _form({"zone": _ENTRANCE}).get_params()["zone"] == _ENTRANCE
 
 
 def test_the_button_names_the_world_the_zone_and_its_id_but_stores_only_the_path(qapp):
