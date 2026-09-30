@@ -7,23 +7,36 @@ where it came from when it did not come from the user.  Editing a row writes an
 whole point of the split: a shared bot stays byte-identical no matter how many
 people tune it.
 
+The rows sit in **folding cards** (#138): *This dungeon*, *Team*, *Quicksell* and
+*General*, in that order in every bot (``bartlebot.option_groups`` says which option
+goes where, and ``option_card`` draws one).  A flat list of thirteen options ran 859px
+tall against a 404px sidebar at 1080p; folding the groups nobody is working in is
+what gets the rest on screen.  Which cards are folded is the reader's, remembered in
+``settings.json`` for every bot and shared with the Options tab.  Enable Quicksell is
+not a row: it is the Quicksell card's header switch, and with it off every row in
+the card is disabled.
+
 Two markings, both borrowed from the systems that solved this before us:
 
 * an **inherited** caption naming the level that answered -- the safety dialog's
   ``(app setting)`` suffix generalised to all four levels;
 * a colored **left bar** plus an enabled **revert** button on any row the user
   has overridden, following VS Code's settings gutter and Unity's prefab
-  overrides.
+  overrides.  A card's header carries the same mark as a stripe, lit while any
+  value in it is the user's, so a folded card cannot hide one.
 
 Those two live in a fixed leading **gutter**, ``[bar][revert][?]``, which is what
 gives every row's chrome one column each instead of a staircase -- see
 ``_build_row`` for why no other placement does.  The accepted cost is roughly
-40px of permanent, mostly blank left inset.
+40px of permanent, mostly blank left inset.  Card headers carry no gutter: a header
+holding only a title would carry fifty pixels of nothing before it.
 
 The revert tooltip names the value a reset would fall back to, which is the free
 mitigation for the one accepted cost of storing overrides as bare values: an
 author who later improves their declaration is outranked silently, so the
-one-way door has to be visibly openable.
+one-way door has to be visibly openable.  The header switch has no revert: for a
+two-state control, flipping back to the inherited value *is* the reset (see
+``_on_value_changed``).
 
 Descriptions are folded away behind a ``?`` and shown at the base font when
 asked for.  Measured on a shipped bot, node-authored prose was 41% of an
@@ -52,8 +65,9 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_options
-from bartlebot.bot_options import UNSET, compose_options, is_set, values_agree
+from bartlebot import bot_options, option_groups
+from bartlebot.bot_options import UNSET, compose_options, is_set, option_specs_for, values_agree
+from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard
 from bartlebot.gui.sidebar.option_gutter import (
     GUTTER_BTN_PX,
     DescriptionSwitches,
@@ -62,7 +76,7 @@ from bartlebot.gui.sidebar.option_gutter import (
     build_gutter_row,
     keep_slot_when_hidden,
 )
-from bartlebot.gui.sidebar.sidebar_section import SidebarSection, field_label
+from bartlebot.gui.sidebar.sidebar_section import HeadingAction, SidebarSection, field_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.option_widgets import (
@@ -74,6 +88,7 @@ from bartlebot.gui.widgets.option_widgets import (
 )
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.gui.widgets.toggle_switch import ToggleSwitch
 from bartlebot.settings_manager import SettingsManager
 
 if TYPE_CHECKING:
@@ -90,15 +105,13 @@ _PLACEHOLDER = "—"
 # that appeared and disappeared would move every row beneath it as a value was typed.
 
 
-def _ordered(options: list) -> list:
-    """The composed options, with the table-shaped controls moved to the end.
+def _is_tall(opt) -> bool:
+    """Whether *opt* is drawn as a table rather than a field, and so goes last in its card.
 
-    Order otherwise follows the states that require each option, which is the order
-    the bot uses them in.  A 220px drop table sitting between two spin boxes pushes
-    everything after it off the bottom of the sidebar, so those go last -- the only
-    rearrangement, and it depends on the control rather than on any option's name.
+    A 220px drop table between two spin boxes pushes everything after it out of sight;
+    this depends on the control, never on the option's name.
     """
-    return [o for o in options if o.type not in TALL_TYPES] + [o for o in options if o.type in TALL_TYPES]
+    return opt.type in TALL_TYPES
 
 
 class _SourceCaption(ThemedTextLabel):
@@ -165,12 +178,28 @@ class _RowChrome:
     body: QWidget
     description: QWidget | None = None
     #: The bool option this row is a child of, or ``None``.  A child is indented
-    #: under its parent and grayed while the parent is off.
+    #: under its parent -- unless the parent is its card's header switch, since the
+    #: card already says what the row belongs to.
     depends_on: str | None = None
+    #: The bool option whose being off disables this row: its parent, or else the
+    #: switch heading its card.  The keep list has no parent and is still nothing
+    #: but a list while quicksell is off.
+    gate: str | None = None
+
+
+@dataclass
+class _HeaderChrome:
+    """An option drawn as its card's header switch rather than as a row."""
+
+    widget: ToggleSwitch
+    caption: _SourceCaption
+    group: str
+    #: Its description, at the top of the card body while descriptions are shown.
+    description: QWidget | None = None
 
 
 class SetupSection(SidebarSection):
-    """Collapsible 'Setup' section: one row per option, editing the user's value."""
+    """Collapsible 'Setup' section: a card per option group, editing the user's values."""
 
     # Emitted after an override is written or reset.  Deliberately *not* wired to
     # ``config_changed``: an override is not an edit to the bot, and marking the
@@ -189,7 +218,12 @@ class SetupSection(SidebarSection):
         self._rows: list[QWidget] = []
         self._composed: dict[str, object] = {}
         self._chrome: dict[str, _RowChrome] = {}
+        self._headers: dict[str, _HeaderChrome] = {}
         self._option_widgets: dict[str, QWidget] = {}
+        self._cards: dict[str, OptionCard] = {}
+        self._groups: list[option_groups.OptionGroup] = []
+        self._group_of: dict[str, str] = {}
+        self._option_specs: dict | None = None
         self._get_clients: Callable[[], list] = lambda: []
         self._show_descriptions = self._read_show_descriptions()
 
@@ -218,6 +252,9 @@ class SetupSection(SidebarSection):
 
         outer.addLayout(self._rows_layout)
         self.set_content_layout(outer)
+
+        # Which cards are folded, and the heading's Collapse all and Expand all.
+        self._folds = CardFolds(self, self._sm)
 
     # ------------------------------------------------------------------
     # Public API
@@ -248,8 +285,25 @@ class SetupSection(SidebarSection):
 
     @property
     def option_widgets(self) -> dict[str, QWidget]:
-        """``{option name: value widget}`` for the rows currently shown."""
+        """``{option name: value widget}`` for the options currently shown.
+
+        Enable Quicksell's is its card's header switch, which speaks the same check
+        box protocol as any other bool's control.
+        """
         return dict(self._option_widgets)
+
+    @property
+    def cards(self) -> dict[str, OptionCard]:
+        """``{group id: card}`` for the cards this bot has, in drawing order."""
+        return dict(self._cards)
+
+    @property
+    def collapse_all_button(self) -> HeadingAction:
+        return self._folds.collapse_all_button
+
+    @property
+    def expand_all_button(self) -> HeadingAction:
+        return self._folds.expand_all_button
 
     @property
     def descriptions_visible(self) -> bool:
@@ -274,7 +328,35 @@ class SetupSection(SidebarSection):
             name,
             override=self._override(name),
             app_value=self._app_value(name),
+            option_specs=self._option_specs,
         )
+
+    # ------------------------------------------------------------------
+    # Folding
+    # ------------------------------------------------------------------
+
+    def set_group_collapsed(self, group: str, collapsed: bool) -> None:
+        """Fold or unfold one card, and remember it for every bot."""
+        self._folds.set_group_collapsed(group, collapsed)
+
+    def collapse_all(self) -> None:
+        self._folds.collapse_all()
+
+    def expand_all(self) -> None:
+        self._folds.expand_all()
+
+    def collapse_others(self, keep: str) -> None:
+        """Leave *keep* open and fold every other card (Blender's Ctrl+click)."""
+        self._folds.collapse_others(keep)
+
+    def card_menu(self, group: str):
+        """The menu a right-click on *group*'s header opens, built but not shown."""
+        return self._folds.card_menu(group)
+
+    def showEvent(self, event) -> None:  # noqa: N802 - Qt override
+        """Pick up folds made on the Options tab while this one was not showing."""
+        self._folds.reload()
+        super().showEvent(event)
 
     # ------------------------------------------------------------------
     # Settings access
@@ -315,42 +397,93 @@ class SetupSection(SidebarSection):
         return None
 
     # ------------------------------------------------------------------
-    # Rows
+    # Cards and rows
     # ------------------------------------------------------------------
 
     def _rebuild(self) -> None:
-        """Build the whole list. Only a *different set of options* needs this.
+        """Build every card. Only a *different set of options* needs this.
 
         A value edit refreshes one row in place instead -- rebuilding would destroy
         the control the user is still holding, which for a spin box means the arrow
         they are clicking vanishes from under the pointer on the first click.
         """
-        for row in self._rows:
-            self._rows_layout.removeWidget(row)
-            row.deleteLater()
+        for card in self._rows:
+            self._rows_layout.removeWidget(card)
+            card.deleteLater()
         self._rows.clear()
         self._composed.clear()
         self._option_widgets.clear()
         self._chrome.clear()
+        self._headers.clear()
+        self._cards.clear()
+        self._group_of.clear()
 
-        options = _ordered(compose_options(self._config) if self._config is not None else [])
+        options = compose_options(self._config) if self._config is not None else []
+        # Computed once per rebuild rather than per resolution: ``resolve_for_config``
+        # walks the whole registry for it otherwise, and a card refresh resolves every
+        # option on the card.
+        self._option_specs = option_specs_for(self._config) if self._config is not None else None
         self._composed = {opt.name: opt for opt in options}
+        self._groups = option_groups.group_options(options, self._option_specs or {}, is_tall=_is_tall)
         self._switches.setVisible(any(opt.description for opt in options))
         if not options:
             self._empty_lbl.show()
+            self._folds.set_cards({})
             return
         self._empty_lbl.hide()
 
         connected = len(self._get_clients())
-        for opt in options:
-            row = self._build_row(opt, connected)
-            self._rows_layout.addWidget(row)
-            self._rows.append(row)
-        for name in {chrome.depends_on for chrome in self._chrome.values() if chrome.depends_on}:
+        for group in self._groups:
+            card = self._build_card(group, connected)
+            self._rows_layout.addWidget(card)
+            self._rows.append(card)
+            self._cards[group.id] = card
+        for name in {chrome.gate for chrome in self._chrome.values() if chrome.gate}:
             self._refresh_children_of(name)
+        self._folds.set_cards(self._cards)
         self._push_keep_list_context()
 
-    def _build_row(self, opt, connected: int) -> QWidget:
+    def _build_card(self, group: option_groups.OptionGroup, connected: int) -> OptionCard:
+        """One group's card: its header switch, if it has one, then its rows."""
+        card = OptionCard(group.id, group.title)
+        header = group.header.name if group.header is not None else None
+        if group.header is not None:
+            self._build_header(card, group)
+        for opt in group.members:
+            self._group_of[opt.name] = group.id
+            card.body_layout.addWidget(self._build_row(opt, connected, card_header=header))
+        return card
+
+    def _build_header(self, card: OptionCard, group: option_groups.OptionGroup) -> None:
+        """The card's header switch, with its source caption beside it.
+
+        The caption still names the level that answered, so the user can tell a switch
+        they set from one the app settings set. There is no revert and no ``?``: the
+        revert would only flip the switch back, and the description is in the switch's
+        tooltip and, while descriptions are shown, at the top of the card.
+        """
+        opt = group.header
+        self._group_of[opt.name] = group.id
+        resolution = self.resolution_for(opt.name)
+        switch = ToggleSwitch()
+        switch.setAccessibleName(opt.name)
+        set_widget_value(switch, resolution.value if resolution is not None else opt.default)
+        caption = _SourceCaption()
+        card.add_header_widget(caption)
+        card.add_header_widget(switch, gap_before=2)
+        connect_widget(switch, lambda new_value, name=opt.name: self._on_value_changed(name, new_value))
+        self._option_widgets[opt.name] = switch
+
+        description: QWidget | None = None
+        if opt.description:
+            description = ThemedTextLabel(opt.description)
+            description.setWordWrap(True)
+            card.body_layout.addWidget(description)
+            description.setVisible(self._show_descriptions)
+        self._headers[opt.name] = _HeaderChrome(widget=switch, caption=caption, group=group.id, description=description)
+        self._refresh_row(opt.name)
+
+    def _build_row(self, opt, connected: int, *, card_header: str | None = None) -> QWidget:
         """One option's row: a fixed leading gutter, then a head line and a control.
 
         The gutter is ``[bar][revert][?]``, and it is the only placement that gives
@@ -373,6 +506,10 @@ class SetupSection(SidebarSection):
         The description is the one exception, and it is not one: it folds on a
         deliberate click of its own ``?``, never on a value edit, and everything it
         moves is below the button that moved it.
+
+        *card_header* is the option heading this row's card, if any. A row whose
+        parent is that switch is not indented under it -- the card says what the row
+        belongs to -- but it is still disabled while the switch is off.
         """
         body = QWidget()
         body_layout = QVBoxLayout(body)
@@ -446,7 +583,8 @@ class SetupSection(SidebarSection):
         help_btn.toggled.connect(lambda shown, name=opt.name: self._set_row_description(name, shown))
 
         parent_name = self._parent_of(opt.name)
-        outer = build_gutter_row(bar, revert_btn, help_btn, body, child=parent_name is not None)
+        indented = parent_name is not None and parent_name != card_header
+        outer = build_gutter_row(bar, revert_btn, help_btn, body, child=indented)
         if description is None:
             keep_slot_when_hidden(help_btn)
         else:
@@ -462,6 +600,7 @@ class SetupSection(SidebarSection):
             body=body,
             description=description,
             depends_on=parent_name,
+            gate=parent_name or card_header,
         )
         self._refresh_row(opt.name)
         return outer
@@ -471,10 +610,14 @@ class SetupSection(SidebarSection):
         for name, widget in self._option_widgets.items():
             if self._composed_type(name) == "drop_keep_list":
                 widget.refresh()
+        self._refresh_cards()
 
     def _drops(self) -> list:
         """This bot's drop table, for the keep-list picker to show."""
         return list(self._config.drops) if self._config is not None else []
+
+    def _keep_list_pickers(self) -> list[QWidget]:
+        return [w for name, w in self._option_widgets.items() if self._composed_type(name) == "drop_keep_list"]
 
     def _push_keep_list_context(self) -> None:
         """Tell the keep-list picker what the sell flags resolved to.
@@ -482,24 +625,79 @@ class SetupSection(SidebarSection):
         The picker shows what will *happen* to each drop, and three of the answers
         are not its own: Sell Pets off spares every pet whatever the list says, and
         Sell Socket Wrenches off adds a keyword the user never typed. Those are
-        separate rows on this same surface, so flipping one has to reach the table.
+        separate rows on this same surface, so flipping one has to reach the table --
+        and the Quicksell card's folded summary and warning, which read the picker.
         """
-        pickers = [w for name, w in self._option_widgets.items() if self._composed_type(name) == "drop_keep_list"]
-        if not pickers or self._config is None:
-            return
-        try:
-            from bartlebot.nodes.utility import quicksell  # noqa: PLC0415 - heavy import, only when shown
+        pickers = self._keep_list_pickers()
+        if pickers and self._config is not None:
+            try:
+                from bartlebot.nodes.utility import quicksell  # noqa: PLC0415 - heavy import, only when shown
 
-            context = quicksell.resolve_options_for(self._config, settings=self._settings)
-        except Exception:
-            logger.exception("Could not resolve the quicksell options behind the keep-list picker")
-            return
-        for picker in pickers:
-            picker.set_context(context)
+                context = quicksell.resolve_options_for(self._config, settings=self._settings)
+            except Exception:
+                logger.exception("Could not resolve the quicksell options behind the keep-list picker")
+            else:
+                for picker in pickers:
+                    picker.set_context(context)
+        self._refresh_cards()
 
     def _composed_type(self, name: str) -> str | None:
         opt = self._composed.get(name)
         return getattr(opt, "type", None)
+
+    # ------------------------------------------------------------------
+    # The cards' headers
+    # ------------------------------------------------------------------
+
+    def _refresh_cards(self) -> None:
+        for group in self._groups:
+            self._refresh_card(group)
+
+    def _refresh_card(self, group: option_groups.OptionGroup) -> None:
+        """Re-mark one card's header from what its options resolve to.
+
+        The stripe is lit while any value on the card is the user's, so a folded card
+        cannot hide one. The summary and the warning read the keep-list picker, which
+        is the one place the counts and the unmatchable drops are worked out.
+        """
+        card = self._cards.get(group.id)
+        if card is None:
+            return
+        values: dict[str, Any] = {}
+        marked = False
+        for opt in group.options:
+            resolution = self.resolution_for(opt.name)
+            if resolution is None:
+                continue
+            values[opt.name] = resolution.value
+            marked = marked or resolution.source == bot_options.SOURCE_OVERRIDE
+        card.set_marked(marked)
+
+        # Nothing is sold while the switch is off, so nothing is lost either.
+        live = group.header is None or values.get(group.header.name) is not False
+        pickers = [w for w in self._keep_list_pickers() if self._group_of.get(self._name_of(w)) == group.id]
+        keep_counts = pickers[0].kept_counts[:2] if pickers else None
+        unmatchable = pickers[0].unmatchable_counts if pickers and live else {}
+        card.set_summary(
+            option_groups.group_summary(group, values, keep_counts=keep_counts, pets_sold=unmatchable.get("Pets", 0))
+        )
+        card.set_warning(self._warning_text(unmatchable))
+
+    def _name_of(self, widget: QWidget) -> str | None:
+        return next((name for name, w in self._option_widgets.items() if w is widget), None)
+
+    @staticmethod
+    def _warning_text(unmatchable: dict[str, int]) -> str | None:
+        """The keep list's own warning line, as the header's ``⚠`` tooltip."""
+        if not unmatchable:
+            return None
+        from bartlebot.nodes.utility import quicksell  # noqa: PLC0415 - heavy import, only when shown
+
+        # Every category the picker counts comes from this same table.
+        return "\n".join(
+            f"{count} {category}: {quicksell.UNMATCHABLE_CATEGORIES[category]}"
+            for category, count in sorted(unmatchable.items())
+        )
 
     # ------------------------------------------------------------------
     # Children
@@ -518,7 +716,8 @@ class SetupSection(SidebarSection):
         return parent if self._composed_type(parent) == "bool" else None
 
     def _children_of(self, name: str) -> list[str]:
-        return [child for child, chrome in self._chrome.items() if chrome.depends_on == name]
+        """Every row *name* being off disables: its children, and its card's rows."""
+        return [child for child, chrome in self._chrome.items() if chrome.gate == name]
 
     def _refresh_children_of(self, name: str) -> None:
         """Gray or restore every row hanging off *name*, from its resolved value.
@@ -538,10 +737,20 @@ class SetupSection(SidebarSection):
             chrome.outer.setToolTip("" if active else f"{name} is off, so this has no effect.")
 
     def _refresh_row(self, name: str) -> None:
-        """Re-mark one row from its current resolution, touching no other row."""
-        chrome = self._chrome.get(name)
+        """Re-mark one option from its current resolution, touching no other row."""
         resolution = self.resolution_for(name)
-        if chrome is None or resolution is None:
+        if resolution is None:
+            return
+        header = self._headers.get(name)
+        if header is not None:
+            header.caption.setText(resolution.source)
+            opt = self._composed.get(name)
+            state = "on" if resolution.value else "off"
+            prose = getattr(opt, "description", None)
+            header.widget.setToolTip(f"{name}: {state}\n\n{prose}" if prose else f"{name}: {state}")
+            return
+        chrome = self._chrome.get(name)
+        if chrome is None:
             return
         overridden = resolution.source == bot_options.SOURCE_OVERRIDE
         # These two lines are the whole reason revert sits against the bar: they are
@@ -594,7 +803,7 @@ class SetupSection(SidebarSection):
         if fallback is None:
             return "Reset to the value this bot recommends"
         level = fallback.source.lower()
-        return f"Reset to {fallback.value!r} \u2014 {level}"
+        return f"Reset to {fallback.value!r} — {level}"
 
     # ------------------------------------------------------------------
     # Edits
@@ -609,6 +818,9 @@ class SetupSection(SidebarSection):
         about what the user did, and it would then silently outrank an author who
         later improved the declaration it happens to match. Every settings UI that
         marks overrides this way drops the row instead; so does this one.
+
+        It is also the whole of the header switch's reset: a switch has two states,
+        so flipping it back to the inherited one lands here and drops the override.
         """
         if self._config is None:
             return
@@ -649,6 +861,9 @@ class SetupSection(SidebarSection):
             logger.exception("Failed to remember whether option descriptions are shown")
         for chrome in self._chrome.values():
             chrome.help_btn.setChecked(shown)
+        for header in self._headers.values():
+            if header.description is not None:
+                header.description.setVisible(shown)
 
     def _set_row_description(self, name: str, shown: bool) -> None:
         """Fold one row's description in or out, leaving every other row alone."""
@@ -667,14 +882,15 @@ class SetupSection(SidebarSection):
         except Exception:
             logger.exception("Failed to forget your value for option %r", name)
             return
-        chrome = self._chrome.get(name)
+        widget = self._option_widgets.get(name)
         fallback = self._fallback_for(name)
-        if chrome is not None and fallback is not None:
+        if widget is not None and fallback is not None:
             # Blocked, because writing the value back through the widget would come
             # straight back round as an edit -- and land here again.
-            chrome.widget.blockSignals(True)
-            set_widget_value(chrome.widget, fallback.value)
-            chrome.widget.blockSignals(False)
+            widget.blockSignals(True)
+            set_widget_value(widget, fallback.value)
+            widget.blockSignals(False)
+            widget.update()
         self._refresh_row(name)
         self._refresh_children_of(name)
         self._push_keep_list_context()

@@ -24,6 +24,7 @@ from bartlebot.nodes.paths import (
     quicksell_item_checkbox_path,
     quicksell_item_title_path,
 )
+from bartlebot.option_groups import GROUP_GENERAL, GROUP_QUICKSELL
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +99,7 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[
         BotOptionSpec(
             name="Safety Delay",
+            group=GROUP_GENERAL,
             type="float",
             default=3.0,
             minimum=0.0,
@@ -109,6 +111,8 @@ NODE_SPEC = NodeSpec(
         ),
         BotOptionSpec(
             name=OPTION_ENABLED,
+            group=GROUP_QUICKSELL,
+            heads_group=True,
             type="bool",
             # Null: the author has no opinion, so the app setting answers. Quicksell
             # is on by default, which is what every bot did before it could be off.
@@ -121,6 +125,7 @@ NODE_SPEC = NodeSpec(
         ),
         BotOptionSpec(
             name=SELL_FLAG_OPTIONS["sell_pets"],
+            group=GROUP_QUICKSELL,
             type="bool",
             default=None,
             depends_on=OPTION_ENABLED,
@@ -133,6 +138,7 @@ NODE_SPEC = NodeSpec(
         ),
         BotOptionSpec(
             name=SELL_FLAG_OPTIONS["sell_socket_wrenches"],
+            group=GROUP_QUICKSELL,
             type="bool",
             default=None,
             depends_on=OPTION_ENABLED,
@@ -142,6 +148,7 @@ NODE_SPEC = NodeSpec(
         ),
         BotOptionSpec(
             name=SELL_FLAG_OPTIONS["sell_skeleton_keys"],
+            group=GROUP_QUICKSELL,
             type="bool",
             default=None,
             depends_on=OPTION_ENABLED,
@@ -151,6 +158,7 @@ NODE_SPEC = NodeSpec(
         ),
         BotOptionSpec(
             name=OPTION_KEEP_LIST,
+            group=GROUP_QUICKSELL,
             # Node-declared type: a str_list underneath, shown in Setup as this bot's
             # own drop table with a tick box per item.
             type="drop_keep_list",

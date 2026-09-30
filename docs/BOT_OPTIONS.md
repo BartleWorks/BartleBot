@@ -143,6 +143,27 @@ in. The restricted-zone guard in `docs/RESTRICTED_ZONES.md` stays the only thing
 codebase shaped like a no-bypass invariant — enforcing a soft norm the same way dilutes
 what that guard signals.
 
+## Which card an option is drawn in
+
+Setup and Options draw a bot's options as four folding cards, always in this order (#138):
+
+| card | holds | first run |
+|---|---|---|
+| **This dungeon** | the author's own options, Challenge Mode | expanded |
+| **Team** | Player Realms, Team-Up and Minimum Team Size, Level Scaling Players, Friend Name | expanded |
+| **Quicksell** | Enable Quicksell as the header switch; the sell flags; the keep list | collapsed |
+| **General** | Safety Delay, Favorite Realm | collapsed |
+
+The card is declared once, on the option: `BotOptionSpec.group`. An option no node declares
+can only be about this dungeon, so it goes in *This dungeon*. `BotOptionSpec.heads_group`
+marks the one option drawn as its card's switch rather than as a row; with it off, every row
+on the card is disabled. The order is fixed rather than following the graph, so an option is
+in the same place in every bot — even a bot with two options gets two cards, which is what
+teaches where things are before a long list arrives. `bartlebot/option_groups.py` is the pure
+half (grouping, the first-run folds, and what a folded card's summary says);
+`gui/sidebar/option_card.py` draws it. Which cards are folded is the reader's, stored per
+group in `settings.json` (`option_group_collapsed`), the same for every bot and both tabs.
+
 ## A declaration is derived, not persisted
 
 An option a node requires is **not written to the bot file**. Its name, type,

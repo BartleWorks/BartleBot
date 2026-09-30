@@ -57,6 +57,14 @@ class BotOptionSpec:
                      port is to a hooked player is a field that does nothing. An absent
                      param counts as off, so a file written before the param existed keeps
                      the option it still needs.
+        group:       Which card the option is drawn in on Setup and Options -- one of the
+                     ``GROUP_*`` names in ``bartlebot.option_groups``. Every node-declared
+                     option names one; ``test_every_node_option_declares_a_group`` keeps it
+                     so. An option no node declares belongs to *This dungeon*.
+        heads_group: Draw this option as its card's header switch rather than as a row,
+                     and disable every row in the card while it is off. A bool only, and
+                     one per group: Enable Quicksell is the case -- with it off, nothing
+                     the Quicksell card holds can affect the run.
     """
 
     name: str
@@ -69,6 +77,8 @@ class BotOptionSpec:
     depends_on: str = ""
     required_when: str = ""
     required_unless: str = ""
+    group: str = ""
+    heads_group: bool = False
 
 
 @dataclass

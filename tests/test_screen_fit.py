@@ -36,7 +36,7 @@ def _sidebar_excess() -> int:
     """How much wider than the reference this machine's two sidebar floors are, together.
 
     ``budget_for`` subtracts the floors ``screen_fit`` measures here, and those are style
-    and font metrics: the same layout leaves 1214px of game width under ``windowsvista``,
+    and font metrics: the same layout leaves 1200px of game width under ``windowsvista``,
     the style a dev box resolves, and 33 fewer under ``windows11``, the one CI resolves.
     A literal budget therefore asserts which style the runner happens to have rather than
     the behavior this test names — see "One QApplication per worker" in tests/CLAUDE.md.
@@ -233,7 +233,7 @@ def test_the_game_view_s_minimum_reaches_the_panel_that_sits_in_the_splitter(qap
 def test_the_budget_takes_the_larger_of_the_layout_and_the_live_area(screen):
     screen(_1080P)
     configured, _dpr = screen_fit.budget_for()
-    assert configured == (1214 - _sidebar_excess(), 800)
+    assert configured == (1200 - _sidebar_excess(), 800)
 
     wider, _dpr = screen_fit.budget_for(live_area=(1700, 700))
     assert wider == (1700, 800)  # width from the drag, height from the layout

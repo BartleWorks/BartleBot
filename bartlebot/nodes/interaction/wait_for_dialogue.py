@@ -5,6 +5,7 @@ import logging
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import INTERACT_ANIMATION_DELAY
+from bartlebot.option_groups import GROUP_GENERAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -52,6 +53,7 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[
         BotOptionSpec(
             name="Safety Delay",
+            group=GROUP_GENERAL,
             type="float",
             default=3.0,
             minimum=0.0,

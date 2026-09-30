@@ -34,6 +34,7 @@ from bartlebot.gui.sidebar.combat_tab import CombatTab
 from bartlebot.gui.sidebar.sections.description_section import DescriptionSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
 from bartlebot.gui.sidebar.sections.setup_section import SetupSection
+from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -170,6 +171,12 @@ class LeftSidebar(QTabWidget):
         scroll = QScrollArea()
         scroll.setWidget(content)
         scroll.setWidgetResizable(True)
+        # The option cards fold under the user's hand, and an as-needed bar would come
+        # and go with them, narrowing every card by its width on the click that folded
+        # one (#112). The space is held instead -- with no extra gap, since the content
+        # margin above already keeps the cards off the bar, and this panel's floor comes
+        # out of the game view's width.
+        reserve_scrollbar_gutter(scroll, gap=0)
         return scroll
 
     def _apply_tab_set(self) -> None:

@@ -8,6 +8,7 @@ from wizwalker import XYZ, Keycode
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import LEVEL_SCALING_ELIXIR_PATH, LEVEL_SCALING_OPTION_BUTTON_PATH
+from bartlebot.option_groups import GROUP_GENERAL, GROUP_TEAM
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -41,6 +42,7 @@ PARAM_SCHEMA: list[ParamField] = [
 
 _SAFETY_DELAY_OPTION = BotOptionSpec(
     name="Safety Delay",
+    group=GROUP_GENERAL,
     type="float",
     default=3.0,
     minimum=0.0,
@@ -53,6 +55,7 @@ _SAFETY_DELAY_OPTION = BotOptionSpec(
 
 _LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
     name="Level Scaling Players",
+    group=GROUP_TEAM,
     type="player_list",
     default=[],
     description="Which players to check/apply level scaling. Empty = no players. Shared by check_level_scaling and apply_level_scaling.",

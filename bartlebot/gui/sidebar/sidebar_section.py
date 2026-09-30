@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import math
 
-from PyQt6.QtCore import QEvent, Qt, pyqtSignal
-from PyQt6.QtGui import QFontMetricsF, QPixmap
+from PyQt6.QtCore import QEvent, QObject, Qt, pyqtSignal
+from PyQt6.QtGui import QFontMetricsF, QIcon, QPixmap
 from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.gui.icon_utils import svg_pixmap
 from bartlebot.gui.theme import THEME
+from bartlebot.gui.widgets.icon_button import IconButton
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 
 _PLACEHOLDER = "—"
@@ -46,6 +47,43 @@ def disclosure_pixmap(expanded: bool, tint: str | None = None) -> QPixmap:
     pass ``THEME.text_muted`` so depth is legible at a glance.
     """
     return svg_pixmap("arrow_down" if expanded else "arrow_right", DISCLOSURE_PX, tint=tint or THEME.icon_tint)
+
+
+class HeadingAction(IconButton):
+    """An icon button on a section heading, drawn only while the heading is reached for.
+
+    ``reveal(False)`` blanks the glyph and leaves the button where it is: still in the
+    layout, so nothing beside it moves, and still in the Tab order, so the keyboard can
+    reach it -- which is what then draws it. ``IconButton`` re-renders its glyph on
+    every theme pass and every enable change, so the blank is applied in that same
+    pass rather than as a one-off that the next pass would undo.
+    """
+
+    # A class default, because ``IconButton.__init__`` already runs a theme pass -- and so
+    # ``apply_theme_styles`` below -- before this ``__init__`` could assign anything.
+    _revealed = False
+
+    def __init__(self, icon_name: str, *, tooltip: str, parent: QWidget | None = None) -> None:
+        super().__init__(icon_name, tooltip=tooltip, parent=parent)
+        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+        policy = self.sizePolicy()
+        policy.setRetainSizeWhenHidden(True)
+        self.setSizePolicy(policy)
+
+    @property
+    def revealed(self) -> bool:
+        return self._revealed
+
+    def reveal(self, shown: bool) -> None:
+        if shown == self._revealed:
+            return
+        self._revealed = shown
+        self.refresh_theme_styles()
+
+    def apply_theme_styles(self) -> None:
+        super().apply_theme_styles()
+        if not self._revealed:
+            self.setIcon(QIcon())
 
 
 # ---------------------------------------------------------------------------
@@ -79,9 +117,60 @@ class _SectionHeader(QWidget):
         layout.addWidget(self.arrow)
         layout.addWidget(self.label)
         layout.addStretch()
+        self._layout = layout
+        self._actions: list[QWidget] = []
+        self._hovered = False
 
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+
+    # -- heading actions -------------------------------------------------
+    #
+    # A heading can carry a few icon buttons at its right end -- Setup's Collapse all and
+    # Expand all, for the option cards under it. They follow VS Code's view headers:
+    # drawn only while the pointer is over the heading or one of them has keyboard focus,
+    # so a heading nobody is reaching for stays a heading.
+    #
+    # *Drawn*, not shown. A hidden widget is skipped by the Tab order, so a button that
+    # really hid itself until focused could never be focused at all. The buttons stay in
+    # the layout and the focus chain the whole time and only stop drawing their glyph --
+    # see ``reveal``. They are hidden outright only while the section is folded, when
+    # there is nothing under the heading for them to act on.
+    #
+    # A press on one never reaches ``mousePressEvent`` below, because a button accepts
+    # its own press, so clicking an action does not also fold the section.
+
+    def add_action(self, button: QWidget) -> None:
+        """Append *button* to the right end of the heading. It must have ``reveal(bool)``."""
+        self._layout.addWidget(button, 0, Qt.AlignmentFlag.AlignVCenter)
+        self._actions.append(button)
+        button.installEventFilter(self)
+        button.setVisible(self._expanded)
+        self._apply_reveal()
+
+    @property
+    def actions(self) -> list[QWidget]:
+        return list(self._actions)
+
+    def _apply_reveal(self) -> None:
+        revealed = self._hovered or any(action.hasFocus() for action in self._actions)
+        for action in self._actions:
+            action.reveal(revealed)
+
+    def enterEvent(self, event) -> None:  # noqa: N802 - Qt override
+        self._hovered = True
+        self._apply_reveal()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:  # noqa: N802 - Qt override
+        self._hovered = False
+        self._apply_reveal()
+        super().leaveEvent(event)
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:  # noqa: N802 - Qt override
+        if obj in self._actions and event.type() in (QEvent.Type.FocusIn, QEvent.Type.FocusOut):
+            self._apply_reveal()
+        return False
 
     @property
     def expanded(self) -> bool:
@@ -97,6 +186,8 @@ class _SectionHeader(QWidget):
             return
         self._expanded = expanded
         self.arrow.setPixmap(self._pixmap_down if expanded else self._pixmap_right)
+        for action in self._actions:
+            action.setVisible(expanded)
         self.toggled.emit(expanded)
 
     def mousePressEvent(self, event):  # noqa: ARG002
@@ -188,6 +279,18 @@ class SidebarSection(QWidget):
     @property
     def body(self) -> QWidget:
         return self._body
+
+    def add_header_action(self, button: QWidget) -> None:
+        """Put *button* at the right end of the heading, drawn on hover or focus.
+
+        *button* needs a ``reveal(shown: bool)`` method that draws or blanks its glyph
+        without hiding the widget -- ``HeadingAction`` is the one there is.
+        """
+        self._header.add_action(button)
+
+    @property
+    def header_actions(self) -> list[QWidget]:
+        return self._header.actions
 
     @property
     def expanded(self) -> bool:

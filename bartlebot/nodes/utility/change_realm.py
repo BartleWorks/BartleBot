@@ -50,6 +50,7 @@ from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, Re
 from bartlebot.nodes.timing import POLL_INTERVAL, SIGHTING_SETTLE_TIMEOUT, TRIGGER_TIMEOUT
 from bartlebot.nodes.utility import realm_list
 from bartlebot.nodes.utility.realm_list import REALMS_PER_PAGE
+from bartlebot.option_groups import GROUP_GENERAL
 
 _TAG = "change_realm"
 
@@ -116,6 +117,7 @@ NODE_SPEC = NodeSpec(
         player_realms.SPEC,
         BotOptionSpec(
             name="Safety Delay",
+            group=GROUP_GENERAL,
             type="float",
             default=3.0,
             minimum=0.0,
@@ -127,6 +129,7 @@ NODE_SPEC = NodeSpec(
         ),
         BotOptionSpec(
             name=OPTION_FAVORITE_REALM,
+            group=GROUP_GENERAL,
             type="realm",
             # Null, always: the author has no opinion about which realm you farm in, and
             # cannot have one. The level below is your app setting.

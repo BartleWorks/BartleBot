@@ -533,9 +533,62 @@ def test_the_gutter_slots_line_up_across_both_surfaces(qapp, settings):
     setup = SetupSection(settings=settings)
     setup.set_config(config)
 
-    opt_row, setup_row = options._option_rows[0], setup._rows[0]
+    opt_row, setup_row = options._option_rows[0], setup._chrome["repeat"].outer
 
     assert [w.width() for w in _gutter_children(opt_row)] == [w.width() for w in _gutter_children(setup_row)]
+    # And at the same x: both rows sit in the same card, at the same inset. Editable, as
+    # Options always is when it is on screen -- it is only offered in Edit mode.
+    options.set_editable(True)
+    for section in (options, setup):
+        section.resize(400, 600)
+        section.show()
+    qapp.processEvents()
+    try:
+        opt_x = [w.mapTo(options, w.rect().topLeft()).x() for w in _gutter_children(opt_row)]
+        setup_x = [w.mapTo(setup, w.rect().topLeft()).x() for w in _gutter_children(setup_row)]
+        assert opt_x == setup_x
+    finally:
+        options.hide()
+        setup.hide()
+
+
+def test_both_surfaces_draw_the_same_cards_and_share_their_folds(qapp, settings):
+    """A mode switch must not move a row into a different place, or reopen a card the
+    reader folded on the other tab."""
+    config = BotConfig(
+        id="test-bot",
+        name="Test Bot",
+        initial="a",
+        recovery_state="a",
+        states=[StateModel(id="a", node_type="enter_dungeon", params={"offers_challenge_mode": True})],
+        transitions=[],
+        options=[_repeat()],
+    )
+    options = OptionsSection(settings=settings)
+    options.set_config(config)
+    setup = SetupSection(settings=settings)
+    setup.set_config(config)
+
+    setup.set_group_collapsed("dungeon", True)
+    options.show()
+    qapp.processEvents()
+    try:
+        assert list(options.cards) == ["dungeon", "team"]  # General held only the user's own options
+        assert list(setup.cards) == ["dungeon", "team", "general"]
+        assert options.cards["dungeon"].is_collapsed
+    finally:
+        options.hide()
+
+
+def test_a_folded_options_card_summarizes_the_declarations(qapp, settings):
+    section = OptionsSection(settings=settings)
+    section.set_config(_config([_repeat(default=True)]))
+
+    assert [part.text for part in section.cards["dungeon"].summary_parts] == ["repeat"]
+
+    section.option_widgets["repeat"].setChecked(False)
+
+    assert [part.text for part in section.cards["dungeon"].summary_parts] == ["Nothing turned on"]
 
 
 def test_a_derived_option_keeps_its_edit_slot_empty_rather_than_closing_it(qapp, settings):

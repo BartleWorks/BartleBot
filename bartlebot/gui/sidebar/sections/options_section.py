@@ -14,6 +14,14 @@ allowed, and materialises the declaration into the file through
 
 Both fixups an option name needs on a rename are done here, because this is the
 only place a name changes: the two transition flag forms, and the override store.
+
+The rows sit in the same folding cards as Setup's (#138), folded the same way -- the
+answer is one, remembered for every bot and shared by both tabs -- so a mode switch
+does not move a row to a different place. Enable Quicksell is the user's alone and is
+not on this surface at all, so the Quicksell card here has no header switch; a card
+with nothing left on it, General usually, is left out. Nothing here is ever the
+user's value, so no card's stripe is lit, and a folded card summarizes the
+*declarations*.
 """
 
 from __future__ import annotations
@@ -39,8 +47,16 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot import option_groups
 from bartlebot.bot.schema import BotOptionModel
-from bartlebot.bot_options import USER_OWNED_OPTIONS, compose_options, is_user_owned, required_option_specs
+from bartlebot.bot_options import (
+    USER_OWNED_OPTIONS,
+    compose_options,
+    is_user_owned,
+    option_specs_for,
+    required_option_specs,
+)
+from bartlebot.gui.sidebar.option_card import CardFolds, OptionCard
 from bartlebot.gui.sidebar.option_gutter import (
     GUTTER_BTN_PX,
     DescriptionSwitches,
@@ -58,6 +74,7 @@ from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.option_widgets import (
     OPTION_TYPES,
+    TALL_TYPES,
     TYPE_LABELS,
     block_separate_if_merging,
     connect_widget,
@@ -372,6 +389,8 @@ class OptionsSection(SidebarSection):
         self._settings = settings
         self._editable: bool = False
         self._option_rows: list[QWidget] = []
+        self._cards: dict[str, OptionCard] = {}
+        self._groups: list[option_groups.OptionGroup] = []
         self._option_widgets: dict[str, QWidget] = {}
         self._chrome: dict[str, _RowChrome] = {}
         self._edit_btns: list[_EditButton] = []
@@ -399,6 +418,8 @@ class OptionsSection(SidebarSection):
         outer.addWidget(self._add_option_btn)
 
         self.set_content_layout(outer)
+        # The same fold state as Setup's, and the same heading actions.
+        self._folds = CardFolds(self, self._sm)
 
     # ------------------------------------------------------------------
     # Public API
@@ -407,6 +428,30 @@ class OptionsSection(SidebarSection):
     def set_config(self, config: BotConfig | None) -> None:
         self._config = config
         self._rebuild_options(self._composed())
+
+    @property
+    def cards(self) -> dict[str, OptionCard]:
+        """``{group id: card}`` for the cards this bot has, in drawing order."""
+        return dict(self._cards)
+
+    def set_group_collapsed(self, group: str, collapsed: bool) -> None:
+        """Fold or unfold one card, and remember it for every bot and both tabs."""
+        self._folds.set_group_collapsed(group, collapsed)
+
+    def collapse_all(self) -> None:
+        self._folds.collapse_all()
+
+    def expand_all(self) -> None:
+        self._folds.expand_all()
+
+    def card_menu(self, group: str):
+        """The menu a right-click on *group*'s header opens, built but not shown."""
+        return self._folds.card_menu(group)
+
+    def showEvent(self, event) -> None:  # noqa: N802 - Qt override
+        """Pick up folds made on the Setup tab while this one was not showing."""
+        self._folds.reload()
+        super().showEvent(event)
 
     @property
     def option_widgets(self) -> dict[str, QWidget]:
@@ -491,27 +536,54 @@ class OptionsSection(SidebarSection):
         # is not on the author's surface at all -- it is a row in Setup instead.  A
         # disabled row here would only invite the question this answers.
         options = [o for o in options if not is_user_owned(o.name)]
-        for row in self._option_rows:
-            self._options_layout.removeWidget(row)
-            row.deleteLater()
+        for card in self._cards.values():
+            self._options_layout.removeWidget(card)
+            card.deleteLater()
+        self._cards.clear()
         self._option_rows.clear()
         self._option_widgets.clear()
         self._chrome.clear()
         self._edit_btns.clear()
 
         self._switches.setVisible(bool(options) and any(o.description for o in options))
+        specs = option_specs_for(self._config) if self._config is not None else {}
+        self._groups = option_groups.group_options(options, specs, is_tall=lambda o: o.type in TALL_TYPES)
         if not options:
             self._no_options_lbl.show()
+            self._folds.set_cards({})
             return
 
         required_names = self._required_names()
         connected = len(self._get_clients())
 
         self._no_options_lbl.hide()
-        for opt in options:
-            row = self._build_row(opt, connected, derived=opt.name in required_names)
-            self._options_layout.addWidget(row)
-            self._option_rows.append(row)
+        for group in self._groups:
+            card = OptionCard(group.id, group.title)
+            # A header option is a row here: the switch is how Setup sets a *value*,
+            # and this surface edits declarations, in the same controls as any other.
+            for opt in group.options:
+                row = self._build_row(opt, connected, derived=opt.name in required_names)
+                card.body_layout.addWidget(row)
+                self._option_rows.append(row)
+            self._options_layout.addWidget(card)
+            self._cards[group.id] = card
+        self._folds.set_cards(self._cards)
+        self._refresh_summaries()
+
+    def _refresh_summaries(self) -> None:
+        """Say what each folded card declares -- the author's values, not the user's."""
+        for group in self._groups:
+            card = self._cards.get(group.id)
+            if card is None:
+                continue
+            values = {opt.name: opt.default for opt in group.options}
+            pickers = [
+                self._option_widgets[o.name]
+                for o in group.options
+                if o.type == "drop_keep_list" and hasattr(self._option_widgets.get(o.name), "kept_counts")
+            ]
+            keep_counts = pickers[0].kept_counts[:2] if pickers else None
+            card.set_summary(option_groups.group_summary(group, values, keep_counts=keep_counts))
 
     def _build_row(self, opt, connected: int, *, derived: bool) -> QWidget:
         """One option's row: the gutter, then the head line, control and prose.
@@ -728,6 +800,8 @@ class OptionsSection(SidebarSection):
             if self._config is None:
                 return
             self._declaration_for(opt).default = value
+            opt.default = value
+            self._refresh_summaries()
             self.defaults_changed.emit()
 
         connect_widget(widget, _update)

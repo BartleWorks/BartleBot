@@ -289,6 +289,24 @@ class DropKeepListWidget(QWidget):
     def get_value(self) -> list[str]:
         return list(self._value)
 
+    @property
+    def kept_counts(self) -> tuple[int, int, int]:
+        """``(kept, sellable, never quicksold)``, as the summary line under the field counts them.
+
+        Public for the Quicksell card, whose folded header says "keeping K of S" from the
+        same numbers rather than counting a second way.
+        """
+        return self._kept_total
+
+    @property
+    def unmatchable_counts(self) -> dict[str, int]:
+        """``{category: rows}`` the keep list cannot act on -- pets, while Sell Pets is on.
+
+        What the warning line reports, and what the Quicksell card rolls up to its header
+        so a fold never hides it.
+        """
+        return dict(self._unmatchable_counts)
+
     def set_value(self, value: list[str]) -> None:
         self._suppress = True
         self._value = [str(v) for v in value] if isinstance(value, list) else parse_list_text(str(value or ""))

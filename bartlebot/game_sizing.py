@@ -118,8 +118,13 @@ BOTCANVAS_MIN_HEIGHT = 180
 # the left row 11% and its floor 19%, and grew the right floor 19% against content that
 # had not moved at all. That is 129px of sidebar between them, and on a 1080p screen it
 # took away three- and four-client launches outright. Measure the row, add the chrome.
-LEFT_SIDEBAR_MIN_WIDTH = 390  # rounds up a measured 378: the filter row plus the gutter,
-# the scroll content margins, the scroll area's frame and its vertical scrollbar.
+LEFT_SIDEBAR_MIN_WIDTH = 404  # a measured 392 plus the 12px of headroom 390 had over 378:
+# the filter row plus the gutter, the option card's border and padding, the
+# scroll content margins, the scroll area's frame and its vertical scrollbar. The headroom
+# is what keeps ``windows11`` and the classic ``Windows`` style, whose frames and
+# scrollbars are wider than the reference style's, inside the floor -- the classic one
+# with 2px to spare, which is why the card's 14px went onto the floor whole. It was 390 until the options moved into folding cards (#138),
+# which added the card's 1px border and 6px padding on each side.
 RIGHT_SIDEBAR_MIN_WIDTH = 300
 # Not the row's ``sizeHint``, though, and not its ``minimumSizeHint`` either: the
 # combobox and the checkbox are what must not be squeezed, so they are taken at their
@@ -140,7 +145,7 @@ REFERENCE_LOG_ROW_PX = 281
 # gutter. Style metrics and fixed spacings, not text, so they are added rather than
 # scaled. Each is the difference between the panel's reference floor and its reference
 # row, which keeps both floors exactly at the references above at the reference metrics.
-LEFT_SIDEBAR_CHROME_PX = LEFT_SIDEBAR_MIN_WIDTH - REFERENCE_FILTER_ROW_PX  # 97
+LEFT_SIDEBAR_CHROME_PX = LEFT_SIDEBAR_MIN_WIDTH - REFERENCE_FILTER_ROW_PX  # 111
 RIGHT_SIDEBAR_CHROME_PX = RIGHT_SIDEBAR_MIN_WIDTH - REFERENCE_LOG_ROW_PX  # 19
 # Shared: the height must stay under the shortest tile any offered resolution produces,
 # or a sidebar rather than the game view becomes the top row's floor.
@@ -442,7 +447,8 @@ def left_sidebar_floor(filter_row_px: float | None = None) -> int:
     field, category combobox and "Kept only" checkbox, composed as
     ``REFERENCE_FILTER_ROW_PX`` describes and measured by
     ``gui/screen_fit.left_sidebar_floor``. ``LEFT_SIDEBAR_CHROME_PX`` is the gutter, the
-    scroll content margins, the frame and the scroll bar, added rather than scaled.
+    option card's inset, the scroll content margins, the frame and the scroll bar, added
+    rather than scaled.
 
     Everything else on this surface elides or wraps by design, so it sets no floor. That
     is why there is no text-height term any more: it was a proxy for content that gives

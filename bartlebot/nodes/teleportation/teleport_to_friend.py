@@ -8,6 +8,7 @@ from bartlebot import dialog_captions, wizard_names
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import POLL_INTERVAL, TRIGGER_TIMEOUT, ZONE_CHANGE_TIMEOUT
+from bartlebot.option_groups import GROUP_TEAM
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +89,7 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[
         BotOptionSpec(
             name=OPTION_FRIEND_NAME,
+            group=GROUP_TEAM,
             type="friend_name",
             # Null, always: the author has no opinion about whose wizard you port to,
             # and cannot have one. The level below is your app setting.

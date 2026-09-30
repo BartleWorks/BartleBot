@@ -32,6 +32,7 @@ from bartlebot.gui.canvas.drop_keep_list import DropKeepListWidget
 from bartlebot.gui.main_window import MainWindow
 from bartlebot.gui.sidebar.left_sidebar import LeftSidebar
 from bartlebot.gui.sidebar.log_panel import LogPanel
+from bartlebot.gui.sidebar.option_card import BODY_MARGIN_PX
 from bartlebot.gui.sidebar.option_gutter import BAR_WIDTH_PX, GUTTER_BTN_PX, GUTTER_GAP_PX, GUTTER_TO_BODY_PX
 from bartlebot.gui.sidebar.right_sidebar import RightSidebar
 from bartlebot.settings_manager import VALID_RESOLUTIONS, SettingsManager
@@ -49,6 +50,8 @@ _PLAYERS_CONTENT_MARGINS_PX = 16  # RightSidebar's players_vbox, 8 a side
 # own frame and scrollbar are measured from the widget rather than named here.
 _GUTTER_PX = BAR_WIDTH_PX + GUTTER_GAP_PX + 2 * GUTTER_BTN_PX + GUTTER_TO_BODY_PX
 _SETUP_CONTENT_MARGINS_PX = 16
+# The option card the keep list sits in: its 1px border and its body's padding, each side.
+_CARD_INSET_PX = 2 * (1 + BODY_MARGIN_PX)
 
 
 class _FakeClient:
@@ -151,6 +154,7 @@ def _keep_list_needs() -> int:
     return (
         _row_floor(_filter_row_of(picker))
         + _GUTTER_PX
+        + _CARD_INSET_PX
         + _SETUP_CONTENT_MARGINS_PX
         + 2 * scroll.frameWidth()
         + scroll.verticalScrollBar().sizeHint().width()
@@ -451,8 +455,8 @@ def test_the_right_floor_follows_its_forcing_row(log_row, expected):
     [
         (None, gs.LEFT_SIDEBAR_MIN_WIDTH),  # not measured: the reference
         (gs.REFERENCE_FILTER_ROW_PX, gs.LEFT_SIDEBAR_MIN_WIDTH),  # windowsvista, the reference style
-        (301, 398),  # windows11 — wider comboboxes and checkboxes at the same text height
-        (324, 421),  # the row at 14px body text
+        (301, 412),  # windows11 — wider comboboxes and checkboxes at the same text height
+        (324, 435),  # the row at 14px body text
         (274, gs.LEFT_SIDEBAR_MIN_WIDTH),  # Fusion, narrower: it does not narrow the panel
     ],
 )

@@ -22,6 +22,7 @@ from bartlebot.nodes.wizard_city import (
     go_to_ravenwood,
 )
 from bartlebot.nodes.zone_entry import enter_zone
+from bartlebot.option_groups import GROUP_GENERAL
 
 # ── Navigation coordinates ─────────────────────────────────────────────────────
 # The route as far as Ravenwood lives in bartlebot.nodes.wizard_city — go_to_world needs
@@ -110,6 +111,7 @@ NODE_SPEC = NodeSpec(
     required_bot_options=[
         BotOptionSpec(
             name="Safety Delay",
+            group=GROUP_GENERAL,
             type="float",
             default=3.0,
             minimum=0.0,

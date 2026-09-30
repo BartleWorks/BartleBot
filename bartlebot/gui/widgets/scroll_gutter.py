@@ -61,17 +61,20 @@ class _BlankWhenIdle(QObject):
         return False
 
 
-def reserve_scrollbar_gutter(area: QAbstractScrollArea) -> None:
+def reserve_scrollbar_gutter(area: QAbstractScrollArea, *, gap: int = GUTTER_GAP) -> None:
     """Keep *area*'s vertical scroll bar space reserved, drawing the bar only when it can scroll.
 
-    Also holds :data:`GUTTER_GAP` clear between the content and the bar. Not for a
-    ``QTreeView`` or ``QTableView``: those set their own viewport margins for their headers.
+    Also holds *gap* clear between the content and the bar -- :data:`GUTTER_GAP` unless
+    the content already keeps its own distance. The left sidebar's pages pass 0: their
+    content carries an 8px margin of its own, and every pixel of that panel's width is
+    one the game view's budget does not have. Not for a ``QTreeView`` or ``QTableView``:
+    those set their own viewport margins for their headers.
 
     Idempotent: a second call finds the filter already installed and does nothing more.
     """
     area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
     margins = area.viewportMargins()
-    area.setViewportMargins(margins.left(), margins.top(), GUTTER_GAP, margins.bottom())
+    area.setViewportMargins(margins.left(), margins.top(), gap, margins.bottom())
     bar = area.verticalScrollBar()
     if bar.findChild(_BlankWhenIdle) is not None:
         return

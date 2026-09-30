@@ -296,7 +296,7 @@ settings window. A settings tab
 reaching back up its parent chain to find the main window would be the coupling this
 avoids.
 
-Worked example, 1080p at the default layout (budget 1214x800), over the ladder rungs:
+Worked example, 1080p at the default layout (budget 1200x800), over the ladder rungs:
 
 | clients | grid | largest that fits | scale |
 |---|---|---|---|
@@ -308,14 +308,16 @@ Micro is not an edge case — it is what a four-client 1080p user actually runs.
 
 Three and four land on Micro's **16:9** form, the smallest offered resolution. Ranking is
 by area, so the widescreen form wins there while still fitting the 2x2 grid — 2*(534+12) =
-1092 against a 1214 budget. Two clients keep a 4:3 form, which shows more game than the
+1092 against a 1200 budget. Two clients keep a 4:3 form, which shows more game than the
 16:9 of the same rung; the 16:9 forms only ever win where they are genuinely bigger.
 
 The rungs here are one lower than they used to be, and the sidebar width bump is why: the left sidebar's
 floor went from a bare 220px to a measured 390, and 170px off the budget costs a solo user
 1280x720 and a pair 640x480. That is intrinsic to any honest floor above ~312px rather
 than an artifact of where this one rounded — the old number simply described a panel whose
-content was overlapping itself.
+content was overlapping itself. The option cards (#138) moved the floor on to 404, for
+their border and padding; the scroll bar's space is reserved with no extra gap, since the
+page's own content margin already keeps the cards off it. That cost no rung at 1080p.
 
 This is the **inverse** of `SettingsManager.minimum_window_size()`, which derives a window
 minimum from a game size already chosen. Both are kept, and they ask opposite questions:
@@ -387,7 +389,7 @@ default sidebar width, so a machine at the reference sees no change at all.
 
 ```
 right_sidebar_floor = measured_log_header_row + RIGHT_SIDEBAR_CHROME_PX   # 19
-left_sidebar_floor  = measured_filter_row     + LEFT_SIDEBAR_CHROME_PX    # 97
+left_sidebar_floor  = measured_filter_row     + LEFT_SIDEBAR_CHROME_PX    # 111
 ```
 
 The chrome — margins, frames, the scroll bar, the gutter, the pinned control widths — is
@@ -429,9 +431,9 @@ scrolls — which is what its old 220px constant was justified by — but the qu
 keep-list picker's filter row does not: a search field, a category `QComboBox` and a
 `Kept only` `QCheckBox` side by side, and the last two carry a `Minimum` size policy,
 which has no shrink flag. At 220px the checkbox was drawn over the dropdown. So
-`LEFT_SIDEBAR_MIN_WIDTH` is 390 — the row's 293px at the reference metrics plus the 97px of
-option gutter, scroll content margins, scroll area frame and scrollbar that
-`LEFT_SIDEBAR_CHROME_PX` holds — and `game_sizing.left_sidebar_floor(filter_row)` adds the
+`LEFT_SIDEBAR_MIN_WIDTH` is 404 — the row's 293px at the reference metrics plus the 111px of
+option gutter, option card inset, scroll content margins, scroll area frame and scrollbar
+that `LEFT_SIDEBAR_CHROME_PX` holds — and `game_sizing.left_sidebar_floor(filter_row)` adds the
 two the same way, from `gui/screen_fit.left_sidebar_floor()`. Everything else on that
 surface elides or wraps by design, so it sets no floor; that is why there is no
 text-height term.
