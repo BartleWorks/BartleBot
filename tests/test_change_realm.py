@@ -25,7 +25,7 @@ from bartlebot.nodes.paths import (
     realm_button_path,
     realm_name_path,
 )
-from tests.conftest import FakeClient, FakeMachine, message_box_patches
+from tests.conftest import FakeClient, FakeMachine, message_box_patches, see_each_other
 
 
 class _RealmList:
@@ -454,19 +454,119 @@ async def test_favorite_mode_is_the_default():
     nxt.assert_not_awaited()
 
 
-async def test_next_realm_mode_cycles_the_fixed_page_range_for_every_client():
-    favorite = AsyncMock(return_value="SUCCESS")
+async def test_next_realm_together_moves_the_leader_and_the_others_follow_it():
+    """#131: each player taking the realm after its own kept a group together only by coincidence."""
+    follow = AsyncMock(return_value="SUCCESS")
     nxt = AsyncMock(return_value="SUCCESS")
     clients = [FakeClient(), FakeClient()]
-    with patch.object(cr, "to_realm", new=favorite), patch.object(cr, "_to_next_realm", new=nxt):
+    with (
+        patch.object(cr, "to_realm", new=follow),
+        patch.object(cr, "_to_next_realm", new=nxt),
+        patch.object(rl, "read_current_realm", new=AsyncMock(return_value="Wraith")),
+    ):
         result = await cr.run(FakeMachine(), clients, {cr.PARAM_USE_FAVORITE_REALM: False})
 
     assert result == "SUCCESS"
-    favorite.assert_not_awaited()
-    assert nxt.await_count == 2
-    for call, client in zip(nxt.await_args_list, clients):
-        assert call.args[1] is client
-        assert call.args[2:4] == (cr.NEXT_REALM_FIRST_PAGE, cr.NEXT_REALM_LAST_PAGE)
+    nxt.assert_awaited_once()
+    assert nxt.await_args.args[1] is clients[0]
+    assert nxt.await_args.args[2:4] == (cr.NEXT_REALM_FIRST_PAGE, cr.NEXT_REALM_LAST_PAGE)
+    follow.assert_awaited_once()
+    assert follow.await_args.args[1:3] == (clients[1], "Wraith")
+
+
+async def test_next_realm_together_fails_when_the_leaders_realm_cannot_be_read():
+    follow = AsyncMock(return_value="SUCCESS")
+    with (
+        patch.object(cr, "to_realm", new=follow),
+        patch.object(cr, "_to_next_realm", new=AsyncMock(return_value="SUCCESS")),
+        patch.object(rl, "read_current_realm", new=AsyncMock(return_value=None)),
+    ):
+        result = await cr.run(FakeMachine(), [FakeClient(), FakeClient()], {cr.PARAM_USE_FAVORITE_REALM: False})
+
+    assert result == "FAILURE"
+    follow.assert_not_awaited()
+
+
+async def test_next_realm_separate_spreads_player_n_n_realms_along():
+    nxt = AsyncMock(return_value="SUCCESS")
+    clients = [FakeClient(), FakeClient(), FakeClient()]
+    for client in clients:
+        see_each_other(client)
+    machine = FakeMachine(options={"Player Realms": "Separate"})
+    with patch.object(cr, "_to_next_realm", new=nxt):
+        result = await cr.run(machine, clients, {cr.PARAM_USE_FAVORITE_REALM: False})
+
+    assert result == "SUCCESS"
+    assert [(call.args[1], call.kwargs["offset"]) for call in nxt.await_args_list] == [
+        (clients[0], 1),
+        (clients[1], 2),
+        (clients[2], 3),
+    ]
+
+
+async def test_favorite_separate_puts_player_1_on_the_favorite_and_the_rest_after_it():
+    favorite = AsyncMock(return_value="SUCCESS")
+    after = AsyncMock(return_value="SUCCESS")
+    clients = [FakeClient(), FakeClient(), FakeClient()]
+    for client in clients:
+        see_each_other(client)
+    machine = _machine("Balestrom", **{"Player Realms": "Separate"})
+    with patch.object(cr, "to_realm", new=favorite), patch.object(cr, "_to_realm_after", new=after):
+        result = await cr.run(machine, clients, {})
+
+    assert result == "SUCCESS"
+    assert favorite.await_args.args[1:3] == (clients[0], "Balestrom")
+    assert [(call.args[1], call.args[3]) for call in after.await_args_list] == [(clients[1], 1), (clients[2], 2)]
+
+
+async def test_separate_players_who_land_together_are_reported_not_failed():
+    clients = [FakeClient(), FakeClient()]
+    machine = FakeMachine(options={"Player Realms": "Separate"})
+    with patch.object(cr, "_to_next_realm", new=AsyncMock(return_value="SUCCESS")):
+        result = await cr.run(machine, clients, {cr.PARAM_USE_FAVORITE_REALM: False})
+
+    assert result == "SUCCESS"
+    assert any("landed on one realm" in msg for msg, _ in machine.logs)
+
+
+async def test_together_players_are_checked_and_gathered_after_the_change():
+    ensure = AsyncMock(return_value=nh.TogetherOutcome.FAILED)
+    with (
+        patch.object(cr, "to_realm", new=AsyncMock(return_value="SUCCESS")),
+        patch.object(nh, "ensure_together", ensure),
+    ):
+        result = await cr.run(_machine("Balestrom"), [FakeClient(), FakeClient()], {})
+
+    assert result == "FAILURE"
+    assert ensure.await_args.kwargs["where"] == "after the realm change"
+
+
+async def test_the_offset_counts_across_the_ranges_pages_and_wraps():
+    """Current on page 3 row 5; three along is page 4 row 1. Pages here are the fixed range, 3-5."""
+    pages = [["x"] * 7, ["y"] * 7] + [[f"r{p}{r}" for r in range(7)] for p in (3, 4, 5)]
+    realm_list = _RealmList(pages, current="r35")
+    client = FakeClient()
+    client.is_loading.side_effect = [True, False]
+
+    with _faked(realm_list):
+        result = await cr._to_next_realm(FakeMachine(), client, 3, 5, 0.0, offset=3)
+
+    assert result == "SUCCESS"
+    assert realm_list.page == 3  # 0-based: page 4
+    assert realm_button_path(1) in realm_list.clicked
+
+
+async def test_the_realm_n_rows_after_the_favorite_is_taken_across_a_page_break():
+    realm_list = _RealmList(_PAGES, current="Wraith")
+    client = FakeClient()
+    client.is_loading.side_effect = [True, False]
+
+    with _faked(realm_list):
+        result = await cr._to_realm_after(FakeMachine(), client, "Centaur", 2, 0.0)
+
+    assert result == "SUCCESS"
+    assert realm_list.page == 1
+    assert realm_button_path(1) in realm_list.clicked  # Diego, Drake: Drake
 
 
 async def test_next_realm_mode_needs_no_favorite_realm():
