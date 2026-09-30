@@ -72,7 +72,7 @@ HOW TO RUN
 Each run writes its readings to its own tools/probe_same_place.<time>.local.csv
 (gitignored). Re-read one or several without the game running:
 
-    uv run python tools/probe_same_place.py --analyse tools/probe_same_place.*.local.csv
+    uv run python tools/probe_same_place.py --analyze tools/probe_same_place.*.local.csv
 
 NO REAL PLAYER DATA: global ids identify characters, so they are never printed or written.
 Clients are named by their slot (P1, P2...). The CSV holds zones, positions, and which
@@ -761,10 +761,10 @@ async def record(clients: list, args, writer, readings: list[Reading]) -> None:
 
 
 async def main(args: argparse.Namespace) -> int:
-    if args.analyse:
-        paths = [Path(p) for pattern in args.analyse for p in sorted(glob.glob(pattern))]
+    if args.analyze:
+        paths = [Path(p) for pattern in args.analyze for p in sorted(glob.glob(pattern))]
         if not paths:
-            print(f"No CSV matches {args.analyse}")
+            print(f"No CSV matches {args.analyze}")
             return 2
         print("Pooling " + ", ".join(p.name for p in paths))
         print(summarize(read_csvs(paths), args.near))
@@ -828,7 +828,7 @@ def _parse_args() -> argparse.Namespace:
         "--csv", help="Where to write readings; must end in .local.csv (default: a new timestamped file in tools/)."
     )
     parser.add_argument(
-        "--analyse",
+        "--analyze",
         metavar="CSV",
         nargs="+",
         help="Summarize saved CSVs (globs allowed), pooled, instead of recording.",

@@ -9,7 +9,7 @@ from tools.probe_aggro_radius import (
     Point,
     Sample,
     Trial,
-    analyse_trial,
+    analyze_trial,
     build_trials,
     find_run_onset,
     read_csv,
@@ -77,7 +77,7 @@ def test_a_found_run_places_the_trigger_and_a_missing_one_falls_back_to_the_mark
     (missing,), _ = build_trials(Events(marks=[1.6], starts=[2.75]), reaction=0.3, samples=still)
 
     assert found == Trial(1.25, "run", 2.75, 1.6)
-    assert analyse_trial(run, found).dist2 == 300.0
+    assert analyze_trial(run, found).dist2 == 300.0
     assert missing.source == "hotkey"
     assert round(missing.trigger_t, 2) == 1.3
 
@@ -108,7 +108,7 @@ def test_the_trigger_distance_is_3d_and_reads_an_approaching_mob():
     # The mob walks 50 units a sample toward a wizard standing still, 300 units below it.
     samples = _walk([900, 850, 800, 750, 700], mob_z=300.0)
 
-    result = analyse_trial(samples, Trial(1.0, "hotkey", 2.0))
+    result = analyze_trial(samples, Trial(1.0, "hotkey", 2.0))
 
     assert result.dist2 == 700.0
     assert round(result.dist3, 1) == 761.6
@@ -119,14 +119,14 @@ def test_the_trigger_distance_is_3d_and_reads_an_approaching_mob():
 
 
 def test_a_still_mob_is_not_approaching():
-    result = analyse_trial(_walk([600] * 5), Trial(1.0, "hotkey", 2.0))
+    result = analyze_trial(_walk([600] * 5), Trial(1.0, "hotkey", 2.0))
 
     assert result.approach_speed == 0.0
     assert not result.approaching
 
 
 def test_a_trigger_before_any_sample_has_no_result():
-    assert analyse_trial(_walk([600, 600]), Trial(-1.0, "hotkey", 0.0)) is None
+    assert analyze_trial(_walk([600, 600]), Trial(-1.0, "hotkey", 0.0)) is None
 
 
 def test_the_csv_round_trips_into_the_same_summary(tmp_path):
@@ -170,4 +170,4 @@ def test_pooled_runs_keep_each_battle_with_its_own_mark(tmp_path):
     assert len(samples) == 10
     assert [t.source for t in trials] == ["hotkey", "hotkey"]
     assert discarded == []
-    assert [analyse_trial(samples, t).dist2 for t in trials] == [700.0, 700.0]
+    assert [analyze_trial(samples, t).dist2 for t in trials] == [700.0, 700.0]

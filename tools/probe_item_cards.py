@@ -171,7 +171,7 @@ async def probe(client) -> None:
     print()
 
     if not item_count:
-        print("   No item card vector at 0x300 -- nothing further to analyse.")
+        print("   No item card vector at 0x300 -- nothing further to analyze.")
         return
 
     item_win = await _maybe_get_named_window(deck_window, "ItemSpells")

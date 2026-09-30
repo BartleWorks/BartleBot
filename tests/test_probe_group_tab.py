@@ -104,7 +104,7 @@ def test_a_getter_that_only_raises_on_other_tabs_still_counts():
 
 
 def test_missing_recheck_snapshot_falls_back_to_the_group_sample():
-    """A sweep cut short still analyses, just without the stability filter."""
+    """A sweep cut short still analyzes, just without the stability filter."""
     snaps = {GROUP: {"Page": {"is_visible": "True"}}, "Tab_Friends": {"Page": {"is_visible": "False"}}}
     candidates, unstable = find_candidates(snaps, GROUP, RECHECK)
     assert candidates == [("Page", "is_visible", "True")]
