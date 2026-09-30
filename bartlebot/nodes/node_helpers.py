@@ -1,6 +1,7 @@
 """Shared async helpers for node implementations."""
 
 import asyncio
+import enum
 import fnmatch
 import logging
 import math
@@ -1736,6 +1737,53 @@ async def port_clients(
         await asyncio.sleep(poll_interval)
 
 
+class TogetherOutcome(enum.Enum):
+    """What ensure_together found, and did."""
+
+    #: Every player already shared one zone, realm and instance; nobody moved.
+    ALREADY = "already"
+    #: Some did not, and were ported to the leader, and are now seen with it.
+    GATHERED = "gathered"
+    #: Some did not, and could not be brought to the leader.
+    FAILED = "failed"
+
+
+async def ensure_together(machine, clients: list, *, where: str) -> TogetherOutcome:
+    """Make sure every player shares one zone, realm and instance, porting stragglers to the leader.
+
+    For a bot whose ``Player Realms`` is Together (#132); a Separate bot always answers
+    ALREADY, since its players are meant to be apart. The machine's record answers first, so
+    a group seen together since anyone last loaded costs nothing. Otherwise one check decides:
+    everyone the leader (sightings.choose_leader) does not see -- Apart, and Unknown too, since
+    a player too far away to tell may be on another realm -- ports to it through
+    gather_at_player, which confirms by sight that they arrived.
+
+    *where* names the moment in the log ("on the sigil", "before the fight"). Logs its own
+    reasons, players by number.
+    """
+    if len(clients) < 2 or player_realms.machine_is_separate(machine) or machine.are_together(clients):
+        return TogetherOutcome.ALREADY
+    check = await read_sightings(clients, machine)
+    if check.all_together():
+        return TogetherOutcome.ALREADY
+
+    leader = sightings.choose_leader(check)
+    group = check.group_of(leader)
+    movers = [i for i in range(len(clients)) if i not in group]
+    machine.log(
+        f"Player(s) {[i + 1 for i in movers]} are not with P{leader + 1} {where} "
+        f"({player_realms.OPTION} is {player_realms.TOGETHER}); porting them to it",
+        logging.WARNING,
+    )
+    name = wizard_names.cached_name(clients[leader])
+    if not name:
+        machine.log(f"FAILURE: P{leader + 1}'s wizard name has not been detected yet", logging.WARNING)
+        return TogetherOutcome.FAILED
+    if not await gather_at_player(machine, clients, leader, name, only=movers):
+        return TogetherOutcome.FAILED
+    return TogetherOutcome.GATHERED
+
+
 async def _sees_each_other(a, b) -> bool:
     """Whether a check proves *a* and *b* share a zone, realm and instance."""
     return (await read_sightings([a, b])).pair(0, 1) is sightings.Sight.TOGETHER
@@ -1748,8 +1796,12 @@ async def gather_at_player(
     target_name: str,
     *,
     poll_interval: float = POLL_INTERVAL,
+    only: Collection[int] | None = None,
 ) -> bool:
     """Port every client but `clients[target_index]` onto that player, and confirm they are with it.
+
+    `only` narrows the movers to those indices, for a caller that knows the rest are already
+    with the target; players keep their numbers in the log either way.
 
     The hooked-player half of teleport_to_friend.
     Because the target is one of ours, its zone and position are readable, which makes this
@@ -1771,8 +1823,9 @@ async def gather_at_player(
     """
     target = clients[target_index]
     target_no = target_index + 1
-    numbers = [i + 1 for i in range(len(clients)) if i != target_index]
-    movers = [c for i, c in enumerate(clients) if i != target_index]
+    moving = [i for i in range(len(clients)) if i != target_index and (only is None or i in only)]
+    numbers = [i + 1 for i in moving]
+    movers = [clients[i] for i in moving]
     if not movers:
         machine.log(f"No other players to port to P{target_no}")
         return True

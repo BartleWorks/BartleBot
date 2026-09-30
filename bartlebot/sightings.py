@@ -155,6 +155,16 @@ class Sightings:
         return self.readings[i].gid
 
 
+def choose_leader(check: Sightings) -> int:
+    """The client everyone else should join: one in the largest group, earliest in player order.
+
+    The largest group moves the fewest players, and player order breaks a tie the same way on
+    every run. ``sync_in_zone`` (#133) breaks ties further by who the others can port to.
+    """
+    largest = max(check.groups(), key=lambda group: (len(group), -group[0]))
+    return largest[0]
+
+
 class TogetherRecord:
     """Which clients have been seen together, remembered past the moment they were.
 
