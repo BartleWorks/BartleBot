@@ -7,7 +7,7 @@ the real trigger distance, so the radius can be picked from evidence.
 OUTCOME: eleven battles across five mob types, ten usable. Still or slow mobs triggered
 at 270-390 units; mobs closing at 150-400/s triggered at 650-886, which fits a fixed
 server-side radius plus client lag. 700 did not cover the 886 measured, so collect_wisps
-now checks against its own SAFE_WISP_RADIUS of 1500, rescanned every hop. The per-trial
+now checks against node_helpers.SAFE_RADIUS of 1500, rescanned every hop. The per-trial
 table is on #117. The phased design there (invulnerable hops in the ghost window, a
 landing spot) was not built: most uses of the node leave the spot straight after, and
 the radius alone fails safe. Keep the probe for re-measuring if wisps judged safe still

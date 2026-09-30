@@ -1498,6 +1498,32 @@ def distance(a, b) -> float:
     return math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
 
 
+SAFE_RADIUS = 1500.0
+"""How far a point must be from every mob to count as safe to stand on.
+
+A battle triggers at a fixed radius on the server, but the client shows a mob walking toward
+the wizard trailing where it really is, so a fast mob pulls the wizard in from further off than
+it looks: up to 886 units measured (#117, tools/probe_aggro_radius.py). WizSprinter's default of
+700 did not cover that; this also leaves room for a mob to close in while a player waits there.
+"""
+
+
+async def mob_clearances(client, points: list) -> list[float]:
+    """The distance from each of *points* to the nearest mob *client* has loaded.
+
+    Infinite where no mob is loaded. Only loaded mobs count -- roughly 3800 units around the
+    client -- so a point far from *client* can read clear when it is not. One read of the
+    entity list serves every point.
+    """
+    mobs = [await m.location() for m in await client.get_mobs()]
+    return [min((distance(point, mob) for mob in mobs), default=math.inf) for point in points]
+
+
+async def mob_clearance(client, point) -> float:
+    """The distance from *point* to the nearest mob *client* has loaded. See :func:`mob_clearances`."""
+    return (await mob_clearances(client, [point]))[0]
+
+
 async def _position_or_none(client):
     """The client's position, or None when it cannot be read -- a body mid-load, say."""
     try:

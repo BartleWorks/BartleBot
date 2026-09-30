@@ -7,6 +7,7 @@ import pytest
 from wizwalker import XYZ
 
 import bartlebot.nodes.combat.collect_wisps as cw
+from bartlebot.nodes import node_helpers
 from tests.conftest import FakeClient, FakeEntity, FakeMachine
 
 # Default params: collect if not at full health/mana, fail if below 50%.
@@ -204,7 +205,7 @@ async def test_wisp_near_an_enemy_is_skipped():
     client = _client(health=0.6)
     near, far = _entity(100), _entity(5000)
     client.get_health_wisps.return_value = [near, far]
-    client.get_mobs.return_value = [_entity(100 + cw.SAFE_WISP_RADIUS - 1)]
+    client.get_mobs.return_value = [_entity(100 + node_helpers.SAFE_RADIUS - 1)]
     _refill_on_teleport(client, health=1.0)
 
     await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)
@@ -214,13 +215,13 @@ async def test_wisp_near_an_enemy_is_skipped():
 
 async def test_radius_is_wider_than_the_measured_trigger_distance():
     """A mob 886 units from a wisp (the furthest trigger measured in #117) makes it unsafe."""
-    assert cw.SAFE_WISP_RADIUS > 886
+    assert node_helpers.SAFE_RADIUS > 886
 
 
 async def test_wisp_exactly_at_the_radius_is_safe():
     client = _client(health=0.6)
     client.get_health_wisps.return_value = [_entity(0)]
-    client.get_mobs.return_value = [_entity(cw.SAFE_WISP_RADIUS)]
+    client.get_mobs.return_value = [_entity(node_helpers.SAFE_RADIUS)]
     _refill_on_teleport(client, health=1.0)
 
     await cw.run(FakeMachine(), [client], _DEFAULT_PARAMS)

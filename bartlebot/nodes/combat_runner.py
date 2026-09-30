@@ -7,7 +7,7 @@ import asyncio
 import contextlib
 import enum
 import logging
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import NamedTuple
@@ -16,10 +16,12 @@ from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
 from bartlebot.nodes.timing import (
     COMBAT_DROP_MESSAGE_POLL,
     COMBAT_DROP_MESSAGE_TIMEOUT,
+    COMBAT_TP_RETRY_INTERVAL,
     FLEE_AFTER_ROUNDS,
     FLEE_CONFIRM_TIMEOUT,
     FLEE_TIMEOUT,
     FLEE_VOTE_TIMEOUT,
+    POLL_INTERVAL,
 )
 from bartlebot.utils import drop_detection
 
@@ -742,3 +744,207 @@ def start_combat_drop_poll(machine, clients: list, slots: list[int]) -> None:
             logger.debug("No drops detected on client(s) %s", slots)
 
     machine.start_drop_poll(asyncio.create_task(_poll()))
+
+
+# ---------------------------------------------------------------------------
+# Joining a fight already under way
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class _Fight:
+    publisher: object
+    centre: object
+    members: list = field(default_factory=list)
+    """Every client seen in battle in this fight, the publisher first."""
+
+
+class FightCentre:
+    """The centre of each fight our players are joining, published by the first of them seen in battle.
+
+    Once a fight starts its mob walks to its seat, or is hidden or swapped, so a late client
+    re-aiming at the mob aims at a moving or absent target (#110). The centre of the duel
+    circle stays put, and teleporting there joins the fight just as teleporting onto an
+    engaged mob does.
+
+    The centre is read from the duel the client is in, and only once in_battle() has read
+    true: outside a fight the duel struct still holds the last fight's data.
+
+    *share* says whether one client's centre is any use to another. None shares it with
+    everybody, which is right when every player is on one realm. Otherwise pass the machine's
+    record of who shares a realm: a centre on another realm is the coordinates of a fight the
+    client is not in, and teleporting there starts a second one. Each group then publishes a
+    centre of its own.
+    """
+
+    def __init__(self, share: Callable[[object, object], bool] | None = None):
+        self._share = share
+        self._fights: list[_Fight] = []
+
+    def _fight_for(self, client) -> _Fight | None:
+        for fight in self._fights:
+            if self._share is None or fight.publisher is client or self._share(fight.publisher, client):
+                return fight
+        return None
+
+    def centre_for(self, client):
+        """The centre *client* should aim at, or None while nobody it shares a realm with has one."""
+        fight = self._fight_for(client)
+        return fight.centre if fight is not None else None
+
+    async def publish(self, machine, client, index: int) -> None:
+        """Record *client* as in its group's fight, publishing the centre if there is none yet.
+
+        Call only while *client* is in battle.
+        """
+        if (fight := self._fight_for(client)) is not None:
+            _join(fight, client)
+            return
+        try:
+            centre = await client.duel.position()
+        except Exception as exc:
+            machine.log(
+                f"Client {index}: fight centre unreadable ({exc!r}); late clients keep aiming at the mob",
+                logging.DEBUG,
+            )
+            return
+        if (fight := self._fight_for(client)) is not None:  # another client published while this one read
+            _join(fight, client)
+            return
+        self._fights.append(_Fight(client, centre, [client]))
+        where = await _position(client)
+        machine.log(
+            f"Client {index} is in battle; publishing its fight centre"
+            + (f" ({where.distance(centre):.1f} units from it)" if where is not None else ""),
+            logging.DEBUG,
+        )
+
+    async def is_over(self, client) -> bool:
+        """Whether the fight *client* would join has ended: nobody seen in it is still in battle.
+
+        False while *client* has no centre to aim at, and False when a read fails: giving up on
+        a fight still going leaves a player out of it, which is worse than one wasted teleport.
+        """
+        fight = self._fight_for(client)
+        if fight is None:
+            return False
+        for member in fight.members:
+            try:
+                if await member.in_battle():
+                    return False
+            except Exception:
+                return False
+        return True
+
+
+def _join(fight: _Fight, client) -> None:
+    if client not in fight.members:
+        fight.members.append(client)
+
+
+async def join_fight(
+    machine,
+    client,
+    index: int,
+    fight: FightCentre,
+    timeout: float,
+    *,
+    find_target: Callable[[object], Awaitable[object]] | None = None,
+) -> bool:
+    """Teleport *client* into a fight, retrying every COMBAT_TP_RETRY_INTERVAL until it is in battle.
+
+    Once *fight* has a centre for the client, each attempt teleports there, and a client that
+    gets in first publishes its own centre for the rest. Before that, *find_target* says what
+    to aim at: handle_combat passes its find-the-mob, which is how a fight starts at all. The
+    ambient watcher passes nothing, so a client only ever teleports to a published centre: a
+    teleport to "the closest mob" could start a second fight.
+
+    Gives up, returning False, at *timeout* or once the fight it would join is over (see
+    FightCentre.is_over): a late client teleporting onto an empty circle joins nothing.
+
+    A target that disappears is waited out rather than given up on: an encounter that swaps
+    or hides its mob as its fight starts may still pull the player in before the timeout.
+    Giving up at once also said nothing, which left a player standing still for the rest
+    of the wait with no line in the log to say why.
+
+    Each re-teleport logs how far it moved the player. Zero means the player was already
+    on the mob or the centre, so the retry could not have started the fight.
+    """
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
+    attempt = 0
+    target_lost = False
+    aimed_at_centre = False
+    waiting_noted = False
+    while True:
+        attempt += 1
+        if (centre := fight.centre_for(client)) is not None:
+            if await fight.is_over(client):
+                machine.log(f"Client {index}: the fight ended before it could join", logging.DEBUG)
+                return False
+            if not aimed_at_centre:
+                machine.log(f"Client {index}: teleporting to the fight centre on attempt {attempt}", logging.DEBUG)
+                aimed_at_centre = True
+            before = await _position(client) if attempt > 1 else None
+            try:
+                await client.teleport(centre)
+            except Exception as exc:
+                machine.log(f"Client {index}: teleport to the fight centre failed ({exc!r})", logging.DEBUG)
+            else:
+                await _log_re_teleport(machine, client, index, attempt, before)
+        elif find_target is None:
+            if not waiting_noted:
+                machine.log(f"Client {index}: no fight centre yet; waiting without teleporting", logging.DEBUG)
+                waiting_noted = True
+        elif (target := await find_target(client)) is None:
+            if not target_lost:
+                machine.log(
+                    f"Client {index}: target not found on attempt {attempt}; waiting for the fight without teleporting",
+                    logging.DEBUG,
+                )
+                target_lost = True
+        else:
+            if target_lost:
+                machine.log(f"Client {index}: target found again on attempt {attempt}", logging.DEBUG)
+                target_lost = False
+            before = await _position(client) if attempt > 1 else None
+            await client.tp_to(target)
+            await _log_re_teleport(machine, client, index, attempt, before)
+
+        # Poll in_battle() for up to COMBAT_TP_RETRY_INTERVAL (or remaining time)
+        retry_at = min(loop.time() + COMBAT_TP_RETRY_INTERVAL, deadline)
+        while loop.time() < retry_at:
+            if await client.in_battle():
+                await fight.publish(machine, client, index)
+                return True
+            await asyncio.sleep(POLL_INTERVAL)
+
+        if loop.time() >= deadline:
+            break
+
+    return False
+
+
+async def duel_centre(client):
+    """The centre of *client*'s duel, or None when it cannot be read."""
+    try:
+        return await client.duel.position()
+    except Exception:
+        return None
+
+
+async def _log_re_teleport(machine, client, index: int, attempt: int, before) -> None:
+    """Log how far a re-teleport moved the player; *before* is None on the first attempt."""
+    if before is not None and (after := await _position(client)) is not None:
+        machine.log(
+            f"Client {index}: not in battle; re-teleport {attempt} moved {before.distance(after):.1f} units",
+            logging.DEBUG,
+        )
+
+
+async def _position(client):
+    """The client's position, or None when it cannot be read; only a log line depends on it."""
+    try:
+        return await client.body.position()
+    except Exception:
+        return None
