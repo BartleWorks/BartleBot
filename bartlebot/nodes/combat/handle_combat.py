@@ -8,8 +8,9 @@ from collections.abc import Callable
 from bartlebot import player_realms
 from bartlebot.nodes import node_helpers
 from bartlebot.nodes.combat_runner import (
-    _run_combat,
+    FightEnd,
     resolve_combat,
+    run_fight,
     seed_chat_baselines,
     start_combat_drop_poll,
 )
@@ -63,8 +64,8 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Max Duration (s)",
         help=(
             "If the entire combat node (target acquisition + waiting for battle + SprintyCombat) "
-            "exceeds this many seconds, exit early with FAILURE. "
-            "0 = no limit."
+            "exceeds this many seconds, exit early with FAILURE. A fight still going by then is fled "
+            "first. 0 = no limit."
         ),
         default=600.0,
     ),
@@ -81,7 +82,8 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("SUCCESS", "All players have exited combat successfully."),
         ReturnSpec(
             "FAILURE",
-            "No valid target found, or players failed to enter and complete combat within the timeout.",
+            "No valid target found, a player had no mana, players failed to enter and complete combat "
+            "within the timeout, or the fight could not be won and was fled.",
         ),
     ],
     required_bot_options=[player_realms.SPEC],
@@ -106,6 +108,7 @@ async def run(machine, clients: list, params: dict) -> str:
     Flow:
       1. Resolve combat DSL via the Duel Combat Strategy assigned to this state, or the
          active Bot Combat Strategy's default, or the BartleBot built-in default.
+         Return FAILURE if any player has no mana: it could only pass (#111).
       2. Resolve target entity for each client (by enemy name or closest mob), retrying
          TARGET_ACQUIRE_RETRIES times. Return FAILURE if target not found.
       3. If max_duration is set and has elapsed, return FAILURE.
@@ -120,15 +123,17 @@ async def run(machine, clients: list, params: dict) -> str:
          Player Realms: Together -- before anyone teleports, ensure_together() ports anyone not
          confirmed with the others to the leader; FAILURE if that port fails. Once all are in
          battle, one realm and one duel circle are checked; a split is fought out, then
-         repaired after step 8 (FAILURE if that port fails).
-      6. If max_duration is set and has elapsed, return FAILURE.
-      7. Run SprintyCombat for all clients in parallel until combat ends.
-      8. Start a background poll of chat for drop announcements, which reports each via
+         repaired after step 7 (FAILURE if that port fails).
+      6. Run SprintyCombat for all clients in parallel until combat ends (run_fight). A fight
+         that cannot be won is fled (#111), and so is one still going when max_duration
+         elapses; either returns FAILURE.
+      7. Start a background poll of chat for drop announcements, which reports each via
          machine.on_drop(); the node returns without waiting for it.
 
-    FAILURE: target not found after retries; max_duration exceeded; clients did not enter
-    combat within ENTER_COMBAT_TIMEOUT.  DSL resolution itself cannot fail — resolve_combat
-    falls back to the built-in default at every level.
+    FAILURE: a player has no mana; target not found after retries; max_duration exceeded;
+    clients did not enter combat within ENTER_COMBAT_TIMEOUT; the fight was fled.  DSL
+    resolution itself cannot fail — resolve_combat falls back to the built-in default at
+    every level.
     """
     max_duration: float = float(params.get("max_duration", 0.0))
     _node_start = time.monotonic()
@@ -150,6 +155,16 @@ async def run(machine, clients: list, params: dict) -> str:
             f"Combat DSL (P1): {per_client_dsl[0][:80]}{'…' if len(per_client_dsl[0]) > 80 else ''}",
             logging.DEBUG,
         )
+
+    # A player with no mana can only pass, and a group of them can only lose or run out the
+    # clock (#111). A fight that goes that way anyway is fled; this one need not start.
+    if empty := await _players_without_mana(clients):
+        machine.log(
+            f"FAILURE: {', '.join(f'P{n}' for n in empty)} {'has' if len(empty) == 1 else 'have'} no mana;"
+            " not starting a fight",
+            logging.WARNING,
+        )
+        return "FAILURE"
 
     # 1. Resolve target entity for each client, retrying to allow enemies time to load.
     targets = None
@@ -238,13 +253,6 @@ async def run(machine, clients: list, params: dict) -> str:
             )
             return "FAILURE"
 
-    if _check_max_duration():
-        machine.log(
-            f"FAILURE: max_duration {max_duration:.0f}s exceeded before SprintyCombat",
-            logging.WARNING,
-        )
-        return "FAILURE"
-
     # A Together bot's players should be in one fight now. If they are not -- one on
     # another realm after all, or pulled into a second duel -- the fights are finished
     # rather than abandoned mid-duel, and the players brought together afterwards.
@@ -252,22 +260,33 @@ async def run(machine, clients: list, params: dict) -> str:
 
     machine.log("All clients in combat — running SprintyCombat")
 
-    # 5. Run SprintyCombat in parallel using the per-client DSL resolved earlier.
-    # Enforced against max_duration too: a fight running long is exactly the case
-    # the timeout is supposed to catch, not just the wait to enter it.
-    combat_awaitable = asyncio.gather(*[_run_combat(c, dsl) for c, dsl in zip(clients, per_client_dsl)])
-    if max_duration > 0:
-        remaining = max_duration - (time.monotonic() - _node_start)
-        try:
-            await asyncio.wait_for(combat_awaitable, timeout=max(remaining, 0))
-        except TimeoutError:
-            machine.log(
-                f"FAILURE: max_duration {max_duration:.0f}s exceeded during SprintyCombat",
-                logging.WARNING,
-            )
-            return "FAILURE"
-    else:
-        await combat_awaitable
+    # 5. Run SprintyCombat in parallel using the per-client DSL resolved earlier. A fight that
+    # cannot be won is fled rather than passed out to the end (#111). max_duration is enforced
+    # here too, since a fight running long is exactly what it is meant to catch; the players
+    # are already in battle, so a fight still going then is fled rather than walked away from.
+    time_limit = max_duration - (time.monotonic() - _node_start) if max_duration > 0 else None
+    fought = await run_fight(
+        clients,
+        per_client_dsl,
+        list(range(1, len(clients) + 1)),
+        time_limit=time_limit,
+        log=machine.log,
+    )
+    for number, exc in fought.errors:
+        machine.log(f"P{number}: combat raised {exc!r}", logging.WARNING)
+    if fought.end is FightEnd.STUCK:
+        machine.log(
+            f"FAILURE: max_duration {max_duration:.0f}s exceeded during SprintyCombat, and the fight"
+            " did not end after a flee was called for",
+            logging.WARNING,
+        )
+        return "FAILURE"
+    if fought.end is FightEnd.FLED:
+        machine.log("FAILURE: fled the fight", logging.WARNING)
+        return "FAILURE"
+    if fought.errors:
+        machine.log("FAILURE: combat raised on some players", logging.WARNING)
+        return "FAILURE"
 
     machine.log("SprintyCombat finished for all clients", logging.DEBUG)
 
@@ -290,6 +309,12 @@ async def run(machine, clients: list, params: dict) -> str:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+async def _players_without_mana(clients: list) -> list[int]:
+    """The 1-based numbers of players at zero mana. One whose mana is unreadable is not counted."""
+    ratios = await asyncio.gather(*(c.calc_mana_ratio() for c in clients), return_exceptions=True)
+    return [i + 1 for i, ratio in enumerate(ratios) if not isinstance(ratio, BaseException) and ratio <= 0]
 
 
 async def _find_target(client, enemy_name: str):

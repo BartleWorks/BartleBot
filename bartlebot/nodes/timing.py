@@ -587,6 +587,31 @@ COMBAT_TP_RETRY_INTERVAL = 5.0
 # How often handle_combat re-teleports to its target while the clients are still not in
 # battle. A teleport that missed leaves nothing to poll for, so the action is repeated.
 
+FLEE_AFTER_ROUNDS = 3
+# Planning phases in a row a fight must look unwinnable before our players flee it (#111):
+# none of them holds a castable damage card, and no damage over time is on the enemies. One
+# round is not enough, because a card greyed out for want of pips reads the same as one that
+# can never be cast, and round one rarely has the pips for a big hit.
+
+FLEE_VOTE_TIMEOUT = 5.0
+# Seconds a player waits, at the start of a planning phase, for the rest of our players in
+# its fight to report whether they can still deal damage. A report that has not arrived by
+# then counts as "can", so a slow read never causes a flee. Well inside the 30s planning
+# timer, which is spent only once the wait is over.
+
+FLEE_CONFIRM_TIMEOUT = 3.0
+# Seconds to wait for the flee confirmation to appear after clicking Flee. A miss is retried
+# at the next planning phase.
+
+FLEE_TIMEOUT = 90.0
+# Seconds a fight has to end after a flee is called for because it ran past its maximum
+# duration. The flee lands at the next planning phase, which can sit behind a full round of
+# animations. Past this the combat is cancelled, with the players still in the fight.
+
+AMBIENT_COMBAT_MAX_DURATION = 600.0
+# The ambient combat watcher's counterpart to handle_combat's max_duration param: a fight
+# no node started is fled once it has run this long.
+
 POST_MARK_WAIT = 2.0
 # Seconds to wait after PAGE_DOWN for the UI to reflect the new mark state.
 

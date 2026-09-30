@@ -691,16 +691,19 @@ class BotMachine:
 
         Runs SprintyCombat using the bot's default combat config whenever a client
         enters combat outside of an explicit handle_combat node. Guarded against
-        re-entry and against conflicting with intentional combat nodes.
+        re-entry and against conflicting with intentional combat nodes. A fight that
+        cannot be won, or that runs past AMBIENT_COMBAT_MAX_DURATION, is fled (#111).
         """
         from bartlebot.nodes import node_helpers
         from bartlebot.nodes.combat_runner import (
-            _run_combat,
+            FightEnd,
             resolve_combat,
+            run_fight,
             seed_chat_baselines,
             slots_in_battle,
             start_combat_drop_poll,
         )
+        from bartlebot.nodes.timing import AMBIENT_COMBAT_MAX_DURATION
 
         while not self._stop_flag.is_set():
             await asyncio.sleep(node_helpers.POLL_INTERVAL)
@@ -768,18 +771,25 @@ class BotMachine:
                     # Seed only clients with no baseline yet; one carried from an earlier
                     # fight is what recovers an announcement that arrived too late for it.
                     await seed_chat_baselines(self, battling)
-                    results = await asyncio.gather(
-                        *[_run_combat(clients[i], per_client_dsl[i]) for i in battling_slots],
-                        return_exceptions=True,
+                    fought = await run_fight(
+                        battling,
+                        [per_client_dsl[i] for i in battling_slots],
+                        [i + 1 for i in battling_slots],
+                        time_limit=AMBIENT_COMBAT_MAX_DURATION,
+                        log=self._log_machine,
                     )
-                    for pos, r in enumerate(results):
-                        if isinstance(r, Exception):
-                            self._log_machine(
-                                f"Ambient combat: error on client {battling_slots[pos]}: {r}",
-                                logging.DEBUG,
-                            )
+                    for number, exc in fought.errors:
+                        self._log_machine(f"Ambient combat: error on client {number - 1}: {exc}", logging.DEBUG)
 
-                    self._log_machine("Ambient combat: SprintyCombat finished", logging.DEBUG)
+                    if fought.end is FightEnd.FINISHED:
+                        self._log_machine("Ambient combat: SprintyCombat finished", logging.DEBUG)
+                    elif fought.end is FightEnd.FLED:
+                        self._log_machine("Ambient combat: fled the fight", logging.WARNING)
+                    else:
+                        self._log_machine(
+                            "Ambient combat: the fight did not end after a flee was called for; resuming anyway",
+                            logging.WARNING,
+                        )
 
                     # In the background, so the FSM resumes as soon as the fight is over.
                     start_combat_drop_poll(self, battling, battling_slots)

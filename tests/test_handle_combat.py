@@ -45,7 +45,7 @@ def _patch_resolve_combat(combat_order: list[int]):
 
 # Convenience context manager: no-op _run_combat so SprintyCombat is never called.
 _patch_run_combat = lambda: patch(  # noqa: E731
-    "bartlebot.nodes.combat.handle_combat._run_combat", new_callable=AsyncMock
+    "bartlebot.nodes.combat_runner._run_combat", new_callable=AsyncMock
 )
 
 
@@ -149,18 +149,19 @@ async def test_timeout_entering_combat_fails():
 
 
 async def test_timeout_during_sprinty_combat_fails():
-    """Players enter combat but SprintyCombat itself outlasts max_duration → FAILURE."""
+    """Players enter combat, SprintyCombat outlasts max_duration, and the called-for flee never lands → FAILURE."""
     client = FakeClient()
     client.find_closest_mob.return_value = FakeEntity()
     client.in_battle.return_value = True
 
-    async def _hang_combat(_client, _dsl):
+    async def _hang_combat(_client, _dsl, _watch):
         await asyncio.sleep(10)
 
     with (
-        patch("bartlebot.nodes.combat.handle_combat._run_combat", new=AsyncMock(side_effect=_hang_combat)),
+        patch("bartlebot.nodes.combat_runner._run_combat", new=AsyncMock(side_effect=_hang_combat)),
         patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
         patch.object(hc, "POLL_INTERVAL", 0),
+        patch.object(combat_runner, "FLEE_TIMEOUT", 0.05),
     ):
         result = await hc.run(
             FakeMachine(),
@@ -627,3 +628,83 @@ async def test_a_separate_bot_is_never_checked_for_one_fight():
     see_each_other(b)
     assert await hc._in_one_fight(FakeMachine(options={"Player Realms": "Separate"}), [a, b])
     a.get_base_entity_list.assert_not_awaited()
+
+
+# ---------------------------------------------------------------------------
+# Fleeing, and refusing a fight with no mana (#111)
+# ---------------------------------------------------------------------------
+
+
+async def test_a_player_with_no_mana_never_starts_a_fight():
+    a, b = FakeClient(), FakeClient()
+    for c in (a, b):
+        c.find_closest_mob.return_value = FakeEntity()
+    b.calc_mana_ratio.return_value = 0.0
+    machine = FakeMachine()
+    with _patch_run_combat() as run_combat:
+        result = await hc.run(machine, [a, b], _DEFAULT_PARAMS)
+
+    assert result == "FAILURE"
+    assert _log_lines(machine, "P2 has no mana")
+    for c in (a, b):
+        c.tp_to.assert_not_awaited()
+    run_combat.assert_not_awaited()
+
+
+async def test_an_unreadable_mana_reading_does_not_stop_the_fight():
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = True
+    client.calc_mana_ratio.side_effect = RuntimeError("unreadable")
+    with (
+        _patch_run_combat(),
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
+        result = await hc.run(FakeMachine(), [client], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"
+
+
+@pytest.mark.parametrize(
+    ("end", "errors", "line"),
+    [
+        (combat_runner.FightEnd.FLED, [], "fled the fight"),
+        (combat_runner.FightEnd.FINISHED, [(1, RuntimeError("boom"))], "P1: combat raised"),
+    ],
+)
+async def test_a_fled_or_broken_fight_fails_without_polling_for_drops(end, errors, line):
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = True
+    machine = FakeMachine()
+    with (
+        patch.object(hc, "run_fight", AsyncMock(return_value=combat_runner.FightResult(end, errors))),
+        patch.object(hc, "start_combat_drop_poll") as drop_poll,
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
+        result = await hc.run(machine, [client], _DEFAULT_PARAMS)
+
+    assert result == "FAILURE"
+    assert _log_lines(machine, line)
+    drop_poll.assert_not_called()
+
+
+async def test_the_fight_is_given_what_is_left_of_max_duration():
+    client = FakeClient()
+    client.find_closest_mob.return_value = FakeEntity()
+    client.in_battle.return_value = True
+    finished = combat_runner.FightResult(combat_runner.FightEnd.FINISHED, [])
+    with (
+        patch.object(hc, "run_fight", AsyncMock(return_value=finished)) as run_fight,
+        patch("bartlebot.utils.drop_detection.snapshot_chat", new=AsyncMock(return_value="")),
+        patch.object(hc, "POLL_INTERVAL", 0),
+    ):
+        await hc.run(FakeMachine(), [client], {**_DEFAULT_PARAMS, "max_duration": 600.0})
+        limited = run_fight.await_args.kwargs["time_limit"]
+        await hc.run(FakeMachine(), [client], {**_DEFAULT_PARAMS, "max_duration": 0})
+        unlimited = run_fight.await_args.kwargs["time_limit"]
+
+    assert 590 < limited <= 600
+    assert unlimited is None

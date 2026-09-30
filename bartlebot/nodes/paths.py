@@ -78,6 +78,29 @@ MESSAGE_BOX_RIGHT = [
 ]
 MESSAGE_BOX_CAPTION_PATH = ["MessageBoxModalWindow", "messageBoxBG", "messageBoxLayout", "TextArea", "CaptionText"]
 
+# Combat planning phase. Both exist only while cards are selectable (DuelPhase.planning).
+# The flee confirmation is its own message box inside PlanningPhase, not the top-level one
+# above, so the path alone says which dialog it is.
+FLEE_BUTTON_PATH = [
+    "WorldView",
+    "PlanningPhase",
+    "Alignment",
+    "PlanningPhaseSubWindow",
+    "SpellSelection",
+    "ActionButtons",
+    "Flee",
+]
+FLEE_CONFIRM_PATH = [
+    "WorldView",
+    "PlanningPhase",
+    "MessageBoxModalWindow",
+    "messageBoxBG",
+    "messageBoxLayout",
+    "AdjustmentWindow",
+    "Layout",
+    "centerButton",
+]
+
 # Team-up paths
 DUNGEON_ENTRANCE_TEAMUP_BUTTON_PATH = [
     "WorldView",

@@ -10,6 +10,7 @@ SprintyCombat.
 """
 
 import asyncio
+import logging
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -77,7 +78,7 @@ async def test_a_surprise_fight_pauses_the_fsm_until_it_is_over(fast, combat):
     machine = BotMachine(clients=[idle, battling], config=_config(), node_registry={})
     during: list[tuple] = []
 
-    async def fight(client, dsl):
+    async def fight(client, dsl, _watch):
         during.append((client, dsl, machine.is_paused, machine.is_ambient_combat_active))
         client.in_battle.return_value = False
 
@@ -96,7 +97,7 @@ async def test_the_strategy_is_resolved_per_slot_and_drops_are_credited_to_it(fa
     battling.in_battle.return_value = True
     machine = BotMachine(clients=[idle, battling], config=_config(), node_registry={})
 
-    async def fight(client, _dsl):
+    async def fight(client, _dsl, _watch):
         client.in_battle.return_value = False
 
     combat.fight.side_effect = fight
@@ -114,7 +115,7 @@ async def test_a_fight_that_raises_on_one_client_still_collects_drops_and_resume
     battling.in_battle.return_value = True
     machine = BotMachine(clients=[battling], config=_config(), node_registry={})
 
-    async def fight(client, _dsl):
+    async def fight(client, _dsl, _watch):
         client.in_battle.return_value = False
         raise RuntimeError("SprintyCombat lost the duel window")
 
@@ -182,3 +183,30 @@ async def test_a_fight_the_fsm_reaches_first_is_left_to_handle_combat(fast, comb
     assert machine.state == "fight"
     combat.resolve.assert_not_called()
     machine.pause.assert_not_called()
+
+
+async def test_a_fight_is_fled_at_the_ambient_time_limit_and_the_fsm_resumes(fast, combat, monkeypatch, caplog):
+    """A fight no node started is held to AMBIENT_COMBAT_MAX_DURATION, then fled (#111)."""
+    from bartlebot.nodes import timing
+
+    monkeypatch.setattr(timing, "AMBIENT_COMBAT_MAX_DURATION", 0.01)
+    battling = FakeClient()
+    battling.in_battle.return_value = True
+    machine = BotMachine(clients=[battling], config=_config(), node_registry={})
+
+    async def fight(client, _dsl, watch):
+        # Stands in for SprintyCombat: flees at the first planning phase that says to.
+        while not await watch.should_flee(SimpleNamespace(client=client)):
+            await asyncio.sleep(0.001)
+        watch.note_fled(client)
+        client.in_battle.return_value = False
+
+    combat.fight.side_effect = fight
+    caplog.set_level(logging.WARNING, logger="bartlebot.bot.machine")
+    task = asyncio.create_task(machine._ambient_combat_watcher())
+    await _until(lambda: combat.poll_drops.await_count == 1 and not machine.is_paused)
+    await _stop(machine, task)
+
+    messages = [r.getMessage() for r in caplog.records]
+    assert "The fight ran past its time limit; fleeing" in messages
+    assert "Ambient combat: fled the fight" in messages

@@ -4,12 +4,23 @@ Extracted so that machine.py does not need to import from a specific node module
 """
 
 import asyncio
+import contextlib
+import enum
 import logging
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import NamedTuple
 
 from bartlebot.defaults.combat_config import BARTLEBOT_DEFAULT_COMBAT_CONFIG
-from bartlebot.nodes.timing import COMBAT_DROP_MESSAGE_POLL, COMBAT_DROP_MESSAGE_TIMEOUT
+from bartlebot.nodes.timing import (
+    COMBAT_DROP_MESSAGE_POLL,
+    COMBAT_DROP_MESSAGE_TIMEOUT,
+    FLEE_AFTER_ROUNDS,
+    FLEE_CONFIRM_TIMEOUT,
+    FLEE_TIMEOUT,
+    FLEE_VOTE_TIMEOUT,
+)
 from bartlebot.utils import drop_detection
 
 logger = logging.getLogger(__name__)
@@ -324,12 +335,325 @@ def dsl_warning_text(warnings: tuple[DslWarning, ...]) -> str:
     return "\n".join(dict.fromkeys(warning.message for warning in warnings))
 
 
-async def _run_combat(client, combat_dsl: str) -> None:
-    """Run SprintyCombat for a single client using an inline DSL string."""
+async def _run_combat(client, combat_dsl: str, watch: "FightWatch | None" = None) -> None:
+    """Run SprintyCombat for a single client using an inline DSL string.
+
+    With a *watch*, the client asks it at every planning phase whether to flee instead of
+    casting. Without one it fights to the end, as the authoring tools' test fight wants.
+    """
+    provider = _str_provider_class()(combat_dsl)
+    if watch is None:
+        from wizwalker.extensions.wizsprinter import SprintyCombat  # noqa: PLC0415
+
+        await SprintyCombat(client, provider).wait_for_combat()
+    else:
+        await _watched_combat_class()(client, provider, watch).wait_for_combat()
+
+
+# ---------------------------------------------------------------------------
+# Running a fight, and fleeing one that cannot be won (#111)
+# ---------------------------------------------------------------------------
+
+
+class FightEnd(enum.Enum):
+    """How :func:`run_fight` ended."""
+
+    FINISHED = "finished"
+    """The fight ended with nobody fleeing: won, or every one of our players defeated."""
+    FLED = "fled"
+    """At least one of our players fled."""
+    STUCK = "stuck"
+    """A flee was called for at the time limit, and the fight had still not ended
+    FLEE_TIMEOUT later. The combat was cancelled; the players may still be in the fight."""
+
+
+class FightResult(NamedTuple):
+    end: FightEnd
+    errors: list[tuple[int, BaseException]]
+    """(player number, what its combat raised), for every player whose combat raised."""
+
+
+class RoundReport(NamedTuple):
+    """What one of our players saw at the start of a planning phase."""
+
+    round: int
+    ours_here: frozenset[int]
+    """The global ids of our players in its duel, its own included."""
+    has_damage: bool
+    """It holds a castable damage card. False while it is defeated."""
+    dot_on_enemies: bool
+    """Some enemy carries damage over time, or damage deferred to a later round."""
+
+
+@dataclass
+class _Ballot:
+    """One fight's reports for one planning phase."""
+
+    expected: frozenset[int]
+    votes: dict[int, RoundReport] = field(default_factory=dict)
+    complete: asyncio.Event = field(default_factory=asyncio.Event)
+    settled: bool = False
+
+
+class FightWatch:
+    """Decides, for each fight our players are in, when to flee it.
+
+    One is shared by every player :func:`run_fight` runs, and each asks it at the start of
+    every planning phase (:meth:`should_flee`). A fight is fled by every one of our players
+    in it, never by one alone: a player out of damage is carried by the rest. It is fled
+
+    - once, for FLEE_AFTER_ROUNDS planning phases in a row, none of our players in it has held
+      a castable damage card and no enemy has carried damage over time; or
+    - at once, for every fight, after :meth:`flee_all`.
+
+    Players are grouped into fights by what each one's duel lists: two of ours share a fight
+    when both are participants of it. Neither zone nor duel circle can tell, since two realms
+    hold the same fight at the same coordinates. Grouping needs every player's global id, so
+    a watch that cannot read one of them never decides a fight is unwinnable, and only
+    :meth:`flee_all` can make its players flee.
+
+    Every doubt counts against fleeing: a report that cannot be read, or that has not arrived
+    within FLEE_VOTE_TIMEOUT, is read as "can still deal damage" and breaks the run of rounds.
+    """
+
+    def __init__(self, numbers: dict, log: Callable[..., None]):
+        self._numbers = numbers  # client -> 1-based player number, for log lines only
+        self.log = log
+        self._gids: dict = {}  # client -> global id; empty when any was unreadable
+        self._ballots: dict[tuple[int, frozenset[int]], _Ballot] = {}
+        self._streaks: dict[frozenset[int], int] = {}
+        self._fleeing: list[frozenset[int]] = []
+        self._flee_all_reason: str | None = None
+        self.fled: set[int] = set()  # player numbers that carried out a flee
+
+    async def identify(self) -> None:
+        """Read every player's global id, which is its combat member's owner id."""
+
+        async def _gid(client) -> int:
+            return int(await client.client_object.global_id_full())
+
+        clients = list(self._numbers)
+        gids = await asyncio.gather(*(_gid(c) for c in clients), return_exceptions=True)
+        if any(isinstance(g, BaseException) for g in gids):
+            self.log("Fight watch: a player's id is unreadable; only the time limit can make them flee", logging.DEBUG)
+            return
+        self._gids = dict(zip(clients, gids))
+
+    def flee_all(self, reason: str) -> None:
+        """Make every player flee at its next planning phase."""
+        if self._flee_all_reason is None:
+            self._flee_all_reason = reason
+            self.log(f"{reason}; fleeing", logging.WARNING)
+
+    def note_fled(self, client) -> None:
+        self.fled.add(self._numbers[client])
+
+    def number(self, client) -> int:
+        return self._numbers[client]
+
+    async def should_flee(self, combat) -> bool:
+        """Whether *combat*'s player should flee now rather than cast. Call once per planning phase."""
+        if self._flee_all_reason is not None:
+            return True
+        gid = self._gids.get(combat.client)
+        if gid is None:
+            return False
+        if self._flees(gid):
+            return True
+        report = await _round_report(combat, gid, frozenset(self._gids.values()))
+        if report is None:
+            # The others wait out FLEE_VOTE_TIMEOUT for this player and read it as "can".
+            return False
+        key = (report.round, report.ours_here)
+        ballot = self._ballots.setdefault(key, _Ballot(report.ours_here))
+        ballot.votes[gid] = report
+        if ballot.expected.issubset(ballot.votes):
+            ballot.complete.set()
+        with contextlib.suppress(TimeoutError):
+            await asyncio.wait_for(ballot.complete.wait(), FLEE_VOTE_TIMEOUT)
+        self._settle(key, ballot)
+        return self._flees(gid)
+
+    def _flees(self, gid: int) -> bool:
+        return any(gid in fight for fight in self._fleeing)
+
+    def _settle(self, key: tuple[int, frozenset[int]], ballot: _Ballot) -> None:
+        """Count one planning phase towards (or against) fleeing its fight. Once per ballot."""
+        if ballot.settled:
+            return
+        ballot.settled = True
+        fight = ballot.expected
+        hopeless = ballot.complete.is_set() and not any(
+            vote.has_damage or vote.dot_on_enemies for vote in ballot.votes.values()
+        )
+        if not hopeless:
+            self._streaks[fight] = 0
+            return
+        streak = self._streaks.get(fight, 0) + 1
+        self._streaks[fight] = streak
+        what = f"{self._players(fight)}: no castable damage card and no damage over time on the enemies"
+        if streak < FLEE_AFTER_ROUNDS:
+            self.log(f"{what} (round {key[0]}, {streak} of {FLEE_AFTER_ROUNDS})", logging.DEBUG)
+            return
+        self._fleeing.append(fight)
+        self.log(f"{what} for {streak} rounds; fleeing", logging.WARNING)
+
+    def _players(self, gids: frozenset[int]) -> str:
+        numbers = sorted(self._numbers[c] for c, gid in self._gids.items() if gid in gids)
+        return ", ".join(f"P{n}" for n in numbers)
+
+
+async def _round_report(combat, own_gid: int, our_gids: frozenset[int]) -> RoundReport | None:
+    """What *combat*'s player sees at the start of this planning phase, or None if unreadable."""
+    try:
+        round_num = await combat.client.duel.round_num()
+        members = [(member, await member.owner_id()) for member in await combat.get_members()]
+        me = next((member for member, owner in members if owner == own_gid), None)
+        if me is None:
+            return None
+        my_team = await (await me.get_participant()).team_id()
+        enemies = []
+        for member, _owner in members:
+            participant = await member.get_participant()
+            if await participant.team_id() != my_team:
+                enemies.append(participant)
+        has_damage = not await me.is_dead() and await _holds_castable_damage(combat)
+        dot_on_enemies = await _carries_damage_over_time(enemies)
+    except Exception as exc:
+        logger.debug("Fight watch: round report unreadable (%r)", exc)
+        return None
+    ours_here = frozenset(owner for _member, owner in members if owner in our_gids)
+    return RoundReport(round_num, ours_here, has_damage, dot_on_enemies)
+
+
+async def _holds_castable_damage(combat) -> bool:
+    """Whether the player holds a card it can cast now that damages an enemy."""
+    from wizwalker.extensions.wizsprinter.combat_backends.combat_api import (  # noqa: PLC0415
+        SpellType,
+        TemplateSpell,
+    )
+    from wizwalker.extensions.wizsprinter.sprinty_combat import does_card_contain_reqs  # noqa: PLC0415
+
+    damage = TemplateSpell([SpellType.type_damage])
+    for card in await combat.get_castable_cards():
+        if await does_card_contain_reqs(card, damage):
+            return True
+    return False
+
+
+async def _carries_damage_over_time(participants: list) -> bool:
+    """Whether any of *participants* has damage still to take from an effect already on it."""
+    from wizwalker.memory import SpellEffects  # noqa: PLC0415
+
+    pending = {SpellEffects.damage_over_time, SpellEffects.deferred_damage}
+    for participant in participants:
+        for effect in await participant.hanging_effects():
+            if await effect.effect_type() in pending:
+                return True
+    return False
+
+
+async def _flee(combat, watch: FightWatch) -> None:
+    """Click Flee and confirm it. A miss is logged, and retried at the next planning phase."""
+    from bartlebot.nodes import node_helpers  # noqa: PLC0415
+    from bartlebot.nodes.paths import FLEE_BUTTON_PATH, FLEE_CONFIRM_PATH  # noqa: PLC0415
+
+    client = combat.client
+    number = watch.number(client)
+    if not await node_helpers.click_by_path(client, FLEE_BUTTON_PATH):
+        # A defeated player's Flee is on its defeat panel instead, which WizWalker knows.
+        try:
+            async with client.mouse_handler:
+                await combat.flee_button()
+        except Exception as exc:
+            watch.log(f"P{number}: Flee could not be clicked ({exc!r}); trying again next round", logging.DEBUG)
+            return
+
+    async def _confirm_showing() -> bool:
+        return await node_helpers.is_visible_by_path(client, FLEE_CONFIRM_PATH)
+
+    if not await node_helpers.poll_until(_confirm_showing, FLEE_CONFIRM_TIMEOUT):
+        watch.log(f"P{number}: clicked Flee, but no confirmation appeared; trying again next round", logging.DEBUG)
+        return
+    await node_helpers.click_by_path(client, FLEE_CONFIRM_PATH)
+    watch.note_fled(client)
+    watch.log(f"P{number}: fled", logging.INFO)
+
+
+@lru_cache(maxsize=1)
+def _watched_combat_class():
+    """SprintyCombat that asks a FightWatch, each planning phase, whether to flee instead.
+
+    Built lazily and cached for the same reason as ``_str_provider_class``.
+    """
     from wizwalker.extensions.wizsprinter import SprintyCombat  # noqa: PLC0415
 
-    provider = _str_provider_class()(combat_dsl)
-    await SprintyCombat(client, provider).wait_for_combat()
+    class _WatchedCombat(SprintyCombat):
+        def __init__(self, client, provider, watch: FightWatch):
+            super().__init__(client, provider)
+            self.watch = watch
+
+        async def handle_round(self):
+            # Outside SprintyCombat's own mouse_handler block: the flee's clicks take it themselves.
+            if await self.watch.should_flee(self):
+                await _flee(self, self.watch)
+                return
+            await super().handle_round()
+
+    return _WatchedCombat
+
+
+async def run_fight(
+    clients: list,
+    dsls: list[str],
+    numbers: list[int],
+    *,
+    time_limit: float | None,
+    log: Callable[..., None],
+) -> FightResult:
+    """Fight to the end with every one of *clients*, fleeing any fight that cannot be won.
+
+    ``clients``, ``dsls`` and ``numbers`` are parallel; ``numbers`` are 1-based player numbers,
+    used in log lines. *time_limit* is how many seconds from now every fight is fled, or None
+    for no limit; zero or less flees at the first planning phase. *log* takes ``(message,
+    level)``, so the caller decides whose logger the lines are filed under: a node passes
+    ``machine.log``, the ambient watcher the machine's own.
+
+    One player's combat raising does not stop the others; it is reported in the result.
+    """
+    if not clients:
+        return FightResult(FightEnd.FINISHED, [])
+    watch = FightWatch(dict(zip(clients, numbers)), log)
+    await watch.identify()
+    tasks = [asyncio.create_task(_run_combat(c, dsl, watch)) for c, dsl in zip(clients, dsls)]
+    stuck = False
+    try:
+        _done, pending = await asyncio.wait(tasks, timeout=time_limit)
+        if pending:
+            watch.flee_all("The fight ran past its time limit")
+            _done, pending = await asyncio.wait(pending, timeout=FLEE_TIMEOUT)
+        if pending:
+            stuck = True
+            for task in pending:
+                task.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
+    finally:
+        for task in tasks:  # only still running when this was cancelled from outside
+            if not task.done():
+                task.cancel()
+
+    errors = [
+        (number, task.exception())
+        for number, task in zip(numbers, tasks)
+        if not task.cancelled() and task.exception() is not None
+    ]
+    if stuck:
+        end = FightEnd.STUCK
+    elif watch.fled:
+        end = FightEnd.FLED
+    else:
+        end = FightEnd.FINISHED
+    return FightResult(end, errors)
 
 
 async def seed_chat_baselines(machine, clients: list) -> None:
