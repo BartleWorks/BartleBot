@@ -161,6 +161,25 @@ async def test_the_survey_skips_the_group_tab_when_friends_connect_everyone(monk
     assert close.await_count == 2
 
 
+async def test_the_survey_reads_each_friends_list_inside_the_mouse_handler(monkeypatch):
+    """Opening the list is a click; outside the handler it raises HookNotActive (#139)."""
+    clients = _clients(_A, _B)
+    held: list[bool] = []
+
+    async def read(client):
+        entered, exited = client.mouse_handler.__aenter__.await_count, client.mouse_handler.__aexit__.await_count
+        held.append(entered == exited + 1)
+        return [_B] if client is clients[0] else [_A]
+
+    monkeypatch.setattr(node_helpers, "list_online_friends", read)
+    monkeypatch.setattr(node_helpers, "close_friends_list", AsyncMock(return_value=True))
+
+    pm = await port_map.survey(clients, names=[_A, _B])
+
+    assert held == [True, True]
+    assert pm.routes(clients[0], clients[1]) == ["friend"]
+
+
 async def test_the_survey_reads_the_group_tab_when_a_pair_is_not_friends(monkeypatch):
     clients = _clients(_A, _B)
     monkeypatch.setattr(node_helpers, "list_online_friends", AsyncMock(side_effect=ValueError("No friends online")))
