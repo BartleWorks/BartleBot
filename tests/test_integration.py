@@ -38,6 +38,7 @@ from bartlebot.bot_options import (
     system_option_names,
 )
 from bartlebot.nodes.registry import NODE_REGISTRY
+from bartlebot.template_store import list_templates
 from tests.conftest import FakeClient
 
 # ---------------------------------------------------------------------------
@@ -707,9 +708,19 @@ async def test_a_dead_client_pauses_the_run_instead_of_failing_the_node(error):
 
 
 def _all_bot_files() -> list[Path]:
+    """Every bot under ``bots/``, and every template's draft, which each bot made from it starts as.
+
+    Drafts, not released versions: a version shares its draft's id, and is checked by
+    the shipped-template tests against the hash it was released with.
+    """
     files = sorted(_BOTS_DIR.rglob("*.json"))
     assert files, f"no bot files found under {_BOTS_DIR}"
-    return files
+    return files + [t.draft_path for t in list_templates(_BOTS_DIR.parent)]
+
+
+def _rel(path: Path) -> str:
+    """``bots/04_mooshu/crimson_fields.json`` or ``templates/boss-farmer/draft.json``, for a message."""
+    return path.relative_to(_BOTS_DIR.parent).as_posix()
 
 
 def _load_raw(path: Path) -> dict:
@@ -723,7 +734,7 @@ def test_every_bot_file_has_an_id():
     against a bot — its combat strategy, and now each of its option values —
     hangs off that id, and a minted one would be a fresh identity each load.
     Migrated by scripts/migrate_bot_ids.py."""
-    missing = [p.relative_to(_BOTS_DIR).as_posix() for p in _all_bot_files() if not _load_raw(p).get("id")]
+    missing = [_rel(p) for p in _all_bot_files() if not _load_raw(p).get("id")]
 
     assert not missing, f"bot files with no id: {missing}"
 
@@ -744,7 +755,7 @@ def test_opening_and_saving_a_bot_changes_nothing_in_the_file(tmp_path):
     for path in _all_bot_files():
         BotConfig.load(path).save(dest)
         if _load_raw(path) != _load_raw(dest):
-            churned.append(path.relative_to(_BOTS_DIR).as_posix())
+            churned.append(_rel(path))
 
     assert not churned, f"opening and saving changed: {churned}"
 
@@ -760,7 +771,7 @@ def test_no_bot_guards_a_transition_on_an_option_nothing_declares():
     for path in _all_bot_files():
         names = sorted({name for _t, name in orphaned_flag_options(BotConfig.load(path))})
         if names:
-            orphans[path.relative_to(_BOTS_DIR).as_posix()] = names
+            orphans[_rel(path)] = names
 
     assert not orphans, f"transitions reading options nothing declares: {orphans}"
 
@@ -788,7 +799,7 @@ def test_no_bot_carries_a_dead_quicksell_param():
             if state.get("node_type") != "quicksell":
                 continue
             for key in sorted(state.get("params") or {}):
-                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')} → {key}")
+                offenders.append(f"{_rel(path)}:{state.get('id')} → {key}")
 
     assert not offenders, f"quicksell states still carrying params: {offenders}"
 
@@ -809,7 +820,7 @@ def test_no_bot_declares_a_quicksell_flag_it_does_not_mean_to():
         for opt in _load_raw(path).get("options") or []:
             floor = floors.get(opt.get("name"))
             if floor is not None and opt.get("default") is floor:
-                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {opt['name']}={floor}")
+                offenders.append(f"{_rel(path)} → {opt['name']}={floor}")
 
     assert not offenders, f"bots declaring a quicksell flag that changes nothing: {offenders}"
 
@@ -834,7 +845,7 @@ def test_every_self_loop_lands_on_a_node_with_a_retry_cap():
             node_type = node_types.get(t.get("source"))
             spec = NODE_SPECS.get(node_type)
             if spec is not None and spec.max_consecutive_retries is None:
-                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{t.get('source')} ({node_type})")
+                offenders.append(f"{_rel(path)}:{t.get('source')} ({node_type})")
     assert not offenders, f"self-loops on a node with no retry cap: {offenders}"
 
 
@@ -859,10 +870,10 @@ def test_no_bot_stores_a_friend_name():
         for state in raw.get("states") or []:
             params = state.get("params")
             if isinstance(params, dict) and params.get("friend_name"):
-                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')}")
+                offenders.append(f"{_rel(path)}:{state.get('id')}")
         for opt in raw.get("options") or []:
             if opt.get("name") == "Friend Name" and opt.get("default"):
-                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → Friend Name declaration")
+                offenders.append(f"{_rel(path)} → Friend Name declaration")
 
     assert not offenders, f"bot states storing a character name: {offenders}"
 
@@ -880,7 +891,7 @@ def test_no_bot_uses_the_retired_zone_list_node():
     out than this.
     """
     offenders = [
-        f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')}"
+        f"{_rel(path)}:{state.get('id')}"
         for path in _all_bot_files()
         for state in _load_raw(path).get("states") or []
         if state.get("node_type") == "enter_zone_via_list"
@@ -908,7 +919,7 @@ def test_no_bot_declares_a_user_owned_option():
     for path in _all_bot_files():
         for opt in _load_raw(path).get("options") or []:
             if opt.get("name") in USER_OWNED_OPTIONS:
-                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {opt['name']}")
+                offenders.append(f"{_rel(path)} → {opt['name']}")
 
     assert not offenders, f"bots declaring a value only the user owns: {offenders}"
 
@@ -947,7 +958,7 @@ def test_no_bot_stores_a_declaration_that_says_nothing():
         kept = {opt.name for opt in storable_options(config)}
         for opt in config.options:
             if opt.name not in kept:
-                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {opt.name}")
+                offenders.append(f"{_rel(path)} → {opt.name}")
 
     assert not offenders, f"declarations a save would drop as saying nothing: {offenders}"
 
@@ -969,7 +980,7 @@ def test_no_bot_declares_an_option_nothing_reads():
         guarded = _guarded_option_names(_load_raw(path))
         for opt in config.options:
             if opt.name not in required and opt.name not in guarded:
-                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {opt.name}")
+                offenders.append(f"{_rel(path)} → {opt.name}")
 
     assert not offenders, f"declared options no node requires and no transition reads: {offenders}"
 
@@ -996,7 +1007,7 @@ def test_no_bot_declares_an_option_borrowed_from_a_node_it_does_not_run():
         required = set(required_option_specs(config))
         for opt in config.options:
             if opt.name in system and opt.name not in required:
-                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {opt.name}")
+                offenders.append(f"{_rel(path)} → {opt.name}")
 
     assert not offenders, f"declarations borrowed from a node the bot does not run: {offenders}"
 
@@ -1014,7 +1025,7 @@ def test_no_bot_pins_a_bot_wide_option_for_one_node():
     for path in _all_bot_files():
         for state in _load_raw(path).get("states") or []:
             if "option_overrides" in state:
-                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')}")
+                offenders.append(f"{_rel(path)}:{state.get('id')}")
 
     assert not offenders, f"bot states with per-node option overrides: {offenders}"
 
@@ -1031,7 +1042,7 @@ def test_no_bot_uses_legacy_combat_params():
                 continue
             for legacy in ("use_default_duel_profile", "duel_profile_name"):
                 if legacy in params:
-                    offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()}:{state.get('id')} → {legacy}")
+                    offenders.append(f"{_rel(path)}:{state.get('id')} → {legacy}")
 
     assert not offenders, f"bot states with legacy combat params: {offenders}"
 
@@ -1054,11 +1065,7 @@ def test_every_shipped_bot_has_at_least_one_tag():
     a subgraph is neither — it is a fragment of one. Its folder is how it is found,
     which is the same reason the "Type" group was dropped.
     """
-    untagged = [
-        p.relative_to(_BOTS_DIR).as_posix()
-        for p in _shipped_bot_files()
-        if not _load_raw(p).get("tags") and p.parent.name != "subgraphs"
-    ]
+    untagged = [_rel(p) for p in _shipped_bot_files() if not _load_raw(p).get("tags") and p.parent.name != "subgraphs"]
 
     assert not untagged, f"bot files with no tags: {untagged}"
 
@@ -1072,6 +1079,6 @@ def test_no_bot_carries_a_tag_outside_the_vocabulary():
     for path in _shipped_bot_files():
         for tag in _load_raw(path).get("tags") or []:
             if tag not in BOT_TAGS:
-                offenders.append(f"{path.relative_to(_BOTS_DIR).as_posix()} → {tag!r}")
+                offenders.append(f"{_rel(path)} → {tag!r}")
 
     assert not offenders, f"bots carrying unknown tags: {offenders}"

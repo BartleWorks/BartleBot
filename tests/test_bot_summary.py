@@ -7,12 +7,13 @@ world_names.json), so each case reads as the sentence a user would actually see.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
 from bartlebot.bot.schema import BotConfig, StateModel, TransitionModel
 from bartlebot.bot_summary import BotFacts, Entrance, describe, describe_data, phrase, run_order
+from bartlebot.paths import project_root
+from bartlebot.template_store import list_templates, load_draft
 
 HAUNTED_CAVE = "WizardCity/WC_Streets/WC_HauntedCave"
 NIGHTSHADES_TOWER = "WizardCity/WC_Streets/Interiors/WC_HauntedCave_T1"  # has its own name
@@ -213,8 +214,10 @@ def test_a_graph_that_implies_nothing_says_nothing():
 
 def test_an_unfilled_template_says_nothing():
     """Every template's entrance and fight are blank until the author fills them in."""
-    for path in sorted(Path("bots/templates").glob("*.json")):
-        assert describe(BotConfig.load(path)) is None, path.name
+    templates = list_templates(project_root())
+    assert templates, "no shipped template, so this checks nothing"
+    for template in templates:
+        assert describe(load_draft(template.id, project_root())) is None, template.name
 
 
 # ---------------------------------------------------------------------------

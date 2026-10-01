@@ -69,7 +69,7 @@ class ControllerHarness:
         self._clean_snapshot = None
         self._rewards_declined_for = None
         # The Rewards prompt is modal; what is under test here is the write behind it.
-        self._confirm_rewards_tags = lambda path: True
+        self._confirm_rewards_tags = lambda: True
         self._doc_stack = []
         self._current_machine = None
         self._bot_task = None

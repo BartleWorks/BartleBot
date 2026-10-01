@@ -105,13 +105,11 @@ from bartlebot.subgraphs import (
     convert_region_to_instance,
     definition_problems,
     extract_definition,
-    mint_instance_id,
     node_panels,
     normalize_input_types,
     promoted_param_type,
     reresolve_member_params,
     sync_linked_values,
-    taken_ids,
 )
 
 logger = logging.getLogger(__name__)
@@ -2843,7 +2841,7 @@ class BotCanvas(QWidget):
             QMessageBox.critical(self, "Save Region as Subgraph", str(exc))
             return False
         library.save(defn)
-        instance_id = mint_instance_id(name, taken_ids(work))
+        instance_id = self._scene.mint_instance_id(name, work)
         id_map = convert_region_to_instance(work, region_id, defn, source, instance_id=instance_id)
         composed, report = compose_bot(work, library)
         self._undo_mgr.cancel_debounce()

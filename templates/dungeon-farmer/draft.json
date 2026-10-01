@@ -1,11 +1,10 @@
 {
   "id": "188f8aed-edbb-4c20-8909-31148443c54f",
-  "name": "Dungeon Farmer Template",
-  "description": "Template bot file for a dungeon farming bot. To use this template to create your own bot, follow these steps:\n\n1) Change the zone in \"Go to dungeon entrance zone\" to the zone containing the dungeon entrance. If the correct zone is not on the list, choose the nearest major zone and add navigation nodes to get to the dungeon entrance zone from the major zone.\n\n2) Edit the \"Enter dungeon\" node and record yourself entering the dungeon.\n\n3) Add nodes between \"Enter dungeon\" and \"Exit dungeon\" to complete the dungeon as needed.\n\n4) For any fights in the dungeon, populate the drop list for the fight by clicking \"Import drops from wiki\" and pasting the Wizard101 wiki page URL for the boss or primary enemy.\n\n5) Edit the \"Exit dungeon\" node and record yourself exiting the dungeon.\n\n6) Edit the \"Quicksell\" node to keep relevant drops.\n\n7) In the left side of the toolbar above the bot canvas, update the bot name/author and add tags to the bot by clicking \"Rewards\" and \"Activities\"",
+  "name": "Dungeon Farmer",
   "version": "1.0",
   "clients": "all",
-  "initial": "sync_players_1_state_2",
-  "recovery_state": "sync_players_1_state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [],
   "authors": "BartleBot",
   "tags": [
@@ -14,61 +13,7 @@
   "options": [],
   "states": [
     {
-      "id": "state_4",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 2200.0,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "refill_potions": true,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": 2640.0,
-        "y": 0.0
-      },
-      "params": {}
-    },
-    {
-      "id": "state_8",
-      "node_type": "enter_dungeon",
-      "label": "Enter dungeon",
-      "position": {
-        "x": 3080.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "",
-        "dungeon_zone": "",
-        "offers_challenge_mode": false,
-        "offers_team_up": true
-      }
-    },
-    {
-      "id": "state_11",
-      "node_type": "enter_zone",
-      "label": "Exit dungeon",
-      "position": {
-        "x": 4400.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "",
-        "to_zone": "",
-        "stagger": false
-      }
-    },
-    {
-      "id": "sync_players_1_state_1",
+      "id": "t_sync_players_1_state_1",
       "node_type": "relog",
       "label": "Relog",
       "position": {
@@ -85,7 +30,7 @@
       }
     },
     {
-      "id": "sync_players_1_state_2",
+      "id": "t_sync_players_1_state_2",
       "node_type": "sync_in_zone",
       "label": "Go to zone",
       "position": {
@@ -97,7 +42,22 @@
       }
     },
     {
-      "id": "sync_players_1_state_3",
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_3",
       "node_type": "change_realm",
       "label": "Change to favorite realm",
       "position": {
@@ -107,13 +67,52 @@
       "params": {
         "use_favorite_realm": true
       }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter dungeon",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "",
+        "dungeon_zone": "",
+        "offers_challenge_mode": false,
+        "offers_team_up": true
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "",
+        "to_zone": "",
+        "stagger": false
+      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -122,8 +121,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_8",
+      "source": "t_2",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -132,8 +131,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_4",
+      "source": "t_4",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -142,8 +141,8 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_1",
-      "dest": "sync_players_1_state_2",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -152,8 +151,8 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_2",
-      "dest": "sync_players_1_state_3",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_sync_players_1_state_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -162,8 +161,8 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_3",
-      "dest": "state_4",
+      "source": "t_sync_players_1_state_3",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -173,12 +172,12 @@
   ],
   "regions": [
     {
-      "id": "sync_players_1",
+      "id": "t_sync_players_1",
       "label": "Sync players",
       "members": [
-        "sync_players_1_state_1",
-        "sync_players_1_state_2",
-        "sync_players_1_state_3"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2",
+        "t_sync_players_1_state_3"
       ],
       "color": 1,
       "source": {
@@ -207,5 +206,8 @@
         }
       }
     }
-  ]
+  ],
+  "template_meta": {
+    "blurb": "Template bot file for a dungeon farming bot. To use this template to create your own bot, follow these steps:\n\n1) Change the zone in \"Go to dungeon entrance zone\" to the zone containing the dungeon entrance. If the correct zone is not on the list, choose the nearest major zone and add navigation nodes to get to the dungeon entrance zone from the major zone.\n\n2) Edit the \"Enter dungeon\" node and record yourself entering the dungeon.\n\n3) Add nodes between \"Enter dungeon\" and \"Exit dungeon\" to complete the dungeon as needed.\n\n4) For any fights in the dungeon, populate the drop list for the fight by clicking \"Import drops from wiki\" and pasting the Wizard101 wiki page URL for the boss or primary enemy.\n\n5) Edit the \"Exit dungeon\" node and record yourself exiting the dungeon.\n\n6) Edit the \"Quicksell\" node to keep relevant drops.\n\n7) In the left side of the toolbar above the bot canvas, update the bot name/author and add tags to the bot by clicking \"Rewards\" and \"Activities\""
+  }
 }

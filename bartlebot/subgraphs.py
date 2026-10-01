@@ -107,8 +107,8 @@ def taken_ids(config: BotConfig) -> set[str]:
     return {r.id for r in config.regions} | {s.id for s in config.states}
 
 
-def mint_instance_id(name: str, existing: Iterable[str]) -> str:
-    """A fresh linked-region id ``<slug>_<n>`` for a definition called ``name``.
+def mint_instance_id(name: str, existing: Iterable[str], prefix: str = "") -> str:
+    """A fresh linked-region id ``<prefix><slug>_<n>`` for a definition called ``name``.
 
     ``n`` is one above every number the slug already carries in ``existing`` --
     whether as a region id (``sync_players_2``) or as the head of a state id
@@ -116,8 +116,11 @@ def mint_instance_id(name: str, existing: Iterable[str]) -> str:
     ordinary state). Never the lowest free number, for the reason
     ``EditScene._unique_id`` gives: combat assignments key on state ids, and a
     recycled instance id would hand a deleted instance's strategies to the next.
+
+    ``prefix`` is ``t_`` in a template draft (``t_sync_players_1``) and empty in a bot,
+    and only ids carrying it are counted, so the two never number against each other.
     """
-    slug = instance_slug(name)
+    slug = f"{prefix}{instance_slug(name)}"
     pattern = re.compile(rf"^{re.escape(slug)}_(\d+)(?:_|$)")
     highest = 0
     for i in existing:

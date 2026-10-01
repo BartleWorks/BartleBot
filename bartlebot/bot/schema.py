@@ -298,6 +298,32 @@ class DefinitionMeta(BaseModel):
     panels: list[SubgraphPanel] = Field(default_factory=list)
 
 
+class TemplateRef(BaseModel):
+    """Which template a bot was made from, and the version it is based on.
+
+    ``version`` is the *base*: the released version the bot was created from, or last
+    finished reviewing against. A monotonic integer like ``SubgraphSource.version``, and
+    unrelated to ``BotConfig.version``. Written only by New Bot and by finishing a
+    template update review -- never on load, never by a migration, and copied unchanged
+    by Save As, since a copy of a bot has the same base.
+    """
+
+    id: str
+    version: int
+
+
+class TemplateMeta(BaseModel):
+    """What makes a ``BotConfig`` a template -- a draft or a released version -- rather than a bot.
+
+    Plays the part :class:`DefinitionMeta` plays for a definition: it rides along through
+    undo and autosave with the rest of the config. Never set on a bot: New Bot drops it
+    when it copies a version, so ``exclude_none`` keeps it out of every bot file.
+    """
+
+    #: What the New Bot dialog says about the template, under its name.
+    blurb: str = ""
+
+
 class BotConfig(BaseModel):
     # Required, with no default_factory: a minted id is indistinguishable from a real
     # one, so a file missing it would silently get a fresh identity on every load --
@@ -325,11 +351,20 @@ class BotConfig(BaseModel):
     regions: list[RegionModel] = Field(default_factory=list)
     # Set only while this config is a subgraph definition open as a document.
     definition: DefinitionMeta | None = None
+    # Set only on a bot made from a template (New Bot), naming it and the base version.
+    template: TemplateRef | None = None
+    # Set only on a template's draft or a released version of it, never on a bot.
+    template_meta: TemplateMeta | None = None
 
     @property
     def is_definition(self) -> bool:
         """Whether this is a subgraph definition document rather than a bot."""
         return self.definition is not None
+
+    @property
+    def is_template(self) -> bool:
+        """Whether this is a template, a draft or a released version, rather than a bot."""
+        return self.template_meta is not None
 
     @field_validator("drops", mode="before")
     @classmethod
@@ -473,10 +508,10 @@ class BotConfig(BaseModel):
         return data
 
     def save(self, path: str | Path) -> None:
-        _atomic_write_json(self.file_dump(), path)
+        atomic_write_json(self.file_dump(), path)
 
 
-def _atomic_write_json(data: dict, path: str | Path) -> None:
+def atomic_write_json(data: dict, path: str | Path) -> None:
     """Write ``data`` to a sibling temp file, then atomically replace ``path``.
 
     Prevents corruption if the process crashes mid-write.
@@ -658,4 +693,4 @@ class SubgraphDefinition(BaseModel):
             return cls.model_validate(json.load(f))
 
     def save(self, path: str | Path) -> None:
-        _atomic_write_json(self.model_dump(exclude_none=True), path)
+        atomic_write_json(self.model_dump(exclude_none=True), path)

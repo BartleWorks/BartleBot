@@ -1,78 +1,65 @@
 {
-  "id": "ca47533c-be03-451e-a3b7-778e2b6fbab6",
-  "name": "Gauntlet Farmer Template",
-  "description": "Template file for a gauntlet farming bot.",
+  "id": "be76a48c-598c-4114-8ddc-389a51d145ed",
+  "name": "Mob Farmer",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_2",
-  "recovery_state": "state_1",
+  "initial": "t_2",
+  "recovery_state": "t_1",
   "drops": [],
   "authors": "BartleBot",
   "tags": [
-    "Gauntlet"
+    "Mobs"
   ],
   "options": [],
   "states": [
     {
-      "id": "state_1",
+      "id": "t_1",
       "node_type": "relog",
-      "label": "Relog",
-      "position": {
-        "x": 440.0,
-        "y": 0.0
-      },
-      "params": {
-        "relog_clients": []
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "teleport_to_friend",
-      "label": "Teleport to friend",
+      "label": "Relog all players",
       "position": {
         "x": 880.0,
         "y": 0.0
       },
       "params": {
-        "target_hooked_player": false,
-        "target_player": 0,
-        "to_zone": ""
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     {
-      "id": "state_3",
-      "node_type": "handle_potions",
-      "label": "Try using potions",
+      "id": "t_2",
+      "node_type": "sync_in_zone",
+      "label": "Go to mob spawn zone",
       "position": {
         "x": 1320.0,
         "y": 0.0
       },
       "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "refill_potions": false,
-        "mark_zone": ""
+        "zone": ""
       }
     },
     {
-      "id": "state_4",
-      "node_type": "sync_in_zone",
-      "label": "Go to The Commons",
+      "id": "t_3",
+      "node_type": "change_realm",
+      "label": "Change to favorite realm",
       "position": {
         "x": 1760.0,
-        "y": 90.0
+        "y": 0.0
       },
       "params": {
-        "zone": "WizardCity/WC_Hub"
+        "use_favorite_realm": true
       }
     },
     {
-      "id": "state_5",
+      "id": "t_4",
       "node_type": "handle_potions",
-      "label": "Refill and use potions",
+      "label": "Handle potions",
       "position": {
         "x": 2200.0,
-        "y": 90.0
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
@@ -82,61 +69,97 @@
       }
     },
     {
-      "id": "state_6",
-      "node_type": "teleport_to_friend",
-      "label": "Teleport to friend",
-      "position": {
-        "x": 2640.0,
-        "y": 90.0
-      },
-      "params": {
-        "target_hooked_player": false,
-        "target_player": 0,
-        "to_zone": ""
-      }
-    },
-    {
-      "id": "state_7",
+      "id": "t_5",
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 3080.0,
+        "x": 2640.0,
         "y": 0.0
       },
       "params": {}
     },
     {
-      "id": "state_8",
-      "node_type": "enter_gauntlet",
-      "label": "Enter gauntlet",
+      "id": "t_6",
+      "node_type": "handle_combat",
+      "label": "Defeat mobs",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "",
+        "wiki_page": "",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
       "position": {
         "x": 3520.0,
         "y": 0.0
       },
       "params": {
-        "dungeon_zone": ""
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       }
     },
     {
-      "id": "state_9",
-      "node_type": "teleport_to_friend",
-      "label": "Teleport to friend",
+      "id": "t_8",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to safety",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": ""
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
       "position": {
         "x": 4400.0,
         "y": 0.0
       },
       "params": {
-        "target_hooked_player": false,
-        "target_player": 0,
-        "to_zone": ""
+        "duration": 5.0
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -145,8 +168,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -155,8 +178,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
+      "source": "t_2",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -165,8 +188,48 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "t_3",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_8",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -175,58 +238,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_3",
+      "source": "t_9",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -234,5 +247,8 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [],
+  "template_meta": {
+    "blurb": "Template bot file for a mob farming bot."
+  }
 }

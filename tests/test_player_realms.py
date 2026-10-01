@@ -24,10 +24,11 @@ from bartlebot.gui.widgets.option_widgets import (
 from bartlebot.gui.widgets.player_realms_choice import PlayerRealmsChoice
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.paths import project_root
+from bartlebot.template_store import list_templates
 
 _ROOT = project_root()
 
-#: The bots that ship Separate: the next-realm reagent collectors, Scrap Iron, and their template.
+#: The bots that ship Separate: the next-realm reagent collectors, Scrap Iron, and their template's draft.
 SHIPPED_SEPARATE = {
     "bots/25_crafting/aeriel_shores_aethyr_burst.json",
     "bots/25_crafting/aeriel_shores_silver_chests.json",
@@ -39,7 +40,7 @@ SHIPPED_SEPARATE = {
     "bots/25_crafting/the_zocalo_red_mandrake.json",
     "bots/25_crafting/scrap_iron_collector.json",
     "bots/25_crafting/selenopolis_parchment.json",
-    "bots/templates/reagent_collector_template.json",
+    "templates/reagent-collector/draft.json",
 }
 
 
@@ -209,7 +210,8 @@ def test_other_controls_are_left_alone(qapp):
 
 
 def _shipped_bots() -> list[Path]:
-    return sorted([*(_ROOT / "bots").rglob("*.json")])
+    """Every bot, and every template draft: a bot made from one starts as a copy of it."""
+    return sorted([*(_ROOT / "bots").rglob("*.json"), *(t.draft_path for t in list_templates(_ROOT))])
 
 
 def test_exactly_the_reagent_bots_ship_separate():

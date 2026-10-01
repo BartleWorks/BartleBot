@@ -1,11 +1,10 @@
 {
   "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
-  "name": "Spellement Farmer Template",
-  "description": "Template bot file for a spellement farming bot. To use this template to create your own bot, follow these steps:",
+  "name": "Spellement Farmer",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_2",
-  "recovery_state": "state_1",
+  "initial": "t_6",
+  "recovery_state": "t_1",
   "drops": [],
   "authors": "BartleBot",
   "tags": [
@@ -16,7 +15,7 @@
   "options": [],
   "states": [
     {
-      "id": "state_1",
+      "id": "t_1",
       "node_type": "relog",
       "label": "Relog all players",
       "position": {
@@ -33,7 +32,56 @@
       }
     },
     {
-      "id": "state_2",
+      "id": "t_2",
+      "node_type": "check_level_scaling",
+      "label": "Check level scaling",
+      "position": {
+        "x": -440.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "sync_in_zone",
+      "label": "Go to level scaling dungeon entrance zone",
+      "position": {
+        "x": 0.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": ""
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "enter_dungeon",
+      "label": "Enter level scaling dungeon",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "from_zone": "",
+        "dungeon_zone": "",
+        "offers_challenge_mode": false,
+        "offers_team_up": false
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "apply_level_scaling",
+      "label": "Apply level scaling",
+      "position": {
+        "x": 880.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": ""
+      }
+    },
+    {
+      "id": "t_6",
       "node_type": "sync_in_zone",
       "label": "Go to dungeon entrance zone",
       "position": {
@@ -45,7 +93,7 @@
       }
     },
     {
-      "id": "state_3",
+      "id": "t_7",
       "node_type": "change_realm",
       "label": "Change to favorite realm",
       "position": {
@@ -57,7 +105,7 @@
       }
     },
     {
-      "id": "state_4",
+      "id": "t_8",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
@@ -72,7 +120,7 @@
       }
     },
     {
-      "id": "state_5",
+      "id": "t_9",
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
@@ -82,7 +130,7 @@
       "params": {}
     },
     {
-      "id": "state_8",
+      "id": "t_10",
       "node_type": "enter_dungeon",
       "label": "Enter dungeon",
       "position": {
@@ -97,7 +145,7 @@
       }
     },
     {
-      "id": "state_9",
+      "id": "t_11",
       "node_type": "handle_combat",
       "label": "Defeat boss",
       "position": {
@@ -112,7 +160,7 @@
       }
     },
     {
-      "id": "state_10",
+      "id": "t_12",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
@@ -129,7 +177,7 @@
       }
     },
     {
-      "id": "state_11",
+      "id": "t_13",
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
@@ -141,62 +189,13 @@
         "to_zone": "",
         "stagger": false
       }
-    },
-    {
-      "id": "state_12",
-      "node_type": "check_level_scaling",
-      "label": "Check level scaling",
-      "position": {
-        "x": -440.0,
-        "y": 0.0
-      },
-      "params": {}
-    },
-    {
-      "id": "state_13",
-      "node_type": "sync_in_zone",
-      "label": "Go to level scaling dungeon entrance zone",
-      "position": {
-        "x": 0.0,
-        "y": 90.0
-      },
-      "params": {
-        "zone": ""
-      }
-    },
-    {
-      "id": "state_14",
-      "node_type": "enter_dungeon",
-      "label": "Enter level scaling dungeon",
-      "position": {
-        "x": 440.0,
-        "y": 90.0
-      },
-      "params": {
-        "from_zone": "",
-        "dungeon_zone": "",
-        "offers_challenge_mode": false,
-        "offers_team_up": false
-      }
-    },
-    {
-      "id": "state_15",
-      "node_type": "apply_level_scaling",
-      "label": "Apply level scaling",
-      "position": {
-        "x": 880.0,
-        "y": 90.0
-      },
-      "params": {
-        "zone": ""
-      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
+      "source": "t_1",
+      "dest": "t_1",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -205,8 +204,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_12",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -215,8 +214,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
+      "source": "t_12",
+      "dest": "t_13",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -225,8 +224,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
+      "source": "t_12",
+      "dest": "t_13",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -235,8 +234,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_12",
+      "source": "t_13",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -245,8 +244,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_13",
+      "source": "t_2",
+      "dest": "t_3",
       "when": "FALSE",
       "flags": [],
       "flag_op": "AND",
@@ -255,8 +254,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_2",
+      "source": "t_2",
+      "dest": "t_6",
       "when": "TRUE",
       "flags": [],
       "flag_op": "AND",
@@ -265,8 +264,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_14",
+      "source": "t_3",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -275,8 +274,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_15",
+      "source": "t_4",
+      "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -285,8 +284,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_2",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -295,8 +294,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
+      "source": "t_6",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -305,8 +304,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "t_7",
+      "dest": "t_8",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -315,8 +314,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
+      "source": "t_8",
+      "dest": "t_9",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -325,8 +324,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_8",
+      "source": "t_9",
+      "dest": "t_10",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -335,8 +334,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
+      "source": "t_10",
+      "dest": "t_11",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -345,8 +344,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_10",
+      "source": "t_11",
+      "dest": "t_12",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -354,5 +353,8 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [],
+  "template_meta": {
+    "blurb": "Template bot file for a spellement farming bot. To use this template to create your own bot, follow these steps:"
+  }
 }

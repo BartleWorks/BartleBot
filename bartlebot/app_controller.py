@@ -782,15 +782,18 @@ class AppController(QObject):
         if self._save_bot():
             self._window.bot_canvas.exit_edit_mode(saved=True)
 
-    def _confirm_rewards_tags(self, path: str | None) -> bool:
+    def _confirm_rewards_tags(self) -> bool:
         """Ask for a Rewards tag if the bot has none. False when the author cancels the save.
 
         Asked once per open: Save Without is remembered against the bot's id until it is
-        closed or reopened. *path* is where the bot is about to be written, which is what
-        exempts a template.
+        closed or reopened. A template draft is never asked.
         """
         config = self._loaded_config
-        if config is None or config.id == self._rewards_declined_for or not wants_rewards_prompt(config.tags, path):
+        if (
+            config is None
+            or config.id == self._rewards_declined_for
+            or not wants_rewards_prompt(config.tags, config.is_template)
+        ):
             return True
         dialog = RewardsTagDialog(suggested_tags(config.states), self._window)
         if dialog.exec() != QDialog.DialogCode.Accepted:
@@ -810,7 +813,7 @@ class AppController(QObject):
             return self._save_definition()
         if self._last_save_path is None:
             return self._save_bot_as()
-        if not self._confirm_rewards_tags(self._last_save_path):
+        if not self._confirm_rewards_tags():
             return False
         try:
             self._loaded_config.save(self._last_save_path)
@@ -834,8 +837,8 @@ class AppController(QObject):
             return False
         if not path.endswith(".json"):
             path += ".json"
-        # After the file dialog, not before: whether the target is a template decides it.
-        if not self._confirm_rewards_tags(path):
+        # After the file dialog, not before: cancelling the dialog should ask nothing.
+        if not self._confirm_rewards_tags():
             return False
         old_save_path = self._last_save_path
         # A fork gets its own identity. The copy would otherwise share the original's

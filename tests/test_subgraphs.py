@@ -428,6 +428,14 @@ def test_mint_instance_id_numbers_above_every_use_of_the_slug():
     assert mint_instance_id("Sync players", ["sync_players_x", "sync_players"]) == "sync_players_1"
 
 
+def test_mint_instance_id_with_a_prefix_numbers_apart_from_the_unprefixed():
+    """A template draft's instances are ``t_``; a bot's own never number against them."""
+    taken = ["t_sync_players_1", "t_sync_players_1_state_2", "sync_players_4"]
+    assert mint_instance_id("Sync players", taken, prefix="t_") == "t_sync_players_2"
+    assert mint_instance_id("Sync players", taken) == "sync_players_5"
+    assert mint_instance_id("Sync players", ["t_sync_players_3"]) == "sync_players_1"
+
+
 def test_member_ids_never_collide_with_unique_id():
     from bartlebot.gui.canvas.edit_scene import _unique_id
 

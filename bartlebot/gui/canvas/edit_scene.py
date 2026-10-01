@@ -13,7 +13,9 @@ import math
 import re
 import uuid
 from collections import defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
+from itertools import chain
 
 from PyQt6.QtCore import QPointF, QRectF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QBrush, QCursor, QKeyEvent, QMouseEvent, QPainter, QPen
@@ -86,6 +88,7 @@ from bartlebot.subgraphs import (
     taken_ids,
 )
 from bartlebot.subgraphs import detach as detach_subgraph
+from bartlebot.template_store import TEMPLATE_ID_PREFIX
 
 logger = logging.getLogger(__name__)
 
@@ -433,8 +436,12 @@ def _dist(a: QPointF, b: QPointF) -> float:
     return math.hypot(a.x() - b.x(), a.y() - b.y())
 
 
-def _unique_id(existing: list[str]) -> str:
-    """Return a fresh ``state_N`` id, numbered above every id already in use.
+#: What a bot's nodes are numbered with; a template draft's are :data:`TEMPLATE_ID_PREFIX`.
+STATE_ID_PREFIX = "state_"
+
+
+def _unique_id(existing: Iterable[str], prefix: str = STATE_ID_PREFIX, reserved: Iterable[str] = ()) -> str:
+    """Return a fresh ``<prefix>N`` id, numbered above every id already in use or reserved.
 
     Deliberately *not* the lowest free number.  Combat configuration binds to
     state ids — ``BotCombatStrategy.state_assignments`` stores raw ``state_N``
@@ -443,17 +450,23 @@ def _unique_id(existing: list[str]) -> str:
     strategy to whatever unrelated node is created next, with nothing in the UI
     to show it happened; the wrong strategy simply runs, minutes into a bot run.
 
-    Ids that don't fit the ``state_N`` pattern (hand-authored bot files may use
-    anything) are ignored when picking the number but still can't be collided
-    with, since the result always carries the ``state_`` prefix and a number
-    above every numbered id present.
+    ``prefix`` is ``state_`` in a bot and ``t_`` in a template draft, and only ids
+    carrying it are counted, so a bot's template-owned ``t_N`` nodes never move its own
+    numbering. ``reserved`` is what a draft's earlier releases used: an id a version
+    retired still names a node in every bot based on that version, so it is counted
+    as if it were still in use.
+
+    Ids that don't fit the pattern (hand-authored bot files may use anything) are
+    ignored when picking the number but still can't be collided with, since the
+    result always carries the prefix and a number above every numbered id present.
     """
+    pattern = _STATE_NUMBER if prefix == STATE_ID_PREFIX else re.compile(rf"(?:^|_){re.escape(prefix)}(\d+)$")
     highest = 0
-    for state_id in existing:
-        match = _STATE_NUMBER.search(state_id)
+    for state_id in chain(existing, reserved):
+        match = pattern.search(state_id)
         if match:
             highest = max(highest, int(match.group(1)))
-    return f"state_{highest + 1}"
+    return f"{prefix}{highest + 1}"
 
 
 #: ``state_N`` on its own, or as the tail of a subgraph member id
@@ -616,6 +629,8 @@ class EditScene(QGraphicsScene):
         # copied whole; ordinary regions do not travel with a copy.
         self._clipboard: tuple[list[dict], list[dict], list[dict]] | None = None
         self._subgraph_library: SubgraphLibrary | None = None
+        # (document id, ids): see set_reserved_ids.
+        self._reserved_ids: tuple[str | None, frozenset[str]] = (None, frozenset())
         self._in_structural_edit: bool = False  # re-entrancy guard; suppresses nested about_to_change
         self._snap_enabled: bool = False
         self._grid_style: str = "dots"  # "dots" | "lines" | "none"
@@ -1255,6 +1270,49 @@ class EditScene(QGraphicsScene):
     def subgraph_library(self) -> SubgraphLibrary | None:
         return self._subgraph_library
 
+    # ------------------------------------------------------------------
+    # Minting ids
+    # ------------------------------------------------------------------
+
+    def set_reserved_ids(self, document_id: str | None, ids: Iterable[str] = ()) -> None:
+        """Ids the document ``document_id`` must never mint, however its own ids change.
+
+        For a template draft, every id its released versions used (``template_store.used_ids``);
+        set by the controller when it opens one. Tied to the document's id so a definition
+        opened over the draft, or the next bot, never inherits them. ``None`` clears it.
+        """
+        self._reserved_ids = (document_id, frozenset(ids)) if document_id is not None else (None, frozenset())
+
+    @property
+    def reserved_ids(self) -> frozenset[str]:
+        """The reserved ids that apply to the open document: empty unless it is the one they were set for."""
+        document_id, ids = self._reserved_ids
+        return ids if self._config is not None and self._config.id == document_id else frozenset()
+
+    @property
+    def state_id_prefix(self) -> str:
+        """``t_`` while a template draft is open, else ``state_``: a bot never mints a template-owned id."""
+        return TEMPLATE_ID_PREFIX if self._config is not None and self._config.is_template else STATE_ID_PREFIX
+
+    @property
+    def instance_id_prefix(self) -> str:
+        """``t_`` while a template draft is open, else nothing (``sync_players_1``)."""
+        return TEMPLATE_ID_PREFIX if self._config is not None and self._config.is_template else ""
+
+    def mint_state_id(self, existing: Iterable[str]) -> str:
+        """A fresh node id for the open document, clear of ``existing`` and the reserved ids."""
+        return _unique_id(existing, self.state_id_prefix, self.reserved_ids)
+
+    def mint_instance_id(self, name: str, config: BotConfig | None = None) -> str:
+        """A fresh subgraph instance id for a definition called ``name``, in ``config`` (default: the open one).
+
+        Public because the canvas mints one on a working copy of the config when it turns
+        a region into an instance.
+        """
+        config = config if config is not None else self._config
+        taken = taken_ids(config) if config is not None else set()
+        return mint_instance_id(name, taken | self.reserved_ids, self.instance_id_prefix)
+
     def linked_region_of(self, state_id: str) -> RegionModel | None:
         """The outermost linked region ``state_id`` belongs to, or None."""
         if self._config is None:
@@ -1306,7 +1364,7 @@ class EditScene(QGraphicsScene):
             logger.warning("Cannot insert subgraph %s: not in the library", subgraph_id)
             return None
         config = self._config
-        region_id = mint_instance_id(defn.name, taken_ids(config))
+        region_id = self.mint_instance_id(defn.name, config)
         source = SubgraphSource(
             subgraph_id=subgraph_id,
             version=defn.version,
@@ -1617,7 +1675,7 @@ class EditScene(QGraphicsScene):
         if node_type.startswith(SUBGRAPH_KEY_PREFIX):
             return self.insert_subgraph_instance(node_type[len(SUBGRAPH_KEY_PREFIX) :], pos)
         self._pre_edit("Create Node")
-        state_id = _unique_id([s.id for s in self._config.states])
+        state_id = self.mint_state_id(s.id for s in self._config.states)
         default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
         state = StateModel(
             id=state_id,
@@ -2493,7 +2551,7 @@ class EditScene(QGraphicsScene):
         id_map: dict[str, str] = {}
         existing_ids = [s.id for s in self._config.states]
         for sd in states_data:
-            new_id = _unique_id(existing_ids)
+            new_id = self.mint_state_id(existing_ids)
             id_map[sd["id"]] = new_id
             existing_ids.append(new_id)
 
@@ -2587,7 +2645,9 @@ class EditScene(QGraphicsScene):
             old_rid = rd["id"]
             source = SubgraphSource.model_validate(rd["source"])
             defn = library.get(source.subgraph_id) if library is not None else None
-            new_rid = mint_instance_id(defn.name if defn is not None else rd["label"], taken)
+            new_rid = mint_instance_id(
+                defn.name if defn is not None else rd["label"], taken | self.reserved_ids, self.instance_id_prefix
+            )
             taken.add(new_rid)
             new_rids.append(new_rid)
             source.anchor = moved(source.anchor) or {"x": offset_x, "y": offset_y}
@@ -2649,7 +2709,7 @@ class EditScene(QGraphicsScene):
                 continue
             if sd.get("node_type") in PORT_NODE_TYPES and not config.is_definition:
                 continue
-            new_id = _unique_id(existing_ids)
+            new_id = self.mint_state_id(existing_ids)
             existing_ids.append(new_id)
             id_map[sd["id"]] = new_id
             new_states.append(StateModel.model_validate({**sd, "id": new_id, "position": moved(sd.get("position"))}))
@@ -3109,7 +3169,7 @@ class EditScene(QGraphicsScene):
         writes it and ``setup`` reads it. Storing the top-left put a node saved before
         anything flushed it back half a node higher than it was drawn.
         """
-        new_id = _unique_id([st.id for st in self._config.states])
+        new_id = self.mint_state_id(st.id for st in self._config.states)
         default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
         self._config.states.append(
             StateModel(

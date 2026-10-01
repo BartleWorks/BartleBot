@@ -118,7 +118,8 @@ def test_every_linked_bot_resolves_under_the_shipped_root_alone():
     """
     shipped = project_root()
     library = SubgraphLibrary(shipped, shipped)
-    uses = count_subgraph_uses(shipped / "bots")
+    # Template drafts and versions too: every bot made from one links what it links.
+    uses = count_subgraph_uses(shipped / "bots") | count_subgraph_uses(shipped / "templates")
     # No shipped bot links one yet (the library rewrite brings them), so every shipped
     # definition loading cleanly is the half of the guard with something to check.
     assert library.ids(), "no shipped subgraph, so this guard checks nothing"
