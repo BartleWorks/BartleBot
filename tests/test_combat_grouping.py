@@ -7,8 +7,8 @@ sidebar draws and what "Applies to…" does, expressed without any widgets.
 
 from __future__ import annotations
 
-from bartlebot.bot.schema import StateModel
-from bartlebot.bot.strategy_models import StateAssignment
+from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.bot.strategy_models import FightRef, StateAssignment
 from bartlebot.combat_grouping import (
     apply_membership,
     build_bindings,
@@ -389,3 +389,54 @@ def test_clearing_a_group_link_leaves_each_fight_on_its_own():
 
     assert bindings["state_1"] is not bindings["state_2"]
     assert bindings["state_1"].state_ids == ["state_1"]
+
+
+# ---------------------------------------------------------------------------
+# build_bindings over a bot — stored fights placed on its current states
+# ---------------------------------------------------------------------------
+
+
+def _bot(*fights: tuple[str, str]) -> BotConfig:
+    """A bot whose exposed fights are (state id, enemy)."""
+    states = [StateModel(id="s0", node_type="sleep")]
+    states += [
+        StateModel(id=sid, node_type="handle_combat", params={"use_default_strategy": False, "enemy": enemy})
+        for sid, enemy in fights
+    ]
+    return BotConfig(id="bot-1", name="Bot", initial="s0", recovery_state="s0", states=states, transitions=[])
+
+
+def test_a_fight_is_bound_to_the_node_now_naming_its_enemy():
+    stored = StateAssignment(fights=[FightRef(state="state_14", enemy="Lamia")], duel_combat_strategy_id=_DCS_A)
+
+    bindings = build_bindings([stored], _bot(("state_20", "Lamia")))
+
+    assert list(bindings) == ["state_20"]
+    # What the tab edits by: the assignment now lists the state it is bound to.
+    assert bindings["state_20"].state_ids == ["state_20"]
+
+
+def test_an_orphaned_fight_is_left_out_of_the_bindings():
+    stored = _linked(_DCS_A, "state_1", "state_404")
+
+    bindings = build_bindings([stored], _bot(("state_1", "")))
+
+    assert list(bindings) == ["state_1"]
+    assert bindings["state_1"].state_ids == ["state_1"]
+
+
+def test_without_a_bot_fights_keep_the_state_ids_they_hold():
+    stored = StateAssignment(fights=[FightRef(state="state_14", enemy="Lamia")], duel_combat_strategy_id=_DCS_A)
+
+    assert list(build_bindings([stored])) == ["state_14"]
+
+
+def test_a_fight_moving_between_groups_is_stored_once():
+    source = _linked(_DCS_A, "state_1", "state_2")
+    dest = StateAssignment(fights=[FightRef(state="state_3", enemy="Lamia")], duel_combat_strategy_id=_DCS_B)
+    bindings = build_bindings([source, dest])
+
+    apply_membership(bindings, dest, ["state_3", "state_2"])
+
+    assert source.fights == [FightRef(state="state_1")]
+    assert dest.fights == [FightRef(state="state_3", enemy="Lamia"), FightRef(state="state_2")]

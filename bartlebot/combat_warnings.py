@@ -24,6 +24,7 @@ from typing import TYPE_CHECKING
 
 from bartlebot.bot.strategy_models import BotCombatStrategy, DuelConfig, StateAssignment
 from bartlebot.combat_profile import StrategyLookup, profile_players_of
+from bartlebot.fight_keys import bind, exposed_combat_states
 from bartlebot.nodes.combat_runner import validate_dsl
 from bartlebot.strategy_store import load_bot_strategy
 from bartlebot.strategy_summary import format_players as _format_players
@@ -31,30 +32,10 @@ from bartlebot.strategy_summary import format_players as _format_players
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from bartlebot.bot.schema import BotConfig, StateModel
+    from bartlebot.bot.schema import BotConfig
 
 # Strategy UUIDs are too long to show in a dialog; enough to grep the filename by.
 _ID_PREVIEW = 8
-
-
-def exposed_combat_states(config: BotConfig) -> list[StateModel]:
-    """Return the ``handle_combat`` states that opted out of the bot default.
-
-    ``use_default_strategy: false`` is how a bot file says "this fight is
-    special — give it its own Duel Strategy".  It is the portable half of the
-    combat config: it ships with the bot and means the same thing for every
-    user, while the strategy that satisfies it stays personal.
-
-    ``use_default_duel_profile`` is the pre-v3 spelling.  The bots in this repo
-    were migrated by ``scripts/migrate_bot_ids.py``, but users' own bots were
-    not, so the old name is still honored on read.
-    """
-    return [
-        s
-        for s in config.states
-        if s.node_type == "handle_combat"
-        and not s.params.get("use_default_strategy", s.params.get("use_default_duel_profile", True))
-    ]
 
 
 def _short(uuid: str) -> str:
@@ -134,8 +115,9 @@ def _unassigned_state_warnings(config: BotConfig, bcs: BotCombatStrategy) -> lis
     """
     fallback = "will use the bot's default strategy" if bcs.default_strategy_id else "will use built-in combat defaults"
     warnings = []
+    bound = bind(bcs, config)
     for state in exposed_combat_states(config):
-        assignment = bcs.find_assignment_for_state(state.id)
+        assignment = bound.get(state.id)
         if assignment is not None and assignment.is_linked:
             continue
         warnings.append(f"Combat state '{state.label or state.id}' has no Duel Strategy assigned — {fallback}.")
@@ -155,23 +137,29 @@ def _duel_sources(bcs: BotCombatStrategy, config: BotConfig | None) -> list[tupl
         sources.append(("Default", bcs.default_strategy_id))
         seen.add(bcs.default_strategy_id)
 
+    bound = bind(bcs, config)
     for assignment in bcs.state_assignments:
         dcs_id = assignment.duel_combat_strategy_id
         if dcs_id is not None and dcs_id not in seen:
             seen.add(dcs_id)
-            sources.append((_state_context_label(assignment, config), dcs_id))
+            sources.append((_state_context_label(assignment, config, bound), dcs_id))
 
     return sources
 
 
-def _state_context_label(assignment: StateAssignment, config: BotConfig | None) -> str:
+def _state_context_label(
+    assignment: StateAssignment, config: BotConfig | None, bound: dict[str, StateAssignment]
+) -> str:
     """Human-readable label for a state assignment, e.g. "'Defeat Howling Chaney'".
 
-    Falls back to the raw state id when no BotConfig was given to resolve labels
-    from — collect_combat_warnings' ``config`` parameter is optional.
+    Names the fights *bound* places on it, which follow an enemy to a new node. Falls
+    back to the raw state ids it was stored with when none is placed, and to the id
+    when no BotConfig was given to resolve labels from — collect_combat_warnings'
+    ``config`` parameter is optional.
     """
     labels_by_id = {s.id: (s.label or s.id) for s in config.states} if config is not None else {}
-    names = [labels_by_id.get(sid, sid) for sid in assignment.state_ids]
+    state_ids = [sid for sid, owner in bound.items() if owner is assignment] or assignment.state_ids
+    names = [labels_by_id.get(sid, sid) for sid in state_ids]
     return ", ".join(f"'{n}'" for n in names)
 
 

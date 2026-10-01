@@ -27,6 +27,7 @@ from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DeckData,
     DuelCombatStrategy,
+    FightRef,
     PlayerAssignment,
     PlayerCombatStrategy,
     StateAssignment,
@@ -1005,6 +1006,20 @@ def test_save_prunes_only_the_dead_ids_from_a_shared_assignment(qapp, store):
     tab._save_bcs()
 
     assert [a.state_ids for a in tab._bcs.state_assignments] == [["state_9"]]
+
+
+def test_save_prunes_a_fight_that_went_back_to_the_bot_default(qapp, store):
+    """Its node is still there, but it no longer takes a strategy of its own."""
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[StateAssignment(state_ids=["state_9"], duel_combat_strategy_id="dcs-x")],
+    )
+    tab = _tab_for(bcs, _config(use_default=True))
+
+    tab._save_bcs()
+
+    assert tab._bcs.state_assignments == []
 
 
 def test_prune_is_skipped_when_no_config_is_loaded(qapp, store):
@@ -2561,3 +2576,111 @@ def test_card_text_takes_the_new_theme_without_a_hover(qapp, switch_theme, make)
     for label in labels:
         assert label.palette().color(label.foregroundRole()).name() in (THEME.text, THEME.text_muted)
     card.close()
+
+
+# ---------------------------------------------------------------------------
+# Fight keys — a card follows its fight's enemy, and a save writes the pairs
+# ---------------------------------------------------------------------------
+
+
+def _enemy_config(*fights: tuple[str, str, str]) -> BotConfig:
+    """A bot whose exposed fights are (state id, label, enemy)."""
+    states = [StateModel(id="s0", node_type="sleep")]
+    states += [
+        StateModel(
+            id=sid, node_type="handle_combat", label=label, params={"use_default_strategy": False, "enemy": enemy}
+        )
+        for sid, label, enemy in fights
+    ]
+    return BotConfig(id="test-bot", name="Enemy Bot", initial="s0", recovery_state="s0", states=states, transitions=[])
+
+
+def _saved_fights(bcs: BotCombatStrategy) -> list[list[FightRef]]:
+    return [a.fights for a in store_mod.load_bot_strategy(bcs.id).state_assignments]
+
+
+def test_a_fight_recreated_against_the_same_enemy_keeps_its_card(qapp, store):
+    """Stored on state_14; that node is gone and state_20 names the same enemy."""
+    dcs = _saved_dcs("Lamia Burn")
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[
+            StateAssignment(fights=[FightRef(state="state_14", enemy="Lamia")], duel_combat_strategy_id=dcs.id)
+        ],
+    )
+
+    tab = _tab_for(bcs, _enemy_config(("state_20", "Defeat Lamia", "Lamia")))
+
+    assert [p.titles() for p in tab._group_panels()] == [["Defeat Lamia"]]
+    assert _default_fights(tab) == []
+
+
+def test_opening_a_bot_writes_nothing_to_its_profile(qapp, store):
+    """Neither the old shape nor a stale state id is rewritten on load."""
+    dcs = _saved_dcs()
+    bcs = BotCombatStrategy.model_validate(
+        {
+            "name": "BCS",
+            "bot_id": "bot-1",
+            "state_assignments": [{"state_ids": ["state_1", "state_404"], "duel_combat_strategy_id": dcs.id}],
+        }
+    )
+    store_mod.save_bot_strategy(bcs)
+    _shipped, user_root = store_roots.resolve_roots(None, None)
+    path = next((user_root / "bot_strategies").glob("*.json"))
+    before = path.read_bytes()
+    config = _enemy_config(("state_1", "A", "Lamia"))
+    config.id = bcs.bot_id
+    _active(config.id, bcs)
+
+    CombatTab().set_config(config)
+
+    assert path.read_bytes() == before
+
+
+def test_a_save_writes_each_fight_with_its_enemy_key(qapp, store):
+    dcs = _saved_dcs()
+    bcs = _linked_bcs(dcs.id, ["state_1", "state_2", "state_3"])
+    tab = _tab_for(bcs, _enemy_config(("state_1", "A", "Lamia"), ("state_2", "B", ""), ("state_3", "C", "Cronus")))
+
+    tab._save_bcs()
+
+    assert _saved_fights(bcs) == [
+        [FightRef(state="state_1", enemy="Lamia"), FightRef(state="state_2"), FightRef(state="state_3", enemy="Cronus")]
+    ]
+
+
+def test_a_save_writes_no_enemy_for_one_two_fights_share(qapp, store):
+    dcs = _saved_dcs()
+    bcs = _linked_bcs(dcs.id, ["state_1", "state_2"])
+    tab = _tab_for(bcs, _enemy_config(("state_1", "A", "Lamia"), ("state_2", "B", "Lamia")))
+
+    tab._save_bcs()
+
+    assert _saved_fights(bcs) == [[FightRef(state="state_1"), FightRef(state="state_2")]]
+
+
+def test_a_save_moves_a_fight_followed_by_enemy_to_its_current_state(qapp, store):
+    dcs = _saved_dcs()
+    bcs = BotCombatStrategy(
+        name="BCS",
+        bot_id="bot-1",
+        state_assignments=[
+            StateAssignment(fights=[FightRef(state="state_14", enemy="Lamia")], duel_combat_strategy_id=dcs.id)
+        ],
+    )
+    tab = _tab_for(bcs, _enemy_config(("state_20", "Defeat Lamia", "Lamia")))
+
+    tab._save_bcs()
+
+    assert _saved_fights(bcs) == [[FightRef(state="state_20", enemy="Lamia")]]
+
+
+def test_a_fight_given_a_strategy_from_its_pill_is_saved_with_its_enemy(qapp, store):
+    dcs = _saved_dcs()
+    tab = _tab_for(BotCombatStrategy(name="BCS", bot_id="bot-1"), _enemy_config(("state_1", "A", "Lamia")))
+
+    tab._link("state_1", dcs.id)
+
+    assert _saved_fights(tab._bcs) == [[FightRef(state="state_1", enemy="Lamia")]]

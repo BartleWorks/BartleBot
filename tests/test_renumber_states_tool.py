@@ -127,7 +127,7 @@ def test_write_saves_the_bot_and_rekeys_strategies_in_both_roots(tmp_path, monke
     assert BotConfig.load(path).initial == "state_3"
     for root, sid in ((project, "shipped"), (user, "mine")):
         saved = json.loads((root / "bot_strategies" / f"{sid}.json").read_text(encoding="utf-8"))
-        assert saved["state_assignments"][0]["state_ids"] == ["state_3"]
+        assert saved["state_assignments"][0]["fights"] == [{"state": "state_3"}]
 
 
 # ---------------------------------------------------------------------------

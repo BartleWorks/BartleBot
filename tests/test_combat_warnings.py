@@ -15,6 +15,7 @@ from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DuelCombatStrategy,
+    FightRef,
     PlayerAssignment,
     PlayerCombatStrategy,
     StateAssignment,
@@ -679,3 +680,59 @@ def test_a_profile_duel_linking_a_profile_player_strategy_is_not_flagged(tmp_pat
     bcs = _bcs(tmp_path, default_strategy_id=own.id, duel_strategies=[own], player_strategies=[pcs])
 
     assert not any("belongs to" in w for w in collect_combat_warnings(bcs.id, 1, root=tmp_path))
+
+
+# ---------------------------------------------------------------------------
+# Fight keys — a stored fight follows its enemy to a new node
+# ---------------------------------------------------------------------------
+
+
+def _lamia_bot(state_id: str = "state_20", enemy: str = "Lamia") -> BotConfig:
+    return BotConfig(
+        id="bot-1",
+        name="Lamia Farm",
+        initial="s0",
+        recovery_state="s0",
+        states=[
+            StateModel(id="s0", node_type="sleep"),
+            StateModel(
+                id=state_id,
+                node_type="handle_combat",
+                label="Defeat Lamia",
+                params={"use_default_strategy": False, "enemy": enemy},
+            ),
+        ],
+        transitions=[],
+    )
+
+
+def test_a_fight_recreated_against_the_same_enemy_is_not_reported_as_unassigned(tmp_path: Path):
+    dcs = _dcs(tmp_path, player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)])
+    stored = StateAssignment(fights=[FightRef(state="state_14", enemy="Lamia")], duel_combat_strategy_id=dcs.id)
+    bcs = _bcs(tmp_path, state_assignments=[stored])
+
+    assert collect_combat_warnings(bcs.id, 1, _lamia_bot(), root=tmp_path) == []
+
+
+def test_a_fight_whose_node_and_enemy_both_changed_is_reported_as_unassigned(tmp_path: Path):
+    dcs = _dcs(tmp_path, player_assignments=[PlayerAssignment(players=[1], dsl=_VALID_DSL)])
+    stored = StateAssignment(fights=[FightRef(state="state_14", enemy="Lamia")], duel_combat_strategy_id=dcs.id)
+    bcs = _bcs(tmp_path, state_assignments=[stored])
+
+    warnings = collect_combat_warnings(bcs.id, 1, _lamia_bot(enemy="Cronus"), root=tmp_path)
+
+    assert len(warnings) == 1
+    assert "'Defeat Lamia' has no Duel Strategy assigned" in warnings[0]
+
+
+def test_a_warning_names_the_fight_the_assignment_is_bound_to_now(tmp_path: Path):
+    """Stored under state_14, bound by enemy to state_20: the label is that node's."""
+    stored = StateAssignment(
+        fights=[FightRef(state="state_14", enemy="Lamia")],
+        duel_combat_strategy_id="abcdef00-0000-0000-0000-000000000000",
+    )
+    bcs = _bcs(tmp_path, state_assignments=[stored])
+
+    warnings = collect_combat_warnings(bcs.id, 1, _lamia_bot(), root=tmp_path)
+
+    assert "'Defeat Lamia' Duel Strategy file is missing" in warnings[0]

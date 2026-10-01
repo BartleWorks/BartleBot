@@ -26,10 +26,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
-from bartlebot.bot.strategy_models import StateAssignment
+from bartlebot.bot.strategy_models import FightRef, StateAssignment
+from bartlebot.fight_keys import settle
 
 if TYPE_CHECKING:
-    from bartlebot.bot.schema import StateModel
+    from bartlebot.bot.schema import BotConfig, StateModel
 
 
 @dataclass
@@ -63,11 +64,11 @@ def merge_linked(assignments: list[StateAssignment]) -> list[StateAssignment]:
     one per fight.  They mean exactly what a single grouped assignment means, so
     they are folded together on read.
 
-    The *first* occurrence survives and absorbs the others' state ids, so
+    The *first* occurrence survives and absorbs the others' fights, so
     ordering follows the file.  Unlinked assignments are passed through untouched:
     they have no shared identity to merge on.
 
-    Mutates the surviving assignments' ``state_ids`` in place — callers pass
+    Mutates the surviving assignments' ``fights`` in place — callers pass
     freshly loaded models, and the merged result is what should be written back
     on the next save.
     """
@@ -84,9 +85,9 @@ def merge_linked(assignments: list[StateAssignment]) -> list[StateAssignment]:
             first_by_dcs[dcs_id] = assignment
             merged.append(assignment)
             continue
-        for state_id in assignment.state_ids:
-            if state_id not in first.state_ids:
-                first.state_ids.append(state_id)
+        for fight in assignment.fights:
+            if fight.state not in first.state_ids:
+                first.fights.append(fight)
 
     return merged
 
@@ -108,30 +109,38 @@ def split_unconfigured(assignments: list[StateAssignment]) -> list[StateAssignme
     split: list[StateAssignment] = []
     for assignment in assignments:
         if not assignment.is_linked and len(assignment.state_ids) > 1:
-            split.extend(StateAssignment(state_ids=[sid]) for sid in assignment.state_ids)
+            split.extend(StateAssignment(fights=[fight]) for fight in assignment.fights)
         else:
             split.append(assignment)
     return split
 
 
-def build_bindings(assignments: list[StateAssignment]) -> dict[str, StateAssignment]:
+def build_bindings(assignments: list[StateAssignment], config: BotConfig | None = None) -> dict[str, StateAssignment]:
     """Map every bound state id to its assignment, one shared object per group.
 
     Replaces the ``for sid in assignment.state_ids`` seeding loop that was
-    duplicated across four call sites in ``CombatTab``.  A state id listed by
-    more than one assignment (only reachable from a hand-edited file) resolves
-    to the last one, which is also what ``find_assignment_for_state`` would have
-    picked up to the point of the first match — close enough for a file that is
-    already inconsistent.
+    duplicated across four call sites in ``CombatTab``.
+
+    Given the bot's *config*, the stored fights are first placed on its current
+    states — by enemy, then by state id, see :mod:`bartlebot.fight_keys` — and each
+    assignment's fights are rewritten in memory to the states they landed on, the
+    orphaned ones dropped. That is what a freshly loaded profile needs. Without one,
+    the fights are taken at the state ids they hold, which is right for assignments
+    already placed and since edited by state id, and for a profile with no bot open.
+    A state id held by more than one assignment (only reachable from a hand-edited
+    file) resolves to the first, as ``fight_keys.bind`` does.
 
     Merging and splitting are both applied here so the two invariants the
     sidebar relies on hold everywhere it is called: one row per strategy, and
     one row per unassigned fight.
     """
+    groups = split_unconfigured(merge_linked(assignments))
+    if config is not None:
+        settle(groups, config)
     bindings: dict[str, StateAssignment] = {}
-    for assignment in split_unconfigured(merge_linked(assignments)):
+    for assignment in groups:
         for state_id in assignment.state_ids:
-            bindings[state_id] = assignment
+            bindings.setdefault(state_id, assignment)
     return bindings
 
 
@@ -208,8 +217,7 @@ def apply_membership(
         # only create an orphan nobody asked for.
         if current is not None and current is not assignment:
             _remove_state(current, state_id)
-        if state_id not in assignment.state_ids:
-            assignment.state_ids.append(state_id)
+        assignment.add_state(state_id)
         bindings[state_id] = assignment
 
 
@@ -227,10 +235,10 @@ def detach_state(
     fight's own chip.
     """
     _remove_state(assignment, state_id)
-    detached = StateAssignment(state_ids=[state_id])
+    detached = StateAssignment(fights=[FightRef(state=state_id)])
     bindings[state_id] = detached
     return detached
 
 
 def _remove_state(assignment: StateAssignment, state_id: str) -> None:
-    assignment.state_ids = [sid for sid in assignment.state_ids if sid != state_id]
+    assignment.remove_state(state_id)

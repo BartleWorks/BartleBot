@@ -295,22 +295,64 @@ class DuelCombatStrategy(DuelConfig):
         _atomic_write(self.model_dump(exclude_defaults=True), path)
 
 
-class StateAssignment(BaseModel):
-    """A group of FSM states and the DuelCombatStrategy they fight with.
+class FightRef(BaseModel):
+    """One fight an assignment covers: the state it was on, and the enemy it named.
 
-    Unlinked means the states fall back to the profile's default. There is no inline
+    ``enemy`` is the node's ``enemy`` param when that names the fight uniquely in its
+    bot, and is what lets the strategy follow a fight whose node was replaced. None
+    for a fight that takes the closest mob, or one written before fight keys. Placing
+    a stored fight on a current state is :func:`bartlebot.fight_keys.bind`'s job.
+    """
+
+    state: str
+    enemy: str | None = None
+
+
+def _fights_from_legacy(data: object) -> object:
+    """Lift a pre-fight-keys ``state_ids`` list into ``fights`` with no enemy.
+
+    A file carrying both keeps ``fights`` and drops the stray ``state_ids``. Never
+    written back on load: the next save writes the new shape.
+    """
+    if isinstance(data, dict) and "state_ids" in data:
+        data = dict(data)
+        state_ids = data.pop("state_ids")
+        if "fights" not in data:
+            data["fights"] = [{"state": sid} for sid in state_ids or []]
+    return data
+
+
+class StateAssignment(BaseModel):
+    """A group of fights and the DuelCombatStrategy they fight with.
+
+    Unlinked means the fights fall back to the profile's default. There is no inline
     config: a one-off strategy lives in the profile's own ``duel_strategies`` and is
     linked by id like any other (#118). A file from before that still loads, because
     the models do not forbid extra fields, and its stray ``duel_config`` is ignored.
     """
 
-    state_ids: list[str]  # FSM state IDs this assignment covers
+    fights: list[FightRef] = Field(default_factory=list)
     duel_combat_strategy_id: str | None = None  # UUID of a DuelCombatStrategy, in the profile or the library
+
+    _legacy_state_ids = model_validator(mode="before")(_fights_from_legacy)
+
+    @property
+    def state_ids(self) -> list[str]:
+        """The state each fight was stored on, in order. Read-only: edit ``fights``."""
+        return [fight.state for fight in self.fights]
 
     @property
     def is_linked(self) -> bool:
         """True if this assignment points at a DuelCombatStrategy."""
         return self.duel_combat_strategy_id is not None
+
+    def add_state(self, state_id: str) -> None:
+        """Cover *state_id* too, unless a fight here is already on it."""
+        if state_id not in self.state_ids:
+            self.fights.append(FightRef(state=state_id))
+
+    def remove_state(self, state_id: str) -> None:
+        self.fights = [fight for fight in self.fights if fight.state != state_id]
 
 
 class BotCombatStrategy(BaseModel):
@@ -337,7 +379,11 @@ class BotCombatStrategy(BaseModel):
         _atomic_write(self.model_dump(exclude_defaults=True), path)
 
     def find_assignment_for_state(self, state_id: str) -> StateAssignment | None:
-        """Return the StateAssignment covering this FSM state, or None."""
+        """Return the StateAssignment whose stored fights name this state id, or None.
+
+        Raw state ids only, for when there is no bot to place the fights on. With one,
+        ask :func:`bartlebot.fight_keys.bind`, which follows a fight by its enemy.
+        """
         for assignment in self.state_assignments:
             if state_id in assignment.state_ids:
                 return assignment

@@ -3,9 +3,11 @@
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DuelCombatStrategy,
+    FightRef,
     PlayerAssignment,
     PlayerCombatStrategy,
     StateAssignment,
@@ -15,13 +17,19 @@ from bartlebot.nodes.combat_runner import _BUILTIN_SOURCE, resolve_combat
 from tests.conftest import FakeMachine
 
 
-def _make_machine(bot_id: str = "bot-1", state: str = "some_state") -> FakeMachine:
+def _make_machine(bot_id: str = "bot-1", state: str = "some_state", enemy: str = "") -> FakeMachine:
+    """A machine standing on *state*, a fight that asked for a strategy of its own."""
     m = FakeMachine()
-    from unittest.mock import MagicMock  # noqa: PLC0415
-
-    cfg = MagicMock()
-    cfg.id = bot_id
-    m.bot_config = cfg
+    m.bot_config = BotConfig(
+        id=bot_id,
+        name="Bot",
+        initial=state,
+        recovery_state=state,
+        states=[
+            StateModel(id=state, node_type="handle_combat", params={"use_default_strategy": False, "enemy": enemy})
+        ],
+        transitions=[],
+    )
     m.state = state
     return m
 
@@ -353,6 +361,29 @@ def test_a_file_from_before_118_loads_with_its_inline_config_ignored(tmp_path: P
 
     assert dsls[0] == "linked_dsl"
     assert "Linked" in source
+
+
+def test_a_fight_stored_under_another_state_id_is_found_by_its_enemy(tmp_path: Path):
+    """The node was deleted and made again: a new state id, the same enemy."""
+    dcs = DuelCombatStrategy(name="Lamia", player_assignments=[PlayerAssignment(players=[1], dsl="lamia_dsl")])
+    bcs = BotCombatStrategy(
+        name="Farm",
+        bot_id="bot-1",
+        state_assignments=[
+            StateAssignment(fights=[FightRef(state="state_14", enemy="Lamia")], duel_combat_strategy_id=dcs.id)
+        ],
+    )
+    machine = _make_machine(bot_id="bot-1", state="state_20", enemy="Lamia")
+
+    with (
+        _patch_active_strategy("bot-1", bcs.id),
+        patch("bartlebot.strategy_store.load_bot_strategy", return_value=bcs),
+        patch("bartlebot.strategy_store.load_duel_strategy", return_value=dcs),
+    ):
+        dsls, _order, source = resolve_combat(machine, use_default_strategy=False, num_clients=1)
+
+    assert dsls == ["lamia_dsl"]
+    assert "state assignment for 'state_20'" in source
 
 
 # ---------------------------------------------------------------------------

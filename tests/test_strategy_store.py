@@ -6,7 +6,9 @@ from bartlebot import store_roots
 from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DuelCombatStrategy,
+    FightRef,
     PlayerCombatStrategy,
+    StateAssignment,
 )
 from bartlebot.strategy_store import (
     Origin,
@@ -21,6 +23,7 @@ from bartlebot.strategy_store import (
     load_duel_strategy,
     load_player_strategy,
     origin_of,
+    rekey_bot_strategy_states,
     save_bot_strategy,
     save_duel_strategy,
     save_player_strategy,
@@ -298,3 +301,34 @@ def test_origin_in_a_single_root_sandbox_is_always_user(tmp_path: Path):
     pcs = PlayerCombatStrategy(name="A")
     save_player_strategy(pcs, tmp_path)
     assert origin_of(StrategyKind.PLAYER, pcs.id, tmp_path) is Origin.USER
+
+
+# ---------------------------------------------------------------------------
+# rekey_bot_strategy_states
+# ---------------------------------------------------------------------------
+
+
+def test_rekeying_renames_a_fights_state_and_leaves_its_enemy(tmp_path: Path):
+    bcs = BotCombatStrategy(
+        name="Farm",
+        bot_id="bot-1",
+        state_assignments=[
+            StateAssignment(fights=[FightRef(state="state_9", enemy="Lamia"), FightRef(state="state_2")]),
+        ],
+    )
+    save_bot_strategy(bcs, tmp_path)
+
+    assert rekey_bot_strategy_states("bot-1", {"state_9": "region_1_state_9"}, tmp_path) == 1
+
+    saved = load_bot_strategy(bcs.id, tmp_path)
+    assert saved.state_assignments[0].fights == [
+        FightRef(state="region_1_state_9", enemy="Lamia"),
+        FightRef(state="state_2"),
+    ]
+
+
+def test_rekeying_saves_nothing_when_no_fight_is_renamed(tmp_path: Path):
+    bcs = BotCombatStrategy(name="Farm", bot_id="bot-1", state_assignments=[StateAssignment(state_ids=["state_2"])])
+    save_bot_strategy(bcs, tmp_path)
+
+    assert rekey_bot_strategy_states("bot-1", {"state_9": "state_3"}, tmp_path) == 0

@@ -102,6 +102,7 @@ from bartlebot.bot.strategy_models import (
     BotCombatStrategy,
     DeckData,
     DuelCombatStrategy,
+    FightRef,
     PlayerCombatStrategy,
     StateAssignment,
 )
@@ -112,9 +113,9 @@ from bartlebot.combat_grouping import (
     state_label,
 )
 from bartlebot.combat_profile import StrategyLookup, duplicate_profile, read_bot_names
-from bartlebot.combat_warnings import exposed_combat_states
 from bartlebot.credentials import CredentialStore
 from bartlebot.deck_io import resolve_apply_archmastery
+from bartlebot.fight_keys import exposed_combat_states, heal, place
 from bartlebot.gui.account_accent import account_accent
 from bartlebot.gui.combat_strategies.bot_strategy_picker import BotStrategyPicker
 from bartlebot.gui.combat_strategies.dialog import CombatStrategyDialog, DialogMode
@@ -1229,10 +1230,23 @@ class CombatTab(QWidget):
     def _set_bindings(self, assignments: list[StateAssignment]) -> None:
         """Bind every fight from a strategy file's *assignments*, whose order is the cards'.
 
+        Each stored fight is placed on one of the bot's current fights, by enemy and
+        then by state id (``bartlebot.fight_keys``), so from here on an assignment's
+        ``state_ids`` are the fights it is bound to.
+
         ``build_bindings`` inserts in file order, so each assignment's first appearance
         among the values is its place in the file.
         """
-        self._state_bindings = build_bindings(assignments)
+        if self._config is not None:
+            orphans = place(assignments, self._config).orphans
+            if orphans:
+                # Still in the file: nothing is written on load. The next save drops them.
+                logger.info(
+                    "Stored fight(s) on state(s) %s of combat strategy %s match no fight in the bot",
+                    ", ".join(fight.state for _, fight in orphans),
+                    self._bcs.id if self._bcs else "?",
+                )
+        self._state_bindings = build_bindings(assignments, self._config)
         self._card_order = list({id(a): a for a in self._state_bindings.values()}.values())
 
     def _card_rank(self, assignment: StateAssignment) -> int:
@@ -1250,7 +1264,7 @@ class CombatTab(QWidget):
         existing = self._state_bindings.get(state_id)
         if existing is not None:
             return existing
-        fresh = StateAssignment(state_ids=[state_id])
+        fresh = StateAssignment(fights=[FightRef(state=state_id)])
         self._state_bindings[state_id] = fresh
         return fresh
 
@@ -1260,7 +1274,7 @@ class CombatTab(QWidget):
         # Only persist bindings that actually say something — an unlinked
         # placeholder is indistinguishable from no binding at all, so writing it
         # out would just be silent clutter in the file.
-        # dict keyed by id() in case a loaded file grouped several state_ids
+        # dict keyed by id() in case a loaded file grouped several fights
         # under one shared StateAssignment object.
         kept = {id(a): a for a in self._state_bindings.values() if a.is_linked}
         # In card order, which is how the order survives a reload.
@@ -1273,7 +1287,12 @@ class CombatTab(QWidget):
         self.combat_config_changed.emit()
 
     def _prune_orphans(self, assignments: list[StateAssignment]) -> list[StateAssignment]:
-        """Drop state ids that no longer exist in the bot, and any assignment left empty.
+        """Write each fight as it stands now, dropping the orphaned ones and any assignment left empty.
+
+        Per fight: one whose state is no longer an exposed fight of the bot goes, and
+        the rest of its assignment stays. Each kept fight is written as its current
+        state, plus its enemy when that enemy names it alone in the bot -- which is how
+        the keys heal, here and nowhere else (``bartlebot.fight_keys``).
 
         Deleting a node used to leave its assignment behind forever, because
         bindings are seeded from the strategy file and never checked against the
@@ -1288,26 +1307,14 @@ class CombatTab(QWidget):
         """
         if self._config is None:
             return assignments
-        live_ids = {s.id for s in self._config.states}
-        pruned: list[StateAssignment] = []
-        for assignment in assignments:
-            kept_ids = [sid for sid in assignment.state_ids if sid in live_ids]
-            if not kept_ids:
-                logger.info(
-                    "Dropping combat assignment for deleted state(s) %s from strategy %s",
-                    ", ".join(assignment.state_ids),
-                    self._bcs.id if self._bcs else "?",
-                )
-                continue
-            if kept_ids != assignment.state_ids:
-                logger.info(
-                    "Dropping deleted state(s) %s from a combat assignment in strategy %s",
-                    ", ".join(sid for sid in assignment.state_ids if sid not in live_ids),
-                    self._bcs.id if self._bcs else "?",
-                )
-                assignment.state_ids = kept_ids
-            pruned.append(assignment)
-        return pruned
+        dropped = heal(assignments, self._config)
+        if dropped:
+            logger.info(
+                "Dropping combat assignment fight(s) for state(s) %s from strategy %s",
+                ", ".join(fight.state for fight in dropped),
+                self._bcs.id if self._bcs else "?",
+            )
+        return [assignment for assignment in assignments if assignment.fights]
 
     def open_combat_dialog(
         self,
@@ -1651,7 +1658,7 @@ class CombatTab(QWidget):
 
         Either way it is two dialogs, chained, and the chaining is what keeps the
         invariant that a card on screen is a card in the file. A ``StateAssignment`` with
-        no ``state_ids`` forms no group, so it would draw no card on the next rebuild, and
+        no ``fights`` forms no group, so it would draw no card on the next rebuild, and
         ``_prune_orphans`` drops it outright on the next save: an empty card cannot be left
         lying about for the user to fill in later, because nothing would bring it back. So
         the strategy comes first, the card is made, its own membership popup opens on it
@@ -1697,7 +1704,7 @@ class CombatTab(QWidget):
         if self._config is None:
             return
         exposed = exposed_combat_states(self._config)
-        assignment = StateAssignment(state_ids=[], duel_combat_strategy_id=chosen)
+        assignment = StateAssignment(duel_combat_strategy_id=chosen)
         panel = self._make_group_panel(assignment, exposed, [])
         panel.membership_changed.connect(partial(self._on_pending_membership, assignment, panel))
         # Where the rebuild would have put it: above the add-card, below the rest.

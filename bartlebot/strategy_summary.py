@@ -346,7 +346,7 @@ def summarize_bot(bcs: BotCombatStrategy, config: BotConfig | None = None) -> St
     already does.
     """
     del config
-    n = sum(len(a.state_ids) for a in bcs.state_assignments)
+    n = sum(len(a.fights) for a in bcs.state_assignments)
     facets = [f"{n} state override{'s' if n != 1 else ''}"] if n else ["Default strategy only"]
     health = _OK if (bcs.default_strategy_id or bcs.state_assignments) else _EMPTY
     return StrategySummary(name=bcs.name, description=bcs.description, facets=facets, health=health)
