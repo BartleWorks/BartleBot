@@ -25,6 +25,7 @@ from bartlebot.bot.schema import (
 )
 from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.new_bot import BotDetails, StartingPoint, create_bot
+from bartlebot.subgraphs import drop_states, nested_regions
 from bartlebot.template_diff import MISSING, Port, Release, Status, TemplateUpdate, apply, diff, finish
 from bartlebot.template_store import list_templates, release, save_draft
 
@@ -609,3 +610,103 @@ def test_a_fight_replaced_against_the_same_enemy_keeps_its_strategy():
 
 def test_missing_reads_as_missing():
     assert repr(MISSING) == "MISSING"
+
+
+# ---------------------------------------------------------------------------
+# Finding a change again, and where an applied option lands
+# ---------------------------------------------------------------------------
+
+
+def _guarded(dest_on: str, dest_off: str) -> BotConfig:
+    """Start leaves on SUCCESS two ways, by the option A: on to one node, off to another."""
+    return _template(
+        [_sleep("t_1", "Start", 1), _sleep("t_2", "X", 1, 200), _sleep("t_3", "Y", 1, 400), _sleep("t_4", "Z", 1, 600)],
+        [
+            _edge("t_1", dest_on, flags=[FlagCondition(option="A", negate=False)]),
+            _edge("t_1", dest_off, flags=[FlagCondition(option="A", negate=True)]),
+        ],
+        options=[BotOptionModel(name="A", type="bool", default=True)],
+        setup=[],
+    )
+
+
+def test_two_guarded_edges_from_one_outcome_are_found_by_ids_of_their_own():
+    """Both rewired in one release. They shared an id, so Apply on the second card applied the first."""
+    v1, v2 = _guarded("t_2", "t_3"), _guarded("t_3", "t_4")
+    mine = _bot(v1)
+    update = _update(v1, v2)
+
+    changes = diff(update, mine)
+    off = next(c for c in changes if "'Z'" in c.detail)
+
+    assert len(changes) == 2 and len({c.id for c in changes}) == 2
+    assert template_diff.review(update, mine).change(off.id).detail == off.detail
+    assert _edges(apply(mine, off)) == {("t_1", "SUCCESS", "t_2"), ("t_1", "SUCCESS", "t_4")}
+
+
+def test_an_applied_option_keeps_its_place_in_the_list():
+    def version(default: int) -> BotConfig:
+        options = [BotOptionModel(name="A", type="int", default=default), BotOptionModel(name="B", type="bool")]
+        return _template([_sleep("t_1", "Start", 1), _fight("t_2", 200)], [], options=options, setup=[])
+
+    mine = _bot(version(1))
+
+    (change,) = diff(_update(version(1), version(2)), mine)
+    after = apply(mine, change)
+
+    assert [(o.name, o.default) for o in after.options] == [("A", 2), ("B", None)]
+
+
+# ---------------------------------------------------------------------------
+# A whole subgraph node, added or removed
+# ---------------------------------------------------------------------------
+
+
+def _without_sync(config: BotConfig) -> BotConfig:
+    """``config`` with its Sync players subgraph node taken out: its members, their edges, its regions."""
+    new = config.model_copy(deep=True)
+    region = next(r for r in new.regions if r.source is not None)
+    gone = {r.id for r in [region, *nested_regions(new, region)]}
+    members = set(region.members)
+    new.regions = [r for r in new.regions if r.id not in gone]
+    drop_states(new, members)
+    return new
+
+
+def _members(config: BotConfig) -> set[str]:
+    return {s.id for s in config.states if s.id.startswith("t_sync_players_1_")}
+
+
+def test_applying_a_removed_subgraph_node_takes_its_members_and_their_edges():
+    v1, mine = _boss()
+    theirs = _without_sync(v1)
+    update = TemplateUpdate(v1.id, "Boss Farmer", 1, v1, [Release(2, "No sync", theirs)])
+
+    removal = next(c for c in diff(update, mine) if "t_sync_players_1" in c.removed)
+    after = apply(mine, removal)
+
+    assert removal.status is Status.OFFERED and removal.title == "Remove 'Sync players'"
+    assert not _members(after) and all(r.source is None for r in after.regions)
+    ids = {s.id for s in after.states}
+    assert all(t.source in ids and t.dest in ids for t in after.transitions)
+    assert after.initial in ids and after.recovery_state in ids
+    assert not any("t_sync_players_1" in c.removed for c in diff(update, after)), "not offered again"
+
+
+def test_applying_an_added_subgraph_node_brings_its_members_and_wires_its_ports():
+    v2, _ = _boss()
+    v1 = _without_sync(v2)
+    mine = create_bot(StartingPoint(v1.id, 1, v1), BotDetails(name="Boss Bot"))
+    update = TemplateUpdate(v1.id, "Boss Farmer", 1, v1, [Release(2, "Sync first", v2)])
+
+    addition = next(c for c in diff(update, mine) if "t_sync_players_1" in c.added)
+    after = apply(mine, addition)
+
+    assert addition.status is Status.OFFERED and addition.title == "Add 'Sync players'"
+    assert _members(after) == _members(v2)
+    region = next(r for r in after.regions if r.id == "t_sync_players_1")
+    assert region.source == next(r for r in v2.regions if r.id == "t_sync_players_1").source
+    touching = lambda c: {e for e in _edges(c) if e[0] in _members(v2) or e[2] in _members(v2)}  # noqa: E731
+    assert touching(after) == touching(v2), "its own edges, and every edge into and out of its ports"
+    assert (after.initial, after.recovery_state) == (v2.initial, v2.recovery_state)
+    assert not any("t_sync_players_1" in c.added for c in diff(update, after)), "not offered again"

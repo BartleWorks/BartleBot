@@ -439,6 +439,7 @@ def _save_as_controller(config, refreshed=None, rebound=None):
         _delete_autosave=lambda *a: None,
         _rewards_declined_for=None,
         _confirm_rewards_tags=lambda: True,
+        _refresh_template_context=lambda: None,
         _window=SimpleNamespace(
             set_bot_name=lambda *a: None,
             update_recent_menu=lambda *a: None,

@@ -230,3 +230,14 @@ def test_the_library_folders_are_listed_in_folder_order_empty_ones_too(tmp_path)
 
     assert library_folders(tmp_path) == ["02_krokotopia", "13_aquila"]
     assert library_folders(tmp_path / "missing") == []
+
+
+def test_a_templates_authors_are_not_the_new_bots(tmp_path):
+    """Whoever wrote the template did not write this bot. It used to say they had."""
+    point = _point(tmp_path)
+    point.config.authors = "BartleBot"
+
+    assert create_bot(point, BotDetails(name="Lamia")).authors is None
+    assert create_bot(point, BotDetails(name="Lamia", authors="  Luke SkullHunter ")).authors == "Luke SkullHunter"
+    assert create_bot(None, BotDetails(name="Scratch", authors="Luke SkullHunter")).authors == "Luke SkullHunter"
+    assert point.config.authors == "BartleBot"

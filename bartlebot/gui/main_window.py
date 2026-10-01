@@ -208,6 +208,8 @@ class MainWindow(QMainWindow):
         self._setup_tab_kept = False
         # Later on a template review: put away until the bot is next opened.
         self._review_later = False
+        # Whether a subgraph definition was open over that document at the last sync.
+        self._setup_over_definition = False
         self._game_view_panel = GameViewPanel()
         self.game_view = self._game_view_panel.game_view
         # The authoring utilities in Bar A (#81); AppController drives them.
@@ -655,10 +657,17 @@ class MainWindow(QMainWindow):
         opened, but one that finishes them keeps it until it is closed -- a tab that
         vanished on the last tick would take "All 5 done" with it -- and Bar B's
         template chip brings it back.
+
+        A subgraph definition opened over the bot is a visit, not another document: the
+        bot is still open underneath. So it has no tab of its own, and coming back out
+        neither forgets a Later nor pulls the sidebar over to Setup again.
         """
         canvas = self.bot_canvas
         config = canvas.config
-        document = config.id if config is not None else None
+        visiting = config is not None and config.is_definition
+        returning = self._setup_over_definition and not visiting
+        self._setup_over_definition = visiting
+        document = self._setup_document if visiting else (config.id if config is not None else None)
         if document != self._setup_document:
             self._setup_document = document
             self._setup_tab_kept = False
@@ -684,7 +693,7 @@ class MainWindow(QMainWindow):
         self.right_sidebar.set_setup_tab_shown(wanted)
         if wanted:
             self._setup_tab_kept = True
-            if not draft and (fresh or not was_shown):
+            if not draft and (fresh or (not was_shown and not returning)):
                 # Steps to do are the first thing to know about a bot just opened.
                 self.right_sidebar.switch_to_setup()
 

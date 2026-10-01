@@ -144,6 +144,8 @@ def test_a_version_written_before_steps_existed_still_loads():
         ("nav_zone", "", _HUB),
         ("str_list", [], ["Amber"]),
         ("xyz", {"x": 0.0, "y": 0.0, "z": 0.0}, _XYZ),
+        # A type the rule does not name, storing text: nothing typed is still nothing there.
+        ("realm", "  ", "Wu"),
     ],
 )
 def test_blank_is_the_types_own_emptiness(field_type, blank, filled):
@@ -434,3 +436,80 @@ def test_the_library_counts_a_bots_steps_from_its_file(tmp_path):
     assert setup_steps.left_in_file(bot.file_dump(), root) == 3
     assert setup_steps.left_in_file(create_bot(None, BotDetails(name="Scratch")).file_dump(), root) == 0
     assert setup_steps.left_in_file({"template": {"id": TEMPLATE_ID, "version": 1}}, root) == 0, "not a bot file"
+
+
+# ---------------------------------------------------------------------------
+# A named input is judged by the value it resolves to, wherever it is asked
+# ---------------------------------------------------------------------------
+
+
+class _ZoneBinding:
+    state, param = "state_2", "zone"
+
+
+class _ZoneInput:
+    name, bindings = "zone", [_ZoneBinding()]
+
+
+class _SyncDefinition:
+    inputs = [_ZoneInput()]
+
+
+class _NamedLibrary:
+    """A subgraph library whose Sync players has one named input, ``zone``, bound to its member's param."""
+
+    def get(self, subgraph_id):
+        return _SyncDefinition() if subgraph_id == "sync" else None
+
+
+_NAMED_ZONE = SetupStep(text="Choose the zone", targets=[SetupTarget(region="t_sync_players_1", input="zone")])
+
+
+def test_release_refuses_a_named_input_whose_default_fills_it():
+    """Unset on the subgraph node, but its default is what runs, so a bot would start with the step done."""
+    draft = _draft([_NAMED_ZONE])
+    assert setup_steps.draft_problems(draft, _NamedLibrary()) == []
+
+    _state(draft, "t_sync_players_1_state_2").params["zone"] = _HUB
+
+    (problem,) = setup_steps.draft_problems(draft, _NamedLibrary())
+    assert "has a default in its subgraph" in problem
+
+    draft.regions[0].source.inputs["zone"] = _HUB
+    (problem,) = setup_steps.draft_problems(draft, _NamedLibrary())
+    assert "holds a value" in problem
+
+
+def test_release_reads_a_named_input_through_the_library_it_is_given(tmp_path):
+    draft = _draft([_NAMED_ZONE])
+    _state(draft, "t_sync_players_1_state_2").params["zone"] = _HUB
+    save_draft(draft, tmp_path)
+
+    with pytest.raises(ReleaseRefused) as refused:
+        release(TEMPLATE_ID, "First release", root=tmp_path, library=_NamedLibrary())
+
+    assert any("has a default in its subgraph" in p for p in refused.value.problems)
+
+
+def test_the_library_row_reads_a_named_input_as_the_editor_does(tmp_path):
+    save_draft(_draft([_NAMED_ZONE]), tmp_path)
+    release(TEMPLATE_ID, "First release", root=tmp_path, today=date(2026, 10, 1), library=_NamedLibrary())
+    bot = _bot()
+    assert setup_steps.left_in_file(bot.file_dump(), tmp_path, library=_NamedLibrary()) == 1
+
+    # Where the input lands, with nothing stored on the subgraph node itself.
+    _state(bot, "t_sync_players_1_state_2").params["zone"] = _HUB
+
+    assert setup_steps.left_in_file(bot.file_dump(), tmp_path, library=_NamedLibrary()) == 0
+    assert setup_steps.steps_left(bot, [_NAMED_ZONE], _NamedLibrary()) == 0, "the editor's answer"
+
+
+def test_only_a_named_input_makes_a_files_count_depend_on_the_library(tmp_path):
+    save_draft(_draft([_NAMED_ZONE]), tmp_path)
+    release(TEMPLATE_ID, "First release", root=tmp_path, today=date(2026, 10, 1), library=_NamedLibrary())
+    assert setup_steps.file_reads_library(_bot().file_dump(), tmp_path)
+
+    promoted = tmp_path / "promoted"
+    _released_store(promoted)
+    assert not setup_steps.file_reads_library(_bot().file_dump(), promoted)
+    assert not setup_steps.file_reads_library(create_bot(None, BotDetails(name="Scratch")).file_dump(), promoted)

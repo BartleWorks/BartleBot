@@ -72,7 +72,10 @@ reach users by accident. `template_store.release` copies the saved draft's bytes
 `v(N+1).json` and appends the version, its SHA-256 and a one-line note to the index, or
 writes nothing and raises `ReleaseRefused`. It refuses a draft with any canvas error, an id
 without `t_`, a retired id reused, a filled fill-in, a step with no text or no targets, or
-a blank note. Release a version with the app's button or with `release`, never by copying a
+a blank note. It also refuses while a `vN.json` for the next number is already on disk and
+the index does not list it, which is what a release that failed between its two writes
+leaves: nothing under `templates/` is ever overwritten, so the stray file is removed by
+hand first. Release a version with the app's button or with `release`, never by copying a
 file.
 
 ## New Bot
@@ -81,7 +84,9 @@ The New Bot dialog (`gui/new_bot_dialog.py`, logic in `bartlebot/new_bot.py`) of
 blank bot and one card per template, built from its latest released version. Create copies
 that version, drops `template_meta`, mints a fresh id, records `template`, composes from
 the subgraph library, and saves the file at once. The setup steps are not copied into the
-bot: it reads them from its base version.
+bot: it reads them from its base version. Nor are the template's `authors`: the dialog has
+an optional Authors field, blank whatever the starting point, and the bot gets what was
+typed there or nothing.
 
 ## Setup steps
 
@@ -98,6 +103,13 @@ three kinds: a node param, a subgraph node's input, or the bot's `drops`.
 - **Done is worked out, never stored.** A step is done when every target is filled and
   valid. A target whose node the user deleted is ignored, and a step with none left is not
   listed.
+- **A subgraph input is judged by the value it resolves to, everywhere.** The editor, the
+  library row and Release all read the composed member the input drives, through the
+  subgraph library, never the value the subgraph node stores. An input left unset still
+  runs with its default, so a *named* input whose default is not blank cannot be a
+  fill-in, and Release says so. A promoted param (`state_2.zone`) names its member itself.
+- **Save As keeps the steps.** The copy has a new id and the same base, so the controller
+  reads its template context again (`_refresh_template_context`).
 
 ## Updates
 
@@ -140,11 +152,14 @@ bot itself added.
   valid bot is reported as can't-apply instead of failing later. An added node is placed
   beside a node it is wired to, as far from it as in the template; the editor moves it to a
   free grid cell when that spot is taken (`EditScene.free_position`).
+- **A change is found again by its id**, which spells out its unit's whole key, flag guard
+  included: two guarded edges from one node on one outcome are two changes.
 - **In the editor, each Apply is one undo step** (`BotCanvas.apply_template_change`). A
-  change that takes a fight's duel strategy with it asks first; the check goes through
+  change that takes a fight's duel strategy with it asks first, naming every combat
+  profile of the bot that loses one, not only the active one; the check goes through
   `fight_keys`, so a fight replaced against the same enemy is not asked about.
-- **Finish review advances the base** to the latest version (`finish_template_review`),
-  also one undo step. That is what remembers a skip: against the new base the template has
+- **Finish review advances the base** to the latest version (`finish_template_review`,
+  through `template_diff.finish`), also one undo step. That is what remembers a skip: against the new base the template has
   not changed it. There is no ignore list. Nothing reaches the file until the bot is saved.
   **Later** leaves the base alone and puts the review away until the bot is next opened.
 - **The newer version's setup steps come with the new base**, since a bot reads its steps

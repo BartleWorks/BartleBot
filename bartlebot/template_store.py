@@ -21,7 +21,9 @@ Release
     mode or not, so a draft cannot reach users by accident. It copies the saved draft's
     bytes as they are to ``v(N+1).json`` and appends the version, its SHA-256 and a change
     note to the index, or writes nothing at all and raises :class:`ReleaseRefused`
-    (:func:`release_problems` says why). A released file is never written again.
+    (:func:`release_problems` says why). A released file is never written again, and
+    a ``vN.json`` already on disk that the index does not list is never overwritten:
+    Release refuses until it is removed.
 
 Setup steps
     A version lists what the user has to fill in (``template_meta.setup``), and a
@@ -61,6 +63,7 @@ from pydantic import BaseModel, Field
 from bartlebot import setup_steps
 from bartlebot.bot.schema import BotConfig, atomic_write_json
 from bartlebot.store_roots import resolve_roots, slugify
+from bartlebot.subgraph_store import SubgraphLibrary
 
 logger = logging.getLogger(__name__)
 
@@ -277,13 +280,30 @@ def _ids_in(config: BotConfig) -> frozenset[str]:
     return frozenset({s.id for s in config.states} | {r.id for r in config.regions if r.source is not None})
 
 
-def release_problems(draft: BotConfig, template: Template, canvas_errors: Sequence[str] = ()) -> list[str]:
+def next_version(template: Template) -> int:
+    """The number Release gives ``template``'s next version."""
+    return (template.latest_version or 0) + 1
+
+
+def release_problems(
+    draft: BotConfig, template: Template, canvas_errors: Sequence[str] = (), library=None
+) -> list[str]:
     """Why ``draft`` cannot be released as ``template``'s next version: empty when it can.
 
     ``canvas_errors`` are the editor's error lines for the draft, which the caller
-    supplies, since working them out needs the scene.
+    supplies, since working them out needs the scene. ``library`` (a ``SubgraphLibrary``)
+    is what a fill-in on a named subgraph input is read through; see
+    :func:`bartlebot.setup_steps.draft_problems`.
     """
     problems = list(canvas_errors)
+    stray = template.folder / f"v{next_version(template)}.json"
+    if stray.exists():
+        # A release that failed between its two writes left it. Nothing under a
+        # template is ever overwritten, a file the index does not list included.
+        problems.append(
+            f"{template.folder.name}/{stray.name} is already there, but the index does not list it: "
+            "a release that failed halfway left it. Remove the file first."
+        )
     if not draft.is_template:
         problems.append("It has no template_meta, so it is a bot, not a template draft.")
     if draft.id != template.id:
@@ -296,7 +316,7 @@ def release_problems(draft: BotConfig, template: Template, canvas_errors: Sequen
     reused = sorted(_ids_in(draft) & retired_ids(template))
     if reused:
         problems.append(f"Reuses ids an earlier version retired: {', '.join(reused)}.")
-    problems.extend(setup_steps.draft_problems(draft))
+    problems.extend(setup_steps.draft_problems(draft, library))
     return problems
 
 
@@ -327,23 +347,28 @@ def release(
     root: str | Path | None = None,
     user_root: str | Path | None = None,
     today: date | None = None,
+    library=None,
 ) -> ReleasedVersion:
     """Release the saved draft of ``template_id`` as its next version, and return the index entry.
 
     Releases ``draft.json`` as it is on disk, so the caller saves first: an unsaved edit
     is not part of the release. Raises :class:`ReleaseRefused`, having written nothing,
-    for an empty note or anything :func:`release_problems` finds.
+    for an empty note or anything :func:`release_problems` finds. ``library`` is the
+    subgraph library the draft's fill-ins are read through: the one under the same
+    roots when none is given.
     """
     template = _require(template_id, root, user_root)
     data = template.draft_path.read_bytes()
     draft = BotConfig.model_validate(json.loads(data))
-    problems = release_problems(draft, template, canvas_errors)
+    if library is None:
+        library = SubgraphLibrary(root, user_root)
+    problems = release_problems(draft, template, canvas_errors, library)
     note = note.strip()
     if not note:
         problems.append("A release needs a note saying what changed.")
     if problems:
         raise ReleaseRefused(problems)
-    number = (template.latest_version or 0) + 1
+    number = next_version(template)
     entry = ReleasedVersion(
         version=number,
         file=f"v{number}.json",

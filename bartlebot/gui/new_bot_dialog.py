@@ -9,9 +9,10 @@ Everything this decides is in :mod:`bartlebot.new_bot`, which has no Qt in it: w
 starting point is, the bot it makes, and the file name rule. The dialog only collects
 the answers, so its tests are about the form and that module's are about the result.
 
-The fields carry no hint text: they are a name, a description, tags, a folder and a
-file name, and the two that must be filled say so with the red asterisk the Properties
-panel puts on a required param.
+The fields carry no hint text: they are a name, a description, authors, tags, a folder
+and a file name, and the two that must be filled say so with the red asterisk the
+Properties panel puts on a required param. Authors starts blank whatever the starting
+point is, since a template's authors are not the new bot's.
 
 The file name follows the display name as it is typed, until the user edits it; from
 then on it is theirs. Either way the line under it says the name that will be written,
@@ -335,6 +336,7 @@ class NewBotDialog(QDialog):
             name=self._name.text().strip(),
             description=self._description.toPlainText().strip(),
             tags=self._tags.tags(),
+            authors=self._authors.text().strip(),
         )
 
     def folder(self) -> Path:
@@ -377,6 +379,10 @@ class NewBotDialog(QDialog):
     @property
     def description_edit(self) -> GrowingTextEdit:
         return self._description
+
+    @property
+    def authors_edit(self) -> QLineEdit:
+        return self._authors
 
     @property
     def tags_field(self) -> TagsField:
@@ -454,6 +460,10 @@ class NewBotDialog(QDialog):
         self._description = GrowingTextEdit(min_lines=2, max_lines=5)
         self._description.setTabChangesFocus(True)
         form.addRow("Description", self._description)
+
+        # Blank whatever the starting point: a template's authors wrote the template.
+        self._authors = QLineEdit()
+        form.addRow("Authors", self._authors)
 
         self._tags = TagsField()
         self._tags.set_editable(True)

@@ -932,6 +932,10 @@ class AppController(QObject):
         # The combat half of the same re-resolve: the active strategy and the BCS
         # list are both keyed on the id, and a fork inherits neither.
         self._window.left_sidebar.rebind_identity()
+        # And the template half: the canvas holds the base version's setup steps and the
+        # update waiting against the bot's id, so under the new one it had neither, and
+        # a copy of a half set up bot lost its Setup errors until it was reopened.
+        self._refresh_template_context()
         return True
 
     # ------------------------------------------------------------------
@@ -1051,18 +1055,22 @@ class AppController(QObject):
             if reply != QMessageBox.StandardButton.Save or not self._save_bot():
                 return False
         errors = self._window.bot_canvas.validation_errors()
-        problems = template_store.release_problems(BotConfig.load(template.draft_path), template, errors)
+        problems = template_store.release_problems(
+            BotConfig.load(template.draft_path), template, errors, self._subgraph_library
+        )
         if problems:
             self._show_release_refused(template.name, problems)
             return False
-        number = (template.latest_version or 0) + 1
+        number = template_store.next_version(template)
         note, ok = QInputDialog.getText(
             self._window, "Release", f"Releasing {template.name} v{number}. What changed, in one line?"
         )
         if not ok:
             return False
         try:
-            entry = template_store.release(template.id, note, errors, root=self._templates_root)
+            entry = template_store.release(
+                template.id, note, errors, root=self._templates_root, library=self._subgraph_library
+            )
         except template_store.ReleaseRefused as exc:
             self._show_release_refused(template.name, exc.problems)
             return False

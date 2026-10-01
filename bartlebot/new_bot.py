@@ -83,6 +83,8 @@ class BotDetails:
     name: str
     description: str = ""
     tags: list[str] = field(default_factory=list)
+    #: Who made the bot. Never the template's: whoever wrote a template did not write this.
+    authors: str = ""
 
 
 def starting_points(root: str | Path | None = None, user_root: str | Path | None = None) -> list[StartingPoint]:
@@ -107,7 +109,8 @@ def create_bot(start: StartingPoint | None, details: BotDetails) -> BotConfig:
     A copy of the version with a fresh id, ``template`` recording where it came from,
     and no ``template_meta`` -- that is what makes it a bot. The setup steps are not
     copied in: the bot reads them from its base version. An empty description stays
-    empty, so the generated one shows (``bot_summary.describe``).
+    empty, so the generated one shows (``bot_summary.describe``). The authors are the
+    ones given, or nobody: a template's are its own and are not copied.
     """
     if start is None:
         config = BotConfig(
@@ -126,6 +129,8 @@ def create_bot(start: StartingPoint | None, details: BotDetails) -> BotConfig:
     config.name = details.name.strip()
     config.description = details.description.strip() or None
     config.tags = normalize_tags(list(details.tags))
+    # Set either way, so a template's own authors never ride along into the copy.
+    config.authors = details.authors.strip() or None
     return config
 
 

@@ -1063,8 +1063,9 @@ def test_removing_a_fight_with_a_strategy_asks_first(canvas, monkeypatch):
         bot_id=bot.id,
         state_assignments=[StateAssignment(fights=[FightRef(state="t_2")], duel_combat_strategy_id="dcs-1")],
     )
-    monkeypatch.setattr(canvas_module, "load_bot_strategy", lambda _id: profile)
-    SettingsManager.instance().set_active_strategy(bot.id, profile.id)
+    # Not the active profile, and asked about all the same: it loses the fight too.
+    monkeypatch.setattr(canvas_module, "list_bot_strategies", lambda bot_id: [profile] if bot_id == bot.id else [])
+    assert SettingsManager.instance().get_active_strategy(bot.id) is None
     _open_bot(canvas, bot)
     canvas.set_template_update(_update(theirs))
     removal = next(c for c in canvas.template_review.changes if c.removed)
@@ -1080,7 +1081,7 @@ def test_removing_a_fight_with_a_strategy_asks_first(canvas, monkeypatch):
     monkeypatch.setattr(QMessageBox, "question", answer(QMessageBox.StandardButton.No))
     assert not canvas.apply_template_change(removal.id)
     assert any(s.id == "t_2" for s in canvas.config.states)
-    assert "'Defeat mobs'" in asked[0]
+    assert "'Defeat mobs'" in asked[0] and "combat profile 'Solo'" in asked[0]
 
     monkeypatch.setattr(QMessageBox, "question", answer(QMessageBox.StandardButton.Yes))
     assert canvas.apply_template_change(removal.id)
@@ -1179,3 +1180,180 @@ def test_a_library_row_says_when_the_template_has_moved_on(qapp, store, tmp_path
     meta = _read_bot_meta(path, store)
     assert meta.update_available
     assert _BotCard(meta).update_text == UPDATE_AVAILABLE_TEXT
+
+
+# ---------------------------------------------------------------------------
+# Fixes from the stage 10 review
+# ---------------------------------------------------------------------------
+
+
+def test_save_as_keeps_the_copys_setup_steps_and_its_review(harness, store, tmp_path, monkeypatch):
+    """A copy has a new id, and the steps and the update were held against the old one.
+
+    So the copy of a half set up bot lost its Setup errors and could be run with a blank
+    enemy, until it was reopened.
+    """
+    from PyQt6.QtWidgets import QFileDialog  # noqa: PLC0415
+
+    save_draft(_v2_draft(), store)
+    release(TEMPLATE_ID, _NOTE, root=store, today=date(2026, 10, 2))
+    path = tmp_path / "bots" / "trolls.json"
+    _bot().save(path)
+    harness._open_bot(str(path), mode=BotMode.EDIT)
+    canvas = harness._window.bot_canvas
+    assert canvas.setup_steps_left == 3 and canvas.template_review is not None
+    copy = tmp_path / "bots" / "copy.json"
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *a, **k: (str(copy), "")))
+    monkeypatch.setattr(type(harness), "_confirm_rewards_tags", lambda self: True, raising=False)
+
+    assert harness._save_bot_as()
+
+    assert canvas.config.id != "bot-mob"
+    assert canvas.has_setup_steps and canvas.setup_steps_left == 3
+    assert any("Setup" in e for e in canvas.validation_errors())
+    assert canvas.template_review is not None
+    assert canvas.header.template_chip.text() == "Mob Farmer v1 \u2192 v2"
+
+
+def test_an_undo_across_finish_gives_the_controller_the_older_base_back(harness, store, tmp_path):
+    """The canvas said the base had moved before the controller held the config it moved in."""
+    save_draft(_v2_draft(), store)
+    release(TEMPLATE_ID, _NOTE, root=store, today=date(2026, 10, 2))
+    path = tmp_path / "bots" / "trolls.json"
+    _bot().save(path)
+    canvas = harness._window.bot_canvas
+    canvas.template_ref_changed.connect(harness._refresh_template_context)
+    harness._open_bot(str(path), mode=BotMode.EDIT)
+
+    assert canvas.finish_template_review()
+    assert canvas.header.template_chip.text() == "Mob Farmer v2" and canvas.template_review is None
+
+    canvas.undo()
+
+    assert canvas.header.template_chip.text() == "Mob Farmer v1 \u2192 v2"
+    assert canvas.template_review is not None
+
+
+def test_the_review_is_worked_out_again_only_when_the_bot_has_changed(canvas, monkeypatch):
+    worked_out: list[int] = []
+    real = template_diff.review
+
+    def counting(*args, **kwargs):
+        worked_out.append(1)
+        return real(*args, **kwargs)
+
+    _open_behind(canvas, _bot())
+    monkeypatch.setattr(template_diff, "review", counting)
+
+    first = canvas.template_review
+    assert canvas.template_review is first and len(worked_out) == 1
+
+    _state(canvas.config, "t_2").params["max_duration"] = 60
+    assert canvas.template_review is not first and len(worked_out) == 2
+    assert _change_text(canvas.template_review, "Max Duration").status is template_diff.Status.CONFLICT
+
+    canvas.set_template_update(_update())
+    assert canvas.template_review is not None and len(worked_out) == 3, "a new update is a new review"
+
+
+def _change_text(review: template_diff.Review, text: str) -> template_diff.Change:
+    return next(c for c in review.changes if text in c.title)
+
+
+def test_a_fight_in_two_profiles_names_both(canvas, monkeypatch):
+    from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment  # noqa: PLC0415
+    from bartlebot.gui.canvas import bot_canvas as canvas_module  # noqa: PLC0415
+
+    theirs = _draft([_ZONE, _DROPS])
+    theirs.states = [s for s in theirs.states if s.id != "t_2"]
+    theirs.transitions = [TransitionModel(trigger="advance", source="t_1", dest="t_1", when="SUCCESS")]
+    bot = _bot()
+    _state(bot, "t_2").params.update(enemy="Troll", use_default_strategy=False)
+
+    def profile(name: str, linked: bool = True) -> BotCombatStrategy:
+        assignment = StateAssignment(
+            fights=[FightRef(state="t_2")], duel_combat_strategy_id="dcs-1" if linked else None
+        )
+        return BotCombatStrategy(name=name, bot_id=bot.id, state_assignments=[assignment])
+
+    profiles = [profile("Solo"), profile("Nothing linked", linked=False), profile("Team")]
+    monkeypatch.setattr(canvas_module, "list_bot_strategies", lambda _bot_id: profiles)
+    _open_bot(canvas, bot)
+    canvas.set_template_update(_update(theirs))
+    removal = next(c for c in canvas.template_review.changes if c.removed)
+    asked: list[str] = []
+    monkeypatch.setattr(
+        QMessageBox, "question", lambda _p, _t, text, *a, **k: asked.append(text) or QMessageBox.StandardButton.No
+    )
+
+    assert not canvas.apply_template_change(removal.id)
+
+    assert "combat profiles 'Solo', 'Team'" in asked[0] and "Nothing linked" not in asked[0]
+
+
+def test_a_visit_to_a_subgraph_definition_does_not_bring_back_a_review_put_away(window):
+    """The definition is another config with another id, so coming back looked like a bot just opened."""
+    from bartlebot.subgraphs import definition_to_config  # noqa: PLC0415
+
+    canvas, sidebar = window.bot_canvas, window.right_sidebar
+    bot = _done_bot()
+    _open_behind(canvas, bot)
+    sidebar.setup_panel.later_button.click()
+    assert not sidebar.setup_tab_shown
+    sidebar.switch_to_log()
+    library = SubgraphLibrary()
+    definition = definition_to_config(library.get(library.ids()[0]))
+
+    canvas.setup(definition, mode=BotMode.EDIT)
+    assert not sidebar.setup_tab_shown, "a definition has no Setup tab of its own"
+    _open_behind(canvas, bot)
+
+    assert not sidebar.setup_tab_shown, "Later lasts until the bot is next opened, not until the next visit"
+    assert sidebar.currentWidget() is not sidebar.setup_panel
+
+
+def test_coming_back_from_a_definition_does_not_pull_the_sidebar_to_setup(window):
+    from bartlebot.subgraphs import definition_to_config  # noqa: PLC0415
+
+    canvas, sidebar = window.bot_canvas, window.right_sidebar
+    bot = _bot()
+    _open_bot(canvas, bot)
+    assert sidebar.currentWidget() is sidebar.setup_panel
+    sidebar.switch_to_log()
+    library = SubgraphLibrary()
+
+    canvas.setup(definition_to_config(library.get(library.ids()[0])), mode=BotMode.EDIT)
+    _open_bot(canvas, bot)
+
+    assert sidebar.setup_tab_shown, "the steps are still to do"
+    assert sidebar.currentWidget() is not sidebar.setup_panel, "but the user was reading the log"
+
+
+def test_a_library_row_counts_a_files_steps_once_until_the_file_changes(qapp, store, tmp_path, monkeypatch):
+    """Counting validates the whole file, and the library reads every bot each time it is listed."""
+    import os  # noqa: PLC0415
+
+    from bartlebot.gui.canvas.bot_canvas import _read_bot_meta  # noqa: PLC0415
+
+    counted: list[int] = []
+    real = setup_steps.left_in_file
+
+    def counting(*args, **kwargs):
+        counted.append(1)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(setup_steps, "left_in_file", counting)
+    path = tmp_path / "trolls.json"
+    bot = _bot()
+    bot.save(path)
+
+    assert _read_bot_meta(path, store).setup_left == 3
+    assert _read_bot_meta(path, store).setup_left == 3
+    assert len(counted) == 1
+
+    _state(bot, "t_2").params["enemy"] = "Troll"
+    bot.save(path)
+    os.utime(path, ns=(path.stat().st_atime_ns, path.stat().st_mtime_ns + 1_000_000))
+
+    assert _read_bot_meta(path, store).setup_left == 2
+    assert len(counted) == 2

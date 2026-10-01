@@ -341,3 +341,20 @@ def test_a_draft_under_another_id_or_recording_a_template_is_refused(tmp_path):
     with pytest.raises(ReleaseRefused, match="is not the template's"):
         release("tpl-boss", "Note", root=tmp_path)
     assert find_template("tpl-boss", tmp_path).latest_version is None
+
+
+def test_release_never_overwrites_a_version_file_the_index_does_not_list(tmp_path):
+    """What a release that failed between its two writes leaves behind. It used to be silently replaced."""
+    path = save_draft(_draft(), tmp_path)
+    stray = path.parent / "v1.json"
+    stray.write_bytes(b"left behind")
+
+    with pytest.raises(ReleaseRefused) as refused:
+        release("tpl-boss", "First release", root=tmp_path)
+
+    assert any("v1.json is already there" in p for p in refused.value.problems)
+    assert stray.read_bytes() == b"left behind"
+    assert TemplateIndex.load(path.parent / INDEX_FILE).versions == []
+
+    stray.unlink()
+    assert release("tpl-boss", "First release", root=tmp_path).version == 1

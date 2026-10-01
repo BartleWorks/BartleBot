@@ -41,6 +41,7 @@ from typing import Any
 from bartlebot import zone_nav
 from bartlebot.bot.schema import BotConfig, RegionModel, SetupStep, SetupTarget, StateModel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
+from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import member_id
 
 logger = logging.getLogger(__name__)
@@ -74,6 +75,9 @@ def value_empty(field_type: str, value: Any) -> bool:
         except (KeyError, TypeError, ValueError):
             return True
         return not any(axes)
+    if isinstance(value, str):
+        # Any other type that stores text: nothing typed is nothing there, whatever it is called.
+        return not value.strip()
     return False  # int, float, bool always have a value
 
 
@@ -138,7 +142,9 @@ def target_params(config: BotConfig, target: SetupTarget, library=None) -> list[
 
     A subgraph input is read where it lands, on the instance's members. A named input
     needs ``library`` (a ``SubgraphLibrary``) for its bindings; without one it has no
-    pairs and is judged by the value the instance stores (:func:`target_filled`).
+    pairs and is judged by the value the instance stores (:func:`target_filled`). Every
+    caller in the app passes one, so the editor, the library row and Release agree: an
+    input left unset still resolves to its default, and that is the value that runs.
     """
     by_id = {s.id: s for s in config.states}
     if target.state is not None and target.param is not None:
@@ -289,11 +295,23 @@ def steps_left(config: BotConfig, steps: Sequence[SetupStep], library=None) -> i
     return sum(1 for status in progress(config, steps, library) if not status.done)
 
 
-def left_in_file(data: Mapping[str, Any], root: str | Path | None = None, user_root: str | Path | None = None) -> int:
+def reads_library(steps: Sequence[SetupStep]) -> bool:
+    """Whether any of ``steps`` asks for a named subgraph input, which only the definition can place.
+
+    A promoted param (``<member>.<key>``) names its member itself and needs no library.
+    """
+    return any(t.region is not None and "." not in (t.input or "") for step in steps for t in step.targets)
+
+
+def left_in_file(
+    data: Mapping[str, Any], root: str | Path | None = None, user_root: str | Path | None = None, library=None
+) -> int:
     """Steps left in a bot file's raw ``data``; 0 for a bot made from no template, or one that does not parse.
 
     What the library row shows. A file with no ``template`` is answered without
-    validating it, which is every bot not made by New Bot.
+    validating it, which is every bot not made by New Bot. ``library`` is the subgraph
+    library a named input is read through, as the editor reads it; the one under the
+    same roots is loaded when none is given and a step needs it.
     """
     if not isinstance(data.get("template"), dict):
         return 0
@@ -301,7 +319,30 @@ def left_in_file(data: Mapping[str, Any], root: str | Path | None = None, user_r
         config = BotConfig.model_validate(data)
     except Exception:
         return 0
-    return steps_left(config, steps_for(config, root, user_root))
+    steps = steps_for(config, root, user_root)
+    if library is None and reads_library(steps):
+        library = SubgraphLibrary(root, user_root)
+    return steps_left(config, steps, library)
+
+
+def file_reads_library(
+    data: Mapping[str, Any], root: str | Path | None = None, user_root: str | Path | None = None
+) -> bool:
+    """Whether :func:`left_in_file`'s answer for ``data`` depends on the subgraph library as well as the file.
+
+    For a caller that remembers the answer against the file: one that does is not the
+    file's alone to say.
+    """
+    ref = data.get("template")
+    if not isinstance(ref, dict) or not isinstance(ref.get("id"), str) or not isinstance(ref.get("version"), int):
+        return False
+    from bartlebot import template_store  # noqa: PLC0415 - template_store imports this module
+
+    try:
+        steps = _released_steps(str(template_store.templates_dir(root, user_root)), ref["id"], ref["version"])
+    except Exception:
+        return False
+    return reads_library(steps)
 
 
 @dataclass(frozen=True)
@@ -332,12 +373,22 @@ def setup_error(fill: FillIn) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _unset_named_input(config: BotConfig, target: SetupTarget) -> bool:
+    """Whether ``target`` is a named subgraph input its subgraph node stores no value for."""
+    region = _instance(config, target.region)
+    if region is None or "." in (target.input or ""):
+        return False
+    return region.source.inputs.get(target.input or "") in (None, "", [], {})
+
+
 def draft_problems(draft: BotConfig, library=None) -> list[str]:
     """Why a template's steps keep it from being released: empty when they do not.
 
     Every step says something and asks for something, every target is in the draft,
     and every fill-in is blank -- so "done" means "valid" in the bot made from it, and
-    a placeholder can never run as if it were a real value.
+    a placeholder can never run as if it were a real value. Blank is judged on the
+    resolved value, through ``library``: a named input the draft leaves unset is still
+    filled when its default is not blank, and so cannot be a fill-in.
     """
     problems: list[str] = []
     meta = draft.template_meta
@@ -357,5 +408,12 @@ def draft_problems(draft: BotConfig, library=None) -> list[str]:
             elif target.state is not None and _field_of(target_params(draft, target)[0][0], target.param or "") is None:
                 problems.append(f"Setup step {number} asks for {what}, which is not a param of that node.")
             elif target_filled(draft, target, library):
-                problems.append(f"Setup step {number}: {what} holds a value. A fill-in is blank in every release.")
+                if _unset_named_input(draft, target):
+                    # Nothing is set on the subgraph node, so what fills it is the input's default.
+                    problems.append(
+                        f"Setup step {number}: {what} has a default in its subgraph, so a bot would start "
+                        "with it filled. Only an input whose default is blank can be a fill-in."
+                    )
+                else:
+                    problems.append(f"Setup step {number}: {what} holds a value. A fill-in is blank in every release.")
     return problems

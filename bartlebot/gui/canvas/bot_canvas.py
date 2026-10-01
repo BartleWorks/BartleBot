@@ -100,7 +100,7 @@ from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import dev_mode
-from bartlebot.strategy_store import load_bot_strategy, rekey_bot_strategy_states
+from bartlebot.strategy_store import list_bot_strategies, rekey_bot_strategy_states
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import (
     ComposeReport,
@@ -282,11 +282,41 @@ def setup_left_text(left: int) -> str:
 UPDATE_AVAILABLE_TEXT = "Template update available"
 
 
-def _read_bot_meta(path: Path, templates_root: "str | Path | None" = None) -> "_BotMeta | None":
+#: (file, template store) -> (the file's mtime, its setup steps left): see ``_setup_left``.
+_setup_left_seen: dict[tuple[str, str], tuple[int, int]] = {}
+
+
+def _setup_left(path: Path, data: dict, templates_root: "str | Path | None", library: "SubgraphLibrary | None") -> int:
+    """The setup steps the bot file at *path* has left, remembered until the file changes.
+
+    Counting them validates the whole file, and the library reads every bot each time it
+    is listed. A released version's steps never change, so the answer is the file's
+    alone -- unless a step asks for a named subgraph input, which the definition places,
+    and then it is worked out each time.
+    """
+    if not isinstance(data.get("template"), dict):
+        return 0
+    if setup_steps.file_reads_library(data, templates_root):
+        return setup_steps.left_in_file(data, templates_root, library=library)
+    key = (str(path), str(templates_root or ""))
+    try:
+        stamp = path.stat().st_mtime_ns
+    except OSError:
+        return setup_steps.left_in_file(data, templates_root, library=library)
+    seen = _setup_left_seen.get(key)
+    if seen is None or seen[0] != stamp:
+        seen = _setup_left_seen[key] = (stamp, setup_steps.left_in_file(data, templates_root, library=library))
+    return seen[1]
+
+
+def _read_bot_meta(
+    path: Path, templates_root: "str | Path | None" = None, library: "SubgraphLibrary | None" = None
+) -> "_BotMeta | None":
     """What a library card shows for the bot file at *path*, read without building a scene.
 
     *templates_root* is where the template store is, for the setup steps a bot made
-    from a template has left; ``None`` is the project's.
+    from a template has left; ``None`` is the project's. *library* is the subgraph
+    library a step on a named subgraph input is read through, as the editor reads it.
     """
     try:
         with path.open(encoding="utf-8") as f:
@@ -301,7 +331,7 @@ def _read_bot_meta(path: Path, templates_root: "str | Path | None" = None) -> "_
             version=data.get("version") or "",
             path=path,
             generated="" if description else (bot_summary.describe_data(data) or ""),
-            setup_left=setup_steps.left_in_file(data, templates_root),
+            setup_left=_setup_left(path, data, templates_root, library),
             update_available=template_diff.behind_in_file(data, templates_root),
         )
     except Exception:
@@ -755,6 +785,9 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         if self._listed:
             self.refresh()
 
+    def _read_meta(self, path: Path) -> "_BotMeta | None":
+        return _read_bot_meta(path, library=self._subgraph_library)
+
     def refresh(self) -> None:
         """Rescan recent files and bots/ directory, rebuild UI."""
         self._listed = True
@@ -772,17 +805,17 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             for subdir in sorted(bots_dir.iterdir()):
                 if not subdir.is_dir():
                     continue
-                metas = [m for f in sorted(subdir.glob("*.json")) if (m := _read_bot_meta(f))]
+                metas = [m for f in sorted(subdir.glob("*.json")) if (m := self._read_meta(f))]
                 if metas:
                     self._category_map[subdir.name] = metas
                     self._all_metas.extend(metas)
-            root_metas = [m for f in sorted(bots_dir.glob("*.json")) if (m := _read_bot_meta(f))]
+            root_metas = [m for f in sorted(bots_dir.glob("*.json")) if (m := self._read_meta(f))]
             if root_metas:
                 self._category_map[self._OTHER_KEY] = root_metas
                 self._all_metas.extend(root_metas)
 
         # Recent files
-        self._recent_metas = [m for p in recent_paths if (m := _read_bot_meta(Path(p)))]
+        self._recent_metas = [m for p in recent_paths if (m := self._read_meta(Path(p)))]
 
         self._subgraph_metas = []
         if self._subgraph_library is not None:
@@ -1497,6 +1530,8 @@ class BotCanvas(QWidget):
         self._template_update: template_diff.TemplateUpdate | None = None
         self._template_update_for: str | None = None
         self._template_ref_seen: dict | None = None
+        #: The last review worked out, and what it was worked out from: see ``template_review``.
+        self._review_seen: tuple[int, str, template_diff.Review | None] | None = None
         self._placeholder.new_bot_requested.connect(self.new_bot_requested)
         self._placeholder.open_bot_requested.connect(self.open_bot_requested)
         self._placeholder.open_recent_requested.connect(self.open_recent_requested)
@@ -2774,13 +2809,16 @@ class BotCanvas(QWidget):
         self._refresh_errors()
         self._scene.refresh_region_states(self._compose_report)
         self._update_validation_badge()
-        self._check_template_ref()
         self._announce_setup_left()
         self._toolbar.refresh_tag_suggestions()
         self._minimap.fit_to_scene()
         if self._search_bar.isVisible():
             self._on_search_text_changed(self._search_bar.current_text())
         self.config_changed.emit()
+        # After config_changed, not before: an undo, an Apply or a Finish hands the canvas
+        # a new config object, and the controller reads the new base from the one it
+        # holds, which it only swaps for this one on config_changed.
+        self._check_template_ref()
         self._refresh_undo_actions()
 
     def _on_initial_state_requested(self, state_id: str) -> None:
@@ -3304,6 +3342,7 @@ class BotCanvas(QWidget):
         """
         config = self._config
         self._template_update = update
+        self._review_seen = None
         self._template_update_for = config.id if config is not None else None
         ref = config.template if config is not None else None
         self._template_ref_seen = ref.model_dump() if ref is not None else None
@@ -3315,13 +3354,26 @@ class BotCanvas(QWidget):
 
         None for a bot that is not behind, and for any document but the bot the update
         was read for.
+
+        Asked on every change to the scene while a review is waiting, and working one out
+        trial-applies each change to a copy of the bot. So the last answer is kept
+        against the bot as it was written out then, and a refresh that leaves the bot
+        as it was -- a selection, a tab switch -- costs one dump and no diff.
         """
         update, config = self._template_update, self._config
         if update is None or config is None or config.template is None or config.is_template:
             return None
         if config.id != self._template_update_for or config.template.version != update.base_version:
             return None
-        return template_diff.review(update, config, self._subgraph_library)
+        written = config.model_dump_json()
+        seen = self._review_seen
+        if seen is None or seen[0] != id(update) or seen[1] != written:
+            seen = self._review_seen = (
+                id(update),
+                written,
+                template_diff.review(update, config, self._subgraph_library),
+            )
+        return seen[2]
 
     def _check_template_ref(self) -> None:
         """Say so when the open bot's ``template`` is not the one the controller last read for."""
@@ -3353,14 +3405,16 @@ class BotCanvas(QWidget):
         except Exception:
             logger.exception("Template change %s could not be applied", change_id)
             return False
-        lost = self._strategies_lost_by(applied)
+        lost, profiles = self._strategies_lost_by(applied)
         if lost:
             names = ", ".join(f"'{name}'" for name in lost)
+            where = ", ".join(f"'{name}'" for name in profiles)
             answer = QMessageBox.question(
                 self,
                 "Apply template change",
                 f"This change removes {names}, which {'has' if len(lost) == 1 else 'have'} a duel strategy "
-                "in the active combat profile. The strategy stays in the profile, but nothing will use it.\n\n"
+                f"in the combat {'profile' if len(profiles) == 1 else 'profiles'} {where}. The strategy stays "
+                "in the profile, but nothing will use it.\n\n"
                 "Apply the change anyway?",
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             )
@@ -3370,17 +3424,28 @@ class BotCanvas(QWidget):
         self._restore(applied)
         return True
 
-    def _strategies_lost_by(self, applied: BotConfig) -> list[str]:
-        """The fights whose duel strategy the active combat profile would lose in ``applied``, by label."""
+    def _strategies_lost_by(self, applied: BotConfig) -> tuple[list[str], list[str]]:
+        """The fights whose duel strategy would be lost in ``applied``, by label, and the profiles losing one.
+
+        Every combat profile of the bot is asked, not only the active one: the others
+        lose the fight just the same, and nothing would say so when one is next made active.
+        """
         config = self._config
-        active = SettingsManager.instance().get_active_strategy(config.id) if config is not None else None
-        if not active:
-            return []
+        if config is None:
+            return [], []
         try:
-            profile = load_bot_strategy(active)
+            profiles = list_bot_strategies(config.id)
         except Exception:
-            return []
-        return template_diff.strategies_lost(profile, config, applied)
+            logger.exception("Could not read the combat profiles of %s", config.name)
+            return [], []
+        lost: list[str] = []
+        names: list[str] = []
+        for profile in profiles:
+            found = template_diff.strategies_lost(profile, config, applied)
+            if found:
+                names.append(profile.name)
+                lost.extend(label for label in found if label not in lost)
+        return lost, names
 
     def finish_template_review(self) -> bool:
         """End the review: advance the bot's base to the latest version, as one undo step.
@@ -3395,8 +3460,7 @@ class BotCanvas(QWidget):
         if self._mode != BotMode.EDIT:
             return False
         self._on_about_to_change("Finish template review")
-        config.template.version = update.latest_version
-        self._on_scene_changed()
+        self._restore(template_diff.finish(config, update))
         return True
 
     @property

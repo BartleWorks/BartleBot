@@ -985,8 +985,13 @@ the list. Four rules:
   applied. A card edits nothing itself, as a step card does not: the panel emits
   `apply_requested`, and `BotCanvas.apply_template_change` makes the change as one undo
   step. **Finish review** advances the bot's base, which is what remembers a skip, and
-  **Later** puts the review away until the bot is next opened. The diff is recomputed from
-  the open bot on every refresh, so an applied or undone change shows at once.
+  **Later** puts the review away until the bot is next opened. A subgraph definition opened
+  over the bot is a visit, not another document: `_sync_setup_tab` keeps the bot's state
+  through it, so coming back neither forgets a Later nor pulls the sidebar to Setup. The
+  review is asked for on every refresh, so an applied or undone change shows at once, but
+  `BotCanvas.template_review` works the diff out again only when the bot's own dump has
+  changed. `template_ref_changed` is emitted after `config_changed`, never before: the
+  controller reads the new base from the config it holds, which it swaps on `config_changed`.
 - **A draft's steps are `CardFrame` cards**, like every other ordered list here: a grip to
   reorder, a cross to remove, and a dashed Add card at the end. The tab's edits go to the
   canvas (`begin_setup_edit`, `begin_setup_change`, `setup_edited`), which owns the undo

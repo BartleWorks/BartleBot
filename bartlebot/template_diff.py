@@ -260,7 +260,9 @@ def load_update(
             if entry.version > ref.version
         ]
     except Exception:
-        logger.warning("No template update for %s: a version of %s does not load", config.name, template.name)
+        logger.warning(
+            "No template update for %s: a version of %s does not load", config.name, template.name, exc_info=True
+        )
         return None
     return TemplateUpdate(ref.id, template.name, ref.version, base, releases)
 
@@ -438,12 +440,30 @@ def _describe(unit: Unit, theirs: _Snapshot, base: _Snapshot, mine: _Snapshot) -
     return f"{source} · on {outcome}{guard}", arrow
 
 
+def _guard_text(guard: tuple) -> str:
+    """A canonical flag guard (:func:`_canon_flags`) spelled out, the same way every time.
+
+    In full, not as a marker that there is one: two edges from one node on one outcome
+    differ only by their guards, and a change is found again by its id.
+    """
+    if not guard:
+        return ""
+
+    def flags(found) -> str:
+        return ",".join(sorted(f"{'!' if negate else ''}{option}" for option, negate in found))
+
+    if guard[0] == "flags":
+        return f"{guard[2]}({flags(guard[1])})"
+    groups = sorted(f"{op}({flags(found)})" for found, op in guard[1])
+    return f"{guard[2]}[{';'.join(groups)}]"
+
+
 def _change_id(units: Sequence[Unit]) -> str:
     def part(value: Any) -> str:
         if isinstance(value, Port):
             return f"{value.region}@{value.port}"
         if isinstance(value, tuple):
-            return "flags" if value else ""
+            return _guard_text(value)
         return "" if value is None else str(value)
 
     # Named for the node it adds or removes when it has one, else for its one unit.
@@ -537,6 +557,14 @@ def diff(update: TemplateUpdate, mine: BotConfig, library=None) -> list[Change]:
                 change.reason = "It can't be applied to this bot as it stands."
         changes.append(change)
     changes.sort(key=lambda c: c.version)
+    # An id is what Apply and Keep mine find a change by, so no two may share one. Each
+    # is spelled from a unit key, and keys are distinct; this is for a name that happens
+    # to contain the separator.
+    seen: dict[str, int] = {}
+    for change in changes:
+        seen[change.id] = seen.get(change.id, 0) + 1
+        if seen[change.id] > 1:
+            change.id = f"{change.id}#{seen[change.id]}"
     return changes
 
 
@@ -815,9 +843,14 @@ def apply(config: BotConfig, change: Change, *, place: Placer | None = None, lib
                 inputs[key[2]] = value
             touched_inputs.add(key[1])
         elif kind == "option":
-            new.options = [o for o in new.options if o.name != key[1]]
-            if value is not MISSING:
+            # In the place it already has: the Options tab lists them in file order.
+            at = next((i for i, o in enumerate(new.options) if o.name == key[1]), None)
+            if value is MISSING:
+                new.options = [o for o in new.options if o.name != key[1]]
+            elif at is None:
                 new.options.append(BotOptionModel.model_validate(value))
+            else:
+                new.options[at] = BotOptionModel.model_validate(value)
 
     for unit in change.units:
         if unit.key[0] == "slot" and _owner(unit.key) not in change.removed:

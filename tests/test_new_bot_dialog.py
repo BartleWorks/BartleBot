@@ -194,6 +194,7 @@ def test_the_details_are_what_was_typed(dialog):
 def test_no_field_carries_hint_text(dialog):
     assert dialog.name_edit.placeholderText() == ""
     assert dialog.description_edit.placeholderText() == ""
+    assert dialog.authors_edit.placeholderText() == ""
     assert dialog.file_edit.placeholderText() == ""
 
 
@@ -419,3 +420,14 @@ def test_the_library_panel_names_the_folder_it_is_showing(qapp):
     assert panel.current_folder() is None
     panel._cat_list.setCurrentRow(1)
     assert panel.current_folder() == "13_aquila"
+
+
+def test_authors_start_blank_whatever_the_starting_point_and_are_what_was_typed(dialog):
+    dialog.select_start(1)
+    dialog.advance()
+    assert dialog.authors_edit.text() == "" and dialog.details().authors == ""
+
+    dialog.authors_edit.setText("  Luke SkullHunter ")
+
+    assert dialog.details().authors == "Luke SkullHunter"
+    assert dialog.is_complete() is False, "authors are optional, and fill nothing that is required"
