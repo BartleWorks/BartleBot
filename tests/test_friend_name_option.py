@@ -9,7 +9,7 @@ declaration, and the guarantee comes from the option layer rather than from a
 widget that refuses to report itself.
 
 What is worth pinning down is the shape of that guarantee: the only editing surface
-is Setup, which writes overrides and never the file, and the app setting is still the
+is Option Values, which writes overrides and never the file, and the app setting is still the
 level underneath, so one idler serves every bot until some bot needs another.
 
 Real widget tests (QApplication required).  The settings store is injected.
@@ -22,7 +22,7 @@ import pytest
 from bartlebot import bot_options
 from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.gui.sidebar.sections.setup_section import SetupSection
+from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.widgets.friend_name_edit import FriendNameEdit
 from bartlebot.gui.widgets.option_widgets import make_option_widget, widget_value
 from bartlebot.nodes.teleportation import teleport_to_friend as ttf
@@ -49,8 +49,8 @@ def _config() -> BotConfig:
     )
 
 
-def _section(settings, config) -> SetupSection:
-    section = SetupSection(settings=settings)
+def _section(settings, config) -> OptionValuesSection:
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
     return section
 
@@ -120,7 +120,7 @@ def test_setup_has_no_row_for_it_when_the_node_ports_to_a_hooked_player(qapp, se
 def test_the_declaration_editor_does_not_offer_it_at_all(qapp, settings):
     """A row here would be a place to type a character name into a file people
     share. The author has nothing to say about whose wizard you port to, so the
-    option is simply not on their surface -- it is a row in Setup instead."""
+    option is simply not on their surface -- it is a row in Option Values instead."""
     from bartlebot.gui.sidebar.sections.options_section import OptionsSection
 
     config = _config()

@@ -141,7 +141,7 @@ def test_an_option_description_recolors(qapp, theme):
     _switch(qapp, desc, theme, "dark")
 
     assert light not in desc.styleSheet()
-    # The base font, the same size the identical prose is read at on Setup.
+    # The base font, the same size the identical prose is read at on Option Values.
     assert "font-size" not in desc.styleSheet()
 
 
@@ -175,7 +175,7 @@ def test_the_add_option_dialog_still_builds_completely(qapp):
 
 
 # ---------------------------------------------------------------------------
-# The Setup gutter's two new controls
+# The Option Values gutter's two new controls
 # ---------------------------------------------------------------------------
 
 

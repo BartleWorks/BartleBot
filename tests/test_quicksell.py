@@ -544,7 +544,7 @@ async def test_the_log_names_every_resolved_value():
 
 # --- the four levels, through the editor's own resolver ---------------------------
 #
-# resolve_options_for is what the Setup picker and the safety dialog read, and it
+# resolve_options_for is what the Option Values picker and the safety dialog read, and it
 # goes through the same four levels the run does. Asserting on it rather than on a
 # live BotMachine keeps these about precedence rather than about the FSM.
 

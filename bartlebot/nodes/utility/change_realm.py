@@ -9,7 +9,7 @@ is what lets every template share a single Player Sync. The mode is the
 
 Favorite mode reads the ``Favorite Realm`` bot option -- the user's, never the bot's: it
 is declared null here, answered by the Favorite Realm setting on the Bot settings tab,
-and a per-bot override in Setup sits above that. A bot file naming a realm would send
+and a per-bot override in Options sits above that. A bot file naming a realm would send
 everyone who runs it to the same place, which is the crowding a favorite realm exists to
 escape, so ``Favorite Realm`` is in ``bot_options.USER_OWNED_OPTIONS`` and the Options
 surface has no row for it. The stored value is the realm's *key* (its English name); the
@@ -79,7 +79,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Use Favorite Realm",
         help=(
             "On: switch to the Favorite Realm — set in Settings → Bot, or overridden for this bot "
-            "in Setup.\n\n"
+            "in Options.\n\n"
             "Off: switch to the next realm after the current one, cycling through the quieter "
             "pages of the realm list. Useful where a fresh realm means fresh spawns, as with "
             "reagent farming.\n\n"
@@ -171,7 +171,7 @@ async def run(machine, clients: list, params: dict) -> str:
     if params.get(PARAM_USE_FAVORITE_REALM, True):
         favorite = str(machine.get_option(OPTION_FAVORITE_REALM, "") or "").strip()
         if not favorite:
-            machine.log("FAILURE: no favorite realm is set — choose one in Settings → Bot, or in this bot's Setup")
+            machine.log("FAILURE: no favorite realm is set — choose one in Settings → Bot, or in this bot's Options")
             return "FAILURE"
         if not realms.is_known(favorite):
             machine.log(

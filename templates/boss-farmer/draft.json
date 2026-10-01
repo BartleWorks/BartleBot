@@ -33,10 +33,10 @@
     {
       "id": "t_sync_players_1_state_2",
       "node_type": "sync_in_zone",
-      "label": "Go to zone",
+      "label": "Sync in zone",
       "position": {
-        "x": 2199.9998649583054,
-        "y": 90.00021952501636
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
       },
       "params": {
         "zone": ""
@@ -55,18 +55,6 @@
         "if_mana_below": 0.15,
         "refill_potions": true,
         "mark_zone": ""
-      }
-    },
-    {
-      "id": "t_sync_players_1_state_3",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
-      "position": {
-        "x": 2639.9998649583054,
-        "y": 0.00021952501634925348
-      },
-      "params": {
-        "use_favorite_realm": true
       }
     },
     {
@@ -225,16 +213,6 @@
     {
       "trigger": "advance",
       "source": "t_sync_players_1_state_2",
-      "dest": "t_sync_players_1_state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_sync_players_1_state_3",
       "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
@@ -249,13 +227,12 @@
       "label": "Sync players",
       "members": [
         "t_sync_players_1_state_1",
-        "t_sync_players_1_state_2",
-        "t_sync_players_1_state_3"
+        "t_sync_players_1_state_2"
       ],
       "color": 1,
       "source": {
         "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
-        "version": 3,
+        "version": 4,
         "inputs": {},
         "ports": {
           "entry_start": {
@@ -267,7 +244,7 @@
           "exit_1": {
             "from": [
               [
-                "state_3",
+                "state_2",
                 "SUCCESS"
               ]
             ]
@@ -314,7 +291,7 @@
         ]
       },
       {
-        "text": "Name the boss, as the Players tab shows it",
+        "text": "Enter the boss's enemy ID, copied from the Players tab",
         "targets": [
           {
             "state": "t_4",

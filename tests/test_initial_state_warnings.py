@@ -145,7 +145,7 @@ def test_the_sidebar_follows_the_config_undo_swapped_in(qapp):
 
 def test_drops_added_after_an_undo_reach_the_saved_config_and_the_keep_list(qapp):
     """Possible Drops kept writing into the object undo discarded: the drop showed in its
-    own list, but not in the Setup keep-list picker, and the save wrote ``drops: []``."""
+    own list, but not in the Option Values keep-list picker, and the save wrote ``drops: []``."""
     h = _Harness(_config(node_type="quicksell"))
     h.undo_an_edit()
 
@@ -153,5 +153,5 @@ def test_drops_added_after_an_undo_reach_the_saved_config_and_the_keep_list(qapp
 
     assert h.right.possible_drops.config is h.canvas.config
     assert [d.name for d in h.canvas.config.drops] == ["Onyx"]
-    picker = h.sidebar.setup.option_widgets[qs.OPTION_KEEP_LIST]
+    picker = h.sidebar.option_values.option_widgets[qs.OPTION_KEEP_LIST]
     assert [r.text(_COL_ITEM) for r in picker._rows] == ["Onyx"]

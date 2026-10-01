@@ -202,6 +202,10 @@ class MainWindow(QMainWindow):
         self.bot_canvas = BotCanvas()
         self.left_sidebar = LeftSidebar(self.bot_canvas.param_panel)
         self.right_sidebar = RightSidebar()
+        # The document the Setup tab was last decided for, and whether it has been shown
+        # for that document: see _sync_setup_tab.
+        self._setup_document: str | None = None
+        self._setup_tab_kept = False
         self._game_view_panel = GameViewPanel()
         self.game_view = self._game_view_panel.game_view
         # The authoring utilities in Bar A (#81); AppController drives them.
@@ -219,20 +223,30 @@ class MainWindow(QMainWindow):
 
         # Wire wiki import from handle_combat node panel → possible drops list
         self.bot_canvas.param_panel.wiki_import_completed.connect(self.right_sidebar.possible_drops.add_drops)
-        # Wire drop list edits → the quicksell keep-list picker in Setup, so it lists
+        # Wire drop list edits → the quicksell keep-list picker in Option Values, so it lists
         # the current drops. The picker is a bot option now, so it lives over there.
         self.right_sidebar.possible_drops.drops_changed.connect(self.left_sidebar.refresh_drops)
         # A setup step can ask for the drop list, so its tick follows the list.
-        self.right_sidebar.possible_drops.drops_changed.connect(self.bot_canvas.refresh_setup_page)
+        self.right_sidebar.possible_drops.drops_changed.connect(self.bot_canvas.refresh_setup)
+        # The Setup tab: a template's steps, beside the node each one points at. The
+        # canvas says when they may have moved; the tab's edits to a draft go back
+        # through the canvas, which owns the undo history.
+        setup = self.right_sidebar.setup_panel
+        self.bot_canvas.setup_changed.connect(self._sync_setup_tab)
+        self.bot_canvas.setup_tab_requested.connect(self._reopen_setup_tab)
+        self.bot_canvas.drops_imported.connect(self.right_sidebar.possible_drops.add_drops)
+        setup.go_to_requested.connect(self.bot_canvas.show_setup_target)
+        setup.drops_requested.connect(self.right_sidebar.switch_to_drops)
+        setup.import_requested.connect(self.bot_canvas.import_drops_for)
+        setup.edit_starting.connect(self.bot_canvas.begin_setup_edit)
+        setup.structural_change.connect(self.bot_canvas.begin_setup_change)
+        setup.changed.connect(self.bot_canvas.setup_edited)
         # Wire Browse Bot Library menu action
         self.action_browse_library.triggered.connect(self.bot_canvas.open_library_dialog)
         # The combat strategy dialog is owned by the Combat tab: it is the surface that
         # has to reload when the dialog closes, and routing through it keeps one caller.
         # Wrapped: ``triggered`` passes a checked flag, which would arrive as ``kind``.
         self.action_combat_strategies.triggered.connect(lambda: self.left_sidebar.combat_tab.open_combat_dialog())
-        # The setup card heading Setup: how many template steps are left, and the way to them.
-        self.bot_canvas.setup_left_changed.connect(self.left_sidebar.set_setup_steps_left)
-        self.left_sidebar.setup_requested.connect(self.bot_canvas.begin_setup)
         # Wire sidebar tab switching from canvas
         self.bot_canvas.tab_switch.connect(self._on_canvas_tab_switch)
         # Wire bot status to game view panel title bar
@@ -263,10 +277,10 @@ class MainWindow(QMainWindow):
         )
         self._game_view_panel.manage_accounts_requested.connect(lambda: self._open_settings(tab_name="game"))
         self._game_view_panel.dismiss_launch_requested.connect(self._dismiss_launch)
-        # Setup's rows name the app setting they fall back to; this is the way there.
+        # Option Values's rows name the app setting they fall back to; this is the way there.
         self.left_sidebar.app_settings_requested.connect(lambda: self._open_settings(tab_name="bot"))
         # ...and back: those rows resolve through the values that dialog just wrote.
-        self.settings_applied.connect(self.left_sidebar.refresh_setup_values)
+        self.settings_applied.connect(self.left_sidebar.refresh_option_values)
         # Straight to the one editor the gear asks for. It used to go through
         # _open_settings, which built the whole Settings dialog to reach it and left it
         # standing behind — see _edit_launch_profile.
@@ -625,6 +639,44 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------
     # Internal
     # ------------------------------------------------------------------
+
+    def _sync_setup_tab(self) -> None:
+        """Redraw the Setup tab from the canvas, and decide whether it is there at all.
+
+        There for a template draft, and for a bot with steps still to do. A bot whose
+        steps are all done gets no tab when it is opened, but one that finishes them
+        keeps it until it is closed -- a tab that vanished on the last tick would take
+        "All 5 done" with it -- and Bar B's template chip brings it back.
+        """
+        canvas = self.bot_canvas
+        config = canvas.config
+        document = config.id if config is not None else None
+        if document != self._setup_document:
+            self._setup_document = document
+            self._setup_tab_kept = False
+            fresh = True
+        else:
+            fresh = False
+        draft = config is not None and config.is_template
+        wanted = draft or canvas.setup_steps_left > 0 or (self._setup_tab_kept and canvas.has_setup_steps)
+        self.right_sidebar.setup_panel.show_document(
+            config if (draft or canvas.has_setup_steps) else None, canvas.setup_progress(), canvas.subgraph_library
+        )
+        was_shown = self.right_sidebar.setup_tab_shown
+        self.right_sidebar.set_setup_tab_shown(wanted)
+        if wanted:
+            self._setup_tab_kept = True
+            if not draft and (fresh or not was_shown):
+                # Steps to do are the first thing to know about a bot just opened.
+                self.right_sidebar.switch_to_setup()
+
+    def _reopen_setup_tab(self) -> None:
+        """Bar B's template chip: show the bot's setup steps again, done or not."""
+        if not self.bot_canvas.has_setup_steps:
+            return
+        self._setup_tab_kept = True
+        self._sync_setup_tab()
+        self.right_sidebar.switch_to_setup()
 
     def _on_canvas_tab_switch(self, tab: str) -> None:
         if tab == "log":

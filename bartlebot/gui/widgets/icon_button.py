@@ -12,7 +12,7 @@ handed to ``setIcon`` is a snapshot of whichever theme was active then -- stale
 after a switch, with no stylesheet anywhere for a text search to find.  That is
 the whole reason this is a class rather than three lines at each call site.
 
-The second reason is the *enabled* tint.  In the Setup gutter the revert button
+The second reason is the *enabled* tint.  In the Option Values gutter the revert button
 is disabled on most rows and its being enabled is one of the two marks saying
 "this value is yours"; the other is the override bar it sits against.  So the
 accent is spent on the enabled state and the icon falls back to the ordinary

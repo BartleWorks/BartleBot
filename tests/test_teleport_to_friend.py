@@ -449,7 +449,7 @@ def test_resolve_target_fails_with_a_pointer_when_nothing_is_configured():
     target = ttf.resolve_target([], {"to_zone": _HOUSE}, "")
 
     assert not target.name
-    assert "Setup" in target.error and "Settings" in target.error
+    assert "Options" in target.error and "Settings" in target.error
 
 
 def test_a_literal_friend_name_still_wins_but_is_marked_deprecated():

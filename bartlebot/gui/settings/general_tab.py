@@ -108,7 +108,7 @@ class GeneralTab(QWidget):
         self._left_sb.setSuffix(" px")
         self._left_sb.setValue(sm.get_general("left_sidebar_width", default=LEFT_SIDEBAR_MIN_WIDTH))
         layout_form.addRow("Default left sidebar width:", self._left_sb)
-        layout_form.addRow(hint("The bot's own configuration — Setup and Combat, or Options and Properties."))
+        layout_form.addRow(hint("The bot's own configuration — Options and Combat, or Options and Properties."))
 
         self._right_sb = QSpinBox()
         # The measured floor, not the constant: on a machine with larger system text the

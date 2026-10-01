@@ -55,7 +55,7 @@ read on purpose.
 
 | file | covers |
 |---|---|
-| `bartlebot/gui/CLAUDE.md` | theming, popup menus, widget parenting, qasync, task lifetime, tile slots, which panel owns what, Setup vs. Options |
+| `bartlebot/gui/CLAUDE.md` | theming, popup menus, widget parenting, qasync, task lifetime, tile slots, which panel owns what, Option Values vs. Options |
 | `bartlebot/gui/settings/CLAUDE.md` | `SettingsManager`, the settings dialog, the Bot tab |
 | `bartlebot/nodes/CLAUDE.md` | adding a node, timing, multi-client coordination, session logs, modal dialogs, UI paths |
 | `tests/CLAUDE.md` | what a change ships with, keeping the suite fast, one QApplication per worker |

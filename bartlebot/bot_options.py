@@ -16,7 +16,7 @@ this decides between them, so precedence is testable without a settings file.
 
 Following ``resolve_combat``: never raise, always fall back, always say which
 level answered.  The source string is user-facing, and is the *same* string the
-Setup surface prints under the row -- see ``SOURCE_OVERRIDE`` and friends below.
+Option Values surface prints under the row -- see ``SOURCE_OVERRIDE`` and friends below.
 """
 
 from __future__ import annotations
@@ -58,7 +58,7 @@ def is_set(value: Any) -> bool:
 
 
 # One vocabulary for the four levels, used wherever a resolution is *named* -- the
-# source caption under a Setup row, the Reset tooltip, the safety dialog's summary,
+# source caption under an Option Values row, the Reset tooltip, the safety dialog's summary,
 # and the once-per-run line ``BotMachine.get_option`` writes to the session log.
 #
 # There were two before, and they disagreed about what the levels were called: these
@@ -383,7 +383,7 @@ def options_signature(config, specs=None) -> tuple:
     ``BotOptionSpec`` at all.  Composing costs 0.05ms, so asking whether the answer
     moved is three orders of magnitude cheaper than rebuilding regardless.
 
-    Carries more than the composed list: the id, because Setup resolves the user's
+    Carries more than the composed list: the id, because Option Values resolves the user's
     overrides through it and Save As moves it under a loaded bot; the drop table,
     because the quicksell keep list is picked from it; and which names are
     *derived*, because that is what decides whether a row on the Options surface
@@ -423,7 +423,7 @@ def values_agree(a, b) -> bool:
     answer.
 
     Used at both ends of the same question: the save-time prune asking whether a
-    stored declaration says anything the composed one does not, and the Setup view
+    stored declaration says anything the composed one does not, and the Option Values view
     asking whether the value just typed is already what the option resolves to.
     """
     if isinstance(a, bool) != isinstance(b, bool):
@@ -514,7 +514,7 @@ def resolve_for_config(
     declaration and the node default come from the bot and the registry, which
     this gathers, while the override and the app setting come from
     ``SettingsManager``, which this module must not import.  So the caller passes
-    those two in -- ``BotMachine`` at run time, the Setup view for display.
+    those two in -- ``BotMachine`` at run time, the Option Values view for display.
 
     Returns ``None`` when *name* is not an option of this bot at all: neither
     declared in its file nor required by any node the registry knows.

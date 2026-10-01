@@ -28,7 +28,7 @@ class BotOptionSpec:
         maximum:     Highest value the option may take, or None for no ceiling.
         suffix:      Unit shown inside the control, e.g. " s". Presentation only; the
                      stored value is the bare number.
-        depends_on: Name of a **bool bot option** this one is a child of. The Setup
+        depends_on: Name of a **bool bot option** this one is a child of. The Option Values
                      surface indents the child under it and disables it while the parent
                      resolves false; nothing else changes -- the child is still resolved
                      the ordinary four-level way, and its stored value survives the
@@ -53,11 +53,11 @@ class BotOptionSpec:
 
                      This is for an option one mode of a node reads and the other ignores:
                      teleport_to_friend reads Friend Name only when it is not targeting a
-                     hooked player, so a Friend Name row in Setup for a bot whose every
+                     hooked player, so a Friend Name row in Option Values for a bot whose every
                      port is to a hooked player is a field that does nothing. An absent
                      param counts as off, so a file written before the param existed keeps
                      the option it still needs.
-        group:       Which card the option is drawn in on Setup and Options -- one of the
+        group:       Which card the option is drawn in on Option Values and Options -- one of the
                      ``GROUP_*`` names in ``bartlebot.option_groups``. Every node-declared
                      option names one; ``test_every_node_option_declares_a_group`` keeps it
                      so. An option no node declares belongs to *This dungeon*.

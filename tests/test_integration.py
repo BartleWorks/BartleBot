@@ -968,7 +968,7 @@ def test_no_bot_declares_an_option_nothing_reads():
 
     An option a node requires is read by that node. An option the *author* hand-added
     has no node behind it, so a transition guarding on it is the only thing that can
-    ever read it -- without one it is a switch wired to nothing, and the Setup surface
+    ever read it -- without one it is a switch wired to nothing, and the Option Values surface
     offers it to the user as though it did something. ``graveyard.json`` carried two
     copied out of ``castle_darkmoor.json`` along with a graph that has no Observatory
     and no treasure chest in it.

@@ -3,7 +3,7 @@
 This is the author's surface: what options exist, what type each is, what the
 author recommends, and what the tooltip says.  Editing a default here changes the
 **recommendation**, not the user's value -- that lives in ``settings.json`` and is
-edited in ``setup_section``, which is the other half of the split.
+edited in ``option_values_section``, which is the other half of the split.
 
 Only hand-added options are editable.  An option a node requires is derived from
 its ``NodeSpec`` on every load (see ``bot_options.compose_options``), so renaming
@@ -15,7 +15,7 @@ allowed, and materialises the declaration into the file through
 Both fixups an option name needs on a rename are done here, because this is the
 only place a name changes: the two transition flag forms, and the override store.
 
-The rows sit in the same folding cards as Setup's (#138), folded the same way -- the
+The rows sit in the same folding cards as Option Values's (#138), folded the same way -- the
 answer is one, remembered for every bot and shared by both tabs -- so a mode switch
 does not move a row to a different place. Enable Quicksell is the user's alone and is
 not on this surface at all, so the Quicksell card here has no header switch; a card
@@ -129,7 +129,7 @@ class _AddOptionDialog(ThemedMixin, QDialog):
     surfaces use.
 
     **Delete lives here**, in edit mode only, and it is the reason the row gutter
-    can be one column wide.  Setup's gutter puts the irreversible action furthest
+    can be one column wide.  Option Values's gutter puts the irreversible action furthest
     from the text because reverting has no undo; deleting an option is strictly
     worse -- it takes the declaration, both transition flag forms, and the user's
     stored value -- so a 20px icon-only target a few pixels from the ``?`` was the
@@ -333,7 +333,7 @@ class _AddOptionDialog(ThemedMixin, QDialog):
 class _EditButton(IconButton):
     """Opens the declaration dialog for one hand-added option.
 
-    It takes the slot Setup gives revert, which is what keeps the two surfaces'
+    It takes the slot Option Values gives revert, which is what keeps the two surfaces'
     ``?`` columns at the same x.  Delete is *not* beside it: see
     ``_AddOptionDialog``, which owns that action now.
 
@@ -418,7 +418,7 @@ class OptionsSection(SidebarSection):
         outer.addWidget(self._add_option_btn)
 
         self.set_content_layout(outer)
-        # The same fold state as Setup's, and the same heading actions.
+        # The same fold state as Option Values's, and the same heading actions.
         self._folds = CardFolds(self, self._sm)
 
     # ------------------------------------------------------------------
@@ -449,7 +449,7 @@ class OptionsSection(SidebarSection):
         return self._folds.card_menu(group)
 
     def showEvent(self, event) -> None:  # noqa: N802 - Qt override
-        """Pick up folds made on the Setup tab while this one was not showing."""
+        """Pick up folds made on the Option Values tab while this one was not showing."""
         self._folds.reload()
         super().showEvent(event)
 
@@ -533,7 +533,7 @@ class OptionsSection(SidebarSection):
 
     def _rebuild_options(self, options: list) -> None:
         # A value that is the user's by definition has no declaration to edit, so it
-        # is not on the author's surface at all -- it is a row in Setup instead.  A
+        # is not on the author's surface at all -- it is a row in Option Values instead.  A
         # disabled row here would only invite the question this answers.
         options = [o for o in options if not is_user_owned(o.name)]
         for card in self._cards.values():
@@ -559,7 +559,7 @@ class OptionsSection(SidebarSection):
         self._no_options_lbl.hide()
         for group in self._groups:
             card = OptionCard(group.id, group.title)
-            # A header option is a row here: the switch is how Setup sets a *value*,
+            # A header option is a row here: the switch is how Option Values sets a *value*,
             # and this surface edits declarations, in the same controls as any other.
             for opt in group.options:
                 row = self._build_row(opt, connected, derived=opt.name in required_names)
@@ -588,9 +588,9 @@ class OptionsSection(SidebarSection):
     def _build_row(self, opt, connected: int, *, derived: bool) -> QWidget:
         """One option's row: the gutter, then the head line, control and prose.
 
-        The same anatomy Setup uses, because the two tabs are two views of one list
+        The same anatomy Option Values uses, because the two tabs are two views of one list
         and a row that changes shape between them reads as a different row.  What
-        differs is the middle gutter slot -- Setup reverts a value, this edits a
+        differs is the middle gutter slot -- Option Values reverts a value, this edits a
         declaration -- and that a *derived* option has nothing to edit at all, since
         it is re-composed from its NodeSpec on every load and a rename or a delete
         would not survive the round trip.  Its default is still the author's to
@@ -637,7 +637,7 @@ class OptionsSection(SidebarSection):
 
         self._connect_option_widget(widget, opt)
 
-        # Never painted here: the bar and revert are one affordance in Setup, and a
+        # Never painted here: the bar and revert are one affordance in Option Values, and a
         # lone marker with no paired action would be a fact to correlate rather than
         # something to act on.  Its width is what lines the two tabs' ? columns up.
         bar = OverrideBar()
@@ -698,7 +698,7 @@ class OptionsSection(SidebarSection):
     def _on_show_all_toggled(self, shown: bool) -> None:
         """Set every row at once, and remember the choice.
 
-        The same ``settings.json`` key Setup writes: folding the prose away is a
+        The same ``settings.json`` key Option Values writes: folding the prose away is a
         property of the reader, so it should not have to be done twice.
         """
         self._show_descriptions = shown

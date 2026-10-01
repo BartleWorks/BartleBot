@@ -13,7 +13,7 @@ rewritten: ``_Swappable`` is that section's mechanism, moved here whole, and the
   plus the bot templates make it moot;
 * **Initial State** and **Recovery State** are badges on the nodes themselves,
   so the labels only ever restated the graph;
-* the **full description** moved to the top of Setup (read) and Options (edit),
+* the **full description** moved to the top of Option Values (read) and Options (edit),
   because eliding it here would hide the ``REQUIREMENTS:`` blocks four bots carry.
 
 The header does not own the buttons.  ``BotCanvas`` builds, wires and *groups* them,
@@ -289,6 +289,21 @@ class _ElidedLabel(ThemedMixin, QLabel):
         self.setStyleSheet(f"color: {getattr(THEME, self._color_token)}; font-size: {THEME.font_body_px}px;")
 
 
+class _TemplateChip(NeutralPill):
+    """The pill naming the template a bot was made from. Clicking it asks for the bot's setup steps."""
+
+    clicked = pyqtSignal()
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__("", parent)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def mouseReleaseEvent(self, event) -> None:  # noqa: N802 - Qt override
+        if event.button() == Qt.MouseButton.LeftButton and self.rect().contains(event.position().toPoint()):
+            self.clicked.emit()
+        super().mouseReleaseEvent(event)
+
+
 class BotHeader(ThemedMixin, QWidget):
     """Three columns above the graph; only the leftmost is two rows deep.
 
@@ -317,6 +332,8 @@ class BotHeader(ThemedMixin, QWidget):
     """
 
     metadata_changed = pyqtSignal()
+    # The template chip was clicked: show the bot's setup steps.
+    template_chip_clicked = pyqtSignal()
 
     def __init__(
         self,
@@ -369,6 +386,13 @@ class BotHeader(ThemedMixin, QWidget):
         self._version_slot = _Swappable(self._version_pill, self._version_edit)
         title_row.addWidget(self._name_slot, 0, Qt.AlignmentFlag.AlignVCenter)
         title_row.addWidget(self._version_slot, 0, Qt.AlignmentFlag.AlignVCenter)
+        # Which template the bot was made from, and the way back to its setup steps once
+        # they are done and their tab has gone. A pill the version pill's height, so the
+        # bar is the same height with it or without.
+        self._template_chip = _TemplateChip(title)
+        self._template_chip.clicked.connect(self.template_chip_clicked)
+        title_row.addWidget(self._template_chip, 0, Qt.AlignmentFlag.AlignVCenter)
+        self._template_chip.setVisible(False)
         self._authors_lbl = _ElidedLabel()
         self._authors_edit = QLineEdit()
         self._authors_edit.setPlaceholderText("Author(s)")
@@ -492,8 +516,21 @@ class BotHeader(ThemedMixin, QWidget):
     # Public API
     # ------------------------------------------------------------------
 
+    def set_template_origin(self, text: str | None) -> None:
+        """What the template chip reads, such as "Boss Farmer v2", or ``None`` for a bot made from none."""
+        self._template_chip.setText(text or "")
+        self._template_chip.setToolTip(f"Made from the template {text}. Click for its setup steps." if text else "")
+        self._template_chip.setVisible(bool(text))
+
+    @property
+    def template_chip(self) -> QLabel:
+        return self._template_chip
+
     def set_config(self, config: BotConfig | None) -> None:
         self._config = config
+        if config is None or config.template is None:
+            # The chip names a bot's template; the controller sets it again for one that has one.
+            self.set_template_origin(None)
         self._suppress = True
         if config is None:
             self._name_lbl.setText(_NO_BOT)

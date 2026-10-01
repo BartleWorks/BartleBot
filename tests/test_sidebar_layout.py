@@ -1,6 +1,6 @@
 """Which panel holds what, after the layout reorganization.
 
-The left sidebar is now two tabs whose *identity* depends on the mode — Setup and
+The left sidebar is now two tabs whose *identity* depends on the mode — Option Values and
 Combat while running, Options and Properties while editing — which is §3.5 of the
 declarations/overrides plan: the two surfaces are separated by context, never by a
 toggle inside one panel.  So the thing worth pinning down is that no tab is
@@ -48,7 +48,7 @@ def sidebar(qapp) -> LeftSidebar:
 
 
 def test_run_mode_offers_setup_and_combat(sidebar):
-    assert _tabs(sidebar) == ["Setup", "Combat"]
+    assert _tabs(sidebar) == ["Options", "Combat"]
 
 
 def test_edit_mode_offers_options_and_properties(sidebar):
@@ -58,7 +58,7 @@ def test_edit_mode_offers_options_and_properties(sidebar):
 
 
 def test_each_mode_lands_on_its_first_tab(sidebar):
-    """Setup being the Run-mode default is the whole pre-run configuration story:
+    """Option Values being the Run-mode default is the whole pre-run configuration story:
     adjacency to the Run button rather than a gate in front of it."""
     sidebar.setCurrentIndex(1)
     sidebar.set_editable(True)
@@ -68,7 +68,7 @@ def test_each_mode_lands_on_its_first_tab(sidebar):
 
 def test_switching_back_and_forth_keeps_the_same_widgets(sidebar):
     param_panel = sidebar._param_panel
-    setup_page = sidebar._setup_page
+    setup_page = sidebar._values_page
 
     sidebar.set_editable(True)
     sidebar.set_editable(False)
@@ -82,8 +82,8 @@ def test_a_tab_the_mode_does_not_offer_is_parked_rather_than_orphaned(sidebar):
     """``removeTab`` leaves a widget parentless, which makes it a top-level window."""
     sidebar.set_editable(True)
 
-    assert sidebar._setup_page.parent() is not None
-    assert not sidebar._setup_page.isVisibleTo(sidebar)
+    assert sidebar._values_page.parent() is not None
+    assert not sidebar._values_page.isVisibleTo(sidebar)
 
 
 def test_switching_to_a_tab_the_mode_does_not_have_is_a_no_op(sidebar):
@@ -92,7 +92,7 @@ def test_switching_to_a_tab_the_mode_does_not_have_is_a_no_op(sidebar):
     sidebar.switch_to_properties()
 
     assert sidebar.currentIndex() == 0
-    assert _tabs(sidebar)[0] == "Setup"
+    assert _tabs(sidebar)[0] == "Options"
 
 
 def test_switching_to_combat_finds_it_by_widget_not_by_index(sidebar):
@@ -126,7 +126,7 @@ def test_closing_the_bot_hides_the_description(sidebar):
     sidebar.set_config(_config(description="Farms Jade Oni."))
     sidebar.set_config(None)
 
-    assert not sidebar.setup_description.isVisibleTo(sidebar._setup_page)
+    assert not sidebar.setup_description.isVisibleTo(sidebar._values_page)
 
 
 # ---------------------------------------------------------------------------
@@ -225,7 +225,7 @@ def test_a_requirements_block_makes_the_editor_grow(sidebar):
         _config(
             description=(
                 "Endlessly farms the Spiral Cup Gauntlet.\n\n"
-                "REQUIREMENTS: Set Friend Name in Setup to the friend who owns the "
+                "REQUIREMENTS: Set Friend Name in Option Values to the friend who owns the "
                 "gauntlet. Your players enter by porting to them rather than by "
                 "walking in, so that friend must be standing on the entrance sigil."
             )
@@ -237,7 +237,7 @@ def test_a_requirements_block_makes_the_editor_grow(sidebar):
 
 def test_the_editor_stops_growing_before_it_takes_the_tab(sidebar):
     """Three gauntlets run to 20 lines at the default sidebar width.  They scroll
-    here; the wrapping label above Setup is where a long block is read in full."""
+    here; the wrapping label above Option Values is where a long block is read in full."""
     editor = sidebar.options_description.editor
     assert editor is not None
     sidebar.set_config(_config(description="\n".join(f"line {i}" for i in range(40))))
@@ -246,7 +246,7 @@ def test_the_editor_stops_growing_before_it_takes_the_tab(sidebar):
 
 
 def test_the_read_only_copy_follows_the_editor(sidebar):
-    """A mode switch re-binds neither copy, so the Setup label would otherwise go
+    """A mode switch re-binds neither copy, so the Option Values label would otherwise go
     on showing whatever the bot said when it was opened."""
     sidebar.set_config(_config())
 
@@ -394,7 +394,7 @@ def test_a_graph_edit_that_changes_no_option_rebuilds_nothing(sidebar):
     costs 0.05ms."""
     config = _config(options=[BotOptionModel(name="repeat", type="bool", default=True)])
     sidebar.set_config(config)
-    before = sidebar.setup.option_widgets
+    before = sidebar.option_values.option_widgets
     declarations = sidebar.options.option_widgets
     assert before and declarations  # otherwise the assertions below hold vacuously
 
@@ -402,7 +402,7 @@ def test_a_graph_edit_that_changes_no_option_rebuilds_nothing(sidebar):
     sidebar.refresh_options(config)
 
     # The same widget objects, not merely the same names: a rebuild replaces them.
-    assert sidebar.setup.option_widgets == before
+    assert sidebar.option_values.option_widgets == before
     assert sidebar.options.option_widgets == declarations
 
 
@@ -414,7 +414,7 @@ def test_an_edit_that_adds_a_required_option_does_rebuild(sidebar):
     config.states.append(StateModel(id="b", node_type="interact", params={}))
     sidebar.refresh_options(config)
 
-    assert "Safety Delay" in sidebar.setup.option_widgets
+    assert "Safety Delay" in sidebar.option_values.option_widgets
 
 
 def test_a_replacement_config_rebinds_even_when_it_says_the_same_thing(sidebar):
@@ -423,26 +423,26 @@ def test_a_replacement_config_rebinds_even_when_it_says_the_same_thing(sidebar):
     write through the object they hold: one left bound to the replaced config edits
     something nothing saves."""
     sidebar.set_config(_config(options=[BotOptionModel(name="repeat", type="bool", default=True)]))
-    before = sidebar.setup.option_widgets
+    before = sidebar.option_values.option_widgets
 
     replacement = _config(options=[BotOptionModel(name="repeat", type="bool", default=True)])
     sidebar.refresh_options(replacement)
 
-    assert sidebar.setup.option_widgets != before
+    assert sidebar.option_values.option_widgets != before
     assert sidebar.config is replacement
 
 
 def test_save_as_re_resolves_the_rows_against_the_new_id(sidebar):
-    """A fork inherits none of the original's stored values, so Setup must not go on
+    """A fork inherits none of the original's stored values, so Option Values must not go on
     showing them.  Same object, new id -- the one case identity cannot see."""
     config = _config(options=[BotOptionModel(name="repeat", type="bool", default=True)])
     sidebar.set_config(config)
-    before = sidebar.setup.option_widgets
+    before = sidebar.option_values.option_widgets
 
     config.id = "forked-bot"
     sidebar.refresh_options(config)
 
-    assert sidebar.setup.option_widgets != before
+    assert sidebar.option_values.option_widgets != before
 
 
 # ---------------------------------------------------------------------------
@@ -500,11 +500,11 @@ def test_leaving_the_players_tab_lets_the_client_poll_slow_down(qapp):
 
 
 def _setup_geometry(sidebar: LeftSidebar):
-    """``(y of the Setup section, its height, y of its body)`` inside the scroll content."""
+    """``(y of the Option Values section, its height, y of its body)`` inside the scroll content."""
     qapp = QApplication.instance()
     for _ in range(5):
         qapp.processEvents()
-    section = sidebar.setup
+    section = sidebar.option_values
     content = sidebar.widget(0).widget()
     top = section.mapTo(content, section.rect().topLeft()).y()
     body_top = section.body.mapTo(content, section.body.rect().topLeft()).y()
@@ -528,17 +528,17 @@ def _wordy_config() -> BotConfig:
 def test_showing_descriptions_grows_the_setup_section_downwards(sidebar):
     sidebar.resize(400, 600)
     sidebar.set_config(_wordy_config())
-    sidebar.setup.set_descriptions_visible(False)
+    sidebar.option_values.set_descriptions_visible(False)
     sidebar.show()
     try:
         folded_top, folded_height, folded_body_top = _setup_geometry(sidebar)
 
-        sidebar.setup.set_descriptions_visible(True)
+        sidebar.option_values.set_descriptions_visible(True)
         shown_top, shown_height, shown_body_top = _setup_geometry(sidebar)
 
         assert shown_height > folded_height, "the descriptions did not actually unfold"
         assert shown_top == folded_top
         assert shown_body_top == folded_body_top
     finally:
-        sidebar.setup.set_descriptions_visible(False)
+        sidebar.option_values.set_descriptions_visible(False)
         sidebar.hide()

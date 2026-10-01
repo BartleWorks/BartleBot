@@ -46,6 +46,7 @@ from bartlebot.bot.schema import (
     PORT_NODE_TYPES,
     BotConfig,
     SetupStep,
+    SetupTarget,
     SubgraphDefinition,
     SubgraphInput,
     SubgraphInputBinding,
@@ -82,6 +83,7 @@ from bartlebot.gui.canvas.subgraph_widgets import (
     ViewFrame,
 )
 from bartlebot.gui.canvas.undo_manager import UndoManager
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
@@ -112,6 +114,7 @@ from bartlebot.subgraphs import (
     reresolve_member_params,
     sync_linked_values,
 )
+from bartlebot.wiki_pages import WIKI_PAGE_PARAM
 
 logger = logging.getLogger(__name__)
 
@@ -1077,6 +1080,13 @@ class BotCanvas(QWidget):
     mode_changed = pyqtSignal(BotMode)
     # How many of the open bot's template setup steps are not done; 0 for anything else.
     setup_left_changed = pyqtSignal(int)
+    # The setup steps, or how the document stands against them, may have moved: the Setup
+    # tab redraws from ``config``, ``setup_progress()`` and ``subgraph_library``.
+    setup_changed = pyqtSignal()
+    # Bar B's template chip: bring the Setup tab back for a bot whose steps are done.
+    setup_tab_requested = pyqtSignal()
+    # Drops imported for a fight from the Setup tab, for the possible-drops list to take.
+    drops_imported = pyqtSignal(list)
     run_requested = pyqtSignal()
     pause_requested = pyqtSignal()
     resume_requested = pyqtSignal()
@@ -1441,9 +1451,9 @@ class BotCanvas(QWidget):
         self._param_panel.unlink_input_requested.connect(self.unlink_param)
         self._param_panel.promote_node_requested.connect(self._on_promote_node_requested)
         self._param_panel.definition_changed.connect(self._on_definition_changed)
-        self._param_panel.template_changed.connect(self._on_template_changed)
-        self._param_panel.drops_requested.connect(self._on_drops_requested)
-        self._param_panel.template_page.set_library_getter(lambda: self._subgraph_library)
+        self._param_panel.add_setup_target_requested.connect(self._on_add_setup_target_requested)
+        self._param_panel.remove_setup_target_requested.connect(self.remove_setup_target)
+        self._toolbar.template_chip_clicked.connect(self.setup_tab_requested)
         self._param_panel.add_port_requested.connect(self._on_add_port_requested)
         self._param_panel.delete_port_requested.connect(self._on_delete_port_requested)
         self._scene.save_region_as_subgraph_requested.connect(self.save_region_as_subgraph)
@@ -1597,6 +1607,10 @@ class BotCanvas(QWidget):
     def is_template(self) -> bool:
         """Whether the open document is a template draft rather than a bot."""
         return self._config is not None and self._config.is_template
+
+    def set_template_origin(self, name: str | None, version: int | None = None) -> None:
+        """For a bot made from a template: what Bar B's template chip reads. ``None`` for any other document."""
+        self._toolbar.set_template_origin(f"{name} v{version}" if name else None)
 
     def set_template_context(self, latest_version: int | None, reserved_ids: Iterable[str] = ()) -> None:
         """For a template draft: its latest released version, for the crumb, and the ids no edit may mint.
@@ -2727,7 +2741,7 @@ class BotCanvas(QWidget):
         self._refresh_errors()
         self._scene.refresh_region_states(self._compose_report)
         self._update_validation_badge()
-        self.refresh_setup_page()
+        self._announce_setup_left()
         self._toolbar.refresh_tag_suggestions()
         self._minimap.fit_to_scene()
         if self._search_bar.isVisible():
@@ -3210,20 +3224,9 @@ class BotCanvas(QWidget):
             self._param_panel.show_signature(self._config)
 
     def _show_default_page(self) -> None:
-        """What the panel shows with nothing selected.
-
-        In Edit mode: a definition's signature, a template draft's steps to edit, or
-        the setup steps of a bot made from a template. Otherwise nothing.
-        """
-        config = self._config
-        if config is None or self._mode != BotMode.EDIT:
-            self._param_panel.show_idle()
-        elif config.is_definition:
-            self._param_panel.show_signature(config)
-        elif config.is_template:
-            self._param_panel.show_template(config)
-        elif self._scene.step_list:
-            self._param_panel.show_template(config, self._scene.setup_progress())
+        """What the panel shows with nothing selected: a definition's signature, or nothing."""
+        if self._config is not None and self._config.is_definition and self._mode == BotMode.EDIT:
+            self._param_panel.show_signature(self._config)
         else:
             self._param_panel.show_idle()
 
@@ -3239,8 +3242,6 @@ class BotCanvas(QWidget):
         self._scene.set_base_setup_steps(self._config.id, steps)
         self._refresh_errors()
         self._update_validation_badge()
-        if not self._scene.selectedItems():
-            self._show_default_page()
         self._announce_setup_left()
 
     @property
@@ -3252,36 +3253,139 @@ class BotCanvas(QWidget):
         return sum(1 for status in self._scene.setup_progress() if not status.done)
 
     def _announce_setup_left(self) -> None:
+        """Say that the setup steps, or how the document stands against them, may have moved."""
         left = self.setup_steps_left
         if left != self._setup_left:
             self._setup_left = left
             self.setup_left_changed.emit(left)
+        self.setup_changed.emit()
+
+    @property
+    def has_setup_steps(self) -> bool:
+        """Whether the open bot has setup steps at all, done or not. False for a draft."""
+        config = self._config
+        return config is not None and not config.is_template and bool(self._scene.step_list)
+
+    @property
+    def subgraph_library(self) -> SubgraphLibrary | None:
+        """The session's subgraph library, which a subgraph node's inputs are read through."""
+        return self._subgraph_library
 
     def setup_progress(self) -> list[setup_steps.StepStatus]:
         """How the open document stands against its template's setup steps, in order."""
         return self._scene.setup_progress()
 
-    def begin_setup(self) -> None:
-        """Go to where setup is done: Edit mode, nothing selected, so Properties shows the steps."""
+    def show_setup_target(self, display_id: str) -> None:
+        """Go to the node a setup step asks about: a state id, or a region id for a subgraph node.
+
+        A fill-in is a value in the bot file, so this is where it is filled: Edit mode,
+        with the node selected and Properties on it. A click in Run mode switches first.
+        """
         self.enter_edit_mode()
         if self._mode != BotMode.EDIT:
             return
-        self._scene.clearSelection()
-        self._show_default_page()
-        self.tab_switch.emit("properties")
+        # Selecting is what brings Properties forward, on the node's page.
+        self.select_state(display_id)
 
-    def _on_template_changed(self) -> None:
-        """The template page wrote into a draft: its blurb or its steps, which move what counts as a fill-in."""
+    # -- A template draft's steps, edited from the Setup tab ------------------
+
+    def begin_setup_edit(self, desc: str) -> None:
+        """A typed edit to a draft's blurb or a step's text is about to land: open its debounced undo step."""
+        self._on_panel_edit_starting(desc)
+
+    def begin_setup_change(self, desc: str) -> None:
+        """A discrete edit to a draft's steps is about to land: push its undo step."""
+        self._on_about_to_change(desc)
+
+    def setup_edited(self) -> None:
+        """The Setup tab wrote into the draft: its blurb or its steps, which move what counts as a fill-in."""
         self._on_scene_changed()
+        self._reshow_selected_node()
 
-    def _on_drops_requested(self) -> None:
-        self.tab_switch.emit("drops")
-
-    def refresh_setup_page(self) -> None:
-        """Re-tick a bot's setup steps if its page is the one showing. A draft's page is left to its own edits."""
-        if self._param_panel.showing_template and self._config is not None and not self._config.is_template:
-            self._param_panel.show_template(self._config, self._scene.setup_progress())
+    def refresh_setup(self) -> None:
+        """Something outside the graph that a step depends on has moved: the drop list."""
         self._announce_setup_left()
+
+    def _reshow_selected_node(self) -> None:
+        """Redraw the node page that is up, so its rows follow a change to which of them are fill-ins."""
+        shown = self._param_panel.shown_state
+        if shown is not None:
+            self._show_state_page(shown)
+
+    def _on_add_setup_target_requested(self, state_id: str, key: str) -> None:
+        """A param row's Add to setup step button: ask which step, then make the param its fill-in."""
+        config = self._config
+        if config is None or config.template_meta is None or self._mode != BotMode.EDIT:
+            return
+        steps = config.template_meta.setup
+        menu = popup_menu(self._param_panel)
+        chosen: list[int] = []
+        for index, step in enumerate(steps):
+            act = menu.addAction(f"{index + 1}. {step.text or '(no text yet)'}")
+            act.triggered.connect(lambda _=False, i=index: chosen.append(i))
+        if steps:
+            menu.addSeparator()
+        new = menu.addAction("New step")
+        new.triggered.connect(lambda _=False: chosen.append(len(steps)))
+        menu.exec(QCursor.pos())
+        menu.deleteLater()
+        if chosen:
+            self.add_setup_target(state_id, key, chosen[0])
+
+    def add_setup_target(self, state_id: str, key: str, step_index: int) -> None:
+        """Make a node's param a fill-in of step *step_index*; one past the last step makes a new step for it."""
+        config = self._config
+        if config is None or config.template_meta is None:
+            return
+        steps = config.template_meta.setup
+        target = SetupTarget(state=state_id, param=key)
+        if any(t == target for step in steps for t in step.targets):
+            return
+        self._on_about_to_change("Add setup target")
+        if step_index >= len(steps):
+            steps.append(SetupStep(text=""))
+        steps[min(step_index, len(steps) - 1)].targets.append(target)
+        self.setup_edited()
+
+    def remove_setup_target(self, state_id: str, key: str) -> None:
+        """Stop a node's param being a fill-in: what its step chip does when clicked."""
+        config = self._config
+        if config is None or config.template_meta is None:
+            return
+        target = SetupTarget(state=state_id, param=key)
+        holders = [step for step in config.template_meta.setup if target in step.targets]
+        if not holders:
+            return
+        self._on_about_to_change("Remove setup target")
+        for step in holders:
+            step.targets.remove(target)
+        self.setup_edited()
+
+    def import_drops_for(self, state_id: str) -> None:
+        """Import one fight's drops from its wiki page, and record the page on the fight.
+
+        What the node page's own Import does, reached from the drops step in the Setup
+        tab. The drop list is the bot file's, so it happens in Edit mode. Called from a
+        synchronous slot: the dialog blocks.
+        """
+        from bartlebot.gui.wiki_import_dialog import WikiImportDialog  # noqa: PLC0415
+
+        self.enter_edit_mode()
+        config = self._config
+        state = next((s for s in config.states if s.id == state_id), None) if config is not None else None
+        if state is None or self._mode != BotMode.EDIT:
+            return
+        dialog = WikiImportDialog(parent=self.window())
+        if not dialog.exec():
+            return
+        entries, page = dialog.selected_entries(), dialog.selected_page()
+        if page and state.params.get(WIKI_PAGE_PARAM) != page:
+            self._on_about_to_change("Import drops")
+            state.params[WIKI_PAGE_PARAM] = page
+            self._on_scene_changed()
+            self._reshow_selected_node()
+        if entries:
+            self.drops_imported.emit(entries)
 
     def _show_state_page(self, state) -> None:
         config = self._scene.config
@@ -3329,7 +3433,10 @@ class BotCanvas(QWidget):
         config = self._scene.config
         mine = {key: fill for (sid, key), fill in self._scene.fill_ins().items() if sid == state_id}
         if config is not None and config.is_template:
-            return {"step_chips": {key: f"Setup step {fill.number}" for key, fill in mine.items()}}
+            return {
+                "step_chips": {key: f"Setup step {fill.number}" for key, fill in mine.items()},
+                "step_addable": self._mode == BotMode.EDIT and self._scene.folded_node_of(state_id) is None,
+            }
         return {"fill_hints": {key: fill.step.text for key, fill in mine.items()}}
 
     def _show_call_page(self, region) -> None:

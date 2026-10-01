@@ -923,7 +923,7 @@ class AppController(QObject):
         self._window.bot_canvas.refresh_placeholder()
         # A new id resolves against a different set of stored values -- none, for a
         # fresh fork -- so every surface displaying one has to re-resolve. Without
-        # this, Setup goes on showing the original's overrides against a bot that
+        # this, Option Values goes on showing the original's overrides against a bot that
         # does not have them, and only a reopen tells the truth.
         self._window.left_sidebar.refresh_options(self._loaded_config)
         # The combat half of the same re-resolve: the active strategy and the BCS
@@ -1001,7 +1001,16 @@ class AppController(QObject):
             return
         if not config.is_template:
             if not config.is_definition:
-                self._window.bot_canvas.set_base_setup_steps(setup_steps.steps_for(config, self._templates_root))
+                canvas = self._window.bot_canvas
+                canvas.set_base_setup_steps(setup_steps.steps_for(config, self._templates_root))
+                origin = (
+                    template_store.find_template(config.template.id, self._templates_root)
+                    if config.template is not None
+                    else None
+                )
+                canvas.set_template_origin(
+                    origin.name if origin is not None else None, config.template.version if origin else None
+                )
             return
         template = self._open_template()
         if template is None:
@@ -1793,7 +1802,7 @@ class AppController(QObject):
 
         Like the restricted-zone check it tells rather than asks: the run would contradict
         itself, porting everyone onto one realm in a bot that says they keep to their own.
-        The Options and Setup rows already refuse the choice, so this is what a hand-edited
+        The Options and Option Values rows already refuse the choice, so this is what a hand-edited
         file or an override from before the node was added reaches.
         """
         if self._loaded_config is None:

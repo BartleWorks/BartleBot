@@ -198,8 +198,8 @@ class _HeaderChrome:
     description: QWidget | None = None
 
 
-class SetupSection(SidebarSection):
-    """Collapsible 'Setup' section: a card per option group, editing the user's values."""
+class OptionValuesSection(SidebarSection):
+    """Collapsible 'Option Values' section: a card per option group, editing the user's values."""
 
     # Emitted after an override is written or reset.  Deliberately *not* wired to
     # ``config_changed``: an override is not an edit to the bot, and marking the

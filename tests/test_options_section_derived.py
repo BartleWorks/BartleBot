@@ -78,7 +78,7 @@ def test_the_config_tab_shows_an_option_the_file_does_not_hold(qapp):
 def test_a_value_only_the_user_owns_is_not_on_the_authors_surface(qapp):
     """Safety Delay describes the connection rather than the dungeon, so a
     declaration of it would outrank the app setting the user set it in -- the
-    per-node pin the override-layer work removed, one level up. The row lives in Setup instead."""
+    per-node pin the override-layer work removed, one level up. The row lives in Option Values instead."""
     section = _section(_config())
 
     assert "Safety Delay" not in section.option_widgets

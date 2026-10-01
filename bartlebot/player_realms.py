@@ -15,7 +15,7 @@ overrule it, as for any bot option.
 
 **A node that merges players by nature** -- ``teleport_to_friend`` ports everyone onto one
 realm, which is its whole purpose -- declares ``NodeSpec.merges_players``, and a bot holding
-one cannot be Separate. That is enforced at three points: the Options and Setup rows offer
+one cannot be Separate. That is enforced at three points: the Options and Options rows offer
 only Together, the node carries an error while the bot's declared default is Separate, and
 the run refuses to start when the value resolves to Separate anyway (a hand-edited file, a
 leftover override). :func:`separate_blocked_by` is the one rule all three read.
@@ -89,14 +89,14 @@ def run_refusal(config, value, specs=None) -> str | None:
     blockers = separate_blocked_by(config, specs)
     if not blockers:
         return None
-    return f"{blocked_reason(blockers)}\n\nSet {OPTION} back to {TOGETHER} in Setup, or take the node out of the bot."
+    return f"{blocked_reason(blockers)}\n\nSet {OPTION} back to {TOGETHER} in Options, or take the node out of the bot."
 
 
 def declares_separate(config) -> bool:
     """Whether *config*'s own file declares Separate -- the author's choice, not a user's.
 
     This is what the canvas marks a merging node against: an error there is the author's
-    to fix. A user's override is the Setup row's and the pre-run check's.
+    to fix. A user's override is the Options row's and the pre-run check's.
     """
     return any(opt.name == OPTION and is_separate(opt.default) for opt in config.options)
 

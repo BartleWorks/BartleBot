@@ -127,7 +127,7 @@ class StateModel(BaseModel):
 class BotOptionModel(BaseModel):
     name: str
     # The last four are declared by nodes only and never offered in the Add Option
-    # dialog: they are a str / str_list underneath, with a richer control in Setup.
+    # dialog: they are a str / str_list underneath, with a richer control in Option Values.
     type: Literal[
         "bool",
         "int",
@@ -153,7 +153,7 @@ class BotOptionModel(BaseModel):
     maximum: float | None = None
     suffix: str | None = None
     # The bool option this one is a child of, carried on the same way. A child is
-    # indented under its parent in Setup and disabled while the parent is off --
+    # indented under its parent in Option Values and disabled while the parent is off --
     # ``Sell Pets`` does nothing whatever it says while ``Enable Quicksell`` is off,
     # and a live-looking control that cannot affect the run is the thing to avoid.
     depends_on: str | None = None

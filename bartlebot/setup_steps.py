@@ -177,16 +177,33 @@ def target_done(config: BotConfig, target: SetupTarget, library=None) -> bool:
     return all(_param_valid(state, key) for state, key in target_params(config, target, library))
 
 
+def _param_label(state: StateModel | None, key: str) -> str:
+    """A param as its own form labels it, or its key for one the node type does not have."""
+    field = _field_of(state, key) if state is not None else None
+    return (field.label or key) if field is not None else key
+
+
 def describe_target(config: BotConfig, target: SetupTarget) -> str:
-    """ "Enter dungeon · from_zone": what a target is called on the template page and in a refusal."""
+    """ "Enter dungeon · From Zone": what a target is called in the Setup tab and in a refusal.
+
+    By the labels the user sees on the node's own page, never the raw keys: a template's
+    steps are read by whoever makes a bot from it, and may one day be written by them too.
+    """
     if target.field is not None:
         return "Possible drops"
+    by_id = {s.id: s for s in config.states}
     if target.state is not None:
-        state = next((s for s in config.states if s.id == target.state), None)
+        state = by_id.get(target.state)
         name = (state.label or state.id) if state is not None else target.state
-        return f"{name} · {target.param}"
+        return f"{name} \u00b7 {_param_label(state, target.param or '')}"
     region = _instance(config, target.region)
-    return f"{region.label if region is not None else target.region} · {target.input}"
+    if region is None:
+        return f"{target.region} \u00b7 {target.input}"
+    member, dot, key = (target.input or "").partition(".")
+    state = by_id.get(member_id(region.id, member)) if dot else None
+    if state is not None:
+        return f"{region.label} \u00b7 {state.label or member} \u203a {_param_label(state, key)}"
+    return f"{region.label} \u00b7 {target.input}"
 
 
 # ---------------------------------------------------------------------------

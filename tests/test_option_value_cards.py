@@ -1,4 +1,4 @@
-"""The Setup tab's folding cards (#138).
+"""The Option Values tab's folding cards (#138).
 
 A bot's options are drawn as *This dungeon*, *Team*, *Quicksell* and *General* cards
 rather than one flat list. These cover what the cards add on top of the rows
@@ -21,7 +21,7 @@ from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, BotOptionModel, DropModel, StateModel
 from bartlebot.bot_options import SOURCE_APP_SETTING, SOURCE_OVERRIDE
 from bartlebot.gui.sidebar.option_card import COLLAPSE_ALL, COLLAPSE_OTHERS, EXPAND_ALL
-from bartlebot.gui.sidebar.sections.setup_section import SetupSection
+from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.widgets.toggle_switch import ToggleSwitch
 from bartlebot.nodes.utility import quicksell as qs
 from bartlebot.settings_manager import SettingsManager
@@ -53,8 +53,8 @@ def _config(options=None) -> BotConfig:
     )
 
 
-def _section(settings, config=None) -> SetupSection:
-    section = SetupSection(settings=settings)
+def _section(settings, config=None) -> OptionValuesSection:
+    section = OptionValuesSection(settings=settings)
     section.set_config(config if config is not None else _config())
     return section
 

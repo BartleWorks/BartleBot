@@ -1,6 +1,6 @@
 # Bot options
 
-Where a value lives, who owns it, and which of the four levels wins. The two surfaces that edit them — Setup and Options — are documented with the rest of the sidebar in `bartlebot/gui/CLAUDE.md`.
+Where a value lives, who owns it, and which of the four levels wins. The two surfaces that edit them — Option Values and Options — are documented with the rest of the sidebar in `bartlebot/gui/CLAUDE.md`.
 
 ## A value the user owns is never a node param
 
@@ -43,7 +43,7 @@ Three things that fall out of it:
 - **Anything showing the user what will happen has to resolve the same way**, through
   the same gatherer, and say which level answered. `bartlebot/option_values.py` is that
   gatherer — `bot_options` stays pure and never imports `SettingsManager`, so the run
-  loop, the Setup rows and the safety dialog each hand it the same two impure inputs
+  loop, the Option Values rows and the safety dialog each hand it the same two impure inputs
   rather than each fetching them their own way.
 - **Values already written into bot files have to be migrated**, or they start
   outranking the app setting the moment it stops rewriting them. Every bot file is in
@@ -145,7 +145,7 @@ what that guard signals.
 
 ## Which card an option is drawn in
 
-Setup and Options draw a bot's options as four folding cards, always in this order (#138):
+Option Values and Options draw a bot's options as four folding cards, always in this order (#138):
 
 | card | holds | first run |
 |---|---|---|
@@ -250,7 +250,7 @@ snapshot rather than typed, because the node matches the key against every local
 display text and a free-typed name has nothing to match. Nothing enforces that in the schema, so the guard is
 `test_no_bot_stores_a_friend_name`, which checks both places a name could land: the
 old `friend_name` param, and a *declaration* of the option that a hand-edited file
-could still carry. Setup — where a user actually sets it — writes an override and
+could still carry. Option Values — where a user actually sets it — writes an override and
 cannot touch the file at all.
 
 The run-time resolution, with its `source` label, is `teleport_to_friend.resolve_target`,

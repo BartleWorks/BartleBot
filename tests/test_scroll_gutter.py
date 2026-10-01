@@ -138,7 +138,7 @@ def test_every_inspector_page_reserves_its_gutter(qapp):
     """All of them, so the inspector keeps one content width whichever page is up."""
     areas = _scroll_areas(_ParamPanel())
 
-    assert len(areas) == 5
+    assert len(areas) == 4
     assert all(is_gutter_reserved(a) for a in areas)
 
 

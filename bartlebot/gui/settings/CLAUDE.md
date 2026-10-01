@@ -97,7 +97,7 @@ ignored Cancel would be the odd one out.
 ## The Bot tab
 
 Every row on it is the **app setting** level of the four-level resolution below,
-so the disclaimer that a bot or a Setup value outranks it is stated once at the
+so the disclaimer that a bot or an Option Values value outranks it is stated once at the
 top of the tab rather than repeated into eight tooltips. That is why it is a tab
 and not a section of General: it is one idea, and General's other five sections
 are not levels of anything.

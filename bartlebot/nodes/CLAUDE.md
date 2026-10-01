@@ -10,7 +10,7 @@ Conventions for everything under `bartlebot/nodes/`, plus the two game-facing pr
 4. Action nodes return `"SUCCESS"` / `"FAILURE"`; condition nodes return `"TRUE"` / `"FALSE"`
 5. The GUI auto-generates parameter forms and tooltips from `NODE_SPEC`
 6. Every `BotOptionSpec` in `required_bot_options` names its `group` — the card it is drawn
-   in on Setup and Options (`bartlebot/option_groups.py`). Reuse the group an existing
+   in on Option Values and Options (`bartlebot/option_groups.py`). Reuse the group an existing
    declaration of the same option uses; `test_every_declaration_of_one_option_agrees_on_its_card`
    fails otherwise
 

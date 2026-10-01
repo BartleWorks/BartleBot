@@ -126,7 +126,7 @@ class _SectionHeader(QWidget):
 
     # -- heading actions -------------------------------------------------
     #
-    # A heading can carry a few icon buttons at its right end -- Setup's Collapse all and
+    # A heading can carry a few icon buttons at its right end -- Option Values's Collapse all and
     # Expand all, for the option cards under it. They follow VS Code's view headers:
     # drawn only while the pointer is over the heading or one of them has keyboard focus,
     # so a heading nobody is reaching for stays a heading.
