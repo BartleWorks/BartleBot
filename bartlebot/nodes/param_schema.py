@@ -89,7 +89,12 @@ class ParamField:
         key:          JSON key used in the params dict.
         type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" |
                       "str_list" | "int_choice" | "str_choice" | "player_list" | "player_slot" |
-                      "wiki_page" | "zone" | "nav_zone".
+                      "wiki_page" | "zone" | "nav_zone" | "ratio".
+                      "ratio" is a share of a whole -- a health or mana threshold. It is stored as
+                      a float from 0.0 to 1.0, which is what a node compares against, and shown and
+                      edited as a whole percent, 0% to 100%, which is all its control accepts
+                      (bartlebot/gui/widgets/ratio_spin_box.py). A plain "float" let it be typed
+                      as 5.0 or -1, neither of which means anything.
                       "zone" is a zone path, or a glob over zone paths ("WizardCity/*"), matched
                       by node_helpers.zone_matches. It gets the zone widget: autocomplete from
                       visited zones, and Fill from a player's current zone. The widget is chosen

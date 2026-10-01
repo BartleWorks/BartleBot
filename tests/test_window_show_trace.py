@@ -65,3 +65,17 @@ def test_the_process_name_lookup_finds_this_process(qapp):
         assert tracer.exe_name(os.getpid()).lower().startswith("python")
     finally:
         tracer.close()
+
+
+def test_our_own_tooltips_and_popups_are_not_reported():
+    """A tooltip is three top-level windows to Windows. Hovering a button logged three warnings."""
+    for expected in (
+        "Qt6112QWindowToolTipSaveBits",
+        "Qt6112QWindowToolTipDropShadowSaveBits",
+        "Qt690QWindowPopupDropShadowSaveBits",
+        "SysShadow",
+    ):
+        assert not should_report("python.exe", 10, own_pid=10, class_name=expected), expected
+
+    assert should_report("python.exe", 10, own_pid=10, class_name="Qt6112QWindowIcon"), "a plain window still is"
+    assert should_report("WizardGraphicalClient.exe", 20, own_pid=10, class_name="SysShadow"), "the game's all are"

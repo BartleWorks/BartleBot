@@ -385,7 +385,10 @@ def test_an_added_node_is_placed_beside_the_node_it_is_wired_from():
 
 
 def test_the_editor_decides_where_a_node_goes_when_its_spot_is_taken():
+    """Taken by something the node does not lead on to, so there are no columns to move over for it."""
     mine = _bot(_v1())
+    _state(mine, "t_3").position = {"x": -400.0, "y": 0.0}
+    mine.states.append(_sleep("state_9", "Mine", 1, 300))
     asked: list[dict] = []
 
     def place(wanted: dict) -> dict:
@@ -710,3 +713,51 @@ def test_applying_an_added_subgraph_node_brings_its_members_and_wires_its_ports(
     assert touching(after) == touching(v2), "its own edges, and every edge into and out of its ports"
     assert (after.initial, after.recovery_state) == (v2.initial, v2.recovery_state)
     assert not any("t_sync_players_1" in c.added for c in diff(update, after)), "not offered again"
+
+
+# ---------------------------------------------------------------------------
+# A node inserted between two others makes room for itself
+# ---------------------------------------------------------------------------
+
+
+def test_the_grid_this_module_assumes_is_the_canvas_grid():
+    from bartlebot.gui.canvas.node_item import GRID_W, NODE_H, NODE_W  # noqa: PLC0415
+
+    assert (template_diff.COLUMN_WIDTH, template_diff.NODE_WIDTH, template_diff.NODE_HEIGHT) == (GRID_W, NODE_W, NODE_H)
+
+
+def test_a_node_inserted_in_front_of_another_moves_the_columns_over_and_takes_its_place():
+    """Collect goes between Fight and Wait. It used to land on the nearest free cell, off the line."""
+    mine = _bot(_v1())
+    mine.states.append(_sleep("state_9", "Mine, under Wait", 1, 400))
+    _state(mine, "state_9").position["y"] = 180.0
+    placed: list[dict] = []
+
+    after = apply(mine, _by_title(diff(_update(), mine), "Add 'Collect'"), place=placed.append)
+
+    column = template_diff.COLUMN_WIDTH
+    assert placed == [], "there was room made, so nothing to ask the editor"
+    assert _state(after, "t_5").position == {"x": 300.0, "y": 0.0}
+    assert _state(after, "t_3").position == {"x": 400.0 + column, "y": 0.0}
+    assert _state(after, "t_4").position == {"x": 600.0 + column, "y": 0.0}, "every column to the right"
+    assert _state(after, "state_9").position == {"x": 400.0 + column, "y": 180.0}, "all of each, not only downstream"
+    assert _state(after, "t_1").position["x"] == 0.0 and _state(after, "t_2").position["x"] == 200.0
+    assert _state(mine, "t_3").position == {"x": 400.0, "y": 0.0}, "the bot itself is untouched"
+
+
+def test_a_subgraph_node_moves_over_as_one():
+    _, mine = _boss()
+    region = next(r for r in mine.regions if r.id == "t_sync_players_1")
+    anchor = dict(region.source.anchor)
+    before = {m: dict(_state(mine, m).position) for m in region.members}
+    theirs = mine.model_copy(deep=True)
+    theirs.states.append(_sleep("t_99", "First", 1))
+    theirs.transitions.append(_edge("t_99", region.members[0]))
+
+    assert template_diff._make_room(mine, theirs, "t_99", anchor)
+
+    column = template_diff.COLUMN_WIDTH
+    assert region.source.anchor == {**anchor, "x": anchor["x"] + column}
+    assert {m: _state(mine, m).position for m in region.members} == {
+        m: {**spot, "x": spot["x"] + column} for m, spot in before.items()
+    }

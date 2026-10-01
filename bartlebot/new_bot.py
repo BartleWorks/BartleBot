@@ -27,7 +27,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from bartlebot import template_store
-from bartlebot.bot.schema import BotConfig, StateModel, TemplateRef
+from bartlebot.bot.schema import BotConfig, TemplateRef
 from bartlebot.bot_folders import UNBADGED_FOLDERS
 from bartlebot.bot_tags import normalize_tags
 from bartlebot.store_roots import slugify
@@ -104,7 +104,7 @@ def starting_points(root: str | Path | None = None, user_root: str | Path | None
 
 
 def create_bot(start: StartingPoint | None, details: BotDetails) -> BotConfig:
-    """The bot New Bot makes from ``start``, or a blank one-node bot for ``None``.
+    """The bot New Bot makes from ``start``, or a blank bot with no nodes for ``None``.
 
     A copy of the version with a fresh id, ``template`` recording where it came from,
     and no ``template_meta`` -- that is what makes it a bot. The setup steps are not
@@ -113,14 +113,8 @@ def create_bot(start: StartingPoint | None, details: BotDetails) -> BotConfig:
     ones given, or nobody: a template's are its own and are not copied.
     """
     if start is None:
-        config = BotConfig(
-            id=str(uuid4()),
-            name="",
-            initial="state_1",
-            recovery_state="state_1",
-            states=[StateModel(id="state_1", node_type="teleport_to_world_hub")],
-            transitions=[],
-        )
+        # No nodes at all: a starter node was a template of one, and a guess at that.
+        config = BotConfig(id=str(uuid4()), name="", initial="", recovery_state="", states=[], transitions=[])
     else:
         config = start.config.model_copy(deep=True)
         config.id = str(uuid4())

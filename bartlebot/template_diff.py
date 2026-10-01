@@ -710,6 +710,62 @@ def _beside(config: BotConfig, theirs: BotConfig, node_id: str) -> dict | None:
     return None
 
 
+#: The canvas's grid, in stored coordinates: a node's footprint and the width of a column.
+#: Spelled out here, since this module has no Qt in it and the canvas's own constants
+#: live beside its items (``gui/canvas/node_item.py``); a test holds the two together.
+NODE_WIDTH = 300.0
+NODE_HEIGHT = 70.0
+COLUMN_WIDTH = 440.0
+
+
+def _make_room(config: BotConfig, theirs: BotConfig, node_id: str, wanted: dict) -> bool:
+    """Move the columns from *wanted* rightward over by one, when the added node goes in front of a node there.
+
+    A node a template inserts between two others wants the spot the second one is in.
+    Moving it to the nearest free cell instead put it off the line the edge ran along.
+    So when the spot is taken and the added node leads on to something at or right of
+    it, every column from there on moves over, all of each, and the node takes the spot.
+    True when it did; False leaves placing to the caller.
+
+    A subgraph node moves as one: its anchor, its members and the anchors nested in it.
+    """
+    member_of: dict[str, RegionModel] = {}
+    for region in outermost_linked_regions([r for r in config.regions if r.source is not None]):
+        for m in region.members:
+            member_of[m] = region
+    loose = [s for s in config.states if s.position and s.id not in member_of]
+    anchored = {id(r): r for r in member_of.values() if r.source.anchor}.values()
+
+    def over(spot: dict) -> bool:
+        return abs(spot["x"] - wanted["x"]) < NODE_WIDTH and abs(spot["y"] - wanted["y"]) < NODE_HEIGHT
+
+    if not any(over(s.position) for s in loose) and not any(over(r.source.anchor) for r in anchored):
+        return False
+    edge = wanted["x"] - 1
+    here = {s.id: s.position for s in config.states if s.position}
+    leads_to = {t.dest for t in theirs.transitions if t.source == node_id}
+    if not any(d in here and here[d]["x"] >= edge for d in leads_to):
+        return False
+
+    def moved(spot: dict) -> dict:
+        return {**spot, "x": spot["x"] + COLUMN_WIDTH}
+
+    for state in loose:
+        if state.position["x"] >= edge:
+            state.position = moved(state.position)
+    by_id = {s.id: s for s in config.states}
+    for region in anchored:
+        if region.source.anchor["x"] < edge:
+            continue
+        for r in [region, *nested_regions(config, region)]:
+            if r.source is not None and r.source.anchor:
+                r.source.anchor = moved(r.source.anchor)
+        for m in region.members:
+            if m in by_id and by_id[m].position:
+                by_id[m].position = moved(by_id[m].position)
+    return True
+
+
 def _slot_sources(config: BotConfig, key: tuple) -> list[tuple[str, str | None]]:
     """The (source, when) pairs a slot is stored as in ``config``: one, or one per pair feeding an exit port."""
     source = key[1]
@@ -746,7 +802,10 @@ def _add_nodes(config: BotConfig, change: Change, place: Placer | None) -> None:
     def add(node_id: str, wanted: dict | None) -> None:
         state = theirs.states[node_id].model_copy(deep=True)
         if wanted is not None:
-            state.position = place(wanted) if place is not None else wanted
+            if _make_room(config, theirs.config, node_id, wanted):
+                state.position = dict(wanted)
+            else:
+                state.position = place(wanted) if place is not None else wanted
         config.states.append(state)
         pending.remove(node_id)
 

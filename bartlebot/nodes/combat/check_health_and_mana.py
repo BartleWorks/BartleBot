@@ -21,12 +21,9 @@ from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="health_threshold",
-        type="float",
+        type="ratio",
         label="Health Threshold",
-        help=(
-            "Health ratio (0.0–1.0). FALSE if any player's health is below this value. "
-            "Set to 0 to skip the health check."
-        ),
+        help=("FALSE if any player's health is below this percentage. Set to 0% to skip the health check."),
         default=1.0,
         minimum=0.0,
         maximum=1.0,
@@ -34,11 +31,11 @@ PARAM_SCHEMA: list[ParamField] = [
     ),
     ParamField(
         key="mana_threshold",
-        type="float",
+        type="ratio",
         label="Mana Threshold",
         help=(
-            "Mana ratio (0.0–1.0). FALSE if any player's mana is below this value. "
-            "Set to 0 to skip the mana check, or to 0.01 to catch only a player with no mana "
+            "FALSE if any player's mana is below this percentage. "
+            "Set to 0% to skip the mana check, or to 1% to catch only a player with no mana "
             "at all — after fleeing a battle, for instance."
         ),
         default=1.0,

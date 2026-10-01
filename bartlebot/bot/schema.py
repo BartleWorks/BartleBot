@@ -443,6 +443,11 @@ class BotConfig(BaseModel):
 
     @model_validator(mode="after")
     def initial_state_exists(self) -> "BotConfig":
+        if not self.states and not self.initial and not self.recovery_state:
+            # A blank bot: nothing on the canvas yet, so nothing for either role to name.
+            # The editor gives both to the first node added, and a bot with no nodes
+            # cannot be run.
+            return self
         ids = {s.id for s in self.states}
         if self.initial not in ids:
             raise ValueError(f"initial state '{self.initial}' is not in states list")

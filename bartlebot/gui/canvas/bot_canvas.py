@@ -278,6 +278,9 @@ def setup_left_text(left: int) -> str:
     return f"{left} setup {'step' if left == 1 else 'steps'} left"
 
 
+#: What a bot with nothing on its canvas is told, in place of a node's error.
+NO_NODES_ERROR = "This bot has no nodes yet: add one to begin"
+
 #: A library row's line for a bot whose template has moved on.
 UPDATE_AVAILABLE_TEXT = "Template update available"
 
@@ -2578,7 +2581,7 @@ class BotCanvas(QWidget):
             self._focus_frame.setVisible(False)
             return
         if template:
-            segments = [Crumb(f"Template draft · {self._config.name}")]
+            segments = [Crumb(self._config.name, prefix="Template draft · ")]
             for lv in self._levels:
                 region = self._region(lv.region_id)
                 label = region.label if region is not None else lv.region_id
@@ -2592,7 +2595,7 @@ class BotCanvas(QWidget):
             self._shared_frame.setVisible(False)
         elif not definition and not self.viewed_instances and top_region is not None:
             if len(self._levels) == 1:
-                crumbs = [Crumb(f"Focus Mode — {top_region.label}")]
+                crumbs = [Crumb(top_region.label, prefix="Focus Mode — ")]
             else:
                 # A collapsed region stepped into inside another: segment i + 1 is level i,
                 # which is what a click on it steps back out to.
@@ -2795,6 +2798,8 @@ class BotCanvas(QWidget):
 
     def _on_scene_changed(self) -> None:
         self._refresh_collapse_buttons()
+        # Before anything draws the roles: the first node on a blank bot's canvas takes both.
+        self._scene.settle_roles()
         config = self._scene.config
         if config is not None and config.is_definition:
             # Links may have moved: each input takes its params' strictest type, and
@@ -3790,6 +3795,9 @@ class BotCanvas(QWidget):
             return [], []
         error_lines: list[str] = []
         warning_lines: list[str] = []
+        if not config.states and not config.is_definition:
+            # A blank bot. An error, so Run is held back as it is for any other.
+            error_lines.append(NO_NODES_ERROR)
         reachable = _reachable_states(config)
         fills = self._scene.fill_ins()
         for state in config.states:

@@ -1055,8 +1055,13 @@ def contains_subgraph(defn: SubgraphDefinition, subgraph_id: str, library: Subgr
 
 
 def reassign_orphaned_roles(config: BotConfig) -> None:
-    """Move ``initial`` / ``recovery_state`` onto the first state when their holder is gone."""
+    """Move ``initial`` / ``recovery_state`` onto the first state when their holder is gone.
+
+    With no states left there is nothing to hold either, and both are cleared: a blank
+    bot is the one config that loads with empty roles.
+    """
     if not config.states:
+        config.initial = config.recovery_state = ""
         return
     ids = {s.id for s in config.states}
     fallback = config.states[0].id

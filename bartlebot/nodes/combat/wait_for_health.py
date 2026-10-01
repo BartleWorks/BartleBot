@@ -21,9 +21,9 @@ from bartlebot.nodes.timing import AFK_INTERVAL, POLL_INTERVAL
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="threshold",
-        type="float",
+        type="ratio",
         label="Health Threshold",
-        help="Wait until all players' health ratio is at or above this value (0.0–1.0).",
+        help="Wait until every player's health is at or above this percentage.",
         default=0.8,
         required=True,
     ),

@@ -88,6 +88,11 @@ bot: it reads them from its base version. Nor are the template's `authors`: the 
 an optional Authors field, blank whatever the starting point, and the bot gets what was
 typed there or nothing.
 
+A blank bot has no nodes at all, and so no `initial` or `recovery_state`: it is the one
+config that loads with both empty. It cannot be run, and the first node put on its canvas
+takes both roles (`EditScene.settle_roles`), on an entry port when that node is a subgraph
+node.
+
 ## Setup steps
 
 `template_meta.setup` is a list of steps, each with text and targets. A target is one of
@@ -150,8 +155,12 @@ bot itself added.
 - **Applying** is `template_diff.apply(config, change)`, pure, all of a change's units or
   none. Every change is trial-applied when the diff is built, so one that would not leave a
   valid bot is reported as can't-apply instead of failing later. An added node is placed
-  beside a node it is wired to, as far from it as in the template; the editor moves it to a
-  free grid cell when that spot is taken (`EditScene.free_position`).
+  beside a node it is wired to, as far from it as in the template. When that spot is taken
+  by a node the added one leads on to, it is an insert between two nodes: the added node
+  takes the spot, and that column and every column right of it move over by one, all of
+  each (`template_diff._make_room`), which is what the editor's own insert on an edge does
+  (`EditScene.insert_state_on_edge`). Taken by anything else, the editor moves the added
+  node to a free grid cell (`EditScene.free_position`).
 - **A change is found again by its id**, which spells out its unit's whole key, flag guard
   included: two guarded edges from one node on one outcome are two changes.
 - **In the editor, each Apply is one undo step** (`BotCanvas.apply_template_change`). A

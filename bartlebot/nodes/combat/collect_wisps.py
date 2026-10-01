@@ -12,11 +12,11 @@ from bartlebot.nodes.timing import WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jit
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="if_health_below",
-        type="float",
+        type="ratio",
         label="Collect Health Wisps If Below",
         help=(
-            "Health threshold (0.0–1.0). Teleport to the closest health wisp while "
-            "the player's health ratio is below this value. Set to 0.0 to skip "
+            "Teleport to the closest health wisp while the player's health is below "
+            "this percentage. Set to 0% to skip "
             "health wisp collection entirely."
         ),
         default=1.0,
@@ -24,11 +24,11 @@ PARAM_SCHEMA: list[ParamField] = [
     ),
     ParamField(
         key="if_mana_below",
-        type="float",
+        type="ratio",
         label="Collect Mana Wisps If Below",
         help=(
-            "Mana threshold (0.0–1.0). Teleport to the closest mana wisp while "
-            "the player's mana ratio is below this value. Set to 0.0 to skip "
+            "Teleport to the closest mana wisp while the player's mana is below "
+            "this percentage. Set to 0% to skip "
             "mana wisp collection entirely."
         ),
         default=1.0,
@@ -48,26 +48,26 @@ PARAM_SCHEMA: list[ParamField] = [
     ),
     ParamField(
         key="fail_if_health_below",
-        type="float",
+        type="ratio",
         label="Fail If Health Still Below",
         help=(
-            "Health threshold (0.0–1.0). After wisp collection, if any player's "
-            "health ratio is still below this value, the node returns FAILURE. "
+            "After wisp collection, if any player's health is still below this "
+            "percentage, the node returns FAILURE. "
             "Useful for routing to a potion node when wisps are insufficient. "
-            "Set to 0.0 to never fail on health."
+            "Set to 0% to never fail on health."
         ),
         default=0.5,
         default_hint="FAILURE if any player is still below 50% health",
     ),
     ParamField(
         key="fail_if_mana_below",
-        type="float",
+        type="ratio",
         label="Fail If Mana Still Below",
         help=(
-            "Mana threshold (0.0–1.0). After wisp collection, if any player's "
-            "mana ratio is still below this value, the node returns FAILURE. "
+            "After wisp collection, if any player's mana is still below this "
+            "percentage, the node returns FAILURE. "
             "Useful for routing to a potion node when wisps are insufficient. "
-            "Set to 0.0 to never fail on mana."
+            "Set to 0% to never fail on mana."
         ),
         default=0.5,
         default_hint="FAILURE if any player is still below 50% mana",

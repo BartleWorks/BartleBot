@@ -59,6 +59,7 @@ from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
 from bartlebot.gui.widgets.player_picker import pick_player, picker_label
+from bartlebot.gui.widgets.ratio_spin_box import RatioSpinBox
 from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.tag_pill import NeutralChip
@@ -1292,6 +1293,9 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 result[key] = w.text()
             elif isinstance(w, QLineEdit):
                 result[key] = w.text()
+            elif isinstance(w, RatioSpinBox):
+                # Before QSpinBox, which it is: the param is the ratio, not the percent shown.
+                result[key] = w.ratio()
             elif isinstance(w, QSpinBox):
                 result[key] = w.value()
             elif isinstance(w, QDoubleSpinBox):
@@ -1393,6 +1397,16 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 w.setValue(int(val) if val is not None else 0)
             except (TypeError, ValueError):
                 w.setValue(0)
+            if help_text:
+                w.setToolTip(help_text)
+            w.valueChanged.connect(self._emit_changed)
+            return w
+        if field_type == "ratio":
+            try:
+                ratio = float(val) if val is not None else 0.0
+            except (TypeError, ValueError):
+                ratio = 0.0
+            w = RatioSpinBox(ratio, minimum, maximum)
             if help_text:
                 w.setToolTip(help_text)
             w.valueChanged.connect(self._emit_changed)

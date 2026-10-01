@@ -199,6 +199,11 @@ _PLACEMENT_SEARCH_RADIUS = 31
 def _placement_candidates(x_dir: int):
     """Grid offsets to try for an inserted node, its own column exhausted first.
 
+    Every insert tries the spot its node belongs in first and moves columns over when
+    it is taken (``EditScene._open_column_at``), so this search is what is left for the
+    inserts with no such spot: an edge running backward or down, and a node a template
+    update adds beside something it does not lead on to.
+
     An inserted node belongs to the layer it was inserted into, so the column is held
     and only the row moves; widening in x is the fallback for a column with no free
     row at all, and it widens *away* from the node the insert hangs off so the new
@@ -2905,19 +2910,40 @@ class EditScene(QGraphicsScene):
 
         The first remaining state is an arbitrary choice, but it is a *valid* one, and
         the badge moving to it is visible -- unlike the corrupted file, which is not.
-        Nothing to do when the graph is empty: a config with no states cannot satisfy
-        either field, and is already unloadable for that reason alone.
+        An empty graph holds neither role, and both are cleared: that is a blank bot,
+        the one config that loads without them. The same pass is what gives both to the
+        first node put on a blank bot's canvas (``settle_roles``).
+
+        When the first state is inside a subgraph node, the roles go to that node's
+        first entry port, since a role on a subgraph node is always on a port.
         """
-        if self._config is None or not self._config.states:
+        if self._config is None:
+            return
+        if not self._config.states:
+            if not self._config.is_definition:
+                self._config.initial = self._config.recovery_state = ""
             return
         ids = {s.id for s in self._config.states}
         fallback = self._config.states[0].id
         if self._config.is_definition:
             fallback = next((s.id for s in self._config.states if s.node_type == SUBGRAPH_ENTRY), fallback)
+        else:
+            region = self.linked_region_of(fallback)
+            entries = [p.member for p in region.source.ports.values() if p.member] if region is not None else []
+            if entries and member_id(region.id, entries[0]) in ids:
+                fallback = member_id(region.id, entries[0])
         if self._config.initial not in ids:
             self._config.initial = fallback
         if self._config.recovery_state not in ids:
             self._config.recovery_state = fallback
+
+    def settle_roles(self) -> None:
+        """Give ``initial`` and ``recovery_state`` a state to name whenever they name none.
+
+        Called on every change to the graph: the first node added to a blank bot takes
+        both, however it was added.
+        """
+        self._reassign_orphaned_roles()
 
     def _delete_node(self, state_id: str, *, confirm: bool = True) -> bool:
         """Delete a state -- or, for a call node's id, the whole instance -- and all its edges.
@@ -3266,12 +3292,15 @@ class EditScene(QGraphicsScene):
         if target is None or isinstance(target, (FoldedNodeItem, PortNodeItem)):
             return None
         incoming = [t for t in self._config.transitions if t.dest == state_id]
-        pos = self.free_position_near(QPointF(target.pos().x() - GRID_W, target.pos().y()), x_dir=-1)
 
         self._pre_edit("Insert State at Port")
         prev_in_structural = self._in_structural_edit
         self._in_structural_edit = True
         try:
+            # In front of the target, on its row: the cell to its left when that is free,
+            # else the target's own place, with the target's column and the rest moved over.
+            before = self._grid_cell(QPointF(target.pos().x() - GRID_W, target.pos().y()))
+            pos = before if self._cell_is_free(before) else self._open_column_at(QPointF(target.pos()))
             new_id, new_node = self._spawn_state(node_type, pos)
             for t in incoming:
                 old_src, old_when = t.source, t.when
@@ -3320,12 +3349,15 @@ class EditScene(QGraphicsScene):
 
         outgoing = [t for t in self._config.transitions if t.source == state_id and t.when == return_name]
         port = source.port_out_for(return_name)
-        pos = self.free_position_near(QPointF(source.pos().x() + GRID_W, port.y() - NODE_H / 2), x_dir=1)
 
         self._pre_edit("Insert State at Port")
         prev_in_structural = self._in_structural_edit
         self._in_structural_edit = True
         try:
+            # The next column, on the port's row: there when it is free, else there all
+            # the same, with that column and the rest moved over to make it so.
+            after = self._grid_cell(QPointF(source.pos().x() + GRID_W, port.y() - NODE_H / 2))
+            pos = after if self._cell_is_free(after) else self._open_column_at(after)
             new_id, new_node = self._spawn_state(node_type, pos)
             for t in outgoing:
                 old_dst = t.dest
@@ -3344,24 +3376,9 @@ class EditScene(QGraphicsScene):
         return new_id
 
     def _insert_state_on_edge(self, edge_item: EdgeItem) -> None:
-        """Split an existing edge by inserting a new state at its midpoint."""
+        """The edge menu's Insert: ask which node, then split the edge with it."""
         if self._config is None:
             return
-        # Locate the edge record
-        for s, w, d, ei in list(self._edge_items):  # noqa: B007 — s, w, d used after loop via for-else leak
-            if ei is edge_item:
-                break
-        else:
-            return
-        src_node = self._node_items.get(s)
-        dst_node = self._node_items.get(d)
-        if src_node is None or dst_node is None:
-            return
-
-        # Midpoint of the edge path in scene coordinates
-        mid = edge_item.mapToScene(edge_item.path().pointAtPercent(0.5))
-        insert_pos = self.free_position_near(QPointF(mid.x() - NODE_W / 2, mid.y() - NODE_H / 2), x_dir=1)
-
         # Ask the user which node type to insert
         from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
 
@@ -3369,12 +3386,26 @@ class EditScene(QGraphicsScene):
         dlg = NodeBrowserDialog(view, mode="add")
         if not (dlg.exec() and dlg.selected_node_type):
             return
-        node_type = dlg.selected_node_type
+        self.insert_state_on_edge(edge_item, dlg.selected_node_type)
+
+    def insert_state_on_edge(self, edge_item: EdgeItem, node_type: str) -> str | None:
+        """Split *edge_item* with a new state of *node_type*, making room for it. Returns the new state's id."""
+        if self._config is None:
+            return None
+        for s, w, d, ei in list(self._edge_items):  # noqa: B007 — s, w, d used after loop via for-else leak
+            if ei is edge_item:
+                break
+        else:
+            return None
+        src_node = self._node_items.get(s)
+        dst_node = self._node_items.get(d)
+        if src_node is None or dst_node is None:
+            return None
 
         self._pre_edit("Insert State on Edge")
         self._in_structural_edit = True
 
-        new_id, new_node = self._spawn_state(node_type, insert_pos)
+        new_id, new_node = self._spawn_state(node_type, self._room_on_edge(edge_item, src_node, dst_node))
 
         # Remove original edge (src --w--> dst), then wire src --w--> new --w'--> dst.
         # Carry the original when value to the outgoing edge only if the new node actually
@@ -3387,6 +3418,53 @@ class EditScene(QGraphicsScene):
         self._create_transition(new_node, dst_node, outgoing_when)
         self._in_structural_edit = False
         self._update_scene_rect()
+        return new_id
+
+    def _room_on_edge(self, edge_item: EdgeItem, src_node: NodeItem, dst_node: NodeItem) -> QPointF:
+        """Where a node inserted on the edge from *src_node* to *dst_node* goes, making room when there is none.
+
+        Between two nodes in neighboring columns there is no cell to put it in: the
+        midpoint is on top of one of them, and the nearest free row is above or below
+        the line the edge ran along, which reads as a detour. So the new node takes the
+        destination's place, and the destination's column and every column right of it
+        move over by one -- all of each column, not only what is downstream, so rows
+        that were level stay level.
+
+        An edge with a whole column between its ends has a place for the node already,
+        and one that runs backward or straight down has no "after" to move, so both
+        keep the midpoint and the nearest free cell to it.
+        """
+        columns_apart = round(dst_node.pos().x() / GRID_W) - round(src_node.pos().x() / GRID_W)
+        if columns_apart != 1:
+            mid = edge_item.mapToScene(edge_item.path().pointAtPercent(0.5))
+            return self.free_position_near(QPointF(mid.x() - NODE_W / 2, mid.y() - NODE_H / 2), x_dir=1)
+        return self._open_column_at(QPointF(dst_node.pos()))
+
+    @staticmethod
+    def _grid_cell(seed: QPointF) -> QPointF:
+        """The grid cell *seed* is in, as an item's top-left: the snap ``free_position_near`` starts from."""
+        return QPointF(round(seed.x() / GRID_W) * GRID_W, round((seed.y() + NODE_H / 2) / GRID_H) * GRID_H - NODE_H / 2)
+
+    def _cell_is_free(self, pos: QPointF) -> bool:
+        """Whether a node put at *pos* would overlap none of the nodes drawn."""
+        box = QRectF(pos.x(), pos.y(), NODE_W, NODE_H)
+        return not any(
+            box.intersects(QRectF(n.pos().x(), n.pos().y(), NODE_W, n.body_height)) for n in self._node_items.values()
+        )
+
+    def _open_column_at(self, place: QPointF) -> QPointF:
+        """Move *place*'s column and every column right of it over by one, and return *place*, now free.
+
+        What every insert does when the spot its node belongs in is taken: on an edge,
+        at an input port and at an output port alike. All of each column moves, not only
+        what is downstream of the insert, so rows that were level stay level. The caller
+        has already opened the undo step, so the move and the insert are one.
+        """
+        for item in self._node_items.values():
+            if item.pos().x() >= place.x() - 1:
+                item.setPos(item.pos().x() + GRID_W, item.pos().y())
+        self._flush_positions()
+        return place
 
     def _flush_positions(self) -> None:
         """Write where every item now sits back into the model, through the fold.

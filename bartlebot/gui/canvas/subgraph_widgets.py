@@ -47,10 +47,36 @@ _GLYPH_PX = 14
 
 @dataclass(frozen=True)
 class Crumb:
-    """One segment of the crumb bar's path. ``region_color`` is a palette slot: a focused region's segment wears it."""
+    """One segment of the crumb bar's path. ``region_color`` is a palette slot: a focused region's segment wears it.
+
+    ``text`` is the name of the thing, which the bar cuts short when it is long
+    (:func:`elided_name`). ``prefix`` is what the bar says before it ("Template draft · ")
+    and is never cut.
+    """
 
     text: str
     region_color: int | None = None
+    prefix: str = ""
+
+    @property
+    def full(self) -> str:
+        """The segment in full: what its tooltip says, and what ``CrumbBar.text`` joins."""
+        return f"{self.prefix}{self.text}"
+
+    @property
+    def shown(self) -> str:
+        """The segment as the bar draws it, a long name cut short."""
+        return f"{self.prefix}{elided_name(self.text)}"
+
+
+#: How many characters of a name the bar shows. It sits over the canvas, and every
+#: character it grows by hides the graph.
+CRUMB_NAME_LIMIT = 25
+
+
+def elided_name(name: str, limit: int = CRUMB_NAME_LIMIT) -> str:
+    """*name*, or its first ``limit - 1`` characters and an ellipsis when it is longer than *limit*."""
+    return name if len(name) <= limit else f"{name[: limit - 1].rstrip()}\u2026"
 
 
 class CrumbMode(Enum):
@@ -203,6 +229,15 @@ class CrumbBar(ThemedMixin, QWidget):
         self._release_btn.setVisible(drafting)
         self._close_btn.setToolTip(close_tip)
         self.refresh_theme_styles()
+        # The theme pass has just restyled the new segments, bold ones included, and a
+        # label only takes its style sheet's font in when it is polished, which is later.
+        # Measured before that, the bar came out narrower than its path, which then ran
+        # on under the buttons until something else happened to measure it again.
+        for label in (*self._segment_labels, *self._seps, self._hint_lbl):
+            label.ensurePolished()
+            label.updateGeometry()
+        self._path_row.activate()
+        self.layout().activate()
         self.adjustSize()
 
     def _rebuild_path(self) -> None:
@@ -223,11 +258,13 @@ class CrumbBar(ThemedMixin, QWidget):
                 # a queued event, after this bar has measured itself without it.
                 sep.show()
                 self._seps.append(sep)
-            seg = _Segment(crumb.text, self._path)
+            seg = _Segment(crumb.shown, self._path)
             if i < last:
                 seg.setCursor(Qt.CursorShape.PointingHandCursor)
-                seg.setToolTip(f"Back to {crumb.text}")
+                seg.setToolTip(f"Back to {crumb.full}")
                 seg.clicked.connect(lambda i=i: self.segment_clicked.emit(i))
+            elif crumb.shown != crumb.full:
+                seg.setToolTip(crumb.full)
             self._path_row.addWidget(seg)
             seg.show()
             self._segment_labels.append(seg)
@@ -238,8 +275,13 @@ class CrumbBar(ThemedMixin, QWidget):
 
     @property
     def text(self) -> str:
-        """The path as one string, ``A › B › C``."""
-        return " › ".join(c.text for c in self._segments)
+        """The path as one string, ``A › B › C``, every name in full."""
+        return " › ".join(c.full for c in self._segments)
+
+    @property
+    def shown_text(self) -> str:
+        """The path as drawn: a long name cut short."""
+        return " › ".join(seg.text() for seg in self._segment_labels)
 
     @property
     def hint_text(self) -> str:

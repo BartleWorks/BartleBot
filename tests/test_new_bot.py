@@ -145,12 +145,12 @@ def test_an_empty_description_stays_empty(tmp_path):
     assert create_bot(None, BotDetails(name="Lamia")).description is None
 
 
-def test_a_blank_bot_is_one_node_with_no_template():
+def test_a_blank_bot_has_no_nodes_and_no_template():
     bot = create_bot(None, BotDetails(name="Scratch", tags=["Mobs"]))
 
     assert bot.template is None and bot.template_meta is None
-    assert [(s.id, s.node_type) for s in bot.states] == [("state_1", "teleport_to_world_hub")]
-    assert (bot.initial, bot.recovery_state) == ("state_1", "state_1")
+    assert bot.states == [] and bot.transitions == []
+    assert (bot.initial, bot.recovery_state) == ("", ""), "nothing for either role to name yet"
     assert (bot.name, bot.tags) == ("Scratch", ["Mobs"])
     assert bot.id
 

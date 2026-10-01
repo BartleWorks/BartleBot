@@ -15,7 +15,9 @@ game. So it watches from both sides and logs a WARNING for each:
   *any* process, which the filter above cannot. Only our own process and the game
   clients are reported, since every other program on the desktop shows windows all
   day. Each line carries the process, the window class and the rect, which is what
-  tells a Qt window (class ``Qt6...``) from one of the game's.
+  tells a Qt window (class ``Qt6...``) from one of the game's. Our own tooltips and
+  popups are left out here as well, by their window class (``is_expected_own_class``):
+  this side used to log three lines for every tooltip.
 
 A game window's title is never logged: the launcher titles it by account.
 """
@@ -26,6 +28,7 @@ import ctypes
 import ctypes.wintypes
 import logging
 import os
+import re
 import traceback
 
 from PyQt6.QtCore import QEvent, QObject, Qt
@@ -89,9 +92,27 @@ def is_stray_window(widget: QWidget) -> bool:
     return widget.windowType() == Qt.WindowType.Window
 
 
-def should_report(exe_name: str, pid: int, own_pid: int) -> bool:
-    """Whether a window shown by process *pid* (``exe_name``) belongs in the log."""
-    return pid == own_pid or exe_name.lower() == GAME_EXE.lower()
+#: Window classes of ours that are windows on purpose: Qt's tooltips and popups (menus,
+#: combo lists), under any Qt version, with or without their drop shadow, and the shadow
+#: Windows draws beside them. The Qt side leaves these out by window type; this is the
+#: same list for the Win32 side, which only has the class to go by.
+_EXPECTED_OWN_CLASS = re.compile(r"^(Qt\d+QWindow(ToolTip|Popup)|SysShadow$)")
+
+
+def is_expected_own_class(class_name: str) -> bool:
+    """Whether a window of our own process with this class is a tooltip, a popup or their shadow."""
+    return _EXPECTED_OWN_CLASS.match(class_name) is not None
+
+
+def should_report(exe_name: str, pid: int, own_pid: int, class_name: str = "") -> bool:
+    """Whether a window shown by process *pid* (``exe_name``) belongs in the log.
+
+    Every window of a game client does. Of our own, all but the tooltips and popups
+    *class_name* gives away: hovering a button is not a stray window.
+    """
+    if pid == own_pid:
+        return not is_expected_own_class(class_name)
+    return exe_name.lower() == GAME_EXE.lower()
 
 
 class WindowShowTracer(QObject):
@@ -155,10 +176,10 @@ class WindowShowTracer(QObject):
             pid = ctypes.wintypes.DWORD()
             user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
             exe = self.exe_name(pid.value)
-            if not should_report(exe, pid.value, self._own_pid):
-                return
             class_name = ctypes.create_unicode_buffer(256)
             user32.GetClassNameW(hwnd, class_name, 256)
+            if not should_report(exe, pid.value, self._own_pid, class_name.value):
+                return
             rect = ctypes.wintypes.RECT()
             user32.GetWindowRect(hwnd, ctypes.byref(rect))
             logger.warning(

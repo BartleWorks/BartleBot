@@ -46,22 +46,17 @@ from bartlebot.nodes.timing import (
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="if_health_below",
-        type="float",
+        type="ratio",
         label="Use Potion If Health Below",
-        help=(
-            "Health ratio (0.0–1.0) below which a player should use a potion. "
-            "Set to 0.0 to skip health-based potion use."
-        ),
+        help=("Health percentage below which a player should use a potion. Set to 0% to skip health-based potion use."),
         default=0.5,
         required=True,
     ),
     ParamField(
         key="if_mana_below",
-        type="float",
+        type="ratio",
         label="Use Potion If Mana Below",
-        help=(
-            "Mana ratio (0.0–1.0) below which a player should use a potion. Set to 0.0 to skip mana-based potion use."
-        ),
+        help=("Mana percentage below which a player should use a potion. Set to 0% to skip mana-based potion use."),
         default=0.15,
         required=True,
     ),

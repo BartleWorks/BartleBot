@@ -15,8 +15,10 @@ Properties panel puts on a required param. Authors starts blank whatever the sta
 point is, since a template's authors are not the new bot's.
 
 The file name follows the display name as it is typed, until the user edits it; from
-then on it is theirs. Either way the line under it says the name that will be written,
-which differs from the field when a file of that name already exists.
+then on it is theirs. Emptying the field hands it back: it stays empty, so a name can be
+retyped, and follows again the next time the display name changes. Either way the line
+under it says the name that will be written, which differs from the field when a file of
+that name already exists.
 """
 
 from __future__ import annotations
@@ -63,7 +65,7 @@ from bartlebot.new_bot import (
 )
 
 _BLANK_NAME = "Blank bot"
-_BLANK_BLURB = "One node and nothing else. Build the graph yourself."
+_BLANK_BLURB = "An empty canvas. Build the graph yourself."
 _BLANK_GLYPH = "plus"
 
 _PAGE_START = 0
@@ -529,6 +531,10 @@ class NewBotDialog(QDialog):
         self._tags.set_tags(list(self.start.config.tags) if self.start is not None else [])
 
     def _on_name_changed(self, text: str) -> None:
+        if not self._file.text().strip():
+            # Emptied by hand, and left empty until now so it could be retyped. A change
+            # to the display name is when it is filled in again; a typed name never is.
+            self._file_follows_name = True
         if self._file_follows_name:
             self._file.setText(file_stem(text) if text.strip() else "")
         self._refresh_file()

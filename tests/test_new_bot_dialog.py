@@ -370,7 +370,7 @@ def test_a_blank_bot_is_saved_with_no_template(harness, tmp_path, monkeypatch):
 
     on_disk = BotConfig.load(path)
     assert on_disk.template is None
-    assert [s.node_type for s in on_disk.states] == ["teleport_to_world_hub"]
+    assert on_disk.states == [], "a blank bot is an empty canvas"
     assert on_disk.id
 
 
@@ -431,3 +431,32 @@ def test_authors_start_blank_whatever_the_starting_point_and_are_what_was_typed(
 
     assert dialog.details().authors == "Luke SkullHunter"
     assert dialog.is_complete() is False, "authors are optional, and fill nothing that is required"
+
+
+def test_an_emptied_file_name_stays_empty_until_the_display_name_changes(dialog):
+    """So it can be retyped; then it follows the name again, as it did before it was touched."""
+    dialog.select_start(0)
+    dialog.advance()
+    dialog.name_edit.setText("Lamia")
+    assert dialog.file_edit.text() == "lamia"
+
+    dialog.edit_file_name("")
+
+    assert dialog.file_edit.text() == "" and not dialog.is_complete()
+
+    dialog.name_edit.setText("Lamia's Lair")
+
+    assert dialog.file_edit.text() == "lamia-s-lair" and dialog.is_complete()
+    dialog.name_edit.setText("Medusa")
+    assert dialog.file_edit.text() == "medusa", "and goes on following"
+
+
+def test_a_typed_file_name_is_never_replaced_by_the_display_name(dialog):
+    dialog.select_start(0)
+    dialog.advance()
+    dialog.name_edit.setText("Lamia")
+    dialog.edit_file_name("my-boss")
+
+    dialog.name_edit.setText("Medusa")
+
+    assert dialog.file_edit.text() == "my-boss"
