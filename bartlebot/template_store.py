@@ -23,6 +23,11 @@ Release
     note to the index, or writes nothing at all and raises :class:`ReleaseRefused`
     (:func:`release_problems` says why). A released file is never written again.
 
+Setup steps
+    A version lists what the user has to fill in (``template_meta.setup``), and a
+    fill-in is blank in every release, which Release enforces. :mod:`bartlebot.setup_steps`
+    reads them back for a bot through its ``template``.
+
 Template-owned ids
     Every node and subgraph instance a draft mints is ``t_``-prefixed
     (:data:`TEMPLATE_ID_PREFIX`) and is never reused once released -- :func:`used_ids` is
@@ -53,6 +58,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from bartlebot import setup_steps
 from bartlebot.bot.schema import BotConfig, atomic_write_json
 from bartlebot.store_roots import resolve_roots, slugify
 
@@ -98,7 +104,8 @@ class TemplateIndex(BaseModel):
             return cls.model_validate(json.load(f))
 
     def save(self, path: str | Path) -> None:
-        atomic_write_json(self.model_dump(), path)
+        # The same line endings on every platform, as a draft is saved: see BotConfig.save.
+        atomic_write_json(self.model_dump(), path, newline="\n")
 
 
 @dataclass(frozen=True)
@@ -289,6 +296,7 @@ def release_problems(draft: BotConfig, template: Template, canvas_errors: Sequen
     reused = sorted(_ids_in(draft) & retired_ids(template))
     if reused:
         problems.append(f"Reuses ids an earlier version retired: {', '.join(reused)}.")
+    problems.extend(setup_steps.draft_problems(draft))
     return problems
 
 

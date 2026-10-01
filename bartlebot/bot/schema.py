@@ -312,16 +312,59 @@ class TemplateRef(BaseModel):
     version: int
 
 
+class SetupTarget(BaseModel):
+    """One field a setup step asks the user to fill: a *fill-in*. Exactly one of three kinds.
+
+    A node's param (``state`` and ``param``), a subgraph node's input (``region`` and
+    ``input``, where a promoted node's param is the input ``<member>.<key>``), or a field
+    of the bot itself (``field``; only ``drops``). Name, description and tags are not
+    targets: the New Bot dialog asks for them.
+    """
+
+    state: str | None = None
+    param: str | None = None
+    region: str | None = None
+    input: str | None = None
+    field: Literal["drops"] | None = None
+
+    @model_validator(mode="after")
+    def _one_kind(self) -> "SetupTarget":
+        kinds = [
+            self.state is not None and self.param is not None,
+            self.region is not None and self.input is not None,
+            self.field is not None,
+        ]
+        given = [v for v in (self.state, self.param, self.region, self.input, self.field) if v is not None]
+        if sum(kinds) != 1 or len(given) != (1 if self.field is not None else 2):
+            raise ValueError("a setup target is state+param, region+input, or field, and only one of them")
+        return self
+
+
+class SetupStep(BaseModel):
+    """One instruction a template gives the user, and the fill-ins it asks for.
+
+    Every target is a fill-in, and nothing else marks one. A step is done when all of
+    its targets are filled and valid; that is worked out from the bot each time
+    (:mod:`bartlebot.setup_steps`) and never stored.
+    """
+
+    text: str
+    targets: list[SetupTarget] = Field(default_factory=list)
+
+
 class TemplateMeta(BaseModel):
     """What makes a ``BotConfig`` a template -- a draft or a released version -- rather than a bot.
 
     Plays the part :class:`DefinitionMeta` plays for a definition: it rides along through
     undo and autosave with the rest of the config. Never set on a bot: New Bot drops it
-    when it copies a version, so ``exclude_none`` keeps it out of every bot file.
+    when it copies a version, so ``exclude_none`` keeps it out of every bot file. The
+    bot reads ``setup`` from its base version instead of carrying a copy.
     """
 
     #: What the New Bot dialog says about the template, under its name.
     blurb: str = ""
+    #: What a bot made from this version has to fill in before it can run.
+    setup: list[SetupStep] = Field(default_factory=list)
 
 
 class BotConfig(BaseModel):
@@ -508,19 +551,24 @@ class BotConfig(BaseModel):
         return data
 
     def save(self, path: str | Path) -> None:
-        atomic_write_json(self.file_dump(), path)
+        # A template's files are byte-exact in git (``templates/** -text``), since a
+        # released version is hashed, so a draft is written with the same line endings
+        # on every platform. Left to the platform, saving one on Windows rewrote every
+        # line of it.
+        atomic_write_json(self.file_dump(), path, newline="\n" if self.is_template else None)
 
 
-def atomic_write_json(data: dict, path: str | Path) -> None:
+def atomic_write_json(data: dict, path: str | Path, *, newline: str | None = None) -> None:
     """Write ``data`` to a sibling temp file, then atomically replace ``path``.
 
-    Prevents corruption if the process crashes mid-write.
+    Prevents corruption if the process crashes mid-write. ``newline`` is ``open``'s:
+    ``None`` writes the platform's line endings, ``"\\n"`` the same bytes everywhere.
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_path = tempfile.mkstemp(dir=path.parent, suffix=".tmp", prefix=path.stem + "_")
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
+        with os.fdopen(fd, "w", encoding="utf-8", newline=newline) as f:
             json.dump(data, f, indent=2)
         os.replace(tmp_path, path)
     except Exception:

@@ -222,12 +222,17 @@ class MainWindow(QMainWindow):
         # Wire drop list edits → the quicksell keep-list picker in Setup, so it lists
         # the current drops. The picker is a bot option now, so it lives over there.
         self.right_sidebar.possible_drops.drops_changed.connect(self.left_sidebar.refresh_drops)
+        # A setup step can ask for the drop list, so its tick follows the list.
+        self.right_sidebar.possible_drops.drops_changed.connect(self.bot_canvas.refresh_setup_page)
         # Wire Browse Bot Library menu action
         self.action_browse_library.triggered.connect(self.bot_canvas.open_library_dialog)
         # The combat strategy dialog is owned by the Combat tab: it is the surface that
         # has to reload when the dialog closes, and routing through it keeps one caller.
         # Wrapped: ``triggered`` passes a checked flag, which would arrive as ``kind``.
         self.action_combat_strategies.triggered.connect(lambda: self.left_sidebar.combat_tab.open_combat_dialog())
+        # The setup card heading Setup: how many template steps are left, and the way to them.
+        self.bot_canvas.setup_left_changed.connect(self.left_sidebar.set_setup_steps_left)
+        self.left_sidebar.setup_requested.connect(self.bot_canvas.begin_setup)
         # Wire sidebar tab switching from canvas
         self.bot_canvas.tab_switch.connect(self._on_canvas_tab_switch)
         # Wire bot status to game view panel title bar
@@ -628,6 +633,8 @@ class MainWindow(QMainWindow):
             self.left_sidebar.switch_to_properties()
         elif tab == "combat":
             self.left_sidebar.switch_to_combat()
+        elif tab == "drops":
+            self.right_sidebar.switch_to_drops()
 
     # ------------------------------------------------------------------
     # Card actions

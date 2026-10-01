@@ -235,6 +235,25 @@
   ],
   "regions": [],
   "template_meta": {
-    "blurb": "Template file for a gauntlet farming bot."
+    "blurb": "Farms a housing gauntlet: players teleport to the friend whose house holds it, run it and repeat, going back to The Commons for potions when they run low.\n\nSet Friend Name in Setup to the wizard whose house holds the gauntlet. Add the nodes that clear the gauntlet after Enter gauntlet. Check what Quicksell keeps before a long run.",
+    "setup": [
+      {
+        "text": "Choose the gauntlet's zone",
+        "targets": [
+          {
+            "state": "t_8",
+            "param": "dungeon_zone"
+          }
+        ]
+      },
+      {
+        "text": "Import the gauntlet's drops from its wiki page",
+        "targets": [
+          {
+            "field": "drops"
+          }
+        ]
+      }
+    ]
   }
 }

@@ -68,7 +68,8 @@ def test_reserved_ids_apply_only_to_the_document_they_were_set_for(qapp):
 
 
 # ---------------------------------------------------------------------------
-# A draft's blanks are what each bot fills in, not faults
+# A blank required param is a fault in a draft too, unless a setup step asks for it
+# (tests/test_setup_steps.py has the fill-in half)
 # ---------------------------------------------------------------------------
 
 
@@ -79,14 +80,14 @@ def _with_blank_zone(template: bool) -> BotConfig:
     return config
 
 
-def test_a_blank_required_param_is_a_warning_in_a_draft():
+def test_a_blank_required_param_is_an_error_in_a_draft_with_no_step_for_it():
     from bartlebot.gui.canvas.edit_scene import _validate_node
 
     config = _with_blank_zone(template=True)
-    is_error, is_warning, errors, warnings = _validate_node(config.states[0], config)
+    is_error, _is_warning, errors, _warnings = _validate_node(config.states[0], config)
 
-    assert not any("Required param" in e for e in errors)
-    assert any("left blank for the bot to fill in" in w for w in warnings)
+    assert is_error
+    assert any("Required param" in e and "is empty" in e for e in errors)
 
 
 def test_the_same_blank_is_an_error_in_a_bot():

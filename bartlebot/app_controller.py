@@ -23,6 +23,7 @@ from bartlebot import (
     player_realms,
     recovery_readiness,
     restricted_zones,
+    setup_steps,
     template_store,
     wizard_names,
 )
@@ -990,9 +991,17 @@ class AppController(QObject):
         return template
 
     def _refresh_template_context(self) -> None:
-        """Tell the canvas what a template draft's crumb says, and which ids it must not mint."""
+        """Tell the canvas what a template is behind the open document.
+
+        For a draft, what its crumb says and which ids it must not mint. For a bot made
+        from a template, the setup steps of its base version, which it does not carry.
+        """
         config = self._loaded_config
-        if config is None or not config.is_template:
+        if config is None:
+            return
+        if not config.is_template:
+            if not config.is_definition:
+                self._window.bot_canvas.set_base_setup_steps(setup_steps.steps_for(config, self._templates_root))
             return
         template = self._open_template()
         if template is None:

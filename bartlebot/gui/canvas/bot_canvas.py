@@ -8,7 +8,7 @@ import json
 import logging
 import time
 from collections import Counter
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
@@ -40,11 +40,12 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_summary, card_art
+from bartlebot import bot_summary, card_art, setup_steps
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
     BotConfig,
+    SetupStep,
     SubgraphDefinition,
     SubgraphInput,
     SubgraphInputBinding,
@@ -245,6 +246,8 @@ class _BotMeta:
     #: The sentence the graph implies, for a bot with no description; "" when it has one,
     #: or the graph implies nothing. See bartlebot/bot_summary.py.
     generated: str = ""
+    #: Setup steps of the bot's template still to do; 0 for a bot made from none.
+    setup_left: int = 0
 
 
 def _drop_names(raw: object) -> list[str]:
@@ -265,7 +268,17 @@ def _drop_names(raw: object) -> list[str]:
     return names
 
 
-def _read_bot_meta(path: Path) -> "_BotMeta | None":
+def setup_left_text(left: int) -> str:
+    """A library row's "2 setup steps left"."""
+    return f"{left} setup {'step' if left == 1 else 'steps'} left"
+
+
+def _read_bot_meta(path: Path, templates_root: "str | Path | None" = None) -> "_BotMeta | None":
+    """What a library card shows for the bot file at *path*, read without building a scene.
+
+    *templates_root* is where the template store is, for the setup steps a bot made
+    from a template has left; ``None`` is the project's.
+    """
     try:
         with path.open(encoding="utf-8") as f:
             data = json.load(f)
@@ -279,6 +292,7 @@ def _read_bot_meta(path: Path) -> "_BotMeta | None":
             version=data.get("version") or "",
             path=path,
             generated="" if description else (bot_summary.describe_data(data) or ""),
+            setup_left=setup_steps.left_in_file(data, templates_root),
         )
     except Exception:
         return None
@@ -384,6 +398,7 @@ class _BotCard(ThemedMixin, QWidget):
         self._hovered = False
         self._desc_lbl: QLabel | None = None
         self._meta_lbl: QLabel | None = None
+        self._setup_lbl: QLabel | None = None
         self._build()
         self.set_matched_drops(matched_drops)
         self.refresh_theme_styles()
@@ -437,6 +452,12 @@ class _BotCard(ThemedMixin, QWidget):
             self._meta_lbl = QLabel("  ·  ".join(parts))
             layout.addWidget(self._meta_lbl)
 
+        # A bot made from a template and left half set up: it cannot run yet, and the
+        # card is where that is found out without opening it.
+        if self._meta.setup_left:
+            self._setup_lbl = QLabel(setup_left_text(self._meta.setup_left))
+            layout.addWidget(self._setup_lbl)
+
         # Always built, and hidden while nothing matched: the library keeps its cards
         # across searches, so this is the one line a new query has to be able to change.
         self._match_lbl = QLabel()
@@ -452,6 +473,11 @@ class _BotCard(ThemedMixin, QWidget):
                 text += f" +{len(drops) - 3} more"
             self._match_lbl.setText(f"Drops: {text}")
         self._match_lbl.setVisible(bool(drops))
+
+    @property
+    def setup_text(self) -> str | None:
+        """The "2 setup steps left" line as shown, or None for a bot with nothing left."""
+        return self._setup_lbl.text() if self._setup_lbl is not None else None
 
     @property
     def matched_drops_text(self) -> str | None:
@@ -476,6 +502,7 @@ class _BotCard(ThemedMixin, QWidget):
         for lbl, color in (
             (self._desc_lbl, THEME.text_muted),
             (self._meta_lbl, THEME.text_subtle),
+            (self._setup_lbl, THEME.warning),
             (self._match_lbl, THEME.accent),
         ):
             if lbl is not None:
@@ -1048,6 +1075,8 @@ class BotCanvas(QWidget):
 
     config_changed = pyqtSignal()
     mode_changed = pyqtSignal(BotMode)
+    # How many of the open bot's template setup steps are not done; 0 for anything else.
+    setup_left_changed = pyqtSignal(int)
     run_requested = pyqtSignal()
     pause_requested = pyqtSignal()
     resume_requested = pyqtSignal()
@@ -1412,6 +1441,9 @@ class BotCanvas(QWidget):
         self._param_panel.unlink_input_requested.connect(self.unlink_param)
         self._param_panel.promote_node_requested.connect(self._on_promote_node_requested)
         self._param_panel.definition_changed.connect(self._on_definition_changed)
+        self._param_panel.template_changed.connect(self._on_template_changed)
+        self._param_panel.drops_requested.connect(self._on_drops_requested)
+        self._param_panel.template_page.set_library_getter(lambda: self._subgraph_library)
         self._param_panel.add_port_requested.connect(self._on_add_port_requested)
         self._param_panel.delete_port_requested.connect(self._on_delete_port_requested)
         self._scene.save_region_as_subgraph_requested.connect(self.save_region_as_subgraph)
@@ -1426,6 +1458,8 @@ class BotCanvas(QWidget):
         self._placeholder = _BotLibraryPanel(self)
         #: The library dialog's own panel, while that dialog is up.
         self._library_dialog_panel: _BotLibraryPanel | None = None
+        #: The last count announced on ``setup_left_changed``.
+        self._setup_left = 0
         self._placeholder.new_bot_requested.connect(self.new_bot_requested)
         self._placeholder.open_bot_requested.connect(self.open_bot_requested)
         self._placeholder.open_recent_requested.connect(self.open_recent_requested)
@@ -1493,6 +1527,7 @@ class BotCanvas(QWidget):
             self._template_hint = ""
         self._refresh_crumb()
         self._show_default_page()
+        self._announce_setup_left()
         self._refresh_collapse_buttons()
         self._reposition_banner()
         self._edit_btn.setEnabled(True)
@@ -1612,6 +1647,7 @@ class BotCanvas(QWidget):
         self._compose_report = ComposeReport()
         self._update_validation_badge()
         self._config = None
+        self._announce_setup_left()
         self._refresh_crumb()
         self._toolbar.set_config(None)
         self._active_state = None
@@ -2691,6 +2727,7 @@ class BotCanvas(QWidget):
         self._refresh_errors()
         self._scene.refresh_region_states(self._compose_report)
         self._update_validation_badge()
+        self.refresh_setup_page()
         self._toolbar.refresh_tag_suggestions()
         self._minimap.fit_to_scene()
         if self._search_bar.isVisible():
@@ -3173,11 +3210,78 @@ class BotCanvas(QWidget):
             self._param_panel.show_signature(self._config)
 
     def _show_default_page(self) -> None:
-        """What the panel shows with nothing selected: a definition's signature, or nothing."""
-        if self._config is not None and self._config.is_definition and self._mode == BotMode.EDIT:
-            self._param_panel.show_signature(self._config)
+        """What the panel shows with nothing selected.
+
+        In Edit mode: a definition's signature, a template draft's steps to edit, or
+        the setup steps of a bot made from a template. Otherwise nothing.
+        """
+        config = self._config
+        if config is None or self._mode != BotMode.EDIT:
+            self._param_panel.show_idle()
+        elif config.is_definition:
+            self._param_panel.show_signature(config)
+        elif config.is_template:
+            self._param_panel.show_template(config)
+        elif self._scene.step_list:
+            self._param_panel.show_template(config, self._scene.setup_progress())
         else:
             self._param_panel.show_idle()
+
+    def set_base_setup_steps(self, steps: Sequence[SetupStep]) -> None:
+        """The setup steps of the open bot, from its template's base version (``setup_steps.steps_for``).
+
+        The controller hands them over when it opens a bot, since reading them takes
+        the template store. A blank fill-in becomes an error on its node from here on,
+        so the errors and the page are worked out again.
+        """
+        if self._config is None:
+            return
+        self._scene.set_base_setup_steps(self._config.id, steps)
+        self._refresh_errors()
+        self._update_validation_badge()
+        if not self._scene.selectedItems():
+            self._show_default_page()
+        self._announce_setup_left()
+
+    @property
+    def setup_steps_left(self) -> int:
+        """How many setup steps the open bot has left; 0 for a draft, a definition or a bot with none."""
+        config = self._config
+        if config is None or config.is_template or config.is_definition:
+            return 0
+        return sum(1 for status in self._scene.setup_progress() if not status.done)
+
+    def _announce_setup_left(self) -> None:
+        left = self.setup_steps_left
+        if left != self._setup_left:
+            self._setup_left = left
+            self.setup_left_changed.emit(left)
+
+    def setup_progress(self) -> list[setup_steps.StepStatus]:
+        """How the open document stands against its template's setup steps, in order."""
+        return self._scene.setup_progress()
+
+    def begin_setup(self) -> None:
+        """Go to where setup is done: Edit mode, nothing selected, so Properties shows the steps."""
+        self.enter_edit_mode()
+        if self._mode != BotMode.EDIT:
+            return
+        self._scene.clearSelection()
+        self._show_default_page()
+        self.tab_switch.emit("properties")
+
+    def _on_template_changed(self) -> None:
+        """The template page wrote into a draft: its blurb or its steps, which move what counts as a fill-in."""
+        self._on_scene_changed()
+
+    def _on_drops_requested(self) -> None:
+        self.tab_switch.emit("drops")
+
+    def refresh_setup_page(self) -> None:
+        """Re-tick a bot's setup steps if its page is the one showing. A draft's page is left to its own edits."""
+        if self._param_panel.showing_template and self._config is not None and not self._config.is_template:
+            self._param_panel.show_template(self._config, self._scene.setup_progress())
+        self._announce_setup_left()
 
     def _show_state_page(self, state) -> None:
         config = self._scene.config
@@ -3217,12 +3321,22 @@ class BotCanvas(QWidget):
             links=links,
             promoted_group=group,
             field_types=types,
+            **self._fill_marks(state.id),
         )
+
+    def _fill_marks(self, state_id: str) -> dict[str, dict[str, str]]:
+        """The node page's fill-in keywords for *state_id*: placeholders in a bot, step pills in a draft."""
+        config = self._scene.config
+        mine = {key: fill for (sid, key), fill in self._scene.fill_ins().items() if sid == state_id}
+        if config is not None and config.is_template:
+            return {"step_chips": {key: f"Setup step {fill.number}" for key, fill in mine.items()}}
+        return {"fill_hints": {key: fill.step.text for key, fill in mine.items()}}
 
     def _show_call_page(self, region) -> None:
         config = self._scene.config
         if config is None:
             return
+        self._param_panel.call_page.set_fill_ins(self._scene.fill_ins(), draft=config.is_template)
         self._param_panel.show_call(
             region, self._definition_for(region), self._compose_report.regions.get(region.id), config
         )
@@ -3231,6 +3345,7 @@ class BotCanvas(QWidget):
         """Run the expensive validation pass after a short debounce from param edits."""
         self._refresh_errors()
         self._update_validation_badge()
+        self._announce_setup_left()
 
     def _on_select_edge_requested(self, transition) -> None:
         """Select the edge on the canvas that corresponds to *transition* and center it."""
@@ -3366,9 +3481,10 @@ class BotCanvas(QWidget):
         error_lines: list[str] = []
         warning_lines: list[str] = []
         reachable = _reachable_states(config)
+        fills = self._scene.fill_ins()
         for state in config.states:
             name = state.label or state.id
-            _, _, err_reasons, warn_reasons = _validate_node(state, config, reachable)
+            _, _, err_reasons, warn_reasons = _validate_node(state, config, reachable, fills)
             folded = self._scene.folded_node_of(state.id)
             if folded is not None:
                 # Named through the node it is drawn as. For a call node, without what is

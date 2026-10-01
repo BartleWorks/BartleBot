@@ -34,6 +34,7 @@ from bartlebot.gui.sidebar.combat_tab import CombatTab
 from bartlebot.gui.sidebar.sections.description_section import DescriptionSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
 from bartlebot.gui.sidebar.sections.setup_section import SetupSection
+from bartlebot.gui.sidebar.setup_steps_card import SetupStepsCard
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 
 if TYPE_CHECKING:
@@ -60,6 +61,8 @@ class LeftSidebar(QTabWidget):
     # window owns the settings dialog, so the request is passed up rather than
     # answered here.
     app_settings_requested = pyqtSignal()
+    # The setup card's Set up button: go to where the template's steps are done.
+    setup_requested = pyqtSignal()
 
     def __init__(
         self,
@@ -97,7 +100,11 @@ class LeftSidebar(QTabWidget):
         self._setup_desc = DescriptionSection(editable=False)
         self._options_desc = DescriptionSection(editable=True)
 
-        self._setup_page = self._wrap(self._setup_desc, self.setup)
+        # Heads Setup while the bot's template steps are not all done; hidden otherwise.
+        self.setup_card = SetupStepsCard()
+        self.setup_card.setup_requested.connect(self.setup_requested)
+
+        self._setup_page = self._wrap(self._setup_desc, self.setup, lead=self.setup_card)
         self._options_page = self._wrap(self._options_desc, self.options)
 
         # ── Combat and Properties ───────────────────────────────────
@@ -160,11 +167,13 @@ class LeftSidebar(QTabWidget):
             self._apply_width_floor()
 
     @staticmethod
-    def _wrap(description: QWidget, section: QWidget) -> QScrollArea:
+    def _wrap(description: QWidget, section: QWidget, *, lead: QWidget | None = None) -> QScrollArea:
         content = QWidget()
         vbox = QVBoxLayout(content)
         vbox.setContentsMargins(8, 8, 8, 8)
         vbox.setSpacing(6)
+        if lead is not None:
+            vbox.addWidget(lead)
         vbox.addWidget(description)
         vbox.addWidget(section)
         vbox.addStretch()
@@ -242,6 +251,10 @@ class LeftSidebar(QTabWidget):
     def config(self) -> BotConfig | None:
         """The BotConfig the sections are currently editing."""
         return self._config
+
+    def set_setup_steps_left(self, left: int) -> None:
+        """How many of the bot's template setup steps are not done: what the card heading Setup says."""
+        self.setup_card.set_steps_left(left)
 
     def set_config(self, config: BotConfig | None) -> None:
         self._config = config

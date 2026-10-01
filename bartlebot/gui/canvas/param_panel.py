@@ -61,6 +61,7 @@ from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlo
 from bartlebot.gui.widgets.player_picker import pick_player, picker_label
 from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
+from bartlebot.gui.widgets.tag_pill import NeutralPill
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.zone_picker import NavZoneButton, is_destination
 from bartlebot.nodes import zone_navigation
@@ -872,6 +873,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         # for a value changed from the definition's.
         self._link_btns: dict[str, QToolButton] = {}
         self._link_chips: dict[str, _LinkChip] = {}
+        self._step_chips: dict[str, NeutralPill] = {}
+        self._fill_labels: dict[str, QLabel] = {}
         self._reset_btns: dict[str, QToolButton] = {}
         self._hover_rows: dict[str, _HoverRow] = {}
         self._schema: list = []
@@ -903,8 +906,16 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         promoted_group: str | None = None,
         resettable: set[str] | frozenset[str] = frozenset(),
         field_types: dict[str, str] | None = None,
+        fill_hints: dict[str, str] | None = None,
+        step_chips: dict[str, str] | None = None,
     ) -> None:
         """Rebuild the form for *schema* showing *params*.
+
+        A key in *fill_hints* (key -> its setup step's text) is a fill-in of the bot's
+        template: the row is marked required, since the bot cannot run with it blank,
+        and its placeholder reads "Fill in: <step text>". In a template draft a key in
+        *step_chips* (key -> "Setup step N") wears that as a pill, so the author can
+        see which rows a bot will be asked for.
 
         On a node in a definition document, *linkable* gives each row a Link button
         that shows while the row is hovered; a row in *links* (key -> what it is linked
@@ -929,15 +940,23 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._muted_labels.clear()
         self._link_btns.clear()
         self._link_chips.clear()
+        self._step_chips.clear()
+        self._fill_labels.clear()
         self._reset_btns.clear()
         self._hover_rows.clear()
-        self._schema = list(schema)
+        # As drawn: a field's type can be narrowed by a link, and a fill-in is required.
+        self._schema = []
         links = links or {}
         field_types = field_types or {}
+        fill_hints = fill_hints or {}
+        step_chips = step_chips or {}
         insert_idx = 0
         for field in schema:
             if field_types.get(field.key, field.type) != field.type:
                 field = replace(field, type=field_types[field.key])
+            if field.key in fill_hints:
+                field = replace(field, required=True, placeholder=f"Fill in: {fill_hints[field.key]}")
+            self._schema.append(field)
             label_w = QLabel()
             label_w.setTextFormat(Qt.TextFormat.RichText)
             self._field_labels.append((label_w, field, insert_idx > 0))
@@ -983,6 +1002,11 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 row_btns.append(link_btn)
             if field.key in resettable:
                 row_btns.append(self._make_reset_button(field.key))
+            if field.key in step_chips:
+                step_chip = NeutralPill(step_chips[field.key])
+                step_chip.setToolTip("A fill-in: left blank in a release, for the bot made from it to fill.")
+                self._step_chips[field.key] = step_chip
+                row_btns.append(step_chip)
             if field.type == "bool":
                 container = _HoverRow(link_btn)
                 if link_btn is not None:
@@ -1033,6 +1057,15 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                         self._form.insertWidget(insert_idx, label_w)
                     self._form.insertWidget(insert_idx + 1, display_w)
                     insert_idx += 2
+            if field.key in fill_hints and field.type not in ("str", "text"):
+                # A picker, a coordinate or a list has no placeholder to carry it.
+                fill_lbl = QLabel(field.placeholder)
+                self._muted_labels.append(fill_lbl)
+                self._fill_labels[field.key] = fill_lbl
+                fill_lbl.setStyleSheet(f"color: {THEME.text_muted};")
+                fill_lbl.setWordWrap(True)
+                self._form.insertWidget(insert_idx, fill_lbl)
+                insert_idx += 1
             if field.default_hint and not field.required:
                 hint_lbl = QLabel(f"Default: {field.default_hint}")
                 self._muted_labels.append(hint_lbl)
@@ -1112,6 +1145,20 @@ class _DynamicParamForm(ThemedMixin, QWidget):
 
     def hover_row(self, key: str) -> _HoverRow | None:
         return self._hover_rows.get(key)
+
+    def step_chip_text(self, key: str) -> str | None:
+        """The "Setup step N" pill on *key*'s row, in a template draft; None for a row with none."""
+        chip = self._step_chips.get(key)
+        return chip.text() if chip is not None else None
+
+    def fill_hint_text(self, key: str) -> str | None:
+        """ "Fill in: <step text>" as *key*'s row shows it in a bot: its placeholder, or the line under it."""
+        label = self._fill_labels.get(key)
+        if label is not None:
+            return label.text()
+        widget = self._widgets.get(key)
+        text = widget.placeholderText() if isinstance(widget, (QLineEdit, QPlainTextEdit)) else ""
+        return text if text.startswith("Fill in: ") else None
 
     def required_fields(self) -> list:
         """The required ``ParamField``s the form was last built from."""
@@ -1263,6 +1310,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         if field_type == "str":
             plain = QLineEdit()
             plain.setText(str(val) if val is not None else "")
+            plain.setPlaceholderText(placeholder)
             if help_text:
                 plain.setToolTip(help_text)
             plain.textChanged.connect(self._emit_changed)
@@ -1750,6 +1798,7 @@ _PAGE_EDGE = 2
 _PAGE_REGION = 3
 _PAGE_CALL = 4
 _PAGE_SIGNATURE = 5
+_PAGE_TEMPLATE = 6
 
 
 class _RegionColorRow(ThemedMixin, QWidget):
@@ -1875,6 +1924,10 @@ class _ParamPanel(ThemedMixin, QWidget):
     promote_node_requested = pyqtSignal(str, bool)
     # The signature page wrote into the definition document's signature.
     definition_changed = pyqtSignal()
+    # The template page wrote into a draft's template_meta: its blurb or its steps.
+    template_changed = pyqtSignal()
+    # A setup step about the drop list was clicked: bring the Drops tab forward.
+    drops_requested = pyqtSignal()
     add_port_requested = pyqtSignal(str)  # SUBGRAPH_ENTRY / SUBGRAPH_EXIT
     delete_port_requested = pyqtSignal(str)  # state ID
 
@@ -2188,6 +2241,21 @@ class _ParamPanel(ThemedMixin, QWidget):
         reserve_scrollbar_gutter(sig_scroll)
         sig_scroll.setWidget(self._signature_page)
         self._stack.addWidget(sig_scroll)
+        # Page 6 -- a template's steps, nothing selected: a bot's to follow, a draft's to edit.
+        from bartlebot.gui.canvas.template_page import TemplatePage  # noqa: PLC0415
+
+        self._template_page = TemplatePage()
+        template_scroll = QScrollArea()
+        template_scroll.setWidgetResizable(True)
+        template_scroll.setFrameShape(template_scroll.Shape.NoFrame)
+        reserve_scrollbar_gutter(template_scroll)
+        template_scroll.setWidget(self._template_page)
+        self._stack.addWidget(template_scroll)
+        self._template_page.edit_starting.connect(self.edit_starting)
+        self._template_page.structural_change.connect(self.structural_property_changed)
+        self._template_page.changed.connect(self.template_changed)
+        self._template_page.go_to_requested.connect(self.select_state_requested)
+        self._template_page.drops_requested.connect(self.drops_requested)
         self._call_page.edit_starting.connect(self.edit_starting)
         self._call_page.structural_change.connect(self.structural_property_changed)
         self._call_page.changed.connect(self.region_property_changed)
@@ -2368,6 +2436,8 @@ class _ParamPanel(ThemedMixin, QWidget):
         links: dict[str, str] | None = None,
         promoted_group: str | None = None,
         field_types: dict[str, str] | None = None,
+        fill_hints: dict[str, str] | None = None,
+        step_chips: dict[str, str] | None = None,
     ) -> None:
         """Show *state*. *in_definition* is a node of a definition document open for editing.
 
@@ -2396,6 +2466,8 @@ class _ParamPanel(ThemedMixin, QWidget):
             links=links,
             promoted_group=promoted_group,
             field_types=field_types,
+            fill_hints=fill_hints,
+            step_chips=step_chips,
         )
         self._rebuild_returns(state.node_type)
         self._rebuild_connections(state.id)
@@ -2504,6 +2576,24 @@ class _ParamPanel(ThemedMixin, QWidget):
     @property
     def showing_signature(self) -> bool:
         return self._stack.currentIndex() == _PAGE_SIGNATURE
+
+    def show_template(self, config, statuses=()) -> None:
+        """Show the template page: a draft's steps to edit, or a bot's (*statuses*) to follow."""
+        self._cancel_record()
+        self._state = None
+        self._transition = None
+        self._region = None
+        self._template_page.show_template(config, statuses)
+        self._stack.setCurrentIndex(_PAGE_TEMPLATE)
+
+    @property
+    def showing_template(self) -> bool:
+        return self._stack.currentIndex() == _PAGE_TEMPLATE
+
+    @property
+    def template_page(self):
+        """The template page (``TemplatePage``)."""
+        return self._template_page
 
     def _on_form_link_requested(self, key: str) -> None:
         if self._state is not None:

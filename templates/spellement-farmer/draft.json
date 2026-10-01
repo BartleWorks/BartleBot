@@ -355,6 +355,123 @@
   ],
   "regions": [],
   "template_meta": {
-    "blurb": "Template bot file for a spellement farming bot. To use this template to create your own bot, follow these steps:"
+    "blurb": "Farms a boss for spellements with level scaling applied: checks the scaling, renews it in its own dungeon when it has lapsed, then enters the boss's dungeon, defeats it, exits and repeats.\n\nIf an entrance zone is not in the list, choose the nearest zone that is, and add navigation nodes from there to the entrance. Check what Quicksell keeps before a long run.",
+    "setup": [
+      {
+        "text": "Choose the zone the level scaling dungeon's entrance is in",
+        "targets": [
+          {
+            "state": "t_3",
+            "param": "zone"
+          }
+        ]
+      },
+      {
+        "text": "Record entering the level scaling dungeon",
+        "targets": [
+          {
+            "state": "t_4",
+            "param": "from_zone"
+          },
+          {
+            "state": "t_4",
+            "param": "dungeon_zone"
+          },
+          {
+            "state": "t_4",
+            "param": "sigil_xyz"
+          },
+          {
+            "state": "t_4",
+            "param": "reset_xyz"
+          }
+        ]
+      },
+      {
+        "text": "Record applying level scaling",
+        "targets": [
+          {
+            "state": "t_5",
+            "param": "zone"
+          },
+          {
+            "state": "t_5",
+            "param": "interact_xyz"
+          },
+          {
+            "state": "t_5",
+            "param": "reset_xyz"
+          }
+        ]
+      },
+      {
+        "text": "Choose the zone the boss's dungeon entrance is in",
+        "targets": [
+          {
+            "state": "t_6",
+            "param": "zone"
+          }
+        ]
+      },
+      {
+        "text": "Record entering the boss's dungeon",
+        "targets": [
+          {
+            "state": "t_10",
+            "param": "from_zone"
+          },
+          {
+            "state": "t_10",
+            "param": "dungeon_zone"
+          },
+          {
+            "state": "t_10",
+            "param": "sigil_xyz"
+          },
+          {
+            "state": "t_10",
+            "param": "reset_xyz"
+          }
+        ]
+      },
+      {
+        "text": "Name the boss, as the Players tab shows it",
+        "targets": [
+          {
+            "state": "t_11",
+            "param": "enemy"
+          }
+        ]
+      },
+      {
+        "text": "Import the boss's drops from its wiki page",
+        "targets": [
+          {
+            "field": "drops"
+          }
+        ]
+      },
+      {
+        "text": "Record exiting the dungeon",
+        "targets": [
+          {
+            "state": "t_13",
+            "param": "from_zone"
+          },
+          {
+            "state": "t_13",
+            "param": "to_zone"
+          },
+          {
+            "state": "t_13",
+            "param": "xyz"
+          },
+          {
+            "state": "t_13",
+            "param": "reset_xyz"
+          }
+        ]
+      }
+    ]
   }
 }

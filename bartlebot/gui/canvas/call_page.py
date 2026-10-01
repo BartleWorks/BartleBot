@@ -142,6 +142,9 @@ class CallNodePage(ThemedMixin, QWidget):
         super().__init__(parent)
         self._region: RegionModel | None = None
         self._defn: SubgraphDefinition | None = None
+        # (state id, param) -> setup_steps.FillIn; see set_fill_ins.
+        self._fill_ins: dict = {}
+        self._fill_ins_draft = False
         self._config: BotConfig | None = None
         self._suppress = False
         self._forms: dict[str | None, object] = {}
@@ -257,6 +260,28 @@ class CallNodePage(ThemedMixin, QWidget):
     def combat_text(self) -> str:
         return self._combat_note.text()
 
+    def set_fill_ins(self, fill_ins, *, draft: bool) -> None:
+        """The setup fill-ins of the open document (``EditScene.fill_ins``), read at the next ``show_call``.
+
+        Keyed by the member an input lands on. In a bot each is marked required with
+        "Fill in: <step text>"; in a template *draft* it wears a "Setup step N" pill.
+        """
+        self._fill_ins = dict(fill_ins)
+        self._fill_ins_draft = draft
+
+    def _fill_marks(self, pairs) -> dict[str, dict[str, str]]:
+        """``load_schema``'s fill-in keywords for form keys, given ``(form key, state id, param)`` triples."""
+        found = {k: self._fill_ins[(sid, param)] for k, sid, param in pairs if (sid, param) in self._fill_ins}
+        if self._fill_ins_draft:
+            return {"step_chips": {k: f"Setup step {f.number}" for k, f in found.items()}}
+        return {"fill_hints": {k: f.step.text for k, f in found.items()}}
+
+    def _input_marks(self, inputs) -> dict[str, dict[str, str]]:
+        assert self._region is not None
+        return self._fill_marks(
+            (i.name, member_id(self._region.id, b.state), b.param) for i in inputs for b in i.bindings
+        )
+
     # -- showing -------------------------------------------------------
 
     def show_call(
@@ -320,7 +345,10 @@ class CallNodePage(ThemedMixin, QWidget):
             if top:
                 form = make_form()
                 form.load_schema(
-                    [input_param_field(defn, i) for i in top], chosen, resettable={i.name for i in top} & set(chosen)
+                    [input_param_field(defn, i) for i in top],
+                    chosen,
+                    resettable={i.name for i in top} & set(chosen),
+                    **self._input_marks(top),
                 )
                 self._add_form(None, form)
                 self._inputs_layout.addWidget(form)
@@ -332,6 +360,7 @@ class CallNodePage(ThemedMixin, QWidget):
                         [input_param_field(defn, i) for i in members],
                         chosen,
                         resettable={i.name for i in members} & set(chosen),
+                        **self._input_marks(members),
                     )
                     self._add_form(panel.id, form)
                     section = PanelSection(panel.label or panel.id, form, closed=panel.default_closed)
@@ -389,7 +418,8 @@ class CallNodePage(ThemedMixin, QWidget):
         changed = {
             k[len(prefix) :] for k, v in self._region.source.inputs.items() if k.startswith(prefix) and v is not None
         }
-        form.load_schema(schema, dict(state.params), resettable=changed)
+        marks = self._fill_marks((f.key, state.id, f.key) for f in schema)
+        form.load_schema(schema, dict(state.params), resettable=changed, **marks)
         self._add_form(panel.id, form)
         record = None
         if state.node_type in recording.RECORDABLE_NODES:

@@ -169,6 +169,56 @@
   ],
   "regions": [],
   "template_meta": {
-    "blurb": "Template bot file for a reagent collector bot."
+    "blurb": "Collects a reagent from up to three spawn points, changing realm after each pass so the spawns are fresh.\n\nDelete the spawn nodes you do not need: a reagent with one spawn point needs only the first.",
+    "setup": [
+      {
+        "text": "Choose the zone the reagent spawns in",
+        "targets": [
+          {
+            "state": "t_2",
+            "param": "zone"
+          }
+        ]
+      },
+      {
+        "text": "Set what to collect at spawn 1",
+        "targets": [
+          {
+            "state": "t_4",
+            "param": "zone"
+          },
+          {
+            "state": "t_4",
+            "param": "entity_names"
+          }
+        ]
+      },
+      {
+        "text": "Set what to collect at spawn 2",
+        "targets": [
+          {
+            "state": "t_5",
+            "param": "zone"
+          },
+          {
+            "state": "t_5",
+            "param": "entity_names"
+          }
+        ]
+      },
+      {
+        "text": "Set what to collect at spawn 3",
+        "targets": [
+          {
+            "state": "t_6",
+            "param": "zone"
+          },
+          {
+            "state": "t_6",
+            "param": "entity_names"
+          }
+        ]
+      }
+    ]
   }
 }

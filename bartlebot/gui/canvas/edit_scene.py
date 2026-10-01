@@ -13,7 +13,7 @@ import math
 import re
 import uuid
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import chain
 
@@ -30,7 +30,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import player_realms, zone_nav
+from bartlebot import player_realms, setup_steps
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -38,6 +38,7 @@ from bartlebot.bot.schema import (
     SUBGRAPH_EXIT,
     BotConfig,
     RegionModel,
+    SetupStep,
     StateModel,
     SubgraphSource,
     TransitionModel,
@@ -65,7 +66,6 @@ from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.zone_picker import is_destination
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, source_label
 from bartlebot.subgraphs import (
@@ -263,37 +263,10 @@ def authoring_anchor(config: BotConfig) -> tuple[str, str] | None:
     return None
 
 
-def _required_field_empty(field, params: dict) -> bool:
-    """Return True if a required ParamField has no meaningful value in params."""
-    if field.key not in params:
-        return True
-    val = params[field.key]
-    if field.type in ("str", "text", "zone", "nav_zone"):
-        # Both zone widgets store a zone path, and an unset one is the empty string.
-        return not str(val).strip()
-    if field.type in ("str_list", "drop_keep_list", "player_list"):
-        return not val  # empty list — for player_list, no player selected is a no-op
-    if field.type == "xyz":
-        # All-zero counts as empty: it is what an unset coordinate was saved as before the
-        # field could be blank, and a node would teleport to the zone's origin on it.
-        try:
-            axes = [float(val[axis]) for axis in ("x", "y", "z")]
-        except (KeyError, TypeError, ValueError):
-            return True
-        return not any(axes)
-    return False  # int, float, bool always have a value
-
-
-def _nav_zone_reachable(value) -> bool:
-    """Whether a ``nav_zone`` value is somewhere Sync In Zone can go. An empty one, or an unloadable map, passes.
-
-    The picker offers only destinations, but a value can arrive another way: a file,
-    or Record writing a zone param a ``nav_zone`` one is linked to.
-    """
-    if not value or not isinstance(value, str):
-        return True
-    nav = zone_nav.load()
-    return not nav.worlds or is_destination(nav, value)
+#: What "blank" means for a param, and whether a ``nav_zone`` is a destination: one rule
+#: each, in ``setup_steps``, shared with the library row and Release.
+_required_field_empty = setup_steps.field_empty
+_nav_zone_reachable = setup_steps.nav_zone_reachable
 
 
 def port_marks_for(state: StateModel, config: BotConfig) -> dict[str, str]:
@@ -328,12 +301,18 @@ def _return_is_handled_without_an_edge(state, config, return_name: str) -> bool:
     return return_name in FALLTHROUGH_RETURNS and state.id != config.recovery_state
 
 
-def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bool, bool, list[str], list[str]]:
+def _validate_node(
+    state,
+    config,
+    reachable: set[str] | None = None,
+    fill_ins: Mapping[tuple[str, str], setup_steps.FillIn] | None = None,
+) -> tuple[bool, bool, list[str], list[str]]:
     """Return (is_error, is_warning, error_reasons, warning_reasons) for a state.
 
     Error conditions:
       - node_type not in NODE_REGISTRY (unknown type)
       - any required param key absent from state.params
+      - in a bot, any setup fill-in (*fill_ins*) left blank, required on its own or not
       - any outgoing transition points to a non-existent destination state
 
     Warning conditions:
@@ -363,13 +342,26 @@ def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bo
     for field in schema:
         if (state.id, field.key) in driven:
             continue
-        if field.required and _required_field_empty(field, state.params):
-            if config.is_template:
-                # A template draft leaves what each bot fills in blank -- a released
-                # version must -- so a blank here is the expected state, not a fault.
-                warning_reasons.append(f"Required param '{field.key}' is left blank for the bot to fill in")
-            else:
-                error_reasons.append(f"Required param '{field.key}' is empty")
+        fill = fill_ins.get((state.id, field.key)) if fill_ins else None
+        empty = _required_field_empty(field, state.params)
+        if fill is not None:
+            # A template leaves its fill-ins blank -- a released version must -- so a
+            # blank one is the expected state there, and a filled one is the fault. In
+            # the bot made from it, blank is the step not done: an error whether or not
+            # the param is required on its own, so no placeholder ever runs as a value.
+            if config.is_template and not empty:
+                warning_reasons.append(
+                    f"'{field.key}' is setup step {fill.number}'s to fill in, so a release needs it blank"
+                )
+            elif not config.is_template and empty and setup_steps.setup_error(fill) not in error_reasons:
+                # Once per step, however many of its fill-ins on this node are blank:
+                # Record fills an entrance's four in one go, and the step is one thing to do.
+                error_reasons.append(setup_steps.setup_error(fill))
+        if fill is not None and empty:
+            continue
+        if field.required and empty:
+            # In a draft too: nothing would ever ask the user of a bot made from it to fill this.
+            error_reasons.append(f"Required param '{field.key}' is empty")
         elif field.type == "nav_zone" and not _nav_zone_reachable(state.params.get(field.key)):
             error_reasons.append(f"'{field.key}' is not a destination on the zone map")
 
@@ -636,6 +628,8 @@ class EditScene(QGraphicsScene):
         self._subgraph_library: SubgraphLibrary | None = None
         # (document id, ids): see set_reserved_ids.
         self._reserved_ids: tuple[str | None, frozenset[str]] = (None, frozenset())
+        # (document id, steps): see set_base_setup_steps.
+        self._base_setup_steps: tuple[str | None, tuple[SetupStep, ...]] = (None, ())
         self._in_structural_edit: bool = False  # re-entrancy guard; suppresses nested about_to_change
         self._snap_enabled: bool = False
         self._grid_style: str = "dots"  # "dots" | "lines" | "none"
@@ -1235,9 +1229,10 @@ class EditScene(QGraphicsScene):
         if self._config is None:
             return
         reachable = _reachable_states(self._config)
+        fills = self.fill_ins()
         rolled: dict[str, tuple[list[str], list[str]]] = {}
         for state in self._config.states:
-            is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, self._config, reachable)
+            is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, self._config, reachable, fills)
             node = self._node_items.get(state.id)
             if node is not None:
                 if self._expanded and state.id in self._expanded_instance_members():
@@ -1274,6 +1269,43 @@ class EditScene(QGraphicsScene):
     @property
     def subgraph_library(self) -> SubgraphLibrary | None:
         return self._subgraph_library
+
+    # ------------------------------------------------------------------
+    # Setup steps
+    # ------------------------------------------------------------------
+
+    def set_base_setup_steps(self, document_id: str | None, steps: Sequence[SetupStep] = ()) -> None:
+        """The setup steps of the bot ``document_id``: its template's base version's (``setup_steps.steps_for``).
+
+        Set by the controller when it opens a bot made from a template, since reading
+        them takes the template store. Tied to the bot's id, as the reserved ids are, so
+        a definition opened over it or the next bot never inherits them. A template
+        draft needs none handed in: its steps are in the document.
+        """
+        self._base_setup_steps = (document_id, tuple(steps)) if document_id is not None else (None, ())
+
+    @property
+    def step_list(self) -> list[SetupStep]:
+        """The steps that apply to the open document: a draft's own, or its bot's base version's."""
+        if self._config is None:
+            return []
+        if self._config.template_meta is not None:
+            return list(self._config.template_meta.setup)
+        document_id, steps = self._base_setup_steps
+        return list(steps) if self._config.template is not None and self._config.id == document_id else []
+
+    def fill_ins(self) -> dict[tuple[str, str], setup_steps.FillIn]:
+        """``(state id, param)`` -> the setup step asking for it, for the open document."""
+        steps = self.step_list
+        if self._config is None or not steps:
+            return {}
+        return setup_steps.fill_ins(self._config, steps, self._subgraph_library)
+
+    def setup_progress(self) -> list[setup_steps.StepStatus]:
+        """How the open document stands against its steps, in order."""
+        if self._config is None:
+            return []
+        return setup_steps.progress(self._config, self.step_list, self._subgraph_library)
 
     # ------------------------------------------------------------------
     # Minting ids

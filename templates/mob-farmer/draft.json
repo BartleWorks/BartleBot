@@ -249,6 +249,47 @@
   ],
   "regions": [],
   "template_meta": {
-    "blurb": "Template bot file for a mob farming bot."
+    "blurb": "Farms one kind of mob in the open world: fights it, moves to a safe spot, and repeats, selling and refilling potions between fights.\n\nCheck what Quicksell keeps before a long run.",
+    "setup": [
+      {
+        "text": "Choose the zone the mobs spawn in",
+        "targets": [
+          {
+            "state": "t_2",
+            "param": "zone"
+          }
+        ]
+      },
+      {
+        "text": "Name the mob to fight, as the Players tab shows it",
+        "targets": [
+          {
+            "state": "t_6",
+            "param": "enemy"
+          }
+        ]
+      },
+      {
+        "text": "Set where players wait safely between fights",
+        "targets": [
+          {
+            "state": "t_8",
+            "param": "zone"
+          },
+          {
+            "state": "t_8",
+            "param": "xyz"
+          }
+        ]
+      },
+      {
+        "text": "Import the mob's drops from its wiki page",
+        "targets": [
+          {
+            "field": "drops"
+          }
+        ]
+      }
+    ]
   }
 }
