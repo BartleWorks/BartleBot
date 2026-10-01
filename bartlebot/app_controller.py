@@ -24,6 +24,7 @@ from bartlebot import (
     recovery_readiness,
     restricted_zones,
     setup_steps,
+    template_diff,
     template_store,
     wizard_names,
 )
@@ -309,6 +310,8 @@ class AppController(QObject):
 
         # Canvas signals
         w.bot_canvas.config_changed.connect(self._on_config_changed)
+        # A finished template review, or an undo across one: the base moved.
+        w.bot_canvas.template_ref_changed.connect(self._refresh_template_context)
         w.bot_canvas.mode_changed.connect(self._on_mode_changed)
         w.bot_canvas.run_requested.connect(self._on_run_requested)
         w.bot_canvas.pause_requested.connect(self._pause_bot)
@@ -994,7 +997,8 @@ class AppController(QObject):
         """Tell the canvas what a template is behind the open document.
 
         For a draft, what its crumb says and which ids it must not mint. For a bot made
-        from a template, the setup steps of its base version, which it does not carry.
+        from a template, the setup steps of its base version, which it does not carry,
+        and the update waiting for it when the template has released since.
         """
         config = self._loaded_config
         if config is None:
@@ -1009,8 +1013,11 @@ class AppController(QObject):
                     else None
                 )
                 canvas.set_template_origin(
-                    origin.name if origin is not None else None, config.template.version if origin else None
+                    origin.name if origin is not None else None,
+                    config.template.version if origin else None,
+                    origin.latest_version if origin else None,
                 )
+                canvas.set_template_update(template_diff.load_update(config, self._templates_root))
             return
         template = self._open_template()
         if template is None:

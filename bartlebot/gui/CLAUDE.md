@@ -967,16 +967,26 @@ can be read without closing Option Values.
 
 **Setup** is a fourth tab there, present only while it has something to say
 (`sidebar/setup_panel.py`): the setup steps a bot made from a template still has to do, or
-a template draft's step editor. It is in the right sidebar and not a page of Properties so
-that the list and the node a step points at are on screen together. As a Properties page,
-acting on a step hid the list. Three rules:
+a template draft's step editor, and the review of a template update for a bot behind its
+template. It is in the right sidebar and not a page of Properties so that the list and the
+node a step points at are on screen together. As a Properties page, acting on a step hid
+the list. Four rules:
 
 - **A step card edits nothing.** Clicking one selects its node, and the fill-in is filled
   on that node's page, the one place it is editable. The drops step is the exception,
   because the drop list has no node: it lists the bot's fights, each with its own Import.
-- **The tab is decided by `MainWindow._sync_setup_tab`.** Shown for a draft and for a bot
-  with steps left. A bot that finishes its steps keeps the tab until it is closed, a bot
-  opened with them all done gets none, and Bar B's template chip brings it back.
+- **The tab is decided by `MainWindow._sync_setup_tab`.** Shown for a draft, for a bot
+  with steps left, and for a bot whose template has released since its base. A bot that
+  finishes its steps keeps the tab until it is closed, a bot opened with them all done gets
+  none, and Bar B's template chip brings it back.
+- **A change card asks; the canvas does.** The review (`docs/TEMPLATES.md`) is drawn above
+  the steps: one `ChangeCard` per change under each release's note, with **Apply**, or
+  **Use template's** / **Keep mine** on a conflict, and no button on one that can't be
+  applied. A card edits nothing itself, as a step card does not: the panel emits
+  `apply_requested`, and `BotCanvas.apply_template_change` makes the change as one undo
+  step. **Finish review** advances the bot's base, which is what remembers a skip, and
+  **Later** puts the review away until the bot is next opened. The diff is recomputed from
+  the open bot on every refresh, so an applied or undone change shows at once.
 - **A draft's steps are `CardFrame` cards**, like every other ordered list here: a grip to
   reorder, a cross to remove, and a dashed Add card at the end. The tab's edits go to the
   canvas (`begin_setup_edit`, `begin_setup_change`, `setup_edited`), which owns the undo

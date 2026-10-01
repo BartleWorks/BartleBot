@@ -516,10 +516,20 @@ class BotHeader(ThemedMixin, QWidget):
     # Public API
     # ------------------------------------------------------------------
 
-    def set_template_origin(self, text: str | None) -> None:
-        """What the template chip reads, such as "Boss Farmer v2", or ``None`` for a bot made from none."""
+    def set_template_origin(self, text: str | None, *, update: bool = False) -> None:
+        """What the template chip reads, such as "Boss Farmer v2", or ``None`` for a bot made from none.
+
+        *update* says the text names a newer version too ("Boss Farmer v1 → v2"), and
+        the chip is then the way to its review.
+        """
         self._template_chip.setText(text or "")
-        self._template_chip.setToolTip(f"Made from the template {text}. Click for its setup steps." if text else "")
+        if not text:
+            tip = ""
+        elif update:
+            tip = "The template has a newer version. Click to review what changed."
+        else:
+            tip = f"Made from the template {text}. Click for its setup steps."
+        self._template_chip.setToolTip(tip)
         self._template_chip.setVisible(bool(text))
 
     @property

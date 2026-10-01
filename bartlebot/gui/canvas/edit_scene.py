@@ -977,6 +977,22 @@ class EditScene(QGraphicsScene):
         x, y = self._fold.to_display(float(position["x"]), float(position["y"]))
         return QPointF(x, y - body_height / 2)
 
+    def free_position(self, position: dict) -> dict:
+        """Where a node wanting stored ``position`` can go: there, or the nearest empty grid cell.
+
+        What a template update asks before it adds a node: the spot beside the node it
+        is wired from may already hold something the bot's author put there.
+        """
+        top_left = self.drawn_position(position)
+        taken = any(
+            abs(item.pos().x() - top_left.x()) < NODE_W and abs(item.pos().y() - top_left.y()) < NODE_H
+            for item in self._node_items.values()
+        )
+        if not taken:
+            return dict(position)
+        center = QPointF(top_left.x() + NODE_W / 2, top_left.y() + NODE_H / 2)
+        return self.stored_position(self.find_empty_grid_cell(center))
+
     # ------------------------------------------------------------------
     # A subgraph node's body, shown in Run mode
     # ------------------------------------------------------------------

@@ -206,6 +206,8 @@ class MainWindow(QMainWindow):
         # for that document: see _sync_setup_tab.
         self._setup_document: str | None = None
         self._setup_tab_kept = False
+        # Later on a template review: put away until the bot is next opened.
+        self._review_later = False
         self._game_view_panel = GameViewPanel()
         self.game_view = self._game_view_panel.game_view
         # The authoring utilities in Bar A (#81); AppController drives them.
@@ -241,6 +243,10 @@ class MainWindow(QMainWindow):
         setup.edit_starting.connect(self.bot_canvas.begin_setup_edit)
         setup.structural_change.connect(self.bot_canvas.begin_setup_change)
         setup.changed.connect(self.bot_canvas.setup_edited)
+        # A template review asks; the canvas, which owns the bot and its undo history, does.
+        setup.apply_requested.connect(self.bot_canvas.apply_template_change)
+        setup.finish_requested.connect(self.bot_canvas.finish_template_review)
+        setup.later_requested.connect(self._put_review_away)
         # Wire Browse Bot Library menu action
         self.action_browse_library.triggered.connect(self.bot_canvas.open_library_dialog)
         # The combat strategy dialog is owned by the Combat tab: it is the surface that
@@ -643,10 +649,12 @@ class MainWindow(QMainWindow):
     def _sync_setup_tab(self) -> None:
         """Redraw the Setup tab from the canvas, and decide whether it is there at all.
 
-        There for a template draft, and for a bot with steps still to do. A bot whose
-        steps are all done gets no tab when it is opened, but one that finishes them
-        keeps it until it is closed -- a tab that vanished on the last tick would take
-        "All 5 done" with it -- and Bar B's template chip brings it back.
+        There for a template draft, for a bot with steps still to do, and for a bot
+        whose template has released a newer version, until that review is finished or
+        put away with Later. A bot whose steps are all done gets no tab when it is
+        opened, but one that finishes them keeps it until it is closed -- a tab that
+        vanished on the last tick would take "All 5 done" with it -- and Bar B's
+        template chip brings it back.
         """
         canvas = self.bot_canvas
         config = canvas.config
@@ -654,13 +662,23 @@ class MainWindow(QMainWindow):
         if document != self._setup_document:
             self._setup_document = document
             self._setup_tab_kept = False
+            self._review_later = False
             fresh = True
         else:
             fresh = False
         draft = config is not None and config.is_template
-        wanted = draft or canvas.setup_steps_left > 0 or (self._setup_tab_kept and canvas.has_setup_steps)
+        review = None if self._review_later else canvas.template_review
+        wanted = (
+            draft
+            or canvas.setup_steps_left > 0
+            or review is not None
+            or (self._setup_tab_kept and canvas.has_setup_steps)
+        )
         self.right_sidebar.setup_panel.show_document(
-            config if (draft or canvas.has_setup_steps) else None, canvas.setup_progress(), canvas.subgraph_library
+            config if (draft or canvas.has_setup_steps or review is not None) else None,
+            canvas.setup_progress(),
+            canvas.subgraph_library,
+            review,
         )
         was_shown = self.right_sidebar.setup_tab_shown
         self.right_sidebar.set_setup_tab_shown(wanted)
@@ -671,12 +689,20 @@ class MainWindow(QMainWindow):
                 self.right_sidebar.switch_to_setup()
 
     def _reopen_setup_tab(self) -> None:
-        """Bar B's template chip: show the bot's setup steps again, done or not."""
-        if not self.bot_canvas.has_setup_steps:
+        """Bar B's template chip: show the bot's setup steps again, done or not, and a review put away."""
+        if not self.bot_canvas.has_setup_steps and self.bot_canvas.template_review is None:
             return
         self._setup_tab_kept = True
+        self._review_later = False
         self._sync_setup_tab()
         self.right_sidebar.switch_to_setup()
+
+    def _put_review_away(self) -> None:
+        """Later, on a template review: nothing changes in the bot, and its base stays where it is."""
+        self._review_later = True
+        # Dismissed by hand, so steps that are all done no longer hold the tab open.
+        self._setup_tab_kept = False
+        self._sync_setup_tab()
 
     def _on_canvas_tab_switch(self, tab: str) -> None:
         if tab == "log":

@@ -40,7 +40,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_summary, card_art, setup_steps
+from bartlebot import bot_summary, card_art, setup_steps, template_diff
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -100,7 +100,7 @@ from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import dev_mode
-from bartlebot.strategy_store import rekey_bot_strategy_states
+from bartlebot.strategy_store import load_bot_strategy, rekey_bot_strategy_states
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import (
     ComposeReport,
@@ -251,6 +251,8 @@ class _BotMeta:
     generated: str = ""
     #: Setup steps of the bot's template still to do; 0 for a bot made from none.
     setup_left: int = 0
+    #: Whether the bot's template has released a version newer than the one it is based on.
+    update_available: bool = False
 
 
 def _drop_names(raw: object) -> list[str]:
@@ -276,6 +278,10 @@ def setup_left_text(left: int) -> str:
     return f"{left} setup {'step' if left == 1 else 'steps'} left"
 
 
+#: A library row's line for a bot whose template has moved on.
+UPDATE_AVAILABLE_TEXT = "Template update available"
+
+
 def _read_bot_meta(path: Path, templates_root: "str | Path | None" = None) -> "_BotMeta | None":
     """What a library card shows for the bot file at *path*, read without building a scene.
 
@@ -296,6 +302,7 @@ def _read_bot_meta(path: Path, templates_root: "str | Path | None" = None) -> "_
             path=path,
             generated="" if description else (bot_summary.describe_data(data) or ""),
             setup_left=setup_steps.left_in_file(data, templates_root),
+            update_available=template_diff.behind_in_file(data, templates_root),
         )
     except Exception:
         return None
@@ -402,6 +409,7 @@ class _BotCard(ThemedMixin, QWidget):
         self._desc_lbl: QLabel | None = None
         self._meta_lbl: QLabel | None = None
         self._setup_lbl: QLabel | None = None
+        self._update_lbl: QLabel | None = None
         self._build()
         self.set_matched_drops(matched_drops)
         self.refresh_theme_styles()
@@ -461,6 +469,11 @@ class _BotCard(ThemedMixin, QWidget):
             self._setup_lbl = QLabel(setup_left_text(self._meta.setup_left))
             layout.addWidget(self._setup_lbl)
 
+        # The template it was made from has released since: opening it offers the review.
+        if self._meta.update_available:
+            self._update_lbl = QLabel(UPDATE_AVAILABLE_TEXT)
+            layout.addWidget(self._update_lbl)
+
         # Always built, and hidden while nothing matched: the library keeps its cards
         # across searches, so this is the one line a new query has to be able to change.
         self._match_lbl = QLabel()
@@ -481,6 +494,11 @@ class _BotCard(ThemedMixin, QWidget):
     def setup_text(self) -> str | None:
         """The "2 setup steps left" line as shown, or None for a bot with nothing left."""
         return self._setup_lbl.text() if self._setup_lbl is not None else None
+
+    @property
+    def update_text(self) -> str | None:
+        """The "Template update available" line as shown, or None for a bot that is not behind."""
+        return self._update_lbl.text() if self._update_lbl is not None else None
 
     @property
     def matched_drops_text(self) -> str | None:
@@ -506,6 +524,7 @@ class _BotCard(ThemedMixin, QWidget):
             (self._desc_lbl, THEME.text_muted),
             (self._meta_lbl, THEME.text_subtle),
             (self._setup_lbl, THEME.warning),
+            (self._update_lbl, THEME.accent),
             (self._match_lbl, THEME.accent),
         ):
             if lbl is not None:
@@ -1085,6 +1104,9 @@ class BotCanvas(QWidget):
     setup_changed = pyqtSignal()
     # Bar B's template chip: bring the Setup tab back for a bot whose steps are done.
     setup_tab_requested = pyqtSignal()
+    # The open bot's ``template`` moved: a finished review, or an undo across one. The
+    # controller reads the new base's setup steps and whatever update is still waiting.
+    template_ref_changed = pyqtSignal()
     # Drops imported for a fight from the Setup tab, for the possible-drops list to take.
     drops_imported = pyqtSignal(list)
     run_requested = pyqtSignal()
@@ -1470,6 +1492,11 @@ class BotCanvas(QWidget):
         self._library_dialog_panel: _BotLibraryPanel | None = None
         #: The last count announced on ``setup_left_changed``.
         self._setup_left = 0
+        #: The update waiting for the open bot, the bot it is for, and the ``template``
+        #: it was worked out against: see ``set_template_update``.
+        self._template_update: template_diff.TemplateUpdate | None = None
+        self._template_update_for: str | None = None
+        self._template_ref_seen: dict | None = None
         self._placeholder.new_bot_requested.connect(self.new_bot_requested)
         self._placeholder.open_bot_requested.connect(self.open_bot_requested)
         self._placeholder.open_recent_requested.connect(self.open_recent_requested)
@@ -1608,9 +1635,15 @@ class BotCanvas(QWidget):
         """Whether the open document is a template draft rather than a bot."""
         return self._config is not None and self._config.is_template
 
-    def set_template_origin(self, name: str | None, version: int | None = None) -> None:
-        """For a bot made from a template: what Bar B's template chip reads. ``None`` for any other document."""
-        self._toolbar.set_template_origin(f"{name} v{version}" if name else None)
+    def set_template_origin(self, name: str | None, version: int | None = None, latest: int | None = None) -> None:
+        """For a bot made from a template: what Bar B's template chip reads. ``None`` for any other document.
+
+        *latest* is the template's latest released version; one newer than *version* is
+        said on the chip, which is where the update is noticed in the open bot.
+        """
+        behind = name is not None and version is not None and latest is not None and latest > version
+        text = f"{name} v{version}" if name else None
+        self._toolbar.set_template_origin(f"{text} \u2192 v{latest}" if behind else text, update=behind)
 
     def set_template_context(self, latest_version: int | None, reserved_ids: Iterable[str] = ()) -> None:
         """For a template draft: its latest released version, for the crumb, and the ids no edit may mint.
@@ -2741,6 +2774,7 @@ class BotCanvas(QWidget):
         self._refresh_errors()
         self._scene.refresh_region_states(self._compose_report)
         self._update_validation_badge()
+        self._check_template_ref()
         self._announce_setup_left()
         self._toolbar.refresh_tag_suggestions()
         self._minimap.fit_to_scene()
@@ -3259,6 +3293,111 @@ class BotCanvas(QWidget):
             self._setup_left = left
             self.setup_left_changed.emit(left)
         self.setup_changed.emit()
+
+    # -- A template update, reviewed from the Setup tab -----------------------
+
+    def set_template_update(self, update: template_diff.TemplateUpdate | None) -> None:
+        """The update waiting for the open bot (``template_diff.load_update``), or None.
+
+        The controller hands it over when it opens a bot, since reading it takes the
+        template store, and again whenever the bot's ``template`` moves.
+        """
+        config = self._config
+        self._template_update = update
+        self._template_update_for = config.id if config is not None else None
+        ref = config.template if config is not None else None
+        self._template_ref_seen = ref.model_dump() if ref is not None else None
+        self._announce_setup_left()
+
+    @property
+    def template_review(self) -> template_diff.Review | None:
+        """What the newer template versions change in the open bot, worked out from it as it stands now.
+
+        None for a bot that is not behind, and for any document but the bot the update
+        was read for.
+        """
+        update, config = self._template_update, self._config
+        if update is None or config is None or config.template is None or config.is_template:
+            return None
+        if config.id != self._template_update_for or config.template.version != update.base_version:
+            return None
+        return template_diff.review(update, config, self._subgraph_library)
+
+    def _check_template_ref(self) -> None:
+        """Say so when the open bot's ``template`` is not the one the controller last read for."""
+        config = self._config
+        if config is None or config.id != self._template_update_for:
+            return
+        ref = config.template.model_dump() if config.template is not None else None
+        if ref != self._template_ref_seen:
+            self._template_ref_seen = ref
+            self.template_ref_changed.emit()
+
+    def apply_template_change(self, change_id: str) -> bool:
+        """Apply one change of the review to the open bot, as one undo step. Returns whether it was applied.
+
+        A change is a value in the bot file, so it lands in Edit mode. One that takes a
+        fight's duel strategy with it asks first.
+        """
+        review = self.template_review
+        change = review.change(change_id) if review is not None else None
+        if change is None or change.status is template_diff.Status.BLOCKED:
+            return False
+        self.enter_edit_mode()
+        if self._mode != BotMode.EDIT or self._config is None:
+            return False
+        try:
+            applied = template_diff.apply(
+                self._config, change, place=self._scene.free_position, library=self._subgraph_library
+            )
+        except Exception:
+            logger.exception("Template change %s could not be applied", change_id)
+            return False
+        lost = self._strategies_lost_by(applied)
+        if lost:
+            names = ", ".join(f"'{name}'" for name in lost)
+            answer = QMessageBox.question(
+                self,
+                "Apply template change",
+                f"This change removes {names}, which {'has' if len(lost) == 1 else 'have'} a duel strategy "
+                "in the active combat profile. The strategy stays in the profile, but nothing will use it.\n\n"
+                "Apply the change anyway?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return False
+        self._on_about_to_change(f"Apply template change: {change.title}")
+        self._restore(applied)
+        return True
+
+    def _strategies_lost_by(self, applied: BotConfig) -> list[str]:
+        """The fights whose duel strategy the active combat profile would lose in ``applied``, by label."""
+        config = self._config
+        active = SettingsManager.instance().get_active_strategy(config.id) if config is not None else None
+        if not active:
+            return []
+        try:
+            profile = load_bot_strategy(active)
+        except Exception:
+            return []
+        return template_diff.strategies_lost(profile, config, applied)
+
+    def finish_template_review(self) -> bool:
+        """End the review: advance the bot's base to the latest version, as one undo step.
+
+        Skipped changes are not offered again, because against the new base the
+        template has not changed them. Nothing reaches the file until the bot is saved.
+        """
+        update, config = self._template_update, self._config
+        if self.template_review is None or update is None or config is None:
+            return False
+        self.enter_edit_mode()
+        if self._mode != BotMode.EDIT:
+            return False
+        self._on_about_to_change("Finish template review")
+        config.template.version = update.latest_version
+        self._on_scene_changed()
+        return True
 
     @property
     def has_setup_steps(self) -> bool:

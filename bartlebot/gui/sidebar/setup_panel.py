@@ -22,6 +22,14 @@ face, and a dashed Add card ending the list. Every target of a step is a fill-in
 (:mod:`bartlebot.setup_steps`), so *Add target…* is how a param becomes one; a node's own
 page offers the same from each param row.
 
+**A bot behind its template** also sees the review: what the releases since its base
+changed, one card per change under each release's note, with *Apply* on a change the bot
+never touched and *Use template's* / *Keep mine* on one it changed too
+(:mod:`bartlebot.template_diff`). A card says what would change and edits nothing by
+itself: anything the user then adjusts is adjusted on the node. *Finish review* advances
+the bot's base, which is what remembers a skipped change, and *Later* puts the review
+away until the bot is next opened.
+
 The panel holds no progress of its own: it is handed the statuses each time something
 may have moved (``show_document``), and rebuilds only when what it shows has changed, so
 a refresh never takes a field out from under the hand typing in it.
@@ -43,13 +51,13 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import setup_steps
+from bartlebot import setup_steps, template_diff
 from bartlebot.bot.schema import PORT_NODE_TYPES, BotConfig, SetupStep, SetupTarget
 from bartlebot.gui.icon_utils import svg_icon
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin, set_style_sheet
-from bartlebot.gui.widgets.action_button import ActionButton
+from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
 from bartlebot.gui.widgets.add_card import AddCard
 from bartlebot.gui.widgets.card_frame import CardFrame, CardMode, CardVerb
 from bartlebot.gui.widgets.discard import discard_widget
@@ -74,6 +82,15 @@ REMOVE_STEP_VERB = "Remove step"
 _STEP_PLACEHOLDER = "What the user is asked to do"
 
 FIGHT_NODE_TYPE = "handle_combat"
+
+#: The review's verbs. Named for what a click does.
+APPLY_TEXT = "Apply"
+USE_TEMPLATE_TEXT = "Use template's"
+KEEP_MINE_TEXT = "Keep mine"
+FINISH_REVIEW_TEXT = "Finish review"
+LATER_TEXT = "Later"
+#: What a release with nothing for this bot says under its note.
+NOTHING_TO_DO_TEXT = "Nothing in this release needs doing in this bot."
 
 
 # ---------------------------------------------------------------------------
@@ -106,6 +123,27 @@ def step_summary(config: BotConfig, status: setup_steps.StepStatus, library=None
     if len(targets) == 1:
         return "Not filled in yet"
     return f"{filled} of {len(targets)} filled in"
+
+
+def review_title(review: template_diff.Review) -> str:
+    """ "Boss Farmer has moved on (v1 → v4)"."""
+    return f"{review.name} has moved on (v{review.base_version} \u2192 v{review.latest_version})"
+
+
+def release_heading(version: int, note: str) -> str:
+    """A release's heading in the review: its number and its change note."""
+    return f"v{version} \u00b7 {note}" if note else f"v{version}"
+
+
+def change_summary(change: template_diff.Change, kept: bool = False) -> str:
+    """A change card's second line: what would change, or why it cannot."""
+    if change.status is template_diff.Status.BLOCKED:
+        return f"Can't apply: {change.reason}"
+    if kept:
+        return f"Keeping yours. {change.detail}".strip()
+    if change.status is template_diff.Status.CONFLICT:
+        return f"You changed this too. {change.detail}".strip()
+    return change.detail
 
 
 @dataclass(frozen=True)
@@ -267,6 +305,83 @@ class StepCard(CardFrame):
 
 
 # ---------------------------------------------------------------------------
+# A template change, in the review
+# ---------------------------------------------------------------------------
+
+
+class ChangeCard(CardFrame):
+    """One change a newer template version makes, as the bot it is offered to sees it.
+
+    ``CardMode.MANAGE``, as a step card is: the body's verb is *go to it*, which selects
+    the node the change is about. What applies it is a button on the card, named for
+    what it does. A change that cannot be applied has no button and says why.
+    """
+
+    FRAME_NAME = "ChangeCard"
+
+    apply_requested = pyqtSignal()
+    keep_requested = pyqtSignal()
+
+    def __init__(self, change: template_diff.Change, kept: bool = False, parent: QWidget | None = None) -> None:
+        super().__init__(parent, mode=CardMode.MANAGE)
+        self._status = change.status
+        self._buttons: dict[str, ActionButton] = {}
+        inner = self._build_frame("template changes", gutter=False)
+
+        self._title = QLabel(change.title, self._body)
+        self._title.setWordWrap(True)
+        self._summary = WrappingElidedLabel(change_summary(change, kept), parent=self._body)
+        inner.addWidget(self._title)
+        inner.addWidget(self._summary)
+
+        verbs: list[tuple[str, str, str, pyqtSignal]] = []
+        if change.status is template_diff.Status.OFFERED:
+            verbs.append((APPLY_TEXT, "checkmark", "Make this change in the bot", self.apply_requested))
+        elif change.status is template_diff.Status.CONFLICT:
+            verbs.append(
+                (USE_TEMPLATE_TEXT, "checkmark", "Replace your value with the template's", self.apply_requested)
+            )
+            if not kept:
+                verbs.append((KEEP_MINE_TEXT, "dismiss", "Leave your value as it is", self.keep_requested))
+        if verbs:
+            row = QHBoxLayout()
+            row.setContentsMargins(0, 2, 0, 0)
+            row.setSpacing(6)
+            inner.addLayout(row)
+            for text, icon, tip, signal in verbs:
+                button = ActionButton(icon, text, fill=False, parent=self._body)
+                button.setToolTip(tip)
+                button.clicked.connect(lambda _=False, s=signal: s.emit())
+                self._buttons[text] = button
+                row.addWidget(button, 0)
+            row.addStretch(1)
+        self.setToolTip("Click to go to the node this is about")
+        self.refresh_theme_styles()
+
+    @property
+    def title(self) -> str:
+        return self._title.text()
+
+    @property
+    def summary(self) -> str:
+        return self._summary.text()
+
+    @property
+    def buttons(self) -> dict[str, ActionButton]:
+        """The card's verbs by label: Apply, or Use template's and Keep mine. Empty when it cannot be applied."""
+        return dict(self._buttons)
+
+    def _restyle_content(self) -> None:
+        set_style_sheet(self._title, f"color: {THEME.text}; font-weight: 600; background: transparent;")
+        blocked = self._status is template_diff.Status.BLOCKED
+        set_style_sheet(
+            self._summary,
+            f"color: {THEME.warning if blocked else THEME.text_muted}; font-size: {THEME.font_subtext_px}px; "
+            "background: transparent;",
+        )
+
+
+# ---------------------------------------------------------------------------
 # A draft's step
 # ---------------------------------------------------------------------------
 
@@ -378,6 +493,10 @@ class SetupPanel(ThemedMixin, QWidget):
     follows either. ``go_to_requested`` names the node to select -- a state id, or a
     region id for a subgraph node -- ``drops_requested`` asks for the Drops tab, and
     ``import_requested`` for one fight's wiki import.
+
+    The review asks rather than does: ``apply_requested`` names a change by its id,
+    ``finish_requested`` and ``later_requested`` end the review, and the canvas, which
+    owns the bot and its undo history, carries each out.
     """
 
     edit_starting = pyqtSignal(str)
@@ -386,12 +505,23 @@ class SetupPanel(ThemedMixin, QWidget):
     go_to_requested = pyqtSignal(str)
     drops_requested = pyqtSignal()
     import_requested = pyqtSignal(str)
+    apply_requested = pyqtSignal(str)
+    finish_requested = pyqtSignal()
+    later_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._config: BotConfig | None = None
         self._statuses: list[setup_steps.StepStatus] = []
         self._library = None
+        self._review: template_diff.Review | None = None
+        # Conflicts the user chose to keep their own side of, by change id, and the
+        # document they belong to. Not stored: finishing the review is what remembers.
+        self._kept: set[str] = set()
+        self._kept_for: str | None = None
+        self._change_cards: list[ChangeCard] = []
+        self._finish: ActionButton | None = None
+        self._later: ActionButton | None = None
         # What the cards on screen were built from: a refresh that would build the same
         # ones is skipped, so it cannot take a field from under the hand typing in it.
         self._shown: tuple | None = None
@@ -463,15 +593,41 @@ class SetupPanel(ThemedMixin, QWidget):
     def scroll_area(self) -> QScrollArea:
         return self._scroll
 
+    @property
+    def change_cards(self) -> list[ChangeCard]:
+        """The review's cards, in order. Empty with no review showing."""
+        return list(self._change_cards)
+
+    @property
+    def finish_button(self) -> ActionButton | None:
+        """The review's Finish review button; None with no review showing."""
+        return self._finish
+
+    @property
+    def later_button(self) -> ActionButton | None:
+        return self._later
+
     # -- building ------------------------------------------------------
 
     def show_document(
-        self, config: BotConfig | None, statuses: Sequence[setup_steps.StepStatus] = (), library=None
+        self,
+        config: BotConfig | None,
+        statuses: Sequence[setup_steps.StepStatus] = (),
+        library=None,
+        review: template_diff.Review | None = None,
     ) -> None:
-        """Show *config*'s steps: the editor for a draft, the cards (*statuses*) for a bot, nothing for neither."""
+        """Show *config*'s steps: the editor for a draft, the cards (*statuses*) for a bot, nothing for neither.
+
+        *review* is the template update waiting for a bot, drawn above its steps.
+        """
         self._config = config
         self._statuses = list(statuses)
         self._library = library
+        self._review = review
+        document = config.id if config is not None else None
+        if document != self._kept_for:
+            self._kept_for = document
+            self._kept = set()
         shown = self._signature()
         if shown == self._shown:
             return
@@ -502,6 +658,19 @@ class SetupPanel(ThemedMixin, QWidget):
             "bot",
             tuple((s.step.text, s.done, step_summary(config, s, self._library)) for s in self._statuses),
             tuple(fights_of(config)) if any(self._is_drops(s) for s in self._statuses) else (),
+            self._review_signature(),
+        )
+
+    def _review_signature(self) -> tuple:
+        review = self._review
+        if review is None:
+            return ()
+        return (
+            review_title(review),
+            tuple(
+                (version, note, tuple((c.id, c.status, c.title, c.detail, c.reason, c.id in self._kept) for c in found))
+                for version, note, found in review.sections
+            ),
         )
 
     @staticmethod
@@ -515,6 +684,9 @@ class SetupPanel(ThemedMixin, QWidget):
     def _clear(self) -> None:
         self._drag.set_cards([])
         self._cards = []
+        self._change_cards = []
+        self._finish = None
+        self._later = None
         self._blurb = None
         self._add_card = None
         layout = self._body_layout
@@ -536,8 +708,15 @@ class SetupPanel(ThemedMixin, QWidget):
             )
             self._build_draft()
         else:
-            self._intro.setText(progress_text(self._statuses))
+            # A bot with a review and no steps of its own has no progress to report.
+            self._intro.setText(progress_text(self._statuses) if self._statuses or self._review is None else "")
+            self._intro.setVisible(bool(self._intro.text()))
+            if self._review is not None:
+                self._build_review(self._review)
+                if self._statuses:
+                    self._body_layout.addWidget(RuleHeading("Setup Steps", self._body))
             self._build_bot()
+        self._intro.setVisible(bool(self._intro.text()))
 
     # -- a bot ---------------------------------------------------------
 
@@ -569,6 +748,74 @@ class SetupPanel(ThemedMixin, QWidget):
             self.drops_requested.emit()
         else:
             self.go_to_requested.emit(target.state or target.region or "")
+
+    # -- a template update ----------------------------------------------
+
+    def _build_review(self, review: template_diff.Review) -> None:
+        layout = self._body_layout
+        head = QLabel(review_title(review), self._body)
+        head.setWordWrap(True)
+        set_style_sheet(head, f"color: {THEME.text}; font-weight: 600; background: transparent;")
+        layout.addWidget(head)
+        about = ThemedTextLabel(
+            "Each change is made only when you choose it, and nothing is saved until you save the bot.",
+            color="text_muted",
+            parent=self._body,
+        )
+        about.setWordWrap(True)
+        layout.addWidget(about)
+
+        for version, note, changes in review.sections:
+            layout.addWidget(RuleHeading(release_heading(version, note), self._body))
+            if not changes:
+                none = ThemedTextLabel(NOTHING_TO_DO_TEXT, color="text_muted", parent=self._body)
+                none.setWordWrap(True)
+                layout.addWidget(none)
+            for change in changes:
+                card = ChangeCard(change, change.id in self._kept, parent=self._body)
+                card.activated.connect(lambda c=change: self._go_to_change(c))
+                card.apply_requested.connect(lambda c=change: self.apply_requested.emit(c.id))
+                card.keep_requested.connect(lambda c=change: self.keep_change(c.id))
+                layout.addWidget(card)
+                self._change_cards.append(card)
+
+        foot = QHBoxLayout()
+        foot.setContentsMargins(0, 6, 0, 0)
+        foot.setSpacing(6)
+        self._finish = ActionButton(
+            "checkmark", FINISH_REVIEW_TEXT, style=ActionStyle.PRIMARY, fill=False, parent=self._body
+        )
+        self._finish.setToolTip(
+            f"Mark this bot as reviewed against v{review.latest_version}. Changes you skipped are not offered again."
+        )
+        self._finish.clicked.connect(lambda _=False: self.finish_requested.emit())
+        self._later = ActionButton("dismiss", LATER_TEXT, fill=False, parent=self._body)
+        self._later.setToolTip("Put the review away. It is offered again the next time the bot is opened.")
+        self._later.clicked.connect(lambda _=False: self.later_requested.emit())
+        foot.addWidget(self._finish, 0)
+        foot.addWidget(self._later, 0)
+        foot.addStretch(1)
+        holder = QWidget(self._body)
+        holder.setLayout(foot)
+        layout.addWidget(holder)
+
+    def _go_to_change(self, change: template_diff.Change) -> None:
+        """Go to what a change is about: the first of its nodes the bot has."""
+        config = self._config
+        if config is None:
+            return
+        here = {s.id for s in config.states} | {r.id for r in config.regions}
+        for node in change.nodes:
+            if node in here:
+                self.go_to_requested.emit(node)
+                return
+
+    def keep_change(self, change_id: str) -> None:
+        """Keep the bot's side of a conflict -- what *Keep mine* does. Nothing in the bot changes."""
+        if self._config is None or change_id in self._kept:
+            return
+        self._kept.add(change_id)
+        self.show_document(self._config, self._statuses, self._library, self._review)
 
     # -- a draft -------------------------------------------------------
 
@@ -642,7 +889,7 @@ class SetupPanel(ThemedMixin, QWidget):
         self.structural_change.emit(desc)
         apply()
         self.changed.emit()
-        self.show_document(self._config, self._statuses, self._library)
+        self.show_document(self._config, self._statuses, self._library, self._review)
 
     def _on_blurb_edited(self) -> None:
         text = self._blurb.toPlainText().strip() if self._blurb is not None else ""
