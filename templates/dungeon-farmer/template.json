@@ -1,4 +1,12 @@
 {
   "id": "188f8aed-edbb-4c20-8909-31148443c54f",
-  "versions": []
+  "versions": [
+    {
+      "version": 1,
+      "file": "v1.json",
+      "sha256": "d82d149fd0be66a80363063b14d905dec0374392ad6937becc30f0f1112a655e",
+      "note": "First release",
+      "released": "2026-10-01"
+    }
+  ]
 }

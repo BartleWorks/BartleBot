@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import date
 
 import pytest
 
@@ -13,13 +14,15 @@ from bartlebot.template_store import (
     DRAFT_FILE,
     INDEX_FILE,
     TEMPLATE_ID_PREFIX,
-    ReleasedVersion,
+    ReleaseRefused,
     TemplateIndex,
     find_template,
     latest_version,
     list_templates,
     load_draft,
     load_version,
+    release,
+    retired_ids,
     save_draft,
     used_ids,
 )
@@ -38,24 +41,10 @@ def _draft(template_id: str = "tpl-boss", name: str = "Boss Farmer", *state_ids:
     )
 
 
-def _release(root, config: BotConfig, note: str = "") -> int:
-    """What Release (10.2) will do, by hand: write ``v(N+1).json`` and append it to the index."""
-    template = find_template(config.id, root)
-    assert template is not None
-    n = (template.latest_version or 0) + 1
-    path = template.folder / f"v{n}.json"
-    config.save(path)
-    template.index.versions.append(
-        ReleasedVersion(
-            version=n,
-            file=path.name,
-            sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
-            note=note,
-            released="2026-10-01",
-        )
-    )
-    template.index.save(template.folder / INDEX_FILE)
-    return n
+def _release(root, config: BotConfig, note: str = "Release") -> int:
+    """Save ``config`` as the draft and release it, as the maintainer does."""
+    save_draft(config, root)
+    return release(config.id, note, root=root, today=date(2026, 10, 1)).version
 
 
 # ---------------------------------------------------------------------------
@@ -244,3 +233,111 @@ def test_every_node_and_instance_in_a_shipped_draft_is_template_owned():
         ids = [s.id for s in draft.states] + [r.id for r in draft.regions if r.source is not None]
         foreign = [i for i in ids if not i.startswith(TEMPLATE_ID_PREFIX)]
         assert not foreign, f"{template.name}: {foreign}"
+
+
+# ---------------------------------------------------------------------------
+# Release
+# ---------------------------------------------------------------------------
+
+
+def _store_state(root) -> dict[str, bytes]:
+    """Every file under the template's folder, by name: what a refused release must leave alone."""
+    folder = find_template("tpl-boss", root).folder
+    return {p.name: p.read_bytes() for p in sorted(folder.iterdir())}
+
+
+def test_release_copies_the_saved_draft_byte_for_byte_and_records_it(tmp_path):
+    path = save_draft(_draft(), tmp_path)
+
+    entry = release("tpl-boss", "  First release  ", root=tmp_path, today=date(2026, 10, 8))
+
+    folder = path.parent
+    assert (entry.version, entry.file, entry.note, entry.released) == (1, "v1.json", "First release", "2026-10-08")
+    assert (folder / "v1.json").read_bytes() == path.read_bytes()
+    assert entry.sha256 == hashlib.sha256(path.read_bytes()).hexdigest()
+    assert TemplateIndex.load(folder / INDEX_FILE).versions == [entry]
+
+
+def test_releases_number_upward_and_leave_earlier_versions_alone(tmp_path):
+    _release(tmp_path, _draft("tpl-boss", "Boss Farmer", "t_1"))
+    v1 = (find_template("tpl-boss", tmp_path).folder / "v1.json").read_bytes()
+
+    assert _release(tmp_path, _draft("tpl-boss", "Boss Farmer", "t_1", "t_2")) == 2
+    assert _release(tmp_path, _draft("tpl-boss", "Boss Farmer", "t_1", "t_2")) == 3
+    assert (find_template("tpl-boss", tmp_path).folder / "v1.json").read_bytes() == v1
+    assert [v.version for v in find_template("tpl-boss", tmp_path).index.versions] == [1, 2, 3]
+
+
+def test_release_takes_the_draft_on_disk_not_one_in_memory(tmp_path):
+    """The controller saves first; anything not saved is not part of the release."""
+    save_draft(_draft("tpl-boss", "Boss Farmer", "t_1"), tmp_path)
+    _draft("tpl-boss", "Boss Farmer", "t_1", "t_2")  # an unsaved edit, never written
+
+    release("tpl-boss", "First", root=tmp_path)
+
+    assert [s.id for s in load_version("tpl-boss", 1, tmp_path).states] == ["t_1"]
+
+
+@pytest.mark.parametrize(
+    ("state_ids", "regions", "canvas_errors", "note", "expected"),
+    [
+        (("t_1",), [], ["Defeat boss: Unknown node type"], "Note", "Unknown node type"),
+        (("t_1", "state_4"), [], [], "Note", "Not template-owned (no t_ prefix): state_4"),
+        (("t_1",), ["sync_players_1"], [], "Note", "Not template-owned (no t_ prefix): sync_players_1"),
+        (("t_1",), [], [], "   ", "needs a note"),
+    ],
+    ids=["canvas-error", "bot-owned-node", "bot-owned-instance", "blank-note"],
+)
+def test_release_refuses_and_writes_nothing(tmp_path, state_ids, regions, canvas_errors, note, expected):
+    draft = _draft("tpl-boss", "Boss Farmer", *state_ids)
+    draft.regions = [
+        RegionModel(id=rid, label="Sync", members=["t_1"], color=1, source=SubgraphSource(subgraph_id="sg", version=1))
+        for rid in regions
+    ]
+    save_draft(draft, tmp_path)
+    before = _store_state(tmp_path)
+
+    with pytest.raises(ReleaseRefused) as refused:
+        release("tpl-boss", note, canvas_errors, root=tmp_path)
+
+    assert any(expected in p for p in refused.value.problems), refused.value.problems
+    assert _store_state(tmp_path) == before
+
+
+def test_a_plain_region_needs_no_prefix(tmp_path):
+    """A plain region is layout: nothing a bot is updated by, so no id to own."""
+    draft = _draft("tpl-boss", "Boss Farmer", "t_1")
+    draft.regions = [RegionModel(id="region_1", label="Loop", members=["t_1"], color=1)]
+
+    save_draft(draft, tmp_path)
+
+    assert release("tpl-boss", "First", root=tmp_path).version == 1
+
+
+def test_an_id_a_version_retired_never_comes_back(tmp_path):
+    _release(tmp_path, _draft("tpl-boss", "Boss Farmer", "t_1", "t_2"))
+    _release(tmp_path, _draft("tpl-boss", "Boss Farmer", "t_1"))
+    assert retired_ids(find_template("tpl-boss", tmp_path)) == {"t_2"}
+    save_draft(_draft("tpl-boss", "Boss Farmer", "t_1", "t_2"), tmp_path)
+    before = _store_state(tmp_path)
+
+    with pytest.raises(ReleaseRefused, match="retired: t_2"):
+        release("tpl-boss", "Bring it back", root=tmp_path)
+    assert _store_state(tmp_path) == before
+
+
+def test_a_draft_under_another_id_or_recording_a_template_is_refused(tmp_path):
+    path = save_draft(_draft(), tmp_path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["template"] = {"id": "tpl-other", "version": 1}
+    path.write_text(json.dumps(data), encoding="utf-8")
+
+    with pytest.raises(ReleaseRefused, match="records a template of its own"):
+        release("tpl-boss", "Note", root=tmp_path)
+
+    data.pop("template")
+    data["id"] = "tpl-other"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    with pytest.raises(ReleaseRefused, match="is not the template's"):
+        release("tpl-boss", "Note", root=tmp_path)
+    assert find_template("tpl-boss", tmp_path).latest_version is None

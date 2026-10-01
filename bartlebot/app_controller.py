@@ -13,10 +13,18 @@ from wakepy import ActivationError, keep
 logger = logging.getLogger(__name__)
 
 from PyQt6.QtCore import QObject, Qt, QTimer
-from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QMessageBox
+from PyQt6.QtWidgets import QApplication, QDialog, QFileDialog, QInputDialog, QMessageBox
 from wizwalker.extensions.wizsprinter import WizSprinter
 
-from bartlebot import group_manager, option_values, player_realms, recovery_readiness, restricted_zones, wizard_names
+from bartlebot import (
+    group_manager,
+    option_values,
+    player_realms,
+    recovery_readiness,
+    restricted_zones,
+    template_store,
+    wizard_names,
+)
 from bartlebot.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
 from bartlebot.bot.machine import BotMachine
 from bartlebot.bot.schema import BotConfig, StateModel
@@ -52,6 +60,12 @@ _ZONE_PLACEHOLDER = "—"
 
 #: An autosave of a definition document is named for the definition, not a file.
 _DEFINITION_AUTOSAVE_PREFIX = "subgraph_"
+
+#: Nor is a template draft's: every draft is a ``draft.json``, so its stem says nothing.
+_TEMPLATE_AUTOSAVE_PREFIX = "template_"
+
+#: What the header and the window title call a template draft's file.
+_DRAFT_FILE_LABEL = "template draft"
 
 #: Player slots with a deck card on the Combat tab; a group is at most four wizards, so
 #: Import all reads no client past the fourth.
@@ -146,6 +160,8 @@ class AppController(QObject):
         # One view of the subgraph library for the session, reloaded on every open and
         # before every run so a definition edited on disk reaches the bot that links it.
         self._subgraph_library = SubgraphLibrary()
+        # Where the template store is: the project root, or a test's tmp_path.
+        self._templates_root: Path | None = None
         if dev_mode():
             logger.warning(
                 "%s is set: subgraphs and combat strategies are read from and saved to %s",
@@ -285,6 +301,7 @@ class AppController(QObject):
         w.action_close.triggered.connect(lambda: self._close_bot())
         w.action_save.triggered.connect(lambda: self._save_bot())
         w.action_save_as.triggered.connect(lambda: self._save_bot_as())
+        w.action_edit_template.triggered.connect(lambda: self._edit_template())
         w.open_recent_requested.connect(self._open_bot)
 
         # Canvas signals
@@ -301,6 +318,9 @@ class AppController(QObject):
         w.bot_canvas.definition_save_as_requested.connect(lambda: self._save_definition_as())
         w.bot_canvas.definition_revert_requested.connect(lambda: self._revert_definition())
         w.bot_canvas.document_back_requested.connect(self._back_to_document)
+        w.bot_canvas.template_save_requested.connect(lambda: self._save_bot())
+        w.bot_canvas.template_release_requested.connect(lambda: self._release_template())
+        w.bot_canvas.template_close_requested.connect(lambda: self._close_bot())
         w.bot_canvas.set_clients_getter(lambda: self._client_manager.clients)
         # Ctrl+R records from the game window last in focus, as Bar A's buttons act on it.
         w.bot_canvas.set_preferred_player_getter(
@@ -716,6 +736,8 @@ class AppController(QObject):
         except Exception as e:
             QMessageBox.critical(self._window, "Failed to load bot", str(e))
             return
+        if config.is_template and not self._may_edit_template(config, path):
+            return
         config, report = self._compose(config)
         old_save_path = self._last_save_path
         self._delete_autosave(old_save_path)
@@ -723,17 +745,20 @@ class AppController(QObject):
         self._loaded_config = config
         self._last_save_path = path
         self._rewards_declined_for = None
-        self._window.set_bot_name(config.name, Path(path).name)
+        self._window.set_bot_name(config.name, self._file_label(config, path))
         self._window.bot_canvas.setup(config)
         # After setup and compose, which the open does not count as edits either.
         self._clean_snapshot = _file_snapshot(config)
         self._window.bot_canvas.set_compose_report(report)
+        self._refresh_template_context()
         self._window.left_sidebar.set_config(config)
         self._window.right_sidebar.set_config(config)
         self._window.set_save_enabled(True)
         self._window.set_close_enabled(True)
         self._window.set_start_enabled(self._start_enabled())
-        self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
+        if not config.is_template:
+            # A draft is reached through Edit Template…, never as a recent bot.
+            self._window.update_recent_menu(SettingsManager.instance().add_recent_bot_file(path))
         self._window.bot_canvas.refresh_placeholder()
 
     def _close_bot(self) -> None:
@@ -819,7 +844,10 @@ class AppController(QObject):
             self._loaded_config.save(self._last_save_path)
             self._has_unsaved_changes = False
             self._clean_snapshot = _file_snapshot(self._loaded_config)
-            self._delete_autosave()
+            if self._loaded_config.is_template:
+                self._delete_autosave(stem=self._autosave_stem())
+            else:
+                self._delete_autosave()
         except Exception as e:
             QMessageBox.critical(self._window, "Failed to save bot", str(e))
             return False
@@ -832,6 +860,15 @@ class AppController(QObject):
         if self._loaded_config.is_definition:
             # A definition lives in the library under its id, not in a file the user names.
             return self._save_definition()
+        if self._loaded_config.is_template:
+            # A copy would be a second draft of one template, or a bot carrying
+            # template_meta; a bot is started from a template with New Bot instead.
+            QMessageBox.information(
+                self._window,
+                "Save Bot As",
+                "A template draft is only saved in place. Release it to make a version New Bot offers.",
+            )
+            return False
         path, _ = QFileDialog.getSaveFileName(self._window, "Save Bot As", "", "Bot Files (*.json)")
         if not path:
             return False
@@ -874,6 +911,131 @@ class AppController(QObject):
         # list are both keyed on the id, and a fork inherits neither.
         self._window.left_sidebar.rebind_identity()
         return True
+
+    # ------------------------------------------------------------------
+    # Template drafts
+    # ------------------------------------------------------------------
+
+    @property
+    def templates_root(self) -> Path | None:
+        """The root the template store is under: None for the project root. Tests point it at a ``tmp_path``."""
+        return self._templates_root
+
+    @templates_root.setter
+    def templates_root(self, root: Path | None) -> None:
+        self._templates_root = root
+
+    def _file_label(self, config: BotConfig, path: str | Path | None) -> str:
+        """What the header calls the open document's file: a draft's name says nothing, every one is draft.json."""
+        if config.is_template:
+            return _DRAFT_FILE_LABEL
+        return Path(path).name if path else "Untitled"
+
+    def _may_edit_template(self, config: BotConfig, path: str) -> bool:
+        """Whether a template file may be opened for editing: only a draft, and only in dev mode. Says why not."""
+        if Path(path).name == template_store.DRAFT_FILE and dev_mode():
+            return True
+        if Path(path).name == template_store.DRAFT_FILE:
+            why = (
+                f"This is the draft of the template '{config.name}', which only its maintainer edits "
+                f"(with {DEV_ENV_VAR} set)."
+            )
+        else:
+            why = f"This is a released version of the template '{config.name}', which is never edited."
+        QMessageBox.information(self._window, "Open Bot", f"{why}\n\nTo start a bot from a template, use New Bot.")
+        return False
+
+    def _edit_template(self) -> bool:
+        """File › Edit Template…: pick a template and open its draft, as a bot is opened. Dev mode only."""
+        if not dev_mode():
+            return False
+        templates = template_store.list_templates(self._templates_root)
+        if not templates:
+            QMessageBox.information(self._window, "Edit Template", "There are no templates to edit.")
+            return False
+        names = [t.name for t in templates]
+        name, ok = QInputDialog.getItem(self._window, "Edit Template", "Template:", names, 0, False)
+        if not ok:
+            return False
+        template = templates[names.index(name)]
+        self._open_bot(str(template.draft_path))
+        return self._loaded_config is not None and self._loaded_config.id == template.id
+
+    def _open_template(self) -> template_store.Template | None:
+        """The template whose draft is the open document, or None."""
+        config = self._loaded_config
+        if config is None or not config.is_template or self._last_save_path is None:
+            return None
+        template = template_store.find_template(config.id, self._templates_root)
+        if template is None or Path(self._last_save_path).resolve() != template.draft_path.resolve():
+            return None
+        return template
+
+    def _refresh_template_context(self) -> None:
+        """Tell the canvas what a template draft's crumb says, and which ids it must not mint."""
+        config = self._loaded_config
+        if config is None or not config.is_template:
+            return
+        template = self._open_template()
+        if template is None:
+            self._window.bot_canvas.set_template_context(None)
+            return
+        reserved = template_store.used_ids(template.id, self._templates_root)
+        self._window.bot_canvas.set_template_context(template.latest_version, reserved)
+
+    def _release_template(self) -> bool:
+        """Release the open draft as its template's next version. False when refused or cancelled.
+
+        Release takes the draft as it is on disk, so unsaved changes are saved first or
+        the release does not happen. The template store refuses anything else wrong,
+        having written nothing.
+        """
+        config = self._loaded_config
+        template = self._open_template()
+        if config is None or template is None:
+            QMessageBox.warning(
+                self._window, "Release", "Only a template's draft, opened with Edit Template…, can be released."
+            )
+            return False
+        if self._has_unsaved_changes and not _matches_clean(config, self._clean_snapshot):
+            reply = QMessageBox.question(
+                self._window,
+                "Release",
+                "Release takes the draft as saved. Save your changes first?",
+                QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Save,
+            )
+            if reply != QMessageBox.StandardButton.Save or not self._save_bot():
+                return False
+        errors = self._window.bot_canvas.validation_errors()
+        problems = template_store.release_problems(BotConfig.load(template.draft_path), template, errors)
+        if problems:
+            self._show_release_refused(template.name, problems)
+            return False
+        number = (template.latest_version or 0) + 1
+        note, ok = QInputDialog.getText(
+            self._window, "Release", f"Releasing {template.name} v{number}. What changed, in one line?"
+        )
+        if not ok:
+            return False
+        try:
+            entry = template_store.release(template.id, note, errors, root=self._templates_root)
+        except template_store.ReleaseRefused as exc:
+            self._show_release_refused(template.name, exc.problems)
+            return False
+        except OSError as exc:
+            QMessageBox.critical(self._window, "Release", f"Could not release {template.name}:\n\n{exc}")
+            return False
+        self._refresh_template_context()
+        QMessageBox.information(
+            self._window, "Release", f"Released {template.name} v{entry.version}. New Bot offers it from now on."
+        )
+        return True
+
+    def _show_release_refused(self, name: str, problems: Sequence[str]) -> None:
+        listed = "\n".join(f"\u2022 {p}" for p in problems[:12])
+        more = f"\n\u2026and {len(problems) - 12} more" if len(problems) > 12 else ""
+        QMessageBox.critical(self._window, "Release", f"{name} can't be released yet:\n\n{listed}{more}")
 
     # ------------------------------------------------------------------
     # Definition documents
@@ -1179,9 +1341,8 @@ class AppController(QObject):
             self._window.right_sidebar.set_config(loaded)
             self._window.left_sidebar.set_editable(canvas.mode == BotMode.EDIT)
             self._window.right_sidebar.set_editable(canvas.mode == BotMode.EDIT)
-            self._window.set_bot_name(
-                loaded.name, Path(self._last_save_path).name if self._last_save_path else "Untitled"
-            )
+            self._window.set_bot_name(loaded.name, self._file_label(loaded, self._last_save_path))
+            self._refresh_template_context()
             self._window.set_start_enabled(self._start_enabled())
         self._window.set_save_enabled(True)
         self._window.set_close_enabled(True)
@@ -2046,8 +2207,9 @@ class AppController(QObject):
             # repainted when its own flag actually moved.
             self._window.bot_canvas.refresh_edge_flags()
             self._window.left_sidebar.refresh_options(self._loaded_config)
-            filename = Path(self._last_save_path).name if self._last_save_path else "Untitled"
-            self._window.set_bot_name(self._loaded_config.name, filename)
+            self._window.set_bot_name(
+                self._loaded_config.name, self._file_label(self._loaded_config, self._last_save_path)
+            )
 
     def _on_mode_changed(self, mode: BotMode) -> None:
         self._window.left_sidebar.set_editable(mode == BotMode.EDIT)
@@ -2110,6 +2272,8 @@ class AppController(QObject):
         config = self._loaded_config
         if config is not None and config.definition is not None:
             return f"{_DEFINITION_AUTOSAVE_PREFIX}{config.definition.id}"
+        if config is not None and config.is_template:
+            return f"{_TEMPLATE_AUTOSAVE_PREFIX}{config.id}"
         return Path(self._last_save_path).stem if self._last_save_path else "_unsaved"
 
     def _autosave_path(self) -> Path:
@@ -2133,8 +2297,7 @@ class AppController(QObject):
             self._loaded_config.save(self._autosave_path())
             logger.debug("Auto-saved recovery file: %s", self._autosave_path())
             if self._last_save_path and not self._loaded_config.is_definition:
-                stem = Path(self._last_save_path).stem
-                SettingsManager.instance().set_autosave_origin(stem, self._last_save_path)
+                SettingsManager.instance().set_autosave_origin(self._autosave_stem(), self._last_save_path)
         except Exception:
             logger.exception("Auto-save failed")
 
@@ -2232,10 +2395,11 @@ class AppController(QObject):
             config, report = self._compose(config)
             self._loaded_config = config
             self._last_save_path = str(original_path) if original_path else None
-            display_name = original_path.name if original_path else "Untitled (recovered)"
+            display_name = self._file_label(config, original_path) if original_path else "Untitled (recovered)"
             self._window.set_bot_name(config.name, display_name)
             self._window.bot_canvas.setup(config, mode=BotMode.EDIT)
             self._window.bot_canvas.set_compose_report(report)
+            self._refresh_template_context()
             self._window.left_sidebar.set_config(config)
             self._window.right_sidebar.set_config(config)
             self._window.set_save_enabled(True)

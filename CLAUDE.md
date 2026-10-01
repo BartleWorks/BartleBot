@@ -13,7 +13,9 @@ points the store's user root at the repo, so a save lands in `subgraphs/` or
 `strategies/` where git sees it, instead of in an `%APPDATA%` copy that silently
 shadows the repo's. `bartlebot/store_roots.py` has the detail. The suite clears it,
 and `test_every_linked_bot_resolves_under_the_shipped_root_alone` catches a
-definition that only exists on your machine.
+definition that only exists on your machine. It also adds File › Edit Template…, the
+only way into a template's draft under `templates/`; only Release on the draft's crumb
+writes a version users are offered (`bartlebot/template_store.py`).
 
 It also turns on the canvas repaint tracer (`bartlebot/gui/canvas/repaint_trace.py`, for
 #73). The tracer logs a WARNING, with a screenshot under `logs/repaint/`, whenever an item

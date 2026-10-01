@@ -16,6 +16,13 @@ The folder's name is cosmetic. A template is found by the id in its ``template.j
 which the draft and every version also carry as their own ``id``, so renaming a
 template never has to move its folder.
 
+Release
+    :func:`release` is the only way a version is written: no save produces one, in dev
+    mode or not, so a draft cannot reach users by accident. It copies the saved draft's
+    bytes as they are to ``v(N+1).json`` and appends the version, its SHA-256 and a change
+    note to the index, or writes nothing at all and raises :class:`ReleaseRefused`
+    (:func:`release_problems` says why). A released file is never written again.
+
 Template-owned ids
     Every node and subgraph instance a draft mints is ``t_``-prefixed
     (:data:`TEMPLATE_ID_PREFIX`) and is never reused once released -- :func:`used_ids` is
@@ -34,9 +41,14 @@ No Qt and no settings here: a test builds a store on a ``tmp_path``.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
+import os
+import tempfile
+from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 from pydantic import BaseModel, Field
@@ -225,15 +237,120 @@ def save_draft(config: BotConfig, root: str | Path | None = None, user_root: str
 
 
 def used_ids(template_id: str, root: str | Path | None = None, user_root: str | Path | None = None) -> frozenset[str]:
-    """Every state and region id any released version of ``template_id`` has used.
+    """Every node and subgraph instance id any released version of ``template_id`` has used.
 
     What a draft's editor must never mint again: an id a version used and a later one
     retired still names that node in every bot based on the earlier version.
     """
-    template = _require(template_id, root, user_root)
+    return _used_by(_require(template_id, root, user_root))
+
+
+def _used_by(template: Template) -> frozenset[str]:
     ids: set[str] = set()
     for entry in template.index.versions:
-        config = BotConfig.load(template.folder / entry.file)
-        ids.update(s.id for s in config.states)
-        ids.update(r.id for r in config.regions)
+        ids |= _ids_in(BotConfig.load(template.folder / entry.file))
     return frozenset(ids)
+
+
+def retired_ids(template: Template) -> frozenset[str]:
+    """Ids an earlier version used that the latest one no longer has: never to be used again.
+
+    A bot based on that earlier version still has a node under each, so a draft that
+    brought one back would make a later update apply to the wrong node.
+    """
+    latest = template.index.latest
+    if latest is None:
+        return frozenset()
+    current = _ids_in(BotConfig.load(template.folder / latest.file))
+    return _used_by(template) - current
+
+
+def _ids_in(config: BotConfig) -> frozenset[str]:
+    """Its node and subgraph instance ids. A plain region is layout, not something a bot is updated by."""
+    return frozenset({s.id for s in config.states} | {r.id for r in config.regions if r.source is not None})
+
+
+def release_problems(draft: BotConfig, template: Template, canvas_errors: Sequence[str] = ()) -> list[str]:
+    """Why ``draft`` cannot be released as ``template``'s next version: empty when it can.
+
+    ``canvas_errors`` are the editor's error lines for the draft, which the caller
+    supplies, since working them out needs the scene.
+    """
+    problems = list(canvas_errors)
+    if not draft.is_template:
+        problems.append("It has no template_meta, so it is a bot, not a template draft.")
+    if draft.id != template.id:
+        problems.append(f"Its id {draft.id} is not the template's, {template.id}.")
+    if draft.template is not None:
+        problems.append("It records a template of its own; only a bot made from one does.")
+    foreign = sorted(i for i in _ids_in(draft) if not i.startswith(TEMPLATE_ID_PREFIX))
+    if foreign:
+        problems.append(f"Not template-owned (no {TEMPLATE_ID_PREFIX} prefix): {', '.join(foreign)}.")
+    reused = sorted(_ids_in(draft) & retired_ids(template))
+    if reused:
+        problems.append(f"Reuses ids an earlier version retired: {', '.join(reused)}.")
+    return problems
+
+
+class ReleaseRefused(Exception):
+    """Release wrote nothing. ``problems`` lists why, one line each."""
+
+    def __init__(self, problems: Sequence[str]) -> None:
+        self.problems = list(problems)
+        super().__init__("; ".join(self.problems))
+
+
+def _atomic_write_bytes(data: bytes, path: Path) -> None:
+    fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp", prefix=path.stem + "_")
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        os.replace(tmp, path)
+    except Exception:
+        Path(tmp).unlink(missing_ok=True)
+        raise
+
+
+def release(
+    template_id: str,
+    note: str,
+    canvas_errors: Sequence[str] = (),
+    *,
+    root: str | Path | None = None,
+    user_root: str | Path | None = None,
+    today: date | None = None,
+) -> ReleasedVersion:
+    """Release the saved draft of ``template_id`` as its next version, and return the index entry.
+
+    Releases ``draft.json`` as it is on disk, so the caller saves first: an unsaved edit
+    is not part of the release. Raises :class:`ReleaseRefused`, having written nothing,
+    for an empty note or anything :func:`release_problems` finds.
+    """
+    template = _require(template_id, root, user_root)
+    data = template.draft_path.read_bytes()
+    draft = BotConfig.model_validate(json.loads(data))
+    problems = release_problems(draft, template, canvas_errors)
+    note = note.strip()
+    if not note:
+        problems.append("A release needs a note saying what changed.")
+    if problems:
+        raise ReleaseRefused(problems)
+    number = (template.latest_version or 0) + 1
+    entry = ReleasedVersion(
+        version=number,
+        file=f"v{number}.json",
+        sha256=hashlib.sha256(data).hexdigest(),
+        note=note,
+        released=(today or date.today()).isoformat(),
+    )
+    _atomic_write_bytes(data, template.folder / entry.file)
+    index = template.index.model_copy(deep=True)
+    index.versions.append(entry)
+    index.save(template.folder / INDEX_FILE)
+    logger.info("Released %s v%d: %s", template.name, number, note)
+    return entry
+
+
+def sha256_matches(template: Template, entry: ReleasedVersion) -> bool:
+    """Whether a released file still has the bytes it was released with."""
+    return hashlib.sha256((template.folder / entry.file).read_bytes()).hexdigest() == entry.sha256

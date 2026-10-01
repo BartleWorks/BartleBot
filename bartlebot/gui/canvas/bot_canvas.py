@@ -8,7 +8,7 @@ import json
 import logging
 import time
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
@@ -1066,6 +1066,10 @@ class BotCanvas(QWidget):
     # discard a modified built-in for the shipped one.
     definition_save_as_requested = pyqtSignal()
     definition_revert_requested = pyqtSignal()
+    # A template draft's crumb: Save draft, Release…, and its close button.
+    template_save_requested = pyqtSignal()
+    template_release_requested = pyqtSignal()
+    template_close_requested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1116,6 +1120,8 @@ class BotCanvas(QWidget):
         self._doc_path: list[str] = []
         # Whether the open definition is a modified built-in, which the crumb offers to revert.
         self._can_revert = False
+        # What a template draft's crumb says after its name: its latest released version.
+        self._template_hint = ""
         # Region color the focus overlays are painted in, or None if never focused.
         self._focus_color: QColor | None = None
 
@@ -1335,7 +1341,8 @@ class BotCanvas(QWidget):
         self._crumb = CrumbBar(self._view)
         self._crumb.segment_clicked.connect(self._on_crumb_segment_clicked)
         self._crumb.close_requested.connect(self.step_back)
-        self._crumb.save_requested.connect(lambda: self.definition_save_requested.emit(False))
+        self._crumb.save_requested.connect(self._on_crumb_save)
+        self._crumb.release_requested.connect(self.template_release_requested)
         self._crumb.save_as_requested.connect(self.definition_save_as_requested)
         self._crumb.revert_requested.connect(self.definition_revert_requested)
         self._crumb.setVisible(False)
@@ -1470,6 +1477,8 @@ class BotCanvas(QWidget):
         if not config.is_definition:
             self._doc_path = []
             self._can_revert = False
+        if not config.is_definition and not config.is_template:
+            self._template_hint = ""
         self._refresh_crumb()
         self._show_default_page()
         self._refresh_collapse_buttons()
@@ -1536,6 +1545,29 @@ class BotCanvas(QWidget):
         self._toolbar.set_editable(self._mode == BotMode.EDIT)
         self._toolbar.set_definition_info(origin, used_by)
         self._reposition_banner()
+
+    @property
+    def is_template(self) -> bool:
+        """Whether the open document is a template draft rather than a bot."""
+        return self._config is not None and self._config.is_template
+
+    def set_template_context(self, latest_version: int | None, reserved_ids: Iterable[str] = ()) -> None:
+        """For a template draft: its latest released version, for the crumb, and the ids no edit may mint.
+
+        ``reserved_ids`` are every id a released version used (``template_store.used_ids``);
+        the scene keeps them against this draft's id, so nothing opened after it inherits them.
+        """
+        if self._config is None or not self._config.is_template:
+            return
+        self._template_hint = f"latest v{latest_version}" if latest_version else "not released yet"
+        self._scene.set_reserved_ids(self._config.id, reserved_ids)
+        self._refresh_crumb()
+
+    def _on_crumb_save(self) -> None:
+        if self.is_template:
+            self.template_save_requested.emit()
+        else:
+            self.definition_save_requested.emit(False)
 
     @property
     def crumb_bar(self) -> CrumbBar:
@@ -2300,11 +2332,13 @@ class BotCanvas(QWidget):
             self.step_out_to(0)
 
     def step_back(self) -> None:
-        """One level out: the crumb's close button and Alt+Left. Out of a definition when nothing is focused."""
+        """One level out: the crumb's close button and Alt+Left. Out of a definition or draft when nothing is focused."""
         if self.step_out():
             return
         if self.is_definition:
             self.definition_back_requested.emit()
+        elif self.is_template:
+            self.template_close_requested.emit()
 
     def _on_escape(self) -> bool:
         """Esc dismisses what is open before it leaves anything. True when it did something.
@@ -2389,12 +2423,28 @@ class BotCanvas(QWidget):
         top = self._levels[-1] if self._levels else None
         top_region = self._region(top.region_id) if top is not None and top.kind == "region" else None
         definition = self.is_definition
-        if self._config is None or (not definition and not self._levels):
+        # A draft keeps its bar up the whole time, so it is never mistaken for a bot; a
+        # subgraph node's body viewed inside one is still the shared VIEW below.
+        template = self.is_template and not self.viewed_instances
+        if self._config is None or (not definition and not template and not self._levels):
             self._crumb.setVisible(False)
             self._shared_frame.setVisible(False)
             self._focus_frame.setVisible(False)
             return
-        if not definition and not self.viewed_instances and top_region is not None:
+        if template:
+            segments = [Crumb(f"Template draft · {self._config.name}")]
+            for lv in self._levels:
+                region = self._region(lv.region_id)
+                label = region.label if region is not None else lv.region_id
+                segments.append(Crumb(label, region.color if lv is top and top_region is not None else None))
+            self._crumb.show_state(
+                CrumbMode.TEMPLATE,
+                segments,
+                hint=self._template_hint,
+                close_tip="Exit Focus Mode" if self._levels else "Close the draft",
+            )
+            self._shared_frame.setVisible(False)
+        elif not definition and not self.viewed_instances and top_region is not None:
             if len(self._levels) == 1:
                 crumbs = [Crumb(f"Focus Mode — {top_region.label}")]
             else:

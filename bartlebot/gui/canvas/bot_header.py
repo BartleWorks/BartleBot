@@ -41,7 +41,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, suggested_tags, tag_group
+from bartlebot.bot_tags import BOT_TAGS, REWARDS, TAG_GROUPS, suggested_tags, tag_group
 from bartlebot.gui.sidebar.sidebar_section import value_label
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
@@ -319,6 +319,7 @@ class _TagsField(QWidget):
         self._tags: list[str] = []
         self._suggested: list[str] = []
         self._editable = False
+        self._rewards_offered = True
 
         root = QHBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
@@ -389,7 +390,22 @@ class _TagsField(QWidget):
         """The suggestions on show: Edit mode only, and only for tags not already set."""
         if not self._editable:
             return []
-        return [t for t in self._suggested if t not in self._tags]
+        return [
+            t for t in self._suggested if t not in self._tags and (self._rewards_offered or tag_group(t) != REWARDS)
+        ]
+
+    def set_rewards_offered(self, offered: bool) -> None:
+        """Whether the Rewards group is offered at all. Not on a template draft: what a run
+        yields depends on the dungeon a bot made from it is for, so there is nothing true to pick."""
+        if offered == self._rewards_offered:
+            return
+        self._rewards_offered = offered
+        self._pickers[REWARDS].setVisible(offered)
+        self._rebuild()
+
+    @property
+    def rewards_offered(self) -> bool:
+        return self._rewards_offered
 
     def set_editable(self, editable: bool) -> None:
         self._editable = editable
@@ -723,6 +739,7 @@ class BotHeader(ThemedMixin, QWidget):
             # Tags and authors describe a bot in the library; a definition has neither.
             # Its row 2 says where it comes from instead: see set_definition_info.
             is_bot = config.definition is None
+            self._tags_field.set_rewards_offered(not config.is_template)
             self._tags_field.setVisible(is_bot)
             self._definition_lbl.setVisible(not is_bot)
             if is_bot:
@@ -786,6 +803,11 @@ class BotHeader(ThemedMixin, QWidget):
     @property
     def version_text(self) -> str:
         return self._version_pill.text()
+
+    @property
+    def rewards_offered(self) -> bool:
+        """Whether the tag row offers a Rewards picker: not on a template draft."""
+        return self._tags_field.rewards_offered
 
     @property
     def status_text(self) -> str:

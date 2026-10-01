@@ -60,9 +60,17 @@ class ControllerHarness:
             "_revert_definition",
             "_reshow_definition",
             "_back_to_document",
+            "_file_label",
+            "_may_edit_template",
+            "_edit_template",
+            "_open_template",
+            "_refresh_template_context",
+            "_release_template",
+            "_show_release_refused",
         ):
             setattr(self, name, getattr(cls, name).__get__(self))
         self._subgraph_library = library
+        self._templates_root = None
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
         self._has_unsaved_changes = False

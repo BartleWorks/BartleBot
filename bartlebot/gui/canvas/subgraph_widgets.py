@@ -1,8 +1,8 @@
 """The small widgets subgraph authoring adds to the canvas.
 
 ``CrumbBar`` is the overlay that says where the canvas is -- Focus Mode on a region, a
-subgraph node's body viewed in Run mode, or a definition open as a document -- with the
-path back out, and in a definition the verbs that save it. ``ViewFrame`` is the border
+subgraph node's body viewed in Run mode, a definition open as a document, or a template
+draft -- with the path back out, and in a definition or a draft the verbs that save it. ``ViewFrame`` is the border
 round the viewport that goes with it. ``SubgraphMetaDialog`` asks for a name and
 description when a region becomes a definition, or a definition is saved as a new one.
 ``LinkInputDialog`` links one node param to an existing input of a compatible type, a
@@ -54,18 +54,23 @@ class Crumb:
 
 
 class CrumbMode(Enum):
-    """The three things the crumb bar can be saying.
+    """The four things the crumb bar can be saying.
 
     ``FOCUS`` is Focus Mode on a region of a bot: a view filter, in the region's own
     color, with a single-line frame. ``VIEW`` is a subgraph node's body in Run mode,
     read-only. ``DEFINITION`` is a definition open as a document, with the verbs that
-    end the visit. The last two wear the accent, the link glyph and a double-line
-    frame, which the call node's double side bars echo: double means shared.
+    end the visit. Those two wear the accent, the link glyph and a double-line frame,
+    which the call node's double side bars echo: double means shared.
+
+    ``TEMPLATE`` is a template draft (dev mode only): a whole bot, so no frame and no
+    link glyph -- a template is copied, never linked -- but the accent bar stays up the
+    whole time, with *Save draft* and *Release…*, so a draft is never mistaken for a bot.
     """
 
     FOCUS = "focus"
     VIEW = "view"
     DEFINITION = "definition"
+    TEMPLATE = "template"
 
 
 class _LinkGlyph(QWidget):
@@ -120,6 +125,7 @@ class CrumbBar(ThemedMixin, QWidget):
     save_requested = pyqtSignal()
     save_as_requested = pyqtSignal()
     revert_requested = pyqtSignal()
+    release_requested = pyqtSignal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -143,10 +149,13 @@ class CrumbBar(ThemedMixin, QWidget):
         self._save_as_btn.setToolTip("Save a copy as a new subgraph, and go on editing the copy")
         self._revert_btn = ActionButton("revert", "Revert", fill=False)
         self._revert_btn.setToolTip("Revert to the built-in version of this subgraph")
+        self._release_btn = ActionButton("upload", "Release…", fill=False)
+        self._release_btn.setToolTip("Release the saved draft as the template's next version, which New Bot offers")
         self._close_btn = IconButton("dismiss", tooltip="Step out", size=22, icon_size=12, tint=IconTint.ON_ACCENT)
         self._save_btn.clicked.connect(self.save_requested)
         self._save_as_btn.clicked.connect(self.save_as_requested)
         self._revert_btn.clicked.connect(self.revert_requested)
+        self._release_btn.clicked.connect(self.release_requested)
         self._close_btn.clicked.connect(self.close_requested)
 
         row = QHBoxLayout(self)
@@ -158,6 +167,7 @@ class CrumbBar(ThemedMixin, QWidget):
         row.addWidget(self._save_btn)
         row.addWidget(self._save_as_btn)
         row.addWidget(self._revert_btn)
+        row.addWidget(self._release_btn)
         row.addWidget(self._close_btn)
         self.show_state(CrumbMode.FOCUS, [])
 
@@ -176,13 +186,21 @@ class CrumbBar(ThemedMixin, QWidget):
         self._color_slot = color_slot if mode == CrumbMode.FOCUS else None
         self._segments = list(segments)
         self._rebuild_path()
-        self._glyph.setVisible(mode != CrumbMode.FOCUS)
+        self._glyph.setVisible(mode in (CrumbMode.VIEW, CrumbMode.DEFINITION))
         self._hint_lbl.setText(hint)
         self._hint_lbl.setVisible(bool(hint))
         editing = mode == CrumbMode.DEFINITION
-        self._save_btn.setVisible(editing)
+        drafting = mode == CrumbMode.TEMPLATE
+        self._save_btn.setText("Save draft" if drafting else "Save")
+        self._save_btn.setToolTip(
+            "Save the draft. Nothing reaches New Bot until it is released"
+            if drafting
+            else "Save this subgraph to the library"
+        )
+        self._save_btn.setVisible(editing or drafting)
         self._save_as_btn.setVisible(editing)
         self._revert_btn.setVisible(editing and can_revert)
+        self._release_btn.setVisible(drafting)
         self._close_btn.setToolTip(close_tip)
         self.refresh_theme_styles()
         self.adjustSize()
@@ -246,6 +264,10 @@ class CrumbBar(ThemedMixin, QWidget):
     @property
     def revert_button(self) -> ActionButton:
         return self._revert_btn
+
+    @property
+    def release_button(self) -> ActionButton:
+        return self._release_btn
 
     @property
     def close_button(self) -> IconButton:

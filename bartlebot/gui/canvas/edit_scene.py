@@ -364,7 +364,12 @@ def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bo
         if (state.id, field.key) in driven:
             continue
         if field.required and _required_field_empty(field, state.params):
-            error_reasons.append(f"Required param '{field.key}' is empty")
+            if config.is_template:
+                # A template draft leaves what each bot fills in blank -- a released
+                # version must -- so a blank here is the expected state, not a fault.
+                warning_reasons.append(f"Required param '{field.key}' is left blank for the bot to fill in")
+            else:
+                error_reasons.append(f"Required param '{field.key}' is empty")
         elif field.type == "nav_zone" and not _nav_zone_reachable(state.params.get(field.key)):
             error_reasons.append(f"'{field.key}' is not a destination on the zone map")
 

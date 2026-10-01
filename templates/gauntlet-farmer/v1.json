@@ -1,0 +1,240 @@
+{
+  "id": "ca47533c-be03-451e-a3b7-778e2b6fbab6",
+  "name": "Gauntlet Farmer",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_2",
+  "recovery_state": "t_1",
+  "drops": [],
+  "authors": "BartleBot",
+  "tags": [
+    "Gauntlet"
+  ],
+  "options": [],
+  "states": [
+    {
+      "id": "t_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": []
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "teleport_to_friend",
+      "label": "Teleport to friend",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "target_hooked_player": false,
+        "target_player": 0,
+        "to_zone": ""
+      }
+    },
+    {
+      "id": "t_3",
+      "node_type": "handle_potions",
+      "label": "Try using potions",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": false,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "sync_in_zone",
+      "label": "Go to The Commons",
+      "position": {
+        "x": 1760.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "handle_potions",
+      "label": "Refill and use potions",
+      "position": {
+        "x": 2200.0,
+        "y": 90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "teleport_to_friend",
+      "label": "Teleport to friend",
+      "position": {
+        "x": 2640.0,
+        "y": 90.0
+      },
+      "params": {
+        "target_hooked_player": false,
+        "target_player": 0,
+        "to_zone": ""
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_8",
+      "node_type": "enter_gauntlet",
+      "label": "Enter gauntlet",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "dungeon_zone": ""
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "teleport_to_friend",
+      "label": "Teleport to friend",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "target_hooked_player": false,
+        "target_player": 0,
+        "to_zone": ""
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "t_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [],
+  "template_meta": {
+    "blurb": "Template file for a gauntlet farming bot."
+  }
+}

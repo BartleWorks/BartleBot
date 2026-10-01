@@ -65,3 +65,35 @@ def test_reserved_ids_apply_only_to_the_document_they_were_set_for(qapp):
     assert scene.reserved_ids == {"t_9"}
     scene.set_reserved_ids(None)
     assert scene.reserved_ids == frozenset()
+
+
+# ---------------------------------------------------------------------------
+# A draft's blanks are what each bot fills in, not faults
+# ---------------------------------------------------------------------------
+
+
+def _with_blank_zone(template: bool) -> BotConfig:
+    config = _config("t_1" if template else "state_1", template=template)
+    config.states[0].node_type = "enter_dungeon"
+    config.states[0].params = {}
+    return config
+
+
+def test_a_blank_required_param_is_a_warning_in_a_draft():
+    from bartlebot.gui.canvas.edit_scene import _validate_node
+
+    config = _with_blank_zone(template=True)
+    is_error, is_warning, errors, warnings = _validate_node(config.states[0], config)
+
+    assert not any("Required param" in e for e in errors)
+    assert any("left blank for the bot to fill in" in w for w in warnings)
+
+
+def test_the_same_blank_is_an_error_in_a_bot():
+    from bartlebot.gui.canvas.edit_scene import _validate_node
+
+    config = _with_blank_zone(template=False)
+    is_error, _is_warning, errors, _warnings = _validate_node(config.states[0], config)
+
+    assert is_error
+    assert any("Required param" in e and "is empty" in e for e in errors)
