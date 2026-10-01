@@ -34,6 +34,8 @@ class ControllerHarness:
         for name in (
             "_compose",
             "_recompose_before_run",
+            "_new_bot",
+            "_new_bot_folder",
             "_open_bot",
             "_save_bot",
             "_save_bot_as",

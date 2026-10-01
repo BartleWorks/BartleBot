@@ -5,6 +5,11 @@ What every change ships with, and the ways this suite goes slow or flaky.
 - Test doubles in `tests/conftest.py`: `FakeClient`, `FakeMachine`, `FakeEntity`
 - No Wizard101 process needed — all node tests use `FakeClient`
 - `FakeMachine.get_option()` returns 0 for unknown options to avoid real delays
+- A new dialog, card or row builder ships with a test that asks for the `parentless_shows`
+  fixture, builds the surface, and asserts the list is empty. It catches a widget shown
+  before it has a parent, which flashes a window on screen and leaves nothing in the
+  finished tree to inspect. `bartlebot/gui/CLAUDE.md` has the rule;
+  `test_building_the_dialog_never_shows_a_parentless_widget` is the pattern.
 
 ## Keeping the suite fast
 

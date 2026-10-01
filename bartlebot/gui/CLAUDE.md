@@ -343,13 +343,33 @@ row = build_gutter_row(bar, edit_btn, help_btn, body)   # this is what parents t
 edit_btn.setVisible(self._editable)                     # only now
 ```
 
+**A widget in a layout nothing has installed yet has no parent either.** `addWidget`
+on a free-standing layout parents nothing; the widgets in it get a parent only when
+that layout is set on a widget, or added to a layout that already is. So the builder
+in the example above is only one way to get here. The other is three lines apart in
+one constructor:
+
+```python
+text = QVBoxLayout()                 # free-standing
+text.addWidget(self._blurb)          # still no parent
+self._blurb.setVisible(bool(blurb))  # a window, once per card
+row.addLayout(text)                  # too late
+```
+
+Attach the layout before putting anything in it (`row.addLayout(text)` first), or pass
+the parent to the layout's constructor. The New Bot dialog flashed one window per
+template card this way.
+
 `setVisible(False)` is safe, and so is showing a child of a hidden parent — only the
 parentless case opens a window. It bites hardest where a rebuild is on a hot path:
 one click of a check box in Edit mode mapped and unmapped **eight** windows on a
 shipped bot, because each row's description and Edit button were shown while still
 loose. `test_building_a_row_never_shows_a_parentless_widget` is the guard, and the
-way it catches it is worth reusing — an event filter on the `QApplication` recording
-every `Show` delivered to a widget whose `parent()` is `None`.
+way it catches it is the `parentless_shows` fixture in `tests/conftest.py` — an event
+filter on the `QApplication` recording every `Show` delivered to a widget whose
+`parent()` is `None`. **A new dialog, card or row builder gets a test that asks for
+it**, builds the surface and asserts the list is empty; reading the code for this bug
+has missed it more than once.
 
 The same window opens on the way *out*. **Discard a widget with `discard_widget`
 (`widgets/discard.py`)**, never a bare `setParent(None)` + `deleteLater()`: a widget

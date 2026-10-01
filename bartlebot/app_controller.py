@@ -18,6 +18,7 @@ from wizwalker.extensions.wizsprinter import WizSprinter
 
 from bartlebot import (
     group_manager,
+    new_bot,
     option_values,
     player_realms,
     recovery_readiness,
@@ -27,7 +28,7 @@ from bartlebot import (
 )
 from bartlebot.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
 from bartlebot.bot.machine import BotMachine
-from bartlebot.bot.schema import BotConfig, StateModel
+from bartlebot.bot.schema import BotConfig
 from bartlebot.bot_tags import normalize_tags, suggested_tags, wants_rewards_prompt
 from bartlebot.client_manager import ClientManager
 from bartlebot.combat_warnings import collect_combat_warnings
@@ -36,6 +37,7 @@ from bartlebot.gui.canvas import recording
 from bartlebot.gui.canvas.bot_canvas import BotMode, CanvasDocument, _resolve_bots_dir
 from bartlebot.gui.global_hotkeys import ID_BASE_SPEED_AUTHORING, GlobalHotkeys
 from bartlebot.gui.main_window import MainWindow
+from bartlebot.gui.new_bot_dialog import NewBotDialog
 from bartlebot.gui.rewards_tag_dialog import RewardsChoice, RewardsTagDialog
 from bartlebot.gui.window_show_trace import WindowShowTracer
 from bartlebot.launcher.launch_profile import restore_game_prefs, restore_ui_size
@@ -699,32 +701,48 @@ class AppController(QObject):
     # File operations
     # ------------------------------------------------------------------
 
-    def _new_bot(self) -> None:
-        if not self._close_definitions():
-            return
-        self._delete_autosave()
-        self._has_unsaved_changes = False
-        config = BotConfig(
-            id=str(uuid4()),
-            name="New Bot",
-            initial="state_1",
-            recovery_state="state_1",
-            states=[StateModel(id="state_1", node_type="teleport_to_world_hub")],
-            transitions=[],
-        )
-        self._loaded_config = config
-        self._last_save_path = None
-        self._rewards_declined_for = None
-        self._window.set_bot_name(config.name, "Untitled")
-        self._window.bot_canvas.setup(config, mode=BotMode.EDIT)
-        self._clean_snapshot = _file_snapshot(config)
-        self._window.left_sidebar.set_config(config)
-        self._window.right_sidebar.set_config(config)
-        self._window.set_save_enabled(True)
-        self._window.set_close_enabled(True)
-        self._window.set_start_enabled(self._start_enabled())
+    def _new_bot(self) -> bool:
+        """New Bot: ask for a starting point and the bot's details, then save the bot and open it for editing.
 
-    def _open_bot(self, path: str | None = None) -> None:
+        Saved before it is opened, so the file exists from the start: a plain Save can
+        never land on a template, and a bot abandoned half set up stays in the library.
+        False when nothing was created.
+        """
+        if not self._close_definitions():
+            return False
+        sm = SettingsManager.instance()
+        bots_dir = _resolve_bots_dir(sm.get("canvas", "bot_library_path", default="bots"), project_root())
+        dialog = NewBotDialog(
+            new_bot.starting_points(self._templates_root),
+            bots_dir,
+            self._window,
+            initial_folder=self._new_bot_folder(bots_dir),
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return False
+        # Composed before it is written, so the file holds what opening it would make
+        # of it and the first Save after that changes nothing.
+        config, _report = self._compose(new_bot.create_bot(dialog.start, dialog.details()))
+        path = dialog.target_path()
+        try:
+            config.save(path)
+        except Exception as e:
+            QMessageBox.critical(self._window, "Failed to create bot", str(e))
+            return False
+        self._open_bot(str(path), mode=BotMode.EDIT)
+        return True
+
+    def _new_bot_folder(self, bots_dir: Path) -> str | None:
+        """The library folder New Bot opens on: the one being looked at, else the open bot's."""
+        looking_at = self._window.bot_canvas.library_folder()
+        if looking_at is not None:
+            return looking_at
+        if self._last_save_path is None:
+            return None
+        parent = Path(self._last_save_path).resolve().parent
+        return parent.name if parent.parent == Path(bots_dir).resolve() else None
+
+    def _open_bot(self, path: str | None = None, *, mode: BotMode = BotMode.RUN) -> None:
         if not self._close_definitions():
             return
         if path is None:
@@ -746,7 +764,7 @@ class AppController(QObject):
         self._last_save_path = path
         self._rewards_declined_for = None
         self._window.set_bot_name(config.name, self._file_label(config, path))
-        self._window.bot_canvas.setup(config)
+        self._window.bot_canvas.setup(config, mode=mode)
         # After setup and compose, which the open does not count as edits either.
         self._clean_snapshot = _file_snapshot(config)
         self._window.bot_canvas.set_compose_report(report)

@@ -15,7 +15,9 @@ shadows the repo's. `bartlebot/store_roots.py` has the detail. The suite clears 
 and `test_every_linked_bot_resolves_under_the_shipped_root_alone` catches a
 definition that only exists on your machine. It also adds File › Edit Template…, the
 only way into a template's draft under `templates/`; only Release on the draft's crumb
-writes a version users are offered (`bartlebot/template_store.py`).
+writes a version users are offered (`bartlebot/template_store.py`). New Bot copies the
+latest released version into a new bot, records it in the bot's `template`, and saves
+the file at once (`bartlebot/new_bot.py`).
 
 It also turns on the canvas repaint tracer (`bartlebot/gui/canvas/repaint_trace.py`, for
 #73). The tracer logs a WARNING, with a screenshot under `logs/repaint/`, whenever an item

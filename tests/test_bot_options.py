@@ -519,27 +519,3 @@ def test_a_failed_save_as_keeps_the_bot_its_identity(tmp_path, monkeypatch):
     assert config.id == original_id
     assert controller._last_save_path is None
     assert refreshed == []
-
-
-def test_a_new_bot_is_born_with_an_id():
-    controller = SimpleNamespace(
-        _delete_autosave=lambda *a: None,
-        _has_unsaved_changes=False,
-        _loaded_config=None,
-        _last_save_path=None,
-        _start_enabled=lambda: False,
-        _window=SimpleNamespace(
-            set_bot_name=lambda *a: None,
-            set_save_enabled=lambda *a: None,
-            set_close_enabled=lambda *a: None,
-            set_start_enabled=lambda *a: None,
-            left_sidebar=SimpleNamespace(set_config=lambda *a: None),
-            right_sidebar=SimpleNamespace(set_config=lambda *a: None),
-            bot_canvas=SimpleNamespace(setup=lambda *a, **k: None),
-        ),
-        _close_definitions=lambda: True,
-    )
-
-    AppController._new_bot(controller)
-
-    assert controller._loaded_config.id

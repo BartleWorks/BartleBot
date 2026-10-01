@@ -242,6 +242,13 @@ def _wiki_import_dialog():
     return WikiImportDialog()
 
 
+def _new_bot_dialog():
+    from bartlebot.gui.new_bot_dialog import NewBotDialog
+
+    # No templates and no library: the Blank bot card alone, on the page Enter leaves by Next.
+    return NewBotDialog([], "no-such-library")
+
+
 #: (name, factory, the label Enter must reach). ``wiki_import`` is absent on purpose —
 #: its commit starts disabled and has a test of its own below.
 CONVERTED = [
@@ -255,6 +262,7 @@ CONVERTED = [
     ("recovery", _recovery_dialog, "OK"),
     ("safety_warning", _safety_warning_dialog, "Run Bot"),
     ("rewards_tag", _rewards_tag_dialog, "Save"),
+    ("new_bot", _new_bot_dialog, "Next"),
 ]
 
 

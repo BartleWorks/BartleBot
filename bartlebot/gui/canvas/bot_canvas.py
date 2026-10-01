@@ -797,6 +797,16 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         else:
             self._show_cards([])
 
+    def current_folder(self) -> str | None:
+        """The library folder the selected category row stands for, by its name on disk.
+
+        ``None`` for the rows that are no folder (Recent, All, Other, Subgraphs), and
+        before the panel has listed anything.
+        """
+        item = self._cat_list.currentItem()
+        key = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        return key if isinstance(key, str) and not key.startswith("\0") else None
+
     def add_category_row(self, key: str, caption: str, icon: QIcon | None = None) -> None:
         """Append a row to the category list, looked up later by *key* rather than *caption*."""
         item = QListWidgetItem(caption)
@@ -1414,6 +1424,8 @@ class BotCanvas(QWidget):
 
         # ── Placeholder — shown until the first bot is loaded ────────
         self._placeholder = _BotLibraryPanel(self)
+        #: The library dialog's own panel, while that dialog is up.
+        self._library_dialog_panel: _BotLibraryPanel | None = None
         self._placeholder.new_bot_requested.connect(self.new_bot_requested)
         self._placeholder.open_bot_requested.connect(self.open_bot_requested)
         self._placeholder.open_recent_requested.connect(self.open_recent_requested)
@@ -1670,6 +1682,18 @@ class BotCanvas(QWidget):
         """Rebuild the recent files list in the placeholder."""
         self._placeholder.refresh()
 
+    def library_folder(self) -> str | None:
+        """The library folder the user is looking at, by its name on disk, or ``None``.
+
+        The library dialog's while it is up, else the placeholder's while no bot is open.
+        What New Bot opens its folder list on.
+        """
+        if self._library_dialog_panel is not None:
+            return self._library_dialog_panel.current_folder()
+        if self._placeholder.isVisibleTo(self):
+            return self._placeholder.current_folder()
+        return None
+
     def open_library_dialog(self) -> None:
         """Open the bot library as a modal dialog (useful when a bot is already loaded)."""
         from PyQt6.QtWidgets import QDialog, QVBoxLayout
@@ -1690,7 +1714,11 @@ class BotCanvas(QWidget):
         panel.open_recent_requested.connect(dlg.accept)
         panel.open_recent_requested.connect(self.open_recent_requested)
         lay.addWidget(panel)
-        dlg.exec()
+        self._library_dialog_panel = panel
+        try:
+            dlg.exec()
+        finally:
+            self._library_dialog_panel = None
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
