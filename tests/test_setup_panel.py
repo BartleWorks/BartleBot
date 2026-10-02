@@ -879,8 +879,22 @@ def test_the_review_says_what_moved_and_heads_each_release_with_its_note():
     review = _review(_bot())
 
     assert review_title(review) == "Mob Farmer has moved on (v1 \u2192 v2)"
-    assert release_heading(2, _NOTE) == f"v2 \u00b7 {_NOTE}"
-    assert release_heading(3, "") == "v3"
+    assert release_heading(2) == "v2"
+
+
+def test_a_long_release_note_wraps_rather_than_widening_the_tab(panel):
+    """A heading's label never wraps, so a note in one set the tab's minimum width past its viewport."""
+    from PyQt6.QtWidgets import QLabel  # noqa: PLC0415
+
+    long_note = "Expose boss duel for combat strategies and update blurb and help text " * 3
+    update = template_diff.TemplateUpdate(
+        TEMPLATE_ID, "Mob Farmer", 1, _draft(), [template_diff.Release(2, long_note, _v2_draft())]
+    )
+    panel.show_document(_bot(), setup_steps.progress(_bot(), _STEPS), None, template_diff.review(update, _bot()))
+
+    (note,) = [label for label in panel.findChildren(QLabel) if label.text() == long_note]
+    assert note.wordWrap()
+    assert panel.scroll_area.widget().minimumSizeHint().width() < 300
 
 
 def test_a_change_card_says_what_would_change_or_why_it_cannot():

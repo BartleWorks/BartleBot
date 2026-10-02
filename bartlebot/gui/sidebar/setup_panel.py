@@ -130,9 +130,9 @@ def review_title(review: template_diff.Review) -> str:
     return f"{review.name} has moved on (v{review.base_version} \u2192 v{review.latest_version})"
 
 
-def release_heading(version: int, note: str) -> str:
-    """A release's heading in the review: its number and its change note."""
-    return f"v{version} \u00b7 {note}" if note else f"v{version}"
+def release_heading(version: int) -> str:
+    """A release's heading in the review: its number. The change note is a line under it."""
+    return f"v{version}"
 
 
 def change_summary(change: template_diff.Change, kept: bool = False) -> str:
@@ -766,7 +766,13 @@ class SetupPanel(ThemedMixin, QWidget):
         layout.addWidget(about)
 
         for version, note, changes in review.sections:
-            layout.addWidget(RuleHeading(release_heading(version, note), self._body))
+            # The note wraps on a line of its own: a heading's label does not, and a long
+            # note in one widened the whole tab past its viewport, clipping every line.
+            layout.addWidget(RuleHeading(release_heading(version), self._body))
+            if note:
+                about_release = ThemedTextLabel(note, color="text", parent=self._body)
+                about_release.setWordWrap(True)
+                layout.addWidget(about_release)
             if not changes:
                 none = ThemedTextLabel(NOTHING_TO_DO_TEXT, color="text_muted", parent=self._body)
                 none.setWordWrap(True)
