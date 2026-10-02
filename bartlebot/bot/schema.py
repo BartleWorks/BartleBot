@@ -169,10 +169,24 @@ PORT_NODE_TYPES = frozenset({SUBGRAPH_ENTRY, SUBGRAPH_EXIT})
 
 
 class SubgraphInputBinding(BaseModel):
-    """One member param an input drives: ``state`` is a definition-local id."""
+    """One thing an input drives: a member's param, or an input of a nested instance.
 
-    state: str
+    For a member, ``state`` is its definition-local id and ``param`` the param's key.
+    For a nested instance, ``region`` is its region's definition-local id and ``param``
+    names one of *its* inputs, so the value goes in through the inner signature and
+    never past it. Exactly one of ``state`` and ``region`` is set; ``region`` is None
+    for a member and so is never written for one.
+    """
+
+    state: str | None = None
     param: str
+    region: str | None = None
+
+    @model_validator(mode="after")
+    def names_one_target(self) -> "SubgraphInputBinding":
+        if (self.state is None) == (self.region is None):
+            raise ValueError("a binding names a state or a nested instance's region, and not both")
+        return self
 
 
 class SubgraphInput(BaseModel):
@@ -669,6 +683,9 @@ def definition_structure_errors(
             errors.append(f"'{param}' of {state!r} is bound twice")
         driven.add((state, param))
 
+    instances = {r.id for r in regions if r.source is not None}
+    forwarded: set[tuple[str, str]] = set()
+
     names: set[str] = set()
     for inp in inputs:
         if inp.name in names:
@@ -677,11 +694,25 @@ def definition_structure_errors(
         if inp.panel is not None and inp.panel not in input_panels:
             errors.append(f"input {inp.name!r} names panel {inp.panel!r}, which is not an inputs panel")
         for b in inp.bindings:
-            drive(b.state, b.param, f"input {inp.name!r}")
+            if b.region is None:
+                drive(b.state or "", b.param, f"input {inp.name!r}")
+            elif b.region not in instances:
+                errors.append(
+                    f"input {inp.name!r} links to {b.region!r}, which is not a subgraph node of this subgraph"
+                )
+            elif (b.region, b.param) in forwarded:
+                errors.append(f"input '{b.param}' of {b.region!r} is linked twice")
+            else:
+                forwarded.add((b.region, b.param))
     for panel in panels:
         for key, extra in panel.bindings.items():
             for b in extra:
-                drive(b.state, b.param, f"the exposed '{key}' of {panel.member!r}")
+                if b.region is not None:
+                    errors.append(
+                        f"the exposed '{key}' of {panel.member!r} cannot be shared with a subgraph node's input"
+                    )
+                else:
+                    drive(b.state or "", b.param, f"the exposed '{key}' of {panel.member!r}")
 
     region_ids: set[str] = set()
     for r in regions:

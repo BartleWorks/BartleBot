@@ -69,11 +69,11 @@ from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.subgraphs import binding_type
+from bartlebot.subgraphs import MAX_DEPTH, binding_type, nested_input
 from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
 
 
-def input_param_field(defn, inp) -> ParamField:
+def input_param_field(defn, inp, library=None, _depth: int = 0) -> ParamField:
     """The ``ParamField`` an input's widget is built from, on the call node and the signature panel.
 
     The input stores what the author owns: key, type, label, help and default. What
@@ -83,10 +83,15 @@ def input_param_field(defn, inp) -> ParamField:
     gets the node's dropdown rather than an empty combo. If any bound param is
     required, so is the input. ``defn`` is anything with ``states``: a definition, or
     a definition document's config.
+
+    An input linked into a nested instance counts that instance's input as a bound
+    field, built the same way from its own definition, which takes ``library`` (a
+    ``SubgraphLibrary``) to find. With no default of its own, the input shows the
+    nested one's: unset, that is the value the nested instance runs with.
     """
     by_id = {s.id: s for s in defn.states}
     # The strictest type of what the input is linked to, whatever an older file stored.
-    inp_type = binding_type(defn, inp.bindings, NODE_PARAM_SCHEMAS) or inp.type
+    inp_type = binding_type(defn, inp.bindings, NODE_PARAM_SCHEMAS, library) or inp.type
     bound = [
         f
         for b in inp.bindings
@@ -94,13 +99,22 @@ def input_param_field(defn, inp) -> ParamField:
         for f in NODE_PARAM_SCHEMAS.get(st.node_type, [])
         if f.key == b.param
     ]
+    nested = [
+        input_param_field(found[0], found[1], library, _depth + 1)
+        for b in inp.bindings
+        if _depth < MAX_DEPTH and (found := nested_input(defn, b, library)) is not None
+    ]
+    bound += nested
     first = next((f for f in bound if f.type == inp_type), bound[0] if bound else None)
+    default = inp.default
+    if default is None:
+        default = next((f.default for f in nested if f.default is not None), None)
     return ParamField(
         key=inp.name,
         type=inp_type,
         label=inp.label or inp.name,
         help=inp.help or "",
-        default=inp.default,
+        default=default,
         required=any(f.required for f in bound),
         choices=list(first.choices) if first is not None else [],
         placeholder=first.placeholder if first is not None else "",
@@ -1968,6 +1982,9 @@ class _ParamPanel(ThemedMixin, QWidget):
     # (state id, param key): Link to subgraph input, and Unlink, on a definition node's page.
     link_input_requested = pyqtSignal(str, str)
     unlink_input_requested = pyqtSignal(str, str)
+    # (region id, input name): the same two on a nested subgraph node's page, in a definition.
+    link_nested_input_requested = pyqtSignal(str, str)
+    unlink_nested_input_requested = pyqtSignal(str, str)
     # (state id, promoted): the node page's Promote to input group / Demote button.
     promote_node_requested = pyqtSignal(str, bool)
     # The signature page wrote into the definition document's signature.
@@ -2295,6 +2312,8 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._call_page.role_requested.connect(self.role_requested)
         self._call_page.open_definition_requested.connect(self.open_definition_requested)
         self._call_page.detach_requested.connect(self.detach_requested)
+        self._call_page.link_input_requested.connect(self.link_nested_input_requested)
+        self._call_page.unlink_input_requested.connect(self.unlink_nested_input_requested)
         self._signature_page.edit_starting.connect(self.edit_starting)
         self._signature_page.structural_change.connect(self.structural_property_changed)
         self._signature_page.changed.connect(self.definition_changed)
@@ -2409,6 +2428,11 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._param_form.set_zone_suggestions_getter(fn)
         self._call_page.set_zone_suggestions_getter(fn)
         self._signature_page.set_zone_suggestions_getter(fn)
+
+    def set_subgraph_library(self, library) -> None:
+        """The library an input linked into a nested instance is looked up in, to draw its field."""
+        self._call_page.set_subgraph_library(library)
+        self._signature_page.set_subgraph_library(library)
 
     def refresh_player_availability(self) -> None:
         """Re-gray the player checkboxes — call when clients connect or disconnect.

@@ -4,7 +4,8 @@ Everything a call node shows is authored here -- the Entry and Exit ports, the
 inputs and their defaults, the panels they are grouped under, and the nodes exposed
 whole. A port *is* its node on the canvas, so adding one places a node and deleting
 one deletes the node; its name is the node's label, so renaming changes nothing
-structural. An input is added from a node's own page (a param's *Link* button); this page
+structural. An input is added from a node's own page (a param's *Link* button), or from a
+nested subgraph node's page (one of its inputs' *Link* button); this page
 renames, re-describes, sets the default, reorders, groups and deletes.
 """
 
@@ -33,6 +34,7 @@ from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
+from bartlebot.subgraphs import nested_input
 
 #: The group dropdown's entry for an input listed in no group.
 _NO_GROUP = "None"
@@ -61,6 +63,7 @@ class SignaturePage(ThemedMixin, QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._config: BotConfig | None = None
+        self._library = None
         self._suppress = False
         self._get_clients: Callable[[], list] = lambda: []
         self._get_zones: Callable[[], list[str]] = lambda: []
@@ -69,7 +72,8 @@ class SignaturePage(ThemedMixin, QWidget):
         self._title = QLabel("Signature")
         self._intro = ThemedTextLabel(
             "What every subgraph node of this subgraph shows: its ports, its inputs and how they are grouped. "
-            "To add a subgraph input, hover a param on a node's page and click its link button.",
+            "To add a subgraph input, hover a param on a node's page, or an input on a subgraph node's page, "
+            "and click its link button.",
             color="text_muted",
         )
         self._intro.setWordWrap(True)
@@ -99,6 +103,10 @@ class SignaturePage(ThemedMixin, QWidget):
 
     def set_zone_suggestions_getter(self, fn: Callable[[], list[str]]) -> None:
         self._get_zones = fn
+
+    def set_subgraph_library(self, library) -> None:
+        """Where an input linked into a nested subgraph node finds that node's definition."""
+        self._library = library
 
     @property
     def config(self) -> BotConfig | None:
@@ -174,6 +182,7 @@ class SignaturePage(ThemedMixin, QWidget):
             note = ThemedTextLabel("No inputs yet.", color="text_muted")
             layout.addWidget(note)
         labels = {s.id: (s.label or s.id) for s in self._config.states}
+        region_labels = {r.id: r.label for r in self._config.regions if r.source is not None}
         inputs_panels = [p for p in meta.panels if p.kind == "inputs"]
         for i, inp in enumerate(meta.inputs):
             label = QLineEdit(inp.label or "")
@@ -209,15 +218,26 @@ class SignaturePage(ThemedMixin, QWidget):
             default = _DynamicParamForm()
             default.set_clients_getter(self._get_clients)
             default.set_zone_suggestions_getter(self._get_zones)
-            field = replace(input_param_field(self._config, inp), label="Default", required=False)
+            field = replace(input_param_field(self._config, inp, self._library), label="Default", required=False)
             default.load_schema([field], {inp.name: inp.default})
             default.changed.connect(lambda n=inp.name, f=default: self._set_default(n, f))
             default.setContentsMargins(10, 0, 0, 0)
             layout.addWidget(default)
             for b in inp.bindings:
-                text = ThemedTextLabel(f"linked to {labels.get(b.state, b.state)} · {b.param}", color="text_muted")
-                unbind = _icon("unhook", "Unlink that param from this input")
-                unbind.clicked.connect(lambda _=False, n=inp.name, st=b.state, k=b.param: self._unbind(n, st, k))
+                if b.region is not None:
+                    # A nested subgraph node's input, named as that node's own page names it.
+                    found = nested_input(self._config, b, self._library)
+                    name = (found[1].label or found[1].name) if found is not None else b.param
+                    text = ThemedTextLabel(
+                        f"linked to {region_labels.get(b.region, b.region)} · {name}", color="text_muted"
+                    )
+                    unbind = _icon("unhook", "Unlink that subgraph node's input from this input")
+                else:
+                    text = ThemedTextLabel(f"linked to {labels.get(b.state, b.state)} · {b.param}", color="text_muted")
+                    unbind = _icon("unhook", "Unlink that param from this input")
+                unbind.clicked.connect(
+                    lambda _=False, n=inp.name, st=b.state, rg=b.region, k=b.param: self._unbind(n, st, k, rg)
+                )
                 layout.addWidget(self._row(text, unbind, indent=16))
 
     def _panels_section(self) -> None:
@@ -382,10 +402,10 @@ class SignaturePage(ThemedMixin, QWidget):
 
         self._discrete("Delete input", apply)
 
-    def _unbind(self, name: str, state: str, key: str) -> None:
+    def _unbind(self, name: str, state: str | None, key: str, region: str | None = None) -> None:
         def apply() -> None:
             inp = self._find_input(name)
-            inp.bindings = [b for b in inp.bindings if not (b.state == state and b.param == key)]
+            inp.bindings = [b for b in inp.bindings if not (b.state == state and b.region == region and b.param == key)]
 
         self._discrete("Unbind param", apply)
 

@@ -771,7 +771,12 @@ or its collapsed node; label, color, Collapse / Expand -- disabled with the reas
 with Record, Open definition, Detach), or in a definition document with nothing selected
 the *signature* (`canvas/signature_page.py`: ports, inputs, panels). A definition's node
 page links a param to a subgraph input (**Link**, one param) or puts the whole node on the
-subgraph node (**Promote to input group** / **Demote**). A linked param *is* its input's
+subgraph node (**Promote to input group** / **Demote**). A subgraph node nested in a
+definition offers the same **Link** on each of its named inputs
+(`BotCanvas.link_nested_input`): the binding names the nested region and the input, never
+one of its members, so the value goes in through the inner signature and composition
+forwards it (`subgraphs.forwarded_inputs`). The rows of a promoted node's input group on
+that nested node are not linkable. A linked param *is* its input's
 default: `subgraphs.sync_linked_values` keeps them equal both ways, and a subgraph node
 follows the default until its own page changes the value (Reset goes back). A row shows
 status and action in one control: an unlinked row's Link button appears only on hover or

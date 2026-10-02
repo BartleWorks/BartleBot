@@ -74,6 +74,7 @@ from bartlebot.subgraphs import (
     boundary_ports,
     collapse_blocker,
     folded_regions,
+    input_targets,
     is_collapsed,
     is_nested_in,
     linked_region_of,
@@ -153,16 +154,18 @@ def _node_returns(node_type: str) -> list[str]:
     return [r.name for r in spec.returns] if spec else []
 
 
-def driven_params(config: BotConfig) -> set[tuple[str, str]]:
+def driven_params(config: BotConfig, library: SubgraphLibrary | None = None) -> set[tuple[str, str]]:
     """``(state id, param key)`` a definition document's signature sets from outside.
 
     A param bound to an input, or belonging to an exposed node, is the consumer's to
-    fill in, so an empty one is not the definition's error. Empty for a bot.
+    fill in, so an empty one is not the definition's error. Empty for a bot. With
+    *library*, so is a nested subgraph node's member that an input reaches through
+    one of that node's own inputs.
     """
     meta = config.definition
     if meta is None:
         return set()
-    driven = {(b.state, b.param) for inp in meta.inputs for b in inp.bindings}
+    driven = {pair for inp in meta.inputs for pair in input_targets(config, inp, library)}
     for panel in meta.panels:
         if panel.kind != "node" or panel.member is None:
             continue
@@ -311,8 +314,12 @@ def _validate_node(
     config,
     reachable: set[str] | None = None,
     fill_ins: Mapping[tuple[str, str], setup_steps.FillIn] | None = None,
+    library: SubgraphLibrary | None = None,
 ) -> tuple[bool, bool, list[str], list[str]]:
     """Return (is_error, is_warning, error_reasons, warning_reasons) for a state.
+
+    *library* lets a definition document see through its nested subgraph nodes: see
+    :func:`driven_params`.
 
     Error conditions:
       - node_type not in NODE_REGISTRY (unknown type)
@@ -343,7 +350,7 @@ def _validate_node(
         error_reasons.append(f"Unknown node type: '{state.node_type}'")
 
     schema = NODE_PARAM_SCHEMAS.get(state.node_type, [])
-    driven = driven_params(config) if config.definition is not None else set()
+    driven = driven_params(config, library) if config.definition is not None else set()
     for field in schema:
         if (state.id, field.key) in driven:
             continue
@@ -1253,7 +1260,9 @@ class EditScene(QGraphicsScene):
         fills = self.fill_ins()
         rolled: dict[str, tuple[list[str], list[str]]] = {}
         for state in self._config.states:
-            is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, self._config, reachable, fills)
+            is_error, is_warning, err_reasons, warn_reasons = _validate_node(
+                state, self._config, reachable, fills, self._subgraph_library
+            )
             node = self._node_items.get(state.id)
             if node is not None:
                 if self._expanded and state.id in self._expanded_instance_members():

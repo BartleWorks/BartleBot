@@ -42,7 +42,7 @@ from bartlebot import zone_nav
 from bartlebot.bot.schema import BotConfig, RegionModel, SetupStep, SetupTarget, StateModel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 from bartlebot.subgraph_store import SubgraphLibrary
-from bartlebot.subgraphs import member_id
+from bartlebot.subgraphs import input_targets, member_id
 
 logger = logging.getLogger(__name__)
 
@@ -156,7 +156,8 @@ def target_params(config: BotConfig, target: SetupTarget, library=None) -> list[
     defn = library.get(region.source.subgraph_id) if library is not None else None
     named = next((i for i in defn.inputs if i.name == target.input), None) if defn is not None else None
     if named is not None:
-        pairs = [(by_id.get(member_id(region.id, b.state)), b.param) for b in named.bindings]
+        # Through a nested instance too: an input linked into one lands on its members.
+        pairs = [(by_id.get(sid), key) for sid, key in input_targets(defn, named, library, region.id)]
         return [(state, key) for state, key in pairs if state is not None]
     member, dot, key = target.input.partition(".")
     state = by_id.get(member_id(region.id, member)) if dot else None

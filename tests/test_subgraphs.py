@@ -1118,3 +1118,165 @@ def test_sync_linked_values_keeps_linked_params_equal_to_their_input():
     hub.default = "Krokotopia/Hub"
     sync_linked_values(config)
     assert by_id["tp_b"].params["zone"] == by_id["hub"].params["zone"] == "Krokotopia/Hub"
+
+
+# ---------------------------------------------------------------------------
+# An outer input linked to a nested instance's input
+# ---------------------------------------------------------------------------
+
+
+def _outer_with_snapshot(library: SubgraphLibrary, **input_kw) -> SubgraphDefinition:
+    """``_outer_definition`` with its nested snapshot stored, and a ``zone`` input linked to the inner ``hub``."""
+    outer = _outer_definition()
+    snap = materialize_region("in1", outer.regions[0].source, library.get(SYNC_ID), library)
+    outer.states += snap.states
+    outer.transitions += snap.transitions
+    outer.regions[0].members = snap.member_ids
+    outer.regions[0].source.ports = snap.ports
+    outer.inputs = [
+        SubgraphInput(name="zone", type="zone", bindings=[SubgraphInputBinding(region="in1", param="hub")], **input_kw)
+    ]
+    return SubgraphDefinition.model_validate(outer.model_dump())
+
+
+def _bot_of(defn: SubgraphDefinition, library: SubgraphLibrary, **inputs) -> BotConfig:
+    source = SubgraphSource(subgraph_id=defn.id, version=defn.version, inputs=inputs)
+    mat = materialize_region("R", source, defn, library)
+    source.ports = mat.ports
+    return BotConfig(
+        id="b",
+        name="B",
+        initial=member_id("R", "start"),
+        recovery_state=member_id("R", "start"),
+        states=mat.states,
+        transitions=mat.transitions,
+        regions=[RegionModel(id="R", label="Outer", members=mat.member_ids, color=1, source=source), *mat.regions],
+    )
+
+
+def _zones(config: BotConfig) -> dict[str, str]:
+    by_id = {s.id: s for s in config.states}
+    return {local: by_id[f"R_in1_{local}"].params["zone"] for local in ("tp_b", "hub")}
+
+
+def test_a_binding_names_a_state_or_a_nested_instance_never_both():
+    with pytest.raises(ValueError):
+        SubgraphInputBinding(param="zone")
+    with pytest.raises(ValueError):
+        SubgraphInputBinding(state="hub", region="in1", param="zone")
+
+
+def test_a_member_binding_is_written_as_before():
+    dumped = sync_players_definition().model_dump(exclude_none=True)
+    assert dumped["inputs"][0]["bindings"] == [{"state": "go_to_world", "param": "world"}]
+
+
+def test_an_outer_input_goes_in_through_the_nested_instances_own_input(library):
+    library.save(_outer_with_snapshot(library))
+    bot = _bot_of(library.get("outer"), library, zone="Deep/Z")
+    # the inner ``hub`` input fans out to both of its members, which the outer never names
+    assert _zones(bot) == {"tp_b": "Deep/Z", "hub": "Deep/Z"}
+    assert bot.regions[1].source.inputs == {"hub": "Deep/Z"}
+
+
+def test_an_unset_outer_input_forwards_its_default_and_with_none_leaves_the_inner_alone(library):
+    library.save(_outer_with_snapshot(library, default="Outer/Default"))
+    assert _zones(_bot_of(library.get("outer"), library)) == {"tp_b": "Outer/Default", "hub": "Outer/Default"}
+
+    library.save(_outer_with_snapshot(library))
+    bot = _bot_of(library.get("outer"), library)
+    assert _zones(bot) == {"tp_b": "WizardCity/Hub", "hub": "WizardCity/Hub"}
+    assert bot.regions[1].source.inputs == {}
+
+
+def test_a_forwarded_input_survives_a_recompose_and_follows_the_instance(library):
+    library.save(_outer_with_snapshot(library))
+    bot = _bot_of(library.get("outer"), library, zone="Deep/Z")
+    bot.regions[0].source.inputs["zone"] = "Other/Z"
+    composed, report = compose_bot(bot, library)
+    assert report.regions["R"].kind == "linked"
+    assert _zones(composed) == {"tp_b": "Other/Z", "hub": "Other/Z"}
+
+
+def test_reresolving_forwards_to_the_nested_instance_without_a_recompose(library):
+    library.save(_outer_with_snapshot(library))
+    defn = library.get("outer")
+    bot = _bot_of(defn, library, zone="Deep/Z")
+    bot.regions[0].source.inputs["zone"] = "Other/Z"
+    reresolve_member_params(bot, bot.regions[0], defn, library)
+    assert _zones(bot) == {"tp_b": "Other/Z", "hub": "Other/Z"}
+    # reset: nothing is forwarded any more, so the inner falls back rather than keeping the old value
+    del bot.regions[0].source.inputs["zone"]
+    reresolve_member_params(bot, bot.regions[0], defn, library)
+    assert _zones(bot) == {"tp_b": "WizardCity/Hub", "hub": "WizardCity/Hub"}
+    assert bot.regions[1].source.inputs == {}
+
+
+def test_a_link_to_something_that_is_not_a_nested_instance_is_refused(library):
+    outer = _outer_with_snapshot(library)
+    outer.inputs[0].bindings = [SubgraphInputBinding(region="nowhere", param="hub")]
+    with pytest.raises(ValueError, match="not a subgraph node"):
+        SubgraphDefinition.model_validate(outer.model_dump())
+    outer.inputs[0].bindings = [SubgraphInputBinding(region="in1", param="hub")] * 2
+    with pytest.raises(ValueError, match="linked twice"):
+        SubgraphDefinition.model_validate(outer.model_dump())
+
+
+def test_a_nested_link_types_the_outer_input_and_names_where_it_lands(library):
+    from bartlebot.subgraphs import binding_type, input_targets  # noqa: PLC0415
+
+    outer = _outer_with_snapshot(library)
+    inp = outer.inputs[0]
+    assert binding_type(outer, inp.bindings, NODE_PARAM_SCHEMAS, library) == "zone"
+    assert binding_type(outer, inp.bindings, NODE_PARAM_SCHEMAS) is None, "the inner type needs the library"
+    assert input_targets(outer, inp, library) == [("in1_tp_b", "zone"), ("in1_hub", "zone")]
+    assert input_targets(outer, inp, library, "R") == [("R_in1_tp_b", "zone"), ("R_in1_hub", "zone")]
+    assert input_targets(outer, inp, None) == []
+
+
+def test_sync_keeps_a_nested_input_equal_to_the_outer_default(library):
+    from bartlebot.subgraphs import reresolve_linked_instances, sync_linked_values  # noqa: PLC0415
+
+    config = definition_to_config(_outer_with_snapshot(library))
+    inner = next(r for r in config.regions if r.id == "in1")
+    zone = config.definition.inputs[0]
+    by_id = {s.id: s for s in config.states}
+
+    sync_linked_values(config)
+    assert zone.default is None and inner.source.inputs == {}, "unset stays unset: the inner follows its own definition"
+
+    zone.default = "Outer/Default"
+    sync_linked_values(config)
+    reresolve_linked_instances(config, library)
+    assert inner.source.inputs == {"hub": "Outer/Default"}
+    assert by_id["in1_hub"].params["zone"] == "Outer/Default"
+
+    inner.source.inputs["hub"] = "Edited/OnTheNode"
+    sync_linked_values(config, edited_state="in1")
+    assert zone.default == "Edited/OnTheNode"
+
+    del inner.source.inputs["hub"]  # Reset on the node's page
+    sync_linked_values(config, edited_state="in1")
+    assert zone.default is None and inner.source.inputs == {}
+
+
+def test_a_link_to_a_detached_instance_goes_and_takes_an_input_left_with_nothing(library):
+    from bartlebot.subgraphs import sync_linked_values  # noqa: PLC0415
+
+    config = definition_to_config(_outer_with_snapshot(library))
+    detach(config, "in1")
+    sync_linked_values(config)
+    assert config.definition.inputs == []
+
+
+def test_an_inner_definition_that_drops_a_linked_input_is_a_warning(library):
+    config = definition_to_config(_outer_with_snapshot(library))
+    assert definition_problems(config, NODE_PARAM_SCHEMAS, library) == ([], [])
+
+    def drop_hub(defn):
+        defn.inputs = [i for i in defn.inputs if i.name != "hub"]
+
+    _save_edited(library, drop_hub)
+    errors, warnings = definition_problems(config, NODE_PARAM_SCHEMAS, library)
+    assert errors == []
+    assert len(warnings) == 1 and "no longer has that input" in warnings[0]

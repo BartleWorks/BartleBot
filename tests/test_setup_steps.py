@@ -191,7 +191,7 @@ def test_a_subgraph_input_is_read_from_the_member_it_lands_on():
 
 def test_a_named_input_is_read_through_its_bindings():
     class _Binding:
-        state, param = "state_2", "zone"
+        state, param, region = "state_2", "zone", None
 
     class _Input:
         name, bindings = "zone", [_Binding()]
@@ -444,7 +444,7 @@ def test_the_library_counts_a_bots_steps_from_its_file(tmp_path):
 
 
 class _ZoneBinding:
-    state, param = "state_2", "zone"
+    state, param, region = "state_2", "zone", None
 
 
 class _ZoneInput:

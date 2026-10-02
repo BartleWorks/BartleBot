@@ -72,7 +72,7 @@ from bartlebot.gui.canvas.edit_scene import (
 from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NodeItem
-from bartlebot.gui.canvas.param_panel import _ParamPanel
+from bartlebot.gui.canvas.param_panel import _ParamPanel, input_param_field
 from bartlebot.gui.canvas.repaint_trace import RepaintTracer
 from bartlebot.gui.canvas.subgraph_widgets import (
     Crumb,
@@ -111,6 +111,7 @@ from bartlebot.subgraphs import (
     node_panels,
     normalize_input_types,
     promoted_param_type,
+    reresolve_linked_instances,
     reresolve_member_params,
     sync_linked_values,
 )
@@ -1507,6 +1508,8 @@ class BotCanvas(QWidget):
         self._param_panel.role_requested.connect(self._on_role_requested)
         self._param_panel.link_input_requested.connect(self._on_link_requested)
         self._param_panel.unlink_input_requested.connect(self.unlink_param)
+        self._param_panel.link_nested_input_requested.connect(self._on_nested_link_requested)
+        self._param_panel.unlink_nested_input_requested.connect(self.unlink_nested_input)
         self._param_panel.promote_node_requested.connect(self._on_promote_node_requested)
         self._param_panel.definition_changed.connect(self._on_definition_changed)
         self._param_panel.add_setup_target_requested.connect(self._on_add_setup_target_requested)
@@ -1763,6 +1766,7 @@ class BotCanvas(QWidget):
         """The library the region page reads definitions from and a pasted instance composes from."""
         self._subgraph_library = library
         self._scene.set_subgraph_library(library)
+        self._param_panel.set_subgraph_library(library)
         self._placeholder.set_subgraph_library(library)
 
     def _definition_for(self, region) -> SubgraphDefinition | None:
@@ -2804,8 +2808,9 @@ class BotCanvas(QWidget):
         if config is not None and config.is_definition:
             # Links may have moved: each input takes its params' strictest type, and
             # every linked param its input's value.
-            normalize_input_types(config, NODE_PARAM_SCHEMAS)
+            normalize_input_types(config, NODE_PARAM_SCHEMAS, self._subgraph_library)
             sync_linked_values(config)
+            reresolve_linked_instances(config, self._subgraph_library)
         self._refresh_node_labels()
         self._refresh_node_returns()
         self._refresh_initial()
@@ -2897,6 +2902,7 @@ class BotCanvas(QWidget):
         shown_state = self._param_panel.shown_state
         if shown_state is not None and self._config is not None and self._config.is_definition:
             sync_linked_values(self._config, edited_state=shown_state.id)
+            reresolve_linked_instances(self._config, self._subgraph_library)
         # Refresh the dotted-pen flag indicator on the selected edge when flags change.
         shown = self._param_panel.shown_transition
         if shown is not None:
@@ -3002,7 +3008,12 @@ class BotCanvas(QWidget):
         else:
             defn = self._definition_for(region)
             if defn is not None:
-                reresolve_member_params(config, region, defn)
+                reresolve_member_params(config, region, defn, self._subgraph_library)
+            if config.is_definition:
+                # A nested subgraph node's linked input is the outer input's default: an
+                # edit here is an edit to that input, and to everything else linked to it.
+                sync_linked_values(config, edited_state=region.id)
+                reresolve_linked_instances(config, self._subgraph_library)
             self._scene.refresh_call_nodes()
             self._scene.refresh_errors()
         self.config_changed.emit()
@@ -3275,6 +3286,103 @@ class BotCanvas(QWidget):
             self.link_param(state_id, key, shared=dlg.shared_choice)
         else:
             self.link_param(state_id, key, new_input=dlg.new_input())
+
+    def _nested_instance(self, region_id: str):
+        """A subgraph node of the open definition document, by its region id, or None."""
+        config = self._scene.config
+        if config is None or config.definition is None:
+            return None
+        return next((r for r in config.regions if r.id == region_id and r.source is not None), None)
+
+    def _nested_input_field(self, region, name: str):
+        """The ``ParamField`` of one named input of a nested subgraph node, or None if it has no such input."""
+        defn = self._definition_for(region)
+        inp = next((i for i in defn.inputs if i.name == name), None) if defn is not None else None
+        return input_param_field(defn, inp, self._subgraph_library) if inp is not None else None
+
+    def link_nested_input(
+        self,
+        region_id: str,
+        name: str,
+        *,
+        existing: str | None = None,
+        new_input: SubgraphInput | None = None,
+    ) -> bool:
+        """Link one input of a nested subgraph node to an input of the definition around it. One undo step.
+
+        The nested node's input is then set through the outer one: by this definition's
+        default, and by each of its own subgraph nodes. ``existing`` names an outer input
+        already declared; otherwise ``new_input`` is declared with this one link. As with
+        a param, the linked value *is* the input's default: it takes the input's, or for
+        an input with no default gives it the value the nested node holds. An input left
+        with none forwards nothing, and the nested node follows its own definition.
+        """
+        region = self._nested_instance(region_id)
+        if region is None or self._nested_input_field(region, name) is None:
+            return False
+        meta = self._scene.config.definition
+        if any(b.region == region_id and b.param == name for i in meta.inputs for b in i.bindings):
+            return False  # set from one place only
+        binding = SubgraphInputBinding(region=region_id, param=name)
+        if existing is not None:
+            target = next((i for i in meta.inputs if i.name == existing), None)
+            if target is None:
+                return False
+            self._begin_definition_edit("Link to subgraph input")
+            target.bindings.append(binding)
+        elif new_input is not None:
+            if any(i.name == new_input.name for i in meta.inputs):
+                return False
+            self._begin_definition_edit("Link to subgraph input")
+            meta.inputs.append(new_input.model_copy(update={"bindings": [binding]}))
+        else:
+            return False
+        self._end_nested_link_edit(region)
+        return True
+
+    def unlink_nested_input(self, region_id: str, name: str) -> bool:
+        """Unlink one input of a nested subgraph node. The outer input stays, and the node keeps the value. One undo step."""
+        region = self._nested_instance(region_id)
+        if region is None:
+            return False
+        meta = self._scene.config.definition
+
+        def linked(b) -> bool:
+            return b.region == region_id and b.param == name
+
+        if not any(linked(b) for i in meta.inputs for b in i.bindings):
+            return False
+        self._begin_definition_edit("Unlink input")
+        for inp in meta.inputs:
+            inp.bindings = [b for b in inp.bindings if not linked(b)]
+        self._end_nested_link_edit(region)
+        return True
+
+    def _end_nested_link_edit(self, region) -> None:
+        self._on_scene_changed()
+        if self._param_panel.shown_region is region:
+            self._show_call_page(region)
+
+    def _on_nested_link_requested(self, region_id: str, name: str) -> None:
+        region = self._nested_instance(region_id)
+        field = self._nested_input_field(region, name) if region is not None else None
+        if field is None:
+            return
+        dlg = LinkInputDialog(
+            self._scene.config.definition.inputs,
+            param_key=name,
+            param_type=field.type,
+            param_label=field.label,
+            current_value=region.source.inputs.get(name),
+            groups=[(pn.id, pn.label or pn.id) for pn in self._scene.config.definition.panels if pn.kind == "inputs"],
+            parent=self,
+        )
+        if not dlg.exec():
+            return
+        if dlg.choice is not None:
+            self.link_nested_input(region_id, name, existing=dlg.choice)
+        else:
+            self.link_nested_input(region_id, name, new_input=dlg.new_input())
 
     def _on_definition_changed(self) -> None:
         """The signature page wrote into the document: a port renamed, an input or group changed.
@@ -3802,7 +3910,7 @@ class BotCanvas(QWidget):
         fills = self._scene.fill_ins()
         for state in config.states:
             name = state.label or state.id
-            _, _, err_reasons, warn_reasons = _validate_node(state, config, reachable, fills)
+            _, _, err_reasons, warn_reasons = _validate_node(state, config, reachable, fills, self._subgraph_library)
             folded = self._scene.folded_node_of(state.id)
             if folded is not None:
                 # Named through the node it is drawn as. For a call node, without what is

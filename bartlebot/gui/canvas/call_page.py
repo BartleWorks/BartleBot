@@ -39,7 +39,15 @@ from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel, ThemedWrappingElidedLabel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 from bartlebot.subgraph_store import source_label
-from bartlebot.subgraphs import RegionStatus, exposed_key, local_id, member_id, port_name, promoted_param_type
+from bartlebot.subgraphs import (
+    RegionStatus,
+    exposed_key,
+    input_targets,
+    local_id,
+    member_id,
+    port_name,
+    promoted_param_type,
+)
 
 #: How the page names where a definition comes from.
 
@@ -137,9 +145,15 @@ class CallNodePage(ThemedMixin, QWidget):
     role_requested = pyqtSignal(str, str)
     open_definition_requested = pyqtSignal(str)
     detach_requested = pyqtSignal(str)
+    # (region id, input name): on a subgraph node nested in a definition document, link
+    # one of its inputs to an input of the definition around it, or unlink it. The page
+    # only reports; the canvas edits the signature.
+    link_input_requested = pyqtSignal(str, str)
+    unlink_input_requested = pyqtSignal(str, str)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self._library = None
         self._region: RegionModel | None = None
         self._defn: SubgraphDefinition | None = None
         # (state id, param) -> setup_steps.FillIn; see set_fill_ins.
@@ -229,6 +243,10 @@ class CallNodePage(ThemedMixin, QWidget):
     def set_zone_suggestions_getter(self, fn: Callable[[], list[str]]) -> None:
         self._get_zones = fn
 
+    def set_subgraph_library(self, library) -> None:
+        """Where an input linked into a nested instance finds that instance's definition."""
+        self._library = library
+
     @property
     def region(self) -> RegionModel | None:
         return self._region
@@ -277,10 +295,30 @@ class CallNodePage(ThemedMixin, QWidget):
         return {"fill_hints": {k: f.step.text for k, f in found.items()}}
 
     def _input_marks(self, inputs) -> dict[str, dict[str, str]]:
-        assert self._region is not None
+        assert self._region is not None and self._defn is not None
         return self._fill_marks(
-            (i.name, member_id(self._region.id, b.state), b.param) for i in inputs for b in i.bindings
+            (i.name, sid, param)
+            for i in inputs
+            for sid, param in input_targets(self._defn, i, self._library, self._region.id)
         )
+
+    def _link_marks(self, inputs) -> dict:
+        """``load_schema``'s link keywords: in a definition document, this node's inputs can be linked outward.
+
+        A row linked to one of the document's own inputs wears that input's name as a
+        chip; every other row offers Link on hover, as a node's param does there.
+        """
+        meta = self._config.definition if self._config is not None else None
+        if meta is None or self._region is None:
+            return {}
+        names = {i.name for i in inputs}
+        links = {
+            b.param: outer.label or outer.name
+            for outer in meta.inputs
+            for b in outer.bindings
+            if b.region == self._region.id and b.param in names
+        }
+        return {"linkable": True, "links": links}
 
     # -- showing -------------------------------------------------------
 
@@ -345,24 +383,26 @@ class CallNodePage(ThemedMixin, QWidget):
             if top:
                 form = make_form()
                 form.load_schema(
-                    [input_param_field(defn, i) for i in top],
+                    [input_param_field(defn, i, self._library) for i in top],
                     chosen,
                     resettable={i.name for i in top} & set(chosen),
                     **self._input_marks(top),
+                    **self._link_marks(top),
                 )
-                self._add_form(None, form)
+                self._add_form(None, form, linkable=True)
                 self._inputs_layout.addWidget(form)
             for panel in panels:
                 if panel.kind == "inputs":
                     members = [i for i in inputs if i.panel == panel.id]
                     form = make_form()
                     form.load_schema(
-                        [input_param_field(defn, i) for i in members],
+                        [input_param_field(defn, i, self._library) for i in members],
                         chosen,
                         resettable={i.name for i in members} & set(chosen),
                         **self._input_marks(members),
+                        **self._link_marks(members),
                     )
-                    self._add_form(panel.id, form)
+                    self._add_form(panel.id, form, linkable=True)
                     section = PanelSection(panel.label or panel.id, form, closed=panel.default_closed)
                 else:
                     form, section = self._node_panel(panel, make_form)
@@ -390,11 +430,20 @@ class CallNodePage(ThemedMixin, QWidget):
         finally:
             self._suppress = False
 
-    def _add_form(self, key: str | None, form) -> None:
+    def _add_form(self, key: str | None, form, *, linkable: bool = False) -> None:
         self._forms[key] = form
         self._initial_values[key] = form.get_params()
         form.changed.connect(lambda k=key: self._on_form_changed(k))
         form.reset_requested.connect(lambda field_key, k=key: self.reset_value(k, field_key))
+        if linkable:
+            # A form of named inputs. A promoted node's panel is not: its values are keyed
+            # by member, and only a named input can be linked outward.
+            form.link_requested.connect(
+                lambda name: self._region and self.link_input_requested.emit(self._region.id, name)
+            )
+            form.unlink_requested.connect(
+                lambda name: self._region and self.unlink_input_requested.emit(self._region.id, name)
+            )
 
     def _node_panel(self, panel: SubgraphPanel, make_form):
         """A member exposed whole: its own fields, keyed by its own keys, valued from ``source.inputs``."""

@@ -525,3 +525,141 @@ def test_a_long_linked_name_is_elided_within_the_cap(doc):
     chip = doc.param_panel.param_form.link_chip("world")
     assert chip.width() <= _LINK_CHIP_MAX_W
     assert chip.text().endswith("…")
+
+
+# ---------------------------------------------------------------------------
+# Linking a nested subgraph node's input to an input of the definition around it
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def outer_doc(qapp, library):
+    """A canvas with a definition open that holds a nested Sync players node, ``in1``."""
+    from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
+    from tests.test_subgraphs import _outer_with_snapshot  # noqa: PLC0415
+
+    outer = _outer_with_snapshot(library)
+    outer.inputs = []
+    library.save(outer)
+    c = BotCanvas()
+    c.set_subgraph_library(library)
+    c.setup(definition_to_config(library.get("outer")))
+    c.enter_edit_mode()
+    yield c
+    c.prepare_for_shutdown()
+
+
+def _nested_page(canvas):
+    canvas.scene.clearSelection()
+    canvas.scene.node_items["in1"].setSelected(True)
+    assert canvas.param_panel.showing_call
+    return canvas.param_panel.call_page
+
+
+def _zone_of(canvas, local: str) -> str:
+    return next(s for s in canvas.config.states if s.id == f"in1_{local}").params["zone"]
+
+
+def test_a_nested_nodes_inputs_offer_link_in_a_definition_and_not_in_a_bot(outer_doc, qapp, library):
+    from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
+    from bartlebot.subgraphs import compose_bot  # noqa: PLC0415
+
+    form = _nested_page(outer_doc).form(None)
+    assert form.link_button("hub") is not None and form.link_chip("hub") is None
+
+    bot_canvas = BotCanvas()
+    bot_canvas.set_subgraph_library(library)
+    bot, report = compose_bot(linked_bot(library.get(SYNC_ID), library), library)
+    bot_canvas.setup(bot)
+    bot_canvas.set_compose_report(report)
+    bot_canvas.enter_edit_mode()
+    bot_canvas.scene.node_items[REGION].setSelected(True)
+    assert bot_canvas.param_panel.call_page.form(None).link_button("hub") is None
+    bot_canvas.prepare_for_shutdown()
+
+
+def test_linking_a_nested_input_to_a_new_input_and_undoing_it(outer_doc):
+    page = _nested_page(outer_doc)
+    assert outer_doc.link_nested_input("in1", "hub", new_input=SubgraphInput(name="zone", label="Zone", type="zone"))
+    zone = _input(outer_doc, "zone")
+    assert [(b.region, b.param) for b in zone.bindings] == [("in1", "hub")]
+    chip = page.form(None).link_chip("hub")
+    assert chip is not None and chip.text() == "Zone"
+    assert page.form(None).link_button("hub") is None
+    assert not outer_doc.link_nested_input("in1", "hub", existing="zone"), "set from one place only"
+    assert not outer_doc.link_nested_input("in1", "nope", existing="zone"), "not an input of that node"
+    outer_doc.undo()
+    assert not _meta(outer_doc).inputs
+
+
+def test_the_link_button_on_a_nested_input_asks_the_canvas(outer_doc):
+    asked = []
+    outer_doc.param_panel.link_nested_input_requested.connect(lambda rid, name: asked.append((rid, name)))
+    outer_doc.param_panel.link_nested_input_requested.disconnect(outer_doc._on_nested_link_requested)
+    _nested_page(outer_doc).form(None).link_button("hub").click()
+    assert asked == [("in1", "hub")]
+
+
+def test_a_linked_nested_input_is_the_outer_inputs_default_both_ways(outer_doc):
+    outer_doc.link_nested_input("in1", "hub", new_input=SubgraphInput(name="zone", type="zone"))
+    zone = _input(outer_doc, "zone")
+    region = next(r for r in outer_doc.config.regions if r.id == "in1")
+    assert zone.default is None and region.source.inputs == {}
+
+    # the default, edited on the signature page, reaches the nested node and its members
+    zone.default = "Outer/Default"
+    outer_doc._on_definition_changed()
+    assert region.source.inputs == {"hub": "Outer/Default"}
+    assert _zone_of(outer_doc, "hub") == _zone_of(outer_doc, "tp_b") == "Outer/Default"
+
+    # and the value, edited on the nested node's own page, is the default
+    _nested_page(outer_doc).form(None).set_str("hub", "Edited/OnTheNode")
+    outer_doc._undo_mgr.flush_debounce()
+    assert zone.default == "Edited/OnTheNode"
+    assert _zone_of(outer_doc, "hub") == "Edited/OnTheNode"
+
+
+def test_linking_a_nested_input_to_an_existing_input_takes_its_default(outer_doc):
+    outer_doc.link_param("start", "relog_clients", new_input=SubgraphInput(name="who", type="str"))
+    outer_doc.link_nested_input("in1", "hub", new_input=SubgraphInput(name="zone", type="zone", default="A/B"))
+    assert _zone_of(outer_doc, "hub") == "A/B"
+    assert outer_doc.link_nested_input("in1", "world", existing="who") is True
+    assert ("in1", "world") in {(b.region, b.param) for b in _input(outer_doc, "who").bindings}
+
+
+def test_unlinking_a_nested_input_keeps_the_value_and_the_outer_input(outer_doc):
+    outer_doc.link_nested_input("in1", "hub", new_input=SubgraphInput(name="zone", type="zone", default="A/B"))
+    assert outer_doc.unlink_nested_input("in1", "hub")
+    assert _input(outer_doc, "zone").bindings == []
+    assert _zone_of(outer_doc, "hub") == "A/B"
+    assert not outer_doc.unlink_nested_input("in1", "hub"), "nothing left to unlink"
+
+
+def test_the_signature_page_lists_and_unlinks_a_nested_link(outer_doc):
+    outer_doc.link_nested_input("in1", "hub", new_input=SubgraphInput(name="zone", type="zone"))
+    from PyQt6.QtWidgets import QLabel  # noqa: PLC0415
+
+    outer_doc.param_panel.show_signature(outer_doc.config)
+    page = outer_doc.param_panel.signature_page
+
+    assert "linked to Inner · Hub" in [lbl.text() for lbl in page.findChildren(QLabel)]
+    page._unbind("zone", None, "hub", "in1")
+    assert _input(outer_doc, "zone").bindings == []
+
+
+def test_a_saved_nested_link_reaches_a_bot_through_the_outer_node(outer_doc, library):
+    from tests.test_subgraphs import _bot_of, _zones  # noqa: PLC0415
+
+    outer_doc.link_nested_input("in1", "hub", new_input=SubgraphInput(name="zone", type="zone"))
+    assert outer_doc.validation_errors() == []
+    from bartlebot.subgraphs import config_to_definition  # noqa: PLC0415
+
+    library.save(config_to_definition(outer_doc.config, version=2))
+    assert _zones(_bot_of(library.get("outer"), library, zone="Deep/Z")) == {"tp_b": "Deep/Z", "hub": "Deep/Z"}
+
+
+def test_building_a_linkable_nested_page_never_shows_a_parentless_widget(outer_doc, parentless_shows):
+    outer_doc.link_nested_input("in1", "hub", new_input=SubgraphInput(name="zone", type="zone"))
+    parentless_shows.clear()
+    _nested_page(outer_doc)
+    assert parentless_shows == []
