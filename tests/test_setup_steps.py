@@ -352,7 +352,7 @@ def test_release_refuses_a_filled_fill_in_and_writes_nothing(tmp_path):
     with pytest.raises(ReleaseRefused) as refused:
         release(TEMPLATE_ID, "First release", root=tmp_path)
 
-    assert any("Defeat boss · Enemy Name holds a value" in p for p in refused.value.problems)
+    assert any("Defeat boss · Enemy ID holds a value" in p for p in refused.value.problems)
     assert not list((tmp_path / "templates" / "boss-farmer").glob("v*.json"))
 
 

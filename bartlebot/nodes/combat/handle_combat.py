@@ -22,13 +22,14 @@ PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="enemy",
         type="str",
-        label="Enemy Name",
+        label="Enemy ID",
         help=(
-            "Entity name of the enemy to initiate combat with. An entity with exactly this name "
-            "is preferred; failing that, any name containing it, so advanced mode's 'Adv_' copy is "
-            "still found. A StandIn (the actor that speaks a pre-battle dialogue) and a boss's "
-            "'-mini' pet copy are never picked that way. Wildcards (* ? []) match the whole name "
-            "instead, so use '*Bandit*' to match anywhere and 'Bandit*' to match only names "
+            "ID of the enemy to initiate combat with: its internal object name, as Record and the "
+            "Entity Browser's ID column give it, not the name shown in game. An entity with exactly "
+            "this ID is preferred; failing that, any ID containing it, so advanced mode's 'Adv_' copy "
+            "is still found. A StandIn (the actor that speaks a pre-battle dialogue) and a boss's "
+            "'-mini' pet copy are never picked that way. Wildcards (* ? []) match the whole ID "
+            "instead, so use '*Bandit*' to match anywhere and 'Bandit*' to match only IDs "
             "starting with it. Leave empty to use the closest available mob."
         ),
         default="",

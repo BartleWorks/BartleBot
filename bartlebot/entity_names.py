@@ -2,7 +2,7 @@
 
 ``ClientObject.object_name()`` is an internal template name -- ``AQ-ATL-NPC02``,
 ``KT-TeleporterEntranceHall`` -- and it is the *identity* nodes are written against, so it
-is what a bot file stores and what the Entity Browser's Copy Name hands over. It is also
+is what a bot file stores and what the Entity Browser's Copy ID hands over. It is also
 unreadable, which is what makes the browser's list hard to search: nothing in
 ``AQ-Centaur-Artemis`` says "Crescent Moon Centaur".
 

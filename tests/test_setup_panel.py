@@ -165,7 +165,7 @@ def test_a_step_says_how_far_along_it_is():
 def test_a_target_is_called_by_its_fields_own_label():
     draft = _draft()
 
-    assert setup_steps.describe_target(draft, _MOB.targets[0]) == "Defeat mobs · Enemy Name"
+    assert setup_steps.describe_target(draft, _MOB.targets[0]) == "Defeat mobs · Enemy ID"
     assert setup_steps.describe_target(draft, _DROPS.targets[0]) == "Possible drops"
 
 
@@ -311,7 +311,7 @@ def test_a_draft_gets_a_card_per_step_with_a_grip_a_cross_and_an_add_card(panel)
     assert card.grip is not None
     assert card.action_button(REMOVE_STEP_VERB) is not None
     assert card.text_edit.text() == _MOB.text
-    assert card.target_texts == ["Defeat mobs · Enemy Name"]
+    assert card.target_texts == ["Defeat mobs · Enemy ID"]
     assert panel.add_card is not None and panel.add_card.text == ADD_STEP_TEXT
 
 
@@ -366,7 +366,7 @@ def test_adding_a_target_makes_a_param_a_fill_in_and_removing_it_stops(panel):
 
     panel.add_target(0, SetupTarget(state="t_2", param="enemy"))
     assert ("t_2", "enemy") in setup_steps.fill_ins(draft, draft.template_meta.setup)
-    assert panel.cards[0].target_texts[1] == "Defeat mobs · Enemy Name"
+    assert panel.cards[0].target_texts[1] == "Defeat mobs · Enemy ID"
 
     panel.remove_target(0, 1)
     assert ("t_2", "enemy") not in setup_steps.fill_ins(draft, draft.template_meta.setup)
