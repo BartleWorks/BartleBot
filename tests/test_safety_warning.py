@@ -1,7 +1,13 @@
 """Tests for collect_safety_warnings() in safety_warning_dialog.py."""
 
+import pytest
+
 from bartlebot.bot.schema import BotConfig
-from bartlebot.gui.safety_warning_dialog import collect_safety_warnings
+from bartlebot.gui.safety_warning_dialog import (
+    collect_safety_warnings,
+    level_scaling_players,
+    level_scaling_warning,
+)
 from bartlebot.nodes.zone_entry import enter_dungeon
 from bartlebot.settings_manager import SettingsManager
 from tests.conftest import FakeClient
@@ -450,3 +456,56 @@ def test_the_warning_names_the_team_size_and_the_player_count():
     assert any(
         label == enter_dungeon.OPTION_MINIMUM_TEAM_SIZE and value.startswith("4") for label, value in warning.details
     )
+
+
+# ---------------------------------------------------------------------------
+# An elixir already active at run start (#141)
+# ---------------------------------------------------------------------------
+
+_SCALING_PLAYERS = [{"name": "Level Scaling Players", "type": "player_list", "default": [1, 3]}]
+
+
+@pytest.mark.parametrize("node_type", ["handle_level_scaling", "check_level_scaling", "apply_level_scaling"])
+def test_a_bot_with_any_level_scaling_node_names_its_players_for_the_elixir_read(node_type):
+    config = _config({"node_type": node_type}, options=_SCALING_PLAYERS)
+
+    assert level_scaling_players(config, client_count=4) == [1, 3]
+
+
+def test_a_player_with_no_client_behind_it_is_not_read():
+    config = _config({"node_type": "handle_level_scaling"}, options=_SCALING_PLAYERS)
+
+    assert level_scaling_players(config, client_count=2) == [1]
+
+
+def test_a_bot_with_no_level_scaling_node_reads_nobody():
+    """The read costs a task and a wait at every run start, so a bot that never scales skips it."""
+    config = _config({"node_type": "sleep"}, options=_SCALING_PLAYERS)
+
+    assert level_scaling_players(config, client_count=4) == []
+
+
+def test_the_users_override_decides_who_is_read():
+    config = _config({"node_type": "handle_level_scaling"}, options=_SCALING_PLAYERS)
+    SettingsManager.instance().set_option_override(config.id, "Level Scaling Players", [2])
+
+    assert level_scaling_players(config, client_count=4) == [2]
+
+
+def test_an_elixir_already_active_warns_and_names_the_players():
+    warning = level_scaling_warning([1, 3])
+
+    assert "cannot tell one elixir from another" in warning.message
+    assert warning.details == [("Elixir already active", "P1, P3")]
+
+
+def test_no_elixir_active_does_not_warn():
+    assert level_scaling_warning([]) is None
+
+
+def test_the_elixir_warning_joins_the_other_safety_warnings():
+    config = _config({"node_type": "handle_level_scaling"}, options=_SCALING_PLAYERS)
+
+    assert collect_safety_warnings(config) == []
+    warnings = collect_safety_warnings(config, [FakeClient()], [1])
+    assert [w.details for w in warnings] == [[("Elixir already active", "P1")]]

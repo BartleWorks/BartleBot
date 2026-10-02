@@ -1,0 +1,525 @@
+{
+  "_comment": [
+    "Every Scales of Knowledge handle_level_scaling can use. Read by bartlebot/scales.py.",
+    "A bot file stores an entry's key, so a key is never renamed once shipped.",
+    "entrance_zone is a destination on the zone navigation map; steps lead from it to zone,",
+    "each a dungeon sigil or a walk-through gateway. See docs/LEVEL_SCALING.md."
+  ],
+  "scales": [
+    {
+      "key": "temple_of_storms",
+      "name": "Temple of Storms",
+      "world": "Krokotopia",
+      "level": 20,
+      "entrance_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+          "to_zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
+          "xyz": {
+            "x": -220.43,
+            "y": 6449.81,
+            "z": -505.0
+          },
+          "reset_xyz": {
+            "x": -9.07,
+            "y": 5821.56,
+            "z": -501.58
+          }
+        }
+      ],
+      "zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
+      "interact_xyz": {
+        "x": -690.89,
+        "y": 625.23,
+        "z": 0.98
+      },
+      "reset_xyz": {
+        "x": -4.77,
+        "y": 521.6,
+        "z": 1.46
+      }
+    },
+    {
+      "key": "ransacked_throne_room",
+      "name": "Ransacked Throne Room",
+      "world": "Marleybone",
+      "level": null,
+      "entrance_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+          "to_zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB*",
+          "xyz": {
+            "x": 2905.41,
+            "y": -6594.68,
+            "z": -4823.63
+          },
+          "reset_xyz": {
+            "x": 2445.19,
+            "y": -5557.71,
+            "z": -4823.63
+          }
+        }
+      ],
+      "zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB",
+      "interact_xyz": {
+        "x": -1118.9,
+        "y": -4145.64,
+        "z": 1.5
+      },
+      "reset_xyz": {
+        "x": -483.61,
+        "y": -4446.71,
+        "z": 1.5
+      }
+    },
+    {
+      "key": "emperors_throne_room",
+      "name": "Emperor's Throne Room",
+      "world": "MooShu",
+      "level": 40,
+      "entrance_zone": "MooShu/MS_Hub",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "MooShu/MS_Hub",
+          "to_zone": "MooShu/Interiors/MS_Emperor_Palace",
+          "xyz": {
+            "x": 19169.84,
+            "y": 209.98,
+            "z": 898.45
+          },
+          "reset_xyz": {
+            "x": 18544.51,
+            "y": -27.69,
+            "z": 898.45
+          }
+        }
+      ],
+      "zone": "MooShu/Interiors/MS_Emperor_Palace",
+      "interact_xyz": {
+        "x": -408.37,
+        "y": 1311.77,
+        "z": 0.0
+      },
+      "reset_xyz": {
+        "x": -211.66,
+        "y": 877.88,
+        "z": 0.0
+      }
+    },
+    {
+      "key": "great_spyre",
+      "name": "Great Spyre",
+      "world": "DragonSpire",
+      "level": 50,
+      "entrance_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
+          "to_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
+          "xyz": {
+            "x": -216.38,
+            "y": 6265.21,
+            "z": 100.0
+          },
+          "reset_xyz": {
+            "x": 1.84,
+            "y": 5384.82,
+            "z": -0.0
+          }
+        }
+      ],
+      "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
+      "interact_xyz": {
+        "x": 46.82,
+        "y": 408.69,
+        "z": -274.89
+      },
+      "reset_xyz": {
+        "x": 46.82,
+        "y": -349.83,
+        "z": -274.89
+      }
+    },
+    {
+      "key": "keep_of_ganelon",
+      "name": "Keep of Ganelon",
+      "world": "Avalon",
+      "level": 80,
+      "entrance_zone": "Avalon/AV_Z07_OuterYard",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Avalon/AV_Z07_OuterYard",
+          "to_zone": "Avalon/AV_Z13_KeepOfGanelon",
+          "xyz": {
+            "x": -196.05,
+            "y": 4712.33,
+            "z": -179.02
+          },
+          "reset_xyz": {
+            "x": 840.94,
+            "y": 4294.36,
+            "z": -180.82
+          }
+        }
+      ],
+      "zone": "Avalon/AV_Z13_KeepOfGanelon",
+      "interact_xyz": {
+        "x": -489.39,
+        "y": -2830.59,
+        "z": 2.2
+      },
+      "reset_xyz": {
+        "x": -68.26,
+        "y": -3189.31,
+        "z": 2.2
+      }
+    },
+    {
+      "key": "mount_olympus",
+      "name": "Mount Olympus",
+      "world": "Aquila",
+      "level": 30,
+      "entrance_zone": "Aquila/AQ_Z00_Hub",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Aquila/AQ_Z00_Hub",
+          "to_zone": "Aquila/AQ_Z01_MountOlympus",
+          "xyz": {
+            "x": -669.19,
+            "y": 4202.56,
+            "z": -89.76
+          },
+          "reset_xyz": {
+            "x": -65.01,
+            "y": 3936.62,
+            "z": -120.04
+          }
+        }
+      ],
+      "zone": "Aquila/AQ_Z01_MountOlympus",
+      "interact_xyz": {
+        "x": -442.98,
+        "y": 576.25,
+        "z": -68.29
+      },
+      "reset_xyz": {
+        "x": 5.68,
+        "y": 85.87,
+        "z": -68.29
+      }
+    },
+    {
+      "key": "atlantea",
+      "name": "Atlantea",
+      "world": "Aquila",
+      "level": 70,
+      "entrance_zone": "Aquila/AQ_Z00_Hub",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Aquila/AQ_Z00_Hub",
+          "to_zone": "Aquila/AQ_Z02_Atlantea",
+          "xyz": {
+            "x": 11442.09,
+            "y": 9193.82,
+            "z": -1474.83
+          },
+          "reset_xyz": {
+            "x": 10022.64,
+            "y": 8965.8,
+            "z": -1679.5
+          }
+        }
+      ],
+      "zone": "Aquila/AQ_Z02_Atlantea",
+      "interact_xyz": {
+        "x": -385.1,
+        "y": -5711.43,
+        "z": 333.77
+      },
+      "reset_xyz": {
+        "x": -904.86,
+        "y": -7331.08,
+        "z": 504.2
+      }
+    },
+    {
+      "key": "tartarus",
+      "name": "Tartarus",
+      "world": "Aquila",
+      "level": 90,
+      "entrance_zone": "Aquila/AQ_Z00_Hub",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Aquila/AQ_Z00_Hub",
+          "to_zone": "Aquila/AQ_Z03_Tartarus",
+          "xyz": {
+            "x": 7633.61,
+            "y": 12837.84,
+            "z": -1659.61
+          },
+          "reset_xyz": {
+            "x": 8245.12,
+            "y": 12550.37,
+            "z": -1643.02
+          }
+        }
+      ],
+      "zone": "Aquila/AQ_Z03_Tartarus",
+      "interact_xyz": {
+        "x": -2498.12,
+        "y": 8396.53,
+        "z": 1291.74
+      },
+      "reset_xyz": {
+        "x": -2539.91,
+        "y": 9093.42,
+        "z": 1303.41
+      }
+    },
+    {
+      "key": "pit_of_the_noxii",
+      "name": "Pit of the Noxii",
+      "world": "Aquila",
+      "level": 90,
+      "entrance_zone": "Aquila/AQ_Z00_Hub",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Aquila/AQ_Z00_Hub",
+          "to_zone": "Aquila/AQ_Z01_MountOlympus",
+          "xyz": {
+            "x": -669.19,
+            "y": 4202.56,
+            "z": -89.76
+          },
+          "reset_xyz": {
+            "x": -74.08,
+            "y": 3670.58,
+            "z": -122.43
+          }
+        },
+        {
+          "kind": "gateway",
+          "from_zone": "Aquila/AQ_Z01_MountOlympus",
+          "to_zone": "Aquila/Interiors/AQ_Z01_PitOfNoxii",
+          "xyz": {
+            "x": 38.91,
+            "y": 5679.64,
+            "z": -1595.74
+          },
+          "reset_xyz": {
+            "x": -13.57,
+            "y": 6289.73,
+            "z": -1671.38
+          }
+        }
+      ],
+      "zone": "Aquila/Interiors/AQ_Z01_PitOfNoxii",
+      "interact_xyz": {
+        "x": 167.02,
+        "y": -1424.12,
+        "z": 0.63
+      },
+      "reset_xyz": {
+        "x": -179.66,
+        "y": -1414.75,
+        "z": 0.89
+      }
+    },
+    {
+      "key": "poseidon_adventure",
+      "name": "The Poseidon Adventure",
+      "world": "Aquila",
+      "level": 90,
+      "entrance_zone": "Aquila/AQ_Z00_Hub",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Aquila/AQ_Z00_Hub",
+          "to_zone": "Aquila/AQ_Z02_Atlantea",
+          "xyz": {
+            "x": 11442.09,
+            "y": 9193.82,
+            "z": -1474.83
+          },
+          "reset_xyz": {
+            "x": 10022.64,
+            "y": 8965.8,
+            "z": -1679.5
+          }
+        },
+        {
+          "kind": "gateway",
+          "from_zone": "Aquila/AQ_Z02_Atlantea",
+          "to_zone": "Aquila/Interiors/AQ_Z02_PirateShip",
+          "xyz": {
+            "x": 3104.97,
+            "y": 1126.18,
+            "z": 221.7
+          },
+          "reset_xyz": {
+            "x": 2463.99,
+            "y": 983.85,
+            "z": 221.7
+          }
+        }
+      ],
+      "zone": "Aquila/Interiors/AQ_Z02_PirateShip",
+      "interact_xyz": {
+        "x": 1433.23,
+        "y": -1142.93,
+        "z": 2.67
+      },
+      "reset_xyz": {
+        "x": 962.73,
+        "y": -791.43,
+        "z": 2.67
+      }
+    },
+    {
+      "key": "north_sands_of_time",
+      "name": "North Sands of Time",
+      "world": "Mirage",
+      "level": 120,
+      "entrance_zone": "Mirage/Interiors/MR_Z10_SandsofTime",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Mirage/Interiors/MR_Z10_SandsofTime",
+          "to_zone": "Mirage/Interiors/MR_Z10_NorthTimeDunes",
+          "xyz": {
+            "x": 562.17,
+            "y": -4862.3,
+            "z": 0.0
+          },
+          "reset_xyz": {
+            "x": 280.56,
+            "y": -4306.88,
+            "z": 0.0
+          }
+        }
+      ],
+      "zone": "Mirage/Interiors/MR_Z10_NorthTimeDunes",
+      "interact_xyz": {
+        "x": 3064.08,
+        "y": -10037.38,
+        "z": 0.0
+      },
+      "reset_xyz": {
+        "x": 2834.94,
+        "y": -9078.1,
+        "z": 0.0
+      }
+    },
+    {
+      "key": "cavity_chamber",
+      "name": "Cavity Chamber",
+      "world": "Karamelle",
+      "level": 140,
+      "entrance_zone": "Karamelle/KM_Z00_HUB",
+      "steps": [
+        {
+          "kind": "gateway",
+          "from_zone": "Karamelle/KM_Z00_HUB",
+          "to_zone": "Karamelle/Interiors/KM_Z00_NanasHQ",
+          "xyz": {
+            "x": 46.21,
+            "y": 4804.44,
+            "z": 39.84
+          },
+          "reset_xyz": {
+            "x": 79.72,
+            "y": 4187.21,
+            "z": -6.57
+          }
+        },
+        {
+          "kind": "gateway",
+          "from_zone": "Karamelle/Interiors/KM_Z00_NanasHQ",
+          "to_zone": "Karamelle/Interiors/KM_Z00_CavityDining",
+          "xyz": {
+            "x": 2150.69,
+            "y": -4489.18,
+            "z": 3.43
+          },
+          "reset_xyz": {
+            "x": 1838.18,
+            "y": -4014.59,
+            "z": 3.43
+          }
+        },
+        {
+          "kind": "sigil",
+          "from_zone": "Karamelle/Interiors/KM_Z00_CavityDining",
+          "to_zone": "Karamelle/Interiors/KM_Z00_TheCavity",
+          "xyz": {
+            "x": 338.15,
+            "y": -1512.39,
+            "z": 1.97
+          },
+          "reset_xyz": {
+            "x": 486.44,
+            "y": -726.4,
+            "z": 0.92
+          }
+        }
+      ],
+      "zone": "Karamelle/Interiors/KM_Z00_TheCavity",
+      "interact_xyz": {
+        "x": 1027.9,
+        "y": -2530.52,
+        "z": -352.3
+      },
+      "reset_xyz": {
+        "x": 739.85,
+        "y": -2945.67,
+        "z": -440.52
+      }
+    },
+    {
+      "key": "hall_of_heroes",
+      "name": "Hall of Heroes",
+      "world": "Lemuria",
+      "level": 150,
+      "entrance_zone": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter",
+          "to_zone": "Lemuria/Interiors/LM_Z00_I08_HallofHeroesInner",
+          "xyz": {
+            "x": 215.12,
+            "y": -3637.5,
+            "z": 543.2
+          },
+          "reset_xyz": {
+            "x": -8.23,
+            "y": -3140.14,
+            "z": 543.2
+          }
+        }
+      ],
+      "zone": "Lemuria/Interiors/LM_Z00_I08_HallofHeroesInner",
+      "interact_xyz": {
+        "x": 244.16,
+        "y": 2147.06,
+        "z": 6.2
+      },
+      "reset_xyz": {
+        "x": -2.62,
+        "y": 2528.3,
+        "z": 6.2
+      }
+    }
+  ]
+}

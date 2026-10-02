@@ -44,6 +44,8 @@ class ControllerHarness:
             "_autosave_path",
             "_on_config_changed",
             "_on_run_requested",
+            "_on_elixir_probe_done",
+            "_finish_run_request",
             "_check_restricted_zones",
             "_check_player_realms",
             "_start_enabled",
@@ -73,6 +75,7 @@ class ControllerHarness:
             setattr(self, name, getattr(cls, name).__get__(self))
         self._subgraph_library = library
         self._templates_root = None
+        self._elixir_probe = None
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
         self._has_unsaved_changes = False

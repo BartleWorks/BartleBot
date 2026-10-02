@@ -38,7 +38,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from bartlebot import zone_nav
+from bartlebot import scales, zone_nav
 from bartlebot.bot.schema import BotConfig, RegionModel, SetupStep, SetupTarget, StateModel
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS
 from bartlebot.subgraph_store import SubgraphLibrary
@@ -62,7 +62,7 @@ def value_empty(field_type: str, value: Any) -> bool:
     """Whether ``value`` is the blank of ``field_type``: what an unfilled field of that type holds."""
     if value is None:
         return True
-    if field_type in ("str", "text", "zone", "nav_zone", "wiki_page", "str_choice"):
+    if field_type in ("str", "text", "zone", "nav_zone", "scales", "wiki_page", "str_choice"):
         # Both zone widgets store a zone path, and an unset one is the empty string.
         return not str(value).strip()
     if field_type in ("str_list", "drop_keep_list", "player_list"):
@@ -116,6 +116,8 @@ def _param_valid(state: StateModel, key: str) -> bool:
     field = _field_of(state, key)
     if field is not None and field.type == "nav_zone":
         return nav_zone_reachable(state.params.get(key))
+    if field is not None and field.type == "scales":
+        return scales.is_known(state.params.get(key))
     return True
 
 

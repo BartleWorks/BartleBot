@@ -61,6 +61,7 @@ from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlo
 from bartlebot.gui.widgets.player_picker import pick_player, picker_label
 from bartlebot.gui.widgets.ratio_spin_box import RatioSpinBox
 from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
+from bartlebot.gui.widgets.scales_picker import ScalesButton
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 from bartlebot.gui.widgets.tag_pill import NeutralChip
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
@@ -1351,7 +1352,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                     result[key] = 0
             elif isinstance(w, _StrChoiceComboBox):
                 result[key] = w.get_value()
-            elif isinstance(w, _NavZoneField):
+            elif isinstance(w, _NavZoneField | ScalesButton):
                 result[key] = w.value()
             elif isinstance(w, QCheckBox):
                 result[key] = w.isChecked()
@@ -1484,6 +1485,13 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             return w
         if field_type == "nav_zone":
             w = _NavZoneField(self._get_zone_suggestions, self._get_clients)
+            w.set_value(str(val) if val else "")
+            if help_text:
+                w.setToolTip(help_text)
+            w.changed.connect(self._emit_changed)
+            return w
+        if field_type == "scales":
+            w = ScalesButton()
             w.set_value(str(val) if val else "")
             if help_text:
                 w.setToolTip(help_text)

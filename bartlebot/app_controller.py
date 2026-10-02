@@ -177,6 +177,8 @@ class AppController(QObject):
 
         # Long-lived asyncio task — held here to prevent GC (event loop keeps weak refs only).
         self._bot_task: asyncio.Task | None = None
+        # The run-start read of who already has an elixir. See _on_run_requested.
+        self._elixir_probe: asyncio.Task | None = None
 
         # Same reason: in-flight client close sequences, one per crashed client.
         self._close_tasks: set[asyncio.Task] = set()
@@ -1755,9 +1757,42 @@ class AppController(QObject):
             return
         if not self._check_player_realms():
             return
+        from bartlebot.gui.safety_warning_dialog import level_scaling_players  # noqa: PLC0415
+
+        clients = self._client_manager.clients
+        players = level_scaling_players(self._loaded_config, len(clients))
+        if not players:
+            self._finish_run_request(())
+            return
+        # Whether a level scaling player already has an elixir is a memory read, which is
+        # async, and the warning it feeds is a blocking dialog, which must not open inside a
+        # task (see "qasync + Python 3.13" in bartlebot/gui/CLAUDE.md). So the read runs as
+        # a task and the rest of the sequence runs from its done callback, which the loop
+        # calls outside any task.
+        if self._elixir_probe is not None and not self._elixir_probe.done():
+            return  # a second press while the first is still reading
+        from bartlebot.nodes.utility.handle_level_scaling import players_with_elixir  # noqa: PLC0415
+
+        self._elixir_probe = asyncio.create_task(players_with_elixir(clients, players))
+        self._elixir_probe.add_done_callback(self._on_elixir_probe_done)
+
+    def _on_elixir_probe_done(self, probe: asyncio.Task) -> None:
+        """Carry on with the run request once the elixir read is in. A failed read warns about nobody."""
+        if probe.cancelled():
+            return
+        if probe.exception() is not None:
+            logger.warning("Could not read the players' elixirs before the run", exc_info=probe.exception())
+            self._finish_run_request(())
+            return
+        self._finish_run_request(probe.result())
+
+    def _finish_run_request(self, elixir_players) -> None:
+        """The rest of the run sequence: the dialogs that ask, then the run itself."""
+        if not self._client_manager.clients or self._loaded_config is None:
+            return
         from bartlebot.gui.safety_warning_dialog import SafetyWarningDialog, collect_safety_warnings  # noqa: PLC0415
 
-        safety_warnings = collect_safety_warnings(self._loaded_config, self._client_manager.clients)
+        safety_warnings = collect_safety_warnings(self._loaded_config, self._client_manager.clients, elixir_players)
         if safety_warnings:
             dlg = SafetyWarningDialog(safety_warnings, parent=self._window)
             if not dlg.exec():

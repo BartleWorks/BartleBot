@@ -60,6 +60,7 @@ This is offered as an optional `sequential` param on `interact`, `interact_menu`
 sets it any more: it stopped being a node with #36, and every list object the map knows serves
 players in parallel. `apply_level_scaling`
 predates the helper and is unconditionally sequential against its one hardcoded station.
+`handle_level_scaling` reuses that loop (`apply_elixir`), so it is sequential too.
 
 `enter_zone_via_object`'s parallel path also falls back to turns on its own: when some clients
 went through and the rest are still standing there after the re-press window, the rest take

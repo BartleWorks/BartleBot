@@ -30,7 +30,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import player_realms, setup_steps
+from bartlebot import player_realms, scales, setup_steps
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -376,6 +376,8 @@ def _validate_node(
             error_reasons.append(f"Required param '{field.key}' is empty")
         elif field.type == "nav_zone" and not _nav_zone_reachable(state.params.get(field.key)):
             error_reasons.append(f"'{field.key}' is not a destination on the zone map")
+        elif field.type == "scales" and not scales.is_known(state.params.get(field.key)):
+            error_reasons.append(f"'{field.key}' is not a Scales of Knowledge this build knows")
 
     merging = NODE_SPECS.get(state.node_type)
     if merging is not None and merging.merges_players and player_realms.declares_separate(config):

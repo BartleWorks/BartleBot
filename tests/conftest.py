@@ -200,6 +200,8 @@ class FakeMachine:
         self.health_checks_resumed: set[int] = set()
         # Mirrors BotMachine.port_map: None until something surveys who can port to whom.
         self.port_map = None
+        # Mirrors BotMachine.node_scratch: what a node keeps for its own rerun.
+        self.node_scratch: dict[str, object] = {}
         # The real record, retaining as it does mid-run, so node tests exercise its rules.
         self.together = sightings.TogetherRecord()
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
@@ -26,7 +27,7 @@ from bartlebot.gui.widgets.action_button import ActionStyle
 from bartlebot.gui.widgets.dialog_footer import dialog_footer
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.nodes.teleportation import teleport_to_friend
-from bartlebot.nodes.utility import quicksell
+from bartlebot.nodes.utility import handle_level_scaling, quicksell
 from bartlebot.nodes.zone_entry import enter_dungeon
 
 if TYPE_CHECKING:
@@ -224,7 +225,47 @@ _MESSAGE_BUILDERS = {
 }
 
 
-def collect_safety_warnings(config: BotConfig, clients: list | None = None) -> list[SafetyWarning]:
+def level_scaling_players(config: BotConfig, client_count: int) -> list[int]:
+    """The 1-based players this run will level scale, or [] for a bot with no level scaling node.
+
+    Who the run-start elixir check reads. Resolved as the nodes resolve it, through the
+    bot's options, so a user's override of Level Scaling Players is what counts.
+    """
+    if not any(state.node_type in handle_level_scaling.LEVEL_SCALING_NODE_TYPES for state in config.states):
+        return []
+    resolution = option_values.option_resolution(config, handle_level_scaling.LEVEL_SCALING_PLAYERS_OPTION.name)
+    if resolution is None:
+        return []
+    return handle_level_scaling.selected_numbers(resolution.value, client_count)
+
+
+def level_scaling_warning(elixir_players: Sequence[int]) -> SafetyWarning | None:
+    """The warning for a run that starts with an elixir already active on a level scaling player.
+
+    The game draws every elixir the same way, and telling them apart would mean opening each
+    one on every check, so the nodes take any elixir for the level scaling one (#141). That is
+    wrong in two ways the user can fix before the run and the bot cannot fix during it: the
+    elixir may be another kind, and a level scaling one taken earlier runs out before the
+    others'. The bot never cancels an elixir itself.
+    """
+    if not elixir_players:
+        return None
+    who = ", ".join(f"P{n}" for n in elixir_players)
+    return SafetyWarning(
+        message=(
+            "A level scaling player already has an elixir active. The bot cannot tell one elixir from "
+            "another, so it treats this player as level scaled and will not visit the Scales of Knowledge "
+            "for them until the elixir runs out. If it is a different elixir, they run unscaled. If it is "
+            "a level scaling elixir taken earlier, it runs out before the other players' and costs an "
+            "extra trip. To start everyone together, cancel the elixir in game before running."
+        ),
+        details=[("Elixir already active", who)],
+    )
+
+
+def collect_safety_warnings(
+    config: BotConfig, clients: list | None = None, elixir_players: Sequence[int] = ()
+) -> list[SafetyWarning]:
     """Return a list of SafetyWarning for every risky node type present in *config*.
 
     Returns at most one SafetyWarning per risky node type, even when multiple
@@ -239,6 +280,9 @@ def collect_safety_warnings(config: BotConfig, clients: list | None = None) -> l
     *clients* is passed to detail builders that resolve something against the live
     clients, such as the wizard name behind a teleport target's player slot. It is
     optional so the collection stays callable from tests without any.
+
+    *elixir_players* is who among ``level_scaling_players`` showed an elixir when the run
+    was requested. Reading that is async, so the caller reads it and hands it in.
     """
     states_by_type: dict[str, list] = {}
     for state in config.states:
@@ -265,6 +309,8 @@ def collect_safety_warnings(config: BotConfig, clients: list | None = None) -> l
             details, editable = built if isinstance(built, tuple) else (built, None)
         warnings.append(SafetyWarning(message=message, details=details, editable_setting=editable))
 
+    if elixir_warning := level_scaling_warning(elixir_players):
+        warnings.append(elixir_warning)
     return warnings
 
 
