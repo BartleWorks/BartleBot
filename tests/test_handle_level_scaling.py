@@ -217,6 +217,38 @@ async def test_an_unknown_scales_fails_before_touching_a_client():
     assert world.calls == []
 
 
+async def test_an_unset_scales_uses_the_default_of_the_bots_world():
+    client = FakeClient()
+    world = _World([client])
+    machine = _machine([1])
+    machine.bot_config = object()
+    seen = []
+
+    def default_for(config):
+        seen.append(config)
+        return _PLAIN
+
+    with world.patched(), patch("bartlebot.scales.default_for", new=default_for):
+        result = await hls.run(machine, [client], {"scales": ""})
+
+    assert result == "SUCCESS"
+    assert seen == [machine.bot_config]
+    assert f"sigil:{_OUTER}" in world.calls
+
+
+async def test_an_unset_scales_with_no_default_fails_and_says_why():
+    client = FakeClient()
+    world = _World([client])
+    machine = _machine([1])
+
+    with world.patched(), patch("bartlebot.scales.default_for", new=lambda config: None):
+        result = await hls.run(machine, [client], {})
+
+    assert result == "FAILURE"
+    assert world.calls == []
+    assert any("no default" in message for message, _ in machine.logs)
+
+
 async def test_everyone_already_scaled_succeeds_at_once():
     clients = [FakeClient(), FakeClient()]
     world = _World(clients, elixirs={1, 2})

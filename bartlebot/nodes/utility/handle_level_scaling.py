@@ -47,7 +47,10 @@ PARAM_SCHEMA: list[ParamField] = [
             "narrow it."
         ),
         default="",
-        required=True,
+        default_hint=(
+            "The Scales of the world this bot farms, when that world has one. Choose one by hand for a "
+            "world that has several, or to use another world's."
+        ),
     ),
 ]
 
@@ -78,6 +81,8 @@ NODE_SPEC = NodeSpec(
     usage_notes=(
         "When every Level Scaling Player already shows an elixir, nothing happens and the node returns "
         "SUCCESS at once, so it is cheap at the top of a loop.\n\n"
+        "Left unset, the Scales is the one for the world this bot farms: the world most of its zones are "
+        "in. A world with several Scales, or none, has no default, and the node says so.\n\n"
         "Whether the players mark and recall is decided by where they are, not by a setting. Away from "
         "the Scales' dungeon, they mark, travel, scale and recall. Inside it, they scale in place and "
         "stay. So in a bot that farms the Scales' own dungeon, place this node after the bot's dungeon "
@@ -205,7 +210,8 @@ async def run(machine, clients: list, params: dict) -> str:
           teleport_to_marked_location.recall()
 
     Flow:
-      1. Resolve the Scales from its key. FAILURE if the table has no such entry.
+      1. Resolve the Scales from its key; an empty key is the default Scales of the bot's world.
+         FAILURE if the table has no such entry.
       2. Check. SUCCESS at once if every Level Scaling Player shows an elixir (or none is chosen),
          unless a cancelled run of this node left the players away from their marks.
       3. Mark, if away from the Scales' dungeon: every client marks where it stands and the node
@@ -223,9 +229,14 @@ async def run(machine, clients: list, params: dict) -> str:
     the retries; a recall failed or landed somewhere else.
     """
     key = params.get(PARAM_SCALES) or ""
-    entry = scales.get(key)
+    entry = scales.resolve(key, getattr(machine, "bot_config", None))
     if entry is None:
-        machine.log(f"FAILURE: {key!r} is not a Scales of Knowledge this build knows", logging.WARNING)
+        reason = (
+            f"{key!r} is not a Scales of Knowledge this build knows"
+            if key
+            else "no Scales of Knowledge is chosen, and this bot's world has no default one"
+        )
+        machine.log(f"FAILURE: {reason}", logging.WARNING)
         return "FAILURE"
 
     numbers = selected_numbers(machine.get_option(LEVEL_SCALING_PLAYERS_OPTION.name, []), len(clients))

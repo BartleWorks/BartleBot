@@ -106,11 +106,57 @@ def test_the_form_gives_a_scales_param_the_picker_and_reads_its_key_back(qapp):
     assert form.get_params()["scales"] == key
 
 
-def test_handle_level_scaling_takes_one_param_and_it_is_a_scales():
-    """The point of #141: which Scales is the only thing an author chooses."""
+def test_handle_level_scaling_takes_one_param_and_it_is_an_optional_scales():
+    """The point of #141: which Scales is the only thing an author chooses, and usually not even that."""
     assert [(f.key, f.type, f.required) for f in NODE_PARAM_SCHEMAS["handle_level_scaling"]] == [
-        ("scales", "scales", True)
+        ("scales", "scales", False)
     ]
+
+
+def test_an_unset_button_names_the_bots_worlds_scales(qapp):
+    button = ScalesButton(_TABLE, get_default=lambda: _TABLE["spyre"])
+
+    assert button.value() == ""
+    assert button.text() == "Bot's world: Dragonspyre · Great Spyre (level 50)"
+
+
+def test_a_chosen_scales_is_shown_over_the_default(qapp):
+    button = ScalesButton(_TABLE, get_default=lambda: _TABLE["spyre"])
+
+    button.set_value("tartarus")
+
+    assert button.text() == "Aquila · Tartarus (level 90)"
+
+
+def test_the_default_is_read_again_when_the_field_is_shown(qapp):
+    """The bot's world follows its zones, which change while the node's form is closed."""
+    current = [None]
+    button = ScalesButton(_TABLE, get_default=lambda: current[0])
+    assert button.text() == PLACEHOLDER
+
+    current[0] = _TABLE["spyre"]
+    button.show()
+
+    assert button.text().startswith("Bot's world: ")
+    button.hide()
+
+
+def test_a_default_that_cannot_be_read_leaves_the_prompt(qapp):
+    def broken():
+        raise RuntimeError
+
+    assert ScalesButton(_TABLE, get_default=broken).text() == PLACEHOLDER
+
+
+def test_the_node_form_hands_the_picker_the_open_bots_default(qapp):
+    from bartlebot.gui.canvas.param_panel import _DynamicParamForm
+
+    form = _DynamicParamForm()
+    form.set_default_scales_getter(lambda: _TABLE["spyre"])
+    form.load_schema([ParamField(key="scales", type="scales", label="Scales")], {})
+
+    assert form.widget("scales").text().startswith("Bot's world: Dragonspyre")
+    assert form.get_params()["scales"] == ""
 
 
 def test_an_unset_scales_is_empty():
@@ -123,7 +169,8 @@ def test_an_unset_scales_is_empty():
 # ---------------------------------------------------------------------------
 
 
-def _errors(scales_key: str) -> list[str]:
+def _errors(scales_key: str, zone: str = "") -> list[str]:
+    """The node's errors in a bot whose one other node is in *zone*."""
     from bartlebot.gui.canvas.edit_scene import _validate_node
 
     config = BotConfig.model_validate(
@@ -132,7 +179,10 @@ def _errors(scales_key: str) -> list[str]:
             "name": "B",
             "initial": "s",
             "recovery_state": "s",
-            "states": [{"id": "s", "node_type": "handle_level_scaling", "params": {"scales": scales_key}}],
+            "states": [
+                {"id": "s", "node_type": "handle_level_scaling", "params": {"scales": scales_key}},
+                {"id": "z", "node_type": "check_zone", "params": {"zone": zone}},
+            ],
             "transitions": [],
         }
     )
@@ -149,5 +199,16 @@ def test_a_known_key_raises_no_scales_error():
     assert not any("scales" in reason for reason in _errors(key))
 
 
-def test_an_unset_scales_is_the_required_param_error():
-    assert any("Required param 'scales'" in reason for reason in _errors(""))
+def test_an_unset_scales_is_fine_in_a_bot_whose_world_has_a_default():
+    world = next(e.world for e in scales.load().values() if e.world_default)
+
+    assert not any("scales" in reason for reason in _errors("", zone=f"{world}/Somewhere"))
+
+
+def test_an_unset_scales_is_an_error_in_a_bot_whose_world_has_no_default():
+    """Aquila has five Scales and no final dungeon, so nothing can be assumed for it."""
+    assert any("no default Scales" in reason for reason in _errors("", zone="Aquila/AQ_Z00_Hub"))
+
+
+def test_an_unset_scales_is_an_error_in_a_bot_with_no_world_yet():
+    assert any("no default Scales" in reason for reason in _errors(""))

@@ -40,7 +40,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_summary, card_art, setup_steps, template_diff
+from bartlebot import bot_summary, card_art, scales, setup_steps, template_diff
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -1248,6 +1248,8 @@ class BotCanvas(QWidget):
         # #73: log any item change Qt never repainted. Developer builds only.
         self._repaint_tracer = RepaintTracer(self._view) if dev_mode() else None
         self._param_panel = _ParamPanel()
+        # An unset Scales param means the open bot's world's, so its picker says which that is.
+        self._param_panel.set_default_scales_getter(lambda: scales.default_for(self._config))
 
         # ── Buttons ───────────────────────────────────────────────────
         self._run_pause_btn = _icon_btn("play", "Run bot")

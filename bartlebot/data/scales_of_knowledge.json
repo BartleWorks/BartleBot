@@ -1,9 +1,9 @@
 {
   "_comment": [
     "Every Scales of Knowledge handle_level_scaling can use. Read by bartlebot/scales.py.",
+    "Written by tools/scales_table.py: add and change entries with it, not by hand.",
     "A bot file stores an entry's key, so a key is never renamed once shipped.",
-    "entrance_zone is a destination on the zone navigation map; steps lead from it to zone,",
-    "each a dungeon sigil or a walk-through gateway. See docs/LEVEL_SCALING.md."
+    "See docs/LEVEL_SCALING.md."
   ],
   "scales": [
     {
@@ -11,6 +11,7 @@
       "name": "Temple of Storms",
       "world": "Krokotopia",
       "level": 20,
+      "world_default": true,
       "entrance_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
       "steps": [
         {
@@ -81,6 +82,7 @@
       "name": "Emperor's Throne Room",
       "world": "MooShu",
       "level": 40,
+      "world_default": true,
       "entrance_zone": "MooShu/MS_Hub",
       "steps": [
         {
@@ -116,6 +118,7 @@
       "name": "Great Spyre",
       "world": "DragonSpire",
       "level": 50,
+      "world_default": true,
       "entrance_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
       "steps": [
         {
@@ -151,6 +154,7 @@
       "name": "Keep of Ganelon",
       "world": "Avalon",
       "level": 80,
+      "world_default": true,
       "entrance_zone": "Avalon/AV_Z07_OuterYard",
       "steps": [
         {
@@ -391,6 +395,7 @@
       "name": "North Sands of Time",
       "world": "Mirage",
       "level": 120,
+      "world_default": true,
       "entrance_zone": "Mirage/Interiors/MR_Z10_SandsofTime",
       "steps": [
         {
@@ -426,6 +431,7 @@
       "name": "Cavity Chamber",
       "world": "Karamelle",
       "level": 140,
+      "world_default": true,
       "entrance_zone": "Karamelle/KM_Z00_HUB",
       "steps": [
         {
@@ -491,6 +497,7 @@
       "name": "Hall of Heroes",
       "world": "Lemuria",
       "level": 150,
+      "world_default": true,
       "entrance_zone": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter",
       "steps": [
         {

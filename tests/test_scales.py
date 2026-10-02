@@ -2,6 +2,7 @@
 
 import json
 import re
+from types import SimpleNamespace
 
 import pytest
 
@@ -77,6 +78,27 @@ def test_every_world_has_a_display_name():
     assert [e.key for e in scales.load().values() if not worlds.display_names(e.world)] == []
 
 
+def test_no_world_has_two_defaults():
+    defaults = [e.world for e in scales.load().values() if e.world_default]
+
+    assert defaults
+    assert len(defaults) == len(set(defaults))
+
+
+def test_the_shipped_table_passes_the_tools_checks_and_is_in_its_format():
+    """What `tools/scales_table.py check` reports. A hand edit that reflows the file fails here."""
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from tools import scales_table
+
+    entries = scales_table.read_entries(scales.SCALES_PATH)
+
+    assert scales_table.problems(entries) == []
+    assert scales.SCALES_PATH.read_text(encoding="utf-8") == scales_table.render(entries)
+
+
 def test_no_two_entries_share_a_scales():
     stations = [(e.zone, e.interact_xyz.x, e.interact_xyz.y) for e in scales.load().values()]
 
@@ -134,6 +156,60 @@ def test_dungeon_from_is_the_first_sigil(table_file):
     _write(table_file, _raw(steps=[{**sigil, "kind": "gateway"}, sigil, {**sigil, "kind": "gateway"}]))
 
     assert scales.get("test").dungeon_from == 1
+
+
+# ---------------------------------------------------------------------------
+# The default for a bot's world
+# ---------------------------------------------------------------------------
+
+
+def _bot(*zone_params: dict) -> SimpleNamespace:
+    return SimpleNamespace(states=[SimpleNamespace(params=params) for params in zone_params])
+
+
+def test_a_bots_world_is_the_one_most_of_its_zones_are_in():
+    bot = _bot(
+        {"zone": "Azteca/AZ_Z08_PitchBlackLake"},
+        {"from_zone": "Azteca/AZ_Z08_PitchBlackLake", "dungeon_zone": "Azteca/Interiors/Pyramid"},
+        {"from_zone": "Aquila/AQ_Z00_Hub", "dungeon_zone": "Aquila/AQ_Z03_Tartarus"},
+    )
+
+    assert scales.bot_world(bot) == "Azteca"
+
+
+def test_only_zone_params_count_toward_a_bots_world():
+    bot = _bot({"enemy": "Aquila/NotAZone", "label": "Aquila/Also", "zone": "MooShu/MS_Hub"})
+
+    assert scales.bot_world(bot) == "MooShu"
+
+
+@pytest.mark.parametrize(
+    "bot",
+    [_bot(), _bot({"zone": ""}), _bot({"zone": "MooShu/MS_Hub"}, {"zone": "Aquila/AQ_Z00_Hub"}), None],
+    ids=["no nodes", "blank zones", "a tie", "no bot"],
+)
+def test_a_bot_with_no_leading_world_has_none(bot):
+    assert scales.bot_world(bot) is None
+
+
+def test_an_empty_scales_resolves_to_the_default_of_the_bots_world(table_file):
+    _write(table_file, _raw("final", world_default=True), _raw("side"))
+    bot = _bot({"zone": "Krokotopia/KT_Hub"})
+
+    assert scales.resolve("", bot).key == "final"
+    assert scales.resolve("side", bot).key == "side"
+
+
+def test_an_empty_scales_resolves_to_nothing_when_the_world_marks_no_default(table_file):
+    _write(table_file, _raw("side"))
+
+    assert scales.resolve("", _bot({"zone": "Krokotopia/KT_Hub"})) is None
+
+
+def test_an_empty_scales_never_borrows_another_worlds_default(table_file):
+    _write(table_file, _raw("final", world_default=True))
+
+    assert scales.resolve("", _bot({"zone": "MooShu/MS_Hub"})) is None
 
 
 @pytest.mark.parametrize(("value", "known"), [("test", True), ("", True), (None, True), ("gone", False), (7, True)])

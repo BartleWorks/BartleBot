@@ -16,8 +16,8 @@ decisions came from #141.
 
 ## One node
 
-`handle_level_scaling` has one param: which Scales to use. Who gets scaled is the
-`Level Scaling Players` bot option. `check_level_scaling` and `apply_level_scaling` still
+`handle_level_scaling` has one param: which Scales to use, and it is usually left unset
+(see "The default" below). Who gets scaled is the `Level Scaling Players` bot option. `check_level_scaling` and `apply_level_scaling` still
 exist until the library moves off them (#59).
 
 | step | what happens | fails when |
@@ -83,6 +83,7 @@ zone paths and coordinates, so it is text and safe to track.
 |---|---|
 | `key` | what a bot file stores. Never renamed once shipped |
 | `name`, `world`, `level` | what the picker shows. `level` may be null |
+| `world_default` | present and true on the Scales of a world's final dungeon. At most one per world |
 | `entrance_zone` | a destination on the zone navigation map, where navigation hands over |
 | `steps` | the zone changes from `entrance_zone` to `zone`, in order |
 | `zone`, `interact_xyz`, `reset_xyz` | the Scales' zone, the interact point, and a spot clear of its prompt |
@@ -100,24 +101,65 @@ loads.
 
 ### Adding a Scales
 
-Record the sigil with `enter_dungeon`'s Record and the Scales with `apply_level_scaling`'s,
-then copy the zones and points into a new entry. Pick an `entrance_zone` that the zone
-picker offers, and add gateway steps from it if the sigil is further in.
+The file is never edited by hand. `tools/scales_table.py` builds an entry from a bot
+recorded in the app, checks it, and writes the whole file back in one fixed format.
+
+1. In the app, make a scratch bot and Record, standing in game:
+   - an `enter_dungeon` on the dungeon's sigil;
+   - an `enter_zone` for each zone change between the sigil and the Scales, or between a
+     zone the zone picker offers and the sigil, when there are any;
+   - an `apply_level_scaling` on the Scales.
+
+   The nodes need no edges and no order. Save the bot anywhere.
+2. Look at what the tool makes of it, then write it:
+
+   ```bash
+   uv run python tools/scales_table.py add path/to/scratch.json --level 100
+   uv run python tools/scales_table.py add path/to/scratch.json --level 100 --write
+   ```
+
+The tool finds the steps by following zones back from the Scales to the first zone the
+navigation map can reach. The name comes from the sigil's prompt title and the key from the
+name; `--name` and `--key` override them, which a nested Scales needs, since its own zone
+has no prompt. `--world-default` marks the Scales of a world's final dungeon.
+
+`set KEY --level N`, `set KEY --world-default`, `remove KEY`, `list`, `check` and `format`
+cover the rest. Every command that changes the file prints the result and writes nothing
+without `--write`, and refuses to write a table that fails `check`. A key is what bot
+files store, so `set` cannot change one.
+
+`test_the_shipped_table_passes_the_tools_checks_and_is_in_its_format` fails on a file
+that was edited by hand and reflowed.
 
 The first thirteen entries were copied from the shipped bots' recorded params and have not
 been re-checked in game as a set. The `level` values other than the three level 90 Aquila
 ones are world level caps, not read from the game.
+
+## The default
+
+An unset `scales` param means the default Scales of the bot's world, resolved when the node
+runs (`scales.resolve`), not written into the bot. So a bot made from a template needs no
+setup step for it, and the answer follows the bot as its zones are filled in.
+
+- The bot's world is the one most of its zone params are in (`scales.bot_world`). A tie, or
+  a bot with no zones yet, has none.
+- A world's default is the entry marked `world_default`. A world with several Scales and no
+  final dungeon (Aquila) marks none, and so does a world whose only entry is a side dungeon.
+
+An unset param in a bot whose world has no default is an error on the node, and `FAILURE`
+if it runs. The Tartarus workaround is the case for choosing by hand: an Azteca bot whose
+own Scales are bugged.
 
 ## The picker
 
 The `scales` param type (`bartlebot/gui/widgets/scales_picker.py`) lists the table by world,
 with each row's level as its meta. Only the key is stored. A key the table lacks is an
 error on the node, as a `nav_zone` that is not a destination is; the button keeps it and
-marks it rather than dropping it.
+marks it rather than dropping it. An unset button reads "Bot's world: …" with the Scales
+the default resolves to.
 
 ## Not done
 
 - **Split travel.** Sending only the players who need scaling, with no mark, would cover the
   zones where a mark fails. #97 is the same idea for `handle_potions`.
-- **Defaulting the picker** to the Scales of the bot's own world.
 - **Migrating the library** and retiring the two old nodes: under #59.

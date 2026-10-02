@@ -64,6 +64,8 @@ class Scales:
     zone: str
     interact_xyz: XYZ
     reset_xyz: XYZ
+    world_default: bool = False
+    """The Scales a bot farming this world uses when its node names none: the world's final dungeon."""
 
     @property
     def dungeon_from(self) -> int:
@@ -94,6 +96,7 @@ def _parse(raw: dict) -> Scales:
         zone=raw["zone"],
         interact_xyz=_xyz(raw["interact_xyz"]),
         reset_xyz=_xyz(raw["reset_xyz"]),
+        world_default=bool(raw.get("world_default", False)),
     )
 
 
@@ -127,6 +130,40 @@ def is_known(value: object) -> bool:
         return True
     table = load()
     return not table or value in table
+
+
+def world_default(world: str | None) -> Scales | None:
+    """The default Scales of `world`, or None when the table marks none for it."""
+    return next((entry for entry in load().values() if entry.world_default and entry.world == world), None)
+
+
+def bot_world(config) -> str | None:
+    """The world a bot farms: the one most of its zone params are in. None when none leads.
+
+    Read from the params rather than stored, so it follows the bot as its zones are filled
+    in. A param counts when its key says it holds a zone (``zone`` or ``*_zone``), which
+    ``test_every_param_named_for_a_zone_is_typed_as_one`` keeps true of every zone param.
+    """
+    counts: dict[str, int] = {}
+    for state in getattr(config, "states", None) or ():
+        for key, value in (state.params or {}).items():
+            if (key == "zone" or key.endswith("_zone")) and isinstance(value, str) and "/" in value:
+                world = value.split("/", 1)[0]
+                counts[world] = counts.get(world, 0) + 1
+    ranked = sorted(counts.items(), key=lambda item: item[1], reverse=True)
+    if not ranked or (len(ranked) > 1 and ranked[0][1] == ranked[1][1]):
+        return None
+    return ranked[0][0]
+
+
+def default_for(config) -> Scales | None:
+    """The Scales a ``scales`` param left empty means in this bot: its world's default, if it has one."""
+    return world_default(bot_world(config))
+
+
+def resolve(key: object, config) -> Scales | None:
+    """The Scales a ``scales`` param value names in this bot. An empty one is the bot's world's default."""
+    return get(key) if key else default_for(config)
 
 
 def describe(scales: Scales) -> str:

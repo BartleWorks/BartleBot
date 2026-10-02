@@ -60,6 +60,11 @@ def world_icon_resolver(table: Mapping[str, scales.Scales]) -> Callable[[str], Q
     return resolve
 
 
+def default_text(default: scales.Scales | None) -> str:
+    """The caption of an unset button: what the bot's world gives it, or a prompt when it gives nothing."""
+    return PLACEHOLDER if default is None else f"Bot's world: {scales.describe(default)}"
+
+
 def describe_key(table: Mapping[str, scales.Scales], key: str) -> str:
     """The button's caption for a stored key; the raw key, marked, for one the table does not have."""
     entry = table.get(key)
@@ -71,9 +76,16 @@ class ScalesButton(PickerButton):
 
     changed = pyqtSignal(str)
 
-    def __init__(self, table: Mapping[str, scales.Scales] | None = None, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        table: Mapping[str, scales.Scales] | None = None,
+        get_default: Callable[[], scales.Scales | None] = lambda: None,
+        parent: QWidget | None = None,
+    ) -> None:
         # Resolved before the base class, because the resolver handed to every popup is built from it.
         resolved = scales.load() if table is None else table
+        # What an unset value means in this bot, read each time the caption is drawn.
+        self._get_default = get_default
         super().__init__(
             "Scales of Knowledge",
             placeholder=PLACEHOLDER,
@@ -104,6 +116,19 @@ class ScalesButton(PickerButton):
     def format_text(self, labels: list[str]) -> str:
         key = self.value()
         table = getattr(self, "table", None)  # the base class draws its text before __init__ gets here
-        if not key or table is None:
+        if table is None:
             return PLACEHOLDER
-        return describe_key(table, key)
+        if key:
+            return describe_key(table, key)
+        return default_text(self._default())
+
+    def _default(self) -> scales.Scales | None:
+        try:
+            return self._get_default()
+        except Exception:
+            return None
+
+    def showEvent(self, event) -> None:  # noqa: N802 - Qt override
+        # The bot's world can change while the field is hidden, and the default follows it.
+        super().showEvent(event)
+        self._refresh_text()

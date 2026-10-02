@@ -378,6 +378,9 @@ def _validate_node(
             error_reasons.append(f"'{field.key}' is not a destination on the zone map")
         elif field.type == "scales" and not scales.is_known(state.params.get(field.key)):
             error_reasons.append(f"'{field.key}' is not a Scales of Knowledge this build knows")
+        elif field.type == "scales" and empty and scales.load() and scales.default_for(config) is None:
+            # Empty means the bot's world's Scales, so it is only a fault when there is none.
+            error_reasons.append(f"'{field.key}' is empty, and this bot's world has no default Scales of Knowledge")
 
     merging = NODE_SPECS.get(state.node_type)
     if merging is not None and merging.merges_players and player_realms.declares_separate(config):

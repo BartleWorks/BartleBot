@@ -938,6 +938,11 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._suppress = False
         self._get_clients: Callable[[], list] = lambda: []
         self._get_zone_suggestions: Callable[[], list[str]] = lambda: []
+        self._get_default_scales: Callable[[], Any] = lambda: None
+
+    def set_default_scales_getter(self, fn: Callable[[], Any]) -> None:
+        """Pass a callable returning the Scales an unset 'scales' param means in the open bot."""
+        self._get_default_scales = fn
 
     def set_clients_getter(self, fn: Callable[[], list]) -> None:
         """Pass a callable returning the currently hooked clients."""
@@ -1491,7 +1496,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             w.changed.connect(self._emit_changed)
             return w
         if field_type == "scales":
-            w = ScalesButton()
+            w = ScalesButton(get_default=lambda: self._get_default_scales())
             w.set_value(str(val) if val else "")
             if help_text:
                 w.setToolTip(help_text)
@@ -2460,6 +2465,10 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._call_page.set_clients_getter(fn)
         self._signature_page.set_clients_getter(fn)
         self.refresh_player_availability()
+
+    def set_default_scales_getter(self, fn: Callable[[], Any]) -> None:
+        """Pass a callable returning the open bot's default Scales, for the node form."""
+        self._param_form.set_default_scales_getter(fn)
 
     def set_zone_suggestions_getter(self, fn: Callable[[], list[str]]) -> None:
         """Pass a callable returning zone suggestions, for the node form and the region inputs form alike."""
