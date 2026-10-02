@@ -752,3 +752,22 @@ def test_the_link_dialog_suggests_the_rows_own_key_as_the_new_inputs_name(promot
     promoted_doc._on_nested_link_requested("in1", "tp_a.zone")
     assert seen["param_key"] == "zone", "an input's name cannot hold a dot"
     assert [(b.region, b.param) for b in _input(promoted_doc, "zone").bindings] == [("in1", "tp_a.zone")]
+
+
+def test_a_linked_row_left_blank_is_not_marked_as_a_required_input_left_empty(promoted_doc):
+    """The input it is linked to asks for the value, so the nested node has nothing to fill in."""
+    region = next(r for r in promoted_doc.config.regions if r.id == "in1")
+    page = _nested_page(promoted_doc)
+    region.source.inputs["tp_a.zone"] = ""
+    promoted_doc._on_region_property_changed()
+    promoted_doc._show_call_page(region)
+    assert page.section("node_tp_a").shows_error, "blank and unlinked: this node's own gap"
+
+    promoted_doc.link_nested_input("in1", "tp_a.zone", new_input=SubgraphInput(name="first", type="zone"))
+    assert _zone_of(promoted_doc, "tp_a") == ""
+    assert not page.section("node_tp_a").shows_error
+    assert promoted_doc.validation_errors() == []
+
+    promoted_doc.unlink_nested_input("in1", "tp_a.zone")
+    assert page.section("node_tp_a").shows_error
+    assert any("Required param 'zone' is empty" in e for e in promoted_doc.validation_errors())

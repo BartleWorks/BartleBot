@@ -324,6 +324,17 @@ class CallNodePage(ThemedMixin, QWidget):
         }
         return {"linkable": True, "links": links}
 
+    @staticmethod
+    def _owned_elsewhere(schema, link_marks: dict) -> list:
+        """*schema* with each linked row no longer required: the input it is linked to asks for the value.
+
+        Left blank here, a linked row is filled by whoever uses the definition around
+        it, so it is not a gap in this node -- and must not light the "required input
+        empty" mark, which would send the author looking for something to fill in.
+        """
+        linked = link_marks.get("links", {})
+        return [replace(f, required=False) if f.key in linked else f for f in schema]
+
     # -- showing -------------------------------------------------------
 
     def show_call(
@@ -386,12 +397,13 @@ class CallNodePage(ThemedMixin, QWidget):
             top = [i for i in inputs if i.panel is None or not any(p.id == i.panel for p in panels)]
             if top:
                 form = make_form()
+                links = self._link_marks(i.name for i in top)
                 form.load_schema(
-                    [input_param_field(defn, i, self._library) for i in top],
+                    self._owned_elsewhere([input_param_field(defn, i, self._library) for i in top], links),
                     chosen,
                     resettable={i.name for i in top} & set(chosen),
                     **self._input_marks(top),
-                    **self._link_marks(i.name for i in top),
+                    **links,
                 )
                 self._add_form(None, form)
                 self._inputs_layout.addWidget(form)
@@ -399,12 +411,13 @@ class CallNodePage(ThemedMixin, QWidget):
                 if panel.kind == "inputs":
                     members = [i for i in inputs if i.panel == panel.id]
                     form = make_form()
+                    links = self._link_marks(i.name for i in members)
                     form.load_schema(
-                        [input_param_field(defn, i, self._library) for i in members],
+                        self._owned_elsewhere([input_param_field(defn, i, self._library) for i in members], links),
                         chosen,
                         resettable={i.name for i in members} & set(chosen),
                         **self._input_marks(members),
-                        **self._link_marks(i.name for i in members),
+                        **links,
                     )
                     self._add_form(panel.id, form)
                     section = PanelSection(panel.label or panel.id, form, closed=panel.default_closed)
@@ -472,7 +485,7 @@ class CallNodePage(ThemedMixin, QWidget):
         }
         marks = self._fill_marks((f.key, state.id, f.key) for f in schema)
         links = self._link_marks((f.key for f in schema), prefix)
-        form.load_schema(schema, dict(state.params), resettable=changed, **marks, **links)
+        form.load_schema(self._owned_elsewhere(schema, links), dict(state.params), resettable=changed, **marks, **links)
         self._add_form(panel.id, form, link_prefix=prefix)
         record = None
         if state.node_type in recording.RECORDABLE_NODES:
