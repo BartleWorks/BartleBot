@@ -164,8 +164,13 @@ setup step for it, and the answer follows the bot as its zones are filled in.
   final dungeon (Aquila) marks none, and so does a world whose only entry is a side dungeon.
 
 An unset param in a bot whose world has no default is an error on the node, and `FAILURE`
-if it runs. The Tartarus workaround is the case for choosing by hand: an Azteca bot whose
-own Scales are bugged.
+if it runs.
+
+Azteca is the one world whose final-dungeon Scales (`xibalba`) are in the table but not
+marked. They are bugged: the Scales disappear after the first player uses them, so a group
+cannot all scale there. An Azteca bot chooses `tartarus` by hand instead, which is also
+level 90. Sending each player into Xibalba on a separate realm would give each their own
+Scales, but that was judged too fragile to build.
 
 ## The picker
 
