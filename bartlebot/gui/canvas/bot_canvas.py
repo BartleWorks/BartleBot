@@ -72,7 +72,7 @@ from bartlebot.gui.canvas.edit_scene import (
 from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NodeItem
-from bartlebot.gui.canvas.param_panel import _ParamPanel, input_param_field
+from bartlebot.gui.canvas.param_panel import _ParamPanel, instance_key_field
 from bartlebot.gui.canvas.repaint_trace import RepaintTracer
 from bartlebot.gui.canvas.subgraph_widgets import (
     Crumb,
@@ -113,6 +113,7 @@ from bartlebot.subgraphs import (
     promoted_param_type,
     reresolve_linked_instances,
     reresolve_member_params,
+    resolve_instance_key,
     sync_linked_values,
 )
 from bartlebot.wiki_pages import WIKI_PAGE_PARAM
@@ -3295,10 +3296,14 @@ class BotCanvas(QWidget):
         return next((r for r in config.regions if r.id == region_id and r.source is not None), None)
 
     def _nested_input_field(self, region, name: str):
-        """The ``ParamField`` of one named input of a nested subgraph node, or None if it has no such input."""
+        """The ``ParamField`` of one input of a nested subgraph node, or None if it has no such input.
+
+        *name* is a key of the node's ``source.inputs``: a named input, or a promoted
+        node's ``<member>.<key>``.
+        """
         defn = self._definition_for(region)
-        inp = next((i for i in defn.inputs if i.name == name), None) if defn is not None else None
-        return input_param_field(defn, inp, self._subgraph_library) if inp is not None else None
+        ikey = resolve_instance_key(defn, name) if defn is not None else None
+        return instance_key_field(ikey, self._subgraph_library) if ikey is not None else None
 
     def link_nested_input(
         self,
@@ -3309,6 +3314,9 @@ class BotCanvas(QWidget):
         new_input: SubgraphInput | None = None,
     ) -> bool:
         """Link one input of a nested subgraph node to an input of the definition around it. One undo step.
+
+        ``name`` is the key the nested node stores the value under: a named input, or
+        ``<member>.<key>`` for one row of a promoted node's input group.
 
         The nested node's input is then set through the outer one: by this definition's
         default, and by each of its own subgraph nodes. ``existing`` names an outer input
@@ -3370,7 +3378,8 @@ class BotCanvas(QWidget):
             return
         dlg = LinkInputDialog(
             self._scene.config.definition.inputs,
-            param_key=name,
+            # A promoted node's row is keyed <member>.<key>; an input's name has no dot.
+            param_key=name.rpartition(".")[2],
             param_type=field.type,
             param_label=field.label,
             current_value=region.source.inputs.get(name),

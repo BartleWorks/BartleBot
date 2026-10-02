@@ -663,3 +663,92 @@ def test_building_a_linkable_nested_page_never_shows_a_parentless_widget(outer_d
     parentless_shows.clear()
     _nested_page(outer_doc)
     assert parentless_shows == []
+
+
+# ---------------------------------------------------------------------------
+# ...and one row of a promoted node's input group on the nested node
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def promoted_doc(qapp, library):
+    """As ``outer_doc``, with the nested node's ``tp_a`` promoted whole in its own definition."""
+    from bartlebot.gui.canvas.bot_canvas import BotCanvas  # noqa: PLC0415
+    from tests.test_subgraphs import _outer_linking_the_row  # noqa: PLC0415
+
+    outer = _outer_linking_the_row(library)
+    outer.inputs = []
+    library.save(outer)
+    c = BotCanvas()
+    c.set_subgraph_library(library)
+    c.setup(definition_to_config(library.get("outer")))
+    c.enter_edit_mode()
+    yield c
+    c.prepare_for_shutdown()
+
+
+def test_a_promoted_row_on_a_nested_node_links_by_its_stored_key(promoted_doc):
+    asked = []
+    promoted_doc.param_panel.link_nested_input_requested.disconnect(promoted_doc._on_nested_link_requested)
+    promoted_doc.param_panel.link_nested_input_requested.connect(lambda rid, name: asked.append((rid, name)))
+    form = _nested_page(promoted_doc).form("node_tp_a")
+    form.link_button("zone").click()
+    assert asked == [("in1", "tp_a.zone")]
+
+    assert promoted_doc.link_nested_input("in1", "tp_a.zone", new_input=SubgraphInput(name="first", type="zone"))
+    assert [(b.region, b.param) for b in _input(promoted_doc, "first").bindings] == [("in1", "tp_a.zone")]
+    form = promoted_doc.param_panel.call_page.form("node_tp_a")
+    assert form.link_chip("zone") is not None and form.link_button("zone") is None
+    assert not promoted_doc.link_nested_input("in1", "tp_b.zone", existing="first"), "tp_b is not promoted"
+    assert promoted_doc.validation_errors() == []
+
+
+def test_a_linked_promoted_row_is_the_outer_inputs_default_both_ways(promoted_doc):
+    promoted_doc.link_nested_input("in1", "tp_a.zone", new_input=SubgraphInput(name="first", type="zone"))
+    first = _input(promoted_doc, "first")
+    assert first.default is None, "unset: the row keeps the member's own value"
+    assert _zone_of(promoted_doc, "tp_a") == "DragonSpyre/DS_Hub"
+
+    first.default = "Outer/Default"
+    promoted_doc._on_definition_changed()
+    assert _zone_of(promoted_doc, "tp_a") == "Outer/Default"
+
+    _nested_page(promoted_doc).form("node_tp_a").set_str("zone", "Edited/OnTheRow")
+    promoted_doc._undo_mgr.flush_debounce()
+    assert first.default == "Edited/OnTheRow"
+
+    promoted_doc.param_panel.call_page.form("node_tp_a").link_chip("zone").click()
+    assert first.bindings == []
+    assert _zone_of(promoted_doc, "tp_a") == "Edited/OnTheRow"
+
+
+def test_the_signature_page_names_a_promoted_row_by_its_group(promoted_doc):
+    from PyQt6.QtWidgets import QLabel  # noqa: PLC0415
+
+    promoted_doc.link_nested_input("in1", "tp_a.zone", new_input=SubgraphInput(name="first", type="zone"))
+    promoted_doc.param_panel.show_signature(promoted_doc.config)
+    texts = [lbl.text() for lbl in promoted_doc.param_panel.signature_page.findChildren(QLabel)]
+    assert any(t.startswith("linked to Inner \u00b7 First hop \u203a ") for t in texts)
+
+
+def test_the_link_dialog_suggests_the_rows_own_key_as_the_new_inputs_name(promoted_doc, monkeypatch):
+    from bartlebot.gui.canvas import bot_canvas  # noqa: PLC0415
+
+    seen = {}
+
+    class _Dialog:
+        choice = None
+
+        def __init__(self, inputs, **kw):
+            seen.update(kw)
+
+        def exec(self):
+            return True
+
+        def new_input(self):
+            return SubgraphInput(name=seen["param_key"], type=seen["param_type"])
+
+    monkeypatch.setattr(bot_canvas, "LinkInputDialog", _Dialog)
+    promoted_doc._on_nested_link_requested("in1", "tp_a.zone")
+    assert seen["param_key"] == "zone", "an input's name cannot hold a dot"
+    assert [(b.region, b.param) for b in _input(promoted_doc, "zone").bindings] == [("in1", "tp_a.zone")]

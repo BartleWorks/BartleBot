@@ -47,6 +47,8 @@ from bartlebot.bot.schema import (
     RegionModel,
     StateModel,
     SubgraphDefinition,
+    SubgraphInput,
+    SubgraphPanel,
     SubgraphPort,
     SubgraphSource,
     TransitionModel,
@@ -344,22 +346,75 @@ def node_panels(defn: SubgraphDefinition | DefinitionMeta):
     return [p for p in defn.panels if p.kind == "node"]
 
 
-def nested_input(defn: SubgraphDefinition | BotConfig, binding, library: SubgraphLibrary | None):
-    """``(inner definition, inner input)`` a nested-instance binding names, or None.
+@dataclass(frozen=True)
+class InstanceKey:
+    """One key of an instance's ``source.inputs``, resolved against the instance's definition.
+
+    Either a named ``input``, or ``key`` of the member a node ``panel`` exposes whole
+    (stored as ``<member>.<key>``). The one place such a key is told apart: a link into
+    a nested instance names one, so its type, where it lands and how it is drawn all
+    come through here, and a new kind of key is added here and nowhere else.
+    """
+
+    defn: SubgraphDefinition
+    name: str
+    input: SubgraphInput | None = None
+    panel: SubgraphPanel | None = None
+    key: str | None = None
+
+
+def resolve_instance_key(defn: SubgraphDefinition, name: str) -> InstanceKey | None:
+    """What ``name`` sets on an instance of ``defn``, or None when the definition has no such key."""
+    named = next((i for i in defn.inputs if i.name == name), None)
+    if named is not None:
+        return InstanceKey(defn, name, input=named)
+    member, dot, key = name.partition(".")
+    panel = next((p for p in node_panels(defn) if p.member == member), None) if dot else None
+    if panel is not None and key and any(s.id == member for s in defn.states):
+        return InstanceKey(defn, name, panel=panel, key=key)
+    return None
+
+
+def nested_key(defn: SubgraphDefinition | BotConfig, binding, library: SubgraphLibrary | None) -> InstanceKey | None:
+    """The key of a nested instance a binding names, resolved against that instance's definition.
 
     None for a member binding, with no library, and when the instance, its definition
-    or the input is gone.
+    or the key is gone.
     """
     if binding.region is None or library is None:
         return None
     region = next((r for r in defn.regions if r.id == binding.region and r.source is not None), None)
     inner = library.get(region.source.subgraph_id) if region is not None else None  # type: ignore[union-attr]
-    found = next((i for i in inner.inputs if i.name == binding.param), None) if inner is not None else None
-    return (inner, found) if found is not None else None
+    return resolve_instance_key(inner, binding.param) if inner is not None else None
+
+
+def instance_key_type(ikey: InstanceKey, schemas: Mapping[str, Sequence[object]]) -> str | None:
+    """The param type a value for ``ikey`` must have: the input's, or the promoted param's."""
+    if ikey.input is not None:
+        return ikey.input.type
+    return promoted_param_type(ikey.defn, ikey.panel, ikey.key or "", schemas)
+
+
+def instance_key_targets(
+    ikey: InstanceKey, library: SubgraphLibrary | None, region_id: str | None = None, _depth: int = 0
+) -> list[tuple[str, str]]:
+    """``(state id, param key)`` of every param a value for ``ikey`` lands on. Ids as :func:`input_targets` gives them."""
+    if ikey.input is not None:
+        return input_targets(ikey.defn, ikey.input, library, region_id, _depth)
+
+    def here(local: str) -> str:
+        return member_id(region_id, local) if region_id is not None else local
+
+    assert ikey.panel is not None and ikey.key is not None
+    shared = ikey.panel.bindings.get(ikey.key, [])
+    return [(here(ikey.panel.member or ""), ikey.key), *((here(b.state), b.param) for b in shared)]
 
 
 def forwarded_inputs(defn: SubgraphDefinition, source: SubgraphSource, region_id: str) -> dict[str, object]:
-    """What an instance of ``defn`` hands the nested instance ``region_id``: inner input name -> value.
+    """What an instance of ``defn`` hands the nested instance ``region_id``: inner key -> value.
+
+    A key is whatever the nested instance's own ``source.inputs`` is keyed by: a named
+    input, or a promoted node's ``<member>.<key>``.
 
     The same order as a member's param: the instance's value, then the input's default.
     An input with neither forwards nothing, so the nested instance keeps what the
@@ -399,8 +454,8 @@ def input_targets(
     for b in inp.bindings:
         if b.region is None:
             out.append((here(b.state), b.param))
-        elif _depth < MAX_DEPTH and (found := nested_input(defn, b, library)) is not None:
-            out.extend(input_targets(found[0], found[1], library, here(b.region), _depth + 1))
+        elif _depth < MAX_DEPTH and (found := nested_key(defn, b, library)) is not None:
+            out.extend(instance_key_targets(found, library, here(b.region), _depth + 1))
     return out
 
 
@@ -1311,9 +1366,10 @@ def definition_problems(
         for b in inp.bindings:
             if b.region is None or library is None:
                 continue
-            found = nested_input(config, b, library)
+            found = nested_key(config, b, library)
             if found is not None:
-                types.append(found[1].type)
+                if (t := instance_key_type(found, schemas)) is not None:
+                    types.append(t)
             elif b.region in instances and library.get(instances[b.region].source.subgraph_id) is not None:  # type: ignore[union-attr]
                 warnings.append(
                     f"input '{inp.label or inp.name}' is linked to '{b.param}' of "
@@ -1356,8 +1412,9 @@ def binding_type(
     types = []
     for b in bindings:
         if b.region is not None:
-            if (found := nested_input(defn, b, library)) is not None:
-                types.append(found[1].type)
+            found = nested_key(defn, b, library)
+            if found is not None and (t := instance_key_type(found, schemas)) is not None:
+                types.append(t)
             continue
         state = by_id.get(b.state)
         if state is None:

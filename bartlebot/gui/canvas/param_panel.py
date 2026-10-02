@@ -69,7 +69,7 @@ from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.subgraphs import MAX_DEPTH, binding_type, nested_input
+from bartlebot.subgraphs import MAX_DEPTH, InstanceKey, binding_type, nested_key, promoted_param_type
 from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
 
 
@@ -100,9 +100,10 @@ def input_param_field(defn, inp, library=None, _depth: int = 0) -> ParamField:
         if f.key == b.param
     ]
     nested = [
-        input_param_field(found[0], found[1], library, _depth + 1)
+        f
         for b in inp.bindings
-        if _depth < MAX_DEPTH and (found := nested_input(defn, b, library)) is not None
+        if _depth < MAX_DEPTH and (found := nested_key(defn, b, library)) is not None
+        if (f := instance_key_field(found, library, _depth + 1)) is not None
     ]
     bound += nested
     first = next((f for f in bound if f.type == inp_type), bound[0] if bound else None)
@@ -121,6 +122,35 @@ def input_param_field(defn, inp, library=None, _depth: int = 0) -> ParamField:
         minimum=first.minimum if first is not None else None,
         maximum=first.maximum if first is not None else None,
     )
+
+
+def instance_key_field(ikey: InstanceKey, library=None, _depth: int = 0) -> ParamField | None:
+    """The ``ParamField`` one key of a subgraph node's inputs is drawn from, or None if its node has no such param.
+
+    A named input's is :func:`input_param_field`. A promoted node's param is the
+    member's own field, typed as the subgraph node types it, and defaulting to the
+    value the member holds: unset, that is what it runs with.
+    """
+    if ikey.input is not None:
+        return input_param_field(ikey.defn, ikey.input, library, _depth)
+    member = next((s for s in ikey.defn.states if s.id == ikey.panel.member), None)
+    field = (
+        next((f for f in NODE_PARAM_SCHEMAS.get(member.node_type, []) if f.key == ikey.key), None) if member else None
+    )
+    if field is None:
+        return None
+    narrowed = promoted_param_type(ikey.defn, ikey.panel, field.key, NODE_PARAM_SCHEMAS) or field.type
+    return replace(field, type=narrowed, default=member.params.get(field.key, field.default))
+
+
+def instance_key_label(ikey: InstanceKey) -> str:
+    """A key of a subgraph node's inputs as that node's own page names it: "Hub", or "Enter dungeon › From Zone"."""
+    if ikey.input is not None:
+        return ikey.input.label or ikey.input.name
+    field = instance_key_field(ikey)
+    member = next((s for s in ikey.defn.states if s.id == ikey.panel.member), None)
+    group = ikey.panel.label or (member.label if member is not None else None) or ikey.panel.member
+    return f"{group} › {field.label if field is not None else ikey.key}"
 
 
 logger = logging.getLogger(__name__)

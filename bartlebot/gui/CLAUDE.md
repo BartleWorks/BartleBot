@@ -775,8 +775,11 @@ subgraph node (**Promote to input group** / **Demote**). A subgraph node nested 
 definition offers the same **Link** on each of its named inputs
 (`BotCanvas.link_nested_input`): the binding names the nested region and the input, never
 one of its members, so the value goes in through the inner signature and composition
-forwards it (`subgraphs.forwarded_inputs`). The rows of a promoted node's input group on
-that nested node are not linkable. A linked param *is* its input's
+forwards it (`subgraphs.forwarded_inputs`). A row of a promoted node's input group on that
+nested node links the same way, under the key the node stores it by (`<member>.<key>`);
+`subgraphs.resolve_instance_key` is the one place the two kinds of key are told apart, and
+where a third would be added. A linked row carries the value up, not the Record button. A
+linked param *is* its input's
 default: `subgraphs.sync_linked_values` keeps them equal both ways, and a subgraph node
 follows the default until its own page changes the value (Reset goes back). A row shows
 status and action in one control: an unlinked row's Link button appears only on hover or

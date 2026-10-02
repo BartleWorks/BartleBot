@@ -34,7 +34,7 @@ from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.gui.widgets.rule_heading import RuleHeading
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
-from bartlebot.subgraphs import nested_input
+from bartlebot.subgraphs import nested_key
 
 #: The group dropdown's entry for an input listed in no group.
 _NO_GROUP = "None"
@@ -172,7 +172,11 @@ class SignaturePage(ThemedMixin, QWidget):
         layout.addWidget(add)
 
     def _inputs_section(self) -> None:
-        from bartlebot.gui.canvas.param_panel import _DynamicParamForm, input_param_field  # noqa: PLC0415
+        from bartlebot.gui.canvas.param_panel import (  # noqa: PLC0415
+            _DynamicParamForm,
+            input_param_field,
+            instance_key_label,
+        )
 
         assert self._config is not None and self._config.definition is not None
         meta = self._config.definition
@@ -226,8 +230,8 @@ class SignaturePage(ThemedMixin, QWidget):
             for b in inp.bindings:
                 if b.region is not None:
                     # A nested subgraph node's input, named as that node's own page names it.
-                    found = nested_input(self._config, b, self._library)
-                    name = (found[1].label or found[1].name) if found is not None else b.param
+                    found = nested_key(self._config, b, self._library)
+                    name = instance_key_label(found) if found is not None else b.param
                     text = ThemedTextLabel(
                         f"linked to {region_labels.get(b.region, b.region)} · {name}", color="text_muted"
                     )

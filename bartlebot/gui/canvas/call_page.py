@@ -145,9 +145,10 @@ class CallNodePage(ThemedMixin, QWidget):
     role_requested = pyqtSignal(str, str)
     open_definition_requested = pyqtSignal(str)
     detach_requested = pyqtSignal(str)
-    # (region id, input name): on a subgraph node nested in a definition document, link
-    # one of its inputs to an input of the definition around it, or unlink it. The page
-    # only reports; the canvas edits the signature.
+    # (region id, key): on a subgraph node nested in a definition document, link one of
+    # its inputs to an input of the definition around it, or unlink it. The key is the
+    # one its ``source.inputs`` uses: an input's name, or a promoted node's
+    # ``<member>.<key>``. The page only reports; the canvas edits the signature.
     link_input_requested = pyqtSignal(str, str)
     unlink_input_requested = pyqtSignal(str, str)
 
@@ -302,18 +303,21 @@ class CallNodePage(ThemedMixin, QWidget):
             for sid, param in input_targets(self._defn, i, self._library, self._region.id)
         )
 
-    def _link_marks(self, inputs) -> dict:
+    def _link_marks(self, keys, prefix: str = "") -> dict:
         """``load_schema``'s link keywords: in a definition document, this node's inputs can be linked outward.
 
-        A row linked to one of the document's own inputs wears that input's name as a
-        chip; every other row offers Link on hover, as a node's param does there.
+        *keys* are a form's own keys, and *prefix* what turns one into the key this
+        node's inputs are stored under: nothing for a named input, ``<member>.`` for a
+        promoted node's param. A row linked to one of the document's own inputs wears
+        that input's name as a chip; every other row offers Link on hover, as a node's
+        param does there.
         """
         meta = self._config.definition if self._config is not None else None
         if meta is None or self._region is None:
             return {}
-        names = {i.name for i in inputs}
+        names = {prefix + k: k for k in keys}
         links = {
-            b.param: outer.label or outer.name
+            names[b.param]: outer.label or outer.name
             for outer in meta.inputs
             for b in outer.bindings
             if b.region == self._region.id and b.param in names
@@ -387,9 +391,9 @@ class CallNodePage(ThemedMixin, QWidget):
                     chosen,
                     resettable={i.name for i in top} & set(chosen),
                     **self._input_marks(top),
-                    **self._link_marks(top),
+                    **self._link_marks(i.name for i in top),
                 )
-                self._add_form(None, form, linkable=True)
+                self._add_form(None, form)
                 self._inputs_layout.addWidget(form)
             for panel in panels:
                 if panel.kind == "inputs":
@@ -400,9 +404,9 @@ class CallNodePage(ThemedMixin, QWidget):
                         chosen,
                         resettable={i.name for i in members} & set(chosen),
                         **self._input_marks(members),
-                        **self._link_marks(members),
+                        **self._link_marks(i.name for i in members),
                     )
-                    self._add_form(panel.id, form, linkable=True)
+                    self._add_form(panel.id, form)
                     section = PanelSection(panel.label or panel.id, form, closed=panel.default_closed)
                 else:
                     form, section = self._node_panel(panel, make_form)
@@ -430,20 +434,19 @@ class CallNodePage(ThemedMixin, QWidget):
         finally:
             self._suppress = False
 
-    def _add_form(self, key: str | None, form, *, linkable: bool = False) -> None:
+    def _add_form(self, key: str | None, form, *, link_prefix: str = "") -> None:
         self._forms[key] = form
         self._initial_values[key] = form.get_params()
         form.changed.connect(lambda k=key: self._on_form_changed(k))
         form.reset_requested.connect(lambda field_key, k=key: self.reset_value(k, field_key))
-        if linkable:
-            # A form of named inputs. A promoted node's panel is not: its values are keyed
-            # by member, and only a named input can be linked outward.
-            form.link_requested.connect(
-                lambda name: self._region and self.link_input_requested.emit(self._region.id, name)
-            )
-            form.unlink_requested.connect(
-                lambda name: self._region and self.unlink_input_requested.emit(self._region.id, name)
-            )
+        # Reported by the key this node's inputs store the value under, so the canvas
+        # need not know which kind of form the row was on. See _link_marks.
+        form.link_requested.connect(
+            lambda name, p=link_prefix: self._region and self.link_input_requested.emit(self._region.id, p + name)
+        )
+        form.unlink_requested.connect(
+            lambda name, p=link_prefix: self._region and self.unlink_input_requested.emit(self._region.id, p + name)
+        )
 
     def _node_panel(self, panel: SubgraphPanel, make_form):
         """A member exposed whole: its own fields, keyed by its own keys, valued from ``source.inputs``."""
@@ -468,8 +471,9 @@ class CallNodePage(ThemedMixin, QWidget):
             k[len(prefix) :] for k, v in self._region.source.inputs.items() if k.startswith(prefix) and v is not None
         }
         marks = self._fill_marks((f.key, state.id, f.key) for f in schema)
-        form.load_schema(schema, dict(state.params), resettable=changed, **marks)
-        self._add_form(panel.id, form)
+        links = self._link_marks((f.key for f in schema), prefix)
+        form.load_schema(schema, dict(state.params), resettable=changed, **marks, **links)
+        self._add_form(panel.id, form, link_prefix=prefix)
         record = None
         if state.node_type in recording.RECORDABLE_NODES:
             record = RecordButton(style=ActionStyle.SECONDARY, get_clients=lambda: self._get_clients())

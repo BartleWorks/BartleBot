@@ -1280,3 +1280,74 @@ def test_an_inner_definition_that_drops_a_linked_input_is_a_warning(library):
     errors, warnings = definition_problems(config, NODE_PARAM_SCHEMAS, library)
     assert errors == []
     assert len(warnings) == 1 and "no longer has that input" in warnings[0]
+
+
+# ---------------------------------------------------------------------------
+# ...and to one row of a promoted node's input group on the nested instance
+# ---------------------------------------------------------------------------
+
+PROMOTED = "tp_a.zone"
+
+
+def _promote_tp_a(library: SubgraphLibrary) -> None:
+    """Save the inner definition with ``tp_a`` promoted whole, as the "First hop" input group."""
+    inner = sync_players_definition()
+    inner.panels = [SubgraphPanel(id="node_tp_a", kind="node", label="First hop", member="tp_a")]
+    library.save(SubgraphDefinition.model_validate(inner.model_dump()))
+
+
+def _outer_linking_the_row(library: SubgraphLibrary, **input_kw) -> SubgraphDefinition:
+    _promote_tp_a(library)
+    outer = _outer_with_snapshot(library)
+    outer.inputs = [
+        SubgraphInput(
+            name="first", type="zone", bindings=[SubgraphInputBinding(region="in1", param=PROMOTED)], **input_kw
+        )
+    ]
+    return SubgraphDefinition.model_validate(outer.model_dump())
+
+
+def test_a_key_of_an_instances_inputs_is_a_named_input_or_a_promoted_nodes_param(library):
+    from bartlebot.subgraphs import resolve_instance_key  # noqa: PLC0415
+
+    _promote_tp_a(library)
+    inner = library.get(SYNC_ID)
+    named = resolve_instance_key(inner, "hub")
+    assert named.input.name == "hub" and named.panel is None
+    row = resolve_instance_key(inner, PROMOTED)
+    assert row.input is None and row.panel.member == "tp_a" and row.key == "zone"
+    assert resolve_instance_key(inner, "nope") is None
+    assert resolve_instance_key(inner, "tp_b.zone") is None, "tp_b is not promoted"
+
+
+def test_an_outer_input_reaches_a_promoted_row_of_the_nested_instance(library):
+    library.save(_outer_linking_the_row(library))
+    bot = _bot_of(library.get("outer"), library, first="Deep/Z")
+    by_id = {s.id: s for s in bot.states}
+    assert by_id["R_in1_tp_a"].params["zone"] == "Deep/Z"
+    assert bot.regions[1].source.inputs == {PROMOTED: "Deep/Z"}
+
+    unset = _bot_of(library.get("outer"), library)
+    assert {s.id: s for s in unset.states}["R_in1_tp_a"].params["zone"] == "DragonSpyre/DS_Hub", "the member's own"
+
+    bot.regions[0].source.inputs["first"] = "Other/Z"
+    reresolve_member_params(bot, bot.regions[0], library.get("outer"), library)
+    assert by_id["R_in1_tp_a"].params["zone"] == "Other/Z"
+
+
+def test_a_promoted_row_link_is_typed_and_lands_like_the_row(library):
+    from bartlebot.subgraphs import binding_type, input_targets  # noqa: PLC0415
+
+    outer = _outer_linking_the_row(library)
+    inp = outer.inputs[0]
+    own = next(f.type for f in NODE_PARAM_SCHEMAS["teleport_to_world_hub"] if f.key == "zone")
+    assert binding_type(outer, inp.bindings, NODE_PARAM_SCHEMAS, library) == own
+    assert input_targets(outer, inp, library, "R") == [("R_in1_tp_a", "zone")]
+
+
+def test_demoting_the_inner_node_leaves_a_warning_on_the_outer_link(library):
+    config = definition_to_config(_outer_linking_the_row(library))
+    assert definition_problems(config, NODE_PARAM_SCHEMAS, library) == ([], [])
+    library.save(sync_players_definition(version=2))
+    errors, warnings = definition_problems(config, NODE_PARAM_SCHEMAS, library)
+    assert errors == [] and len(warnings) == 1
