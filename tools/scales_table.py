@@ -45,7 +45,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from bartlebot import scales, zone_names, zone_nav  # noqa: E402
-from bartlebot.nodes.node_helpers import zone_matches  # noqa: E402
+from bartlebot.nodes.node_helpers import has_glob, zone_matches  # noqa: E402
 
 COMMENT = [
     "Every Scales of Knowledge handle_level_scaling can use. Read by bartlebot/scales.py.",
@@ -152,7 +152,12 @@ def _steps_to(zone: str, candidates: list[dict], nav: zone_nav.NavMap) -> list[d
     while not (any(c["step"]["kind"] == scales.SIGIL for c in chain) and zone_nav.is_destination(nav, target)):
         if len(chain) == MAX_STEPS:
             raise TableError(f"more than {MAX_STEPS} zone changes lead to {zone}; the recorded zones may loop")
-        into = [c for c in candidates if zone_matches(target, c["step"]["to_zone"]) and c not in chain]
+        used = [(c["step"]["from_zone"], c["step"]["kind"]) for c in chain]
+        into = [
+            c
+            for c in candidates
+            if zone_matches(target, c["step"]["to_zone"]) and (c["step"]["from_zone"], c["step"]["kind"]) not in used
+        ]
         if not into and chain and zone_nav.is_destination(nav, target):
             raise TableError(
                 f"the recorded way from {target} to {zone} goes through no dungeon sigil. A Scales is inside a "
@@ -171,8 +176,11 @@ def _steps_to(zone: str, candidates: list[dict], nav: zone_nav.NavMap) -> list[d
                 not zone_nav.is_destination(nav, c["step"]["from_zone"]),
             )
         )
-        chain.insert(0, into[0])
-        target = into[0]["step"]["from_zone"]
+        # A bot's dungeon zone may be a glob that also takes in the Challenge Mode copy. The table
+        # holds the ordinary zone only: the node enters in normal mode, and the copy has no Scales.
+        step = {**into[0]["step"], "to_zone": target}
+        chain.insert(0, {**into[0], "step": step})
+        target = step["from_zone"]
     return chain
 
 
@@ -244,6 +252,9 @@ def problems(entries: list[dict], nav: zone_nav.NavMap | None = None) -> list[st
         if entry.key in seen:
             found.append(f"{label}: the key is used twice")
         seen.add(entry.key)
+        named = [entry.entrance_zone, entry.zone, *(z for s in entry.steps for z in (s.from_zone, s.to_zone))]
+        if globbed := sorted({z for z in named if has_glob(z)}):
+            found.append(f"{label}: {globbed[0]} is a pattern; the table names one zone, never a Challenge Mode copy")
         if not zone_nav.is_destination(nav, entry.entrance_zone):
             found.append(f"{label}: entrance zone {entry.entrance_zone} is not a destination on the zone map")
         if entry.steps[0].from_zone != entry.entrance_zone:

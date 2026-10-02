@@ -65,6 +65,23 @@ read is async and the dialog blocks, so the read runs as a task and the dialogs 
 done callback, outside any task (see "qasync + Python 3.13" in `bartlebot/gui/CLAUDE.md`).
 A read that fails warns about nobody and the run starts.
 
+### Challenge Mode
+
+Entering a dungeon in Challenge Mode level scales its players automatically. It shows no
+elixir for that, and the Challenge Mode copy of the dungeon has no Scales of Knowledge.
+That copy is a separate zone whose id is the ordinary one plus `_Challenge`, `_Hard` or
+`_Adv` (`zone_names.challenge_variant_of`).
+
+So when every client is standing in a Challenge Mode zone, the node returns `SUCCESS` and
+does nothing. Without that, the missing elixir would send the players out of the instance
+for one they do not need.
+
+For the same reason the table never names a Challenge Mode zone, or a pattern that would
+take one in. The node always enters through the sigil in normal mode, so it lands in the
+ordinary zone. `tools/scales_table.py` writes the Scales' own zone even when the recorded
+`enter_dungeon` holds a pattern such as `MB_G14_ThroneRoomB*`, and `check` refuses a
+pattern.
+
 ### A rerun after a cancel
 
 The ambient combat watcher can cancel the node mid-trip and run it again from the start

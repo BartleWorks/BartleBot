@@ -311,6 +311,31 @@ async def test_inside_the_dungeon_players_scale_in_place_and_stay():
     assert client.zone_name.return_value == _OUTER
 
 
+async def test_players_in_a_challenge_mode_dungeon_are_left_alone():
+    """Challenge Mode scales its players with no elixir, so the missing elixir must not send them out."""
+    clients = [FakeClient(), FakeClient()]
+    world = _World(clients)
+    for client in clients:
+        client.zone_name.return_value = "Aquila/AQ_Z03_Tartarus_Hard"
+
+    with world.patched():
+        result = await hls.run(_machine([1, 2]), clients, _PARAMS)
+
+    assert result == "SUCCESS"
+    assert world.calls == []
+
+
+async def test_one_player_outside_the_challenge_dungeon_still_makes_the_trip():
+    clients = [FakeClient(), FakeClient()]
+    world = _World(clients)
+    clients[0].zone_name.return_value = "Aquila/AQ_Z03_Tartarus_Hard"
+
+    with world.patched():
+        await hls.run(_machine([1, 2]), clients, _PARAMS)
+
+    assert "mark" in world.calls
+
+
 async def test_a_nested_scales_is_reached_through_its_gateway():
     client = FakeClient()
     world = _World([client], entry=_NESTED)

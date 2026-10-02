@@ -46,13 +46,13 @@
       "key": "ransacked_throne_room",
       "name": "Ransacked Throne Room",
       "world": "Marleybone",
-      "level": null,
+      "level": 40,
       "entrance_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
       "steps": [
         {
           "kind": "sigil",
           "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
-          "to_zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB*",
+          "to_zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB",
           "xyz": {
             "x": 2905.41,
             "y": -6594.68,
@@ -526,6 +526,398 @@
         "x": -2.62,
         "y": 2528.3,
         "z": 6.2
+      }
+    },
+    {
+      "key": "big_ben",
+      "name": "Big Ben",
+      "world": "Marleybone",
+      "level": 30,
+      "world_default": true,
+      "entrance_zone": "Marleybone/MB_BigBen/MB_Museum",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Marleybone/MB_BigBen/MB_Museum",
+          "to_zone": "Marleybone/MB_BigBen/MB_BigBen",
+          "xyz": {
+            "x": -220.67,
+            "y": 4540.38,
+            "z": -350.0
+          },
+          "reset_xyz": {
+            "x": -13.91,
+            "y": 4027.12,
+            "z": -350.03
+          }
+        }
+      ],
+      "zone": "Marleybone/MB_BigBen/MB_BigBen",
+      "interact_xyz": {
+        "x": -31251.67,
+        "y": 20827.32,
+        "z": -202.72
+      },
+      "reset_xyz": {
+        "x": -31452.46,
+        "y": 21261.85,
+        "z": -202.82
+      }
+    },
+    {
+      "key": "trial_of_the_spheres",
+      "name": "Trial of the Spheres",
+      "world": "Celestia",
+      "level": 60,
+      "world_default": true,
+      "entrance_zone": "Celestia/CL_Hub",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Celestia/CL_Hub",
+          "to_zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+          "xyz": {
+            "x": -217.96,
+            "y": 15369.93,
+            "z": -1048.77
+          },
+          "reset_xyz": {
+            "x": -0.41,
+            "y": 14773.7,
+            "z": -1099.7
+          }
+        }
+      ],
+      "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+      "interact_xyz": {
+        "x": -246.43,
+        "y": -3909.67,
+        "z": 0.0
+      },
+      "reset_xyz": {
+        "x": -6.57,
+        "y": -4466.82,
+        "z": 0.0
+      }
+    },
+    {
+      "key": "mirror_lake",
+      "name": "Mirror Lake",
+      "world": "Zafaria",
+      "level": 70,
+      "world_default": true,
+      "entrance_zone": "Zafaria/ZF_Z00_Hub",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Zafaria/ZF_Z00_Hub",
+          "to_zone": "Zafaria/ZF_Z11_Mirror_Lake",
+          "xyz": {
+            "x": 2954.12,
+            "y": 2855.28,
+            "z": -956.42
+          },
+          "reset_xyz": {
+            "x": 3126.46,
+            "y": 2242.73,
+            "z": -1044.72
+          }
+        }
+      ],
+      "zone": "Zafaria/ZF_Z11_Mirror_Lake",
+      "interact_xyz": {
+        "x": -659.94,
+        "y": -996.94,
+        "z": -1514.03
+      },
+      "reset_xyz": {
+        "x": 110.62,
+        "y": -791.83,
+        "z": -1514.03
+      }
+    },
+    {
+      "key": "xibalba",
+      "name": "Xibalba",
+      "world": "Azteca",
+      "level": 90,
+      "entrance_zone": "Azteca/AZ_Z11_TwinGiants",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Azteca/AZ_Z11_TwinGiants",
+          "to_zone": "Azteca/AZ_Z12_Xibalba",
+          "xyz": {
+            "x": 11994.74,
+            "y": -12548.37,
+            "z": 3145.45
+          },
+          "reset_xyz": {
+            "x": 11360.15,
+            "y": -11958.58,
+            "z": 2853.19
+          }
+        }
+      ],
+      "zone": "Azteca/AZ_Z12_Xibalba",
+      "interact_xyz": {
+        "x": 2060.84,
+        "y": 510.43,
+        "z": 6.02
+      },
+      "reset_xyz": {
+        "x": 2165.63,
+        "y": 1067.53,
+        "z": -3.44
+      }
+    },
+    {
+      "key": "morganthes_chamber",
+      "name": "Morganthe's Chamber",
+      "world": "Khrysalis",
+      "level": 100,
+      "world_default": true,
+      "entrance_zone": "Khrysalis/Interiors/KR_Z12_I02_Entry",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Khrysalis/Interiors/KR_Z12_I02_Entry",
+          "to_zone": "Khrysalis/Interiors/KR_Z12_I04_MorgantheBossRoom",
+          "xyz": {
+            "x": -221.6,
+            "y": -2202.58,
+            "z": 0.0
+          },
+          "reset_xyz": {
+            "x": -32.38,
+            "y": -2764.95,
+            "z": 0.0
+          }
+        }
+      ],
+      "zone": "Khrysalis/Interiors/KR_Z12_I04_MorgantheBossRoom",
+      "interact_xyz": {
+        "x": -550.02,
+        "y": -1359.54,
+        "z": 0.31
+      },
+      "reset_xyz": {
+        "x": -0.23,
+        "y": -1505.23,
+        "z": 0.3
+      }
+    },
+    {
+      "key": "horizon_hold",
+      "name": "Horizon Hold",
+      "world": "Polaris",
+      "level": 110,
+      "world_default": true,
+      "entrance_zone": "Polaris/Interiors/PL_Z07_SkyAnchorPeak",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Polaris/Interiors/PL_Z07_SkyAnchorPeak",
+          "to_zone": "Polaris/Interiors/PL_Z07_PL_Horizon_Hold",
+          "xyz": {
+            "x": -1615.67,
+            "y": 4024.51,
+            "z": 1773.38
+          },
+          "reset_xyz": {
+            "x": -2127.65,
+            "y": 3825.88,
+            "z": 1773.6
+          }
+        }
+      ],
+      "zone": "Polaris/Interiors/PL_Z07_PL_Horizon_Hold",
+      "interact_xyz": {
+        "x": -5386.01,
+        "y": 159.03,
+        "z": 641.56
+      },
+      "reset_xyz": {
+        "x": -5528.46,
+        "y": -173.54,
+        "z": 641.56
+      }
+    },
+    {
+      "key": "storm_titan_maelstrom",
+      "name": "Storm Titan Maelstrom",
+      "world": "Empyrea",
+      "level": 130,
+      "world_default": true,
+      "entrance_zone": "Empyrea/EM_Z16_Husk",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Empyrea/EM_Z16_Husk",
+          "to_zone": "Empyrea/Interiors/EM_Z16_I04_StormTitan",
+          "xyz": {
+            "x": 10838.94,
+            "y": 17150.65,
+            "z": 3069.24
+          },
+          "reset_xyz": {
+            "x": 10351.83,
+            "y": 17403.3,
+            "z": 3065.19
+          }
+        }
+      ],
+      "zone": "Empyrea/Interiors/EM_Z16_I04_StormTitan",
+      "interact_xyz": {
+        "x": -304.11,
+        "y": -1378.8,
+        "z": 17.08
+      },
+      "reset_xyz": {
+        "x": -69.12,
+        "y": -1791.23,
+        "z": -3.74
+      }
+    },
+    {
+      "key": "manticores_madness",
+      "name": "Manticore's Madness",
+      "world": "Novus",
+      "level": 160,
+      "world_default": true,
+      "entrance_zone": "Novus/NV_Z06_NucleusGallery",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Novus/NV_Z06_NucleusGallery",
+          "to_zone": "Novus/Interiors/NV_Z06_ManticoresMadness",
+          "xyz": {
+            "x": -908.23,
+            "y": -5357.52,
+            "z": -1.0
+          },
+          "reset_xyz": {
+            "x": -541.95,
+            "y": -5029.53,
+            "z": -7.68
+          }
+        }
+      ],
+      "zone": "Novus/Interiors/NV_Z06_ManticoresMadness",
+      "interact_xyz": {
+        "x": 176.68,
+        "y": -726.2,
+        "z": 1.2
+      },
+      "reset_xyz": {
+        "x": -27.95,
+        "y": 372.0,
+        "z": 1.2
+      }
+    },
+    {
+      "key": "main_hall",
+      "name": "Main Hall",
+      "world": "Marleybone",
+      "level": 40,
+      "entrance_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+          "to_zone": "Marleybone/G14_Gauntlet/MB_Z10_MainHall_01",
+          "xyz": {
+            "x": 208.89,
+            "y": -8494.42,
+            "z": -4257.88
+          },
+          "reset_xyz": {
+            "x": -12.51,
+            "y": -7703.35,
+            "z": -4453.28
+          }
+        }
+      ],
+      "zone": "Marleybone/G14_Gauntlet/MB_Z10_MainHall_01",
+      "interact_xyz": {
+        "x": -1137.75,
+        "y": -1110.53,
+        "z": 0.2
+      },
+      "reset_xyz": {
+        "x": 24.46,
+        "y": -1302.43,
+        "z": 0.2
+      }
+    },
+    {
+      "key": "rooftop",
+      "name": "Rooftop",
+      "world": "Marleybone",
+      "level": 40,
+      "entrance_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+          "to_zone": "Marleybone/G14_Gauntlet/MB_Z06_Rooftop",
+          "xyz": {
+            "x": -2852.08,
+            "y": -6434.02,
+            "z": -4822.8
+          },
+          "reset_xyz": {
+            "x": -2407.94,
+            "y": -6209.05,
+            "z": -4823.62
+          }
+        }
+      ],
+      "zone": "Marleybone/G14_Gauntlet/MB_Z06_Rooftop",
+      "interact_xyz": {
+        "x": 334.2,
+        "y": -4105.19,
+        "z": -170.36
+      },
+      "reset_xyz": {
+        "x": -1227.44,
+        "y": -4232.12,
+        "z": -170.36
+      }
+    },
+    {
+      "key": "state_wing",
+      "name": "State Wing",
+      "world": "Marleybone",
+      "level": 40,
+      "entrance_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+          "to_zone": "Marleybone/G14_Gauntlet/MB_Z02_PalaceWestWing_01",
+          "xyz": {
+            "x": 2358.23,
+            "y": -3802.26,
+            "z": -4823.28
+          },
+          "reset_xyz": {
+            "x": 1806.67,
+            "y": -4016.25,
+            "z": -4823.62
+          }
+        }
+      ],
+      "zone": "Marleybone/G14_Gauntlet/MB_Z02_PalaceWestWing_01",
+      "interact_xyz": {
+        "x": -1156.99,
+        "y": -1014.61,
+        "z": 0.2
+      },
+      "reset_xyz": {
+        "x": -2.79,
+        "y": -1318.39,
+        "z": 0.2
       }
     }
   ]

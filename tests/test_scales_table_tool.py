@@ -103,10 +103,21 @@ def test_the_sigil_is_taken_over_a_walk_back_out_of_a_side_room(nav):
     assert _route(scales_table.entry_from_bot(bot, nav=nav)) == [("sigil", _DUNGEON)]
 
 
-def test_a_glob_dungeon_zone_still_leads_to_the_scales(nav):
+def test_a_glob_dungeon_zone_is_written_as_the_one_zone_the_scales_are_in(nav):
+    """A bot globs to take in the Challenge Mode copy; the table must not, since that copy has no Scales."""
     bot = _bot(_sigil(_HUB, "World/Dungeon*"), _station(_DUNGEON))
 
-    assert _route(scales_table.entry_from_bot(bot, nav=nav)) == [("sigil", "World/Dungeon*")]
+    entry = scales_table.entry_from_bot(bot, nav=nav)
+
+    assert _route(entry) == [("sigil", _DUNGEON)]
+    assert scales_table.problems([entry], nav) == []
+
+
+def test_a_pattern_in_the_table_is_a_problem(nav):
+    entry = _entry(nav)
+    entry["steps"][0]["to_zone"] = "World/Dungeon*"
+
+    assert any("is a pattern" in line for line in scales_table.problems([entry], nav))
 
 
 def test_the_name_key_level_and_default_can_be_given(nav):

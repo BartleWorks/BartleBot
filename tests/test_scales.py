@@ -99,6 +99,17 @@ def test_the_shipped_table_passes_the_tools_checks_and_is_in_its_format():
     assert scales.SCALES_PATH.read_text(encoding="utf-8") == scales_table.render(entries)
 
 
+def test_no_entry_names_a_challenge_mode_zone():
+    """The Challenge Mode copy of a dungeon has no Scales, so no entry may lead into one."""
+    from bartlebot import zone_names
+    from bartlebot.nodes.node_helpers import has_glob
+
+    for entry in scales.load().values():
+        for zone in (entry.entrance_zone, entry.zone, *(z for s in entry.steps for z in (s.from_zone, s.to_zone))):
+            assert not has_glob(zone), entry.key
+            assert zone_names.challenge_variant_of(zone) is None, entry.key
+
+
 def test_no_two_entries_share_a_scales():
     stations = [(e.zone, e.interact_xyz.x, e.interact_xyz.y) for e in scales.load().values()]
 

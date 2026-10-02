@@ -13,7 +13,7 @@ from dataclasses import dataclass
 
 from wizwalker import XYZ
 
-from bartlebot import player_realms, scales
+from bartlebot import player_realms, scales, zone_names
 from bartlebot.nodes import node_helpers, zone_navigation
 from bartlebot.nodes.node_helpers import POSITION_MARGIN
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
@@ -89,6 +89,8 @@ NODE_SPEC = NodeSpec(
         "entry; placed before it, the players make an extra trip in and back out.\n\n"
         "Every player makes the trip, not only the ones being scaled. The dungeon is entered through "
         "its sigil in normal mode, never through Team-Up or Challenge Mode.\n\n"
+        "In a Challenge Mode dungeon the node does nothing and returns SUCCESS: the game level scales "
+        "everyone inside it, and it has no Scales of Knowledge.\n\n"
         "A player who already has an elixir keeps it: the node never cancels one. The game shows every "
         "elixir the same way, so a player with any other elixir active reads as level scaled. Starting "
         "a run in that state raises a warning."
@@ -214,6 +216,8 @@ async def run(machine, clients: list, params: dict) -> str:
          FAILURE if the table has no such entry.
       2. Check. SUCCESS at once if every Level Scaling Player shows an elixir (or none is chosen),
          unless a cancelled run of this node left the players away from their marks.
+      2b. SUCCESS at once if every client is in a Challenge Mode dungeon: the game scales its
+          players itself there, and that dungeon has no Scales.
       3. Mark, if away from the Scales' dungeon: every client marks where it stands and the node
          remembers each one's zone and position. FAILURE if any mark fails.
       4. Travel: zone navigation to the entrance zone, then the entry's sigil and gateway steps
@@ -244,6 +248,13 @@ async def run(machine, clients: list, params: dict) -> str:
     marks = _kept_marks(machine, clients)
     if not lacking and marks is None:
         machine.log("SUCCESS: every level scaling player already has an elixir")
+        return "SUCCESS"
+
+    # Challenge Mode scales its players itself, shows no elixir for it, and has no Scales inside.
+    # Leaving to fetch an elixir would give the instance up for one nobody needs.
+    zones = await asyncio.gather(*[c.zone_name() for c in clients])
+    if marks is None and zones and all(zone_names.challenge_variant_of(zone) for zone in zones):
+        machine.log("SUCCESS: the players are in a Challenge Mode dungeon, which level scales them itself")
         return "SUCCESS"
 
     machine.log(f"handle_level_scaling: {scales.describe(entry)}, for player(s) {lacking}")
