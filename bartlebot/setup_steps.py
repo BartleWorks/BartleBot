@@ -366,6 +366,12 @@ def fill_ins(config: BotConfig, steps: Sequence[SetupStep], library=None) -> dic
     return found
 
 
+def any_blank(config: BotConfig, fills: Mapping[tuple[str, str], FillIn]) -> bool:
+    """Whether any of ``fills`` (from :func:`fill_ins`) is still blank in ``config``."""
+    states = {state.id: state for state in config.states}
+    return any(_param_empty(states[sid], key) for sid, key in fills if sid in states)
+
+
 def setup_error(fill: FillIn) -> str:
     """The error an unfilled fill-in raises on its node, in a bot."""
     return f"{ERROR_PREFIX}{fill.step.text}"

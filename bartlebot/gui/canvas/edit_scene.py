@@ -309,6 +309,21 @@ def _return_is_handled_without_an_edge(state, config, return_name: str) -> bool:
     return return_name in FALLTHROUGH_RETURNS and state.id != config.recovery_state
 
 
+def _lacks_default_scales(config, fill_ins: Mapping[tuple[str, str], setup_steps.FillIn] | None) -> bool:
+    """Whether an empty ``scales`` param has no world default to fall back on, as far as can be told yet.
+
+    The world is read from the bot's zones (``scales.bot_world``), so while it is not known
+    the answer waits for them where they are still to come: a draft, whose zones its bots
+    fill in, and a bot with setup fill-ins left blank, which those steps already keep from
+    running. A world that is known and has no default is a fault everywhere.
+    """
+    if not scales.load() or scales.default_for(config) is not None:
+        return False
+    if scales.bot_world(config) is not None:
+        return True
+    return not (config.is_template or setup_steps.any_blank(config, fill_ins or {}))
+
+
 def _validate_node(
     state,
     config,
@@ -378,7 +393,7 @@ def _validate_node(
             error_reasons.append(f"'{field.key}' is not a destination on the zone map")
         elif field.type == "scales" and not scales.is_known(state.params.get(field.key)):
             error_reasons.append(f"'{field.key}' is not a Scales of Knowledge this build knows")
-        elif field.type == "scales" and empty and scales.load() and scales.default_for(config) is None:
+        elif field.type == "scales" and empty and _lacks_default_scales(config, fill_ins):
             # Empty means the bot's world's Scales, so it is only a fault when there is none.
             error_reasons.append(f"'{field.key}' is empty, and this bot's world has no default Scales of Knowledge")
 

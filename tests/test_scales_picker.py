@@ -212,3 +212,45 @@ def test_an_unset_scales_is_an_error_in_a_bot_whose_world_has_no_default():
 
 def test_an_unset_scales_is_an_error_in_a_bot_with_no_world_yet():
     assert any("no default Scales" in reason for reason in _errors(""))
+
+
+def _template_errors(zone: str, *, draft: bool) -> list[str]:
+    """The Scales node's errors where the check zone is a setup fill-in left at *zone*."""
+    from bartlebot.bot.schema import SetupStep, SetupTarget, TemplateMeta, TemplateRef
+    from bartlebot.gui.canvas.edit_scene import _validate_node
+    from bartlebot.setup_steps import fill_ins
+
+    config = BotConfig.model_validate(
+        {
+            "id": "b",
+            "name": "B",
+            "initial": "s",
+            "recovery_state": "s",
+            "states": [
+                {"id": "s", "node_type": "handle_level_scaling", "params": {"scales": ""}},
+                {"id": "z", "node_type": "check_zone", "params": {"zone": zone}},
+            ],
+            "transitions": [],
+        }
+    )
+    steps = [SetupStep(text="Choose the zone", targets=[SetupTarget(state="z", param="zone")])]
+    if draft:
+        config.template_meta = TemplateMeta(blurb="", setup=steps)
+    else:
+        config.template = TemplateRef(id="t", version=1)
+    return _validate_node(config.states[0], config, fill_ins=fill_ins(config, steps))[2]
+
+
+def test_an_unset_scales_in_a_draft_waits_for_the_bots_zones():
+    """A template has no world of its own: the bots made from it get one as their zones are filled."""
+    assert not any("scales" in reason for reason in _template_errors("", draft=True))
+
+
+def test_an_unset_scales_waits_for_a_bots_blank_setup_steps():
+    """The steps already block Run, and the zones they ask for are what decide the world."""
+    assert not any("scales" in reason for reason in _template_errors("", draft=False))
+
+
+def test_an_unset_scales_is_an_error_once_the_steps_name_a_world_with_no_default():
+    for draft in (True, False):
+        assert any("no default Scales" in r for r in _template_errors("Aquila/AQ_Z00_Hub", draft=draft))

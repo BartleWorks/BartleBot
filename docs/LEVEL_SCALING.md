@@ -164,7 +164,9 @@ setup step for it, and the answer follows the bot as its zones are filled in.
   final dungeon (Aquila) marks none, and so does a world whose only entry is a side dungeon.
 
 An unset param in a bot whose world has no default is an error on the node, and `FAILURE`
-if it runs.
+if it runs. A world not known yet waits for the zones that will decide it: in a template
+draft, and in a bot whose setup steps still have blank fill-ins (which already block Run),
+there is no error until a zone names the world.
 
 Azteca is the one world whose final-dungeon Scales (`xibalba`) are in the table but not
 marked. They are bugged: the Scales disappear after the first player uses them, so a group
