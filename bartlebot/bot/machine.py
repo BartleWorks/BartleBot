@@ -119,6 +119,8 @@ class BotMachine:
         # combat watcher is run again from the start (see bartlebot/nodes/CLAUDE.md), and this
         # is the only thing that outlives the cancel: handle_level_scaling keeps where each
         # client marked, so the rerun does not mark again somewhere on the way to the Scales.
+        # One entry is run-wide rather than a node's own: mark_location.MARKS_KEY, where each
+        # client last marked in this run, written by every mark.
         self.node_scratch: dict[str, object] = {}
         # Which clients have been seen sharing a zone, realm and instance. Keeps only the
         # latest check until run() starts the loading watcher that says when one goes stale.

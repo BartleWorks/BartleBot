@@ -127,12 +127,9 @@ from bartlebot.nodes.timing import (  # noqa: E402
 # ---------------------------------------------------------------------------
 
 
-@dataclass(frozen=True)
-class Mark:
-    """Where one client stood when it marked: what its recall is checked against."""
-
-    zone: str
-    position: XYZ
+#: Where one client stood when it marked: what its recall is checked against. mark_client
+#: records the same thing for the rest of the run.
+Mark = mark_location.Mark
 
 
 @dataclass(frozen=True)
