@@ -34,6 +34,11 @@ _HILDA_XYZ = XYZ(-4398.70654296875, 1016.1954345703125, 229.00079345703125)
 # Nearby Commons point where Hilda's interact prompt does NOT appear.
 _HILDA_RESET_XYZ = XYZ(-3860.94, 1601.97, 229.0)
 
+#: Whether players with no potion charges left go to Hilda Brewer to buy more. A bot option
+#: rather than a param: spending gold describes the user, not this node's place in the graph,
+#: so it is declared ``None`` and the app setting answers (docs/BOT_OPTIONS.md).
+OPTION_REFILL = "Refill Potions"
+
 # ── Timing constants ───────────────────────────────────────────────────────────
 from bartlebot.nodes.timing import (
     MAX_RETRIES,
@@ -61,17 +66,6 @@ PARAM_SCHEMA: list[ParamField] = [
         required=True,
     ),
     ParamField(
-        key="refill_potions",
-        type="bool",
-        label="Refill Potions",
-        help=(
-            "If enabled, navigate to Hilda Brewer in the Commons to buy potions "
-            "when any player has no potion charges remaining."
-        ),
-        default=True,
-        required=True,
-    ),
-    ParamField(
         key="mark_zone",
         type="zone",
         label="Mark Zone",
@@ -90,7 +84,7 @@ PARAM_SCHEMA: list[ParamField] = [
 NODE_SPEC = NodeSpec(
     description=(
         "Uses potions on players below health or mana thresholds. "
-        "If refill_potions is enabled and any player has no potion charges remaining, "
+        "If Refill Potions is on and any player has no potion charges remaining, "
         "marks the current location, navigates to Hilda Brewer in the Commons to buy "
         "potions, then recalls back to the mark."
     ),
@@ -104,6 +98,19 @@ NODE_SPEC = NodeSpec(
         ),
     ],
     required_bot_options=[
+        BotOptionSpec(
+            name=OPTION_REFILL,
+            group=GROUP_GENERAL,
+            type="bool",
+            # Null: the author has no opinion, so the app setting answers. On by default,
+            # which is what every bot did while this was a param.
+            default=None,
+            description=(
+                "Whether players who run out of potions go to Hilda Brewer in the Commons to buy "
+                "more, marking where they stood and recalling there afterward. Buying costs gold. "
+                "Off, they keep farming without potions."
+            ),
+        ),
         BotOptionSpec(
             name="Safety Delay",
             group=GROUP_GENERAL,
@@ -157,7 +164,7 @@ async def run(machine, clients: list, params: dict) -> str:
     """
     health_threshold: float = params.get("if_health_below", 0.5)
     mana_threshold: float = params.get("if_mana_below", 0.15)
-    refill: bool = params.get("refill_potions", True)
+    refill = bool(machine.get_option(OPTION_REFILL, True))
     mark_zone: str = params.get("mark_zone", "") or ""
 
     machine.log(

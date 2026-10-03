@@ -483,7 +483,6 @@
       "params": {
         "if_health_below": 0.5,
         "if_mana_below": 0.15,
-        "refill_potions": true,
         "mark_zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple"
       }
     },

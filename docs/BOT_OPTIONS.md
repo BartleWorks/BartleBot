@@ -23,7 +23,7 @@ in this graph*:
 | the value describes | where it goes |
 |---|---|
 | this node's place in this dungeon (a zone name, an XYZ, which player interacts) | a param |
-| the user, or their machine (Safety Delay, what they will let quicksell sell, whose wizard to port to) | a bot option, declared `default=None`, with an entry in `bot_options.APP_SETTING_KEYS` |
+| the user, or their machine (Safety Delay, what they will let quicksell sell, whether to spend gold on potions, whose wizard to port to) | a bot option, declared `default=None`, with an entry in `bot_options.APP_SETTING_KEYS` |
 | this dungeon, but bot-wide (quicksell's keep list) | a bot option with a real default |
 
 A bot option also reaches **every** node in the bot at once. That is not a detail:
@@ -198,7 +198,7 @@ Option Values and Options draw a bot's options as four folding cards, always in 
 | **This dungeon** | the author's own options, Challenge Mode | expanded |
 | **Team** | Player Realms, Team-Up and Minimum Team Size, Level Scaling Players, Friend Name | expanded |
 | **Quicksell** | Enable Quicksell as the header switch; the sell flags; the keep list | collapsed |
-| **General** | Safety Delay, Favorite Realm | collapsed |
+| **General** | Safety Delay, Refill Potions, Favorite Realm | collapsed |
 
 The card is declared once, on the option: `BotOptionSpec.group`. An option no node declares
 can only be about this dungeon, so it goes in *This dungeon*. `BotOptionSpec.heads_group`

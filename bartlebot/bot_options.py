@@ -90,6 +90,8 @@ SAFETY_DELAY_DESCRIPTION = (
 APP_SETTING_KEYS: dict[str, str] = {
     "Safety Delay": "default_safety_delay",
     "Level Scaling Players": "default_level_scaling_players",
+    # Spending gold on potions is the user's call, not the dungeon's.
+    "Refill Potions": "default_refill_potions",
     # Quicksell: what to sell describes the user's tolerance for losing an item,
     # not the dungeon.  The keep list is the one part of it that is authorial.
     "Enable Quicksell": "default_quicksell_enabled",

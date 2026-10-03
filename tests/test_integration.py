@@ -804,6 +804,21 @@ def test_no_bot_carries_a_dead_quicksell_param():
     assert not offenders, f"quicksell states still carrying params: {offenders}"
 
 
+def test_no_bot_carries_a_dead_refill_potions_param():
+    """Refill Potions is a bot option the app setting answers, so a ``refill_potions``
+    param left on a ``handle_potions`` state is never read. Left in place it would look
+    like a choice the bot made, and an older editor saving over a bot would put it back.
+    """
+    offenders = [
+        f"{_rel(path)}:{state.get('id')}"
+        for path in _all_bot_files()
+        for state in _load_raw(path).get("states") or []
+        if state.get("node_type") == "handle_potions" and "refill_potions" in (state.get("params") or {})
+    ]
+
+    assert not offenders, f"handle_potions states still carrying refill_potions: {offenders}"
+
+
 def test_no_bot_declares_a_quicksell_flag_it_does_not_mean_to():
     """A sell flag declared equal to the value it would resolve to anyway says nothing,
     and outranks the user's own app setting while saying it.

@@ -159,7 +159,7 @@ def test_atlantea_groups_as_the_design_says():
         {player_realms.OPTION, OPTION_TEAM_UP, OPTION_MINIMUM_TEAM_SIZE, "Level Scaling Players"},
     )
     assert layout[og.GROUP_QUICKSELL] == (qs.OPTION_ENABLED, {*qs.SELL_FLAG_OPTIONS.values(), qs.OPTION_KEEP_LIST})
-    assert layout[og.GROUP_GENERAL] == (None, {"Safety Delay", OPTION_FAVORITE_REALM})
+    assert layout[og.GROUP_GENERAL] == (None, {"Safety Delay", "Refill Potions", OPTION_FAVORITE_REALM})
 
 
 # ---------------------------------------------------------------------------

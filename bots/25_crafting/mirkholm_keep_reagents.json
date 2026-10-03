@@ -203,7 +203,6 @@
       "params": {
         "if_health_below": 0.5,
         "if_mana_below": 0.15,
-        "refill_potions": true,
         "mark_zone": "Grizzleheim/GH_Wolf"
       },
       "notes": "It's possible to get pulled into combat while collecting Ore from the last two spawn points. Over a long enough run, this can cause health and mana to drop low enough to require potions."

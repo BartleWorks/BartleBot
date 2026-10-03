@@ -257,7 +257,6 @@
       "params": {
         "if_health_below": 0.5,
         "if_mana_below": 0.15,
-        "refill_potions": true,
         "mark_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard"
       }
     },
@@ -598,7 +597,6 @@
       "params": {
         "if_health_below": 0.1,
         "if_mana_below": 0.15,
-        "refill_potions": true,
         "mark_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard"
       }
     }
