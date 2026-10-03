@@ -651,3 +651,49 @@ def test_the_dungeons_first_are_rebuilt_as_dungeons():
     for stem in rft.DUNGEONS_FIRST:
         assert rft.category_of(Path(f"bots/x/{stem}.json"), config) == "dungeon"
     assert rft.category_of(Path("bots/x/test_boss.json"), config) == "boss"
+
+
+def test_a_bail_out_to_the_old_hub_still_relogs(library):
+    """A fight's failure into the hub teleport the way out became is left unrouted, as every failure now is."""
+    old = _dungeon([], [_t("state_7", "state_1"), _t("state_4", "state_1", "FAILURE")])
+    config, report = _rebuild(old, "Dungeon Farmer", library)
+
+    assert not [t for t in config.transitions if t.source == "state_4" and t.when == "FAILURE"]
+    assert report.clean
+
+
+def test_out_either_way_keeps_its_failure_edge(library):
+    """Wisps that go on to the exit whether or not they collect still do, into the recall."""
+    old = _dungeon(
+        _WALK_OUT_STATES,
+        [*_WALK_OUT_TRANSITIONS, _t("state_7", "state_8", "FAILURE")],
+    )
+    config, report = _rebuild(old, "Dungeon Farmer", library)
+    recall = _recall_of(config)
+
+    assert {t.when for t in config.transitions if t.source == "state_7" and t.dest == recall} == {"SUCCESS", "FAILURE"}
+    assert report.clean
+
+
+def test_a_dungeon_that_runs_on_failures_still_finds_its_way_out(library):
+    """A plaque puzzle tries the next plaque on a failure; the door after it is still the way out."""
+    old = _dungeon(
+        [
+            _s("state_8", "interact", "Try the first plaque", zone=ROOM, interact_xyz=_A, reset_xyz=_B),
+            _s("state_9", "interact", "Try the second plaque", zone=ROOM, interact_xyz=_B, reset_xyz=_A),
+            _s(
+                "state_10", "enter_zone", "Leave the Test Halls", from_zone=ROOM, to_zone=ENTRANCE, xyz=_A, reset_xyz=_B
+            ),
+        ],
+        [
+            _t("state_7", "state_8"),
+            _t("state_8", "state_9", "FAILURE"),
+            _t("state_8", "state_10"),
+            _t("state_9", "state_10"),
+            _t("state_10", "state_3"),
+        ],
+    )
+    config, report = _rebuild(old, "Dungeon Farmer", library)
+
+    assert _covered_by(report, _recall_of(config)) == {"state_10"}
+    assert report.clean

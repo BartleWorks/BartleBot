@@ -962,6 +962,8 @@ def _carry_exits(
     for tr in old.config.transitions:
         if tr.source not in piece or tr.dest in piece:
             continue
+        if tr.dest in old.way_out and tr.when in FALLTHROUGH_RETURNS and not _also_succeeds_into(old, tr.source):
+            continue  # a bail-out to the old exit or hub: unrouted, it relogs, as every failure now does
         if tr.dest in mapping:
             dest = mapping[tr.dest]
             if rejoin and tr.when not in FALLTHROUGH_RETURNS and dest in rejoin[1:]:
@@ -976,6 +978,13 @@ def _carry_exits(
                 f"content {tr.source} leaves on {tr.when or 'any result'} through {kind} {tr.dest}, "
                 "which the template replaces"
             )
+
+
+def _also_succeeds_into(old: OldBot, sid: str) -> bool:
+    """Whether ``sid`` goes on to the way out when it works, too: then its failure going there is "out either way"."""
+    return any(
+        t.source == sid and t.dest in old.way_out and t.when not in FALLTHROUGH_RETURNS for t in old.config.transitions
+    )
 
 
 def _is_member(config: BotConfig, sid: str) -> bool:
@@ -1080,10 +1089,24 @@ def _way_out(old: OldBot, sources: dict[str, StateModel]) -> set[str]:
     farm = _farm_zones(old)
     used = {s.id for s in sources.values()}
     forward: dict[str, list[str]] = {}
+    every: dict[str, list[str]] = {}
     for tr in old.config.transitions:
+        every.setdefault(tr.source, []).append(tr.dest)
         if tr.when not in FALLTHROUGH_RETURNS:
             forward.setdefault(tr.source, []).append(tr.dest)
-    reached = _reachable(old.config, old.entry.id) - {old.entry.id}
+
+    def walk(start: str) -> set[str]:
+        # By any edge: some dungeons run on failures (a plaque puzzle tries the next on one).
+        seen, stack = set(), [start]
+        while stack:
+            sid = stack.pop()
+            if sid not in seen:
+                seen.add(sid)
+                if sid != old.entry.id or sid == start:
+                    stack.extend(every.get(sid, []))
+        return seen - {start, old.entry.id}
+
+    reached = walk(old.entry.id)
 
     def leaves(state: StateModel) -> bool:
         params = state.params or {}
@@ -1094,8 +1117,7 @@ def _way_out(old: OldBot, sources: dict[str, StateModel]) -> set[str]:
         return False
 
     def done_farming(sid: str) -> bool:
-        after = _reachable(old.config, sid, stop=old.entry.id) - {sid, old.entry.id}
-        return not any(by_id[a].node_type in FARMING_TYPES for a in after if a in by_id)
+        return not any(by_id[a].node_type in FARMING_TYPES for a in walk(sid) if a in by_id)
 
     out = {sid for sid in reached if sid not in used and leaves(by_id[sid]) and done_farming(sid)}
     if not out:
