@@ -129,6 +129,27 @@ def test_a_bot_made_from_a_draft_is_stopped_by_its_setup_steps_and_nothing_else(
     assert {e[len(setup_steps.ERROR_PREFIX) :] for e in errors} == {s.text for s in node_steps}
 
 
+@pytest.mark.parametrize("template", _TEMPLATES, ids=lambda t: t.folder.name)
+def test_every_template_opens_with_sync_players(template):
+    """Starting and recovering both go through Player Sync, so a fix to it reaches every bot.
+
+    In every released version and the draft. Gauntlet included: it syncs in The Commons,
+    where it also comes back to for potions.
+    """
+    from bartlebot.subgraphs import entry_port_of, linked_regions  # noqa: PLC0415
+
+    sync_players = "45419e29-77a2-4923-b779-a0ab2d948878"
+    for name in [v.file for v in template.index.versions] + [DRAFT_FILE]:
+        config = BotConfig.load(template.folder / name)
+        calls = [r for r in linked_regions(config) if r.source.subgraph_id == sync_players]
+        assert len(calls) == 1, f"{template.name} {name}: {len(calls)} Sync players nodes"
+        region = calls[0]
+        assert entry_port_of(region.source, region.id, config.initial) == "entry_start", f"{template.name} {name}"
+        assert entry_port_of(region.source, region.id, config.recovery_state) == "entry_recover", (
+            f"{template.name} {name}"
+        )
+
+
 @pytest.mark.parametrize("name", ["Boss Farmer", "Spellement Farmer"])
 def test_a_boss_fight_asks_for_a_strategy_of_its_own(name):
     """A boss is the fight a default strategy is wrong for, so its template leaves it exposed."""

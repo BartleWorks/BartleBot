@@ -72,7 +72,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter dungeon",
       "position": {
-        "x": 3080.0,
+        "x": 3520.0,
         "y": 0.0
       },
       "params": {
@@ -87,7 +87,7 @@
       "node_type": "handle_combat",
       "label": "Defeat boss",
       "position": {
-        "x": 3520.0,
+        "x": 3960.0,
         "y": 0.0
       },
       "params": {
@@ -102,7 +102,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3960.0,
+        "x": 4400.0,
         "y": 0.0
       },
       "params": {
@@ -119,13 +119,30 @@
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
-        "x": 4400.0,
+        "x": 4840.0,
         "y": 0.0
       },
       "params": {
         "from_zone": "",
         "to_zone": "",
         "stagger": false
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       }
     }
   ],
@@ -134,16 +151,6 @@
       "trigger": "advance",
       "source": "t_1",
       "dest": "t_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -219,12 +226,42 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": [
     {
       "id": "t_sync_players_1",
-      "label": "Sync players",
+      "label": "Sync players in dungeon entrance zone",
       "members": [
         "t_sync_players_1_state_1",
         "t_sync_players_1_state_2"
@@ -258,7 +295,7 @@
     }
   ],
   "template_meta": {
-    "blurb": "Farms one boss: enters its dungeon, defeats it, exits and repeats, selling and refilling potions between runs.\n\nIf the entrance zone is not in the list, choose the nearest zone that is, and add navigation nodes from there to the entrance. Check what Quicksell keeps before a long run.",
+    "blurb": "Farms one boss: enters its dungeon, defeats the boss, exits, and repeats.\n\nIf the entrance zone isn't in the zone list, choose the nearest zone that is, and add navigation nodes from there to the entrance. Set the Quicksell keep list from the boss's drops.",
     "setup": [
       {
         "text": "Choose the zone the dungeon entrance is in",
@@ -291,7 +328,7 @@
         ]
       },
       {
-        "text": "Enter the boss's enemy ID, copied from the Players tab",
+        "text": "Record the boss's enemy ID",
         "targets": [
           {
             "state": "t_4",

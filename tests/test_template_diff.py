@@ -454,17 +454,21 @@ def _boss() -> tuple[BotConfig, BotConfig]:
     return version, bot
 
 
+def _sync_label(config: BotConfig) -> str:
+    return next(r for r in config.regions if r.id == "t_sync_players_1").label
+
+
 def test_an_edge_out_of_a_subgraph_node_is_compared_by_port_and_applied_to_its_members():
     v1, mine = _boss()
     theirs = v1.model_copy(deep=True)
-    leaving = next(t for t in theirs.transitions if t.source == "t_sync_players_1_state_3" and t.dest == "t_1")
+    leaving = next(t for t in theirs.transitions if t.source.startswith("t_sync_players_1_") and t.dest == "t_1")
     leaving.dest = "t_2"
 
     (change,) = diff(TemplateUpdate(v1.id, "Boss Farmer", 1, v1, [Release(2, "Rewire", theirs)]), mine)
 
     assert change.units[0].key == ("slot", Port("t_sync_players_1", "exit_1"), None, ())
-    assert change.title == "Sync players · on port exit_1"
-    assert ("t_sync_players_1_state_3", "SUCCESS", "t_2") in _edges(apply(mine, change))
+    assert change.title == f"{_sync_label(v1)} · on port exit_1"
+    assert (leaving.source, "SUCCESS", "t_2") in _edges(apply(mine, change))
 
 
 def test_a_role_on_a_subgraph_node_is_compared_by_port():
@@ -728,7 +732,7 @@ def test_applying_a_removed_subgraph_node_takes_its_members_and_their_edges():
     removal = next(c for c in diff(update, mine) if "t_sync_players_1" in c.removed)
     after = apply(mine, removal)
 
-    assert removal.status is Status.OFFERED and removal.title == "Remove 'Sync players'"
+    assert removal.status is Status.OFFERED and removal.title == f"Remove '{_sync_label(v1)}'"
     assert not _members(after) and all(r.source is None for r in after.regions)
     ids = {s.id for s in after.states}
     assert all(t.source in ids and t.dest in ids for t in after.transitions)
@@ -760,7 +764,7 @@ def test_applying_an_added_subgraph_node_brings_its_members_and_wires_its_ports(
     addition = next(c for c in diff(update, mine) if "t_sync_players_1" in c.added)
     after = apply(mine, addition)
 
-    assert addition.status is Status.OFFERED and addition.title == "Add 'Sync players'"
+    assert addition.status is Status.OFFERED and addition.title == f"Add '{_sync_label(v2)}'"
     assert _members(after) == _members(v2)
     region = next(r for r in after.regions if r.id == "t_sync_players_1")
     assert region.source == next(r for r in v2.regions if r.id == "t_sync_players_1").source

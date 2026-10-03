@@ -4,9 +4,9 @@
     {
       "version": 1,
       "file": "v1.json",
-      "sha256": "e4b6e47f1f3f4b1b5e0714705ea5d5bb6ee32374d6b4606c06ae25d6bf76e66e",
+      "sha256": "0d050a6a2344df5c51b202c08e5807fc42267d48afacac07808cd86e42576882",
       "note": "First release",
-      "released": "2026-10-01"
+      "released": "2026-10-03"
     }
   ]
 }

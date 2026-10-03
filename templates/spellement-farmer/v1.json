@@ -3,8 +3,8 @@
   "name": "Spellement Farmer",
   "version": "1.0",
   "clients": "all",
-  "initial": "t_6",
-  "recovery_state": "t_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [],
   "authors": "BartleBot",
   "tags": [
@@ -14,96 +14,6 @@
   ],
   "options": [],
   "states": [
-    {
-      "id": "t_1",
-      "node_type": "relog",
-      "label": "Relog all players",
-      "position": {
-        "x": -880.0,
-        "y": 0.0
-      },
-      "params": {
-        "relog_clients": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "t_2",
-      "node_type": "check_level_scaling",
-      "label": "Check level scaling",
-      "position": {
-        "x": -440.0,
-        "y": 0.0
-      },
-      "params": {}
-    },
-    {
-      "id": "t_3",
-      "node_type": "sync_in_zone",
-      "label": "Go to level scaling dungeon entrance zone",
-      "position": {
-        "x": 0.0,
-        "y": 90.0
-      },
-      "params": {
-        "zone": ""
-      }
-    },
-    {
-      "id": "t_4",
-      "node_type": "enter_dungeon",
-      "label": "Enter level scaling dungeon",
-      "position": {
-        "x": 440.0,
-        "y": 90.0
-      },
-      "params": {
-        "from_zone": "",
-        "dungeon_zone": "",
-        "offers_challenge_mode": false,
-        "offers_team_up": false
-      }
-    },
-    {
-      "id": "t_5",
-      "node_type": "apply_level_scaling",
-      "label": "Apply level scaling",
-      "position": {
-        "x": 880.0,
-        "y": 90.0
-      },
-      "params": {
-        "zone": ""
-      }
-    },
-    {
-      "id": "t_6",
-      "node_type": "sync_in_zone",
-      "label": "Go to dungeon entrance zone",
-      "position": {
-        "x": 1320.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": ""
-      }
-    },
-    {
-      "id": "t_7",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
-      "position": {
-        "x": 1760.0,
-        "y": 0.0
-      },
-      "params": {
-        "use_favorite_realm": true
-      }
-    },
     {
       "id": "t_8",
       "node_type": "handle_potions",
@@ -134,7 +44,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter dungeon",
       "position": {
-        "x": 3080.0,
+        "x": 3520.0,
         "y": 0.0
       },
       "params": {
@@ -149,13 +59,13 @@
       "node_type": "handle_combat",
       "label": "Defeat boss",
       "position": {
-        "x": 3520.0,
+        "x": 3960.0,
         "y": 0.0
       },
       "params": {
         "enemy": "",
         "wiki_page": "",
-        "use_default_strategy": true,
+        "use_default_strategy": false,
         "max_duration": 0.0
       }
     },
@@ -164,7 +74,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3960.0,
+        "x": 4400.0,
         "y": 0.0
       },
       "params": {
@@ -181,7 +91,7 @@
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
-        "x": 4400.0,
+        "x": 4840.0,
         "y": 0.0
       },
       "params": {
@@ -189,31 +99,69 @@
         "to_zone": "",
         "stagger": false
       }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1320.0004001498485,
+        "y": 0.0004953973327941341
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 1760.0004001498485,
+        "y": 90.0004953973328
+      },
+      "params": {
+        "zone": ""
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "t_1",
-      "dest": "t_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_1",
-      "dest": "t_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "t_12",
       "dest": "t_13",
       "when": "SUCCESS",
@@ -227,86 +175,6 @@
       "source": "t_12",
       "dest": "t_13",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_13",
-      "dest": "t_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_3",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_2",
-      "dest": "t_6",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_3",
-      "dest": "t_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_4",
-      "dest": "t_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_5",
-      "dest": "t_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_6",
-      "dest": "t_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_7",
-      "dest": "t_8",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -316,16 +184,6 @@
       "trigger": "advance",
       "source": "t_8",
       "dest": "t_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "t_9",
-      "dest": "t_10",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -351,10 +209,185 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
-  "regions": [],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {},
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1320.0004001498485,
+          "y": 0.0004953973327941341
+        }
+      }
+    }
+  ],
   "template_meta": {
-    "blurb": "Template bot file for a spellement farming bot. To use this template to create your own bot, follow these steps:"
+    "blurb": "Farms a boss for spellements while level-scaled: applies level scaling to selected players when needed, enters the boss's dungeon, defeats the boss, exits, and repeats.\n\nIf the entrance zone isn't in the zone list, choose the nearest zone that is, and add navigation nodes from there to the entrance. Set the Quicksell keep list from the boss's drops. The Scales of Knowledge used for level scaling default to the ones in the final dungeon of the world that the boss is in. Choose one by hand for level bands or worlds with multiple options.",
+    "setup": [
+      {
+        "text": "Choose the zone the boss's dungeon entrance is in",
+        "targets": [
+          {
+            "region": "t_sync_players_1",
+            "input": "state_2.zone"
+          }
+        ]
+      },
+      {
+        "text": "Record entering the boss's dungeon",
+        "targets": [
+          {
+            "state": "t_10",
+            "param": "from_zone"
+          },
+          {
+            "state": "t_10",
+            "param": "dungeon_zone"
+          },
+          {
+            "state": "t_10",
+            "param": "sigil_xyz"
+          },
+          {
+            "state": "t_10",
+            "param": "reset_xyz"
+          }
+        ]
+      },
+      {
+        "text": "Record the boss's enemy ID",
+        "targets": [
+          {
+            "state": "t_11",
+            "param": "enemy"
+          }
+        ]
+      },
+      {
+        "text": "Import the boss's drops from its wiki page",
+        "targets": [
+          {
+            "field": "drops"
+          }
+        ]
+      },
+      {
+        "text": "Record exiting the dungeon",
+        "targets": [
+          {
+            "state": "t_13",
+            "param": "from_zone"
+          },
+          {
+            "state": "t_13",
+            "param": "to_zone"
+          },
+          {
+            "state": "t_13",
+            "param": "xyz"
+          },
+          {
+            "state": "t_13",
+            "param": "reset_xyz"
+          }
+        ]
+      }
+    ]
   }
 }

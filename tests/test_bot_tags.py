@@ -141,8 +141,12 @@ def test_every_implies_tags_when_names_a_bool_param_on_its_own_node():
 
 
 def _library_bots() -> list[Path]:
-    """Every library bot. ``test_*`` files are scratch; templates live outside ``bots/``."""
-    return [p for p in sorted((project_root() / "bots").rglob("*.json")) if not p.name.startswith("test_")]
+    """Every library bot, and every template draft, since each bot made from one starts with its tags.
+
+    ``test_*`` files are scratch.
+    """
+    bots = [p for p in sorted((project_root() / "bots").rglob("*.json")) if not p.name.startswith("test_")]
+    return bots + sorted((project_root() / "templates").glob("*/draft.json"))
 
 
 def test_every_library_bot_carries_its_suggested_tags():

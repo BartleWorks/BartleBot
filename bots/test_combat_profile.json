@@ -9,6 +9,7 @@
   "drops": [],
   "authors": "BartleBot",
   "tags": [
+    "Gold",
     "Mobs"
   ],
   "options": [],
@@ -18,7 +19,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Lost Souls",
       "position": {
-        "x": 880.0,
+        "x": 440.0,
         "y": 0.0
       },
       "params": {
@@ -33,13 +34,13 @@
     {
       "id": "state_4",
       "node_type": "handle_combat",
-      "label": "Defeat first Lost Soul",
+      "label": "Defeat Lost Soul(s)",
       "position": {
         "x": 1320.0,
         "y": 0.0
       },
       "params": {
-        "enemy": "",
+        "enemy": "Ghost-Blue-L01",
         "wiki_page": "",
         "use_default_strategy": false,
         "max_duration": 0.0
@@ -48,7 +49,7 @@
     {
       "id": "state_6",
       "node_type": "teleport_to_coordinates",
-      "label": "Teleport to Lost Souls",
+      "label": "Teleport to Skeletal Pirates",
       "position": {
         "x": 1760.0,
         "y": 0.0
@@ -56,22 +57,22 @@
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Unicorn",
         "xyz": {
-          "x": -6704.81,
-          "y": 6382.21,
-          "z": 29.85
+          "x": -15931.83,
+          "y": 13587.21,
+          "z": 60.02
         }
       }
     },
     {
       "id": "state_7",
       "node_type": "handle_combat",
-      "label": "Defeat second Lost Soul",
+      "label": "Defeat Skeletal Pirate(s)",
       "position": {
         "x": 2640.0,
         "y": 0.0
       },
       "params": {
-        "enemy": "",
+        "enemy": "Skeleton-Pirate-L01",
         "wiki_page": "",
         "use_default_strategy": false,
         "max_duration": 0.0
@@ -94,8 +95,8 @@
       "node_type": "relog",
       "label": "Relog",
       "position": {
-        "x": 440.0001412688031,
-        "y": 3.662524525793742e-05
+        "x": 0.00014126880307685497,
+        "y": 3.662524525527289e-05
       },
       "params": {
         "relog_clients": [
@@ -109,9 +110,9 @@
     {
       "id": "sync_players_1_state_2",
       "node_type": "sync_in_zone",
-      "label": "Go to zone",
+      "label": "Sync in zone",
       "position": {
-        "x": 880.0001412688031,
+        "x": 440.0001412688031,
         "y": 90.00003662524526
       },
       "params": {
@@ -119,15 +120,15 @@
       }
     },
     {
-      "id": "sync_players_1_state_3",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
+      "id": "state_9",
+      "node_type": "sleep",
+      "label": "Sleep",
       "position": {
-        "x": 1320.000141268803,
-        "y": 3.662524525793742e-05
+        "x": 880.0,
+        "y": 0.0
       },
       "params": {
-        "use_favorite_realm": true
+        "duration": 30.0
       }
     }
   ],
@@ -135,7 +136,7 @@
     {
       "trigger": "advance",
       "source": "state_3",
-      "dest": "state_4",
+      "dest": "state_9",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -184,6 +185,16 @@
     },
     {
       "trigger": "advance",
+      "source": "state_9",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "sync_players_1_state_1",
       "dest": "sync_players_1_state_2",
       "when": "SUCCESS",
@@ -195,16 +206,6 @@
     {
       "trigger": "advance",
       "source": "sync_players_1_state_2",
-      "dest": "sync_players_1_state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_3",
       "dest": "state_3",
       "when": "SUCCESS",
       "flags": [],
@@ -219,13 +220,12 @@
       "label": "Sync players",
       "members": [
         "sync_players_1_state_1",
-        "sync_players_1_state_2",
-        "sync_players_1_state_3"
+        "sync_players_1_state_2"
       ],
       "color": 1,
       "source": {
         "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
-        "version": 3,
+        "version": 4,
         "inputs": {
           "state_2.zone": "WizardCity/WC_Streets/WC_Unicorn"
         },
@@ -239,14 +239,14 @@
           "exit_1": {
             "from": [
               [
-                "state_3",
+                "state_2",
                 "SUCCESS"
               ]
             ]
           }
         },
         "anchor": {
-          "x": 440.0001412688031,
+          "x": 0.00014126880307685497,
           "y": 3.662524525527289e-05
         }
       }
