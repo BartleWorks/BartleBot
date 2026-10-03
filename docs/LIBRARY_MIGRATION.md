@@ -123,15 +123,15 @@ visible per bot, not buried in a diff.
 
 ## Rebuild status
 
-**43 of 85 bots are rebuilt** (2026-10-03), each by `tools/rebuild_from_template.py rebuild
---all --write`, which writes a bot only when every old node is carried or replaced, every
-node fill-in is filled, and the result is sound. The other 42 are unchanged and still run as
-they did; `status` lists them.
+**56 of 85 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
+--write`, which writes a bot only when every old node is carried or replaced, every node
+fill-in is filled, and the result is sound. The other 29 are unchanged and still run as they
+did; `status` lists them.
 
 | template | rebuilt |
 |---|---|
 | Boss Farmer (23) | `achaelos`, `advisor_fancy_fries`, `alicane_swiftarrow`, `bellows`, `crash_the_bandit_coot`, `graveyard`, `guillermo_shatterer`, `harvest_lord`, `lord_bramble`, `lord_graustark`, `lord_nightshade`, `mongu_refuge`, `mr_cane`, `mr_stone`, `oakheart`, `praetor_mako`, `prince_gobblestone`, `scion_of_the_old_one`, `sergeant_skullsplitter`, `sister_sanderson`, `sprockets`, `taking_tree`, `vigilant_jarilo` |
-| Dungeon Farmer (6) | `barkingham_palace_main_hall`, `five_boxes_avalon`, `heretical_academy`, `katzensteins_lab`, `spike_the_crusher`, `trial_of_the_spheres` |
+| Dungeon Farmer (19) | `atlantea`, `barkingham_palace_main_hall`, `barkingham_palace_rooftop`, `barkingham_palace_state_wing`, `castle_darkmoor`, `crimson_fields`, `five_boxes_avalon`, `heretical_academy`, `katzensteins_lab`, `king_detritus`, `mirror_lake`, `mt_olympus`, `secret_tunnel`, `spike_the_crusher`, `spiral_cup_portal_of_peril`, `throne_room_of_fire`, `tree_of_life`, `trial_of_the_spheres`, `waterworks` |
 | Spellement Farmer (5) | `copy_qhat`, `do_daga`, `eerkala`, `hall_of_heroes`, `harlequin_knight` |
 | Reagent Collector (6) | `mirkholm_keep_reagents`, `nightside_flax`, `selenopolis_parchment`, `the_necropolis_deep_mushroom`, `the_wild_deep_mushroom`, `the_zocalo_red_mandrake` |
 | Mob Farmer (3) | `fortee_thieves`, `monkey_spiders`, `valerik_brightsword` |
@@ -143,23 +143,36 @@ rebuilt reagent bots already declared it.
 `crash_the_bandit_coot`, `eerkala` and `heretical_academy` have no drops, so their drops step
 stays open; that blocks nothing.
 
-### Why 42 are not rebuilt
+The six bots first rebuilt on Dungeon Farmer were rebuilt again from their files before
+`3842b9f` once it recalled out (see *Dungeon Farmer leaves by recall*); each differs from the
+first rebuild only at its exit. `mt_olympus` lost its mark inside Mount Olympus, which would
+have sent the recall back in, and keeps the quicksell it ran just before leaving, so it sells
+twice; the second finds nothing. `atlantea` and `mt_olympus` no longer offer Team-Up, as
+Dungeon Farmer does not.
+
+### Why 29 are not rebuilt
 
 A bot can be in several rows; each row is a reason the tool refuses it.
 
 | reason | bots | what it needs |
 |---|---|---|
-| **No exit.** The bot leaves its dungeon by teleporting to the hub and walks back in; every template exits by a zone change it can record. | `atlantea`, `barkingham_palace_rooftop`, `barkingham_palace_state_wing`, `big_salgio`, `castle_darkmoor`, `crimson_fields`, `cronus`, `gladiator_dimachaerus`, `house_of_scales`, `ironworks`, `jade_oni`, `king_detritus`, `krokopatra`, `mirror_lake`, `mt_olympus`, `oyotomi_the_defiler`, `prince_viggor`, `pyramid_of_mother_moon_tartarus_workaround`, `queen_calypso`, `sand_squid_tentacles`, `spiral_cup_portal_of_peril`, `the_great_spyre`, `throne_room_of_fire`, `tree_of_life`, `waterworks`, `youkai` | the exit recorded in game, or a decision that some keep teleporting out |
-| **A blank fill-in**, which would stop the bot running | `foulgaze`, `hierophant_of_destruction`, `jabberwock` (enemy); `mirkholm_keep_ore` (spawn 1's scan point) | recording in game |
-| **Content only navigation reached**: a puzzle or teleport on the trip that Sync players would skip | `biti_nirini`, `crab_alley_stone_block`, `spiral_cup_gauntlet`, and seven of the no-exit bots | a decision per bot: the trip may need its own steps after Sync players |
-| **Content that leaves through navigation**: a branch that ends with a hub teleport or a ride | `aeriel_shores_aethyr_burst`, `aeriel_shores_silver_chests`, `grand_tourney_arena_gauntlet`, `hidden_temple_gauntlet`, `spiral_cup_gauntlet`, and twelve of the no-exit bots | the same decision as no exit |
-| **Content hanging off several template nodes** | `secret_tunnel`, and four no-exit bots | rebuilding by hand |
+| **No exit, in a single-boss farm.** Boss and Spellement Farmer walk out; these leave by the hub button (their entrance is the hub), by a teleporter back to the entrance, or have no door recorded. | `big_salgio`, `cronus`, `gladiator_dimachaerus`, `sand_squid_tentacles` (hub); `krokopatra`, `pyramid_of_mother_moon_tartarus_workaround` (teleporter); `prince_viggor`, `youkai` (no door) | a decision, deferred: see *Dungeon Farmer leaves by recall* |
+| **The fight restarts in place**: the boss is fought again without leaving its zone | `jade_oni`, `queen_calypso`, `oyotomi_the_defiler` (open world, not a dungeon) | handled as exceptions, outside the templates |
+| **A blank fill-in**, which would stop the bot running | `foulgaze`, `hierophant_of_destruction`, `jabberwock` (enemy); `mirkholm_keep_ore` (spawn 1's scan point), and `gladiator_dimachaerus`, `sand_squid_tentacles` | recording in game |
+| **Content only navigation reached**: a puzzle or teleport on the trip that Sync players would skip | `barkingham_palace_ransacked_throne_room`, `biti_nirini`, `crab_alley_stone_block`, `house_of_scales`, `the_great_spyre`, and four of the no-exit bots | a decision per bot: the trip may need its own steps after Sync players |
+| **Content that leaves through navigation**: a branch that ends with a hub teleport or a ride | `aeriel_shores_aethyr_burst`, `aeriel_shores_silver_chests`, `grand_tourney_arena_gauntlet`, `hidden_temple_gauntlet` | a decision per bot |
+| **A recall of the bot's own inside the dungeon**: Dungeon Farmer's exit recalls to the latest mark | `ironworks` (two recalls to a mark in the station) | its in-dungeon trips without a mark, or by hand |
+| **A template node no run reaches** | `spiral_cup_gauntlet` | rebuilding by hand |
 | **A reagent dungeon entered on the way in**: Sync players would gather in the entrance hall and collect before going in | `scrap_iron_collector`, `the_portico_pearl` | Reagent Collector with an entry, or these two by hand |
 | **Challenge Mode potions logic**: a flag-guarded skip that runs backwards through the template's potions, quicksell and wisps | `sisyphus`, `barkingham_palace_ransacked_throne_room` | a decision on Challenge Mode potions |
 
-**The no-exit row corrects this worksheet.** The first measurement took the walk back to a
-dungeon's entrance for its exit, so it put most of these in tier A or B. 26 bots have no exit
-at all, and that, not node count, is what keeps most of them from a drop-in rebuild.
+`foulgaze`, `hierophant_of_destruction` and `jabberwock` are being recorded in game; with
+their enemies named they rebuild clean.
+
+**The no-exit row corrected this worksheet, and the recall answered most of it.** The first
+measurement took the walk back to a dungeon's entrance for its exit, so it put most of the 26
+bots with no exit in tier A or B. Dungeon Farmer now recalls out, so no dungeon bot needs an
+exit recorded, and the eight left are single-boss farms.
 
 ## Settled for the rewrite (2026-10-03)
 
@@ -190,6 +203,47 @@ at all, and that, not node count, is what keeps most of them from a drop-in rebu
   the Sync players zone and every spawn's zone together, so in these two the Sync players zone
   is the entrance and the spawns' zones are the dungeon.
 
+### Dungeon Farmer leaves by recall (2026-10-04)
+
+Dungeon Farmer marks the entrance right after Sync players ("Mark the entrance", at the
+sigil's Reset XYZ) and leaves the dungeon by recalling to it ("Recall to the entrance"), in
+place of the walk-out exit it had. A dungeon's way out is often no door at all: 26 bots left
+by the hub button, a teleporter that appears after the last boss, or a Sync in zone back, and
+none of those is a zone change the template's exit could record. A recall covers all of
+them in one loading screen, lands just outside the sigil, and can skip the closing cutscene,
+which is usually welcome: drops are granted the moment the last boss falls.
+
+- **The mark runs once per Sync players**, at the start and after each recovery, not every
+  loop. A recall does not use a mark up, and marking has no cooldown of its own: the timer
+  under the Recall button is the cooldown the hub button, HOME and recall share.
+- **Every mark is remembered for the run** (`mark_location.MARKS_KEY`), written by
+  `mark_client` so `handle_level_scaling`'s marks count. `mark_location` leaves a player
+  already marked on its spot alone, and the recall names no spot of its own: with its zone
+  and XYZ blank it checks each player against the mark it set. `handle_potions` marks where
+  the players stand, the entrance, so its refill trip recalls back there too.
+- **A mark of the bot's own inside the dungeon is dropped** by the rebuild, since the recall
+  goes to the latest mark; a recall of its own partway through is refused (`ironworks`).
+- **Boss and Spellement Farmer keep their walk-out exits.** A single-room farm loops often,
+  and a recall there spends mana every loop where the door costs nothing; recalling past a
+  teleporter out of a whole dungeon is a much smaller missed optimization. Their eight bots
+  with no door wait for a decision of their own.
+- **`atlantea`, `mt_olympus` and `the_great_spyre` are dungeons first.** Each drops
+  spellements but is farmed as a dungeon, never as a spellement farm (`atlantea` is about
+  five times slower for spellements than `sisyphus`, a single boss). They are rebuilt from
+  Dungeon Farmer (`DUNGEONS_FIRST` in the tool), each with a `handle_level_scaling` of its
+  own straight after the entry, where its Scales are.
+- **`jade_oni`, `queen_calypso` and `oyotomi_the_defiler` are exceptions.** Their boss is
+  fought again without leaving the zone, which no template's loop does; they are handled as
+  the edge cases they are.
+
+Dungeon Farmer v1 was re-cut from the draft, as in `f6fc0f8`; no user had a bot from it.
+
+Rejected, in the order they were weighed: a recall in every template (it spends mana every
+loop in the single-room farms that make up most of the library); an Exit dungeon node that
+takes a door, a teleporter, the hub button or a recall (a new param type and Record flow for
+what a recall already covers); and no exit at all, with the loop returning through a Sync in
+zone (slower, and a missing exit goes unnoticed).
+
 ### Level scaling goes after entry where the Scales are inside
 
 Spellement Farmer is unchanged: it scales before `enter_dungeon`. A bot that farms the Scales'
@@ -199,7 +253,9 @@ out and entering a second time. That is 10 of the 16 spellement bots (`krokopatr
 `oyotomi_the_defiler`, `the_great_spyre`, `atlantea`, `gladiator_dimachaerus`, `mt_olympus`,
 `sand_squid_tentacles`, `hall_of_heroes`, `barkingham_palace_ransacked_throne_room`), and most of
 a full library. The rebuild tool decides it from the Scales table: the bot's farm dungeon is the
-Scales' own dungeon.
+Scales' own dungeon. Three of the ten, `the_great_spyre`, `atlantea` and `mt_olympus`, are now
+dungeons first on Dungeon Farmer, which has no level scaling node; each scales in place all the
+same, through a `handle_level_scaling` of its own after the entry.
 
 It costs little against template updates. The move changes four edge slots of template-owned
 nodes: Sync in zone and the exit each go on to Handle potions, Enter dungeon goes to Handle level
@@ -226,7 +282,11 @@ None of these can be done from the files.
 - **Five template fights have no enemy**: `foulgaze`, `hierophant_of_destruction`,
   `jabberwock`, `gladiator_dimachaerus` and `sand_squid_tentacles`. Boss, Spellement and Mob
   Farmer make the enemy a fill-in, so each needs its enemy ID recorded before the bot can run.
-- **26 bots have no exit** to record from the files (see *Rebuild status*).
+- **Eight single-boss farms have no exit** Boss or Spellement Farmer can record (see
+  *Rebuild status*); two of them, `prince_viggor` and `youkai`, may have a door to record.
+- **`sisyphus` needs level scaling before 1.0.0.** It is farmed for spellements in Challenge
+  Mode, which scales its players itself, so it has no level scaling node; a user who does not
+  play Challenge Mode needs one.
 - **`mirkholm_keep_ore`'s spawn has no scan point**, which Reagent Collector asks for.
 - **Seven exposed fights have no enemy** (see above).
 - **Every rewritten bot needs a run** before it counts as done.
@@ -343,9 +403,9 @@ content and survives.
 | `check_zone` | 42 | 0 | **kept for now**: every use is an opening or recovery hub that Sync players replaces |
 | `check_if_dropped` | 0 | 0 | **removed**: never adopted; no template has a "farm until it drops" loop |
 | `interact_menu`, `click_path` | 3 each, one bot | same | keep (see *Decisions taken*) |
-| `mark_location`, `teleport_to_marked_location` | 6 and 5 bots | 4 bots, maybe fewer | keep: some uses are Scales detours, the rest are content |
+| `mark_location`, `teleport_to_marked_location` | 6 and 5 bots | every Dungeon Farmer bot | keep: Dungeon Farmer marks the entrance and recalls out |
 | `teleport_to_friend` | 4 | Gauntlet Farmer | keep |
-| `teleport_to_world_hub` | 63 bots | 3 bots | keep: a mid-route hop in `house_of_scales`, `aeriel_shores_aethyr_burst` and `spiral_cup_portal_of_peril`, and a step zone navigation runs |
+| `teleport_to_world_hub` | 63 bots | 2 bots | keep: a mid-route hop in `house_of_scales` and `aeriel_shores_aethyr_burst`, and a step zone navigation runs. `spiral_cup_portal_of_peril`'s was its way out, and is the recall now |
 | `enter_zone_via_object` | 19 bots | 9 bots | keep: in-dungeon teleporters and skips |
 
 **`apply_level_scaling` no longer holds anything else up.** `tools/scales_table.py add` used to
