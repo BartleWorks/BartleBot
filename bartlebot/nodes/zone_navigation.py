@@ -25,9 +25,10 @@ travels and the rest port to it on arrival. That also keeps every object to one 
 docs/ZONE_NAVIGATION.md, "Running a route with several clients".
 
 Arriving in one zone is not arriving on one realm (#133). A Together bot's players end up
-with one of them -- the leader, from the largest group that already sees itself -- on one
-realm and in one area: the leader hops to the realm it was asked for, everyone it does not
-see ports to it, and the trip ends with a check by sight (#130). A Separate bot's players
+with one of them -- the leader: one already there, else one from the largest group that
+already sees itself -- on one realm and in one area: the leader hops to the realm it was
+asked for, everyone it does not see ports to it, and the trip ends with a check by sight
+(#130). A Separate bot's players
 all travel, and nobody ports or hops (#132).
 """
 
@@ -359,18 +360,23 @@ class _Trip:
         return await self.solo(leader)
 
     def choose_leader(self, zones: list[str], ports: port_map.PortMap, check: sightings.Sightings):
-        """The client in the largest group that already sees itself, then the one the most others
-        can port to, then the one with the cheapest route, then player order.
+        """A client already there that others can port to, then the client in the largest group
+        that already sees itself, then the one the most others can port to, then the one with the
+        cheapest route, then player order.
 
-        The largest group first because everyone the leader does not see has to move; the rest is
-        choose_navigator's old ranking, for who can reach the target and be reached.
+        One already there first because a port is one loading screen for any number of clients,
+        while a leader that travels costs a whole route and still has the others port to it --
+        including the one that was already there. The largest group next because everyone the
+        leader does not see has to move; the rest is choose_navigator's old ranking, for who can
+        reach the target and be reached.
         """
         best = None
         for index, (client, zone) in enumerate(zip(self.clients, zones)):
             route = [] if self.arrived(zone) else self.plan(zone, 1)
             if route is None:
                 continue
-            key = (-len(check.group_of(index)), -len(ports.reach(client, self.clients)), route_cost(route), index)
+            reach = ports.reach(client, self.clients)
+            key = (not (route == [] and reach), -len(check.group_of(index)), -len(reach), route_cost(route), index)
             if best is None or key < best[0]:
                 best = (key, client)
         return None if best is None else best[1]
