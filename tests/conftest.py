@@ -227,10 +227,6 @@ class FakeMachine:
     def on_drop(self, item: str, qty: int, client_index: int = 0) -> None:
         self.drops.append((item, qty, client_index))
 
-    def has_drop(self, item: str, client_index: int) -> bool:
-        key = item.strip().lower()
-        return any(client_index == ci and name.strip().lower() == key for name, _qty, ci in self.drops)
-
     def chat_baseline(self, client) -> str | None:
         """Mirror BotMachine: None means never seeded, "" is a real empty baseline."""
         return self.chat_baselines.get(client)

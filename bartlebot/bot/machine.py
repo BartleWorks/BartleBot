@@ -84,7 +84,6 @@ class BotMachine:
         self._stop_grace_period = stop_grace_period
         self._current_node_task: asyncio.Task | None = None
         self.drops: deque[tuple[str, int, int]] = deque(maxlen=10_000)  # (item, quantity, client_index)
-        self._drops_seen: set[tuple[int, str]] = set()  # (client_index, item_lower) — never evicted, used by has_drop()
         # Per-client chat-log baseline that drop detection diffs against. Keyed by the
         # client object rather than its slot: ClientManager.swap_clients reorders slots
         # mid-run, and a baseline describes what a particular game window has already
@@ -280,20 +279,11 @@ class BotMachine:
         if m:
             item, quantity = m.group(2), quantity * int(m.group(1))
         self.drops.append((item, quantity, client_index))
-        self._drops_seen.add((client_index, item.strip().lower()))
         if self._on_drop:
             try:
                 self._on_drop(item, quantity, client_index)
             except Exception:
                 logger.exception("on_drop callback raised for item=%r qty=%d", item, quantity)
-
-    def has_drop(self, item: str, client_index: int) -> bool:
-        """Return True if *item* was ever dropped by *client_index* in this run.
-
-        Uses a dedicated set so the answer is correct even when self.drops has
-        rotated old entries out of its bounded deque window.
-        """
-        return (client_index, item.strip().lower()) in self._drops_seen
 
     def chat_baseline(self, client) -> str | None:
         """The chat-log text *client*'s drops were last read from, or None if unseeded.
@@ -320,8 +310,8 @@ class BotMachine:
 
         A fight hands its poll here instead of awaiting it: an announcement can take many
         seconds to arrive, and on a fight that dropped nothing the poll waits out its whole
-        window. Nothing downstream needs the answer at once except ``check_if_dropped``,
-        which calls ``wait_for_drop_poll``.
+        window. Nothing downstream needs the answer at once; anything that does waits with
+        ``wait_for_drop_poll``.
 
         Cancelling the old poll loses nothing. It only moves a baseline forward on a hit,
         and records that hit with no await in between, so a cancel lands either before

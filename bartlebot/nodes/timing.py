@@ -148,7 +148,7 @@ COMBAT_DROP_MESSAGE_TIMEOUT = 15.0
 #
 # The poll runs in the background (combat_runner.start_combat_drop_poll), so this
 # window never holds up the next node, even on a fight that drops nothing and waits
-# all of it out; only check_if_dropped waits for it. Nor is it the last line of
+# all of it out. Nor is it the last line of
 # defense: the caller carries its chat baseline between fights, so a message that
 # beats even this window is recorded late by the next fight's poll rather than lost.
 # That makes this value an attribution-latency knob, not a correctness one.

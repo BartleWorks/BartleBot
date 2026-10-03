@@ -308,7 +308,7 @@ content and survives.
 | `apply_level_scaling` | 15 | 0 | **remove from the library**, but see below |
 | `go_to_world` | 6 | 0 | **removed**: each use is now a `sync_in_zone` to the zone its World Gate lands in |
 | `check_zone` | 42 | 0 | **kept for now**: every use is an opening or recovery hub that Sync players replaces |
-| `check_if_dropped` | 0 | 0 | **remove**: never adopted; no template has a "farm until it drops" loop |
+| `check_if_dropped` | 0 | 0 | **removed**: never adopted; no template has a "farm until it drops" loop |
 | `interact_menu`, `click_path` | 3 each, one bot | same | keep (see *Decisions taken*) |
 | `mark_location`, `teleport_to_marked_location` | 6 and 5 bots | 4 bots, maybe fewer | keep: some uses are Scales detours, the rest are content |
 | `teleport_to_friend` | 4 | Gauntlet Farmer | keep |

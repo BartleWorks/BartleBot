@@ -35,8 +35,6 @@ from bartlebot.nodes.utility.apply_level_scaling import NODE_SPEC as _apply_leve
 from bartlebot.nodes.utility.apply_level_scaling import run as apply_level_scaling_run
 from bartlebot.nodes.utility.change_realm import NODE_SPEC as _change_realm_spec
 from bartlebot.nodes.utility.change_realm import run as change_realm_run
-from bartlebot.nodes.utility.check_if_dropped import NODE_SPEC as _check_if_dropped_spec
-from bartlebot.nodes.utility.check_if_dropped import run as check_if_dropped_run
 from bartlebot.nodes.utility.check_level_scaling import NODE_SPEC as _check_level_scaling_spec
 from bartlebot.nodes.utility.check_level_scaling import run as check_level_scaling_run
 from bartlebot.nodes.utility.check_zone import NODE_SPEC as _check_zone_spec
@@ -83,7 +81,6 @@ NODE_REGISTRY: dict = {
     "sleep": sleep_run,
     "wait_for_dialogue": wait_for_dialogue_run,
     "wait_for_health": wait_for_health_run,
-    "check_if_dropped": check_if_dropped_run,
     "check_level_scaling": check_level_scaling_run,
     "check_zone": check_zone_run,
     "handle_level_scaling": handle_level_scaling_run,
@@ -115,7 +112,6 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "sleep": _sleep_spec,
     "wait_for_dialogue": _wait_for_dialogue_spec,
     "wait_for_health": _wait_for_health_spec,
-    "check_if_dropped": _check_if_dropped_spec,
     "check_level_scaling": _check_level_scaling_spec,
     "check_zone": _check_zone_spec,
     "handle_level_scaling": _handle_level_scaling_spec,
@@ -173,7 +169,6 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
         [
             "apply_level_scaling",
             "change_realm",
-            "check_if_dropped",
             "check_level_scaling",
             "check_zone",
             "handle_level_scaling",
