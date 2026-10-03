@@ -1057,11 +1057,13 @@ class AppController(QObject):
             if reply != QMessageBox.StandardButton.Save or not self._save_bot():
                 return False
         errors = self._window.bot_canvas.validation_errors()
-        problems = template_store.release_problems(
-            BotConfig.load(template.draft_path), template, errors, self._subgraph_library
-        )
+        draft = BotConfig.load(template.draft_path)
+        problems = template_store.release_problems(draft, template, errors, self._subgraph_library)
         if problems:
             self._show_release_refused(template.name, problems)
+            return False
+        replaced = template_store.replaced_nodes(draft, template)
+        if replaced and not self._confirm_replaced(template.name, template.latest_version, replaced):
             return False
         number = template_store.next_version(template)
         note, ok = QInputDialog.getText(
@@ -1084,6 +1086,21 @@ class AppController(QObject):
             self._window, "Release", f"Released {template.name} v{entry.version}. New Bot offers it from now on."
         )
         return True
+
+    def _confirm_replaced(self, name: str, latest: int | None, replaced: Sequence[str]) -> bool:
+        """Ask before releasing a draft that replaces nodes rather than keeping them. True to go on."""
+        listed = "\n".join(f"• {line}" for line in replaced)
+        reply = QMessageBox.warning(
+            self._window,
+            "Release",
+            f"This draft of {name} replaces nodes v{latest} has instead of keeping them:\n\n{listed}\n\n"
+            "Bots are updated node by node, by id, so each of these reaches them as a removal and an "
+            "addition, and any edge a user wired to the old node is dropped. Keeping the node and "
+            "changing it would offer them the change instead.\n\nRelease anyway?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        return reply == QMessageBox.StandardButton.Yes
 
     def _show_release_refused(self, name: str, problems: Sequence[str]) -> None:
         listed = "\n".join(f"\u2022 {p}" for p in problems[:12])

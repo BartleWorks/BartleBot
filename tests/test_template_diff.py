@@ -25,7 +25,7 @@ from bartlebot.bot.schema import (
 )
 from bartlebot.bot.strategy_models import BotCombatStrategy, FightRef, StateAssignment
 from bartlebot.new_bot import BotDetails, StartingPoint, create_bot
-from bartlebot.subgraphs import drop_states, nested_regions
+from bartlebot.subgraphs import drop_states, member_id, nested_regions
 from bartlebot.template_diff import MISSING, Port, Release, Status, TemplateUpdate, apply, diff, finish
 from bartlebot.template_store import list_templates, release, save_draft
 
@@ -259,6 +259,46 @@ def test_a_removal_of_a_node_the_user_edited_is_a_conflict():
     _state(mine, "t_4").params["duration"] = 60
 
     assert _by_title(diff(_update(), mine), "Remove 'Old'").status is Status.CONFLICT
+
+
+def test_a_removal_that_drops_edges_the_bot_wired_is_a_conflict_naming_what_to_rewire():
+    """A node the user put after a template node, and back into it: the gauntlet's fight, in small.
+
+    The slot out of 'Old' on failure is empty in both versions, and an edge out of a node
+    the bot added is never a unit, so no unit holds either edge. Removing 'Old' drops them
+    all the same, and calling that clean left the user's node wired to nothing.
+    """
+    mine = _bot(_v1())
+    mine.states.append(_sleep("state_1", "Mine", 3))
+    mine.transitions += [_edge("t_4", "state_1", "FAILURE"), _edge("state_1", "t_4", "FAILURE")]
+
+    change = _by_title(diff(_update(), mine), "Remove 'Old'")
+
+    assert change.status is Status.CONFLICT
+    assert change.detail.endswith("Drops 2 edges you added: 'Mine' will need rewiring")
+    assert "state_1" in change.nodes
+    assert not any("state_1" in (source, dest) for source, _, dest in _edges(apply(mine, change)))
+
+
+def test_a_template_edge_the_bot_rewired_into_a_removed_node_is_its_own_too():
+    mine = _bot(_v1())
+    mine.transitions.append(_edge("t_1", "t_4", "FAILURE"))
+
+    change = _by_title(diff(_update(), mine), "Remove 'Old'")
+
+    assert change.status is Status.CONFLICT
+    assert change.detail.endswith("Drops 1 edge you added: 'Start' will need rewiring")
+
+
+def test_a_removal_that_touches_only_the_templates_own_edges_is_still_offered():
+    mine = _bot(_v1())
+    mine.states.append(_sleep("state_1", "Mine", 3))
+    mine.transitions.append(_edge("t_3", "state_1", "FAILURE"))
+
+    change = _by_title(diff(_update(), mine), "Remove 'Old'")
+
+    assert change.status is Status.OFFERED
+    assert "you added" not in change.detail
 
 
 # ---------------------------------------------------------------------------
@@ -694,6 +734,21 @@ def test_applying_a_removed_subgraph_node_takes_its_members_and_their_edges():
     assert all(t.source in ids and t.dest in ids for t in after.transitions)
     assert after.initial in ids and after.recovery_state in ids
     assert not any("t_sync_players_1" in c.removed for c in diff(update, after)), "not offered again"
+
+
+def test_removing_a_subgraph_node_the_bot_wired_into_is_a_conflict():
+    """An edge into a port lands on a member; it is the bot's own all the same, and its edges inside are not."""
+    v1, mine = _boss()
+    region = next(r for r in mine.regions if r.source is not None)
+    entry = next(p for p in region.source.ports.values() if p.member is not None)
+    mine.states.append(_sleep("state_1", "Mine", 3))
+    mine.transitions.append(_edge("state_1", member_id(region.id, entry.member)))
+    update = TemplateUpdate(v1.id, "Boss Farmer", 1, v1, [Release(2, "No sync", _without_sync(v1))])
+
+    removal = next(c for c in diff(update, mine) if "t_sync_players_1" in c.removed)
+
+    assert removal.status is Status.CONFLICT
+    assert removal.detail.endswith("Drops 1 edge you added: 'Mine' will need rewiring")
 
 
 def test_applying_an_added_subgraph_node_brings_its_members_and_wires_its_ports():

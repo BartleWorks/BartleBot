@@ -22,6 +22,7 @@ from bartlebot.template_store import (
     load_draft,
     load_version,
     release,
+    replaced_nodes,
     retired_ids,
     save_draft,
     used_ids,
@@ -324,6 +325,34 @@ def test_an_id_a_version_retired_never_comes_back(tmp_path):
     with pytest.raises(ReleaseRefused, match="retired: t_2"):
         release("tpl-boss", "Bring it back", root=tmp_path)
     assert _store_state(tmp_path) == before
+
+
+def _kinds(draft: BotConfig, **node_types: str) -> BotConfig:
+    for state in draft.states:
+        state.node_type = node_types.get(state.id, state.node_type)
+    return draft
+
+
+def test_a_draft_that_replaces_a_node_rather_than_keeping_it_is_named(tmp_path):
+    _release(tmp_path, _kinds(_draft("tpl-boss", "Boss Farmer", "t_1", "t_2"), t_2="quicksell"))
+    draft = _kinds(_draft("tpl-boss", "Boss Farmer", "t_1", "t_3"), t_3="quicksell")
+
+    assert replaced_nodes(draft, find_template("tpl-boss", tmp_path)) == ["'quicksell' (t_2) → 'quicksell' (t_3)"]
+
+
+def test_a_node_kept_removed_or_added_is_not_a_replacement(tmp_path):
+    _release(tmp_path, _kinds(_draft("tpl-boss", "Boss Farmer", "t_1", "t_2"), t_2="quicksell"))
+    template = find_template("tpl-boss", tmp_path)
+
+    assert replaced_nodes(_draft("tpl-boss", "Boss Farmer", "t_1", "t_2"), template) == []  # t_2 changed type
+    assert replaced_nodes(_draft("tpl-boss", "Boss Farmer", "t_1"), template) == []
+    assert replaced_nodes(_kinds(_draft("tpl-boss", "Boss Farmer", "t_1", "t_3"), t_3="sleep"), template) == []
+
+
+def test_a_draft_with_nothing_released_replaces_nothing(tmp_path):
+    save_draft(_draft(), tmp_path)
+
+    assert replaced_nodes(_draft(), find_template("tpl-boss", tmp_path)) == []
 
 
 def test_a_draft_under_another_id_or_recording_a_template_is_refused(tmp_path):

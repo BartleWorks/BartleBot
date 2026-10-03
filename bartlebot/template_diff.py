@@ -10,7 +10,9 @@ the *base*). When the template releases a newer one, this module compares three 
 Each is turned into a set of **units**, the smallest things compared: one param, one
 label, one edge slot, one input, one option, one role. A unit the template did not change
 is never shown. One it did change is hidden when the bot already matches, **offered** when
-the user never touched it, and a **conflict** when the user changed it too.
+the user never touched it, and a **conflict** when the user changed it too. A removal is a
+conflict as well when the bot wired edges of its own to what it removes, since applying it
+drops them: the change names the nodes left to rewire.
 
 Units are grouped into **changes**, which is what the user applies or skips. A node added
 together with its params, its label, its own edges and every edge that now points at it
@@ -581,6 +583,56 @@ def _unit_versions(update: TemplateUpdate, base: _Snapshot) -> dict[tuple, int]:
     return last
 
 
+def _home(snap: _Snapshot, state_id: str) -> str:
+    """The node an edge end is drawn on: the state itself, or the subgraph node drawing it."""
+    region = snap.member_of.get(state_id)
+    return region.id if region is not None else state_id
+
+
+def _edge_key(snap: _Snapshot, t: TransitionModel) -> tuple | None:
+    """A transition with both ends normalized as a slot's are; None for one inside a subgraph node."""
+    region = snap.member_of.get(t.source)
+    source: tuple = (t.source, t.when)
+    if region is not None:
+        if snap.member_of.get(t.dest) is region:
+            return None
+        port = exit_port_of(region.source, region.id, t.source, t.when)
+        if port is not None:
+            source = (Port(region.id, port), None)
+    return (*source, _canon_flags(t), _end(snap, t.dest))
+
+
+def _lost_edges(removed: Sequence[str], base: _Snapshot, own: _Snapshot) -> list[TransitionModel]:
+    """The bot's own edges that go with the nodes a change removes: ones touching them that base never had.
+
+    No unit holds them. An edge out of a node the bot added is never a unit, and one the
+    bot wired into an empty slot of a removed node is a slot the template left empty in
+    both versions. Removing the node drops them all the same, so the change says so.
+    """
+    gone = set(removed)
+    if not gone:
+        return []
+    template_edges = {key for t in base.config.transitions if (key := _edge_key(base, t)) is not None}
+    lost = []
+    for t in own.config.transitions:
+        key = _edge_key(own, t)
+        if key is None or key in template_edges:
+            continue
+        if _home(own, t.source) in gone or _home(own, t.dest) in gone:
+            lost.append(t)
+    return lost
+
+
+def _lost_text(lost: Sequence[TransitionModel], left: Sequence[str], own: _Snapshot) -> str:
+    """ "Drops 2 edges you added: 'Defeat Lamia' will need rewiring"."""
+    text = f"Drops {len(lost)} edge{'s' if len(lost) != 1 else ''} you added"
+    if not left:
+        return text
+    names = [f"'{_name(own, entity)}'" for entity in left]
+    named = names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
+    return f"{text}: {named} will need rewiring"
+
+
 def _blocker(units: Sequence[Unit], own: _Snapshot, theirs: _Snapshot) -> str:
     """Why these units cannot land in the bot, or "" when they can."""
     adds = {u.key[1] for u in units if u.key[0] in ("node", "instance") and u.base is MISSING}
@@ -635,16 +687,23 @@ def _build_change(units: list[Unit], base: _Snapshot, theirs: _Snapshot, own: _S
         title, detail = _describe(units[0], theirs, base, own)
         if len(units) > 1:
             detail = f"{detail} (and {len(units) - 1} more)"
+    # The nodes left on the other end of an edge the removal drops: the user's to rewire.
+    lost = _lost_edges(drops, base, own)
+    left = list(dict.fromkeys(e for t in lost for e in (_home(own, t.source), _home(own, t.dest)) if e not in drops))
+    if lost:
+        detail = ". ".join(part for part in (detail, _lost_text(lost, left, own)) if part)
     reason = _blocker(units, own, theirs)
     # A unit the bot never touched keeps base's value. One being added has no value there
-    # either way, so only an existing unit the user changed is a conflict.
-    conflict = any(u.conflicts for u in units)
+    # either way, so only an existing unit the user changed is a conflict, or a removal
+    # that would take edges the user wired with it.
+    conflict = any(u.conflicts for u in units) or bool(lost)
     status = Status.BLOCKED if reason else (Status.CONFLICT if conflict else Status.OFFERED)
     nodes: list[str] = []
     for unit in units:
         for entity in (_owner(unit.key), _entity(unit.theirs) if unit.key[0] in ("slot", "role") else None):
             if entity is not None and entity not in nodes:
                 nodes.append(entity)
+    nodes += [e for e in left if e not in nodes]
     return Change(
         id=_change_id(units),
         status=status,

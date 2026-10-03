@@ -148,6 +148,14 @@ bot itself added.
 | changed | differs from both | **conflict**: use the template's, or keep mine |
 | changed | its node was deleted by the user | hidden |
 | changed | needs a node or port the bot lacks | **can't apply**, with the reason |
+| removed | the bot wired edges of its own to it | **conflict**: applying drops them, and the change names the nodes left to rewire |
+
+The last row covers what no unit holds. An edge out of a node the bot added is never a
+unit, and an edge the bot wired into a slot the template left empty is not one either,
+because that slot is empty in both versions. A removal drops both kinds all the same.
+Without the row, a release that replaces a node rather than keeping it strips the user's
+own nodes out of the loop and calls the change clean. "The bot's own" means an edge base
+does not have, compared the way slots are, ports and all.
 
 - **Grouping.** A node added together with its params, its label, its own slots and every
   slot or role that now points at it is one change, and so is a removal. Added and removed

@@ -64,6 +64,7 @@ from bartlebot import setup_steps
 from bartlebot.bot.schema import BotConfig, atomic_write_json
 from bartlebot.store_roots import resolve_roots, slugify
 from bartlebot.subgraph_store import SubgraphLibrary
+from bartlebot.subgraphs import outermost_linked_regions
 
 logger = logging.getLogger(__name__)
 
@@ -318,6 +319,49 @@ def release_problems(
         problems.append(f"Reuses ids an earlier version retired: {', '.join(reused)}.")
     problems.extend(setup_steps.draft_problems(draft, library))
     return problems
+
+
+def replaced_nodes(draft: BotConfig, template: Template) -> list[str]:
+    """What ``draft`` replaces rather than keeps, against the latest version: one line per kind of node.
+
+    A node the latest version has, gone from the draft, while the draft adds one of the
+    same node type (or a subgraph node of the same subgraph). Not a refusal, since a node
+    can be replaced on purpose, but worth asking about. A bot is updated by id, so a
+    replaced node reaches it as a removal and an addition: every edge the user wired to
+    the old node is dropped, where a node kept and changed would have offered its change.
+    Nodes inside a subgraph node are left out; their ids come from the subgraph node's.
+    """
+    latest = template.index.latest
+    if latest is None:
+        return []
+    before = _loose_by_kind(BotConfig.load(template.folder / latest.file))
+    after = _loose_by_kind(draft)
+    lines = []
+    for kind, old in before.items():
+        new = after.get(kind, [])
+        old_ids, new_ids = {i for _, i in old}, {i for _, i in new}
+        gone = [(label, i) for label, i in old if i not in new_ids]
+        fresh = [(label, i) for label, i in new if i not in old_ids]
+        if gone and fresh:
+            lines.append(f"{_listed(gone)} → {_listed(fresh)}")
+    return lines
+
+
+def _loose_by_kind(config: BotConfig) -> dict[str, list[tuple[str, str]]]:
+    """(name, id) of each node not inside a subgraph node, and of each outermost subgraph node, by kind."""
+    outermost = outermost_linked_regions(config.regions)
+    members = {m for r in outermost for m in r.members}
+    kinds: dict[str, list[tuple[str, str]]] = {}
+    for s in config.states:
+        if s.id not in members:
+            kinds.setdefault(s.node_type, []).append((s.label or s.node_type, s.id))
+    for r in outermost:
+        kinds.setdefault(f"subgraph:{r.source.subgraph_id}", []).append((r.label or r.id, r.id))
+    return kinds
+
+
+def _listed(nodes: Sequence[tuple[str, str]]) -> str:
+    return ", ".join(f"'{label}' ({node_id})" for label, node_id in nodes)
 
 
 class ReleaseRefused(Exception):
