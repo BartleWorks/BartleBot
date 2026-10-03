@@ -37,10 +37,10 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Entity IDs",
         help=(
             "IDs of the reagents to collect: their internal object names, as the Entity "
-            "Browser's ID column gives them, not the names shown in game. Partial matches work "
-            "(e.g. 'Fungi' matches 'FungusWort'). Wildcards (* ? []) match the whole "
-            "ID instead, so use '*Fungi*' to match anywhere and 'Fungi*' to match only "
-            "IDs starting with it. All listed reagents are collected in one pass."
+            "Browser's ID column gives them, not the names shown in game. Each must be the "
+            "whole ID, though case does not matter: 'Stone' collects Stone, never Sandstone. "
+            "For a partial match, use wildcards (* ? []): '*Stone*' matches anywhere and "
+            "'Stone*' only IDs starting with it. All listed reagents are collected in one pass."
         ),
         default=[],
         required=True,

@@ -43,3 +43,28 @@ def test_the_shipped_snapshot_resolves_a_known_entity():
     # A guard on the checked-in file itself: a dump that wrote the wrong key shape, or an
     # empty "names", would pass every test above on its fixture and ship a dead column.
     assert entity_names.display_name("AQ-Centaur-Artemis") == "Crescent Moon Centaur"
+
+
+# ---------------------------------------------------------------------------
+# reagent_node_ids -- the IDs entity_names.json drops, having no display name
+# ---------------------------------------------------------------------------
+
+
+def test_reagent_node_ids_reads_the_ids(tmp_path):
+    path = tmp_path / "reagent_nodes.json"
+    path.write_text(json.dumps({"ids": ["Ore", "Stone"]}), encoding="utf-8")
+    assert entity_names.reagent_node_ids(path) == {"Ore", "Stone"}
+
+
+def test_a_missing_reagent_snapshot_is_empty_rather_than_raising(tmp_path):
+    assert entity_names.reagent_node_ids(tmp_path / "gone.json") == frozenset()
+
+
+def test_the_shipped_reagent_snapshot_keeps_the_games_own_spelling():
+    # "Scraplron" (a lowercase L) is the real ID; a hand "fix" to ScrapIron would make the
+    # scrap iron bot collect nothing. The others pin the selection rule: a node outside
+    # Reagent_Nodes/ (the Mooshu raid), and a stem that is not the ID (Antiquitie.xml).
+    ids = entity_names.reagent_node_ids()
+    assert {"Ore", "Stone", "Scraplron", "Raid_MS_Essence_Fire", "Antiquity"} <= ids
+    assert "ScrapIron" not in ids
+    assert "Black Lotus_PAGauntlet" not in ids  # same model, but not harvestable

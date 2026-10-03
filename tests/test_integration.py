@@ -878,6 +878,39 @@ def test_no_bot_stores_a_friend_name():
     assert not offenders, f"bot states storing a character name: {offenders}"
 
 
+def test_every_reagent_id_names_a_real_entity():
+    """A plain collect_reagent name must match one ID exactly (#144), so a typo finds nothing.
+
+    And finding nothing is a quiet SUCCESS, since an empty spawn is normal: the bot would
+    run its whole route collecting nothing, with no line in the log to say why. So each
+    plain name is checked against the game's own IDs, spelled as the game spells it --
+    matching ignores case, but a shipped file has no reason to. A reagent node has no
+    display name, so it is in reagent_nodes.json and not entity_names.json; a chest is the
+    other way round. Regenerate with tools/dump_reagent_nodes.py after a patch.
+
+    A wildcard pattern is skipped: it names no single ID to look up.
+    """
+    from bartlebot import entity_names  # noqa: PLC0415
+    from bartlebot.nodes.node_helpers import has_glob  # noqa: PLC0415
+
+    reagents = entity_names.reagent_node_ids()
+    assert reagents, "bartlebot/data/reagent_nodes.json is missing or empty"
+
+    unknown: list[str] = []
+    for path in _all_bot_files():
+        for state in _load_raw(path).get("states") or []:
+            if state.get("node_type") != "collect_reagent":
+                continue
+            for name in (state.get("params") or {}).get("entity_names") or []:
+                name = name.strip()
+                if not name or has_glob(name):
+                    continue
+                if name not in reagents and entity_names.display_name(name) is None:
+                    unknown.append(f"{_rel(path)}:{state.get('id')} → {name!r}")
+
+    assert not unknown, f"collect_reagent names that are no entity's ID: {unknown}"
+
+
 def test_no_bot_uses_the_retired_zone_list_node():
     """enter_zone_via_list is not a node any more (#36) -- Sync In Zone is.
 

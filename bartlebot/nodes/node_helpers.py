@@ -760,15 +760,15 @@ def entity_name_matches(actual: str, pattern: str) -> bool:
 
     Two modes, chosen by the pattern itself, mirroring zone_matches():
 
-      * No metacharacters — case-insensitive *substring* match, which is what
-        WizSprinter's get_base_entities_with_vague_name() does. "Cyclops" finds
-        "Cyclops/CyclopsMinion". The reagent bots rely on this: "Ore" is a category.
-        A fight does not use it directly -- see fight_target_rank.
+      * No metacharacters — the whole name, ignoring case. A plain name is an ID, as
+        the Entity Browser hands it over, so "Stone" is the Stone reagent node and
+        nothing else. It used to be a substring match, WizSprinter's
+        get_base_entities_with_vague_name(), which sent collect_reagent to
+        ZF-STONE-NPC10 and to the Sandstone and DreamStone nodes (#144). A fight
+        does not use this mode -- see fight_target_rank.
       * With metacharacters — case-insensitive glob against the *whole* name, so
         "*Bandit*" matches anywhere but "Bandit*" only matches names that start
-        with it. Anchoring is the point: substring matching alone cannot express
-        "starts with", and a pattern that silently meant the same thing either
-        way would make the wildcard decorative.
+        with it. This is the one way to ask for a partial match.
 
     A malformed glob does not raise: fnmatch treats an unbalanced bracket as a
     literal character, so "[unclosed" simply matches names containing that text
@@ -778,7 +778,7 @@ def entity_name_matches(actual: str, pattern: str) -> bool:
         return False
     if has_glob(pattern):
         return fnmatch.fnmatch(actual.lower(), pattern.lower())
-    return pattern.lower() in actual.lower()
+    return actual.lower() == pattern.lower()
 
 
 def entity_name_predicate(pattern: str):
@@ -810,13 +810,10 @@ def _template_name_predicate(matches: Callable[[str], bool]):
 async def find_closest_entity_by_name(client, pattern: str):
     """Return the closest entity whose template name matches pattern, or None.
 
-    Plain names delegate to WizSprinter's find_closest_by_vague_name() so the
-    long-standing path is untouched; only a pattern carrying metacharacters takes
-    the predicate route, which is the same search with our matcher in place of
-    WizSprinter's hardcoded substring test.
+    See entity_name_matches for what a pattern means. WizSprinter's
+    find_closest_by_vague_name() is never used: its hardcoded substring test is the
+    loose match a plain name no longer means.
     """
-    if not has_glob(pattern):
-        return await client.find_closest_by_vague_name(pattern)
     return await client.find_closest_by_predicate(entity_name_predicate(pattern))
 
 
@@ -870,11 +867,8 @@ async def find_closest_fight_target(client, pattern: str):
 async def find_entities_by_name(client, pattern: str) -> list:
     """Return every entity whose template name matches pattern.
 
-    The list counterpart of find_closest_entity_by_name(), with the same split:
-    plain names go through WizSprinter untouched, wildcards through our matcher.
+    The list counterpart of find_closest_entity_by_name(), and the same matcher.
     """
-    if not has_glob(pattern):
-        return await client.get_base_entities_with_vague_name(pattern)
     return await client.get_base_entities_with_predicate(entity_name_predicate(pattern))
 
 
