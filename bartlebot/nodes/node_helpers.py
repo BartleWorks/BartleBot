@@ -878,11 +878,15 @@ def zone_matches(actual: str, pattern: str) -> bool:
     If pattern contains glob metacharacters (* ? [), fnmatch is used so callers
     can write patterns like "WizardCity/*" to match any WizardCity sub-zone.
     Plain strings (no metacharacters) are compared for equality, with one
-    exception: a dungeon and its Challenge Mode copy (zone_names.challenge_variant_of)
-    are the same zone here, in both directions and whether or not the bot asked for
-    Challenge Mode, so a plain name matches either one. A glob is tried against the
-    zone and against the zone it is a copy of, so "*_Hard" still names only the
-    copy (#143).
+    exception: duplicates of one place are the same zone here, in both directions.
+    That is a dungeon and its Challenge Mode copy (#143), and a gauntlet room in
+    each of its level bands (zone_names.TIERED_GAUNTLETS), whether or not the bot
+    asked for Challenge Mode and whatever band the players' levels chose. Both
+    sides are compared as zone_names.canonical_zone.
+
+    A glob is tried against the zone and against its canonical zone, so "*_Hard"
+    still names only the copy, and a glob over a gauntlet's lowest band
+    ("PA_Gauntlet_01/*") takes in every band.
 
     A malformed glob does not raise: fnmatch treats an unbalanced bracket as a
     literal character, so "[unclosed" matches the zone of that exact name and
@@ -890,13 +894,13 @@ def zone_matches(actual: str, pattern: str) -> bool:
     """
     if actual is None:
         return False
-    ordinary = zone_names.ordinary_zone(actual)
+    canonical = zone_names.canonical_zone(actual)
     if has_glob(pattern):
-        matched = fnmatch.fnmatchcase(actual, pattern) or fnmatch.fnmatchcase(ordinary, pattern)
+        matched = fnmatch.fnmatchcase(actual, pattern) or fnmatch.fnmatchcase(canonical, pattern)
         if matched:
             logger.debug("zone_matches: pattern %r matched actual zone %r (wildcard)", pattern, actual)
         return matched
-    return actual == pattern or ordinary == zone_names.ordinary_zone(pattern)
+    return actual == pattern or canonical == zone_names.canonical_zone(pattern)
 
 
 async def all_left_zone(clients: list, zone: str) -> bool:

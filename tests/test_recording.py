@@ -334,6 +334,15 @@ async def test_a_recording_in_a_challenge_mode_copy_writes_the_ordinary_zone():
     assert form.str_fields["zone"] == "Aquila/AQ_Z02_Atlantea"
 
 
+async def test_a_recording_in_a_higher_gauntlet_band_writes_the_lowest_band():
+    client = _client(zone="Housing_AV_Gauntlet/AV_Gauntlet_60/AV_Gauntlet_60_02")
+    form = FakeParamForm()
+
+    await run_recording("teleport_to_coordinates", client, form, *_callbacks())
+
+    assert form.str_fields["zone"] == "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_02"
+
+
 async def test_a_destination_reached_in_a_challenge_mode_copy_is_its_ordinary_zone():
     client = FakeClient()
     client.zone_name.return_value = "Aquila/AQ_Z02_Atlantea_Hard"

@@ -128,14 +128,24 @@ sharing the target's zone or coordinates. When the target is one of ours, use
 
 ## Comparing a zone a bot names with one a client is in
 
-Always through `node_helpers.zone_matches`, never `==` or `!=`. Besides globs, it treats a
-dungeon and its Challenge Mode copy as one zone (#143): the copy is a separate zone whose id is
-the ordinary one plus `_Challenge`, `_Hard` or `_Adv`, and a bot names the ordinary one. A raw
-`!=` in `enter_zone` read a client standing in the copy of `from_zone` as having already left
-it. Two clients' live zones can be compared directly, since both are in the same copy.
+Always through `node_helpers.zone_matches`, never `==` or `!=`. Besides globs, it treats every
+duplicate of one place as the same zone, comparing both sides as `zone_names.canonical_zone`:
 
-Anything that writes a client's zone into a bot writes `zone_names.ordinary_zone(zone)`, as
-Record and Fill from Player do.
+- **A Challenge Mode copy** (#143) is a separate zone whose id is the ordinary one plus
+  `_Challenge`, `_Hard` or `_Adv`. Its canonical zone is the ordinary one.
+- **A gauntlet room in another level band.** The game picks the band from the players' levels,
+  and each band is its own zone (`PA_Gauntlet_40/PA_Gauntlet_40_03`). Its canonical zone is the
+  same room in the lowest band. The families are declared in `zone_names.TIERED_GAUNTLETS`,
+  never found by a suffix: `_T1`…`_T9` and Treasure Tower's `_L01`…`_L30` are different rooms.
+
+A raw `!=` in `enter_zone` read a client standing in the copy of `from_zone` as having already
+left it. Two clients' live zones can be compared directly, since all of them are in one copy.
+
+Anything that writes a client's zone into a bot writes its canonical zone, as Record and Fill
+from Player do, so no bot needs a glob to take in a duplicate.
+
+Skeleton keys look like the same problem and are not: a key's boss changes with the players'
+levels, but inside one zone. That is an enemy name, not a zone.
 
 ## Keeping a session log readable
 

@@ -423,7 +423,7 @@
         "y": 0.0
       },
       "params": {
-        "dungeon_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01"
+        "dungeon_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01"
       }
     },
     {
@@ -435,7 +435,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
         "interact_xyz": {
           "x": -3.18,
           "y": 290.17,
@@ -460,8 +460,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_02",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_02",
         "xyz": {
           "x": -1482.77,
           "y": -13.7,
@@ -499,8 +499,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_02",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_02",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
         "xyz": {
           "x": 647.42,
           "y": 1578.09,
@@ -522,7 +522,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
         "interact_xyz": {
           "x": -3.18,
           "y": 290.17,
@@ -547,8 +547,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_03",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_03",
         "xyz": {
           "x": -1039.09,
           "y": -1057.99,
@@ -586,8 +586,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_03",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_03",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
         "xyz": {
           "x": 601.38,
           "y": 1446.98,
@@ -625,7 +625,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
         "interact_xyz": {
           "x": -3.18,
           "y": 290.17,
@@ -650,8 +650,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_04",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_04",
         "xyz": {
           "x": 1048.44,
           "y": -1053.31,
@@ -689,8 +689,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_04",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_04",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
         "xyz": {
           "x": 605.41,
           "y": 1406.74,
@@ -744,7 +744,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
         "interact_xyz": {
           "x": -3.18,
           "y": 290.17,
@@ -769,8 +769,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_05",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_05",
         "xyz": {
           "x": 1488.28,
           "y": -6.51,
@@ -808,8 +808,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_05",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_05",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
         "xyz": {
           "x": 605.41,
           "y": 1406.74,
@@ -847,8 +847,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_01",
-        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_06",
+        "from_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
+        "to_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_06",
         "interact_xyz": {
           "x": -17.35,
           "y": -1310.53,
@@ -886,7 +886,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_??/PA_Gauntlet_??_06",
+        "zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_06",
         "xyz": {
           "x": -24.78,
           "y": 832.96,

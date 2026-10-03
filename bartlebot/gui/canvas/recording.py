@@ -180,13 +180,15 @@ async def _npc_range_title(client) -> str:
 
 
 async def _zone_to_record(client) -> str | None:
-    """The client's zone as a bot stores it: the ordinary zone, never its Challenge Mode copy.
+    """The client's zone as a bot stores it: its canonical zone, never a duplicate of it.
 
-    The nodes match either one against it (node_helpers.zone_matches), so a bot recorded in
-    Challenge Mode still runs in normal mode, and its labels and summary name the dungeon.
+    The ordinary zone for a Challenge Mode copy, the lowest level band for a gauntlet room
+    (zone_names.canonical_zone). The nodes match every duplicate against it
+    (node_helpers.zone_matches), so a bot recorded in Challenge Mode still runs in normal
+    mode, and one recorded at level 40 still runs for a party at level 80.
     """
     zone = await client.zone_name()
-    return zone and zone_names.ordinary_zone(zone)
+    return zone and zone_names.canonical_zone(zone)
 
 
 async def _wait_for_zone_name(client, poll: float, timeout: float = 10.0) -> str | None:

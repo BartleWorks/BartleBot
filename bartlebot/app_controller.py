@@ -135,16 +135,17 @@ def merge_zone_choices(client_zones: Sequence[str], recent_zones: Sequence[str])
     reference.  Blanks and the unread placeholder are dropped — offering "—" as a
     zone name would write it straight into a bot config.
 
-    A Challenge Mode copy is offered as the ordinary zone it copies, which is what a bot
-    stores and what matches either one (#143), so the two never appear side by side.
+    A duplicate of a zone -- a Challenge Mode copy, a gauntlet room in another level band --
+    is offered as its canonical zone, which is what a bot stores and what matches every
+    duplicate (zone_names.canonical_zone), so two of them never appear side by side.
     """
     live: list[str] = []
     for zone in client_zones:
         if not zone or zone == _ZONE_PLACEHOLDER:
             continue
-        if (ordinary := zone_names.ordinary_zone(zone)) not in live:
-            live.append(ordinary)
-    recent = dict.fromkeys(zone_names.ordinary_zone(z) for z in recent_zones)
+        if (canonical := zone_names.canonical_zone(zone)) not in live:
+            live.append(canonical)
+    recent = dict.fromkeys(zone_names.canonical_zone(z) for z in recent_zones)
     return live, live + [z for z in recent if z not in live]
 
 

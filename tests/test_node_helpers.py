@@ -145,6 +145,31 @@ def test_zone_matches_a_glob_against_a_copy_through_its_ordinary_zone():
     assert zone_matches("Aquila/AQ_Z02_Atlantea_Hard", "Aquila/AQ_Z02_Atlant?a") is True
 
 
+_PA_01_03 = "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_03"
+_PA_40_03 = "Housing_PA_Gauntlet/PA_Gauntlet_40/PA_Gauntlet_40_03"
+
+
+def test_zone_matches_a_gauntlet_room_in_any_level_band():
+    """The players' levels pick the band; a bot recorded in one runs in every other."""
+    assert zone_matches(_PA_40_03, _PA_01_03) is True
+    assert zone_matches(_PA_01_03, _PA_40_03) is True
+    assert zone_matches("Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_03", _PA_40_03) is True
+
+
+def test_zone_matches_only_the_same_room_across_bands():
+    assert zone_matches("Housing_PA_Gauntlet/PA_Gauntlet_40/PA_Gauntlet_40_04", _PA_01_03) is False
+
+
+def test_zone_matches_a_glob_over_the_lowest_band_takes_in_every_band():
+    assert zone_matches(_PA_40_03, "Housing_PA_Gauntlet/PA_Gauntlet_01/*") is True
+
+
+def test_zone_matches_does_not_merge_numbered_rooms():
+    """_T1 to _T3 are three rooms of one dungeon, not three bands."""
+    sunken = "WizardCity/WC_Streets/Interiors/WC_Sunken_City_T"
+    assert zone_matches(sunken + "2", sunken + "1") is False
+
+
 def test_zone_matches_a_glob_naming_only_the_copy_still_refuses_the_ordinary_zone():
     """A glob is the one way left to tell the two apart."""
     assert zone_matches("Aquila/AQ_Z02_Atlantea_Hard", "*_Hard") is True

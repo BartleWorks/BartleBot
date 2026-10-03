@@ -585,8 +585,8 @@ class _ZoneWidget(QWidget):
         try:
             zone = await clients[idx].zone_name()
             if zone:
-                # A bot stores the ordinary zone, never its Challenge Mode copy (#143).
-                self.setText(zone_names.ordinary_zone(zone))
+                # A bot stores the canonical zone, never a Challenge Mode copy or a gauntlet's band.
+                self.setText(zone_names.canonical_zone(zone))
         except Exception:
             pass
 
