@@ -38,8 +38,8 @@ nav, though `handle_level_scaling` folds it too, so spellement slot counts read 
 And `teleport_to_coordinates` is deliberately not nav: `sync_in_zone` leaves players wherever
 the last zone change put them, so a bot that needs a position keeps it.
 
-`tools/` has no script for this yet; the numbers come from a scratch measurement. The rebuild
-tool (see *Settled for the rewrite*) is where it goes.
+The tier numbers come from a scratch measurement, not a tool. Progress is
+`tools/rebuild_from_template.py status`.
 
 ## Tiers
 
@@ -136,12 +136,13 @@ Defects in the current tree that the rewrite would otherwise inherit.
 
 ## Settled for the rewrite (2026-10-03)
 
-- **A dev-only tool rebuilds a bot from a template.** New Bot mints a fresh id, and nothing else
-  builds a bot from a template. The tool builds from the latest released version through
-  `create_bot`, carries the kept fields, and fills the fill-ins from the old file, leaving the
-  bot's own content to be authored in the app. It keeps the bot's id where it can; the shipped
-  bots' combat profiles are not shipped, so a lost id costs nothing a user has. It is also what
-  regenerates this worksheet and reports progress: a bot is done when it records `template`.
+- **`tools/rebuild_from_template.py` rebuilds a bot from a template.** New Bot mints a fresh
+  id, and nothing else builds a bot from a template. The tool builds from the latest released
+  version through `create_bot`, keeps the old bot's id, name, description, tags, authors, drops,
+  clients and its own options, and fills the fill-ins from the old file. It folds the
+  navigation Sync players replaces and the level scaling `handle_level_scaling` replaces, and
+  reports every old node it did not carry. `rebuild` is a dry run until `--write`; `status`
+  reports progress, and a bot is done when it records `template`.
 - **Every Portal of Peril bot is built from Dungeon Farmer**, `spiral_cup_portal_of_peril` and
   any that follow it. Special Events is otherwise still out of scope.
 - **`big_salgio` is built from Spellement Farmer** (#23), so it scales on the Celestia default,
