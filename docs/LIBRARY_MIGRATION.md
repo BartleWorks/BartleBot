@@ -315,12 +315,12 @@ content and survives.
 | `teleport_to_world_hub` | 63 bots | 3 bots | keep: a mid-route hop in `house_of_scales`, `aeriel_shores_aethyr_burst` and `spiral_cup_portal_of_peril`, and a step zone navigation runs |
 | `enter_zone_via_object` | 19 bots | 9 bots | keep: in-dungeon teleporters and skips |
 
-**`apply_level_scaling` is how a Scales entry is recorded.** `tools/scales_table.py add`
-builds a new entry from a scratch bot with an `apply_level_scaling` recorded on the Scales, and
-`handle_level_scaling` imports its `apply_elixir`. Removing the node needs the recipe to record
-the Scales some other way first (an `interact`, which records the same point and reset), and
-`apply_elixir` to move into `handle_level_scaling`. The pattern for a node that stays as code but
-leaves the browser is `enter_zone_via_ride`.
+**`apply_level_scaling` no longer holds anything else up.** `tools/scales_table.py add` used to
+build a new entry from a scratch bot with an `apply_level_scaling` recorded on the Scales; it now
+reads an `interact`, which records the same zone, point and reset. `apply_elixir` and the two
+option specs moved into `handle_level_scaling`, which `apply_level_scaling` now imports them from.
+So once the last bot is rebuilt, both old nodes are deleted outright: no bot uses them, so they
+need no hidden-but-registered state in between.
 
 `go_to_world` went because a Sync in zone to the zone a world's gate lands in does the same
 thing, through a route the planner picks. Its six uses were converted in place, keeping their

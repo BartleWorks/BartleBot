@@ -10,7 +10,8 @@ To add a Scales:
    - an ``enter_dungeon`` on the dungeon's sigil,
    - an ``enter_zone`` for each zone change between the sigil and the Scales, or between a
      zone the zone picker offers and the sigil, if there are any,
-   - an ``apply_level_scaling`` on the Scales.
+   - an ``interact`` on the Scales: its zone, the point where the prompt shows, and a reset
+     point where it does not.
    The nodes do not need edges between them. Save the bot anywhere.
 2. Run::
 
@@ -117,6 +118,10 @@ def slug(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "_", name.replace("'", "").replace("’", "").casefold()).strip("_")
 
 
+#: The node a scratch bot records the Scales themselves with.
+STATION_NODE_TYPE = "interact"
+
+
 def _candidates(states: list[dict]) -> list[dict]:
     """Every recorded zone change in the bot, as a table step plus the sigil's prompt title."""
     found = []
@@ -194,21 +199,25 @@ def entry_from_bot(
     world_default: bool = False,
     nav: zone_nav.NavMap | None = None,
 ) -> dict:
-    """The table entry for the Scales a bot's ``apply_level_scaling`` node was recorded on."""
+    """The table entry for the Scales a bot's ``interact`` node was recorded on.
+
+    An ``interact`` because it records exactly the station's three fields and is staying in the
+    library; ``apply_level_scaling``, which records the same three, goes once no bot uses it.
+    """
     nav = zone_nav.load() if nav is None else nav
     states = bot.get("states") or []
-    stations = [s for s in states if s.get("node_type") == "apply_level_scaling"]
+    stations = [s for s in states if s.get("node_type") == STATION_NODE_TYPE]
     if state_id is not None:
         stations = [s for s in stations if s.get("id") == state_id]
     if not stations:
-        raise TableError("the bot has no apply_level_scaling node" + (f" with id {state_id!r}" if state_id else ""))
+        raise TableError(f"the bot has no {STATION_NODE_TYPE} node" + (f" with id {state_id!r}" if state_id else ""))
     if len(stations) > 1:
         ids = ", ".join(s["id"] for s in stations)
-        raise TableError(f"the bot has several apply_level_scaling nodes ({ids}); pick one with --state")
+        raise TableError(f"the bot has several {STATION_NODE_TYPE} nodes ({ids}); pick one with --state")
     params = stations[0].get("params") or {}
     zone = params.get("zone")
     if not (zone and params.get("interact_xyz") and params.get("reset_xyz")):
-        raise TableError("the apply_level_scaling node is not recorded: it needs a zone and both points")
+        raise TableError(f"the {STATION_NODE_TYPE} node is not recorded: it needs a zone and both points")
 
     chain = _steps_to(zone, _candidates(states), nav)
     if name is None:
@@ -320,9 +329,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--table", type=Path, default=scales.SCALES_PATH, help=argparse.SUPPRESS)
     commands = parser.add_subparsers(dest="command", required=True)
 
-    add = commands.add_parser("add", help="add the Scales a bot's apply_level_scaling node was recorded on")
+    add = commands.add_parser("add", help="add the Scales a bot's interact node was recorded on")
     add.add_argument("bot", type=Path, help="a bot file holding the recorded nodes")
-    add.add_argument("--state", help="the apply_level_scaling node's id, when the bot has several")
+    add.add_argument("--state", help="the interact node's id, when the bot has several")
     add.add_argument("--key", help="the key bot files store (default: made from the name)")
     add.add_argument("--name", help="the name the picker shows (default: the sigil's prompt title)")
     add.add_argument("--level", type=int, help="the level this Scales scales a player to")

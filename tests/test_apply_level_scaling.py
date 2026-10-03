@@ -1,8 +1,13 @@
-"""Unit tests for the apply_level_scaling node."""
+"""Unit tests for the apply_level_scaling node, and the elixir code it shares with handle_level_scaling.
+
+The station mechanics (``apply_elixir`` and its menu waits) live in handle_level_scaling,
+which outlives this node, so they are patched there.
+"""
 
 from unittest.mock import AsyncMock, patch
 
 import bartlebot.nodes.utility.apply_level_scaling as als
+import bartlebot.nodes.utility.handle_level_scaling as hls
 from tests.conftest import FakeClient, FakeMachine
 
 _PARAMS = {
@@ -13,11 +18,11 @@ _PARAMS = {
 
 # No-op patches for the NPCServicesWin menu (instantly visible, then instantly gone).
 _patch_menu_visible = lambda: patch(  # noqa: E731
-    "bartlebot.nodes.utility.apply_level_scaling._all_menu_visible",
+    "bartlebot.nodes.utility.handle_level_scaling._all_menu_visible",
     new=AsyncMock(return_value=True),
 )
 _patch_menu_gone = lambda: patch(  # noqa: E731
-    "bartlebot.nodes.utility.apply_level_scaling._none_menu_visible",
+    "bartlebot.nodes.utility.handle_level_scaling._none_menu_visible",
     new=AsyncMock(return_value=True),
 )
 # Patch for step 10: elixir is active on all clients after interaction.
@@ -85,12 +90,12 @@ async def test_prompt_never_appears_fails():
     client.is_in_npc_range.return_value = False  # never appears
     machine = FakeMachine(options={"Level Scaling Players": [1]})
 
-    with patch.object(als, "POLL_INTERVAL", 0):
+    with patch.object(hls, "POLL_INTERVAL", 0):
         result = await als.run(machine, [client], _PARAMS)
 
     assert result == "FAILURE"
     # teleport(interact) + teleport(reset) for each attempt
-    assert client.teleport.call_count == als.MAX_RETRIES * 2
+    assert client.teleport.call_count == hls.MAX_RETRIES * 2
 
 
 async def test_menu_never_appears_fails():
@@ -99,8 +104,8 @@ async def test_menu_never_appears_fails():
     machine = FakeMachine(options={"Level Scaling Players": [1]})
 
     with (
-        patch("bartlebot.nodes.utility.apply_level_scaling._all_menu_visible", new=AsyncMock(return_value=False)),
-        patch.object(als, "POLL_INTERVAL", 0),
+        patch("bartlebot.nodes.utility.handle_level_scaling._all_menu_visible", new=AsyncMock(return_value=False)),
+        patch.object(hls, "POLL_INTERVAL", 0),
     ):
         result = await als.run(machine, [client], _PARAMS)
 
@@ -115,7 +120,7 @@ async def test_success():
     client = _ready_client()
     machine = FakeMachine(options={"Level Scaling Players": [1]})
 
-    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
+    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(hls, "POLL_INTERVAL", 0):
         result = await als.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -144,7 +149,7 @@ async def test_clients_to_scale_subset():
     c2 = _ready_client()  # should be scaled
     machine = FakeMachine(options={"Level Scaling Players": [2]})
 
-    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
+    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(hls, "POLL_INTERVAL", 0):
         result = await als.run(machine, [c1, c2], _PARAMS)
 
     assert result == "SUCCESS"
@@ -162,7 +167,7 @@ async def test_out_of_range_client_numbers_skipped():
     machine = FakeMachine(options={"Level Scaling Players": [1, 99]})
 
     # [1, 99]: client 99 doesn't exist, only client 1 is scaled.
-    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
+    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(hls, "POLL_INTERVAL", 0):
         result = await als.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -188,7 +193,7 @@ async def test_stale_prompt_cleared_before_interaction():
 
     client.is_in_npc_range.side_effect = _npc_range
 
-    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(als, "POLL_INTERVAL", 0):
+    with _patch_menu_visible(), _patch_menu_gone(), _patch_elixir_active(), patch.object(hls, "POLL_INTERVAL", 0):
         result = await als.run(machine, [client], _PARAMS)
 
     assert result == "SUCCESS"
@@ -224,7 +229,7 @@ async def test_prompt_retry_then_success():
         _patch_menu_visible(),
         _patch_menu_gone(),
         patch("bartlebot.nodes.node_helpers.is_visible_by_path", new=AsyncMock(side_effect=elixir_visible)),
-        patch.object(als, "POLL_INTERVAL", 0),
+        patch.object(hls, "POLL_INTERVAL", 0),
     ):
         result = await als.run(machine, [client], _PARAMS)
 
@@ -249,8 +254,8 @@ async def test_missing_elixir_is_retried():
         _patch_menu_visible(),
         _patch_menu_gone(),
         patch("bartlebot.nodes.node_helpers.is_visible_by_path", new=AsyncMock(side_effect=elixir_visible)),
-        patch.object(als, "POLL_INTERVAL", 0),
-        patch.object(als, "LEVEL_SCALING_STAGGER_DELAY", 0),
+        patch.object(hls, "POLL_INTERVAL", 0),
+        patch.object(hls, "LEVEL_SCALING_STAGGER_DELAY", 0),
     ):
         result = await als.run(machine, [c1, c2], _PARAMS)
 
@@ -284,8 +289,8 @@ async def test_clients_use_station_one_at_a_time():
         _patch_menu_gone(),
         _patch_elixir_active(),
         patch("bartlebot.nodes.node_helpers.click_by_path", new=AsyncMock(side_effect=_click)),
-        patch.object(als, "POLL_INTERVAL", 0),
-        patch.object(als, "LEVEL_SCALING_STAGGER_DELAY", 0),
+        patch.object(hls, "POLL_INTERVAL", 0),
+        patch.object(hls, "LEVEL_SCALING_STAGGER_DELAY", 0),
     ):
         result = await als.run(machine, [c1, c2], _PARAMS)
 
