@@ -111,21 +111,27 @@ writes `keep_list` back as this bot's value, and a merged list would copy the us
 keywords into every bot whose picker they touched. The picker shows a row the user's
 list keeps as checked and locked, with a tooltip pointing to Settings → Bot.
 
-**The quicksell safety warning is explained once, not on every run** (#145). Once the
-templates reach the library nearly every bot sells, and a dialog on every run teaches
-the user to click through it, along with the teleport and elixir warnings it shares
-the dialog with. What the explanation asks (lock what you value, keep it on a list) is
-the same for every bot, so it is shown once for the whole app. Once per bot would ask the
-same question eighty times.
+**The quicksell safety warning's explanation can be turned off for good** (#145). Once
+the templates reach the library nearly every bot sells, and a dialog on every run
+teaches the user to click through it, along with the teleport and elixir warnings it
+shares the dialog with. So the explanation carries a check box under it, *Don't show
+this quicksell explanation again*, which turns off *Show Quicksell explanation before
+each run* on the Bot settings tab. It is a check box under its own warning, the form
+Windows and macOS use for suppressing an alert, rather than a footer button: the dialog
+holds several warnings, and a button there reads as "don't show this dialog". The
+switch is one answer for the whole app. What the explanation asks (lock what you value,
+keep it on a list) is the same for every bot, and a per-bot answer would ask the same
+question eighty times.
 
-After that, the user's settings are the baseline. A sale they set up themselves, in
-Settings or as a value for this bot, needs no warning. The one level that can sell more
-than the user asked for without the user touching anything is the bot file, so
-`quicksell.declared_sales` names the sell flags a declaration turns on while the user's
-app setting keeps them, and the dialog asks about each one once per bot.
-Tree of Life's Sell Skeleton Keys is the case in the shipped library today. A
-declaration that keeps more than the user would is never flagged, and nor is the keep
-list, since the user's own list is kept whatever a bot declares.
+The switch does not reach the one case this dialog exists for. With the user's settings
+as the baseline, a sale they set up themselves, in Settings or as a value for this bot,
+needs no warning. The one level that can sell more than the user asked for without the
+user touching anything is the bot file, so `quicksell.declared_sales` names the sell
+flags a declaration turns on while the user's app setting keeps them, and the dialog
+asks about each one once per bot, whatever the switch says. Tree of Life's Sell Skeleton
+Keys is the case in the shipped library today. A declaration that keeps more than the
+user would is never flagged, and nor is the keep list, since the user's own list is kept
+whatever a bot declares.
 
 Two things that are easy to get wrong:
 
@@ -133,10 +139,11 @@ Two things that are easy to get wrong:
   to the one it resolves to drops the override (see the Option Values rules in
   `bartlebot/gui/CLAUDE.md`), so the per-bot answer lives apart, in
   `accepted_quicksell_sales: {bot_id: [option name, …]}`.
-- **Both answers are written on accept only**, through `SafetyWarning.acknowledge`. A
-  run the user cancelled is not a warning they ran past. "Explain quicksell before the
-  next run" on the Bot tab clears the app-wide answer, so the explanation can be read
-  again.
+- **Both answers are written on accept only**: a declared sale through
+  `SafetyWarning.acknowledge`, on any Run, and the explanation's check box through
+  `SafetyWarning.opt_out`, only when ticked. A run the user cancelled records neither.
+  Running past the explanation without ticking the box is not an answer, so it is shown
+  again next run.
 
 ## A param gates an option the author knows about
 

@@ -48,7 +48,7 @@ class _GeneralSettings(BaseModel):
     default_quicksell_sell_skeleton_keys: bool = False
     default_quicksell_enabled: bool = True
     quicksell_keep_list: list[str] = []
-    quicksell_warning_acknowledged: bool = False
+    show_quicksell_explanation: bool = True
     default_apply_archmastery: bool = False
     default_level_scaling_players: list[int] = []
     auto_group_players: bool = True
@@ -153,9 +153,9 @@ _DEFAULTS: dict[str, Any] = {
         # Not a level of any option's resolution, unlike the four above: every bot
         # applies it on top of its own keep list. See quicksell.user_keep_list.
         "quicksell_keep_list": [],
-        # Whether the safety check has explained quicksell once. See
+        # Whether the safety check explains quicksell before each run. See
         # safety_warning_dialog._quicksell_message.
-        "quicksell_warning_acknowledged": False,
+        "show_quicksell_explanation": True,
         "default_apply_archmastery": False,
         "default_level_scaling_players": [],
         "auto_group_players": True,
@@ -912,13 +912,13 @@ class SettingsManager:
     # ------------------------------------------------------------------
 
     @property
-    def quicksell_warning_acknowledged(self) -> bool:
-        """Whether the user has run past the safety check's explanation of quicksell once."""
-        return bool(self.get_general("quicksell_warning_acknowledged", default=False))
+    def show_quicksell_explanation(self) -> bool:
+        """Whether the safety check explains quicksell before each run of a bot that sells."""
+        return bool(self.get_general("show_quicksell_explanation", default=True))
 
-    @quicksell_warning_acknowledged.setter
-    def quicksell_warning_acknowledged(self, value: bool) -> None:
-        self.set_general("quicksell_warning_acknowledged", bool(value))
+    @show_quicksell_explanation.setter
+    def show_quicksell_explanation(self, value: bool) -> None:
+        self.set_general("show_quicksell_explanation", bool(value))
 
     def accepted_quicksell_sales(self, bot_id: str) -> list[str]:
         """The sell flags this bot declares on, against the user's settings, that the user has accepted."""

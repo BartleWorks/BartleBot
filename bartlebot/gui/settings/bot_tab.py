@@ -211,12 +211,13 @@ class BotTab(QWidget):
         )
 
         self._explain_quicksell_cb = QCheckBox()
-        self._explain_quicksell_cb.setChecked(not sm.quicksell_warning_acknowledged)
-        quicksell_form.addRow("Explain quicksell before the next run:", self._explain_quicksell_cb)
+        self._explain_quicksell_cb.setChecked(sm.show_quicksell_explanation)
+        quicksell_form.addRow("Show Quicksell explanation before each run:", self._explain_quicksell_cb)
         quicksell_form.addRow(
             hint(
-                "The safety check explains what quicksell sells the first time you run a bot that has it, "
-                "then stays quiet unless a bot sells something your settings here keep. Tick to read it again."
+                "The safety check explains what quicksell sells before each run of a bot that has it. Off "
+                "skips the explanation, but a bot that sells something your settings here keep is still "
+                "flagged, once for each bot."
             )
         )
 
@@ -260,5 +261,5 @@ class BotTab(QWidget):
         sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())
         sm.set_general("default_quicksell_sell_skeleton_keys", self._sell_skeleton_keys_cb.isChecked())
         sm.set_general(quicksell.USER_KEEP_LIST_KEY, parse_list_text(self._keep_list_edit.text()))
-        sm.quicksell_warning_acknowledged = not self._explain_quicksell_cb.isChecked()
+        sm.show_quicksell_explanation = self._explain_quicksell_cb.isChecked()
         sm.set_general("default_apply_archmastery", self._apply_archmastery_cb.isChecked())

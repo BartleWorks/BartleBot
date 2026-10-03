@@ -104,9 +104,9 @@ are not levels of anything.
 
 Two Quicksell rows are the exception, and their hints say so instead of the note at
 the top: *Always keep*, the user's own keep list, which every bot applies on top of its
-own rather than as a level beneath it, and *Explain quicksell before the next run*,
-which is the safety check's one-time explanation turned back on. `docs/BOT_OPTIONS.md`
-has why neither can be a level.
+own rather than as a level beneath it, and *Show Quicksell explanation before each run*,
+which the safety check's own check box also turns off. `docs/BOT_OPTIONS.md` has why
+neither can be a level.
 
 That is also the test for whether a row belongs here at all: **a setting the app
 applies to a client while it is starting is a Game tab row, not a Bot tab one.**

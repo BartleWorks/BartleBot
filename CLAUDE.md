@@ -61,7 +61,7 @@ read on purpose.
 | `tests/CLAUDE.md` | what a change ships with, keeping the suite fast, one QApplication per worker |
 | `tools/CLAUDE.md` | type dumps and `Root.wad` — read these before writing a probe |
 | `docs/WINDOW_SIZING.md` | the (resolution, UI size) ladder, which XML file holds which, and why an unfittable launch is refused |
-| `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value, which card an option is drawn in, quicksell's user keep list and its once-shown warning |
+| `docs/BOT_OPTIONS.md` | the four-level resolution, params vs. options, who owns a value, which card an option is drawn in, quicksell's user keep list and when its warning is shown |
 | `docs/COMBAT_CONFIG.md` | the five strategy levels, the two storage roots, a combat profile's own strategies and the profile-then-library lookup, the pick/assemble/author split, the dialog's ways in, and the Save/Cancel boundary |
 | `docs/SUBGRAPHS.md` | reusable subgraphs: definition vs. instance, derived member ids, follow-latest with snapshot fallback, the three param levels, instance-owned layout, the authoring verbs |
 | `docs/SUBGRAPH_CALLS.md` | a pointer to the plan for the successor epic to #37 (subgraph calls, ports, the definition document, the call node, the library rewrite), which lives on a claude.ai page — read that page before any subgraph work; it supersedes several of `SUBGRAPHS.md`'s sections |

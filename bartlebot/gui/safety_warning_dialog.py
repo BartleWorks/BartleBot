@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QDialog,
     QFormLayout,
     QFrame,
@@ -54,10 +55,18 @@ class SafetyWarning:
     """
 
     acknowledge: Callable[[Any], None] | None = None
-    """Optional call recording that this warning was read, for one shown once rather than every run.
+    """Optional call recording that this warning was read, for one asked once rather than every run.
 
     Handed the ``SettingsManager``, and called on accept only, like the editable field: a
     run the user cancelled is not a warning they ran past.
+    """
+
+    opt_out: tuple[str, Callable[[Any], None]] | None = None
+    """Optional (check box label, call) letting the user stop this warning, drawn under it.
+
+    A check box under its own warning rather than a footer button, so it plainly covers this
+    warning and not the dialog's others. The call is handed the ``SettingsManager``, and made
+    on accept only, and only if the box is ticked.
     """
 
 
@@ -67,10 +76,12 @@ def _settings():
     return SettingsManager.instance()
 
 
-#: Ends quicksell's explanation, which the safety check shows once rather than on every run.
-QUICKSELL_SHOWN_ONCE = (
-    "You will not see this again. After this, a bot is only flagged here when it sells something your settings keep."
-)
+#: The check box under quicksell's explanation.
+QUICKSELL_OPT_OUT_LABEL = "Don't show this quicksell explanation again"
+
+
+def _stop_explaining_quicksell(settings) -> None:
+    settings.show_quicksell_explanation = False
 
 
 def _spoken_list(words: Sequence[str]) -> str:
@@ -99,7 +110,7 @@ def _quicksell_enabled(config) -> bool:
     return bool(quicksell.resolve_options_for(config)["enabled"])
 
 
-def _quicksell_message(config, states, clients, message: str) -> str | tuple[str, Callable[[Any], None]] | None:
+def _quicksell_message(config, states, clients, message: str) -> str | SafetyWarning | None:
     """The warning quicksell earns on *this* run, or None to drop it.
 
     A bot with quicksell nodes is not necessarily a bot that sells: ``Enable
@@ -116,12 +127,15 @@ def _quicksell_message(config, states, clients, message: str) -> str | tuple[str
 
     A bot that sells is nearly every bot once the templates reach the library, and the
     same habit applies (#145). What the explanation asks of the user — lock what you
-    value, keep it on a list — is the same for every bot, so it is shown once for the
-    whole app, not once per bot: per bot, it would ask the same question eighty times.
-    After that the only thing left to warn about is a bot selling more than the user's
-    own settings would, which only its file can do (``quicksell.declared_sales``), and
-    each such sale is asked about once per bot. The acknowledgement goes back as the
-    warning's ``acknowledge``, so it is recorded only if the user runs.
+    value, keep it on a list — is the same for every bot, so the way out of it is one
+    answer for the whole app, not one per bot: per bot, it would ask the same question
+    eighty times. It is shown before each run until the user ticks the check box under
+    it, which turns off Show Quicksell explanation before each run in Settings → Bot.
+
+    That switch does not reach a bot selling more than the user's own settings would,
+    which only its file can do (``quicksell.declared_sales``). That is the case this
+    dialog exists for, and it is asked about once per bot whatever the switch says. Both
+    answers are written on accept only, so a cancelled run records neither.
     """
     if not _quicksell_enabled(config):
         resolution = option_values.option_resolution(config, quicksell.OPTION_ENABLED)
@@ -133,22 +147,20 @@ def _quicksell_message(config, states, clients, message: str) -> str | tuple[str
         return quicksell.SAFETY_WARNING_DISABLED
 
     settings = _settings()
-    explained = settings.quicksell_warning_acknowledged
+    explain = settings.show_quicksell_explanation
     accepted = settings.accepted_quicksell_sales(config.id)
     sales = [name for name in quicksell.declared_sales(config) if name not in accepted]
-    if explained and not sales:
+    if not explain and not sales:
         return None
 
     parts = [declared_sales_message(sales)] if sales else []
-    if not explained:
-        parts += [message, QUICKSELL_SHOWN_ONCE]
-
-    def acknowledge(sm) -> None:
-        sm.quicksell_warning_acknowledged = True
-        if sales:
-            sm.accept_quicksell_sales(config.id, sales)
-
-    return "\n\n".join(parts), acknowledge
+    if explain:
+        parts.append(message)
+    return SafetyWarning(
+        message="\n\n".join(parts),
+        acknowledge=(lambda sm: sm.accept_quicksell_sales(config.id, sales)) if sales else None,
+        opt_out=(QUICKSELL_OPT_OUT_LABEL, _stop_explaining_quicksell) if explain else None,
+    )
 
 
 def _quicksell_details(config, states, clients) -> list[tuple[str, str]]:
@@ -271,8 +283,8 @@ _DETAIL_BUILDERS = {
 #: node type -> ``(config, states, clients, message) -> message or None``, where the
 #: message passed in is the ``NodeSpec.safety_warning``. Returning it unchanged is the
 #: default for a node with no entry here; returning None drops the warning for this run.
-#: A ``(message, acknowledge)`` pair is a warning shown until read -- see
-#: ``SafetyWarning.acknowledge``.
+#: A ``SafetyWarning`` is the message with its ``acknowledge`` or ``opt_out`` attached;
+#: its details are filled in afterwards, as for a plain message.
 #:
 #: This is the answer to "the node is in the bot, but will it do anything?", which a
 #: NodeSpec field cannot answer because it is a question about the bot's options -- and
@@ -360,22 +372,19 @@ def collect_safety_warnings(
         if not states:
             continue
         message_builder = _MESSAGE_BUILDERS.get(node_type)
-        message = spec.safety_warning
-        acknowledge = None
+        warning = SafetyWarning(message=spec.safety_warning)
         if message_builder:
-            built_message = message_builder(config, states, clients, message)
-            if built_message is None:
+            built = message_builder(config, states, clients, spec.safety_warning)
+            if built is None:
                 continue
-            message, acknowledge = built_message if isinstance(built_message, tuple) else (built_message, None)
+            warning = built if isinstance(built, SafetyWarning) else SafetyWarning(message=built)
         detail_builder = _DETAIL_BUILDERS.get(node_type)
         details: list[tuple[str, str]] = []
         editable: tuple[str, str] | None = None
         if detail_builder:
             built = detail_builder(config, states, clients)
             details, editable = built if isinstance(built, tuple) else (built, None)
-        warnings.append(
-            SafetyWarning(message=message, details=details, editable_setting=editable, acknowledge=acknowledge)
-        )
+        warnings.append(replace(warning, details=details, editable_setting=editable))
 
     if elixir_warning := level_scaling_warning(elixir_players):
         warnings.append(elixir_warning)
@@ -390,6 +399,7 @@ class SafetyWarningDialog(QDialog):
         self.setWindowTitle("Safety Check")
         self.setMinimumWidth(440)
         self._edits: list[tuple[str, QLineEdit]] = []
+        self._opt_outs: list[tuple[QCheckBox, Callable[[Any], None]]] = []
         self._acknowledgements = [w.acknowledge for w in warnings if w.acknowledge is not None]
         self._build(warnings)
 
@@ -401,7 +411,7 @@ class SafetyWarningDialog(QDialog):
             return ""
 
     def accept(self) -> None:
-        """Save any edited settings and record the warnings read once, then accept.
+        """Save any edited settings and the answers given to the warnings, then accept.
 
         On accept only: cancelling a run must not leave a half-typed name behind. The
         write happens here rather than on every keystroke for the same reason.
@@ -418,6 +428,10 @@ class SafetyWarningDialog(QDialog):
             for acknowledge in self._acknowledgements:
                 acknowledge(settings)
                 changed = True
+            for box, opt_out in self._opt_outs:
+                if box.isChecked():
+                    opt_out(settings)
+                    changed = True
             if changed:
                 settings.save()
         except Exception:
@@ -489,6 +503,17 @@ class SafetyWarningDialog(QDialog):
                 edit_form.addRow(f"Change {label_text}:", edit)
                 layout.addWidget(edit_container)
                 self._edits.append((setting_key, edit))
+
+            if warning.opt_out:
+                label_text, opt_out = warning.opt_out
+                box = QCheckBox(label_text)
+                box.setToolTip("Turn it back on in Settings → Bot. Saved when you run.")
+                box_container = QWidget()
+                box_layout = QHBoxLayout(box_container)
+                box_layout.setContentsMargins(icon_size + 8, 0, 0, 0)
+                box_layout.addWidget(box)
+                layout.addWidget(box_container)
+                self._opt_outs.append((box, opt_out))
 
         # The one place in the app where the commit deliberately does not take the accent.
         # This dialog exists to make the user stop and read before a run; filling the

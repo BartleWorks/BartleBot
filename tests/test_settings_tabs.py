@@ -100,22 +100,34 @@ def test_the_users_own_keep_list_is_written_from_what_was_typed(qapp):
     assert SettingsManager.instance().get_general("quicksell_keep_list") == ["Amber", "Pearl"]
 
 
-def test_the_quicksell_explanation_is_due_on_a_fresh_install(qapp):
-    assert _field(BotTab(), "Explain quicksell before the next run:").isChecked()
+_SHOW_EXPLANATION = "Show Quicksell explanation before each run:"
 
 
-def test_the_quicksell_explanation_can_be_asked_for_again(qapp):
-    """#145 shows it once, so the once has to be undoable."""
+def test_the_quicksell_explanation_is_shown_on_a_fresh_install(qapp):
+    assert _field(BotTab(), _SHOW_EXPLANATION).isChecked()
+
+
+def test_the_quicksell_explanation_can_be_turned_back_on(qapp):
+    """#145. The safety check's check box turns it off, so this is the way back."""
     sm = SettingsManager.instance()
-    sm.quicksell_warning_acknowledged = True
+    sm.show_quicksell_explanation = False
     tab = BotTab()
-    box = _field(tab, "Explain quicksell before the next run:")
+    box = _field(tab, _SHOW_EXPLANATION)
     assert not box.isChecked()
 
     box.setChecked(True)
     tab.apply()
 
-    assert sm.quicksell_warning_acknowledged is False
+    assert sm.show_quicksell_explanation is True
+
+
+def test_the_quicksell_explanation_can_be_turned_off_here_too(qapp):
+    tab = BotTab()
+    _field(tab, _SHOW_EXPLANATION).setChecked(False)
+
+    tab.apply()
+
+    assert SettingsManager.instance().show_quicksell_explanation is False
 
 
 def test_the_launch_options_are_on_the_game_tab(qapp):
