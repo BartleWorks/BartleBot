@@ -80,6 +80,44 @@ def test_the_bot_tab_writes_what_it_was_given(qapp):
     assert "Spare Idler" in sm.recent_friend_names
 
 
+def test_the_users_own_keep_list_round_trips_a_name_with_a_comma_in_it(qapp):
+    """#34. ``No Pain, No Gain Onyx`` is a real item, and a naive split makes it two keywords."""
+    sm = SettingsManager.instance()
+    sm.set_general("quicksell_keep_list", ["Amber", "No Pain, No Gain Onyx"])
+    tab = BotTab()
+
+    tab.apply()
+
+    assert sm.get_general("quicksell_keep_list") == ["Amber", "No Pain, No Gain Onyx"]
+
+
+def test_the_users_own_keep_list_is_written_from_what_was_typed(qapp):
+    tab = BotTab()
+    _field(tab, "Always keep:").setText("Amber,  Pearl , ")
+
+    tab.apply()
+
+    assert SettingsManager.instance().get_general("quicksell_keep_list") == ["Amber", "Pearl"]
+
+
+def test_the_quicksell_explanation_is_due_on_a_fresh_install(qapp):
+    assert _field(BotTab(), "Explain quicksell before the next run:").isChecked()
+
+
+def test_the_quicksell_explanation_can_be_asked_for_again(qapp):
+    """#145 shows it once, so the once has to be undoable."""
+    sm = SettingsManager.instance()
+    sm.quicksell_warning_acknowledged = True
+    tab = BotTab()
+    box = _field(tab, "Explain quicksell before the next run:")
+    assert not box.isChecked()
+
+    box.setChecked(True)
+    tab.apply()
+
+    assert sm.quicksell_warning_acknowledged is False
+
+
 def test_the_launch_options_are_on_the_game_tab(qapp):
     """A setting the app applies while a client starts is not a Bot tab row.
 

@@ -585,6 +585,77 @@ def test_enable_quicksell_defaults_to_on():
     assert qs.resolve_options_for(_bot())["enabled"] is True
 
 
+# --- the user's own keep list (#34) -------------------------------------------------
+
+
+async def test_the_users_own_keep_list_spares_an_item_the_bot_would_sell():
+    SettingsManager.instance().set_general(qs.USER_KEEP_LIST_KEY, ["hat"])
+    client = _full_backpack()
+
+    def _text_for_path(client_arg, path):
+        return "Rare Hat" if path == quicksell_item_title_path(0) else ""
+
+    p = _make_patchers(is_jewel_full_returns=False)
+    with p["poll_until"], p["click_by_path"] as mock_click, p["is_enabled"], p["jewel_full"], p["poll_interval"]:
+        with patch.object(node_helpers, "get_text_by_path", side_effect=_text_for_path, new_callable=AsyncMock):
+            result = await qs.run(_machine(keep_list=[]), [client], {})
+
+    assert result == "SUCCESS"
+    assert quicksell_item_checkbox_path(0) in [c.args[1] for c in mock_click.call_args_list]
+
+
+def test_the_users_own_keep_list_survives_a_bot_value_replacing_the_authors():
+    """Not a level of the keep list option: a bot's value replaces the author's list,
+    and the user's own list is kept whatever that resolves to."""
+    config = _bot(BotOptionModel(name=qs.OPTION_KEEP_LIST, type="drop_keep_list", default=["Amber"]))
+    sm = SettingsManager.instance()
+    sm.set_option_override(config.id, qs.OPTION_KEEP_LIST, ["Onyx"])
+    sm.set_general(qs.USER_KEEP_LIST_KEY, ["Pearl"])
+
+    options = qs.resolve_options_for(config)
+
+    assert options["keep_list"] == ["Onyx"]
+    assert {"onyx", "pearl"} <= set(qs.effective_keep_list(options))
+    assert "amber" not in qs.effective_keep_list(options)
+
+
+def test_a_keep_list_setting_of_the_wrong_shape_keeps_nothing_extra():
+    SettingsManager.instance().set_general(qs.USER_KEEP_LIST_KEY, "Amber")
+    assert qs.user_keep_list() == []
+
+
+# --- what a bot's own file sells beyond the user's settings (#145) -----------------
+
+
+def _declaring(name: str, value: bool) -> BotConfig:
+    return _bot(BotOptionModel(name=name, type="bool", default=value))
+
+
+def test_a_bot_that_sells_what_the_users_settings_keep_declares_a_sale():
+    """Tree of Life's case: Sell Skeleton Keys on, against an app setting that keeps them."""
+    config = _declaring("Sell Skeleton Keys", True)
+    assert qs.declared_sales(config) == ["Sell Skeleton Keys"]
+
+
+def test_a_declaration_the_user_already_agrees_with_is_not_a_declared_sale():
+    SettingsManager.instance().set_general("default_quicksell_sell_skeleton_keys", True)
+    assert qs.declared_sales(_declaring("Sell Skeleton Keys", True)) == []
+
+
+def test_a_declaration_that_keeps_more_is_not_a_declared_sale():
+    assert qs.declared_sales(_declaring("Sell Pets", False)) == []
+
+
+def test_the_users_own_value_for_the_bot_is_not_a_declared_sale():
+    config = _declaring("Sell Skeleton Keys", True)
+    SettingsManager.instance().set_option_override(config.id, "Sell Skeleton Keys", True)
+    assert qs.declared_sales(config) == []
+
+
+def test_a_bot_that_declares_nothing_declares_no_sale():
+    assert qs.declared_sales(_bot()) == []
+
+
 # ---------------------------------------------------------------------------
 # The category vocabulary
 #

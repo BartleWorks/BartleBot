@@ -4,7 +4,11 @@ import pytest
 
 from bartlebot.bot.schema import BotConfig
 from bartlebot.gui.safety_warning_dialog import (
+    QUICKSELL_SHOWN_ONCE,
+    SafetyWarning,
+    SafetyWarningDialog,
     collect_safety_warnings,
+    declared_sales_message,
     level_scaling_players,
     level_scaling_warning,
 )
@@ -223,6 +227,131 @@ def test_quicksell_details_are_listed_once_however_many_nodes_there_are():
 
     assert [k for k, _ in details].count("Sell Pets") == 1
     assert not any("Sell A" in k or "Sell B" in k for k, _ in details)
+
+
+# ---------------------------------------------------------------------------
+# quicksell, explained once (#145)
+#
+# Nearly every bot sells once the templates reach the library, and a warning on every
+# run is one the user learns to click through -- taking the other warnings in this
+# dialog with it. So the explanation is shown once for the whole app, and after that
+# only a bot whose own file sells more than the user's settings would is flagged.
+# ---------------------------------------------------------------------------
+
+
+def _quicksell_bot(bot_id: str = "test-bot", **declared: bool) -> BotConfig:
+    config = _config(
+        {"node_type": "quicksell", "params": {}},
+        options=[{"name": name.replace("_", " "), "type": "bool", "default": v} for name, v in declared.items()],
+    )
+    return config.model_copy(update={"id": bot_id})
+
+
+def _run_past(warnings) -> None:
+    for warning in warnings:
+        if warning.acknowledge is not None:
+            warning.acknowledge(SettingsManager.instance())
+
+
+def test_the_first_quicksell_warning_explains_itself_and_says_it_is_shown_once():
+    (warning,) = collect_safety_warnings(_quicksell_bot())
+
+    assert "locked any valuable items" in warning.message
+    assert warning.message.endswith(QUICKSELL_SHOWN_ONCE)
+    assert warning.acknowledge is not None
+
+
+def test_once_read_a_bot_that_sells_only_what_the_user_set_up_is_not_flagged():
+    _run_past(collect_safety_warnings(_quicksell_bot()))
+
+    assert collect_safety_warnings(_quicksell_bot("another-bot")) == []
+
+
+def test_once_read_a_bot_selling_what_the_users_settings_keep_is_flagged_alone():
+    _run_past(collect_safety_warnings(_quicksell_bot()))
+
+    (warning,) = collect_safety_warnings(_quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True))
+
+    assert warning.message == declared_sales_message(["Sell Skeleton Keys"])
+    assert "skeleton keys" in warning.message and "Sell Skeleton Keys off" in warning.message
+
+
+def test_a_first_run_of_such_a_bot_leads_with_what_this_bot_sells():
+    (warning,) = collect_safety_warnings(_quicksell_bot(Sell_Skeleton_Keys=True))
+
+    assert warning.message.startswith(declared_sales_message(["Sell Skeleton Keys"]))
+    assert "locked any valuable items" in warning.message
+
+
+def test_a_sale_accepted_for_one_bot_is_not_asked_about_again_for_it():
+    _run_past(collect_safety_warnings(_quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True)))
+
+    assert collect_safety_warnings(_quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True)) == []
+
+
+def test_a_sale_accepted_for_one_bot_is_still_asked_about_for_another():
+    _run_past(collect_safety_warnings(_quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True)))
+
+    assert len(collect_safety_warnings(_quicksell_bot("another-bot", Sell_Skeleton_Keys=True))) == 1
+
+
+def test_a_bot_that_starts_selling_something_else_is_asked_about_that_alone():
+    """A template update can turn a second flag on in a bot the user already accepted."""
+    _run_past(collect_safety_warnings(_quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True)))
+
+    (warning,) = collect_safety_warnings(
+        _quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True, Sell_Socket_Wrenches=True)
+    )
+
+    assert warning.message == declared_sales_message(["Sell Socket Wrenches"])
+
+
+def test_a_bot_that_keeps_more_than_the_user_asked_is_not_flagged():
+    _run_past(collect_safety_warnings(_quicksell_bot()))
+
+    assert collect_safety_warnings(_quicksell_bot(Sell_Pets=False)) == []
+
+
+def test_two_sales_are_named_together():
+    message = declared_sales_message(["Sell Socket Wrenches", "Sell Skeleton Keys"])
+    assert "socket wrenches and skeleton keys" in message
+    assert "Sell Socket Wrenches and Sell Skeleton Keys off" in message
+
+
+def test_the_explanation_comes_back_when_the_user_asks_for_it():
+    _run_past(collect_safety_warnings(_quicksell_bot()))
+    SettingsManager.instance().quicksell_warning_acknowledged = False
+
+    assert len(collect_safety_warnings(_quicksell_bot())) == 1
+
+
+def test_running_past_the_dialog_records_the_explanation_as_read(qapp):
+    dlg = SafetyWarningDialog(collect_safety_warnings(_quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True)))
+
+    dlg.accept()
+
+    sm = SettingsManager.instance()
+    assert sm.quicksell_warning_acknowledged is True
+    assert sm.accepted_quicksell_sales("tree-of-life") == ["Sell Skeleton Keys"]
+
+
+def test_cancelling_the_run_records_nothing(qapp):
+    """A run the user backed out of is not a warning they ran past."""
+    dlg = SafetyWarningDialog(collect_safety_warnings(_quicksell_bot("tree-of-life", Sell_Skeleton_Keys=True)))
+
+    dlg.reject()
+
+    sm = SettingsManager.instance()
+    assert sm.quicksell_warning_acknowledged is False
+    assert sm.accepted_quicksell_sales("tree-of-life") == []
+
+
+def test_a_warning_shown_every_run_records_nothing(qapp):
+    dlg = SafetyWarningDialog([SafetyWarning(message="This bot teleports to collect reagents.")])
+
+    dlg.accept()
+
+    assert SettingsManager.instance().quicksell_warning_acknowledged is False
 
 
 # ---------------------------------------------------------------------------

@@ -28,8 +28,10 @@ from PyQt6.QtWidgets import (
 
 from bartlebot.bot_options import SAFETY_DELAY_DESCRIPTION
 from bartlebot.gui.settings.rows import hint
+from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.realm_combo import RealmCombo
 from bartlebot.gui.widgets.rule_heading import RuleHeading
+from bartlebot.nodes.utility import quicksell
 from bartlebot.settings_manager import SettingsManager
 
 
@@ -194,6 +196,30 @@ class BotTab(QWidget):
         quicksell_form.addRow("Sell Skeleton Keys:", self._sell_skeleton_keys_cb)
         quicksell_form.addRow(hint("Keys open the locked skeleton-key dungeons, and are not otherwise farmable."))
 
+        # Not a starting answer like the rows above: every bot keeps these on top of its
+        # own keep list, so nothing a bot or its Options says can sell them (#34).
+        self._keep_list_edit = QLineEdit(
+            format_list_text([str(k) for k in sm.get_general(quicksell.USER_KEEP_LIST_KEY, default=[]) or []])
+        )
+        self._keep_list_edit.setPlaceholderText("e.g. Amber, Pearl")
+        quicksell_form.addRow("Always keep:", self._keep_list_edit)
+        quicksell_form.addRow(
+            hint(
+                "Items every bot keeps, on top of its own keep list. Separate them with commas; any item "
+                "whose name contains one is not sold. Pets are listed by nickname, so this cannot keep one."
+            )
+        )
+
+        self._explain_quicksell_cb = QCheckBox()
+        self._explain_quicksell_cb.setChecked(not sm.quicksell_warning_acknowledged)
+        quicksell_form.addRow("Explain quicksell before the next run:", self._explain_quicksell_cb)
+        quicksell_form.addRow(
+            hint(
+                "The safety check explains what quicksell sells the first time you run a bot that has it, "
+                "then stays quiet unless a bot sells something your settings here keep. Tick to read it again."
+            )
+        )
+
         layout.addLayout(quicksell_form)
 
         # ------------------------------------------------------------------
@@ -233,4 +259,6 @@ class BotTab(QWidget):
         sm.set_general("default_quicksell_sell_pets", self._sell_pets_cb.isChecked())
         sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())
         sm.set_general("default_quicksell_sell_skeleton_keys", self._sell_skeleton_keys_cb.isChecked())
+        sm.set_general(quicksell.USER_KEEP_LIST_KEY, parse_list_text(self._keep_list_edit.text()))
+        sm.quicksell_warning_acknowledged = not self._explain_quicksell_cb.isChecked()
         sm.set_general("default_apply_archmastery", self._apply_archmastery_cb.isChecked())

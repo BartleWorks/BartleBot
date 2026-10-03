@@ -99,6 +99,45 @@ Nothing rewrites an option on load. `_apply_bot_defaults` used to overwrite Safe
 Delay from the app setting on open, which is why `bots/` moved on every run;
 `test_opening_and_saving_a_bot_changes_none_of_its_options` is what keeps it still.
 
+## Beside the levels: quicksell's user keep list, and its warning
+
+**The user's own keep list is not a level of `Quicksell Keep List`** (#34). It is
+`quicksell_keep_list` on the Bot settings tab ("Always keep"), and every bot keeps it on
+top of whatever the option resolved to. As a fifth level it would never be reached: a
+resolution picks one winner, and nearly every bot declares a list, which outranks an
+app setting. So `quicksell.resolve_options` takes it as a separate argument and carries
+it as its own `user_keep_list` key, never merged into `keep_list`. The keep-list picker
+writes `keep_list` back as this bot's value, and a merged list would copy the user's
+keywords into every bot whose picker they touched. The picker shows a row the user's
+list keeps as checked and locked, with a tooltip pointing to Settings → Bot.
+
+**The quicksell safety warning is explained once, not on every run** (#145). Once the
+templates reach the library nearly every bot sells, and a dialog on every run teaches
+the user to click through it, along with the teleport and elixir warnings it shares
+the dialog with. What the explanation asks (lock what you value, keep it on a list) is
+the same for every bot, so it is shown once for the whole app. Once per bot would ask the
+same question eighty times.
+
+After that, the user's settings are the baseline. A sale they set up themselves, in
+Settings or as a value for this bot, needs no warning. The one level that can sell more
+than the user asked for without the user touching anything is the bot file, so
+`quicksell.declared_sales` names the sell flags a declaration turns on while the user's
+app setting keeps them, and the dialog asks about each one once per bot.
+Tree of Life's Sell Skeleton Keys is the case in the shipped library today. A
+declaration that keeps more than the user would is never flagged, and nor is the keep
+list, since the user's own list is kept whatever a bot declares.
+
+Two things that are easy to get wrong:
+
+- **Accepting a declared sale cannot be stored as an override.** Setting a value back
+  to the one it resolves to drops the override (see the Option Values rules in
+  `bartlebot/gui/CLAUDE.md`), so the per-bot answer lives apart, in
+  `accepted_quicksell_sales: {bot_id: [option name, …]}`.
+- **Both answers are written on accept only**, through `SafetyWarning.acknowledge`. A
+  run the user cancelled is not a warning they ran past. "Explain quicksell before the
+  next run" on the Bot tab clears the app-wide answer, so the explanation can be read
+  again.
+
 ## A param gates an option the author knows about
 
 Some choices only exist in some dungeons. Challenge Mode is in a handful of them,

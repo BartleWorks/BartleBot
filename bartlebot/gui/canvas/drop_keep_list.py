@@ -315,7 +315,7 @@ class DropKeepListWidget(QWidget):
         self.refresh()
 
     def set_context(self, params: dict) -> None:
-        """Supply the resolved sell_* bools, which decide what the keep list can reach.
+        """Supply the resolved sell_* bools and the user's own keep list, which decide what this one can reach.
 
         The host pushes this on every edit, including the widget's own, so it
         returns early when nothing relevant moved. Without that, each keystroke in
@@ -465,6 +465,12 @@ class DropKeepListWidget(QWidget):
             row.setFlags(flags & ~Qt.ItemFlag.ItemIsEnabled if locked else flags | Qt.ItemFlag.ItemIsEnabled)
             if category_reason is not None:
                 row.setToolTip(_COL_ITEM, category_reason)
+            elif locked and state.users:
+                row.setToolTip(
+                    _COL_ITEM,
+                    f"Kept by {state.keyword!r} in your own keep list, which every bot keeps — "
+                    "change that in Settings → Bot.",
+                )
             elif locked:
                 row.setToolTip(
                     _COL_ITEM, f"Kept by the keyword {state.keyword!r}, not by its own name — change that above."

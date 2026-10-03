@@ -191,6 +191,15 @@ def test_row_kept_by_a_partial_keyword_is_locked(qapp):
     assert "amber" in _row(w, "Amber Ring").toolTip(_COL_ITEM).lower()
 
 
+def test_row_kept_by_the_users_own_list_is_locked_and_says_where_to_change_it(qapp):
+    """#34. Every bot keeps it, so unticking it here could not sell it -- and the bot's
+    own list, which this widget writes, must not pick it up either."""
+    w = _make(qapp, keep_list=[], context={**_SELL_ALL, "user_keep_list": ["Amber"]})
+    assert _checked(w, "Amber Ring") and not _enabled(w, "Amber Ring")
+    assert "Settings → Bot" in _row(w, "Amber Ring").toolTip(_COL_ITEM)
+    assert w.get_value() == []
+
+
 def test_row_kept_by_a_sell_bool_is_locked(qapp):
     w = _make(qapp, keep_list=[], context={"sell_socket_wrenches": False, "sell_skeleton_keys": True})
     assert _checked(w, "Socket Wrench") and not _enabled(w, "Socket Wrench")

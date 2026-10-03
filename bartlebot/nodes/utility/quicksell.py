@@ -38,6 +38,12 @@ logger = logging.getLogger(__name__)
 # the keep list is the one authorial declaration here, and the user's own list
 # replaces it, seeded from the author's.
 #
+# The user *also* has a keep list of their own in Settings -> Bot (#34), for what they
+# never want sold whatever they farm. It is not a fifth level of the keep list option:
+# a resolution picks one winner, and nearly every bot declares a list, which would
+# outrank it in every bot. It is applied beside the option instead, by every bot,
+# whatever the option resolved to -- so a bot's keep list can only ever add to it.
+#
 # There was one bot in the library with two quicksell nodes, and it existed only to
 # offer a choice between two keep lists.  Under bot options that choice is a value
 # the user edits directly, so the reason for a second node is gone, and
@@ -50,6 +56,9 @@ OPTION_ENABLED = "Enable Quicksell"
 
 #: The authorial one: keywords naming this dungeon's drops worth keeping.
 OPTION_KEEP_LIST = "Quicksell Keep List"
+
+#: The ``general`` settings key holding the user's own keep list, which every bot applies.
+USER_KEEP_LIST_KEY = "quicksell_keep_list"
 
 #: Internal key -> option name, for the three bools. The internal keys are what every
 #: pure helper below is written against, and what the editor's picker speaks.
@@ -166,15 +175,17 @@ NODE_SPEC = NodeSpec(
             description=(
                 "Keywords to match against item names when quickselling. Any item whose name "
                 "contains one of these (case-insensitive, partial matches count) is not sold. "
-                "The bot's author recommends a list; yours replaces it."
+                "The bot's author recommends a list; yours replaces it. Your own keep list in "
+                "Settings → Bot is kept too, in every bot."
             ),
         ),
     ],
     max_consecutive_retries=5,
     safety_warning=(
         "This bot quicksells items when your backpack is full. "
-        "Ensure that you have locked any valuable items or have added them to the keep list in "
-        "Options. "
+        "Ensure that you have locked any valuable items (the game's Backpack Item Lock, under "
+        "Options → Gameplay Options 2, has to be on first) or have added them to a keep list: "
+        "this bot's, in Options, or your own, in Settings → Bot, which every bot keeps. "
         "Pets are the exception: the quicksell window lists them by nickname, so the keep list "
         "cannot spare one — turn Sell Pets off to keep your pets. " + SAFETY_WARNING_DISABLED
     ),
@@ -277,7 +288,7 @@ QUICKSELLABLE_CATEGORIES: frozenset[str] = frozenset(
 DROP_CATEGORIES: tuple[str, ...] = tuple(sorted(QUICKSELLABLE_CATEGORIES | set(NEVER_QUICKSOLD_CATEGORIES)))
 
 
-def resolve_options(get_option) -> dict:
+def resolve_options(get_option, user_keep_list=()) -> dict:
     """Collapse the five quicksell options into the plain dict everything else reads.
 
     This is the one place the option layer touches quicksell.  Below it nothing
@@ -290,17 +301,42 @@ def resolve_options(get_option) -> dict:
     written under an older type, or a stub that answers everything with a number,
     must not turn a bool into "sell everything".  A value of the wrong shape falls
     back to the floor in ``SELL_FLAG_DEFAULTS``, never to something more destructive.
+
+    *user_keep_list* is the user's own list from Settings -> Bot, read by the caller
+    with :func:`user_keep_list`.  It is kept apart as ``"user_keep_list"`` rather than
+    merged into ``"keep_list"``: the picker edits ``"keep_list"`` and writes it back as
+    this bot's value, and a merged list would copy the user's entries into every bot
+    whose picker they touched.
     """
     keep_list = get_option(OPTION_KEEP_LIST, [])
     enabled = get_option(OPTION_ENABLED, True)
     values: dict = {
         "enabled": enabled if isinstance(enabled, bool) else True,
         "keep_list": [str(k) for k in keep_list] if isinstance(keep_list, list) else [],
+        "user_keep_list": [str(k) for k in user_keep_list],
     }
     for key, name in SELL_FLAG_OPTIONS.items():
         value = get_option(name, SELL_FLAG_DEFAULTS[key])
         values[key] = value if isinstance(value, bool) else SELL_FLAG_DEFAULTS[key]
     return values
+
+
+def user_keep_list(settings=None) -> list[str]:
+    """The user's own keep list from Settings -> Bot, or ``[]`` when it cannot be read.
+
+    Never raises: a settings file that cannot be read keeps nothing extra, which is
+    the state every install starts in.
+    """
+    try:
+        if settings is None:
+            from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 - avoids an import cycle
+
+            settings = SettingsManager.instance()
+        value = settings.get("general", USER_KEEP_LIST_KEY, default=[])
+    except Exception:
+        logger.exception("Failed to read the user's quicksell keep list")
+        return []
+    return [str(k) for k in value] if isinstance(value, list) else []
 
 
 def resolve_options_for(config, settings=None) -> dict:
@@ -314,8 +350,37 @@ def resolve_options_for(config, settings=None) -> dict:
     from bartlebot import option_values  # noqa: PLC0415 - avoids a settings import at node load
 
     return resolve_options(
-        lambda name, default=None: option_values.option_value(config, name, default, settings=settings)
+        lambda name, default=None: option_values.option_value(config, name, default, settings=settings),
+        user_keep_list(settings),
     )
+
+
+def declared_sales(config, settings=None) -> list[str]:
+    """The sell flags this bot's own declaration turns on that the user's settings keep.
+
+    What the safety check still warns about once the user has read its explanation of
+    quicksell (#145). The user's settings are the baseline: a sale they set up
+    themselves, in Settings -> Bot or as this bot's value in Options, needs no warning.
+    A bot file is the one level that can sell more than the user asked for without the
+    user having touched anything -- Tree of Life declares Sell Skeleton Keys on, while
+    the app setting keeps them.
+
+    Returns option names in ``SELL_FLAG_OPTIONS`` order; empty when nothing is
+    declared, or when the declaration agrees with the user or is safer.
+    """
+    from bartlebot import bot_options, option_values  # noqa: PLC0415 - avoids a settings import at node load
+
+    sales = []
+    for key, name in SELL_FLAG_OPTIONS.items():
+        resolution = option_values.option_resolution(config, name, settings=settings)
+        if resolution is None or resolution.source != bot_options.SOURCE_BOT_FILE or resolution.value is not True:
+            continue
+        users = option_values.app_value(name, settings=settings)
+        if not isinstance(users, bool):
+            users = SELL_FLAG_DEFAULTS[key]
+        if not users:
+            sales.append(name)
+    return sales
 
 
 def describe_config(params: dict) -> str:
@@ -328,7 +393,16 @@ def describe_config(params: dict) -> str:
 def _typed_keywords(params: dict) -> list[str]:
     """The keep_list param, lowercased. Blank entries are dropped: an empty keyword
     is a substring of every name and would silently keep the entire backpack."""
-    return [k for k in (kw.lower().strip() for kw in (params.get("keep_list") or [])) if k]
+    return _keywords(params.get("keep_list"))
+
+
+def _user_keywords(params: dict) -> list[str]:
+    """The user's own keep list from Settings -> Bot, lowercased, blanks dropped the same way."""
+    return _keywords(params.get("user_keep_list"))
+
+
+def _keywords(entries) -> list[str]:
+    return [k for k in (kw.lower().strip() for kw in (entries or [])) if k]
 
 
 def sell_flag(params: dict, param_key: str) -> bool:
@@ -378,8 +452,12 @@ def category_unmatchable_reasons(params: dict) -> dict[str, str]:
 
 
 def effective_keep_list(params: dict) -> list[str]:
-    """Return the lowercased keywords this config keeps items by."""
-    return [*_typed_keywords(params), *_implied_keywords(params)]
+    """Return the lowercased keywords this config keeps items by, each once.
+
+    The bot's own list, then the user's from Settings -> Bot, then the ones the sell
+    flags imply.
+    """
+    return list(dict.fromkeys([*_typed_keywords(params), *_user_keywords(params), *_implied_keywords(params)]))
 
 
 def matching_keyword(item_name: str, keywords: list[str]) -> str | None:
@@ -407,11 +485,15 @@ class DropKeepState:
                  fate. False for a partial match, and false for an implied keyword
                  even when it happens to equal the name ("Socket Wrench") — removing
                  that one means flipping the sell_* bool, not editing the keep list.
+        users:   True when *keyword* comes from the user's own keep list in
+                 Settings -> Bot. Never exact either: this bot's list cannot
+                 remove it, so the row is not this bot's to untick.
     """
 
     name: str
     keyword: str | None
     exact: bool
+    users: bool = False
 
     @property
     def kept(self) -> bool:
@@ -421,12 +503,15 @@ class DropKeepState:
 def drop_keep_states(drops: list[str], params: dict) -> list[DropKeepState]:
     """Report what a quicksell config does to each item in a bot's drop table."""
     typed = _typed_keywords(params)
+    users = _user_keywords(params)
     implied = _implied_keywords(params)
     states = []
     for name in drops:
         keyword = matching_keyword(name, typed)
         if keyword is not None:
             states.append(DropKeepState(name, keyword, exact=keyword == name.lower().strip()))
+        elif (keyword := matching_keyword(name, users)) is not None:
+            states.append(DropKeepState(name, keyword, exact=False, users=True))
         else:
             states.append(DropKeepState(name, matching_keyword(name, implied), exact=False))
     return states
@@ -465,8 +550,9 @@ async def run(machine, clients: list, params: dict) -> str:
       0. Resolve the five bot options via resolve_options(). Enable Quicksell off is
          SUCCESS without touching a client -- a node that does nothing has not failed.
       1. Build the effective keep_list via effective_keep_list(): the Quicksell Keep
-         List option plus the keywords implied by the sell_* bools that are off. The
-         Options picker resolves the same way, so what it shows is what this will do.
+         List option, the user's own list from Settings -> Bot, and the keywords
+         implied by the sell_* bools that are off. The Options picker resolves the
+         same way, so what it shows is what this will do.
       2. Open the inventory page (B key); read backpack_space() to check if full.
       3. Switch to the jewel page (Y key); read the jewel capacity text to check if full.
       4. If neither is full, close the backpack and return SUCCESS.
@@ -492,7 +578,7 @@ async def run(machine, clients: list, params: dict) -> str:
     # The one place the option layer is read. Everything below sees plain values;
     # which level answered each one is already in the log, written once per run by
     # get_option itself, so this line says only what the node will do with them.
-    params = resolve_options(machine.get_option)
+    params = resolve_options(machine.get_option, user_keep_list())
     keep_list = effective_keep_list(params)
     sell_pets: bool = params["sell_pets"]
     machine.log(f"quicksell: {describe_config(params)}")

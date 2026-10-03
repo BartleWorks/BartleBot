@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
@@ -53,6 +53,39 @@ class SafetyWarning:
     than cancelling the run, going to Settings, and starting over. Saved on accept only.
     """
 
+    acknowledge: Callable[[Any], None] | None = None
+    """Optional call recording that this warning was read, for one shown once rather than every run.
+
+    Handed the ``SettingsManager``, and called on accept only, like the editable field: a
+    run the user cancelled is not a warning they ran past.
+    """
+
+
+def _settings():
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle
+
+    return SettingsManager.instance()
+
+
+#: Ends quicksell's explanation, which the safety check shows once rather than on every run.
+QUICKSELL_SHOWN_ONCE = (
+    "You will not see this again. After this, a bot is only flagged here when it sells something your settings keep."
+)
+
+
+def _spoken_list(words: Sequence[str]) -> str:
+    """``a``, ``a and b``, ``a, b and c``."""
+    return words[0] if len(words) == 1 else f"{', '.join(words[:-1])} and {words[-1]}"
+
+
+def declared_sales_message(names: Sequence[str]) -> str:
+    """The warning for a bot whose own file sells what the user's settings keep."""
+    items = _spoken_list([name.removeprefix("Sell ").lower() for name in names])
+    return (
+        f"This bot's author has it sell {items}, which your settings keep. To keep them, turn "
+        f"{_spoken_list(list(names))} off in this bot's Options. You will not be asked about this bot again."
+    )
+
 
 def _quicksell_enabled(config) -> bool:
     """Whether this bot's quicksell nodes will sell anything at all.
@@ -66,7 +99,7 @@ def _quicksell_enabled(config) -> bool:
     return bool(quicksell.resolve_options_for(config)["enabled"])
 
 
-def _quicksell_message(config, states, clients, message: str) -> str | None:
+def _quicksell_message(config, states, clients, message: str) -> str | tuple[str, Callable[[Any], None]] | None:
     """The warning quicksell earns on *this* run, or None to drop it.
 
     A bot with quicksell nodes is not necessarily a bot that sells: ``Enable
@@ -80,13 +113,42 @@ def _quicksell_message(config, states, clients, message: str) -> str | None:
     bot file that declares it off is not something the user chose or can see from
     here, so the one sentence that is still true — the backpack fills, then the bank
     — is shown on its own instead of being lost.
+
+    A bot that sells is nearly every bot once the templates reach the library, and the
+    same habit applies (#145). What the explanation asks of the user — lock what you
+    value, keep it on a list — is the same for every bot, so it is shown once for the
+    whole app, not once per bot: per bot, it would ask the same question eighty times.
+    After that the only thing left to warn about is a bot selling more than the user's
+    own settings would, which only its file can do (``quicksell.declared_sales``), and
+    each such sale is asked about once per bot. The acknowledgement goes back as the
+    warning's ``acknowledge``, so it is recorded only if the user runs.
     """
-    if _quicksell_enabled(config):
-        return message
-    resolution = option_values.option_resolution(config, quicksell.OPTION_ENABLED)
-    if resolution is not None and resolution.source in (bot_options.SOURCE_OVERRIDE, bot_options.SOURCE_APP_SETTING):
+    if not _quicksell_enabled(config):
+        resolution = option_values.option_resolution(config, quicksell.OPTION_ENABLED)
+        if resolution is not None and resolution.source in (
+            bot_options.SOURCE_OVERRIDE,
+            bot_options.SOURCE_APP_SETTING,
+        ):
+            return None
+        return quicksell.SAFETY_WARNING_DISABLED
+
+    settings = _settings()
+    explained = settings.quicksell_warning_acknowledged
+    accepted = settings.accepted_quicksell_sales(config.id)
+    sales = [name for name in quicksell.declared_sales(config) if name not in accepted]
+    if explained and not sales:
         return None
-    return quicksell.SAFETY_WARNING_DISABLED
+
+    parts = [declared_sales_message(sales)] if sales else []
+    if not explained:
+        parts += [message, QUICKSELL_SHOWN_ONCE]
+
+    def acknowledge(sm) -> None:
+        sm.quicksell_warning_acknowledged = True
+        if sales:
+            sm.accept_quicksell_sales(config.id, sales)
+
+    return "\n\n".join(parts), acknowledge
 
 
 def _quicksell_details(config, states, clients) -> list[tuple[str, str]]:
@@ -209,6 +271,8 @@ _DETAIL_BUILDERS = {
 #: node type -> ``(config, states, clients, message) -> message or None``, where the
 #: message passed in is the ``NodeSpec.safety_warning``. Returning it unchanged is the
 #: default for a node with no entry here; returning None drops the warning for this run.
+#: A ``(message, acknowledge)`` pair is a warning shown until read -- see
+#: ``SafetyWarning.acknowledge``.
 #:
 #: This is the answer to "the node is in the bot, but will it do anything?", which a
 #: NodeSpec field cannot answer because it is a question about the bot's options -- and
@@ -297,17 +361,21 @@ def collect_safety_warnings(
             continue
         message_builder = _MESSAGE_BUILDERS.get(node_type)
         message = spec.safety_warning
+        acknowledge = None
         if message_builder:
-            message = message_builder(config, states, clients, message)
-            if message is None:
+            built_message = message_builder(config, states, clients, message)
+            if built_message is None:
                 continue
+            message, acknowledge = built_message if isinstance(built_message, tuple) else (built_message, None)
         detail_builder = _DETAIL_BUILDERS.get(node_type)
         details: list[tuple[str, str]] = []
         editable: tuple[str, str] | None = None
         if detail_builder:
             built = detail_builder(config, states, clients)
             details, editable = built if isinstance(built, tuple) else (built, None)
-        warnings.append(SafetyWarning(message=message, details=details, editable_setting=editable))
+        warnings.append(
+            SafetyWarning(message=message, details=details, editable_setting=editable, acknowledge=acknowledge)
+        )
 
     if elixir_warning := level_scaling_warning(elixir_players):
         warnings.append(elixir_warning)
@@ -322,27 +390,24 @@ class SafetyWarningDialog(QDialog):
         self.setWindowTitle("Safety Check")
         self.setMinimumWidth(440)
         self._edits: list[tuple[str, QLineEdit]] = []
+        self._acknowledgements = [w.acknowledge for w in warnings if w.acknowledge is not None]
         self._build(warnings)
 
     @staticmethod
     def _stored_setting(key: str) -> str:
-        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle
-
         try:
-            return str(SettingsManager.instance().get_general(key, default="") or "")
+            return str(_settings().get_general(key, default="") or "")
         except Exception:
             return ""
 
     def accept(self) -> None:
-        """Save any edited settings, then accept.
+        """Save any edited settings and record the warnings read once, then accept.
 
         On accept only: cancelling a run must not leave a half-typed name behind. The
         write happens here rather than on every keystroke for the same reason.
         """
-        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle
-
         try:
-            settings = SettingsManager.instance()
+            settings = _settings()
             changed = False
             for key, edit in self._edits:
                 value = edit.text().strip()
@@ -350,10 +415,13 @@ class SafetyWarningDialog(QDialog):
                     settings.set_general(key, value)
                     settings.add_recent_friend_name(value)
                     changed = True
+            for acknowledge in self._acknowledgements:
+                acknowledge(settings)
+                changed = True
             if changed:
                 settings.save()
         except Exception:
-            logger.exception("Could not save an edited safety-dialog setting")
+            logger.exception("Could not save what the safety dialog changed")
         super().accept()
 
     def _build(self, warnings: list[SafetyWarning]) -> None:

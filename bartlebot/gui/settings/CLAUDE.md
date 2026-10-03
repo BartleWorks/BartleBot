@@ -102,6 +102,12 @@ top of the tab rather than repeated into eight tooltips. That is why it is a tab
 and not a section of General: it is one idea, and General's other five sections
 are not levels of anything.
 
+Two Quicksell rows are the exception, and their hints say so instead of the note at
+the top: *Always keep*, the user's own keep list, which every bot applies on top of its
+own rather than as a level beneath it, and *Explain quicksell before the next run*,
+which is the safety check's one-time explanation turned back on. `docs/BOT_OPTIONS.md`
+has why neither can be a level.
+
 That is also the test for whether a row belongs here at all: **a setting the app
 applies to a client while it is starting is a Game tab row, not a Bot tab one.**
 Character selection and quick friend teleport both sat here and both moved —
