@@ -4,8 +4,8 @@
   "description": "Endlessly completes the Tree of Life in Mooshu",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_3",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Accurate"
@@ -803,16 +803,15 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "check_zone",
-      "label": "Check if in Mooshu",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
         "x": 0.0,
         "y": 0.0
       },
       "params": {
-        "zone": "MooShu/*",
-        "clients_to_check": [
+        "relog_clients": [
           1,
           2,
           3,
@@ -821,111 +820,71 @@
       }
     },
     {
-      "id": "state_2",
-      "node_type": "check_zone",
-      "label": "Check if in Yoshihito Temple",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
         "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple"
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 440,
         "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Jade Palace",
-      "position": {
-        "x": 880.0,
-        "y": 90.0
-      },
-      "params": {
-        "zone": "MooShu/MS_Hub"
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "collect_wisps",
-      "label": "Collect mana wisps",
-      "position": {
-        "x": 1320.0,
-        "y": 90.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "enter_zone",
-      "label": "Enter Rock Dojo",
-      "position": {
-        "x": 1760.0,
-        "y": 90.0
-      },
-      "params": {
-        "from_zone": "MooShu/MS_Hub",
-        "to_zone": "MooShu/Interiors/MS_RockDojoT2",
         "xyz": {
-          "x": 11518.74,
-          "y": -12981.39,
-          "z": 53.91
-        },
-        "reset_xyz": {
-          "x": 11518.76,
-          "y": -12498.38,
-          "z": -154.57
-        },
-        "stagger": false
+          "x": 21269.32,
+          "y": 16798.13,
+          "z": -532.83
+        }
       }
     },
     {
-      "id": "state_6",
-      "node_type": "enter_zone",
-      "label": "Enter Yoshihito Temple",
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
       "position": {
-        "x": 2200.0,
-        "y": 90.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
-        "from_zone": "MooShu/Interiors/MS_RockDojoT2",
-        "to_zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
-        "xyz": {
-          "x": -1840.39,
-          "y": 1691.98,
-          "z": -0.0
-        },
-        "reset_xyz": {
-          "x": -1415.22,
-          "y": 1552.24,
-          "z": 0.0
-        },
-        "stagger": false
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
       }
     },
     {
-      "id": "state_7",
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Tree of Life",
       "position": {
-        "x": 2640.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
         "dungeon_zone": "MooShu/MS_Death/MS_Death_Zone3_AncientTree",
+        "offers_challenge_mode": false,
+        "offers_team_up": false,
         "dungeon_name": "Tree of Life",
         "sigil_xyz": {
           "x": 22340.45,
@@ -940,11 +899,41 @@
       }
     },
     {
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
+      "position": {
+        "x": 9680,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "",
+        "xyz": null
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
       "id": "state_8",
       "node_type": "interact",
       "label": "Talk to Hideo Kebo",
       "position": {
-        "x": 3080.0,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -970,7 +959,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Pool",
       "position": {
-        "x": 3520.0,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -983,11 +972,23 @@
       }
     },
     {
+      "id": "state_22",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 3520,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0
+      }
+    },
+    {
       "id": "state_10",
       "node_type": "interact",
       "label": "Talk to Yishin Chen",
       "position": {
-        "x": 4400.0,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
@@ -1013,7 +1014,7 @@
       "node_type": "enter_zone",
       "label": "Enter Momoonaga's Tower",
       "position": {
-        "x": 4840.0,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
@@ -1037,7 +1038,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Nomoonaga",
       "position": {
-        "x": 5280.0,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
@@ -1051,7 +1052,7 @@
       "node_type": "enter_zone",
       "label": "Exit Nomoonaga's Tower",
       "position": {
-        "x": 5720.0,
+        "x": 5280,
         "y": 0.0
       },
       "params": {
@@ -1075,7 +1076,7 @@
       "node_type": "interact",
       "label": "Talk to Yishin Chen",
       "position": {
-        "x": 6160.0,
+        "x": 5720,
         "y": 0.0
       },
       "params": {
@@ -1101,7 +1102,7 @@
       "node_type": "interact",
       "label": "Use Tree of Life",
       "position": {
-        "x": 6600.0,
+        "x": 6160,
         "y": 0.0
       },
       "params": {
@@ -1127,7 +1128,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Take portal to Spirit World",
       "position": {
-        "x": 7040.0,
+        "x": 6600,
         "y": 0.0
       },
       "params": {
@@ -1150,7 +1151,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Kagemoosha",
       "position": {
-        "x": 7480.0,
+        "x": 7040,
         "y": 0.0
       },
       "params": {
@@ -1167,7 +1168,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Kagemoosha",
       "position": {
-        "x": 7920.0,
+        "x": 7480,
         "y": 0.0
       },
       "params": {
@@ -1181,7 +1182,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to safety",
       "position": {
-        "x": 8360.0,
+        "x": 7920,
         "y": 0.0
       },
       "params": {
@@ -1198,7 +1199,7 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 8800.0,
+        "x": 8360,
         "y": 0.0
       },
       "params": {
@@ -1210,7 +1211,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Death Oni",
       "position": {
-        "x": 9240.0,
+        "x": 8800,
         "y": 0.0
       },
       "params": {
@@ -1220,23 +1221,11 @@
       }
     },
     {
-      "id": "state_22",
-      "node_type": "wait_for_dialogue",
-      "label": "Wait for dialogue",
-      "position": {
-        "x": 3960.0,
-        "y": 0.0
-      },
-      "params": {
-        "timeout": 60.0
-      }
-    },
-    {
       "id": "state_23",
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 9680.0,
+        "x": 9240,
         "y": 0.0
       },
       "params": {}
@@ -1245,9 +1234,79 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
-      "when": "TRUE",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1355,16 +1414,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_7",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_20",
       "dest": "state_21",
       "when": "SUCCESS",
@@ -1377,76 +1426,6 @@
       "trigger": "advance",
       "source": "state_22",
       "dest": "state_10",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1485,8 +1464,18 @@
     },
     {
       "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_23",
-      "dest": "state_3",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1494,5 +1483,46 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  }
 }

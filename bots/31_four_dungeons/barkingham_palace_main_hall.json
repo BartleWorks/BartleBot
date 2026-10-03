@@ -212,11 +212,28 @@
       }
     },
     {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
+        "xyz": {
+          "x": -16.8,
+          "y": -7648.48,
+          "z": -4453.28
+        }
+      }
+    },
+    {
       "id": "t_1",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 440,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -230,7 +247,7 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 880,
+        "x": 1320,
         "y": 0.0
       },
       "params": {}
@@ -240,7 +257,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Main Hall",
       "position": {
-        "x": 1760,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -262,27 +279,16 @@
       }
     },
     {
-      "id": "t_4",
-      "node_type": "enter_zone",
-      "label": "Exit dungeon",
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
       "position": {
-        "x": 6600,
+        "x": 7040,
         "y": 0.0
       },
       "params": {
-        "from_zone": "Marleybone/G14_Gauntlet/MB_Z05_ThroneRoom",
-        "to_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
-        "stagger": false,
-        "xyz": {
-          "x": -1296.38,
-          "y": -1506.46,
-          "z": 3.86
-        },
-        "reset_xyz": {
-          "x": -757.76,
-          "y": -1520.25,
-          "z": 3.86
-        }
+        "zone": "",
+        "xyz": null
       }
     },
     {
@@ -290,7 +296,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1320,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -307,7 +313,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Main Hall",
       "position": {
-        "x": 2200,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -324,7 +330,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 2640,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -336,7 +342,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Corrupted Grenadiers",
       "position": {
-        "x": 3080,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -350,7 +356,7 @@
       "node_type": "enter_zone",
       "label": "Go to next room",
       "position": {
-        "x": 3520,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
@@ -374,7 +380,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Chief Whip",
       "position": {
-        "x": 3960,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
@@ -388,7 +394,7 @@
       "node_type": "interact",
       "label": "Talk to Bulldog Sergeant Major",
       "position": {
-        "x": 4400,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
@@ -414,7 +420,7 @@
       "node_type": "enter_zone",
       "label": "Go to next room",
       "position": {
-        "x": 4840,
+        "x": 5280,
         "y": 0.0
       },
       "params": {
@@ -438,7 +444,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger dialogue",
       "position": {
-        "x": 5280,
+        "x": 5720,
         "y": 0.0
       },
       "params": {
@@ -455,7 +461,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Noxious Gas Golem",
       "position": {
-        "x": 5720,
+        "x": 6160,
         "y": 0.0
       },
       "params": {
@@ -469,7 +475,7 @@
       "node_type": "interact",
       "label": "Talk to Chief Whip",
       "position": {
-        "x": 6160,
+        "x": 6600,
         "y": 0.0
       },
       "params": {
@@ -504,7 +510,7 @@
     },
     {
       "trigger": "advance",
-      "source": "t_4",
+      "source": "t_7",
       "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
@@ -525,7 +531,7 @@
     {
       "trigger": "advance",
       "source": "t_sync_players_1_state_2",
-      "dest": "t_1",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -557,6 +563,16 @@
       "source": "t_5",
       "dest": "t_3",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -665,7 +681,7 @@
     {
       "trigger": "advance",
       "source": "state_17",
-      "dest": "t_4",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",

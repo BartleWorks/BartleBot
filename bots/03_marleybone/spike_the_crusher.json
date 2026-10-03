@@ -273,11 +273,28 @@
       }
     },
     {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_Museum",
+        "xyz": {
+          "x": -4.06,
+          "y": 4112.19,
+          "z": -350.03
+        }
+      }
+    },
+    {
       "id": "t_1",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 440,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -291,7 +308,7 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 880,
+        "x": 1320,
         "y": 0.0
       },
       "params": {}
@@ -301,7 +318,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Big Ben",
       "position": {
-        "x": 1760,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -323,27 +340,16 @@
       }
     },
     {
-      "id": "t_4",
-      "node_type": "enter_zone",
-      "label": "Exit Big Ben",
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
       "position": {
-        "x": 6160,
+        "x": 6600,
         "y": 0.0
       },
       "params": {
-        "from_zone": "Marleybone/MB_BigBen/MB_BigBen",
-        "to_zone": "Marleybone/MB_BigBen/MB_Museum",
-        "stagger": false,
-        "xyz": {
-          "x": -32067.12,
-          "y": 21013.26,
-          "z": -192.95
-        },
-        "reset_xyz": {
-          "x": -31410.1,
-          "y": 21011.12,
-          "z": -202.79
-        }
+        "zone": "",
+        "xyz": null
       }
     },
     {
@@ -351,7 +357,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1320,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -368,7 +374,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Gearhead",
       "position": {
-        "x": 2200,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -385,7 +391,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Gearhead",
       "position": {
-        "x": 2640,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -399,7 +405,7 @@
       "node_type": "interact",
       "label": "Spill first milk",
       "position": {
-        "x": 3080,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -429,7 +435,7 @@
       "node_type": "interact",
       "label": "Spill second milk",
       "position": {
-        "x": 3520,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
@@ -456,7 +462,7 @@
       "node_type": "interact",
       "label": "Spill third milk",
       "position": {
-        "x": 3960,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
@@ -483,7 +489,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Spike the Crusher",
       "position": {
-        "x": 4400,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
@@ -500,7 +506,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Spike the Crusher",
       "position": {
-        "x": 4840,
+        "x": 5280,
         "y": 0.0
       },
       "params": {
@@ -514,7 +520,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisps",
       "position": {
-        "x": 5280,
+        "x": 5720,
         "y": 0.0
       },
       "params": {
@@ -531,7 +537,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 5720,
+        "x": 6160,
         "y": 0.0
       },
       "params": {
@@ -557,7 +563,7 @@
     },
     {
       "trigger": "advance",
-      "source": "t_4",
+      "source": "t_7",
       "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
@@ -578,7 +584,7 @@
     {
       "trigger": "advance",
       "source": "t_sync_players_1_state_2",
-      "dest": "t_1",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -610,6 +616,16 @@
       "source": "t_5",
       "dest": "t_3",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -708,7 +724,7 @@
     {
       "trigger": "advance",
       "source": "state_14",
-      "dest": "t_4",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -718,7 +734,7 @@
     {
       "trigger": "advance",
       "source": "state_14",
-      "dest": "t_4",
+      "dest": "t_7",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",

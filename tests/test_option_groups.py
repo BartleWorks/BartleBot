@@ -154,10 +154,8 @@ def test_atlantea_groups_as_the_design_says():
 
     assert [g.id for g in groups] == list(og.GROUP_ORDER)
     assert layout[og.GROUP_DUNGEON] == (None, {"Fail puzzle and defeat Teles", "Challenge Mode"})
-    assert layout[og.GROUP_TEAM] == (
-        None,
-        {player_realms.OPTION, OPTION_TEAM_UP, OPTION_MINIMUM_TEAM_SIZE, "Level Scaling Players"},
-    )
+    # A dungeon first, built from Dungeon Farmer, which does not offer Team-Up.
+    assert layout[og.GROUP_TEAM] == (None, {player_realms.OPTION, "Level Scaling Players"})
     assert layout[og.GROUP_QUICKSELL] == (qs.OPTION_ENABLED, {*qs.SELL_FLAG_OPTIONS.values(), qs.OPTION_KEEP_LIST})
     assert layout[og.GROUP_GENERAL] == (None, {"Safety Delay", "Refill Potions", OPTION_FAVORITE_REALM})
 

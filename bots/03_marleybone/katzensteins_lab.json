@@ -802,11 +802,28 @@
       }
     },
     {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_ScotlandYard/MB_Roof",
+        "xyz": {
+          "x": -2210.12,
+          "y": 1635.3,
+          "z": -240.0
+        }
+      }
+    },
+    {
       "id": "t_1",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 440,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -820,7 +837,7 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 880,
+        "x": 1320,
         "y": 0.0
       },
       "params": {}
@@ -830,7 +847,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Katzenstein's Lab",
       "position": {
-        "x": 1760,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -852,27 +869,16 @@
       }
     },
     {
-      "id": "t_4",
-      "node_type": "enter_zone",
-      "label": "Exit dungeon",
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
       "position": {
-        "x": 12320,
+        "x": 12760,
         "y": 0.0
       },
       "params": {
-        "from_zone": "Marleybone/MB_ScotlandYard/MB_KatzLab",
-        "to_zone": "Marleybone/MB_ScotlandYard/MB_Roof",
-        "stagger": false,
-        "xyz": {
-          "x": -6.92,
-          "y": -5858.13,
-          "z": -230.0
-        },
-        "reset_xyz": {
-          "x": -1.99,
-          "y": -5433.72,
-          "z": -230.0
-        }
+        "zone": "",
+        "xyz": null
       }
     },
     {
@@ -880,7 +886,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1320,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -897,7 +903,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to health wisps",
       "position": {
-        "x": 2200,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -914,7 +920,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 2640,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -931,7 +937,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 3080,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -945,7 +951,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Smogger",
       "position": {
-        "x": 3520,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
@@ -962,7 +968,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Smogger",
       "position": {
-        "x": 3960,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
@@ -977,7 +983,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Dr. Von Katzenstein",
       "position": {
-        "x": 4400,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
@@ -994,7 +1000,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Dr. Von Katzenstein",
       "position": {
-        "x": 4840,
+        "x": 5280,
         "y": 0.0
       },
       "params": {
@@ -1009,7 +1015,7 @@
       "node_type": "interact",
       "label": "Talk to Watson",
       "position": {
-        "x": 5280,
+        "x": 5720,
         "y": 0.0
       },
       "params": {
@@ -1037,7 +1043,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Firegut's gate",
       "position": {
-        "x": 5720,
+        "x": 6160,
         "y": 0.0
       },
       "params": {
@@ -1054,7 +1060,7 @@
       "node_type": "enter_zone",
       "label": "Enter Firegut's warehouse",
       "position": {
-        "x": 6160,
+        "x": 6600,
         "y": 0.0
       },
       "params": {
@@ -1077,7 +1083,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Firegut",
       "position": {
-        "x": 6600,
+        "x": 7040,
         "y": 0.0
       },
       "params": {
@@ -1092,7 +1098,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Dismiss dialogue",
       "position": {
-        "x": 7040,
+        "x": 7480,
         "y": 0.0
       },
       "params": {
@@ -1104,7 +1110,7 @@
       "node_type": "enter_zone",
       "label": "Exit Firegut's warehouse",
       "position": {
-        "x": 7480,
+        "x": 7920,
         "y": 0.0
       },
       "params": {
@@ -1127,7 +1133,7 @@
       "node_type": "interact",
       "label": "Activate Sun plaque",
       "position": {
-        "x": 7920,
+        "x": 8360,
         "y": 0.0
       },
       "params": {
@@ -1155,7 +1161,7 @@
       "node_type": "interact",
       "label": "Activate Bird plaque",
       "position": {
-        "x": 8360,
+        "x": 8800,
         "y": 0.0
       },
       "params": {
@@ -1183,7 +1189,7 @@
       "node_type": "interact",
       "label": "Activate Tree plaque",
       "position": {
-        "x": 8800,
+        "x": 9240,
         "y": 0.0
       },
       "params": {
@@ -1211,7 +1217,7 @@
       "node_type": "interact",
       "label": "Activate Bug plaque",
       "position": {
-        "x": 9240,
+        "x": 9680,
         "y": 0.0
       },
       "params": {
@@ -1239,7 +1245,7 @@
       "node_type": "interact",
       "label": "Talk to Watson",
       "position": {
-        "x": 9680,
+        "x": 10120,
         "y": 0.0
       },
       "params": {
@@ -1267,7 +1273,7 @@
       "node_type": "enter_zone",
       "label": "Enter Clanker's clocktower",
       "position": {
-        "x": 10120,
+        "x": 10560,
         "y": 0.0
       },
       "params": {
@@ -1290,7 +1296,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Clanker",
       "position": {
-        "x": 10560,
+        "x": 11000,
         "y": 0.0
       },
       "params": {
@@ -1305,7 +1311,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Dismiss dialogue",
       "position": {
-        "x": 11000,
+        "x": 11440,
         "y": 0.0
       },
       "params": {
@@ -1317,7 +1323,7 @@
       "node_type": "enter_zone",
       "label": "Exit Clanker's clocktower",
       "position": {
-        "x": 11440,
+        "x": 11880,
         "y": 0.0
       },
       "params": {
@@ -1340,7 +1346,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 11880,
+        "x": 12320,
         "y": 0.0
       },
       "params": {
@@ -1366,7 +1372,7 @@
     },
     {
       "trigger": "advance",
-      "source": "t_4",
+      "source": "t_7",
       "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
@@ -1387,7 +1393,7 @@
     {
       "trigger": "advance",
       "source": "t_sync_players_1_state_2",
-      "dest": "t_1",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1419,6 +1425,16 @@
       "source": "t_5",
       "dest": "t_3",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1895,7 +1911,7 @@
     {
       "trigger": "advance",
       "source": "state_24",
-      "dest": "t_4",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1905,7 +1921,7 @@
     {
       "trigger": "advance",
       "source": "state_24",
-      "dest": "t_4",
+      "dest": "t_7",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -1915,7 +1931,7 @@
     {
       "trigger": "advance",
       "source": "state_26",
-      "dest": "t_4",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1939,7 +1955,7 @@
     {
       "trigger": "advance",
       "source": "state_38",
-      "dest": "t_4",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",

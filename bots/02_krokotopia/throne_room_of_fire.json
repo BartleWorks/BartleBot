@@ -4,8 +4,8 @@
   "description": "Endlessly completes the Throne Room of Fire in Krokotopia",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Alligator Pear Tree"
@@ -469,74 +469,88 @@
   "options": [],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to the Oasis",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": -440.0,
+        "x": 0.0,
         "y": 0.0
       },
       "params": {
-        "zone": "Krokotopia/KT_Hub"
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     {
-      "id": "state_2",
-      "node_type": "enter_zone",
-      "label": "Enter Pyramid of the Sun",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
         "x": 440.0,
-        "y": 0.0
+        "y": 90.0
       },
       "params": {
-        "from_zone": "Krokotopia/KT_Hub",
-        "to_zone": "Krokotopia/KT_Pyramid/KT_AltarOfKings",
-        "xyz": {
-          "x": -4.1,
-          "y": 8044.24,
-          "z": 496.31
-        },
-        "reset_xyz": {
-          "x": -21.74,
-          "y": 7291.8,
-          "z": 496.29
-        }
+        "zone": "Krokotopia/KT_Pyramid/KT_PalaceOfFire"
       }
     },
     {
-      "id": "state_3",
-      "node_type": "enter_zone",
-      "label": "Enter Palace of Fire",
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
       "position": {
-        "x": 880.0,
+        "x": 440,
         "y": 0.0
       },
       "params": {
-        "from_zone": "Krokotopia/KT_Pyramid/KT_AltarOfKings",
-        "to_zone": "Krokotopia/KT_Pyramid/KT_PalaceOfFire",
+        "zone": "Krokotopia/KT_Pyramid/KT_PalaceOfFire",
         "xyz": {
-          "x": 4559.36,
-          "y": 7020.47,
-          "z": 950.0
-        },
-        "reset_xyz": {
-          "x": 3027.39,
-          "y": 7080.77,
-          "z": 950.0
+          "x": -2043.65,
+          "y": -16089.92,
+          "z": -0.0
         }
       }
     },
     {
-      "id": "state_4",
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Throne Room of Fire",
       "position": {
-        "x": 1320.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
         "from_zone": "Krokotopia/KT_Pyramid/KT_PalaceOfFire",
         "dungeon_zone": "Krokotopia/KT_Pyramid/KT_ThroneRoom",
+        "offers_challenge_mode": false,
+        "offers_team_up": false,
         "dungeon_name": "Throne Room of Fire",
         "sigil_xyz": {
           "x": -2105.14,
@@ -551,20 +565,33 @@
       }
     },
     {
-      "id": "state_5",
-      "node_type": "teleport_to_coordinates",
-      "label": "Teleport to Krokenkahmen",
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
       "position": {
-        "x": 3520.0,
-        "y": -90.0
+        "x": 5720,
+        "y": 0.0
       },
       "params": {
-        "zone": "Krokotopia/KT_Pyramid/KT_ThroneRoom",
-        "xyz": {
-          "x": -17991.53,
-          "y": -4970.93,
-          "z": -0.0
-        }
+        "zone": "",
+        "xyz": null
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       }
     },
     {
@@ -572,8 +599,8 @@
       "node_type": "interact",
       "label": "Talk to Professor Winthrop",
       "position": {
-        "x": 1760.0,
-        "y": -90.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Pyramid/KT_ThroneRoom",
@@ -597,8 +624,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Prince Manu Nirini",
       "position": {
-        "x": 2200.0,
-        "y": -90.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Pyramid/KT_ThroneRoom",
@@ -614,8 +641,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Prince Manu Nirini",
       "position": {
-        "x": 2640.0,
-        "y": -90.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "enemy": "KrokPharaoh-FireTut-KTBoss-L04",
@@ -629,8 +656,8 @@
       "node_type": "interact",
       "label": "Talk to Professor Winthrop",
       "position": {
-        "x": 3080.0,
-        "y": -90.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Pyramid/KT_ThroneRoom",
@@ -650,12 +677,29 @@
       }
     },
     {
+      "id": "state_5",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Krokenkahmen",
+      "position": {
+        "x": 4400,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Pyramid/KT_ThroneRoom",
+        "xyz": {
+          "x": -17991.53,
+          "y": -4970.93,
+          "z": -0.0
+        }
+      }
+    },
+    {
       "id": "state_10",
       "node_type": "handle_combat",
       "label": "Defeat Krokenkahmen",
       "position": {
-        "x": 3960.0,
-        "y": -90.0
+        "x": 4840,
+        "y": 0.0
       },
       "params": {
         "enemy": "KrokTut-Fire-L04",
@@ -665,26 +709,12 @@
       }
     },
     {
-      "id": "state_11",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 0.0,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "mark_zone": ""
-      }
-    },
-    {
       "id": "state_12",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 4400.0,
-        "y": -90.0
+        "x": 5280,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -699,8 +729,68 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -709,28 +799,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_6",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -829,36 +899,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_11",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_11",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_10",
       "dest": "state_12",
       "when": "SUCCESS",
@@ -869,8 +909,18 @@
     },
     {
       "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_12",
-      "dest": "state_1",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -878,5 +928,46 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Krokotopia/KT_Pyramid/KT_PalaceOfFire"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  }
 }

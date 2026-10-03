@@ -56,11 +56,28 @@
       }
     },
     {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Darkmoor/DM_Z05_ScholomanceEntrance",
+        "xyz": {
+          "x": 8654.82,
+          "y": 1627.78,
+          "z": 909.08
+        }
+      }
+    },
+    {
       "id": "t_1",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 440,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -74,7 +91,7 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 880,
+        "x": 1320,
         "y": 0.0
       },
       "params": {}
@@ -84,7 +101,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Heretical Academy",
       "position": {
-        "x": 1760,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -106,27 +123,16 @@
       }
     },
     {
-      "id": "t_4",
-      "node_type": "enter_zone",
-      "label": "Exit Heretical Academy",
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
       "position": {
-        "x": 14080,
+        "x": 14520,
         "y": 0.0
       },
       "params": {
-        "from_zone": "Darkmoor/Interiors/DM_Z05_HereticalAcademy",
-        "to_zone": "Darkmoor/DM_Z05_ScholomanceEntrance",
-        "stagger": false,
-        "xyz": {
-          "x": -214.68,
-          "y": -2104.66,
-          "z": 249.6
-        },
-        "reset_xyz": {
-          "x": -124.28,
-          "y": -1253.41,
-          "z": 153.72
-        }
+        "zone": "",
+        "xyz": null
       }
     },
     {
@@ -134,7 +140,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1320,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -151,7 +157,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 2200,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -163,7 +169,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Entrance Exam",
       "position": {
-        "x": 2640,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -177,7 +183,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3080,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -194,7 +200,7 @@
       "node_type": "interact",
       "label": "Check first sword location",
       "position": {
-        "x": 3520,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
@@ -220,7 +226,7 @@
       "node_type": "interact",
       "label": "Add first sword to weapons rack",
       "position": {
-        "x": 7040,
+        "x": 7480,
         "y": 0.0
       },
       "params": {
@@ -246,7 +252,7 @@
       "node_type": "interact",
       "label": "Check second sword location",
       "position": {
-        "x": 3960,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
@@ -272,7 +278,7 @@
       "node_type": "interact",
       "label": "Check third sword location",
       "position": {
-        "x": 4400,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
@@ -298,7 +304,7 @@
       "node_type": "interact",
       "label": "Check fourth sword location",
       "position": {
-        "x": 4840,
+        "x": 5280,
         "y": 0.0
       },
       "params": {
@@ -324,7 +330,7 @@
       "node_type": "interact",
       "label": "Check fifth sword location",
       "position": {
-        "x": 5280,
+        "x": 5720,
         "y": 0.0
       },
       "params": {
@@ -350,7 +356,7 @@
       "node_type": "interact",
       "label": "Check sixth sword location",
       "position": {
-        "x": 5720,
+        "x": 6160,
         "y": 0.0
       },
       "params": {
@@ -376,7 +382,7 @@
       "node_type": "interact",
       "label": "Check seventh sword location",
       "position": {
-        "x": 6160,
+        "x": 6600,
         "y": 0.0
       },
       "params": {
@@ -402,7 +408,7 @@
       "node_type": "interact",
       "label": "Check eighth sword location",
       "position": {
-        "x": 6600,
+        "x": 7040,
         "y": 0.0
       },
       "params": {
@@ -428,7 +434,7 @@
       "node_type": "interact",
       "label": "Add second sword to weapons rack",
       "position": {
-        "x": 7480,
+        "x": 7920,
         "y": 0.0
       },
       "params": {
@@ -454,7 +460,7 @@
       "node_type": "interact",
       "label": "Add third sword to weapons rack",
       "position": {
-        "x": 7920,
+        "x": 8360,
         "y": 0.0
       },
       "params": {
@@ -480,7 +486,7 @@
       "node_type": "interact",
       "label": "Add fourth sword to weapons rack",
       "position": {
-        "x": 8360,
+        "x": 8800,
         "y": 0.0
       },
       "params": {
@@ -506,7 +512,7 @@
       "node_type": "interact",
       "label": "Open gate",
       "position": {
-        "x": 8800,
+        "x": 9240,
         "y": 0.0
       },
       "params": {
@@ -532,7 +538,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Preceptor of Order",
       "position": {
-        "x": 9240,
+        "x": 9680,
         "y": 0.0
       },
       "params": {
@@ -549,7 +555,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Preceptor of Order",
       "position": {
-        "x": 9680,
+        "x": 10120,
         "y": 0.0
       },
       "params": {
@@ -563,7 +569,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 10120,
+        "x": 10560,
         "y": 0.0
       },
       "params": {
@@ -575,7 +581,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 10560,
+        "x": 11000,
         "y": 0.0
       },
       "params": {
@@ -592,7 +598,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Trigger cutscene",
       "position": {
-        "x": 11000,
+        "x": 11440,
         "y": 0.0
       },
       "params": {
@@ -609,7 +615,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 11440,
+        "x": 11880,
         "y": 0.0
       },
       "params": {
@@ -621,7 +627,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Balaur",
       "position": {
-        "x": 11880,
+        "x": 12320,
         "y": 0.0
       },
       "params": {
@@ -635,7 +641,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to first group of wisps",
       "position": {
-        "x": 12320,
+        "x": 12760,
         "y": 0.0
       },
       "params": {
@@ -652,7 +658,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 12760,
+        "x": 13200,
         "y": 0.0
       },
       "params": {
@@ -669,7 +675,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to second group of wisps",
       "position": {
-        "x": 13200,
+        "x": 13640,
         "y": 0.0
       },
       "params": {
@@ -686,7 +692,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 13640,
+        "x": 14080,
         "y": 0.0
       },
       "params": {
@@ -712,7 +718,7 @@
     },
     {
       "trigger": "advance",
-      "source": "t_4",
+      "source": "t_7",
       "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
@@ -733,7 +739,7 @@
     {
       "trigger": "advance",
       "source": "t_sync_players_1_state_2",
-      "dest": "t_1",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -765,6 +771,16 @@
       "source": "t_5",
       "dest": "t_3",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1173,7 +1189,7 @@
     {
       "trigger": "advance",
       "source": "state_35",
-      "dest": "t_4",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1183,7 +1199,7 @@
     {
       "trigger": "advance",
       "source": "state_35",
-      "dest": "t_4",
+      "dest": "t_7",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",

@@ -4,8 +4,8 @@
   "description": "Endlessly completes Atlantea in Aquila",
   "version": "1.0",
   "clients": "all",
-  "initial": "sync_players_1_state_2",
-  "recovery_state": "sync_players_1_state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "25 Olympian Dust",
@@ -309,61 +309,11 @@
   ],
   "states": [
     {
-      "id": "state_4",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": -880.0,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": -440.0,
-        "y": 0.0
-      },
-      "params": {}
-    },
-    {
-      "id": "state_8",
-      "node_type": "enter_dungeon",
-      "label": "Enter Atlantea",
-      "position": {
-        "x": 0.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Aquila/AQ_Z00_Hub",
-        "dungeon_zone": "Aquila/AQ_Z02_Atlantea",
-        "dungeon_name": "Atlantea",
-        "sigil_xyz": {
-          "x": 11442.09,
-          "y": 9193.82,
-          "z": -1474.83
-        },
-        "reset_xyz": {
-          "x": 10879.24,
-          "y": 8967.49,
-          "z": -1479.71
-        },
-        "offers_challenge_mode": true,
-        "offers_team_up": true
-      }
-    },
-    {
-      "id": "sync_players_1_state_1",
+      "id": "t_sync_players_1_state_1",
       "node_type": "relog",
       "label": "Relog",
       "position": {
-        "x": -1320.0,
+        "x": 0.0,
         "y": 0.0
       },
       "params": {
@@ -376,11 +326,11 @@
       }
     },
     {
-      "id": "sync_players_1_state_2",
+      "id": "t_sync_players_1_state_2",
       "node_type": "sync_in_zone",
       "label": "Sync in zone",
       "position": {
-        "x": -880.0,
+        "x": 440.0,
         "y": 90.0
       },
       "params": {
@@ -388,11 +338,120 @@
       }
     },
     {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z00_Hub",
+        "xyz": {
+          "x": 10879.24,
+          "y": 8967.49,
+          "z": -1479.71
+        }
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Atlantea",
+      "position": {
+        "x": 2200,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Aquila/AQ_Z00_Hub",
+        "dungeon_zone": "Aquila/AQ_Z02_Atlantea",
+        "offers_challenge_mode": true,
+        "offers_team_up": false,
+        "dungeon_name": "Atlantea",
+        "sigil_xyz": {
+          "x": 11442.09,
+          "y": 9193.82,
+          "z": -1474.83
+        },
+        "reset_xyz": {
+          "x": 10879.24,
+          "y": 8967.49,
+          "z": -1479.71
+        }
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
+      "position": {
+        "x": 25080,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "",
+        "xyz": null
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_1",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 2640,
+        "y": 0.0
+      },
+      "params": {
+        "scales": "atlantea"
+      }
+    },
+    {
       "id": "state_12",
       "node_type": "interact",
       "label": "Talk to Hermes Winged Wayfarer",
       "position": {
-        "x": 880.0,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -421,7 +480,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Locate Voracious Legionnaires",
       "position": {
-        "x": 1320.0,
+        "x": 3520.0,
         "y": 0.0
       },
       "params": {
@@ -434,11 +493,24 @@
       }
     },
     {
+      "id": "state_63",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "timeout": 60.0,
+        "animation_delay": 0.0
+      }
+    },
+    {
       "id": "state_14",
       "node_type": "handle_combat",
       "label": "Defeat Voracious Legionnaires",
       "position": {
-        "x": 2200.0,
+        "x": 4400.0,
         "y": 0.0
       },
       "params": {
@@ -449,11 +521,28 @@
       }
     },
     {
+      "id": "state_71",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to safety",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "xyz": {
+          "x": 117.95,
+          "y": -5000.49,
+          "z": 333.77
+        }
+      }
+    },
+    {
       "id": "state_15",
       "node_type": "interact",
       "label": "Talk to Hermes Winged Wayfarer",
       "position": {
-        "x": 3080.0,
+        "x": 5280.0,
         "y": 0.0
       },
       "params": {
@@ -482,7 +571,7 @@
       "node_type": "enter_zone",
       "label": "Enter House of Lost Saliors",
       "position": {
-        "x": 3520,
+        "x": 5720.0,
         "y": 0.0
       },
       "params": {
@@ -506,7 +595,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Locate Lamia",
       "position": {
-        "x": 3960,
+        "x": 6160.0,
         "y": 0.0
       },
       "params": {
@@ -523,7 +612,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Lamia",
       "position": {
-        "x": 4400,
+        "x": 6600.0,
         "y": 0.0
       },
       "params": {
@@ -538,7 +627,7 @@
       "node_type": "interact",
       "label": "Interact with Alabaster Sea Cow",
       "position": {
-        "x": 4840.0,
+        "x": 7040.0,
         "y": 0.0
       },
       "params": {
@@ -567,7 +656,7 @@
       "node_type": "enter_zone",
       "label": "Exit House of Lost Saliors",
       "position": {
-        "x": 5280.0,
+        "x": 7480.0,
         "y": 0.0
       },
       "params": {
@@ -591,7 +680,7 @@
       "node_type": "interact",
       "label": "Talk to Hermes Winged Wayfarer",
       "position": {
-        "x": 5720.0,
+        "x": 7920.0,
         "y": 0.0
       },
       "params": {
@@ -620,7 +709,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to wisps",
       "position": {
-        "x": 6160.0,
+        "x": 8360.0,
         "y": 0.0
       },
       "params": {
@@ -637,7 +726,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 6600.0,
+        "x": 8800.0,
         "y": 0.0
       },
       "params": {
@@ -654,7 +743,7 @@
       "node_type": "enter_zone",
       "label": "Enter House of Fury",
       "position": {
-        "x": 7040.0,
+        "x": 9240.0,
         "y": 0.0
       },
       "params": {
@@ -678,7 +767,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Locate Arion Spiny Stallion",
       "position": {
-        "x": 7480.0,
+        "x": 9680.0,
         "y": 0.0
       },
       "params": {
@@ -695,7 +784,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Arion Spiny Stallion",
       "position": {
-        "x": 7920.0,
+        "x": 10120.0,
         "y": 0.0
       },
       "params": {
@@ -710,7 +799,7 @@
       "node_type": "interact",
       "label": "Interact with Onyx Sea Cow",
       "position": {
-        "x": 8360.0,
+        "x": 10560.0,
         "y": 0.0
       },
       "params": {
@@ -739,7 +828,7 @@
       "node_type": "enter_zone",
       "label": "Exit House of Fury",
       "position": {
-        "x": 8800.0,
+        "x": 11000.0,
         "y": 0.0
       },
       "params": {
@@ -763,7 +852,7 @@
       "node_type": "interact",
       "label": "Interact with Hermes Winged Wayfarer",
       "position": {
-        "x": 9240.0,
+        "x": 11440.0,
         "y": 0.0
       },
       "params": {
@@ -788,11 +877,45 @@
       }
     },
     {
+      "id": "state_59",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to wisps",
+      "position": {
+        "x": 11880.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Aquila/AQ_Z02_Atlantea",
+        "xyz": {
+          "x": -939.46,
+          "y": -5591.9,
+          "z": 333.77
+        }
+      }
+    },
+    {
+      "id": "state_60",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 12320.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
       "id": "state_30",
       "node_type": "enter_zone",
       "label": "Enter Hall of Contriver",
       "position": {
-        "x": 10560.0,
+        "x": 12760.0,
         "y": 0.0
       },
       "params": {
@@ -816,7 +939,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Locate Akhelios the Contriver",
       "position": {
-        "x": 11000.0,
+        "x": 13200.0,
         "y": 0.0
       },
       "params": {
@@ -833,7 +956,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Akheilos the Contriver",
       "position": {
-        "x": 11440.0,
+        "x": 13640.0,
         "y": 0.0
       },
       "params": {
@@ -848,7 +971,7 @@
       "node_type": "enter_zone",
       "label": "Exit Hall of Contriver",
       "position": {
-        "x": 11880.0,
+        "x": 14080.0,
         "y": 0.0
       },
       "params": {
@@ -872,7 +995,7 @@
       "node_type": "interact",
       "label": "Interact with Hermes Winged Wayfarer",
       "position": {
-        "x": 12320.0,
+        "x": 14520.0,
         "y": 0.0
       },
       "params": {
@@ -901,7 +1024,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to health and mana wisps",
       "position": {
-        "x": 12760.0,
+        "x": 14960.0,
         "y": 0.0
       },
       "params": {
@@ -918,7 +1041,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health and mana wisps",
       "position": {
-        "x": 13200.0,
+        "x": 15400.0,
         "y": 0.0
       },
       "params": {
@@ -935,7 +1058,7 @@
       "node_type": "enter_zone",
       "label": "Enter Teles' Room",
       "position": {
-        "x": 13640.0,
+        "x": 15840.0,
         "y": 0.0
       },
       "params": {
@@ -959,7 +1082,7 @@
       "node_type": "interact",
       "label": "Interact with Teles",
       "position": {
-        "x": 14080.0,
+        "x": 16280.0,
         "y": 0.0
       },
       "params": {
@@ -988,7 +1111,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Fix first CoralChord pipe",
       "position": {
-        "x": 14520.0,
+        "x": 16720.0,
         "y": 0.0
       },
       "params": {
@@ -1005,7 +1128,7 @@
       "node_type": "sleep",
       "label": "Wait",
       "position": {
-        "x": 14960.0,
+        "x": 17160.0,
         "y": 0.0
       },
       "params": {
@@ -1017,7 +1140,7 @@
       "node_type": "teleport_to_coordinates",
       "label": " Fix second CoralChord pipe",
       "position": {
-        "x": 15400.0,
+        "x": 17600.0,
         "y": 0.0
       },
       "params": {
@@ -1034,7 +1157,7 @@
       "node_type": "sleep",
       "label": "Wait",
       "position": {
-        "x": 15840.0,
+        "x": 18040.0,
         "y": 0.0
       },
       "params": {
@@ -1046,7 +1169,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Fix third CoralChord pipe",
       "position": {
-        "x": 16280.0,
+        "x": 18480.0,
         "y": 0.0
       },
       "params": {
@@ -1063,7 +1186,7 @@
       "node_type": "sleep",
       "label": "Wait",
       "position": {
-        "x": 16720.0,
+        "x": 18920.0,
         "y": 0.0
       },
       "params": {
@@ -1075,7 +1198,7 @@
       "node_type": "interact",
       "label": "Interact with Lever",
       "position": {
-        "x": 17160.0,
+        "x": 19360.0,
         "y": 0.0
       },
       "params": {
@@ -1104,7 +1227,7 @@
       "node_type": "enter_zone",
       "label": "Exit Teles' Room",
       "position": {
-        "x": 17600.0,
+        "x": 19800.0,
         "y": 0.0
       },
       "params": {
@@ -1128,7 +1251,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Locate Lost Maiden",
       "position": {
-        "x": 18040.0,
+        "x": 20240.0,
         "y": 0.0
       },
       "params": {
@@ -1145,7 +1268,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Lost Maiden",
       "position": {
-        "x": 18480.0,
+        "x": 20680.0,
         "y": 0.0
       },
       "params": {
@@ -1160,7 +1283,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health and mana wisps",
       "position": {
-        "x": 18920.0,
+        "x": 21120.0,
         "y": 0.0
       },
       "params": {
@@ -1177,7 +1300,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Locate Atlantean Trierarch",
       "position": {
-        "x": 19360.0,
+        "x": 21560.0,
         "y": 0.0
       },
       "params": {
@@ -1194,7 +1317,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Atlantean Trierarch",
       "position": {
-        "x": 19800.0,
+        "x": 22000.0,
         "y": 0.0
       },
       "params": {
@@ -1209,7 +1332,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health and mana wisps",
       "position": {
-        "x": 20240.0,
+        "x": 22440.0,
         "y": 0.0
       },
       "params": {
@@ -1226,7 +1349,7 @@
       "node_type": "interact",
       "label": "Interact with Pedestal",
       "position": {
-        "x": 20680.0,
+        "x": 22880.0,
         "y": 0.0
       },
       "params": {
@@ -1255,7 +1378,7 @@
       "node_type": "interact",
       "label": "Interact with Pedestal",
       "position": {
-        "x": 21120.0,
+        "x": 23320.0,
         "y": 0.0
       },
       "params": {
@@ -1284,7 +1407,7 @@
       "node_type": "enter_zone",
       "label": "Enter Poseidon's Throne Room",
       "position": {
-        "x": 21560.0,
+        "x": 23760.0,
         "y": 0.0
       },
       "params": {
@@ -1308,7 +1431,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Locate Poseidon Earth Shaker",
       "position": {
-        "x": 22000.0,
+        "x": 24200,
         "y": 0.0
       },
       "params": {
@@ -1325,7 +1448,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Poseidon Earth Shaker",
       "position": {
-        "x": 22440.0,
+        "x": 24640,
         "y": 0.0
       },
       "params": {
@@ -1336,83 +1459,11 @@
       }
     },
     {
-      "id": "state_58",
-      "node_type": "enter_zone_via_object",
-      "label": "Return to Garden of Hesperides",
-      "position": {
-        "x": 22880.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Aquila/Interiors/AQ_Z02_ThroneRoom",
-        "to_zone": "Aquila/AQ_Z00_Hub",
-        "interact_xyz": {
-          "x": -26.54,
-          "y": 3614.8,
-          "z": -345.8
-        },
-        "reset_xyz": {
-          "x": 626.0,
-          "y": 3549.5,
-          "z": -345.8
-        },
-        "sequential": false,
-        "object_use_delay": 1.0
-      }
-    },
-    {
-      "id": "state_59",
-      "node_type": "teleport_to_coordinates",
-      "label": "Teleport to wisps",
-      "position": {
-        "x": 9680.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Aquila/AQ_Z02_Atlantea",
-        "xyz": {
-          "x": -939.46,
-          "y": -5591.9,
-          "z": 333.77
-        }
-      }
-    },
-    {
-      "id": "state_60",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
-      "position": {
-        "x": 10120.0,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "timeout": 10.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true
-      }
-    },
-    {
-      "id": "state_63",
-      "node_type": "wait_for_dialogue",
-      "label": "Wait for dialogue",
-      "position": {
-        "x": 1760.0,
-        "y": 0.0
-      },
-      "params": {
-        "timeout": 60.0,
-        "animation_delay": 0.0
-      }
-    },
-    {
       "id": "state_64",
       "node_type": "interact",
       "label": "Interact with Lever",
       "position": {
-        "x": 14520.0,
+        "x": 16720.0,
         "y": 180.0
       },
       "params": {
@@ -1437,26 +1488,11 @@
       }
     },
     {
-      "id": "state_65",
-      "node_type": "handle_combat",
-      "label": "Defeat Teles",
-      "position": {
-        "x": 17160.0,
-        "y": 180.0
-      },
-      "params": {
-        "enemy": "AQ-Siren-Teles",
-        "wiki_page": "Creature:Teles",
-        "use_default_strategy": false,
-        "max_duration": 600.0
-      }
-    },
-    {
       "id": "state_66",
       "node_type": "interact",
       "label": "Interact with Lever",
       "position": {
-        "x": 14960.0,
+        "x": 17160.0,
         "y": 180.0
       },
       "params": {
@@ -1485,7 +1521,7 @@
       "node_type": "interact",
       "label": "Interact with Lever",
       "position": {
-        "x": 15400.0,
+        "x": 17600.0,
         "y": 180.0
       },
       "params": {
@@ -1514,7 +1550,7 @@
       "node_type": "interact",
       "label": "Interact with Lever",
       "position": {
-        "x": 15840.0,
+        "x": 18040.0,
         "y": 180.0
       },
       "params": {
@@ -1543,7 +1579,7 @@
       "node_type": "interact",
       "label": "Interact with Lever",
       "position": {
-        "x": 16280.0,
+        "x": 18480.0,
         "y": 180.0
       },
       "params": {
@@ -1572,7 +1608,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Teles",
       "position": {
-        "x": 16720.0,
+        "x": 18920.0,
         "y": 180.0
       },
       "params": {
@@ -1585,46 +1621,112 @@
       }
     },
     {
-      "id": "state_71",
-      "node_type": "teleport_to_coordinates",
-      "label": "Teleport to safety",
+      "id": "state_65",
+      "node_type": "handle_combat",
+      "label": "Defeat Teles",
       "position": {
-        "x": 2640.0,
-        "y": 0.0
+        "x": 19360.0,
+        "y": 180.0
       },
       "params": {
-        "zone": "Aquila/AQ_Z02_Atlantea",
-        "xyz": {
-          "x": 117.95,
-          "y": -5000.49,
-          "z": 333.77
-        }
-      }
-    },
-    {
-      "id": "state_72",
-      "node_type": "apply_level_scaling",
-      "label": "Apply level scaling",
-      "position": {
-        "x": 440.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Aquila/AQ_Z02_Atlantea",
-        "interact_xyz": {
-          "x": -385.1,
-          "y": -5711.43,
-          "z": 333.77
-        },
-        "reset_xyz": {
-          "x": -904.86,
-          "y": -7331.08,
-          "z": 504.2
-        }
+        "enemy": "AQ-Siren-Teles",
+        "wiki_page": "Creature:Teles",
+        "use_default_strategy": false,
+        "max_duration": 600.0
       }
     }
   ],
   "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
     {
       "trigger": "advance",
       "source": "state_12",
@@ -1937,16 +2039,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_40",
       "dest": "state_41",
       "when": "SUCCESS",
@@ -2047,16 +2139,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_50",
       "dest": "state_51",
       "when": "SUCCESS",
@@ -2119,26 +2201,6 @@
       "trigger": "advance",
       "source": "state_56",
       "dest": "state_57",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_57",
-      "dest": "state_58",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_58",
-      "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2257,7 +2319,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_72",
+      "source": "state_1",
       "dest": "state_12",
       "when": "SUCCESS",
       "flags": [],
@@ -2267,28 +2329,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_72",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_1",
-      "dest": "sync_players_1_state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_2",
-      "dest": "state_4",
+      "source": "state_57",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2298,11 +2340,11 @@
   ],
   "regions": [
     {
-      "id": "sync_players_1",
-      "label": "Sync players",
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
       "members": [
-        "sync_players_1_state_1",
-        "sync_players_1_state_2"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
       "color": 1,
       "source": {
@@ -2328,23 +2370,10 @@
           }
         },
         "anchor": {
-          "x": -1320.0,
+          "x": 0.0,
           "y": 0.0
         }
       }
-    },
-    {
-      "id": "e12846bd",
-      "label": "Start Atlantea",
-      "members": [
-        "state_5",
-        "state_12",
-        "state_8",
-        "state_4",
-        "state_72"
-      ],
-      "color": 1,
-      "collapsed": true
     },
     {
       "id": "00524b63",
@@ -2447,17 +2476,10 @@
       ],
       "color": 2,
       "collapsed": true
-    },
-    {
-      "id": "dc1dab1e",
-      "label": "Defeat Poseidon Earth Shaker",
-      "members": [
-        "state_58",
-        "state_57",
-        "state_56"
-      ],
-      "color": 3,
-      "collapsed": true
     }
-  ]
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  }
 }

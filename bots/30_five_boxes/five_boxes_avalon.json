@@ -1131,11 +1131,28 @@
       }
     },
     {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Avalon/AV_Z01_AbbeyRoad",
+        "xyz": {
+          "x": -1325.99,
+          "y": -46.1,
+          "z": -99.8
+        }
+      }
+    },
+    {
       "id": "t_1",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 440,
+        "x": 880,
         "y": 0.0
       },
       "params": {
@@ -1149,7 +1166,7 @@
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 880,
+        "x": 1320,
         "y": 0.0
       },
       "params": {}
@@ -1159,7 +1176,7 @@
       "node_type": "enter_dungeon",
       "label": "Enter Telegraph Box",
       "position": {
-        "x": 1760,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -1181,27 +1198,16 @@
       }
     },
     {
-      "id": "t_4",
-      "node_type": "enter_zone",
-      "label": "Exit Telegraph Box",
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
       "position": {
         "x": 18920,
         "y": 0.0
       },
       "params": {
-        "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
-        "to_zone": "Avalon/AV_Z01_AbbeyRoad",
-        "stagger": false,
-        "xyz": {
-          "x": 1567.08,
-          "y": 15.1,
-          "z": -298.46
-        },
-        "reset_xyz": {
-          "x": 1122.48,
-          "y": 15.41,
-          "z": -298.46
-        }
+        "zone": "",
+        "xyz": null
       }
     },
     {
@@ -1209,7 +1215,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1320,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
@@ -1226,7 +1232,7 @@
       "node_type": "interact",
       "label": "Talk to The Professor",
       "position": {
-        "x": 2200,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -1255,7 +1261,7 @@
       "node_type": "enter_zone",
       "label": "Enter first room",
       "position": {
-        "x": 2640,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -1279,7 +1285,7 @@
       "node_type": "interact",
       "label": "Talk to Vasek Ashweaver",
       "position": {
-        "x": 3080,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -1308,7 +1314,7 @@
       "node_type": "enter_zone",
       "label": "Exit first room",
       "position": {
-        "x": 3520,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
@@ -1332,7 +1338,7 @@
       "node_type": "enter_zone",
       "label": "Enter second room",
       "position": {
-        "x": 3960,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
@@ -1356,7 +1362,7 @@
       "node_type": "interact",
       "label": "Talk to Cyrus Drake",
       "position": {
-        "x": 4400,
+        "x": 4840,
         "y": 0.0
       },
       "params": {
@@ -1385,7 +1391,7 @@
       "node_type": "enter_zone",
       "label": "Exit second room",
       "position": {
-        "x": 4840,
+        "x": 5280,
         "y": 0.0
       },
       "params": {
@@ -1409,7 +1415,7 @@
       "node_type": "enter_zone",
       "label": "Enter third room",
       "position": {
-        "x": 5280,
+        "x": 5720,
         "y": 0.0
       },
       "params": {
@@ -1433,7 +1439,7 @@
       "node_type": "interact",
       "label": "Talk to Malistaire Drake",
       "position": {
-        "x": 5720,
+        "x": 6160,
         "y": 0.0
       },
       "params": {
@@ -1462,7 +1468,7 @@
       "node_type": "enter_zone",
       "label": "Exit third room",
       "position": {
-        "x": 6160,
+        "x": 6600,
         "y": 0.0
       },
       "params": {
@@ -1486,7 +1492,7 @@
       "node_type": "interact",
       "label": "Talk to The Professor",
       "position": {
-        "x": 6600,
+        "x": 7040,
         "y": 0.0
       },
       "params": {
@@ -1515,7 +1521,7 @@
       "node_type": "enter_zone",
       "label": "Enter fourth room",
       "position": {
-        "x": 7040,
+        "x": 7480,
         "y": 0.0
       },
       "params": {
@@ -1539,7 +1545,7 @@
       "node_type": "interact",
       "label": "Talk to Laszlo Starblade",
       "position": {
-        "x": 7480,
+        "x": 7920,
         "y": 0.0
       },
       "params": {
@@ -1568,7 +1574,7 @@
       "node_type": "enter_zone",
       "label": "Exit fourth room",
       "position": {
-        "x": 7920,
+        "x": 8360,
         "y": 0.0
       },
       "params": {
@@ -1592,7 +1598,7 @@
       "node_type": "interact",
       "label": "Talk to The Professor",
       "position": {
-        "x": 8360,
+        "x": 8800,
         "y": 0.0
       },
       "params": {
@@ -1621,7 +1627,7 @@
       "node_type": "enter_zone",
       "label": "Enter third room",
       "position": {
-        "x": 8800,
+        "x": 9240,
         "y": 0.0
       },
       "params": {
@@ -1645,7 +1651,7 @@
       "node_type": "interact",
       "label": "Talk to Malistaire Drake",
       "position": {
-        "x": 9240,
+        "x": 9680,
         "y": 0.0
       },
       "params": {
@@ -1674,7 +1680,7 @@
       "node_type": "enter_zone",
       "label": "Exit third room",
       "position": {
-        "x": 9680,
+        "x": 10120,
         "y": 0.0
       },
       "params": {
@@ -1698,7 +1704,7 @@
       "node_type": "enter_zone",
       "label": "Enter second room",
       "position": {
-        "x": 10120,
+        "x": 10560,
         "y": 0.0
       },
       "params": {
@@ -1722,7 +1728,7 @@
       "node_type": "interact",
       "label": "Talk to Cyrus Drake",
       "position": {
-        "x": 10560,
+        "x": 11000,
         "y": 0.0
       },
       "params": {
@@ -1751,7 +1757,7 @@
       "node_type": "enter_zone",
       "label": "Exit second room",
       "position": {
-        "x": 11000,
+        "x": 11440,
         "y": 0.0
       },
       "params": {
@@ -1775,7 +1781,7 @@
       "node_type": "enter_zone",
       "label": "Enter Loremaster's Chamber",
       "position": {
-        "x": 11440,
+        "x": 11880,
         "y": 0.0
       },
       "params": {
@@ -1799,7 +1805,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Loremaster",
       "position": {
-        "x": 11880,
+        "x": 12320,
         "y": 0.0
       },
       "params": {
@@ -1814,7 +1820,7 @@
       "node_type": "enter_zone",
       "label": "Exit Loremaster's Chamber",
       "position": {
-        "x": 12320,
+        "x": 12760,
         "y": 0.0
       },
       "params": {
@@ -1838,7 +1844,7 @@
       "node_type": "enter_zone",
       "label": "Enter second room",
       "position": {
-        "x": 12760,
+        "x": 13200,
         "y": 0.0
       },
       "params": {
@@ -1862,7 +1868,7 @@
       "node_type": "interact",
       "label": "Talk to Cyrus Drake",
       "position": {
-        "x": 13200,
+        "x": 13640,
         "y": 0.0
       },
       "params": {
@@ -1891,7 +1897,7 @@
       "node_type": "enter_zone",
       "label": "Exit second room",
       "position": {
-        "x": 13640,
+        "x": 14080,
         "y": 0.0
       },
       "params": {
@@ -1915,7 +1921,7 @@
       "node_type": "enter_zone",
       "label": "Enter fourth room",
       "position": {
-        "x": 14080,
+        "x": 14520,
         "y": 0.0
       },
       "params": {
@@ -1939,7 +1945,7 @@
       "node_type": "interact",
       "label": "Talk to Laszlo Starblade",
       "position": {
-        "x": 14520,
+        "x": 14960,
         "y": 0.0
       },
       "params": {
@@ -1968,7 +1974,7 @@
       "node_type": "enter_zone",
       "label": "Enter Grand General's Chambers",
       "position": {
-        "x": 14960,
+        "x": 15400,
         "y": 0.0
       },
       "params": {
@@ -1992,7 +1998,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Elite Battle Mage",
       "position": {
-        "x": 15400,
+        "x": 15840,
         "y": 0.0
       },
       "params": {
@@ -2007,7 +2013,7 @@
       "node_type": "enter_zone",
       "label": "Exit Grand General's Chambers",
       "position": {
-        "x": 15840,
+        "x": 16280,
         "y": 0.0
       },
       "params": {
@@ -2031,7 +2037,7 @@
       "node_type": "interact",
       "label": "Talk to The Professor",
       "position": {
-        "x": 16280,
+        "x": 16720,
         "y": 0.0
       },
       "params": {
@@ -2060,7 +2066,7 @@
       "node_type": "enter_zone",
       "label": "Enter outside War Room",
       "position": {
-        "x": 16720,
+        "x": 17160,
         "y": 0.0
       },
       "params": {
@@ -2084,7 +2090,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Dragonclaw Guard",
       "position": {
-        "x": 17160,
+        "x": 17600,
         "y": 0.0
       },
       "params": {
@@ -2099,7 +2105,7 @@
       "node_type": "enter_zone",
       "label": "Enter War Room",
       "position": {
-        "x": 17600,
+        "x": 18040,
         "y": 0.0
       },
       "params": {
@@ -2123,7 +2129,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Sylvia Spitfire and The Maestro",
       "position": {
-        "x": 18040,
+        "x": 18480,
         "y": 0.0
       },
       "params": {
@@ -2131,30 +2137,6 @@
         "wiki_page": "",
         "use_default_strategy": true,
         "max_duration": 0.0
-      }
-    },
-    {
-      "id": "state_50",
-      "node_type": "enter_zone",
-      "label": "Exit War Room",
-      "position": {
-        "x": 18480,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Avalon/Interiors/AV_MaestroEvent/AZ_Z06_ArtOfWar",
-        "to_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
-        "xyz": {
-          "x": -9.16,
-          "y": 1459.48,
-          "z": 0.0
-        },
-        "reset_xyz": {
-          "x": -7.45,
-          "y": 855.88,
-          "z": -0.0
-        },
-        "stagger": false
       }
     }
   ],
@@ -2171,7 +2153,7 @@
     },
     {
       "trigger": "advance",
-      "source": "t_4",
+      "source": "t_7",
       "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
@@ -2192,7 +2174,7 @@
     {
       "trigger": "advance",
       "source": "t_sync_players_1_state_2",
-      "dest": "t_1",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2224,6 +2206,16 @@
       "source": "t_5",
       "dest": "t_3",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2591,16 +2583,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_49",
-      "dest": "state_50",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "t_3",
       "dest": "state_10",
       "when": "SUCCESS",
@@ -2611,9 +2593,19 @@
     },
     {
       "trigger": "advance",
-      "source": "state_50",
-      "dest": "t_4",
+      "source": "state_49",
+      "dest": "t_7",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_49",
+      "dest": "t_7",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
