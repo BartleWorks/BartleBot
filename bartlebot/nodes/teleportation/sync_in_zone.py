@@ -104,7 +104,7 @@ NODE_SPEC = NodeSpec(
         "realm in Eerem Palace, so bound there it changes on the way.\n\n"
         "With Player Realms set to Separate, every player travels, and nobody ports or changes realm."
     ),
-    see_also=["go_to_world", "teleport_to_world_hub", "change_realm"],
+    see_also=["teleport_to_world_hub", "change_realm"],
 )
 
 

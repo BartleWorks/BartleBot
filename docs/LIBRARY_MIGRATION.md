@@ -27,7 +27,7 @@ bot that already opens that way folds nothing for it.
 
 | bucket | meaning | what it costs |
 |---|---|---|
-| **nav to fold** | `teleport_to_world_hub`, `go_to_world`, `enter_zone_via_object`, `check_zone`, `teleport_to_friend` (not in gauntlet, whose template has one), and any `relog`, `sync_in_zone` or `change_realm` beyond the template's | mechanical: the Sync players node and its zone input replace all of it |
+| **nav to fold** | `teleport_to_world_hub`, `go_to_world` (since removed), `enter_zone_via_object`, `check_zone`, `teleport_to_friend` (not in gauntlet, whose template has one), and any `relog`, `sync_in_zone` or `change_realm` beyond the template's | mechanical: the Sync players node and its zone input replace all of it |
 | **scaling to fold** | `check_level_scaling`, `apply_level_scaling` | mechanical: one `handle_level_scaling`, which checks, travels, applies and returns (`docs/LEVEL_SCALING.md`) |
 | **slot** | the bot's own content: extra combats, interacts, coordinate teleports, room-to-room `enter_zone`, extra reagent spawns, marks and recalls | irreducible; it is what the bot adds to the template |
 | **outlier** | a node no template can express | a decision, per node |
@@ -108,7 +108,7 @@ record, so the two counts are not comparable.
 
 - **Recovery becomes a relog.** The recovery state is Sync players' Recover port in every
   template. Today it is `teleport_to_world_hub` in 49 bots, `relog` in 19, `check_zone` in 6,
-  `sync_in_zone` in 4, `go_to_world` in 3, and something else in 4.
+  `sync_in_zone` in 4, `go_to_world` in 3 (each now a `sync_in_zone`), and something else in 4.
 - **32 bots gain a quicksell** they did not have, and **13 gain `handle_potions`**. Both are
   template structure, and quicksell runs under the user's own Enable Quicksell setting.
 - **Every boss, dungeon and spellement bot runs a Collect wisps before entry**, whose failure
@@ -306,9 +306,9 @@ content and survives.
 | `wait_for_health` | 1 | 0 | **remove** (decided) |
 | `check_level_scaling` | 16 | 0 | **remove**: `handle_level_scaling` checks first |
 | `apply_level_scaling` | 15 | 0 | **remove from the library**, but see below |
-| `go_to_world` | 6 | 0 | candidate: zone navigation crosses worlds through the World Gate itself |
-| `check_zone` | 42 | 0 | candidate: every use is an opening or recovery hub that Sync players replaces |
-| `check_if_dropped` | 0 | 0 | candidate: never adopted; no template has a "farm until it drops" loop |
+| `go_to_world` | 6 | 0 | **removed**: each use is now a `sync_in_zone` to the zone its World Gate lands in |
+| `check_zone` | 42 | 0 | **kept for now**: every use is an opening or recovery hub that Sync players replaces |
+| `check_if_dropped` | 0 | 0 | **remove**: never adopted; no template has a "farm until it drops" loop |
 | `interact_menu`, `click_path` | 3 each, one bot | same | keep (see *Decisions taken*) |
 | `mark_location`, `teleport_to_marked_location` | 6 and 5 bots | 4 bots, maybe fewer | keep: some uses are Scales detours, the rest are content |
 | `teleport_to_friend` | 4 | Gauntlet Farmer | keep |
@@ -322,11 +322,11 @@ the Scales some other way first (an `interact`, which records the same point and
 `apply_elixir` to move into `handle_level_scaling`. The pattern for a node that stays as code but
 leaves the browser is `enter_zone_via_ride`.
 
-`go_to_world` and `check_zone` are decisions, not measurements. Neither has a use left, but both
-are general-purpose: `check_zone` is the case explicit stops were built for
-(`docs/RETURN_ROUTING.md`), and `go_to_world` is the plain way to reach a world without naming a
-zone in it. The `check_zone` the restricted-zone guard calls is a different function, in
-`restricted_zones`, and is unaffected.
+`go_to_world` went because a Sync in zone to the zone a world's gate lands in does the same
+thing, through a route the planner picks. Its six uses were converted in place, keeping their
+state ids and edges. `check_zone` stays for now: Sync players has superseded its uses, but it is
+the case explicit stops were built for (`docs/RETURN_ROUTING.md`). The `check_zone` the
+restricted-zone guard calls is a different function, in `restricted_zones`, and is unaffected.
 
 ## Coverage
 

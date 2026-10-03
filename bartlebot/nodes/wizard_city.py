@@ -2,12 +2,11 @@
 
 Pressing HOME is the one move available from anywhere in the Spiral, which makes the dorm
 the only reliable fixed point a node can navigate from. Everything that needs to reach a
-specific place in Wizard City -- Hilda Brewer for potions, the World Tree for the spiral
-door -- starts by getting here.
+specific place in Wizard City -- Hilda Brewer for potions -- starts by getting here.
 
-This lived inside handle_potions until go_to_world needed the same first two steps.
-Nothing here is potion-specific; handle_potions continues from Ravenwood to the Commons on
-its own.
+This lived inside handle_potions until the since-removed go_to_world node needed the same
+first two steps. Nothing here is potion-specific; handle_potions continues from Ravenwood
+to the Commons on its own.
 """
 
 import asyncio

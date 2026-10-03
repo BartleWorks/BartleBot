@@ -1103,14 +1103,14 @@
   "states": [
     {
       "id": "sync_players_1_state_4",
-      "node_type": "go_to_world",
+      "node_type": "sync_in_zone",
       "label": "Go to Avalon",
       "position": {
         "x": 1320.0,
         "y": -90.0
       },
       "params": {
-        "world": "Avalon"
+        "zone": "Avalon/AV_Z00_Hub"
       }
     },
     {

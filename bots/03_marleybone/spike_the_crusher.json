@@ -552,14 +552,14 @@
     },
     {
       "id": "state_18",
-      "node_type": "go_to_world",
+      "node_type": "sync_in_zone",
       "label": "Go to Marleybone",
       "position": {
         "x": -880.0,
         "y": -90.0
       },
       "params": {
-        "world": "Marleybone"
+        "zone": "Marleybone/Interiors/MB_WolfminsterAbbey"
       }
     }
   ],

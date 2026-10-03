@@ -384,14 +384,14 @@
   "states": [
     {
       "id": "state_1",
-      "node_type": "go_to_world",
+      "node_type": "sync_in_zone",
       "label": "Go to Mooshu",
       "position": {
         "x": 0.0,
         "y": 0.0
       },
       "params": {
-        "world": "MooShu"
+        "zone": "MooShu/Interiors/MS_Teleport_Chamber"
       }
     },
     {

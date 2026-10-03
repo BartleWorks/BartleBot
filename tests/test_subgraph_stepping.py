@@ -498,8 +498,8 @@ def test_revert_discards_the_copy_and_shows_the_built_in(qapp, two_roots, monkey
 
         assert two_roots.origin(SYNC_ID) is Origin.SHIPPED
         assert canvas.config.definition.version == 1
-        go = next(s for s in canvas.config.states if s.id == "go_to_world")
-        assert go.params["world"] == "WizardCity"
+        go = next(s for s in canvas.config.states if s.id == "gate")
+        assert go.params["zone"] == "WizardCity"
         assert not canvas.crumb_bar.revert_button.isVisibleTo(canvas.crumb_bar)
     finally:
         canvas.prepare_for_shutdown()

@@ -367,8 +367,8 @@ def test_every_surface_names_the_source_the_same_way():
 
 
 def test_deleting_a_node_takes_the_inputs_only_it_set(doc):
-    # "world" sets go_to_world alone; "hub" also sets tp_b, so it stays.
-    assert doc.scene.delete_state("go_to_world", confirm=False)
+    # "world" sets gate alone; "hub" also sets tp_b, so it stays.
+    assert doc.scene.delete_state("gate", confirm=False)
     assert not any(i.name == "world" for i in _meta(doc).inputs)
     assert doc.scene.delete_state("hub", confirm=False)
     assert [(b.state, b.param) for b in _input(doc, "hub").bindings] == [("tp_b", "zone")]
@@ -413,9 +413,9 @@ def test_a_linked_chip_turns_into_unlink_on_hover_but_a_promoted_one_does_not(do
     chip.click()
     assert ("tp_b", "zone") not in {(b.state, b.param) for b in _input(doc, "hub").bindings}
 
-    doc.set_node_promoted("go_to_world", True)
-    doc.select_state("go_to_world")
-    locked = doc.param_panel.param_form.link_chip("world")
+    doc.set_node_promoted("gate", True)
+    doc.select_state("gate")
+    locked = doc.param_panel.param_form.link_chip("zone")
     qapp.sendEvent(locked, QEvent(QEvent.Type.Enter))
     assert not locked.armed
 
@@ -430,12 +430,12 @@ def test_editing_a_linked_param_edits_its_input_and_the_other_linked_params(doc)
 def test_editing_an_inputs_default_edits_every_linked_param(doc):
     _input(doc, "world").default = "Krokotopia"
     doc._on_definition_changed()
-    assert next(s for s in doc.config.states if s.id == "go_to_world").params["world"] == "Krokotopia"
+    assert next(s for s in doc.config.states if s.id == "gate").params["zone"] == "Krokotopia"
 
 
 def test_promoting_a_node_drops_the_inputs_only_it_was_linked_to(doc):
-    # "world" is linked to go_to_world alone; "hub" also to tp_b.
-    assert doc.set_node_promoted("go_to_world", True)
+    # "world" is linked to gate alone; "hub" also to tp_b.
+    assert doc.set_node_promoted("gate", True)
     assert not any(i.name == "world" for i in _meta(doc).inputs)
     assert doc.set_node_promoted("hub", True)
     assert [(b.state, b.param) for b in _input(doc, "hub").bindings] == [("tp_b", "zone")]
@@ -510,8 +510,8 @@ def test_a_nav_zone_that_is_not_a_destination_is_an_error(doc):
 def test_the_link_chip_is_one_width_in_both_states(doc, qapp):
     from PyQt6.QtCore import QEvent  # noqa: PLC0415
 
-    doc.select_state("go_to_world")
-    chip = doc.param_panel.param_form.link_chip("world")
+    doc.select_state("gate")
+    chip = doc.param_panel.param_form.link_chip("zone")
     width = chip.width()
     qapp.sendEvent(chip, QEvent(QEvent.Type.Enter))
     assert chip.text() == "Unlink" and chip.width() == width
@@ -521,8 +521,8 @@ def test_a_long_linked_name_is_elided_within_the_cap(doc):
     from bartlebot.gui.canvas.param_panel import _LINK_CHIP_MAX_W  # noqa: PLC0415
 
     _input(doc, "world").label = "A world name far too long to fit on any chip at all"
-    doc.select_state("go_to_world")
-    chip = doc.param_panel.param_form.link_chip("world")
+    doc.select_state("gate")
+    chip = doc.param_panel.param_form.link_chip("zone")
     assert chip.width() <= _LINK_CHIP_MAX_W
     assert chip.text().endswith("…")
 

@@ -1,7 +1,7 @@
 """Widget tests for the 'str_choice' param field (QApplication required).
 
 The point of the type is that what the bot file stores and what the user reads are
-different strings — go_to_world stores "DragonSpire" and shows "Dragonspyre". A dropdown
+different strings, such as a world stored as "DragonSpire" and shown as "Dragonspyre". A dropdown
 that wrote its label back into the bot would produce a world key the zone glob never
 matches, and it would do it silently, so the round trip is worth pinning down.
 """
@@ -56,16 +56,3 @@ def test_a_bare_string_choice_list_works(qapp):
 
     assert form.widget("pick").currentText() == "b"
     assert form.get_params()["pick"] == "b"
-
-
-def test_go_to_world_offers_every_spiral_door_world(qapp):
-    """The real node's schema, driven through the real widget."""
-    from bartlebot import worlds
-    from bartlebot.nodes.teleportation import go_to_world
-
-    form = _form(go_to_world.PARAM_SCHEMA, {"world": "Darkmoor"})
-    widget = form.widget("world")
-
-    assert widget.count() == len(worlds.SPIRAL_DOOR_WORLDS)
-    assert widget.currentText() == "Darkmoor"
-    assert form.get_params()["world"] == "Darkmoor"

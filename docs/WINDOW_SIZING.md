@@ -86,8 +86,8 @@ resolves the window and hands its center to wizwalker's `mouse_handler.click_win
 whatever is drawn on top takes the click. A covered button therefore fails **quietly**:
 `click_by_path` returns True (the window exists and is not grayed), the click lands on the
 prompt, and the node burns its `TRIGGER_TIMEOUT` waiting for a loading screen that never
-starts. Four nodes ride on that button group — `teleport_to_world_hub`, `wizard_city`'s
-go-home (which `go_to_world` is built on), `mark_location` and `teleport_to_marked_location`.
+starts. Four steps ride on that button group — `teleport_to_world_hub`, `wizard_city`'s
+go-home (which `handle_potions` and zone navigation's `home` step use), `mark_location` and `teleport_to_marked_location`.
 
 There are two ways out, and the ladder uses both.
 

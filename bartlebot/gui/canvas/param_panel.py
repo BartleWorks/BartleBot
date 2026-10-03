@@ -727,8 +727,8 @@ class _StrChoiceComboBox(QComboBox):
 
     Displays a fixed dropdown of string options defined by ``ParamField.choices``. Each
     choice may be a bare string, or a ``(value, label)`` pair when the value stored in the
-    bot file is not what the user should read -- go_to_world stores the world's zone
-    prefix ("DragonSpire") and shows its display name ("Dragonspyre").
+    bot file is not what the user should read, such as a world's zone prefix
+    ("DragonSpire") shown as its display name ("Dragonspyre").
 
     ``get_params()`` returns the stored value, never the label.
     """

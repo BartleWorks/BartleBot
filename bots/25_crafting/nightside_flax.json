@@ -108,14 +108,14 @@
     },
     {
       "id": "state_6",
-      "node_type": "go_to_world",
+      "node_type": "sync_in_zone",
       "label": "Go to Wizard City",
       "position": {
         "x": -440.0,
         "y": 90.0
       },
       "params": {
-        "world": "WizardCity"
+        "zone": "WizardCity/WC_Ravenwood_Teleporter"
       }
     },
     {

@@ -156,8 +156,8 @@ class ParamField:
     For ``type="int_choice"``: a list of integers.
 
     For ``type="str_choice"``: a list of strings, or of ``(value, label)`` pairs when what
-    the bot file stores differs from what the user should read — go_to_world stores the
-    world's zone prefix ("DragonSpire") and shows its display name ("Dragonspyre").
+    the bot file stores differs from what the user should read, such as a world's zone
+    prefix ("DragonSpire") shown as its display name ("Dragonspyre").
     """
 
 

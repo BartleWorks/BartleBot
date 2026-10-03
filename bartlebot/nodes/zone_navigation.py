@@ -147,7 +147,7 @@ def _zone_entry_call(step: zone_nav.Step, zones: dict) -> tuple[Runs, dict] | st
     if step.kind == zone_nav.HUB:
         return teleport_to_world_hub, {"zone": step.to_zone}
     if step.kind == zone_nav.GATE:
-        # The gate lists worlds, in the client's language, as go_to_world searches it.
+        # The gate lists worlds in the client's language, so search for every locale's name.
         names = worlds.display_names(p["world"])
         if not names:
             return (
@@ -157,7 +157,7 @@ def _zone_entry_call(step: zone_nav.Step, zones: dict) -> tuple[Runs, dict] | st
         primary, *aliases = names
         return enter_zone_via_list, {
             "zone": step.from_zone,
-            # Anywhere in the world counts as arriving, as for go_to_world; the next plan starts from there.
+            # Anywhere in the world counts as arriving; the next plan starts from there.
             "to_zone": worlds.zone_pattern(p["world"]),
             "interact_xyz": p["interact_xyz"],
             "reset_xyz": p["reset_xyz"],

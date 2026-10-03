@@ -101,7 +101,7 @@ quadruples the file for rows no surface can show.
 
 `WorldNames.lang` is worth knowing about on its own, because its key **is** the world
 segment `zone_name()` returns — `WizardCity`, `DragonSpire`, `MooShu` — and its value is
-the localized text the spiral door lists. That correspondence is what lets `go_to_world`
+the localized text the spiral door lists. That correspondence is what lets a World Gate step
 verify arrival with the glob `"<key>/*"` rather than a per-world table of spiral chamber
 zone names.
 

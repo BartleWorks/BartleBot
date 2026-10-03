@@ -25,8 +25,8 @@ from bartlebot.nodes.zone_entry import enter_zone
 from bartlebot.option_groups import GROUP_GENERAL
 
 # ── Navigation coordinates ─────────────────────────────────────────────────────
-# The route as far as Ravenwood lives in bartlebot.nodes.wizard_city — go_to_world needs
-# the same first two steps. Only the Commons leg and Hilda herself are potion-specific.
+# The route as far as Ravenwood lives in bartlebot.nodes.wizard_city. Only the Commons leg
+# and Hilda herself are potion-specific.
 
 # Hilda Brewer's location in the Commons (potion vendor).
 _HILDA_XYZ = XYZ(-4398.70654296875, 1016.1954345703125, 229.00079345703125)

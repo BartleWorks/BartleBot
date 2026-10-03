@@ -1,7 +1,7 @@
 """Use a zone-selection list object -- a Streamportal, a Nanavator, a World Gate -- and teleport.
 
 Not a node in the library: it is how a planned ``list`` or ``gate`` step is run
-(``nodes/zone_navigation.step_call``) and how ``go_to_world`` works the spiral door. Callers
+(``nodes/zone_navigation.step_call``), the World Gate included. Callers
 hand over a row already resolved -- the text to match in every locale it might read, and where
 to stand -- because only they know what the row is: ``zone_lists.resolve`` for a zone list,
 ``worlds.display_names`` for a gate, whose rows are worlds rather than zones.

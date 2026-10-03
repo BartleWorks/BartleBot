@@ -163,14 +163,14 @@
     },
     {
       "id": "state_7",
-      "node_type": "go_to_world",
+      "node_type": "sync_in_zone",
       "label": "Go to Celestia",
       "position": {
         "x": -440.0,
         "y": 0.0
       },
       "params": {
-        "world": "Celestia"
+        "zone": "Celestia/CL_Hub"
       }
     }
   ],
