@@ -62,7 +62,7 @@ def value_empty(field_type: str, value: Any) -> bool:
     """Whether ``value`` is the blank of ``field_type``: what an unfilled field of that type holds."""
     if value is None:
         return True
-    if field_type in ("str", "text", "zone", "nav_zone", "scales", "wiki_page", "str_choice"):
+    if field_type in ("str", "text", "zone", "nav_zone", "scales", "wiki_page"):
         # Both zone widgets store a zone path, and an unset one is the empty string.
         return not str(value).strip()
     if field_type in ("str_list", "drop_keep_list", "player_list"):

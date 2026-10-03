@@ -88,7 +88,7 @@ class ParamField:
     Attributes:
         key:          JSON key used in the params dict.
         type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" |
-                      "str_list" | "int_choice" | "str_choice" | "player_list" | "player_slot" |
+                      "str_list" | "player_list" | "player_slot" |
                       "wiki_page" | "zone" | "nav_zone" | "scales" | "ratio".
                       "ratio" is a share of a whole -- a health or mana threshold. It is stored as
                       a float from 0.0 to 1.0, which is what a node compares against, and shown and
@@ -150,15 +150,6 @@ class ParamField:
     disabled_by: str = ""
     enabled_by: str = ""
     required: bool = False
-    choices: list[Any] = field(default_factory=list)
-    """The ordered dropdown options.
-
-    For ``type="int_choice"``: a list of integers.
-
-    For ``type="str_choice"``: a list of strings, or of ``(value, label)`` pairs when what
-    the bot file stores differs from what the user should read, such as a world's zone
-    prefix ("DragonSpire") shown as its display name ("Dragonspyre").
-    """
 
 
 PARAM_SUPERTYPES: dict[str, str] = {"nav_zone": "zone"}

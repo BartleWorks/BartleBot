@@ -194,7 +194,7 @@ class SubgraphInput(BaseModel):
 
     What the author owns is stored here: name, label, help, default and type. ``type``
     is a ``ParamField`` type name, the narrowest of the bound params' types, so its
-    value is valid for every param it feeds; what the *type* owns -- choices, range,
+    value is valid for every param it feeds; what the *type* owns -- range,
     placeholder, the widget -- comes from the bound fields when the form is drawn.
     ``default`` is what a fresh instance is prefilled with; it is *not* applied during
     composition -- an input the instance has not set leaves the definition's own value

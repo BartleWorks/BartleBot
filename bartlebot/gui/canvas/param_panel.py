@@ -79,10 +79,9 @@ def input_param_field(defn, inp, library=None, _depth: int = 0) -> ParamField:
     """The ``ParamField`` an input's widget is built from, on the call node and the signature panel.
 
     The input stores what the author owns: key, type, label, help and default. What
-    the *type* owns -- a ``str_choice``'s dropdown, a placeholder, a numeric range --
+    the *type* owns -- a placeholder, a numeric range --
     comes from a bound member param of the input's own type when the form is drawn,
-    so a change to a node's schema reaches every input bound to it, and a World input
-    gets the node's dropdown rather than an empty combo. If any bound param is
+    so a change to a node's schema reaches every input bound to it. If any bound param is
     required, so is the input. ``defn`` is anything with ``states``: a definition, or
     a definition document's config.
 
@@ -119,7 +118,6 @@ def input_param_field(defn, inp, library=None, _depth: int = 0) -> ParamField:
         help=inp.help or "",
         default=default,
         required=any(f.required for f in bound),
-        choices=list(first.choices) if first is not None else [],
         placeholder=first.placeholder if first is not None else "",
         minimum=first.minimum if first is not None else None,
         maximum=first.maximum if first is not None else None,
@@ -714,38 +712,6 @@ class _NavZoneField(QWidget):
                 pass  # the panel was rebuilt while the players traveled
 
 
-class _IntChoiceComboBox(QComboBox):
-    """QComboBox variant used for 'int_choice' param fields.
-
-    Displays a fixed dropdown of integer options defined by ``ParamField.choices``.
-    ``get_params()`` returns the selected value as an int.
-    """
-
-
-class _StrChoiceComboBox(QComboBox):
-    """QComboBox variant used for 'str_choice' param fields.
-
-    Displays a fixed dropdown of string options defined by ``ParamField.choices``. Each
-    choice may be a bare string, or a ``(value, label)`` pair when the value stored in the
-    bot file is not what the user should read, such as a world's zone prefix
-    ("DragonSpire") shown as its display name ("Dragonspyre").
-
-    ``get_params()`` returns the stored value, never the label.
-    """
-
-    def add_choices(self, choices: list) -> None:
-        for choice in choices or []:
-            value, label = choice if isinstance(choice, (tuple, list)) else (choice, choice)
-            self.addItem(str(label), str(value))
-
-    def set_value(self, value) -> None:
-        index = self.findData(str(value) if value is not None else "")
-        self.setCurrentIndex(max(index, 0))
-
-    def get_value(self) -> str:
-        return self.currentData() or ""
-
-
 # ---------------------------------------------------------------------------
 # Link controls on a definition's param rows
 # ---------------------------------------------------------------------------
@@ -1030,7 +996,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 field.type,
                 val,
                 field.help,
-                getattr(field, "choices", []),
                 getattr(field, "placeholder", ""),
                 minimum=getattr(field, "minimum", None),
                 maximum=getattr(field, "maximum", None),
@@ -1352,13 +1317,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 result[key] = w.value()
             elif isinstance(w, QDoubleSpinBox):
                 result[key] = w.value()
-            elif isinstance(w, _IntChoiceComboBox):
-                try:
-                    result[key] = int(w.currentText())
-                except (TypeError, ValueError):
-                    result[key] = 0
-            elif isinstance(w, _StrChoiceComboBox):
-                result[key] = w.get_value()
             elif isinstance(w, _NavZoneField | ScalesButton):
                 result[key] = w.value()
             elif isinstance(w, QCheckBox):
@@ -1370,7 +1328,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         field_type: str,
         val: Any,
         help_text: str,
-        choices: list | None = None,
         placeholder: str = "",
         minimum: float | None = None,
         maximum: float | None = None,
@@ -1503,28 +1460,6 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             if help_text:
                 w.setToolTip(help_text)
             w.changed.connect(self._emit_changed)
-            return w
-        if field_type == "str_choice":
-            w = _StrChoiceComboBox()
-            w.add_choices(choices or [])
-            w.set_value(val)
-            if help_text:
-                w.setToolTip(help_text)
-            w.currentTextChanged.connect(self._emit_changed)
-            return w
-        if field_type == "int_choice":
-            w = _IntChoiceComboBox()
-            for c in choices or []:
-                w.addItem(str(c))
-            try:
-                idx = w.findText(str(int(val)) if val is not None else "")
-                if idx >= 0:
-                    w.setCurrentIndex(idx)
-            except (TypeError, ValueError):
-                pass
-            if help_text:
-                w.setToolTip(help_text)
-            w.currentTextChanged.connect(self._emit_changed)
             return w
         w = QLabel(f"(unsupported type: {field_type})")
         self._muted_labels.append(w)
