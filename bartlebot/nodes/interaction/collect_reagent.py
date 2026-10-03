@@ -34,13 +34,13 @@ PARAM_SCHEMA: list[ParamField] = [
     ParamField(
         key="entity_names",
         type="str_list",
-        label="Entity Names",
+        label="Entity IDs",
         help=(
-            "Internal object names of the reagents to collect — use the Nearest Entity "
-            "display in the Players tab to find them. Partial matches work "
-            "(e.g. 'Fungi' matches 'FungusWort'). Wildcards (* ? []) match the whole "
-            "name instead, so use '*Fungi*' to match anywhere and 'Fungi*' to match only "
-            "names starting with it. All listed reagents are collected in one pass."
+            "IDs of the reagents to collect: their internal object names, as the Entity "
+            "Browser's ID column gives them, not the names shown in game. Each must be the "
+            "whole ID, though case does not matter: 'Stone' collects Stone, never Sandstone. "
+            "For a partial match, use wildcards (* ? []): '*Stone*' matches anywhere and "
+            "'Stone*' only IDs starting with it. All listed reagents are collected in one pass."
         ),
         default=[],
         required=True,

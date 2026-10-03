@@ -2,7 +2,7 @@
 
 A realm is the user's, never the bot's: a bot file naming one would send everyone who
 runs it to the same realm. So it is a bot option with a null declaration, answered by
-the Favorite Realm setting on the Bot tab, overridable per bot in Setup, and picked
+the Favorite Realm setting on the Bot tab, overridable per bot in Option Values, and picked
 from the checked-in realm table rather than typed.
 
 Real widget tests (QApplication required). The settings store is injected.
@@ -17,7 +17,7 @@ from bartlebot import bot_options, realms
 from bartlebot import settings_manager as sm_mod
 from bartlebot.bot.schema import BotConfig, StateModel
 from bartlebot.gui.settings.bot_tab import BotTab
-from bartlebot.gui.sidebar.sections.setup_section import SetupSection
+from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.widgets.option_widgets import NODE_ONLY_TYPES, OPTION_TYPES, make_option_widget, widget_value
 from bartlebot.gui.widgets.realm_combo import NOT_SET_TEXT, RealmCombo
 from bartlebot.nodes.utility import change_realm as cf
@@ -116,7 +116,7 @@ def test_the_bot_tab_writes_the_chosen_realm(qapp):
 
 def test_the_app_setting_answers_until_a_bot_needs_its_own(qapp, settings):
     settings.favorite_realm = "Balestrom"
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(_config())
 
     assert section.option_widgets[_OPTION].get_value() == "Balestrom"
@@ -127,7 +127,7 @@ def test_a_per_bot_override_wins_over_the_setting(qapp, settings):
     settings.favorite_realm = "Balestrom"
     config = _config()
     settings.set_option_override(config.id, _OPTION, "Wraith")
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
 
     resolution = section.resolution_for(_OPTION)

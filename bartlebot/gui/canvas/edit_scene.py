@@ -13,7 +13,9 @@ import math
 import re
 import uuid
 from collections import defaultdict
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from itertools import chain
 
 from PyQt6.QtCore import QPointF, QRectF, Qt, QTimer, pyqtSignal
 from PyQt6.QtGui import QAction, QBrush, QCursor, QKeyEvent, QMouseEvent, QPainter, QPen
@@ -28,7 +30,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import player_realms, zone_nav
+from bartlebot import player_realms, scales, setup_steps
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
@@ -36,6 +38,7 @@ from bartlebot.bot.schema import (
     SUBGRAPH_EXIT,
     BotConfig,
     RegionModel,
+    SetupStep,
     StateModel,
     SubgraphSource,
     TransitionModel,
@@ -63,7 +66,6 @@ from bartlebot.gui.canvas.region_item import RegionItem
 from bartlebot.gui.canvas.region_manager import RegionManager
 from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
-from bartlebot.gui.widgets.zone_picker import is_destination
 from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.subgraph_store import SUBGRAPH_KEY_PREFIX, SubgraphLibrary, source_label
 from bartlebot.subgraphs import (
@@ -72,6 +74,7 @@ from bartlebot.subgraphs import (
     boundary_ports,
     collapse_blocker,
     folded_regions,
+    input_targets,
     is_collapsed,
     is_nested_in,
     linked_region_of,
@@ -86,6 +89,7 @@ from bartlebot.subgraphs import (
     taken_ids,
 )
 from bartlebot.subgraphs import detach as detach_subgraph
+from bartlebot.template_store import TEMPLATE_ID_PREFIX
 
 logger = logging.getLogger(__name__)
 
@@ -150,16 +154,18 @@ def _node_returns(node_type: str) -> list[str]:
     return [r.name for r in spec.returns] if spec else []
 
 
-def driven_params(config: BotConfig) -> set[tuple[str, str]]:
+def driven_params(config: BotConfig, library: SubgraphLibrary | None = None) -> set[tuple[str, str]]:
     """``(state id, param key)`` a definition document's signature sets from outside.
 
     A param bound to an input, or belonging to an exposed node, is the consumer's to
-    fill in, so an empty one is not the definition's error. Empty for a bot.
+    fill in, so an empty one is not the definition's error. Empty for a bot. With
+    *library*, so is a nested subgraph node's member that an input reaches through
+    one of that node's own inputs.
     """
     meta = config.definition
     if meta is None:
         return set()
-    driven = {(b.state, b.param) for inp in meta.inputs for b in inp.bindings}
+    driven = {pair for inp in meta.inputs for pair in input_targets(config, inp, library)}
     for panel in meta.panels:
         if panel.kind != "node" or panel.member is None:
             continue
@@ -195,6 +201,11 @@ _PLACEMENT_SEARCH_RADIUS = 31
 
 def _placement_candidates(x_dir: int):
     """Grid offsets to try for an inserted node, its own column exhausted first.
+
+    Every insert tries the spot its node belongs in first and moves columns over when
+    it is taken (``EditScene._open_column_at``), so this search is what is left for the
+    inserts with no such spot: an edge running backward or down, and a node a template
+    update adds beside something it does not lead on to.
 
     An inserted node belongs to the layer it was inserted into, so the column is held
     and only the row moves; widening in x is the fallback for a column with no free
@@ -260,37 +271,10 @@ def authoring_anchor(config: BotConfig) -> tuple[str, str] | None:
     return None
 
 
-def _required_field_empty(field, params: dict) -> bool:
-    """Return True if a required ParamField has no meaningful value in params."""
-    if field.key not in params:
-        return True
-    val = params[field.key]
-    if field.type in ("str", "text", "zone", "nav_zone"):
-        # Both zone widgets store a zone path, and an unset one is the empty string.
-        return not str(val).strip()
-    if field.type in ("str_list", "drop_keep_list", "player_list"):
-        return not val  # empty list — for player_list, no player selected is a no-op
-    if field.type == "xyz":
-        # All-zero counts as empty: it is what an unset coordinate was saved as before the
-        # field could be blank, and a node would teleport to the zone's origin on it.
-        try:
-            axes = [float(val[axis]) for axis in ("x", "y", "z")]
-        except (KeyError, TypeError, ValueError):
-            return True
-        return not any(axes)
-    return False  # int, float, bool always have a value
-
-
-def _nav_zone_reachable(value) -> bool:
-    """Whether a ``nav_zone`` value is somewhere Sync In Zone can go. An empty one, or an unloadable map, passes.
-
-    The picker offers only destinations, but a value can arrive another way: a file,
-    or Record writing a zone param a ``nav_zone`` one is linked to.
-    """
-    if not value or not isinstance(value, str):
-        return True
-    nav = zone_nav.load()
-    return not nav.worlds or is_destination(nav, value)
+#: What "blank" means for a param, and whether a ``nav_zone`` is a destination: one rule
+#: each, in ``setup_steps``, shared with the library row and Release.
+_required_field_empty = setup_steps.field_empty
+_nav_zone_reachable = setup_steps.nav_zone_reachable
 
 
 def port_marks_for(state: StateModel, config: BotConfig) -> dict[str, str]:
@@ -325,12 +309,37 @@ def _return_is_handled_without_an_edge(state, config, return_name: str) -> bool:
     return return_name in FALLTHROUGH_RETURNS and state.id != config.recovery_state
 
 
-def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bool, bool, list[str], list[str]]:
+def _lacks_default_scales(config, fill_ins: Mapping[tuple[str, str], setup_steps.FillIn] | None) -> bool:
+    """Whether an empty ``scales`` param has no world default to fall back on, as far as can be told yet.
+
+    The world is read from the bot's zones (``scales.bot_world``), so while it is not known
+    the answer waits for them where they are still to come: a draft, whose zones its bots
+    fill in, and a bot with setup fill-ins left blank, which those steps already keep from
+    running. A world that is known and has no default is a fault everywhere.
+    """
+    if not scales.load() or scales.default_for(config) is not None:
+        return False
+    if scales.bot_world(config) is not None:
+        return True
+    return not (config.is_template or setup_steps.any_blank(config, fill_ins or {}))
+
+
+def _validate_node(
+    state,
+    config,
+    reachable: set[str] | None = None,
+    fill_ins: Mapping[tuple[str, str], setup_steps.FillIn] | None = None,
+    library: SubgraphLibrary | None = None,
+) -> tuple[bool, bool, list[str], list[str]]:
     """Return (is_error, is_warning, error_reasons, warning_reasons) for a state.
+
+    *library* lets a definition document see through its nested subgraph nodes: see
+    :func:`driven_params`.
 
     Error conditions:
       - node_type not in NODE_REGISTRY (unknown type)
       - any required param key absent from state.params
+      - in a bot, any setup fill-in (*fill_ins*) left blank, required on its own or not
       - any outgoing transition points to a non-existent destination state
 
     Warning conditions:
@@ -356,14 +365,37 @@ def _validate_node(state, config, reachable: set[str] | None = None) -> tuple[bo
         error_reasons.append(f"Unknown node type: '{state.node_type}'")
 
     schema = NODE_PARAM_SCHEMAS.get(state.node_type, [])
-    driven = driven_params(config) if config.definition is not None else set()
+    driven = driven_params(config, library) if config.definition is not None else set()
     for field in schema:
         if (state.id, field.key) in driven:
             continue
-        if field.required and _required_field_empty(field, state.params):
+        fill = fill_ins.get((state.id, field.key)) if fill_ins else None
+        empty = _required_field_empty(field, state.params)
+        if fill is not None:
+            # A template leaves its fill-ins blank -- a released version must -- so a
+            # blank one is the expected state there, and a filled one is the fault. In
+            # the bot made from it, blank is the step not done: an error whether or not
+            # the param is required on its own, so no placeholder ever runs as a value.
+            if config.is_template and not empty:
+                warning_reasons.append(
+                    f"'{field.key}' is setup step {fill.number}'s to fill in, so a release needs it blank"
+                )
+            elif not config.is_template and empty and setup_steps.setup_error(fill) not in error_reasons:
+                # Once per step, however many of its fill-ins on this node are blank:
+                # Record fills an entrance's four in one go, and the step is one thing to do.
+                error_reasons.append(setup_steps.setup_error(fill))
+        if fill is not None and empty:
+            continue
+        if field.required and empty:
+            # In a draft too: nothing would ever ask the user of a bot made from it to fill this.
             error_reasons.append(f"Required param '{field.key}' is empty")
         elif field.type == "nav_zone" and not _nav_zone_reachable(state.params.get(field.key)):
             error_reasons.append(f"'{field.key}' is not a destination on the zone map")
+        elif field.type == "scales" and not scales.is_known(state.params.get(field.key)):
+            error_reasons.append(f"'{field.key}' is not a Scales of Knowledge this build knows")
+        elif field.type == "scales" and empty and _lacks_default_scales(config, fill_ins):
+            # Empty means the bot's world's Scales, so it is only a fault when there is none.
+            error_reasons.append(f"'{field.key}' is empty, and this bot's world has no default Scales of Knowledge")
 
     merging = NODE_SPECS.get(state.node_type)
     if merging is not None and merging.merges_players and player_realms.declares_separate(config):
@@ -433,8 +465,12 @@ def _dist(a: QPointF, b: QPointF) -> float:
     return math.hypot(a.x() - b.x(), a.y() - b.y())
 
 
-def _unique_id(existing: list[str]) -> str:
-    """Return a fresh ``state_N`` id, numbered above every id already in use.
+#: What a bot's nodes are numbered with; a template draft's are :data:`TEMPLATE_ID_PREFIX`.
+STATE_ID_PREFIX = "state_"
+
+
+def _unique_id(existing: Iterable[str], prefix: str = STATE_ID_PREFIX, reserved: Iterable[str] = ()) -> str:
+    """Return a fresh ``<prefix>N`` id, numbered above every id already in use or reserved.
 
     Deliberately *not* the lowest free number.  Combat configuration binds to
     state ids — ``BotCombatStrategy.state_assignments`` stores raw ``state_N``
@@ -443,17 +479,23 @@ def _unique_id(existing: list[str]) -> str:
     strategy to whatever unrelated node is created next, with nothing in the UI
     to show it happened; the wrong strategy simply runs, minutes into a bot run.
 
-    Ids that don't fit the ``state_N`` pattern (hand-authored bot files may use
-    anything) are ignored when picking the number but still can't be collided
-    with, since the result always carries the ``state_`` prefix and a number
-    above every numbered id present.
+    ``prefix`` is ``state_`` in a bot and ``t_`` in a template draft, and only ids
+    carrying it are counted, so a bot's template-owned ``t_N`` nodes never move its own
+    numbering. ``reserved`` is what a draft's earlier releases used: an id a version
+    retired still names a node in every bot based on that version, so it is counted
+    as if it were still in use.
+
+    Ids that don't fit the pattern (hand-authored bot files may use anything) are
+    ignored when picking the number but still can't be collided with, since the
+    result always carries the prefix and a number above every numbered id present.
     """
+    pattern = _STATE_NUMBER if prefix == STATE_ID_PREFIX else re.compile(rf"(?:^|_){re.escape(prefix)}(\d+)$")
     highest = 0
-    for state_id in existing:
-        match = _STATE_NUMBER.search(state_id)
+    for state_id in chain(existing, reserved):
+        match = pattern.search(state_id)
         if match:
             highest = max(highest, int(match.group(1)))
-    return f"state_{highest + 1}"
+    return f"{prefix}{highest + 1}"
 
 
 #: ``state_N`` on its own, or as the tail of a subgraph member id
@@ -616,6 +658,10 @@ class EditScene(QGraphicsScene):
         # copied whole; ordinary regions do not travel with a copy.
         self._clipboard: tuple[list[dict], list[dict], list[dict]] | None = None
         self._subgraph_library: SubgraphLibrary | None = None
+        # (document id, ids): see set_reserved_ids.
+        self._reserved_ids: tuple[str | None, frozenset[str]] = (None, frozenset())
+        # (document id, steps): see set_base_setup_steps.
+        self._base_setup_steps: tuple[str | None, tuple[SetupStep, ...]] = (None, ())
         self._in_structural_edit: bool = False  # re-entrancy guard; suppresses nested about_to_change
         self._snap_enabled: bool = False
         self._grid_style: str = "dots"  # "dots" | "lines" | "none"
@@ -963,6 +1009,22 @@ class EditScene(QGraphicsScene):
         x, y = self._fold.to_display(float(position["x"]), float(position["y"]))
         return QPointF(x, y - body_height / 2)
 
+    def free_position(self, position: dict) -> dict:
+        """Where a node wanting stored ``position`` can go: there, or the nearest empty grid cell.
+
+        What a template update asks before it adds a node: the spot beside the node it
+        is wired from may already hold something the bot's author put there.
+        """
+        top_left = self.drawn_position(position)
+        taken = any(
+            abs(item.pos().x() - top_left.x()) < NODE_W and abs(item.pos().y() - top_left.y()) < NODE_H
+            for item in self._node_items.values()
+        )
+        if not taken:
+            return dict(position)
+        center = QPointF(top_left.x() + NODE_W / 2, top_left.y() + NODE_H / 2)
+        return self.stored_position(self.find_empty_grid_cell(center))
+
     # ------------------------------------------------------------------
     # A subgraph node's body, shown in Run mode
     # ------------------------------------------------------------------
@@ -1215,9 +1277,12 @@ class EditScene(QGraphicsScene):
         if self._config is None:
             return
         reachable = _reachable_states(self._config)
+        fills = self.fill_ins()
         rolled: dict[str, tuple[list[str], list[str]]] = {}
         for state in self._config.states:
-            is_error, is_warning, err_reasons, warn_reasons = _validate_node(state, self._config, reachable)
+            is_error, is_warning, err_reasons, warn_reasons = _validate_node(
+                state, self._config, reachable, fills, self._subgraph_library
+            )
             node = self._node_items.get(state.id)
             if node is not None:
                 if self._expanded and state.id in self._expanded_instance_members():
@@ -1254,6 +1319,86 @@ class EditScene(QGraphicsScene):
     @property
     def subgraph_library(self) -> SubgraphLibrary | None:
         return self._subgraph_library
+
+    # ------------------------------------------------------------------
+    # Setup steps
+    # ------------------------------------------------------------------
+
+    def set_base_setup_steps(self, document_id: str | None, steps: Sequence[SetupStep] = ()) -> None:
+        """The setup steps of the bot ``document_id``: its template's base version's (``setup_steps.steps_for``).
+
+        Set by the controller when it opens a bot made from a template, since reading
+        them takes the template store. Tied to the bot's id, as the reserved ids are, so
+        a definition opened over it or the next bot never inherits them. A template
+        draft needs none handed in: its steps are in the document.
+        """
+        self._base_setup_steps = (document_id, tuple(steps)) if document_id is not None else (None, ())
+
+    @property
+    def step_list(self) -> list[SetupStep]:
+        """The steps that apply to the open document: a draft's own, or its bot's base version's."""
+        if self._config is None:
+            return []
+        if self._config.template_meta is not None:
+            return list(self._config.template_meta.setup)
+        document_id, steps = self._base_setup_steps
+        return list(steps) if self._config.template is not None and self._config.id == document_id else []
+
+    def fill_ins(self) -> dict[tuple[str, str], setup_steps.FillIn]:
+        """``(state id, param)`` -> the setup step asking for it, for the open document."""
+        steps = self.step_list
+        if self._config is None or not steps:
+            return {}
+        return setup_steps.fill_ins(self._config, steps, self._subgraph_library)
+
+    def setup_progress(self) -> list[setup_steps.StepStatus]:
+        """How the open document stands against its steps, in order."""
+        if self._config is None:
+            return []
+        return setup_steps.progress(self._config, self.step_list, self._subgraph_library)
+
+    # ------------------------------------------------------------------
+    # Minting ids
+    # ------------------------------------------------------------------
+
+    def set_reserved_ids(self, document_id: str | None, ids: Iterable[str] = ()) -> None:
+        """Ids the document ``document_id`` must never mint, however its own ids change.
+
+        For a template draft, every id its released versions used (``template_store.used_ids``);
+        set by the controller when it opens one. Tied to the document's id so a definition
+        opened over the draft, or the next bot, never inherits them. ``None`` clears it.
+        """
+        self._reserved_ids = (document_id, frozenset(ids)) if document_id is not None else (None, frozenset())
+
+    @property
+    def reserved_ids(self) -> frozenset[str]:
+        """The reserved ids that apply to the open document: empty unless it is the one they were set for."""
+        document_id, ids = self._reserved_ids
+        return ids if self._config is not None and self._config.id == document_id else frozenset()
+
+    @property
+    def state_id_prefix(self) -> str:
+        """``t_`` while a template draft is open, else ``state_``: a bot never mints a template-owned id."""
+        return TEMPLATE_ID_PREFIX if self._config is not None and self._config.is_template else STATE_ID_PREFIX
+
+    @property
+    def instance_id_prefix(self) -> str:
+        """``t_`` while a template draft is open, else nothing (``sync_players_1``)."""
+        return TEMPLATE_ID_PREFIX if self._config is not None and self._config.is_template else ""
+
+    def mint_state_id(self, existing: Iterable[str]) -> str:
+        """A fresh node id for the open document, clear of ``existing`` and the reserved ids."""
+        return _unique_id(existing, self.state_id_prefix, self.reserved_ids)
+
+    def mint_instance_id(self, name: str, config: BotConfig | None = None) -> str:
+        """A fresh subgraph instance id for a definition called ``name``, in ``config`` (default: the open one).
+
+        Public because the canvas mints one on a working copy of the config when it turns
+        a region into an instance.
+        """
+        config = config if config is not None else self._config
+        taken = taken_ids(config) if config is not None else set()
+        return mint_instance_id(name, taken | self.reserved_ids, self.instance_id_prefix)
 
     def linked_region_of(self, state_id: str) -> RegionModel | None:
         """The outermost linked region ``state_id`` belongs to, or None."""
@@ -1306,7 +1451,7 @@ class EditScene(QGraphicsScene):
             logger.warning("Cannot insert subgraph %s: not in the library", subgraph_id)
             return None
         config = self._config
-        region_id = mint_instance_id(defn.name, taken_ids(config))
+        region_id = self.mint_instance_id(defn.name, config)
         source = SubgraphSource(
             subgraph_id=subgraph_id,
             version=defn.version,
@@ -1617,7 +1762,7 @@ class EditScene(QGraphicsScene):
         if node_type.startswith(SUBGRAPH_KEY_PREFIX):
             return self.insert_subgraph_instance(node_type[len(SUBGRAPH_KEY_PREFIX) :], pos)
         self._pre_edit("Create Node")
-        state_id = _unique_id([s.id for s in self._config.states])
+        state_id = self.mint_state_id(s.id for s in self._config.states)
         default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
         state = StateModel(
             id=state_id,
@@ -2493,7 +2638,7 @@ class EditScene(QGraphicsScene):
         id_map: dict[str, str] = {}
         existing_ids = [s.id for s in self._config.states]
         for sd in states_data:
-            new_id = _unique_id(existing_ids)
+            new_id = self.mint_state_id(existing_ids)
             id_map[sd["id"]] = new_id
             existing_ids.append(new_id)
 
@@ -2587,7 +2732,9 @@ class EditScene(QGraphicsScene):
             old_rid = rd["id"]
             source = SubgraphSource.model_validate(rd["source"])
             defn = library.get(source.subgraph_id) if library is not None else None
-            new_rid = mint_instance_id(defn.name if defn is not None else rd["label"], taken)
+            new_rid = mint_instance_id(
+                defn.name if defn is not None else rd["label"], taken | self.reserved_ids, self.instance_id_prefix
+            )
             taken.add(new_rid)
             new_rids.append(new_rid)
             source.anchor = moved(source.anchor) or {"x": offset_x, "y": offset_y}
@@ -2649,7 +2796,7 @@ class EditScene(QGraphicsScene):
                 continue
             if sd.get("node_type") in PORT_NODE_TYPES and not config.is_definition:
                 continue
-            new_id = _unique_id(existing_ids)
+            new_id = self.mint_state_id(existing_ids)
             existing_ids.append(new_id)
             id_map[sd["id"]] = new_id
             new_states.append(StateModel.model_validate({**sd, "id": new_id, "position": moved(sd.get("position"))}))
@@ -2792,19 +2939,40 @@ class EditScene(QGraphicsScene):
 
         The first remaining state is an arbitrary choice, but it is a *valid* one, and
         the badge moving to it is visible -- unlike the corrupted file, which is not.
-        Nothing to do when the graph is empty: a config with no states cannot satisfy
-        either field, and is already unloadable for that reason alone.
+        An empty graph holds neither role, and both are cleared: that is a blank bot,
+        the one config that loads without them. The same pass is what gives both to the
+        first node put on a blank bot's canvas (``settle_roles``).
+
+        When the first state is inside a subgraph node, the roles go to that node's
+        first entry port, since a role on a subgraph node is always on a port.
         """
-        if self._config is None or not self._config.states:
+        if self._config is None:
+            return
+        if not self._config.states:
+            if not self._config.is_definition:
+                self._config.initial = self._config.recovery_state = ""
             return
         ids = {s.id for s in self._config.states}
         fallback = self._config.states[0].id
         if self._config.is_definition:
             fallback = next((s.id for s in self._config.states if s.node_type == SUBGRAPH_ENTRY), fallback)
+        else:
+            region = self.linked_region_of(fallback)
+            entries = [p.member for p in region.source.ports.values() if p.member] if region is not None else []
+            if entries and member_id(region.id, entries[0]) in ids:
+                fallback = member_id(region.id, entries[0])
         if self._config.initial not in ids:
             self._config.initial = fallback
         if self._config.recovery_state not in ids:
             self._config.recovery_state = fallback
+
+    def settle_roles(self) -> None:
+        """Give ``initial`` and ``recovery_state`` a state to name whenever they name none.
+
+        Called on every change to the graph: the first node added to a blank bot takes
+        both, however it was added.
+        """
+        self._reassign_orphaned_roles()
 
     def _delete_node(self, state_id: str, *, confirm: bool = True) -> bool:
         """Delete a state -- or, for a call node's id, the whole instance -- and all its edges.
@@ -3109,7 +3277,7 @@ class EditScene(QGraphicsScene):
         writes it and ``setup`` reads it. Storing the top-left put a node saved before
         anything flushed it back half a node higher than it was drawn.
         """
-        new_id = _unique_id([st.id for st in self._config.states])
+        new_id = self.mint_state_id(st.id for st in self._config.states)
         default_params = {f.key: f.default for f in NODE_PARAM_SCHEMAS.get(node_type, []) if f.default is not None}
         self._config.states.append(
             StateModel(
@@ -3153,12 +3321,15 @@ class EditScene(QGraphicsScene):
         if target is None or isinstance(target, (FoldedNodeItem, PortNodeItem)):
             return None
         incoming = [t for t in self._config.transitions if t.dest == state_id]
-        pos = self.free_position_near(QPointF(target.pos().x() - GRID_W, target.pos().y()), x_dir=-1)
 
         self._pre_edit("Insert State at Port")
         prev_in_structural = self._in_structural_edit
         self._in_structural_edit = True
         try:
+            # In front of the target, on its row: the cell to its left when that is free,
+            # else the target's own place, with the target's column and the rest moved over.
+            before = self._grid_cell(QPointF(target.pos().x() - GRID_W, target.pos().y()))
+            pos = before if self._cell_is_free(before) else self._open_column_at(QPointF(target.pos()))
             new_id, new_node = self._spawn_state(node_type, pos)
             for t in incoming:
                 old_src, old_when = t.source, t.when
@@ -3207,12 +3378,15 @@ class EditScene(QGraphicsScene):
 
         outgoing = [t for t in self._config.transitions if t.source == state_id and t.when == return_name]
         port = source.port_out_for(return_name)
-        pos = self.free_position_near(QPointF(source.pos().x() + GRID_W, port.y() - NODE_H / 2), x_dir=1)
 
         self._pre_edit("Insert State at Port")
         prev_in_structural = self._in_structural_edit
         self._in_structural_edit = True
         try:
+            # The next column, on the port's row: there when it is free, else there all
+            # the same, with that column and the rest moved over to make it so.
+            after = self._grid_cell(QPointF(source.pos().x() + GRID_W, port.y() - NODE_H / 2))
+            pos = after if self._cell_is_free(after) else self._open_column_at(after)
             new_id, new_node = self._spawn_state(node_type, pos)
             for t in outgoing:
                 old_dst = t.dest
@@ -3231,24 +3405,9 @@ class EditScene(QGraphicsScene):
         return new_id
 
     def _insert_state_on_edge(self, edge_item: EdgeItem) -> None:
-        """Split an existing edge by inserting a new state at its midpoint."""
+        """The edge menu's Insert: ask which node, then split the edge with it."""
         if self._config is None:
             return
-        # Locate the edge record
-        for s, w, d, ei in list(self._edge_items):  # noqa: B007 — s, w, d used after loop via for-else leak
-            if ei is edge_item:
-                break
-        else:
-            return
-        src_node = self._node_items.get(s)
-        dst_node = self._node_items.get(d)
-        if src_node is None or dst_node is None:
-            return
-
-        # Midpoint of the edge path in scene coordinates
-        mid = edge_item.mapToScene(edge_item.path().pointAtPercent(0.5))
-        insert_pos = self.free_position_near(QPointF(mid.x() - NODE_W / 2, mid.y() - NODE_H / 2), x_dir=1)
-
         # Ask the user which node type to insert
         from bartlebot.gui.canvas.node_browser_dialog import NodeBrowserDialog
 
@@ -3256,12 +3415,26 @@ class EditScene(QGraphicsScene):
         dlg = NodeBrowserDialog(view, mode="add")
         if not (dlg.exec() and dlg.selected_node_type):
             return
-        node_type = dlg.selected_node_type
+        self.insert_state_on_edge(edge_item, dlg.selected_node_type)
+
+    def insert_state_on_edge(self, edge_item: EdgeItem, node_type: str) -> str | None:
+        """Split *edge_item* with a new state of *node_type*, making room for it. Returns the new state's id."""
+        if self._config is None:
+            return None
+        for s, w, d, ei in list(self._edge_items):  # noqa: B007 — s, w, d used after loop via for-else leak
+            if ei is edge_item:
+                break
+        else:
+            return None
+        src_node = self._node_items.get(s)
+        dst_node = self._node_items.get(d)
+        if src_node is None or dst_node is None:
+            return None
 
         self._pre_edit("Insert State on Edge")
         self._in_structural_edit = True
 
-        new_id, new_node = self._spawn_state(node_type, insert_pos)
+        new_id, new_node = self._spawn_state(node_type, self._room_on_edge(edge_item, src_node, dst_node))
 
         # Remove original edge (src --w--> dst), then wire src --w--> new --w'--> dst.
         # Carry the original when value to the outgoing edge only if the new node actually
@@ -3274,6 +3447,53 @@ class EditScene(QGraphicsScene):
         self._create_transition(new_node, dst_node, outgoing_when)
         self._in_structural_edit = False
         self._update_scene_rect()
+        return new_id
+
+    def _room_on_edge(self, edge_item: EdgeItem, src_node: NodeItem, dst_node: NodeItem) -> QPointF:
+        """Where a node inserted on the edge from *src_node* to *dst_node* goes, making room when there is none.
+
+        Between two nodes in neighboring columns there is no cell to put it in: the
+        midpoint is on top of one of them, and the nearest free row is above or below
+        the line the edge ran along, which reads as a detour. So the new node takes the
+        destination's place, and the destination's column and every column right of it
+        move over by one -- all of each column, not only what is downstream, so rows
+        that were level stay level.
+
+        An edge with a whole column between its ends has a place for the node already,
+        and one that runs backward or straight down has no "after" to move, so both
+        keep the midpoint and the nearest free cell to it.
+        """
+        columns_apart = round(dst_node.pos().x() / GRID_W) - round(src_node.pos().x() / GRID_W)
+        if columns_apart != 1:
+            mid = edge_item.mapToScene(edge_item.path().pointAtPercent(0.5))
+            return self.free_position_near(QPointF(mid.x() - NODE_W / 2, mid.y() - NODE_H / 2), x_dir=1)
+        return self._open_column_at(QPointF(dst_node.pos()))
+
+    @staticmethod
+    def _grid_cell(seed: QPointF) -> QPointF:
+        """The grid cell *seed* is in, as an item's top-left: the snap ``free_position_near`` starts from."""
+        return QPointF(round(seed.x() / GRID_W) * GRID_W, round((seed.y() + NODE_H / 2) / GRID_H) * GRID_H - NODE_H / 2)
+
+    def _cell_is_free(self, pos: QPointF) -> bool:
+        """Whether a node put at *pos* would overlap none of the nodes drawn."""
+        box = QRectF(pos.x(), pos.y(), NODE_W, NODE_H)
+        return not any(
+            box.intersects(QRectF(n.pos().x(), n.pos().y(), NODE_W, n.body_height)) for n in self._node_items.values()
+        )
+
+    def _open_column_at(self, place: QPointF) -> QPointF:
+        """Move *place*'s column and every column right of it over by one, and return *place*, now free.
+
+        What every insert does when the spot its node belongs in is taken: on an edge,
+        at an input port and at an output port alike. All of each column moves, not only
+        what is downstream of the insert, so rows that were level stay level. The caller
+        has already opened the undo step, so the move and the insert are one.
+        """
+        for item in self._node_items.values():
+            if item.pos().x() >= place.x() - 1:
+                item.setPos(item.pos().x() + GRID_W, item.pos().y())
+        self._flush_positions()
+        return place
 
     def _flush_positions(self) -> None:
         """Write where every item now sits back into the model, through the fold.

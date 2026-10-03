@@ -1,4 +1,4 @@
-"""The two option surfaces: values in Setup, declarations in Options.
+"""The two option surfaces: values in Option Values, declarations in Options.
 
 ``OptionsSection`` shipped untested, which is how two bugs survived in it long
 enough to be found by reading rather than by running: the rename fixup walked
@@ -6,7 +6,7 @@ only the *flat* ``flags`` list while the edge editor writes ``flag_groups`` — 
 form that takes precedence at run time — and the Add/Edit dialog hardcoded
 ``type="bool"``, so pressing Edit on Safety Delay rewrote a float as a checkbox.
 
-The assertion that matters most is the negative one: editing a value in Setup
+The assertion that matters most is the negative one: editing a value in Option Values
 must leave the bot file byte-identical.  That is the whole epic in one test.
 
 Real widget tests (QApplication required), in the style of
@@ -18,7 +18,6 @@ patched — both sections take one — so nothing here touches the real
 from __future__ import annotations
 
 import pytest
-from PyQt6.QtCore import QEvent, QObject
 from PyQt6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -26,7 +25,6 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QSpinBox,
-    QWidget,
 )
 
 from bartlebot import bot_options
@@ -39,8 +37,8 @@ from bartlebot.bot.schema import (
     StateModel,
     TransitionModel,
 )
+from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection, _AddOptionDialog
-from bartlebot.gui.sidebar.sections.setup_section import SetupSection
 from bartlebot.gui.widgets.growing_text_edit import GrowingTextEdit
 from bartlebot.gui.widgets.option_widgets import (
     OPTION_TYPES,
@@ -126,13 +124,13 @@ def test_the_widget_types_are_the_ones_the_panels_expect(qapp):
 
 
 # ---------------------------------------------------------------------------
-# Setup — the values surface
+# Option Values — the values surface
 # ---------------------------------------------------------------------------
 
 
 def test_editing_a_value_writes_an_override_and_not_the_declaration(qapp, settings):
     config = _config([_repeat(default=True)])
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
 
     section.option_widgets["repeat"].setChecked(False)
@@ -145,7 +143,7 @@ def test_a_bot_file_is_untouched_by_a_value_edit(qapp, settings):
     """The epic in one assertion: tuning a shared bot must not modify it."""
     config = _config([_repeat(default=True)])
     before = config.model_dump()
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
 
     section.option_widgets["repeat"].setChecked(False)
@@ -156,7 +154,7 @@ def test_a_bot_file_is_untouched_by_a_value_edit(qapp, settings):
 def test_an_override_wins_over_the_declaration_in_the_row(qapp, settings):
     settings.set_option_override("test-bot", "repeat", False)
     config = _config([_repeat(default=True)])
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
 
     assert section.option_widgets["repeat"].isChecked() is False
@@ -165,7 +163,7 @@ def test_an_override_wins_over_the_declaration_in_the_row(qapp, settings):
 
 def test_a_row_with_no_override_reports_the_bot_as_its_source(qapp, settings):
     config = _config([_repeat(default=True)])
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
 
     assert section.resolution_for("repeat").source == bot_options.SOURCE_BOT_FILE
@@ -174,7 +172,7 @@ def test_a_row_with_no_override_reports_the_bot_as_its_source(qapp, settings):
 def test_reset_removes_the_override_row(qapp, settings):
     settings.set_option_override("test-bot", "repeat", False)
     config = _config([_repeat(default=True)])
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
 
     section._on_reset("repeat")
@@ -191,7 +189,7 @@ def test_typing_a_value_back_to_the_default_forgets_the_override(qapp, settings)
     who later improved the declaration it happens to match.
     """
     config = _config([_repeat(default=True)])
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
 
     section.option_widgets["repeat"].setChecked(False)
@@ -206,7 +204,7 @@ def test_typing_a_value_back_to_the_default_forgets_the_override(qapp, settings)
 def test_a_value_edit_keeps_the_control_it_was_made_in(qapp, settings):
     """Rebuilding the list would delete the spin box under the arrow being clicked."""
     config = _config([BotOptionModel(name="Passes", type="int", default=1)])
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
     before = section.option_widgets["Passes"]
 
@@ -218,7 +216,7 @@ def test_a_value_edit_keeps_the_control_it_was_made_in(qapp, settings):
 
 def test_resetting_puts_the_resolved_value_back_on_screen(qapp, settings):
     config = _config([BotOptionModel(name="Passes", type="int", default=1)])
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
 
     section.option_widgets["Passes"].setValue(5)
@@ -232,7 +230,7 @@ def test_revert_is_enabled_exactly_while_the_value_is_the_users(qapp, settings):
     """Revert going live and the override bar going accent are one fact said twice,
     which is why they sit next to each other in the gutter."""
     config = _config([_repeat(default=True)])
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
     chrome = section._chrome["repeat"]
 
@@ -249,7 +247,7 @@ def test_revert_is_enabled_exactly_while_the_value_is_the_users(qapp, settings):
 def test_a_false_override_is_a_choice_and_survives_a_rebuild(qapp, settings):
     """Absence is unset; a stored ``false`` is an answer. Nothing may prune it."""
     config = _config([_repeat(default=True)])  # so False really is the user's choice
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
 
     section.option_widgets["repeat"].setChecked(False)
@@ -261,7 +259,7 @@ def test_a_false_override_is_a_choice_and_survives_a_rebuild(qapp, settings):
 
 def test_an_empty_list_override_is_a_choice_too(qapp, settings):
     config = _config([BotOptionModel(name="Players", type="player_list", default=[1, 2])])
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
 
     section._on_value_changed("Players", [])
@@ -273,7 +271,7 @@ def test_an_empty_list_override_is_a_choice_too(qapp, settings):
 def test_setup_has_no_authoring_controls_to_reveal(qapp, settings):
     """``set_editable`` is accepted and ignored — values are a run-mode concern."""
     config = _config([_repeat()])
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
 
     section.set_editable(True)
@@ -525,12 +523,12 @@ def _gutter_children(row):
 
 
 def test_the_gutter_slots_line_up_across_both_surfaces(qapp, settings):
-    """Setup and Options are two views of one list, so a row's chrome has to land at
+    """Option Values and Options are two views of one list, so a row's chrome has to land at
     the same x on both — otherwise a mode switch reads as a different row."""
     config = _config([_repeat()])
     options = OptionsSection(settings=settings)
     options.set_config(config)
-    setup = SetupSection(settings=settings)
+    setup = OptionValuesSection(settings=settings)
     setup.set_config(config)
 
     opt_row, setup_row = options._option_rows[0], setup._chrome["repeat"].outer
@@ -566,7 +564,7 @@ def test_both_surfaces_draw_the_same_cards_and_share_their_folds(qapp, settings)
     )
     options = OptionsSection(settings=settings)
     options.set_config(config)
-    setup = SetupSection(settings=settings)
+    setup = OptionValuesSection(settings=settings)
     setup.set_config(config)
 
     setup.set_group_collapsed("dungeon", True)
@@ -613,7 +611,7 @@ def test_a_derived_option_keeps_its_edit_slot_empty_rather_than_closing_it(qapp,
 
 
 def test_a_description_is_folded_away_until_asked_for(qapp, settings):
-    """Options showed every description unconditionally; Setup has folded them since
+    """Options showed every description unconditionally; Option Values has folded them since
     the prose was measured at 41% of a row's height."""
     section = OptionsSection(settings=settings)
     section.set_config(_config([_repeat()]))
@@ -636,13 +634,13 @@ def test_folding_the_prose_away_is_remembered_for_both_surfaces(qapp, settings):
 
     options.set_descriptions_visible(True)
 
-    setup = SetupSection(settings=settings)
+    setup = OptionValuesSection(settings=settings)
     setup.set_config(_config([_repeat()]))
     assert setup.descriptions_visible
 
 
 def test_a_description_is_read_at_the_base_font(qapp, settings):
-    """The same prose as on Setup, so it is read at the same size."""
+    """The same prose as on Option Values, so it is read at the same size."""
     section = OptionsSection(settings=settings)
     section.set_config(_config([_repeat()]))
 
@@ -730,27 +728,8 @@ def test_a_multi_line_description_round_trips_through_the_dialog(qapp):
 # ---------------------------------------------------------------------------
 
 
-class _ParentlessShowSpy(QObject):
-    """Records every widget shown while it still has no parent.
-
-    Qt gives such a widget a window of its own, maps it, and unmaps it again the
-    moment the next ``addWidget`` reparents it — so a rebuild of a list of rows is
-    a burst of real frames appearing on screen.  Installed on the ``QApplication``,
-    which sees the events delivered to every object in the process.
-    """
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.shown: list[str] = []
-
-    def eventFilter(self, obj, event):  # noqa: N802 - Qt's name
-        if event.type() == QEvent.Type.Show and isinstance(obj, QWidget) and obj.parent() is None:
-            self.shown.append(type(obj).__name__)
-        return False
-
-
 @pytest.mark.parametrize("descriptions_shown", [False, True])
-def test_building_a_row_never_shows_a_parentless_widget(qapp, settings, descriptions_shown):
+def test_building_a_row_never_shows_a_parentless_widget(qapp, settings, descriptions_shown, parentless_shows):
     """The user's report: windows flashing on an option edit, worst on a check box.
 
     Every value edit rebuilds a list of rows, and each row set the visibility of its
@@ -759,23 +738,18 @@ def test_building_a_row_never_shows_a_parentless_widget(qapp, settings, descript
     """
     settings.set("general", "show_option_descriptions", value=descriptions_shown)
     config = _config([_repeat()])
-    spy = _ParentlessShowSpy()
-    qapp.installEventFilter(spy)
-    try:
-        options = OptionsSection(settings=settings)
-        options.set_editable(True)  # Edit mode: the button the rows would have shown
-        options.set_config(config)
-        SetupSection(settings=settings).set_config(config)
-    finally:
-        qapp.removeEventFilter(spy)
+    options = OptionsSection(settings=settings)
+    options.set_editable(True)  # Edit mode: the button the rows would have shown
+    options.set_config(config)
+    OptionValuesSection(settings=settings).set_config(config)
 
-    assert spy.shown == []
+    assert parentless_shows == []
 
 
 def test_a_changed_default_does_not_rebuild_the_row_it_was_changed_in(qapp, settings):
     """A check box whose row is rebuilt on ``toggled`` is destroyed under the pointer.
 
-    Setup has followed this rule since the spin-box bug; Options did not, because a
+    Option Values has followed this rule since the spin-box bug; Options did not, because a
     default edit went out on ``options_changed``, whose handler recomposes and
     rebuilds the whole list.  It is ``defaults_changed`` now — no name can change,
     so there is nothing here to rebuild.

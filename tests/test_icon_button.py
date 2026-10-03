@@ -121,7 +121,7 @@ def test_the_variants_are_told_apart(qapp):
 
 
 def test_accent_when_enabled_spends_the_accent_only_while_it_can_act(qapp):
-    """The Setup gutter's revert: being enabled is one of the two marks saying
+    """The Option Values gutter's revert: being enabled is one of the two marks saying
     "this value is yours", so the accent is what carries it."""
     button = IconButton("revert", tooltip="Discard", tint=IconTint.ACCENT_WHEN_ENABLED)
     enabled = _image(button)

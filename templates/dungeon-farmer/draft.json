@@ -1,0 +1,298 @@
+{
+  "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+  "name": "Dungeon Farmer",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [],
+  "authors": "BartleBot",
+  "tags": [
+    "Dungeon"
+  ],
+  "options": [],
+  "states": [
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.999938308534,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999938308534,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": ""
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter dungeon",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "",
+        "dungeon_zone": "",
+        "offers_challenge_mode": false,
+        "offers_team_up": false
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "",
+        "to_zone": "",
+        "stagger": false
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {},
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.999938308534,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ],
+  "template_meta": {
+    "blurb": "Farms a whole dungeon: enters it, runs the nodes you add, exits, and repeats.\n\nAdd the nodes that clear the dungeon between Enter dungeon and Exit dungeon. If the entrance zone isn't in the zone list, choose the nearest zone that is, and add navigation nodes from there to the entrance. Set the Quicksell keep list from the dungeon's drops.",
+    "setup": [
+      {
+        "text": "Choose the zone the dungeon entrance is in",
+        "targets": [
+          {
+            "region": "t_sync_players_1",
+            "input": "state_2.zone"
+          }
+        ]
+      },
+      {
+        "text": "Record entering the dungeon",
+        "targets": [
+          {
+            "state": "t_3",
+            "param": "from_zone"
+          },
+          {
+            "state": "t_3",
+            "param": "dungeon_zone"
+          },
+          {
+            "state": "t_3",
+            "param": "sigil_xyz"
+          },
+          {
+            "state": "t_3",
+            "param": "reset_xyz"
+          }
+        ]
+      },
+      {
+        "text": "Record exiting the dungeon",
+        "targets": [
+          {
+            "state": "t_4",
+            "param": "from_zone"
+          },
+          {
+            "state": "t_4",
+            "param": "to_zone"
+          },
+          {
+            "state": "t_4",
+            "param": "xyz"
+          },
+          {
+            "state": "t_4",
+            "param": "reset_xyz"
+          }
+        ]
+      },
+      {
+        "text": "Import the drops of the dungeon's fights from their wiki pages",
+        "targets": [
+          {
+            "field": "drops"
+          }
+        ]
+      }
+    ]
+  }
+}

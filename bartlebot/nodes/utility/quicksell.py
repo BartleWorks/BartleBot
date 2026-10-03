@@ -159,7 +159,7 @@ NODE_SPEC = NodeSpec(
         BotOptionSpec(
             name=OPTION_KEEP_LIST,
             group=GROUP_QUICKSELL,
-            # Node-declared type: a str_list underneath, shown in Setup as this bot's
+            # Node-declared type: a str_list underneath, shown in Options as this bot's
             # own drop table with a tick box per item.
             type="drop_keep_list",
             default=[],
@@ -174,7 +174,7 @@ NODE_SPEC = NodeSpec(
     safety_warning=(
         "This bot quicksells items when your backpack is full. "
         "Ensure that you have locked any valuable items or have added them to the keep list in "
-        "Setup. "
+        "Options. "
         "Pets are the exception: the quicksell window lists them by nickname, so the keep list "
         "cannot spare one — turn Sell Pets off to keep your pets. " + SAFETY_WARNING_DISABLED
     ),
@@ -466,7 +466,7 @@ async def run(machine, clients: list, params: dict) -> str:
          SUCCESS without touching a client -- a node that does nothing has not failed.
       1. Build the effective keep_list via effective_keep_list(): the Quicksell Keep
          List option plus the keywords implied by the sell_* bools that are off. The
-         Setup picker resolves the same way, so what it shows is what this will do.
+         Options picker resolves the same way, so what it shows is what this will do.
       2. Open the inventory page (B key); read backpack_space() to check if full.
       3. Switch to the jewel page (Y key); read the jewel capacity text to check if full.
       4. If neither is full, close the backpack and return SUCCESS.

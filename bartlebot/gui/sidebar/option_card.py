@@ -1,4 +1,4 @@
-"""``OptionCard`` -- one folding group of bot options on Setup and Options (#138).
+"""``OptionCard`` -- one folding group of bot options on Option Values and Options (#138).
 
 The two option surfaces draw a bot's options as a column of these rather than one flat
 list: *This dungeon*, *Team*, *Quicksell* and *General* (``bartlebot.option_groups``
@@ -32,7 +32,7 @@ A bordered card with a header band over a page-colored body::
   hide a problem would make folding unsafe.
 * While folded, the band carries a one-line summary of the card, warning parts in the
   warning color. It is hidden while expanded, so nothing is on screen twice.
-* At the right end, whatever the surface adds: Setup puts Enable Quicksell's source
+* At the right end, whatever the surface adds: Option Values puts Enable Quicksell's source
   caption and switch there.
 
 The header has **no option gutter**. The rows keep theirs, so every revert and ``?``
@@ -496,7 +496,7 @@ COLLAPSE_OTHERS_HINT = "Ctrl+click"
 class CardFolds:
     """Which of a surface's cards are folded, and every way there is to change it.
 
-    Setup and Options each hold one. The answer is the *reader's*: one ``{group:
+    Option Values and Options each hold one. The answer is the *reader's*: one ``{group:
     collapsed}`` in ``settings.json`` (``option_groups.COLLAPSED_SETTING``), the same for
     every bot and shared by both surfaces. Only one of the two is on screen at a time, so
     each re-reads it on the way in (``reload``) rather than the two being wired together.

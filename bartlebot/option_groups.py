@@ -1,8 +1,8 @@
 """Which card a bot option is drawn in, and what a collapsed card says (#138).
 
-Both option surfaces -- Setup, where the user sets values, and Options, where the author
+Both option surfaces -- Option Values, where the user sets values, and Options, where the author
 declares them -- draw a bot's options as a short column of folding cards rather than one
-flat list. Atlantea carries thirteen options, and the Setup tab ran 859px tall for them
+flat list. Atlantea carries thirteen options, and the Option Values tab ran 859px tall for them
 against a 404px sidebar at 1080p; folding the groups nobody is working in is what gets
 the rest onto the screen.
 
@@ -177,7 +177,7 @@ def group_summary(
 ) -> list[SummaryPart]:
     """What *group*'s header says while it is collapsed.
 
-    *values* maps an option name to what it resolved to -- the user's value on Setup,
+    *values* maps an option name to what it resolved to -- the user's value on Option Values,
     the declaration on Options. A name missing from it, or holding ``None``, contributes
     nothing: the Options surface leaves out the user's own options altogether, and an
     author with no opinion has nothing to summarize.

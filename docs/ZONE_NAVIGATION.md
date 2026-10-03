@@ -291,10 +291,11 @@ together.
 | in one zone | is longer, or takes a teleporter | follow one client: it travels, the rest port to it |
 | in several zones | — | follow one client |
 
-The client that travels -- the leader -- is one in the largest group that already sees itself (see
-below), then the one the most others can port to, then the one with the cheapest route, then the
-lowest player number; a client already in the target zone has the cheapest route of
-all. Nobody else moves until it arrives, so no two clients ever use an object at once. Clients that
+The client that travels -- the leader -- is one already in the target zone that others can port to,
+then one in the largest group that already sees itself (see below), then the one the most others can
+port to, then the one with the cheapest route, then the lowest player number. A client already there
+outranks a larger group elsewhere: following the group costs a whole route and still moves the client
+that was there, where porting to it is one loading screen for everyone. Nobody else moves until it arrives, so no two clients ever use an object at once. Clients that
 cannot port to one another travel together instead, regrouping first if they are split: at the hub
 within one world, at home across worlds.
 

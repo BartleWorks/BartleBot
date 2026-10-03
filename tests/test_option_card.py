@@ -1,6 +1,6 @@
 """The option card and its header switch (#138).
 
-``OptionCard`` is one folding group of options on Setup and Options; ``ToggleSwitch``
+``OptionCard`` is one folding group of options on Option Values and Options; ``ToggleSwitch``
 is the switch Enable Quicksell is drawn as in the Quicksell card's header. Neither
 holds option state -- the surfaces drive them -- so these tests drive them directly.
 """

@@ -56,6 +56,32 @@ def label(zone: str) -> str:
     return next(iter(display_names(zone)), zone.rsplit("/", 1)[-1])
 
 
+CHALLENGE_SUFFIXES: tuple[str, ...] = ("_Challenge", "_Hard", "_Adv", "Adv")
+"""What the game appends to a dungeon zone's id for its Challenge Mode copy.
+
+There is no one tag: Barkingham Palace uses ``_Challenge``, Aquila and most others ``_Hard``,
+Karamelle and parts of Darkmoor ``_Adv`` (once with no underscore). The copy is a separate
+zone, so a node standing in it reads a different zone_name() from the one a bot recorded.
+"""
+
+
+def challenge_variant_of(zone: str | None) -> str | None:
+    """The ordinary zone `zone` is the Challenge Mode copy of, or None if it is not one.
+
+    Decided by the snapshot, not by the suffix alone: the zone must end in one of
+    CHALLENGE_SUFFIXES *and* the game must have a zone of the same id without it. A zone
+    that merely ends in "Adv" has no such sibling and is left alone.
+    """
+    if not zone:
+        return None
+    zones, _ = _snapshot()
+    for suffix in CHALLENGE_SUFFIXES:
+        base = zone[: -len(suffix)]
+        if zone.endswith(suffix) and base in zones:
+            return base
+    return None
+
+
 @cache
 def labels() -> frozenset[str]:
     """Every text ``label()`` gives some zone in the snapshot."""

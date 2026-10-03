@@ -11,6 +11,7 @@ from bartlebot.bot.strategy_models import (
     DeckPreset,
     DuelCombatStrategy,
     DuelConfig,
+    FightRef,
     PlayerAssignment,
     PlayerCombatStrategy,
     StateAssignment,
@@ -457,3 +458,22 @@ def test_an_empty_assignment_set_falls_through_to_the_linked_preset():
     pcs = PlayerCombatStrategy(name="Heals", dsl="x", schools=["Life", "Myth"])
     assignment = PlayerAssignment(players=[1], player_combat_strategy_id=pcs.id)
     assert DuelConfig.assignment_schools(assignment, {pcs.id: pcs}) == ["Life", "Myth"]
+
+
+def test_state_ids_is_read_only():
+    """Writers build fights; an assignment to ``state_ids`` must not pass silently."""
+    assignment = StateAssignment(state_ids=["boss1"])
+
+    with pytest.raises(AttributeError):
+        assignment.state_ids = ["boss2"]
+
+
+def test_adding_and_removing_a_state_edits_the_fights():
+    assignment = StateAssignment(fights=[FightRef(state="boss1", enemy="Lamia")])
+
+    assignment.add_state("boss2")
+    assignment.add_state("boss1")  # already covered
+    assert assignment.fights == [FightRef(state="boss1", enemy="Lamia"), FightRef(state="boss2")]
+
+    assignment.remove_state("boss1")
+    assert assignment.state_ids == ["boss2"]

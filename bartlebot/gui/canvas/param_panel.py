@@ -59,19 +59,22 @@ from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 from bartlebot.gui.widgets.list_text import format_list_text, parse_list_text
 from bartlebot.gui.widgets.player_list_widget import PlayerListWidget, PlayerSlotWidget
 from bartlebot.gui.widgets.player_picker import pick_player, picker_label
+from bartlebot.gui.widgets.ratio_spin_box import RatioSpinBox
 from bartlebot.gui.widgets.record_button import IDLE_TEXT, RecordButton
+from bartlebot.gui.widgets.scales_picker import ScalesButton
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
+from bartlebot.gui.widgets.tag_pill import NeutralChip
 from bartlebot.gui.widgets.themed_label import ThemedTextLabel
 from bartlebot.gui.widgets.zone_picker import NavZoneButton, is_destination
 from bartlebot.nodes import zone_navigation
 from bartlebot.nodes.param_schema import ParamField
 from bartlebot.nodes.registry import NODE_CATEGORIES, NODE_PARAM_SCHEMAS, NODE_REGISTRY, NODE_SPECS
 from bartlebot.settings_manager import SettingsManager
-from bartlebot.subgraphs import binding_type
+from bartlebot.subgraphs import MAX_DEPTH, InstanceKey, binding_type, nested_key, promoted_param_type
 from bartlebot.wiki_pages import WIKI_PAGE_PARAM, page_title
 
 
-def input_param_field(defn, inp) -> ParamField:
+def input_param_field(defn, inp, library=None, _depth: int = 0) -> ParamField:
     """The ``ParamField`` an input's widget is built from, on the call node and the signature panel.
 
     The input stores what the author owns: key, type, label, help and default. What
@@ -81,10 +84,15 @@ def input_param_field(defn, inp) -> ParamField:
     gets the node's dropdown rather than an empty combo. If any bound param is
     required, so is the input. ``defn`` is anything with ``states``: a definition, or
     a definition document's config.
+
+    An input linked into a nested instance counts that instance's input as a bound
+    field, built the same way from its own definition, which takes ``library`` (a
+    ``SubgraphLibrary``) to find. With no default of its own, the input shows the
+    nested one's: unset, that is the value the nested instance runs with.
     """
     by_id = {s.id: s for s in defn.states}
     # The strictest type of what the input is linked to, whatever an older file stored.
-    inp_type = binding_type(defn, inp.bindings, NODE_PARAM_SCHEMAS) or inp.type
+    inp_type = binding_type(defn, inp.bindings, NODE_PARAM_SCHEMAS, library) or inp.type
     bound = [
         f
         for b in inp.bindings
@@ -92,19 +100,58 @@ def input_param_field(defn, inp) -> ParamField:
         for f in NODE_PARAM_SCHEMAS.get(st.node_type, [])
         if f.key == b.param
     ]
+    nested = [
+        f
+        for b in inp.bindings
+        if _depth < MAX_DEPTH and (found := nested_key(defn, b, library)) is not None
+        if (f := instance_key_field(found, library, _depth + 1)) is not None
+    ]
+    bound += nested
     first = next((f for f in bound if f.type == inp_type), bound[0] if bound else None)
+    default = inp.default
+    if default is None:
+        default = next((f.default for f in nested if f.default is not None), None)
     return ParamField(
         key=inp.name,
         type=inp_type,
         label=inp.label or inp.name,
         help=inp.help or "",
-        default=inp.default,
+        default=default,
         required=any(f.required for f in bound),
         choices=list(first.choices) if first is not None else [],
         placeholder=first.placeholder if first is not None else "",
         minimum=first.minimum if first is not None else None,
         maximum=first.maximum if first is not None else None,
     )
+
+
+def instance_key_field(ikey: InstanceKey, library=None, _depth: int = 0) -> ParamField | None:
+    """The ``ParamField`` one key of a subgraph node's inputs is drawn from, or None if its node has no such param.
+
+    A named input's is :func:`input_param_field`. A promoted node's param is the
+    member's own field, typed as the subgraph node types it, and defaulting to the
+    value the member holds: unset, that is what it runs with.
+    """
+    if ikey.input is not None:
+        return input_param_field(ikey.defn, ikey.input, library, _depth)
+    member = next((s for s in ikey.defn.states if s.id == ikey.panel.member), None)
+    field = (
+        next((f for f in NODE_PARAM_SCHEMAS.get(member.node_type, []) if f.key == ikey.key), None) if member else None
+    )
+    if field is None:
+        return None
+    narrowed = promoted_param_type(ikey.defn, ikey.panel, field.key, NODE_PARAM_SCHEMAS) or field.type
+    return replace(field, type=narrowed, default=member.params.get(field.key, field.default))
+
+
+def instance_key_label(ikey: InstanceKey) -> str:
+    """A key of a subgraph node's inputs as that node's own page names it: "Hub", or "Enter dungeon › From Zone"."""
+    if ikey.input is not None:
+        return ikey.input.label or ikey.input.name
+    field = instance_key_field(ikey)
+    member = next((s for s in ikey.defn.states if s.id == ikey.panel.member), None)
+    group = ikey.panel.label or (member.label if member is not None else None) or ikey.panel.member
+    return f"{group} › {field.label if field is not None else ikey.key}"
 
 
 logger = logging.getLogger(__name__)
@@ -858,6 +905,10 @@ class _DynamicParamForm(ThemedMixin, QWidget):
     unlink_requested = pyqtSignal(str)
     # (param key) from a row's Reset, on a subgraph node's form: follow the definition again.
     reset_requested = pyqtSignal(str)
+    # (param key) from a row's Add to setup step button, or from its step chip, on a node
+    # of a template draft.
+    step_add_requested = pyqtSignal(str)
+    step_remove_requested = pyqtSignal(str)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -872,6 +923,9 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         # for a value changed from the definition's.
         self._link_btns: dict[str, QToolButton] = {}
         self._link_chips: dict[str, _LinkChip] = {}
+        self._step_chips: dict[str, NeutralChip] = {}
+        self._step_btns: dict[str, QToolButton] = {}
+        self._fill_labels: dict[str, QLabel] = {}
         self._reset_btns: dict[str, QToolButton] = {}
         self._hover_rows: dict[str, _HoverRow] = {}
         self._schema: list = []
@@ -884,6 +938,11 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._suppress = False
         self._get_clients: Callable[[], list] = lambda: []
         self._get_zone_suggestions: Callable[[], list[str]] = lambda: []
+        self._get_default_scales: Callable[[], Any] = lambda: None
+
+    def set_default_scales_getter(self, fn: Callable[[], Any]) -> None:
+        """Pass a callable returning the Scales an unset 'scales' param means in the open bot."""
+        self._get_default_scales = fn
 
     def set_clients_getter(self, fn: Callable[[], list]) -> None:
         """Pass a callable returning the currently hooked clients."""
@@ -903,8 +962,19 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         promoted_group: str | None = None,
         resettable: set[str] | frozenset[str] = frozenset(),
         field_types: dict[str, str] | None = None,
+        fill_hints: dict[str, str] | None = None,
+        step_chips: dict[str, str] | None = None,
+        step_addable: bool = False,
     ) -> None:
         """Rebuild the form for *schema* showing *params*.
+
+        A key in *fill_hints* (key -> its setup step's text) is a fill-in of the bot's
+        template: the row is marked required, since the bot cannot run with it blank,
+        and its placeholder reads "Fill in: <step text>". In a template draft a key in
+        *step_chips* (key -> "Setup step N") wears that as a chip, which takes the row
+        out of the step when clicked; with *step_addable*, every other row has an
+        Add to setup step button that shows while the row is hovered, as Link does in
+        a definition.
 
         On a node in a definition document, *linkable* gives each row a Link button
         that shows while the row is hovered; a row in *links* (key -> what it is linked
@@ -929,15 +999,24 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._muted_labels.clear()
         self._link_btns.clear()
         self._link_chips.clear()
+        self._step_chips.clear()
+        self._step_btns.clear()
+        self._fill_labels.clear()
         self._reset_btns.clear()
         self._hover_rows.clear()
-        self._schema = list(schema)
+        # As drawn: a field's type can be narrowed by a link, and a fill-in is required.
+        self._schema = []
         links = links or {}
         field_types = field_types or {}
+        fill_hints = fill_hints or {}
+        step_chips = step_chips or {}
         insert_idx = 0
         for field in schema:
             if field_types.get(field.key, field.type) != field.type:
                 field = replace(field, type=field_types[field.key])
+            if field.key in fill_hints:
+                field = replace(field, required=True, placeholder=f"Fill in: {fill_hints[field.key]}")
+            self._schema.append(field)
             label_w = QLabel()
             label_w.setTextFormat(Qt.TextFormat.RichText)
             self._field_labels.append((label_w, field, insert_idx > 0))
@@ -983,6 +1062,18 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 row_btns.append(link_btn)
             if field.key in resettable:
                 row_btns.append(self._make_reset_button(field.key))
+            if field.key in step_chips:
+                step_chip = NeutralChip(
+                    step_chips[field.key],
+                    tooltip="A fill-in: left blank in a release, for the bot made from it to fill. Click to remove it.",
+                )
+                step_chip.removed.connect(lambda _text, k=field.key: self.step_remove_requested.emit(k))
+                self._step_chips[field.key] = step_chip
+                row_btns.append(step_chip)
+            elif step_addable and link_btn is None:
+                # Takes the Link button's slot and its hover: a draft is never a definition.
+                link_btn = self._make_step_button(field.key)
+                row_btns.append(link_btn)
             if field.type == "bool":
                 container = _HoverRow(link_btn)
                 if link_btn is not None:
@@ -1033,6 +1124,15 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                         self._form.insertWidget(insert_idx, label_w)
                     self._form.insertWidget(insert_idx + 1, display_w)
                     insert_idx += 2
+            if field.key in fill_hints and field.type not in ("str", "text"):
+                # A picker, a coordinate or a list has no placeholder to carry it.
+                fill_lbl = QLabel(field.placeholder)
+                self._muted_labels.append(fill_lbl)
+                self._fill_labels[field.key] = fill_lbl
+                fill_lbl.setStyleSheet(f"color: {THEME.text_muted};")
+                fill_lbl.setWordWrap(True)
+                self._form.insertWidget(insert_idx, fill_lbl)
+                insert_idx += 1
             if field.default_hint and not field.required:
                 hint_lbl = QLabel(f"Default: {field.default_hint}")
                 self._muted_labels.append(hint_lbl)
@@ -1090,6 +1190,20 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         self._link_btns[key] = btn
         return btn
 
+    def _make_step_button(self, key: str) -> QToolButton:
+        btn = QToolButton()
+        btn.setAutoRaise(True)
+        btn.setIconSize(QSize(14, 14))
+        btn.setFocusPolicy(Qt.FocusPolicy.TabFocus)
+        btn.setToolTip("Add to setup step\u2026")
+        btn.clicked.connect(lambda _=None, k=key: self.step_add_requested.emit(k))
+        self._step_btns[key] = btn
+        return btn
+
+    def step_button(self, key: str) -> QToolButton | None:
+        """One row's Add to setup step button, shown on hover in a template draft, or None."""
+        return self._step_btns.get(key)
+
     def _make_reset_button(self, key: str) -> QToolButton:
         btn = QToolButton()
         btn.setAutoRaise(True)
@@ -1112,6 +1226,23 @@ class _DynamicParamForm(ThemedMixin, QWidget):
 
     def hover_row(self, key: str) -> _HoverRow | None:
         return self._hover_rows.get(key)
+
+    def step_chip_text(self, key: str) -> str | None:
+        """The "Setup step N" chip on *key*'s row, in a template draft; None for a row with none."""
+        chip = self._step_chips.get(key)
+        return chip.value if chip is not None else None
+
+    def step_chip(self, key: str) -> NeutralChip | None:
+        return self._step_chips.get(key)
+
+    def fill_hint_text(self, key: str) -> str | None:
+        """ "Fill in: <step text>" as *key*'s row shows it in a bot: its placeholder, or the line under it."""
+        label = self._fill_labels.get(key)
+        if label is not None:
+            return label.text()
+        widget = self._widgets.get(key)
+        text = widget.placeholderText() if isinstance(widget, (QLineEdit, QPlainTextEdit)) else ""
+        return text if text.startswith("Fill in: ") else None
 
     def required_fields(self) -> list:
         """The required ``ParamField``s the form was last built from."""
@@ -1177,6 +1308,8 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             label.setStyleSheet(f"color: {THEME.text_muted};")
         for btn in self._link_btns.values():
             btn.setIcon(svg_icon("hook", 14))
+        for btn in self._step_btns.values():
+            btn.setIcon(svg_icon("plus", 14))
         for btn in self._reset_btns.values():
             btn.setIcon(svg_icon("revert", 12))
         # The red border on an empty required field is THEME.error, and is applied
@@ -1210,6 +1343,9 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 result[key] = w.text()
             elif isinstance(w, QLineEdit):
                 result[key] = w.text()
+            elif isinstance(w, RatioSpinBox):
+                # Before QSpinBox, which it is: the param is the ratio, not the percent shown.
+                result[key] = w.ratio()
             elif isinstance(w, QSpinBox):
                 result[key] = w.value()
             elif isinstance(w, QDoubleSpinBox):
@@ -1221,7 +1357,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                     result[key] = 0
             elif isinstance(w, _StrChoiceComboBox):
                 result[key] = w.get_value()
-            elif isinstance(w, _NavZoneField):
+            elif isinstance(w, _NavZoneField | ScalesButton):
                 result[key] = w.value()
             elif isinstance(w, QCheckBox):
                 result[key] = w.isChecked()
@@ -1263,6 +1399,7 @@ class _DynamicParamForm(ThemedMixin, QWidget):
         if field_type == "str":
             plain = QLineEdit()
             plain.setText(str(val) if val is not None else "")
+            plain.setPlaceholderText(placeholder)
             if help_text:
                 plain.setToolTip(help_text)
             plain.textChanged.connect(self._emit_changed)
@@ -1314,6 +1451,16 @@ class _DynamicParamForm(ThemedMixin, QWidget):
                 w.setToolTip(help_text)
             w.valueChanged.connect(self._emit_changed)
             return w
+        if field_type == "ratio":
+            try:
+                ratio = float(val) if val is not None else 0.0
+            except (TypeError, ValueError):
+                ratio = 0.0
+            w = RatioSpinBox(ratio, minimum, maximum)
+            if help_text:
+                w.setToolTip(help_text)
+            w.valueChanged.connect(self._emit_changed)
+            return w
         if field_type == "float":
             w = QDoubleSpinBox()
             w.setRange(
@@ -1343,6 +1490,13 @@ class _DynamicParamForm(ThemedMixin, QWidget):
             return w
         if field_type == "nav_zone":
             w = _NavZoneField(self._get_zone_suggestions, self._get_clients)
+            w.set_value(str(val) if val else "")
+            if help_text:
+                w.setToolTip(help_text)
+            w.changed.connect(self._emit_changed)
+            return w
+        if field_type == "scales":
+            w = ScalesButton(get_default=lambda: self._get_default_scales())
             w.set_value(str(val) if val else "")
             if help_text:
                 w.setToolTip(help_text)
@@ -1871,10 +2025,17 @@ class _ParamPanel(ThemedMixin, QWidget):
     # (state id, param key): Link to subgraph input, and Unlink, on a definition node's page.
     link_input_requested = pyqtSignal(str, str)
     unlink_input_requested = pyqtSignal(str, str)
+    # (region id, input name): the same two on a nested subgraph node's page, in a definition.
+    link_nested_input_requested = pyqtSignal(str, str)
+    unlink_nested_input_requested = pyqtSignal(str, str)
     # (state id, promoted): the node page's Promote to input group / Demote button.
     promote_node_requested = pyqtSignal(str, bool)
     # The signature page wrote into the definition document's signature.
     definition_changed = pyqtSignal()
+    # (state id, param key), on a node of a template draft: make the param a setup step's
+    # fill-in, or stop it being one. The panel only reports; the canvas edits the draft.
+    add_setup_target_requested = pyqtSignal(str, str)
+    remove_setup_target_requested = pyqtSignal(str, str)
     add_port_requested = pyqtSignal(str)  # SUBGRAPH_ENTRY / SUBGRAPH_EXIT
     delete_port_requested = pyqtSignal(str)  # state ID
 
@@ -2194,6 +2355,8 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._call_page.role_requested.connect(self.role_requested)
         self._call_page.open_definition_requested.connect(self.open_definition_requested)
         self._call_page.detach_requested.connect(self.detach_requested)
+        self._call_page.link_input_requested.connect(self.link_nested_input_requested)
+        self._call_page.unlink_input_requested.connect(self.unlink_nested_input_requested)
         self._signature_page.edit_starting.connect(self.edit_starting)
         self._signature_page.structural_change.connect(self.structural_property_changed)
         self._signature_page.changed.connect(self.definition_changed)
@@ -2213,6 +2376,8 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._edge_dst_combo.currentTextChanged.connect(self._on_edge_dst_changed)
         self._flag_conditions_widget.changed.connect(self._on_flag_conditions_changed)
         self._param_form.link_requested.connect(self._on_form_link_requested)
+        self._param_form.step_add_requested.connect(self._on_form_step_add_requested)
+        self._param_form.step_remove_requested.connect(self._on_form_step_remove_requested)
         self._param_form.unlink_requested.connect(self._on_form_unlink_requested)
         self._region_label_edit.textChanged.connect(self._on_region_label_changed)
         self._region_color_row.changed.connect(self._on_region_color_changed)
@@ -2301,11 +2466,20 @@ class _ParamPanel(ThemedMixin, QWidget):
         self._signature_page.set_clients_getter(fn)
         self.refresh_player_availability()
 
+    def set_default_scales_getter(self, fn: Callable[[], Any]) -> None:
+        """Pass a callable returning the open bot's default Scales, for the node form."""
+        self._param_form.set_default_scales_getter(fn)
+
     def set_zone_suggestions_getter(self, fn: Callable[[], list[str]]) -> None:
         """Pass a callable returning zone suggestions, for the node form and the region inputs form alike."""
         self._param_form.set_zone_suggestions_getter(fn)
         self._call_page.set_zone_suggestions_getter(fn)
         self._signature_page.set_zone_suggestions_getter(fn)
+
+    def set_subgraph_library(self, library) -> None:
+        """The library an input linked into a nested instance is looked up in, to draw its field."""
+        self._call_page.set_subgraph_library(library)
+        self._signature_page.set_subgraph_library(library)
 
     def refresh_player_availability(self) -> None:
         """Re-gray the player checkboxes — call when clients connect or disconnect.
@@ -2368,6 +2542,9 @@ class _ParamPanel(ThemedMixin, QWidget):
         links: dict[str, str] | None = None,
         promoted_group: str | None = None,
         field_types: dict[str, str] | None = None,
+        fill_hints: dict[str, str] | None = None,
+        step_chips: dict[str, str] | None = None,
+        step_addable: bool = False,
     ) -> None:
         """Show *state*. *in_definition* is a node of a definition document open for editing.
 
@@ -2396,6 +2573,9 @@ class _ParamPanel(ThemedMixin, QWidget):
             links=links,
             promoted_group=promoted_group,
             field_types=field_types,
+            fill_hints=fill_hints,
+            step_chips=step_chips,
+            step_addable=step_addable,
         )
         self._rebuild_returns(state.node_type)
         self._rebuild_connections(state.id)
@@ -2508,6 +2688,14 @@ class _ParamPanel(ThemedMixin, QWidget):
     def _on_form_link_requested(self, key: str) -> None:
         if self._state is not None:
             self.link_input_requested.emit(self._state.id, key)
+
+    def _on_form_step_add_requested(self, key: str) -> None:
+        if self._state is not None:
+            self.add_setup_target_requested.emit(self._state.id, key)
+
+    def _on_form_step_remove_requested(self, key: str) -> None:
+        if self._state is not None:
+            self.remove_setup_target_requested.emit(self._state.id, key)
 
     def _on_form_unlink_requested(self, key: str) -> None:
         if self._state is not None:

@@ -487,20 +487,67 @@ def test_an_output_insert_lands_right_of_its_source(canvas):
     assert c.scene.node_items[new_id].pos().x() > c.scene.node_items["a"].pos().x()
 
 
-def test_placement_holds_the_column_and_moves_the_row(canvas):
-    """The whole point of searching rows before columns: it stays in its layer.
+def test_an_input_insert_with_no_room_takes_the_targets_place_and_moves_the_columns_over(canvas):
+    """The three sources fill column 0 at rows 0, 90 and 180, so the cell in front of the target is taken.
 
-    The three sources fill column 0 at rows 0, 90 and 180, so the insert has to take
-    a free row in that same column rather than drift into another one.
+    It used to take a free row in the sources' column, off the line the edges ran along.
     """
-    from bartlebot.gui.canvas.node_item import NODE_H
+    from bartlebot.gui.canvas.node_item import GRID_W
 
     c = canvas(_grid_config())
 
     new_id = c.scene.insert_state_at_input_port("target", "sleep")
 
-    assert c.scene.node_items[new_id].pos().x() == pytest.approx(0.0)
-    assert c.scene.node_items[new_id].pos().y() + NODE_H / 2 not in (0.0, 90.0, 180.0)
+    stored = {s.id: s.position for s in c.config.states}
+    assert stored[new_id] == {"x": GRID_W, "y": 90.0}, "where the target was"
+    assert stored["target"] == {"x": 2 * GRID_W, "y": 90.0}
+    assert [stored[s]["x"] for s in ("a", "b", "c")] == [0.0, 0.0, 0.0], "the sources stay where they are"
+
+
+def test_an_input_insert_takes_the_cell_in_front_of_its_target_when_it_is_free(canvas):
+    from bartlebot.gui.canvas.node_item import GRID_W
+
+    config = _grid_config()
+    next(s for s in config.states if s.id == "target").position = {"x": 2.0 * GRID_W, "y": 90.0}
+    c = canvas(config)
+
+    new_id = c.scene.insert_state_at_input_port("target", "sleep")
+
+    stored = {s.id: s.position for s in c.config.states}
+    assert stored[new_id] == {"x": GRID_W, "y": 90.0}
+    assert stored["target"] == {"x": 2 * GRID_W, "y": 90.0}, "nothing had to move"
+
+
+def test_an_output_insert_with_no_room_moves_the_next_column_over_and_takes_its_cell(canvas):
+    """a -> target, side by side. The new node goes between them, on the line, not above or below it."""
+    from bartlebot.gui.canvas.node_item import GRID_W
+
+    config = _grid_config()
+    next(s for s in config.states if s.id == "target").position = {"x": float(GRID_W), "y": 0.0}
+    config.states.append(
+        StateModel(id="below", node_type="sleep", params={}, position={"x": float(GRID_W), "y": 270.0})
+    )
+    c = canvas(config)
+
+    new_id = c.scene.insert_state_at_output_port("a", "SUCCESS", "sleep")
+
+    stored = {s.id: s.position for s in c.config.states}
+    assert stored[new_id] == {"x": GRID_W, "y": 0.0}
+    assert stored["target"] == {"x": 2 * GRID_W, "y": 0.0}
+    assert stored["below"] == {"x": 2 * GRID_W, "y": 270.0}, "all of the column, wired to it or not"
+    assert [stored[s]["x"] for s in ("a", "b", "c")] == [0.0, 0.0, 0.0]
+
+
+def test_a_port_insert_and_the_move_it_makes_are_one_undo_step(canvas):
+    from bartlebot.gui.canvas.node_item import GRID_W
+
+    c = canvas(_grid_config())
+
+    c.scene.insert_state_at_input_port("target", "sleep")
+    c.undo()
+
+    stored = {s.id: s.position for s in c.config.states}
+    assert set(stored) == {"a", "b", "c", "target"} and stored["target"] == {"x": GRID_W, "y": 90.0}
 
 
 def test_placement_lands_on_the_same_grid_the_bots_use(canvas):

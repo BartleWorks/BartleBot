@@ -1,8 +1,8 @@
 """The leading gutter both option surfaces hang their row chrome in.
 
-Setup and Options are two views of the same list, so a row's chrome has to land
+Option Values and Options are two views of the same list, so a row's chrome has to land
 at the same x on both: ``[bar][action][?]``, then the row's own content.  The
-placement argument is in ``CLAUDE.md`` and in ``setup_section``'s own docstring --
+placement argument is in ``CLAUDE.md`` and in ``option_values_section``'s own docstring --
 in short it is the only arrangement that yields one *column* per button, because
 the head line's right edge sits at two different x values and a bool row has no
 separate label to right-align against.
@@ -12,12 +12,12 @@ The middle slot is the one that differs, and deliberately:
 ============  ==================================  ============================
 surface       middle slot                         bar
 ============  ==================================  ============================
-Setup         revert -- discard the user's value   accent while overridden
+Option Values         revert -- discard the user's value   accent while overridden
 Options       edit -- open the declaration dialog  reserved width, never painted
 ============  ==================================  ============================
 
 Options has no bar to paint because it has nothing to paint it *about*: the bar
-and revert are one affordance in Setup, set by the same two lines, and a lone
+and revert are one affordance in Option Values, set by the same two lines, and a lone
 marker with no paired action would be a fact to correlate rather than an
 affordance.  Its width is still reserved, so the two surfaces' ``?`` columns line
 up across a mode switch.  If a meaning is ever found for it -- "this author
@@ -192,7 +192,7 @@ class DescriptionSwitches(QWidget):
     Two commands for the reader who wants the whole tab as a document, rather than
     a row at a time.  The choice is remembered in ``settings.json`` and shared by
     both surfaces: it is a property of the person reading, not of the bot, so
-    folding the prose away on Setup folds it away on Options too.
+    folding the prose away on Option Values folds it away on Options too.
 
     Links rather than a check box, and at the top of the *body* rather than on the
     section header.  A tick box captioned "Show descriptions" sitting above a list
@@ -209,7 +209,7 @@ class DescriptionSwitches(QWidget):
     commands say what they do whatever state the rows are in.
 
     A third link may be added at the *far* end of the row, for the one place a
-    surface has somewhere else to send the reader -- Setup's route to the app
+    surface has somewhere else to send the reader -- Option Values's route to the app
     settings its rows resolve through.  It is separated by the stretch rather than
     the dot, because it is not a third description command: the two on the left are
     one group and it is not in it.  It rides this row so that the link is written

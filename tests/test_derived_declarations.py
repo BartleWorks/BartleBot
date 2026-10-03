@@ -466,7 +466,7 @@ def _teleport_states(*modes) -> list[dict]:
 
 
 def test_friend_name_is_not_composed_when_every_port_is_to_a_hooked_player():
-    """A hooked-player port never reads Friend Name, so Setup has no row for it."""
+    """A hooked-player port never reads Friend Name, so Option Values has no row for it."""
     config = _config(states=_teleport_states(True, True))
 
     assert "Friend Name" not in _named(compose_options(config))
@@ -498,7 +498,7 @@ def test_switching_a_port_to_a_hooked_player_moves_the_signature():
 
 
 def test_a_new_id_moves_the_signature():
-    """Save As mints one under a loaded bot, and Setup resolves the user's stored
+    """Save As mints one under a loaded bot, and Option Values resolves the user's stored
     values through it -- so those rows have to be re-resolved."""
     config = _config()
     before = options_signature(config)

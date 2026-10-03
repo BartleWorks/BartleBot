@@ -7,3 +7,8 @@
 # Compare them with the tool that understands the structure instead:
 #     uv run python tools/typedump.py diff <old.json> <new.json>
 tools/r*_WizardDev.json -diff
+
+# A released template version is checked against the SHA-256 Release recorded for its
+# bytes, and a draft must round-trip byte for byte, so nothing under templates/ may have
+# its line endings rewritten on checkout (core.autocrlf would turn them into CRLF).
+templates/** -text

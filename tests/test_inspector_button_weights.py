@@ -1,6 +1,6 @@
 """The inspector and panel rows converted in issue #90, commit 1.
 
-These surfaces are all rows of *equal* verbs — Refresh, Copy Name, Copy XYZ and Teleport
+These surfaces are all rows of *equal* verbs — Refresh, Copy ID, Copy XYZ and Teleport
 are four reads on one selection — so the thing worth guarding is the absence of a weight
 rather than the presence of one. ``gui/CLAUDE.md`` is explicit that nothing in an
 equal-weight row outranks its neighbors, and Teleport is the button that will tempt

@@ -3,7 +3,7 @@
 Split out of ``GeneralTab``, which had grown a twelve-row Bot section under five
 unrelated ones. The split is not only length: every row here is the **app
 setting** level of the four-level resolution in :mod:`bartlebot.bot_options`, so
-a value set for one bot in its Setup tab wins over anything on this tab, and so
+a value set for one bot in its Options tab wins over anything on this tab, and so
 does an author who declared an answer their dungeon needs. That is one idea, and
 it now has one page to say it on -- the note at the top of the tab, rather than
 the same disclaimer repeated into eight tooltips.
@@ -45,7 +45,7 @@ class BotTab(QWidget):
         layout.addWidget(
             hint(
                 "These are starting answers, not rules. A bot whose author needed a particular "
-                "answer overrides them, and a value you set for one bot in its Setup tab "
+                "answer overrides them, and a value you set for one bot in its Options tab "
                 "overrides both."
             )
         )

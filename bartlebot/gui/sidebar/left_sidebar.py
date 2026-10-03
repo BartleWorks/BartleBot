@@ -1,23 +1,29 @@
 """Left sidebar: a mode-swapped pair of tab sets.
 
-Run mode shows **Setup** and **Combat** — the two things a user tunes before
+Run mode shows **Option Values** and **Combat** — the two things a user tunes before
 pressing play.  Edit mode shows **Options** and **Properties** — the two things an
 author declares.  Nothing is shown in both, and no tab changes meaning when the
 mode does.
+
+Both option tabs are *labeled* **Options**: to a user they are one place, showing the
+values in Run mode and the declarations in Edit mode.  The code and the docs still need
+two names, so the Run-mode surface is **Option Values** (``OptionValuesSection``) and
+the Edit-mode one **Options** (``OptionsSection``).  It was labeled Setup until 10.4,
+when that word went to the template's setup steps in the right sidebar.
 
 That split is §3.5 of the declarations/overrides plan: every production system
 that separates a declaration surface from a values surface does it by *context*
 (Unity's Prefab Mode, Unreal's Class Defaults, VS Code's ``package.json`` against
 its Settings UI), never a toggle inside one panel — and edit mode is the context
-this app already has.  Setup being the default Run-mode tab is also the whole of
+this app already has.  Option Values being the default Run-mode tab is also the whole of
 the pre-run configuration story: adjacency to the Run button, not a gate in front
 of it.
 
 Two tabs went elsewhere entirely.  **Bot** is gone — its metadata is Bar B above
-the graph, its description heads Setup (read-only) and Options (where it is now
+the graph, its description heads Option Values (read-only) and Options (where it is now
 edited), and its Start / Initial / Recovery rows were either unread or already
 badges on the nodes.  **Log** moved to
-the right sidebar, where it can be read while the left one is showing Setup.
+the right sidebar, where it can be read while the left one is showing Option Values.
 """
 
 from __future__ import annotations
@@ -32,8 +38,8 @@ from bartlebot.game_sizing import SIDEBAR_MIN_HEIGHT
 from bartlebot.gui import screen_fit
 from bartlebot.gui.sidebar.combat_tab import CombatTab
 from bartlebot.gui.sidebar.sections.description_section import DescriptionSection
+from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.sidebar.sections.options_section import OptionsSection
-from bartlebot.gui.sidebar.sections.setup_section import SetupSection
 from bartlebot.gui.widgets.scroll_gutter import reserve_scrollbar_gutter
 
 if TYPE_CHECKING:
@@ -43,7 +49,7 @@ if TYPE_CHECKING:
 class LeftSidebar(QTabWidget):
     """Two tabs, whose identity depends on the mode.
 
-    - Run:  Setup (the user's values) and Combat
+    - Run:  Option Values (the user's values) and Combat
     - Edit: Options (the author's declarations) and Properties
 
     ``Properties`` is the node parameter editor, built by ``BotCanvas`` and passed
@@ -56,7 +62,7 @@ class LeftSidebar(QTabWidget):
     # both option surfaces, which is ~80ms on a large bot -- affordable once per
     # graph edit, and not affordable once per keystroke.
     metadata_changed = pyqtSignal()
-    # Setup's link to the app-setting level its rows resolve through.  Only the
+    # Option Values's link to the app-setting level its rows resolve through.  Only the
     # window owns the settings dialog, so the request is passed up rather than
     # answered here.
     app_settings_requested = pyqtSignal()
@@ -92,12 +98,12 @@ class LeftSidebar(QTabWidget):
         # in front of the user rather than behind an ellipsis in the header.  The
         # Options copy is the writable one: the description is authorial, so it
         # belongs on the declarations surface and not on the values surface.
-        self.setup = SetupSection()
+        self.option_values = OptionValuesSection()
         self.options = OptionsSection()
-        self._setup_desc = DescriptionSection(editable=False)
+        self._values_desc = DescriptionSection(editable=False)
         self._options_desc = DescriptionSection(editable=True)
 
-        self._setup_page = self._wrap(self._setup_desc, self.setup)
+        self._values_page = self._wrap(self._values_desc, self.option_values)
         self._options_page = self._wrap(self._options_desc, self.options)
 
         # ── Combat and Properties ───────────────────────────────────
@@ -114,27 +120,27 @@ class LeftSidebar(QTabWidget):
 
         # Propagate section-level signals up as the unified config_changed signal.
         self.options.options_changed.connect(self.config_changed)
-        # A changed declaration changes what Setup resolves to, so that surface has
+        # A changed declaration changes what Option Values resolves to, so that surface has
         # to be rebuilt.  The reverse is deliberately *not* wired: an override lives
         # in settings.json, so writing one must never dirty the bot file.
-        self.options.options_changed.connect(self.refresh_setup_values)
+        self.options.options_changed.connect(self.refresh_option_values)
         # A changed *default* dirties the bot file but cannot change what its
         # options are, so it goes out as ``metadata_changed`` for the same reason
         # the description does: ``config_changed`` would rebuild the Options list
-        # from under the control the user is still holding.  Setup is rebuilt
+        # from under the control the user is still holding.  Option Values is rebuilt
         # because the declaration it resolves through has moved.
         self.options.defaults_changed.connect(self.metadata_changed)
-        self.options.defaults_changed.connect(self.refresh_setup_values)
+        self.options.defaults_changed.connect(self.refresh_option_values)
         # Editing the description *is* an edit to the bot file, unlike an override --
         # but it is prose, and no option is composed from it.  So it goes out as
         # ``metadata_changed``, which only marks the bot dirty: routing it through
         # ``config_changed`` rebuilt every option row on every character typed.
-        # The Setup copy is not re-bound by a mode switch, so it is refreshed here
+        # The Option Values copy is not re-bound by a mode switch, so it is refreshed here
         # rather than left to disagree with the editor above Options.
         self._options_desc.description_changed.connect(self.metadata_changed)
-        self._options_desc.description_changed.connect(self._setup_desc.refresh)
+        self._options_desc.description_changed.connect(self._values_desc.refresh)
         self.combat_tab.combat_config_changed.connect(self.config_changed)
-        self.setup.app_settings_requested.connect(self.app_settings_requested)
+        self.option_values.app_settings_requested.connect(self.app_settings_requested)
 
         # Refresh the Combat tab's fight profile list whenever it becomes visible,
         # so that handle_combat nodes edited in the Properties tab are reflected.
@@ -198,7 +204,7 @@ class LeftSidebar(QTabWidget):
                 self.addTab(self._options_page, "Options")
                 self.addTab(self._param_panel, "Properties")
             else:
-                self.addTab(self._setup_page, "Setup")
+                self.addTab(self._values_page, "Options")
                 self.addTab(self.combat_tab, "Combat")
             self.setCurrentIndex(0)
         finally:
@@ -209,7 +215,7 @@ class LeftSidebar(QTabWidget):
     # ------------------------------------------------------------------
 
     # No ``switch_to_setup``: leaving Edit mode rebuilds the tab set and lands on
-    # Setup already, so a method for it would have no caller.
+    # Option Values already, so a method for it would have no caller.
 
     def switch_to_combat(self) -> None:
         self._switch_to(self.combat_tab)
@@ -230,13 +236,13 @@ class LeftSidebar(QTabWidget):
         if self.widget(index) is self.combat_tab:
             self.combat_tab.refresh_duel_profiles()
 
-    def refresh_setup_values(self) -> None:
-        """Re-resolve the Setup rows after an edit to the level beneath them.
+    def refresh_option_values(self) -> None:
+        """Re-resolve the Option Values rows after an edit to the level beneath them.
 
         A declaration edit and a change to the app settings are the same event from
-        this surface's point of view: a level Setup resolves *through* has moved.
+        this surface's point of view: a level Option Values resolves *through* has moved.
         """
-        self.setup.set_config(self._config)
+        self.option_values.set_config(self._config)
 
     @property
     def config(self) -> BotConfig | None:
@@ -268,7 +274,7 @@ class LeftSidebar(QTabWidget):
         self._refresh_description()
 
     def _rebuild_option_surfaces(self, config: BotConfig | None) -> None:
-        """Re-bind Setup and Options, unless they are already showing this list.
+        """Re-bind Option Values and Options, unless they are already showing this list.
 
         Object identity is checked as well as the signature because undo/redo hands
         the canvas a brand-new ``BotConfig`` whose contents are usually identical to
@@ -278,7 +284,7 @@ class LeftSidebar(QTabWidget):
         signature = options_signature(config)
         if config is self._built_config and signature == self._built_signature:
             return
-        self.setup.set_config(config)
+        self.option_values.set_config(config)
         self.options.set_config(config)
         self._built_config = config
         self._built_signature = signature
@@ -287,15 +293,15 @@ class LeftSidebar(QTabWidget):
         """Forward a change of the config's *id* to the surfaces keyed on it.
 
         Save As is the only thing that moves an id under a loaded bot.  Options
-        and Setup are re-resolved by ``refresh_options``; this is the combat
+        and Option Values are re-resolved by ``refresh_options``; this is the combat
         half, kept separate because it must not go through ``set_config``.
         """
         self.combat_tab.rebind_identity()
 
     @property
     def setup_description(self) -> DescriptionSection:
-        """The read-only description heading Setup."""
-        return self._setup_desc
+        """The read-only description heading Option Values."""
+        return self._values_desc
 
     @property
     def options_description(self) -> DescriptionSection:
@@ -304,22 +310,22 @@ class LeftSidebar(QTabWidget):
 
     def _refresh_description(self) -> None:
         """Put the bot's own description above both option surfaces."""
-        for section in (self._setup_desc, self._options_desc):
+        for section in (self._values_desc, self._options_desc):
             section.set_config(self._config)
 
     def set_clients_getter(self, fn) -> None:
         """Pass the sections a callable returning the currently hooked clients."""
-        self.setup.set_clients_getter(fn)
+        self.option_values.set_clients_getter(fn)
         self.options.set_clients_getter(fn)
 
     def refresh_player_availability(self) -> None:
         """Re-gray the player checkboxes in both option surfaces."""
-        self.setup.refresh_player_availability()
+        self.option_values.refresh_player_availability()
         self.options.refresh_player_availability()
 
     def refresh_drops(self) -> None:
         """Re-read the bot's drop table into the quicksell keep-list picker."""
-        self.setup.refresh_drops()
+        self.option_values.refresh_drops()
 
     def sync_config(self, config: BotConfig | None, editable: bool) -> None:
         """Rebind the sections if *config* is a different object than they hold.

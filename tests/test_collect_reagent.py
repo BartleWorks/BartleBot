@@ -19,10 +19,23 @@ _EXTRACT = "bartlebot.utils.drop_detection.extract_new_drops"
 _AVAIL = "bartlebot.utils.drop_detection.chat_available"
 
 
-def _entity(xyz: XYZ = _XYZ_A) -> FakeEntity:
-    e = FakeEntity("FungusWort/FungusWort")
+def _entity(xyz: XYZ = _XYZ_A, name: str = _ENTITY_NAME) -> FakeEntity:
+    e = FakeEntity(name)
     e.location = AsyncMock(return_value=xyz)
     return e
+
+
+def _spawn(client: FakeClient, entities: list[FakeEntity]) -> None:
+    """Load *entities* into the client's zone; each search keeps those its predicate accepts.
+
+    The node's own predicate runs, rather than a canned answer per search, so a test sees
+    exactly which entities a name picks out of the zone.
+    """
+
+    async def _search(predicate):
+        return [e for e in entities if await predicate(e)]
+
+    client.get_base_entities_with_predicate.side_effect = _search
 
 
 async def test_wrong_zone_fails():
@@ -53,7 +66,7 @@ async def test_no_entities_found_succeeds():
     problem and would send routes to their recovery branch on an ordinary pass.
     """
     client = FakeClient()
-    client.get_base_entities_with_vague_name.return_value = []
+    _spawn(client, [])
 
     result = await cr.run(FakeMachine(), [client], _PARAMS)
 
@@ -61,10 +74,17 @@ async def test_no_entities_found_succeeds():
     client.teleport.assert_not_called()
 
 
-async def test_wildcard_entity_name_searches_by_predicate():
-    """Wildcards in reagent names glob, the same as the enemy name field."""
+async def test_plain_name_skips_entities_whose_id_only_contains_it():
+    """#144: "Stone" teleported a player to ZF-STONE-NPC10, and would take Sandstone too."""
     client = FakeClient()
-    client.get_base_entities_with_predicate.return_value = [_entity()]
+    _spawn(
+        client,
+        [
+            _entity(_XYZ_A, name="ZF-STONE-NPC10"),
+            _entity(_XYZ_B, name="Stone"),
+            _entity(XYZ(0.0, 0.0, 10.0), name="Sandstone"),
+        ],
+    )
     client.is_in_npc_range.side_effect = [True, False]
 
     with (
@@ -72,18 +92,53 @@ async def test_wildcard_entity_name_searches_by_predicate():
         patch(_SNAP, new=AsyncMock(return_value="")),
         patch(_EXTRACT, return_value=[]),
     ):
-        result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_names": ["*Fungi*"]})
+        result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_names": ["Stone"]})
+
+    assert result == "SUCCESS"
+    client.teleport.assert_called_once_with(_XYZ_B)
+    # WizSprinter's vague-name search is the substring match this replaced.
+    client.get_base_entities_with_vague_name.assert_not_called()
+
+
+async def test_plain_name_ignores_case():
+    client = FakeClient()
+    _spawn(client, [_entity(name="Black Lotus")])
+    client.is_in_npc_range.side_effect = [True, False]
+
+    with (
+        patch.object(cr, "POLL_INTERVAL", 0),
+        patch(_SNAP, new=AsyncMock(return_value="")),
+        patch(_EXTRACT, return_value=[]),
+    ):
+        result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_names": ["black lotus"]})
 
     assert result == "SUCCESS"
     client.teleport.assert_called_once()
-    # The literal pattern must never reach WizSprinter's substring matcher.
+
+
+async def test_wildcard_entity_name_matches_part_of_an_id():
+    """Wildcards in reagent names glob, the same as the enemy name field, and are the way to ask
+    for a partial match."""
+    client = FakeClient()
+    _spawn(client, [_entity(_XYZ_A, name="Sandstone"), _entity(_XYZ_B, name="Ore")])
+    client.is_in_npc_range.side_effect = [True, False]
+
+    with (
+        patch.object(cr, "POLL_INTERVAL", 0),
+        patch(_SNAP, new=AsyncMock(return_value="")),
+        patch(_EXTRACT, return_value=[]),
+    ):
+        result = await cr.run(FakeMachine(), [client], {"zone": "TestZone", "entity_names": ["*Stone*"]})
+
+    assert result == "SUCCESS"
+    client.teleport.assert_called_once_with(_XYZ_A)
     client.get_base_entities_with_vague_name.assert_not_called()
 
 
 async def test_success_immediate_prompt():
     """Entity found, prompt appears immediately — X is pressed and SUCCESS returned."""
     client = FakeClient()
-    client.get_base_entities_with_vague_name.return_value = [_entity()]
+    _spawn(client, [_entity()])
     client.is_in_npc_range.side_effect = [True, False]  # True: in range (prompted); False: gone (dismissed)
 
     with (
@@ -103,7 +158,7 @@ async def test_success_immediate_prompt():
 async def test_success_prompt_appears_after_polling():
     """Prompt not visible on first check, appears within the poll window — X is still pressed."""
     client = FakeClient()
-    client.get_base_entities_with_vague_name.return_value = [_entity()]
+    _spawn(client, [_entity()])
     call_count = 0
 
     async def npc_range():
@@ -129,11 +184,7 @@ async def test_success_prompt_appears_after_polling():
 async def test_success_multiple_entities():
     """Three entities found, each has a prompt — X pressed three times."""
     client = FakeClient()
-    client.get_base_entities_with_vague_name.return_value = [
-        _entity(_XYZ_A),
-        _entity(_XYZ_B),
-        _entity(XYZ(0.0, 0.0, 10.0)),
-    ]
+    _spawn(client, [_entity(_XYZ_A), _entity(_XYZ_B), _entity(XYZ(0.0, 0.0, 10.0))])
     client.is_in_npc_range.side_effect = [True, False, True, False, True, False]  # in/out pair per entity
 
     with (
@@ -154,13 +205,7 @@ async def test_success_multiple_entities():
 async def test_multiple_entity_names_combined():
     """Two entity names provided — entities from both are collected in one pass."""
     client = FakeClient()
-    entity_a = _entity(_XYZ_A)
-    entity_b = _entity(_XYZ_B)
-
-    def entities_for_name(name):
-        return [entity_a] if name == "FungusWort" else [entity_b]
-
-    client.get_base_entities_with_vague_name.side_effect = entities_for_name
+    _spawn(client, [_entity(_XYZ_A, name="FungusWort"), _entity(_XYZ_B, name="Mushroom")])
     client.is_in_npc_range.side_effect = [True, False, True, False]  # in/out per entity
 
     with (
@@ -184,7 +229,7 @@ async def test_entity_found_no_prompt_still_succeeds():
     Also an ordinary outcome in a shared realm, so it does not fail the node.
     """
     client = FakeClient()
-    client.get_base_entities_with_vague_name.return_value = [_entity()]
+    _spawn(client, [_entity()])
     client.is_in_npc_range.return_value = False  # prompt never appears
 
     with (
@@ -201,7 +246,7 @@ async def test_entity_found_no_prompt_still_succeeds():
 async def test_partial_collection_counts_as_success():
     """Two entities: first has a prompt, second doesn't — one collected → SUCCESS."""
     client = FakeClient()
-    client.get_base_entities_with_vague_name.return_value = [_entity(_XYZ_A), _entity(_XYZ_B)]
+    _spawn(client, [_entity(_XYZ_A), _entity(_XYZ_B)])
     call_count = 0
 
     async def npc_range():
@@ -230,8 +275,8 @@ async def test_multiple_clients_independent():
     """Two clients on separate servers each find their own entity and collect it."""
     c1 = FakeClient()
     c2 = FakeClient()
-    c1.get_base_entities_with_vague_name.return_value = [_entity(_XYZ_A)]
-    c2.get_base_entities_with_vague_name.return_value = [_entity(_XYZ_B)]
+    _spawn(c1, [_entity(_XYZ_A)])
+    _spawn(c2, [_entity(_XYZ_B)])
     c1.is_in_npc_range.side_effect = [True, False]  # in range (prompted), then gone (dismissed)
     c2.is_in_npc_range.side_effect = [True, False]
 
@@ -253,8 +298,8 @@ async def test_multiple_clients_one_misses():
     """Same server: c2's entity is already gone — c1 still collected → SUCCESS."""
     c1 = FakeClient()
     c2 = FakeClient()
-    c1.get_base_entities_with_vague_name.return_value = [_entity()]
-    c2.get_base_entities_with_vague_name.return_value = []
+    _spawn(c1, [_entity()])
+    _spawn(c2, [])
     c1.is_in_npc_range.side_effect = [True, False]  # in range (prompted), then gone (dismissed)
 
     with (
@@ -274,7 +319,7 @@ async def test_multiple_clients_one_misses():
 async def test_drop_tracking():
     """Items appearing in chat after pressing X are reported via machine.on_drop()."""
     client = FakeClient()
-    client.get_base_entities_with_vague_name.return_value = [_entity()]
+    _spawn(client, [_entity()])
     client.is_in_npc_range.side_effect = [True, False]  # in range (prompted), then gone (dismissed)
     machine = FakeMachine()
     calls = 0
@@ -303,7 +348,7 @@ async def test_drop_arriving_after_its_own_poll_window_is_still_logged():
     absorbed into a fresh baseline and lost.
     """
     client = FakeClient()
-    client.get_base_entities_with_vague_name.return_value = [_entity(_XYZ_A), _entity(_XYZ_B)]
+    _spawn(client, [_entity(_XYZ_A), _entity(_XYZ_B)])
     client.is_in_npc_range.side_effect = [True, False, True, False]
     machine = FakeMachine()
 
@@ -323,7 +368,7 @@ async def test_drop_arriving_after_its_own_poll_window_is_still_logged():
 async def test_hidden_chat_skips_drop_detection():
     """With the chat log hidden there is nothing to poll, so no time is spent trying."""
     client = FakeClient()
-    client.get_base_entities_with_vague_name.return_value = [_entity()]
+    _spawn(client, [_entity()])
     client.is_in_npc_range.side_effect = [True, False]
     machine = FakeMachine()
     extract = MagicMock()

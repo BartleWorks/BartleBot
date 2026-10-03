@@ -4,8 +4,8 @@
   "description": "Endlessly farms Do-Daga.",
   "version": "3.0",
   "clients": "all",
-  "initial": "state_13",
-  "recovery_state": "state_2",
+  "initial": "state_3",
+  "recovery_state": "state_3",
   "drops": [
     {
       "name": "Abstract Shroud",
@@ -512,29 +512,6 @@
   "options": [],
   "states": [
     {
-      "id": "state_2",
-      "node_type": "enter_zone",
-      "label": "Go to Hametsu Village",
-      "position": {
-        "x": 3520.0,
-        "y": -180.0
-      },
-      "params": {
-        "from_zone": "MooShu/MS_Hub",
-        "to_zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
-        "xyz": {
-          "x": 3021.04,
-          "y": 3419.09,
-          "z": 1.1
-        },
-        "reset_xyz": {
-          "x": 3038.89,
-          "y": 2775.06,
-          "z": 1.1
-        }
-      }
-    },
-    {
       "id": "state_3",
       "node_type": "enter_dungeon",
       "label": "Enter Do-Daga's Dojo",
@@ -611,200 +588,14 @@
         "fail_if_mana_below": 0.5,
         "only_safe": true
       }
-    },
-    {
-      "id": "state_11",
-      "node_type": "check_zone",
-      "label": "Check if in Hametsu Village",
-      "position": {
-        "x": 2640.0,
-        "y": -270.0
-      },
-      "params": {
-        "zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_12",
-      "node_type": "teleport_to_world_hub",
-      "label": "Go to Jade Palace",
-      "position": {
-        "x": 3080.0,
-        "y": -180.0
-      },
-      "params": {
-        "zone": "MooShu/MS_Hub"
-      }
-    },
-    {
-      "id": "state_13",
-      "node_type": "check_zone",
-      "label": "Check if in MooShu",
-      "position": {
-        "x": 440.0,
-        "y": -270.0
-      },
-      "params": {
-        "zone": "MooShu/*",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "mooshu_level_scaling_1_state_1",
-      "node_type": "apply_level_scaling",
-      "label": "Apply level scaling",
-      "position": {
-        "x": 2200.0,
-        "y": -180.0
-      },
-      "params": {
-        "zone": "MooShu/Interiors/MS_Emperor_Palace",
-        "interact_xyz": {
-          "x": -405.3,
-          "y": 1323.0,
-          "z": 0.0
-        },
-        "reset_xyz": {
-          "x": -260.72,
-          "y": 926.12,
-          "z": 0.0
-        }
-      }
-    },
-    {
-      "id": "mooshu_level_scaling_1_state_2",
-      "node_type": "check_level_scaling",
-      "label": "Check level scaling",
-      "position": {
-        "x": 880.0,
-        "y": -270.0
-      },
-      "params": {}
-    },
-    {
-      "id": "mooshu_level_scaling_1_state_3",
-      "node_type": "teleport_to_world_hub",
-      "label": "Go to Jade Palace",
-      "position": {
-        "x": 1320.0,
-        "y": -180.0
-      },
-      "params": {
-        "zone": "MooShu/MS_Hub"
-      }
-    },
-    {
-      "id": "mooshu_level_scaling_1_state_4",
-      "node_type": "enter_dungeon",
-      "label": "Enter Emperor's Throne Room",
-      "position": {
-        "x": 1760.0,
-        "y": -180.0
-      },
-      "params": {
-        "from_zone": "MooShu/MS_Hub",
-        "dungeon_zone": "MooShu/Interiors/MS_Emperor_Palace",
-        "dungeon_name": "Emperor's Throne Room",
-        "sigil_xyz": {
-          "x": 19169.84,
-          "y": 209.98,
-          "z": 898.45
-        },
-        "reset_xyz": {
-          "x": 18533.88,
-          "y": -480.59,
-          "z": 898.45
-        }
-      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_12",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_3",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_12",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_12",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_3",
       "dest": "state_4",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_12",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -822,26 +613,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_12",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_12",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_6",
       "dest": "state_5",
       "when": "FAILURE",
@@ -854,96 +625,6 @@
       "trigger": "advance",
       "source": "state_6",
       "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "mooshu_level_scaling_1_state_1",
-      "dest": "mooshu_level_scaling_1_state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "mooshu_level_scaling_1_state_2",
-      "dest": "mooshu_level_scaling_1_state_3",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "mooshu_level_scaling_1_state_3",
-      "dest": "mooshu_level_scaling_1_state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "mooshu_level_scaling_1_state_3",
-      "dest": "mooshu_level_scaling_1_state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "mooshu_level_scaling_1_state_4",
-      "dest": "mooshu_level_scaling_1_state_1",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "mooshu_level_scaling_1_state_4",
-      "dest": "mooshu_level_scaling_1_state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "mooshu_level_scaling_1_state_2",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "mooshu_level_scaling_1_state_2",
-      "dest": "state_11",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "mooshu_level_scaling_1_state_1",
-      "dest": "state_11",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -962,17 +643,6 @@
         "state_3"
       ],
       "color": 1
-    },
-    {
-      "id": "mooshu_level_scaling_1",
-      "label": "MooShu level scaling",
-      "members": [
-        "mooshu_level_scaling_1_state_1",
-        "mooshu_level_scaling_1_state_2",
-        "mooshu_level_scaling_1_state_3",
-        "mooshu_level_scaling_1_state_4"
-      ],
-      "color": 2
     }
   ]
 }

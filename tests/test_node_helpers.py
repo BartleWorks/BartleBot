@@ -114,18 +114,29 @@ def test_zone_matches_malformed_pattern_is_literal_not_an_error():
 # ---------------------------------------------------------------------------
 
 
-def test_entity_name_plain_is_substring():
-    # The long-standing behavior every existing bot file depends on.
-    assert entity_name_matches("Cyclops/CyclopsMinion", "Cyclops") is True
-    assert entity_name_matches("Cyclops/CyclopsMinion", "Minion") is True
+def test_entity_name_plain_is_the_whole_id():
+    assert entity_name_matches("Stone", "Stone") is True
 
 
 def test_entity_name_plain_is_case_insensitive():
-    assert entity_name_matches("Cyclops/CyclopsMinion", "cyclops") is True
+    assert entity_name_matches("Stone", "stone") is True
+    assert entity_name_matches("Black Lotus", "BLACK LOTUS") is True
+
+
+def test_entity_name_plain_never_matches_part_of_an_id():
+    # #144: "Stone" sent collect_reagent to an NPC and to two other reagents.
+    assert entity_name_matches("ZF-STONE-NPC10", "Stone") is False
+    assert entity_name_matches("Sandstone", "Stone") is False
+    assert entity_name_matches("AetherOre", "Ore") is False
 
 
 def test_entity_name_plain_miss():
-    assert entity_name_matches("Cyclops/CyclopsMinion", "Kraken") is False
+    assert entity_name_matches("Stone", "Kraken") is False
+
+
+def test_entity_name_wildcard_is_how_to_ask_for_part_of_an_id():
+    assert entity_name_matches("Sandstone", "*Stone*") is True
+    assert entity_name_matches("ZF-STONE-NPC10", "*Stone*") is True
 
 
 def test_entity_name_wildcard_anchors_the_whole_name():
@@ -164,16 +175,16 @@ def test_entity_name_malformed_pattern_is_literal_not_an_error():
 
 
 @pytest.mark.asyncio
-async def test_find_closest_plain_name_uses_vague_name():
-    """A plain name must keep taking WizSprinter's own path, untouched."""
+async def test_find_closest_plain_name_never_uses_vague_name():
+    """WizSprinter's vague-name search is a substring match, which a plain name no longer is."""
     client = FakeClient()
-    client.find_closest_by_vague_name.return_value = FakeEntity("Cyclops/CyclopsMinion")
+    client.find_closest_by_predicate.return_value = FakeEntity("Stone")
 
-    found = await find_closest_entity_by_name(client, "Cyclops")
+    found = await find_closest_entity_by_name(client, "Stone")
 
     assert found is not None
-    client.find_closest_by_vague_name.assert_awaited_once_with("Cyclops")
-    client.find_closest_by_predicate.assert_not_awaited()
+    client.find_closest_by_vague_name.assert_not_awaited()
+    client.find_closest_by_predicate.assert_awaited_once()
 
 
 @pytest.mark.asyncio
@@ -189,15 +200,19 @@ async def test_find_closest_wildcard_uses_predicate():
 
 
 @pytest.mark.asyncio
-async def test_find_entities_plain_name_uses_vague_name():
+async def test_find_entities_plain_name_keeps_only_the_exact_id():
     client = FakeClient()
-    client.get_base_entities_with_vague_name.return_value = [FakeEntity("FungusWort")]
+    entities = [FakeEntity("Stone"), FakeEntity("ZF-STONE-NPC10"), FakeEntity("Sandstone"), FakeEntity("stone")]
 
-    found = await find_entities_by_name(client, "Fungi")
+    async def _filter(predicate):
+        return [e for e in entities if await predicate(e)]
 
-    assert len(found) == 1
-    client.get_base_entities_with_vague_name.assert_awaited_once_with("Fungi")
-    client.get_base_entities_with_predicate.assert_not_awaited()
+    client.get_base_entities_with_predicate.side_effect = _filter
+
+    found = await find_entities_by_name(client, "Stone")
+
+    assert [await e.object_name() for e in found] == ["Stone", "stone"]
+    client.get_base_entities_with_vague_name.assert_not_awaited()
 
 
 @pytest.mark.asyncio

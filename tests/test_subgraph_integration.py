@@ -34,6 +34,8 @@ class ControllerHarness:
         for name in (
             "_compose",
             "_recompose_before_run",
+            "_new_bot",
+            "_new_bot_folder",
             "_open_bot",
             "_save_bot",
             "_save_bot_as",
@@ -42,6 +44,8 @@ class ControllerHarness:
             "_autosave_path",
             "_on_config_changed",
             "_on_run_requested",
+            "_on_elixir_probe_done",
+            "_finish_run_request",
             "_check_restricted_zones",
             "_check_player_realms",
             "_start_enabled",
@@ -60,16 +64,25 @@ class ControllerHarness:
             "_revert_definition",
             "_reshow_definition",
             "_back_to_document",
+            "_file_label",
+            "_may_edit_template",
+            "_edit_template",
+            "_open_template",
+            "_refresh_template_context",
+            "_release_template",
+            "_show_release_refused",
         ):
             setattr(self, name, getattr(cls, name).__get__(self))
         self._subgraph_library = library
+        self._templates_root = None
+        self._elixir_probe = None
         self._loaded_config: BotConfig | None = None
         self._last_save_path: str | None = None
         self._has_unsaved_changes = False
         self._clean_snapshot = None
         self._rewards_declined_for = None
         # The Rewards prompt is modal; what is under test here is the write behind it.
-        self._confirm_rewards_tags = lambda path: True
+        self._confirm_rewards_tags = lambda: True
         self._doc_stack = []
         self._current_machine = None
         self._bot_task = None

@@ -87,6 +87,7 @@ The snapshots and their tools:
 | `data/spell_schools.json` | `dump_spell_schools.py` | a spell is added, or its school changes |
 | `data/badge_categories.json` | `dump_badge_categories.py` | a badge category is added, reordered or renamed; the bot library's folders follow its order |
 | `data/entity_names.json` | `dump_entity_names.py` | an NPC, mob or world object is added or renamed |
+| `data/reagent_nodes.json` | `dump_reagent_nodes.py` | a reagent node is added or renamed; `entity_names.json` cannot hold them, having no display name to join on |
 
 `entity_names.json` is the one snapshot taken to *avoid* a library call rather than to
 replace a probe. WizWalker's `ClientObject.display_name()` answers the same question, but it

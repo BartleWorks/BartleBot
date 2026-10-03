@@ -14,7 +14,7 @@ _LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
     group=GROUP_TEAM,
     type="player_list",
     default=[],
-    description="Which players to check/apply level scaling. Empty = no players. Shared by check_level_scaling and apply_level_scaling.",
+    description="Which players to check/apply level scaling. Empty = no players. Shared by every level scaling node.",
 )
 
 NODE_SPEC = NodeSpec(

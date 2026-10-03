@@ -7,7 +7,7 @@ that Phase 3 deleted.  Three copies is how ``_AddOptionDialog`` came to hardcode
 ``type="bool"`` while the row builder happily rendered floats -- pressing Edit on
 Safety Delay rewrote it as a checkbox.
 
-Both option surfaces now share this module: the Setup values view, the Options
+Both option surfaces now share this module: the Option Values view, the Options
 declaration editor, and the Add/Edit dialog inside it.  ``_make_widget`` stays
 where it is -- it maps *param* fields, a much larger vocabulary (zone, xyz,
 wiki_page, drop_keep_list) that no bot option can have.
@@ -54,7 +54,7 @@ TALL_TYPES: frozenset[str] = frozenset({"drop_keep_list"})
 #: How wide a spin box is allowed to get.  A number field that spans a 400px sidebar
 #: reads as a text field and gives four decimal places' worth of room to a value that
 #: is nearly always one digit -- "3.00 s" occupying the whole panel was half of what
-#: made the Setup screenshot behind the Safety Delay validation look wrong.
+#: made the Option Values screenshot behind the Safety Delay validation look wrong.
 NUMERIC_MAX_WIDTH_PX = 110
 
 #: Decimals shown by a float control.  Four was the old default: Safety Delay read

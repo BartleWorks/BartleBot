@@ -43,6 +43,8 @@ from bartlebot.nodes.utility.check_level_scaling import NODE_SPEC as _check_leve
 from bartlebot.nodes.utility.check_level_scaling import run as check_level_scaling_run
 from bartlebot.nodes.utility.check_zone import NODE_SPEC as _check_zone_spec
 from bartlebot.nodes.utility.check_zone import run as check_zone_run
+from bartlebot.nodes.utility.handle_level_scaling import NODE_SPEC as _handle_level_scaling_spec
+from bartlebot.nodes.utility.handle_level_scaling import run as handle_level_scaling_run
 from bartlebot.nodes.utility.quicksell import NODE_SPEC as _quicksell_spec
 from bartlebot.nodes.utility.quicksell import run as quicksell_run
 from bartlebot.nodes.utility.relog import NODE_SPEC as _relog_spec
@@ -87,6 +89,7 @@ NODE_REGISTRY: dict = {
     "check_if_dropped": check_if_dropped_run,
     "check_level_scaling": check_level_scaling_run,
     "check_zone": check_zone_run,
+    "handle_level_scaling": handle_level_scaling_run,
     "relog": relog_run,
 }
 
@@ -119,6 +122,7 @@ NODE_SPECS: dict[str, NodeSpec] = {
     "check_if_dropped": _check_if_dropped_spec,
     "check_level_scaling": _check_level_scaling_spec,
     "check_zone": _check_zone_spec,
+    "handle_level_scaling": _handle_level_scaling_spec,
     "relog": _relog_spec,
 }
 
@@ -177,6 +181,7 @@ NODE_CATEGORIES: list[tuple[str, list[str]]] = [
             "check_if_dropped",
             "check_level_scaling",
             "check_zone",
+            "handle_level_scaling",
             "quicksell",
             "relog",
             "sleep",

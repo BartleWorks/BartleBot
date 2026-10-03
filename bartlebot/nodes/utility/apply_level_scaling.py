@@ -40,7 +40,7 @@ PARAM_SCHEMA: list[ParamField] = [
     ),
 ]
 
-_SAFETY_DELAY_OPTION = BotOptionSpec(
+SAFETY_DELAY_OPTION = BotOptionSpec(
     name="Safety Delay",
     group=GROUP_GENERAL,
     type="float",
@@ -53,12 +53,12 @@ _SAFETY_DELAY_OPTION = BotOptionSpec(
     ),
 )
 
-_LEVEL_SCALING_CLIENTS_OPTION = BotOptionSpec(
+LEVEL_SCALING_PLAYERS_OPTION = BotOptionSpec(
     name="Level Scaling Players",
     group=GROUP_TEAM,
     type="player_list",
     default=[],
-    description="Which players to check/apply level scaling. Empty = no players. Shared by check_level_scaling and apply_level_scaling.",
+    description="Which players to check/apply level scaling. Empty = no players. Shared by every level scaling node.",
 )
 
 NODE_SPEC = NodeSpec(
@@ -77,7 +77,7 @@ NODE_SPEC = NodeSpec(
             "button never became visible, or the elixir did not take effect).",
         ),
     ],
-    required_bot_options=[_SAFETY_DELAY_OPTION, _LEVEL_SCALING_CLIENTS_OPTION],
+    required_bot_options=[SAFETY_DELAY_OPTION, LEVEL_SCALING_PLAYERS_OPTION],
     # Each tick already retries every player up to MAX_RETRIES rounds, so a FAILURE that
     # survives a few more ticks is not going to clear by itself.
     max_consecutive_retries=3,
@@ -143,32 +143,44 @@ async def run(machine, clients: list, params: dict) -> str:
     scale_clients = [clients[i] for i in scale_indices]
     machine.log(f"Scaling client(s): {[i + 1 for i in scale_indices]}", logging.DEBUG)
 
+    numbered = [(i + 1, c) for i, c in zip(scale_indices, scale_clients)]
+    return "SUCCESS" if await apply_elixir(machine, numbered, interact, reset, safety_delay) else "FAILURE"
+
+
+async def apply_elixir(
+    machine, numbered: list[tuple[int, object]], interact: XYZ, reset: XYZ, safety_delay: float
+) -> bool:
+    """Steps 3 to 5 of run(): give the elixir to each ``(player number, client)``, with the retry rounds.
+
+    Every client must already be in the station's zone. Returns False having logged who still
+    lacks the elixir. handle_level_scaling calls this with only the players that lack one.
+    """
     # 3. Clear any pre-existing interact prompt on the scaled clients.
     await node_helpers.clear_stale_prompt(
         machine,
-        scale_clients,
+        [c for _, c in numbered],
         reset,
         node_helpers.INTERACT_PROMPT,
         safety_delay,
         POLL_INTERVAL,
-        numbers=[i + 1 for i in scale_indices],
+        numbers=[n for n, _ in numbered],
     )
 
     # 4. Retry rounds over the clients that still need the elixir. One client uses the
     #    station from start to finish before the next one opens it: an open menu closes
     #    on every client that has not clicked yet as soon as one of them does, so the
     #    whole interaction has to be sequential, not just the clicks.
-    pending = list(zip(scale_indices, scale_clients))
+    pending = list(numbered)
     for attempt in range(1, MAX_RETRIES + 1):
         machine.log(
-            f"Attempt {attempt}/{MAX_RETRIES}: applying elixir to client(s) {[i + 1 for i, _ in pending]}",
+            f"Attempt {attempt}/{MAX_RETRIES}: applying elixir to client(s) {[n for n, _ in pending]}",
             logging.DEBUG,
         )
 
-        for position, (index, client) in enumerate(pending):
+        for position, (number, client) in enumerate(pending):
             if position:
                 await asyncio.sleep(LEVEL_SCALING_STAGGER_DELAY)
-            await _use_station(machine, client, index + 1, interact, safety_delay)
+            await _use_station(machine, client, number, interact, safety_delay)
 
         # Give the elixirs time to apply server-side before reading the indicator.
         machine.log(f"Waiting {safety_delay}s for elixir to apply…", logging.DEBUG)
@@ -181,21 +193,20 @@ async def run(machine, clients: list, params: dict) -> str:
         pending = [entry for entry, active in zip(pending, elixir_results) if not active]
         if not pending:
             machine.log("SUCCESS: level scaling applied")
-            return "SUCCESS"
+            return True
 
         # Step out of NPC range so the next round's teleport re-triggers the prompt.
         machine.log(
-            f"Elixir not active on client(s) {[i + 1 for i, _ in pending]}; resetting to retry",
+            f"Elixir not active on client(s) {[n for n, _ in pending]}; resetting to retry",
             logging.DEBUG,
         )
         await asyncio.gather(*[c.teleport(reset) for _, c in pending])
 
     machine.log(
-        f"FAILURE: level-scaling elixir not active on client(s) {[i + 1 for i, _ in pending]} "
-        f"after {MAX_RETRIES} attempts",
+        f"FAILURE: level-scaling elixir not active on client(s) {[n for n, _ in pending]} after {MAX_RETRIES} attempts",
         logging.WARNING,
     )
-    return "FAILURE"
+    return False
 
 
 async def _use_station(machine, client, client_number: int, interact: XYZ, safety_delay: float) -> None:

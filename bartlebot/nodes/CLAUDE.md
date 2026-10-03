@@ -10,7 +10,7 @@ Conventions for everything under `bartlebot/nodes/`, plus the two game-facing pr
 4. Action nodes return `"SUCCESS"` / `"FAILURE"`; condition nodes return `"TRUE"` / `"FALSE"`
 5. The GUI auto-generates parameter forms and tooltips from `NODE_SPEC`
 6. Every `BotOptionSpec` in `required_bot_options` names its `group` — the card it is drawn
-   in on Setup and Options (`bartlebot/option_groups.py`). Reuse the group an existing
+   in on Option Values and Options (`bartlebot/option_groups.py`). Reuse the group an existing
    declaration of the same option uses; `test_every_declaration_of_one_option_agrees_on_its_card`
    fails otherwise
 
@@ -60,6 +60,7 @@ This is offered as an optional `sequential` param on `interact`, `interact_menu`
 sets it any more: it stopped being a node with #36, and every list object the map knows serves
 players in parallel. `apply_level_scaling`
 predates the helper and is unconditionally sequential against its one hardcoded station.
+`handle_level_scaling` reuses that loop (`apply_elixir`), so it is sequential too.
 
 `enter_zone_via_object`'s parallel path also falls back to turns on its own: when some clients
 went through and the rest are still standing there after the re-press window, the rest take

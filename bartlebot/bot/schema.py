@@ -127,7 +127,7 @@ class StateModel(BaseModel):
 class BotOptionModel(BaseModel):
     name: str
     # The last four are declared by nodes only and never offered in the Add Option
-    # dialog: they are a str / str_list underneath, with a richer control in Setup.
+    # dialog: they are a str / str_list underneath, with a richer control in Option Values.
     type: Literal[
         "bool",
         "int",
@@ -153,7 +153,7 @@ class BotOptionModel(BaseModel):
     maximum: float | None = None
     suffix: str | None = None
     # The bool option this one is a child of, carried on the same way. A child is
-    # indented under its parent in Setup and disabled while the parent is off --
+    # indented under its parent in Option Values and disabled while the parent is off --
     # ``Sell Pets`` does nothing whatever it says while ``Enable Quicksell`` is off,
     # and a live-looking control that cannot affect the run is the thing to avoid.
     depends_on: str | None = None
@@ -169,10 +169,24 @@ PORT_NODE_TYPES = frozenset({SUBGRAPH_ENTRY, SUBGRAPH_EXIT})
 
 
 class SubgraphInputBinding(BaseModel):
-    """One member param an input drives: ``state`` is a definition-local id."""
+    """One thing an input drives: a member's param, or an input of a nested instance.
 
-    state: str
+    For a member, ``state`` is its definition-local id and ``param`` the param's key.
+    For a nested instance, ``region`` is its region's definition-local id and ``param``
+    names one of *its* inputs, so the value goes in through the inner signature and
+    never past it. Exactly one of ``state`` and ``region`` is set; ``region`` is None
+    for a member and so is never written for one.
+    """
+
+    state: str | None = None
     param: str
+    region: str | None = None
+
+    @model_validator(mode="after")
+    def names_one_target(self) -> "SubgraphInputBinding":
+        if (self.state is None) == (self.region is None):
+            raise ValueError("a binding names a state or a nested instance's region, and not both")
+        return self
 
 
 class SubgraphInput(BaseModel):
@@ -298,6 +312,75 @@ class DefinitionMeta(BaseModel):
     panels: list[SubgraphPanel] = Field(default_factory=list)
 
 
+class TemplateRef(BaseModel):
+    """Which template a bot was made from, and the version it is based on.
+
+    ``version`` is the *base*: the released version the bot was created from, or last
+    finished reviewing against. A monotonic integer like ``SubgraphSource.version``, and
+    unrelated to ``BotConfig.version``. Written only by New Bot and by finishing a
+    template update review -- never on load, never by a migration, and copied unchanged
+    by Save As, since a copy of a bot has the same base.
+    """
+
+    id: str
+    version: int
+
+
+class SetupTarget(BaseModel):
+    """One field a setup step asks the user to fill: a *fill-in*. Exactly one of three kinds.
+
+    A node's param (``state`` and ``param``), a subgraph node's input (``region`` and
+    ``input``, where a promoted node's param is the input ``<member>.<key>``), or a field
+    of the bot itself (``field``; only ``drops``). Name, description and tags are not
+    targets: the New Bot dialog asks for them.
+    """
+
+    state: str | None = None
+    param: str | None = None
+    region: str | None = None
+    input: str | None = None
+    field: Literal["drops"] | None = None
+
+    @model_validator(mode="after")
+    def _one_kind(self) -> "SetupTarget":
+        kinds = [
+            self.state is not None and self.param is not None,
+            self.region is not None and self.input is not None,
+            self.field is not None,
+        ]
+        given = [v for v in (self.state, self.param, self.region, self.input, self.field) if v is not None]
+        if sum(kinds) != 1 or len(given) != (1 if self.field is not None else 2):
+            raise ValueError("a setup target is state+param, region+input, or field, and only one of them")
+        return self
+
+
+class SetupStep(BaseModel):
+    """One instruction a template gives the user, and the fill-ins it asks for.
+
+    Every target is a fill-in, and nothing else marks one. A step is done when all of
+    its targets are filled and valid; that is worked out from the bot each time
+    (:mod:`bartlebot.setup_steps`) and never stored.
+    """
+
+    text: str
+    targets: list[SetupTarget] = Field(default_factory=list)
+
+
+class TemplateMeta(BaseModel):
+    """What makes a ``BotConfig`` a template -- a draft or a released version -- rather than a bot.
+
+    Plays the part :class:`DefinitionMeta` plays for a definition: it rides along through
+    undo and autosave with the rest of the config. Never set on a bot: New Bot drops it
+    when it copies a version, so ``exclude_none`` keeps it out of every bot file. The
+    bot reads ``setup`` from its base version instead of carrying a copy.
+    """
+
+    #: What the New Bot dialog says about the template, under its name.
+    blurb: str = ""
+    #: What a bot made from this version has to fill in before it can run.
+    setup: list[SetupStep] = Field(default_factory=list)
+
+
 class BotConfig(BaseModel):
     # Required, with no default_factory: a minted id is indistinguishable from a real
     # one, so a file missing it would silently get a fresh identity on every load --
@@ -325,11 +408,20 @@ class BotConfig(BaseModel):
     regions: list[RegionModel] = Field(default_factory=list)
     # Set only while this config is a subgraph definition open as a document.
     definition: DefinitionMeta | None = None
+    # Set only on a bot made from a template (New Bot), naming it and the base version.
+    template: TemplateRef | None = None
+    # Set only on a template's draft or a released version of it, never on a bot.
+    template_meta: TemplateMeta | None = None
 
     @property
     def is_definition(self) -> bool:
         """Whether this is a subgraph definition document rather than a bot."""
         return self.definition is not None
+
+    @property
+    def is_template(self) -> bool:
+        """Whether this is a template, a draft or a released version, rather than a bot."""
+        return self.template_meta is not None
 
     @field_validator("drops", mode="before")
     @classmethod
@@ -365,6 +457,11 @@ class BotConfig(BaseModel):
 
     @model_validator(mode="after")
     def initial_state_exists(self) -> "BotConfig":
+        if not self.states and not self.initial and not self.recovery_state:
+            # A blank bot: nothing on the canvas yet, so nothing for either role to name.
+            # The editor gives both to the first node added, and a bot with no nodes
+            # cannot be run.
+            return self
         ids = {s.id for s in self.states}
         if self.initial not in ids:
             raise ValueError(f"initial state '{self.initial}' is not in states list")
@@ -473,19 +570,24 @@ class BotConfig(BaseModel):
         return data
 
     def save(self, path: str | Path) -> None:
-        _atomic_write_json(self.file_dump(), path)
+        # A template's files are byte-exact in git (``templates/** -text``), since a
+        # released version is hashed, so a draft is written with the same line endings
+        # on every platform. Left to the platform, saving one on Windows rewrote every
+        # line of it.
+        atomic_write_json(self.file_dump(), path, newline="\n" if self.is_template else None)
 
 
-def _atomic_write_json(data: dict, path: str | Path) -> None:
+def atomic_write_json(data: dict, path: str | Path, *, newline: str | None = None) -> None:
     """Write ``data`` to a sibling temp file, then atomically replace ``path``.
 
-    Prevents corruption if the process crashes mid-write.
+    Prevents corruption if the process crashes mid-write. ``newline`` is ``open``'s:
+    ``None`` writes the platform's line endings, ``"\\n"`` the same bytes everywhere.
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_path = tempfile.mkstemp(dir=path.parent, suffix=".tmp", prefix=path.stem + "_")
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as f:
+        with os.fdopen(fd, "w", encoding="utf-8", newline=newline) as f:
             json.dump(data, f, indent=2)
         os.replace(tmp_path, path)
     except Exception:
@@ -581,6 +683,9 @@ def definition_structure_errors(
             errors.append(f"'{param}' of {state!r} is bound twice")
         driven.add((state, param))
 
+    instances = {r.id for r in regions if r.source is not None}
+    forwarded: set[tuple[str, str]] = set()
+
     names: set[str] = set()
     for inp in inputs:
         if inp.name in names:
@@ -589,11 +694,25 @@ def definition_structure_errors(
         if inp.panel is not None and inp.panel not in input_panels:
             errors.append(f"input {inp.name!r} names panel {inp.panel!r}, which is not an inputs panel")
         for b in inp.bindings:
-            drive(b.state, b.param, f"input {inp.name!r}")
+            if b.region is None:
+                drive(b.state or "", b.param, f"input {inp.name!r}")
+            elif b.region not in instances:
+                errors.append(
+                    f"input {inp.name!r} links to {b.region!r}, which is not a subgraph node of this subgraph"
+                )
+            elif (b.region, b.param) in forwarded:
+                errors.append(f"input '{b.param}' of {b.region!r} is linked twice")
+            else:
+                forwarded.add((b.region, b.param))
     for panel in panels:
         for key, extra in panel.bindings.items():
             for b in extra:
-                drive(b.state, b.param, f"the exposed '{key}' of {panel.member!r}")
+                if b.region is not None:
+                    errors.append(
+                        f"the exposed '{key}' of {panel.member!r} cannot be shared with a subgraph node's input"
+                    )
+                else:
+                    drive(b.state or "", b.param, f"the exposed '{key}' of {panel.member!r}")
 
     region_ids: set[str] = set()
     for r in regions:
@@ -658,4 +777,4 @@ class SubgraphDefinition(BaseModel):
             return cls.model_validate(json.load(f))
 
     def save(self, path: str | Path) -> None:
-        _atomic_write_json(self.model_dump(exclude_none=True), path)
+        atomic_write_json(self.model_dump(exclude_none=True), path)

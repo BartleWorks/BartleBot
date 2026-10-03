@@ -1,0 +1,298 @@
+{
+  "id": "be76a48c-598c-4114-8ddc-389a51d145ed",
+  "name": "Mob Farmer",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [],
+  "authors": "BartleBot",
+  "tags": [
+    "Mobs"
+  ],
+  "options": [],
+  "states": [
+    {
+      "id": "t_4",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_6",
+      "node_type": "handle_combat",
+      "label": "Defeat mobs",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "",
+        "wiki_page": "",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_8",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to safe spot near mobs",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {
+        "zone": ""
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 5.0
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 880.0002001308044,
+        "y": 0.00042969260954928146
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 1320.0002001308044,
+        "y": 90.00042969260954
+      },
+      "params": {
+        "zone": ""
+      }
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in mob spawn zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {},
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 880.0002001308044,
+          "y": 0.00042969260954928146
+        }
+      }
+    }
+  ],
+  "template_meta": {
+    "blurb": "Farms one kind of mob in the open world: fights it, waits somewhere safe, and repeats.\n\nSet the Quicksell keep list from the mob's drops.",
+    "setup": [
+      {
+        "text": "Choose the zone the mobs spawn in",
+        "targets": [
+          {
+            "region": "t_sync_players_1",
+            "input": "state_2.zone"
+          }
+        ]
+      },
+      {
+        "text": "Set where players wait safely between fights",
+        "targets": [
+          {
+            "state": "t_8",
+            "param": "zone"
+          },
+          {
+            "state": "t_8",
+            "param": "xyz"
+          }
+        ]
+      },
+      {
+        "text": "Record the mob's enemy ID",
+        "targets": [
+          {
+            "state": "t_6",
+            "param": "enemy"
+          }
+        ]
+      },
+      {
+        "text": "Import the mob's drops from its wiki page",
+        "targets": [
+          {
+            "field": "drops"
+          }
+        ]
+      }
+    ]
+  }
+}

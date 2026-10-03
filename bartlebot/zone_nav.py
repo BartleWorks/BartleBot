@@ -292,6 +292,16 @@ def reachable(nav: NavMap, start: str, *, include_unverified: bool = False, avoi
     return seen
 
 
+def is_destination(nav: NavMap, zone: str) -> bool:
+    """Whether `zone` is in the picker's list: on the map, and not a zone routes only pass through.
+
+    Sync In Zone fails on anything else, so a zone that arrives some other way -- filled from where
+    a player stands -- is checked against this.
+    """
+    world = nav.world_of(zone)
+    return world is not None and zone in world.destinations()
+
+
 # ── Loading ────────────────────────────────────────────────────────────────────
 
 

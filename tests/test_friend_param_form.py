@@ -19,7 +19,7 @@ def _form(params: dict) -> _DynamicParamForm:
 def test_the_form_never_writes_a_friend_name_into_the_bot(qapp):
     """This is what makes test_no_bot_stores_a_friend_name hold going forward: not a
     convention authors have to remember, but a panel with no such field to write from.
-    The name is a bot option now, valued in Setup and stored in settings.json."""
+    The name is a bot option now, valued in Option Values and stored in settings.json."""
     form = _form({"target_hooked_player": False, "to_zone": "Z"})
 
     assert "friend_name" not in form.get_params()
@@ -50,7 +50,7 @@ def test_hooked_player_mode_offers_the_player_picker(qapp):
 def test_name_mode_grays_the_player_picker(qapp):
     """The two targets are mutually exclusive, and graying is the loudest way the panel
     can say so. Only one side of the pair is a param now -- the name is a bot option,
-    edited in Setup -- so this is the half the panel can still show."""
+    edited in Option Values -- so this is the half the panel can still show."""
     form = _form({"target_hooked_player": False, "to_zone": "Z"})
 
     assert not form.widget("target_player").isEnabled()

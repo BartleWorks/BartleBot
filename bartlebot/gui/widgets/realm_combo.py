@@ -1,6 +1,6 @@
 """A realm picker, for the ``realm`` option type and the Favorite Realm setting.
 
-One control for both surfaces, so the Bot settings tab and a Setup override list the
+One control for both surfaces, so the Bot settings tab and an Option Values override list the
 same realms in the same order and neither can offer a realm the other cannot. The
 list is the checked-in snapshot (``bartlebot.realms``), never typed: the value has
 to match a key the run-time matcher knows, and a free-text field is how a realm

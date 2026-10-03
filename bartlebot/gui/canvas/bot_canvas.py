@@ -8,7 +8,7 @@ import json
 import logging
 import time
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from uuid import uuid4
@@ -40,11 +40,13 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
-from bartlebot import bot_summary, card_art
+from bartlebot import bot_summary, card_art, scales, setup_steps, template_diff
 from bartlebot.bot.schema import (
     FALLTHROUGH_RETURNS,
     PORT_NODE_TYPES,
     BotConfig,
+    SetupStep,
+    SetupTarget,
     SubgraphDefinition,
     SubgraphInput,
     SubgraphInputBinding,
@@ -70,7 +72,7 @@ from bartlebot.gui.canvas.edit_scene import (
 from bartlebot.gui.canvas.favorites_bar import FavoritesBar
 from bartlebot.gui.canvas.graph_view import _MinimapView
 from bartlebot.gui.canvas.node_item import NodeItem
-from bartlebot.gui.canvas.param_panel import _ParamPanel
+from bartlebot.gui.canvas.param_panel import _ParamPanel, instance_key_field
 from bartlebot.gui.canvas.repaint_trace import RepaintTracer
 from bartlebot.gui.canvas.subgraph_widgets import (
     Crumb,
@@ -81,6 +83,7 @@ from bartlebot.gui.canvas.subgraph_widgets import (
     ViewFrame,
 )
 from bartlebot.gui.canvas.undo_manager import UndoManager
+from bartlebot.gui.menu_utils import popup_menu
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
 from bartlebot.gui.widgets.action_button import ActionButton, ActionStyle
@@ -97,7 +100,7 @@ from bartlebot.nodes.registry import NODE_PARAM_SCHEMAS, NODE_SPECS
 from bartlebot.paths import project_root
 from bartlebot.settings_manager import SettingsManager
 from bartlebot.store_roots import dev_mode
-from bartlebot.strategy_store import rekey_bot_strategy_states
+from bartlebot.strategy_store import list_bot_strategies, rekey_bot_strategy_states
 from bartlebot.subgraph_store import SubgraphLibrary
 from bartlebot.subgraphs import (
     ComposeReport,
@@ -105,14 +108,15 @@ from bartlebot.subgraphs import (
     convert_region_to_instance,
     definition_problems,
     extract_definition,
-    mint_instance_id,
     node_panels,
     normalize_input_types,
     promoted_param_type,
+    reresolve_linked_instances,
     reresolve_member_params,
+    resolve_instance_key,
     sync_linked_values,
-    taken_ids,
 )
+from bartlebot.wiki_pages import WIKI_PAGE_PARAM
 
 logger = logging.getLogger(__name__)
 
@@ -247,6 +251,10 @@ class _BotMeta:
     #: The sentence the graph implies, for a bot with no description; "" when it has one,
     #: or the graph implies nothing. See bartlebot/bot_summary.py.
     generated: str = ""
+    #: Setup steps of the bot's template still to do; 0 for a bot made from none.
+    setup_left: int = 0
+    #: Whether the bot's template has released a version newer than the one it is based on.
+    update_available: bool = False
 
 
 def _drop_names(raw: object) -> list[str]:
@@ -267,7 +275,54 @@ def _drop_names(raw: object) -> list[str]:
     return names
 
 
-def _read_bot_meta(path: Path) -> "_BotMeta | None":
+def setup_left_text(left: int) -> str:
+    """A library row's "2 setup steps left"."""
+    return f"{left} setup {'step' if left == 1 else 'steps'} left"
+
+
+#: What a bot with nothing on its canvas is told, in place of a node's error.
+NO_NODES_ERROR = "This bot has no nodes yet: add one to begin"
+
+#: A library row's line for a bot whose template has moved on.
+UPDATE_AVAILABLE_TEXT = "Template update available"
+
+
+#: (file, template store) -> (the file's mtime, its setup steps left): see ``_setup_left``.
+_setup_left_seen: dict[tuple[str, str], tuple[int, int]] = {}
+
+
+def _setup_left(path: Path, data: dict, templates_root: "str | Path | None", library: "SubgraphLibrary | None") -> int:
+    """The setup steps the bot file at *path* has left, remembered until the file changes.
+
+    Counting them validates the whole file, and the library reads every bot each time it
+    is listed. A released version's steps never change, so the answer is the file's
+    alone -- unless a step asks for a named subgraph input, which the definition places,
+    and then it is worked out each time.
+    """
+    if not isinstance(data.get("template"), dict):
+        return 0
+    if setup_steps.file_reads_library(data, templates_root):
+        return setup_steps.left_in_file(data, templates_root, library=library)
+    key = (str(path), str(templates_root or ""))
+    try:
+        stamp = path.stat().st_mtime_ns
+    except OSError:
+        return setup_steps.left_in_file(data, templates_root, library=library)
+    seen = _setup_left_seen.get(key)
+    if seen is None or seen[0] != stamp:
+        seen = _setup_left_seen[key] = (stamp, setup_steps.left_in_file(data, templates_root, library=library))
+    return seen[1]
+
+
+def _read_bot_meta(
+    path: Path, templates_root: "str | Path | None" = None, library: "SubgraphLibrary | None" = None
+) -> "_BotMeta | None":
+    """What a library card shows for the bot file at *path*, read without building a scene.
+
+    *templates_root* is where the template store is, for the setup steps a bot made
+    from a template has left; ``None`` is the project's. *library* is the subgraph
+    library a step on a named subgraph input is read through, as the editor reads it.
+    """
     try:
         with path.open(encoding="utf-8") as f:
             data = json.load(f)
@@ -281,6 +336,8 @@ def _read_bot_meta(path: Path) -> "_BotMeta | None":
             version=data.get("version") or "",
             path=path,
             generated="" if description else (bot_summary.describe_data(data) or ""),
+            setup_left=_setup_left(path, data, templates_root, library),
+            update_available=template_diff.behind_in_file(data, templates_root),
         )
     except Exception:
         return None
@@ -386,6 +443,8 @@ class _BotCard(ThemedMixin, QWidget):
         self._hovered = False
         self._desc_lbl: QLabel | None = None
         self._meta_lbl: QLabel | None = None
+        self._setup_lbl: QLabel | None = None
+        self._update_lbl: QLabel | None = None
         self._build()
         self.set_matched_drops(matched_drops)
         self.refresh_theme_styles()
@@ -439,6 +498,17 @@ class _BotCard(ThemedMixin, QWidget):
             self._meta_lbl = QLabel("  ·  ".join(parts))
             layout.addWidget(self._meta_lbl)
 
+        # A bot made from a template and left half set up: it cannot run yet, and the
+        # card is where that is found out without opening it.
+        if self._meta.setup_left:
+            self._setup_lbl = QLabel(setup_left_text(self._meta.setup_left))
+            layout.addWidget(self._setup_lbl)
+
+        # The template it was made from has released since: opening it offers the review.
+        if self._meta.update_available:
+            self._update_lbl = QLabel(UPDATE_AVAILABLE_TEXT)
+            layout.addWidget(self._update_lbl)
+
         # Always built, and hidden while nothing matched: the library keeps its cards
         # across searches, so this is the one line a new query has to be able to change.
         self._match_lbl = QLabel()
@@ -454,6 +524,16 @@ class _BotCard(ThemedMixin, QWidget):
                 text += f" +{len(drops) - 3} more"
             self._match_lbl.setText(f"Drops: {text}")
         self._match_lbl.setVisible(bool(drops))
+
+    @property
+    def setup_text(self) -> str | None:
+        """The "2 setup steps left" line as shown, or None for a bot with nothing left."""
+        return self._setup_lbl.text() if self._setup_lbl is not None else None
+
+    @property
+    def update_text(self) -> str | None:
+        """The "Template update available" line as shown, or None for a bot that is not behind."""
+        return self._update_lbl.text() if self._update_lbl is not None else None
 
     @property
     def matched_drops_text(self) -> str | None:
@@ -478,6 +558,8 @@ class _BotCard(ThemedMixin, QWidget):
         for lbl, color in (
             (self._desc_lbl, THEME.text_muted),
             (self._meta_lbl, THEME.text_subtle),
+            (self._setup_lbl, THEME.warning),
+            (self._update_lbl, THEME.accent),
             (self._match_lbl, THEME.accent),
         ):
             if lbl is not None:
@@ -708,6 +790,9 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
         if self._listed:
             self.refresh()
 
+    def _read_meta(self, path: Path) -> "_BotMeta | None":
+        return _read_bot_meta(path, library=self._subgraph_library)
+
     def refresh(self) -> None:
         """Rescan recent files and bots/ directory, rebuild UI."""
         self._listed = True
@@ -725,17 +810,17 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             for subdir in sorted(bots_dir.iterdir()):
                 if not subdir.is_dir():
                     continue
-                metas = [m for f in sorted(subdir.glob("*.json")) if (m := _read_bot_meta(f))]
+                metas = [m for f in sorted(subdir.glob("*.json")) if (m := self._read_meta(f))]
                 if metas:
                     self._category_map[subdir.name] = metas
                     self._all_metas.extend(metas)
-            root_metas = [m for f in sorted(bots_dir.glob("*.json")) if (m := _read_bot_meta(f))]
+            root_metas = [m for f in sorted(bots_dir.glob("*.json")) if (m := self._read_meta(f))]
             if root_metas:
                 self._category_map[self._OTHER_KEY] = root_metas
                 self._all_metas.extend(root_metas)
 
         # Recent files
-        self._recent_metas = [m for p in recent_paths if (m := _read_bot_meta(Path(p)))]
+        self._recent_metas = [m for p in recent_paths if (m := self._read_meta(Path(p)))]
 
         self._subgraph_metas = []
         if self._subgraph_library is not None:
@@ -798,6 +883,16 @@ class _BotLibraryPanel(ThemedMixin, QWidget):
             self._cat_list.setCurrentRow(0)
         else:
             self._show_cards([])
+
+    def current_folder(self) -> str | None:
+        """The library folder the selected category row stands for, by its name on disk.
+
+        ``None`` for the rows that are no folder (Recent, All, Other, Subgraphs), and
+        before the panel has listed anything.
+        """
+        item = self._cat_list.currentItem()
+        key = item.data(Qt.ItemDataRole.UserRole) if item is not None else None
+        return key if isinstance(key, str) and not key.startswith("\0") else None
 
     def add_category_row(self, key: str, caption: str, icon: QIcon | None = None) -> None:
         """Append a row to the category list, looked up later by *key* rather than *caption*."""
@@ -1040,6 +1135,18 @@ class BotCanvas(QWidget):
 
     config_changed = pyqtSignal()
     mode_changed = pyqtSignal(BotMode)
+    # How many of the open bot's template setup steps are not done; 0 for anything else.
+    setup_left_changed = pyqtSignal(int)
+    # The setup steps, or how the document stands against them, may have moved: the Setup
+    # tab redraws from ``config``, ``setup_progress()`` and ``subgraph_library``.
+    setup_changed = pyqtSignal()
+    # Bar B's template chip: bring the Setup tab back for a bot whose steps are done.
+    setup_tab_requested = pyqtSignal()
+    # The open bot's ``template`` moved: a finished review, or an undo across one. The
+    # controller reads the new base's setup steps and whatever update is still waiting.
+    template_ref_changed = pyqtSignal()
+    # Drops imported for a fight from the Setup tab, for the possible-drops list to take.
+    drops_imported = pyqtSignal(list)
     run_requested = pyqtSignal()
     pause_requested = pyqtSignal()
     resume_requested = pyqtSignal()
@@ -1068,6 +1175,10 @@ class BotCanvas(QWidget):
     # discard a modified built-in for the shipped one.
     definition_save_as_requested = pyqtSignal()
     definition_revert_requested = pyqtSignal()
+    # A template draft's crumb: Save draft, Release…, and its close button.
+    template_save_requested = pyqtSignal()
+    template_release_requested = pyqtSignal()
+    template_close_requested = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -1118,6 +1229,8 @@ class BotCanvas(QWidget):
         self._doc_path: list[str] = []
         # Whether the open definition is a modified built-in, which the crumb offers to revert.
         self._can_revert = False
+        # What a template draft's crumb says after its name: its latest released version.
+        self._template_hint = ""
         # Region color the focus overlays are painted in, or None if never focused.
         self._focus_color: QColor | None = None
 
@@ -1135,6 +1248,8 @@ class BotCanvas(QWidget):
         # #73: log any item change Qt never repainted. Developer builds only.
         self._repaint_tracer = RepaintTracer(self._view) if dev_mode() else None
         self._param_panel = _ParamPanel()
+        # An unset Scales param means the open bot's world's, so its picker says which that is.
+        self._param_panel.set_default_scales_getter(lambda: scales.default_for(self._config))
 
         # ── Buttons ───────────────────────────────────────────────────
         self._run_pause_btn = _icon_btn("play", "Run bot")
@@ -1337,7 +1452,8 @@ class BotCanvas(QWidget):
         self._crumb = CrumbBar(self._view)
         self._crumb.segment_clicked.connect(self._on_crumb_segment_clicked)
         self._crumb.close_requested.connect(self.step_back)
-        self._crumb.save_requested.connect(lambda: self.definition_save_requested.emit(False))
+        self._crumb.save_requested.connect(self._on_crumb_save)
+        self._crumb.release_requested.connect(self.template_release_requested)
         self._crumb.save_as_requested.connect(self.definition_save_as_requested)
         self._crumb.revert_requested.connect(self.definition_revert_requested)
         self._crumb.setVisible(False)
@@ -1395,8 +1511,13 @@ class BotCanvas(QWidget):
         self._param_panel.role_requested.connect(self._on_role_requested)
         self._param_panel.link_input_requested.connect(self._on_link_requested)
         self._param_panel.unlink_input_requested.connect(self.unlink_param)
+        self._param_panel.link_nested_input_requested.connect(self._on_nested_link_requested)
+        self._param_panel.unlink_nested_input_requested.connect(self.unlink_nested_input)
         self._param_panel.promote_node_requested.connect(self._on_promote_node_requested)
         self._param_panel.definition_changed.connect(self._on_definition_changed)
+        self._param_panel.add_setup_target_requested.connect(self._on_add_setup_target_requested)
+        self._param_panel.remove_setup_target_requested.connect(self.remove_setup_target)
+        self._toolbar.template_chip_clicked.connect(self.setup_tab_requested)
         self._param_panel.add_port_requested.connect(self._on_add_port_requested)
         self._param_panel.delete_port_requested.connect(self._on_delete_port_requested)
         self._scene.save_region_as_subgraph_requested.connect(self.save_region_as_subgraph)
@@ -1409,6 +1530,17 @@ class BotCanvas(QWidget):
 
         # ── Placeholder — shown until the first bot is loaded ────────
         self._placeholder = _BotLibraryPanel(self)
+        #: The library dialog's own panel, while that dialog is up.
+        self._library_dialog_panel: _BotLibraryPanel | None = None
+        #: The last count announced on ``setup_left_changed``.
+        self._setup_left = 0
+        #: The update waiting for the open bot, the bot it is for, and the ``template``
+        #: it was worked out against: see ``set_template_update``.
+        self._template_update: template_diff.TemplateUpdate | None = None
+        self._template_update_for: str | None = None
+        self._template_ref_seen: dict | None = None
+        #: The last review worked out, and what it was worked out from: see ``template_review``.
+        self._review_seen: tuple[int, str, template_diff.Review | None] | None = None
         self._placeholder.new_bot_requested.connect(self.new_bot_requested)
         self._placeholder.open_bot_requested.connect(self.open_bot_requested)
         self._placeholder.open_recent_requested.connect(self.open_recent_requested)
@@ -1472,8 +1604,11 @@ class BotCanvas(QWidget):
         if not config.is_definition:
             self._doc_path = []
             self._can_revert = False
+        if not config.is_definition and not config.is_template:
+            self._template_hint = ""
         self._refresh_crumb()
         self._show_default_page()
+        self._announce_setup_left()
         self._refresh_collapse_buttons()
         self._reposition_banner()
         self._edit_btn.setEnabled(True)
@@ -1540,6 +1675,39 @@ class BotCanvas(QWidget):
         self._reposition_banner()
 
     @property
+    def is_template(self) -> bool:
+        """Whether the open document is a template draft rather than a bot."""
+        return self._config is not None and self._config.is_template
+
+    def set_template_origin(self, name: str | None, version: int | None = None, latest: int | None = None) -> None:
+        """For a bot made from a template: what Bar B's template chip reads. ``None`` for any other document.
+
+        *latest* is the template's latest released version; one newer than *version* is
+        said on the chip, which is where the update is noticed in the open bot.
+        """
+        behind = name is not None and version is not None and latest is not None and latest > version
+        text = f"{name} v{version}" if name else None
+        self._toolbar.set_template_origin(f"{text} \u2192 v{latest}" if behind else text, update=behind)
+
+    def set_template_context(self, latest_version: int | None, reserved_ids: Iterable[str] = ()) -> None:
+        """For a template draft: its latest released version, for the crumb, and the ids no edit may mint.
+
+        ``reserved_ids`` are every id a released version used (``template_store.used_ids``);
+        the scene keeps them against this draft's id, so nothing opened after it inherits them.
+        """
+        if self._config is None or not self._config.is_template:
+            return
+        self._template_hint = f"latest v{latest_version}" if latest_version else "not released yet"
+        self._scene.set_reserved_ids(self._config.id, reserved_ids)
+        self._refresh_crumb()
+
+    def _on_crumb_save(self) -> None:
+        if self.is_template:
+            self.template_save_requested.emit()
+        else:
+            self.definition_save_requested.emit(False)
+
+    @property
     def crumb_bar(self) -> CrumbBar:
         return self._crumb
 
@@ -1570,6 +1738,7 @@ class BotCanvas(QWidget):
         self._compose_report = ComposeReport()
         self._update_validation_badge()
         self._config = None
+        self._announce_setup_left()
         self._refresh_crumb()
         self._toolbar.set_config(None)
         self._active_state = None
@@ -1600,6 +1769,7 @@ class BotCanvas(QWidget):
         """The library the region page reads definitions from and a pasted instance composes from."""
         self._subgraph_library = library
         self._scene.set_subgraph_library(library)
+        self._param_panel.set_subgraph_library(library)
         self._placeholder.set_subgraph_library(library)
 
     def _definition_for(self, region) -> SubgraphDefinition | None:
@@ -1640,6 +1810,18 @@ class BotCanvas(QWidget):
         """Rebuild the recent files list in the placeholder."""
         self._placeholder.refresh()
 
+    def library_folder(self) -> str | None:
+        """The library folder the user is looking at, by its name on disk, or ``None``.
+
+        The library dialog's while it is up, else the placeholder's while no bot is open.
+        What New Bot opens its folder list on.
+        """
+        if self._library_dialog_panel is not None:
+            return self._library_dialog_panel.current_folder()
+        if self._placeholder.isVisibleTo(self):
+            return self._placeholder.current_folder()
+        return None
+
     def open_library_dialog(self) -> None:
         """Open the bot library as a modal dialog (useful when a bot is already loaded)."""
         from PyQt6.QtWidgets import QDialog, QVBoxLayout
@@ -1660,7 +1842,11 @@ class BotCanvas(QWidget):
         panel.open_recent_requested.connect(dlg.accept)
         panel.open_recent_requested.connect(self.open_recent_requested)
         lay.addWidget(panel)
-        dlg.exec()
+        self._library_dialog_panel = panel
+        try:
+            dlg.exec()
+        finally:
+            self._library_dialog_panel = None
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
@@ -2302,11 +2488,13 @@ class BotCanvas(QWidget):
             self.step_out_to(0)
 
     def step_back(self) -> None:
-        """One level out: the crumb's close button and Alt+Left. Out of a definition when nothing is focused."""
+        """One level out: the crumb's close button and Alt+Left. Out of a definition or draft when nothing is focused."""
         if self.step_out():
             return
         if self.is_definition:
             self.definition_back_requested.emit()
+        elif self.is_template:
+            self.template_close_requested.emit()
 
     def _on_escape(self) -> bool:
         """Esc dismisses what is open before it leaves anything. True when it did something.
@@ -2391,14 +2579,30 @@ class BotCanvas(QWidget):
         top = self._levels[-1] if self._levels else None
         top_region = self._region(top.region_id) if top is not None and top.kind == "region" else None
         definition = self.is_definition
-        if self._config is None or (not definition and not self._levels):
+        # A draft keeps its bar up the whole time, so it is never mistaken for a bot; a
+        # subgraph node's body viewed inside one is still the shared VIEW below.
+        template = self.is_template and not self.viewed_instances
+        if self._config is None or (not definition and not template and not self._levels):
             self._crumb.setVisible(False)
             self._shared_frame.setVisible(False)
             self._focus_frame.setVisible(False)
             return
-        if not definition and not self.viewed_instances and top_region is not None:
+        if template:
+            segments = [Crumb(self._config.name, prefix="Template draft · ")]
+            for lv in self._levels:
+                region = self._region(lv.region_id)
+                label = region.label if region is not None else lv.region_id
+                segments.append(Crumb(label, region.color if lv is top and top_region is not None else None))
+            self._crumb.show_state(
+                CrumbMode.TEMPLATE,
+                segments,
+                hint=self._template_hint,
+                close_tip="Exit Focus Mode" if self._levels else "Close the draft",
+            )
+            self._shared_frame.setVisible(False)
+        elif not definition and not self.viewed_instances and top_region is not None:
             if len(self._levels) == 1:
-                crumbs = [Crumb(f"Focus Mode — {top_region.label}")]
+                crumbs = [Crumb(top_region.label, prefix="Focus Mode — ")]
             else:
                 # A collapsed region stepped into inside another: segment i + 1 is level i,
                 # which is what a click on it steps back out to.
@@ -2601,12 +2805,15 @@ class BotCanvas(QWidget):
 
     def _on_scene_changed(self) -> None:
         self._refresh_collapse_buttons()
+        # Before anything draws the roles: the first node on a blank bot's canvas takes both.
+        self._scene.settle_roles()
         config = self._scene.config
         if config is not None and config.is_definition:
             # Links may have moved: each input takes its params' strictest type, and
             # every linked param its input's value.
-            normalize_input_types(config, NODE_PARAM_SCHEMAS)
+            normalize_input_types(config, NODE_PARAM_SCHEMAS, self._subgraph_library)
             sync_linked_values(config)
+            reresolve_linked_instances(config, self._subgraph_library)
         self._refresh_node_labels()
         self._refresh_node_returns()
         self._refresh_initial()
@@ -2615,11 +2822,16 @@ class BotCanvas(QWidget):
         self._refresh_errors()
         self._scene.refresh_region_states(self._compose_report)
         self._update_validation_badge()
+        self._announce_setup_left()
         self._toolbar.refresh_tag_suggestions()
         self._minimap.fit_to_scene()
         if self._search_bar.isVisible():
             self._on_search_text_changed(self._search_bar.current_text())
         self.config_changed.emit()
+        # After config_changed, not before: an undo, an Apply or a Finish hands the canvas
+        # a new config object, and the controller reads the new base from the one it
+        # holds, which it only swaps for this one on config_changed.
+        self._check_template_ref()
         self._refresh_undo_actions()
 
     def _on_initial_state_requested(self, state_id: str) -> None:
@@ -2693,6 +2905,7 @@ class BotCanvas(QWidget):
         shown_state = self._param_panel.shown_state
         if shown_state is not None and self._config is not None and self._config.is_definition:
             sync_linked_values(self._config, edited_state=shown_state.id)
+            reresolve_linked_instances(self._config, self._subgraph_library)
         # Refresh the dotted-pen flag indicator on the selected edge when flags change.
         shown = self._param_panel.shown_transition
         if shown is not None:
@@ -2798,7 +3011,12 @@ class BotCanvas(QWidget):
         else:
             defn = self._definition_for(region)
             if defn is not None:
-                reresolve_member_params(config, region, defn)
+                reresolve_member_params(config, region, defn, self._subgraph_library)
+            if config.is_definition:
+                # A nested subgraph node's linked input is the outer input's default: an
+                # edit here is an edit to that input, and to everything else linked to it.
+                sync_linked_values(config, edited_state=region.id)
+                reresolve_linked_instances(config, self._subgraph_library)
             self._scene.refresh_call_nodes()
             self._scene.refresh_errors()
         self.config_changed.emit()
@@ -2843,7 +3061,7 @@ class BotCanvas(QWidget):
             QMessageBox.critical(self, "Save Region as Subgraph", str(exc))
             return False
         library.save(defn)
-        instance_id = mint_instance_id(name, taken_ids(work))
+        instance_id = self._scene.mint_instance_id(name, work)
         id_map = convert_region_to_instance(work, region_id, defn, source, instance_id=instance_id)
         composed, report = compose_bot(work, library)
         self._undo_mgr.cancel_debounce()
@@ -3072,6 +3290,111 @@ class BotCanvas(QWidget):
         else:
             self.link_param(state_id, key, new_input=dlg.new_input())
 
+    def _nested_instance(self, region_id: str):
+        """A subgraph node of the open definition document, by its region id, or None."""
+        config = self._scene.config
+        if config is None or config.definition is None:
+            return None
+        return next((r for r in config.regions if r.id == region_id and r.source is not None), None)
+
+    def _nested_input_field(self, region, name: str):
+        """The ``ParamField`` of one input of a nested subgraph node, or None if it has no such input.
+
+        *name* is a key of the node's ``source.inputs``: a named input, or a promoted
+        node's ``<member>.<key>``.
+        """
+        defn = self._definition_for(region)
+        ikey = resolve_instance_key(defn, name) if defn is not None else None
+        return instance_key_field(ikey, self._subgraph_library) if ikey is not None else None
+
+    def link_nested_input(
+        self,
+        region_id: str,
+        name: str,
+        *,
+        existing: str | None = None,
+        new_input: SubgraphInput | None = None,
+    ) -> bool:
+        """Link one input of a nested subgraph node to an input of the definition around it. One undo step.
+
+        ``name`` is the key the nested node stores the value under: a named input, or
+        ``<member>.<key>`` for one row of a promoted node's input group.
+
+        The nested node's input is then set through the outer one: by this definition's
+        default, and by each of its own subgraph nodes. ``existing`` names an outer input
+        already declared; otherwise ``new_input`` is declared with this one link. As with
+        a param, the linked value *is* the input's default: it takes the input's, or for
+        an input with no default gives it the value the nested node holds. An input left
+        with none forwards nothing, and the nested node follows its own definition.
+        """
+        region = self._nested_instance(region_id)
+        if region is None or self._nested_input_field(region, name) is None:
+            return False
+        meta = self._scene.config.definition
+        if any(b.region == region_id and b.param == name for i in meta.inputs for b in i.bindings):
+            return False  # set from one place only
+        binding = SubgraphInputBinding(region=region_id, param=name)
+        if existing is not None:
+            target = next((i for i in meta.inputs if i.name == existing), None)
+            if target is None:
+                return False
+            self._begin_definition_edit("Link to subgraph input")
+            target.bindings.append(binding)
+        elif new_input is not None:
+            if any(i.name == new_input.name for i in meta.inputs):
+                return False
+            self._begin_definition_edit("Link to subgraph input")
+            meta.inputs.append(new_input.model_copy(update={"bindings": [binding]}))
+        else:
+            return False
+        self._end_nested_link_edit(region)
+        return True
+
+    def unlink_nested_input(self, region_id: str, name: str) -> bool:
+        """Unlink one input of a nested subgraph node. The outer input stays, and the node keeps the value. One undo step."""
+        region = self._nested_instance(region_id)
+        if region is None:
+            return False
+        meta = self._scene.config.definition
+
+        def linked(b) -> bool:
+            return b.region == region_id and b.param == name
+
+        if not any(linked(b) for i in meta.inputs for b in i.bindings):
+            return False
+        self._begin_definition_edit("Unlink input")
+        for inp in meta.inputs:
+            inp.bindings = [b for b in inp.bindings if not linked(b)]
+        self._end_nested_link_edit(region)
+        return True
+
+    def _end_nested_link_edit(self, region) -> None:
+        self._on_scene_changed()
+        if self._param_panel.shown_region is region:
+            self._show_call_page(region)
+
+    def _on_nested_link_requested(self, region_id: str, name: str) -> None:
+        region = self._nested_instance(region_id)
+        field = self._nested_input_field(region, name) if region is not None else None
+        if field is None:
+            return
+        dlg = LinkInputDialog(
+            self._scene.config.definition.inputs,
+            # A promoted node's row is keyed <member>.<key>; an input's name has no dot.
+            param_key=name.rpartition(".")[2],
+            param_type=field.type,
+            param_label=field.label,
+            current_value=region.source.inputs.get(name),
+            groups=[(pn.id, pn.label or pn.id) for pn in self._scene.config.definition.panels if pn.kind == "inputs"],
+            parent=self,
+        )
+        if not dlg.exec():
+            return
+        if dlg.choice is not None:
+            self.link_nested_input(region_id, name, existing=dlg.choice)
+        else:
+            self.link_nested_input(region_id, name, new_input=dlg.new_input())
+
     def _on_definition_changed(self) -> None:
         """The signature page wrote into the document: a port renamed, an input or group changed.
 
@@ -3102,6 +3425,294 @@ class BotCanvas(QWidget):
             self._param_panel.show_signature(self._config)
         else:
             self._param_panel.show_idle()
+
+    def set_base_setup_steps(self, steps: Sequence[SetupStep]) -> None:
+        """The setup steps of the open bot, from its template's base version (``setup_steps.steps_for``).
+
+        The controller hands them over when it opens a bot, since reading them takes
+        the template store. A blank fill-in becomes an error on its node from here on,
+        so the errors and the page are worked out again.
+        """
+        if self._config is None:
+            return
+        self._scene.set_base_setup_steps(self._config.id, steps)
+        self._refresh_errors()
+        self._update_validation_badge()
+        self._announce_setup_left()
+
+    @property
+    def setup_steps_left(self) -> int:
+        """How many setup steps the open bot has left; 0 for a draft, a definition or a bot with none."""
+        config = self._config
+        if config is None or config.is_template or config.is_definition:
+            return 0
+        return sum(1 for status in self._scene.setup_progress() if not status.done)
+
+    def _announce_setup_left(self) -> None:
+        """Say that the setup steps, or how the document stands against them, may have moved."""
+        left = self.setup_steps_left
+        if left != self._setup_left:
+            self._setup_left = left
+            self.setup_left_changed.emit(left)
+        self.setup_changed.emit()
+
+    # -- A template update, reviewed from the Setup tab -----------------------
+
+    def set_template_update(self, update: template_diff.TemplateUpdate | None) -> None:
+        """The update waiting for the open bot (``template_diff.load_update``), or None.
+
+        The controller hands it over when it opens a bot, since reading it takes the
+        template store, and again whenever the bot's ``template`` moves.
+        """
+        config = self._config
+        self._template_update = update
+        self._review_seen = None
+        self._template_update_for = config.id if config is not None else None
+        ref = config.template if config is not None else None
+        self._template_ref_seen = ref.model_dump() if ref is not None else None
+        self._announce_setup_left()
+
+    @property
+    def template_review(self) -> template_diff.Review | None:
+        """What the newer template versions change in the open bot, worked out from it as it stands now.
+
+        None for a bot that is not behind, and for any document but the bot the update
+        was read for.
+
+        Asked on every change to the scene while a review is waiting, and working one out
+        trial-applies each change to a copy of the bot. So the last answer is kept
+        against the bot as it was written out then, and a refresh that leaves the bot
+        as it was -- a selection, a tab switch -- costs one dump and no diff.
+        """
+        update, config = self._template_update, self._config
+        if update is None or config is None or config.template is None or config.is_template:
+            return None
+        if config.id != self._template_update_for or config.template.version != update.base_version:
+            return None
+        written = config.model_dump_json()
+        seen = self._review_seen
+        if seen is None or seen[0] != id(update) or seen[1] != written:
+            seen = self._review_seen = (
+                id(update),
+                written,
+                template_diff.review(update, config, self._subgraph_library),
+            )
+        return seen[2]
+
+    def _check_template_ref(self) -> None:
+        """Say so when the open bot's ``template`` is not the one the controller last read for."""
+        config = self._config
+        if config is None or config.id != self._template_update_for:
+            return
+        ref = config.template.model_dump() if config.template is not None else None
+        if ref != self._template_ref_seen:
+            self._template_ref_seen = ref
+            self.template_ref_changed.emit()
+
+    def apply_template_change(self, change_id: str) -> bool:
+        """Apply one change of the review to the open bot, as one undo step. Returns whether it was applied.
+
+        A change is a value in the bot file, so it lands in Edit mode. One that takes a
+        fight's duel strategy with it asks first.
+        """
+        review = self.template_review
+        change = review.change(change_id) if review is not None else None
+        if change is None or change.status is template_diff.Status.BLOCKED:
+            return False
+        self.enter_edit_mode()
+        if self._mode != BotMode.EDIT or self._config is None:
+            return False
+        try:
+            applied = template_diff.apply(
+                self._config, change, place=self._scene.free_position, library=self._subgraph_library
+            )
+        except Exception:
+            logger.exception("Template change %s could not be applied", change_id)
+            return False
+        lost, profiles = self._strategies_lost_by(applied)
+        if lost:
+            names = ", ".join(f"'{name}'" for name in lost)
+            where = ", ".join(f"'{name}'" for name in profiles)
+            answer = QMessageBox.question(
+                self,
+                "Apply template change",
+                f"This change removes {names}, which {'has' if len(lost) == 1 else 'have'} a duel strategy "
+                f"in the combat {'profile' if len(profiles) == 1 else 'profiles'} {where}. The strategy stays "
+                "in the profile, but nothing will use it.\n\n"
+                "Apply the change anyway?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return False
+        self._on_about_to_change(f"Apply template change: {change.title}")
+        self._restore(applied)
+        return True
+
+    def _strategies_lost_by(self, applied: BotConfig) -> tuple[list[str], list[str]]:
+        """The fights whose duel strategy would be lost in ``applied``, by label, and the profiles losing one.
+
+        Every combat profile of the bot is asked, not only the active one: the others
+        lose the fight just the same, and nothing would say so when one is next made active.
+        """
+        config = self._config
+        if config is None:
+            return [], []
+        try:
+            profiles = list_bot_strategies(config.id)
+        except Exception:
+            logger.exception("Could not read the combat profiles of %s", config.name)
+            return [], []
+        lost: list[str] = []
+        names: list[str] = []
+        for profile in profiles:
+            found = template_diff.strategies_lost(profile, config, applied)
+            if found:
+                names.append(profile.name)
+                lost.extend(label for label in found if label not in lost)
+        return lost, names
+
+    def finish_template_review(self) -> bool:
+        """End the review: advance the bot's base to the latest version, as one undo step.
+
+        Skipped changes are not offered again, because against the new base the
+        template has not changed them. Nothing reaches the file until the bot is saved.
+        """
+        update, config = self._template_update, self._config
+        if self.template_review is None or update is None or config is None:
+            return False
+        self.enter_edit_mode()
+        if self._mode != BotMode.EDIT:
+            return False
+        self._on_about_to_change("Finish template review")
+        self._restore(template_diff.finish(config, update))
+        return True
+
+    @property
+    def has_setup_steps(self) -> bool:
+        """Whether the open bot has setup steps at all, done or not. False for a draft."""
+        config = self._config
+        return config is not None and not config.is_template and bool(self._scene.step_list)
+
+    @property
+    def subgraph_library(self) -> SubgraphLibrary | None:
+        """The session's subgraph library, which a subgraph node's inputs are read through."""
+        return self._subgraph_library
+
+    def setup_progress(self) -> list[setup_steps.StepStatus]:
+        """How the open document stands against its template's setup steps, in order."""
+        return self._scene.setup_progress()
+
+    def show_setup_target(self, display_id: str) -> None:
+        """Go to the node a setup step asks about: a state id, or a region id for a subgraph node.
+
+        A fill-in is a value in the bot file, so this is where it is filled: Edit mode,
+        with the node selected and Properties on it. A click in Run mode switches first.
+        """
+        self.enter_edit_mode()
+        if self._mode != BotMode.EDIT:
+            return
+        # Selecting is what brings Properties forward, on the node's page.
+        self.select_state(display_id)
+
+    # -- A template draft's steps, edited from the Setup tab ------------------
+
+    def begin_setup_edit(self, desc: str) -> None:
+        """A typed edit to a draft's blurb or a step's text is about to land: open its debounced undo step."""
+        self._on_panel_edit_starting(desc)
+
+    def begin_setup_change(self, desc: str) -> None:
+        """A discrete edit to a draft's steps is about to land: push its undo step."""
+        self._on_about_to_change(desc)
+
+    def setup_edited(self) -> None:
+        """The Setup tab wrote into the draft: its blurb or its steps, which move what counts as a fill-in."""
+        self._on_scene_changed()
+        self._reshow_selected_node()
+
+    def refresh_setup(self) -> None:
+        """Something outside the graph that a step depends on has moved: the drop list."""
+        self._announce_setup_left()
+
+    def _reshow_selected_node(self) -> None:
+        """Redraw the node page that is up, so its rows follow a change to which of them are fill-ins."""
+        shown = self._param_panel.shown_state
+        if shown is not None:
+            self._show_state_page(shown)
+
+    def _on_add_setup_target_requested(self, state_id: str, key: str) -> None:
+        """A param row's Add to setup step button: ask which step, then make the param its fill-in."""
+        config = self._config
+        if config is None or config.template_meta is None or self._mode != BotMode.EDIT:
+            return
+        steps = config.template_meta.setup
+        menu = popup_menu(self._param_panel)
+        chosen: list[int] = []
+        for index, step in enumerate(steps):
+            act = menu.addAction(f"{index + 1}. {step.text or '(no text yet)'}")
+            act.triggered.connect(lambda _=False, i=index: chosen.append(i))
+        if steps:
+            menu.addSeparator()
+        new = menu.addAction("New step")
+        new.triggered.connect(lambda _=False: chosen.append(len(steps)))
+        menu.exec(QCursor.pos())
+        menu.deleteLater()
+        if chosen:
+            self.add_setup_target(state_id, key, chosen[0])
+
+    def add_setup_target(self, state_id: str, key: str, step_index: int) -> None:
+        """Make a node's param a fill-in of step *step_index*; one past the last step makes a new step for it."""
+        config = self._config
+        if config is None or config.template_meta is None:
+            return
+        steps = config.template_meta.setup
+        target = SetupTarget(state=state_id, param=key)
+        if any(t == target for step in steps for t in step.targets):
+            return
+        self._on_about_to_change("Add setup target")
+        if step_index >= len(steps):
+            steps.append(SetupStep(text=""))
+        steps[min(step_index, len(steps) - 1)].targets.append(target)
+        self.setup_edited()
+
+    def remove_setup_target(self, state_id: str, key: str) -> None:
+        """Stop a node's param being a fill-in: what its step chip does when clicked."""
+        config = self._config
+        if config is None or config.template_meta is None:
+            return
+        target = SetupTarget(state=state_id, param=key)
+        holders = [step for step in config.template_meta.setup if target in step.targets]
+        if not holders:
+            return
+        self._on_about_to_change("Remove setup target")
+        for step in holders:
+            step.targets.remove(target)
+        self.setup_edited()
+
+    def import_drops_for(self, state_id: str) -> None:
+        """Import one fight's drops from its wiki page, and record the page on the fight.
+
+        What the node page's own Import does, reached from the drops step in the Setup
+        tab. The drop list is the bot file's, so it happens in Edit mode. Called from a
+        synchronous slot: the dialog blocks.
+        """
+        from bartlebot.gui.wiki_import_dialog import WikiImportDialog  # noqa: PLC0415
+
+        self.enter_edit_mode()
+        config = self._config
+        state = next((s for s in config.states if s.id == state_id), None) if config is not None else None
+        if state is None or self._mode != BotMode.EDIT:
+            return
+        dialog = WikiImportDialog(parent=self.window())
+        if not dialog.exec():
+            return
+        entries, page = dialog.selected_entries(), dialog.selected_page()
+        if page and state.params.get(WIKI_PAGE_PARAM) != page:
+            self._on_about_to_change("Import drops")
+            state.params[WIKI_PAGE_PARAM] = page
+            self._on_scene_changed()
+            self._reshow_selected_node()
+        if entries:
+            self.drops_imported.emit(entries)
 
     def _show_state_page(self, state) -> None:
         config = self._scene.config
@@ -3141,12 +3752,25 @@ class BotCanvas(QWidget):
             links=links,
             promoted_group=group,
             field_types=types,
+            **self._fill_marks(state.id),
         )
+
+    def _fill_marks(self, state_id: str) -> dict[str, dict[str, str]]:
+        """The node page's fill-in keywords for *state_id*: placeholders in a bot, step pills in a draft."""
+        config = self._scene.config
+        mine = {key: fill for (sid, key), fill in self._scene.fill_ins().items() if sid == state_id}
+        if config is not None and config.is_template:
+            return {
+                "step_chips": {key: f"Setup step {fill.number}" for key, fill in mine.items()},
+                "step_addable": self._mode == BotMode.EDIT and self._scene.folded_node_of(state_id) is None,
+            }
+        return {"fill_hints": {key: fill.step.text for key, fill in mine.items()}}
 
     def _show_call_page(self, region) -> None:
         config = self._scene.config
         if config is None:
             return
+        self._param_panel.call_page.set_fill_ins(self._scene.fill_ins(), draft=config.is_template)
         self._param_panel.show_call(
             region, self._definition_for(region), self._compose_report.regions.get(region.id), config
         )
@@ -3155,6 +3779,7 @@ class BotCanvas(QWidget):
         """Run the expensive validation pass after a short debounce from param edits."""
         self._refresh_errors()
         self._update_validation_badge()
+        self._announce_setup_left()
 
     def _on_select_edge_requested(self, transition) -> None:
         """Select the edge on the canvas that corresponds to *transition* and center it."""
@@ -3289,10 +3914,14 @@ class BotCanvas(QWidget):
             return [], []
         error_lines: list[str] = []
         warning_lines: list[str] = []
+        if not config.states and not config.is_definition:
+            # A blank bot. An error, so Run is held back as it is for any other.
+            error_lines.append(NO_NODES_ERROR)
         reachable = _reachable_states(config)
+        fills = self._scene.fill_ins()
         for state in config.states:
             name = state.label or state.id
-            _, _, err_reasons, warn_reasons = _validate_node(state, config, reachable)
+            _, _, err_reasons, warn_reasons = _validate_node(state, config, reachable, fills, self._subgraph_library)
             folded = self._scene.folded_node_of(state.id)
             if folded is not None:
                 # Named through the node it is drawn as. For a call node, without what is

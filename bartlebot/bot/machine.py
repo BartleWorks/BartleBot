@@ -116,6 +116,11 @@ class BotMachine:
         self._health_monitor: ClientHealthMonitor | None = None
         # Who can port to whom, surveyed before the run. See the port_map property.
         self._port_map: PortMap | None = None
+        # What a node keeps for its own rerun, by node type. A node cancelled by the ambient
+        # combat watcher is run again from the start (see bartlebot/nodes/CLAUDE.md), and this
+        # is the only thing that outlives the cancel: handle_level_scaling keeps where each
+        # client marked, so the rerun does not mark again somewhere on the way to the Scales.
+        self.node_scratch: dict[str, object] = {}
         # Which clients have been seen sharing a zone, realm and instance. Keeps only the
         # latest check until run() starts the loading watcher that says when one goes stale.
         self._together = sightings.TogetherRecord(retain=False)

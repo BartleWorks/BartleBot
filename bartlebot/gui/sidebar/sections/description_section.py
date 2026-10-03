@@ -1,13 +1,13 @@
 """The bot's own description, under a collapsible ``Description`` header.
 
-The description heads both option surfaces — read-only above Setup, editable above
+The description heads both option surfaces — read-only above Option Values, editable above
 Options — because the four bots carrying multi-line ``REQUIREMENTS:`` blocks say
 things like "change the client resolution to 800x600 before running", and that is
 exactly the text eliding it into the header bar would have hidden.
 
 Two things fall out of that:
 
-- **Options owns the only editor.**  Setup is a values surface, and the description
+- **Options owns the only editor.**  Option Values is a values surface, and the description
   is authorial; the same split that puts declarations in Options puts the writable
   copy there.  The read-only copy is not a lesser variant of the editor — it
   is a wrapping label, so a long block is read in full rather than through a
@@ -20,10 +20,10 @@ Two things fall out of that:
   of bots scrolled a viewport while the other half held blank space above the
   options they had come to edit.  Eight lines fits 94% of them; the three gauntlets
   whose ``REQUIREMENTS`` blocks run to 20 lines still scroll here, which is the same
-  split as ever — the wrapping label above Setup is where a long block is *read*.
+  split as ever — the wrapping label above Option Values is where a long block is *read*.
 
 **An empty description stands in for itself with the one the graph implies**
-(``bartlebot/bot_summary.py``).  Above Setup it is shown in italics, so it never reads
+(``bartlebot/bot_summary.py``).  Above Option Values it is shown in italics, so it never reads
 as something the author wrote.  Above Options it sits under the empty editor with a
 *Use this* link rather than in the placeholder, which Qt draws as one unwrapped line and
 clips — and the generated sentence is usually longer than the prompt.  It is never

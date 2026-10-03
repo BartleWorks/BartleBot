@@ -59,7 +59,7 @@ Options. The author sets the default; the user may overrule it.
 is the one -- and a bot holding one cannot be Separate. `separate_blocked_by` is the rule, and three
 places enforce it, as with restricted zones:
 
-1. the Setup and Options rows gray out Separate, naming the nodes;
+1. the Option Values and Options rows gray out Separate, naming the nodes;
 2. the canvas marks the node an error while the bot's file declares Separate;
 3. `AppController._check_player_realms` refuses the run, which is what a hand-edited file or an
    override from before the node was added reaches.

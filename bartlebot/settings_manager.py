@@ -624,7 +624,7 @@ class SettingsManager:
         Machine configuration, like the friend name above: a shared bot file naming a
         realm would herd every user who runs it into one place, which is the opposite of
         what a favorite realm is for. The node reads it as the ``Favorite Realm`` bot
-        option, so a per-bot override in Setup still wins over this.
+        option, so a per-bot override in Option Values still wins over this.
         """
         return str(self.get_general("favorite_realm", default="") or "")
 

@@ -1,0 +1,253 @@
+{
+  "id": "ca47533c-be03-451e-a3b7-778e2b6fbab6",
+  "name": "Gauntlet Farmer",
+  "version": "1.0",
+  "clients": "all",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
+  "drops": [],
+  "authors": "BartleBot",
+  "tags": [
+    "Gauntlet"
+  ],
+  "options": [],
+  "states": [
+    {
+      "id": "t_11",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 440.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "refill_potions": true,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_12",
+      "node_type": "teleport_to_friend",
+      "label": "Teleport to friend on gauntlet sigil",
+      "position": {
+        "x": 880.0,
+        "y": 0.0
+      },
+      "params": {
+        "target_hooked_player": false,
+        "target_player": 0,
+        "to_zone": ""
+      },
+      "notes": "Friend account should be unhooked and standing on the gauntlet sigil. Ensure that there are no conflicting interaction items at the chosen location, such as other gauntlets, the Bank, etc."
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.00023960265835398786,
+        "y": -0.0004109813348458502
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0002396026583,
+        "y": 89.99958901866515
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      }
+    },
+    {
+      "id": "t_13",
+      "node_type": "enter_gauntlet",
+      "label": "Enter gauntlet",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "dungeon_zone": "",
+        "gauntlet_name": ""
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "check_health_and_mana",
+      "label": "Check health and mana",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "health_threshold": 0.5,
+        "mana_threshold": 0.15
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320.0,
+        "y": 0.0
+      },
+      "params": {}
+    }
+  ],
+  "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_11",
+      "dest": "t_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_12",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_sync_players_1_state_2",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    }
+  ],
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in The Commons",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "WizardCity/WC_Hub"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.00023960265835398786,
+          "y": -0.0004109813348458502
+        }
+      }
+    }
+  ],
+  "template_meta": {
+    "blurb": "Farms a housing gauntlet: ports to an unhooked friend on its sigil, runs the nodes you add, and repeats, going back to The Commons for potions when they run low.\n\nAdd the nodes that clear the gauntlet between Enter gauntlet and Check health and mana. Set the Quicksell keep list from the gauntlet's drops.",
+    "setup": [
+      {
+        "text": "Record entering the gauntlet",
+        "targets": [
+          {
+            "state": "t_13",
+            "param": "dungeon_zone"
+          }
+        ]
+      },
+      {
+        "text": "Import the drops of the gauntlet's fights from their wiki pages",
+        "targets": [
+          {
+            "field": "drops"
+          }
+        ]
+      }
+    ]
+  }
+}

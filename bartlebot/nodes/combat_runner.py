@@ -56,7 +56,8 @@ def resolve_combat(
       1. Get bot_id from machine.bot_config.id.
       2. Look up active BotCombatStrategy UUID in SettingsManager.
       3. Load BotCombatStrategy (the active combat profile); if use_default_strategy=True use the BCS default,
-         otherwise find the StateAssignment whose state_ids contains machine.state,
+         otherwise find the StateAssignment whose fight is machine.state -- by the
+         enemy the node names first, then by state id, see ``bartlebot.fight_keys`` --
          falling back to the BCS default when no assignment covers the state.
       4. Find the DuelCombatStrategy that one links -- in the profile first, then
          the library; an unset one means the built-in default.
@@ -71,6 +72,7 @@ def resolve_combat(
     """
     # Lazy imports to avoid circular imports and keep startup fast.
     from bartlebot.combat_profile import StrategyLookup  # noqa: PLC0415
+    from bartlebot.fight_keys import bind  # noqa: PLC0415
     from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415
     from bartlebot.strategy_store import load_bot_strategy  # noqa: PLC0415
 
@@ -100,7 +102,7 @@ def resolve_combat(
         assignment_source = "default strategy"
     else:
         current_state: str = getattr(machine, "state", "")
-        assignment = bcs.find_assignment_for_state(current_state)
+        assignment = bind(bcs, bot_cfg).get(current_state)
         dcs_id = assignment.duel_combat_strategy_id if assignment is not None else None
         # An unlinked assignment is equivalent to no assignment at all.
         if dcs_id:

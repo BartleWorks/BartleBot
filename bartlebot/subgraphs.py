@@ -47,6 +47,8 @@ from bartlebot.bot.schema import (
     RegionModel,
     StateModel,
     SubgraphDefinition,
+    SubgraphInput,
+    SubgraphPanel,
     SubgraphPort,
     SubgraphSource,
     TransitionModel,
@@ -107,8 +109,8 @@ def taken_ids(config: BotConfig) -> set[str]:
     return {r.id for r in config.regions} | {s.id for s in config.states}
 
 
-def mint_instance_id(name: str, existing: Iterable[str]) -> str:
-    """A fresh linked-region id ``<slug>_<n>`` for a definition called ``name``.
+def mint_instance_id(name: str, existing: Iterable[str], prefix: str = "") -> str:
+    """A fresh linked-region id ``<prefix><slug>_<n>`` for a definition called ``name``.
 
     ``n`` is one above every number the slug already carries in ``existing`` --
     whether as a region id (``sync_players_2``) or as the head of a state id
@@ -116,8 +118,11 @@ def mint_instance_id(name: str, existing: Iterable[str]) -> str:
     ordinary state). Never the lowest free number, for the reason
     ``EditScene._unique_id`` gives: combat assignments key on state ids, and a
     recycled instance id would hand a deleted instance's strategies to the next.
+
+    ``prefix`` is ``t_`` in a template draft (``t_sync_players_1``) and empty in a bot,
+    and only ids carrying it are counted, so the two never number against each other.
     """
-    slug = instance_slug(name)
+    slug = f"{prefix}{instance_slug(name)}"
     pattern = re.compile(rf"^{re.escape(slug)}_(\d+)(?:_|$)")
     highest = 0
     for i in existing:
@@ -341,6 +346,119 @@ def node_panels(defn: SubgraphDefinition | DefinitionMeta):
     return [p for p in defn.panels if p.kind == "node"]
 
 
+@dataclass(frozen=True)
+class InstanceKey:
+    """One key of an instance's ``source.inputs``, resolved against the instance's definition.
+
+    Either a named ``input``, or ``key`` of the member a node ``panel`` exposes whole
+    (stored as ``<member>.<key>``). The one place such a key is told apart: a link into
+    a nested instance names one, so its type, where it lands and how it is drawn all
+    come through here, and a new kind of key is added here and nowhere else.
+    """
+
+    defn: SubgraphDefinition
+    name: str
+    input: SubgraphInput | None = None
+    panel: SubgraphPanel | None = None
+    key: str | None = None
+
+
+def resolve_instance_key(defn: SubgraphDefinition, name: str) -> InstanceKey | None:
+    """What ``name`` sets on an instance of ``defn``, or None when the definition has no such key."""
+    named = next((i for i in defn.inputs if i.name == name), None)
+    if named is not None:
+        return InstanceKey(defn, name, input=named)
+    member, dot, key = name.partition(".")
+    panel = next((p for p in node_panels(defn) if p.member == member), None) if dot else None
+    if panel is not None and key and any(s.id == member for s in defn.states):
+        return InstanceKey(defn, name, panel=panel, key=key)
+    return None
+
+
+def nested_key(defn: SubgraphDefinition | BotConfig, binding, library: SubgraphLibrary | None) -> InstanceKey | None:
+    """The key of a nested instance a binding names, resolved against that instance's definition.
+
+    None for a member binding, with no library, and when the instance, its definition
+    or the key is gone.
+    """
+    if binding.region is None or library is None:
+        return None
+    region = next((r for r in defn.regions if r.id == binding.region and r.source is not None), None)
+    inner = library.get(region.source.subgraph_id) if region is not None else None  # type: ignore[union-attr]
+    return resolve_instance_key(inner, binding.param) if inner is not None else None
+
+
+def instance_key_type(ikey: InstanceKey, schemas: Mapping[str, Sequence[object]]) -> str | None:
+    """The param type a value for ``ikey`` must have: the input's, or the promoted param's."""
+    if ikey.input is not None:
+        return ikey.input.type
+    return promoted_param_type(ikey.defn, ikey.panel, ikey.key or "", schemas)
+
+
+def instance_key_targets(
+    ikey: InstanceKey, library: SubgraphLibrary | None, region_id: str | None = None, _depth: int = 0
+) -> list[tuple[str, str]]:
+    """``(state id, param key)`` of every param a value for ``ikey`` lands on. Ids as :func:`input_targets` gives them."""
+    if ikey.input is not None:
+        return input_targets(ikey.defn, ikey.input, library, region_id, _depth)
+
+    def here(local: str) -> str:
+        return member_id(region_id, local) if region_id is not None else local
+
+    assert ikey.panel is not None and ikey.key is not None
+    shared = ikey.panel.bindings.get(ikey.key, [])
+    return [(here(ikey.panel.member or ""), ikey.key), *((here(b.state), b.param) for b in shared)]
+
+
+def forwarded_inputs(defn: SubgraphDefinition, source: SubgraphSource, region_id: str) -> dict[str, object]:
+    """What an instance of ``defn`` hands the nested instance ``region_id``: inner key -> value.
+
+    A key is whatever the nested instance's own ``source.inputs`` is keyed by: a named
+    input, or a promoted node's ``<member>.<key>``.
+
+    The same order as a member's param: the instance's value, then the input's default.
+    An input with neither forwards nothing, so the nested instance keeps what the
+    definition stored for it, or follows its own default.
+    """
+    out: dict[str, object] = {}
+    for inp in defn.inputs:
+        value = source.inputs.get(inp.name)
+        if value is None:
+            value = inp.default
+        if value is None:
+            continue
+        for b in inp.bindings:
+            if b.region == region_id:
+                out[b.param] = value
+    return out
+
+
+def input_targets(
+    defn: SubgraphDefinition | BotConfig,
+    inp,
+    library: SubgraphLibrary | None,
+    region_id: str | None = None,
+    _depth: int = 0,
+) -> list[tuple[str, str]]:
+    """``(state id, param key)`` of every param ``inp`` lands on, through nested instances.
+
+    Ids are those of the instance ``region_id`` in a bot, or ``defn``'s own with none.
+    A link into a nested instance is followed to the members its input sets, which
+    needs ``library``; without one, or past a definition that is gone, it lands nowhere.
+    """
+
+    def here(local: str) -> str:
+        return member_id(region_id, local) if region_id is not None else local
+
+    out: list[tuple[str, str]] = []
+    for b in inp.bindings:
+        if b.region is None:
+            out.append((here(b.state), b.param))
+        elif _depth < MAX_DEPTH and (found := nested_key(defn, b, library)) is not None:
+            out.extend(instance_key_targets(found, library, here(b.region), _depth + 1))
+    return out
+
+
 def resolve_member_params(defn: SubgraphDefinition, def_state: StateModel, source: SubgraphSource) -> dict:
     """``instance value (if set) > input default > definition value`` for one member.
 
@@ -419,7 +537,8 @@ def _materialize_local(
     """Compose ``defn`` into definition-local ids, nested instances recomposed from the library.
 
     A nested instance is stored in the definition as a snapshot, the way a bot stores
-    one, and recomposed here by the same rules a bot's is; held, it keeps the
+    one, and recomposed here by the same rules a bot's is, with the inputs this
+    instance forwards to it (:func:`forwarded_inputs`); held, it keeps the
     definition's snapshot and says so. Port nodes and the edges touching them are
     dropped once the port map has been read off the result. Plain regions are the
     definition's own layout and are not composed.
@@ -435,6 +554,8 @@ def _materialize_local(
     )
     warnings: list[str] = []
     for inner in outermost_linked_regions(graph.regions):
+        # An outer input linked to one of the inner's goes in through the inner signature.
+        inner.source.inputs.update(forwarded_inputs(defn, source, inner.id))  # type: ignore[union-attr]
         status = _recompose(graph, inner, library, stack, nested=True)
         if status.kind in ("missing", "invalid"):
             raise LookupError(f"nested subgraph '{inner.source.subgraph_id}' is missing")  # type: ignore[union-attr]
@@ -698,20 +819,48 @@ def sync_linked_values(config: BotConfig, *, edited_state: str | None = None) ->
     A linked param *is* its input's default: edit either and the other follows, and so
     does every other param linked to the same input. A param linked to a promoted node's
     param follows that param the same way. ``edited_state`` names the node whose params
-    were just edited, and they win; otherwise (a default edited on the signature page, a
-    new link) the defaults win. An input with no default takes the first linked value.
+    were just edited -- or the nested instance whose inputs were -- and they win;
+    otherwise (a default edited on the signature page, a new link) the defaults win.
+    An input with no default takes the first linked value.
+
+    A nested instance's linked input is kept the same way, in its ``source.inputs``:
+    unset there while the default is None, so the instance follows its own definition.
+    A link to an instance that is no longer one (deleted, or detached) is dropped
+    first, and with it an input that linked to nothing else, as on a node's delete.
     """
     meta = config.definition
     if meta is None:
         return
     by_id = {s.id: s for s in config.states}
+    instances = {r.id: r for r in config.regions if r.source is not None}
+
+    emptied = set()
+    for inp in meta.inputs:
+        kept = [b for b in inp.bindings if b.region is None or b.region in instances]
+        if inp.bindings and not kept:
+            emptied.add(inp.name)
+        inp.bindings = kept
+    if emptied:
+        meta.inputs = [i for i in meta.inputs if i.name not in emptied]
 
     def value_of(state_id: str, key: str):
         state = by_id.get(state_id)
         return state.params.get(key) if state is not None else None
 
+    def bound_value(b):
+        if b.region is not None:
+            return instances[b.region].source.inputs.get(b.param)  # type: ignore[union-attr]
+        return value_of(b.state, b.param)
+
     def spread(targets, value) -> None:
         for b in targets:
+            if b.region is not None:
+                inputs = instances[b.region].source.inputs  # type: ignore[union-attr]
+                if value is None:
+                    inputs.pop(b.param, None)
+                elif inputs.get(b.param) != value:
+                    inputs[b.param] = value
+                continue
             state = by_id.get(b.state)
             if state is not None and state.params.get(b.param) != value:
                 state.params[b.param] = value
@@ -719,11 +868,11 @@ def sync_linked_values(config: BotConfig, *, edited_state: str | None = None) ->
     for inp in meta.inputs:
         if not inp.bindings:
             continue
-        edited = [b for b in inp.bindings if b.state == edited_state]
+        edited = [b for b in inp.bindings if edited_state is not None and edited_state in (b.state, b.region)]
         if edited:
-            inp.default = value_of(edited[0].state, edited[0].param)
+            inp.default = bound_value(edited[0])
         elif inp.default is None:
-            inp.default = value_of(inp.bindings[0].state, inp.bindings[0].param)
+            inp.default = bound_value(inp.bindings[0])
         spread(inp.bindings, inp.default)
     for panel in node_panels(meta):
         member = panel.member or ""
@@ -739,13 +888,20 @@ def sync_linked_values(config: BotConfig, *, edited_state: str | None = None) ->
             spread(extra, value)
 
 
-def reresolve_member_params(config: BotConfig, region: RegionModel, defn: SubgraphDefinition) -> None:
+def reresolve_member_params(
+    config: BotConfig,
+    region: RegionModel,
+    defn: SubgraphDefinition,
+    library: SubgraphLibrary | None = None,
+    _depth: int = 0,
+) -> None:
     """Rewrite every direct member's params from ``defn`` and the instance's inputs. In place.
 
     What an input edit on the call node's page needs, without a full recompose: the
     members stay, only their params move. A member with no state of that local id in
     ``defn`` (one from a nested instance, or one the definition no longer has) is
-    left alone.
+    left alone. With ``library``, an input linked into a nested instance is forwarded
+    to it and that instance's members re-resolved in turn, as a recompose would.
     """
     source = region.source
     if source is None:
@@ -758,6 +914,38 @@ def reresolve_member_params(config: BotConfig, region: RegionModel, defn: Subgra
         def_state = def_states.get(local) if local is not None else None
         if def_state is not None:
             state.params = resolve_member_params(defn, def_state, source)
+    if library is None or _depth >= MAX_DEPTH:
+        return
+    by_id = {r.id: r for r in config.regions if r.source is not None}
+    for inner_id in dict.fromkeys(b.region for inp in defn.inputs for b in inp.bindings if b.region is not None):
+        stored = next((r for r in defn.regions if r.id == inner_id and r.source is not None), None)
+        inner = by_id.get(member_id(region.id, inner_id))
+        if stored is None or inner is None:
+            continue
+        inner_defn = library.get(inner.source.subgraph_id)  # type: ignore[union-attr]
+        if inner_defn is None:
+            continue
+        # From what the definition stored, not what the bot holds: a value this instance
+        # stops forwarding has to fall back, not linger.
+        inner.source.inputs = {**stored.source.inputs, **forwarded_inputs(defn, source, inner_id)}  # type: ignore[union-attr]
+        reresolve_member_params(config, inner, inner_defn, library, _depth + 1)
+
+
+def reresolve_linked_instances(config: BotConfig, library: SubgraphLibrary | None) -> None:
+    """In a definition document, re-resolve each nested instance one of its inputs links into. In place.
+
+    :func:`sync_linked_values` writes an input's default into the nested instance's
+    inputs; this moves the instance's members to match, as editing its own page would.
+    """
+    meta = config.definition
+    if meta is None or library is None:
+        return
+    linked = {b.region for inp in meta.inputs for b in inp.bindings if b.region is not None}
+    for region in config.regions:
+        if region.id in linked and region.source is not None:
+            defn = library.get(region.source.subgraph_id)
+            if defn is not None:
+                reresolve_member_params(config, region, defn, library)
 
 
 # ---------------------------------------------------------------------------
@@ -1052,8 +1240,13 @@ def contains_subgraph(defn: SubgraphDefinition, subgraph_id: str, library: Subgr
 
 
 def reassign_orphaned_roles(config: BotConfig) -> None:
-    """Move ``initial`` / ``recovery_state`` onto the first state when their holder is gone."""
+    """Move ``initial`` / ``recovery_state`` onto the first state when their holder is gone.
+
+    With no states left there is nothing to hold either, and both are cleared: a blank
+    bot is the one config that loads with empty roles.
+    """
     if not config.states:
+        config.initial = config.recovery_state = ""
         return
     ids = {s.id for s in config.states}
     fallback = config.states[0].id
@@ -1166,8 +1359,22 @@ def definition_problems(
             (getattr(f, "type", None) for f in schemas.get(state.node_type, []) if getattr(f, "key", None) == key), None
         )
 
+    warnings: list[str] = []
+    instances = {r.id: r for r in config.regions if r.source is not None}
     for inp in meta.inputs:
-        types = [t for b in inp.bindings if (t := field_type(b.state, b.param)) is not None]
+        types = [t for b in inp.bindings if b.region is None and (t := field_type(b.state, b.param)) is not None]
+        for b in inp.bindings:
+            if b.region is None or library is None:
+                continue
+            found = nested_key(config, b, library)
+            if found is not None:
+                if (t := instance_key_type(found, schemas)) is not None:
+                    types.append(t)
+            elif b.region in instances and library.get(instances[b.region].source.subgraph_id) is not None:  # type: ignore[union-attr]
+                warnings.append(
+                    f"input '{inp.label or inp.name}' is linked to '{b.param}' of "
+                    f"'{instances[b.region].label}', which no longer has that input"
+                )
         if types and narrowest_type(types) is None:
             errors.append(f"input '{inp.label or inp.name}' binds params of incompatible types ({', '.join(types)})")
     for panel in node_panels(meta):
@@ -1185,17 +1392,30 @@ def definition_problems(
         if defn is not None and contains_subgraph(defn, defn.id, library):
             errors.append(f"'{config.name}' would contain itself, which can never finish composing")
 
-    warnings: list[str] = []
     return errors, warnings
 
 
-def binding_type(defn: SubgraphDefinition | BotConfig, bindings, schemas: Mapping[str, Sequence[object]]) -> str | None:
-    """The narrowest of the bound params' types -- the type an input over ``bindings`` must have."""
+def binding_type(
+    defn: SubgraphDefinition | BotConfig,
+    bindings,
+    schemas: Mapping[str, Sequence[object]],
+    library: SubgraphLibrary | None = None,
+) -> str | None:
+    """The narrowest of the bound params' types -- the type an input over ``bindings`` must have.
+
+    A link into a nested instance counts as that instance's input's type, which takes
+    ``library`` to look up; without one it is left out.
+    """
     from bartlebot.nodes.param_schema import narrowest_type  # noqa: PLC0415
 
     by_id = {s.id: s for s in defn.states}
     types = []
     for b in bindings:
+        if b.region is not None:
+            found = nested_key(defn, b, library)
+            if found is not None and (t := instance_key_type(found, schemas)) is not None:
+                types.append(t)
+            continue
         state = by_id.get(b.state)
         if state is None:
             continue
@@ -1228,7 +1448,9 @@ def promoted_param_type(
     return narrowest_type(types) if types else None
 
 
-def normalize_input_types(config: BotConfig, schemas: Mapping[str, Sequence[object]]) -> None:
+def normalize_input_types(
+    config: BotConfig, schemas: Mapping[str, Sequence[object]], library: SubgraphLibrary | None = None
+) -> None:
     """Give each linked input the strictest type among its params. In place.
 
     An input keeps the type of the param it was made from until another links to it;
@@ -1239,5 +1461,5 @@ def normalize_input_types(config: BotConfig, schemas: Mapping[str, Sequence[obje
     if meta is None:
         return
     for inp in meta.inputs:
-        if inp.bindings and (t := binding_type(config, inp.bindings, schemas)) is not None:
+        if inp.bindings and (t := binding_type(config, inp.bindings, schemas, library)) is not None:
             inp.type = t

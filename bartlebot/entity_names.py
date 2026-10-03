@@ -2,7 +2,7 @@
 
 ``ClientObject.object_name()`` is an internal template name -- ``AQ-ATL-NPC02``,
 ``KT-TeleporterEntranceHall`` -- and it is the *identity* nodes are written against, so it
-is what a bot file stores and what the Entity Browser's Copy Name hands over. It is also
+is what a bot file stores and what the Entity Browser's Copy ID hands over. It is also
 unreadable, which is what makes the browser's list hard to search: nothing in
 ``AQ-Centaur-Artemis`` says "Crescent Moon Centaur".
 
@@ -28,6 +28,10 @@ logger = logging.getLogger(__name__)
 
 ENTITY_NAMES_PATH = Path(__file__).resolve().parent / "data" / "entity_names.json"
 
+# Reagent nodes have no display name, so the snapshot above drops every one of them. This
+# one lists their IDs on their own, from tools/dump_reagent_nodes.py.
+REAGENT_NODES_PATH = Path(__file__).resolve().parent / "data" / "reagent_nodes.json"
+
 
 @cache
 def _names(path: Path | None = None) -> dict[str, str]:
@@ -49,3 +53,15 @@ def display_name(object_name: str, path: Path | None = None) -> str | None:
 def label(object_name: str, path: Path | None = None) -> str:
     """One readable name: the player-facing one if there is one, else the object name."""
     return display_name(object_name, path) or object_name
+
+
+@cache
+def reagent_node_ids(path: Path | None = None) -> frozenset[str]:
+    """Every harvestable reagent node's ID, as the game spells it. Cached, like _names."""
+    ids_path = path or REAGENT_NODES_PATH
+    try:
+        raw = json.loads(ids_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        logger.exception("could not read reagent node IDs from %s", ids_path)
+        return frozenset()
+    return frozenset(raw.get("ids", []))

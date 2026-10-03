@@ -379,25 +379,13 @@
     {
       "id": "sync_players_1_state_2",
       "node_type": "sync_in_zone",
-      "label": "Go to zone",
+      "label": "Sync in zone",
       "position": {
         "x": -880.0,
         "y": 90.0
       },
       "params": {
         "zone": "Aquila/AQ_Z00_Hub"
-      }
-    },
-    {
-      "id": "sync_players_1_state_3",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
-      "position": {
-        "x": -440.0,
-        "y": 0.0
-      },
-      "params": {
-        "use_favorite_realm": true
       }
     },
     {
@@ -2301,16 +2289,6 @@
     {
       "trigger": "advance",
       "source": "sync_players_1_state_2",
-      "dest": "sync_players_1_state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_3",
       "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
@@ -2325,13 +2303,12 @@
       "label": "Sync players",
       "members": [
         "sync_players_1_state_1",
-        "sync_players_1_state_2",
-        "sync_players_1_state_3"
+        "sync_players_1_state_2"
       ],
       "color": 1,
       "source": {
         "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
-        "version": 3,
+        "version": 4,
         "inputs": {
           "state_2.zone": "Aquila/AQ_Z00_Hub"
         },
@@ -2345,7 +2322,7 @@
           "exit_1": {
             "from": [
               [
-                "state_3",
+                "state_2",
                 "SUCCESS"
               ]
             ]

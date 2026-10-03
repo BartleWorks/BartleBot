@@ -28,7 +28,7 @@ PARAM_SCHEMA: list[ParamField] = [
         label="Teleport to a Hooked Player",
         help=(
             "On: port to one of this bot's own players, whose wizard name is read from the game at run "
-            "time. Off: port to the Friend Name bot option, which you set in Setup."
+            "time. Off: port to the Friend Name bot option, which you set in Options."
         ),
         default=True,
         required=False,
@@ -95,7 +95,7 @@ NODE_SPEC = NodeSpec(
             # and cannot have one. The level below is your app setting.
             default=None,
             # A hooked-player port never reads it, so a bot whose every port is to a
-            # hooked player gets no Setup row for a name it will not use.
+            # hooked player gets no Options row for a name it will not use.
             required_unless="target_hooked_player",
             description=(
                 "Wizard name to search for in the friends list (case-insensitive). Must be online "
@@ -118,7 +118,7 @@ NODE_SPEC = NodeSpec(
     ),
     safety_warning=(
         "This bot teleports you to another wizard. In friend-name mode that wizard must be on "
-        "every player's friends list and online — set the name here, in Setup, or in Settings "
+        "every player's friends list and online — set the name here, in Options, or in Settings "
         "if it is wrong."
     ),
 )
@@ -181,7 +181,7 @@ def resolve_target(clients: list, params: dict, configured: str = "") -> TargetR
     configured = str(configured or "").strip()
     if not configured:
         return TargetResolution(
-            error="no friend name configured — set Friend Name in Setup, in the pre-run warning, or in Settings → Bot"
+            error="no friend name configured — set Friend Name in Options, in the pre-run warning, or in Settings → Bot"
         )
     return TargetResolution(name=configured, source="the Friend Name option")
 

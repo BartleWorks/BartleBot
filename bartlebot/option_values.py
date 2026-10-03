@@ -5,7 +5,7 @@ four values it is handed.  Two of those four live in ``SettingsManager``, which
 that module must not import, so every caller has had to gather them itself.
 
 Three surfaces now need the same gather and must not disagree about it: the run
-loop (``BotMachine.get_option``), the Setup rows that show the user what the run
+loop (``BotMachine.get_option``), the Option Values rows that show the user what the run
 will do, and the safety dialog that is the last thing between the user and an
 irreversible sale.  This is that gather, once.
 

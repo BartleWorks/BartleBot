@@ -4,7 +4,7 @@ Lifted out of the properties panel's ``_AppSettingStrWidget``, which owned both 
 control *and* the storage: it wrote the app setting directly, because a friend name
 had nowhere else to live.  A friend name is now an ordinary bot option, so where the
 value goes is the option layer's business and this is only the control -- it reports
-``changed`` and answers ``get_value()`` like every other option widget, and Setup
+``changed`` and answers ``get_value()`` like every other option widget, and Option Values
 decides whether that becomes an override.
 
 The two suggestion tiers are the same arrangement zones use: live first (the online

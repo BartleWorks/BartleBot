@@ -23,7 +23,7 @@ THE CAPTION ONLY APPEARS FOR THE LEVEL THAT DELEGATES
     With a mode pinned, the radio already says what will happen and a sentence
     underneath would be the same fact twice. With "Use app setting" chosen the deck has
     deliberately not answered, and what the app setting currently says is the one thing
-    the user cannot see from here — the same four-level idiom the Setup tab's source
+    the user cannot see from here — the same four-level idiom the Option Values tab's source
     captions follow.
 
 A deck with no school saved gets no radios at all: there is nothing for them to act on,

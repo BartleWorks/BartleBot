@@ -111,7 +111,7 @@ async def run(machine, clients: list, params: dict) -> str:
         await asyncio.gather(*[_wait_stabilized(machine, c, target) for c in clients])
 
     # 3. Mark each client, handling the cooldown timer and same-spot edge case.
-    results = await asyncio.gather(*[_mark_client(machine, c) for c in clients])
+    results = await asyncio.gather(*[mark_client(machine, c) for c in clients])
     if not all(results):
         machine.log("FAILURE: one or more clients failed to set a mark", logging.WARNING)
         return "FAILURE"
@@ -120,8 +120,11 @@ async def run(machine, clients: list, params: dict) -> str:
     return "SUCCESS"
 
 
-async def _mark_client(machine, client) -> bool:
-    """Mark location for a single client. Returns True if mark was confirmed set."""
+async def mark_client(machine, client) -> bool:
+    """Mark location for a single client, where it stands. Returns True if mark was confirmed set.
+
+    Public: handle_level_scaling marks each client wherever it is, with no recorded spot.
+    """
     # Wait for any existing mark cooldown to expire.
     machine.log("Waiting for mark cooldown to clear…", logging.DEBUG)
     if not await node_helpers.poll_until(lambda: _timer_is_clear(client), COMPASS_TELEPORT_TIMEOUT, POLL_INTERVAL):

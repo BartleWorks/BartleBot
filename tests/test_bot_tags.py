@@ -9,7 +9,6 @@ from pathlib import Path
 import pytest
 
 from bartlebot.bot.schema import BotConfig, StateModel
-from bartlebot.bot_folders import TEMPLATES_FOLDER
 from bartlebot.bot_tags import BOT_TAGS, TAG_GROUPS, normalize_tags, suggested_tags, wants_rewards_prompt
 from bartlebot.nodes.registry import NODE_SPECS
 from bartlebot.paths import project_root
@@ -142,13 +141,12 @@ def test_every_implies_tags_when_names_a_bool_param_on_its_own_node():
 
 
 def _library_bots() -> list[Path]:
-    """Every library bot: templates are skeletons, and ``test_*`` files are scratch."""
-    bots = project_root() / "bots"
-    return [
-        p
-        for p in sorted(bots.rglob("*.json"))
-        if TEMPLATES_FOLDER not in p.relative_to(bots).parts and not p.name.startswith("test_")
-    ]
+    """Every library bot, and every template draft, since each bot made from one starts with its tags.
+
+    ``test_*`` files are scratch.
+    """
+    bots = [p for p in sorted((project_root() / "bots").rglob("*.json")) if not p.name.startswith("test_")]
+    return bots + sorted((project_root() / "templates").glob("*/draft.json"))
 
 
 def test_every_library_bot_carries_its_suggested_tags():
@@ -173,18 +171,15 @@ def test_every_library_bot_carries_its_suggested_tags():
 # ---------------------------------------------------------------------------
 
 
-def test_a_bot_with_no_rewards_tag_is_asked_for_one(tmp_path):
-    assert wants_rewards_prompt(["Boss"], tmp_path / "bots" / "01_wizard_city" / "x.json")
-
-
-def test_a_bot_not_yet_saved_anywhere_is_asked_too():
-    assert wants_rewards_prompt([], None)
+def test_a_bot_with_no_rewards_tag_is_asked_for_one():
+    assert wants_rewards_prompt(["Boss"], is_template=False)
+    assert wants_rewards_prompt([], is_template=False)
 
 
 def test_one_rewards_tag_is_enough():
-    assert not wants_rewards_prompt(["Pets", "Boss"], None)
+    assert not wants_rewards_prompt(["Pets", "Boss"], is_template=False)
 
 
-def test_a_template_is_never_asked(tmp_path):
+def test_a_template_is_never_asked():
     """What a template's runs yield depends on the dungeon it is turned into."""
-    assert not wants_rewards_prompt(["Dungeon"], tmp_path / "bots" / TEMPLATES_FOLDER / "x.json")
+    assert not wants_rewards_prompt(["Dungeon"], is_template=True)

@@ -31,9 +31,6 @@ a test cannot tell a stale tag from that author's judgment.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
-
-from bartlebot.bot_folders import TEMPLATES_FOLDER
 
 logger = logging.getLogger(__name__)
 
@@ -151,13 +148,14 @@ def suggested_tags(states, specs=None) -> list[str]:
     return [t for t in BOT_TAGS if t in out]
 
 
-def wants_rewards_prompt(tags: list[str], path: str | Path | None) -> bool:
-    """Whether saving a bot with *tags* to *path* should ask for a Rewards tag.
+def wants_rewards_prompt(tags: list[str], is_template: bool) -> bool:
+    """Whether saving a bot with *tags* should ask for a Rewards tag.
 
     A bot normally says what a run of it yields, and a library filtered by Rewards never
-    finds one that does not. Templates are exempt: what a run yields depends on the
-    dungeon a template is turned into, so there is nothing true for one to say.
+    finds one that does not. A template draft is exempt (*is_template*: the document has
+    ``template_meta``): what a run yields depends on the dungeon it is turned into, so
+    there is nothing true for one to say.
     """
     if any(tag_group(t) == REWARDS for t in tags):
         return False
-    return path is None or Path(path).parent.name != TEMPLATES_FOLDER
+    return not is_template

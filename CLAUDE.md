@@ -13,7 +13,11 @@ points the store's user root at the repo, so a save lands in `subgraphs/` or
 `strategies/` where git sees it, instead of in an `%APPDATA%` copy that silently
 shadows the repo's. `bartlebot/store_roots.py` has the detail. The suite clears it,
 and `test_every_linked_bot_resolves_under_the_shipped_root_alone` catches a
-definition that only exists on your machine.
+definition that only exists on your machine. It also adds File › Edit Template…, the
+only way into a template's draft under `templates/`; only Release on the draft's crumb
+writes a version users are offered (`bartlebot/template_store.py`). New Bot copies the
+latest released version into a new bot, records it in the bot's `template`, and saves
+the file at once (`bartlebot/new_bot.py`).
 
 It also turns on the canvas repaint tracer (`bartlebot/gui/canvas/repaint_trace.py`, for
 #73). The tracer logs a WARNING, with a screenshot under `logs/repaint/`, whenever an item
@@ -51,7 +55,7 @@ read on purpose.
 
 | file | covers |
 |---|---|
-| `bartlebot/gui/CLAUDE.md` | theming, popup menus, widget parenting, qasync, task lifetime, tile slots, which panel owns what, Setup vs. Options |
+| `bartlebot/gui/CLAUDE.md` | theming, popup menus, widget parenting, qasync, task lifetime, tile slots, which panel owns what, Option Values vs. Options |
 | `bartlebot/gui/settings/CLAUDE.md` | `SettingsManager`, the settings dialog, the Bot tab |
 | `bartlebot/nodes/CLAUDE.md` | adding a node, timing, multi-client coordination, session logs, modal dialogs, UI paths |
 | `tests/CLAUDE.md` | what a change ships with, keeping the suite fast, one QApplication per worker |
@@ -61,11 +65,13 @@ read on purpose.
 | `docs/COMBAT_CONFIG.md` | the five strategy levels, the two storage roots, a combat profile's own strategies and the profile-then-library lookup, the pick/assemble/author split, the dialog's ways in, and the Save/Cancel boundary |
 | `docs/SUBGRAPHS.md` | reusable subgraphs: definition vs. instance, derived member ids, follow-latest with snapshot fallback, the three param levels, instance-owned layout, the authoring verbs |
 | `docs/SUBGRAPH_CALLS.md` | a pointer to the plan for the successor epic to #37 (subgraph calls, ports, the definition document, the call node, the library rewrite), which lives on a claude.ai page — read that page before any subgraph work; it supersedes several of `SUBGRAPHS.md`'s sections |
+| `docs/TEMPLATES.md` | the template store, `t_` ids, release, New Bot, setup steps and fill-ins, and the three-way update diff: units, changes, Apply, Finish review |
 | `docs/LIBRARY_MIGRATION.md` | where all 82 bots stand against the four core templates: per-bot tier and divergence, the template input signature, the outlier bots |
 | `docs/RETURN_ROUTING.md` | the default failure edge, the explicit stop, why neither is drawn, and the three-mode failure-edge toggle |
 | `docs/RELOGGING.md` | why a client slows down, and the two ways to clear it |
 | `docs/PLAYER_REALMS.md` | telling whether players share a realm by sight, the record of who does, the Player Realms option (Together/Separate) and what blocks Separate, and where each node checks and repairs |
 | `docs/AMBIENT_COMBAT.md` | a fight no node started: the game rules it rests on, cancelling and rerunning the node, who helps and how (same realm, or by port), holding the first cast, where everyone goes after, how a session ends, the flee limit |
+| `docs/LEVEL_SCALING.md` | the one level scaling node, why it never cancels an elixir and warns at run start instead, the Scales of Knowledge table and how to add an entry |
 | `docs/RESTRICTED_ZONES.md` | the PvP policy and its three enforcement points |
 | `docs/ZONE_NAVIGATION.md` | the zone navigation map: link kinds, list networks, doors and side worlds, and routes costed in seconds |
 | `docs/UPSTREAM.md` | wizwalker/wizsprinter forks, offset fixes, bumping a pin |

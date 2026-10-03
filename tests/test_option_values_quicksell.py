@@ -1,4 +1,4 @@
-"""Quicksell's settings on the Setup surface.
+"""Quicksell's settings on the Option Values surface.
 
 Quicksell used to carry five node params.  Four of them described the *user* --
 what they are willing to lose -- and one described the *dungeon*: which of its
@@ -30,7 +30,7 @@ from bartlebot.bot.schema import BotConfig, BotOptionModel, DropModel, StateMode
 from bartlebot.bot_options import UNSET
 from bartlebot.gui.canvas.drop_keep_list import _COL_ITEM, _COL_KEEP, DropKeepListWidget
 from bartlebot.gui.sidebar.option_gutter import CHILD_INDENT_PX, ChildBranch
-from bartlebot.gui.sidebar.sections.setup_section import SetupSection
+from bartlebot.gui.sidebar.sections.option_values_section import OptionValuesSection
 from bartlebot.gui.widgets.link_button import LinkButton
 from bartlebot.nodes.utility import quicksell as qs
 from bartlebot.nodes.zone_entry.enter_dungeon import OPTION_MINIMUM_TEAM_SIZE, OPTION_TEAM_UP, PARAM_OFFERS_TEAM_UP
@@ -64,13 +64,13 @@ def _config(options=None, drops=None) -> BotConfig:
     )
 
 
-def _section(settings, config, *, expanded: bool = True) -> SetupSection:
-    """A Setup section for *config*, every card expanded unless asked otherwise.
+def _section(settings, config, *, expanded: bool = True) -> OptionValuesSection:
+    """A Option Values section for *config*, every card expanded unless asked otherwise.
 
     Quicksell and General start collapsed on a first run, and a row in a collapsed card
     is neither visible nor laid out -- which is beside the point of every test here.
     """
-    section = SetupSection(settings=settings)
+    section = OptionValuesSection(settings=settings)
     section.set_config(config)
     if expanded:
         section.expand_all()

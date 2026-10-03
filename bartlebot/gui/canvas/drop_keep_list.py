@@ -1,6 +1,6 @@
 """Quicksell keep-list picker: the bot's drop table as a filterable, checkable table.
 
-Rendered in Setup for the ``Quicksell Keep List`` bot option (``BotOptionModel.type ==
+Rendered in Option Values for the ``Quicksell Keep List`` bot option (``BotOptionModel.type ==
 "drop_keep_list"``). The keyword line edit is the value; the table below it shows what
 those keywords do to each drop the bot can farm.
 

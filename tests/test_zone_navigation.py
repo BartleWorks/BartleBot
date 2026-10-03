@@ -625,6 +625,36 @@ async def test_a_client_already_there_is_the_one_the_others_port_to(monkeypatch)
     assert game.waves == [([1], [2])]
 
 
+async def test_a_client_already_there_outranks_a_larger_group_elsewhere(monkeypatch):
+    """Following the group would cost it a whole route and still move the client already there."""
+    game = _Game(monkeypatch, [_ISLAND, _HUB, _HUB, _HUB], friends=True)
+    see_each_other(game.clients[0])
+    see_each_other(*game.clients[1:])
+
+    outcome = await _go(game, _nav(*_LONG), _ISLAND)
+
+    assert outcome.success
+    assert game.calls == []
+    assert game.waves == [([2, 3, 4], [1])]
+
+
+async def test_a_client_already_there_that_nobody_can_port_to_does_not_lead(monkeypatch):
+    game = _Game(monkeypatch, [_S2, _S1, _S1])
+    see_each_other(game.clients[0])
+    see_each_other(*game.clients[1:])
+    names = _NAMES[:3]
+    for client, name in zip(game.clients, names):
+        wizard_names.remember(client, name)
+    # Players 2 and 3 can port to each other, and nobody to player 1.
+    game.survey.return_value = port_map.PortMap.from_survey(names, [[], [names[2]], [names[1]]], [(), (), ()])
+
+    outcome = await _go(game, _nav(_teleporter(_S1, _S2)), _S2)
+
+    assert outcome.success
+    assert game.groups == [[2]]
+    assert game.waves == [([1, 3], [2])]
+
+
 async def test_a_client_that_cannot_port_travels_there_itself(monkeypatch):
     game = _Game(monkeypatch, [_HUB, _HUB], friends=True, cannot_port={2})
 

@@ -126,8 +126,8 @@ class EntityBrowserDialog(QDialog):
         self._status = ThemedTextLabel("Loading…", css=f"font-size: {THEME.font_small_px}px;")
         btn_row.addWidget(self._status, 1)
 
-        self._copy_name_btn = ActionButton("copy", "Copy Name", fill=False)
-        self._copy_name_btn.setToolTip("Copy the selected entity's name to clipboard")
+        self._copy_name_btn = ActionButton("copy", "Copy ID", fill=False)
+        self._copy_name_btn.setToolTip("Copy the selected entity's ID to the clipboard")
         self._copy_name_btn.setEnabled(False)
         self._copy_name_btn.clicked.connect(self._copy_selected_name)
         btn_row.addWidget(self._copy_name_btn)
@@ -146,13 +146,13 @@ class EntityBrowserDialog(QDialog):
 
         root_layout.addLayout(btn_row)
 
-        # Tree widget: Name | Display Name | Dist | Location.
-        # Object name leads: it is the identity a node's params are written against, and
-        # the one Copy Name hands over. The display name reads better but is not unique —
+        # Tree widget: ID | Display Name | Dist | Location.
+        # The object name, shown as the ID, leads: it is the identity a node's params are
+        # written against, and the one Copy ID hands over. The display name reads better but is not unique —
         # four separate templates all display as "Cerberus" — so it informs rather than keys.
         self._tree = QTreeWidget()
         self._tree.setColumnCount(4)
-        self._tree.setHeaderLabels(["Name", "Display Name", "Dist", "Location (X, Y, Z)"])
+        self._tree.setHeaderLabels(["ID", "Display Name", "Dist", "Location (X, Y, Z)"])
         self._tree.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
         self._tree.setRootIsDecorated(False)
         self._tree.setSortingEnabled(True)

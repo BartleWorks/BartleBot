@@ -28,7 +28,7 @@ class BotOptionSpec:
         maximum:     Highest value the option may take, or None for no ceiling.
         suffix:      Unit shown inside the control, e.g. " s". Presentation only; the
                      stored value is the bare number.
-        depends_on: Name of a **bool bot option** this one is a child of. The Setup
+        depends_on: Name of a **bool bot option** this one is a child of. The Option Values
                      surface indents the child under it and disables it while the parent
                      resolves false; nothing else changes -- the child is still resolved
                      the ordinary four-level way, and its stored value survives the
@@ -53,11 +53,11 @@ class BotOptionSpec:
 
                      This is for an option one mode of a node reads and the other ignores:
                      teleport_to_friend reads Friend Name only when it is not targeting a
-                     hooked player, so a Friend Name row in Setup for a bot whose every
+                     hooked player, so a Friend Name row in Option Values for a bot whose every
                      port is to a hooked player is a field that does nothing. An absent
                      param counts as off, so a file written before the param existed keeps
                      the option it still needs.
-        group:       Which card the option is drawn in on Setup and Options -- one of the
+        group:       Which card the option is drawn in on Option Values and Options -- one of the
                      ``GROUP_*`` names in ``bartlebot.option_groups``. Every node-declared
                      option names one; ``test_every_node_option_declares_a_group`` keeps it
                      so. An option no node declares belongs to *This dungeon*.
@@ -89,7 +89,12 @@ class ParamField:
         key:          JSON key used in the params dict.
         type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" |
                       "str_list" | "int_choice" | "str_choice" | "player_list" | "player_slot" |
-                      "wiki_page" | "zone" | "nav_zone".
+                      "wiki_page" | "zone" | "nav_zone" | "scales" | "ratio".
+                      "ratio" is a share of a whole -- a health or mana threshold. It is stored as
+                      a float from 0.0 to 1.0, which is what a node compares against, and shown and
+                      edited as a whole percent, 0% to 100%, which is all its control accepts
+                      (bartlebot/gui/widgets/ratio_spin_box.py). A plain "float" let it be typed
+                      as 5.0 or -1, neither of which means anything.
                       "zone" is a zone path, or a glob over zone paths ("WizardCity/*"), matched
                       by node_helpers.zone_matches. It gets the zone widget: autocomplete from
                       visited zones, and Fill from a player's current zone. The widget is chosen
@@ -98,6 +103,9 @@ class ParamField:
                       world (bartlebot/gui/widgets/zone_picker.py). Only the zone path is stored:
                       the map already says which world it is in. It is a narrower "zone" -- see
                       narrowest_type.
+                      "scales" is one Scales of Knowledge, picked from the shipped table grouped by
+                      world (bartlebot/gui/widgets/scales_picker.py). Only the entry's key is stored;
+                      bartlebot/scales.py resolves it.
                       "text" renders as a multi-line QPlainTextEdit.
                       "player_slot" is the single-select sibling of "player_list": one 1-based client
                       index, or 0 for none.

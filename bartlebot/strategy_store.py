@@ -250,22 +250,23 @@ def delete_bot_strategy(uuid: str, root: str | Path | None = None, user_root: st
 def rekey_bot_strategy_states(
     bot_id: str, id_map: dict[str, str], root: str | Path | None = None, user_root: str | Path | None = None
 ) -> int:
-    """Rewrite state ids in every strategy of ``bot_id`` and save the ones that changed.
+    """Rename each fight's state in every strategy of ``bot_id`` and save the ones that changed.
 
     Converting a region into a subgraph instance renames its members
     (``docs/SUBGRAPHS.md``); the assignments that keyed on the old ids would
     otherwise fall silent, with nothing in the UI to say so. A shipped strategy
     that changes is written to the user root, as every save here is. Returns how
-    many strategies were rewritten.
+    many strategies were rewritten. A fight's ``enemy`` is left alone: the node
+    was renamed, not the enemy it names.
     """
     changed = 0
     for bcs in list_bot_strategies(bot_id, root, user_root):
         touched = False
         for assignment in bcs.state_assignments:
-            renamed = [id_map.get(sid, sid) for sid in assignment.state_ids]
-            if renamed != assignment.state_ids:
-                assignment.state_ids = renamed
-                touched = True
+            for fight in assignment.fights:
+                if id_map.get(fight.state, fight.state) != fight.state:
+                    fight.state = id_map[fight.state]
+                    touched = True
         if touched:
             save_bot_strategy(bcs, root, user_root)
             changed += 1

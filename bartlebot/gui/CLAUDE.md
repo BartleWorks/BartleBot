@@ -231,7 +231,7 @@ Three things about them:
 - **`IconTint` varies color and nothing else**, the same rule the four weights follow:
   the size is the caller's to choose, because a toolbar's 44px and a flag row's 24px are
   both right. `DANGER` is what makes a remove read as one; `ACCENT_WHEN_ENABLED` is the
-  Setup gutter's revert, where *being* enabled is the signal.
+  Option Values gutter's revert, where *being* enabled is the signal.
 - **A `LinkButton` underlines on hover, not always.** The accent alone says "clickable"
   while the pointer is elsewhere.
 
@@ -343,13 +343,33 @@ row = build_gutter_row(bar, edit_btn, help_btn, body)   # this is what parents t
 edit_btn.setVisible(self._editable)                     # only now
 ```
 
+**A widget in a layout nothing has installed yet has no parent either.** `addWidget`
+on a free-standing layout parents nothing; the widgets in it get a parent only when
+that layout is set on a widget, or added to a layout that already is. So the builder
+in the example above is only one way to get here. The other is three lines apart in
+one constructor:
+
+```python
+text = QVBoxLayout()                 # free-standing
+text.addWidget(self._blurb)          # still no parent
+self._blurb.setVisible(bool(blurb))  # a window, once per card
+row.addLayout(text)                  # too late
+```
+
+Attach the layout before putting anything in it (`row.addLayout(text)` first), or pass
+the parent to the layout's constructor. The New Bot dialog flashed one window per
+template card this way.
+
 `setVisible(False)` is safe, and so is showing a child of a hidden parent — only the
 parentless case opens a window. It bites hardest where a rebuild is on a hot path:
 one click of a check box in Edit mode mapped and unmapped **eight** windows on a
 shipped bot, because each row's description and Edit button were shown while still
 loose. `test_building_a_row_never_shows_a_parentless_widget` is the guard, and the
-way it catches it is worth reusing — an event filter on the `QApplication` recording
-every `Show` delivered to a widget whose `parent()` is `None`.
+way it catches it is the `parentless_shows` fixture in `tests/conftest.py` — an event
+filter on the `QApplication` recording every `Show` delivered to a widget whose
+`parent()` is `None`. **A new dialog, card or row builder gets a test that asks for
+it**, builds the surface and asserts the list is empty; reading the code for this bug
+has missed it more than once.
 
 The same window opens on the way *out*. **Discard a widget with `discard_widget`
 (`widgets/discard.py`)**, never a bare `setParent(None)` + `deleteLater()`: a widget
@@ -751,7 +771,15 @@ or its collapsed node; label, color, Collapse / Expand -- disabled with the reas
 with Record, Open definition, Detach), or in a definition document with nothing selected
 the *signature* (`canvas/signature_page.py`: ports, inputs, panels). A definition's node
 page links a param to a subgraph input (**Link**, one param) or puts the whole node on the
-subgraph node (**Promote to input group** / **Demote**). A linked param *is* its input's
+subgraph node (**Promote to input group** / **Demote**). A subgraph node nested in a
+definition offers the same **Link** on each of its named inputs
+(`BotCanvas.link_nested_input`): the binding names the nested region and the input, never
+one of its members, so the value goes in through the inner signature and composition
+forwards it (`subgraphs.forwarded_inputs`). A row of a promoted node's input group on that
+nested node links the same way, under the key the node stores it by (`<member>.<key>`);
+`subgraphs.resolve_instance_key` is the one place the two kinds of key are told apart, and
+where a third would be added. A linked row carries the value up, not the Record button. A
+linked param *is* its input's
 default: `subgraphs.sync_linked_values` keeps them equal both ways, and a subgraph node
 follows the default until its own page changes the value (Reset goes back). A row shows
 status and action in one control: an unlinked row's Link button appears only on hover or
@@ -934,7 +962,7 @@ Three things the header does not hold, and should not be given back:
   an older file and `save()` drops it.
 - **Initial State / Recovery State** are badges on the nodes themselves;
   the labels only restated the graph.
-- **The description** heads Setup (read) and Options (edit) instead. Elided into
+- **The description** heads Option Values (read) and Options (edit) instead. Elided into
   a header it would hide exactly the text a user must read — four bots carry
   multi-line `REQUIREMENTS:` blocks saying things like "change the client
   resolution to…".
@@ -943,7 +971,40 @@ Three things the header does not hold, and should not be given back:
 tab: the two answer the same question at different times, what this run could
 yield and what it has. It is the only authorial thing over there, which is what
 `RightSidebar.config_changed` exists for. **Log** is the third tab there, so it
-can be read without closing Setup.
+can be read without closing Option Values.
+
+**Setup** is a fourth tab there, present only while it has something to say
+(`sidebar/setup_panel.py`): the setup steps a bot made from a template still has to do, or
+a template draft's step editor, and the review of a template update for a bot behind its
+template. It is in the right sidebar and not a page of Properties so that the list and the
+node a step points at are on screen together. As a Properties page, acting on a step hid
+the list. Four rules:
+
+- **A step card edits nothing.** Clicking one selects its node, and the fill-in is filled
+  on that node's page, the one place it is editable. The drops step is the exception,
+  because the drop list has no node: it lists the bot's fights, each with its own Import.
+- **The tab is decided by `MainWindow._sync_setup_tab`.** Shown for a draft, for a bot
+  with steps left, and for a bot whose template has released since its base. A bot that
+  finishes its steps keeps the tab until it is closed, a bot opened with them all done gets
+  none, and Bar B's template chip brings it back.
+- **A change card asks; the canvas does.** The review (`docs/TEMPLATES.md`) is drawn above
+  the steps: one `ChangeCard` per change under each release's note, with **Apply**, or
+  **Use template's** / **Keep mine** on a conflict, and no button on one that can't be
+  applied. A card edits nothing itself, as a step card does not: the panel emits
+  `apply_requested`, and `BotCanvas.apply_template_change` makes the change as one undo
+  step. **Finish review** advances the bot's base, which is what remembers a skip, and
+  **Later** puts the review away until the bot is next opened. A subgraph definition opened
+  over the bot is a visit, not another document: `_sync_setup_tab` keeps the bot's state
+  through it, so coming back neither forgets a Later nor pulls the sidebar to Setup. The
+  review is asked for on every refresh, so an applied or undone change shows at once, but
+  `BotCanvas.template_review` works the diff out again only when the bot's own dump has
+  changed. `template_ref_changed` is emitted after `config_changed`, never before: the
+  controller reads the new base from the config it holds, which it swaps on `config_changed`.
+- **A draft's steps are `CardFrame` cards**, like every other ordered list here: a grip to
+  reorder, a cross to remove, and a dashed Add card at the end. The tab's edits go to the
+  canvas (`begin_setup_edit`, `begin_setup_change`, `setup_edited`), which owns the undo
+  history. A param row on a draft's node page offers *Add to setup step* on hover, and a
+  row that is a fill-in wears a "Setup step N" chip that removes it.
 
 - **A drop's category is a closed dropdown, never typed.** `_DropEditDialog` offers
   `quicksell.DROP_CATEGORIES` — derived from that node's two classification sets, which
@@ -962,13 +1023,19 @@ can be read without closing Setup.
   beside what was typed. The checkbox is disabled, not hidden, for a bot that never sells
   (no quicksell node, or Enable Quicksell off): there the filter can only hide everything,
   and a control that appears for some bots is one nobody finds. The keep list is a bot
-  option edited over in Setup and nothing reports here, so `DropSection.refresh_keep_list`
+  option edited over in Option Values and nothing reports here, so `DropSection.refresh_keep_list`
   re-resolves it when the Drops tab comes forward.
 
-## Two surfaces: Setup edits values, Options edits declarations
+## Two surfaces: Option Values edits values, Options edits declarations
+
+Both are **labeled "Options"** in the app: to a user it is one tab, holding values in Run
+mode and declarations in Edit mode. "Option Values" is this file's and the code's name
+for the Run-mode one (`OptionValuesSection`); the label was "Setup" until that word went
+to the template's setup steps in the right sidebar. Never write "Option Values" in text a
+user reads.
 
 They are separate tabs of the left sidebar, and edit mode decides which pair is
-there at all — Run shows **Setup** (`setup_section.py`) and Combat, Edit shows
+there at all — Run shows **Option Values** (`option_values_section.py`) and Combat, Edit shows
 **Options** (`options_section.py`) and Properties. Every production system that
 solves this split separates the surfaces by context rather than by a toggle
 inside one panel (Unity's Prefab Mode, Unreal's Class Defaults, VS Code's
@@ -1003,7 +1070,7 @@ already has.
     otherwise jolt every card sideways (#112), and the page's own content margin already
     keeps the cards off the bar. The card's 14px of border and padding is on the left
     sidebar's floor — see `docs/WINDOW_SIZING.md`.
-- **Setup writes `settings.json`, never the bot file.** `values_changed` is
+- **Option Values writes `settings.json`, never the bot file.** `values_changed` is
   deliberately *not* wired to `config_changed`: an override is not an edit to
   the bot, and a shared bot must stay byte-identical however its users tune it.
   `test_a_bot_file_is_untouched_by_a_value_edit` is the guard.
@@ -1033,10 +1100,10 @@ already has.
 - **A default edit goes out on `defaults_changed`, not `options_changed`.** The
   latter's handler recomposes and rebuilds *both* surfaces, which destroys the
   check box the click landed on and rebuilds it under the pointer — the same rule
-  the next bullet states for Setup, which Options was breaking. No name can change
+  the next bullet states for Option Values, which Options was breaking. No name can change
   on a default edit, so there is nothing on that surface to rebuild; it is routed
-  to `metadata_changed` (dirty the file, rebuild nothing) plus a Setup refresh,
-  because a declaration outranks the app setting Setup resolves through.
+  to `metadata_changed` (dirty the file, rebuild nothing) plus an Option Values refresh,
+  because a declaration outranks the app setting Option Values resolves through.
 - **No chrome appears or disappears with the override state, and a value edit
   refreshes one row rather than rebuilding the list.** Both are the same
   concern: a spin box whose row is rebuilt on `valueChanged` vanishes from under
@@ -1061,9 +1128,9 @@ already has.
   both surfaces.** The pieces are shared — `gui/sidebar/option_gutter.py` holds
   the bar, the `?`, the `Show/Hide descriptions` links and the row builder — so
   the two tabs' columns land at the same x and a mode switch does not read as a
-  different row. Only the middle slot differs: Setup reverts a *value*, Options
+  different row. Only the middle slot differs: Option Values reverts a *value*, Options
   edits a *declaration*. Options never paints its bar, because the bar and revert
-  are one affordance in Setup and a lone marker with no paired action would be a
+  are one affordance in Option Values and a lone marker with no paired action would be a
   fact to correlate rather than something to act on; the width is still reserved,
   so the `?` columns line up and a meaning can be given to it later. It
   is the only placement that yields one column per button. Right-aligning the `?`
@@ -1112,14 +1179,14 @@ already has.
   toggles collapse. `LinkButton` (`gui/widgets/link_button.py`) is the shared
   control.
 - **The route to the app settings is written once, at the far end of that same
-  row.** Setup's rows name the level that answered, and one of the four —
+  row.** Option Values's rows name the level that answered, and one of the four —
   *App settings* — is a page the user can actually go to; a link in every hint
-  that mentions it would be eight identical links to one destination. So Setup
+  that mentions it would be eight identical links to one destination. So Option Values
   passes `DescriptionSwitches` a `trailing` link, separated from the two
   description commands by the stretch because it is not a third one of them.
   It emits `app_settings_requested` rather than opening the dialog: `exec()` may
   only be entered from a synchronous slot in `MainWindow`, which also refreshes
-  the rows on `settings_applied` — a level Setup resolves *through* has moved,
+  the rows on `settings_applied` — a level Option Values resolves *through* has moved,
   which is the same event as a declaration edit. Options has no trailing link;
   it edits declarations, and the app setting is not one.
 - **A numeric option may declare bounds, and both ends enforce them.**
@@ -1153,9 +1220,9 @@ already has.
   Four things that are load-bearing, and all four are the same rule the rest of
   this surface follows:
 
-  - **Only Setup indents, and only under a parent that is a row.** Options edits
+  - **Only Option Values indents, and only under a parent that is a row.** Options edits
     declarations, and `Enable Quicksell` is user-owned, so the parent has no row there
-    to be a child of. On Setup the sell flags are not indented either: their parent is
+    to be a child of. On Option Values the sell flags are not indented either: their parent is
     the switch heading their card, and the card already says what they belong to.
     Minimum Team Size, under Team-Up, is the child that is. A row whose parent heads
     its card is still disabled while the switch is off, and so is every other row on
@@ -1178,7 +1245,7 @@ already has.
 - **Descriptions fold on both surfaces, at the base font, behind one remembered
   switch.** Options used to show every description unconditionally and at 9px —
   75% of base, where Windows subpixel antialiasing starts coloring the strokes —
-  while Setup showed the identical node-authored prose folded and at full size.
+  while Option Values showed the identical node-authored prose folded and at full size.
   Two tabs disagreeing about the size of the same text reads as a disagreement
   about what the text *is*. `show_option_descriptions` is the one setting behind
   both, because folding the prose away is a property of the reader and should not

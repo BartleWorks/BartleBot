@@ -23,7 +23,8 @@ That is also what the assignment card's fold is for. The school, the note and th
 ```
 BotCombatStrategy      per bot, per user      the combat profile: which fights use which duel strategy,
                                               the per-player decks, and strategies of its own
-  StateAssignment      one entry              these FSM states use this duel strategy
+  StateAssignment      one entry              these fights use this duel strategy
+    FightRef           one fight              the state it was on, and the enemy it named
 DuelCombatStrategy     library or profile     one fight: combat order, and who does what
   PlayerAssignment     one row                these player slots run this strategy
 PlayerCombatStrategy   library or profile     one wizard's job, as DSL
@@ -152,17 +153,55 @@ Filtering must never disturb the editor beside it. `QListWidget.clear()` emits `
 `resolve_combat()` in `bartlebot/nodes/combat_runner.py` returns `(per_client_dsl, combat_order, source_label)` and falls back to `BARTLEBOT_DEFAULT_COMBAT_CONFIG` at **every** level:
 
 1. `machine.bot_config.id` → `SettingsManager.get_active_strategy(bot_id)` → load the `BotCombatStrategy`.
-2. Either the BCS default (`use_default_strategy`) or the `StateAssignment` covering `machine.state`, falling back to the default when no assignment covers it. An unlinked assignment counts as no assignment at all.
+2. Either the BCS default (`use_default_strategy`) or the `StateAssignment` whose fight is `machine.state` (`fight_keys.bind`, below), falling back to the default when no assignment covers it. An unlinked assignment counts as no assignment at all.
 3. The `DuelCombatStrategy` that target links — found in the profile first, then the library (`StrategyLookup`) — or the built-in default when it links none. Its player strategies are found the same way.
 4. Per 1-based player slot, the matching `PlayerAssignment`'s inline DSL, or the linked Player Strategy's DSL.
 5. Anything unresolved gets the built-in default.
 
-Assignments key on state ids, so a state whose id changes would lose its assignment
-silently. The one place the app renames states — turning a region into a subgraph
-instance (`docs/SUBGRAPHS.md`) — re-keys every strategy of that bot through
-`strategy_store.rekey_bot_strategy_states` in the same step.
-
 `source_label` says which level answered, in the user's vocabulary — `duel strategy 'Frenzy AoE' (via state assignment for 'fight_1')`. It is the older precedent for the logging `BotMachine.get_option` does; see `docs/BOT_OPTIONS.md`. **Never log the strategy's contents in place of the label**, and never log a wizard name.
+
+## Fight keys: which stored fight is which state
+
+A state id alone loses its strategy whenever the id changes: a node replaced, a bot
+re-authored, a fight deleted and made again. So an assignment stores each fight as a
+pair, the state it was on and the enemy it named:
+
+```
+{ "fights": [{ "state": "state_14", "enemy": "Lamia" }], "duel_combat_strategy_id": "…" }
+```
+
+A file written before this holds `"state_ids": ["state_14"]`. It still loads, as fights
+with no enemy, and is **never rewritten on load**; the next save writes the new shape.
+`StateAssignment.state_ids` is a read-only view of each fight's state.
+
+- **An enemy key** is the fight node's `enemy` param, stripped, exactly as typed,
+  wildcards included. It is a key only while exactly one exposed fight in the bot names
+  it. A fight that takes the closest mob has none.
+- **One resolver, `fight_keys.bind(bcs, config)`,** places every stored fight on a
+  current state: a fight whose enemy is a key goes to the node naming it; each
+  remaining fight goes to its `state`, if that is still an exposed fight and was not
+  taken by an enemy match; anything left is orphaned. Enemy matches win, so a renamed
+  enemy and a replaced node both keep their strategy, and only changing both at once
+  loses it. With no config it falls back to the raw state ids.
+- **Every reader goes through it:** `resolve_combat`, `combat_warnings`, and
+  `combat_grouping.build_bindings`, which the Combat tab seeds from. A surface that
+  looks a fight up by state id on its own will disagree with the run about a fight
+  that moved.
+- **The keys heal on save, and only there.** When the Combat tab saves, it writes each
+  fight as its current state, plus its enemy if that enemy is a key right now
+  (`fight_keys.heal`), and drops a fight whose state is no longer an exposed fight,
+  along with any assignment left with none. Nothing writes to the profile when a node
+  is edited: the profile saves at once, while the bot waits for Save.
+- **In the tab, the state is the truth.** Loading places the fights and rewrites each
+  assignment's fights in memory to the states they landed on (`fight_keys.settle`).
+  From then on the tab edits membership by state id, so its save heals by state and
+  never re-places by a stored enemy that may have gone stale.
+
+The one place the app renames states — turning a region into a subgraph instance
+(`docs/SUBGRAPHS.md`) — still re-keys every strategy of that bot through
+`strategy_store.rekey_bot_strategy_states` in the same step. It renames each fight's
+`state` and leaves its `enemy` alone. A fight with no enemy key has nothing else to
+follow it by.
 
 ## Layers, and what stays Qt-free
 
@@ -173,6 +212,7 @@ instance (`docs/SUBGRAPHS.md`) — re-keys every strategy of that bot through
 | `strategy_workset.py` | the Save/Cancel boundary |
 | `strategy_summary.py` | every display string, derived once |
 | `combat_grouping.py`, `combat_warnings.py` | how a list is grouped, and what is wrong with a configuration |
+| `fight_keys.py` | which stored fight belongs to which combat state |
 | `combat_profile.py` | the profile-then-library lookup, what a profile duel takes with it, and duplicating a profile |
 
 All of these are Qt-free and need no `QApplication`. That is deliberate and worth keeping: the boundary, the precedence, the filter rule and the warnings are all testable without a widget, which is why the Qt tests over them are small enough to stay fast.

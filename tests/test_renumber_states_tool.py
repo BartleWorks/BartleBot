@@ -127,4 +127,71 @@ def test_write_saves_the_bot_and_rekeys_strategies_in_both_roots(tmp_path, monke
     assert BotConfig.load(path).initial == "state_3"
     for root, sid in ((project, "shipped"), (user, "mine")):
         saved = json.loads((root / "bot_strategies" / f"{sid}.json").read_text(encoding="utf-8"))
-        assert saved["state_assignments"][0]["state_ids"] == ["state_3"]
+        assert saved["state_assignments"][0]["fights"] == [{"state": "state_3"}]
+
+
+# ---------------------------------------------------------------------------
+# --prefix t_: the template scheme
+# ---------------------------------------------------------------------------
+
+
+def _with_instance() -> BotConfig:
+    return _config(
+        initial="sync_1_state_2",
+        recovery_state="sync_1_state_1",
+        states=[
+            _state("state_9", 200),
+            _state("sync_1_state_1", 0),
+            _state("sync_1_state_2", 50),
+            _state("sync_1_inner_1_state_1", 60),
+            _state("state_4", 100),
+        ],
+        transitions=[_edge("sync_1_state_2", "state_4"), _edge("state_4", "state_9")],
+        regions=[
+            {
+                "id": "sync_1",
+                "label": "Sync",
+                "members": ["sync_1_state_1", "sync_1_state_2", "sync_1_inner_1_state_1"],
+                "color": 1,
+                "source": {"subgraph_id": "sync", "version": 1},
+            },
+            {
+                "id": "sync_1_inner_1",
+                "label": "Inner",
+                "members": ["sync_1_inner_1_state_1"],
+                "color": 2,
+                "source": {"subgraph_id": "inner", "version": 1},
+            },
+        ],
+    )
+
+
+def test_the_template_prefix_numbers_nodes_and_prefixes_instances():
+    config = _with_instance()
+    id_map = renumber(config, "t_")
+
+    assert id_map == {
+        "state_4": "t_1",
+        "state_9": "t_2",
+        "sync_1_state_1": "t_sync_1_state_1",
+        "sync_1_state_2": "t_sync_1_state_2",
+        "sync_1_inner_1_state_1": "t_sync_1_inner_1_state_1",
+    }
+    assert [r.id for r in config.regions] == ["t_sync_1", "t_sync_1_inner_1"]
+    assert config.regions[1].members == ["t_sync_1_inner_1_state_1"]
+    assert (config.initial, config.recovery_state) == ("t_sync_1_state_2", "t_sync_1_state_1")
+    assert [(t.source, t.dest) for t in config.transitions] == [("t_sync_1_state_2", "t_1"), ("t_1", "t_2")]
+
+
+def test_the_default_prefix_leaves_instance_ids_alone():
+    config = _with_instance()
+    renumber(config)
+
+    assert [r.id for r in config.regions] == ["sync_1", "sync_1_inner_1"]
+
+
+def test_a_template_already_in_the_scheme_maps_nothing():
+    config = _with_instance()
+    renumber(config, "t_")
+
+    assert renumber(config, "t_") == {}

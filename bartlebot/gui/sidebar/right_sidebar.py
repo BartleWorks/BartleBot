@@ -1,4 +1,4 @@
-"""Right sidebar: tab-based panel with Players, Drops and Log tabs."""
+"""Right sidebar: tab-based panel with Players, Drops and Log tabs, and Setup while a template's steps apply."""
 
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from bartlebot.gui.sidebar.log_panel import LogPanel
 from bartlebot.gui.sidebar.sections.client_section import ClientSection
 from bartlebot.gui.sidebar.sections.drop_section import DropSection
 from bartlebot.gui.sidebar.sections.possible_drops_section import PossibleDropsSection
+from bartlebot.gui.sidebar.setup_panel import SetupPanel
 
 if TYPE_CHECKING:
     from bartlebot.bot.schema import BotConfig
@@ -20,6 +21,8 @@ if TYPE_CHECKING:
 _PLAYERS_TAB = 0
 _DROPS_TAB = 1
 _LOG_TAB = 2
+#: The Setup tab's label. Last, so the three fixed tabs keep their indices with or without it.
+_SETUP_LABEL = "Setup"
 
 
 class RightSidebar(QTabWidget):
@@ -31,7 +34,7 @@ class RightSidebar(QTabWidget):
     it explicit and give each side the full panel height.
 
     **Log** moved here from the left sidebar.  The left one is now the bot's
-    configuration and nothing else, and a log you have to close Setup to read is a
+    configuration and nothing else, and a log you have to close Option Values to read is a
     log nobody watches while a run is going.
 
     **Possible Drops** — the author's list of what this bot can drop — sits above
@@ -39,6 +42,13 @@ class RightSidebar(QTabWidget):
     same question at different times: what this run *could* yield, and what it
     has.  It is the one piece of the old Bot tab that is not metadata about the
     file, so it did not follow the rest into the header.
+
+    **Setup** is there only while it has something to say: a template draft's steps to
+    edit, or the steps a bot made from a template still has to do. It is over here, not
+    a page of Properties, so the list stays on screen while Properties shows the node a
+    step points at (``setup_panel.py``). A ``QTabWidget`` cannot hide a tab, so it is
+    added and removed, and parked on a hidden child in between, as the left sidebar
+    parks the tabs its mode does not offer.
     """
 
     # Emitted when the *bot file* is edited from this panel -- which today means the
@@ -63,6 +73,10 @@ class RightSidebar(QTabWidget):
         self.drops = DropSection()
         self.possible_drops = PossibleDropsSection()
         self.log_panel = LogPanel()
+        self.setup_panel = SetupPanel()
+        self._parked = QWidget(self)
+        self._parked.setVisible(False)
+        self.setup_panel.setParent(self._parked)
 
         # ── Players tab ─────────────────────────────────────────
         # ClientSection goes in unwrapped, exactly as DropSection does below: its card
@@ -125,6 +139,29 @@ class RightSidebar(QTabWidget):
     def switch_to_log(self) -> None:
         self.setCurrentIndex(_LOG_TAB)
 
+    @property
+    def setup_tab_shown(self) -> bool:
+        return self.indexOf(self.setup_panel) >= 0
+
+    def set_setup_tab_shown(self, shown: bool) -> None:
+        """Add the Setup tab after the others, or take it away. Leaves the current tab alone where it can."""
+        if shown == self.setup_tab_shown:
+            return
+        if shown:
+            self.addTab(self.setup_panel, _SETUP_LABEL)
+        else:
+            was_current = self.currentWidget() is self.setup_panel
+            self.removeTab(self.indexOf(self.setup_panel))
+            # removeTab leaves the page parentless, which is a top-level window.
+            self.setup_panel.setParent(self._parked)
+            if was_current:
+                self.setCurrentIndex(_PLAYERS_TAB)
+
+    def switch_to_setup(self) -> None:
+        """Bring the Setup tab forward, if it is there."""
+        if self.setup_tab_shown:
+            self.setCurrentWidget(self.setup_panel)
+
     # ------------------------------------------------------------------
     # Bot binding
     # ------------------------------------------------------------------
@@ -139,7 +176,7 @@ class RightSidebar(QTabWidget):
 
         The right-hand half of ``LeftSidebar.sync_config``, and the same bug: undo/redo
         hands the canvas a brand-new ``BotConfig``, and a list left bound to the old one
-        shows every drop added to it while the Setup keep-list picker and the saved file
+        shows every drop added to it while the Option Values keep-list picker and the saved file
         never see them.  The wiki import makes it look worse than it is, because the
         page it records goes onto the node -- the canvas's object -- and does save.
         """
@@ -154,7 +191,7 @@ class RightSidebar(QTabWidget):
         # Let the client section back its polling off while it is off screen.
         self.clients.set_players_visible(index == _PLAYERS_TAB)
         if index == _DROPS_TAB:
-            # The keep list is a bot option edited over in Setup, which does not report
+            # The keep list is a bot option edited over in Option Values, which does not report
             # here. Coming forward is the moment the filter has to be right, so it is
             # the moment to re-resolve it.
             self.drops.refresh_keep_list()

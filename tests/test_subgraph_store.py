@@ -118,11 +118,38 @@ def test_every_linked_bot_resolves_under_the_shipped_root_alone():
     """
     shipped = project_root()
     library = SubgraphLibrary(shipped, shipped)
-    uses = count_subgraph_uses(shipped / "bots")
-    # No shipped bot links one yet (the library rewrite brings them), so every shipped
-    # definition loading cleanly is the half of the guard with something to check.
+    # Template drafts and versions too: every bot made from one links what it links.
+    uses = count_subgraph_uses(shipped / "bots") | count_subgraph_uses(shipped / "templates")
     assert library.ids(), "no shipped subgraph, so this guard checks nothing"
     assert not library.errors, f"shipped definitions that fail to load: {library.errors}"
+    assert uses, "no shipped bot or template links a subgraph, so this guard checks nothing"
 
     unresolved = sorted(sid for sid in uses if library.get(sid) is None)
     assert not unresolved, f"linked from bots/ but not loadable from subgraphs/: {unresolved}"
+
+
+def test_every_shipped_bot_and_template_composes_cleanly():
+    """A shipped definition change that breaks a bot fails here, not in someone's run.
+
+    Every linked region in every bot, draft and released version has to come out
+    ``linked`` with nothing to report: no ``held``, ``missing``, ``invalid`` or
+    ``cycle``, and no nested instance held inside it.
+    """
+    from bartlebot.bot.schema import BotConfig  # noqa: PLC0415
+    from bartlebot.subgraphs import compose_bot  # noqa: PLC0415
+
+    shipped = project_root()
+    library = SubgraphLibrary(shipped, shipped)
+    files = sorted((shipped / "bots").rglob("*.json")) + sorted((shipped / "templates").glob("*/[dv]*.json"))
+    linked, broken = 0, []
+    for path in files:
+        _composed, report = compose_bot(BotConfig.load(path), library)
+        linked += bool(report.regions)
+        broken += [
+            f"{path.relative_to(shipped).as_posix()} {rid}: {status.kind} {status.reasons}"
+            for rid, status in report.regions.items()
+            if status.kind != "linked" or status.reasons
+        ]
+
+    assert linked, "nothing shipped links a subgraph, so this checks nothing"
+    assert not broken, "shipped files that don't compose cleanly:\n" + "\n".join(broken)
