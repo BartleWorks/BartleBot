@@ -103,6 +103,24 @@ def test_a_zone_param_gets_the_zone_widget(qapp):
     assert form.get_params() == {"where": "WizardCity/*"}
 
 
+async def test_fill_from_player_writes_the_ordinary_zone_of_a_challenge_mode_copy(qapp):
+    """A bot stores the ordinary zone, which matches either one (#143)."""
+
+    class _InCopy:
+        async def zone_name(self):
+            return "Aquila/AQ_Z02_Atlantea_Hard"
+
+    from bartlebot.gui.canvas.param_panel import _DynamicParamForm
+
+    form = _DynamicParamForm()
+    form.set_clients_getter(lambda: [_InCopy()])
+    form.load_schema([ParamField(key="where", type="zone", label="Where")], {})
+
+    await form.widget("where")._fill_from_player(0)
+
+    assert form.get_params() == {"where": "Aquila/AQ_Z02_Atlantea"}
+
+
 def test_a_str_param_named_zone_is_a_plain_field(qapp):
     from bartlebot.gui.canvas.param_panel import _ZoneWidget
 

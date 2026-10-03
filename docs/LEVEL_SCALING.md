@@ -79,8 +79,10 @@ for one they do not need.
 For the same reason the table never names a Challenge Mode zone, or a pattern that would
 take one in. The node always enters through the sigil in normal mode, so it lands in the
 ordinary zone. `tools/scales_table.py` writes the Scales' own zone even when the recorded
-`enter_dungeon` holds a pattern such as `MB_G14_ThroneRoomB*`, and `check` refuses a
-pattern.
+`enter_dungeon` holds a pattern, and `check` refuses a pattern or a Challenge Mode zone.
+
+A bot needs no pattern for this any more: `node_helpers.zone_matches` treats a zone and its
+Challenge Mode copy as one (#143), so a recorded ordinary zone matches a client in either.
 
 ### A rerun after a cancel
 

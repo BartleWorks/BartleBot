@@ -58,3 +58,28 @@ class TestRecentZones:
 
 def test_nothing_anywhere_gives_an_empty_dropdown() -> None:
     assert merge_zone_choices([], []) == ([], [])
+
+
+class TestDuplicateZones:
+    """A bot stores the canonical zone and matches every duplicate, so a duplicate is never offered."""
+
+    def test_a_live_copy_is_offered_as_its_canonical_zone(self) -> None:
+        live, choices = merge_zone_choices(["Aquila/AQ_Z02_Atlantea_Hard", "Aquila/AQ_Z02_Atlantea"], [])
+
+        assert live == ["Aquila/AQ_Z02_Atlantea"]
+        assert choices == ["Aquila/AQ_Z02_Atlantea"]
+
+    def test_a_remembered_copy_folds_into_its_canonical_zone(self) -> None:
+        recent = ["Aquila/AQ_Z02_Atlantea_Hard", "KT/Bazaar", "Aquila/AQ_Z02_Atlantea"]
+
+        live, choices = merge_zone_choices([], recent)
+
+        assert choices == ["Aquila/AQ_Z02_Atlantea", "KT/Bazaar"]
+
+    def test_gauntlet_bands_fold_into_the_lowest_band(self) -> None:
+        live, choices = merge_zone_choices(
+            ["Housing_PA_Gauntlet/PA_Gauntlet_40/PA_Gauntlet_40_02"],
+            ["Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_02"],
+        )
+
+        assert choices == ["Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_02"]

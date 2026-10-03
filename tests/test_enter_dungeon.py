@@ -1,6 +1,7 @@
 """Unit tests for the enter_dungeon node."""
 
 import asyncio
+import itertools
 from unittest.mock import AsyncMock, patch
 
 from wizwalker import Keycode
@@ -338,6 +339,25 @@ async def test_challenge_mode_already_set_does_not_toggle():
     assert result == "SUCCESS"
     toggles = [c for c in click_by_path_mock.call_args_list if c.args[1] == ed.SIGIL_MODE_TOGGLE_BUTTON_PATH]
     assert toggles == []
+
+
+async def test_challenge_mode_arrives_in_the_copy_of_the_recorded_dungeon_zone():
+    """The copy is its own zone, and the bot records the ordinary one (#143)."""
+    client = FakeClient()
+    client.zone_name.side_effect = itertools.chain(
+        ["Aquila/AQ_Z00_Hub"] * 2, itertools.repeat("Aquila/AQ_Z02_Atlantea_Hard")
+    )
+    params = {**_CHALLENGE_PARAMS, "from_zone": "Aquila/AQ_Z00_Hub", "dungeon_zone": "Aquila/AQ_Z02_Atlantea"}
+
+    with (
+        patch.object(ed, "POLL_INTERVAL", 0),
+        patch.object(nh, "POLL_INTERVAL", 0),
+        patch.object(nh, "all_at_dungeon_entrance", new=AsyncMock(return_value=True)),
+        patch.object(nh, "get_text_by_path", new=AsyncMock(return_value="Challenge Mode Entrance")),
+    ):
+        result = await ed.run(FakeMachine(options={"Challenge Mode": True}), [client], params)
+
+    assert result == "SUCCESS"
 
 
 async def test_challenge_mode_missing_toggle_button_fails():

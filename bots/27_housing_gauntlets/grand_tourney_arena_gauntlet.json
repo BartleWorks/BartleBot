@@ -315,7 +315,7 @@
         "y": 0.0
       },
       "params": {
-        "dungeon_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01"
+        "dungeon_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_01"
       }
     },
     {
@@ -342,8 +342,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_02",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_01",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_02",
         "xyz": {
           "x": -1364.28,
           "y": -3391.03,
@@ -365,7 +365,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_02",
+        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_02",
         "interact_xyz": {
           "x": -2838.83,
           "y": 222.01,
@@ -390,8 +390,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_02",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_02",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_01",
         "xyz": {
           "x": -2805.2,
           "y": -813.98,
@@ -428,8 +428,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_03",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_01",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_03",
         "xyz": {
           "x": -2198.24,
           "y": -3025.78,
@@ -451,7 +451,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_03",
+        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_03",
         "interact_xyz": {
           "x": 74.71,
           "y": 366.19,
@@ -476,8 +476,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_03",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_03",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_01",
         "xyz": {
           "x": -17.84,
           "y": -844.59,
@@ -514,8 +514,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_04",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_01",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_04",
         "xyz": {
           "x": -452.4,
           "y": -3408.7,
@@ -537,7 +537,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_04",
+        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_04",
         "interact_xyz": {
           "x": -5575.39,
           "y": 206.17,
@@ -562,8 +562,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_04",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_04",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_01",
         "xyz": {
           "x": -5605.43,
           "y": -843.43,
@@ -600,8 +600,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_05",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_01",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_05",
         "xyz": {
           "x": 700.34,
           "y": -1377.06,
@@ -623,7 +623,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_05",
+        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_05",
         "interact_xyz": {
           "x": -8362.13,
           "y": -20.27,
@@ -648,8 +648,8 @@
         "y": 0.0
       },
       "params": {
-        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_05",
-        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
+        "from_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_05",
+        "to_zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_01",
         "xyz": {
           "x": -8393.09,
           "y": -857.54,
@@ -686,7 +686,7 @@
         "y": 0.0
       },
       "params": {
-        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_??/AV_Gauntlet_??_01",
+        "zone": "Housing_AV_Gauntlet/AV_Gauntlet_01/AV_Gauntlet_01_01",
         "xyz": {
           "x": -470.2,
           "y": -76.98,

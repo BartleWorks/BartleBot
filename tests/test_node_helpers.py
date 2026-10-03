@@ -109,6 +109,73 @@ def test_zone_matches_malformed_pattern_is_literal_not_an_error():
     assert zone_matches("[unclosed", "[unclosed") is True
 
 
+# A dungeon and its Challenge Mode copy are one zone to a bot (#143). One case per suffix the
+# game uses, since no dungeon shares another's.
+_COPIES = [
+    ("Aquila/AQ_Z02_Atlantea", "Aquila/AQ_Z02_Atlantea_Hard"),
+    ("Marleybone/G14_Gauntlet/MB_Z06_Rooftop", "Marleybone/G14_Gauntlet/MB_Z06_Rooftop_Challenge"),
+    ("Karamelle/Interiors/KM_Z10_ThroneRoom_B", "Karamelle/Interiors/KM_Z10_ThroneRoom_B_Adv"),
+    ("Darkmoor/Interiors/DM_Z04I08_BogOfVengeance", "Darkmoor/Interiors/DM_Z04I08_BogOfVengeanceAdv"),
+]
+
+
+@pytest.mark.parametrize(("ordinary", "copy"), _COPIES)
+def test_zone_matches_a_challenge_mode_copy_of_a_named_zone(ordinary, copy):
+    assert zone_matches(copy, ordinary) is True
+
+
+@pytest.mark.parametrize(("ordinary", "copy"), _COPIES)
+def test_zone_matches_a_named_copy_against_its_ordinary_zone(ordinary, copy):
+    """Both ways: a bot recorded in Challenge Mode still runs in normal mode."""
+    assert zone_matches(ordinary, copy) is True
+
+
+def test_zone_matches_only_the_copy_of_that_zone():
+    """Atlantea02_Hard is the copy of Atlantea02, not of Atlantea, though it starts with it."""
+    assert zone_matches("Aquila/AQ_Z02_Atlantea02_Hard", "Aquila/AQ_Z02_Atlantea") is False
+    assert zone_matches("Aquila/AQ_Z02_Atlantea_Hard", "Aquila/AQ_Z02_Atlantea02") is False
+
+
+def test_zone_matches_does_not_take_an_easy_copy_for_a_challenge_copy():
+    easy = "Wallaru/Interiors/WL_Z02_I10_OutbackDungeon_Easy"
+    assert zone_matches(easy, "Wallaru/Interiors/WL_Z02_I10_OutbackDungeon") is False
+
+
+def test_zone_matches_a_glob_against_a_copy_through_its_ordinary_zone():
+    assert zone_matches("Aquila/AQ_Z02_Atlantea_Hard", "Aquila/AQ_Z02_Atlant?a") is True
+
+
+_PA_01_03 = "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_03"
+_PA_40_03 = "Housing_PA_Gauntlet/PA_Gauntlet_40/PA_Gauntlet_40_03"
+
+
+def test_zone_matches_a_gauntlet_room_in_any_level_band():
+    """The players' levels pick the band; a bot recorded in one runs in every other."""
+    assert zone_matches(_PA_40_03, _PA_01_03) is True
+    assert zone_matches(_PA_01_03, _PA_40_03) is True
+    assert zone_matches("Housing_PA_Gauntlet/PA_Gauntlet_80/PA_Gauntlet_80_03", _PA_40_03) is True
+
+
+def test_zone_matches_only_the_same_room_across_bands():
+    assert zone_matches("Housing_PA_Gauntlet/PA_Gauntlet_40/PA_Gauntlet_40_04", _PA_01_03) is False
+
+
+def test_zone_matches_a_glob_over_the_lowest_band_takes_in_every_band():
+    assert zone_matches(_PA_40_03, "Housing_PA_Gauntlet/PA_Gauntlet_01/*") is True
+
+
+def test_zone_matches_does_not_merge_numbered_rooms():
+    """_T1 to _T3 are three rooms of one dungeon, not three bands."""
+    sunken = "WizardCity/WC_Streets/Interiors/WC_Sunken_City_T"
+    assert zone_matches(sunken + "2", sunken + "1") is False
+
+
+def test_zone_matches_a_glob_naming_only_the_copy_still_refuses_the_ordinary_zone():
+    """A glob is the one way left to tell the two apart."""
+    assert zone_matches("Aquila/AQ_Z02_Atlantea_Hard", "*_Hard") is True
+    assert zone_matches("Aquila/AQ_Z02_Atlantea", "*_Hard") is False
+
+
 # ---------------------------------------------------------------------------
 # entity_name_matches — pure function, no async
 # ---------------------------------------------------------------------------

@@ -61,6 +61,22 @@ async def test_success_multiple_clients():
         assert c.teleport.call_count == 2
 
 
+async def test_a_client_in_the_challenge_mode_copy_of_from_zone_has_not_left_it():
+    """It used to read as gone at once, so it was never sent to the trigger (#143)."""
+    client = FakeClient()
+    client.zone_name.side_effect = itertools.chain(
+        ["Aquila/AQ_Z02_Atlantea_Hard"] * 2, itertools.repeat("Aquila/Interiors/AQ_Z02_ThroneRoom_Hard")
+    )
+    params = {**_PARAMS, "from_zone": "Aquila/AQ_Z02_Atlantea", "to_zone": "Aquila/Interiors/AQ_Z02_ThroneRoom"}
+
+    with patch.object(gtz, "POLL_INTERVAL", 0):
+        result = await gtz.run(FakeMachine(), [client], params)
+
+    assert result == "SUCCESS"
+    # The opening teleport, and the retry while it still stood in the copy.
+    assert client.teleport.call_count == 2
+
+
 async def test_timeout_leaving_source_zone_fails():
     """If clients never leave from_zone the node returns FAILURE after timeout."""
     client = FakeClient()

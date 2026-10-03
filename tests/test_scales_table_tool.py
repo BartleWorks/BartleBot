@@ -120,6 +120,14 @@ def test_a_pattern_in_the_table_is_a_problem(nav):
     assert any("is a pattern" in line for line in scales_table.problems([entry], nav))
 
 
+def test_a_challenge_mode_copy_in_the_table_is_a_problem(nav):
+    """The node enters in normal mode, and the copy has no Scales."""
+    entry = _entry(nav)
+    entry["steps"][0]["to_zone"] = "Aquila/AQ_Z02_Atlantea_Hard"
+
+    assert any("is a Challenge Mode copy" in line for line in scales_table.problems([entry], nav))
+
+
 def test_the_name_key_level_and_default_can_be_given(nav):
     bot = _bot(_sigil(_HUB, _DUNGEON), _station(_DUNGEON))
 

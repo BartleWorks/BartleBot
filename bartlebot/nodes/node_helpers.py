@@ -16,7 +16,7 @@ from wizwalker.extensions.scripting import teleport_to_friend_from_list
 
 logger = logging.getLogger(__name__)
 
-from bartlebot import dialog_captions, player_realms, sightings, wizard_names
+from bartlebot import dialog_captions, player_realms, sightings, wizard_names, zone_names
 from bartlebot.nodes.paths import (  # noqa: F401 — re-exported for callers
     ADVANCE_DIALOG_PATH,
     DECLINE_QUEST_PATH,
@@ -877,8 +877,16 @@ def zone_matches(actual: str, pattern: str) -> bool:
 
     If pattern contains glob metacharacters (* ? [), fnmatch is used so callers
     can write patterns like "WizardCity/*" to match any WizardCity sub-zone.
-    Plain strings (no metacharacters) fall through to exact equality, preserving
-    the previous behavior for all existing bot files.
+    Plain strings (no metacharacters) are compared for equality, with one
+    exception: duplicates of one place are the same zone here, in both directions.
+    That is a dungeon and its Challenge Mode copy (#143), and a gauntlet room in
+    each of its level bands (zone_names.TIERED_GAUNTLETS), whether or not the bot
+    asked for Challenge Mode and whatever band the players' levels chose. Both
+    sides are compared as zone_names.canonical_zone.
+
+    A glob is tried against the zone and against its canonical zone, so "*_Hard"
+    still names only the copy, and a glob over a gauntlet's lowest band
+    ("PA_Gauntlet_01/*") takes in every band.
 
     A malformed glob does not raise: fnmatch treats an unbalanced bracket as a
     literal character, so "[unclosed" matches the zone of that exact name and
@@ -886,12 +894,13 @@ def zone_matches(actual: str, pattern: str) -> bool:
     """
     if actual is None:
         return False
+    canonical = zone_names.canonical_zone(actual)
     if has_glob(pattern):
-        matched = fnmatch.fnmatchcase(actual, pattern)
+        matched = fnmatch.fnmatchcase(actual, pattern) or fnmatch.fnmatchcase(canonical, pattern)
         if matched:
             logger.debug("zone_matches: pattern %r matched actual zone %r (wildcard)", pattern, actual)
         return matched
-    return actual == pattern
+    return actual == pattern or canonical == zone_names.canonical_zone(pattern)
 
 
 async def all_left_zone(clients: list, zone: str) -> bool:

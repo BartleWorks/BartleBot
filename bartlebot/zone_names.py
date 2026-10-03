@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from functools import cache
 from pathlib import Path
 
@@ -80,6 +81,70 @@ def challenge_variant_of(zone: str | None) -> str | None:
         if zone.endswith(suffix) and base in zones:
             return base
     return None
+
+
+TIERED_GAUNTLETS: tuple[str, ...] = (
+    "Housing_AV_Gauntlet/AV_Gauntlet_{tier}/AV_Gauntlet_{tier}_",
+    "Housing_Gauntlet/KH_Gauntlet{tier}/KH_Gauntlet{tier}_",
+    "Housing_PA_Gauntlet/PA_Gauntlet_{tier}/PA_Gauntlet_{tier}_",
+    "Housing_VA_Gauntlet/VA_Clock_Gauntlet_{tier}/VA_Level{tier}_",
+    "Housing_GHGauntlet/GH_WinterbaneGauntlet{tier}/GH_WinterbaneGauntlet{tier}_",
+    "Housing_Gauntlet_Theater/Gauntlet_{tier}/TheaterGauntlet_G{tier}_",
+    "Housing_Gauntlet_Voyage/Gauntlet_{tier}/",
+)
+"""Gauntlets the game copies once per level band, as the prefix of each room's zone.
+
+The game picks the band from the players' levels, and every band is a separate zone: the
+same rooms, at the same coordinates, under a different number (``PA_Gauntlet_40`` is the
+level 40 copy of ``PA_Gauntlet_01``). The room is whatever follows the prefix.
+
+Declared one family at a time, never by a suffix rule: ``WC_Sunken_City_T1`` to ``_T3`` are
+three rooms of one dungeon, and Treasure Tower's ``_L01`` to ``_L30`` are its floors. The
+Halloween gauntlet's Easy, Medium and Hard are a choice, not a band, and are left out.
+"""
+
+
+def _tier_pattern(prefix: str) -> re.Pattern[str]:
+    before, _, rest = prefix.partition("{tier}")
+    later = r"(?P=tier)".join(re.escape(part) for part in rest.split("{tier}"))
+    return re.compile(rf"{re.escape(before)}(?P<tier>\d+){later}(?P<room>.+)")
+
+
+_TIER_PATTERNS = tuple(_tier_pattern(prefix) for prefix in TIERED_GAUNTLETS)
+
+
+def tier_of(zone: str) -> tuple[int, str, int] | None:
+    """(family, room, level band) for a room of a TIERED_GAUNTLETS family, or None."""
+    for family, pattern in enumerate(_TIER_PATTERNS):
+        if match := pattern.fullmatch(zone):
+            return family, match["room"], int(match["tier"])
+    return None
+
+
+@cache
+def _lowest_tiers() -> dict[tuple[int, str], str]:
+    """Each tiered room's zone in its lowest band, from the snapshot."""
+    zones, _ = _snapshot()
+    lowest: dict[tuple[int, str], tuple[int, str]] = {}
+    for zone in zones:
+        if (tier := tier_of(zone)) is not None:
+            family, room, band = tier
+            if (family, room) not in lowest or band < lowest[family, room][0]:
+                lowest[family, room] = (band, zone)
+    return {key: zone for key, (_, zone) in lowest.items()}
+
+
+def canonical_zone(zone: str) -> str:
+    """The zone a bot stores for `zone`: the one every duplicate of it is compared as.
+
+    A Challenge Mode copy's is the ordinary zone it copies (#143), and a tiered gauntlet
+    room's is the same room in its lowest level band. Any other zone's is itself. A bot
+    means a place, and which of its copies the players land in is the game's choice.
+    """
+    zone = challenge_variant_of(zone) or zone
+    if (tier := tier_of(zone)) is not None:
+        return _lowest_tiers().get(tier[:2], zone)
+    return zone
 
 
 @cache
