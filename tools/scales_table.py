@@ -255,6 +255,8 @@ def problems(entries: list[dict], nav: zone_nav.NavMap | None = None) -> list[st
         named = [entry.entrance_zone, entry.zone, *(z for s in entry.steps for z in (s.from_zone, s.to_zone))]
         if globbed := sorted({z for z in named if has_glob(z)}):
             found.append(f"{label}: {globbed[0]} is a pattern; the table names one zone, never a Challenge Mode copy")
+        if copies := sorted({z for z in named if zone_names.challenge_variant_of(z)}):
+            found.append(f"{label}: {copies[0]} is a Challenge Mode copy; the table names the ordinary zone")
         if not zone_nav.is_destination(nav, entry.entrance_zone):
             found.append(f"{label}: entrance zone {entry.entrance_zone} is not a destination on the zone map")
         if entry.steps[0].from_zone != entry.entrance_zone:

@@ -49,6 +49,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from bartlebot import zone_names
 from bartlebot.bot.schema import FlagCondition, FlagGroup, RegionModel, StateModel, TransitionModel
 from bartlebot.gui.canvas import recording
 from bartlebot.gui.icon_utils import svg_icon, svg_pixmap
@@ -584,7 +585,8 @@ class _ZoneWidget(QWidget):
         try:
             zone = await clients[idx].zone_name()
             if zone:
-                self.setText(zone)
+                # A bot stores the ordinary zone, never its Challenge Mode copy (#143).
+                self.setText(zone_names.ordinary_zone(zone))
         except Exception:
             pass
 

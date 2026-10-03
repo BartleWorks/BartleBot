@@ -27,6 +27,7 @@ from bartlebot import (
     template_diff,
     template_store,
     wizard_names,
+    zone_names,
 )
 from bartlebot.authoring_tools import SLOT_KEYS, AuthoringAction, AuthoringTools, slot_keys_armed, source_index
 from bartlebot.bot.machine import BotMachine
@@ -133,12 +134,18 @@ def merge_zone_choices(client_zones: Sequence[str], recent_zones: Sequence[str])
     zones lead because they are what a bot being edited right now is about to
     reference.  Blanks and the unread placeholder are dropped — offering "—" as a
     zone name would write it straight into a bot config.
+
+    A Challenge Mode copy is offered as the ordinary zone it copies, which is what a bot
+    stores and what matches either one (#143), so the two never appear side by side.
     """
     live: list[str] = []
     for zone in client_zones:
-        if zone and zone != _ZONE_PLACEHOLDER and zone not in live:
-            live.append(zone)
-    return live, live + [z for z in recent_zones if z not in live]
+        if not zone or zone == _ZONE_PLACEHOLDER:
+            continue
+        if (ordinary := zone_names.ordinary_zone(zone)) not in live:
+            live.append(ordinary)
+    recent = dict.fromkeys(zone_names.ordinary_zone(z) for z in recent_zones)
+    return live, live + [z for z in recent if z not in live]
 
 
 class AppController(QObject):

@@ -58,3 +58,20 @@ class TestRecentZones:
 
 def test_nothing_anywhere_gives_an_empty_dropdown() -> None:
     assert merge_zone_choices([], []) == ([], [])
+
+
+class TestChallengeModeCopies:
+    """A bot stores the ordinary zone and matches either, so a copy is never offered (#143)."""
+
+    def test_a_live_copy_is_offered_as_its_ordinary_zone(self) -> None:
+        live, choices = merge_zone_choices(["Aquila/AQ_Z02_Atlantea_Hard", "Aquila/AQ_Z02_Atlantea"], [])
+
+        assert live == ["Aquila/AQ_Z02_Atlantea"]
+        assert choices == ["Aquila/AQ_Z02_Atlantea"]
+
+    def test_a_remembered_copy_folds_into_its_ordinary_zone(self) -> None:
+        recent = ["Aquila/AQ_Z02_Atlantea_Hard", "KT/Bazaar", "Aquila/AQ_Z02_Atlantea"]
+
+        live, choices = merge_zone_choices([], recent)
+
+        assert choices == ["Aquila/AQ_Z02_Atlantea", "KT/Bazaar"]

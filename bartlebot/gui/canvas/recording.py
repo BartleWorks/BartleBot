@@ -179,11 +179,21 @@ async def _npc_range_title(client) -> str:
     return _TITLE_ASIDE.sub("", title).strip()
 
 
+async def _zone_to_record(client) -> str | None:
+    """The client's zone as a bot stores it: the ordinary zone, never its Challenge Mode copy.
+
+    The nodes match either one against it (node_helpers.zone_matches), so a bot recorded in
+    Challenge Mode still runs in normal mode, and its labels and summary name the dungeon.
+    """
+    zone = await client.zone_name()
+    return zone and zone_names.ordinary_zone(zone)
+
+
 async def _wait_for_zone_name(client, poll: float, timeout: float = 10.0) -> str | None:
     """Poll until zone_name() returns a non-None value after a loading screen."""
     deadline = asyncio.get_event_loop().time() + timeout
     while True:
-        zone = await client.zone_name()
+        zone = await _zone_to_record(client)
         if zone is not None:
             return zone
         if asyncio.get_event_loop().time() >= deadline:
@@ -277,7 +287,7 @@ class _WalkIn(_Workflow):
         return [k for k in (self.zone_key, *points, self.destination_key, self.name_key) if k is not None]
 
     async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
-        from_zone = await client.zone_name()
+        from_zone = await _zone_to_record(client)
         if self.zone_key is not None:
             param_form.set_str(self.zone_key, from_zone)
         if self.point_key is not None:
@@ -348,7 +358,7 @@ class _Interact(_Workflow):
         return keys if self.destination_key is None else [*keys, self.destination_key]
 
     async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
-        zone = await client.zone_name()
+        zone = await _zone_to_record(client)
         param_form.set_str(self.zone_key, zone)
         _set_position(param_form, "reset_xyz", await client.body.position())
         on_status(self.approach)
@@ -398,7 +408,7 @@ class _Point(_Workflow):
         return ["zone", "xyz"]
 
     async def capture(self, client, param_form, on_status, try_set_label, player) -> str:
-        zone = await client.zone_name()
+        zone = await _zone_to_record(client)
         pos = await client.body.position()
         param_form.set_str("zone", zone)
         _set_position(param_form, "xyz", pos)

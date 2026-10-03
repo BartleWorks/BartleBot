@@ -82,6 +82,15 @@ def challenge_variant_of(zone: str | None) -> str | None:
     return None
 
 
+def ordinary_zone(zone: str) -> str:
+    """`zone` itself, or the ordinary zone it is the Challenge Mode copy of.
+
+    What a bot stores and what two zones are compared as: a dungeon and its copy are one
+    place to a bot, whichever of the two the players are standing in (#143).
+    """
+    return challenge_variant_of(zone) or zone
+
+
 @cache
 def labels() -> frozenset[str]:
     """Every text ``label()`` gives some zone in the snapshot."""

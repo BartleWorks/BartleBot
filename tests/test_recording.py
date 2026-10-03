@@ -324,6 +324,23 @@ async def test_go_to_xyz_happy_path():
     assert call("Stop") not in on_btn.call_args_list
 
 
+async def test_a_recording_in_a_challenge_mode_copy_writes_the_ordinary_zone():
+    """A bot stores the ordinary zone, which matches either one (#143)."""
+    client = _client(zone="Aquila/AQ_Z02_Atlantea_Hard")
+    form = FakeParamForm()
+
+    await run_recording("teleport_to_coordinates", client, form, *_callbacks())
+
+    assert form.str_fields["zone"] == "Aquila/AQ_Z02_Atlantea"
+
+
+async def test_a_destination_reached_in_a_challenge_mode_copy_is_its_ordinary_zone():
+    client = FakeClient()
+    client.zone_name.return_value = "Aquila/AQ_Z02_Atlantea_Hard"
+
+    assert await _wait_for_zone_name(client, poll=0) == "Aquila/AQ_Z02_Atlantea"
+
+
 async def test_go_to_xyz_status_contains_zone_suffix():
     client = _client(zone="Hub/Central")
     form = FakeParamForm()

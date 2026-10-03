@@ -121,7 +121,9 @@ from bartlebot.nodes.timing import MAX_RETRIES, POLL_INTERVAL, ZONE_CHANGE_TIMEO
 
 
 async def _has_left_zone(client, zone: str) -> bool:
-    return await client.zone_name() != zone
+    # Through zone_matches, not !=: a client in a Challenge Mode copy of a literal from_zone,
+    # or in a zone a glob from_zone names, has not left it (#143).
+    return not node_helpers.zone_matches(await client.zone_name(), zone)
 
 
 async def _any_confirmed_arrival(clients: list, to_zone: str) -> bool:

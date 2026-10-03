@@ -77,3 +77,16 @@ def test_a_challenge_mode_copy_names_the_zone_it_is_a_copy_of(zone, base):
 )
 def test_anything_else_is_not_a_challenge_mode_copy(zone):
     assert zone_names.challenge_variant_of(zone) is None
+
+
+def test_the_ordinary_zone_of_a_copy_is_the_zone_it_copies():
+    assert zone_names.ordinary_zone("Aquila/AQ_Z02_Atlantea_Hard") == "Aquila/AQ_Z02_Atlantea"
+
+
+@pytest.mark.parametrize(
+    "zone",
+    ["Aquila/AQ_Z02_Atlantea", "Wallaru/Interiors/WL_Z02_I10_OutbackDungeon_Easy", "Nowhere/Made_Up_Hard"],
+    ids=["ordinary", "easy copy", "no such sibling"],
+)
+def test_any_other_zone_is_its_own_ordinary_zone(zone):
+    assert zone_names.ordinary_zone(zone) == zone

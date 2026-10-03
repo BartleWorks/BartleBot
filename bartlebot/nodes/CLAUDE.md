@@ -126,6 +126,17 @@ number. Realm cannot be read without opening the spellbook, so never skip portin
 sharing the target's zone or coordinates. When the target is one of ours, use
 `gather_at_player`, which checks arrival against the target's own zone and position.
 
+## Comparing a zone a bot names with one a client is in
+
+Always through `node_helpers.zone_matches`, never `==` or `!=`. Besides globs, it treats a
+dungeon and its Challenge Mode copy as one zone (#143): the copy is a separate zone whose id is
+the ordinary one plus `_Challenge`, `_Hard` or `_Adv`, and a bot names the ordinary one. A raw
+`!=` in `enter_zone` read a client standing in the copy of `from_zone` as having already left
+it. Two clients' live zones can be compared directly, since both are in the same copy.
+
+Anything that writes a client's zone into a bot writes `zone_names.ordinary_zone(zone)`, as
+Record and Fill from Player do.
+
 ## Keeping a session log readable
 
 A five-hour four-client run writes tens of thousands of lines, and the difference
