@@ -39,7 +39,7 @@ def _t(source: str, dest: str, when: str | None = "SUCCESS") -> dict:
     return t
 
 
-def _bot(states: list[dict], transitions: list[dict], **extra) -> BotConfig:
+def _bot(states: list[dict], transitions: list[dict], more_states=(), **extra) -> BotConfig:
     data = {
         "id": "00000000-1111-2222-3333-444444444444",
         "name": "Test Boss",
@@ -50,13 +50,13 @@ def _bot(states: list[dict], transitions: list[dict], **extra) -> BotConfig:
         "drops": [{"name": "Test Hat"}],
         "initial": states[0]["id"],
         "recovery_state": states[0]["id"],
-        "states": states,
+        "states": [*states, *more_states],
         "transitions": transitions,
     }
     return BotConfig.model_validate({**data, **extra})
 
 
-def _boss(enemy: str = "Test-Boss-01", **extra) -> BotConfig:
+def _boss(enemy: str = "Test-Boss-01", more_states=(), more_transitions=(), **extra) -> BotConfig:
     return _bot(
         [
             _s("state_1", "teleport_to_world_hub", "Go to the hub", zone=HUB),
@@ -90,7 +90,9 @@ def _boss(enemy: str = "Test-Boss-01", **extra) -> BotConfig:
             _t("state_4", "state_5"),
             _t("state_5", "state_6"),
             _t("state_6", "state_3"),
+            *more_transitions,
         ],
+        more_states=more_states,
         **extra,
     )
 
@@ -144,7 +146,8 @@ def test_a_rebuilt_bot_keeps_who_it_is_and_records_its_template(library):
 
     assert config.id == old.id
     assert (config.name, config.description, config.version) == (old.name, old.description, old.version)
-    assert config.tags == old.tags and config.authors == old.authors
+    assert config.authors == old.authors
+    assert config.tags == ["Boss", "Team-Up"], "its own, and the Team-Up its rebuilt entry offers"
     assert [d.name for d in config.drops] == ["Test Hat"]
     assert config.template is not None
     assert (config.template.id, config.template.version) == (start.template_id, start.version)
@@ -174,7 +177,46 @@ def test_the_report_sorts_every_old_node(library):
 
     assert any("state_1 teleport_to_world_hub" in line for line in report.folded)
     assert any("state_2 enter_zone" in line for line in report.folded), "the walk to the entrance is Sync players'"
-    assert [line.split()[0] for line in report.content] == ["state_5"], "the chest is the bot's own content"
+    assert [line.split()[0] for line in report.grafted] == ["state_5"], "the chest is the bot's own content"
+    assert not report.content and report.clean
+
+
+def test_content_is_spliced_in_after_the_node_it_hung_off_and_skips_nothing(library):
+    config, _report = _rebuild(_boss(), "Boss Farmer", library)
+    fight = _by_type(config, "handle_combat")[0]
+    chest = next(s for s in config.states if s.id == "state_5")
+    wisps_after = next(s for s in _by_type(config, "collect_wisps") if s.id == _next(config, chest.id))
+
+    assert _next(config, fight.id) == chest.id
+    assert _next(config, wisps_after.id) == next(s.id for s in _by_type(config, "enter_zone")), "then the exit"
+    assert chest.label == "Open the chest" and chest.params["interact_xyz"] == _A
+
+
+def test_a_flag_guarded_skip_comes_with_its_content(library):
+    skip = {**_t("state_4", "state_6"), "flags": [{"option": "Skip the chest", "value": True}]}
+    old = _boss(more_transitions=[skip], options=[{"name": "Skip the chest", "type": "bool", "default": False}])
+    config, report = _rebuild(old, "Boss Farmer", library)
+    fight = _by_type(config, "handle_combat")[0]
+
+    assert any(t.source == fight.id and t.flags for t in config.transitions), "the skip is kept"
+    assert not report.unread_options and report.clean
+
+
+def test_content_reached_only_from_replaced_navigation_is_not_written(tmp_path, library):
+    old = _boss(
+        more_states=[_s("state_9", "interact", "Pull a lever", zone=HUB, interact_xyz=_A, reset_xyz=_B)],
+        more_transitions=[_t("state_1", "state_9"), _t("state_9", "state_2")],
+    )
+    _config, report = _rebuild(old, "Boss Farmer", library)
+
+    assert any("only from navigation" in line for line in report.problems)
+    assert not report.clean
+
+    path = tmp_path / "lever.json"
+    old.save(path)
+    before = path.read_bytes()
+    assert rft._rebuild_one(str(path), None, write=True) is False
+    assert path.read_bytes() == before
 
 
 def test_an_unnamed_enemy_is_reported_and_left_as_a_step(library):
@@ -182,6 +224,7 @@ def test_an_unnamed_enemy_is_reported_and_left_as_a_step(library):
 
     assert any("Enemy" in line for line in report.unfilled)
     assert _steps_left(config, library) == 1
+    assert not report.clean, "a blank fill-in would stop the bot running, so it is not written"
 
 
 def test_the_old_bots_options_are_kept_and_one_nothing_reads_is_reported(library):
@@ -189,7 +232,8 @@ def test_the_old_bots_options_are_kept_and_one_nothing_reads_is_reported(library
     config, report = _rebuild(old, "Boss Farmer", library)
 
     assert "Skip the chest" in {o.name for o in config.options}
-    assert report.unread_options == ["Skip the chest"], "its guard was on content the rebuild leaves out"
+    assert report.unread_options == ["Skip the chest"], "no edge guards on it"
+    assert not report.clean
 
 
 def test_an_entrance_off_the_zone_map_syncs_where_the_old_bot_entered_it_from(library):
@@ -214,7 +258,10 @@ def test_an_entrance_off_the_zone_map_syncs_where_the_old_bot_entered_it_from(li
 
     sync = next(r for r in config.regions if r.source is not None)
     assert sync.source.inputs[rft.SYNC_ZONE_INPUT] == wastes
-    assert [line.split()[0] for line in report.content] == ["state_2"], "the step into the manor is put back by hand"
+    assert [line.split()[0] for line in report.grafted] == ["state_2"]
+    sync_member = next(s for s in config.states if s.node_type == "sync_in_zone")
+    assert _next(config, sync_member.id) == "state_2", "the step into the manor goes straight after Sync players"
+    assert _next(config, "state_2") == _by_type(config, "handle_potions")[0].id
 
 
 # ---------------------------------------------------------------------------
@@ -294,9 +341,11 @@ def test_reagent_spawns_fill_in_the_order_a_run_reaches_them(library):
     )
     config, report = _rebuild(old, "Reagent Collector", library)
 
-    xs = [s.params["xyz"]["x"] for s in rft.walk_order(config) if s.node_type == "collect_reagent"]
-    assert xs == [3.0, 1.0, 2.0], "the first three, in run order"
-    assert [line.split()[0] for line in report.content] == ["state_4"], "the fourth spawn is put back by hand"
+    filled = {s.id: s.params["xyz"]["x"] for s in config.states if s.node_type == "collect_reagent"}
+    assert [filled[tid] for tid in ("t_4", "t_5", "t_6")] == [3.0, 1.0, 2.0], "the template's three, in run order"
+    assert [line.split()[0] for line in report.grafted] == ["state_4"], "the fourth spawn is carried"
+    assert _next(config, "t_6") == "state_4"
+    assert _next(config, "state_4") == _by_type(config, "change_realm")[0].id, "and the loop changes realm as before"
 
 
 # ---------------------------------------------------------------------------
@@ -328,3 +377,48 @@ def test_a_bot_that_already_records_a_template_is_refused(tmp_path, library):
 
     with pytest.raises(rft.RebuildError, match="already records"):
         rft._rebuild_one(str(path), None, write=False)
+
+
+def test_a_reagent_bot_with_fewer_spawns_loses_the_templates_spares(library):
+    zone = "Celestia/CL_Hub"
+    old = _bot(
+        [_s("state_1", "collect_reagent", zone=zone, xyz=_A, entity_names=["Pearl"])],
+        [_t("state_1", "state_1")],
+        name="Test Reagent",
+    )
+    config, report = _rebuild(old, "Reagent Collector", library)
+    spawns = _by_type(config, "collect_reagent")
+
+    assert [s.id for s in spawns] == ["t_4"]
+    assert _next(config, "t_4") == _by_type(config, "change_realm")[0].id, "the loop closes round the spares"
+    assert report.clean and _steps_left(config, library) == 0
+
+
+def test_a_wisps_on_the_trip_goes_with_the_trip(library):
+    old = _boss(
+        more_states=[_s("state_9", "collect_wisps", "Collect mana at the hub"), _s("state_10", "collect_wisps")],
+        more_transitions=[_t("state_1", "state_9"), _t("state_9", "state_2"), _t("state_6", "state_10")],
+    )
+    _config, report = _rebuild(old, "Boss Farmer", library)
+
+    assert any(line.startswith("state_9 ") for line in report.folded), "the template collects before the entry"
+    assert report.clean
+
+
+def test_a_dungeon_entered_on_the_way_to_the_spawns_is_not_spliced_after_them(library):
+    """The first run would collect in the hall before entering the dungeon the reagents grow in."""
+    hall, dungeon = "Celestia/CL_Hub", "Celestia/Interiors/Spawns"
+    old = _bot(
+        [
+            _s("state_1", "teleport_to_world_hub", zone=hall),
+            _s("state_2", "enter_dungeon", from_zone=hall, dungeon_zone=dungeon, sigil_xyz=_A, reset_xyz=_B),
+            _s("state_3", "collect_reagent", zone=dungeon, xyz=_A, entity_names=["Pearl"]),
+            _s("state_4", "enter_zone", from_zone=dungeon, to_zone=hall, xyz=_A, reset_xyz=_B),
+        ],
+        [_t("state_1", "state_2"), _t("state_2", "state_3"), _t("state_3", "state_4"), _t("state_4", "state_2")],
+        name="Test Reagent",
+    )
+    _config, report = _rebuild(old, "Reagent Collector", library)
+
+    assert any("on the way in" in line for line in report.problems)
+    assert not report.clean

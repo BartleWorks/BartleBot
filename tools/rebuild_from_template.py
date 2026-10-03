@@ -43,8 +43,17 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from bartlebot import scales, setup_steps, zone_nav  # noqa: E402
-from bartlebot.bot.schema import BotConfig, BotOptionModel, StateModel  # noqa: E402
+from bartlebot.bot.schema import (  # noqa: E402
+    FALLTHROUGH_RETURNS,
+    BotConfig,
+    BotOptionModel,
+    StateModel,
+    TransitionModel,
+)
 from bartlebot.bot_options import required_option_specs  # noqa: E402
+from bartlebot.bot_tags import normalize_tags, suggested_tags  # noqa: E402
+from bartlebot.gui.canvas.edit_scene import _reachable_states  # noqa: E402
+from bartlebot.gui.canvas.layout import auto_layout  # noqa: E402
 from bartlebot.new_bot import BotDetails, StartingPoint, create_bot, starting_points  # noqa: E402
 from bartlebot.nodes.registry import NODE_SPECS  # noqa: E402
 from bartlebot.subgraph_store import SubgraphLibrary  # noqa: E402
@@ -73,13 +82,30 @@ LEVEL_SCALING_TYPES = SCALING_FOLD | {"handle_level_scaling"}
 #: Params carried from the node a template node is filled from, beyond its fill-ins: what the
 #: old bot knew about its dungeon and fight that the template leaves blank.
 CARRY_PARAMS = {
-    "enter_dungeon": ("dungeon_name",),
+    # Whether the dungeon has a Challenge Mode is a fact about it, and content may be guarded
+    # on the option it brings. Team-Up stays the template's: its defaults were set on purpose.
+    "enter_dungeon": ("dungeon_name", "offers_challenge_mode"),
     "enter_gauntlet": ("gauntlet_name",),
     "handle_combat": ("wiki_page", "use_default_strategy", "max_duration"),
 }
 
 #: The template node types a value is looked for in the old bot, by role.
 MAPPED_TYPES = ("enter_dungeon", "enter_zone", "handle_combat", "teleport_to_coordinates", "enter_gauntlet")
+
+#: Params of the nodes the template replaces that stay the template's: the worksheet's
+#: "set by every template" values, and potions' mark zone, whose place has moved.
+TEMPLATE_SET = {
+    "collect_wisps": ("only_safe", "timeout", "if_health_below"),
+    "handle_potions": ("mark_zone",),
+}
+
+#: Author options that are not carried, and why. Every guard on one goes with it.
+RETIRED_OPTIONS = {
+    "Quicksell": "an author's own switch for selling, which Enable Quicksell, the user's setting, replaces",
+}
+
+#: How a report line about the drops fill-in starts (``setup_steps.describe_target``).
+DROPS_LABEL = "Possible drops"
 
 #: The Sync players node's promoted zone, as a template's setup step names it.
 SYNC_ZONE_INPUT = "state_2.zone"
@@ -235,7 +261,7 @@ def read_old(config: BotConfig, category: str, nav: zone_nav.NavMap | None = Non
             old.notes.append(
                 f"farm entry is {old.entry.id}, the first reached; the other dungeon entries ({others}) are content"
             )
-        old.exit = _exit_of(order, old.entry, old.folded)
+        old.exit = _exit_of(old, order)
 
     fights = [s for s in order if s.node_type == "handle_combat"]
     if fights and category in ("boss", "spellement", "mob"):
@@ -300,9 +326,11 @@ def _farm_zones(old: OldBot) -> set[str]:
     else:
         return set()
     changes = [s for s in old.config.states if s.node_type in ("enter_zone", "enter_zone_via_object")]
+    # Growing stops at the entrance: the way out leads there, and it is not the farm.
+    outside = {old.entry.params.get("from_zone")} if old.entry is not None else set()
     grew = True
     while grew:
-        more = {s.params.get("to_zone") for s in changes if s.params.get("from_zone") in zones} - zones
+        more = {s.params.get("to_zone") for s in changes if s.params.get("from_zone") in zones} - zones - outside
         grew = bool(more)
         zones |= more
     zones.discard(None)
@@ -330,17 +358,23 @@ def _reachable(config: BotConfig, start: str, stop: str | None = None) -> set[st
     return seen
 
 
-def _exit_of(order: list[StateModel], entry: StateModel, folded: set[str]) -> StateModel | None:
-    """The zone change that leaves the farm dungeon: back to where it was entered from, if one does.
+def _exit_of(old: OldBot, order: list[StateModel]) -> StateModel | None:
+    """The zone change that leaves the farm: from one of its zones to a zone outside it.
 
-    Only one after the entry in the run: the walk *to* the entrance ends where the exit does.
+    Back to where the dungeon was entered from, when one goes there.
     """
-    after = order[order.index(entry) + 1 :]
-    candidates = [s for s in after if s.node_type == "enter_zone" and s.id not in folded]
-    back = [s for s in candidates if s.params.get("to_zone") == entry.params.get("from_zone")]
-    if back:
-        return back[-1]
-    return next((s for s in candidates if s.params.get("from_zone") == entry.params.get("dungeon_zone")), None)
+    farm = _farm_zones(old)
+    leaving = [
+        s
+        for s in order
+        if s.node_type == "enter_zone"
+        and s.id not in old.folded
+        and s.params.get("from_zone") in farm
+        and s.params.get("to_zone") not in farm
+    ]
+    entrance = old.entry.params.get("from_zone") if old.entry is not None else None
+    back = [s for s in leaving if s.params.get("to_zone") == entrance]
+    return (back or leaving or [None])[0]
 
 
 # ---------------------------------------------------------------------------
@@ -360,20 +394,36 @@ class Report:
     carried: list[str] = field(default_factory=list)
     folded: list[str] = field(default_factory=list)
     covered: list[str] = field(default_factory=list)
+    grafted: list[str] = field(default_factory=list)
     content: list[str] = field(default_factory=list)
     unread_options: list[str] = field(default_factory=list)
+    #: Why the rebuilt bot is not a faithful copy. ``--write`` refuses a bot with any.
+    problems: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+
+    @property
+    def clean(self) -> bool:
+        """Every old node carried or replaced, every node fill-in filled, and the result sound.
+
+        Only then is it written. A blank fill-in on a node is a validation error in a bot made
+        from a template, so the bot would stop running until someone records it in game; a
+        bot left as it was keeps running meanwhile. Missing drops block nothing.
+        """
+        blocking = [line for line in self.unfilled if not line.startswith(DROPS_LABEL)]
+        return not self.problems and not self.content and not self.unread_options and not blocking
 
     def lines(self) -> list[str]:
         out = [f"{self.bot}: rebuilt from {self.template} v{self.version}"]
         sections = (
             ("filled", self.filled),
-            ("NOT FILLED", self.unfilled),
+            ("NOT FILLED: a setup step stays open, and a blank node fill-in blocks a run", self.unfilled),
             ("also carried", self.carried),
             ("folded into the template", self.folded),
             ("covered by the template's own node", self.covered),
+            ("the bot's own content, carried", self.grafted),
             ("NOT CARRIED: the bot's own content, to put back in the app", self.content),
-            ("OPTIONS NOTHING READS until their content is back", self.unread_options),
+            ("OPTIONS NOTHING READS", self.unread_options),
+            ("PROBLEMS: not written", self.problems),
             ("notes", self.notes),
         )
         for title, items in sections:
@@ -445,7 +495,7 @@ def rebuild(
     config.version = old_config.version
     config.clients = old_config.clients
     config.drops = [d.model_copy(deep=True) for d in old_config.drops]
-    _merge_options(config, old_config)
+    _merge_options(config, old_config, report)
 
     by_id = {s.id: s for s in config.states}
     sources = template_sources(start.config, old)
@@ -459,10 +509,13 @@ def rebuild(
                 target.params[key] = value
                 report.carried.append(f"{tid}.{key} = {value!r} (from {source.id})")
 
+    _drop_spare_spawns(config, start.config, sources, report)
+    present = {st.id for st in config.states}
     steps = start.config.template_meta.setup if start.config.template_meta is not None else []
     for step in steps:
         for target in step.targets:
-            _fill(config, target, step.text, sources, old, nav, report)
+            if target.state is None or target.state in present:
+                _fill(config, target, step.text, sources, old, nav, report)
 
     template_spawns = sum(1 for st in start.config.states if st.node_type == "collect_reagent")
     if old.spawns and len(old.spawns) < template_spawns:
@@ -470,23 +523,429 @@ def rebuild(
             f"the template has {template_spawns} spawns and the old bot {len(old.spawns)}: "
             "record the rest in the app, or delete the ones it does not need"
         )
+    _check_anchors(config, sources, report)
     _place_level_scaling(config, old, report)
+    covered = _cover(old, sources, start.config)
+    hls = next((st.id for st in config.states if st.node_type == "handle_level_scaling"), None)
+    if hls is not None:
+        # handle_level_scaling replaces the old pair, so whatever hung off them hangs off it.
+        covered |= {st.id: hls for st in old_config.states if st.node_type in LEVEL_SCALING_TYPES}
+    grafted = _graft(config, old, sources, covered, report)
+    config.transitions = [t for t in config.transitions if not _retired_guard(t)]
+    _carry_tuning(config, old, covered, report)
+    if grafted:
+        auto_layout(config)
 
     composed, compose_report = compose_bot(config, library)
+    missing = [tag for tag in suggested_tags(composed.states) if tag not in composed.tags]
+    if missing:
+        composed.tags = normalize_tags([*composed.tags, *missing])
+        report.carried.append(f"tags the rebuilt graph suggests: {', '.join(missing)}")
     for rid, status in compose_report.regions.items():
         if status.kind != "linked" or status.reasons:
-            report.notes.append(f"region {rid} composes as {status.kind}: {status.reasons}")
+            report.problems.append(f"region {rid} composes as {status.kind}: {status.reasons}")
 
-    _sort_old_nodes(old, sources, start.config, report)
+    _sort_old_nodes(old, sources, covered, grafted, report)
     report.unread_options = _unread_options(composed)
+    unreachable = sorted({s.id for s in composed.states} - _reachable_states(composed))
+    if unreachable:
+        report.problems.append(f"no run reaches {', '.join(unreachable)}")
     return composed, report
 
 
-def _merge_options(config: BotConfig, old_config: BotConfig) -> None:
-    """The template's declarations, then the old bot's own; the bot's win on a shared name."""
+def _drop_spare_spawns(config: BotConfig, template: BotConfig, sources: dict[str, StateModel], report: Report) -> None:
+    """Delete the template's reagent spawns the old bot never had, closing the loop round them.
+
+    Reagent Collector has three; a bot that farms one spawn keeps one. A deleted template node
+    is something the update review already knows: a change to it is hidden.
+    """
+    spare = [s.id for s in walk_order(template) if s.node_type == "collect_reagent" and s.id not in sources]
+    if not spare or not any(s.node_type == "collect_reagent" for s in sources.values()):
+        return
+    for sid in spare:
+        after = _template_successor(config, sid)
+        for tr in config.transitions:
+            if tr.dest == sid:
+                tr.dest = after
+        config.transitions = [t for t in config.transitions if t.source != sid]
+        config.states = [s for s in config.states if s.id != sid]
+    report.notes.append(f"the old bot farms fewer spawns than the template: {', '.join(spare)} deleted")
+
+
+def _carry_tuning(config: BotConfig, old: OldBot, covered: dict[str, str], report: Report) -> None:
+    """Give a template node the old bot's own thresholds on the node it replaces.
+
+    Not the values the worksheet records as the template's to set (``TEMPLATE_SET``), and
+    not ``mark_zone``: where the potions run is the template's now, so a zone checked against
+    the old place could fail at the new one.
+    """
+    by_id = {s.id: s for s in config.states}
+    old_by_id = {s.id: s for s in old.config.states}
+    for old_id, tid in covered.items():
+        target, source = by_id.get(tid), old_by_id[old_id]
+        if target is None or target.node_type != source.node_type:
+            continue
+        for key, value in (source.params or {}).items():
+            if key in TEMPLATE_SET.get(target.node_type, ()) or _empty(value):
+                continue
+            if value != target.params.get(key, _field_default(target.node_type, key)):
+                target.params[key] = value
+                report.carried.append(f"{tid}.{key} = {value!r} (from {old_id})")
+
+
+def _check_anchors(config: BotConfig, sources: dict[str, StateModel], report: Report) -> None:
+    """A template node the farm hangs on that nothing in the old bot fills means a different shape."""
+    for state in config.states:
+        if state.node_type in (*MAPPED_TYPES, "collect_reagent") and state.id not in sources:
+            role = "exit" if state.node_type == "enter_zone" else state.node_type
+            report.problems.append(f"the old bot has no {role} for the template's {state.id}: a different shape")
+
+
+def _guarded(tr: TransitionModel) -> bool:
+    return bool(tr.flags or tr.flag_groups)
+
+
+def _template_successor(config: BotConfig, sid: str | None) -> str | None:
+    """Where a node's plain ``SUCCESS`` goes."""
+    return next(
+        (t.dest for t in config.transitions if t.source == sid and t.when == "SUCCESS" and not _guarded(t)), None
+    )
+
+
+def _inside(old: OldBot) -> set[str]:
+    """The old nodes inside the farm: past its dungeon or gauntlet entry, short of its way out."""
+    if old.entry is not None:
+        start, stops = old.entry, {old.exit.id} if old.exit is not None else set()
+    elif old.gauntlet is not None:
+        start = old.gauntlet
+        stops = {s.id for s in old.config.states if s.node_type == "teleport_to_friend"}
+    else:
+        return set()
+    stops |= old.folded | {start.id}
+    edges: dict[str, list[str]] = {}
+    for tr in old.config.transitions:
+        if tr.when != "FAILURE":
+            edges.setdefault(tr.source, []).append(tr.dest)
+    seen: set[str] = set()
+    stack = list(edges.get(start.id, []))
+    while stack:
+        sid = stack.pop()
+        if sid in seen or sid in stops:
+            continue
+        seen.add(sid)
+        stack.extend(edges.get(sid, []))
+    return seen
+
+
+def _cover(old: OldBot, sources: dict[str, StateModel], template: BotConfig) -> dict[str, str]:
+    """``{old id: template id}`` for the old nodes the template's own potions, quicksell, wisps and so on replace.
+
+    Only where the template has them: outside the farm, or the wisps straight after the fight.
+    Any other -- a wisps between two rooms, a second potions -- is the bot's own content.
+    """
+    used = {s.id for s in sources.values()}
+    inside = _inside(old)
+    kinds = {s.node_type for s in template.states} - set(MAPPED_TYPES)
+    kinds -= {"collect_reagent", "relog", "sync_in_zone", *LEVEL_SCALING_TYPES}
+    by_kind: dict[str, list[str]] = {}
+    for state in walk_order(template):
+        if state.node_type in kinds:
+            by_kind.setdefault(state.node_type, []).append(state.id)
+    template_fight = next((tid for tid, src in sources.items() if src is old.fight), None) if old.fight else None
+    after_fight = _template_successor(template, template_fight)
+    old_after_fight = _template_successor(old.config, old.fight.id) if old.fight is not None else None
+    covered: dict[str, str] = {}
+    taken: set[str] = set()
+    for state in walk_order(old.config):
+        if state.id in used or state.id in old.folded or state.id in old.keep or state.node_type not in kinds:
+            continue
+        if state.id == old_after_fight and after_fight in by_kind.get(state.node_type, []) and after_fight not in taken:
+            covered[state.id] = after_fight
+            taken.add(after_fight)
+            continue
+        if state.id in inside:
+            continue
+        free = [tid for tid in by_kind.get(state.node_type, []) if tid not in taken and tid != after_fight]
+        if free:
+            covered[state.id] = free[0]
+            taken.add(free[0])
+        elif _only_from(old.config, state.id, old.folded):
+            # A second wisps or potions on the trip, after the hub teleport: the template runs
+            # its own before the entry, so this one goes with the trip.
+            old.folded.add(state.id)
+    return covered
+
+
+def _only_from(config: BotConfig, sid: str, sources: set[str]) -> bool:
+    """Whether every edge a run takes into ``sid`` when things work comes from ``sources``."""
+    ins = [t.source for t in config.transitions if t.dest == sid and t.when not in FALLTHROUGH_RETURNS]
+    ins = [src for src in ins if src != sid]
+    return bool(ins) and all(src in sources for src in ins)
+
+
+def _graft(
+    config: BotConfig, old: OldBot, sources: dict[str, StateModel], covered: dict[str, str], report: Report
+) -> list[str]:
+    """Carry the old bot's own content into the rebuilt one, each piece spliced in where it hung.
+
+    The content is every old node nothing replaces. It falls into pieces joined by their own
+    edges, and each piece must hang off exactly one node the template has (the dungeon entry,
+    the wisps after the fight, a reagent spawn): the piece goes in straight after that node,
+    on the edges the old bot left it by, and comes back out where the old bot's edges lead.
+    A failure into navigation the template replaces is dropped, since an unrouted failure
+    relogs. Anything else -- a piece reached only from navigation, or one that leaves through
+    it -- is reported as a problem, and the bot is not written.
+    """
+    mapping = {src.id: tid for tid, src in sources.items()} | covered
+    old_by_id = {s.id: s for s in old.config.states}
+    content = [s.id for s in walk_order(old.config) if s.id not in mapping and s.id not in old.folded]
+    if not content:
+        return []
+    content_set = set(content)
+    clash = sorted(content_set & {s.id for s in config.states})
+    if clash:
+        report.problems.append(f"old ids {clash} clash with the template's")
+        return []
+    sync = next((s.id for s in config.states if s.node_type == "sync_in_zone" and _is_member(config, s.id)), None)
+
+    new_edges: list[TransitionModel] = []
+    replaced: set[tuple[str, str | None]] = set()
+    problems: list[str] = []
+    for piece in _pieces(old.config, content):
+        names = ", ".join(sid for sid in content if sid in piece)
+        entering = [
+            _as_entry(t, old_by_id, mapping) for t in old.config.transitions if t.dest in piece and t.source in mapping
+        ]
+        entering = [t for t in entering if t is not None]
+        # A failure branch into the piece is carried, but where the piece goes in is decided by
+        # how the run reaches it when things work.
+        anchors = {t.source for t in entering if t.when not in FALLTHROUGH_RETURNS}
+        if not anchors and entering:
+            new_edges += _unique(entering)
+            report.notes.append(f"content {names} hangs off a failure branch")
+            _carry_exits(piece, old, old_by_id, mapping, new_edges, problems, rejoin=None)
+            continue
+        if not anchors and piece & old.keep and sync is not None:
+            # The step into an entrance Sync players cannot reach goes straight after Sync players.
+            first = next(sid for sid in content if sid in piece)
+            entering = [TransitionModel(trigger="advance", source=sync, dest=first, when="SUCCESS")]
+            anchors = {sync}
+            for tr in old.config.transitions:
+                if tr.source in piece and tr.dest in mapping:
+                    tr_dest = _template_successor(config, sync)
+                    new_edges.append(tr.model_copy(update={"dest": tr_dest}, deep=True))
+            replaced.add((sync, "SUCCESS"))
+            new_edges.append(entering[0])
+            report.notes.append(f"content {names} spliced in straight after Sync players")
+            continue
+        if len(anchors) != 1:
+            why = (
+                "only from navigation the template replaces"
+                if not anchors
+                else f"from several places {sorted(anchors)}"
+            )
+            problems.append(f"content {names} is reached {why}")
+            continue
+        anchor = anchors.pop()
+        late = _late_on_the_way_in(config, old, piece, anchor, mapping, sync)
+        if late:
+            problems.append(f"content {names} comes before {late} on the way in, but the template reaches {late} first")
+            continue
+        for tr in _unique(entering):
+            new_edges.append(tr)
+            if not _guarded(tr) and tr.when not in FALLTHROUGH_RETURNS:
+                replaced.add((anchor, tr.when))
+        _carry_exits(piece, old, old_by_id, mapping, new_edges, problems, rejoin=_downstream(config, anchor))
+        report.notes.append(f"content {names} spliced in after {anchor}")
+    if problems:
+        report.problems += problems
+        return []
+
+    # An old edge between two nodes the template has that carries a flag guard is an author's
+    # skip. It is kept only where it still skips forward: one into a node the template runs
+    # earlier would loop, as "skip potions in Challenge Mode" does now that potions come first.
+    for tr in old.config.transitions:
+        if not (tr.source in mapping and tr.dest in mapping and _guarded(tr)):
+            continue
+        if _retired_guard(tr):
+            continue
+        edge = _as_entry(tr, old_by_id, mapping)
+        if edge is None:
+            continue
+        edge = edge.model_copy(update={"dest": mapping[tr.dest]})
+        if edge.dest in _ahead(config, edge.source, sync):
+            new_edges.append(edge)
+        else:
+            problems.append(
+                f"guarded edge {tr.source} -> {tr.dest} would run backwards as {edge.source} -> {edge.dest}: "
+                "the template's order cannot express it"
+            )
+    if problems:
+        report.problems += problems
+        return []
+
+    config.transitions = [t for t in config.transitions if (t.source, t.when) not in replaced or _guarded(t)]
+    config.states += [old_by_id[sid].model_copy(deep=True) for sid in content]
+    inner = [
+        t.model_copy(deep=True) for t in old.config.transitions if t.source in content_set and t.dest in content_set
+    ]
+    config.transitions += inner + new_edges
+    for region in old.config.regions:
+        if region.source is None and set(region.members) <= content_set:
+            config.regions.append(region.model_copy(deep=True))
+    return content
+
+
+def _as_entry(tr: TransitionModel, old_by_id: dict[str, StateModel], mapping: dict[str, str]) -> TransitionModel | None:
+    """An old edge into content, leaving from the template node that replaces its source.
+
+    The old level scaling pair maps onto handle_level_scaling, an action: a check's ``TRUE``
+    becomes its ``SUCCESS``, and a check's ``FALSE`` -- the way to the old apply -- is dropped.
+    """
+    source = old_by_id[tr.source]
+    when = tr.when
+    if source.node_type == "check_level_scaling":
+        if when == "FALSE":
+            return None
+        when = "SUCCESS"
+    return tr.model_copy(update={"source": mapping[tr.source], "when": when}, deep=True)
+
+
+def _late_on_the_way_in(
+    config: BotConfig, old: OldBot, piece: set[str], anchor: str, mapping: dict[str, str], sync: str | None
+) -> str | None:
+    """A template node the piece led to on the old bot's way in that the template's first run reaches too soon.
+
+    A piece the old bot walked through on its way to the farm -- the entry to a dungeon its
+    reagents grow in -- has to run before what it led to on the template's first run as well.
+    Spliced in after a node the run only reaches later, the first run skips it: players would
+    collect in the museum before entering Counterweight West. None when the order holds.
+    """
+    travel = old.folded - {s.id for s in old.config.states if s.node_type in ("check_zone", *SCALING_FOLD)}
+    on_the_way_in = any(
+        t.dest in piece and t.source in travel and t.when not in FALLTHROUGH_RETURNS for t in old.config.transitions
+    )
+    if not on_the_way_in or sync is None:
+        return None
+    first_run = _downstream(config, sync)
+    if anchor not in first_run:
+        return None
+    led_to = {
+        mapping[t.dest]
+        for t in old.config.transitions
+        if t.source in piece and t.dest in mapping and t.when not in FALLTHROUGH_RETURNS
+    }
+    reached_first = [tid for tid in first_run[: first_run.index(anchor) + 1] if tid in led_to]
+    return reached_first[0] if reached_first else None
+
+
+def _ahead(config: BotConfig, sid: str, sync: str | None) -> list[str]:
+    """The template nodes a run reaches from ``sid`` before its loop starts over."""
+    chain = _downstream(config, sid)
+    restart = _template_successor(config, sync) if sync is not None else None
+    return chain[: chain.index(restart)] if restart in chain else chain
+
+
+def _retired_guard(tr: TransitionModel) -> bool:
+    names = {f.option for f in tr.flags} | {f.option for g in tr.flag_groups for f in g.flags}
+    return bool(names & RETIRED_OPTIONS.keys())
+
+
+def _downstream(config: BotConfig, anchor: str) -> list[str]:
+    """The template's chain of plain ``SUCCESS`` edges after ``anchor``, up to where it loops."""
+    chain: list[str] = []
+    sid = _template_successor(config, anchor)
+    while sid is not None and sid not in chain and sid != anchor:
+        chain.append(sid)
+        sid = _template_successor(config, sid)
+    return chain
+
+
+def _unique(edges: list[TransitionModel]) -> list[TransitionModel]:
+    seen, out = set(), []
+    for tr in edges:
+        key = (tr.source, tr.dest, tr.when, repr(tr.flags), repr(tr.flag_groups))
+        if key not in seen:
+            seen.add(key)
+            out.append(tr)
+    return out
+
+
+def _carry_exits(
+    piece: set[str],
+    old: OldBot,
+    old_by_id: dict[str, StateModel],
+    mapping: dict[str, str],
+    new_edges: list[TransitionModel],
+    problems: list[str],
+    rejoin: list[str] | None,
+) -> None:
+    """The piece's edges back out: to the template node that replaces where they went.
+
+    ``rejoin`` is the template's own chain after the node the piece hangs off. A way out that
+    lands further down that chain comes back in at its start instead, so the piece never skips
+    a template node -- the wisps after a fight still run when a chest is opened before the exit.
+    """
+    for tr in old.config.transitions:
+        if tr.source not in piece or tr.dest in piece:
+            continue
+        if tr.dest in mapping:
+            dest = mapping[tr.dest]
+            if rejoin and tr.when not in FALLTHROUGH_RETURNS and dest in rejoin[1:]:
+                dest = rejoin[0]
+            new_edges.append(tr.model_copy(update={"dest": dest}, deep=True))
+        elif tr.dest in old.folded and tr.when in FALLTHROUGH_RETURNS:
+            continue  # an unrouted failure relogs, which is what every failure edge now does
+        else:
+            dest = old_by_id.get(tr.dest)
+            kind = dest.node_type if dest is not None else "?"
+            problems.append(
+                f"content {tr.source} leaves on {tr.when or 'any result'} through {kind} {tr.dest}, "
+                "which the template replaces"
+            )
+
+
+def _is_member(config: BotConfig, sid: str) -> bool:
+    return any(r.source is not None and sid in r.members for r in config.regions)
+
+
+def _pieces(config: BotConfig, content: list[str]) -> list[set[str]]:
+    """The content split into pieces joined by their own edges, either way round."""
+    links: dict[str, set[str]] = {sid: set() for sid in content}
+    for tr in config.transitions:
+        if tr.source in links and tr.dest in links:
+            links[tr.source].add(tr.dest)
+            links[tr.dest].add(tr.source)
+    pieces: list[set[str]] = []
+    seen: set[str] = set()
+    for sid in content:
+        if sid in seen:
+            continue
+        piece: set[str] = set()
+        stack = [sid]
+        while stack:
+            cur = stack.pop()
+            if cur not in piece:
+                piece.add(cur)
+                stack.extend(links[cur] - piece)
+        seen |= piece
+        pieces.append(piece)
+    return pieces
+
+
+def _merge_options(config: BotConfig, old_config: BotConfig, report: Report) -> None:
+    """The template's declarations, then the old bot's own; the bot's win on a shared name.
+
+    A retired option is not carried (see :data:`RETIRED_OPTIONS`).
+    """
     mine = {o.name for o in old_config.options}
     kept: list[BotOptionModel] = [o for o in config.options if o.name not in mine]
-    config.options = kept + [o.model_copy(deep=True) for o in old_config.options]
+    for option in old_config.options:
+        if option.name in RETIRED_OPTIONS:
+            report.notes.append(f"option {option.name!r} not carried: {RETIRED_OPTIONS[option.name]}")
+        else:
+            kept.append(option.model_copy(deep=True))
+    config.options = kept
 
 
 def _fill(config, target, step_text: str, sources, old: OldBot, nav, report: Report) -> None:
@@ -567,21 +1026,20 @@ def _move_after(config: BotConfig, node_id: str, anchor_id: str) -> bool:
     return True
 
 
-def _sort_old_nodes(old: OldBot, sources: dict[str, StateModel], template: BotConfig, report: Report) -> None:
-    used = {s.id for s in sources.values()}
-    template_types = {s.node_type for s in template.states}
+def _sort_old_nodes(
+    old: OldBot, sources: dict[str, StateModel], covered: dict[str, str], grafted: list[str], report: Report
+) -> None:
+    used = {src.id for src in sources.values()}
+    carried = set(grafted)
     for state in walk_order(old.config):
         if state.id in used:
             continue
-        if state.id in old.keep:
-            report.content.append(_label(state))
-        elif state.id in old.folded or (state.node_type in SCALING_FOLD and "handle_level_scaling" in template_types):
+        if state.id in carried:
+            report.grafted.append(_label(state))
+        elif state.id in covered:
+            report.covered.append(f"{_label(state)} -> {covered[state.id]}")
+        elif state.id in old.folded:
             report.folded.append(_label(state))
-        elif state.node_type in template_types and state.node_type not in (*MAPPED_TYPES, "collect_reagent"):
-            # A potion, quicksell or wisp node the template runs at its own place. A node of a
-            # type a value was read from, but not the one it was read from, is content: a
-            # second fight, a fourth spawn, a room-to-room zone change.
-            report.covered.append(_label(state))
         else:
             report.content.append(_label(state))
 
@@ -647,7 +1105,8 @@ def status_lines(bots_dir: Path = BOTS_DIR, root: Path = PROJECT_ROOT) -> list[s
 # ---------------------------------------------------------------------------
 
 
-def _rebuild_one(name: str, template: str | None, write: bool) -> int:
+def _rebuild_one(name: str, template: str | None, write: bool) -> bool:
+    """Rebuild one bot, print its report, and write it if asked and it came out clean. True if written."""
     path = find_bot(name)
     old = BotConfig.load(path)
     if old.template is not None:
@@ -662,21 +1121,27 @@ def _rebuild_one(name: str, template: str | None, write: bool) -> int:
         old, find_start(template_name), SubgraphLibrary(PROJECT_ROOT, PROJECT_ROOT), category=category
     )
     print("\n".join(report.lines()))
-    if write:
-        config.save(path)
-        print(f"  wrote {path.as_posix()}")
-    else:
+    if not write:
         print("  (dry run: nothing written; add --write)")
-    return 0
+        return False
+    if not report.clean:
+        print("  NOT WRITTEN: it would lose or break something, as listed above")
+        return False
+    config.save(path)
+    print(f"  wrote {path.as_posix()}")
+    return True
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
     commands = parser.add_subparsers(dest="command", required=True)
     rebuild_cmd = commands.add_parser("rebuild", help="rebuild bots from their templates")
-    rebuild_cmd.add_argument("bots", nargs="+", help="file stems or paths under bots/")
+    rebuild_cmd.add_argument("bots", nargs="*", help="file stems or paths under bots/")
+    rebuild_cmd.add_argument("--all", action="store_true", help="every bot that does not record a template yet")
     rebuild_cmd.add_argument("--template", help="the template's name, when its nodes say a different one")
-    rebuild_cmd.add_argument("--write", action="store_true", help="write the rebuilt bot over the old file")
+    rebuild_cmd.add_argument(
+        "--write", action="store_true", help="write each rebuilt bot over its old file, if it came out clean"
+    )
     commands.add_parser("status", help="every bot: its category, template and setup steps left")
     args = parser.parse_args(argv)
     # A step's label carries "·" and "›", which a Windows console's code page cannot print.
@@ -686,13 +1151,20 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "status":
         print("\n".join(status_lines()))
         return 0
-    failed = 0
-    for name in args.bots:
+    names = list(args.bots)
+    if args.all:
+        names += [str(p) for p in all_bots() if BotConfig.load(p).template is None]
+    if not names:
+        parser.error("name a bot, or pass --all")
+    failed = written = 0
+    for name in names:
         try:
-            _rebuild_one(name, args.template, args.write)
+            written += _rebuild_one(name, args.template, args.write)
         except RebuildError as error:
             print(f"{name}: {error}", file=sys.stderr)
             failed += 1
+    if args.write:
+        print(f"wrote {written} of {len(names)}")
     return 1 if failed else 0
 
 
