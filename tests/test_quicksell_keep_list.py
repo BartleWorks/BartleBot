@@ -269,10 +269,38 @@ def test_the_options_collapse_to_the_dict_the_pure_helpers_read():
     assert params == {
         "enabled": True,
         "keep_list": ["Amber"],
+        "user_keep_list": [],
         "sell_pets": False,
         "sell_socket_wrenches": True,
         "sell_skeleton_keys": True,
     }
+
+
+def test_the_users_own_list_is_kept_apart_from_the_bots():
+    """#34. The picker writes ``keep_list`` back as this bot's value, so a merged list
+    would copy the user's keywords into every bot whose picker they touched."""
+    params = resolve_options(_answers({OPTION_KEEP_LIST: ["Amber"]}), ["Pearl"])
+    assert params["keep_list"] == ["Amber"]
+    assert params["user_keep_list"] == ["Pearl"]
+
+
+def test_the_users_own_list_is_matched_after_the_bots_and_each_keyword_once():
+    params = {"keep_list": ["Amber"], "user_keep_list": ["pearl", " AMBER "], **_SELL_ALL}
+    assert effective_keep_list(params) == ["amber", "pearl"]
+
+
+def test_a_drop_kept_by_the_users_own_list_says_so_and_is_not_the_bots_to_untick():
+    params = {"keep_list": [], "user_keep_list": ["Pearl"], **_SELL_ALL}
+    (state,) = drop_keep_states(["Pearl"], params)
+    assert state.kept and state.users
+    assert not state.exact
+
+
+def test_the_bots_own_exact_entry_still_answers_first():
+    """Ticked in this bot, so unticking it here is still meaningful."""
+    params = {"keep_list": ["Pearl"], "user_keep_list": ["Pearl"], **_SELL_ALL}
+    (state,) = drop_keep_states(["Pearl"], params)
+    assert state.exact and not state.users
 
 
 def test_an_unanswered_option_falls_back_to_its_floor():

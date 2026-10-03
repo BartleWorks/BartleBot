@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Sequence
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field, replace
+from typing import TYPE_CHECKING, Any
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QDialog,
     QFormLayout,
     QFrame,
@@ -53,6 +54,49 @@ class SafetyWarning:
     than cancelling the run, going to Settings, and starting over. Saved on accept only.
     """
 
+    acknowledge: Callable[[Any], None] | None = None
+    """Optional call recording that this warning was read, for one asked once rather than every run.
+
+    Handed the ``SettingsManager``, and called on accept only, like the editable field: a
+    run the user cancelled is not a warning they ran past.
+    """
+
+    opt_out: tuple[str, Callable[[Any], None]] | None = None
+    """Optional (check box label, call) letting the user stop this warning, drawn under it.
+
+    A check box under its own warning rather than a footer button, so it plainly covers this
+    warning and not the dialog's others. The call is handed the ``SettingsManager``, and made
+    on accept only, and only if the box is ticked.
+    """
+
+
+def _settings():
+    from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle
+
+    return SettingsManager.instance()
+
+
+#: The check box under quicksell's explanation.
+QUICKSELL_OPT_OUT_LABEL = "Don't show this quicksell explanation again"
+
+
+def _stop_explaining_quicksell(settings) -> None:
+    settings.show_quicksell_explanation = False
+
+
+def _spoken_list(words: Sequence[str]) -> str:
+    """``a``, ``a and b``, ``a, b and c``."""
+    return words[0] if len(words) == 1 else f"{', '.join(words[:-1])} and {words[-1]}"
+
+
+def declared_sales_message(names: Sequence[str]) -> str:
+    """The warning for a bot whose own file sells what the user's settings keep."""
+    items = _spoken_list([name.removeprefix("Sell ").lower() for name in names])
+    return (
+        f"This bot's author has it sell {items}, which your settings keep. To keep them, turn "
+        f"{_spoken_list(list(names))} off in this bot's Options. You will not be asked about this bot again."
+    )
+
 
 def _quicksell_enabled(config) -> bool:
     """Whether this bot's quicksell nodes will sell anything at all.
@@ -66,7 +110,7 @@ def _quicksell_enabled(config) -> bool:
     return bool(quicksell.resolve_options_for(config)["enabled"])
 
 
-def _quicksell_message(config, states, clients, message: str) -> str | None:
+def _quicksell_message(config, states, clients, message: str) -> str | SafetyWarning | None:
     """The warning quicksell earns on *this* run, or None to drop it.
 
     A bot with quicksell nodes is not necessarily a bot that sells: ``Enable
@@ -80,13 +124,43 @@ def _quicksell_message(config, states, clients, message: str) -> str | None:
     bot file that declares it off is not something the user chose or can see from
     here, so the one sentence that is still true — the backpack fills, then the bank
     — is shown on its own instead of being lost.
+
+    A bot that sells is nearly every bot once the templates reach the library, and the
+    same habit applies (#145). What the explanation asks of the user — lock what you
+    value, keep it on a list — is the same for every bot, so the way out of it is one
+    answer for the whole app, not one per bot: per bot, it would ask the same question
+    eighty times. It is shown before each run until the user ticks the check box under
+    it, which turns off Show Quicksell explanation before each run in Settings → Bot.
+
+    That switch does not reach a bot selling more than the user's own settings would,
+    which only its file can do (``quicksell.declared_sales``). That is the case this
+    dialog exists for, and it is asked about once per bot whatever the switch says. Both
+    answers are written on accept only, so a cancelled run records neither.
     """
-    if _quicksell_enabled(config):
-        return message
-    resolution = option_values.option_resolution(config, quicksell.OPTION_ENABLED)
-    if resolution is not None and resolution.source in (bot_options.SOURCE_OVERRIDE, bot_options.SOURCE_APP_SETTING):
+    if not _quicksell_enabled(config):
+        resolution = option_values.option_resolution(config, quicksell.OPTION_ENABLED)
+        if resolution is not None and resolution.source in (
+            bot_options.SOURCE_OVERRIDE,
+            bot_options.SOURCE_APP_SETTING,
+        ):
+            return None
+        return quicksell.SAFETY_WARNING_DISABLED
+
+    settings = _settings()
+    explain = settings.show_quicksell_explanation
+    accepted = settings.accepted_quicksell_sales(config.id)
+    sales = [name for name in quicksell.declared_sales(config) if name not in accepted]
+    if not explain and not sales:
         return None
-    return quicksell.SAFETY_WARNING_DISABLED
+
+    parts = [declared_sales_message(sales)] if sales else []
+    if explain:
+        parts.append(message)
+    return SafetyWarning(
+        message="\n\n".join(parts),
+        acknowledge=(lambda sm: sm.accept_quicksell_sales(config.id, sales)) if sales else None,
+        opt_out=(QUICKSELL_OPT_OUT_LABEL, _stop_explaining_quicksell) if explain else None,
+    )
 
 
 def _quicksell_details(config, states, clients) -> list[tuple[str, str]]:
@@ -209,6 +283,8 @@ _DETAIL_BUILDERS = {
 #: node type -> ``(config, states, clients, message) -> message or None``, where the
 #: message passed in is the ``NodeSpec.safety_warning``. Returning it unchanged is the
 #: default for a node with no entry here; returning None drops the warning for this run.
+#: A ``SafetyWarning`` is the message with its ``acknowledge`` or ``opt_out`` attached;
+#: its details are filled in afterwards, as for a plain message.
 #:
 #: This is the answer to "the node is in the bot, but will it do anything?", which a
 #: NodeSpec field cannot answer because it is a question about the bot's options -- and
@@ -296,18 +372,19 @@ def collect_safety_warnings(
         if not states:
             continue
         message_builder = _MESSAGE_BUILDERS.get(node_type)
-        message = spec.safety_warning
+        warning = SafetyWarning(message=spec.safety_warning)
         if message_builder:
-            message = message_builder(config, states, clients, message)
-            if message is None:
+            built = message_builder(config, states, clients, spec.safety_warning)
+            if built is None:
                 continue
+            warning = built if isinstance(built, SafetyWarning) else SafetyWarning(message=built)
         detail_builder = _DETAIL_BUILDERS.get(node_type)
         details: list[tuple[str, str]] = []
         editable: tuple[str, str] | None = None
         if detail_builder:
             built = detail_builder(config, states, clients)
             details, editable = built if isinstance(built, tuple) else (built, None)
-        warnings.append(SafetyWarning(message=message, details=details, editable_setting=editable))
+        warnings.append(replace(warning, details=details, editable_setting=editable))
 
     if elixir_warning := level_scaling_warning(elixir_players):
         warnings.append(elixir_warning)
@@ -322,27 +399,25 @@ class SafetyWarningDialog(QDialog):
         self.setWindowTitle("Safety Check")
         self.setMinimumWidth(440)
         self._edits: list[tuple[str, QLineEdit]] = []
+        self._opt_outs: list[tuple[QCheckBox, Callable[[Any], None]]] = []
+        self._acknowledgements = [w.acknowledge for w in warnings if w.acknowledge is not None]
         self._build(warnings)
 
     @staticmethod
     def _stored_setting(key: str) -> str:
-        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle
-
         try:
-            return str(SettingsManager.instance().get_general(key, default="") or "")
+            return str(_settings().get_general(key, default="") or "")
         except Exception:
             return ""
 
     def accept(self) -> None:
-        """Save any edited settings, then accept.
+        """Save any edited settings and the answers given to the warnings, then accept.
 
         On accept only: cancelling a run must not leave a half-typed name behind. The
         write happens here rather than on every keystroke for the same reason.
         """
-        from bartlebot.settings_manager import SettingsManager  # noqa: PLC0415 — avoids an import cycle
-
         try:
-            settings = SettingsManager.instance()
+            settings = _settings()
             changed = False
             for key, edit in self._edits:
                 value = edit.text().strip()
@@ -350,10 +425,17 @@ class SafetyWarningDialog(QDialog):
                     settings.set_general(key, value)
                     settings.add_recent_friend_name(value)
                     changed = True
+            for acknowledge in self._acknowledgements:
+                acknowledge(settings)
+                changed = True
+            for box, opt_out in self._opt_outs:
+                if box.isChecked():
+                    opt_out(settings)
+                    changed = True
             if changed:
                 settings.save()
         except Exception:
-            logger.exception("Could not save an edited safety-dialog setting")
+            logger.exception("Could not save what the safety dialog changed")
         super().accept()
 
     def _build(self, warnings: list[SafetyWarning]) -> None:
@@ -421,6 +503,17 @@ class SafetyWarningDialog(QDialog):
                 edit_form.addRow(f"Change {label_text}:", edit)
                 layout.addWidget(edit_container)
                 self._edits.append((setting_key, edit))
+
+            if warning.opt_out:
+                label_text, opt_out = warning.opt_out
+                box = QCheckBox(label_text)
+                box.setToolTip("Turn it back on in Settings → Bot. Saved when you run.")
+                box_container = QWidget()
+                box_layout = QHBoxLayout(box_container)
+                box_layout.setContentsMargins(icon_size + 8, 0, 0, 0)
+                box_layout.addWidget(box)
+                layout.addWidget(box_container)
+                self._opt_outs.append((box, opt_out))
 
         # The one place in the app where the commit deliberately does not take the accent.
         # This dialog exists to make the user stop and read before a run; filling the

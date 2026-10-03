@@ -47,6 +47,8 @@ class _GeneralSettings(BaseModel):
     default_quicksell_sell_socket_wrenches: bool = False
     default_quicksell_sell_skeleton_keys: bool = False
     default_quicksell_enabled: bool = True
+    quicksell_keep_list: list[str] = []
+    show_quicksell_explanation: bool = True
     default_apply_archmastery: bool = False
     default_level_scaling_players: list[int] = []
     auto_group_players: bool = True
@@ -148,6 +150,12 @@ _DEFAULTS: dict[str, Any] = {
         "default_quicksell_sell_socket_wrenches": False,
         "default_quicksell_sell_skeleton_keys": False,
         "default_quicksell_enabled": True,
+        # Not a level of any option's resolution, unlike the four above: every bot
+        # applies it on top of its own keep list. See quicksell.user_keep_list.
+        "quicksell_keep_list": [],
+        # Whether the safety check explains quicksell before each run. See
+        # safety_warning_dialog._quicksell_message.
+        "show_quicksell_explanation": True,
         "default_apply_archmastery": False,
         "default_level_scaling_players": [],
         "auto_group_players": True,
@@ -201,6 +209,9 @@ _DEFAULTS: dict[str, Any] = {
     "recent_friend_names": [],
     "active_bot_strategies": {},  # {bot_uuid: bcs_uuid}
     "bot_option_overrides": {},  # {bot_uuid: {option_name: value}}
+    # {bot_uuid: [sell flag option name, …]} -- sales a bot's own declaration makes that the
+    # user's settings would not, which the user has run past the warning for once.
+    "accepted_quicksell_sales": {},
 }
 
 # Resolutions from the game's own dropdown, at and above its 800x600 floor. A subset of
@@ -895,6 +906,31 @@ class SettingsManager:
             mapping[bot_id] = strategy_id
         self.set("active_bot_strategies", value=mapping)
         self.save()
+
+    # ------------------------------------------------------------------
+    # Quicksell warnings
+    # ------------------------------------------------------------------
+
+    @property
+    def show_quicksell_explanation(self) -> bool:
+        """Whether the safety check explains quicksell before each run of a bot that sells."""
+        return bool(self.get_general("show_quicksell_explanation", default=True))
+
+    @show_quicksell_explanation.setter
+    def show_quicksell_explanation(self, value: bool) -> None:
+        self.set_general("show_quicksell_explanation", bool(value))
+
+    def accepted_quicksell_sales(self, bot_id: str) -> list[str]:
+        """The sell flags this bot declares on, against the user's settings, that the user has accepted."""
+        names = self.get("accepted_quicksell_sales", bot_id)
+        return [str(n) for n in names] if isinstance(names, list) else []
+
+    def accept_quicksell_sales(self, bot_id: str, names: Iterable[str]) -> None:
+        """Add *names* to what the user has accepted this bot selling. Not saved: the caller saves."""
+        mapping = dict(self.get("accepted_quicksell_sales") or {})
+        accepted = self.accepted_quicksell_sales(bot_id)
+        mapping[bot_id] = [*accepted, *(n for n in names if n not in accepted)]
+        self.set("accepted_quicksell_sales", value=mapping)
 
     # ------------------------------------------------------------------
     # Bot option overrides
