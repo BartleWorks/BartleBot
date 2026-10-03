@@ -4,8 +4,8 @@
   "description": "Endlessly defeats bosses of your choice in Katzenstein's Lab. Includes teleport skips for Smogger and Dr. Von Katzenstein.",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Air Dales Sign"
@@ -773,91 +773,71 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Regent's Square",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": 0,
+        "x": 0.0,
         "y": 0.0
       },
       "params": {
-        "zone": "Marleybone/MB_Hub"
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     {
-      "id": "state_2",
-      "node_type": "collect_wisps",
-      "label": "Collect mana wisps",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
         "x": 440.0,
-        "y": 0.0
+        "y": 90.0
       },
       "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
+        "zone": "Marleybone/MB_ScotlandYard/MB_Roof"
       }
     },
     {
-      "id": "state_3",
-      "node_type": "enter_zone",
-      "label": "Enter Scotland Yard",
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
       "position": {
-        "x": 880.0,
+        "x": 440,
         "y": 0.0
       },
       "params": {
-        "from_zone": "Marleybone/MB_Hub",
-        "to_zone": "Marleybone/Interiors/MB_ScotlandYard",
-        "xyz": {
-          "x": -9377.03,
-          "y": 2287.48,
-          "z": 0.0
-        },
-        "reset_xyz": {
-          "x": -8606.81,
-          "y": 2299.25,
-          "z": 20.0
-        }
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
       }
     },
     {
-      "id": "state_4",
-      "node_type": "enter_zone",
-      "label": "Enter Scotland Yard Roof",
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
       "position": {
-        "x": 1320.0,
+        "x": 880,
         "y": 0.0
       },
-      "params": {
-        "from_zone": "Marleybone/Interiors/MB_ScotlandYard",
-        "to_zone": "Marleybone/MB_ScotlandYard/MB_Roof",
-        "xyz": {
-          "x": 5.43,
-          "y": 2043.33,
-          "z": 10.0
-        },
-        "reset_xyz": {
-          "x": -5.43,
-          "y": 1559.81,
-          "z": 0.0
-        }
-      }
+      "params": {}
     },
     {
-      "id": "state_5",
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Katzenstein's Lab",
       "position": {
-        "x": 1760.0,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
         "from_zone": "Marleybone/MB_ScotlandYard/MB_Roof",
         "dungeon_zone": "Marleybone/MB_ScotlandYard/MB_KatzLab",
+        "offers_challenge_mode": false,
+        "offers_team_up": false,
         "dungeon_name": "Katzenstein's Lab",
         "sigil_xyz": {
           "x": -2449.45,
@@ -872,11 +852,52 @@
       }
     },
     {
+      "id": "t_4",
+      "node_type": "enter_zone",
+      "label": "Exit dungeon",
+      "position": {
+        "x": 12320,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Marleybone/MB_ScotlandYard/MB_KatzLab",
+        "to_zone": "Marleybone/MB_ScotlandYard/MB_Roof",
+        "stagger": false,
+        "xyz": {
+          "x": -6.92,
+          "y": -5858.13,
+          "z": -230.0
+        },
+        "reset_xyz": {
+          "x": -1.99,
+          "y": -5433.72,
+          "z": -230.0
+        }
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
       "id": "state_6",
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to health wisps",
       "position": {
-        "x": 2200.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -893,7 +914,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 2640.0,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -910,7 +931,7 @@
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 3080.0,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -920,11 +941,75 @@
       }
     },
     {
+      "id": "state_25",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Smogger",
+      "position": {
+        "x": 3520,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_ScotlandYard/MB_KatzLab",
+        "xyz": {
+          "x": -23946.92,
+          "y": 52836.64,
+          "z": -129.69
+        }
+      }
+    },
+    {
+      "id": "state_26",
+      "node_type": "handle_combat",
+      "label": "Defeat Smogger",
+      "position": {
+        "x": 3960,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Golem-Steel-MBBoss-LXX",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "state_37",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Dr. Von Katzenstein",
+      "position": {
+        "x": 4400,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_ScotlandYard/MB_KatzLab",
+        "xyz": {
+          "x": -15190.31,
+          "y": 51705.4,
+          "z": -1450.2
+        }
+      }
+    },
+    {
+      "id": "state_38",
+      "node_type": "handle_combat",
+      "label": "Defeat Dr. Von Katzenstein",
+      "position": {
+        "x": 4840,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Cat-Scratcher-Doctor-MBBoss-L50",
+        "use_bot_default": true,
+        "combat_config": "",
+        "max_duration": 0.0
+      }
+    },
+    {
       "id": "state_9",
       "node_type": "interact",
       "label": "Talk to Watson",
       "position": {
-        "x": 5280.0,
+        "x": 5280,
         "y": 0.0
       },
       "params": {
@@ -952,8 +1037,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Firegut's gate",
       "position": {
-        "x": 5720.0,
-        "y": -90.0
+        "x": 5720,
+        "y": 0.0
       },
       "params": {
         "zone": "Marleybone/MB_ScotlandYard/MB_KatzLab",
@@ -969,8 +1054,8 @@
       "node_type": "enter_zone",
       "label": "Enter Firegut's warehouse",
       "position": {
-        "x": 6160.0,
-        "y": -90.0
+        "x": 6160,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Marleybone/MB_ScotlandYard/MB_KatzLab",
@@ -992,7 +1077,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Firegut",
       "position": {
-        "x": 6600.0,
+        "x": 6600,
         "y": 0.0
       },
       "params": {
@@ -1007,7 +1092,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Dismiss dialogue",
       "position": {
-        "x": 7040.0,
+        "x": 7040,
         "y": 0.0
       },
       "params": {
@@ -1019,7 +1104,7 @@
       "node_type": "enter_zone",
       "label": "Exit Firegut's warehouse",
       "position": {
-        "x": 7480.0,
+        "x": 7480,
         "y": 0.0
       },
       "params": {
@@ -1042,7 +1127,7 @@
       "node_type": "interact",
       "label": "Activate Sun plaque",
       "position": {
-        "x": 7920.0,
+        "x": 7920,
         "y": 0.0
       },
       "params": {
@@ -1070,7 +1155,7 @@
       "node_type": "interact",
       "label": "Activate Bird plaque",
       "position": {
-        "x": 8360.0,
+        "x": 8360,
         "y": 0.0
       },
       "params": {
@@ -1098,7 +1183,7 @@
       "node_type": "interact",
       "label": "Activate Tree plaque",
       "position": {
-        "x": 8800.0,
+        "x": 8800,
         "y": 0.0
       },
       "params": {
@@ -1126,7 +1211,7 @@
       "node_type": "interact",
       "label": "Activate Bug plaque",
       "position": {
-        "x": 9240.0,
+        "x": 9240,
         "y": 0.0
       },
       "params": {
@@ -1154,7 +1239,7 @@
       "node_type": "interact",
       "label": "Talk to Watson",
       "position": {
-        "x": 9680.0,
+        "x": 9680,
         "y": 0.0
       },
       "params": {
@@ -1182,7 +1267,7 @@
       "node_type": "enter_zone",
       "label": "Enter Clanker's clocktower",
       "position": {
-        "x": 10120.0,
+        "x": 10120,
         "y": 0.0
       },
       "params": {
@@ -1205,7 +1290,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Clanker",
       "position": {
-        "x": 10560.0,
+        "x": 10560,
         "y": 0.0
       },
       "params": {
@@ -1220,7 +1305,7 @@
       "node_type": "wait_for_dialogue",
       "label": "Dismiss dialogue",
       "position": {
-        "x": 11000.0,
+        "x": 11000,
         "y": 0.0
       },
       "params": {
@@ -1232,7 +1317,7 @@
       "node_type": "enter_zone",
       "label": "Exit Clanker's clocktower",
       "position": {
-        "x": 11440.0,
+        "x": 11440,
         "y": 0.0
       },
       "params": {
@@ -1255,7 +1340,7 @@
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 11880.0,
+        "x": 11880,
         "y": 0.0
       },
       "params": {
@@ -1266,101 +1351,14 @@
         "only_safe": true,
         "timeout": 10.0
       }
-    },
-    {
-      "id": "state_37",
-      "node_type": "teleport_to_coordinates",
-      "label": "Teleport to Dr. Von Katzenstein",
-      "position": {
-        "x": 4400.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Marleybone/MB_ScotlandYard/MB_KatzLab",
-        "xyz": {
-          "x": -15190.31,
-          "y": 51705.4,
-          "z": -1450.2
-        }
-      }
-    },
-    {
-      "id": "state_38",
-      "node_type": "handle_combat",
-      "label": "Defeat Dr. Von Katzenstein",
-      "position": {
-        "x": 4840.0,
-        "y": -90.0
-      },
-      "params": {
-        "enemy": "Cat-Scratcher-Doctor-MBBoss-L50",
-        "use_bot_default": true,
-        "combat_config": "",
-        "max_duration": 0.0
-      }
-    },
-    {
-      "id": "state_25",
-      "node_type": "teleport_to_coordinates",
-      "label": "Teleport to Smogger",
-      "position": {
-        "x": 3520.0,
-        "y": -180.0
-      },
-      "params": {
-        "zone": "Marleybone/MB_ScotlandYard/MB_KatzLab",
-        "xyz": {
-          "x": -23946.92,
-          "y": 52836.64,
-          "z": -129.69
-        }
-      }
-    },
-    {
-      "id": "state_26",
-      "node_type": "handle_combat",
-      "label": "Defeat Smogger",
-      "position": {
-        "x": 3960.0,
-        "y": -180.0
-      },
-      "params": {
-        "enemy": "Golem-Steel-MBBoss-LXX",
-        "use_bot_default": true,
-        "combat_config": "",
-        "max_duration": 0.0
-      }
-    },
-    {
-      "id": "state_27",
-      "node_type": "enter_zone",
-      "label": "Exit dungeon",
-      "position": {
-        "x": 12320.0,
-        "y": -270.0
-      },
-      "params": {
-        "from_zone": "Marleybone/MB_ScotlandYard/MB_KatzLab",
-        "to_zone": "Marleybone/MB_ScotlandYard/MB_Roof",
-        "xyz": {
-          "x": -6.92,
-          "y": -5858.13,
-          "z": -230.0
-        },
-        "reset_xyz": {
-          "x": -1.99,
-          "y": -5433.72,
-          "z": -230.0
-        }
-      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1368,9 +1366,59 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
+      "source": "t_4",
+      "dest": "t_1",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1548,16 +1596,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_20",
       "dest": "state_21",
       "when": "SUCCESS",
@@ -1611,26 +1649,6 @@
       "source": "state_23",
       "dest": "state_24",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_24",
-      "dest": "state_27",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_24",
-      "dest": "state_27",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1703,52 +1721,8 @@
     {
       "trigger": "advance",
       "source": "state_26",
-      "dest": "state_27",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Defeat Clanker",
-              "negate": true
-            },
-            {
-              "option": "Defeat Dr. Von Katzenstein",
-              "negate": true
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_26",
       "dest": "state_25",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_27",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1797,48 +1771,8 @@
     {
       "trigger": "advance",
       "source": "state_38",
-      "dest": "state_27",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Defeat Clanker",
-              "negate": true
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_38",
       "dest": "state_37",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1947,9 +1881,119 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_24",
+      "dest": "t_4",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_26",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Clanker",
+              "negate": true
+            },
+            {
+              "option": "Defeat Dr. Von Katzenstein",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_38",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Clanker",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
     }
   ],
   "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Marleybone/MB_ScotlandYard/MB_Roof"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    },
     {
       "id": "c4fc941b",
       "label": "Puzzle",
@@ -1988,28 +2032,6 @@
       "color": 6
     },
     {
-      "id": "9f1f2f07",
-      "label": "Go to dungeon",
-      "members": [
-        "state_1",
-        "state_2",
-        "state_3",
-        "state_4"
-      ],
-      "color": 1
-    },
-    {
-      "id": "34efcbc8",
-      "label": "Start dungeon",
-      "members": [
-        "state_6",
-        "state_7",
-        "state_5",
-        "state_8"
-      ],
-      "color": 2
-    },
-    {
       "id": "e54206bc",
       "label": "Teleport boss skips",
       "members": [
@@ -2020,5 +2042,9 @@
       ],
       "color": 3
     }
-  ]
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  }
 }

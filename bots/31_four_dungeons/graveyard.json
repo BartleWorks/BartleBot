@@ -4,8 +4,8 @@
   "description": "Endlessly farms Graveyard in Castle Darkmoor.",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_2",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Alligator Pear"
@@ -680,33 +680,21 @@
   "authors": "BartleBot",
   "tags": [
     "Gear",
-    "Dungeon"
+    "Dungeon",
+    "Team-Up"
   ],
   "options": [],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Castle Darkmoor",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
         "x": 0.0,
         "y": 0.0
       },
       "params": {
-        "zone": "G14_DM/DM_Z01_CastleDarkmoor"
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "check_zone",
-      "label": "Check if in Castle Darkmoor",
-      "position": {
-        "x": -1760.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "G14_DM*",
-        "clients_to_check": [
+        "relog_clients": [
           1,
           2,
           3,
@@ -715,104 +703,23 @@
       }
     },
     {
-      "id": "state_4",
-      "node_type": "check_zone",
-      "label": "Check if in Wizard City",
-      "position": {
-        "x": -1320.0,
-        "y": 180.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_Hub",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to the Commons",
-      "position": {
-        "x": -880.0,
-        "y": 180.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_Hub"
-      }
-    },
-    {
-      "id": "state_6",
-      "node_type": "enter_zone",
-      "label": "Enter Nightside",
-      "position": {
-        "x": -440.0,
-        "y": 180.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_Hub",
-        "to_zone": "WizardCity/WC_NightSide",
-        "xyz": {
-          "x": 2660.16,
-          "y": 4961.69,
-          "z": 2.51
-        },
-        "reset_xyz": {
-          "x": 3058.7,
-          "y": 4440.57,
-          "z": 2.4
-        }
-      }
-    },
-    {
-      "id": "state_7",
-      "node_type": "enter_zone",
-      "label": "Enter Castle Darkmoor",
-      "position": {
-        "x": 0.0,
-        "y": 180.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_NightSide",
-        "to_zone": "G14_DM/DM_Z01_CastleDarkmoor",
-        "xyz": {
-          "x": -2377.25,
-          "y": -595.69,
-          "z": 17.99
-        },
-        "reset_xyz": {
-          "x": -936.58,
-          "y": -314.31,
-          "z": 1.27
-        }
-      }
-    },
-    {
-      "id": "state_31",
-      "node_type": "collect_wisps",
-      "label": "Collect health and mana wisps",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
         "x": 440.0,
-        "y": 0.0
+        "y": 90.0
       },
       "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
+        "zone": "G14_DM/DM_Z06_Bridge"
       }
     },
     {
-      "id": "state_32",
+      "id": "t_1",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 880.0,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -822,49 +729,28 @@
       }
     },
     {
-      "id": "state_33",
+      "id": "t_2",
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 1320.0,
+        "x": 880,
         "y": 0.0
       },
       "params": {}
     },
     {
-      "id": "state_3",
-      "node_type": "enter_zone_via_object",
-      "label": "Take teleporter to Graveyard entrance",
-      "position": {
-        "x": 1760.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "G14_DM/DM_Z01_CastleDarkmoor",
-        "to_zone": "G14_DM/DM_Z06_Bridge",
-        "interact_xyz": {
-          "x": -4398.57,
-          "y": -1650.43,
-          "z": -125.14
-        },
-        "reset_xyz": {
-          "x": -4418.75,
-          "y": -1807.9,
-          "z": -126.32
-        }
-      }
-    },
-    {
-      "id": "state_8",
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Graveyard",
       "position": {
-        "x": 2200.0,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
         "from_zone": "G14_DM/DM_Z06_Bridge",
         "dungeon_zone": "G14_DM/DM_Z07_Graveyard",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "dungeon_name": "Graveyard",
         "sigil_xyz": {
           "x": -222.0,
@@ -879,47 +765,49 @@
       }
     },
     {
-      "id": "state_9",
+      "id": "t_4",
       "node_type": "handle_combat",
       "label": "Defeat Yevgeny Nightcreeper",
       "position": {
-        "x": 2640.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
         "enemy": "G14-DM-Ghoul_Boss",
+        "wiki_page": "",
         "use_default_strategy": false,
         "max_duration": 600.0
       }
     },
     {
-      "id": "state_10",
+      "id": "t_5",
       "node_type": "collect_wisps",
-      "label": "Collect health wisps",
+      "label": "Collect wisps",
       "position": {
-        "x": 3080.0,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
         "if_mana_below": 0.5,
+        "timeout": 10.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
+        "only_safe": true
       }
     },
     {
-      "id": "state_11",
+      "id": "t_6",
       "node_type": "enter_zone",
       "label": "Exit Graveyard",
       "position": {
-        "x": 3520.0,
-        "y": -90.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "G14_DM/DM_Z07_Graveyard",
         "to_zone": "G14_DM/DM_Z06_Bridge",
+        "stagger": false,
         "xyz": {
           "x": -11.86,
           "y": -3439.66,
@@ -929,8 +817,24 @@
           "x": 0.56,
           "y": -2957.34,
           "z": 0.52
-        },
-        "stagger": false
+        }
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       }
     },
     {
@@ -938,8 +842,8 @@
       "node_type": "collect_wisps",
       "label": "Collect mana wisps",
       "position": {
-        "x": 3960.0,
-        "y": -90.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -954,8 +858,48 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -964,8 +908,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_31",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -974,8 +918,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -984,7 +928,37 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
       "dest": "state_12",
       "when": "SUCCESS",
       "flags": [],
@@ -995,167 +969,7 @@
     {
       "trigger": "advance",
       "source": "state_12",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_1",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_4",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_31",
-      "dest": "state_32",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_31",
-      "dest": "state_32",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_32",
-      "dest": "state_33",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_33",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_31",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_10",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1165,21 +979,44 @@
   ],
   "regions": [
     {
-      "id": "e5dbeadb",
-      "label": "Go to dungeon entrance",
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
       "members": [
-        "state_6",
-        "state_4",
-        "state_2",
-        "state_7",
-        "state_1",
-        "state_5",
-        "state_31",
-        "state_32",
-        "state_33",
-        "state_3"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 5
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "G14_DM/DM_Z06_Bridge"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
     }
-  ]
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
 }

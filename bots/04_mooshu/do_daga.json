@@ -4,8 +4,8 @@
   "description": "Endlessly farms Do-Daga.",
   "version": "3.0",
   "clients": "all",
-  "initial": "state_3",
-  "recovery_state": "state_3",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Abstract Shroud",
@@ -507,21 +507,48 @@
   "authors": "BartleBot",
   "tags": [
     "Spellements",
-    "Boss"
+    "Boss",
+    "Team-Up"
   ],
   "options": [],
   "states": [
     {
-      "id": "state_3",
+      "id": "t_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_10",
       "node_type": "enter_dungeon",
       "label": "Enter Do-Daga's Dojo",
       "position": {
-        "x": 3960.0,
-        "y": -270.0
+        "x": 3520.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
         "dungeon_zone": "MooShu/MS_War/Interiors/MS_WarHub_T4",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "dungeon_name": "Do-Daga's Dojo",
         "sigil_xyz": {
           "x": -44885.84,
@@ -536,30 +563,49 @@
       }
     },
     {
-      "id": "state_4",
+      "id": "t_11",
       "node_type": "handle_combat",
       "label": "Defeat Do-Daga",
       "position": {
-        "x": 4400.0,
-        "y": -270.0
+        "x": 3960.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "Pig-War-Warrior-MSBoss-L42",
+        "wiki_page": "",
         "use_default_strategy": false,
         "max_duration": 0.0
       }
     },
     {
-      "id": "state_5",
+      "id": "t_12",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_13",
       "node_type": "enter_zone",
       "label": "Exit Do-Daga's Dojo",
       "position": {
-        "x": 5280.0,
-        "y": -270.0
+        "x": 4840.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "MooShu/MS_War/Interiors/MS_WarHub_T4",
         "to_zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub",
+        "stagger": false,
         "xyz": {
           "x": -1.61,
           "y": -1829.88,
@@ -573,17 +619,58 @@
       }
     },
     {
-      "id": "state_6",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1320.0004001498485,
+        "y": 0.0004953973327941341
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 1760.0004001498485,
+        "y": 90.0004953973328
+      },
+      "params": {
+        "zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub"
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 1760.0,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
+      }
+    },
+    {
+      "id": "t_15",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 4840.0,
-        "y": -270.0
+        "x": 3080.0,
+        "y": 0.0
       },
       "params": {
-        "if_health_below": 0.5,
+        "if_health_below": 1.0,
         "if_mana_below": 1.0,
-        "timeout": 3.0,
+        "timeout": 10.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "only_safe": true
@@ -593,8 +680,8 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "t_12",
+      "dest": "t_13",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -603,18 +690,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_5",
+      "source": "t_12",
+      "dest": "t_13",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -623,9 +700,99 @@
     },
     {
       "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_5",
+      "source": "t_8",
+      "dest": "t_9",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_10",
+      "dest": "t_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_11",
+      "dest": "t_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -634,15 +801,44 @@
   ],
   "regions": [
     {
-      "id": "7dbab4bc",
-      "label": "Main loop",
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
       "members": [
-        "state_5",
-        "state_4",
-        "state_6",
-        "state_3"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 1
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "MooShu/MS_War/MS_War_RuinedVillage_Hub"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1320.0004001498485,
+          "y": 0.0004953973327941341
+        }
+      }
     }
-  ]
+  ],
+  "template": {
+    "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
+    "version": 1
+  }
 }

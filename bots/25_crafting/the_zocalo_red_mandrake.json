@@ -4,8 +4,8 @@
   "description": "Collects Red Mandrake/Blood Moss in The Zocalo, Azteca",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Blood Moss"
@@ -28,23 +28,11 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to The Zocalo",
-      "position": {
-        "x": 0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Azteca/AZ_Z00_Zocalo"
-      }
-    },
-    {
-      "id": "state_2",
+      "id": "t_3",
       "node_type": "change_realm",
-      "label": "Change Realm",
+      "label": "Change to next realm",
       "position": {
-        "x": 440.0,
+        "x": 440,
         "y": 0.0
       },
       "params": {
@@ -52,63 +40,93 @@
       }
     },
     {
-      "id": "state_3",
+      "id": "t_4",
       "node_type": "collect_reagent",
       "label": "Collect Red Mandrake",
       "position": {
-        "x": 880.0,
+        "x": 880,
         "y": 0.0
       },
       "params": {
         "zone": "Azteca/AZ_Z00_Zocalo",
+        "entity_names": [
+          "Mandrake"
+        ],
         "xyz": {
           "x": 3052.5,
           "y": -9594.95,
           "z": 82.23
-        },
-        "entity_names": [
-          "Mandrake"
-        ]
+        }
       }
     },
     {
-      "id": "state_4",
+      "id": "t_5",
       "node_type": "collect_reagent",
       "label": "Collect Red Mandrake",
       "position": {
-        "x": 1320.0,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
         "zone": "Azteca/AZ_Z00_Zocalo",
+        "entity_names": [
+          "Mandrake"
+        ],
         "xyz": {
           "x": 1846.64,
           "y": 3559.13,
           "z": 0.56
-        },
-        "entity_names": [
-          "Mandrake"
-        ]
+        }
       }
     },
     {
-      "id": "state_5",
+      "id": "t_6",
       "node_type": "collect_reagent",
       "label": "Collect Red Mandrake",
       "position": {
-        "x": 1760.0,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
         "zone": "Azteca/AZ_Z00_Zocalo",
+        "entity_names": [
+          "Mandrake"
+        ],
         "xyz": {
           "x": 1571.49,
           "y": 8298.36,
           "z": 276.01
-        },
-        "entity_names": [
-          "Mandrake"
+        }
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
         ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Azteca/AZ_Z00_Zocalo",
+        "keep_current_realm": true
       }
     },
     {
@@ -116,7 +134,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Red Mandrake",
       "position": {
-        "x": 2200.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -136,7 +154,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Red Mandrake",
       "position": {
-        "x": 2640.0,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -155,8 +173,8 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
+      "source": "t_3",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -165,18 +183,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
+      "source": "t_4",
+      "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -185,18 +193,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_2",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -205,8 +203,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -215,8 +213,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -235,8 +233,18 @@
     },
     {
       "trigger": "advance",
+      "source": "t_6",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_7",
-      "dest": "state_2",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -244,5 +252,47 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in reagent spawn zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.keep_current_realm": true,
+          "state_2.zone": "Azteca/AZ_Z00_Zocalo"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "7910bf84-1c71-4d5a-a39c-2f26b4219617",
+    "version": 1
+  }
 }

@@ -4,8 +4,8 @@
   "description": "Endlessly farms Valerik Brightsword in The Crucible, Dragonspyre.",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_11",
-  "recovery_state": "state_12",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Brass"
@@ -121,11 +121,125 @@
   "options": [],
   "states": [
     {
+      "id": "t_4",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_6",
+      "node_type": "handle_combat",
+      "label": "Defeat Valerik Brightsword",
+      "position": {
+        "x": 2640,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Warrior-Male-Armor-Purple-Boss-R8",
+        "wiki_page": "",
+        "use_default_strategy": true,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_8",
+      "node_type": "teleport_to_coordinates",
+      "label": "Go to Valerik Brightsword",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
+        "xyz": {
+          "x": -4991.92,
+          "y": 14503.84,
+          "z": -700.0
+        }
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
+      "position": {
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 5.0
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena"
+      }
+    },
+    {
       "id": "state_4",
       "node_type": "interact",
       "label": "Summon Valerik Brightsword",
       "position": {
-        "x": 2640,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -146,153 +260,28 @@
       }
     },
     {
-      "id": "state_5",
-      "node_type": "teleport_to_coordinates",
-      "label": "Go to Valerik Brightsword",
-      "position": {
-        "x": 1320.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
-        "xyz": {
-          "x": -4991.92,
-          "y": 14503.84,
-          "z": -700.0
-        }
-      }
-    },
-    {
-      "id": "state_6",
-      "node_type": "handle_combat",
-      "label": "Defeat Valerik Brightsword",
-      "position": {
-        "x": 3080,
-        "y": 0.0
-      },
-      "params": {
-        "enemy": "Warrior-Male-Armor-Purple-Boss-R8",
-        "use_bot_default": true,
-        "combat_config": "",
-        "max_duration": 0.0
-      }
-    },
-    {
       "id": "state_7",
       "node_type": "teleport_to_coordinates",
       "label": "Exit combat area",
-      "position": {
-        "x": 3960,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
-        "xyz": {
-          "x": -4991.92,
-          "y": 14503.84,
-          "z": -700.0
-        }
-      }
-    },
-    {
-      "id": "state_8",
-      "node_type": "sleep",
-      "label": "Wait for invulnerability to end",
-      "position": {
-        "x": 4400,
-        "y": 0.0
-      },
-      "params": {
-        "duration": 5.0
-      }
-    },
-    {
-      "id": "state_9",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 1760.0,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_10",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
       "position": {
         "x": 3520,
         "y": 0.0
       },
       "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "timeout": 10.0
+        "zone": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena",
+        "xyz": {
+          "x": -4991.92,
+          "y": 14503.84,
+          "z": -700.0
+        }
       }
-    },
-    {
-      "id": "state_11",
-      "node_type": "sync_in_zone",
-      "label": "Go to The Crucible",
-      "position": {
-        "x": 440.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena"
-      }
-    },
-    {
-      "id": "state_12",
-      "node_type": "relog",
-      "label": "Relog",
-      "position": {
-        "x": 0.0,
-        "y": 0.0
-      },
-      "params": {
-        "relog_clients": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_13",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
-      "position": {
-        "x": 880.0,
-        "y": 0.0
-      },
-      "params": {
-        "use_favorite_realm": true
-      }
-    },
-    {
-      "id": "state_14",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": 2200.0,
-        "y": 0.0
-      },
-      "params": {}
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_6",
+      "source": "t_4",
+      "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -301,8 +290,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
+      "source": "t_6",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -311,8 +300,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
+      "source": "t_8",
+      "dest": "t_9",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -321,28 +310,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_10",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_7",
+      "source": "t_7",
+      "dest": "t_8",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -351,8 +320,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_11",
+      "source": "t_9",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -361,8 +330,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_13",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -371,8 +340,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_5",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_8",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -381,17 +350,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_14",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
+      "source": "t_5",
       "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
@@ -401,8 +360,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_9",
+      "source": "state_4",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -411,14 +370,75 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_12",
+      "source": "t_7",
+      "dest": "state_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "state_7",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_7",
+      "dest": "t_8",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in mob spawn zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "DragonSpire/DS_A2_Battle/DS_A2Z2_Arena"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "be76a48c-598c-4114-8ddc-389a51d145ed",
+    "version": 1
+  }
 }

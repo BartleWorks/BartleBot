@@ -4,8 +4,8 @@
   "description": "Endlessly farms Sprockets in Counterweight East, Marleybone",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Admirable Shoes"
@@ -317,7 +317,8 @@
   "authors": "BartleBot",
   "tags": [
     "Gear",
-    "Boss"
+    "Boss",
+    "Team-Up"
   ],
   "options": [
     {
@@ -328,51 +329,71 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Regent's Square",
-      "position": {
-        "x": -440.0,
-        "y": -180.0
-      },
-      "params": {
-        "zone": "Marleybone/MB_Hub"
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "enter_zone",
-      "label": "Enter Royal Museum",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
         "x": 0.0,
-        "y": -180.0
+        "y": 0.0
       },
       "params": {
-        "from_zone": "Marleybone/MB_Hub",
-        "to_zone": "Marleybone/MB_BigBen/MB_Museum",
-        "xyz": {
-          "x": -205.62,
-          "y": 9124.3,
-          "z": -0.0
-        },
-        "reset_xyz": {
-          "x": -191.04,
-          "y": 8491.09,
-          "z": -0.0
-        }
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     {
-      "id": "state_3",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Marleybone/MB_BigBen/MB_Museum"
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Counterweight East",
       "position": {
-        "x": 440.0,
-        "y": -270.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Marleybone/MB_BigBen/MB_Museum",
         "dungeon_zone": "Marleybone/MB_BigBen/MB_CounterweightEast",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "dungeon_name": "Counterweight East",
         "sigil_xyz": {
           "x": 855.23,
@@ -387,31 +408,49 @@
       }
     },
     {
-      "id": "state_13",
+      "id": "t_4",
       "node_type": "handle_combat",
       "label": "Defeat Sprockets",
       "position": {
-        "x": 1320.0,
-        "y": -270.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "enemy": "Golem-Brass-MBBoss-L48",
-        "use_bot_default": true,
-        "combat_config": "",
+        "wiki_page": "",
+        "use_default_strategy": false,
         "max_duration": 0.0
       }
     },
     {
-      "id": "state_14",
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 2640,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
       "node_type": "enter_zone",
       "label": "Exit Counterweight East",
       "position": {
-        "x": 1760.0,
-        "y": -180.0
+        "x": 3080,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Marleybone/MB_BigBen/MB_CounterweightEast",
         "to_zone": "Marleybone/MB_BigBen/MB_Museum",
+        "stagger": false,
         "xyz": {
           "x": -2.47,
           "y": -5255.66,
@@ -425,12 +464,29 @@
       }
     },
     {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
       "id": "state_15",
       "node_type": "teleport_to_coordinates",
       "label": "Spawn Sprockets",
       "position": {
-        "x": 880.0,
-        "y": -270.0
+        "x": 2640,
+        "y": 90.0
       },
       "params": {
         "zone": "Marleybone/MB_BigBen/MB_CounterweightEast",
@@ -445,8 +501,8 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -455,8 +511,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
+      "source": "t_3",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -465,8 +521,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_14",
+      "source": "t_4",
+      "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -475,8 +531,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_3",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -485,8 +541,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -495,9 +551,59 @@
     },
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_13",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -515,7 +621,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
+      "source": "t_4",
       "dest": "state_15",
       "when": "FAILURE",
       "flags": [],
@@ -525,7 +631,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
+      "source": "t_3",
       "dest": "state_15",
       "when": "SUCCESS",
       "flags": [
@@ -537,7 +643,58 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_15",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Marleybone/MB_BigBen/MB_Museum"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
 }

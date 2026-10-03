@@ -4,21 +4,16 @@
   "description": "Endlessly defeats Eerkala in Eerem Palace, Mirage",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [],
   "authors": "BartleBot",
   "tags": [
     "Spellements",
-    "Boss"
+    "Boss",
+    "Team-Up"
   ],
   "options": [
-    {
-      "name": "Quicksell",
-      "type": "bool",
-      "default": true,
-      "description": "Whether or not to quicksell items"
-    },
     {
       "name": "Quicksell Keep List",
       "type": "drop_keep_list",
@@ -29,87 +24,42 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "check_zone",
-      "label": "Check world",
+      "id": "t_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
       "position": {
-        "x": -2200.0,
-        "y": 0.0
+        "x": 880,
+        "y": -90.0
       },
       "params": {
-        "zone": "Mirage*",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
       }
     },
     {
-      "id": "state_2",
-      "node_type": "check_zone",
-      "label": "Check zone",
+      "id": "t_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
       "position": {
-        "x": 1320.0,
-        "y": 0.0
+        "x": 1320,
+        "y": -90.0
       },
-      "params": {
-        "zone": "Mirage/MR_Z08_EeremPalace",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
+      "params": {}
     },
     {
-      "id": "state_3",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Caravan",
-      "position": {
-        "x": 1760.0,
-        "y": 90.0
-      },
-      "params": {
-        "zone": "Mirage/MR_Z00_Hub"
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "enter_zone_via_object",
-      "label": "Take magic carpet to Eerem Palace",
-      "position": {
-        "x": 3080.0,
-        "y": 90.0
-      },
-      "params": {
-        "from_zone": "Mirage/MR_Z00_Hub",
-        "to_zone": "Mirage/MR_Z08_EeremPalace",
-        "interact_xyz": {
-          "x": -5088.3,
-          "y": -239.48,
-          "z": 0.05
-        },
-        "reset_xyz": {
-          "x": -4821.62,
-          "y": 413.96,
-          "z": 0.05
-        }
-      }
-    },
-    {
-      "id": "state_5",
+      "id": "t_10",
       "node_type": "enter_dungeon",
       "label": "Enter Eerem Gardens",
       "position": {
-        "x": 3520.0,
-        "y": 0.0
+        "x": 2200,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Mirage/MR_Z08_EeremPalace",
         "dungeon_zone": "Mirage/Interiors/MR_Z08_EeremGardens",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "dungeon_name": "Eerem Gardens",
         "sigil_xyz": {
           "x": -2208.15,
@@ -124,47 +74,49 @@
       }
     },
     {
-      "id": "state_6",
-      "node_type": "teleport_to_coordinates",
-      "label": "Teleport to Eerkala",
-      "position": {
-        "x": 3960.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Mirage/Interiors/MR_Z08_EeremGardens",
-        "xyz": {
-          "x": 1371.69,
-          "y": -30.55,
-          "z": 100.78
-        }
-      }
-    },
-    {
-      "id": "state_7",
+      "id": "t_11",
       "node_type": "handle_combat",
       "label": "Defeat Eerkala",
       "position": {
-        "x": 4400.0,
-        "y": 0.0
+        "x": 3080,
+        "y": -90.0
       },
       "params": {
         "enemy": "MR_Djinn_MageF_B_Boss_01",
+        "wiki_page": "",
         "use_default_strategy": false,
         "max_duration": 600.0
       }
     },
     {
-      "id": "state_8",
+      "id": "t_12",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3520,
+        "y": -90.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 0.5,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_13",
       "node_type": "enter_zone",
       "label": "Exit Eerem Gardens",
       "position": {
-        "x": 5280.0,
-        "y": 0.0
+        "x": 3960,
+        "y": -90.0
       },
       "params": {
         "from_zone": "Mirage/Interiors/MR_Z08_EeremGardens",
         "to_zone": "Mirage/MR_Z08_EeremPalace",
+        "stagger": false,
         "xyz": {
           "x": 7150.05,
           "y": 4991.72,
@@ -178,217 +130,87 @@
       }
     },
     {
-      "id": "state_9",
-      "node_type": "check_level_scaling",
-      "label": "Check level scaling",
-      "position": {
-        "x": 6160.0,
-        "y": 0.0
-      },
-      "params": {}
-    },
-    {
-      "id": "state_10",
-      "node_type": "enter_zone_via_object",
-      "label": "Take magic carpet to Rubal Wastes",
-      "position": {
-        "x": -880.0,
-        "y": 270.0
-      },
-      "params": {
-        "from_zone": "Mirage/MR_Z00_Hub",
-        "to_zone": "Mirage/MR_Z04_RubalWastes",
-        "interact_xyz": {
-          "x": -5269.28,
-          "y": -1230.33,
-          "z": 0.05
-        },
-        "reset_xyz": {
-          "x": -5553.88,
-          "y": -935.07,
-          "z": 0.05
-        }
-      }
-    },
-    {
-      "id": "state_11",
-      "node_type": "enter_zone_via_object",
-      "label": "Take teleporter to Chronoverge",
-      "position": {
-        "x": -440.0,
-        "y": 270.0
-      },
-      "params": {
-        "from_zone": "Mirage/MR_Z04_RubalWastes",
-        "to_zone": "Mirage/MR_Z10_Chronoverge",
-        "interact_xyz": {
-          "x": -6824.03,
-          "y": -7415.05,
-          "z": 181.97
-        },
-        "reset_xyz": {
-          "x": -6331.58,
-          "y": -7752.96,
-          "z": 71.22
-        }
-      }
-    },
-    {
-      "id": "state_12",
-      "node_type": "enter_zone",
-      "label": "Enter Sands of Time",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
         "x": 0.0,
-        "y": 270.0
+        "y": 0.0
       },
       "params": {
-        "from_zone": "Mirage/MR_Z10_Chronoverge",
-        "to_zone": "Mirage/Interiors/MR_Z10_SandsofTime",
-        "xyz": {
-          "x": 2857.73,
-          "y": 16.15,
-          "z": 194.44
-        },
-        "reset_xyz": {
-          "x": 2213.33,
-          "y": 16.66,
-          "z": 2.73
-        }
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     {
-      "id": "state_13",
-      "node_type": "enter_dungeon",
-      "label": "Enter North Sands of Time",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
         "x": 440.0,
-        "y": 270.0
-      },
-      "params": {
-        "from_zone": "Mirage/Interiors/MR_Z10_SandsofTime",
-        "dungeon_zone": "Mirage/Interiors/MR_Z10_NorthTimeDunes",
-        "dungeon_name": "North Sands of Time",
-        "sigil_xyz": {
-          "x": 562.17,
-          "y": -4862.3,
-          "z": 0.0
-        },
-        "reset_xyz": {
-          "x": 280.56,
-          "y": -4306.88,
-          "z": 0.0
-        }
-      }
-    },
-    {
-      "id": "state_14",
-      "node_type": "apply_level_scaling",
-      "label": "Apply level scaling",
-      "position": {
-        "x": 880.0,
-        "y": 180.0
-      },
-      "params": {
-        "zone": "Mirage/Interiors/MR_Z10_NorthTimeDunes",
-        "interact_xyz": {
-          "x": 3064.08,
-          "y": -10037.38,
-          "z": 0.0
-        },
-        "reset_xyz": {
-          "x": 2834.94,
-          "y": -9078.1,
-          "z": 0.0
-        }
-      }
-    },
-    {
-      "id": "state_15",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Caravan",
-      "position": {
-        "x": -1320.0,
-        "y": 270.0
-      },
-      "params": {
-        "zone": "Mirage/MR_Z00_Hub"
-      }
-    },
-    {
-      "id": "state_16",
-      "node_type": "check_level_scaling",
-      "label": "Check level scaling",
-      "position": {
-        "x": -1760.0,
-        "y": 0.0
-      },
-      "params": {}
-    },
-    {
-      "id": "state_18",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
-      "position": {
-        "x": 4840.0,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 0.5,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
-      }
-    },
-    {
-      "id": "state_19",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
-      "position": {
-        "x": 2200.0,
         "y": 90.0
+      },
+      "params": {
+        "zone": "Mirage/MR_Z08_EeremPalace"
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1760,
+        "y": -90.0
       },
       "params": {
         "if_health_below": 1.0,
         "if_mana_below": 1.0,
+        "timeout": 10.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
+        "only_safe": true
       }
     },
     {
-      "id": "state_20",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
+      "id": "state_6",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Eerkala",
       "position": {
-        "x": 2640.0,
-        "y": 90.0
+        "x": 2640,
+        "y": -90.0
       },
       "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "mark_zone": ""
+        "zone": "Mirage/Interiors/MR_Z08_EeremGardens",
+        "xyz": {
+          "x": 1371.69,
+          "y": -30.55,
+          "z": 100.78
+        }
       }
-    },
-    {
-      "id": "state_17",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": 5720.0,
-        "y": 90.0
-      },
-      "params": {}
     },
     {
       "id": "state_21",
       "node_type": "sleep",
       "label": "Sleep",
       "position": {
-        "x": 1320.0,
-        "y": 180.0
+        "x": 880,
+        "y": 90.0
       },
       "params": {
         "duration": 1.0
@@ -398,18 +220,8 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_16",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
+      "source": "t_12",
+      "dest": "t_13",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -418,8 +230,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_15",
+      "source": "t_12",
+      "dest": "t_13",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -428,8 +240,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_12",
+      "source": "t_8",
+      "dest": "t_9",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -438,8 +250,78 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_15",
+      "source": "t_11",
+      "dest": "t_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -448,257 +330,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_13",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_15",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_14",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_15",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_21",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_15",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_10",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_15",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_2",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_20",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_5",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_20",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_20",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_14",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_19",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
+      "source": "t_10",
       "dest": "state_6",
       "when": "SUCCESS",
       "flags": [],
@@ -708,18 +340,18 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_6",
-      "dest": "state_3",
+      "dest": "t_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "state_21",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -728,104 +360,55 @@
     },
     {
       "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
+      "source": "state_21",
+      "dest": "t_14",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_18",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Quicksell",
-              "negate": true
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_17",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Quicksell",
-              "negate": false
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_15",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_5",
-      "when": "TRUE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Mirage/MR_Z08_EeremPalace"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
+    "version": 1
+  }
 }

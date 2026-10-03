@@ -4,8 +4,8 @@
   "description": "Defeats Taking Tree in Dark Abode, Vivarium, Selenopolis.",
   "version": "1.0",
   "clients": "all",
-  "initial": "sync_players_1_state_2",
-  "recovery_state": "sync_players_1_state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Ammut",
@@ -1262,113 +1262,7 @@
   "options": [],
   "states": [
     {
-      "id": "state_4",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 2200.0,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": 2640.0,
-        "y": 0.0
-      },
-      "params": {}
-    },
-    {
-      "id": "state_8",
-      "node_type": "enter_dungeon",
-      "label": "Enter Dark Abode",
-      "position": {
-        "x": 3080.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium",
-        "dungeon_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I03_DarkAbode",
-        "dungeon_name": "Dark Abode",
-        "sigil_xyz": {
-          "x": 25975.75,
-          "y": 2324.29,
-          "z": 0.02
-        },
-        "reset_xyz": {
-          "x": 26183.05,
-          "y": 1795.52,
-          "z": 0.02
-        },
-        "offers_challenge_mode": false,
-        "offers_team_up": true
-      }
-    },
-    {
-      "id": "state_9",
-      "node_type": "handle_combat",
-      "label": "Defeat Taking Tree",
-      "position": {
-        "x": 3520.0,
-        "y": 0.0
-      },
-      "params": {
-        "enemy": "KT_SE_Treant_Tormented_A_01",
-        "wiki_page": "Creature:Taking Tree (Standard)",
-        "use_default_strategy": true,
-        "max_duration": 600.0
-      }
-    },
-    {
-      "id": "state_10",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
-      "position": {
-        "x": 3960.0,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "timeout": 10.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true
-      }
-    },
-    {
-      "id": "state_11",
-      "node_type": "enter_zone",
-      "label": "Exit Dark Abode",
-      "position": {
-        "x": 4400.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I03_DarkAbode",
-        "to_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium",
-        "xyz": {
-          "x": 8.68,
-          "y": -3437.25,
-          "z": 81.59
-        },
-        "reset_xyz": {
-          "x": 8.68,
-          "y": -2919.45,
-          "z": 40.16
-        },
-        "stagger": false
-      }
-    },
-    {
-      "id": "sync_players_1_state_1",
+      "id": "t_sync_players_1_state_1",
       "node_type": "relog",
       "label": "Relog",
       "position": {
@@ -1385,9 +1279,9 @@
       }
     },
     {
-      "id": "sync_players_1_state_2",
+      "id": "t_sync_players_1_state_2",
       "node_type": "sync_in_zone",
-      "label": "Go to zone",
+      "label": "Sync in zone",
       "position": {
         "x": 2199.999864958305,
         "y": 90.00021952501635
@@ -1397,23 +1291,134 @@
       }
     },
     {
-      "id": "sync_players_1_state_3",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
       "position": {
-        "x": 2639.999864958305,
-        "y": 0.00021952501634925348
+        "x": 2200.0,
+        "y": 0.0
       },
       "params": {
-        "use_favorite_realm": true
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
+      "node_type": "enter_dungeon",
+      "label": "Enter Dark Abode",
+      "position": {
+        "x": 3520.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium",
+        "dungeon_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I03_DarkAbode",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
+        "dungeon_name": "Dark Abode",
+        "sigil_xyz": {
+          "x": 25975.75,
+          "y": 2324.29,
+          "z": 0.02
+        },
+        "reset_xyz": {
+          "x": 26183.05,
+          "y": 1795.52,
+          "z": 0.02
+        }
+      }
+    },
+    {
+      "id": "t_4",
+      "node_type": "handle_combat",
+      "label": "Defeat Taking Tree",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "KT_SE_Treant_Tormented_A_01",
+        "wiki_page": "Creature:Taking Tree (Standard)",
+        "use_default_strategy": true,
+        "max_duration": 600.0
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "enter_zone",
+      "label": "Exit Dark Abode",
+      "position": {
+        "x": 4840.0,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I03_DarkAbode",
+        "to_zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium",
+        "stagger": false,
+        "xyz": {
+          "x": 8.68,
+          "y": -3437.25,
+          "z": 81.59
+        },
+        "reset_xyz": {
+          "x": 8.68,
+          "y": -2919.45,
+          "z": 40.16
+        }
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3080.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1422,8 +1427,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_8",
+      "source": "t_3",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1432,8 +1437,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
+      "source": "t_4",
+      "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1442,8 +1447,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_10",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1452,18 +1457,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -1472,8 +1467,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_4",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1482,8 +1477,8 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_1",
-      "dest": "sync_players_1_state_2",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1492,8 +1487,8 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_2",
-      "dest": "sync_players_1_state_3",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1502,9 +1497,29 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_3",
-      "dest": "state_4",
+      "source": "t_2",
+      "dest": "t_7",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1513,17 +1528,16 @@
   ],
   "regions": [
     {
-      "id": "sync_players_1",
-      "label": "Sync players in Vivarium",
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
       "members": [
-        "sync_players_1_state_1",
-        "sync_players_1_state_2",
-        "sync_players_1_state_3"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
       "color": 1,
       "source": {
         "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
-        "version": 3,
+        "version": 4,
         "inputs": {
           "state_2.zone": "Krokotopia/KT_Selenopolis/Interiors/KT_Z07I01_Vivarium"
         },
@@ -1537,7 +1551,7 @@
           "exit_1": {
             "from": [
               [
-                "state_3",
+                "state_2",
                 "SUCCESS"
               ]
             ]
@@ -1549,5 +1563,9 @@
         }
       }
     }
-  ]
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
 }

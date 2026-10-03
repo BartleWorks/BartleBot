@@ -4,8 +4,8 @@
   "description": "Endlessly defeats Mongu brothers in Mongu Refuge, Mirage",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_3",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Aether"
@@ -633,7 +633,8 @@
   "tags": [
     "Jewels",
     "Reagents",
-    "Boss"
+    "Boss",
+    "Team-Up"
   ],
   "options": [
     {
@@ -646,28 +647,15 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Caravan",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": 0,
+        "x": 0.0,
         "y": 0.0
       },
       "params": {
-        "zone": "Mirage/MR_Z00_Hub"
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "check_zone",
-      "label": "Check if in Rubal Wastes",
-      "position": {
-        "x": -440.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Mirage/MR_Z04_RubalWastes",
-        "clients_to_check": [
+        "relog_clients": [
           1,
           2,
           3,
@@ -676,57 +664,54 @@
       }
     },
     {
-      "id": "state_3",
-      "node_type": "check_zone",
-      "label": "Check if in Mirage",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
-        "x": -880.0,
-        "y": -90.0
+        "x": 440.0,
+        "y": 90.0
       },
       "params": {
-        "zone": "Mirage/*",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
+        "zone": "Mirage/MR_Z04_RubalWastes"
       }
     },
     {
-      "id": "state_4",
-      "node_type": "enter_zone_via_object",
-      "label": "Take magic carpet to Rubal Wastes",
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
       "position": {
-        "x": 1320.0,
+        "x": 440,
         "y": 0.0
       },
       "params": {
-        "from_zone": "Mirage/MR_Z00_Hub",
-        "to_zone": "Mirage/MR_Z04_RubalWastes",
-        "interact_xyz": {
-          "x": -4980.61,
-          "y": -1390.33,
-          "z": 0.05
-        },
-        "reset_xyz": {
-          "x": -4550.88,
-          "y": -1661.63,
-          "z": 0.05
-        }
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
       }
     },
     {
-      "id": "state_5",
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Mongu Refuge",
       "position": {
-        "x": 3080.0,
-        "y": -90.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Mirage/MR_Z04_RubalWastes",
         "dungeon_zone": "Mirage/Interiors/MR_Z04_MonguRefuge",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "dungeon_name": "Mongu Refuge",
         "sigil_xyz": {
           "x": 4082.19,
@@ -741,47 +726,49 @@
       }
     },
     {
-      "id": "state_6",
-      "node_type": "teleport_to_coordinates",
-      "label": "Teleport to final room",
-      "position": {
-        "x": 3520.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Mirage/Interiors/MR_Z04_MonguRefuge",
-        "xyz": {
-          "x": 785.92,
-          "y": -6503.3,
-          "z": -696.58
-        }
-      }
-    },
-    {
-      "id": "state_7",
+      "id": "t_4",
       "node_type": "handle_combat",
       "label": "Defeat Mongu brothers",
       "position": {
-        "x": 3960.0,
-        "y": -90.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "enemy": "MR_Mongoose_Warrior_C_Boss_01",
+        "wiki_page": "",
         "use_default_strategy": true,
         "max_duration": 0.0
       }
     },
     {
-      "id": "state_8",
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3520,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
       "node_type": "enter_zone",
       "label": "Exit Mongu Refuge",
       "position": {
-        "x": 4840.0,
-        "y": -90.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Mirage/Interiors/MR_Z04_MonguRefuge",
         "to_zone": "Mirage/MR_Z04_RubalWastes",
+        "stagger": false,
         "xyz": {
           "x": -2352.05,
           "y": 9116.85,
@@ -791,73 +778,24 @@
           "x": -2329.88,
           "y": 8535.87,
           "z": 1.37
-        },
-        "stagger": false
+        }
       }
     },
     {
-      "id": "state_9",
+      "id": "t_7",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 1760.0,
-        "y": -90.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
-      }
-    },
-    {
-      "id": "state_10",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
-      "position": {
-        "x": 440.0,
+        "x": 1320,
         "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
         "if_mana_below": 1.0,
+        "timeout": 10.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
-      }
-    },
-    {
-      "id": "state_11",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 880.0,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_12",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
-      "position": {
-        "x": 4400.0,
-        "y": -90.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
+        "only_safe": true
       }
     },
     {
@@ -865,8 +803,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to dungeon entrance",
       "position": {
-        "x": 2200.0,
-        "y": -90.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "zone": "Mirage/MR_Z04_RubalWastes",
@@ -878,21 +816,58 @@
       }
     },
     {
-      "id": "state_14",
-      "node_type": "quicksell",
-      "label": "Quicksell",
+      "id": "state_6",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to final room",
       "position": {
-        "x": 2640.0,
-        "y": -90.0
+        "x": 2640,
+        "y": 0.0
       },
-      "params": {}
+      "params": {
+        "zone": "Mirage/Interiors/MR_Z04_MonguRefuge",
+        "xyz": {
+          "x": 785.92,
+          "y": -6503.3,
+          "z": -696.58
+        }
+      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -901,8 +876,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_10",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -911,8 +886,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -921,8 +896,28 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -931,107 +926,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_8",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_9",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_2",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_12",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
+      "source": "t_7",
       "dest": "state_13",
       "when": "SUCCESS",
       "flags": [],
@@ -1042,7 +937,7 @@
     {
       "trigger": "advance",
       "source": "state_13",
-      "dest": "state_14",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1051,8 +946,18 @@
     },
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_5",
+      "source": "t_3",
+      "dest": "state_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_6",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1060,5 +965,46 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Mirage/MR_Z04_RubalWastes"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
 }

@@ -121,18 +121,45 @@ record, so the two counts are not comparable.
 The notes column marks the bots each change touches. The tier tables exist so these are
 visible per bot, not buried in a diff.
 
-## Fix before the rewrite
+## Rebuild status
 
-Defects in the current tree that the rewrite would otherwise inherit.
+**43 of 85 bots are rebuilt** (2026-10-03), each by `tools/rebuild_from_template.py rebuild
+--all --write`, which writes a bot only when every old node is carried or replaced, every
+node fill-in is filled, and the result is sound. The other 42 are unchanged and still run as
+they did; `status` lists them.
 
-- **`do_daga` was reduced to a test stub in `00b8049`**: 4 nodes, no level scaling,
-  `enter_dungeon` as both initial and recovery state, and an exit with no outgoing edge, so a
-  run farms once and stops. It is not restored. The rewrite builds it from Spellement Farmer
-  with the entry, exit and enemy from its version before `00b8049`, which is the version
-  measured here.
-- **`eerkala` declares its own "Quicksell" bool option**, used as a flag guard around its
-  quicksell node. It duplicates Enable Quicksell, which `bot_options` says an author never
-  declares. The rewrite drops the option and both guards.
+| template | rebuilt |
+|---|---|
+| Boss Farmer (23) | `achaelos`, `advisor_fancy_fries`, `alicane_swiftarrow`, `bellows`, `crash_the_bandit_coot`, `graveyard`, `guillermo_shatterer`, `harvest_lord`, `lord_bramble`, `lord_graustark`, `lord_nightshade`, `mongu_refuge`, `mr_cane`, `mr_stone`, `oakheart`, `praetor_mako`, `prince_gobblestone`, `scion_of_the_old_one`, `sergeant_skullsplitter`, `sister_sanderson`, `sprockets`, `taking_tree`, `vigilant_jarilo` |
+| Dungeon Farmer (6) | `barkingham_palace_main_hall`, `five_boxes_avalon`, `heretical_academy`, `katzensteins_lab`, `spike_the_crusher`, `trial_of_the_spheres` |
+| Spellement Farmer (5) | `copy_qhat`, `do_daga`, `eerkala`, `hall_of_heroes`, `harlequin_knight` |
+| Reagent Collector (6) | `mirkholm_keep_reagents`, `nightside_flax`, `selenopolis_parchment`, `the_necropolis_deep_mushroom`, `the_wild_deep_mushroom`, `the_zocalo_red_mandrake` |
+| Mob Farmer (3) | `fortee_thieves`, `monkey_spiders`, `valerik_brightsword` |
+
+`do_daga` was rebuilt from its version before `00b8049`, as decided, not from the stub.
+`eerkala` lost its own "Quicksell" option and its guards. `nightside_flax`, which
+declared no Player Realms, now ships Separate, Reagent Collector's own declaration; the other
+rebuilt reagent bots already declared it.
+`crash_the_bandit_coot`, `eerkala` and `heretical_academy` have no drops, so their drops step
+stays open; that blocks nothing.
+
+### Why 42 are not rebuilt
+
+A bot can be in several rows; each row is a reason the tool refuses it.
+
+| reason | bots | what it needs |
+|---|---|---|
+| **No exit.** The bot leaves its dungeon by teleporting to the hub and walks back in; every template exits by a zone change it can record. | `atlantea`, `barkingham_palace_rooftop`, `barkingham_palace_state_wing`, `big_salgio`, `castle_darkmoor`, `crimson_fields`, `cronus`, `gladiator_dimachaerus`, `house_of_scales`, `ironworks`, `jade_oni`, `king_detritus`, `krokopatra`, `mirror_lake`, `mt_olympus`, `oyotomi_the_defiler`, `prince_viggor`, `pyramid_of_mother_moon_tartarus_workaround`, `queen_calypso`, `sand_squid_tentacles`, `spiral_cup_portal_of_peril`, `the_great_spyre`, `throne_room_of_fire`, `tree_of_life`, `waterworks`, `youkai` | the exit recorded in game, or a decision that some keep teleporting out |
+| **A blank fill-in**, which would stop the bot running | `foulgaze`, `hierophant_of_destruction`, `jabberwock` (enemy); `mirkholm_keep_ore` (spawn 1's scan point) | recording in game |
+| **Content only navigation reached**: a puzzle or teleport on the trip that Sync players would skip | `biti_nirini`, `crab_alley_stone_block`, `spiral_cup_gauntlet`, and seven of the no-exit bots | a decision per bot: the trip may need its own steps after Sync players |
+| **Content that leaves through navigation**: a branch that ends with a hub teleport or a ride | `aeriel_shores_aethyr_burst`, `aeriel_shores_silver_chests`, `grand_tourney_arena_gauntlet`, `hidden_temple_gauntlet`, `spiral_cup_gauntlet`, and twelve of the no-exit bots | the same decision as no exit |
+| **Content hanging off several template nodes** | `secret_tunnel`, and four no-exit bots | rebuilding by hand |
+| **A reagent dungeon entered on the way in**: Sync players would gather in the entrance hall and collect before going in | `scrap_iron_collector`, `the_portico_pearl` | Reagent Collector with an entry, or these two by hand |
+| **Challenge Mode potions logic**: a flag-guarded skip that runs backwards through the template's potions, quicksell and wisps | `sisyphus`, `barkingham_palace_ransacked_throne_room` | a decision on Challenge Mode potions |
+
+**The no-exit row corrects this worksheet.** The first measurement took the walk back to a
+dungeon's entrance for its exit, so it put most of these in tier A or B. 26 bots have no exit
+at all, and that, not node count, is what keeps most of them from a drop-in rebuild.
 
 ## Settled for the rewrite (2026-10-03)
 
@@ -140,13 +167,16 @@ Defects in the current tree that the rewrite would otherwise inherit.
   id, and nothing else builds a bot from a template. The tool builds from the latest released
   version through `create_bot`, keeps the old bot's id, name, description, tags, authors, drops,
   clients and its own options, and fills the fill-ins from the old file. It folds the
-  navigation Sync players replaces and the level scaling `handle_level_scaling` replaces, and
-  reports every old node it did not carry. `rebuild` is a dry run until `--write`; `status`
+  navigation Sync players replaces and the level scaling `handle_level_scaling` replaces,
+  carries the bot's own content into the template's slot, and keeps the bot's own thresholds on
+  the potions and wisps the template replaces. Its module docstring has the rules and what it
+  refuses. `rebuild` is a dry run until `--write`, which writes only a clean bot; `status`
   reports progress, and a bot is done when it records `template`.
 - **Every Portal of Peril bot is built from Dungeon Farmer**, `spiral_cup_portal_of_peril` and
   any that follow it. Special Events is otherwise still out of scope.
 - **`big_salgio` is built from Spellement Farmer** (#23), so it scales on the Celestia default,
-  Trial of the Spheres, and moves from boss to spellement. The other half of #23 is done:
+  Trial of the Spheres, and moves from boss to spellement. Not yet: it has no exit (see
+  *Rebuild status*), and the tool needs `--template "Spellement Farmer"` for it. The other half of #23 is done:
   `valerik_brightsword` is tagged Seeds and Boss.
 - **One entrance is off the zone map.** Sync players' zone is a `nav_zone`, so it has to be a
   destination. `advisor_fancy_fries` enters its dungeon from House Calixco, an interior of Rubal
@@ -196,6 +226,8 @@ None of these can be done from the files.
 - **Five template fights have no enemy**: `foulgaze`, `hierophant_of_destruction`,
   `jabberwock`, `gladiator_dimachaerus` and `sand_squid_tentacles`. Boss, Spellement and Mob
   Farmer make the enemy a fill-in, so each needs its enemy ID recorded before the bot can run.
+- **26 bots have no exit** to record from the files (see *Rebuild status*).
+- **`mirkholm_keep_ore`'s spawn has no scan point**, which Reagent Collector asks for.
 - **Seven exposed fights have no enemy** (see above).
 - **Every rewritten bot needs a run** before it counts as done.
 

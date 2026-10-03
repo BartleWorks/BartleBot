@@ -4,8 +4,8 @@
   "description": "Endlessly farms Monkey Spiders in Monkey Spider Cave, Empyrea",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Alligator Pear Tree"
@@ -909,119 +909,68 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Aeriel Shore",
+      "id": "t_4",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
       "position": {
-        "x": 0,
+        "x": 2200.0,
         "y": 0.0
       },
       "params": {
-        "zone": "Empyrea/EM_Z00_Aeriel_HUB"
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
       }
     },
     {
-      "id": "state_2",
-      "node_type": "enter_zone",
-      "label": "Enter Aeriel Jungle",
+      "id": "t_5",
+      "node_type": "quicksell",
+      "label": "Quicksell",
       "position": {
-        "x": 1320,
+        "x": 2640.0,
         "y": 0.0
       },
-      "params": {
-        "from_zone": "Empyrea/EM_Z00_Aeriel_HUB",
-        "to_zone": "Empyrea/EM_Z01_Jungle",
-        "xyz": {
-          "x": 6999.35,
-          "y": -11009.71,
-          "z": -13.75
-        },
-        "reset_xyz": {
-          "x": 6568.22,
-          "y": -10177.47,
-          "z": -29.5
-        }
-      }
+      "params": {}
     },
     {
-      "id": "state_3",
-      "node_type": "collect_wisps",
-      "label": "Collect mana wisps",
-      "position": {
-        "x": 440,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "timeout": 10.0
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "enter_zone",
-      "label": "Enter Monkey Spider Cave",
-      "position": {
-        "x": 1760,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Empyrea/EM_Z01_Jungle",
-        "to_zone": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave",
-        "xyz": {
-          "x": -3028.19,
-          "y": -3510.37,
-          "z": -125.24
-        },
-        "reset_xyz": {
-          "x": -2757.2,
-          "y": -3339.27,
-          "z": -139.33
-        },
-        "stagger": true
-      }
-    },
-    {
-      "id": "state_6",
+      "id": "t_6",
       "node_type": "handle_combat",
       "label": "Defeat Monkey Spiders",
       "position": {
-        "x": 2640.0,
-        "y": -180.0
+        "x": 3080.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "EM_MonkeySpider_Hunter_A_01",
-        "use_bot_default": true,
-        "combat_config": "",
+        "wiki_page": "",
+        "use_default_strategy": true,
         "max_duration": 600.0
       }
     },
     {
-      "id": "state_7",
+      "id": "t_7",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3080.0,
-        "y": -90.0
+        "x": 3520.0,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
         "if_mana_below": 0.5,
+        "timeout": 10.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
+        "only_safe": true
       }
     },
     {
-      "id": "state_8",
+      "id": "t_8",
       "node_type": "teleport_to_coordinates",
       "label": "Exit battle area",
       "position": {
-        "x": 3520.0,
-        "y": -90.0
+        "x": 1320.0,
+        "y": 0.0
       },
       "params": {
         "zone": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave",
@@ -1033,61 +982,52 @@
       }
     },
     {
-      "id": "state_9",
+      "id": "t_9",
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 3960.0,
-        "y": -90.0
+        "x": 1760.0,
+        "y": 0.0
       },
       "params": {
         "duration": 5.0
       }
     },
     {
-      "id": "state_10",
-      "node_type": "quicksell",
-      "label": "Quicksell",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": 4400.0,
-        "y": -90.0
-      },
-      "params": {}
-    },
-    {
-      "id": "state_11",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 4840.0,
-        "y": -90.0
+        "x": 880.0002001308044,
+        "y": 0.00042969260954928146
       },
       "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "mark_zone": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave"
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     {
-      "id": "state_12",
-      "node_type": "teleport_to_friend",
-      "label": "Teleport to friend",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
-        "x": 2200.0,
-        "y": 0.0
+        "x": 1320.0002001308044,
+        "y": 90.00042969260954
       },
       "params": {
-        "target_hooked_player": true,
-        "target_player": 1,
-        "to_zone": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave"
+        "zone": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave"
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_3",
+      "source": "t_4",
+      "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1096,8 +1036,48 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
+      "source": "t_6",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_8",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -1106,8 +1086,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
+      "source": "t_9",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1116,8 +1096,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_6",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1126,88 +1106,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_12",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_10",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_8",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1217,17 +1117,44 @@
   ],
   "regions": [
     {
-      "id": "1a634649",
-      "label": "Main loop",
+      "id": "t_sync_players_1",
+      "label": "Sync players in mob spawn zone",
       "members": [
-        "state_11",
-        "state_8",
-        "state_10",
-        "state_9",
-        "state_6",
-        "state_7"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 1
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Empyrea/Interiors/EM_Z01_MonkeySpiderCave"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 880.0002001308044,
+          "y": 0.00042969260954928146
+        }
+      }
     }
-  ]
+  ],
+  "template": {
+    "id": "be76a48c-598c-4114-8ddc-389a51d145ed",
+    "version": 1
+  }
 }

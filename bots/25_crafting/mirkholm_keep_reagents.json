@@ -4,8 +4,8 @@
   "description": "Collects Ore and Diamonds in Mirkholm Keep in Grizzleheim. Optionally also collects Cattails/Water Lillies/Kelp and Frost Flowers/Grendelweed.",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_26",
-  "recovery_state": "state_26",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Cat Tail"
@@ -43,43 +43,105 @@
   ],
   "states": [
     {
-      "id": "state_7",
+      "id": "t_3",
+      "node_type": "change_realm",
+      "label": "Change to next realm",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "use_favorite_realm": false
+      }
+    },
+    {
+      "id": "t_4",
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 2640.0,
+        "x": 880,
         "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
+        "entity_names": [
+          "Ore"
+        ],
+        "xyz": {
+          "x": -8525.18,
+          "y": 3341.57,
+          "z": -494.31
+        }
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_reagent",
+      "label": "Collect Ore",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf",
+        "entity_names": [
+          "Ore"
+        ],
         "xyz": {
           "x": -11522.34,
           "y": 4606.54,
           "z": -700.0
-        },
-        "entity_names": [
-          "Ore"
-        ]
+        }
       }
     },
     {
-      "id": "state_9",
+      "id": "t_6",
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 3080.0,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
         "zone": "Grizzleheim/GH_Wolf",
+        "entity_names": [
+          "Ore"
+        ],
         "xyz": {
           "x": -11717.84,
           "y": 14869.37,
           "z": -670.0
-        },
-        "entity_names": [
-          "Ore"
+        }
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
         ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Grizzleheim/GH_Wolf",
+        "keep_current_realm": true
       }
     },
     {
@@ -87,7 +149,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 3520.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -107,7 +169,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Ore",
       "position": {
-        "x": 3960.0,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -127,7 +189,7 @@
       "node_type": "collect_reagent",
       "label": "Collect Frost Flowers and Cattails",
       "position": {
-        "x": 4400.0,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -144,60 +206,11 @@
       }
     },
     {
-      "id": "state_22",
-      "node_type": "change_realm",
-      "label": "Change to next realm",
-      "position": {
-        "x": 5720.0,
-        "y": -90.0
-      },
-      "params": {
-        "use_favorite_realm": false
-      }
-    },
-    {
-      "id": "state_23",
-      "node_type": "relog",
-      "label": "Relog",
-      "position": {
-        "x": 5280.0,
-        "y": 0.0
-      },
-      "params": {
-        "relog_clients": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_24",
-      "node_type": "collect_reagent",
-      "label": "Collect Ore",
-      "position": {
-        "x": 2200.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Grizzleheim/GH_Wolf",
-        "xyz": {
-          "x": -8525.18,
-          "y": 3341.57,
-          "z": -494.31
-        },
-        "entity_names": [
-          "Ore"
-        ]
-      }
-    },
-    {
       "id": "state_25",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 4840.0,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -206,21 +219,59 @@
         "mark_zone": "Grizzleheim/GH_Wolf"
       },
       "notes": "It's possible to get pulled into combat while collecting Ore from the last two spawn points. Over a long enough run, this can cause health and mana to drop low enough to require potions."
-    },
-    {
-      "id": "state_26",
-      "node_type": "sync_in_zone",
-      "label": "Go to Mirkholm Keep",
-      "position": {
-        "x": 1760.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Grizzleheim/GH_Wolf"
-      }
     }
   ],
   "transitions": [
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
     {
       "trigger": "advance",
       "source": "state_11",
@@ -253,108 +304,18 @@
     },
     {
       "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_23",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_24",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_23",
-      "dest": "state_23",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_23",
-      "dest": "state_22",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_24",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_25",
-      "dest": "state_22",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_25",
-      "dest": "state_23",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_26",
-      "dest": "state_24",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_26",
-      "dest": "state_26",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
+      "source": "t_6",
       "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_25",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -364,27 +325,45 @@
   ],
   "regions": [
     {
-      "id": "401623d0",
-      "label": "Collect reagents",
+      "id": "t_sync_players_1",
+      "label": "Sync players in reagent spawn zone",
       "members": [
-        "state_24",
-        "state_7",
-        "state_11",
-        "state_19",
-        "state_13",
-        "state_9"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 4
-    },
-    {
-      "id": "362bbeae",
-      "label": "Reset",
-      "members": [
-        "state_22",
-        "state_23",
-        "state_25"
-      ],
-      "color": 5
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.keep_current_realm": true,
+          "state_2.zone": "Grizzleheim/GH_Wolf"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
     }
-  ]
+  ],
+  "template": {
+    "id": "7910bf84-1c71-4d5a-a39c-2f26b4219617",
+    "version": 1
+  }
 }
