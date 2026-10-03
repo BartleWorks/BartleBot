@@ -9,10 +9,17 @@ in. This tool starts from the template's latest released version through
   string, and its own option declarations (the template's are kept too; the bot's win);
 - fills every setup step's fill-in it can find in the old file: the dungeon entry and exit,
   the fight's enemy, the Sync players zone, a mob's wait spot, a gauntlet's entry and a
-  reagent's spawns. The node each value came from also lends its label;
+  reagent's spawns. The node each value came from also lends its label. Dungeon Farmer's
+  mark is filled from the entry: the entrance zone, at the sigil's Reset XYZ;
+- in a template that recalls out of its dungeon (Dungeon Farmer), treats the old bot's whole
+  way out as the recall: the walk-out exit, a hub teleport or a teleporter out, an old
+  recall, and the plain navigation that only led to them, such as walking back through the
+  rooms to the door. Content that led there goes to the recall instead;
 - in a Spellement bot, names its Scales when the world default is not the one it used, and
   moves ``handle_level_scaling`` after the dungeon entry when the farm dungeon is the
-  Scales' own, as ``docs/LEVEL_SCALING.md`` says;
+  Scales' own, as ``docs/LEVEL_SCALING.md`` says. A level scaling bot rebuilt from a
+  template with no such node (a dungeon first, :data:`DUNGEONS_FIRST`) gets one of its own,
+  straight after the entry;
 - composes the bot before writing it, as New Bot does, so the file holds what opening it
   makes of it.
 
@@ -71,6 +78,11 @@ TEMPLATE_NAMES = {
     "gauntlet": "Gauntlet Farmer",
 }
 
+#: Bots whose nodes say spellement but that are dungeons first: each farms a whole dungeon that
+#: happens to drop spellements, and nobody farms it for them (decided 2026-10-03). They are
+#: rebuilt from Dungeon Farmer, keeping their level scaling as a node of their own.
+DUNGEONS_FIRST = frozenset({"atlantea", "mt_olympus", "the_great_spyre"})
+
 #: Navigation the Sync players node replaces. A gauntlet's template has its own teleport_to_friend.
 NAV_FOLD = frozenset(
     {"teleport_to_world_hub", "enter_zone_via_object", "check_zone", "teleport_to_friend", "relog", "sync_in_zone"}
@@ -91,6 +103,33 @@ CARRY_PARAMS = {
 
 #: The template node types a value is looked for in the old bot, by role.
 MAPPED_TYPES = ("enter_dungeon", "enter_zone", "handle_combat", "teleport_to_coordinates", "enter_gauntlet")
+
+#: Template fill-ins read from the old bot's dungeon entry, by (node type, param): Dungeon
+#: Farmer's mark is made in the entrance zone, at the spot the sigil's prompt does not reach.
+ENTRY_FILLS = {
+    ("mark_location", "zone"): "from_zone",
+    ("mark_location", "xyz"): "reset_xyz",
+}
+
+#: The node types a way out of a dungeon is made of: zone changes, teleports, and the steps
+#: and pauses between them. Nothing that farms.
+WAY_OUT_TYPES = frozenset(
+    {
+        "enter_zone",
+        "enter_zone_via_object",
+        "teleport_to_world_hub",
+        "teleport_to_marked_location",
+        "teleport_to_coordinates",
+        "sleep",
+        "check_zone",
+        "sync_in_zone",
+    }
+)
+
+#: What a run still has to do after a node for that node not to be the way out.
+FARMING_TYPES = frozenset(
+    {"handle_combat", "interact", "interact_menu", "click_path", "collect_reagent", "enter_dungeon"}
+)
 
 #: Params of the nodes the template replaces that stay the template's: the worksheet's
 #: "set by every template" values, and potions' mark zone, whose place has moved.
@@ -139,6 +178,11 @@ def classify(config: BotConfig) -> str:
     if "enter_dungeon" not in types:
         return "mob" if fights else "other"
     return "boss" if fights <= 1 else "dungeon"
+
+
+def category_of(path: Path, config: BotConfig) -> str:
+    """The category a bot is rebuilt as: what its nodes say, unless it is a dungeon first."""
+    return "dungeon" if path.stem in DUNGEONS_FIRST else classify(config)
 
 
 def walk_order(config: BotConfig) -> list[StateModel]:
@@ -206,6 +250,8 @@ class OldBot:
     sync_override: str = ""
     #: State ids that are the bot's own content even though the template has a node of their type.
     keep: set[str] = field(default_factory=set)
+    #: State ids of the old way out of the farm, when the template recalls out instead (:func:`_way_out`).
+    way_out: set[str] = field(default_factory=set)
     notes: list[str] = field(default_factory=list)
 
     @property
@@ -274,6 +320,15 @@ def read_old(config: BotConfig, category: str, nav: zone_nav.NavMap | None = Non
     old.gauntlet = next((s for s in order if s.node_type == "enter_gauntlet"), None)
     old.spawns = [s for s in order if s.node_type == "collect_reagent"]
     _fold_travel(old, order, nav)
+    # A teleporter from one of the farm's rooms to another is the dungeon's own, not travel.
+    farm = _farm_zones(old)
+    old.folded -= {
+        s.id
+        for s in config.states
+        if s.node_type == "enter_zone_via_object"
+        and s.params.get("from_zone") in farm
+        and s.params.get("to_zone") in farm
+    }
     return old
 
 
@@ -479,6 +534,8 @@ def rebuild(
     """The old bot rebuilt from ``start``, composed, and what was done. Writes nothing."""
     nav = zone_nav.load() if nav is None else nav
     category = category or classify(old_config)
+    # The old graph may be edited on the way (an inner mark spliced out), never the caller's.
+    old_config = old_config.model_copy(deep=True)
     old = read_old(old_config, category, nav)
     report = Report(bot=old_config.name, template=start.config.name, version=start.version, notes=list(old.notes))
 
@@ -524,15 +581,24 @@ def rebuild(
             "record the rest in the app, or delete the ones it does not need"
         )
     _check_anchors(config, sources, report)
+    _add_level_scaling(config, old, report)
     _place_level_scaling(config, old, report)
+    recall = _template_recall(start.config)
+    if recall is not None:
+        # The template recalls out of the dungeon, so the old way out is the recall now.
+        old.way_out = _way_out(old, sources)
     covered = _cover(old, sources, start.config)
+    if recall is not None:
+        covered |= {sid: recall for sid in old.way_out}
+        _drop_inner_marks(old, sources, covered, report)
     hls = next((st.id for st in config.states if st.node_type == "handle_level_scaling"), None)
     if hls is not None:
         # handle_level_scaling replaces the old pair, so whatever hung off them hangs off it.
         covered |= {st.id: hls for st in old_config.states if st.node_type in LEVEL_SCALING_TYPES}
     grafted = _graft(config, old, sources, covered, report)
     config.transitions = [t for t in config.transitions if not _retired_guard(t)]
-    _carry_tuning(config, old, covered, report)
+    fills = {(t.state, t.param) for step in steps for t in step.targets if t.state is not None}
+    _carry_tuning(config, old, covered, fills, report)
     if grafted:
         auto_layout(config)
 
@@ -572,21 +638,24 @@ def _drop_spare_spawns(config: BotConfig, template: BotConfig, sources: dict[str
     report.notes.append(f"the old bot farms fewer spawns than the template: {', '.join(spare)} deleted")
 
 
-def _carry_tuning(config: BotConfig, old: OldBot, covered: dict[str, str], report: Report) -> None:
+def _carry_tuning(
+    config: BotConfig, old: OldBot, covered: dict[str, str], fills: set[tuple[str, str]], report: Report
+) -> None:
     """Give a template node the old bot's own thresholds on the node it replaces.
 
-    Not the values the worksheet records as the template's to set (``TEMPLATE_SET``), and
-    not ``mark_zone``: where the potions run is the template's now, so a zone checked against
-    the old place could fail at the new one.
+    Not the values the worksheet records as the template's to set (``TEMPLATE_SET``), not
+    ``mark_zone`` (where the potions run is the template's now, so a zone checked against the
+    old place could fail at the new one), and never a fill-in, which a setup step filled.
     """
     by_id = {s.id: s for s in config.states}
     old_by_id = {s.id: s for s in old.config.states}
     for old_id, tid in covered.items():
         target, source = by_id.get(tid), old_by_id[old_id]
-        if target is None or target.node_type != source.node_type:
+        if target is None or target.node_type != source.node_type or old_id in old.way_out:
+            # The recall the old way out became names no spot: it checks each player's own mark.
             continue
         for key, value in (source.params or {}).items():
-            if key in TEMPLATE_SET.get(target.node_type, ()) or _empty(value):
+            if key in TEMPLATE_SET.get(target.node_type, ()) or (tid, key) in fills or _empty(value):
                 continue
             if value != target.params.get(key, _field_default(target.node_type, key)):
                 target.params[key] = value
@@ -613,7 +682,7 @@ def _template_successor(config: BotConfig, sid: str | None) -> str | None:
 
 
 def _inside(old: OldBot) -> set[str]:
-    """The old nodes inside the farm: past its dungeon or gauntlet entry, short of its way out."""
+    """The old nodes inside the farm: past its dungeon or gauntlet entry, short of its way out, by any edge."""
     if old.entry is not None:
         start, stops = old.entry, {old.exit.id} if old.exit is not None else set()
     elif old.gauntlet is not None:
@@ -621,11 +690,15 @@ def _inside(old: OldBot) -> set[str]:
         stops = {s.id for s in old.config.states if s.node_type == "teleport_to_friend"}
     else:
         return set()
-    stops |= old.folded | {start.id}
+    # The old level scaling pair is folded too, but a dungeon first scales just past its entry,
+    # so the farm goes on beyond it.
+    scaling = {s.id for s in old.config.states if s.node_type in SCALING_FOLD}
+    stops |= (old.folded - scaling) | old.way_out | {start.id}
+    # Failure branches too: a potions a failed wisps falls back to is inside the dungeon all the
+    # same. One into navigation stops there, as every edge does.
     edges: dict[str, list[str]] = {}
     for tr in old.config.transitions:
-        if tr.when != "FAILURE":
-            edges.setdefault(tr.source, []).append(tr.dest)
+        edges.setdefault(tr.source, []).append(tr.dest)
     seen: set[str] = set()
     stack = list(edges.get(start.id, []))
     while stack:
@@ -974,7 +1047,10 @@ def _fill(config, target, step_text: str, sources, old: OldBot, nav, report: Rep
     source = sources.get(target.state or "")
     if state is None:
         return
-    value = (source.params or {}).get(target.param or "") if source is not None else None
+    key = target.param or ""
+    if source is None and (state.node_type, key) in ENTRY_FILLS and old.entry is not None:
+        source, key = old.entry, ENTRY_FILLS[(state.node_type, key)]
+    value = (source.params or {}).get(key) if source is not None else None
     if source is None:
         report.unfilled.append(f"{where}: the old bot has no node for it ({step_text})")
     elif _empty(value):
@@ -982,6 +1058,135 @@ def _fill(config, target, step_text: str, sources, old: OldBot, nav, report: Rep
     else:
         state.params[target.param] = value
         report.filled.append(f"{where} = {value!r} (from {source.id})")
+
+
+def _template_recall(template: BotConfig) -> str | None:
+    """The template's own recall out of its dungeon, if it leaves that way."""
+    return next((s.id for s in template.states if s.node_type == "teleport_to_marked_location"), None)
+
+
+def _way_out(old: OldBot, sources: dict[str, StateModel]) -> set[str]:
+    """The old bot's way out of its farm: every node a recall to the entrance replaces.
+
+    It starts at whatever takes the players out once nothing is left to farm before the loop
+    comes round to the entry again -- the walk-out exit, a hub teleport, a teleporter to a zone
+    outside the farm, an old recall, a Sync in zone back to the entrance -- and takes in the plain navigation on either side of it:
+    the walk back through the rooms to the door before, and the trip back to the entrance after.
+    A hub teleport with more to farm after it, a hop partway through, is not a way out.
+    """
+    if old.entry is None:
+        return set()
+    by_id = {s.id: s for s in old.config.states}
+    farm = _farm_zones(old)
+    used = {s.id for s in sources.values()}
+    forward: dict[str, list[str]] = {}
+    for tr in old.config.transitions:
+        if tr.when not in FALLTHROUGH_RETURNS:
+            forward.setdefault(tr.source, []).append(tr.dest)
+    reached = _reachable(old.config, old.entry.id) - {old.entry.id}
+
+    def leaves(state: StateModel) -> bool:
+        params = state.params or {}
+        if state.node_type in ("teleport_to_world_hub", "teleport_to_marked_location", "sync_in_zone"):
+            return True
+        if state.node_type in ("enter_zone", "enter_zone_via_object"):
+            return params.get("from_zone") in farm and params.get("to_zone") not in farm
+        return False
+
+    def done_farming(sid: str) -> bool:
+        after = _reachable(old.config, sid, stop=old.entry.id) - {sid, old.entry.id}
+        return not any(by_id[a].node_type in FARMING_TYPES for a in after if a in by_id)
+
+    out = {sid for sid in reached if sid not in used and leaves(by_id[sid]) and done_farming(sid)}
+    if not out:
+        return set()
+    # Forward: the trip back to the entrance, up to whatever the template replaces or the entry.
+    stack = list(out)
+    while stack:
+        for dest in forward.get(stack.pop(), []):
+            state = by_id.get(dest)
+            if state is not None and dest not in out and dest not in used and state.node_type in WAY_OUT_TYPES:
+                out.add(dest)
+                stack.append(dest)
+    # Backward: navigation whose every way on is the way out.
+    grew = True
+    while grew:
+        grew = False
+        for sid in reached - out - used:
+            nexts = forward.get(sid, [])
+            if by_id[sid].node_type in WAY_OUT_TYPES and nexts and all(n in out for n in nexts):
+                out.add(sid)
+                grew = True
+    return out
+
+
+def _drop_inner_marks(old: OldBot, sources: dict[str, StateModel], covered: dict[str, str], report: Report) -> None:
+    """Splice the bot's own marks out of its content when the template recalls out.
+
+    The template's recall goes back to each player's latest mark, so a mark made inside the
+    dungeon would send the exit back into it. A mark with nothing of the bot's own recalling
+    to it has no other use, and goes; a recall of the bot's own inside the dungeon is a
+    problem, since the two cannot both have the last mark.
+    """
+    used = {s.id for s in sources.values()} | covered.keys()
+    for state in list(old.config.states):
+        if state.id in used or state.id in old.folded:
+            continue
+        if state.node_type == "teleport_to_marked_location":
+            report.problems.append(
+                f"{_label(state)} recalls to a mark of the bot's own, and the template's exit recalls "
+                "to the latest mark: the two cannot share it"
+            )
+        elif state.node_type == "mark_location" and _splice_out(old.config, state.id):
+            report.notes.append(
+                f"{_label(state)} dropped: the template's exit recalls to the latest mark, so a mark "
+                "inside the dungeon would send it back in"
+            )
+
+
+def _splice_out(config: BotConfig, sid: str) -> bool:
+    """Take ``sid`` out of the graph, its way in going on to its one ``SUCCESS``. False if it has no single one."""
+    nexts = [t.dest for t in config.transitions if t.source == sid and t.when == "SUCCESS" and not _guarded(t)]
+    if len(nexts) != 1 or nexts[0] == sid:
+        return False
+    for tr in config.transitions:
+        if tr.dest == sid:
+            tr.dest = nexts[0]
+    config.transitions = [t for t in config.transitions if t.source != sid and t.dest != sid]
+    config.states = [s for s in config.states if s.id != sid]
+    return True
+
+
+def _add_level_scaling(config: BotConfig, old: OldBot, report: Report) -> None:
+    """Give a level scaling bot a handle_level_scaling of its own when its template has none.
+
+    It goes straight after the dungeon entry: a dungeon first scales inside the dungeon it
+    farms, where its Scales are, so its players scale in place.
+    """
+    if any(s.node_type == "handle_level_scaling" for s in config.states):
+        return
+    if not any(s.node_type in LEVEL_SCALING_TYPES for s in old.config.states):
+        return
+    farm = next((s for s in config.states if s.node_type == "enter_dungeon"), None)
+    after = _template_successor(config, farm.id) if farm is not None else None
+    if after is None:
+        report.problems.append("the old bot level scales, and the template has no entry to scale after")
+        return
+    taken = {s.id for s in config.states} | {s.id for s in old.config.states}
+    number = next(n for n in range(1, len(taken) + 2) if f"state_{n}" not in taken)
+    node = StateModel(
+        id=f"state_{number}",
+        node_type="handle_level_scaling",
+        label="Handle level scaling",
+        position=dict(farm.position),
+        params={"scales": ""},
+    )
+    config.states.append(node)
+    for tr in config.transitions:
+        if tr.source == farm.id and tr.when == "SUCCESS" and not _guarded(tr):
+            tr.dest = node.id
+    config.transitions.append(TransitionModel(trigger="advance", source=node.id, dest=after, when="SUCCESS"))
+    report.carried.append(f"{node.id} handle_level_scaling, the bot's own, after {farm.id}: its template has none")
 
 
 def _place_level_scaling(config: BotConfig, old: OldBot, report: Report) -> None:
@@ -999,6 +1204,8 @@ def _place_level_scaling(config: BotConfig, old: OldBot, report: Report) -> None
     entry = scales.resolve(node.params.get("scales"), config)
     farm = next((s for s in config.states if s.node_type == "enter_dungeon"), None)
     if entry is None or farm is None or farm.params.get("dungeon_zone") not in inside_zones(entry):
+        return
+    if _template_successor(config, farm.id) == node.id:
         return
     if _move_after(config, node.id, farm.id):
         report.notes.append(
@@ -1089,13 +1296,15 @@ def status_lines(bots_dir: Path = BOTS_DIR, root: Path = PROJECT_ROOT) -> list[s
     for path in bots:
         config = BotConfig.load(path)
         if config.template is None:
-            lines.append(f"{path.stem:44} {classify(config):11} not rebuilt")
+            lines.append(f"{path.stem:44} {category_of(path, config):11} not rebuilt")
             continue
         done += 1
         steps = setup_steps.steps_for(config, root, root)
         left = setup_steps.steps_left(config, steps, library)
         name = names.get(config.template.id, config.template.id)
-        lines.append(f"{path.stem:44} {classify(config):11} {name} v{config.template.version}, {left} steps left")
+        lines.append(
+            f"{path.stem:44} {category_of(path, config):11} {name} v{config.template.version}, {left} steps left"
+        )
     lines.append(f"{done} of {len(bots)} bots rebuilt")
     return lines
 
@@ -1111,7 +1320,7 @@ def _rebuild_one(name: str, template: str | None, write: bool) -> bool:
     old = BotConfig.load(path)
     if old.template is not None:
         raise RebuildError(f"{path.stem} already records {old.template.id} v{old.template.version}; nothing to rebuild")
-    category = classify(old)
+    category = category_of(path, old)
     template_name = template or TEMPLATE_NAMES.get(category)
     if template_name is None:
         raise RebuildError(f"{path.stem} is no template's category ({category}); pass --template")

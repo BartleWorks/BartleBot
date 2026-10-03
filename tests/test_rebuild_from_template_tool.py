@@ -422,3 +422,232 @@ def test_a_dungeon_entered_on_the_way_to_the_spawns_is_not_spliced_after_them(li
 
     assert any("on the way in" in line for line in report.problems)
     assert not report.clean
+
+
+# ---------------------------------------------------------------------------
+# Dungeon Farmer: the way out is a recall
+# ---------------------------------------------------------------------------
+
+ROOM = "Celestia/Interiors/CL_Z10i7_Test_Room"
+
+
+def _dungeon(exit_states=(), exit_transitions=(), more_states=(), more_transitions=(), **extra) -> BotConfig:
+    """Two fights in two rooms, then wisps; the way out is whatever the caller adds after them."""
+    return _bot(
+        [
+            _s("state_1", "teleport_to_world_hub", "Go to the hub", zone=HUB),
+            _s("state_2", "enter_zone", "Walk to the entrance", from_zone=HUB, to_zone=ENTRANCE, xyz=_A, reset_xyz=_B),
+            _s(
+                "state_3",
+                "enter_dungeon",
+                "Enter the Test Halls",
+                from_zone=ENTRANCE,
+                dungeon_zone=DUNGEON,
+                sigil_xyz=_A,
+                reset_xyz=_B,
+            ),
+            _s("state_4", "handle_combat", "Defeat the first guard", enemy="Test-Guard-01"),
+            _s("state_5", "enter_zone", "Enter the inner room", from_zone=DUNGEON, to_zone=ROOM, xyz=_A, reset_xyz=_B),
+            _s("state_6", "handle_combat", "Defeat the test boss", enemy="Test-Boss-01"),
+            _s("state_7", "collect_wisps", "Collect wisps"),
+            *exit_states,
+        ],
+        [
+            _t("state_1", "state_2"),
+            _t("state_2", "state_3"),
+            _t("state_3", "state_4"),
+            _t("state_4", "state_5"),
+            _t("state_5", "state_6"),
+            _t("state_6", "state_7"),
+            *exit_transitions,
+            *more_transitions,
+        ],
+        more_states=more_states,
+        name="Test Dungeon",
+        tags=["Dungeon"],
+        **extra,
+    )
+
+
+_WALK_OUT_STATES = [
+    _s("state_8", "enter_zone", "Back to the hall", from_zone=ROOM, to_zone=DUNGEON, xyz=_A, reset_xyz=_B),
+    _s("state_9", "enter_zone", "Leave the Test Halls", from_zone=DUNGEON, to_zone=ENTRANCE, xyz=_A, reset_xyz=_B),
+]
+_WALK_OUT_TRANSITIONS = [_t("state_7", "state_8"), _t("state_8", "state_9"), _t("state_9", "state_3")]
+
+
+def _recall_of(config: BotConfig) -> str:
+    return _by_type(config, "teleport_to_marked_location")[0].id
+
+
+def _covered_by(report: rft.Report, target: str) -> set[str]:
+    return {line.split()[0] for line in report.covered if line.endswith(f"-> {target}")}
+
+
+def _without(config: BotConfig, *edges: tuple[str, str]) -> BotConfig:
+    config.transitions = [t for t in config.transitions if (t.source, t.dest) not in set(edges)]
+    return config
+
+
+def test_a_walk_out_and_the_walk_back_to_the_door_become_the_recall(library):
+    config, report = _rebuild(_dungeon(_WALK_OUT_STATES, _WALK_OUT_TRANSITIONS), "Dungeon Farmer", library)
+    recall = _recall_of(config)
+
+    assert _covered_by(report, recall) == {"state_8", "state_9"}
+    assert _next(config, "state_7") == recall, "the last of the bot's own nodes goes on to the recall"
+    assert not {"state_8", "state_9"} & {s.id for s in config.states}
+    assert report.clean
+
+
+def test_the_mark_is_filled_from_the_entry(library):
+    config, _report = _rebuild(_dungeon(_WALK_OUT_STATES, _WALK_OUT_TRANSITIONS), "Dungeon Farmer", library)
+    mark = _by_type(config, "mark_location")[0]
+
+    assert mark.params["zone"] == ENTRANCE
+    assert mark.params["xyz"] == _B, "at the sigil's Reset XYZ, where its prompt does not show"
+    assert _steps_left(config, library) == 0
+
+
+def test_a_hub_teleport_out_becomes_the_recall(library):
+    config, report = _rebuild(_dungeon([], [_t("state_7", "state_1")]), "Dungeon Farmer", library)
+
+    assert "state_1" in _covered_by(report, _recall_of(config))
+    assert _next(config, "state_7") == _recall_of(config)
+    assert report.clean
+
+
+def test_a_teleporter_out_becomes_the_recall_and_one_inside_is_the_dungeons_own(library):
+    old = _dungeon(
+        [
+            _s(
+                "state_8", "enter_zone_via_object", "Lift to the hall", from_zone=ROOM, to_zone=DUNGEON, interact_xyz=_A
+            ),
+            _s("state_9", "handle_combat", "Defeat the last guard", enemy="Test-Guard-02"),
+            _s("state_10", "enter_zone_via_object", "Way out", from_zone=DUNGEON, to_zone=ENTRANCE, interact_xyz=_A),
+        ],
+        [_t("state_7", "state_8"), _t("state_8", "state_9"), _t("state_9", "state_10"), _t("state_10", "state_3")],
+    )
+    config, report = _rebuild(old, "Dungeon Farmer", library)
+
+    assert "state_8" in {s.id for s in config.states}, "a teleporter between rooms is content"
+    assert _covered_by(report, _recall_of(config)) == {"state_10"}
+    assert report.clean
+
+
+def test_a_sync_back_to_the_entrance_becomes_the_recall(library):
+    old = _dungeon(
+        [_s("state_8", "sync_in_zone", "Back to the entrance", zone=ENTRANCE)],
+        [_t("state_7", "state_8"), _t("state_8", "state_3")],
+    )
+    config, report = _rebuild(old, "Dungeon Farmer", library)
+
+    assert _covered_by(report, _recall_of(config)) == {"state_8"}
+    assert report.clean
+
+
+def test_a_hub_hop_with_more_to_farm_after_it_is_not_the_way_out(library):
+    """A hop partway through leads on to more fighting, so the recall cannot stand in for it."""
+    old = _dungeon(
+        [
+            _s("state_8", "teleport_to_world_hub", "Hop to the hub", zone=HUB),
+            _s("state_9", "handle_combat", "Defeat the hub guard", enemy="Test-Guard-03"),
+        ],
+        [_t("state_7", "state_8"), _t("state_8", "state_9"), _t("state_9", "state_1")],
+    )
+    _config, report = _rebuild(old, "Dungeon Farmer", library)
+
+    assert "state_8" not in {line.split()[0] for line in report.covered}
+    assert not report.clean
+
+
+def test_a_mark_of_the_bots_own_inside_the_dungeon_is_dropped(library):
+    """The template's recall goes to the latest mark, so one inside would send the exit back in."""
+    old = _dungeon(
+        [*_WALK_OUT_STATES, _s("state_10", "mark_location", "Mark the hall", zone=DUNGEON, xyz=_A)],
+        [*_WALK_OUT_TRANSITIONS, _t("state_3", "state_10"), _t("state_10", "state_4")],
+    )
+    config, report = _rebuild(_without(old, ("state_3", "state_4")), "Dungeon Farmer", library)
+
+    assert "state_10" not in {s.id for s in config.states}
+    assert any("state_10" in note and "dropped" in note for note in report.notes)
+    assert _by_type(config, "mark_location")[0].params["zone"] == ENTRANCE, "the template's own mark keeps its fill"
+    assert report.clean
+
+
+def test_a_recall_of_the_bots_own_inside_the_dungeon_is_a_problem(library):
+    """A recall back to the hall partway through, with more to fight after it, needs its own mark."""
+    old = _dungeon(
+        [
+            *_WALK_OUT_STATES,
+            _s("state_10", "mark_location", "Mark the hall", zone=DUNGEON, xyz=_A),
+            _s("state_11", "teleport_to_marked_location", "Back to the hall", zone=DUNGEON, xyz=_A),
+        ],
+        [
+            *_WALK_OUT_TRANSITIONS,
+            _t("state_3", "state_10"),
+            _t("state_10", "state_4"),
+            _t("state_4", "state_11"),
+            _t("state_11", "state_5"),
+        ],
+    )
+    _config, report = _rebuild(_without(old, ("state_3", "state_4"), ("state_4", "state_5")), "Dungeon Farmer", library)
+
+    assert any("state_11" in line and "cannot share" in line for line in report.problems)
+    assert not report.clean
+
+
+def test_the_recall_the_old_way_out_became_names_no_spot(library):
+    """An old recall's zone and XYZ are not carried: the template's checks each player's own mark."""
+    old = _dungeon(
+        [_s("state_8", "teleport_to_marked_location", "Recall out", zone=ENTRANCE, xyz=_A)],
+        [_t("state_7", "state_8"), _t("state_8", "state_3")],
+    )
+    config, report = _rebuild(old, "Dungeon Farmer", library)
+    recall = next(s for s in config.states if s.id == _recall_of(config))
+
+    assert "state_8" in _covered_by(report, recall.id)
+    assert not recall.params.get("zone") and not recall.params.get("xyz")
+    assert report.clean
+
+
+def test_a_dungeon_first_keeps_its_level_scaling_as_its_own_node(library):
+    """Mount Olympus drops spellements, but it is farmed as a dungeon, and its Scales are inside."""
+    hub, olympus = "Aquila/AQ_Z00_Hub", "Aquila/AQ_Z01_MountOlympus"
+    old = _bot(
+        [
+            _s("state_1", "teleport_to_world_hub", zone=hub),
+            _s("state_2", "enter_dungeon", from_zone=hub, dungeon_zone=olympus, sigil_xyz=_A, reset_xyz=_B),
+            _s("state_3", "check_level_scaling"),
+            _s("state_4", "apply_level_scaling", zone=olympus, interact_xyz=_A, reset_xyz=_B),
+            _s("state_5", "handle_combat", enemy="Test-Boss-01"),
+            _s("state_6", "handle_combat", enemy="Test-Boss-02"),
+            _s("state_7", "enter_zone_via_object", from_zone=olympus, to_zone=hub, interact_xyz=_A),
+        ],
+        [
+            _t("state_1", "state_2"),
+            _t("state_2", "state_3"),
+            _t("state_3", "state_5", "TRUE"),
+            _t("state_3", "state_4", "FALSE"),
+            _t("state_4", "state_5"),
+            _t("state_5", "state_6"),
+            _t("state_6", "state_7"),
+            _t("state_7", "state_2"),
+        ],
+        name="Test Olympus",
+    )
+    config, report = rft.rebuild(old, rft.find_start("Dungeon Farmer", ROOT), library, category="dungeon")
+    hls = _by_type(config, "handle_level_scaling")
+    entry = _by_type(config, "enter_dungeon")[0]
+
+    assert len(hls) == 1 and not hls[0].id.startswith("t_"), "the bot's own node: Dungeon Farmer has none"
+    assert _next(config, entry.id) == hls[0].id
+    assert _next(config, hls[0].id) == "state_5"
+    assert hls[0].params["scales"] == "mount_olympus"
+    assert report.clean
+
+
+def test_the_dungeons_first_are_rebuilt_as_dungeons():
+    config = _boss()
+    for stem in rft.DUNGEONS_FIRST:
+        assert rft.category_of(Path(f"bots/x/{stem}.json"), config) == "dungeon"
+    assert rft.category_of(Path("bots/x/test_boss.json"), config) == "boss"
