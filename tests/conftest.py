@@ -201,6 +201,11 @@ class FakeMachine:
         # unnoticed for the rest of the run, so both sides are recorded.
         self.health_checks_suspended: set[int] = set()
         self.health_checks_resumed: set[int] = set()
+        # Every abandon_client call, as (client, reason). ``recovers`` is what it answers:
+        # False by default, which is the node tester's run with no recovery behind it.
+        self.abandoned: list[tuple[object, str]] = []
+        self.recovers = False
+        self.is_stopped = False
         # Mirrors BotMachine.port_map: None until something surveys who can port to whom.
         self.port_map = None
         # Mirrors BotMachine.node_scratch: what a node keeps for its own rerun.
@@ -254,6 +259,11 @@ class FakeMachine:
     def resume_health_checks_for(self, hwnds) -> None:
         self.health_checks_suspended.difference_update(hwnds)
         self.health_checks_resumed.update(hwnds)
+
+    def abandon_client(self, client, reason: str) -> bool:
+        """Record a handover to crash recovery. Real BotMachine kills the client, or stops the run."""
+        self.abandoned.append((client, reason))
+        return self.recovers
 
     def get_option(self, name: str, default=None):
         """Return configured option value, or a sensible test default.

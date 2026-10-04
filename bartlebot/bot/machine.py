@@ -63,6 +63,7 @@ class BotMachine:
         on_restricted_zone: Callable[[str], None] | None = None,
         on_explicit_stop: Callable[[str, str, str], None] | None = None,
         on_stopped: Callable[[str], None] | None = None,
+        recovery_gap: Callable[[int], str | None] | None = None,
         stop_grace_period: float = 1.0,
     ) -> None:
         self.clients = clients
@@ -76,6 +77,8 @@ class BotMachine:
         self._on_restricted_zone = on_restricted_zone
         self._on_explicit_stop = on_explicit_stop
         self._on_stopped = on_stopped
+        # Why a client could not be relaunched, or None when it could. See abandon_client.
+        self._recovery_gap = recovery_gap
         # When each recent flee happened (monotonic), for the flee limit. See note_flee.
         self._flees: list[float] = []
         # True while run()'s loop is live, so the ambient watcher knows whether a park can come.
@@ -1018,6 +1021,46 @@ class BotMachine:
             return
         for hwnd in hwnds:
             self._health_monitor.unflag(hwnd)
+
+    def abandon_client(self, client, reason: str) -> bool:
+        """Hand a client a node can no longer use to crash recovery, to be closed and relaunched.
+
+        For a node that has taken a client somewhere it cannot bring it back from -- the
+        relog node after Quit, with the client stuck on a loading screen -- while holding
+        health checks off for it, so no watcher is going to notice on its own.
+
+        True when the client was handed over. The node must then raise ``ClientClosedError``
+        rather than return a result: the run loop's dead-client branch parks without counting
+        the tick, where a FAILURE is routed and counted first and can stop the run before
+        recovery gets to resume it. The client stays flagged until recovery's ``resume()``
+        clears it, so the caller must not resume health checks for it either.
+
+        False when it was not. With no run in flight there is no recovery to hand to. A
+        client recovery could not relaunch stops the run with a message saying why: closing
+        it would only leave the bot paused on a player that never comes back.
+
+        *reason* reads after a subject: "has been loading for 60s".
+        """
+        monitor = self._health_monitor
+        if monitor is None:
+            return False
+        hwnd = client.window_handle
+        gap = None
+        if self._recovery_gap:
+            try:
+                gap = self._recovery_gap(hwnd)
+            except Exception:
+                logger.exception("recovery_gap raised")
+        if gap:
+            position = next((i for i, c in enumerate(self.clients, start=1) if c is client), None)
+            who = f"Player {position}" if position else f"The client at hwnd={hwnd}"
+            self._stop_with_reason(
+                f"{who} {reason}, and cannot be closed and relaunched automatically: {gap}."
+                " Fix that before running the bot again."
+            )
+            return False
+        monitor.recover(client, reason)
+        return True
 
     def force_state(self, state_id: str, reason: str | None = None) -> None:
         """Force the FSM into a specific state for recovery. Bypasses normal entry callbacks.

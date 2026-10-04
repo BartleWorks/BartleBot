@@ -295,12 +295,16 @@ class ClientHealthMonitor:
         """
         terminate_process(pid)
 
-    def _recover(self, client, reason: str) -> None:
+    def recover(self, client, reason: str) -> None:
         """Kill a client that has lost its connection and hand it to recovery.
 
         Shared by every watcher whose signal is "the game is still running but its
         connection is gone": nothing is left to shut down cleanly, and killing the process
         is what gets remove_dead_clients() to reap it and start the relaunch.
+
+        Public for ``BotMachine.abandon_client``: a node holding health checks off for a
+        client it has wedged is the one party that can tell, and it recovers the client
+        exactly as a watcher would. *reason* reads after "Client hwnd=N".
         """
         hwnd = client.window_handle
         logger.warning("Client hwnd=%d %s — force-killing and triggering recovery", hwnd, reason)
@@ -336,7 +340,7 @@ class ClientHealthMonitor:
                     continue
                 if not modal_visible:
                     continue
-                self._recover(client, "shows a disconnect modal")
+                self.recover(client, "shows a disconnect modal")
 
     @staticmethod
     async def _is_disconnect_modal_visible(client) -> bool:
@@ -429,7 +433,7 @@ class ClientHealthMonitor:
         else:
             return
         del streaks[hwnd]
-        self._recover(client, reason)
+        self.recover(client, reason)
 
     async def _client_status_watcher(self) -> None:
         """Detect unresponsive clients via zone_name() polling.

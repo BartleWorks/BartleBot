@@ -1954,6 +1954,7 @@ class AppController(QObject):
             on_restricted_zone=self._on_machine_restricted_zone,
             on_explicit_stop=self._on_machine_explicit_stop,
             on_stopped=self._on_machine_stopped,
+            recovery_gap=self._client_manager.recovery_gap_for,
         )
         self._current_machine = machine
         self._client_manager.set_machine(machine)

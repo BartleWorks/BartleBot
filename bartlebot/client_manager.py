@@ -217,19 +217,33 @@ class ClientManager(QObject):
         """
         gaps: list[tuple[int, str]] = []
         for position, client in enumerate(self._clients, start=1):
-            username = self._hwnd_account_map.get(client.window_handle)
-            if not username:
-                gaps.append((position, recovery_readiness.NO_ACCOUNT))
-                continue
-            try:
-                has_password = bool(CredentialStore.retrieve(username))
-            except Exception:
-                logger.exception("Could not check the stored password for P%d's account", position)
-                continue  # Credential Manager is unhappy; do not claim a gap we cannot verify
-            if not has_password:
-                display = CredentialStore.display_name(username, self._alias_for(username))
-                gaps.append((position, recovery_readiness.NO_PASSWORD.format(account=display)))
+            gap = self._recovery_gap(client.window_handle, position)
+            if gap:
+                gaps.append((position, gap))
         return gaps
+
+    def recovery_gap_for(self, hwnd: int) -> str | None:
+        """Why this one client could not be recovered, or None when it could.
+
+        The single-client form of ``recovery_gaps``, for a node that is about to hand a
+        client to recovery mid-run and needs to know first whether it would come back.
+        """
+        position = next((i for i, c in enumerate(self._clients, start=1) if c.window_handle == hwnd), 0)
+        return self._recovery_gap(hwnd, position)
+
+    def _recovery_gap(self, hwnd: int, position: int) -> str | None:
+        username = self._hwnd_account_map.get(hwnd)
+        if not username:
+            return recovery_readiness.NO_ACCOUNT
+        try:
+            has_password = bool(CredentialStore.retrieve(username))
+        except Exception:
+            logger.exception("Could not check the stored password for P%d's account", position)
+            return None  # Credential Manager is unhappy; do not claim a gap we cannot verify
+        if not has_password:
+            display = CredentialStore.display_name(username, self._alias_for(username))
+            return recovery_readiness.NO_PASSWORD.format(account=display)
+        return None
 
     def _alias_for(self, username: str) -> str | None:
         """The configured alias for *username*, or None. Keeps real usernames out of the GUI."""
