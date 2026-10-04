@@ -4,8 +4,8 @@
   "description": "Endlessly collects Stone Blocks in Triton Avenue",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_16",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Fossil"
@@ -28,193 +28,105 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to the Commons",
-      "position": {
-        "x": 0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_Hub"
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "enter_zone",
-      "label": "Enter Shopping District",
-      "position": {
-        "x": 880,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_Hub",
-        "to_zone": "WizardCity/WC_Shop_Area",
-        "xyz": {
-          "x": 1373.34,
-          "y": -3590.64,
-          "z": -27.99
-        },
-        "reset_xyz": {
-          "x": 1311.11,
-          "y": -2802.26,
-          "z": -27.99
-        }
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "enter_zone",
-      "label": "Enter Olde Town",
-      "position": {
-        "x": 1320,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_Shop_Area",
-        "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
-        "xyz": {
-          "x": -6054.32,
-          "y": -3302.17,
-          "z": -29.36
-        },
-        "reset_xyz": {
-          "x": -5251.57,
-          "y": -3295.22,
-          "z": -29.36
-        }
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "enter_zone",
-      "label": "Enter Triton Avenue",
-      "position": {
-        "x": 1760,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
-        "to_zone": "WizardCity/WC_Streets/WC_Triton",
-        "xyz": {
-          "x": -7423.81,
-          "y": -422.95,
-          "z": -1397.84
-        },
-        "reset_xyz": {
-          "x": -6662.58,
-          "y": -616.32,
-          "z": -1397.84
-        }
-      }
-    },
-    {
-      "id": "state_8",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
+      "id": "t_3",
+      "node_type": "change_realm",
+      "label": "Change to next realm",
       "position": {
         "x": 440,
         "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "enter_zone_via_object",
-      "label": "Enter Crab Alley",
-      "position": {
-        "x": 2200.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_Streets/WC_Triton",
-        "to_zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
-        "interact_xyz": {
-          "x": -12571.79,
-          "y": -3277.93,
-          "z": -1394.23
-        },
-        "reset_xyz": {
-          "x": -12473.75,
-          "y": -2767.04,
-          "z": -1394.23
-        }
-      }
-    },
-    {
-      "id": "state_14",
-      "node_type": "change_realm",
-      "label": "Change realm",
-      "position": {
-        "x": 2640.0,
-        "y": -180.0
       },
       "params": {
         "use_favorite_realm": false
       }
     },
     {
-      "id": "state_6",
+      "id": "t_4",
       "node_type": "collect_reagent",
       "label": "Collect Stone Block",
       "position": {
-        "x": 3080.0,
-        "y": -180.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
+        "entity_names": [
+          "Stone"
+        ],
         "xyz": {
           "x": 70.8,
           "y": 1317.95,
           "z": -4.01
-        },
-        "entity_names": [
-          "Stone"
-        ]
+        }
       }
     },
     {
-      "id": "state_9",
+      "id": "t_5",
       "node_type": "collect_reagent",
       "label": "Collect Stone Block",
       "position": {
-        "x": 3520.0,
-        "y": -180.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
+        "entity_names": [
+          "Stone"
+        ],
         "xyz": {
           "x": 338.52,
           "y": -1672.96,
           "z": 25.15
-        },
-        "entity_names": [
-          "Stone"
-        ]
+        }
       }
     },
     {
-      "id": "state_11",
+      "id": "t_6",
       "node_type": "collect_reagent",
       "label": "Collect Stone Block",
       "position": {
-        "x": 3960.0,
-        "y": -180.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
+        "entity_names": [
+          "Stone"
+        ],
         "xyz": {
           "x": -5108.88,
           "y": -3576.29,
           "z": 28.77
-        },
-        "entity_names": [
-          "Stone"
+        }
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
         ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
+        "keep_current_realm": true
       }
     },
     {
@@ -222,8 +134,8 @@
       "node_type": "collect_reagent",
       "label": "Collect Stone Block",
       "position": {
-        "x": 4400.0,
-        "y": -180.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
@@ -236,51 +148,13 @@
           "Stone"
         ]
       }
-    },
-    {
-      "id": "state_16",
-      "node_type": "check_zone",
-      "label": "Check starting zone",
-      "position": {
-        "x": -440.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_14",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_8",
+      "source": "t_3",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -289,8 +163,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_2",
+      "source": "t_4",
+      "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -299,8 +173,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -309,8 +183,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -319,8 +193,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -329,57 +203,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_14",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_14",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_11",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
+      "source": "t_6",
       "dest": "state_13",
       "when": "SUCCESS",
       "flags": [],
@@ -390,7 +214,7 @@
     {
       "trigger": "advance",
       "source": "state_13",
-      "dest": "state_14",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -400,29 +224,45 @@
   ],
   "regions": [
     {
-      "id": "af7a2f79",
-      "label": "Go to Crab Alley",
+      "id": "t_sync_players_1",
+      "label": "Sync players in reagent spawn zone",
       "members": [
-        "state_2",
-        "state_3",
-        "state_1",
-        "state_4",
-        "state_5",
-        "state_8"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 3
-    },
-    {
-      "id": "1f76b31f",
-      "label": "Collect Stone Blocks",
-      "members": [
-        "state_11",
-        "state_9",
-        "state_14",
-        "state_13",
-        "state_6"
-      ],
-      "color": 1
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.keep_current_realm": true,
+          "state_2.zone": "WizardCity/WC_Streets/WC_Triton_Underwater/WC_Triton_Underwater"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
     }
-  ]
+  ],
+  "template": {
+    "id": "7910bf84-1c71-4d5a-a39c-2f26b4219617",
+    "version": 1
+  }
 }
