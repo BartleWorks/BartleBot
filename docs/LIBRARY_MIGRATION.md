@@ -6,8 +6,8 @@ Stage 9 of the subgraph-calls plan (linked from `docs/SUBGRAPH_CALLS.md`), issue
 
 ## Not yet migrated
 
-10 of 84 bots, as of 2026-10-04. Each is checked off when `tools/rebuild_from_template.py
-status` shows it on a template. Grouped by what unblocks it; *Why 10 are not rebuilt* has the
+7 of 84 bots, as of 2026-10-04. Each is checked off when `tools/rebuild_from_template.py
+status` shows it on a template. Grouped by what unblocks it; *Why 7 are not rebuilt* has the
 reasons in full.
 
 **No exit, in a single-boss farm**: done 2026-10-04, after each was stripped by hand to the
@@ -34,9 +34,9 @@ nodes it adds (see *Single-boss farms with no door*)
 - [x] `crab_alley_stone_block`: Reagent Collector, in separate realms with the hop after Sync players; its fourth spawn follows spawn 3
 - [x] `aeriel_shores_aethyr_burst`: Reagent Collector, its hub teleports replaced by hand with the door into Aeriel Jungle and back
 - [x] `aeriel_shores_silver_chests`: Reagent Collector, its hub teleports replaced by hand with the door into Aeriel Jungle and back
-- [ ] `grand_tourney_arena_gauntlet` (Gauntlet Farmer): a branch ends with a hub teleport
-- [ ] `hidden_temple_gauntlet` (Gauntlet Farmer): a branch ends with a hub teleport
-- [ ] `spiral_cup_gauntlet` (Gauntlet Farmer): rebuilt, a template node is reached by no run; by hand
+- [x] `grand_tourney_arena_gauntlet`: Gauntlet Farmer, stripped by hand; its last node goes to the health and mana check
+- [x] `hidden_temple_gauntlet`: Gauntlet Farmer, stripped by hand; its last node goes to the health and mana check
+- [x] `spiral_cup_gauntlet`: Gauntlet Farmer, stripped by hand; its last node goes to the health and mana check
 
 **A reagent dungeon entered on the way in** (Reagent Collector with an entry, or by hand)
 - [ ] `scrap_iron_collector`: Sync players would gather in the Royal Museum and collect before entering Counterweight West
@@ -165,9 +165,9 @@ visible per bot, not buried in a diff.
 
 ## Rebuild status
 
-**74 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
+**77 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
 --write`, which writes a bot only when every old node is carried or replaced, every node
-fill-in is filled, and the result is sound. The other 10 are unchanged and still run as they
+fill-in is filled, and the result is sound. The other 7 are unchanged and still run as they
 did; `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the library is 84.
 
 | template | rebuilt |
@@ -177,6 +177,7 @@ did; `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the li
 | Spellement Farmer (8) | `big_salgio`, `biti_nirini`, `copy_qhat`, `do_daga`, `eerkala`, `hall_of_heroes`, `harlequin_knight`, `krokopatra` |
 | Reagent Collector (9) | `aeriel_shores_aethyr_burst`, `aeriel_shores_silver_chests`, `crab_alley_stone_block`, `mirkholm_keep_reagents`, `nightside_flax`, `selenopolis_parchment`, `the_necropolis_deep_mushroom`, `the_wild_deep_mushroom`, `the_zocalo_red_mandrake` |
 | Mob Farmer (3) | `fortee_thieves`, `monkey_spiders`, `valerik_brightsword` |
+| Gauntlet Farmer (3) | `grand_tourney_arena_gauntlet`, `hidden_temple_gauntlet`, `spiral_cup_gauntlet` |
 
 `do_daga` was rebuilt from its version before `00b8049`, as decided, not from the stub.
 `eerkala` lost its own "Quicksell" option and its guards. `nightside_flax`, which
@@ -192,7 +193,7 @@ have sent the recall back in, and keeps the quicksell it ran just before leaving
 twice; the second finds nothing. `atlantea` and `mt_olympus` no longer offer Team-Up, as
 Dungeon Farmer does not.
 
-### Why 10 are not rebuilt
+### Why 7 are not rebuilt
 
 A bot can be in several rows; each row is a reason the tool refuses it.
 
@@ -200,8 +201,6 @@ A bot can be in several rows; each row is a reason the tool refuses it.
 |---|---|---|
 | **The fight restarts in place**: the boss is fought again without leaving its zone | `jade_oni`, `queen_calypso`, `oyotomi_the_defiler` (open world, not a dungeon) | handled as exceptions, outside the templates |
 | **Content only navigation reached**: a puzzle or teleport on the trip that Sync players would skip | `barkingham_palace_ransacked_throne_room` | a decision per bot: the trip may need its own steps after Sync players |
-| **Content that leaves through navigation**: a branch that ends with a hub teleport or a ride | `grand_tourney_arena_gauntlet`, `hidden_temple_gauntlet` | a decision per bot |
-| **A template node no run reaches** | `spiral_cup_gauntlet` | rebuilding by hand |
 | **A reagent dungeon entered on the way in**: Sync players would gather in the entrance hall and collect before going in | `scrap_iron_collector`, `the_portico_pearl` | Reagent Collector with an entry, or these two by hand |
 | **Challenge Mode potions logic**: a flag-guarded skip that runs backwards through the template's potions, quicksell and wisps | `sisyphus`, `barkingham_palace_ransacked_throne_room` | a decision on Challenge Mode potions |
 
