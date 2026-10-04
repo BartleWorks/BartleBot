@@ -704,6 +704,33 @@ def test_a_bail_out_to_the_old_hub_still_relogs(library):
     assert report.clean
 
 
+def test_a_failure_into_content_replaces_the_templates_failure_edge(library):
+    """Wisps that respawn the boss whether or not they collect, as oyotomi's: one FAILURE edge, the bot's."""
+    old = _bot(
+        [
+            _s("state_1", "teleport_to_coordinates", "Go to the boss", zone=HUB, xyz=_A),
+            _s("state_2", "handle_combat", "Defeat the boss", enemy="Test-Boss-01"),
+            _s("state_3", "collect_wisps", "Collect wisps"),
+            _s("state_4", "teleport_to_coordinates", "Respawn the boss", zone=HUB, xyz=_B),
+            _s("state_5", "sleep", "Wait for invulnerability to end", duration=5.0),
+        ],
+        [
+            _t("state_1", "state_2"),
+            _t("state_2", "state_3"),
+            _t("state_3", "state_4"),
+            _t("state_3", "state_4", "FAILURE"),
+            _t("state_4", "state_5"),
+        ],
+        name="Test Wraith",
+        tags=["Boss"],
+    )
+    config, report = _rebuild(old, "Mob Farmer", library)
+    wisps = _by_type(config, "collect_wisps")[0].id
+
+    assert [t.dest for t in config.transitions if t.source == wisps and t.when == "FAILURE"] == ["state_4"]
+    assert report.clean
+
+
 def test_out_either_way_keeps_its_failure_edge(library):
     """Wisps that go on to the exit whether or not they collect still do, into the recall."""
     old = _dungeon(

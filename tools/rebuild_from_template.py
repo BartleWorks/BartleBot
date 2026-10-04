@@ -826,8 +826,9 @@ def _graft(
             continue
         for tr in _unique(entering):
             new_edges.append(tr)
-            if not _guarded(tr) and tr.when not in FALLTHROUGH_RETURNS:
-                replaced.add((anchor, tr.when))
+            # One edge per outcome: the old bot's, failures included, replaces the template's.
+            if not _guarded(tr):
+                replaced.add((tr.source, tr.when))
         rejoin = _downstream(config, anchor)
         _carry_exits(
             piece, old, old_by_id, mapping, new_edges, problems, rejoin=rejoin, inner=_inner_loop(config, rejoin, sync)

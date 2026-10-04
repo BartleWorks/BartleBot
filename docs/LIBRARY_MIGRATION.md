@@ -6,9 +6,9 @@ Stage 9 of the subgraph-calls plan (linked from `docs/SUBGRAPH_CALLS.md`), issue
 
 ## Not yet migrated
 
-6 of 84 bots, as of 2026-10-04. Each is checked off when `tools/rebuild_from_template.py
-status` shows it on a template. Grouped by what unblocks it; *Why 6 are not rebuilt* has the
-reasons in full.
+4 of 84 bots, as of 2026-10-04, and `queen_calypso`, which is built by hand by design. Each
+is checked off when `tools/rebuild_from_template.py status` shows it on a template. Grouped by
+what unblocks it; *Why 5 are not rebuilt* has the reasons in full.
 
 **No exit, in a single-boss farm**: done 2026-10-04, after each was stripped by hand to the
 nodes it adds (see *Single-boss farms with no door*)
@@ -23,8 +23,11 @@ nodes it adds (see *Single-boss farms with no door*)
 
 **The fight restarts in place** (exceptions, outside the templates, unless restructured)
 - [x] `jade_oni`: Spellement Farmer, restructured by hand so the refight is its own loop inside the Throne Room
-- [ ] `queen_calypso`: fights its boss again without leaving the zone
-- [ ] `oyotomi_the_defiler`: an open-world fight, not a dungeon
+- [x] `queen_calypso`: **built by hand, by design**, on no template. Entered once, she is reset,
+  respawned and fought forever without leaving, and leaving would give up the respawn; every
+  template's loop leaves each pass. Its level scaling and potions run inside the loop, marking in
+  the cavern and recalling back in (see *Queen Calypso stays by hand*)
+- [x] `oyotomi_the_defiler`: Mob Farmer, with its level scaling moved by hand into the loop
 
 **A decision per bot about content the template cannot place**
 - [x] `house_of_scales`: Dungeon Farmer, stripped by hand to one run through its four chambers, without the hub hop
@@ -165,10 +168,10 @@ visible per bot, not buried in a diff.
 
 ## Rebuild status
 
-**78 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
+**79 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
 --write`, which writes a bot only when every old node is carried or replaced, every node
-fill-in is filled, and the result is sound. The other 6 are unchanged and still run as they
-did; `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the library is 84.
+fill-in is filled, and the result is sound. The other 5 are unchanged and still run as they
+did, one of them for good (`queen_calypso`); `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the library is 84.
 
 | template | rebuilt |
 |---|---|
@@ -176,7 +179,7 @@ did; `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the li
 | Dungeon Farmer (28) | `atlantea`, `barkingham_palace_main_hall`, `barkingham_palace_rooftop`, `barkingham_palace_state_wing`, `castle_darkmoor`, `crimson_fields`, `cronus`, `five_boxes_avalon`, `gladiator_dimachaerus`, `heretical_academy`, `house_of_scales`, `ironworks`, `katzensteins_lab`, `king_detritus`, `mirror_lake`, `mt_olympus`, `prince_viggor`, `pyramid_of_mother_moon_tartarus_workaround`, `sand_squid_tentacles`, `secret_tunnel`, `spike_the_crusher`, `spiral_cup_portal_of_peril`, `the_great_spyre`, `throne_room_of_fire`, `tree_of_life`, `trial_of_the_spheres`, `waterworks`, `youkai` |
 | Spellement Farmer (9) | `big_salgio`, `biti_nirini`, `copy_qhat`, `do_daga`, `eerkala`, `hall_of_heroes`, `harlequin_knight`, `jade_oni`, `krokopatra` |
 | Reagent Collector (9) | `aeriel_shores_aethyr_burst`, `aeriel_shores_silver_chests`, `crab_alley_stone_block`, `mirkholm_keep_reagents`, `nightside_flax`, `selenopolis_parchment`, `the_necropolis_deep_mushroom`, `the_wild_deep_mushroom`, `the_zocalo_red_mandrake` |
-| Mob Farmer (3) | `fortee_thieves`, `monkey_spiders`, `valerik_brightsword` |
+| Mob Farmer (4) | `fortee_thieves`, `monkey_spiders`, `oyotomi_the_defiler`, `valerik_brightsword` |
 | Gauntlet Farmer (3) | `grand_tourney_arena_gauntlet`, `hidden_temple_gauntlet`, `spiral_cup_gauntlet` |
 
 `do_daga` was rebuilt from its version before `00b8049`, as decided, not from the stub.
@@ -193,13 +196,13 @@ have sent the recall back in, and keeps the quicksell it ran just before leaving
 twice; the second finds nothing. `atlantea` and `mt_olympus` no longer offer Team-Up, as
 Dungeon Farmer does not.
 
-### Why 6 are not rebuilt
+### Why 5 are not rebuilt
 
 A bot can be in several rows; each row is a reason the tool refuses it.
 
 | reason | bots | what it needs |
 |---|---|---|
-| **The fight restarts in place**: the boss is fought again without leaving its zone | `queen_calypso`, `oyotomi_the_defiler` (open world, not a dungeon) | handled as exceptions, outside the templates |
+| **The fight restarts in place**: the boss is fought again without leaving its zone | `queen_calypso` | built by hand, by design: no template's loop stays in its dungeon |
 | **Content only navigation reached**: a puzzle or teleport on the trip that Sync players would skip | `barkingham_palace_ransacked_throne_room` | a decision per bot: the trip may need its own steps after Sync players |
 | **A reagent dungeon entered on the way in**: Sync players would gather in the entrance hall and collect before going in | `scrap_iron_collector`, `the_portico_pearl` | Reagent Collector with an entry, or these two by hand |
 | **Challenge Mode potions logic**: a flag-guarded skip that runs backwards through the template's potions, quicksell and wisps | `sisyphus`, `barkingham_palace_ransacked_throne_room` | a decision on Challenge Mode potions |
@@ -278,7 +281,22 @@ which is usually welcome: drops are granted the moment the last boss falls.
   wisps that collect step out of the fight and go back to its level scaling, and wisps that
   find none leave by the template's exit. The rebuild tool keeps such a way back as the bot's
   own loop when it lands past the next pass's entry (`_inner_loop`); one to the entry or
-  before it still goes out first.
+  before it still goes out first. `oyotomi_the_defiler`, an open-world boss, was restructured
+  the same way for Mob Farmer, its level scaling moved into the loop. `queen_calypso` stays by
+  hand (below).
+
+### Queen Calypso stays by hand (2026-10-04)
+
+Dry-run against all six templates, `queen_calypso` is refused by each, all for the same reason:
+every template's loop leaves each pass (an exit, a recall, a realm hop) and refills, sells and
+collects outside, while Calypso is entered once and reset, respawned and fought forever, and
+leaving gives the respawn up. Forced into Spellement Farmer, the tool wired her spawn wait into
+the potions outside the dungeon and added an exit after every fight. Its `handle_level_scaling`
+and `handle_potions` sit inside the loop instead: they do nothing until needed, then mark in the
+cavern, make their trip, and recall back into the instance. A trip that outlasts the instance
+timer (usually 5 minutes) gets the game's refusal, which the recall names; the node fails, and
+the bot recovers through Sync players and enters again. That case is the one to watch in game.
+A second bot of the same shape would justify a template of its own; one does not.
 
 Dungeon Farmer v1 was re-cut from the draft, as in `f6fc0f8`; no user had a bot from it.
 

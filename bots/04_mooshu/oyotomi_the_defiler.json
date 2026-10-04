@@ -4,8 +4,8 @@
   "description": "Endlessly defeats Oyotomi the Defiler in Village of Sorrow, Mooshu. Fastest spellement farm for rank 1-5 spiritual spellements.",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_5",
-  "recovery_state": "state_5",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Balance-Off Citrine",
@@ -370,255 +370,71 @@
     "Spellements",
     "Boss"
   ],
-  "options": [
-    {
-      "name": "Quicksell Keep List",
-      "type": "drop_keep_list",
-      "default": [
-        "Energy Opal",
-        "Huge Energy Opal",
-        "Ultra Energy Opal"
-      ]
-    }
-  ],
+  "options": [],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "sync_in_zone",
-      "label": "Go to Mooshu",
+      "id": "t_4",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
       "position": {
-        "x": 0.0,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
-        "zone": "MooShu/Interiors/MS_Teleport_Chamber"
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
       }
     },
     {
-      "id": "state_2",
-      "node_type": "check_zone",
-      "label": "Check if in Mooshu spiral door chamber",
+      "id": "t_5",
+      "node_type": "quicksell",
+      "label": "Quicksell",
       "position": {
-        "x": 440.0,
+        "x": 2200,
         "y": 0.0
-      },
-      "params": {
-        "zone": "MooShu/Interiors/MS_Teleport_Chamber",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "enter_zone",
-      "label": "Exit spiral door chamber",
-      "position": {
-        "x": 880.0,
-        "y": -90.0
-      },
-      "params": {
-        "from_zone": "MooShu/Interiors/MS_Teleport_Chamber",
-        "to_zone": "MooShu/MS_Hub",
-        "xyz": {
-          "x": -0.98,
-          "y": -5219.67,
-          "z": 0.01
-        },
-        "reset_xyz": {
-          "x": -0.98,
-          "y": -4331.67,
-          "z": 0.0
-        },
-        "stagger": false
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Jade Palace",
-      "position": {
-        "x": 1320.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "MooShu/MS_Hub"
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "check_zone",
-      "label": "Check if in Mooshu",
-      "position": {
-        "x": -440.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "MooShu/*",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_6",
-      "node_type": "check_level_scaling",
-      "label": "Check level scaling",
-      "position": {
-        "x": 1760.0,
-        "y": -180.0
       },
       "params": {}
     },
     {
-      "id": "state_7",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Jade Palace",
+      "id": "t_6",
+      "node_type": "handle_combat",
+      "label": "Defeat Oyotomi the Defiler",
       "position": {
-        "x": 2200.0,
-        "y": -90.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
-        "zone": "MooShu/MS_Hub"
+        "enemy": "Wraith-MSBoss-L56",
+        "wiki_page": "Creature:Oyotomi the Defiler",
+        "use_default_strategy": false,
+        "max_duration": 0.0
       }
     },
     {
-      "id": "state_8",
-      "node_type": "enter_dungeon",
-      "label": "Enter Emperor's Throne Room",
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
       "position": {
-        "x": 2640.0,
-        "y": -90.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
-        "from_zone": "MooShu/MS_Hub",
-        "dungeon_zone": "MooShu/Interiors/MS_Emperor_Palace",
-        "dungeon_name": "Emperor's Throne Room",
-        "sigil_xyz": {
-          "x": 19169.84,
-          "y": 209.98,
-          "z": 898.45
-        },
-        "reset_xyz": {
-          "x": 18636.0,
-          "y": -488.0,
-          "z": 898.45
-        }
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       }
     },
     {
-      "id": "state_9",
-      "node_type": "apply_level_scaling",
-      "label": "Apply level scaling",
-      "position": {
-        "x": 3080.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "MooShu/Interiors/MS_Emperor_Palace",
-        "interact_xyz": {
-          "x": -394.96,
-          "y": 1325.73,
-          "z": 0.0
-        },
-        "reset_xyz": {
-          "x": 208.1,
-          "y": -5.69,
-          "z": 0.0
-        }
-      }
-    },
-    {
-      "id": "state_11",
-      "node_type": "check_zone",
-      "label": "Check if in Village of Sorrow",
-      "position": {
-        "x": 3520.0,
-        "y": -180.0
-      },
-      "params": {
-        "zone": "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_12",
-      "node_type": "enter_zone",
-      "label": "Enter Rock Dojo",
-      "position": {
-        "x": 4400.0,
-        "y": -90.0
-      },
-      "params": {
-        "from_zone": "MooShu/MS_Hub",
-        "to_zone": "MooShu/Interiors/MS_RockDojoT2",
-        "xyz": {
-          "x": 11513.32,
-          "y": -12967.51,
-          "z": 53.91
-        },
-        "reset_xyz": {
-          "x": 11227.08,
-          "y": -12214.34,
-          "z": -154.11
-        },
-        "stagger": false
-      }
-    },
-    {
-      "id": "state_13",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Jade Palace",
-      "position": {
-        "x": 3960.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "MooShu/MS_Hub"
-      }
-    },
-    {
-      "id": "state_14",
-      "node_type": "enter_zone",
-      "label": "Enter Village of Sorrow",
-      "position": {
-        "x": 5280.0,
-        "y": -90.0
-      },
-      "params": {
-        "from_zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
-        "to_zone": "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage",
-        "xyz": {
-          "x": 9675.14,
-          "y": 31649.17,
-          "z": -79.59
-        },
-        "reset_xyz": {
-          "x": 8741.81,
-          "y": 30475.39,
-          "z": -203.94
-        },
-        "stagger": false
-      }
-    },
-    {
-      "id": "state_15",
+      "id": "t_8",
       "node_type": "teleport_to_coordinates",
       "label": "Go to Oyotomi the Defiler",
       "position": {
-        "x": 5720.0,
-        "y": -180.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage",
@@ -630,35 +446,56 @@
       }
     },
     {
-      "id": "state_16",
-      "node_type": "handle_combat",
-      "label": "Defeat Oyotomi the Defiler",
+      "id": "t_9",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
       "position": {
-        "x": 6160.0,
-        "y": -180.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
-        "enemy": "Wraith-MSBoss-L56",
-        "wiki_page": "Creature:Oyotomi the Defiler",
-        "use_default_strategy": false,
-        "max_duration": 0.0
+        "duration": 5.0
       }
     },
     {
-      "id": "state_17",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": 6600.0,
-        "y": -180.0
+        "x": 0.0,
+        "y": 0.0
       },
       "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "timeout": 3.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage"
+      }
+    },
+    {
+      "id": "state_21",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
       }
     },
     {
@@ -666,8 +503,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Respawn Oyotomi the Defiler",
       "position": {
-        "x": 7040.0,
-        "y": -180.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "zone": "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage",
@@ -677,73 +514,13 @@
           "z": -379.38
         }
       }
-    },
-    {
-      "id": "state_19",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 7480.0,
-        "y": -180.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "mark_zone": "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage"
-      }
-    },
-    {
-      "id": "state_20",
-      "node_type": "sleep",
-      "label": "Wait for invulnerability to end",
-      "position": {
-        "x": 7920.0,
-        "y": -180.0
-      },
-      "params": {
-        "duration": 5.0
-      }
-    },
-    {
-      "id": "state_21",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": 8360.0,
-        "y": -180.0
-      },
-      "params": {}
-    },
-    {
-      "id": "state_22",
-      "node_type": "enter_zone",
-      "label": "Enter Shirataki Temple",
-      "position": {
-        "x": 4840.0,
-        "y": -90.0
-      },
-      "params": {
-        "from_zone": "MooShu/Interiors/MS_RockDojoT2",
-        "to_zone": "MooShu/MS_Death/MS_Death_Hub_RuinedTemple",
-        "xyz": {
-          "x": -1826.98,
-          "y": 1659.59,
-          "z": -0.0
-        },
-        "reset_xyz": {
-          "x": -1349.64,
-          "y": 1463.62,
-          "z": 0.0
-        },
-        "stagger": false
-      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
+      "source": "t_4",
+      "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -752,28 +529,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_13",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_15",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_22",
+      "source": "t_6",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -782,18 +539,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_13",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_12",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -802,18 +549,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_13",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_15",
+      "source": "t_9",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -822,18 +559,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_13",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_16",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -842,18 +569,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_13",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_17",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_8",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -862,87 +579,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_13",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_18",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_18",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_19",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_13",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_20",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_4",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_20",
+      "source": "t_8",
       "dest": "state_21",
       "when": "SUCCESS",
       "flags": [],
@@ -952,148 +589,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_14",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_22",
-      "dest": "state_13",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_1",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_11",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_7",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_7",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_7",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_21",
-      "dest": "state_6",
+      "dest": "t_9",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1102,8 +599,28 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_13",
+      "source": "t_7",
+      "dest": "state_18",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "state_18",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_18",
+      "dest": "t_8",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1113,52 +630,44 @@
   ],
   "regions": [
     {
-      "id": "bdf3ed58",
-      "label": "Defeat Oyotomi the Defiler",
+      "id": "t_sync_players_1",
+      "label": "Sync players in mob spawn zone",
       "members": [
-        "state_17",
-        "state_19",
-        "state_21",
-        "state_18",
-        "state_20",
-        "state_15",
-        "state_16"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 4
-    },
-    {
-      "id": "d8960175",
-      "label": "Go to Village of Sorrow",
-      "members": [
-        "state_11",
-        "state_14",
-        "state_12",
-        "state_13"
-      ],
-      "color": 3
-    },
-    {
-      "id": "a649ad16",
-      "label": "Level Scaling",
-      "members": [
-        "state_8",
-        "state_6",
-        "state_7",
-        "state_9"
-      ],
-      "color": 2
-    },
-    {
-      "id": "265e14bc",
-      "label": "Go to Mooshu",
-      "members": [
-        "state_3",
-        "state_2",
-        "state_1",
-        "state_5",
-        "state_4"
-      ],
-      "color": 1
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "MooShu/MS_Death/MS_Death_Zone2_HauntedVillage"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
     }
-  ]
+  ],
+  "template": {
+    "id": "be76a48c-598c-4114-8ddc-389a51d145ed",
+    "version": 1
+  }
 }
