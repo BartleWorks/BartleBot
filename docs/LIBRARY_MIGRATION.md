@@ -6,8 +6,8 @@ Stage 9 of the subgraph-calls plan (linked from `docs/SUBGRAPH_CALLS.md`), issue
 
 ## Not yet migrated
 
-15 of 84 bots, as of 2026-10-04. Each is checked off when `tools/rebuild_from_template.py
-status` shows it on a template. Grouped by what unblocks it; *Why 15 are not rebuilt* has the
+14 of 84 bots, as of 2026-10-04. Each is checked off when `tools/rebuild_from_template.py
+status` shows it on a template. Grouped by what unblocks it; *Why 14 are not rebuilt* has the
 reasons in full.
 
 **No exit, in a single-boss farm**: done 2026-10-04, after each was stripped by hand to the
@@ -29,7 +29,7 @@ nodes it adds (see *Single-boss farms with no door*)
 **A decision per bot about content the template cannot place**
 - [x] `house_of_scales`: Dungeon Farmer, stripped by hand to one run through its four chambers, without the hub hop
 - [x] `the_great_spyre`: Dungeon Farmer, stripped by hand past the flight path interact; its early exit after the Gurtoks recalls out too
-- [ ] `ironworks` (Dungeon Farmer): recalls to marks of its own inside the station, which the exit recall would follow
+- [x] `ironworks`: Dungeon Farmer, its marks inside removed by hand; its three early exits, gated on the boss options, recall out too
 - [ ] `biti_nirini` (Spellement Farmer): content reached only from navigation Sync players replaces
 - [ ] `crab_alley_stone_block` (Reagent Collector): content reached only from navigation Sync players replaces
 - [ ] `aeriel_shores_aethyr_burst` (Reagent Collector): a branch ends with a hub teleport
@@ -165,15 +165,15 @@ visible per bot, not buried in a diff.
 
 ## Rebuild status
 
-**69 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
+**70 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
 --write`, which writes a bot only when every old node is carried or replaced, every node
-fill-in is filled, and the result is sound. The other 15 are unchanged and still run as they
+fill-in is filled, and the result is sound. The other 14 are unchanged and still run as they
 did; `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the library is 84.
 
 | template | rebuilt |
 |---|---|
 | Boss Farmer (26) | `achaelos`, `advisor_fancy_fries`, `alicane_swiftarrow`, `bellows`, `crash_the_bandit_coot`, `foulgaze`, `graveyard`, `guillermo_shatterer`, `harvest_lord`, `hierophant_of_destruction`, `jabberwock`, `lord_bramble`, `lord_graustark`, `lord_nightshade`, `mongu_refuge`, `mr_cane`, `mr_stone`, `oakheart`, `praetor_mako`, `prince_gobblestone`, `scion_of_the_old_one`, `sergeant_skullsplitter`, `sister_sanderson`, `sprockets`, `taking_tree`, `vigilant_jarilo` |
-| Dungeon Farmer (27) | `atlantea`, `barkingham_palace_main_hall`, `barkingham_palace_rooftop`, `barkingham_palace_state_wing`, `castle_darkmoor`, `crimson_fields`, `cronus`, `five_boxes_avalon`, `gladiator_dimachaerus`, `heretical_academy`, `house_of_scales`, `katzensteins_lab`, `king_detritus`, `mirror_lake`, `mt_olympus`, `prince_viggor`, `pyramid_of_mother_moon_tartarus_workaround`, `sand_squid_tentacles`, `secret_tunnel`, `spike_the_crusher`, `spiral_cup_portal_of_peril`, `the_great_spyre`, `throne_room_of_fire`, `tree_of_life`, `trial_of_the_spheres`, `waterworks`, `youkai` |
+| Dungeon Farmer (28) | `atlantea`, `barkingham_palace_main_hall`, `barkingham_palace_rooftop`, `barkingham_palace_state_wing`, `castle_darkmoor`, `crimson_fields`, `cronus`, `five_boxes_avalon`, `gladiator_dimachaerus`, `heretical_academy`, `house_of_scales`, `ironworks`, `katzensteins_lab`, `king_detritus`, `mirror_lake`, `mt_olympus`, `prince_viggor`, `pyramid_of_mother_moon_tartarus_workaround`, `sand_squid_tentacles`, `secret_tunnel`, `spike_the_crusher`, `spiral_cup_portal_of_peril`, `the_great_spyre`, `throne_room_of_fire`, `tree_of_life`, `trial_of_the_spheres`, `waterworks`, `youkai` |
 | Spellement Farmer (7) | `big_salgio`, `copy_qhat`, `do_daga`, `eerkala`, `hall_of_heroes`, `harlequin_knight`, `krokopatra` |
 | Reagent Collector (6) | `mirkholm_keep_reagents`, `nightside_flax`, `selenopolis_parchment`, `the_necropolis_deep_mushroom`, `the_wild_deep_mushroom`, `the_zocalo_red_mandrake` |
 | Mob Farmer (3) | `fortee_thieves`, `monkey_spiders`, `valerik_brightsword` |
@@ -192,7 +192,7 @@ have sent the recall back in, and keeps the quicksell it ran just before leaving
 twice; the second finds nothing. `atlantea` and `mt_olympus` no longer offer Team-Up, as
 Dungeon Farmer does not.
 
-### Why 15 are not rebuilt
+### Why 14 are not rebuilt
 
 A bot can be in several rows; each row is a reason the tool refuses it.
 
@@ -201,7 +201,6 @@ A bot can be in several rows; each row is a reason the tool refuses it.
 | **The fight restarts in place**: the boss is fought again without leaving its zone | `jade_oni`, `queen_calypso`, `oyotomi_the_defiler` (open world, not a dungeon) | handled as exceptions, outside the templates |
 | **Content only navigation reached**: a puzzle or teleport on the trip that Sync players would skip | `barkingham_palace_ransacked_throne_room`, `biti_nirini`, `crab_alley_stone_block` | a decision per bot: the trip may need its own steps after Sync players |
 | **Content that leaves through navigation**: a branch that ends with a hub teleport or a ride | `aeriel_shores_aethyr_burst`, `aeriel_shores_silver_chests`, `grand_tourney_arena_gauntlet`, `hidden_temple_gauntlet` | a decision per bot |
-| **A recall of the bot's own inside the dungeon**: Dungeon Farmer's exit recalls to the latest mark | `ironworks` (two recalls to a mark in the station) | its in-dungeon trips without a mark, or by hand |
 | **A template node no run reaches** | `spiral_cup_gauntlet` | rebuilding by hand |
 | **A reagent dungeon entered on the way in**: Sync players would gather in the entrance hall and collect before going in | `scrap_iron_collector`, `the_portico_pearl` | Reagent Collector with an entry, or these two by hand |
 | **Challenge Mode potions logic**: a flag-guarded skip that runs backwards through the template's potions, quicksell and wisps | `sisyphus`, `barkingham_palace_ransacked_throne_room` | a decision on Challenge Mode potions |
@@ -263,7 +262,8 @@ which is usually welcome: drops are granted the moment the last boss falls.
   and XYZ blank it checks each player against the mark it set. `handle_potions` marks where
   the players stand, the entrance, so its refill trip recalls back there too.
 - **A mark of the bot's own inside the dungeon is dropped** by the rebuild, since the recall
-  goes to the latest mark; a recall of its own partway through is refused (`ironworks`).
+  goes to the latest mark; a recall of its own partway through is refused. `ironworks` had two, to marks in the station;
+  with those marks removed by hand, its recalls name no spot and each became the template's.
 - **Boss and Spellement Farmer keep their walk-out exits.** A single-room farm loops often,
   and a recall there spends mana every loop where the door costs nothing; recalling past a
   teleporter out of a whole dungeon is a much smaller missed optimization. Their eight bots
