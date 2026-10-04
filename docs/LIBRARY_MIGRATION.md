@@ -123,14 +123,14 @@ visible per bot, not buried in a diff.
 
 ## Rebuild status
 
-**56 of 85 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
+**59 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
 --write`, which writes a bot only when every old node is carried or replaced, every node
-fill-in is filled, and the result is sound. The other 29 are unchanged and still run as they
-did; `status` lists them.
+fill-in is filled, and the result is sound. The other 25 are unchanged and still run as they
+did; `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the library is 84.
 
 | template | rebuilt |
 |---|---|
-| Boss Farmer (23) | `achaelos`, `advisor_fancy_fries`, `alicane_swiftarrow`, `bellows`, `crash_the_bandit_coot`, `graveyard`, `guillermo_shatterer`, `harvest_lord`, `lord_bramble`, `lord_graustark`, `lord_nightshade`, `mongu_refuge`, `mr_cane`, `mr_stone`, `oakheart`, `praetor_mako`, `prince_gobblestone`, `scion_of_the_old_one`, `sergeant_skullsplitter`, `sister_sanderson`, `sprockets`, `taking_tree`, `vigilant_jarilo` |
+| Boss Farmer (26) | `achaelos`, `advisor_fancy_fries`, `alicane_swiftarrow`, `bellows`, `crash_the_bandit_coot`, `foulgaze`, `graveyard`, `guillermo_shatterer`, `harvest_lord`, `hierophant_of_destruction`, `jabberwock`, `lord_bramble`, `lord_graustark`, `lord_nightshade`, `mongu_refuge`, `mr_cane`, `mr_stone`, `oakheart`, `praetor_mako`, `prince_gobblestone`, `scion_of_the_old_one`, `sergeant_skullsplitter`, `sister_sanderson`, `sprockets`, `taking_tree`, `vigilant_jarilo` |
 | Dungeon Farmer (19) | `atlantea`, `barkingham_palace_main_hall`, `barkingham_palace_rooftop`, `barkingham_palace_state_wing`, `castle_darkmoor`, `crimson_fields`, `five_boxes_avalon`, `heretical_academy`, `katzensteins_lab`, `king_detritus`, `mirror_lake`, `mt_olympus`, `secret_tunnel`, `spike_the_crusher`, `spiral_cup_portal_of_peril`, `throne_room_of_fire`, `tree_of_life`, `trial_of_the_spheres`, `waterworks` |
 | Spellement Farmer (5) | `copy_qhat`, `do_daga`, `eerkala`, `hall_of_heroes`, `harlequin_knight` |
 | Reagent Collector (6) | `mirkholm_keep_reagents`, `nightside_flax`, `selenopolis_parchment`, `the_necropolis_deep_mushroom`, `the_wild_deep_mushroom`, `the_zocalo_red_mandrake` |
@@ -150,7 +150,7 @@ have sent the recall back in, and keeps the quicksell it ran just before leaving
 twice; the second finds nothing. `atlantea` and `mt_olympus` no longer offer Team-Up, as
 Dungeon Farmer does not.
 
-### Why 29 are not rebuilt
+### Why 25 are not rebuilt
 
 A bot can be in several rows; each row is a reason the tool refuses it.
 
@@ -158,7 +158,7 @@ A bot can be in several rows; each row is a reason the tool refuses it.
 |---|---|---|
 | **No exit, in a single-boss farm.** Boss and Spellement Farmer walk out; these leave by the hub button (their entrance is the hub), by a teleporter back to the entrance, or have no door recorded. | `big_salgio`, `cronus`, `gladiator_dimachaerus`, `sand_squid_tentacles` (hub); `krokopatra`, `pyramid_of_mother_moon_tartarus_workaround` (teleporter); `prince_viggor`, `youkai` (no door) | a decision, deferred: see *Dungeon Farmer leaves by recall* |
 | **The fight restarts in place**: the boss is fought again without leaving its zone | `jade_oni`, `queen_calypso`, `oyotomi_the_defiler` (open world, not a dungeon) | handled as exceptions, outside the templates |
-| **A blank fill-in**, which would stop the bot running | `foulgaze`, `hierophant_of_destruction`, `jabberwock` (enemy); `mirkholm_keep_ore` (spawn 1's scan point), and `gladiator_dimachaerus`, `sand_squid_tentacles` | recording in game |
+| **A blank fill-in**, which would stop the bot running | `gladiator_dimachaerus`, `sand_squid_tentacles` (enemy) | recording in game |
 | **Content only navigation reached**: a puzzle or teleport on the trip that Sync players would skip | `barkingham_palace_ransacked_throne_room`, `biti_nirini`, `crab_alley_stone_block`, `house_of_scales`, `the_great_spyre`, and four of the no-exit bots | a decision per bot: the trip may need its own steps after Sync players |
 | **Content that leaves through navigation**: a branch that ends with a hub teleport or a ride | `aeriel_shores_aethyr_burst`, `aeriel_shores_silver_chests`, `grand_tourney_arena_gauntlet`, `hidden_temple_gauntlet` | a decision per bot |
 | **A recall of the bot's own inside the dungeon**: Dungeon Farmer's exit recalls to the latest mark | `ironworks` (two recalls to a mark in the station) | its in-dungeon trips without a mark, or by hand |
@@ -166,8 +166,8 @@ A bot can be in several rows; each row is a reason the tool refuses it.
 | **A reagent dungeon entered on the way in**: Sync players would gather in the entrance hall and collect before going in | `scrap_iron_collector`, `the_portico_pearl` | Reagent Collector with an entry, or these two by hand |
 | **Challenge Mode potions logic**: a flag-guarded skip that runs backwards through the template's potions, quicksell and wisps | `sisyphus`, `barkingham_palace_ransacked_throne_room` | a decision on Challenge Mode potions |
 
-`foulgaze`, `hierophant_of_destruction` and `jabberwock` are being recorded in game; with
-their enemies named they rebuild clean.
+`foulgaze`, `hierophant_of_destruction` and `jabberwock` were rebuilt once their enemies were
+recorded in game (`485528e`).
 
 **The no-exit row corrected this worksheet, and the recall answered most of it.** The first
 measurement took the walk back to a dungeon's entrance for its exit, so it put most of the 26
@@ -279,15 +279,14 @@ get their own answer after 1.0.0.
 
 None of these can be done from the files.
 
-- **Five template fights have no enemy**: `foulgaze`, `hierophant_of_destruction`,
-  `jabberwock`, `gladiator_dimachaerus` and `sand_squid_tentacles`. Boss, Spellement and Mob
-  Farmer make the enemy a fill-in, so each needs its enemy ID recorded before the bot can run.
+- **Two template fights have no enemy**: `gladiator_dimachaerus` and `sand_squid_tentacles`.
+  Boss, Spellement and Mob Farmer make the enemy a fill-in, so each needs its enemy ID recorded
+  before the bot can run.
 - **Eight single-boss farms have no exit** Boss or Spellement Farmer can record (see
   *Rebuild status*); two of them, `prince_viggor` and `youkai`, may have a door to record.
 - **`sisyphus` needs level scaling before 1.0.0.** It is farmed for spellements in Challenge
   Mode, which scales its players itself, so it has no level scaling node; a user who does not
   play Challenge Mode needs one.
-- **`mirkholm_keep_ore`'s spawn has no scan point**, which Reagent Collector asks for.
 - **Seven exposed fights have no enemy** (see above).
 - **Every rewritten bot needs a run** before it counts as done.
 
@@ -562,7 +561,7 @@ default applies), and the quicksell or potion handling it gains.
 | B | `scrap_iron_collector` | Crafting | 8 | 3 | 0 | 4 | — | 2nd-tier recovery (6 edges); collects inside a dungeon |
 | B | `the_necropolis_deep_mushroom` | Crafting | 10 | 2 | 0 | 4 | — | — |
 | B | `crab_alley_stone_block` | Crafting | 12 | 3 | 0 | 5 | — | 2 regions |
-| B | `mirkholm_keep_ore` | Crafting | 12 | 0 | 0 | 6 | — | links Sync players |
+| B | `mirkholm_keep_ore` | Crafting | 12 | 0 | 0 | 6 | — | links Sync players; deleted in `485528e` |
 | C | `aeriel_shores_aethyr_burst` | Crafting | 18 | 1 | 0 | 11 | — | links Sync players; 3 regions |
 | C | `aeriel_shores_silver_chests` | Crafting | 16 | 1 | 0 | 11 | — | 3 regions |
 
