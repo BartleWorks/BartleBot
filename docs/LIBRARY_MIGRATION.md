@@ -6,8 +6,8 @@ Stage 9 of the subgraph-calls plan (linked from `docs/SUBGRAPH_CALLS.md`), issue
 
 ## Not yet migrated
 
-12 of 84 bots, as of 2026-10-04. Each is checked off when `tools/rebuild_from_template.py
-status` shows it on a template. Grouped by what unblocks it; *Why 12 are not rebuilt* has the
+10 of 84 bots, as of 2026-10-04. Each is checked off when `tools/rebuild_from_template.py
+status` shows it on a template. Grouped by what unblocks it; *Why 10 are not rebuilt* has the
 reasons in full.
 
 **No exit, in a single-boss farm**: done 2026-10-04, after each was stripped by hand to the
@@ -32,8 +32,8 @@ nodes it adds (see *Single-boss farms with no door*)
 - [x] `ironworks`: Dungeon Farmer, its marks inside removed by hand; its three early exits, gated on the boss options, recall out too
 - [x] `biti_nirini`: Spellement Farmer, stripped by hand to its own chamber's entry, fight and exit
 - [x] `crab_alley_stone_block`: Reagent Collector, in separate realms with the hop after Sync players; its fourth spawn follows spawn 3
-- [ ] `aeriel_shores_aethyr_burst` (Reagent Collector): a branch ends with a hub teleport
-- [ ] `aeriel_shores_silver_chests` (Reagent Collector): a branch ends with a hub teleport
+- [x] `aeriel_shores_aethyr_burst`: Reagent Collector, its hub teleports replaced by hand with the door into Aeriel Jungle and back
+- [x] `aeriel_shores_silver_chests`: Reagent Collector, its hub teleports replaced by hand with the door into Aeriel Jungle and back
 - [ ] `grand_tourney_arena_gauntlet` (Gauntlet Farmer): a branch ends with a hub teleport
 - [ ] `hidden_temple_gauntlet` (Gauntlet Farmer): a branch ends with a hub teleport
 - [ ] `spiral_cup_gauntlet` (Gauntlet Farmer): rebuilt, a template node is reached by no run; by hand
@@ -165,9 +165,9 @@ visible per bot, not buried in a diff.
 
 ## Rebuild status
 
-**72 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
+**74 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
 --write`, which writes a bot only when every old node is carried or replaced, every node
-fill-in is filled, and the result is sound. The other 12 are unchanged and still run as they
+fill-in is filled, and the result is sound. The other 10 are unchanged and still run as they
 did; `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the library is 84.
 
 | template | rebuilt |
@@ -175,7 +175,7 @@ did; `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the li
 | Boss Farmer (26) | `achaelos`, `advisor_fancy_fries`, `alicane_swiftarrow`, `bellows`, `crash_the_bandit_coot`, `foulgaze`, `graveyard`, `guillermo_shatterer`, `harvest_lord`, `hierophant_of_destruction`, `jabberwock`, `lord_bramble`, `lord_graustark`, `lord_nightshade`, `mongu_refuge`, `mr_cane`, `mr_stone`, `oakheart`, `praetor_mako`, `prince_gobblestone`, `scion_of_the_old_one`, `sergeant_skullsplitter`, `sister_sanderson`, `sprockets`, `taking_tree`, `vigilant_jarilo` |
 | Dungeon Farmer (28) | `atlantea`, `barkingham_palace_main_hall`, `barkingham_palace_rooftop`, `barkingham_palace_state_wing`, `castle_darkmoor`, `crimson_fields`, `cronus`, `five_boxes_avalon`, `gladiator_dimachaerus`, `heretical_academy`, `house_of_scales`, `ironworks`, `katzensteins_lab`, `king_detritus`, `mirror_lake`, `mt_olympus`, `prince_viggor`, `pyramid_of_mother_moon_tartarus_workaround`, `sand_squid_tentacles`, `secret_tunnel`, `spike_the_crusher`, `spiral_cup_portal_of_peril`, `the_great_spyre`, `throne_room_of_fire`, `tree_of_life`, `trial_of_the_spheres`, `waterworks`, `youkai` |
 | Spellement Farmer (8) | `big_salgio`, `biti_nirini`, `copy_qhat`, `do_daga`, `eerkala`, `hall_of_heroes`, `harlequin_knight`, `krokopatra` |
-| Reagent Collector (7) | `crab_alley_stone_block`, `mirkholm_keep_reagents`, `nightside_flax`, `selenopolis_parchment`, `the_necropolis_deep_mushroom`, `the_wild_deep_mushroom`, `the_zocalo_red_mandrake` |
+| Reagent Collector (9) | `aeriel_shores_aethyr_burst`, `aeriel_shores_silver_chests`, `crab_alley_stone_block`, `mirkholm_keep_reagents`, `nightside_flax`, `selenopolis_parchment`, `the_necropolis_deep_mushroom`, `the_wild_deep_mushroom`, `the_zocalo_red_mandrake` |
 | Mob Farmer (3) | `fortee_thieves`, `monkey_spiders`, `valerik_brightsword` |
 
 `do_daga` was rebuilt from its version before `00b8049`, as decided, not from the stub.
@@ -192,7 +192,7 @@ have sent the recall back in, and keeps the quicksell it ran just before leaving
 twice; the second finds nothing. `atlantea` and `mt_olympus` no longer offer Team-Up, as
 Dungeon Farmer does not.
 
-### Why 12 are not rebuilt
+### Why 10 are not rebuilt
 
 A bot can be in several rows; each row is a reason the tool refuses it.
 
@@ -200,7 +200,7 @@ A bot can be in several rows; each row is a reason the tool refuses it.
 |---|---|---|
 | **The fight restarts in place**: the boss is fought again without leaving its zone | `jade_oni`, `queen_calypso`, `oyotomi_the_defiler` (open world, not a dungeon) | handled as exceptions, outside the templates |
 | **Content only navigation reached**: a puzzle or teleport on the trip that Sync players would skip | `barkingham_palace_ransacked_throne_room` | a decision per bot: the trip may need its own steps after Sync players |
-| **Content that leaves through navigation**: a branch that ends with a hub teleport or a ride | `aeriel_shores_aethyr_burst`, `aeriel_shores_silver_chests`, `grand_tourney_arena_gauntlet`, `hidden_temple_gauntlet` | a decision per bot |
+| **Content that leaves through navigation**: a branch that ends with a hub teleport or a ride | `grand_tourney_arena_gauntlet`, `hidden_temple_gauntlet` | a decision per bot |
 | **A template node no run reaches** | `spiral_cup_gauntlet` | rebuilding by hand |
 | **A reagent dungeon entered on the way in**: Sync players would gather in the entrance hall and collect before going in | `scrap_iron_collector`, `the_portico_pearl` | Reagent Collector with an entry, or these two by hand |
 | **Challenge Mode potions logic**: a flag-guarded skip that runs backwards through the template's potions, quicksell and wisps | `sisyphus`, `barkingham_palace_ransacked_throne_room` | a decision on Challenge Mode potions |
@@ -466,7 +466,7 @@ content and survives.
 | `interact_menu`, `click_path` | 3 each, one bot | same | keep (see *Decisions taken*) |
 | `mark_location`, `teleport_to_marked_location` | 6 and 5 bots | every Dungeon Farmer bot | keep: Dungeon Farmer marks the entrance and recalls out |
 | `teleport_to_friend` | 4 | Gauntlet Farmer | keep |
-| `teleport_to_world_hub` | 63 bots | 1 bot | keep: a mid-route hop in `aeriel_shores_aethyr_burst` (`house_of_scales` lost its own when it was stripped by hand), and a step zone navigation runs. `spiral_cup_portal_of_peril`'s was its way out, and is the recall now |
+| `teleport_to_world_hub` | 63 bots | 0 bots | keep: a step zone navigation runs. The last mid-route hops, in `house_of_scales` and `aeriel_shores_aethyr_burst`, were removed by hand. `spiral_cup_portal_of_peril`'s was its way out, and is the recall now |
 | `enter_zone_via_object` | 19 bots | 9 bots | keep: in-dungeon teleporters and skips |
 
 **`apply_level_scaling` no longer holds anything else up.** `tools/scales_table.py add` used to

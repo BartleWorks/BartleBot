@@ -1,11 +1,11 @@
 {
   "id": "f49756e9-de37-4237-a0aa-5f0709b94924",
-  "name": "Silver Chest Locator",
+  "name": "Empyrea Silver Chest Locator",
   "description": "Locates Silver Chests in Aeriel Shores and Aeriel Jungle, Empyrea.\n\nDOES NOT AUTOMATICALLY PLAY CHEST MINIGAMES! This bot simply locates the chests for you. Stop the bot once you find a Silver Chest.",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Shocked Key"
@@ -28,21 +28,9 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Aeriel Shores",
-      "position": {
-        "x": 0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Empyrea/EM_Z00_Aeriel_HUB"
-      }
-    },
-    {
-      "id": "state_28",
+      "id": "t_3",
       "node_type": "change_realm",
-      "label": "Change realm",
+      "label": "Change to next realm",
       "position": {
         "x": 440,
         "y": 0.0
@@ -52,7 +40,7 @@
       }
     },
     {
-      "id": "state_4",
+      "id": "t_4",
       "node_type": "collect_reagent",
       "label": "Locate Silver Chest",
       "position": {
@@ -61,18 +49,18 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
+        "entity_names": [
+          "EM-Chest-Rare-001"
+        ],
         "xyz": {
           "x": 7084.0,
           "y": -2384.0,
           "z": -8.5
-        },
-        "entity_names": [
-          "EM-Chest-Rare-001"
-        ]
+        }
       }
     },
     {
-      "id": "state_9",
+      "id": "t_5",
       "node_type": "collect_reagent",
       "label": "Locate Silver Chest",
       "position": {
@@ -81,18 +69,18 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
+        "entity_names": [
+          "EM-Chest-Rare-001"
+        ],
         "xyz": {
           "x": 4456.32,
           "y": 433.3,
           "z": -59.03
-        },
-        "entity_names": [
-          "EM-Chest-Rare-001"
-        ]
+        }
       }
     },
     {
-      "id": "state_11",
+      "id": "t_6",
       "node_type": "collect_reagent",
       "label": "Locate Silver Chest",
       "position": {
@@ -101,14 +89,44 @@
       },
       "params": {
         "zone": "Empyrea/EM_Z00_Aeriel_HUB",
+        "entity_names": [
+          "EM-Chest-Rare-001"
+        ],
         "xyz": {
           "x": 348.48,
           "y": 2254.32,
           "z": -122.79
-        },
-        "entity_names": [
-          "EM-Chest-Rare-001"
+        }
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
         ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Empyrea/EM_Z00_Aeriel_HUB",
+        "keep_current_realm": true
       }
     },
     {
@@ -328,13 +346,37 @@
           "EM-Chest-Rare-001"
         ]
       }
+    },
+    {
+      "id": "state_28",
+      "node_type": "enter_zone",
+      "label": "Enter Aeriel Shore",
+      "position": {
+        "x": 7040,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Empyrea/EM_Z01_Jungle",
+        "to_zone": "Empyrea/EM_Z00_Aeriel_HUB",
+        "xyz": {
+          "x": -1625.89,
+          "y": -12154.83,
+          "z": 1657.37
+        },
+        "reset_xyz": {
+          "x": -1528.61,
+          "y": -10751.54,
+          "z": 1236.71
+        },
+        "stagger": false
+      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_28",
+      "source": "t_3",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -343,18 +385,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_28",
-      "dest": "state_4",
+      "source": "t_4",
+      "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -363,18 +395,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_28",
-      "dest": "state_28",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_9",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -383,8 +405,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_11",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -393,8 +415,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_13",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -504,7 +526,27 @@
     {
       "trigger": "advance",
       "source": "state_7",
-      "dest": "state_1",
+      "dest": "state_28",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "state_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_28",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -514,39 +556,60 @@
   ],
   "regions": [
     {
-      "id": "d9fc030f",
-      "label": "Near Ark",
+      "id": "t_sync_players_1",
+      "label": "Sync players in reagent spawn zone",
       "members": [
-        "state_4",
-        "state_9",
-        "state_11"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 1
-    },
-    {
-      "id": "b755cfe7",
-      "label": "Nowhere Village",
-      "members": [
-        "state_13",
-        "state_15"
-      ],
-      "color": 2
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.keep_current_realm": true,
+          "state_2.zone": "Empyrea/EM_Z00_Aeriel_HUB"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
     },
     {
       "id": "ae37850e",
       "label": "Aeriel Jungle",
       "members": [
         "state_7",
-        "state_17",
-        "state_2",
         "state_8",
         "state_19",
         "state_21",
         "state_23",
         "state_25",
-        "state_27"
+        "state_27",
+        "state_28"
       ],
       "color": 3
     }
-  ]
+  ],
+  "template": {
+    "id": "7910bf84-1c71-4d5a-a39c-2f26b4219617",
+    "version": 1
+  }
 }
