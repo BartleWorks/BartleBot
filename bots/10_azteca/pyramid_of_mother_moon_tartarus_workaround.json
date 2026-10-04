@@ -4,8 +4,8 @@
   "description": "Endlessly completes Pyramid of Mother Moon in Pitch Black Lake, Azteca. Good for rank 6-10 spellements.",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_39",
-  "recovery_state": "state_38",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Acampi Reedfist's Lost Seal",
@@ -668,26 +668,88 @@
   "options": [],
   "states": [
     {
-      "id": "state_2",
-      "node_type": "check_level_scaling",
-      "label": "Check level scaling",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": 7480.0,
-        "y": -90.0
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Azteca/AZ_Z08_PitchBlackLake"
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Azteca/AZ_Z08_PitchBlackLake",
+        "xyz": {
+          "x": -3695.92,
+          "y": -6229.73,
+          "z": 2.67
+        }
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320,
+        "y": 0.0
       },
       "params": {}
     },
     {
-      "id": "state_15",
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Pyramid of Mother Moon",
       "position": {
-        "x": 10120.0,
-        "y": -90.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Azteca/AZ_Z08_PitchBlackLake",
         "dungeon_zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room01",
+        "offers_challenge_mode": false,
+        "offers_team_up": false,
         "dungeon_name": "Pyramid of Mother Moon",
         "sigil_xyz": {
           "x": -4402.27,
@@ -702,12 +764,42 @@
       }
     },
     {
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
+      "position": {
+        "x": 4840,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "",
+        "xyz": null
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
       "id": "state_16",
       "node_type": "enter_zone",
       "label": "Enter second room",
       "position": {
-        "x": 10560.0,
-        "y": -90.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room01",
@@ -730,8 +822,8 @@
       "node_type": "enter_zone",
       "label": "Enter third room",
       "position": {
-        "x": 11000.0,
-        "y": -90.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room02",
@@ -754,8 +846,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Neza the Poet and Grinning Death Moon",
       "position": {
-        "x": 11440.0,
-        "y": -90.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room03",
@@ -771,8 +863,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Neza the Poet and Grinning Death Moon",
       "position": {
-        "x": 11880.0,
-        "y": -90.0
+        "x": 4400,
+        "y": 0.0
       },
       "params": {
         "enemy": "AZ-Parrot-King-B",
@@ -781,168 +873,93 @@
       }
     },
     {
-      "id": "state_29",
-      "node_type": "enter_dungeon",
-      "label": "Enter Tartarus",
+      "id": "state_1",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling at Tartarus",
       "position": {
-        "x": 8800.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
-        "from_zone": "Aquila/AQ_Z00_Hub",
-        "dungeon_zone": "Aquila/AQ_Z03_Tartarus",
-        "dungeon_name": "Tartarus",
-        "sigil_xyz": {
-          "x": 7633.61,
-          "y": 12837.84,
-          "z": -1659.61
-        },
-        "reset_xyz": {
-          "x": 8245.12,
-          "y": 12550.37,
-          "z": -1643.02
-        }
-      }
-    },
-    {
-      "id": "state_31",
-      "node_type": "apply_level_scaling",
-      "label": "Apply level scaling",
-      "position": {
-        "x": 9240.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Aquila/AQ_Z03_Tartarus",
-        "interact_xyz": {
-          "x": -2498.12,
-          "y": 8396.53,
-          "z": 1291.74
-        },
-        "reset_xyz": {
-          "x": -2539.91,
-          "y": 9093.42,
-          "z": 1303.41
-        }
-      }
-    },
-    {
-      "id": "state_33",
-      "node_type": "teleport_to_marked_location",
-      "label": "Recall to Pitch Black Lake",
-      "position": {
-        "x": 9680.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Azteca/AZ_Z08_PitchBlackLake",
-        "xyz": {
-          "x": -3733.4,
-          "y": -6185.43,
-          "z": 2.67
-        }
-      }
-    },
-    {
-      "id": "state_34",
-      "node_type": "enter_zone_via_object",
-      "label": "Take teleporter to outside",
-      "position": {
-        "x": 12320.0,
-        "y": -90.0
-      },
-      "params": {
-        "from_zone": "Azteca/Interiors/AZ_Z08_PyramidMotherMoon_Room03",
-        "to_zone": "Azteca/AZ_Z08_PitchBlackLake",
-        "interact_xyz": {
-          "x": -2997.71,
-          "y": -3851.34,
-          "z": -1722.26
-        },
-        "reset_xyz": {
-          "x": -2563.96,
-          "y": -3467.23,
-          "z": -1747.25
-        },
-        "sequential": false
-      }
-    },
-    {
-      "id": "state_36",
-      "node_type": "sync_in_zone",
-      "label": "Go to Garden of Hesperides",
-      "position": {
-        "x": 8360.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Aquila/AQ_Z00_Hub"
-      }
-    },
-    {
-      "id": "state_37",
-      "node_type": "mark_location",
-      "label": "Mark location in Pitch Black Lake",
-      "position": {
-        "x": 7920.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Azteca/AZ_Z08_PitchBlackLake",
-        "xyz": {
-          "x": -3631.39,
-          "y": -6330.84,
-          "z": 2.67
-        }
-      }
-    },
-    {
-      "id": "state_38",
-      "node_type": "relog",
-      "label": "Relog",
-      "position": {
-        "x": 6160.0,
-        "y": -90.0
-      },
-      "params": {
-        "relog_clients": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_39",
-      "node_type": "sync_in_zone",
-      "label": "Go to Pitch Black Lake",
-      "position": {
-        "x": 6600.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Azteca/AZ_Z08_PitchBlackLake"
-      }
-    },
-    {
-      "id": "state_40",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
-      "position": {
-        "x": 7040.0,
-        "y": -90.0
-      },
-      "params": {
-        "use_favorite_realm": true
+        "scales": "tartarus"
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_16",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "state_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "state_1",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -981,8 +998,18 @@
     },
     {
       "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_16",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_19",
-      "dest": "state_34",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -991,138 +1018,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_37",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_15",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_29",
-      "dest": "state_31",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_29",
-      "dest": "state_36",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_31",
-      "dest": "state_33",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_31",
-      "dest": "state_36",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_33",
-      "dest": "state_15",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_34",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_36",
-      "dest": "state_29",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_37",
-      "dest": "state_36",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_38",
-      "dest": "state_39",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_38",
-      "dest": "state_38",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_39",
-      "dest": "state_40",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_40",
-      "dest": "state_2",
+      "source": "state_1",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1132,29 +1029,44 @@
   ],
   "regions": [
     {
-      "id": "db0ff54f",
-      "label": "Defeat bosses",
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
       "members": [
-        "state_15",
-        "state_18",
-        "state_34",
-        "state_17",
-        "state_16",
-        "state_19"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 1
-    },
-    {
-      "id": "2860582e",
-      "label": "Handle level scaling",
-      "members": [
-        "state_2",
-        "state_29",
-        "state_31",
-        "state_33",
-        "state_37"
-      ],
-      "color": 3
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Azteca/AZ_Z08_PitchBlackLake"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
     }
-  ]
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  }
 }
