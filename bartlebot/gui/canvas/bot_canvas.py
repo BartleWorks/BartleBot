@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
     QAbstractSpinBox,
     QApplication,
     QFrame,
+    QGraphicsItem,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -1893,6 +1894,8 @@ class BotCanvas(QWidget):
     def eventFilter(self, obj, event) -> bool:
         if obj is self._view.viewport() and event.type() == QEvent.Type.Resize:
             self._reposition_banner()
+        elif obj is self._view.viewport() and event.type() == QEvent.Type.MouseButtonPress and self._levels:
+            self._log_focus_click(event)
         elif obj is self._view:
             if event.type() == QEvent.Type.Resize:
                 self._reposition_banner()
@@ -2442,6 +2445,7 @@ class BotCanvas(QWidget):
             camera = self._view.camera_state()
         self._levels.append(_ViewLevel("region", region_id, camera))
         self._sync_opened()
+        self._log_focus_state(f"entered region {region_id} (collapsed={self._scene.is_region_collapsed(region_id)})")
         # Frame the region. Hiding everything else is what made the canvas look empty
         # without explanation: the camera never moved, so a region that was small
         # or off to one side stayed small and off to one side while the rest vanished.
@@ -2475,7 +2479,52 @@ class BotCanvas(QWidget):
         level = self._levels.pop()
         self._sync_opened()
         self._view.restore_camera(level.camera)
+        logger.debug("Focus Mode: stepped out of %s %s (depth now %d)", level.kind, level.region_id, len(self._levels))
         return True
+
+    def _log_focus_state(self, what: str) -> None:
+        """Record what a click on the canvas would meet now: diagnostics for #126."""
+        vp = self._view.viewport()
+        center = vp.rect().center()
+        on_top = QApplication.widgetAt(vp.mapToGlobal(center))
+        shown = [n for n in self._scene.node_items.values() if n.isVisible()]
+        logger.debug(
+            "Focus Mode: %s; mode=%s depth=%d scene_interactive=%s view_interactive=%s grabber=%s "
+            "shown_nodes=%d selectable=%d widget_at_viewport_center=%s%s",
+            what,
+            self._mode.name,
+            len(self._levels),
+            self._scene.interactive,
+            self._view.isInteractive(),
+            type(self._scene.mouseGrabberItem()).__name__ if self._scene.mouseGrabberItem() else None,
+            len(shown),
+            sum(1 for n in shown if n.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsSelectable),
+            type(on_top).__name__ if on_top is not None else None,
+            "" if on_top is vp else " (NOT the viewport)",
+        )
+
+    def _log_focus_click(self, event) -> None:
+        """A press on the viewport while focused: what was under it, and whether it selected anything (#126)."""
+        pos = event.position().toPoint()
+        items = self._view.items(pos)
+        top = items[0] if items else None
+        logger.debug(
+            "Focus Mode click: button=%s items=%s top_flags=%s grabber=%s scene_interactive=%s view_interactive=%s",
+            event.button().name,
+            [getattr(i, "state_id", None) or type(i).__name__ for i in items[:4]],
+            int(top.flags().value) if top is not None else None,
+            type(self._scene.mouseGrabberItem()).__name__ if self._scene.mouseGrabberItem() else None,
+            self._scene.interactive,
+            self._view.isInteractive(),
+        )
+        QTimer.singleShot(
+            0,
+            lambda: logger.debug(
+                "Focus Mode click: after press selected=%s grabber=%s",
+                [getattr(i, "state_id", None) or type(i).__name__ for i in self._scene.selectedItems()],
+                type(self._scene.mouseGrabberItem()).__name__ if self._scene.mouseGrabberItem() else None,
+            ),
+        )
 
     def step_out_to(self, depth: int) -> None:
         """Step out until ``depth`` levels are left: 0 is the open document itself."""
@@ -2750,6 +2799,8 @@ class BotCanvas(QWidget):
     # ------------------------------------------------------------------
 
     def _apply_mode(self, mode: BotMode) -> None:
+        prev = getattr(self, "_mode", None)
+        logger.debug("Canvas mode: %s -> %s", prev.name if prev is not None else None, mode.name)
         self.exit_focus_mode()
         self._mode = mode
         self._toolbar.set_editable(mode == BotMode.EDIT)
