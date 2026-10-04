@@ -908,13 +908,14 @@
     {
       "id": "state_8",
       "node_type": "handle_combat",
-      "label": "Defeat Hierophant of Destruction",
+      "label": "Defeat The Hierophant of Destruction",
       "position": {
         "x": 3080.0,
         "y": -90.0
       },
       "params": {
-        "enemy": "",
+        "enemy": "DM_Scholomari_PriestessF_B_01",
+        "wiki_page": "Creature:The Hierophant of Destruction (Standard)",
         "use_default_strategy": true,
         "max_duration": 0.0
       }

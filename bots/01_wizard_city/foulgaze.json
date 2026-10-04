@@ -485,14 +485,14 @@
     {
       "id": "defeat_boss_1_state_4",
       "node_type": "handle_combat",
-      "label": "Defeat boss",
+      "label": "Defeat Foulgaze",
       "position": {
         "x": 2640.0,
         "y": -90.0
       },
       "params": {
-        "enemy": "",
-        "wiki_page": "",
+        "enemy": "Ghost-Red-WCBoss-L03",
+        "wiki_page": "Creature:Foulgaze",
         "use_default_strategy": true,
         "max_duration": 0.0
       }

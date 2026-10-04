@@ -8,458 +8,609 @@
   "recovery_state": "state_1",
   "drops": [
     {
-      "name": "Angel Oak"
+      "name": "Angel Oak",
+      "category": "Seeds"
     },
     {
-      "name": "Avalon Abbey Road Theme"
+      "name": "Avalon Abbey Road Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Avalon Main Theme"
+      "name": "Avalon Main Theme",
+      "category": "Housing Items"
     },
     {
-      "name": "Avalon Wooden Table"
+      "name": "Avalon Wooden Table",
+      "category": "Housing Items"
     },
     {
-      "name": "Badger's Claw"
+      "name": "Badger's Claw",
+      "category": "Athames"
     },
     {
-      "name": "Balance-Off Citrine"
+      "name": "Balance-Off Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Bananas! Opal"
+      "name": "Bananas! Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Band of the Lost Abbey"
+      "name": "Band of the Lost Abbey",
+      "category": "Rings"
     },
     {
-      "name": "Bannerman's Honorbound Ring"
+      "name": "Bannerman's Honorbound Ring",
+      "category": "Rings"
     },
     {
-      "name": "Basilisk"
+      "name": "Basilisk",
+      "category": "Spellements"
     },
     {
-      "name": "Black Lotus"
+      "name": "Black Lotus",
+      "category": "Reagents"
     },
     {
-      "name": "Blight Hound"
+      "name": "Blight Hound",
+      "category": "Spellements"
     },
     {
-      "name": "Bludgeon of Confidence"
+      "name": "Bludgeon of Confidence",
+      "category": "Wands"
     },
     {
-      "name": "Blue Huckleberries"
+      "name": "Blue Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Bogwich"
+      "name": "Bogwich",
+      "category": "Snacks"
     },
     {
-      "name": "Bronze"
+      "name": "Bronze",
+      "category": "Reagents"
     },
     {
-      "name": "Cat Tail"
+      "name": "Cat Tail",
+      "category": "Reagents"
     },
     {
-      "name": "Catalan"
+      "name": "Catalan",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Cauliflowers"
+      "name": "Cauliflowers",
+      "category": "Snacks"
     },
     {
-      "name": "Centaur"
+      "name": "Centaur",
+      "category": "Spellements"
     },
     {
-      "name": "Champion of Order's Icy Helm"
+      "name": "Champion of Order's Icy Helm",
+      "category": "Hats"
     },
     {
-      "name": "Chaos Knight's Blazing Helm"
+      "name": "Chaos Knight's Blazing Helm",
+      "category": "Hats"
     },
     {
-      "name": "Cheese Broccoli"
+      "name": "Cheese Broccoli",
+      "category": "Snacks"
     },
     {
-      "name": "Chimera"
+      "name": "Chimera",
+      "category": "Spellements"
     },
     {
-      "name": "Chocolate Strawberry"
+      "name": "Chocolate Strawberry",
+      "category": "Snacks"
     },
     {
-      "name": "Choke"
+      "name": "Choke",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Clear Accurate Amethyst +9%"
+      "name": "Clear Accurate Amethyst +9%",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Accurate Ruby +9%"
+      "name": "Clear Accurate Ruby +9%",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Blocking Amethyst +10"
+      "name": "Clear Blocking Amethyst +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Blocking Citrine +10"
+      "name": "Clear Blocking Citrine +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Blocking Ruby +10"
+      "name": "Clear Blocking Ruby +10",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Critical Amethyst +9"
+      "name": "Clear Critical Amethyst +9",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Defense Jade +37"
+      "name": "Clear Defense Jade +37",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Defense Opal +19"
+      "name": "Clear Defense Opal +19",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Piercing Peridot +5%"
+      "name": "Clear Piercing Peridot +5%",
+      "category": "Jewels"
     },
     {
-      "name": "Cobalt"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Colossus"
+      "name": "Colossus",
+      "category": "Spellements"
     },
     {
-      "name": "Courageous Knight's Boots"
+      "name": "Courageous Knight's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Deadly Fly Trap"
+      "name": "Deadly Fly Trap",
+      "category": "Seeds"
     },
     {
-      "name": "Deep Mushroom"
+      "name": "Deep Mushroom",
+      "category": "Reagents"
     },
     {
-      "name": "Delicious Cookie"
+      "name": "Delicious Cookie",
+      "category": "Snacks"
     },
     {
-      "name": "Deviled Eggs"
+      "name": "Deviled Eggs",
+      "category": "Snacks"
     },
     {
-      "name": "Dr. Von's Monster"
+      "name": "Dr. Von's Monster",
+      "category": "Spellements"
     },
     {
-      "name": "Druid's Amulet of Courage"
+      "name": "Druid's Amulet of Courage",
+      "category": "Amulets"
     },
     {
-      "name": "Earth Walker"
+      "name": "Earth Walker",
+      "category": "Spellements"
     },
     {
-      "name": "Efreet"
+      "name": "Efreet",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Efreet"
+      "name": "Efreet",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Evil Magma Peas"
+      "name": "Evil Magma Peas",
+      "category": "Seeds"
     },
     {
-      "name": "Fire Dragon"
+      "name": "Fire Dragon",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Dragon"
+      "name": "Fire Dragon",
+      "category": "Treasure Cards"
     },
     {
       "name": "Fire Trap Ruby (Triangle)",
+      "category": "Jewels",
       "match_name": "Fire Trap Ruby"
     },
     {
-      "name": "Fire-Spitter Robes"
+      "name": "Fire-Spitter Robes",
+      "category": "Robes"
     },
     {
-      "name": "Forest Lord"
+      "name": "Forest Lord",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Forest Lord"
+      "name": "Forest Lord",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Frost Flower"
+      "name": "Frost Flower",
+      "category": "Reagents"
     },
     {
-      "name": "Frost Giant"
+      "name": "Frost Giant",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Frost Giant"
+      "name": "Frost Giant",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fuel"
+      "name": "Fuel",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Gargantuan"
+      "name": "Gargantuan",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Gnomes!"
+      "name": "Gnomes!",
+      "category": "Spellements"
     },
     {
-      "name": "Goat Cheese"
+      "name": "Goat Cheese",
+      "category": "Snacks"
     },
     {
-      "name": "Gold Miner Opal"
+      "name": "Gold Miner Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Golden Grapes"
+      "name": "Golden Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Green Grapes"
+      "name": "Green Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Guardian's Helm"
+      "name": "Guardian's Helm",
+      "category": "Hats"
     },
     {
-      "name": "Gummy Humongofrog"
+      "name": "Gummy Humongofrog",
+      "category": "Snacks"
     },
     {
-      "name": "Gummy Wyrms"
+      "name": "Gummy Wyrms",
+      "category": "Snacks"
     },
     {
-      "name": "Helephant"
+      "name": "Helephant",
+      "category": "Spellements"
     },
     {
-      "name": "Highland Shillelagh"
+      "name": "Highland Shillelagh",
+      "category": "Wands"
     },
     {
-      "name": "Honor Bound Surcoat"
+      "name": "Honor Bound Surcoat",
+      "category": "Robes"
     },
     {
-      "name": "Hydra"
+      "name": "Hydra",
+      "category": "Spellements"
     },
     {
-      "name": "Immolate"
+      "name": "Immolate",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Immunity Opal"
+      "name": "Immunity Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Jabberwock's Plate"
+      "name": "Jabberwock's Plate",
+      "category": "Robes"
     },
     {
-      "name": "Jelly Baby"
+      "name": "Jelly Baby",
+      "category": "Snacks"
     },
     {
-      "name": "Jousting Rack"
+      "name": "Jousting Rack",
+      "category": "Housing Items"
     },
     {
-      "name": "Key Limes"
+      "name": "Key Limes",
+      "category": "Seeds"
     },
     {
-      "name": "King Banana"
+      "name": "King Banana",
+      "category": "Snacks"
     },
     {
-      "name": "Kola Nuts"
+      "name": "Kola Nuts",
+      "category": "Snacks"
     },
     {
-      "name": "Lava Lily"
+      "name": "Lava Lily",
+      "category": "Reagents"
     },
     {
-      "name": "Leviathan"
+      "name": "Leviathan",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Leviathan"
+      "name": "Leviathan",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Medusa"
+      "name": "Medusa",
+      "category": "Spellements"
     },
     {
-      "name": "Minotaur"
+      "name": "Minotaur",
+      "category": "Spellements"
     },
     {
-      "name": "Mist Wood"
+      "name": "Mist Wood",
+      "category": "Reagents"
     },
     {
-      "name": "Monstrous Opal"
+      "name": "Monstrous Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Noble Knight's Boots"
+      "name": "Noble Knight's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Opaque Defense Jade +36"
+      "name": "Opaque Defense Jade +36",
+      "category": "Jewels"
     },
     {
-      "name": "Opaque Health Opal +71"
+      "name": "Opaque Health Opal +71",
+      "category": "Jewels"
     },
     {
-      "name": "Ore"
+      "name": "Ore",
+      "category": "Reagents"
     },
     {
-      "name": "Orthrus"
+      "name": "Orthrus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Orthrus"
+      "name": "Orthrus",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Parchment"
+      "name": "Parchment",
+      "category": "Reagents"
     },
     {
-      "name": "Pearl"
+      "name": "Pearl",
+      "category": "Reagents"
     },
     {
-      "name": "Pendant of Armiger's Tenacity"
+      "name": "Pendant of Armiger's Tenacity",
+      "category": "Amulets"
     },
     {
-      "name": "Phoenix"
+      "name": "Phoenix",
+      "category": "Spellements"
     },
     {
-      "name": "Pigeon Pie"
+      "name": "Pigeon Pie",
+      "category": "Snacks"
     },
     {
-      "name": "Pink Huckleberries"
+      "name": "Pink Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Plain Blocking Opal +3"
+      "name": "Plain Blocking Opal +3",
+      "category": "Jewels"
     },
     {
-      "name": "Ponycorn Hoofers"
+      "name": "Ponycorn Hoofers",
+      "category": "Boots"
     },
     {
-      "name": "Power Link"
+      "name": "Power Link",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Power Nova"
+      "name": "Power Nova",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Power Nova"
+      "name": "Power Nova",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ra"
+      "name": "Ra",
+      "category": "Spellements"
     },
     {
-      "name": "Rain of Fire"
+      "name": "Rain of Fire",
+      "category": "Spellements"
     },
     {
-      "name": "Rebirth"
+      "name": "Rebirth",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Rebirth"
+      "name": "Rebirth",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Red Huckleberries"
+      "name": "Red Huckleberries",
+      "category": "Seeds"
     },
     {
-      "name": "Red Mandrake"
+      "name": "Red Mandrake",
+      "category": "Reagents"
     },
     {
-      "name": "Roasted Chickpeas"
+      "name": "Roasted Chickpeas",
+      "category": "Snacks"
     },
     {
-      "name": "Robes of the Silent Hunter"
+      "name": "Robes of the Silent Hunter",
+      "category": "Robes"
     },
     {
-      "name": "Scald"
+      "name": "Scald",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scarecrow"
+      "name": "Scarecrow",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scarecrow"
+      "name": "Scarecrow",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Shell"
+      "name": "Shell",
+      "category": "Reagents"
     },
     {
-      "name": "Shift Peridot"
+      "name": "Shift Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Silver Trumpet Vine"
+      "name": "Silver Trumpet Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Sirens"
+      "name": "Sirens",
+      "category": "Spellements"
     },
     {
-      "name": "Skeletal Dragon"
+      "name": "Skeletal Dragon",
+      "category": "Spellements"
     },
     {
-      "name": "Skeletal Pirate"
+      "name": "Skeletal Pirate",
+      "category": "Spellements"
     },
     {
-      "name": "Slick Road Grippers"
+      "name": "Slick Road Grippers",
+      "category": "Boots"
     },
     {
-      "name": "Small Arms Weapons Rack"
+      "name": "Small Arms Weapons Rack",
+      "category": "Housing Items"
     },
     {
-      "name": "Sniper Opal"
+      "name": "Sniper Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Snow Angel"
+      "name": "Snow Angel",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Snow Angel"
+      "name": "Snow Angel",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Spectral Blast"
+      "name": "Spectral Blast",
+      "category": "Spellements"
     },
     {
-      "name": "Spicy Drumstick"
+      "name": "Spicy Drumstick",
+      "category": "Snacks"
     },
     {
-      "name": "Splashing Stream Waders"
+      "name": "Splashing Stream Waders",
+      "category": "Boots"
     },
     {
-      "name": "Steal Charm"
+      "name": "Steal Charm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Stone Block"
+      "name": "Stone Block",
+      "category": "Reagents"
     },
     {
-      "name": "Stone Colossus"
+      "name": "Stone Colossus",
+      "category": "Spellements"
     },
     {
-      "name": "Stone Skeleton Key"
+      "name": "Stone Skeleton Key",
+      "category": "Housing Items"
     },
     {
-      "name": "Storm Lord"
+      "name": "Storm Lord",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm Lord"
+      "name": "Storm Lord",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Stormzilla"
+      "name": "Stormzilla",
+      "category": "Spellements"
     },
     {
-      "name": "Submarine Sandwich"
+      "name": "Submarine Sandwich",
+      "category": "Snacks"
     },
     {
-      "name": "Tanglewood Cards"
+      "name": "Tanglewood Cards",
+      "category": "Decks"
     },
     {
-      "name": "Toasty Band of the Fire Elves"
+      "name": "Toasty Band of the Fire Elves",
+      "category": "Rings"
     },
     {
-      "name": "Treant Bark"
+      "name": "Treant Bark",
+      "category": "Snacks"
     },
     {
-      "name": "Triton"
+      "name": "Triton",
+      "category": "Spellements"
     },
     {
-      "name": "Trumpet Vine"
+      "name": "Trumpet Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Ultra Energy Opal"
+      "name": "Ultra Energy Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Unstoppable"
+      "name": "Unstoppable",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Weirwood's Thorn"
+      "name": "Weirwood's Thorn",
+      "category": "Athames"
     },
     {
-      "name": "White Desparagus"
+      "name": "White Desparagus",
+      "category": "Seeds"
     },
     {
-      "name": "White Tiger Lily"
+      "name": "White Tiger Lily",
+      "category": "Seeds"
     },
     {
-      "name": "Windbreaker of Nodor"
+      "name": "Windbreaker of Nodor",
+      "category": "Robes"
     },
     {
-      "name": "Winter Wyrm's Cloak"
+      "name": "Winter Wyrm's Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Woolly Mammoth"
+      "name": "Woolly Mammoth",
+      "category": "Spellements"
     },
     {
-      "name": "Wraith"
+      "name": "Wraith",
+      "category": "Spellements"
     }
   ],
   "authors": "BartleBot",
@@ -573,9 +724,9 @@
         "y": -90.0
       },
       "params": {
-        "enemy": "",
-        "use_bot_default": true,
-        "combat_config": "",
+        "enemy": "AV-Wyrm-Jabberwock-R11-01",
+        "wiki_page": "Creature:Jabberwock",
+        "use_default_strategy": true,
         "max_duration": 0.0
       }
     },
