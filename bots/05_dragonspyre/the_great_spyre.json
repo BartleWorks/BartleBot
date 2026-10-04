@@ -4,17 +4,1837 @@
   "description": "Completes the Great Spyre dungeon in Dragonspyre. Defeats both Gurtok demons as well as Malistaire.",
   "version": "4.0",
   "clients": "all",
-  "initial": "state_4",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
+      "name": "2 Claw",
+      "category": "Reagents"
+    },
+    {
+      "name": "6 Claw",
+      "category": "Reagents"
+    },
+    {
+      "name": "7 Claw",
+      "category": "Reagents"
+    },
+    {
+      "name": "Add Health Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Adept's Socket Wrench",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Allegiance Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Amoretto's Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "and boots"
+    },
+    {
+      "name": "Arbiter's Raiment",
+      "category": "Robes"
+    },
+    {
+      "name": "Arboreal Robes",
+      "category": "Robes"
+    },
+    {
+      "name": "Ascendant Staff",
+      "category": "Wands"
+    },
+    {
+      "name": "Ashen Footwraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Attentive Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Avalanche Legendary Spellsword",
+      "category": "Wands"
+    },
+    {
+      "name": "Avalanche's Legendary Cutlass",
+      "category": "Wands"
+    },
+    {
+      "name": "Balefrost Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Band of the Hearth",
+      "category": "Rings"
+    },
+    {
+      "name": "Banshee",
+      "category": "Spellements"
+    },
+    {
+      "name": "Bat Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Benevolent Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Blemished Accurate Amethyst +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Accurate Citrine +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Accurate Jade +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Accurate Onyx +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Accurate Peridot +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Accurate Ruby +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Accurate Sapphire +5%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Amethyst +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Amethyst +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Citrine +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Citrine +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Jade +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Jade +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Onyx +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Onyx +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Peridot +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Peridot +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Ruby +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Ruby +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Sapphire +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Damage Sapphire +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Amethyst +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Amethyst +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Amethyst +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Amethyst +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Citrine +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Citrine +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Citrine +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Citrine +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Jade +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Jade +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Jade +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Jade +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Onyx +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Onyx +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Onyx +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Onyx +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Opal +11",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Opal +12",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Peridot +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Peridot +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Peridot +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Peridot +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Ruby +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Ruby +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Ruby +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Ruby +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Sapphire +21",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Sapphire +22",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Sapphire +23",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Defense Sapphire +24",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +36",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +37",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +38",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +39",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +40",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +41",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +42",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +43",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +44",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Health Opal +45",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Mana Opal +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Mana Opal +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Mana Opal +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished Mana Opal +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blemished PIP Opal +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Blight Hound",
+      "category": "Spellements"
+    },
+    {
+      "name": "Blizzard Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Bone",
+      "category": "Reagents"
+    },
+    {
+      "name": "Bonfire Headdress",
+      "category": "Hats"
+    },
+    {
+      "name": "Boots of Equivalence",
+      "category": "Boots"
+    },
+    {
+      "name": "Boots of the Bountiful",
+      "category": "Boots"
+    },
+    {
+      "name": "Boots of the Comet",
+      "category": "Boots"
+    },
+    {
+      "name": "Boots of the Slipstream",
+      "category": "Boots"
+    },
+    {
+      "name": "Boots of the Titan",
+      "category": "Boots"
+    },
+    {
+      "name": "Brass",
+      "category": "Reagents"
+    },
+    {
+      "name": "Burning Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Cap of Chronicles",
+      "category": "Hats"
+    },
+    {
+      "name": "Cap of Constitution",
+      "category": "Hats"
+    },
+    {
+      "name": "Cap of the Frontier",
+      "category": "Hats"
+    },
+    {
+      "name": "Centaur",
+      "category": "Spellements"
+    },
+    {
+      "name": "Centaur Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Cerulean Edge",
+      "category": "Wands"
+    },
+    {
+      "name": "Claw",
+      "category": "Reagents"
+    },
+    {
+      "name": "Claw of Conciliation",
+      "category": "Athames"
+    },
+    {
+      "name": "Coat of the Zephyr",
+      "category": "Robes"
+    },
+    {
+      "name": "Cobalt",
+      "category": "Reagents"
+    },
+    {
+      "name": "Colossus",
+      "category": "Spellements"
+    },
+    {
+      "name": "Colossus Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Copper",
+      "category": "Reagents"
+    },
+    {
+      "name": "Copper Urn",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Cowl of Morbidity",
+      "category": "Hats"
+    },
+    {
+      "name": "Crate of Chickens",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Cyclops",
+      "category": "Spellements"
+    },
+    {
+      "name": "Cyclops Minion",
+      "category": "Spellements"
+    },
+    {
+      "name": "Dark Sun Obelisk",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Darkwind Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dauntless Dirk",
+      "category": "Athames"
+    },
+    {
+      "name": "Deadly Fly Trap",
+      "category": "Seeds"
+    },
+    {
+      "name": "Dean Darkflame's Cleaver",
+      "category": "Wands"
+    },
+    {
+      "name": "Dean Darkflame's Spellsword",
+      "category": "Wands"
+    },
+    {
+      "name": "Donate Power Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Doom and Gloom Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dragon's Claw Blade",
+      "category": "Athames"
+    },
+    {
+      "name": "Dragon's Eye Dagger",
+      "category": "Athames"
+    },
+    {
+      "name": "Dragonblood Dirk",
+      "category": "Athames"
+    },
+    {
+      "name": "Dragonclaw Boots",
+      "category": "Boots"
+    },
+    {
+      "name": "Dragonflies",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Dragonscale Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Dragonspyre Main Theme",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Dull Accurate Citrine +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Accurate Jade +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Accurate Peridot +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Accurate Sapphire +6%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Blocking Amethyst +4",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Blocking Jade +4",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Blocking Onyx +4",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Blocking Opal +2",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Critical Jade +4",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Critical Sapphire +4",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Damage Citrine +13",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Damage Jade +13",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Damage Opal +7",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Damage Peridot +13",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Damage Ruby +13",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Health Opal +46",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Piercing Amethyst +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Piercing Onyx +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Piercing Peridot +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dull Piercing Ruby +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Dune Striders",
+      "category": "Boots"
+    },
+    {
+      "name": "Earth Walker",
+      "category": "Spellements"
+    },
+    {
+      "name": "Earthquake Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ectoplasm",
+      "category": "Reagents"
+    },
+    {
+      "name": "Enchanted Nutcracker Wand",
+      "category": "Wands"
+    },
+    {
+      "name": "Equalizer's Coif",
+      "category": "Hats"
+    },
+    {
+      "name": "Evil Snowman",
+      "category": "Spellements"
+    },
+    {
+      "name": "Fiery Boom Shroom",
+      "category": "Seeds"
+    },
+    {
+      "name": "Fiery Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Final Curtain",
+      "category": "Robes"
+    },
+    {
+      "name": "Fire Elf",
+      "category": "Spellements"
+    },
+    {
+      "name": "Flaming Soup",
+      "category": "Snacks"
+    },
+    {
+      "name": "Flawed Accurate Amethyst +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Citrine +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Jade +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Onyx +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Peridot +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Ruby +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Accurate Sapphire +4%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Amethyst +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Amethyst +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Citrine +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Citrine +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Jade +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Jade +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Onyx +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Onyx +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Opal +5",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Peridot +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Peridot +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Ruby +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Ruby +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Sapphire +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Damage Sapphire +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Amethyst +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Amethyst +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Amethyst +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Amethyst +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Citrine +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Citrine +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Citrine +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Citrine +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Jade +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Jade +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Jade +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Jade +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Onyx +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Onyx +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Onyx +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Onyx +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Opal +10",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Opal +9",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Peridot +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Peridot +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Peridot +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Peridot +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Ruby +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Ruby +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Ruby +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Ruby +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Sapphire +17",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Sapphire +18",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Sapphire +19",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Defense Sapphire +20",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +26",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +27",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +28",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +29",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +30",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +31",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +32",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +33",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +34",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Health Opal +35",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Mana Opal +13",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Mana Opal +14",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Mana Opal +15",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Mana Opal +16",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Mending Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed PIP Opal +3%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Flawed Resilient Opal +2%",
+      "category": "Jewels"
+    },
+    {
+      "name": "Footgear of the North Wind",
+      "category": "Boots"
+    },
+    {
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ghoul",
+      "category": "Spellements"
+    },
+    {
+      "name": "Goat Cheese",
+      "category": "Snacks"
+    },
+    {
+      "name": "Golden Grapes",
+      "category": "Snacks"
+    },
+    {
+      "name": "Green Holiday Ornament",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Gummy Humongofrog",
+      "category": "Snacks"
+    },
+    {
+      "name": "Gurtok Apotheosis Coil",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Apotheosis Ringlet",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Celsius Band",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Celsius Coil",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Chill Spell Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Chillblade",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Ender's Blade",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Ender's Spell Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Everthorn",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Everthorn Spell Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Firetusk",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Firetusk Spell Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Fulgis Circlet",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Fulgis Coil",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Ignus Coil",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Ignus Signet",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Mortis Coil",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Mortis Seal",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Mythslayer",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Mythslayer Spell Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Oroboros Coil",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Oroboros Loop",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Scaleblade",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Spell Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Telluric Spell Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Telluric Steel",
+      "category": "Athames"
+    },
+    {
+      "name": "Gurtok Vivus Coil",
+      "category": "Rings"
+    },
+    {
+      "name": "Gurtok Vivus Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Halcyon Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Hat of the Endless",
+      "category": "Hats"
+    },
+    {
+      "name": "Headdress of Refutation",
+      "category": "Hats"
+    },
+    {
+      "name": "Health Boost Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Helephant",
+      "category": "Spellements"
+    },
+    {
+      "name": "Helephant Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Hood of Hibernation",
+      "category": "Hats"
+    },
+    {
+      "name": "Hood of the Vigilant",
+      "category": "Hats"
+    },
+    {
+      "name": "Huge Energy Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Humongofrog Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Hydra",
+      "category": "Spellements"
+    },
+    {
+      "name": "Hydra Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ice Wyvern",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ice Wyvern Sapphire",
+      "category": "Jewels"
+    },
+    {
+      "name": "Immolate",
+      "category": "Spellements"
+    },
+    {
+      "name": "Ivy-Wrapped Cap",
+      "category": "Hats"
+    },
+    {
+      "name": "Jade Oni",
+      "category": "Pets"
+    },
+    {
+      "name": "Jagged Rock Shard",
+      "category": "Housing Items"
+    },
+    {
+      "name": "King Banana",
+      "category": "Snacks"
+    },
+    {
+      "name": "King Parsley",
+      "category": "Seeds"
+    },
+    {
+      "name": "Kraken",
+      "category": "Spellements"
+    },
+    {
+      "name": "Kraken Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Kraysys' Boots of Retreat",
+      "category": "Boots"
+    },
+    {
+      "name": "Kraysys' Hat of the Hidden",
+      "category": "Hats"
+    },
+    {
+      "name": "Kraysys' Hood of the Hidden",
+      "category": "Hats"
+    },
+    {
+      "name": "Kraysys' Subterfuge Slippers",
+      "category": "Boots"
+    },
+    {
+      "name": "Kraysys' Subterfuge Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Kraysys' Unfaithful Cowl",
+      "category": "Hats"
+    },
+    {
+      "name": "Kraysys' Unfaithful Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Kraysys' Walkers of Retreat",
+      "category": "Boots"
+    },
+    {
+      "name": "Krokopatra Exalted Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Large Snowflake",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Lead",
+      "category": "Reagents"
+    },
+    {
+      "name": "Leprechaun",
+      "category": "Spellements"
+    },
+    {
       "name": "Level 50 hat"
+    },
+    {
+      "name": "Lightning Bats",
+      "category": "Spellements"
+    },
+    {
+      "name": "Locust Swarm",
+      "category": "Spellements"
+    },
+    {
+      "name": "Long Corner Wall Ruins",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Longblade of the Homunculus",
+      "category": "Wands"
+    },
+    {
+      "name": "Lump of Coal",
+      "category": "Pets"
+    },
+    {
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
+    },
+    {
+      "name": "Malistaire Drake's Deathedge",
+      "category": "Athames"
+    },
+    {
+      "name": "Malistaire Drake's Ebon Robe",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire Drake's Ebon Suit",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire Drake's Ruby Signet",
+      "category": "Rings"
+    },
+    {
+      "name": "Malistaire's Dragonfire Cloak",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire's Dragonfire Suit",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire's Iceflame Suit",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire's Iceflame Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire's Purgatory Coat",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire's Purgatory Suit",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire's Suit of Torment",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire's Tunic of Torment",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire's Unhallowed Suit",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire's Unhallowed Tunic",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire's Wrathful Suit",
+      "category": "Robes"
+    },
+    {
+      "name": "Malistaire's Wrathful Wrap",
+      "category": "Robes"
+    },
+    {
+      "name": "Mantle of the Icicle",
+      "category": "Hats"
+    },
+    {
+      "name": "Maple Moose",
+      "category": "Pets"
+    },
+    {
+      "name": "Mega-Upset Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Meowiarty Archmage Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Meowiarty Exalted Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Meteor Strike Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Minotaur",
+      "category": "Spellements"
+    },
+    {
+      "name": "Minotaur Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Mocassins of the Oracle",
+      "category": "Boots"
+    },
+    {
+      "name": "Mythological Mantle",
+      "category": "Hats"
+    },
+    {
+      "name": "Nature's Wrath",
+      "category": "Spellements"
+    },
+    {
+      "name": "Nickel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Nutcracker",
+      "category": "Pets"
+    },
+    {
+      "name": "Pest Zapper",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Phoenix",
+      "category": "Spellements"
+    },
+    {
+      "name": "Phoenix Ruby",
+      "category": "Jewels"
+    },
+    {
+      "name": "Pink Dandelion",
+      "category": "Seeds"
+    },
+    {
+      "name": "Plain Blocking Opal +3",
+      "category": "Jewels"
+    },
+    {
+      "name": "Power Play Citrine",
+      "category": "Jewels"
+    },
+    {
+      "name": "Professor Drake",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Promethean Hood",
+      "category": "Hats"
+    },
+    {
+      "name": "Quick Learner Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Raiment of the Judge",
+      "category": "Robes"
+    },
+    {
+      "name": "Rainbow's Reward",
+      "category": "Wands"
+    },
+    {
+      "name": "Rainstorm Waders",
+      "category": "Boots"
+    },
+    {
+      "name": "Rattlebones Master Duel",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Redwind's Viridian Blade",
+      "category": "Wands"
+    },
+    {
+      "name": "Redwind's Viridian Spellsword",
+      "category": "Wands"
+    },
+    {
+      "name": "Reinforced Helmet",
+      "category": "Hats"
+    },
+    {
+      "name": "Rescue Rover",
+      "category": "Pets"
+    },
+    {
+      "name": "Rime-Edged Ring",
+      "category": "Rings"
+    },
+    {
+      "name": "Ring of Dominance",
+      "category": "Rings"
+    },
+    {
+      "name": "Ring of the Forefathers",
+      "category": "Rings"
     },
     {
       "name": "robe"
     },
     {
-      "name": "and boots"
+      "name": "Robe of Radiance",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of the Deep",
+      "category": "Robes"
+    },
+    {
+      "name": "Robe of the Greatest Saga",
+      "category": "Robes"
+    },
+    {
+      "name": "Ruined Painting",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Salamander-Hide Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Sanctuary Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sandals of Lost Aeons",
+      "category": "Boots"
+    },
+    {
+      "name": "Sandals of Neutrality",
+      "category": "Boots"
+    },
+    {
+      "name": "Sandals of the Generous Earth",
+      "category": "Boots"
+    },
+    {
+      "name": "Sandals of the Squall",
+      "category": "Boots"
+    },
+    {
+      "name": "Scarecrow",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Scepter of the Red Hart",
+      "category": "Wands"
+    },
+    {
+      "name": "Scorched Tree",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Scorpion",
+      "category": "Spellements"
+    },
+    {
+      "name": "Seal of the Gallium Paladin",
+      "category": "Rings"
+    },
+    {
+      "name": "Seal of the Saga",
+      "category": "Rings"
+    },
+    {
+      "name": "Searing Knife",
+      "category": "Athames"
+    },
+    {
+      "name": "Seraph",
+      "category": "Spellements"
+    },
+    {
+      "name": "Seraph Jade",
+      "category": "Jewels"
+    },
+    {
+      "name": "Seraph Wings",
+      "category": "Mounts"
+    },
+    {
+      "name": "Shibboleth Smock",
+      "category": "Robes"
+    },
+    {
+      "name": "Shockblade of the Hoarder",
+      "category": "Wands"
+    },
+    {
+      "name": "Shoes of the Whispering Dark",
+      "category": "Boots"
+    },
+    {
+      "name": "Short Corner Wall Ruins",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Shroud of the Equinox",
+      "category": "Hats"
+    },
+    {
+      "name": "Shroud of the Green",
+      "category": "Hats"
+    },
+    {
+      "name": "Singed Magic Book",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Skeletal Pirate",
+      "category": "Spellements"
+    },
+    {
+      "name": "Skeletal Pirate Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Small Corner Wall Ruins",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Smock of the Frost Giant",
+      "category": "Robes"
+    },
+    {
+      "name": "Snow Serpent",
+      "category": "Spellements"
+    },
+    {
+      "name": "Snowcrusher Shelter Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Snowcrusher Tension Walkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Snowcrusher's Galvanic Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Snowcrusher's Galvanic Shroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Snowcrusher's Hat of Embers",
+      "category": "Hats"
+    },
+    {
+      "name": "Snowcrusher's Mantle of Embers",
+      "category": "Hats"
+    },
+    {
+      "name": "Snowcrusher's Shoes of Shelter",
+      "category": "Boots"
+    },
+    {
+      "name": "Snowcrusher's Snowstompers",
+      "category": "Boots"
+    },
+    {
+      "name": "Snowcrusher's Snowwalkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Snowcrusher's Tread of Tension",
+      "category": "Boots"
+    },
+    {
+      "name": "Snowman Wrapped Gift",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Soulsinger's Soulsword",
+      "category": "Wands"
+    },
+    {
+      "name": "Soulsinger's Spellsword",
+      "category": "Wands"
+    },
+    {
+      "name": "Spectral Blast",
+      "category": "Spellements"
+    },
+    {
+      "name": "Spellsword of the Hoarder",
+      "category": "Wands"
+    },
+    {
+      "name": "Spellsword of the Homunculus",
+      "category": "Wands"
+    },
+    {
+      "name": "Spellsword of the Steward",
+      "category": "Wands"
+    },
+    {
+      "name": "Spider Silk",
+      "category": "Reagents"
+    },
+    {
+      "name": "Spiderkeeper's Charstriders",
+      "category": "Boots"
+    },
+    {
+      "name": "Spiderkeeper's Charwalkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Spiderkeeper's Dark Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Spiderkeeper's Darkshroud",
+      "category": "Hats"
+    },
+    {
+      "name": "Spiderkeeper's Ice Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Spiderkeeper's Icemantle",
+      "category": "Hats"
+    },
+    {
+      "name": "Spiderkeeper's Story Hat",
+      "category": "Hats"
+    },
+    {
+      "name": "Spiderkeeper's Storyveil",
+      "category": "Hats"
+    },
+    {
+      "name": "Spiderkeeper's Thundershoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Spiderkeeper's Thunderwalkers",
+      "category": "Boots"
+    },
+    {
+      "name": "Staff of the Equinox",
+      "category": "Wands"
+    },
+    {
+      "name": "Staff of the Hopper",
+      "category": "Wands"
+    },
+    {
+      "name": "Stone Colossus",
+      "category": "Spellements"
+    },
+    {
+      "name": "Storm Giant's Surcoat",
+      "category": "Robes"
+    },
+    {
+      "name": "Storm Hound",
+      "category": "Pets"
+    },
+    {
+      "name": "Storm Shark",
+      "category": "Spellements"
+    },
+    {
+      "name": "Stormbreaker Sandals",
+      "category": "Boots"
+    },
+    {
+      "name": "Stormzilla",
+      "category": "Spellements"
+    },
+    {
+      "name": "Stormzilla Amethyst",
+      "category": "Jewels"
+    },
+    {
+      "name": "Sunbird",
+      "category": "Spellements"
+    },
+    {
+      "name": "Surcoat of the Charge",
+      "category": "Robes"
+    },
+    {
+      "name": "Sword of the Steward",
+      "category": "Wands"
+    },
+    {
+      "name": "Terminus Wrap",
+      "category": "Robes"
+    },
+    {
+      "name": "Tin",
+      "category": "Reagents"
+    },
+    {
+      "name": "To The Basilica",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Tough",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Triton",
+      "category": "Spellements"
+    },
+    {
+      "name": "Triton's Topper",
+      "category": "Hats"
+    },
+    {
+      "name": "Troll",
+      "category": "Spellements"
+    },
+    {
+      "name": "Tunic of the Sphinx",
+      "category": "Robes"
+    },
+    {
+      "name": "Tunic of Tradition",
+      "category": "Robes"
+    },
+    {
+      "name": "Ultra Boost Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Ultra Mute Opal",
+      "category": "Jewels"
+    },
+    {
+      "name": "Vampire",
+      "category": "Spellements"
+    },
+    {
+      "name": "Veil of Leaves",
+      "category": "Hats"
+    },
+    {
+      "name": "Veil of Passage",
+      "category": "Hats"
+    },
+    {
+      "name": "Verdant Vestment",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of the Chill",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of the Inferno",
+      "category": "Robes"
+    },
+    {
+      "name": "Vestment of the Spring",
+      "category": "Robes"
+    },
+    {
+      "name": "Vineyard Shoes",
+      "category": "Boots"
+    },
+    {
+      "name": "Warded Footwear",
+      "category": "Boots"
+    },
+    {
+      "name": "Whirlwind Wrap",
+      "category": "Robes"
+    },
+    {
+      "name": "White Laugh-O-Dil",
+      "category": "Seeds"
+    },
+    {
+      "name": "Wolverine's Helm",
+      "category": "Hats"
+    },
+    {
+      "name": "Wraith",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Wraith Onyx",
+      "category": "Jewels"
+    },
+    {
+      "name": "Wrap of the Monsoon",
+      "category": "Robes"
+    },
+    {
+      "name": "Yuletide Spirit",
+      "category": "Pets"
+    },
+    {
+      "name": "Zeus Exalted Duel",
+      "category": "Housing Items"
     }
   ],
   "authors": "BartleBot",
@@ -34,76 +1854,53 @@
     {
       "name": "Defeat Gurtok Piercer",
       "type": "bool",
-      "default": true,
+      "default": false,
       "description": "Whether or not to defeat the Gurtok Piercer, which drops level 50 athames"
+    },
+    {
+      "name": "Reset after Gurtoks",
+      "type": "bool",
+      "default": false,
+      "description": "Whether or not to reset after defeating one or both Gurtok demons. If set to True, does NOT defeat Malistaire Drake at the end of the dungeon."
     }
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Go to the Basilica",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": -1320.0,
-        "y": -630.0
+        "x": 0.0,
+        "y": 0.0
       },
       "params": {
-        "zone": "DragonSpire/DS_Hub_Cathedral"
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     {
-      "id": "state_2",
-      "node_type": "enter_zone_via_object",
-      "label": "Take portal to Dragonspyre Academy",
-      "position": {
-        "x": -880.0,
-        "y": -630.0
-      },
-      "params": {
-        "from_zone": "DragonSpire/DS_Hub_Cathedral",
-        "to_zone": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
-        "interact_xyz": {
-          "x": 1296.47,
-          "y": -1254.53,
-          "z": -0.09
-        },
-        "reset_xyz": {
-          "x": 852.88,
-          "y": -808.36,
-          "z": -0.04
-        }
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "enter_zone_via_object",
-      "label": "Start dragon ride",
-      "position": {
-        "x": -440.0,
-        "y": -630.0
-      },
-      "params": {
-        "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Hub_Academy",
-        "to_zone": "DragonSpire/DS_A3_Kings/DS_A3_FlightPath",
-        "interact_xyz": {
-          "x": -5415.53,
-          "y": 10081.53,
-          "z": 1998.8
-        },
-        "reset_xyz": {
-          "x": -4490.77,
-          "y": 10068.47,
-          "z": 1998.84
-        }
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "mark_location",
-      "label": "Mark location outside dungeon entrance",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
         "x": 440.0,
-        "y": -630.0
+        "y": 90.0
+      },
+      "params": {
+        "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone"
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
@@ -115,30 +1912,42 @@
       }
     },
     {
-      "id": "state_6",
+      "id": "t_1",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 880.0,
-        "y": -630.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
         "if_mana_below": 0.15,
-        "mark_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone"
+        "mark_zone": ""
       }
     },
     {
-      "id": "state_7",
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter the Great Spyre dungeon",
       "position": {
-        "x": 1320.0,
-        "y": -630.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
         "dungeon_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
+        "offers_challenge_mode": false,
+        "offers_team_up": false,
         "dungeon_name": "Great Spyre",
         "sigil_xyz": {
           "x": -216.38,
@@ -153,93 +1962,93 @@
       }
     },
     {
-      "id": "state_8",
-      "node_type": "apply_level_scaling",
-      "label": "Apply level scaling",
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
       "position": {
-        "x": 2200.0,
-        "y": -630.0
+        "x": 11440,
+        "y": 0.0
       },
       "params": {
-        "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
-        "interact_xyz": {
-          "x": 46.82,
-          "y": 408.69,
-          "z": -274.89
-        },
-        "reset_xyz": {
-          "x": 46.82,
-          "y": -349.83,
-          "z": -274.89
-        }
+        "zone": "",
+        "xyz": null
       }
     },
     {
-      "id": "state_10",
-      "node_type": "interact",
-      "label": "Skip dragon ride",
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
       "position": {
-        "x": 0.0,
-        "y": -630.0
+        "x": 1760,
+        "y": 0.0
       },
       "params": {
-        "zone": "DragonSpire/DS_A3_Kings/DS_A3_FlightPath",
-        "interact_xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 16.0
-        },
-        "reset_xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 16.0
-        }
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_38",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 2640,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
       }
     },
     {
       "id": "state_11",
       "node_type": "enter_zone",
-      "label": "Go to Path of Scales",
+      "label": "Enter The Path of Scales from The Great Spyre",
       "position": {
-        "x": 2640.0,
-        "y": -810.0
+        "x": 3080.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1_2",
         "to_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano_Cave3",
         "xyz": {
-          "x": 3819.64,
-          "y": 11459.53,
-          "z": -403.52
+          "x": 3810.83,
+          "y": 11476.59,
+          "z": -403.51
         },
         "reset_xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        }
+          "x": 3818.69,
+          "y": 10945.25,
+          "z": -403.51
+        },
+        "stagger": false
       }
     },
     {
       "id": "state_12",
       "node_type": "enter_zone",
-      "label": "Go to the Great Spyre",
+      "label": "Enter The Great Spyre from The Path of Scales",
       "position": {
-        "x": 3080.0,
-        "y": -720.0
+        "x": 3520.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano_Cave3",
         "to_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1",
         "xyz": {
-          "x": -782.46,
-          "y": -10509.64,
-          "z": -2404.18
+          "x": -854.69,
+          "y": -10525.25,
+          "z": -2404.25
         },
         "reset_xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        }
+          "x": -1451.68,
+          "y": -10521.79,
+          "z": -2404.81
+        },
+        "stagger": false
       }
     },
     {
@@ -247,8 +2056,8 @@
       "node_type": "enter_zone_via_object",
       "label": "Activate elevator",
       "position": {
-        "x": 3520.0,
-        "y": -720.0
+        "x": 3960.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano1",
@@ -270,8 +2079,8 @@
       "node_type": "sleep",
       "label": "Wait for elevator",
       "position": {
-        "x": 3960.0,
-        "y": -630.0
+        "x": 4400.0,
+        "y": 0.0
       },
       "params": {
         "duration": 25.0
@@ -282,8 +2091,8 @@
       "node_type": "enter_zone",
       "label": "Exit elevator",
       "position": {
-        "x": 4400.0,
-        "y": -630.0
+        "x": 4840.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano_Elevator_Up",
@@ -294,77 +2103,26 @@
           "z": -14.57
         },
         "reset_xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        }
+          "x": -6.89,
+          "y": 12.42,
+          "z": -14.57
+        },
+        "stagger": false
       }
-    },
-    {
-      "id": "state_16",
-      "node_type": "check_level_scaling",
-      "label": "Check level scaling",
-      "position": {
-        "x": 1760.0,
-        "y": -720.0
-      },
-      "params": {}
     },
     {
       "id": "state_17",
       "node_type": "handle_combat",
       "label": "Defeat Gurtok Firebender",
       "position": {
-        "x": 4840.0,
-        "y": -630.0
+        "x": 5280,
+        "y": 0.0
       },
       "params": {
         "enemy": "Helephant-Fire-Boss-R9",
-        "use_bot_default": true,
-        "combat_config": ""
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "teleport_to_coordinates",
-      "label": "Enter Gurtok Piercer render radius",
-      "position": {
-        "x": 5280.0,
-        "y": -630.0
-      },
-      "params": {
-        "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
-        "xyz": {
-          "x": -717.58,
-          "y": 5591.99,
-          "z": 4734.39
-        }
-      }
-    },
-    {
-      "id": "state_9",
-      "node_type": "sleep",
-      "label": "Wait for invulnerability to end",
-      "position": {
-        "x": 5720.0,
-        "y": -630.0
-      },
-      "params": {
-        "duration": 4.0
-      }
-    },
-    {
-      "id": "state_18",
-      "node_type": "handle_combat",
-      "label": "Defeat Gurtok Piercer",
-      "position": {
-        "x": 6160.0,
-        "y": -630.0
-      },
-      "params": {
-        "enemy": "Helephant-Death-Boss-R9",
-        "use_bot_default": true,
-        "combat_config": ""
+        "wiki_page": "Creature:Gurtok Firebender",
+        "use_default_strategy": false,
+        "max_duration": 600.0
       }
     },
     {
@@ -372,8 +2130,8 @@
       "node_type": "interact",
       "label": "Activate crystal stand",
       "position": {
-        "x": 6600.0,
-        "y": -630.0
+        "x": 7040,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
@@ -390,7 +2148,7 @@
         "interact_clients": [
           1
         ],
-        "has_dialogue": true,
+        "has_dialogue": false,
         "animation_delay": 0.0,
         "sequential": false,
         "object_use_delay": 1.0
@@ -401,8 +2159,8 @@
       "node_type": "collect_wisps",
       "label": "Collect health and mana wisps",
       "position": {
-        "x": 7040.0,
-        "y": -630.0
+        "x": 7480,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -417,22 +2175,23 @@
       "node_type": "enter_zone",
       "label": "Go to the Crown of Fire",
       "position": {
-        "x": 7480.0,
-        "y": -630.0
+        "x": 7920,
+        "y": 0.0
       },
       "params": {
         "from_zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
         "to_zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
         "xyz": {
-          "x": -1425.48,
-          "y": 11610.05,
+          "x": -1400.77,
+          "y": 11676.9,
           "z": 4734.21
         },
         "reset_xyz": {
-          "x": 0.0,
-          "y": 0.0,
-          "z": 0.0
-        }
+          "x": -1397.61,
+          "y": 10927.67,
+          "z": 4734.23
+        },
+        "stagger": false
       }
     },
     {
@@ -440,8 +2199,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Enter render radius for mobs",
       "position": {
-        "x": 7920.0,
-        "y": -630.0
+        "x": 8360,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
@@ -457,8 +2216,8 @@
       "node_type": "sleep",
       "label": "Wait for mobs to render",
       "position": {
-        "x": 8360.0,
-        "y": -630.0
+        "x": 8800,
+        "y": 0.0
       },
       "params": {
         "duration": 3.0
@@ -467,27 +2226,29 @@
     {
       "id": "state_30",
       "node_type": "handle_combat",
-      "label": "Defeat mobs",
+      "label": "Defeat Soul Servants",
       "position": {
-        "x": 8800.0,
-        "y": -630.0
+        "x": 9240,
+        "y": 0.0
       },
       "params": {
         "enemy": "Undead-Caster-Blue-R8-1",
-        "use_bot_default": false,
-        "combat_config": "### p1\ntempest[epic]\n\n### p2\npass"
+        "wiki_page": "",
+        "use_default_strategy": false,
+        "max_duration": 600.0
       }
     },
     {
-      "id": "state_31",
-      "node_type": "sleep",
-      "label": "Wait for Malistaire to start dialogue",
+      "id": "state_37",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for dialogue",
       "position": {
-        "x": 9240.0,
-        "y": -630.0
+        "x": 9680,
+        "y": 0.0
       },
       "params": {
-        "duration": 8.0
+        "timeout": 60.0,
+        "animation_delay": 8.0
       }
     },
     {
@@ -495,8 +2256,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Activate Malistaire dialogue",
       "position": {
-        "x": 9680.0,
-        "y": -630.0
+        "x": 10120,
+        "y": 0.0
       },
       "params": {
         "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
@@ -508,71 +2269,83 @@
       }
     },
     {
-      "id": "state_33",
-      "node_type": "sleep",
-      "label": "Wait for Malistaire dialogue to end",
+      "id": "state_36",
+      "node_type": "wait_for_dialogue",
+      "label": "Wait for cutscene",
       "position": {
-        "x": 10120.0,
-        "y": -630.0
+        "x": 10560,
+        "y": 0.0
       },
       "params": {
-        "duration": 20.0
-      }
-    },
-    {
-      "id": "state_34",
-      "node_type": "teleport_to_coordinates",
-      "label": "Reset Malistaire dialogue",
-      "position": {
-        "x": 11000.0,
-        "y": -450.0
-      },
-      "params": {
-        "zone": "DragonSpire/DS_A3_Kings/Interiors/DS_MalistaireLair",
-        "xyz": {
-          "x": -10.05,
-          "y": 9028.63,
-          "z": 410.4
-        }
+        "timeout": 60.0,
+        "animation_delay": 8.0
       }
     },
     {
       "id": "state_35",
       "node_type": "handle_combat",
-      "label": "Defeat Malistaire",
+      "label": "Defeat Malistaire Drake",
       "position": {
-        "x": 10560.0,
-        "y": -540.0
+        "x": 11000,
+        "y": 0.0
       },
       "params": {
         "enemy": "Malistaire-Boss-R10",
-        "use_bot_default": true,
-        "combat_config": ""
+        "wiki_page": "Creature:Malistaire Drake",
+        "use_default_strategy": false,
+        "max_duration": 600.0
       }
     },
     {
-      "id": "state_36",
-      "node_type": "teleport_to_marked_location",
-      "label": "Recall to mark",
+      "id": "state_5",
+      "node_type": "teleport_to_coordinates",
+      "label": "Enter Gurtok Piercer render radius",
       "position": {
-        "x": 10560.0,
-        "y": -270.0
+        "x": 5720,
+        "y": 0.0
       },
       "params": {
-        "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone",
+        "zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_Volcano2",
         "xyz": {
-          "x": 0.0,
-          "y": 5384.0,
-          "z": 0.0
+          "x": -717.58,
+          "y": 5591.99,
+          "z": 4734.39
         }
+      }
+    },
+    {
+      "id": "state_9",
+      "node_type": "sleep",
+      "label": "Wait for invulnerability to end",
+      "position": {
+        "x": 6160,
+        "y": 0.0
+      },
+      "params": {
+        "duration": 4.0
+      }
+    },
+    {
+      "id": "state_18",
+      "node_type": "handle_combat",
+      "label": "Defeat Gurtok Piercer",
+      "position": {
+        "x": 6600,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "Helephant-Death-Boss-R9",
+        "wiki_page": "Creature:Gurtok Piercer",
+        "use_default_strategy": false,
+        "max_duration": 600.0
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -581,8 +2354,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
+      "source": "t_7",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -591,8 +2364,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_10",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -601,8 +2374,48 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_11",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -651,77 +2464,94 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_16",
+      "source": "state_15",
+      "dest": "state_17",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_11",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_8",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Gurtok Firebender",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
       "source": "state_15",
-      "dest": "state_17",
+      "dest": "state_19",
       "when": "SUCCESS",
-      "flags": [
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
         {
-          "option": "Defeat Gurtok Firebender",
-          "negate": false
+          "flags": [
+            {
+              "option": "Defeat Gurtok Firebender",
+              "negate": true
+            },
+            {
+              "option": "Defeat Gurtok Piercer",
+              "negate": true
+            }
+          ],
+          "op": "AND"
         }
       ],
-      "flag_op": "AND",
-      "flag_groups": [],
       "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_4",
+      "source": "state_15",
+      "dest": "state_18",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Gurtok Firebender",
+              "negate": true
+            },
+            {
+              "option": "Defeat Gurtok Piercer",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_6",
+      "source": "state_17",
+      "dest": "state_19",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Defeat Gurtok Firebender",
+              "negate": false
+            },
+            {
+              "option": "Defeat Gurtok Piercer",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
@@ -731,62 +2561,21 @@
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [
+      "flag_groups": [
         {
-          "option": "Defeat Gurtok Firebender",
-          "negate": false
+          "flags": [
+            {
+              "option": "Defeat Gurtok Firebender",
+              "negate": false
+            },
+            {
+              "option": "Defeat Gurtok Piercer",
+              "negate": false
+            }
+          ],
+          "op": "AND"
         }
       ],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_18",
-      "when": "SUCCESS",
-      "flags": [
-        {
-          "option": "Defeat Gurtok Piercer",
-          "negate": false
-        }
-      ],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_18",
-      "when": "SUCCESS",
-      "flags": [
-        {
-          "option": "Defeat Gurtok Piercer",
-          "negate": false
-        }
-      ],
-      "flag_op": "AND",
-      "flag_groups": [],
       "flag_groups_op": "OR"
     },
     {
@@ -801,8 +2590,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_19",
+      "source": "state_19",
+      "dest": "state_20",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -811,8 +2600,48 @@
     },
     {
       "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_20",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Reset after Gurtoks",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_20",
+      "dest": "state_21",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Reset after Gurtoks",
+              "negate": true
+            }
+          ],
+          "op": "AND"
+        }
+      ],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_21",
+      "dest": "state_28",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -842,17 +2671,7 @@
     {
       "trigger": "advance",
       "source": "state_30",
-      "dest": "state_31",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_31",
-      "dest": "state_32",
+      "dest": "state_37",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -862,7 +2681,7 @@
     {
       "trigger": "advance",
       "source": "state_32",
-      "dest": "state_33",
+      "dest": "state_36",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -871,27 +2690,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_32",
-      "dest": "state_34",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_34",
-      "dest": "state_32",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_33",
+      "source": "state_36",
       "dest": "state_35",
       "when": "SUCCESS",
       "flags": [],
@@ -901,8 +2700,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_35",
-      "dest": "state_36",
+      "source": "state_37",
+      "dest": "state_32",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -911,109 +2710,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_35",
-      "dest": "state_34",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_36",
-      "dest": "state_6",
+      "source": "state_38",
+      "dest": "state_11",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_28",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_19",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_20",
-      "dest": "state_21",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_8",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_36",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_36",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_36",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_36",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_17",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1022,8 +2721,8 @@
     {
       "trigger": "advance",
       "source": "state_5",
-      "dest": "state_36",
-      "when": "FAILURE",
+      "dest": "state_9",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1031,9 +2730,19 @@
     },
     {
       "trigger": "advance",
-      "source": "state_18",
+      "source": "state_9",
       "dest": "state_18",
-      "when": "FAILURE",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_38",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1042,58 +2751,48 @@
     {
       "trigger": "advance",
       "source": "state_20",
-      "dest": "state_21",
-      "when": "FAILURE",
+      "dest": "t_7",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Reset after Gurtoks",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
-      "source": "state_30",
-      "dest": "state_28",
+      "source": "state_20",
+      "dest": "t_7",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
-      "flag_groups": [],
+      "flag_groups": [
+        {
+          "flags": [
+            {
+              "option": "Reset after Gurtoks",
+              "negate": false
+            }
+          ],
+          "op": "AND"
+        }
+      ],
       "flag_groups_op": "OR"
     },
     {
       "trigger": "advance",
-      "source": "state_21",
-      "dest": "state_36",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_28",
-      "dest": "state_36",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_36",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
+      "source": "state_35",
+      "dest": "t_7",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1102,15 +2801,40 @@
   ],
   "regions": [
     {
-      "id": "e8cce5eb",
-      "label": "Go to Dungeon from the Basilica",
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
       "members": [
-        "state_3",
-        "state_1",
-        "state_10",
-        "state_2"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 4
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "DragonSpire/DS_A3_Kings/DS_A3Z3_Volcano/DS_LandingZone"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
     },
     {
       "id": "80e8f4fe",
@@ -1122,47 +2846,12 @@
         "state_14",
         "state_15"
       ],
-      "color": 6
-    },
-    {
-      "id": "c4202236",
-      "label": "Defeat Gurtoks",
-      "members": [
-        "state_9",
-        "state_17",
-        "state_18",
-        "state_5"
-      ],
-      "color": 5
-    },
-    {
-      "id": "6bc28164",
-      "label": "Enable Malistaire fight",
-      "members": [
-        "state_19",
-        "state_33",
-        "state_20",
-        "state_30",
-        "state_21",
-        "state_29",
-        "state_34",
-        "state_31",
-        "state_32",
-        "state_28"
-      ],
-      "color": 3
-    },
-    {
-      "id": "734309f2",
-      "label": "Dungeon logistics",
-      "members": [
-        "state_4",
-        "state_7",
-        "state_8",
-        "state_16",
-        "state_6"
-      ],
-      "color": 1
+      "color": 6,
+      "collapsed": true
     }
-  ]
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  }
 }
