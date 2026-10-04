@@ -1,6 +1,7 @@
 """Unit tests for the collect_wisps node."""
 
 from itertools import count
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -337,3 +338,20 @@ async def test_zero_timeout_does_not_limit_collection():
     await cw.run(FakeMachine(), [client], {**_DEFAULT_PARAMS, "timeout": 0.0})
 
     client.teleport.assert_called_once()
+
+
+async def test_challenge_mode_reads_the_fail_threshold_against_the_scaled_max():
+    """Back from a level 40 Challenge Mode dungeon at 60% of the scaled max: above the 50% fail threshold."""
+    client = _client(health=0.6 * 2690 / 13413)
+    bot = SimpleNamespace(
+        states=[
+            SimpleNamespace(
+                node_type="enter_dungeon",
+                params={"dungeon_zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB", "offers_challenge_mode": True},
+            )
+        ]
+    )
+
+    result = await cw.run(FakeMachine(bot_config=bot, options={"Challenge Mode": True}), [client], _DEFAULT_PARAMS)
+
+    assert result == "SUCCESS"

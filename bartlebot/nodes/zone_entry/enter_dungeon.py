@@ -21,10 +21,14 @@ from bartlebot.option_groups import GROUP_DUNGEON, GROUP_GENERAL, GROUP_TEAM
 
 #: Option names, so the safety dialog and the tests name them from one place.
 OPTION_TEAM_UP = "Team-Up"
+OPTION_CHALLENGE_MODE = "Challenge Mode"
 OPTION_MINIMUM_TEAM_SIZE = "Minimum Team Size"
 
 #: The param that says this sigil offers Team-Up at all.
 PARAM_OFFERS_TEAM_UP = "offers_team_up"
+
+#: The param that says this sigil offers Challenge Mode at all.
+PARAM_OFFERS_CHALLENGE_MODE = "offers_challenge_mode"
 
 #: The param holding the entrance prompt's title. Editor-only: see bartlebot/bot_summary.py.
 PARAM_DUNGEON_NAME = "dungeon_name"
@@ -79,7 +83,7 @@ PARAM_SCHEMA: list[ParamField] = [
         required=True,
     ),
     ParamField(
-        key="offers_challenge_mode",
+        key=PARAM_OFFERS_CHALLENGE_MODE,
         type="bool",
         label="Offers Challenge Mode",
         help=(
@@ -141,7 +145,7 @@ NODE_SPEC = NodeSpec(
             ),
         ),
         BotOptionSpec(
-            name="Challenge Mode",
+            name=OPTION_CHALLENGE_MODE,
             group=GROUP_DUNGEON,
             type="bool",
             default=False,
@@ -151,7 +155,7 @@ NODE_SPEC = NodeSpec(
             ),
             # Only the author knows whether their dungeon has a Challenge Mode at all, and
             # most do not. Without this the option appeared in every bot with a sigil in it.
-            required_when="offers_challenge_mode",
+            required_when=PARAM_OFFERS_CHALLENGE_MODE,
         ),
         BotOptionSpec(
             name=OPTION_TEAM_UP,
@@ -194,7 +198,7 @@ NODE_SPEC = NodeSpec(
         "If In Zone offers as a standalone node — before reporting FAILURE. That needs "
         "every player to already be mutual in-game friends."
     ),
-    implies_tags_when={"Team-Up": PARAM_OFFERS_TEAM_UP, "Challenge Mode": "offers_challenge_mode"},
+    implies_tags_when={"Team-Up": PARAM_OFFERS_TEAM_UP, "Challenge Mode": PARAM_OFFERS_CHALLENGE_MODE},
 )
 
 from bartlebot.nodes.timing import (  # noqa: E402
@@ -402,8 +406,8 @@ async def run(machine, clients: list, params: dict) -> str:
     safety_delay: float = machine.get_option("Safety Delay", 3.0)
     # The param is the gate and the option is the choice: a user's leftover override
     # cannot ask for a way in that the author has said this dungeon does not offer.
-    challenge_mode: bool = bool(params.get("offers_challenge_mode")) and bool(
-        machine.get_option("Challenge Mode", False)
+    challenge_mode: bool = bool(params.get(PARAM_OFFERS_CHALLENGE_MODE)) and bool(
+        machine.get_option(OPTION_CHALLENGE_MODE, False)
     )
     team_up: bool = bool(params.get(PARAM_OFFERS_TEAM_UP)) and bool(machine.get_option(OPTION_TEAM_UP, False))
     team_size = int(machine.get_option(OPTION_MINIMUM_TEAM_SIZE, 2) or 2)

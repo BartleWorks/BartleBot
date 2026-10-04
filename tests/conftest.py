@@ -124,6 +124,9 @@ class FakeClient:
         self.stats = MagicMock()
         self.stats.potion_max = AsyncMock(return_value=10)
         self.stats.potion_charge = AsyncMock(return_value=10)
+        # A level 180 Fire wizard, which is what Challenge Mode's stat caps read (scaled_ratios).
+        self.stats.reference_level = AsyncMock(return_value=180)
+        self.stats.school_id = AsyncMock(return_value=2343174)
         self.get_health_wisps = AsyncMock(return_value=[])
         self.get_mana_wisps = AsyncMock(return_value=[])
         self.get_mobs = AsyncMock(return_value=[])

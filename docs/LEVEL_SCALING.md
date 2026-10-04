@@ -85,6 +85,43 @@ ordinary zone. `tools/scales_table.py` writes the Scales' own zone even when the
 A bot needs no pattern for this any more: `node_helpers.zone_matches` treats a zone and its
 Challenge Mode copy as one (#143), so a recorded ordinary zone matches a client in either.
 
+### Challenge Mode and potions: the stat caps
+
+Challenge Mode scales by the **stat caps**, the game's own table in `Root.wad`'s
+`LevelScaledData.xml` (`tools/dump_stat_caps.py` writes it to `data/stat_caps.json`). A
+stat is scaled by the cap at the dungeon's level over the cap at the player's own, and a
+player is held to the caps of the lowest ten-level step it has not passed: 90 to the level
+90 caps, 91 to 100 to the level 100 caps. Caps apply only in advanced combat, which here
+means only Challenge Mode, and potions cannot be used inside it.
+
+A player leaves with the health and mana it had inside, under its full caps again, so
+leaving a level 40 dungeon at full health reads about 20% outside. Entering clamps current
+health to the scaled max rather than scaling it, so the share that matters before the
+next entry is the share of the *scaled* max. With the Challenge Mode option on,
+`handle_potions` and `collect_wisps` read their ratios that way
+(`nodes/combat/scaled_ratios.py`), and the same thresholds serve both modes. Before this a
+Challenge Mode bot branched to a second `handle_potions` with lower thresholds, guessed by
+hand.
+
+The level is the bot's own: the `dungeon_zone` of an `enter_dungeon` offering Challenge
+Mode, looked up by `stat_caps.dungeon_level`:
+
+1. the Scales whose own zone is that dungeon. A secret boss's Scales one gateway further in
+   (Pit of the Noxii inside Mount Olympus) do not count: in Challenge Mode they are gone and
+   the boss is fought at the larger dungeon's level;
+2. Wallaru (170) and Darkmoor (180), which have Challenge Mode and no Scales, from
+   `stat_caps.WORLD_LEVELS_WITHOUT_SCALES`;
+3. the world's default Scales, or the one level every Scales in the world shares (Azteca).
+
+A player inside a Challenge Mode zone is read plainly, since the game has scaled its max
+already. With no level found the ratios are plain too, which errs toward a potion. Boss
+rematches have Challenge Mode but enter through a housing item, so nothing gives their
+level; they will need it entered by hand once they are built.
+
+`stats.school_id()` and `stats.reference_level()` give the school and level. The school id
+is not yet checked in game against wizwalker's `school_to_str`; a school the table cannot
+name takes the mean over the seven, which is within a few hundredths of any one.
+
 ### A rerun after a cancel
 
 The ambient combat watcher can cancel the node mid-trip and run it again from the start
@@ -153,8 +190,9 @@ files store, so `set` cannot change one.
 that was edited by hand and reflowed.
 
 The first thirteen entries were copied from the shipped bots' recorded params and have not
-been re-checked in game as a set. The `level` values other than the three level 90 Aquila
-ones are world level caps, not read from the game.
+been re-checked in game as a set. Every entry's `level` was checked in game on 2026-10-04,
+and every Scales in Aquila is recorded. Challenge Mode reads the levels too (see
+*Challenge Mode and potions*).
 
 ## The default
 

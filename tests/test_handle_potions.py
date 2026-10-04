@@ -1,5 +1,6 @@
 """Unit tests for the handle_potions node."""
 
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 from wizwalker import XYZ, Keycode
@@ -713,3 +714,37 @@ def test_refill_potions_resolves_to_the_app_setting_when_nothing_outranks_it():
 
     assert bot_options.resolve_option(hp.OPTION_REFILL, declaration=None, app_value=False).value is False
     assert bot_options.resolve_option(hp.OPTION_REFILL, override=True, app_value=False).value is True
+
+
+# ── Challenge Mode ────────────────────────────────────────────────────────────
+
+_THRONE_ROOM_BOT = SimpleNamespace(
+    states=[
+        SimpleNamespace(
+            node_type="enter_dungeon",
+            params={"dungeon_zone": "Marleybone/G14_Gauntlet/MB_G14_ThroneRoomB", "offers_challenge_mode": True},
+        )
+    ]
+)
+
+
+async def test_challenge_mode_reads_health_against_the_scaled_max():
+    """Back from a level 40 Challenge Mode dungeon at 60% of the scaled max: no potion, though it reads 12%."""
+    client = _well_stocked_client()
+    client.calc_health_ratio.return_value = 0.6 * 2690 / 13413
+
+    machine = FakeMachine(bot_config=_THRONE_ROOM_BOT, options={hp.OPTION_REFILL: True, "Challenge Mode": True})
+    result = await hp.run(machine, [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    client.use_potion.assert_not_called()
+
+
+async def test_the_same_health_without_challenge_mode_uses_a_potion():
+    client = _well_stocked_client()
+    client.calc_health_ratio.return_value = 0.6 * 2690 / 13413
+
+    machine = FakeMachine(bot_config=_THRONE_ROOM_BOT, options={hp.OPTION_REFILL: True, "Challenge Mode": False})
+    await hp.run(machine, [client], _PARAMS)
+
+    client.use_potion.assert_called_once()
