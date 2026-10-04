@@ -829,7 +829,9 @@ def _graft(
             if not _guarded(tr) and tr.when not in FALLTHROUGH_RETURNS:
                 replaced.add((anchor, tr.when))
         rejoin = _downstream(config, anchor)
-        _carry_exits(piece, old, old_by_id, mapping, new_edges, problems, rejoin=rejoin)
+        _carry_exits(
+            piece, old, old_by_id, mapping, new_edges, problems, rejoin=rejoin, inner=_inner_loop(config, rejoin, sync)
+        )
         if rejoin and not any(t.source in piece and t.dest not in piece for t in old.config.transitions):
             # A chain that just stops -- a bot stripped to the nodes it adds -- goes on to the
             # template's next node from where it ends, as content in a slot does.
@@ -949,6 +951,27 @@ def _downstream(config: BotConfig, anchor: str) -> list[str]:
     return chain
 
 
+def _inner_loop(config: BotConfig, rejoin: list[str], sync: str | None) -> frozenset[str]:
+    """The template nodes inside the dungeon on the next pass, for content already inside it.
+
+    ``rejoin`` runs on past where the loop starts over, through the next pass's entry. A piece
+    whose chain reaches the loop's start before an entry is inside the dungeon, and a way out
+    to a node past that entry is its own loop that never leaves -- jade_oni fights again from
+    its level scaling -- not a skip down the chain. A way back to the entry or before it still
+    goes out first.
+    """
+    restart = _template_successor(config, sync) if sync is not None else None
+    if restart not in rejoin or rejoin.index(restart) == 0:
+        return frozenset()  # off Sync players or the way out: outside the dungeon
+    types = {s.id: s.node_type for s in config.states}
+    entries = ("enter_dungeon", "enter_gauntlet")
+    if any(types.get(sid) in entries for sid in rejoin[: rejoin.index(restart)]):
+        return frozenset()  # this pass's entry is still ahead
+    after = rejoin[rejoin.index(restart) :]
+    entry = next((i for i, sid in enumerate(after) if types.get(sid) in entries), None)
+    return frozenset() if entry is None else frozenset(after[entry + 1 :])
+
+
 def _unique(edges: list[TransitionModel]) -> list[TransitionModel]:
     seen, out = set(), []
     for tr in edges:
@@ -967,12 +990,14 @@ def _carry_exits(
     new_edges: list[TransitionModel],
     problems: list[str],
     rejoin: list[str] | None,
+    inner: frozenset[str] = frozenset(),
 ) -> None:
     """The piece's edges back out: to the template node that replaces where they went.
 
     ``rejoin`` is the template's own chain after the node the piece hangs off. A way out that
     lands further down that chain comes back in at its start instead, so the piece never skips
     a template node -- the wisps after a fight still run when a chest is opened before the exit.
+    A way out to one of ``inner`` is the exception: see ``_inner_loop``.
     """
     for tr in old.config.transitions:
         if tr.source not in piece or tr.dest in piece:
@@ -981,7 +1006,7 @@ def _carry_exits(
             continue  # a bail-out to the old exit or hub: unrouted, it relogs, as every failure now does
         if tr.dest in mapping:
             dest = mapping[tr.dest]
-            if rejoin and tr.when not in FALLTHROUGH_RETURNS and dest in rejoin[1:]:
+            if rejoin and tr.when not in FALLTHROUGH_RETURNS and dest in rejoin[1:] and dest not in inner:
                 dest = rejoin[0]
             new_edges.append(tr.model_copy(update={"dest": dest}, deep=True))
         elif tr.dest in old.folded and tr.when in FALLTHROUGH_RETURNS:

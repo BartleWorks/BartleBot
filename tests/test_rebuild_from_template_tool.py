@@ -323,6 +323,48 @@ def test_a_bot_farming_elsewhere_keeps_the_templates_order(library):
     assert not any("moved after" in note for note in report.notes)
 
 
+def _refight(back_to: str) -> BotConfig:
+    """jade_oni's shape: wisps that find mana step back and fight again from ``back_to``; ones that find none leave."""
+    storms = "Krokotopia/KT_Tomb/KT_TempleOfStorms"
+    entrance = "Krokotopia/KT_Tomb/KT_WellOfSpirits"
+    return _bot(
+        [
+            _s("state_1", "enter_dungeon", from_zone=entrance, dungeon_zone=storms, sigil_xyz=_A, reset_xyz=_B),
+            _s("state_2", "handle_level_scaling", scales="temple_of_storms"),
+            _s("state_3", "handle_combat", enemy="Test-Boss-01"),
+            _s("state_4", "collect_wisps"),
+            _s("state_5", "teleport_to_coordinates", "Step out of the fight", zone=storms, xyz=_A),
+            _s("state_6", "enter_zone", from_zone=storms, to_zone=entrance, xyz=_A, reset_xyz=_B),
+        ],
+        [
+            _t("state_1", "state_2"),
+            _t("state_2", "state_3"),
+            _t("state_3", "state_4"),
+            _t("state_4", "state_5"),
+            _t("state_4", "state_6", "FAILURE"),
+            _t("state_5", back_to),
+            _t("state_6", "state_1"),
+        ],
+    )
+
+
+def test_content_that_fights_again_inside_keeps_its_loop(library):
+    """Back to the level scaling past the entry: the bot's own inner loop, not a skip down the chain."""
+    config, report = _rebuild(_refight("state_2"), "Spellement Farmer", library)
+    wisps = next(t.source for t in config.transitions if t.dest == "state_5")
+    exit_ = next(s.id for s in _by_type(config, "enter_zone"))
+
+    assert _next(config, "state_5") == _by_type(config, "handle_level_scaling")[0].id
+    assert {t.dest for t in config.transitions if t.source == wisps and t.when == "FAILURE"} == {exit_}
+    assert report.clean
+
+
+def test_content_that_goes_back_to_the_entry_still_leaves_first(library):
+    config, _report = _rebuild(_refight("state_1"), "Spellement Farmer", library)
+
+    assert _next(config, "state_5") == next(s.id for s in _by_type(config, "enter_zone"))
+
+
 # ---------------------------------------------------------------------------
 # Reagents
 # ---------------------------------------------------------------------------

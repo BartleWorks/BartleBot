@@ -6,8 +6,8 @@ Stage 9 of the subgraph-calls plan (linked from `docs/SUBGRAPH_CALLS.md`), issue
 
 ## Not yet migrated
 
-7 of 84 bots, as of 2026-10-04. Each is checked off when `tools/rebuild_from_template.py
-status` shows it on a template. Grouped by what unblocks it; *Why 7 are not rebuilt* has the
+6 of 84 bots, as of 2026-10-04. Each is checked off when `tools/rebuild_from_template.py
+status` shows it on a template. Grouped by what unblocks it; *Why 6 are not rebuilt* has the
 reasons in full.
 
 **No exit, in a single-boss farm**: done 2026-10-04, after each was stripped by hand to the
@@ -21,8 +21,8 @@ nodes it adds (see *Single-boss farms with no door*)
 - [x] `prince_viggor`: Dungeon Farmer
 - [x] `youkai`: Dungeon Farmer
 
-**The fight restarts in place** (exceptions, outside the templates)
-- [ ] `jade_oni`: fights its boss again without leaving the zone
+**The fight restarts in place** (exceptions, outside the templates, unless restructured)
+- [x] `jade_oni`: Spellement Farmer, restructured by hand so the refight is its own loop inside the Throne Room
 - [ ] `queen_calypso`: fights its boss again without leaving the zone
 - [ ] `oyotomi_the_defiler`: an open-world fight, not a dungeon
 
@@ -165,16 +165,16 @@ visible per bot, not buried in a diff.
 
 ## Rebuild status
 
-**77 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
+**78 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
 --write`, which writes a bot only when every old node is carried or replaced, every node
-fill-in is filled, and the result is sound. The other 7 are unchanged and still run as they
+fill-in is filled, and the result is sound. The other 6 are unchanged and still run as they
 did; `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the library is 84.
 
 | template | rebuilt |
 |---|---|
 | Boss Farmer (26) | `achaelos`, `advisor_fancy_fries`, `alicane_swiftarrow`, `bellows`, `crash_the_bandit_coot`, `foulgaze`, `graveyard`, `guillermo_shatterer`, `harvest_lord`, `hierophant_of_destruction`, `jabberwock`, `lord_bramble`, `lord_graustark`, `lord_nightshade`, `mongu_refuge`, `mr_cane`, `mr_stone`, `oakheart`, `praetor_mako`, `prince_gobblestone`, `scion_of_the_old_one`, `sergeant_skullsplitter`, `sister_sanderson`, `sprockets`, `taking_tree`, `vigilant_jarilo` |
 | Dungeon Farmer (28) | `atlantea`, `barkingham_palace_main_hall`, `barkingham_palace_rooftop`, `barkingham_palace_state_wing`, `castle_darkmoor`, `crimson_fields`, `cronus`, `five_boxes_avalon`, `gladiator_dimachaerus`, `heretical_academy`, `house_of_scales`, `ironworks`, `katzensteins_lab`, `king_detritus`, `mirror_lake`, `mt_olympus`, `prince_viggor`, `pyramid_of_mother_moon_tartarus_workaround`, `sand_squid_tentacles`, `secret_tunnel`, `spike_the_crusher`, `spiral_cup_portal_of_peril`, `the_great_spyre`, `throne_room_of_fire`, `tree_of_life`, `trial_of_the_spheres`, `waterworks`, `youkai` |
-| Spellement Farmer (8) | `big_salgio`, `biti_nirini`, `copy_qhat`, `do_daga`, `eerkala`, `hall_of_heroes`, `harlequin_knight`, `krokopatra` |
+| Spellement Farmer (9) | `big_salgio`, `biti_nirini`, `copy_qhat`, `do_daga`, `eerkala`, `hall_of_heroes`, `harlequin_knight`, `jade_oni`, `krokopatra` |
 | Reagent Collector (9) | `aeriel_shores_aethyr_burst`, `aeriel_shores_silver_chests`, `crab_alley_stone_block`, `mirkholm_keep_reagents`, `nightside_flax`, `selenopolis_parchment`, `the_necropolis_deep_mushroom`, `the_wild_deep_mushroom`, `the_zocalo_red_mandrake` |
 | Mob Farmer (3) | `fortee_thieves`, `monkey_spiders`, `valerik_brightsword` |
 | Gauntlet Farmer (3) | `grand_tourney_arena_gauntlet`, `hidden_temple_gauntlet`, `spiral_cup_gauntlet` |
@@ -193,13 +193,13 @@ have sent the recall back in, and keeps the quicksell it ran just before leaving
 twice; the second finds nothing. `atlantea` and `mt_olympus` no longer offer Team-Up, as
 Dungeon Farmer does not.
 
-### Why 7 are not rebuilt
+### Why 6 are not rebuilt
 
 A bot can be in several rows; each row is a reason the tool refuses it.
 
 | reason | bots | what it needs |
 |---|---|---|
-| **The fight restarts in place**: the boss is fought again without leaving its zone | `jade_oni`, `queen_calypso`, `oyotomi_the_defiler` (open world, not a dungeon) | handled as exceptions, outside the templates |
+| **The fight restarts in place**: the boss is fought again without leaving its zone | `queen_calypso`, `oyotomi_the_defiler` (open world, not a dungeon) | handled as exceptions, outside the templates |
 | **Content only navigation reached**: a puzzle or teleport on the trip that Sync players would skip | `barkingham_palace_ransacked_throne_room` | a decision per bot: the trip may need its own steps after Sync players |
 | **A reagent dungeon entered on the way in**: Sync players would gather in the entrance hall and collect before going in | `scrap_iron_collector`, `the_portico_pearl` | Reagent Collector with an entry, or these two by hand |
 | **Challenge Mode potions logic**: a flag-guarded skip that runs backwards through the template's potions, quicksell and wisps | `sisyphus`, `barkingham_palace_ransacked_throne_room` | a decision on Challenge Mode potions |
@@ -274,7 +274,11 @@ which is usually welcome: drops are granted the moment the last boss falls.
   own straight after the entry, where its Scales are.
 - **`jade_oni`, `queen_calypso` and `oyotomi_the_defiler` are exceptions.** Their boss is
   fought again without leaving the zone, which no template's loop does; they are handled as
-  the edge cases they are.
+  the edge cases they are. `jade_oni` was then restructured by hand to fit Spellement Farmer:
+  wisps that collect step out of the fight and go back to its level scaling, and wisps that
+  find none leave by the template's exit. The rebuild tool keeps such a way back as the bot's
+  own loop when it lands past the next pass's entry (`_inner_loop`); one to the entry or
+  before it still goes out first.
 
 Dungeon Farmer v1 was re-cut from the draft, as in `f6fc0f8`; no user had a bot from it.
 
