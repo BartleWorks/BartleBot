@@ -6,9 +6,10 @@ Stage 9 of the subgraph-calls plan (linked from `docs/SUBGRAPH_CALLS.md`), issue
 
 ## Not yet migrated
 
-4 of 84 bots, as of 2026-10-04, and `queen_calypso`, which is built by hand by design. Each
-is checked off when `tools/rebuild_from_template.py status` shows it on a template. Grouped by
-what unblocks it; *Why 5 are not rebuilt* has the reasons in full.
+2 of 84 bots, as of 2026-10-04. Three more are built by hand, on no template, and checked off
+as such: `queen_calypso`, `scrap_iron_collector` and `the_portico_pearl`. Every other bot is
+checked off when `tools/rebuild_from_template.py status` shows it on a template. Grouped by what
+unblocks it; *Why 5 are not rebuilt* has the reasons in full.
 
 **No exit, in a single-boss farm**: done 2026-10-04, after each was stripped by hand to the
 nodes it adds (see *Single-boss farms with no door*)
@@ -41,9 +42,13 @@ nodes it adds (see *Single-boss farms with no door*)
 - [x] `hidden_temple_gauntlet`: Gauntlet Farmer, stripped by hand; its last node goes to the health and mana check
 - [x] `spiral_cup_gauntlet`: Gauntlet Farmer, stripped by hand; its last node goes to the health and mana check
 
-**A reagent dungeon entered on the way in** (Reagent Collector with an entry, or by hand)
-- [ ] `scrap_iron_collector`: Sync players would gather in the Royal Museum and collect before entering Counterweight West
-- [ ] `the_portico_pearl`: the same, at Celestia's Survey Camp before The Portico
+**A reagent dungeon entered on the way in**: built by hand, on no template
+- [x] `scrap_iron_collector`: **built by hand.** Sync players in the Royal Museum, a hop to
+  separate realms, then a loop into Counterweight West, collect, and out. Leaving puts every
+  player back on one realm, which looks like a game bug (#151), so from the second pass on
+  Separate does not hold
+- [x] `the_portico_pearl`: **built by hand**, the same shape at Celestia's Survey Camp and The
+  Portico, with three collects inside; the same merge on the way out (#151)
 
 **Challenge Mode potions logic** (a decision on Challenge Mode potions)
 - [ ] `sisyphus` (Boss Farmer, or Spellement Farmer once it scales): a guarded skip runs backwards through the template's potions; it also needs level scaling before 1.0.0
@@ -170,8 +175,8 @@ visible per bot, not buried in a diff.
 
 **79 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
 --write`, which writes a bot only when every old node is carried or replaced, every node
-fill-in is filled, and the result is sound. The other 5 are unchanged and still run as they
-did, one of them for good (`queen_calypso`); `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the library is 84.
+fill-in is filled, and the result is sound. The other 5 are not on a template: three are built by hand for good (`queen_calypso`,
+`scrap_iron_collector`, `the_portico_pearl`), and two still run as they did; `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the library is 84.
 
 | template | rebuilt |
 |---|---|
@@ -204,7 +209,7 @@ A bot can be in several rows; each row is a reason the tool refuses it.
 |---|---|---|
 | **The fight restarts in place**: the boss is fought again without leaving its zone | `queen_calypso` | built by hand, by design: no template's loop stays in its dungeon |
 | **Content only navigation reached**: a puzzle or teleport on the trip that Sync players would skip | `barkingham_palace_ransacked_throne_room` | a decision per bot: the trip may need its own steps after Sync players |
-| **A reagent dungeon entered on the way in**: Sync players would gather in the entrance hall and collect before going in | `scrap_iron_collector`, `the_portico_pearl` | Reagent Collector with an entry, or these two by hand |
+| **A reagent dungeon entered on the way in**: Sync players would gather in the entrance hall and collect before going in | `scrap_iron_collector`, `the_portico_pearl` | built by hand (2026-10-04); leaving each dungeon merges realms (#151) |
 | **Challenge Mode potions logic**: a flag-guarded skip that runs backwards through the template's potions, quicksell and wisps | `sisyphus`, `barkingham_palace_ransacked_throne_room` | a decision on Challenge Mode potions |
 
 `foulgaze`, `hierophant_of_destruction` and `jabberwock` were rebuilt once their enemies were
@@ -243,7 +248,9 @@ farms with no door*).
   Celestia's Survey Camp) and `scrap_iron_collector` (Counterweight West, from the Royal Museum)
   keep their `enter_dungeon` and exit as their own nodes. Reagent Collector's zone step targets
   the Sync players zone and every spawn's zone together, so in these two the Sync players zone
-  is the entrance and the spawns' zones are the dungeon.
+  is the entrance and the spawns' zones are the dungeon. *Later (2026-10-04):* both were built
+  by hand instead, on no template. In game, leaving either dungeon puts players who went in on
+  separate realms back on one realm (#151); both still loop from the exit straight back in.
 
 ### Dungeon Farmer leaves by recall (2026-10-04)
 

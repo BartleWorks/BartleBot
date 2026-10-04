@@ -28,7 +28,7 @@ from bartlebot.template_store import list_templates
 
 _ROOT = project_root()
 
-#: The bots that ship Separate: the next-realm reagent collectors, Scrap Iron, the reagent bots
+#: The bots that ship Separate: the next-realm reagent collectors, Scrap Iron and the Portico, the reagent bots
 #: rebuilt from Reagent Collector (which declares it), and that template's draft.
 SHIPPED_SEPARATE = {
     "bots/25_crafting/aeriel_shores_aethyr_burst.json",
@@ -41,6 +41,7 @@ SHIPPED_SEPARATE = {
     "bots/25_crafting/the_zocalo_red_mandrake.json",
     "bots/25_crafting/scrap_iron_collector.json",
     "bots/25_crafting/selenopolis_parchment.json",
+    "bots/25_crafting/the_portico_pearl.json",
     "templates/reagent-collector/draft.json",
 }
 
