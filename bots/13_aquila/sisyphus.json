@@ -4,8 +4,8 @@
   "description": "Endlessly defeats Sisyphus in Temple of Sisyphus, Aquila. When run in Challenge Mode, this is the best Aquila spellement farm.",
   "version": "1.0",
   "clients": "all",
-  "initial": "sync_players_1_state_2",
-  "recovery_state": "sync_players_1_state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "12 Olympian Dust",
@@ -437,16 +437,42 @@
   "options": [],
   "states": [
     {
-      "id": "state_13",
+      "id": "t_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_10",
       "node_type": "enter_dungeon",
       "label": "Enter Temple of Sisyphus",
       "position": {
-        "x": 5280.0,
-        "y": -180.0
+        "x": 3520.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Aquila/AQ_Z00_Hub",
         "dungeon_zone": "Aquila/Interiors/AQ_Z01_TempleOfSisyphus",
+        "offers_challenge_mode": true,
+        "offers_team_up": true,
         "dungeon_name": "Temple of Sisyphus",
         "sigil_xyz": {
           "x": 1180.28,
@@ -457,18 +483,16 @@
           "x": 826.78,
           "y": 3268.84,
           "z": -100.0
-        },
-        "offers_challenge_mode": true,
-        "offers_team_up": true
+        }
       }
     },
     {
-      "id": "state_14",
+      "id": "t_11",
       "node_type": "handle_combat",
       "label": "Defeat Sisyphus",
       "position": {
-        "x": 5720.0,
-        "y": -180.0
+        "x": 3960.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "*AQ_Eagles_Sisyphus_A_01",
@@ -478,16 +502,34 @@
       }
     },
     {
-      "id": "state_15",
+      "id": "t_12",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_13",
       "node_type": "enter_zone",
       "label": "Exit Temple of Sisyphus",
       "position": {
-        "x": 6160.0,
-        "y": -180.0
+        "x": 4840.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Aquila/Interiors/AQ_Z01_TempleOfSisyphus",
         "to_zone": "Aquila/AQ_Z00_Hub",
+        "stagger": false,
         "xyz": {
           "x": 10.6,
           "y": -3749.86,
@@ -497,17 +539,16 @@
           "x": -2.81,
           "y": -3343.28,
           "z": 189.58
-        },
-        "stagger": false
+        }
       }
     },
     {
-      "id": "sync_players_1_state_1",
+      "id": "t_sync_players_1_state_1",
       "node_type": "relog",
       "label": "Relog",
       "position": {
-        "x": 3519.9996870503587,
-        "y": -179.99979332897314
+        "x": 1320.0004001498485,
+        "y": 0.0004953973327941341
       },
       "params": {
         "relog_clients": [
@@ -519,81 +560,43 @@
       }
     },
     {
-      "id": "sync_players_1_state_2",
+      "id": "t_sync_players_1_state_2",
       "node_type": "sync_in_zone",
-      "label": "Go to zone",
+      "label": "Sync in zone",
       "position": {
-        "x": 3959.9996870503587,
-        "y": -89.99979332897314
+        "x": 1760.0004001498485,
+        "y": 90.0004953973328
       },
       "params": {
         "zone": "Aquila/AQ_Z00_Hub"
       }
     },
     {
-      "id": "sync_players_1_state_3",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
       "position": {
-        "x": 4399.999687050358,
-        "y": -179.99979332897314
+        "x": 1760.0,
+        "y": 0.0
       },
       "params": {
-        "use_favorite_realm": true
+        "scales": "temple_of_sisyphus"
       }
     },
     {
-      "id": "state_16",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": 4400.0,
-        "y": -180.0
-      },
-      "params": {}
-    },
-    {
-      "id": "state_17",
-      "node_type": "handle_potions",
-      "label": "Handle potions (Challenge Mode)",
-      "position": {
-        "x": 4840.0,
-        "y": -90.0
-      },
-      "params": {
-        "if_health_below": 0.25,
-        "if_mana_below": 0.15,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_18",
-      "node_type": "handle_potions",
-      "label": "Handle potions (Standard Mode)",
-      "position": {
-        "x": 4840.0,
-        "y": -180.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_19",
+      "id": "t_15",
       "node_type": "collect_wisps",
-      "label": "Collect mana wisps",
+      "label": "Collect wisps",
       "position": {
-        "x": 3960.0,
-        "y": -180.0
+        "x": 3080.0,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
-        "if_mana_below": 0.25,
+        "if_mana_below": 1.0,
         "timeout": 10.0,
         "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.1,
+        "fail_if_mana_below": 0.5,
         "only_safe": true
       }
     }
@@ -601,8 +604,8 @@
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_14",
+      "source": "t_12",
+      "dest": "t_13",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -611,8 +614,18 @@
     },
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_15",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -621,8 +634,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_16",
+      "source": "t_10",
+      "dest": "t_14",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -631,48 +644,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_18",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Challenge Mode",
-              "negate": true
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_17",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [
-        {
-          "flags": [
-            {
-              "option": "Challenge Mode",
-              "negate": false
-            }
-          ],
-          "op": "AND"
-        }
-      ],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_13",
+      "source": "t_11",
+      "dest": "t_12",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -681,8 +654,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_13",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -691,8 +664,8 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_1",
-      "dest": "sync_players_1_state_2",
+      "source": "t_14",
+      "dest": "t_11",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -701,8 +674,8 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_2",
-      "dest": "sync_players_1_state_3",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_8",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -711,8 +684,8 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_3",
-      "dest": "state_19",
+      "source": "t_13",
+      "dest": "t_8",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -721,9 +694,29 @@
     },
     {
       "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_16",
+      "source": "t_9",
+      "dest": "t_15",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -732,27 +725,16 @@
   ],
   "regions": [
     {
-      "id": "046d7b7b",
-      "label": "Defeat Sisyphus",
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
       "members": [
-        "state_13",
-        "state_14",
-        "state_15"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 5
-    },
-    {
-      "id": "sync_players_1",
-      "label": "Sync players in Garden of Hesperides",
-      "members": [
-        "sync_players_1_state_1",
-        "sync_players_1_state_2",
-        "sync_players_1_state_3"
-      ],
-      "color": 2,
+      "color": 1,
       "source": {
         "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
-        "version": 3,
+        "version": 4,
         "inputs": {
           "state_2.zone": "Aquila/AQ_Z00_Hub"
         },
@@ -766,17 +748,21 @@
           "exit_1": {
             "from": [
               [
-                "state_3",
+                "state_2",
                 "SUCCESS"
               ]
             ]
           }
         },
         "anchor": {
-          "x": 3519.9996870503587,
-          "y": -179.99979332897314
+          "x": 1320.0004001498485,
+          "y": 0.0004953973327941341
         }
       }
     }
-  ]
+  ],
+  "template": {
+    "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
+    "version": 1
+  }
 }

@@ -6,10 +6,11 @@ Stage 9 of the subgraph-calls plan (linked from `docs/SUBGRAPH_CALLS.md`), issue
 
 ## Not yet migrated
 
-2 of 84 bots, as of 2026-10-04. Three more are built by hand, on no template, and checked off
-as such: `queen_calypso`, `scrap_iron_collector` and `the_portico_pearl`. Every other bot is
-checked off when `tools/rebuild_from_template.py status` shows it on a template. Grouped by what
-unblocks it; *Why 5 are not rebuilt* has the reasons in full.
+None of 84 bots, as of 2026-10-04: 81 are on a template, and three are built by hand, on no
+template, and checked off as such: `queen_calypso`, `scrap_iron_collector` and
+`the_portico_pearl`. A bot is checked off when `tools/rebuild_from_template.py status` shows
+it on a template. Grouped by what unblocked it; *Why 5 were not rebuilt* has the reasons in
+full.
 
 **No exit, in a single-boss farm**: done 2026-10-04, after each was stripped by hand to the
 nodes it adds (see *Single-boss farms with no door*)
@@ -50,9 +51,12 @@ nodes it adds (see *Single-boss farms with no door*)
 - [x] `the_portico_pearl`: **built by hand**, the same shape at Celestia's Survey Camp and The
   Portico, with three collects inside; the same merge on the way out (#151)
 
-**Challenge Mode potions logic** (a decision on Challenge Mode potions)
-- [ ] `sisyphus` (Boss Farmer, or Spellement Farmer once it scales): a guarded skip runs backwards through the template's potions; it also needs level scaling before 1.0.0
-- [ ] `barkingham_palace_ransacked_throne_room` (Spellement Farmer): the same skip, and content reached only from its trip in
+**Challenge Mode potions logic** (decided 2026-10-04: `handle_potions` and `collect_wisps` read
+ratios against the scaled max, so the branch and the second potions node are dropped; see
+*Challenge Mode and potions* in `docs/LEVEL_SCALING.md`)
+- [x] `sisyphus`: Spellement Farmer, scaling at its own Scales (`temple_of_sisyphus`) after the entry
+- [x] `barkingham_palace_ransacked_throne_room`: Spellement Farmer, scaling at its own Scales after
+  the entry; Notes 5-7, when Activate Notes 5-7 is on, run between the scaling and the fight
 
 Measured over `bots/` at `3109d5c` on 2026-10-03, against v1 of every template, with one
 exception: `do_daga` is measured at its version before `00b8049` (see *Fix before the
@@ -173,16 +177,16 @@ visible per bot, not buried in a diff.
 
 ## Rebuild status
 
-**79 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
+**81 of 84 bots are rebuilt** (2026-10-04), each by `tools/rebuild_from_template.py rebuild
 --write`, which writes a bot only when every old node is carried or replaced, every node
-fill-in is filled, and the result is sound. The other 5 are not on a template: three are built by hand for good (`queen_calypso`,
-`scrap_iron_collector`, `the_portico_pearl`), and two still run as they did; `status` lists them. `mirkholm_keep_ore` was deleted (`485528e`), so the library is 84.
+fill-in is filled, and the result is sound. The other 3 are built by hand for good, on no
+template (`queen_calypso`, `scrap_iron_collector`, `the_portico_pearl`). `mirkholm_keep_ore` was deleted (`485528e`), so the library is 84.
 
 | template | rebuilt |
 |---|---|
 | Boss Farmer (26) | `achaelos`, `advisor_fancy_fries`, `alicane_swiftarrow`, `bellows`, `crash_the_bandit_coot`, `foulgaze`, `graveyard`, `guillermo_shatterer`, `harvest_lord`, `hierophant_of_destruction`, `jabberwock`, `lord_bramble`, `lord_graustark`, `lord_nightshade`, `mongu_refuge`, `mr_cane`, `mr_stone`, `oakheart`, `praetor_mako`, `prince_gobblestone`, `scion_of_the_old_one`, `sergeant_skullsplitter`, `sister_sanderson`, `sprockets`, `taking_tree`, `vigilant_jarilo` |
 | Dungeon Farmer (28) | `atlantea`, `barkingham_palace_main_hall`, `barkingham_palace_rooftop`, `barkingham_palace_state_wing`, `castle_darkmoor`, `crimson_fields`, `cronus`, `five_boxes_avalon`, `gladiator_dimachaerus`, `heretical_academy`, `house_of_scales`, `ironworks`, `katzensteins_lab`, `king_detritus`, `mirror_lake`, `mt_olympus`, `prince_viggor`, `pyramid_of_mother_moon_tartarus_workaround`, `sand_squid_tentacles`, `secret_tunnel`, `spike_the_crusher`, `spiral_cup_portal_of_peril`, `the_great_spyre`, `throne_room_of_fire`, `tree_of_life`, `trial_of_the_spheres`, `waterworks`, `youkai` |
-| Spellement Farmer (9) | `big_salgio`, `biti_nirini`, `copy_qhat`, `do_daga`, `eerkala`, `hall_of_heroes`, `harlequin_knight`, `jade_oni`, `krokopatra` |
+| Spellement Farmer (11) | `barkingham_palace_ransacked_throne_room`, `big_salgio`, `biti_nirini`, `copy_qhat`, `do_daga`, `eerkala`, `hall_of_heroes`, `harlequin_knight`, `jade_oni`, `krokopatra`, `sisyphus` |
 | Reagent Collector (9) | `aeriel_shores_aethyr_burst`, `aeriel_shores_silver_chests`, `crab_alley_stone_block`, `mirkholm_keep_reagents`, `nightside_flax`, `selenopolis_parchment`, `the_necropolis_deep_mushroom`, `the_wild_deep_mushroom`, `the_zocalo_red_mandrake` |
 | Mob Farmer (4) | `fortee_thieves`, `monkey_spiders`, `oyotomi_the_defiler`, `valerik_brightsword` |
 | Gauntlet Farmer (3) | `grand_tourney_arena_gauntlet`, `hidden_temple_gauntlet`, `spiral_cup_gauntlet` |
@@ -201,16 +205,16 @@ have sent the recall back in, and keeps the quicksell it ran just before leaving
 twice; the second finds nothing. `atlantea` and `mt_olympus` no longer offer Team-Up, as
 Dungeon Farmer does not.
 
-### Why 5 are not rebuilt
+### Why 5 were not rebuilt
 
 A bot can be in several rows; each row is a reason the tool refuses it.
 
 | reason | bots | what it needs |
 |---|---|---|
 | **The fight restarts in place**: the boss is fought again without leaving its zone | `queen_calypso` | built by hand, by design: no template's loop stays in its dungeon |
-| **Content only navigation reached**: a puzzle or teleport on the trip that Sync players would skip | `barkingham_palace_ransacked_throne_room` | a decision per bot: the trip may need its own steps after Sync players |
+| **Content only navigation reached**: a puzzle or teleport on the trip that Sync players would skip | `barkingham_palace_ransacked_throne_room` | rebuilt 2026-10-04: the notes run inside, after the scaling, so the trip needs nothing of its own |
 | **A reagent dungeon entered on the way in**: Sync players would gather in the entrance hall and collect before going in | `scrap_iron_collector`, `the_portico_pearl` | built by hand (2026-10-04); leaving each dungeon merges realms (#151) |
-| **Challenge Mode potions logic**: a flag-guarded skip that runs backwards through the template's potions, quicksell and wisps | `sisyphus`, `barkingham_palace_ransacked_throne_room` | a decision on Challenge Mode potions |
+| **Challenge Mode potions logic**: a flag-guarded skip that runs backwards through the template's potions, quicksell and wisps | `sisyphus`, `barkingham_palace_ransacked_throne_room` | rebuilt 2026-10-04: potions read the scaled max, so no branch (`docs/LEVEL_SCALING.md`) |
 
 `foulgaze`, `hierophant_of_destruction` and `jabberwock` were rebuilt once their enemies were
 recorded in game (`485528e`).
@@ -374,9 +378,6 @@ get their own answer after 1.0.0.
 
 None of these can be done from the files.
 
-- **`sisyphus` needs level scaling before 1.0.0.** It is farmed for spellements in Challenge
-  Mode, which scales its players itself, so it has no level scaling node; a user who does not
-  play Challenge Mode needs one.
 - **Seven exposed fights have no enemy** (see above).
 - **Every rewritten bot needs a run** before it counts as done.
 
