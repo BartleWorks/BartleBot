@@ -697,3 +697,33 @@ def test_a_dungeon_that_runs_on_failures_still_finds_its_way_out(library):
 
     assert _covered_by(report, _recall_of(config)) == {"state_10"}
     assert report.clean
+
+
+def test_a_chain_that_just_stops_goes_on_to_the_recall(library):
+    """A bot stripped to the nodes it adds ends on its last fight: that fight leads to the recall."""
+    config, report = _rebuild(_dungeon(), "Dungeon Farmer", library)
+
+    assert _next(config, "state_7") == _recall_of(config)
+    assert any("state_7 ended the old chain" in note for note in report.notes)
+    assert report.clean
+
+
+def test_a_chain_with_its_own_way_on_is_not_joined_again(library):
+    config, report = _rebuild(_dungeon(_WALK_OUT_STATES, _WALK_OUT_TRANSITIONS), "Dungeon Farmer", library)
+
+    assert not any("ended the old chain" in note for note in report.notes)
+    assert [t.dest for t in config.transitions if t.source == "state_7"] == [_recall_of(config)]
+
+
+def test_a_handle_level_scaling_of_the_bots_own_stays_where_it_is(library):
+    """Placed by its author deeper in the dungeon, where its Scales are, it is carried, not replaced."""
+    old = _dungeon(
+        [_s("state_8", "handle_level_scaling", "Scale in the inner room", scales="mount_olympus")],
+        [_t("state_5", "state_8"), _t("state_8", "state_6")],
+    )
+    config, report = _rebuild(_without(old, ("state_5", "state_6")), "Dungeon Farmer", library)
+
+    assert [s.id for s in _by_type(config, "handle_level_scaling")] == ["state_8"]
+    assert _next(config, "state_5") == "state_8"
+    assert _next(config, "t_3") == "state_4", "no second one is added after the entry"
+    assert report.clean

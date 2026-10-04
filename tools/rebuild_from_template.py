@@ -828,7 +828,15 @@ def _graft(
             new_edges.append(tr)
             if not _guarded(tr) and tr.when not in FALLTHROUGH_RETURNS:
                 replaced.add((anchor, tr.when))
-        _carry_exits(piece, old, old_by_id, mapping, new_edges, problems, rejoin=_downstream(config, anchor))
+        rejoin = _downstream(config, anchor)
+        _carry_exits(piece, old, old_by_id, mapping, new_edges, problems, rejoin=rejoin)
+        if rejoin and not any(t.source in piece and t.dest not in piece for t in old.config.transitions):
+            # A chain that just stops -- a bot stripped to the nodes it adds -- goes on to the
+            # template's next node from where it ends, as content in a slot does.
+            for sid in sorted(piece - {t.source for t in old.config.transitions}):
+                when = _happy_path(old_by_id[sid].node_type)
+                new_edges.append(TransitionModel(trigger="advance", source=sid, dest=rejoin[0], when=when))
+                report.notes.append(f"{sid} ended the old chain: it goes on to {rejoin[0]}")
         report.notes.append(f"content {names} spliced in after {anchor}")
     if problems:
         report.problems += problems
@@ -867,6 +875,13 @@ def _graft(
         if region.source is None and set(region.members) <= content_set:
             config.regions.append(region.model_copy(deep=True))
     return content
+
+
+def _happy_path(node_type: str) -> str:
+    """The outcome a node of ``node_type`` returns when it works: ``SUCCESS``, or ``TRUE`` for a check."""
+    spec = NODE_SPECS.get(node_type)
+    names = [r.name for r in spec.returns] if spec is not None else []
+    return "TRUE" if "TRUE" in names and "SUCCESS" not in names else "SUCCESS"
 
 
 def _as_entry(tr: TransitionModel, old_by_id: dict[str, StateModel], mapping: dict[str, str]) -> TransitionModel | None:
@@ -1182,12 +1197,15 @@ def _splice_out(config: BotConfig, sid: str) -> bool:
 def _add_level_scaling(config: BotConfig, old: OldBot, report: Report) -> None:
     """Give a level scaling bot a handle_level_scaling of its own when its template has none.
 
-    It goes straight after the dungeon entry: a dungeon first scales inside the dungeon it
+    Only for the old pair: a bot that already has a handle_level_scaling keeps it, carried
+    where it stands. A new one goes straight after the dungeon entry: a dungeon first scales inside the dungeon it
     farms, where its Scales are, so its players scale in place.
     """
     if any(s.node_type == "handle_level_scaling" for s in config.states):
         return
-    if not any(s.node_type in LEVEL_SCALING_TYPES for s in old.config.states):
+    if any(s.node_type == "handle_level_scaling" for s in old.config.states):
+        return  # the bot's own is already where it belongs: it is carried as content
+    if not any(s.node_type in SCALING_FOLD for s in old.config.states):
         return
     farm = next((s for s in config.states if s.node_type == "enter_dungeon"), None)
     after = _template_successor(config, farm.id) if farm is not None else None
