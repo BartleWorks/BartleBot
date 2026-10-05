@@ -4,6 +4,9 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import Any
 
+from bartlebot.bot_options import SAFETY_DELAY_DESCRIPTION
+from bartlebot.option_groups import GROUP_GENERAL
+
 
 @dataclass
 class BotOptionSpec:
@@ -88,7 +91,7 @@ class ParamField:
     Attributes:
         key:          JSON key used in the params dict.
         type:         Widget type: "str" | "text" | "int" | "float" | "bool" | "xyz" |
-                      "str_list" | "int_choice" | "str_choice" | "player_list" | "player_slot" |
+                      "str_list" | "player_list" | "player_slot" |
                       "wiki_page" | "zone" | "nav_zone" | "scales" | "ratio".
                       "ratio" is a share of a whole -- a health or mana threshold. It is stored as
                       a float from 0.0 to 1.0, which is what a node compares against, and shown and
@@ -150,15 +153,6 @@ class ParamField:
     disabled_by: str = ""
     enabled_by: str = ""
     required: bool = False
-    choices: list[Any] = field(default_factory=list)
-    """The ordered dropdown options.
-
-    For ``type="int_choice"``: a list of integers.
-
-    For ``type="str_choice"``: a list of strings, or of ``(value, label)`` pairs when what
-    the bot file stores differs from what the user should read — go_to_world stores the
-    world's zone prefix ("DragonSpire") and shows its display name ("Dragonspyre").
-    """
 
 
 PARAM_SUPERTYPES: dict[str, str] = {"nav_zone": "zone"}
@@ -252,3 +246,16 @@ class NodeSpec:
     A bot holding such a node cannot be ``Player Realms: Separate``. See
     :mod:`bartlebot.player_realms` for the three places that is enforced.
     """
+
+
+#: Safety Delay, for any node that waits on the game server. One spec for every node that
+#: declares it, so its text and card cannot drift between them.
+SAFETY_DELAY_OPTION = BotOptionSpec(
+    name="Safety Delay",
+    group=GROUP_GENERAL,
+    type="float",
+    default=3.0,
+    minimum=0.0,
+    suffix=" s",
+    description=SAFETY_DELAY_DESCRIPTION,
+)

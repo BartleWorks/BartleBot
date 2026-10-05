@@ -138,7 +138,7 @@ def test_open_composes_linked_region_from_library(harness, library, bot_file):
     assert harness._loaded_config is config
     assert config.regions[0].source.version == 2
     assert m("rest") in config.regions[0].members
-    assert {s.id: s for s in config.states}[m("go_to_world")].params["world"] == "Mooshu"
+    assert {s.id: s for s in config.states}[m("gate")].params["zone"] == "Mooshu"
     # Drawn as its call node, like every member.
     assert harness._window.bot_canvas.scene.call_node_of(m("rest")) is not None
     assert harness._window.bot_canvas.compose_report.regions[REGION].kind == "linked"

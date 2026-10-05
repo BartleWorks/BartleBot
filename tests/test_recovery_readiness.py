@@ -56,6 +56,8 @@ class GapsHarness:
     """The attributes recovery_gaps and _alias_for use on self."""
 
     recovery_gaps = ClientManager.recovery_gaps
+    recovery_gap_for = ClientManager.recovery_gap_for
+    _recovery_gap = ClientManager._recovery_gap
     _alias_for = ClientManager._alias_for
 
     def __init__(self, clients: list, account_map: dict[int, str]) -> None:
@@ -133,3 +135,16 @@ def test_reason_constants_are_human_readable():
     """These land verbatim in a dialog, so they have to read as prose."""
     assert recovery_readiness.NO_ACCOUNT.islower() or " " in recovery_readiness.NO_ACCOUNT
     assert "{account}" in recovery_readiness.NO_PASSWORD
+
+
+def test_one_client_can_be_asked_about_by_hwnd(passwords):
+    """What the relog node's handover asks, mid-run, before closing a client."""
+    harness = GapsHarness([_client(100), _client(200)], {100: "user1"})
+    assert harness.recovery_gap_for(100) is None
+    assert harness.recovery_gap_for(200) == NO_ACCOUNT
+
+
+def test_one_client_without_a_password_is_a_gap(passwords):
+    passwords.retrieve.return_value = None
+    harness = GapsHarness([_client(100)], {100: "user1"})
+    assert "no password saved" in harness.recovery_gap_for(100)

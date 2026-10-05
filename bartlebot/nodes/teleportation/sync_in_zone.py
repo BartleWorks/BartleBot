@@ -10,7 +10,7 @@ import logging
 
 from bartlebot import player_realms, realms, zone_names
 from bartlebot.nodes import zone_navigation
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.utility.change_realm import OPTION_FAVORITE_REALM
 from bartlebot.option_groups import GROUP_GENERAL
 
@@ -64,18 +64,7 @@ NODE_SPEC = NodeSpec(
     ],
     required_bot_options=[
         player_realms.SPEC,
-        BotOptionSpec(
-            name="Safety Delay",
-            group=GROUP_GENERAL,
-            type="float",
-            default=3.0,
-            minimum=0.0,
-            suffix=" s",
-            description=(
-                "Seconds to allow for game-server responses when waiting for prompts or menus. "
-                "Increase on high-latency connections."
-            ),
-        ),
+        SAFETY_DELAY_OPTION,
         BotOptionSpec(
             name=OPTION_FAVORITE_REALM,
             group=GROUP_GENERAL,
@@ -104,7 +93,7 @@ NODE_SPEC = NodeSpec(
         "realm in Eerem Palace, so bound there it changes on the way.\n\n"
         "With Player Realms set to Separate, every player travels, and nobody ports or changes realm."
     ),
-    see_also=["go_to_world", "teleport_to_world_hub", "change_realm"],
+    see_also=["teleport_to_world_hub", "change_realm"],
 )
 
 

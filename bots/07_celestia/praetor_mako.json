@@ -4,8 +4,8 @@
   "description": "Endlessly defeats Praetor Mako in The Barbican, Celestia",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_16",
-  "recovery_state": "state_15",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Accurate"
@@ -509,7 +509,8 @@
   "authors": "BartleBot",
   "tags": [
     "Gear",
-    "Boss"
+    "Boss",
+    "Team-Up"
   ],
   "options": [
     {
@@ -523,16 +524,71 @@
   ],
   "states": [
     {
-      "id": "state_8",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs"
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2200.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter The Barbican",
       "position": {
         "x": 3520.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "from_zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
         "dungeon_zone": "Celestia/Interiors/CL_Z10i4_Kingdom_Of_The_Crabs",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "dungeon_name": "The Barbican",
         "sigil_xyz": {
           "x": -8737.08,
@@ -547,31 +603,49 @@
       }
     },
     {
-      "id": "state_9",
+      "id": "t_4",
       "node_type": "handle_combat",
       "label": "Defeat Praetor Mako",
       "position": {
         "x": 3960.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "enemy": "CL-SharkKing-Boss-R10",
-        "use_bot_default": true,
-        "combat_config": "",
+        "wiki_page": "",
+        "use_default_strategy": false,
         "max_duration": 0.0
       }
     },
     {
-      "id": "state_10",
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
       "node_type": "enter_zone",
       "label": "Exit The Barbican",
       "position": {
         "x": 4840.0,
-        "y": -90.0
+        "y": 0.0
       },
       "params": {
         "from_zone": "Celestia/Interiors/CL_Z10i4_Kingdom_Of_The_Crabs",
         "to_zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
+        "stagger": false,
         "xyz": {
           "x": -16.07,
           "y": 854.72,
@@ -585,94 +659,28 @@
       }
     },
     {
-      "id": "state_14",
+      "id": "t_7",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 4400.0,
-        "y": -90.0
+        "x": 3080.0,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
         "if_mana_below": 1.0,
+        "timeout": 10.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
+        "only_safe": true
       }
-    },
-    {
-      "id": "state_15",
-      "node_type": "relog",
-      "label": "Relog",
-      "position": {
-        "x": 1320.0,
-        "y": -90.0
-      },
-      "params": {
-        "relog_clients": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_16",
-      "node_type": "sync_in_zone",
-      "label": "Go to Crustacean Empire",
-      "position": {
-        "x": 1760.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs"
-      }
-    },
-    {
-      "id": "state_17",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
-      "position": {
-        "x": 2200.0,
-        "y": -90.0
-      },
-      "params": {
-        "use_favorite_realm": true
-      }
-    },
-    {
-      "id": "state_18",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 2640.0,
-        "y": -90.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "refill_potions": true,
-        "mark_zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs"
-      }
-    },
-    {
-      "id": "state_19",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": 3080.0,
-        "y": -90.0
-      },
-      "params": {}
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_10",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -681,8 +689,38 @@
     },
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_10",
+      "source": "t_3",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -691,8 +729,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -701,8 +739,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_14",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -711,8 +749,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_16",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -721,64 +759,75 @@
     },
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_15",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_17",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_18",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_19",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_18",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
 }

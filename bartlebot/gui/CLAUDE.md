@@ -957,7 +957,7 @@ and back would make the bar depend on a window that may not have connected yet.
 Three things the header does not hold, and should not be given back:
 
 - **`start_location`** is gone from the schema. Nothing in the engine ever read
-  it, `go_to_world` and the bot templates make it moot, and a field naming a
+  it, `sync_in_zone` and the bot templates make it moot, and a field naming a
   place the app will not take you to reads as a promise. Pydantic ignores it in
   an older file and `save()` drops it.
 - **Initial State / Recovery State** are badges on the nodes themselves;

@@ -4,8 +4,8 @@
   "description": "Endlessly completes Main Hall in Barkingham Palace, Marleybone",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_3",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "13 Royal Brooch"
@@ -183,120 +183,88 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Regent's Square",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": 0,
+        "x": 0.0,
         "y": 0.0
       },
       "params": {
-        "zone": "Marleybone/MB_Hub"
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     {
-      "id": "state_2",
-      "node_type": "check_zone",
-      "label": "Check if in Barkingham Palace",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
-        "x": -440.0,
-        "y": -90.0
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard"
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 440,
+        "y": 0.0
       },
       "params": {
         "zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "check_zone",
-      "label": "Check if in Marleybone",
-      "position": {
-        "x": -880.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Marleybone/*",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "enter_zone",
-      "label": "Enter Barkingham Palace",
-      "position": {
-        "x": 440.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Marleybone/MB_Hub",
-        "to_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
         "xyz": {
-          "x": 7123.4,
-          "y": 1315.09,
-          "z": -0.0
-        },
-        "reset_xyz": {
-          "x": 6640.42,
-          "y": 1310.45,
-          "z": -0.0
-        },
-        "stagger": false
+          "x": -16.8,
+          "y": -7648.48,
+          "z": -4453.28
+        }
       }
     },
     {
-      "id": "state_5",
-      "node_type": "collect_wisps",
-      "label": "Collect mana wisps",
-      "position": {
-        "x": 880.0,
-        "y": -90.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
-      }
-    },
-    {
-      "id": "state_6",
+      "id": "t_1",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 1320.0,
-        "y": -90.0
+        "x": 880,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
         "if_mana_below": 0.15,
-        "refill_potions": true,
         "mark_zone": ""
       }
     },
     {
-      "id": "state_7",
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Main Hall",
       "position": {
-        "x": 2200.0,
-        "y": -90.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
         "dungeon_zone": "Marleybone/G14_Gauntlet/MB_Z10_MainHall_01",
+        "offers_challenge_mode": true,
+        "offers_team_up": false,
         "dungeon_name": "Main Hall",
         "sigil_xyz": {
           "x": 208.89,
@@ -307,9 +275,37 @@
           "x": -16.8,
           "y": -7648.48,
           "z": -4453.28
-        },
-        "offers_challenge_mode": true,
-        "offers_team_up": true
+        }
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
+      "position": {
+        "x": 7040,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "",
+        "xyz": null
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       }
     },
     {
@@ -317,8 +313,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Main Hall",
       "position": {
-        "x": 2640.0,
-        "y": -90.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "zone": "Marleybone/G14_Gauntlet/MB_Z10_MainHall_01",
@@ -334,8 +330,8 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 3080.0,
-        "y": -90.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "timeout": 60.0
@@ -346,8 +342,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Corrupted Grenadiers",
       "position": {
-        "x": 3520.0,
-        "y": -90.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "enemy": "G14-BP-Corrupted_Grenadiers",
@@ -360,8 +356,8 @@
       "node_type": "enter_zone",
       "label": "Go to next room",
       "position": {
-        "x": 3960.0,
-        "y": -90.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Marleybone/G14_Gauntlet/MB_Z10_MainHall_01",
@@ -384,8 +380,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Chief Whip",
       "position": {
-        "x": 4400.0,
-        "y": -90.0
+        "x": 4400,
+        "y": 0.0
       },
       "params": {
         "enemy": "G14-BP-Dog_Police_Boss",
@@ -398,8 +394,8 @@
       "node_type": "interact",
       "label": "Talk to Bulldog Sergeant Major",
       "position": {
-        "x": 4840.0,
-        "y": -90.0
+        "x": 4840,
+        "y": 0.0
       },
       "params": {
         "zone": "Marleybone/G14_Gauntlet/MB_Z11_MainHall_02",
@@ -424,8 +420,8 @@
       "node_type": "enter_zone",
       "label": "Go to next room",
       "position": {
-        "x": 5280.0,
-        "y": -90.0
+        "x": 5280,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Marleybone/G14_Gauntlet/MB_Z11_MainHall_02",
@@ -444,26 +440,12 @@
       }
     },
     {
-      "id": "state_15",
-      "node_type": "handle_combat",
-      "label": "Defeat Noxious Gas Golem",
-      "position": {
-        "x": 6160.0,
-        "y": -90.0
-      },
-      "params": {
-        "enemy": "G14-BP-Golem_Steel_Boss",
-        "use_default_strategy": false,
-        "max_duration": 0.0
-      }
-    },
-    {
       "id": "state_16",
       "node_type": "teleport_to_coordinates",
       "label": "Trigger dialogue",
       "position": {
-        "x": 5720.0,
-        "y": -90.0
+        "x": 5720,
+        "y": 0.0
       },
       "params": {
         "zone": "Marleybone/G14_Gauntlet/MB_Z05_ThroneRoom",
@@ -475,12 +457,26 @@
       }
     },
     {
+      "id": "state_15",
+      "node_type": "handle_combat",
+      "label": "Defeat Noxious Gas Golem",
+      "position": {
+        "x": 6160,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "G14-BP-Golem_Steel_Boss",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
       "id": "state_17",
       "node_type": "interact",
       "label": "Talk to Chief Whip",
       "position": {
-        "x": 6600.0,
-        "y": -90.0
+        "x": 6600,
+        "y": 0.0
       },
       "params": {
         "zone": "Marleybone/G14_Gauntlet/MB_Z05_ThroneRoom",
@@ -501,45 +497,40 @@
       }
     },
     {
-      "id": "state_18",
-      "node_type": "enter_zone",
-      "label": "Exit dungeon",
+      "id": "t_8",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
       "position": {
-        "x": 7040.0,
-        "y": -90.0
+        "x": -880.0,
+        "y": 0.0
       },
       "params": {
-        "from_zone": "Marleybone/G14_Gauntlet/MB_Z05_ThroneRoom",
-        "to_zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard",
-        "xyz": {
-          "x": -1296.38,
-          "y": -1506.46,
-          "z": 3.86
-        },
-        "reset_xyz": {
-          "x": -757.76,
-          "y": -1520.25,
-          "z": 3.86
-        },
-        "stagger": true
+        "zone": "Marleybone/MB_Hub"
       }
     },
     {
-      "id": "state_19",
-      "node_type": "quicksell",
-      "label": "Quicksell",
+      "id": "t_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
       "position": {
-        "x": 1760.0,
-        "y": -90.0
+        "x": -440.0,
+        "y": 0.0
       },
-      "params": {}
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_4",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -548,9 +539,69 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
       "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -628,106 +679,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_18",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_5",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_2",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_19",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_8",
       "dest": "state_9",
       "when": "SUCCESS",
@@ -745,7 +696,98 @@
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_3",
+      "dest": "state_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_17",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Marleybone/G14_Gauntlet/MB_Z01_BarkinghamCourtyard"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  }
 }

@@ -919,6 +919,41 @@
         "y": -1318.39,
         "z": 0.2
       }
+    },
+    {
+      "key": "temple_of_sisyphus",
+      "name": "Temple of Sisyphus",
+      "world": "Aquila",
+      "level": 90,
+      "entrance_zone": "Aquila/AQ_Z00_Hub",
+      "steps": [
+        {
+          "kind": "sigil",
+          "from_zone": "Aquila/AQ_Z00_Hub",
+          "to_zone": "Aquila/Interiors/AQ_Z01_TempleOfSisyphus",
+          "xyz": {
+            "x": 1180.28,
+            "y": 3764.68,
+            "z": -46.81
+          },
+          "reset_xyz": {
+            "x": 826.78,
+            "y": 3268.84,
+            "z": -100.0
+          }
+        }
+      ],
+      "zone": "Aquila/Interiors/AQ_Z01_TempleOfSisyphus",
+      "interact_xyz": {
+        "x": -965.75,
+        "y": -2519.43,
+        "z": 189.57
+      },
+      "reset_xyz": {
+        "x": 4.95,
+        "y": -3576.73,
+        "z": 189.57
+      }
     }
   ]
 }

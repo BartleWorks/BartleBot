@@ -39,7 +39,7 @@ def _walk(from_zone: str, to_zone: str) -> dict:
 
 
 def _station(zone: str) -> dict:
-    return {"node_type": "apply_level_scaling", "params": {"zone": zone, "interact_xyz": _POINT, "reset_xyz": _RESET}}
+    return {"node_type": "interact", "params": {"zone": zone, "interact_xyz": _POINT, "reset_xyz": _RESET}}
 
 
 def _bot(*states: dict) -> dict:
@@ -156,8 +156,19 @@ def test_a_key_is_made_from_the_name(name, expected):
 
 
 def test_a_bot_with_no_station_is_refused(nav):
-    with pytest.raises(TableError, match="no apply_level_scaling"):
+    with pytest.raises(TableError, match="no interact"):
         scales_table.entry_from_bot(_bot(_sigil(_HUB, _DUNGEON)), nav=nav)
+
+
+def test_an_apply_level_scaling_is_not_read_as_the_station(nav):
+    """The recipe records the Scales with an interact; the old node is on its way out."""
+    station = {
+        "node_type": "apply_level_scaling",
+        "params": {"zone": _DUNGEON, "interact_xyz": _POINT, "reset_xyz": _RESET},
+    }
+
+    with pytest.raises(TableError, match="no interact"):
+        scales_table.entry_from_bot(_bot(_sigil(_HUB, _DUNGEON), station), nav=nav)
 
 
 def test_a_bot_with_several_stations_asks_which(nav):
@@ -170,7 +181,7 @@ def test_a_bot_with_several_stations_asks_which(nav):
 
 
 def test_an_unrecorded_station_is_refused(nav):
-    bot = _bot(_sigil(_HUB, _DUNGEON), {"node_type": "apply_level_scaling", "params": {"zone": _DUNGEON}})
+    bot = _bot(_sigil(_HUB, _DUNGEON), {"node_type": "interact", "params": {"zone": _DUNGEON}})
 
     with pytest.raises(TableError, match="not recorded"):
         scales_table.entry_from_bot(bot, nav=nav)

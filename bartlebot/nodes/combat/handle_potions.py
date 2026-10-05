@@ -6,7 +6,8 @@ import logging
 from wizwalker import XYZ, Keycode
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.combat import scaled_ratios
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, BotOptionSpec, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.paths import (
     POTION_BUY_PATH,
     POTION_EXIT_PATH,
@@ -25,14 +26,19 @@ from bartlebot.nodes.zone_entry import enter_zone
 from bartlebot.option_groups import GROUP_GENERAL
 
 # ── Navigation coordinates ─────────────────────────────────────────────────────
-# The route as far as Ravenwood lives in bartlebot.nodes.wizard_city — go_to_world needs
-# the same first two steps. Only the Commons leg and Hilda herself are potion-specific.
+# The route as far as Ravenwood lives in bartlebot.nodes.wizard_city. Only the Commons leg
+# and Hilda herself are potion-specific.
 
 # Hilda Brewer's location in the Commons (potion vendor).
 _HILDA_XYZ = XYZ(-4398.70654296875, 1016.1954345703125, 229.00079345703125)
 
 # Nearby Commons point where Hilda's interact prompt does NOT appear.
 _HILDA_RESET_XYZ = XYZ(-3860.94, 1601.97, 229.0)
+
+#: Whether players with no potion charges left go to Hilda Brewer to buy more. A bot option
+#: rather than a param: spending gold describes the user, not this node's place in the graph,
+#: so it is declared ``None`` and the app setting answers (docs/BOT_OPTIONS.md).
+OPTION_REFILL = "Refill Potions"
 
 # ── Timing constants ───────────────────────────────────────────────────────────
 from bartlebot.nodes.timing import (
@@ -61,17 +67,6 @@ PARAM_SCHEMA: list[ParamField] = [
         required=True,
     ),
     ParamField(
-        key="refill_potions",
-        type="bool",
-        label="Refill Potions",
-        help=(
-            "If enabled, navigate to Hilda Brewer in the Commons to buy potions "
-            "when any player has no potion charges remaining."
-        ),
-        default=True,
-        required=True,
-    ),
-    ParamField(
         key="mark_zone",
         type="zone",
         label="Mark Zone",
@@ -90,7 +85,10 @@ PARAM_SCHEMA: list[ParamField] = [
 NODE_SPEC = NodeSpec(
     description=(
         "Uses potions on players below health or mana thresholds. "
-        "If refill_potions is enabled and any player has no potion charges remaining, "
+        "With Challenge Mode on, a player's health and mana are measured against the max its "
+        "next entry scales it to, since it keeps what it left the dungeon with, so the same "
+        "thresholds serve both modes. "
+        "If Refill Potions is on and any player has no potion charges remaining, "
         "marks the current location, navigates to Hilda Brewer in the Commons to buy "
         "potions, then recalls back to the mark."
     ),
@@ -105,17 +103,19 @@ NODE_SPEC = NodeSpec(
     ],
     required_bot_options=[
         BotOptionSpec(
-            name="Safety Delay",
+            name=OPTION_REFILL,
             group=GROUP_GENERAL,
-            type="float",
-            default=3.0,
-            minimum=0.0,
-            suffix=" s",
+            type="bool",
+            # Null: the author has no opinion, so the app setting answers. On by default,
+            # which is what every bot did while this was a param.
+            default=None,
             description=(
-                "Seconds to allow for game-server responses when waiting for prompts or menus. "
-                "Increase on high-latency connections."
+                "Whether players who run out of potions go to Hilda Brewer in the Commons to buy "
+                "more, marking where they stood and recalling there afterward. Buying costs gold. "
+                "Off, they keep farming without potions."
             ),
         ),
+        SAFETY_DELAY_OPTION,
     ],
     max_consecutive_retries=5,
 )
@@ -123,12 +123,13 @@ NODE_SPEC = NodeSpec(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: SprintyClient.calc_health_ratio(), SprintyClient.calc_mana_ratio(),
+    APIs: scaled_ratios.ratios() (SprintyClient.calc_health_ratio(), calc_mana_ratio()),
           SprintyClient.use_potion(), SprintyClient.has_potion(),
           mark_location.run(), enter_zone.run(), teleport_to_marked_location.run()
 
     Flow:
       1. Check health and mana ratios; use potions on clients below threshold that have them.
+         With Challenge Mode on, the ratios are against the scaled max (scaled_ratios).
       2. Identify buying_clients: clients with no potion charges remaining after use.
       3. If refill is disabled or no clients need to buy, return SUCCESS.
       4. Check buying_clients zones:
@@ -157,20 +158,18 @@ async def run(machine, clients: list, params: dict) -> str:
     """
     health_threshold: float = params.get("if_health_below", 0.5)
     mana_threshold: float = params.get("if_mana_below", 0.15)
-    refill: bool = params.get("refill_potions", True)
+    refill = bool(machine.get_option(OPTION_REFILL, True))
     mark_zone: str = params.get("mark_zone", "") or ""
+    scaled_to = scaled_ratios.challenge_level(machine)
 
     machine.log(
         f"handle_potions: health_threshold={health_threshold:.2f} "
         f"mana_threshold={mana_threshold:.2f} "
-        f"refill={refill} mark_zone={mark_zone!r}"
+        f"refill={refill} mark_zone={mark_zone!r} scaled_to={scaled_to}"
     )
 
     # 1. Check health/mana ratios and use potions on low clients that have them.
-    health_ratios, mana_ratios = await asyncio.gather(
-        asyncio.gather(*[c.calc_health_ratio() for c in clients]),
-        asyncio.gather(*[c.calc_mana_ratio() for c in clients]),
-    )
+    health_ratios, mana_ratios = zip(*await asyncio.gather(*[scaled_ratios.ratios(c, scaled_to) for c in clients]))
     machine.log(
         f"Health: {[round(r, 2) for r in health_ratios]}  Mana: {[round(r, 2) for r in mana_ratios]}",
         logging.DEBUG,

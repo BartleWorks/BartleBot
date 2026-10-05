@@ -154,6 +154,7 @@ async def advance_dialogue_until_clear(
     clients: list,
     safety_delay: float,
     timeout: float | None,
+    first_wait: float | None = None,
 ) -> bool:
     """Advance dialogue on all clients until all are dialogue-free for safety_delay seconds.
 
@@ -162,16 +163,26 @@ async def advance_dialogue_until_clear(
     after a dismissal and POLL_INTERVAL during the quiet phase (no dialogue detected). Returns True when all clients have been dialogue-free
     for safety_delay seconds. Returns False if timeout expires while clients are still in
     dialogue.
+
+    `first_wait`, when given, is how long each client may take to open its first dialogue,
+    counted from the call — the time an animation may take to open it. It is per client: one
+    player's window opening early says nothing about another's animation, which is still
+    playing. A client that has shown dialogue needs only the safety_delay quiet period after
+    the last page.
     """
     loop = asyncio.get_event_loop()
     overall_start = loop.time()
     quiet_since = overall_start
+    # The clients whose first dialogue has not been seen yet, while first_wait still covers them.
+    unseen = set(range(len(clients))) if first_wait is not None else set()
 
     while True:
         now = loop.time()
         dialogs = await asyncio.gather(*[advance_dialog_once(c) for c in clients])
+        unseen -= {i for i, shown in enumerate(dialogs) if shown}
+        animating = bool(unseen) and (now - overall_start) < (first_wait or 0.0)
 
-        if not any(dialogs) and (now - quiet_since) >= safety_delay:
+        if not any(dialogs) and (now - quiet_since) >= safety_delay and not animating:
             return True
 
         if timeout is not None and (now - overall_start) >= timeout:

@@ -124,6 +124,9 @@ class FakeClient:
         self.stats = MagicMock()
         self.stats.potion_max = AsyncMock(return_value=10)
         self.stats.potion_charge = AsyncMock(return_value=10)
+        # A level 180 Fire wizard, which is what Challenge Mode's stat caps read (scaled_ratios).
+        self.stats.reference_level = AsyncMock(return_value=180)
+        self.stats.school_id = AsyncMock(return_value=2343174)
         self.get_health_wisps = AsyncMock(return_value=[])
         self.get_mana_wisps = AsyncMock(return_value=[])
         self.get_mobs = AsyncMock(return_value=[])
@@ -198,6 +201,11 @@ class FakeMachine:
         # unnoticed for the rest of the run, so both sides are recorded.
         self.health_checks_suspended: set[int] = set()
         self.health_checks_resumed: set[int] = set()
+        # Every abandon_client call, as (client, reason). ``recovers`` is what it answers:
+        # False by default, which is the node tester's run with no recovery behind it.
+        self.abandoned: list[tuple[object, str]] = []
+        self.recovers = False
+        self.is_stopped = False
         # Mirrors BotMachine.port_map: None until something surveys who can port to whom.
         self.port_map = None
         # Mirrors BotMachine.node_scratch: what a node keeps for its own rerun.
@@ -227,10 +235,6 @@ class FakeMachine:
     def on_drop(self, item: str, qty: int, client_index: int = 0) -> None:
         self.drops.append((item, qty, client_index))
 
-    def has_drop(self, item: str, client_index: int) -> bool:
-        key = item.strip().lower()
-        return any(client_index == ci and name.strip().lower() == key for name, _qty, ci in self.drops)
-
     def chat_baseline(self, client) -> str | None:
         """Mirror BotMachine: None means never seeded, "" is a real empty baseline."""
         return self.chat_baselines.get(client)
@@ -255,6 +259,11 @@ class FakeMachine:
     def resume_health_checks_for(self, hwnds) -> None:
         self.health_checks_suspended.difference_update(hwnds)
         self.health_checks_resumed.update(hwnds)
+
+    def abandon_client(self, client, reason: str) -> bool:
+        """Record a handover to crash recovery. Real BotMachine kills the client, or stops the run."""
+        self.abandoned.append((client, reason))
+        return self.recovers
 
     def get_option(self, name: str, default=None):
         """Return configured option value, or a sensible test default.

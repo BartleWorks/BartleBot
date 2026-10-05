@@ -9,7 +9,7 @@ The metadata rows are the ones ``BotInfoSection`` used to hold, lifted rather th
 rewritten: ``_Swappable`` is that section's mechanism, moved here whole, and the tags are a
 ``TagsField`` (``gui/widgets/tags_field.py``), which the New Bot dialog uses too.  Everything else the old Bot tab carried is gone —
 
-* **Start** (``start_location``) was never read by the engine, and ``go_to_world``
+* **Start** (``start_location``) was never read by the engine, and ``sync_in_zone``
   plus the bot templates make it moot;
 * **Initial State** and **Recovery State** are badges on the nodes themselves,
   so the labels only ever restated the graph;

@@ -8,11 +8,17 @@ The one behavior worth stating up front: health monitoring is suspended for the 
 being relogged and put back afterwards, *including* when the relog fails. A client at
 character select fails ``zone_name()`` and shows loading screens, which is exactly what the
 crash watchers look for.
+
+The other: past Quit there is no going back. A player that leaves the world and cannot get
+back in is handed to crash recovery (``machine.abandon_client``) and the node raises, rather
+than returning a FAILURE the run would count and possibly stop on.
 """
 
+import asyncio
 import logging
 
 import pytest
+from wizwalker.errors import ClientClosedError
 
 from bartlebot.nodes.paths import (
     BACKPACK_CLOSE_BUTTON_PATH,
@@ -37,6 +43,11 @@ class FakeGame:
     ``quit_dialog`` puts a modal between Quit and character select, as the game does when
     logging out of a dungeon: its caption, and which buttons it shows. The center button
     goes on to character select; the right one backs out to the settings page.
+
+    The ways out of the world can go wrong: ``logout_hangs`` sticks on the loading screen
+    out to character select, ``hangs_loading`` on the one back in, and ``crashes_loading``
+    goes unreadable instead. ``ignores_play_for`` is a character select that takes that
+    many seconds to accept Play.
     """
 
     def __init__(
@@ -46,8 +57,20 @@ class FakeGame:
         loads_in: bool = True,
         reaches_char_select: bool = True,
         quit_dialog: tuple[str, tuple] | None = None,
+        logout_hangs: bool = False,
+        hangs_loading: bool = False,
+        crashes_loading: bool = False,
+        ignores_play_for: float = 0.0,
+        load_seconds: float | None = None,
     ):
+        self.load_seconds = load_seconds
+        self._loading_from = 0.0
         self.screen = "world"
+        self.logout_hangs = logout_hangs
+        self.hangs_loading = hangs_loading
+        self.crashes_loading = crashes_loading
+        self.ignores_play_for = ignores_play_for
+        self._first_play_at: float | None = None
         self.opens_on_realms = opens_on_realms
         self.quit_dialog = quit_dialog
         self.loads_in = loads_in
@@ -78,10 +101,13 @@ class FakeGame:
         return self.screen == "char_select"
 
     async def is_loading(self) -> bool:
-        return self.screen == "loading"
+        if self.screen == "dead":
+            raise RuntimeError("unreadable")
+        return self.screen in ("loading", "loading_out")
 
     async def zone_name(self) -> str:
-        if self.screen != "world":
+        # The world is readable with a menu or a dialog open over it, as in the game.
+        if self.screen not in ("world", "spellbook", "settings", "dialog"):
             raise RuntimeError("not in a zone")
         return "TestZone"
 
@@ -100,6 +126,8 @@ class FakeGame:
         elif path == SETTINGS_QUIT_BUTTON_PATH and self.screen == "settings":
             if self.quit_dialog:
                 self.screen = "dialog"
+            elif self.logout_hangs:
+                self.screen = "loading_out"
             else:
                 self.screen = "char_select" if self.reaches_char_select else "settings"
         elif path == MESSAGE_BOX_CENTER and self.screen == "dialog":
@@ -109,14 +137,28 @@ class FakeGame:
 
     def press_play(self) -> None:
         self.plays += 1
-        if self.screen == "char_select":
-            self.screen = "loading" if self.loads_in else "char_select"
+        if self.screen != "char_select":
+            return
+        now = asyncio.get_running_loop().time()
+        if self._first_play_at is None:
+            self._first_play_at = now
+        if now - self._first_play_at < self.ignores_play_for or not self.loads_in:
+            return
+        self.screen = "dead" if self.crashes_loading else "loading"
+        self._loading_from = now
 
     def tick(self) -> None:
-        """Advance a loading screen, so loading in takes more than one poll."""
-        if self.screen == "loading":
+        """Advance a loading screen, so loading in takes more than one poll.
+
+        Two polls by default; ``load_seconds`` makes it a slow load measured in time instead.
+        """
+        if self.screen == "loading" and not self.hangs_loading:
             self._loading_ticks += 1
-            if self._loading_ticks >= 2:
+            if self.load_seconds is not None:
+                done = asyncio.get_running_loop().time() - self._loading_from >= self.load_seconds
+            else:
+                done = self._loading_ticks >= 2
+            if done:
                 self.screen = "world"
 
 
@@ -156,6 +198,9 @@ def games(monkeypatch):
     monkeypatch.setattr(relog_node, "TRIGGER_TIMEOUT", 0.2)
     monkeypatch.setattr(relog_node, "RELOG_CHAR_SELECT_TIMEOUT", 0.2)
     monkeypatch.setattr(relog_node, "RELOG_IN_GAME_TIMEOUT", 0.5)
+    # A third of the overall deadline, as the real minute is of three, so a stuck loading
+    # screen is caught by its own clock with room to spare.
+    monkeypatch.setattr(relog_node, "LOADING_SCREEN_TIMEOUT", 0.15)
 
     def _make(*game_kwargs) -> tuple[list, list[FakeGame]]:
         clients, made = [], []
@@ -253,19 +298,17 @@ class TestLogoutWarnings:
 
 
 class TestFailurePaths:
-    async def test_character_select_never_appears(self, machine, games, caplog):
+    """Failures with the player still in the world: an ordinary FAILURE, no recovery."""
+
+    async def test_quit_that_does_not_take_effect(self, machine, games, caplog):
         clients, (game,) = games({"reaches_char_select": False})
         with caplog.at_level(logging.WARNING):
             assert await relog_node.run(machine, clients, {}) == "FAILURE"
-        assert any("character select never appeared" in msg for msg, _ in machine.logs)
-
-    async def test_a_player_that_never_loads_back_in(self, machine, games):
-        clients, (game,) = games({"loads_in": False})
-        assert await relog_node.run(machine, clients, {}) == "FAILURE"
-        assert any("did not load back in" in msg for msg, _ in machine.logs)
+        assert any("character select never appeared" in msg and "still in the world" in msg for msg, _ in machine.logs)
+        assert machine.abandoned == []
 
     async def test_one_failure_fails_the_node_for_the_group(self, machine, games):
-        clients, (good, bad) = games({}, {"loads_in": False})
+        clients, (good, bad) = games({}, {"reaches_char_select": False})
         assert await relog_node.run(machine, clients, {}) == "FAILURE"
         assert good.screen == "world"  # the healthy one still relogged
 
@@ -279,6 +322,89 @@ class TestFailurePaths:
         monkeypatch.setattr(nh, "is_visible_by_path", _never_visible)
         assert await relog_node.run(machine, clients, {}) == "FAILURE"
         assert any("spellbook did not open" in msg for msg, _ in machine.logs)
+
+
+class TestPastQuit:
+    """Past Quit, a player that cannot get back in is a crash: handed to recovery, and the node raises.
+
+    The bug this came from: a player left character select and sat on its loading screen for
+    good. The node waited out its whole deadline with health checks off, returned FAILURE,
+    and the retry turned them off again, so nothing ever relaunched the client.
+    """
+
+    @pytest.mark.parametrize(
+        ("game", "said"),
+        [
+            ({"hangs_loading": True}, "has been loading"),
+            ({"crashes_loading": True}, "has been loading"),  # unreadable is the same hang
+            ({"logout_hangs": True}, "character select never appeared"),
+            ({"loads_in": False}, "did not load back in"),  # character select keeps coming back
+        ],
+        ids=["stuck-loading", "unreadable", "stuck-logging-out", "play-never-takes"],
+    )
+    async def test_the_player_is_handed_to_recovery(self, machine, games, game, said):
+        machine.recovers = True
+        clients, _ = games(game)
+        with pytest.raises(ClientClosedError):
+            await relog_node.run(machine, clients, {})
+        ((client, reason),) = machine.abandoned
+        assert client is clients[0]
+        assert said in reason
+
+    async def test_a_stuck_loading_screen_is_caught_well_before_the_overall_deadline(self, machine, games):
+        machine.recovers = True
+        clients, _ = games({"hangs_loading": True})
+        loop = asyncio.get_running_loop()
+        started = loop.time()
+        with pytest.raises(ClientClosedError):
+            await relog_node.run(machine, clients, {})
+        assert loop.time() - started < relog_node.RELOG_IN_GAME_TIMEOUT
+
+    async def test_a_slow_load_under_the_limit_succeeds(self, machine, games):
+        machine.recovers = True
+        clients, (game,) = games({"load_seconds": relog_node.LOADING_SCREEN_TIMEOUT / 3})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert machine.abandoned == []
+
+    async def test_time_at_character_select_is_not_loading(self, machine, games, monkeypatch):
+        """A character select slow to take Play restarts nothing: only time off it counts."""
+        monkeypatch.setattr(relog_node, "RELOG_IN_GAME_TIMEOUT", 2.0)
+        machine.recovers = True
+        clients, (game,) = games({"ignores_play_for": relog_node.LOADING_SCREEN_TIMEOUT * 2})
+        assert await relog_node.run(machine, clients, {}) == "SUCCESS"
+        assert game.plays > 1
+        assert machine.abandoned == []
+
+    async def test_health_checks_stay_off_for_the_abandoned_player_only(self, machine, games):
+        machine.recovers = True
+        clients, (good, _bad) = games({}, {"hangs_loading": True})
+        with pytest.raises(ClientClosedError):
+            await relog_node.run(machine, clients, {})
+        assert good.screen == "world"
+        assert machine.health_checks_resumed == {clients[0].window_handle}
+        assert machine.health_checks_suspended == {clients[1].window_handle}  # recovery's resume() clears it
+
+    async def test_with_no_recovery_behind_the_run_it_is_a_failure(self, machine, games):
+        """The node tester's case: nothing to hand to, so say why and fail as before."""
+        clients, _ = games({"hangs_loading": True})
+        assert await relog_node.run(machine, clients, {}) == "FAILURE"
+        assert any("relog: player has been loading" in msg for msg, _ in machine.logs)
+        assert machine.health_checks_suspended == set()
+
+    async def test_a_player_recovery_cannot_relaunch_leaves_the_stop_to_explain_itself(self, games):
+        """abandon_client stopped the run with the reason; the node adds no second account of it."""
+
+        class StoppingMachine(FakeMachine):
+            def abandon_client(self, client, reason):
+                super().abandon_client(client, reason)
+                self.is_stopped = True
+                return False
+
+        machine = StoppingMachine()
+        clients, _ = games({"hangs_loading": True})
+        assert await relog_node.run(machine, clients, {}) == "FAILURE"
+        assert len(machine.abandoned) == 1
+        assert not any("has been loading" in msg for msg, _ in machine.logs)
 
 
 class TestHealthChecks:

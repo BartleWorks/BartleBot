@@ -1705,6 +1705,11 @@ class EditScene(QGraphicsScene):
             self._in_structural_edit = prev
         self.graph_changed.emit()
 
+    @property
+    def interactive(self) -> bool:
+        """Whether nodes and edges take clicks and drags: Edit mode's state."""
+        return self._interactive_mode
+
     def set_interactive(self, interactive: bool) -> None:
         """Toggle node and edge interactivity for mode switching."""
         self._interactive_mode = interactive

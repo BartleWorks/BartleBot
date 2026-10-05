@@ -132,6 +132,16 @@ class BotTab(QWidget):
             )
         )
 
+        self._refill_potions_cb = QCheckBox()
+        self._refill_potions_cb.setChecked(sm.get_general("default_refill_potions", default=True))
+        players_form.addRow("Refill potions:", self._refill_potions_cb)
+        players_form.addRow(
+            hint(
+                "Whether players who run out of potions go to Hilda Brewer in the Commons to buy more, "
+                "then recall to where they were. Buying costs gold. Off, they keep farming without potions."
+            )
+        )
+
         layout.addLayout(players_form)
 
         # ------------------------------------------------------------------
@@ -256,6 +266,7 @@ class BotTab(QWidget):
             sm.default_friend_name = friend_name
             sm.add_recent_friend_name(friend_name)
         sm.favorite_realm = self._favorite_realm_combo.get_value()
+        sm.set_general("default_refill_potions", self._refill_potions_cb.isChecked())
         sm.set_general("default_quicksell_enabled", self._quicksell_enabled_cb.isChecked())
         sm.set_general("default_quicksell_sell_pets", self._sell_pets_cb.isChecked())
         sm.set_general("default_quicksell_sell_socket_wrenches", self._sell_socket_wrenches_cb.isChecked())

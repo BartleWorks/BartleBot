@@ -3,9 +3,8 @@
 import logging
 
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import INTERACT_ANIMATION_DELAY
-from bartlebot.option_groups import GROUP_GENERAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -51,18 +50,7 @@ NODE_SPEC = NodeSpec(
         ReturnSpec("FAILURE", "The timeout expired while players were still in dialogue."),
     ],
     required_bot_options=[
-        BotOptionSpec(
-            name="Safety Delay",
-            group=GROUP_GENERAL,
-            type="float",
-            default=3.0,
-            minimum=0.0,
-            suffix=" s",
-            description=(
-                "Seconds to allow for game-server responses when waiting for prompts or menus. "
-                "Increase on high-latency connections."
-            ),
-        ),
+        SAFETY_DELAY_OPTION,
     ],
     max_consecutive_retries=None,
 )

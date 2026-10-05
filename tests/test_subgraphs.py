@@ -1,7 +1,7 @@
 """Tests for bartlebot.subgraphs — composing instances into a bot and extracting them back out.
 
 The fixture definition is a synthetic seven-node "sync players" chain shaped like the
-boss template's region (relog → gather → two teleports → go_to_world → hub →
+boss template's region (relog → gather → three teleports → hub →
 wisps), with two entries and two exits. Ids, zones and worlds are invented; nothing
 here is a real character.
 """
@@ -93,8 +93,8 @@ def sync_players_definition(version: int = 1, world: str = "WizardCity") -> Subg
             SubgraphInput(
                 name="world",
                 label="World",
-                type="str_choice",
-                bindings=[SubgraphInputBinding(state="go_to_world", param="world")],
+                type="zone",
+                bindings=[SubgraphInputBinding(state="gate", param="zone")],
             ),
             SubgraphInput(
                 name="hub",
@@ -127,7 +127,7 @@ def sync_players_definition(version: int = 1, world: str = "WizardCity") -> Subg
                 params={"zone": f"{world}/Hub"},
             ),
             StateModel(
-                id="go_to_world", node_type="go_to_world", position={"x": 1760.0, "y": 90.0}, params={"world": world}
+                id="gate", node_type="teleport_to_world_hub", position={"x": 1760.0, "y": 90.0}, params={"zone": world}
             ),
             StateModel(
                 id="hub",
@@ -155,10 +155,10 @@ def sync_players_definition(version: int = 1, world: str = "WizardCity") -> Subg
             _t("gather", "tp_a"),
             _t("tp_a", "tp_b", "FAILURE"),
             _t("tp_a", "exit_early"),
-            _t("tp_b", "go_to_world", "FAILURE"),
+            _t("tp_b", "gate", "FAILURE"),
             _t("tp_b", "hub"),
-            _t("go_to_world", "hub"),
-            _t("go_to_world", "tp_b", "FAILURE"),
+            _t("gate", "hub"),
+            _t("gate", "tp_b", "FAILURE"),
             _t("hub", "wisps"),
             _t("hub", "relog", "FAILURE"),
             _t("wisps", "hub", "FAILURE"),
@@ -482,9 +482,9 @@ def test_a_set_input_beats_the_definition_value():
 
 def test_unset_input_leaves_definition_value():
     defn = sync_players_definition()
-    go = next(s for s in defn.states if s.id == "go_to_world")
+    go = next(s for s in defn.states if s.id == "gate")
     source = SubgraphSource(subgraph_id=SYNC_ID, version=1, inputs={"world": None})
-    assert resolve_member_params(defn, go, source)["world"] == "WizardCity"
+    assert resolve_member_params(defn, go, source)["zone"] == "WizardCity"
 
 
 def test_a_set_input_reaches_every_bound_member(library):
@@ -493,7 +493,7 @@ def test_a_set_input_reaches_every_bound_member(library):
     assert by_id[m("hub")].params["zone"] == "Marleybone/Hub"
     assert by_id[m("tp_b")].params["zone"] == "Marleybone/Hub"
     assert by_id[m("tp_a")].params["zone"] == "DragonSpyre/DS_Hub"  # not bound; definition value
-    assert by_id[m("go_to_world")].params["world"] == "WizardCity"  # a different input, unset
+    assert by_id[m("gate")].params["zone"] == "WizardCity"  # a different input, unset
 
 
 def _panel_definition() -> SubgraphDefinition:
@@ -560,7 +560,7 @@ def test_compose_replaces_snapshot_with_current_definition(bot, library):
     assert report.regions[REGION].kind == "linked"
     assert report.regions[REGION].library_version == 2
     assert report.regions[REGION].origin is Origin.USER
-    assert {s.id: s for s in composed.states}[m("go_to_world")].params["world"] == "Mooshu"
+    assert {s.id: s for s in composed.states}[m("gate")].params["zone"] == "Mooshu"
     assert composed.regions[0].members == bot.regions[0].members
     assert composed.initial == m("relog")
 
@@ -682,14 +682,14 @@ def test_removing_a_member_that_no_crossing_uses_is_linked(bot, library):
     """Internal changes never hold an update."""
 
     def edit(d: SubgraphDefinition) -> None:
-        d.states = [s for s in d.states if s.id != "go_to_world"]
-        d.transitions = [t for t in d.transitions if "go_to_world" not in (t.source, t.dest)]
+        d.states = [s for s in d.states if s.id != "gate"]
+        d.transitions = [t for t in d.transitions if "gate" not in (t.source, t.dest)]
         d.inputs = [i for i in d.inputs if i.name != "world"]
 
     _save_edited(library, edit)
     composed, report = compose_bot(bot, library)
     assert report.regions[REGION].kind == "linked"
-    assert m("go_to_world") not in {s.id for s in composed.states}
+    assert m("gate") not in {s.id for s in composed.states}
 
 
 def test_a_crossing_on_no_port_holds_only_if_its_member_goes(bot, library):
@@ -878,7 +878,7 @@ def test_compose_recomposes_a_nested_instance_through_its_outer_region(library):
     library.save(sync_players_definition(version=2, world="Avalon"))
     composed, report = compose_bot(bot, library)
     assert set(report.regions) == {"R"}, "the nested region is not composed on its own"
-    assert {s.id: s for s in composed.states}["R_in1_go_to_world"].params["world"] == "Avalon"
+    assert {s.id: s for s in composed.states}["R_in1_gate"].params["zone"] == "Avalon"
     assert [r.id for r in composed.regions] == ["R", "R_in1"]
     assert composed.regions[1].source.version == 2
 
@@ -1039,7 +1039,7 @@ def test_reresolve_member_params_applies_inputs_in_place(bot, library):
     region.source.inputs["world"] = "Mooshu"
     reresolve_member_params(bot, region, library.get(SYNC_ID))
     by_id = {s.id: s for s in bot.states}
-    assert by_id[m("go_to_world")].params["world"] == "Mooshu"
+    assert by_id[m("gate")].params["zone"] == "Mooshu"
     assert by_id[m("hub")].params["zone"] == "WizardCity/Hub"
     assert by_id["state_1"].params == {"to_zone": "X/Y"}, "an external state is not the instance's"
 
@@ -1098,11 +1098,11 @@ def test_an_unset_input_follows_its_default():
     defn = sync_players_definition()
     world = next(i for i in defn.inputs if i.name == "world")
     world.default = "Mooshu"
-    state = next(s for s in defn.states if s.id == "go_to_world")
+    state = next(s for s in defn.states if s.id == "gate")
     source = SubgraphSource(subgraph_id=defn.id, version=1)
-    assert resolve_member_params(defn, state, source)["world"] == "Mooshu"
+    assert resolve_member_params(defn, state, source)["zone"] == "Mooshu"
     source.inputs["world"] = "Krokotopia"
-    assert resolve_member_params(defn, state, source)["world"] == "Krokotopia"
+    assert resolve_member_params(defn, state, source)["zone"] == "Krokotopia"
 
 
 def test_sync_linked_values_keeps_linked_params_equal_to_their_input():
@@ -1168,7 +1168,7 @@ def test_a_binding_names_a_state_or_a_nested_instance_never_both():
 
 def test_a_member_binding_is_written_as_before():
     dumped = sync_players_definition().model_dump(exclude_none=True)
-    assert dumped["inputs"][0]["bindings"] == [{"state": "go_to_world", "param": "world"}]
+    assert dumped["inputs"][0]["bindings"] == [{"state": "gate", "param": "zone"}]
 
 
 def test_an_outer_input_goes_in_through_the_nested_instances_own_input(library):

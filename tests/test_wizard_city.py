@@ -1,4 +1,4 @@
-"""Unit tests for the Wizard City travel route shared by handle_potions and go_to_world."""
+"""Unit tests for the Wizard City travel route handle_potions starts with."""
 
 import logging
 from unittest.mock import AsyncMock, patch
@@ -340,7 +340,7 @@ async def test_home_without_a_warning_still_re_presses():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# go_to_ravenwood — the route both handle_potions and go_to_world start with
+# go_to_ravenwood — the route handle_potions starts with
 # ══════════════════════════════════════════════════════════════════════════════
 
 

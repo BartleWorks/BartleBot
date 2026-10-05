@@ -165,7 +165,7 @@ class NavMap:
         return self.worlds.get(key)
 
     def entry_world(self, world: str) -> str:
-        """The world go_to_world should be asked for to reach `world`: follows entered_from."""
+        """The world the World Gate should be asked for to reach `world`: follows entered_from."""
         current = self.worlds[world]
         while current.entered_from:
             current = self.worlds[current.entered_from]
@@ -437,7 +437,7 @@ def _gate_links(worlds: dict[str, World]) -> list[Step]:
 
 
 def _parse_gate(spec: dict, where: str, problems: list[str]) -> dict | None:
-    """A world's World Gate. It stands where go_to_world lands, so only a world with a door has one."""
+    """A world's World Gate. It stands where the gate lands players, so only a world with a door has one."""
     if "gate" not in spec:
         return None
     gate = spec["gate"]

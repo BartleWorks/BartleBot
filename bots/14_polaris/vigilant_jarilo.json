@@ -4,8 +4,8 @@
   "description": "Farms Vigilant Sargun in the Sunless Shrine, entered via the River of Frozen Tears in Polaris.",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_2",
-  "recovery_state": "state_2",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Aether"
@@ -533,21 +533,77 @@
   "authors": "BartleBot",
   "tags": [
     "Jewels",
-    "Boss"
+    "Boss",
+    "Team-Up"
   ],
   "options": [],
   "states": [
     {
-      "id": "state_3",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Polaris/PL_Z03_IcefallPassage"
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Sunless Shrine",
       "position": {
-        "x": 1320,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
         "from_zone": "Polaris/PL_Z03_IcefallPassage",
         "dungeon_zone": "Polaris/Interiors/PL_Z03I04_SunlessShrineEnt",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "dungeon_name": "Sunless Shrine",
         "sigil_xyz": {
           "x": 7289.76,
@@ -562,11 +618,84 @@
       }
     },
     {
+      "id": "t_4",
+      "node_type": "handle_combat",
+      "label": "Fight Vigilant Jarilo",
+      "position": {
+        "x": 2640,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "PL_WolfGryphon_Warrior_C",
+        "wiki_page": "",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3960,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
+      "node_type": "enter_zone",
+      "label": "Exit Sunless Shrine",
+      "position": {
+        "x": 4400,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Polaris/Interiors/PL_Z03I04_SunlessShrineEnt",
+        "to_zone": "Polaris/PL_Z03_IcefallPassage",
+        "stagger": false,
+        "xyz": {
+          "x": -1.96,
+          "y": 168.13,
+          "z": -0.22
+        },
+        "reset_xyz": {
+          "x": -26.17,
+          "y": -506.71,
+          "z": -0.22
+        }
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
       "id": "state_4",
       "node_type": "enter_zone",
       "label": "Enter boss room",
       "position": {
-        "x": 1760,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -586,25 +715,11 @@
       }
     },
     {
-      "id": "state_5",
-      "node_type": "handle_combat",
-      "label": "Fight Vigilant Jarilo",
-      "position": {
-        "x": 2200,
-        "y": 0.0
-      },
-      "params": {
-        "enemy": "PL_WolfGryphon_Warrior_C",
-        "use_bot_default": false,
-        "combat_config": "### p1\nmass | feint[potent]@boss | feint@boss\n\n### p2\nany<aura & out_damage> | lord[epic] | tempest[epic]"
-      }
-    },
-    {
       "id": "state_6",
       "node_type": "enter_zone",
       "label": "Exit boss room",
       "position": {
-        "x": 2640,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -624,47 +739,11 @@
       }
     },
     {
-      "id": "state_7",
-      "node_type": "enter_zone",
-      "label": "Exit Sunless Shrine",
-      "position": {
-        "x": 3520,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Polaris/Interiors/PL_Z03I04_SunlessShrineEnt",
-        "to_zone": "Polaris/PL_Z03_IcefallPassage",
-        "xyz": {
-          "x": -1.96,
-          "y": 168.13,
-          "z": -0.22
-        },
-        "reset_xyz": {
-          "x": -26.17,
-          "y": -506.71,
-          "z": -0.22
-        },
-        "stagger": false
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "sync_in_zone",
-      "label": "Go to River of Frozen Tears",
-      "position": {
-        "x": 440,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Polaris/PL_Z03_IcefallPassage"
-      }
-    },
-    {
       "id": "state_8",
       "node_type": "collect_wisps",
       "label": "Collect health wisps",
       "position": {
-        "x": 3080,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -674,28 +753,13 @@
         "fail_if_mana_below": 0.5,
         "timeout": 10.0
       }
-    },
-    {
-      "id": "state_9",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 880,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "refill_potions": true,
-        "mark_zone": "Polaris/PL_Z03_IcefallPassage"
-      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_9",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -704,8 +768,18 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_2",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -714,8 +788,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -724,8 +798,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -734,9 +808,39 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -754,8 +858,28 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_9",
+      "source": "t_3",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "state_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -765,7 +889,7 @@
     {
       "trigger": "advance",
       "source": "state_8",
-      "dest": "state_7",
+      "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -775,27 +899,7 @@
     {
       "trigger": "advance",
       "source": "state_8",
-      "dest": "state_7",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_3",
+      "dest": "t_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -803,5 +907,46 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Polaris/PL_Z03_IcefallPassage"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
 }

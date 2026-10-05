@@ -136,7 +136,7 @@ def _within(pixel: QColor, target: QColor, tolerance: int) -> bool:
 
 def _combo(*, enabled: bool = True) -> QComboBox:
     combo = QComboBox()
-    combo.addItem("go_to_world")
+    combo.addItem("sync_in_zone")
     combo.setEnabled(enabled)
     return combo
 

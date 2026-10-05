@@ -10,8 +10,11 @@ Nodes are async mocks; no Wizard101 client is involved.
 import asyncio
 
 import pytest
+from wizwalker.errors import ClientClosedError
 
+from bartlebot.bot.client_health_monitor import ClientHealthMonitor
 from bartlebot.bot.machine import BotMachine
+from tests.conftest import FakeClient
 
 CONFIG = {
     "initial": "state_a",
@@ -138,6 +141,98 @@ class TestSuspendHealthChecks:
         machine.resume()
         assert monitor.is_flagged(111) is False
 
+        await _finish(machine, task)
+
+
+class TestAbandonClient:
+    """A node handing a client it wedged to crash recovery, or stopping when recovery cannot help."""
+
+    @staticmethod
+    def _machine(node_fn, clients, **kwargs):
+        stopped: list[str] = []
+        machine = BotMachine(
+            clients=clients,
+            config=CONFIG,
+            node_registry={"mock": node_fn},
+            stop_grace_period=0.1,
+            on_stopped=stopped.append,
+            **kwargs,
+        )
+        return machine, stopped
+
+    @staticmethod
+    async def _started(machine, monkeypatch) -> tuple[asyncio.Task, list]:
+        """Run the loop until the monitor exists, with its kill swapped for a recorder."""
+        task = await _run_briefly(machine)
+        await asyncio.sleep(0.02)
+        recovered: list = []
+        monkeypatch.setattr(machine.health_monitor, "recover", lambda c, r: recovered.append((c, r)))
+        return task, recovered
+
+    def test_with_no_run_in_flight_there_is_nothing_to_hand_to(self):
+        client = FakeClient()
+        machine, _ = self._machine(quick_node, [client])
+        assert machine.abandon_client(client, "has been loading for 60s") is False
+
+    async def test_a_recoverable_client_goes_to_the_monitor(self, monkeypatch):
+        client = FakeClient()
+        machine, stopped = self._machine(quick_node, [client], recovery_gap=lambda _hwnd: None)
+        task, recovered = await self._started(machine, monkeypatch)
+
+        assert machine.abandon_client(client, "has been loading for 60s") is True
+        assert recovered == [(client, "has been loading for 60s")]
+        assert not machine.is_stopped and stopped == []
+        await _finish(machine, task)
+
+    async def test_a_client_recovery_cannot_relaunch_stops_the_run_and_says_why(self, monkeypatch):
+        other, client = FakeClient(), FakeClient()
+        machine, stopped = self._machine(
+            quick_node, [other, client], recovery_gap=lambda _hwnd: "no password saved for 'Account 2'"
+        )
+        task, recovered = await self._started(machine, monkeypatch)
+
+        assert machine.abandon_client(client, "has been loading for 60s") is False
+        assert recovered == []  # closing it would leave the bot waiting on a player that never returns
+        assert machine.is_stopped
+        (message,) = stopped
+        assert message.startswith("Player 2 has been loading for 60s")
+        assert "no password saved for 'Account 2'" in message
+        await _finish(machine, task)
+
+    async def test_a_gap_lookup_that_raises_is_not_a_gap(self, monkeypatch):
+        """As recovery_gaps does: an unverifiable gap is not claimed."""
+        client = FakeClient()
+
+        def _broken(_hwnd):
+            raise RuntimeError("Credential Manager is unhappy")
+
+        machine, _ = self._machine(quick_node, [client], recovery_gap=_broken)
+        task, recovered = await self._started(machine, monkeypatch)
+        assert machine.abandon_client(client, "has been loading for 60s") is True
+        assert len(recovered) == 1
+        await _finish(machine, task)
+
+    async def test_a_node_that_abandons_and_raises_parks_without_counting(self, monkeypatch):
+        """The contract relog relies on: the run waits for recovery, even with no retries left.
+
+        A FAILURE here would hit max_consecutive_retries=1 and stop the run before recovery
+        could resume it, which is the bug this path exists to avoid.
+        """
+        client = FakeClient()
+
+        async def abandoning_node(machine, _clients, _params):
+            machine.abandon_client(client, "has been loading for 60s")
+            raise ClientClosedError()
+
+        config = {**CONFIG, "states": [{**CONFIG["states"][0], "max_consecutive_retries": 1}]}
+        machine = BotMachine(
+            clients=[client], config=config, node_registry={"mock": abandoning_node}, stop_grace_period=0.1
+        )
+        task = await _run_briefly(machine)
+        monkeypatch.setattr(ClientHealthMonitor, "recover", lambda self, c, r: None)
+
+        assert await machine.wait_until_parked(1.0) is True
+        assert not machine.is_stopped
         await _finish(machine, task)
 
 

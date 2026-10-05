@@ -63,6 +63,7 @@ class BotMachine:
         on_restricted_zone: Callable[[str], None] | None = None,
         on_explicit_stop: Callable[[str, str, str], None] | None = None,
         on_stopped: Callable[[str], None] | None = None,
+        recovery_gap: Callable[[int], str | None] | None = None,
         stop_grace_period: float = 1.0,
     ) -> None:
         self.clients = clients
@@ -76,6 +77,8 @@ class BotMachine:
         self._on_restricted_zone = on_restricted_zone
         self._on_explicit_stop = on_explicit_stop
         self._on_stopped = on_stopped
+        # Why a client could not be relaunched, or None when it could. See abandon_client.
+        self._recovery_gap = recovery_gap
         # When each recent flee happened (monotonic), for the flee limit. See note_flee.
         self._flees: list[float] = []
         # True while run()'s loop is live, so the ambient watcher knows whether a park can come.
@@ -84,7 +87,6 @@ class BotMachine:
         self._stop_grace_period = stop_grace_period
         self._current_node_task: asyncio.Task | None = None
         self.drops: deque[tuple[str, int, int]] = deque(maxlen=10_000)  # (item, quantity, client_index)
-        self._drops_seen: set[tuple[int, str]] = set()  # (client_index, item_lower) — never evicted, used by has_drop()
         # Per-client chat-log baseline that drop detection diffs against. Keyed by the
         # client object rather than its slot: ClientManager.swap_clients reorders slots
         # mid-run, and a baseline describes what a particular game window has already
@@ -120,6 +122,8 @@ class BotMachine:
         # combat watcher is run again from the start (see bartlebot/nodes/CLAUDE.md), and this
         # is the only thing that outlives the cancel: handle_level_scaling keeps where each
         # client marked, so the rerun does not mark again somewhere on the way to the Scales.
+        # One entry is run-wide rather than a node's own: mark_location.MARKS_KEY, where each
+        # client last marked in this run, written by every mark.
         self.node_scratch: dict[str, object] = {}
         # Which clients have been seen sharing a zone, realm and instance. Keeps only the
         # latest check until run() starts the loading watcher that says when one goes stale.
@@ -280,20 +284,11 @@ class BotMachine:
         if m:
             item, quantity = m.group(2), quantity * int(m.group(1))
         self.drops.append((item, quantity, client_index))
-        self._drops_seen.add((client_index, item.strip().lower()))
         if self._on_drop:
             try:
                 self._on_drop(item, quantity, client_index)
             except Exception:
                 logger.exception("on_drop callback raised for item=%r qty=%d", item, quantity)
-
-    def has_drop(self, item: str, client_index: int) -> bool:
-        """Return True if *item* was ever dropped by *client_index* in this run.
-
-        Uses a dedicated set so the answer is correct even when self.drops has
-        rotated old entries out of its bounded deque window.
-        """
-        return (client_index, item.strip().lower()) in self._drops_seen
 
     def chat_baseline(self, client) -> str | None:
         """The chat-log text *client*'s drops were last read from, or None if unseeded.
@@ -320,8 +315,8 @@ class BotMachine:
 
         A fight hands its poll here instead of awaiting it: an announcement can take many
         seconds to arrive, and on a fight that dropped nothing the poll waits out its whole
-        window. Nothing downstream needs the answer at once except ``check_if_dropped``,
-        which calls ``wait_for_drop_poll``.
+        window. Nothing downstream needs the answer at once; anything that does waits with
+        ``wait_for_drop_poll``.
 
         Cancelling the old poll loses nothing. It only moves a baseline forward on a hit,
         and records that hit with no await in between, so a cancel lands either before
@@ -1026,6 +1021,46 @@ class BotMachine:
             return
         for hwnd in hwnds:
             self._health_monitor.unflag(hwnd)
+
+    def abandon_client(self, client, reason: str) -> bool:
+        """Hand a client a node can no longer use to crash recovery, to be closed and relaunched.
+
+        For a node that has taken a client somewhere it cannot bring it back from -- the
+        relog node after Quit, with the client stuck on a loading screen -- while holding
+        health checks off for it, so no watcher is going to notice on its own.
+
+        True when the client was handed over. The node must then raise ``ClientClosedError``
+        rather than return a result: the run loop's dead-client branch parks without counting
+        the tick, where a FAILURE is routed and counted first and can stop the run before
+        recovery gets to resume it. The client stays flagged until recovery's ``resume()``
+        clears it, so the caller must not resume health checks for it either.
+
+        False when it was not. With no run in flight there is no recovery to hand to. A
+        client recovery could not relaunch stops the run with a message saying why: closing
+        it would only leave the bot paused on a player that never comes back.
+
+        *reason* reads after a subject: "has been loading for 60s".
+        """
+        monitor = self._health_monitor
+        if monitor is None:
+            return False
+        hwnd = client.window_handle
+        gap = None
+        if self._recovery_gap:
+            try:
+                gap = self._recovery_gap(hwnd)
+            except Exception:
+                logger.exception("recovery_gap raised")
+        if gap:
+            position = next((i for i, c in enumerate(self.clients, start=1) if c is client), None)
+            who = f"Player {position}" if position else f"The client at hwnd={hwnd}"
+            self._stop_with_reason(
+                f"{who} {reason}, and cannot be closed and relaunched automatically: {gap}."
+                " Fix that before running the bot again."
+            )
+            return False
+        monitor.recover(client, reason)
+        return True
 
     def force_state(self, state_id: str, reason: str | None = None) -> None:
         """Force the FSM into a specific state for recovery. Bypasses normal entry callbacks.

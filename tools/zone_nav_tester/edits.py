@@ -120,7 +120,7 @@ def set_world_gate(raw: dict, zone: str, interact: dict, reset: dict, *, verifie
     """Record the World Gate standing in `zone`, on the world whose door that is.
 
     Returns "added" or "updated". Raises ValueError when `zone` is no world's door: a gate
-    stands where go_to_world lands, so one found anywhere else means the map's door is wrong.
+    stands where the gate lands players, so one found anywhere else means the map's door is wrong.
     Any note on an existing gate is kept.
     """
     world = world_with_door(raw, zone)

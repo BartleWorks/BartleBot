@@ -4,8 +4,8 @@
   "description": "Endlessly completes the Trial of the Spheres in Celestia",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "5 Shark Tooth"
@@ -1342,28 +1342,88 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Celestia Base Camp",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": 0,
+        "x": 0.0,
         "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Celestia/CL_Hub"
       }
     },
     {
-      "id": "state_2",
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Celestia/CL_Hub",
+        "xyz": {
+          "x": -21.36,
+          "y": 14693.1,
+          "z": -1099.7
+        }
+      }
+    },
+    {
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Trial of the Spheres",
       "position": {
-        "x": 440.0,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
         "from_zone": "Celestia/CL_Hub",
         "dungeon_zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
+        "offers_challenge_mode": false,
+        "offers_team_up": false,
         "dungeon_name": "Trial of the Spheres",
         "sigil_xyz": {
           "x": -217.96,
@@ -1378,11 +1438,41 @@
       }
     },
     {
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
+      "position": {
+        "x": 19360,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "",
+        "xyz": null
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
       "id": "state_3",
       "node_type": "teleport_to_coordinates",
       "label": "Activate cutscene",
       "position": {
-        "x": 880.0,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -1399,8 +1489,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Begin Test of the Shining Stars",
       "position": {
-        "x": 1320.0,
-        "y": -90.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1416,8 +1506,8 @@
       "node_type": "interact",
       "label": "Activate first star",
       "position": {
-        "x": 1760.0,
-        "y": -90.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1441,8 +1531,8 @@
       "node_type": "interact",
       "label": "Activate second star",
       "position": {
-        "x": 2200.0,
-        "y": -90.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1466,8 +1556,8 @@
       "node_type": "interact",
       "label": "Activate third star",
       "position": {
-        "x": 2640.0,
-        "y": -90.0
+        "x": 4400,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1491,8 +1581,8 @@
       "node_type": "interact",
       "label": "Activate fourth star",
       "position": {
-        "x": 3080.0,
-        "y": -90.0
+        "x": 4840,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1516,8 +1606,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Begin Test of Constellation",
       "position": {
-        "x": 3520.0,
-        "y": -90.0
+        "x": 5280,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1533,8 +1623,8 @@
       "node_type": "interact",
       "label": "Activate green console",
       "position": {
-        "x": 3960.0,
-        "y": -90.0
+        "x": 5720,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1558,8 +1648,8 @@
       "node_type": "interact",
       "label": "Activate red console",
       "position": {
-        "x": 4400.0,
-        "y": -90.0
+        "x": 6160,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1583,8 +1673,8 @@
       "node_type": "interact",
       "label": "Activate yellow console",
       "position": {
-        "x": 4840.0,
-        "y": -90.0
+        "x": 6600,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1608,8 +1698,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Begin Test of Vision",
       "position": {
-        "x": 5280.0,
-        "y": -90.0
+        "x": 7040,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1625,8 +1715,8 @@
       "node_type": "interact",
       "label": "Turn first head",
       "position": {
-        "x": 5720.0,
-        "y": -90.0
+        "x": 7480,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1650,8 +1740,8 @@
       "node_type": "interact",
       "label": "Turn second head",
       "position": {
-        "x": 6160.0,
-        "y": -180.0
+        "x": 7920,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1675,8 +1765,8 @@
       "node_type": "interact",
       "label": "Turn second head",
       "position": {
-        "x": 6160.0,
-        "y": -90.0
+        "x": 8360,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1696,12 +1786,12 @@
       }
     },
     {
-      "id": "state_17",
+      "id": "state_19",
       "node_type": "interact",
       "label": "Turn third head",
       "position": {
-        "x": 6600.0,
-        "y": -90.0
+        "x": 8800,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1725,8 +1815,8 @@
       "node_type": "interact",
       "label": "Turn third head",
       "position": {
-        "x": 6600.0,
-        "y": -180.0
+        "x": 9240,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1746,12 +1836,12 @@
       }
     },
     {
-      "id": "state_19",
+      "id": "state_17",
       "node_type": "interact",
       "label": "Turn third head",
       "position": {
-        "x": 6600.0,
-        "y": -270.0
+        "x": 9680,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/StarRoom",
@@ -1775,7 +1865,7 @@
       "node_type": "enter_zone",
       "label": "Enter Sanctum of the Stars",
       "position": {
-        "x": 7040.0,
+        "x": 10120,
         "y": 0.0
       },
       "params": {
@@ -1798,7 +1888,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Astraeus",
       "position": {
-        "x": 7480.0,
+        "x": 10560,
         "y": 0.0
       },
       "params": {
@@ -1813,7 +1903,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 7920.0,
+        "x": 11000,
         "y": 0.0
       },
       "params": {
@@ -1830,7 +1920,7 @@
       "node_type": "enter_zone",
       "label": "Enter teleporter to moon room",
       "position": {
-        "x": 8360.0,
+        "x": 11440,
         "y": 0.0
       },
       "params": {
@@ -1853,8 +1943,8 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to Ptolemos",
       "position": {
-        "x": 8800.0,
-        "y": -90.0
+        "x": 11880,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/MoonRoom",
@@ -1870,8 +1960,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Ptolemos",
       "position": {
-        "x": 9240.0,
-        "y": -90.0
+        "x": 12320,
+        "y": 0.0
       },
       "params": {
         "enemy": "CL-Moon-Boss-R10",
@@ -1885,7 +1975,7 @@
       "node_type": "enter_zone",
       "label": "Enter teleporter to sun room",
       "position": {
-        "x": 9680.0,
+        "x": 12760,
         "y": 0.0
       },
       "params": {
@@ -1908,8 +1998,8 @@
       "node_type": "interact",
       "label": "Align first mirror",
       "position": {
-        "x": 10120.0,
-        "y": -270.0
+        "x": 13200,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
@@ -1933,8 +2023,8 @@
       "node_type": "interact",
       "label": "Align second mirror",
       "position": {
-        "x": 10120.0,
-        "y": -180.0
+        "x": 13640,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
@@ -1958,8 +2048,8 @@
       "node_type": "interact",
       "label": "Align third mirror",
       "position": {
-        "x": 10120.0,
-        "y": -90.0
+        "x": 14080,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
@@ -1983,7 +2073,7 @@
       "node_type": "interact",
       "label": "Align fourth mirror",
       "position": {
-        "x": 10120.0,
+        "x": 14520,
         "y": 0.0
       },
       "params": {
@@ -2008,8 +2098,8 @@
       "node_type": "interact",
       "label": "Collect first sword",
       "position": {
-        "x": 10560.0,
-        "y": -90.0
+        "x": 14960,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
@@ -2033,7 +2123,7 @@
       "node_type": "interact",
       "label": "Place first sword",
       "position": {
-        "x": 10560.0,
+        "x": 15400,
         "y": 0.0
       },
       "params": {
@@ -2058,8 +2148,8 @@
       "node_type": "interact",
       "label": "Collect second sword",
       "position": {
-        "x": 11000.0,
-        "y": -90.0
+        "x": 15840,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
@@ -2083,7 +2173,7 @@
       "node_type": "interact",
       "label": "Place second sword",
       "position": {
-        "x": 11000.0,
+        "x": 16280,
         "y": 0.0
       },
       "params": {
@@ -2108,8 +2198,8 @@
       "node_type": "interact",
       "label": "Collect third sword",
       "position": {
-        "x": 11440.0,
-        "y": -90.0
+        "x": 16720,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
@@ -2133,7 +2223,7 @@
       "node_type": "interact",
       "label": "Place third sword",
       "position": {
-        "x": 11440.0,
+        "x": 17160,
         "y": 0.0
       },
       "params": {
@@ -2158,8 +2248,8 @@
       "node_type": "interact",
       "label": "Collect fourth sword",
       "position": {
-        "x": 11880.0,
-        "y": -90.0
+        "x": 17600,
+        "y": 0.0
       },
       "params": {
         "zone": "Celestia/CL_Z12_Test_of_the_Spheres/SunRoom",
@@ -2183,7 +2273,7 @@
       "node_type": "interact",
       "label": "Place fourth sword",
       "position": {
-        "x": 11880.0,
+        "x": 18040,
         "y": 0.0
       },
       "params": {
@@ -2208,7 +2298,7 @@
       "node_type": "enter_zone",
       "label": "Take teleporter to Sanctum of the Sun",
       "position": {
-        "x": 12320.0,
+        "x": 18480,
         "y": 0.0
       },
       "params": {
@@ -2231,8 +2321,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Mithraya",
       "position": {
-        "x": 12760.0,
-        "y": -90.0
+        "x": 18920,
+        "y": 0.0
       },
       "params": {
         "enemy": "CL-Sun-Boss-R10",
@@ -2242,54 +2332,40 @@
       }
     },
     {
-      "id": "state_41",
-      "node_type": "enter_zone",
-      "label": "Take teleporter to Celestia Base Camp",
+      "id": "t_8",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
       "position": {
-        "x": 13200.0,
-        "y": -90.0
+        "x": -880.0,
+        "y": 0.0
       },
       "params": {
-        "from_zone": "Celestia/Interiors/CL_Z12i2_Test_Of_The_Spheres",
-        "to_zone": "Celestia/CL_Hub",
-        "xyz": {
-          "x": 297.68,
-          "y": 2378.14,
-          "z": 0.0
-        },
-        "reset_xyz": {
-          "x": 236.35,
-          "y": 1826.29,
-          "z": 0.0
-        }
+        "zone": "Celestia/CL_Hub"
       }
     },
     {
-      "id": "state_42",
-      "node_type": "quicksell",
-      "label": "Quicksell",
+      "id": "t_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
       "position": {
-        "x": 13640.0,
-        "y": -360.0
+        "x": -440.0,
+        "y": 0.0
       },
-      "params": {}
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
+      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2298,8 +2374,68 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2868,16 +3004,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_40",
-      "dest": "state_41",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_21",
       "dest": "state_21",
       "when": "FAILURE",
@@ -2898,8 +3024,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_41",
-      "dest": "state_42",
+      "source": "t_3",
+      "dest": "state_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2908,8 +3034,38 @@
     },
     {
       "trigger": "advance",
-      "source": "state_42",
-      "dest": "state_2",
+      "source": "state_40",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2918,6 +3074,42 @@
     }
   ],
   "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Celestia/CL_Hub"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    },
     {
       "id": "051bf615",
       "label": "Test of the Shining Stars",
@@ -2974,5 +3166,9 @@
       ],
       "color": 4
     }
-  ]
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  }
 }

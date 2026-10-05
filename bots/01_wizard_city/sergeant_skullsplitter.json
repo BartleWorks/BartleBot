@@ -4,382 +4,456 @@
   "description": "Endlessly farms Sergeant Skullsplitter in Triton Avenue",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_9",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Antique Footguards"
+      "name": "Antique Footguards",
+      "category": "Boots"
     },
     {
-      "name": "Antique Overshirt"
+      "name": "Antique Overshirt",
+      "category": "Robes"
     },
     {
-      "name": "Armored Tunic"
+      "name": "Armored Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Ashen Cloak"
+      "name": "Ashen Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Banshee"
+      "name": "Banshee",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Blonde Strawberry"
+      "name": "Blonde Strawberry",
+      "category": "Snacks"
     },
     {
-      "name": "Bloomshroud"
+      "name": "Bloomshroud",
+      "category": "Hats"
     },
     {
-      "name": "Bone"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Boots of Embers"
+      "name": "Boots of Embers",
+      "category": "Boots"
     },
     {
-      "name": "Cap of Advantages"
+      "name": "Cap of Advantages",
+      "category": "Hats"
     },
     {
-      "name": "Charged Cover"
+      "name": "Charged Cover",
+      "category": "Hats"
     },
     {
-      "name": "Cheese Broccoli"
+      "name": "Cheese Broccoli",
+      "category": "Snacks"
     },
     {
-      "name": "Chillcloak"
+      "name": "Chillcloak",
+      "category": "Robes"
     },
     {
-      "name": "Chipped Knife"
+      "name": "Chipped Knife",
+      "category": "Athames"
     },
     {
-      "name": "Chocolate Strawberry"
+      "name": "Chocolate Strawberry",
+      "category": "Snacks"
     },
     {
-      "name": "Cloak of Vigilance"
+      "name": "Cloak of Vigilance",
+      "category": "Robes"
     },
     {
-      "name": "Cowl of the Discreet"
+      "name": "Cowl of the Discreet",
+      "category": "Hats"
     },
     {
-      "name": "Cowl of Wisdom"
+      "name": "Cowl of Wisdom",
+      "category": "Hats"
     },
     {
-      "name": "Dark Stone Tower"
+      "name": "Dark Stone Tower",
+      "category": "Housing Items"
     },
     {
-      "name": "Death Trap"
+      "name": "Death Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Double Sided Hat"
+      "name": "Double Sided Hat",
+      "category": "Hats"
     },
     {
-      "name": "Dulled Athame"
+      "name": "Dulled Athame",
+      "category": "Athames"
     },
     {
-      "name": "Ectoplasm"
+      "name": "Ectoplasm",
+      "category": "Reagents"
     },
     {
-      "name": "Elven Storm Cap"
+      "name": "Elven Storm Cap",
+      "category": "Hats"
     },
     {
-      "name": "Engraved Amethyst Ring"
+      "name": "Engraved Amethyst Ring",
+      "category": "Rings"
     },
     {
-      "name": "Engraved Citrine Ring"
+      "name": "Engraved Citrine Ring",
+      "category": "Rings"
     },
     {
-      "name": "Engraved Jade Ring"
+      "name": "Engraved Jade Ring",
+      "category": "Rings"
     },
     {
-      "name": "Engraved Onyx Ring"
+      "name": "Engraved Onyx Ring",
+      "category": "Rings"
     },
     {
-      "name": "Engraved Peridot Ring"
+      "name": "Engraved Peridot Ring",
+      "category": "Rings"
     },
     {
-      "name": "Engraved Ruby Ring"
+      "name": "Engraved Ruby Ring",
+      "category": "Rings"
     },
     {
-      "name": "Fairy Cap"
+      "name": "Fairy Cap",
+      "category": "Hats"
     },
     {
-      "name": "Fairy's Wand"
+      "name": "Fairy's Wand",
+      "category": "Wands"
     },
     {
-      "name": "Fire Cat"
+      "name": "Fire Cat",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Shield"
+      "name": "Fire Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fireguard Slippers"
+      "name": "Fireguard Slippers",
+      "category": "Boots"
     },
     {
-      "name": "Firestorm Vestment"
+      "name": "Firestorm Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Flametouched Hat"
+      "name": "Flametouched Hat",
+      "category": "Hats"
     },
     {
-      "name": "Flash Frozen Choker"
+      "name": "Flash Frozen Choker",
+      "category": "Amulets"
     },
     {
-      "name": "Footwraps of Seasons"
+      "name": "Footwraps of Seasons",
+      "category": "Boots"
     },
     {
-      "name": "Frost Beetle"
+      "name": "Frost Beetle",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Frostshroud"
+      "name": "Frostshroud",
+      "category": "Hats"
     },
     {
-      "name": "Frostshroud"
+      "name": "Frostshroud",
+      "category": "Hats"
     },
     {
-      "name": "Fur-Lined Hood"
+      "name": "Fur-Lined Hood",
+      "category": "Hats"
     },
     {
-      "name": "Guiding Light"
+      "name": "Guiding Light",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Gummy Firecat"
+      "name": "Gummy Firecat",
+      "category": "Snacks"
     },
     {
-      "name": "Hardened Boots"
+      "name": "Hardened Boots",
+      "category": "Boots"
     },
     {
-      "name": "Hardened Cap"
+      "name": "Hardened Cap",
+      "category": "Hats"
     },
     {
-      "name": "Hat of Eradication"
+      "name": "Hat of Eradication",
+      "category": "Hats"
     },
     {
-      "name": "Helm of Audacity"
+      "name": "Helm of Audacity",
+      "category": "Hats"
     },
     {
-      "name": "Honey Sickle"
+      "name": "Honey Sickle",
+      "category": "Seeds"
     },
     {
-      "name": "Hood of Storms"
+      "name": "Hood of Storms",
+      "category": "Hats"
     },
     {
-      "name": "Hood of Tension"
+      "name": "Hood of Tension",
+      "category": "Hats"
     },
     {
-      "name": "Imp"
+      "name": "Imp",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Imp Lord's Helm"
+      "name": "Imp Lord's Helm",
+      "category": "Hats"
     },
     {
-      "name": "Insulated Wand"
+      "name": "Insulated Wand",
+      "category": "Wands"
     },
     {
-      "name": "Keen Eyes"
+      "name": "Keen Eyes",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Knife of Winter"
+      "name": "Knife of Winter",
+      "category": "Athames"
     },
     {
-      "name": "Lightning Bats"
+      "name": "Lightning Bats",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Locust Swarm",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Lord's Signet"
+      "name": "Lord's Signet",
+      "category": "Rings"
     },
     {
-      "name": "Pixie"
+      "name": "Pixie",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Prop House 1"
+      "name": "Prop House 1",
+      "category": "Housing Items"
     },
     {
-      "name": "Raiment of Storms"
+      "name": "Raiment of Storms",
+      "category": "Robes"
     },
     {
-      "name": "Robe of All Trades"
+      "name": "Robe of All Trades",
+      "category": "Robes"
     },
     {
-      "name": "Robe of Embers"
+      "name": "Robe of Embers",
+      "category": "Robes"
     },
     {
-      "name": "Robe of the Blizzard"
+      "name": "Robe of the Blizzard",
+      "category": "Robes"
     },
     {
-      "name": "Roughspun Robe"
+      "name": "Roughspun Robe",
+      "category": "Robes"
     },
     {
-      "name": "Sapphyra's Studded Boots"
+      "name": "Sapphyra's Studded Boots",
+      "category": "Boots"
     },
     {
-      "name": "Senior Novice's Robe"
+      "name": "Senior Novice's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Senior Novice's Shoes"
+      "name": "Senior Novice's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Shimmering Cloak"
+      "name": "Shimmering Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Skullsplitter's Signet"
+      "name": "Skullsplitter's Signet",
+      "category": "Rings"
     },
     {
-      "name": "Slippers of Excitement"
+      "name": "Slippers of Excitement",
+      "category": "Boots"
     },
     {
-      "name": "Small Orange Symbol Rug"
+      "name": "Small Orange Symbol Rug",
+      "category": "Housing Items"
     },
     {
-      "name": "Snow Serpent"
+      "name": "Snow Serpent",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Snow Shield"
+      "name": "Snow Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm Shield"
+      "name": "Storm Shield",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Stormcaller's Boots"
+      "name": "Stormcaller's Boots",
+      "category": "Boots"
     },
     {
-      "name": "Stormcaller's Robe"
+      "name": "Stormcaller's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Studded Knife"
+      "name": "Studded Knife",
+      "category": "Athames"
     },
     {
-      "name": "Sugar Donut"
+      "name": "Sugar Donut",
+      "category": "Snacks"
     },
     {
-      "name": "Symmetrical Shoes"
+      "name": "Symmetrical Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Thunder Snake"
+      "name": "Thunder Snake",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Time of Legend"
+      "name": "Time of Legend",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tough"
+      "name": "Tough",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Triton Statue"
+      "name": "Triton Statue",
+      "category": "Housing Items"
     },
     {
-      "name": "Troll"
+      "name": "Troll",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Venomous Cowl"
+      "name": "Venomous Cowl",
+      "category": "Hats"
     },
     {
-      "name": "Vestment of Panic"
+      "name": "Vestment of Panic",
+      "category": "Robes"
     },
     {
-      "name": "Vrixx's Verdant Robes"
+      "name": "Vrixx's Verdant Robes",
+      "category": "Robes"
     },
     {
-      "name": "Wondershroud"
+      "name": "Wondershroud",
+      "category": "Hats"
     }
   ],
   "authors": "BartleBot",
   "tags": [
     "Gear",
-    "Boss"
+    "Boss",
+    "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Elven Storm Cap"
+      ]
+    }
+  ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to the Commons",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": 0.0,
-        "y": 180.0
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
       },
       "params": {
-        "zone": "WizardCity/WC_Hub"
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     {
-      "id": "state_2",
-      "node_type": "enter_zone",
-      "label": "Enter Shopping District",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
-        "x": 880.0,
-        "y": 180.0
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
       },
       "params": {
-        "from_zone": "WizardCity/WC_Hub",
-        "to_zone": "WizardCity/WC_Shop_Area",
-        "xyz": {
-          "x": 1373.34,
-          "y": -3590.64,
-          "z": -27.99
-        },
-        "reset_xyz": {
-          "x": 1311.11,
-          "y": -2802.26,
-          "z": -27.99
-        }
+        "zone": "WizardCity/WC_Streets/WC_Triton"
       }
     },
     {
-      "id": "state_3",
-      "node_type": "enter_zone",
-      "label": "Enter Olde Town",
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
       "position": {
-        "x": 1320.0,
-        "y": 180.0
+        "x": 2200.0,
+        "y": 0.0
       },
       "params": {
-        "from_zone": "WizardCity/WC_Shop_Area",
-        "to_zone": "WizardCity/WC_Streets/WC_OldeTown",
-        "xyz": {
-          "x": -6054.32,
-          "y": -3302.17,
-          "z": -29.36
-        },
-        "reset_xyz": {
-          "x": -5251.57,
-          "y": -3295.22,
-          "z": -29.36
-        }
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
       }
     },
     {
-      "id": "state_4",
-      "node_type": "enter_zone",
-      "label": "Enter Triton Avenue",
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
       "position": {
-        "x": 1760.0,
-        "y": 180.0
+        "x": 2640.0,
+        "y": 0.0
       },
-      "params": {
-        "from_zone": "WizardCity/WC_Streets/WC_OldeTown",
-        "to_zone": "WizardCity/WC_Streets/WC_Triton",
-        "xyz": {
-          "x": -7423.81,
-          "y": -422.95,
-          "z": -1397.84
-        },
-        "reset_xyz": {
-          "x": -6662.58,
-          "y": -616.32,
-          "z": -1397.84
-        }
-      }
+      "params": {}
     },
     {
-      "id": "state_5",
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Skull Fort",
       "position": {
-        "x": 2200,
+        "x": 3520.0,
         "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Triton",
         "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T2",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "dungeon_name": "Skull Fort",
         "sigil_xyz": {
           "x": 5420.85,
@@ -394,31 +468,49 @@
       }
     },
     {
-      "id": "state_6",
+      "id": "t_4",
       "node_type": "handle_combat",
       "label": "Defeat Sergeant Skullsplitter",
       "position": {
-        "x": 2640,
+        "x": 3960.0,
         "y": 0.0
       },
       "params": {
         "enemy": "Skeleton-Gold-WCBoss-L03",
-        "use_bot_default": true,
-        "combat_config": "",
+        "wiki_page": "Creature:Sergeant Skullsplitter",
+        "use_default_strategy": false,
         "max_duration": 0.0
       }
     },
     {
-      "id": "state_7",
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 4400.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_6",
       "node_type": "enter_zone",
       "label": "Exit Skull Fort",
       "position": {
-        "x": 3080,
+        "x": 4840.0,
         "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/Interiors/WC_Triton_T2",
         "to_zone": "WizardCity/WC_Streets/WC_Triton",
+        "stagger": false,
         "xyz": {
           "x": 20.79,
           "y": -1219.98,
@@ -432,56 +524,28 @@
       }
     },
     {
-      "id": "state_11",
+      "id": "t_7",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3520,
+        "x": 3080.0,
         "y": 0.0
       },
       "params": {
-        "timeout": 10.0
-      }
-    },
-    {
-      "id": "state_8",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 440.0,
-        "y": 180.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "refill_potions": true,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_9",
-      "node_type": "check_zone",
-      "label": "Check starting zone",
-      "position": {
-        "x": -440.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_Streets/WC_Triton",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -490,8 +554,38 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
+      "source": "t_3",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -500,8 +594,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -510,8 +604,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -520,79 +614,39 @@
     },
     {
       "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_6",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_11",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_5",
-      "when": "TRUE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -601,27 +655,44 @@
   ],
   "regions": [
     {
-      "id": "af7a2f79",
-      "label": "Go to Triton Avenue",
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
       "members": [
-        "state_2",
-        "state_3",
-        "state_1",
-        "state_4",
-        "state_8"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 3
-    },
-    {
-      "id": "af18e22e",
-      "label": "Defeat Sergeant Skullsplitter",
-      "members": [
-        "state_11",
-        "state_6",
-        "state_5",
-        "state_7"
-      ],
-      "color": 1
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "WizardCity/WC_Streets/WC_Triton"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
     }
-  ]
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
 }

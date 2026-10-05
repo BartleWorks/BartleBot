@@ -37,6 +37,17 @@ What must not be broken:
   force-close a client that is relogging perfectly well. `suspend_health_checks_for()`
   flags them; a relog inside a node must call `resume_health_checks_for()` on the way out,
   because nothing calls `resume()` for it.
+- **Whatever suspends the watchers has to do their job.** With the monitor blind, the node
+  is the only thing that can see its client hang. Past Quit the soft path cannot go back, so
+  any failure from there is a crash: character select never appearing, a loading screen
+  outlasting `LOADING_SCREEN_TIMEOUT` (the monitor's own minute), or the overall deadline.
+  The node hands the client to `machine.abandon_client()`, which kills it through the
+  monitor's `recover()`, or stops the run with the reason when `recovery_gap_for()` says it
+  cannot be relaunched. The node then **raises `ClientClosedError` rather than returning
+  FAILURE**. A FAILURE is routed and counted before the loop parks; the run that taught
+  this fell through to its recovery state (the Relog node itself), hit the retry limit and
+  stopped, so nothing relaunched the client stuck loading. The dead-client branch parks
+  without counting. The abandoned client stays flagged until recovery's `resume()`.
 - **Close, never unhook.** Killing the process sidesteps `HookHandler._rewrite_autobot`'s
   fixed 0.5 s sleep, which is a hazard on exactly the lagging clients this exists for.
 - **Recover the fleet as one batch, not a client at a time.** A relog closes every

@@ -4,8 +4,8 @@
   "description": "Endlessly defeats Crash the Bandit Coot in Wobbegong Territory, Wallaru",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_2",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [],
   "authors": "BartleBot",
   "tags": [
@@ -13,33 +13,21 @@
     "Reagents",
     "Spellements",
     "Housing",
-    "Boss"
+    "Boss",
+    "Team-Up"
   ],
   "options": [],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Hope Springs",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": 0,
-        "y": 0.0
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
       },
       "params": {
-        "zone": "Wallaru/WL_Z01_Hub"
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "check_zone",
-      "label": "Check zone",
-      "position": {
-        "x": -440.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Wallaru/WL_Z05_Wobbegong_JT",
-        "clients_to_check": [
+        "relog_clients": [
           1,
           2,
           3,
@@ -48,43 +36,54 @@
       }
     },
     {
-      "id": "state_3",
+      "id": "t_sync_players_1_state_2",
       "node_type": "sync_in_zone",
-      "label": "Take Traveler's Truck to Wobbegong Territory",
+      "label": "Sync in zone",
       "position": {
-        "x": 440.0,
-        "y": 0.0
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
       },
       "params": {
         "zone": "Wallaru/WL_Z05_Wobbegong_JT"
       }
     },
     {
-      "id": "state_4",
+      "id": "t_1",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 880.0,
-        "y": -90.0
+        "x": 2200.0,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 0.25,
         "if_mana_below": 0.15,
-        "refill_potions": true,
-        "mark_zone": "Wallaru/WL_Z05_Wobbegong_JT"
+        "mark_zone": ""
       }
     },
     {
-      "id": "state_5",
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 2640.0,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Crash's Cave",
       "position": {
-        "x": 1320.0,
-        "y": -90.0
+        "x": 3520.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Wallaru/WL_Z05_Wobbegong_JT",
         "dungeon_zone": "Wallaru/Interiors/WL_Z05_BanditCootCave",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "dungeon_name": "Crash's Cave",
         "sigil_xyz": {
           "x": -5997.44,
@@ -99,47 +98,49 @@
       }
     },
     {
-      "id": "state_6",
+      "id": "t_4",
       "node_type": "handle_combat",
       "label": "Defeat Crash the Bandit Coot",
       "position": {
-        "x": 1760.0,
-        "y": -90.0
+        "x": 3960.0,
+        "y": 0.0
       },
       "params": {
         "enemy": "WL_Dingo_Crash_A_01",
+        "wiki_page": "",
         "use_default_strategy": true,
         "max_duration": 600.0
       }
     },
     {
-      "id": "state_7",
+      "id": "t_5",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 2200.0,
-        "y": -90.0
+        "x": 4400.0,
+        "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
         "if_mana_below": 1.0,
+        "timeout": 10.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
-        "only_safe": true,
-        "timeout": 10.0
+        "only_safe": true
       }
     },
     {
-      "id": "state_8",
+      "id": "t_6",
       "node_type": "enter_zone",
       "label": "Exit Crash's Cave",
       "position": {
-        "x": 2640.0,
-        "y": -90.0
+        "x": 4840.0,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Wallaru/Interiors/WL_Z05_BanditCootCave",
         "to_zone": "Wallaru/WL_Z05_Wobbegong_JT",
+        "stagger": false,
         "xyz": {
           "x": 595.54,
           "y": -12194.17,
@@ -149,26 +150,32 @@
           "x": 1110.46,
           "y": -11332.11,
           "z": -976.89
-        },
-        "stagger": false
+        }
       }
     },
     {
-      "id": "state_9",
-      "node_type": "quicksell",
-      "label": "Quicksell",
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
       "position": {
         "x": 3080.0,
-        "y": -90.0
+        "y": 0.0
       },
-      "params": {}
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_3",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -177,8 +184,38 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
+      "source": "t_3",
+      "dest": "t_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_4",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -187,18 +224,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_4",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -207,8 +234,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -217,8 +244,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -227,8 +254,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
+      "source": "t_2",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -237,8 +264,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
+      "source": "t_7",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -247,34 +274,55 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
+      "source": "t_7",
+      "dest": "t_3",
       "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_4",
-      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Wallaru/WL_Z05_Wobbegong_JT"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
 }

@@ -69,7 +69,7 @@ def test_an_untranslated_world_still_resolves_to_english():
 
 
 def test_unknown_world_yields_nothing_rather_than_raising():
-    """go_to_world checks for this and fails loudly; it must not explode here first."""
+    """A World Gate step checks for this and fails loudly; it must not explode here first."""
     assert worlds.display_names("NotAWorld") == []
     assert worlds.label("NotAWorld") == "NotAWorld"
 

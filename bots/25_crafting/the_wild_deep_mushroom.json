@@ -4,8 +4,8 @@
   "description": "Collects Deep Mushroom/Nightshade in The Wild, Avalon",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Deep Mushroom"
@@ -28,147 +28,73 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Caliburn",
-      "position": {
-        "x": 0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Avalon/AV_Z00_Hub"
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "enter_zone_via_object",
-      "label": "Take teleporter to The Wild",
-      "position": {
-        "x": 440,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Avalon/AV_Z00_Hub",
-        "to_zone": "Avalon/AV_Z04_TheWild",
-        "interact_xyz": {
-          "x": 1070.37,
-          "y": -229.6,
-          "z": -20.37
-        },
-        "reset_xyz": {
-          "x": 550.35,
-          "y": -711.47,
-          "z": 0.4
-        }
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "enter_zone",
-      "label": "Enter High Road",
+      "id": "t_3",
+      "node_type": "change_realm",
+      "label": "Change to next realm",
       "position": {
         "x": 880.0,
         "y": 0.0
-      },
-      "params": {
-        "from_zone": "Avalon/AV_Z00_Hub",
-        "to_zone": "Avalon/AV_Z02_HighRoad",
-        "xyz": {
-          "x": 182.94,
-          "y": 6107.86,
-          "z": -493.61
-        },
-        "reset_xyz": {
-          "x": -427.87,
-          "y": 4526.11,
-          "z": -493.65
-        }
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "enter_zone",
-      "label": "Enter Caer Lyon",
-      "position": {
-        "x": 1320.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Avalon/AV_Z02_HighRoad",
-        "to_zone": "Avalon/AV_Z03_CaerLyon",
-        "xyz": {
-          "x": -845.21,
-          "y": 14253.63,
-          "z": 171.97
-        },
-        "reset_xyz": {
-          "x": -873.7,
-          "y": 13396.95,
-          "z": 13.15
-        }
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "enter_zone",
-      "label": "Enter The Wild",
-      "position": {
-        "x": 1760.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Avalon/AV_Z03_CaerLyon",
-        "to_zone": "Avalon/AV_Z04_TheWild",
-        "xyz": {
-          "x": -7705.26,
-          "y": 14861.19,
-          "z": 0.0
-        },
-        "reset_xyz": {
-          "x": -6824.6,
-          "y": 14794.37,
-          "z": 1126.04
-        }
-      }
-    },
-    {
-      "id": "state_6",
-      "node_type": "change_realm",
-      "label": "Change realm",
-      "position": {
-        "x": 2200.0,
-        "y": -90.0
       },
       "params": {
         "use_favorite_realm": false
       }
     },
     {
-      "id": "state_7",
+      "id": "t_4",
       "node_type": "collect_reagent",
       "label": "Collect Deep Mushroom",
       "position": {
-        "x": 2640.0,
-        "y": -90.0
+        "x": 1320.0,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/AV_Z04_TheWild",
+        "entity_names": [
+          "Mushroom"
+        ],
         "xyz": {
           "x": -6127.68,
           "y": -3902.1,
           "z": 456.5
-        },
-        "entity_names": [
-          "Mushroom"
+        }
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 440.00014846304765,
+        "y": 0.00018770438194959382
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
         ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 880.0001484630477,
+        "y": 90.00018770438194
+      },
+      "params": {
+        "zone": "Avalon/AV_Z04_TheWild",
+        "keep_current_realm": true
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
+      "source": "t_3",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -177,18 +103,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_6",
+      "source": "t_4",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -197,18 +113,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -217,48 +123,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_6",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_6",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_3",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -266,5 +132,47 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in reagent spawn zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.keep_current_realm": true,
+          "state_2.zone": "Avalon/AV_Z04_TheWild"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 440.00014846304765,
+          "y": 0.00018770438194959382
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "7910bf84-1c71-4d5a-a39c-2f26b4219617",
+    "version": 1
+  }
 }

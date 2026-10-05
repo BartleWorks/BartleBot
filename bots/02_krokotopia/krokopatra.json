@@ -4,774 +4,860 @@
   "description": "Endlessly farms Krokopatra in Temple of Storms, Krokotopia",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_15",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
-      "name": "Alligator Pear Tree"
+      "name": "Alligator Pear Tree",
+      "category": "Seeds"
     },
     {
-      "name": "Amulet of Eyes"
+      "name": "Amulet of Eyes",
+      "category": "Amulets"
     },
     {
-      "name": "Athame of Adaption"
+      "name": "Athame of Adaption",
+      "category": "Athames"
     },
     {
-      "name": "Augmented Mantle"
+      "name": "Augmented Mantle",
+      "category": "Hats"
     },
     {
-      "name": "Band of the Bastion"
+      "name": "Band of the Bastion",
+      "category": "Rings"
     },
     {
-      "name": "Band of the Skies"
+      "name": "Band of the Skies",
+      "category": "Rings"
     },
     {
-      "name": "Big Boost Opal"
+      "name": "Big Boost Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Biti Nirini's Torrid Boots"
+      "name": "Biti Nirini's Torrid Boots",
+      "category": "Boots"
     },
     {
-      "name": "Black Cat"
+      "name": "Black Cat",
+      "category": "Pets"
     },
     {
-      "name": "Boat Tent"
+      "name": "Boat Tent",
+      "category": "Housing Items"
     },
     {
-      "name": "Bone"
+      "name": "Bone",
+      "category": "Reagents"
     },
     {
-      "name": "Boo Pumpkin Mask"
+      "name": "Boo Pumpkin Mask",
+      "category": "Hats"
     },
     {
-      "name": "Boots of Talent"
+      "name": "Boots of Talent",
+      "category": "Boots"
     },
     {
-      "name": "Boots of the Citadel"
+      "name": "Boots of the Citadel",
+      "category": "Boots"
     },
     {
-      "name": "Boots of the Whirlwind"
+      "name": "Boots of the Whirlwind",
+      "category": "Boots"
     },
     {
-      "name": "Bountiful Wand"
+      "name": "Bountiful Wand",
+      "category": "Wands"
     },
     {
-      "name": "Brass"
+      "name": "Brass",
+      "category": "Reagents"
     },
     {
-      "name": "Bunny Wand"
+      "name": "Bunny Wand",
+      "category": "Wands"
     },
     {
-      "name": "Charmed Clover Wand"
+      "name": "Charmed Clover Wand",
+      "category": "Wands"
     },
     {
-      "name": "Chipped Accurate Amethyst +3%"
+      "name": "Chipped Accurate Amethyst +3%",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Accurate Jade +3%"
+      "name": "Chipped Accurate Jade +3%",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Defense Citrine +13"
+      "name": "Chipped Defense Citrine +13",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Defense Onyx +13"
+      "name": "Chipped Defense Onyx +13",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Defense Ruby +13"
+      "name": "Chipped Defense Ruby +13",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Health Opal +16"
+      "name": "Chipped Health Opal +16",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Mana Opal +11"
+      "name": "Chipped Mana Opal +11",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Mana Opal +12"
+      "name": "Chipped Mana Opal +12",
+      "category": "Jewels"
     },
     {
-      "name": "Chipped Mana Opal +9"
+      "name": "Chipped Mana Opal +9",
+      "category": "Jewels"
     },
     {
-      "name": "Clay Post Opal"
+      "name": "Clay Post Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Clear Path Opal"
+      "name": "Clear Path Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Cloak of the Skies"
+      "name": "Cloak of the Skies",
+      "category": "Robes"
     },
     {
-      "name": "Copper"
+      "name": "Copper",
+      "category": "Reagents"
     },
     {
-      "name": "Cowl of the Fortress"
+      "name": "Cowl of the Fortress",
+      "category": "Hats"
     },
     {
-      "name": "Cracked Damage Amethyst +5"
+      "name": "Cracked Damage Amethyst +5",
+      "category": "Jewels"
     },
     {
-      "name": "Cracked Damage Onyx +6"
+      "name": "Cracked Damage Onyx +6",
+      "category": "Jewels"
     },
     {
-      "name": "Cracked Damage Opal +2"
+      "name": "Cracked Damage Opal +2",
+      "category": "Jewels"
     },
     {
-      "name": "Cracked Damage Sapphire +5"
+      "name": "Cracked Damage Sapphire +5",
+      "category": "Jewels"
     },
     {
-      "name": "Cracked Damage Sapphire +6"
+      "name": "Cracked Damage Sapphire +6",
+      "category": "Jewels"
     },
     {
-      "name": "Cracked Defense Jade +11"
+      "name": "Cracked Defense Jade +11",
+      "category": "Jewels"
     },
     {
-      "name": "Cracker"
+      "name": "Cracker",
+      "category": "Snacks"
     },
     {
-      "name": "Cryptkeeper's Circlet"
+      "name": "Cryptkeeper's Circlet",
+      "category": "Hats"
     },
     {
-      "name": "Cupig"
+      "name": "Cupig",
+      "category": "Pets"
     },
     {
-      "name": "Dagger of Annihilation"
+      "name": "Dagger of Annihilation",
+      "category": "Athames"
     },
     {
-      "name": "Dagger of Downpour"
+      "name": "Dagger of Downpour",
+      "category": "Athames"
     },
     {
-      "name": "Death-Boon Onyx"
+      "name": "Death-Boon Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Death-Shot Onyx"
+      "name": "Death-Shot Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Dependable Opal"
+      "name": "Dependable Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Dirk of Harmony"
+      "name": "Dirk of Harmony",
+      "category": "Athames"
     },
     {
-      "name": "Diviner's Hat of Squalls"
+      "name": "Diviner's Hat of Squalls",
+      "category": "Hats"
     },
     {
-      "name": "Dryad"
+      "name": "Dryad",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dusty Robe"
+      "name": "Dusty Robe",
+      "category": "Robes"
     },
     {
-      "name": "Egg Basket Wand"
+      "name": "Egg Basket Wand",
+      "category": "Wands"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Evil Snowman",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Evil Snowman",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Evil Snowman (Tier 2b)"
+      "name": "Evil Snowman (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fang Bat"
+      "name": "Fang Bat",
+      "category": "Pets"
     },
     {
-      "name": "Fire Cat"
+      "name": "Fire Cat",
+      "category": "Spellements"
     },
     {
-      "name": "Fire Cat (Tier 2b)"
+      "name": "Fire Cat (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Fire Elf"
+      "name": "Fire Elf",
+      "category": "Spellements"
     },
     {
-      "name": "Fire Elf (Tier 2b)"
+      "name": "Fire Elf (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Flowering Band"
+      "name": "Flowering Band",
+      "category": "Rings"
     },
     {
-      "name": "Footwraps of the Arctic"
+      "name": "Footwraps of the Arctic",
+      "category": "Boots"
     },
     {
-      "name": "Frost Beetle"
+      "name": "Frost Beetle",
+      "category": "Spellements"
     },
     {
-      "name": "Frost Beetle (Tier 2b)"
+      "name": "Frost Beetle (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ghoul Onyx"
+      "name": "Ghoul Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Gingerbread Wand"
+      "name": "Gingerbread Wand",
+      "category": "Wands"
     },
     {
-      "name": "Glacial Shield Ruby"
+      "name": "Glacial Shield Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Golden Goose"
+      "name": "Golden Goose",
+      "category": "Pets"
     },
     {
-      "name": "Goofy Pumpkin Mask"
+      "name": "Goofy Pumpkin Mask",
+      "category": "Hats"
     },
     {
-      "name": "Green Grapes"
+      "name": "Green Grapes",
+      "category": "Snacks"
     },
     {
-      "name": "Hallowe'en Robe"
+      "name": "Hallowe'en Robe",
+      "category": "Robes"
     },
     {
-      "name": "Happy Holidaisy"
+      "name": "Happy Holidaisy",
+      "category": "Seeds"
     },
     {
-      "name": "Hardy Boots"
+      "name": "Hardy Boots",
+      "category": "Boots"
     },
     {
-      "name": "Harp of the Lucky"
+      "name": "Harp of the Lucky",
+      "category": "Wands"
     },
     {
-      "name": "Helm of the Citadel"
+      "name": "Helm of the Citadel",
+      "category": "Hats"
     },
     {
-      "name": "Hieroglyphic Ice Tablet"
+      "name": "Hieroglyphic Ice Tablet",
+      "category": "Housing Items"
     },
     {
-      "name": "Humongofrog"
+      "name": "Humongofrog",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice Trap"
+      "name": "Ice Trap",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Ice-Boon Sapphire"
+      "name": "Ice-Boon Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Ill-Omened Striders"
+      "name": "Ill-Omened Striders",
+      "category": "Boots"
     },
     {
-      "name": "Iron"
+      "name": "Iron",
+      "category": "Reagents"
     },
     {
-      "name": "Kitty Pumpkin Mask"
+      "name": "Kitty Pumpkin Mask",
+      "category": "Hats"
     },
     {
-      "name": "Krokopatra Exalted Duel"
+      "name": "Krokopatra Exalted Duel",
+      "category": "Housing Items"
     },
     {
-      "name": "Krokopatra Master Duel"
+      "name": "Krokopatra Master Duel",
+      "category": "Housing Items"
     },
     {
-      "name": "Krokopatra's Cap"
+      "name": "Krokopatra's Cap",
+      "category": "Hats"
     },
     {
-      "name": "Krokopatra's Circlet"
+      "name": "Krokopatra's Circlet",
+      "category": "Hats"
     },
     {
-      "name": "Krokopatra's Footwraps"
+      "name": "Krokopatra's Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Krokopatra's Garments"
+      "name": "Krokopatra's Garments",
+      "category": "Robes"
     },
     {
-      "name": "Krokopatra's Robe"
+      "name": "Krokopatra's Robe",
+      "category": "Robes"
     },
     {
-      "name": "Krokopatra's Shoes"
+      "name": "Krokopatra's Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Krokopatra's Silent Cloak"
+      "name": "Krokopatra's Silent Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Krokotillian"
+      "name": "Krokotillian",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Krokotopia Theme 4"
+      "name": "Krokotopia Theme 4",
+      "category": "Housing Items"
     },
     {
-      "name": "Krokotopian Balance Modius"
+      "name": "Krokotopian Balance Modius",
+      "category": "Hats"
     },
     {
-      "name": "Krokotopian Death Modius"
+      "name": "Krokotopian Death Modius",
+      "category": "Hats"
     },
     {
-      "name": "Krokotopian Life Modius"
+      "name": "Krokotopian Life Modius",
+      "category": "Hats"
     },
     {
-      "name": "Krokotopian Modius"
+      "name": "Krokotopian Modius",
+      "category": "Hats"
     },
     {
-      "name": "Krokotopian Storm Modius"
+      "name": "Krokotopian Storm Modius",
+      "category": "Hats"
     },
     {
-      "name": "Large Archway"
+      "name": "Large Archway",
+      "category": "Housing Items"
     },
     {
-      "name": "Lead"
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
-      "name": "Life Troll"
+      "name": "Life Troll",
+      "category": "Pets"
     },
     {
-      "name": "Lightning Bats"
+      "name": "Lightning Bats",
+      "category": "Spellements"
     },
     {
-      "name": "Lightning Bats (Tier 2b)"
+      "name": "Lightning Bats (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Lightning Bats Amethyst"
+      "name": "Lightning Bats Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Locust Swarm",
+      "category": "Spellements"
     },
     {
-      "name": "Locust Swarm (Tier 2b)"
+      "name": "Locust Swarm (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Loop of Quietude"
+      "name": "Loop of Quietude",
+      "category": "Rings"
     },
     {
-      "name": "Loop of the Defender"
+      "name": "Loop of the Defender",
+      "category": "Rings"
     },
     {
-      "name": "Lovely Leopard"
+      "name": "Lovely Leopard",
+      "category": "Pets"
     },
     {
-      "name": "Magma-Walkers"
+      "name": "Magma-Walkers",
+      "category": "Boots"
     },
     {
-      "name": "Maple Moose"
+      "name": "Maple Moose",
+      "category": "Pets"
     },
     {
-      "name": "Mummy Costume Bodywraps"
+      "name": "Mummy Costume Bodywraps",
+      "category": "Robes"
     },
     {
-      "name": "Mummy Costume Footwraps"
+      "name": "Mummy Costume Footwraps",
+      "category": "Boots"
     },
     {
-      "name": "Myth-Shot Peridot"
+      "name": "Myth-Shot Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Nettle Root"
+      "name": "Nettle Root",
+      "category": "Snacks"
     },
     {
-      "name": "Nickel"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Novice's Socket Wrench"
+      "name": "Novice's Socket Wrench",
+      "category": "Housing Items"
     },
     {
-      "name": "Overtake Opal"
+      "name": "Overtake Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Parched Kris"
+      "name": "Pacify",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Parched Sandals"
+      "name": "Parched Kris",
+      "category": "Athames"
     },
     {
-      "name": "Pet Egg"
+      "name": "Parched Sandals",
+      "category": "Boots"
     },
     {
-      "name": "Phantasmal Raiment"
+      "name": "Pet Egg",
+      "category": "Pets"
     },
     {
-      "name": "Pink Dandelion"
+      "name": "Phantasmal Raiment",
+      "category": "Robes"
     },
     {
-      "name": "Pip O'Plenty Opal"
+      "name": "Pink Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Polar Shoes"
+      "name": "Pip O'Plenty Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Powerful Ring"
+      "name": "Polar Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Powerful Vestment"
+      "name": "Powerful Ring",
+      "category": "Rings"
     },
     {
-      "name": "Pyrite"
+      "name": "Powerful Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Raised Storm Sarcophagus"
+      "name": "Pyrite",
+      "category": "Reagents"
     },
     {
-      "name": "Redskin Peanut"
+      "name": "Raised Storm Sarcophagus",
+      "category": "Housing Items"
     },
     {
-      "name": "Rescue Rover"
+      "name": "Redskin Peanut",
+      "category": "Snacks"
     },
     {
-      "name": "Ring of the Badlands"
+      "name": "Rescue Rover",
+      "category": "Pets"
     },
     {
-      "name": "Robe of the Bastion"
+      "name": "Ring of the Badlands",
+      "category": "Rings"
     },
     {
-      "name": "Robe of the Mirage"
+      "name": "Robe of the Bastion",
+      "category": "Robes"
     },
     {
-      "name": "Rod of Regard"
+      "name": "Robe of the Mirage",
+      "category": "Robes"
     },
     {
-      "name": "Rough-Hewn Hood"
+      "name": "Rod of Regard",
+      "category": "Wands"
     },
     {
-      "name": "Row of Scrolls"
+      "name": "Rough-Hewn Hood",
+      "category": "Hats"
     },
     {
-      "name": "Runed Hood"
+      "name": "Row of Scrolls",
+      "category": "Housing Items"
     },
     {
-      "name": "Sandals of Energy"
+      "name": "Runed Hood",
+      "category": "Hats"
     },
     {
-      "name": "Santa Hat"
+      "name": "Sandals of Energy",
+      "category": "Boots"
     },
     {
-      "name": "Scarab"
+      "name": "Santa Hat",
+      "category": "Hats"
     },
     {
-      "name": "Scarab (Tier 2b)"
+      "name": "Scarab",
+      "category": "Spellements"
     },
     {
-      "name": "Scorpion"
+      "name": "Scarab (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Scorpion (Tier 2b)"
+      "name": "Scorpion",
+      "category": "Spellements"
     },
     {
-      "name": "Scorpion Citrine"
+      "name": "Scorpion (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Seal of the Conqueror"
+      "name": "Scorpion Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Seraph Wings"
+      "name": "Seal of the Conqueror",
+      "category": "Rings"
     },
     {
-      "name": "Shamrock Scepter"
+      "name": "Seraph Wings",
+      "category": "Mounts"
     },
     {
-      "name": "Shoes of the Desert"
+      "name": "Shamrock Scepter",
+      "category": "Wands"
     },
     {
-      "name": "Shroud of Rationality"
+      "name": "Shoes of the Desert",
+      "category": "Boots"
     },
     {
-      "name": "Silence Opal"
+      "name": "Shroud of Rationality",
+      "category": "Robes"
     },
     {
-      "name": "Silent Jewel"
+      "name": "Silence Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Sniper"
+      "name": "Silent Jewel",
+      "category": "Rings"
     },
     {
-      "name": "Snow Serpent"
+      "name": "Sniper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Snow Serpent (Tier 2b)"
+      "name": "Snow Serpent",
+      "category": "Spellements"
     },
     {
-      "name": "Snowball"
+      "name": "Snow Serpent (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Snowglobe"
+      "name": "Snowball",
+      "category": "Pets"
     },
     {
-      "name": "Snowman"
+      "name": "Snowglobe",
+      "category": "Housing Items"
     },
     {
-      "name": "Soothsayer's Helm"
+      "name": "Snowman",
+      "category": "Housing Items"
     },
     {
-      "name": "Sparkling Band"
+      "name": "Soothsayer's Helm",
+      "category": "Hats"
     },
     {
-      "name": "Sphinx's Vestment"
+      "name": "Sparkling Band",
+      "category": "Rings"
     },
     {
-      "name": "Spider Silk"
+      "name": "Sphinx's Vestment",
+      "category": "Robes"
     },
     {
-      "name": "Spring Chicken Scepter"
+      "name": "Spider Silk",
+      "category": "Reagents"
     },
     {
-      "name": "Sprite"
+      "name": "Spring Chicken Scepter",
+      "category": "Wands"
     },
     {
-      "name": "Square Watermelon"
+      "name": "Sprite",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Staff of Commitment"
+      "name": "Square Watermelon",
+      "category": "Snacks"
     },
     {
-      "name": "Stinky Cheese"
+      "name": "Staff of Commitment",
+      "category": "Wands"
     },
     {
-      "name": "Storm Shark"
+      "name": "Stinky Cheese",
+      "category": "Snacks"
     },
     {
-      "name": "Storm Shark"
+      "name": "Storm Shark",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm Shark (Tier 2b)"
+      "name": "Storm Shark",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm-Away Amethyst"
+      "name": "Storm Shark (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Storm-Shot Amethyst"
+      "name": "Storm-Away Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Stormrider Hare"
+      "name": "Storm-Shot Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Stout Hood"
+      "name": "Stormrider Hare",
+      "category": "Mounts"
     },
     {
-      "name": "Sturdy Hood"
+      "name": "Stout Hood",
+      "category": "Hats"
     },
     {
-      "name": "Sturdy Robe"
+      "name": "Sturdy Hood",
+      "category": "Hats"
     },
     {
-      "name": "Sunbird"
+      "name": "Sturdy Robe",
+      "category": "Robes"
     },
     {
-      "name": "Sunbird (Tier 2b)"
+      "name": "Sunbird",
+      "category": "Spellements"
     },
     {
-      "name": "Sweet Staff"
+      "name": "Sunbird (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tall Palm Tree"
+      "name": "Sweet Staff",
+      "category": "Wands"
     },
     {
-      "name": "Theurge's Hat"
+      "name": "Tall Palm Tree",
+      "category": "Housing Items"
     },
     {
-      "name": "Threadbare Hood"
+      "name": "Theurge's Hat",
+      "category": "Hats"
     },
     {
-      "name": "Thunder Snake"
+      "name": "Threadbare Hood",
+      "category": "Hats"
     },
     {
-      "name": "Thunder Snake (Tier 2b)"
+      "name": "Thunder Snake",
+      "category": "Spellements"
     },
     {
-      "name": "Tin"
+      "name": "Thunder Snake (Tier 2b)",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Tiny Fish"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "To The Oasis"
+      "name": "Tiny Fish",
+      "category": "Snacks"
     },
     {
-      "name": "Tree Wrapped Gift"
+      "name": "To The Oasis",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Troll Peridot"
+      "name": "Tree Wrapped Gift",
+      "category": "Housing Items"
     },
     {
-      "name": "Vampire Costume Boots"
+      "name": "Troll Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Vest of Somnolence"
+      "name": "Vampire Costume Boots",
+      "category": "Boots"
     },
     {
-      "name": "Vest of the Desert"
+      "name": "Vest of Somnolence",
+      "category": "Robes"
     },
     {
-      "name": "Vest of the Oasis"
+      "name": "Vest of the Desert",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Darkness"
+      "name": "Vest of the Oasis",
+      "category": "Robes"
     },
     {
-      "name": "Vestment of Ignition"
+      "name": "Vestment of Darkness",
+      "category": "Robes"
     },
     {
-      "name": "Volcanic Shield Sapphire"
+      "name": "Vestment of Ignition",
+      "category": "Robes"
     },
     {
-      "name": "Weakness"
+      "name": "Volcanic Shield Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Whirlwind Dagger"
+      "name": "Weakness",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Yuletide Lg. Small Fry Aquarium"
+      "name": "Whirlwind Dagger",
+      "category": "Athames"
     },
     {
-      "name": "Yuletide Spirit"
+      "name": "Yuletide Lg. Small Fry Aquarium",
+      "category": "Housing Items"
+    },
+    {
+      "name": "Yuletide Spirit",
+      "category": "Pets"
     }
   ],
   "authors": "BartleBot",
   "tags": [
     "Gear",
     "Spellements",
-    "Boss"
+    "Boss",
+    "Team-Up"
   ],
   "options": [],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to the Oasis",
-      "position": {
-        "x": 0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Krokotopia/KT_Hub"
-      }
-    },
-    {
-      "id": "state_2",
-      "node_type": "enter_zone",
-      "label": "Enter Tomb of Storms",
-      "position": {
-        "x": 2200,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Krokotopia/KT_Hub",
-        "to_zone": "Krokotopia/KT_Hub_Crypt",
-        "xyz": {
-          "x": -3350.5,
-          "y": -1806.1,
-          "z": -35.35
-        },
-        "reset_xyz": {
-          "x": -2732.08,
-          "y": -1408.83,
-          "z": -117.74
-        }
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "interact",
-      "label": "Activate first pillar",
+      "id": "t_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
       "position": {
         "x": 440,
         "y": 0.0
       },
       "params": {
-        "zone": "Krokotopia/KT_Hub",
-        "interact_xyz": {
-          "x": -3292.71,
-          "y": -2826.11,
-          "z": -35.35
-        },
-        "reset_xyz": {
-          "x": -2941.24,
-          "y": -2366.05,
-          "z": -35.35
-        },
-        "interact_clients": [
-          1
-        ]
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
       }
     },
     {
-      "id": "state_4",
-      "node_type": "interact",
-      "label": "Activate second pillar",
+      "id": "t_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
       "position": {
         "x": 880,
         "y": 0.0
       },
-      "params": {
-        "zone": "Krokotopia/KT_Hub",
-        "interact_xyz": {
-          "x": -4487.85,
-          "y": -2658.67,
-          "z": -35.35
-        },
-        "reset_xyz": {
-          "x": -3915.6,
-          "y": -2979.07,
-          "z": -35.35
-        },
-        "interact_clients": [
-          1
-        ]
-      }
+      "params": {}
     },
     {
-      "id": "state_5",
-      "node_type": "interact",
-      "label": "Activate third pillar",
-      "position": {
-        "x": 1320,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Krokotopia/KT_Hub",
-        "interact_xyz": {
-          "x": -4330.95,
-          "y": -1446.72,
-          "z": -35.35
-        },
-        "reset_xyz": {
-          "x": -4661.24,
-          "y": -2030.25,
-          "z": -35.35
-        },
-        "interact_clients": [
-          1
-        ]
-      }
-    },
-    {
-      "id": "state_6",
-      "node_type": "sleep",
-      "label": "Wait for portal to open",
+      "id": "t_10",
+      "node_type": "enter_dungeon",
+      "label": "Enter Temple of Storms",
       "position": {
         "x": 1760,
         "y": 0.0
       },
       "params": {
-        "duration": 15.0
-      }
-    },
-    {
-      "id": "state_7",
-      "node_type": "enter_zone",
-      "label": "Enter Well of Spirits",
-      "position": {
-        "x": 2640,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Krokotopia/KT_Hub_Crypt",
-        "to_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
-        "xyz": {
-          "x": -10677.8,
-          "y": -8573.19,
-          "z": -373.0
-        },
-        "reset_xyz": {
-          "x": -10197.39,
-          "y": -8112.82,
-          "z": -373.0
-        }
-      }
-    },
-    {
-      "id": "state_8",
-      "node_type": "enter_dungeon",
-      "label": "Enter Temple of Storms",
-      "position": {
-        "x": 3080.0,
-        "y": -180.0
-      },
-      "params": {
         "from_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
         "dungeon_zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "dungeon_name": "Temple of Storms",
         "sigil_xyz": {
           "x": -220.43,
@@ -786,19 +872,53 @@
       }
     },
     {
-      "id": "state_9",
-      "node_type": "apply_level_scaling",
-      "label": "Apply level scaling",
+      "id": "t_11",
+      "node_type": "handle_combat",
+      "label": "Defeat Krokopatra",
+      "position": {
+        "x": 3520,
+        "y": 0.0
+      },
+      "params": {
+        "enemy": "KrokTut-Storm-KTBoss-L05",
+        "wiki_page": "Creature:Krokopatra",
+        "use_default_strategy": false,
+        "max_duration": 0.0
+      }
+    },
+    {
+      "id": "t_12",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
       "position": {
         "x": 3960,
         "y": 0.0
       },
       "params": {
-        "zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
-        "interact_xyz": {
-          "x": -690.89,
-          "y": 625.23,
-          "z": 0.98
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_13",
+      "node_type": "enter_zone",
+      "label": "Exit Temple of Storms",
+      "position": {
+        "x": 4400,
+        "y": 0.0
+      },
+      "params": {
+        "from_zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
+        "to_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
+        "stagger": false,
+        "xyz": {
+          "x": -4.77,
+          "y": 1149.08,
+          "z": 11.72
         },
         "reset_xyz": {
           "x": -4.77,
@@ -808,12 +928,70 @@
       }
     },
     {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits"
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 2200,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
       "id": "state_10",
       "node_type": "teleport_to_coordinates",
       "label": "Teleport to Krokopatra",
       "position": {
-        "x": 4400.0,
-        "y": -90.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
@@ -825,92 +1003,23 @@
       }
     },
     {
-      "id": "state_11",
-      "node_type": "handle_combat",
-      "label": "Defeat Krokopatra",
+      "id": "state_16",
+      "node_type": "sleep",
+      "label": "Wait for Krokopatra to load",
       "position": {
-        "x": 4840,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
-        "enemy": "KrokTut-Storm-KTBoss-L05",
-        "use_bot_default": true,
-        "combat_config": "",
-        "max_duration": 0.0
-      }
-    },
-    {
-      "id": "state_13",
-      "node_type": "enter_zone_via_object",
-      "label": "Teleport to Well of Spirits",
-      "position": {
-        "x": 5280,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Krokotopia/KT_Tomb/KT_TempleOfStorms",
-        "to_zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
-        "interact_xyz": {
-          "x": 19191.47,
-          "y": 20816.21,
-          "z": -1000.0
-        },
-        "reset_xyz": {
-          "x": 19403.77,
-          "y": 20289.71,
-          "z": -1000.0
-        }
-      }
-    },
-    {
-      "id": "state_12",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 5720,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "refill_potions": true,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_14",
-      "node_type": "check_level_scaling",
-      "label": "Check level scaling",
-      "position": {
-        "x": 3520,
-        "y": 0.0
-      },
-      "params": {}
-    },
-    {
-      "id": "state_15",
-      "node_type": "check_zone",
-      "label": "Check starting zone",
-      "position": {
-        "x": -440.0,
-        "y": -180.0
-      },
-      "params": {
-        "zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
+        "duration": 3.0
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "t_12",
+      "dest": "t_13",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -919,48 +1028,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_3",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_3",
+      "source": "t_12",
+      "dest": "t_13",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -969,48 +1038,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_4",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_7",
+      "source": "t_8",
+      "dest": "t_9",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1019,9 +1048,79 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_10",
+      "source": "t_10",
+      "dest": "t_14",
       "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_11",
+      "dest": "t_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1030,7 +1129,7 @@
     {
       "trigger": "advance",
       "source": "state_10",
-      "dest": "state_11",
+      "dest": "state_16",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1039,59 +1138,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_13",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_12",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_14",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
+      "source": "t_14",
       "dest": "state_10",
-      "when": "TRUE",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1099,19 +1148,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_9",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_8",
-      "when": "TRUE",
+      "source": "state_16",
+      "dest": "t_11",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1120,32 +1159,44 @@
   ],
   "regions": [
     {
-      "id": "ab484383",
-      "label": "Go to Well of Spirits",
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
       "members": [
-        "state_7",
-        "state_4",
-        "state_5",
-        "state_3",
-        "state_2",
-        "state_6",
-        "state_1"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 3
-    },
-    {
-      "id": "bd755d08",
-      "label": "Defeat Krokopatra",
-      "members": [
-        "state_13",
-        "state_8",
-        "state_11",
-        "state_10",
-        "state_9",
-        "state_12",
-        "state_14"
-      ],
-      "color": 1
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Krokotopia/KT_Tomb/KT_WellOfSpirits"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
     }
-  ]
+  ],
+  "template": {
+    "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
+    "version": 1
+  }
 }

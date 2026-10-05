@@ -65,7 +65,7 @@ def is_subgraph_key(key: str) -> bool:
 # Helpers
 # ---------------------------------------------------------------------------
 
-_CONDITION_TYPES = {"check_if_dropped", "check_level_scaling", "check_zone"}
+_CONDITION_TYPES = {"check_level_scaling", "check_zone"}
 
 
 def _humanize(node_type: str) -> str:

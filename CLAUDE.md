@@ -66,12 +66,12 @@ read on purpose.
 | `docs/SUBGRAPHS.md` | reusable subgraphs: definition vs. instance, derived member ids, follow-latest with snapshot fallback, the three param levels, instance-owned layout, the authoring verbs |
 | `docs/SUBGRAPH_CALLS.md` | a pointer to the plan for the successor epic to #37 (subgraph calls, ports, the definition document, the call node, the library rewrite), which lives on a claude.ai page — read that page before any subgraph work; it supersedes several of `SUBGRAPHS.md`'s sections |
 | `docs/TEMPLATES.md` | the template store, `t_` ids, release, New Bot, setup steps and fill-ins, and the three-way update diff: units, changes, Apply, Finish review |
-| `docs/LIBRARY_MIGRATION.md` | where all 82 bots stand against the four core templates: per-bot tier and divergence, the template input signature, the outlier bots |
+| `docs/LIBRARY_MIGRATION.md` | the Stage 9 worksheet: where all 85 bots stand against the six released templates, per-bot tier and divergence, what the rewrite keeps and changes, and what to fix or decide before it starts |
 | `docs/RETURN_ROUTING.md` | the default failure edge, the explicit stop, why neither is drawn, and the three-mode failure-edge toggle |
 | `docs/RELOGGING.md` | why a client slows down, and the two ways to clear it |
 | `docs/PLAYER_REALMS.md` | telling whether players share a realm by sight, the record of who does, the Player Realms option (Together/Separate) and what blocks Separate, and where each node checks and repairs |
 | `docs/AMBIENT_COMBAT.md` | a fight no node started: the game rules it rests on, cancelling and rerunning the node, who helps and how (same realm, or by port), holding the first cast, where everyone goes after, how a session ends, the flee limit |
-| `docs/LEVEL_SCALING.md` | the one level scaling node, why it never cancels an elixir and warns at run start instead, the Scales of Knowledge table and how to add an entry |
+| `docs/LEVEL_SCALING.md` | the one level scaling node, why it never cancels an elixir and warns at run start instead, the Scales of Knowledge table and how to add an entry, and Challenge Mode's stat caps: why potions read against the scaled max, and which level a dungeon scales to |
 | `docs/RESTRICTED_ZONES.md` | the PvP policy and its three enforcement points |
 | `docs/ZONE_NAVIGATION.md` | the zone navigation map: link kinds, list networks, doors and side worlds, and routes costed in seconds |
 | `docs/UPSTREAM.md` | wizwalker/wizsprinter forks, offset fixes, bumping a pin |

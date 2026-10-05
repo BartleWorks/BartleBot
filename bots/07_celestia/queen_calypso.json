@@ -4,634 +4,843 @@
   "description": "Endlessly farms Queen Calypso",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_12",
-  "recovery_state": "state_11",
+  "initial": "sync_players_1_state_2",
+  "recovery_state": "sync_players_1_state_1",
   "drops": [
     {
-      "name": "Abyss Bodkin"
+      "name": "Abyss Bodkin",
+      "category": "Athames"
     },
     {
-      "name": "Accurate Talent Opal"
+      "name": "Accurate Talent Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Atavistic Balance Band"
+      "name": "Atavistic Balance Band",
+      "category": "Rings"
     },
     {
-      "name": "Atavistic Death Band"
+      "name": "Atavistic Death Band",
+      "category": "Rings"
     },
     {
-      "name": "Atavistic Fire Band"
+      "name": "Atavistic Fire Band",
+      "category": "Rings"
     },
     {
-      "name": "Atavistic Ice Band"
+      "name": "Atavistic Ice Band",
+      "category": "Rings"
     },
     {
-      "name": "Atavistic Life Band"
+      "name": "Atavistic Life Band",
+      "category": "Rings"
     },
     {
-      "name": "Atavistic Myth Band"
+      "name": "Atavistic Myth Band",
+      "category": "Rings"
     },
     {
-      "name": "Atavistic Storm Band"
+      "name": "Atavistic Storm Band",
+      "category": "Rings"
     },
     {
       "name": "Balance Crushing Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Balance Crushing Pin (60)"
     },
     {
       "name": "Balance Crushing Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Balance Crushing Pin (60)"
     },
     {
       "name": "Balance Crushing Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Balance Crushing Pin (60)"
     },
     {
       "name": "Balance Crushing Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Balance Crushing Pin (60)"
     },
     {
       "name": "Balance Crushing Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Balance Crushing Pin (60)"
     },
     {
       "name": "Balance Crushing Pin (60, Storm)",
+      "category": "Pins",
       "match_name": "Balance Crushing Pin (60)"
     },
     {
       "name": "Balance Disabling Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Balance Disabling Pin (60)"
     },
     {
       "name": "Balance Disabling Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Balance Disabling Pin (60)"
     },
     {
       "name": "Balance Disabling Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Balance Disabling Pin (60)"
     },
     {
       "name": "Balance Disabling Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Balance Disabling Pin (60)"
     },
     {
       "name": "Balance Disabling Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Balance Disabling Pin (60)"
     },
     {
       "name": "Balance Disabling Pin (60, Storm)",
+      "category": "Pins",
       "match_name": "Balance Disabling Pin (60)"
     },
     {
       "name": "Balance Punishing Pin (50, Death)",
+      "category": "Pins",
       "match_name": "Balance Punishing Pin (50)"
     },
     {
       "name": "Balance Punishing Pin (50, Fire)",
+      "category": "Pins",
       "match_name": "Balance Punishing Pin (50)"
     },
     {
       "name": "Balance Punishing Pin (50, Ice)",
+      "category": "Pins",
       "match_name": "Balance Punishing Pin (50)"
     },
     {
       "name": "Balance Punishing Pin (50, Life)",
+      "category": "Pins",
       "match_name": "Balance Punishing Pin (50)"
     },
     {
       "name": "Balance Punishing Pin (50, Myth)",
+      "category": "Pins",
       "match_name": "Balance Punishing Pin (50)"
     },
     {
       "name": "Balance Punishing Pin (50, Storm)",
+      "category": "Pins",
       "match_name": "Balance Punishing Pin (50)"
     },
     {
       "name": "Balance Punishing Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Balance Punishing Pin (60)"
     },
     {
       "name": "Balance Punishing Pin (60, Ice)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (60)"
+    },
+    {
+      "name": "Balance Punishing Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Balance Punishing Pin (60)"
     },
     {
       "name": "Balance Punishing Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Balance Punishing Pin (60)"
     },
     {
-      "name": "Banshee"
+      "name": "Balance Punishing Pin (60, Storm)",
+      "category": "Pins",
+      "match_name": "Balance Punishing Pin (60)"
     },
     {
-      "name": "Berserk Talent Opal"
+      "name": "Banshee",
+      "category": "Spellements"
     },
     {
-      "name": "Blade of Ice Sapphire"
+      "name": "Berserk Talent Opal",
+      "category": "Jewels"
     },
     {
-      "name": "Blemished Defense Peridot +24"
+      "name": "Blade of Ice Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Blight Hound"
+      "name": "Blemished Defense Peridot +24",
+      "category": "Jewels"
     },
     {
-      "name": "Boots of Catastrophe"
+      "name": "Blight Hound",
+      "category": "Spellements"
     },
     {
-      "name": "Boots of Celestian Totality"
+      "name": "Boots of Catastrophe",
+      "category": "Boots"
     },
     {
-      "name": "Brimstone Boots"
+      "name": "Boots of Celestian Totality",
+      "category": "Boots"
     },
     {
-      "name": "Bronze"
+      "name": "Brimstone Boots",
+      "category": "Boots"
     },
     {
-      "name": "Bygone Balance Band"
+      "name": "Bronze",
+      "category": "Reagents"
     },
     {
-      "name": "Bygone Death Band"
+      "name": "Bygone Balance Band",
+      "category": "Rings"
     },
     {
-      "name": "Bygone Fire Band"
+      "name": "Bygone Death Band",
+      "category": "Rings"
     },
     {
-      "name": "Bygone Ice Band"
+      "name": "Bygone Fire Band",
+      "category": "Rings"
     },
     {
-      "name": "Bygone Life Band"
+      "name": "Bygone Ice Band",
+      "category": "Rings"
     },
     {
-      "name": "Bygone Myth Band"
+      "name": "Bygone Life Band",
+      "category": "Rings"
     },
     {
-      "name": "Bygone Storm Band"
+      "name": "Bygone Myth Band",
+      "category": "Rings"
     },
     {
-      "name": "Cauliflowers"
+      "name": "Bygone Storm Band",
+      "category": "Rings"
     },
     {
-      "name": "Centaur"
+      "name": "Cauliflowers",
+      "category": "Snacks"
     },
     {
-      "name": "Cloak"
+      "name": "Centaur",
+      "category": "Spellements"
     },
     {
-      "name": "Cobalt"
+      "name": "Cloak",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Colossus"
+      "name": "Cobalt",
+      "category": "Reagents"
     },
     {
-      "name": "Cyclops"
+      "name": "Colossus",
+      "category": "Spellements"
     },
     {
-      "name": "Cyclops Minion"
+      "name": "Cyclops",
+      "category": "Spellements"
     },
     {
-      "name": "Darkwind"
+      "name": "Cyclops Minion",
+      "category": "Spellements"
     },
     {
-      "name": "Deadly Fly Trap"
+      "name": "Darkwind",
+      "category": "Treasure Cards"
+    },
+    {
+      "name": "Deadly Fly Trap",
+      "category": "Seeds"
     },
     {
       "name": "Death Crushing Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Death Crushing Pin (60)"
     },
     {
       "name": "Death Crushing Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Death Crushing Pin (60)"
     },
     {
       "name": "Death Crushing Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Death Crushing Pin (60)"
     },
     {
       "name": "Death Crushing Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Death Crushing Pin (60)"
     },
     {
       "name": "Death Crushing Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Death Crushing Pin (60)"
     },
     {
       "name": "Death Crushing Pin (60, Storm)",
+      "category": "Pins",
       "match_name": "Death Crushing Pin (60)"
     },
     {
       "name": "Death Disabling Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Death Disabling Pin (60)"
     },
     {
       "name": "Death Disabling Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Death Disabling Pin (60)"
     },
     {
       "name": "Death Disabling Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Death Disabling Pin (60)"
     },
     {
       "name": "Death Disabling Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Death Disabling Pin (60)"
     },
     {
       "name": "Death Disabling Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Death Disabling Pin (60)"
     },
     {
       "name": "Death Disabling Pin (60, Storm)",
+      "category": "Pins",
       "match_name": "Death Disabling Pin (60)"
     },
     {
       "name": "Death Punishing Pin (50, Balance)",
+      "category": "Pins",
       "match_name": "Death Punishing Pin (50)"
     },
     {
       "name": "Death Punishing Pin (50, Fire)",
+      "category": "Pins",
       "match_name": "Death Punishing Pin (50)"
     },
     {
       "name": "Death Punishing Pin (50, Ice)",
+      "category": "Pins",
       "match_name": "Death Punishing Pin (50)"
     },
     {
       "name": "Death Punishing Pin (50, Life)",
+      "category": "Pins",
       "match_name": "Death Punishing Pin (50)"
     },
     {
       "name": "Death Punishing Pin (50, Myth)",
+      "category": "Pins",
       "match_name": "Death Punishing Pin (50)"
     },
     {
       "name": "Death Punishing Pin (50, Storm)",
+      "category": "Pins",
       "match_name": "Death Punishing Pin (50)"
     },
     {
       "name": "Death Punishing Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Death Punishing Pin (60)"
     },
     {
       "name": "Death Punishing Pin (60, Ice)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (60)"
+    },
+    {
+      "name": "Death Punishing Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Death Punishing Pin (60)"
     },
     {
       "name": "Death Punishing Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Death Punishing Pin (60)"
     },
     {
-      "name": "Delicious Cookie"
+      "name": "Death Punishing Pin (60, Storm)",
+      "category": "Pins",
+      "match_name": "Death Punishing Pin (60)"
     },
     {
-      "name": "Disarmament Amethyst"
+      "name": "Delicious Cookie",
+      "category": "Snacks"
     },
     {
-      "name": "Doom and Gloom"
+      "name": "Disarmament Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Dragonflies"
+      "name": "Doom and Gloom",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dull Critical Citrine +3"
+      "name": "Dragonflies",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Dull Critical Jade +3"
+      "name": "Dull Critical Citrine +3",
+      "category": "Jewels"
     },
     {
-      "name": "Dull Health Opal +51"
+      "name": "Dull Critical Jade +3",
+      "category": "Jewels"
     },
     {
-      "name": "Dull Health Opal +53"
+      "name": "Dull Health Opal +51",
+      "category": "Jewels"
     },
     {
-      "name": "Dull Mana Opal +23"
+      "name": "Dull Health Opal +53",
+      "category": "Jewels"
     },
     {
-      "name": "Earth Walker"
+      "name": "Dull Mana Opal +23",
+      "category": "Jewels"
     },
     {
-      "name": "Empower"
+      "name": "Earth Walker",
+      "category": "Spellements"
     },
     {
-      "name": "Eureka Coif"
+      "name": "Empower",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Eureka Wraps"
+      "name": "Eureka Coif",
+      "category": "Hats"
     },
     {
-      "name": "Evil Snowman"
+      "name": "Eureka Wraps",
+      "category": "Boots"
+    },
+    {
+      "name": "Evil Snowman",
+      "category": "Spellements"
     },
     {
       "name": "Fire Crushing Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Fire Crushing Pin (60)"
     },
     {
       "name": "Fire Crushing Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Fire Crushing Pin (60)"
     },
     {
       "name": "Fire Crushing Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Fire Crushing Pin (60)"
     },
     {
       "name": "Fire Crushing Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Fire Crushing Pin (60)"
     },
     {
       "name": "Fire Crushing Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Fire Crushing Pin (60)"
     },
     {
       "name": "Fire Crushing Pin (60, Storm)",
+      "category": "Pins",
       "match_name": "Fire Crushing Pin (60)"
     },
     {
       "name": "Fire Disabling Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Fire Disabling Pin (60)"
     },
     {
       "name": "Fire Disabling Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Fire Disabling Pin (60)"
     },
     {
       "name": "Fire Disabling Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Fire Disabling Pin (60)"
     },
     {
       "name": "Fire Disabling Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Fire Disabling Pin (60)"
     },
     {
       "name": "Fire Disabling Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Fire Disabling Pin (60)"
     },
     {
       "name": "Fire Disabling Pin (60, Storm)",
+      "category": "Pins",
       "match_name": "Fire Disabling Pin (60)"
     },
     {
-      "name": "Fire Dragon"
+      "name": "Fire Dragon",
+      "category": "Spellements"
     },
     {
       "name": "Fire Punishing Pin (50, Balance)",
+      "category": "Pins",
       "match_name": "Fire Punishing Pin (50)"
     },
     {
       "name": "Fire Punishing Pin (50, Death)",
+      "category": "Pins",
       "match_name": "Fire Punishing Pin (50)"
     },
     {
       "name": "Fire Punishing Pin (50, Ice)",
+      "category": "Pins",
       "match_name": "Fire Punishing Pin (50)"
     },
     {
       "name": "Fire Punishing Pin (50, Life)",
+      "category": "Pins",
       "match_name": "Fire Punishing Pin (50)"
     },
     {
       "name": "Fire Punishing Pin (50, Myth)",
+      "category": "Pins",
       "match_name": "Fire Punishing Pin (50)"
     },
     {
       "name": "Fire Punishing Pin (50, Storm)",
+      "category": "Pins",
       "match_name": "Fire Punishing Pin (50)"
     },
     {
       "name": "Fire Punishing Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Fire Punishing Pin (60)"
     },
     {
       "name": "Fire Punishing Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Fire Punishing Pin (60)"
     },
     {
       "name": "Fire Punishing Pin (60, Ice)",
+      "category": "Pins",
+      "match_name": "Fire Punishing Pin (60)"
+    },
+    {
+      "name": "Fire Punishing Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Fire Punishing Pin (60)"
     },
     {
       "name": "Fire Punishing Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Fire Punishing Pin (60)"
     },
     {
-      "name": "Fish on a Vine"
+      "name": "Fish on a Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Forest Lord"
+      "name": "Forest Lord",
+      "category": "Spellements"
     },
     {
-      "name": "Frost Giant"
+      "name": "Frost Giant",
+      "category": "Spellements"
     },
     {
-      "name": "Frostbit Footguards"
+      "name": "Frostbit Footguards",
+      "category": "Boots"
     },
     {
-      "name": "Gargantuan"
+      "name": "Gargantuan",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Gearhead Destroyer"
+      "name": "Gearhead Destroyer",
+      "category": "Spellements"
     },
     {
-      "name": "Glowing Star Fruit"
+      "name": "Glowing Star Fruit",
+      "category": "Snacks"
     },
     {
-      "name": "Glowing Taffy"
+      "name": "Glowing Taffy",
+      "category": "Snacks"
     },
     {
-      "name": "Headdress of Dragon Fire"
+      "name": "Headdress of Dragon Fire",
+      "category": "Hats"
     },
     {
-      "name": "Helephant"
+      "name": "Helephant",
+      "category": "Spellements"
     },
     {
-      "name": "Helm of Burning Ambition"
+      "name": "Helm of Burning Ambition",
+      "category": "Hats"
     },
     {
-      "name": "Hydra"
+      "name": "Hydra",
+      "category": "Spellements"
     },
     {
       "name": "Ice Crushing Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Ice Crushing Pin (60)"
     },
     {
       "name": "Ice Crushing Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Ice Crushing Pin (60)"
     },
     {
       "name": "Ice Crushing Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Ice Crushing Pin (60)"
     },
     {
       "name": "Ice Crushing Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Ice Crushing Pin (60)"
     },
     {
       "name": "Ice Crushing Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Ice Crushing Pin (60)"
     },
     {
       "name": "Ice Crushing Pin (60, Storm)",
+      "category": "Pins",
       "match_name": "Ice Crushing Pin (60)"
     },
     {
       "name": "Ice Disabling Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Ice Disabling Pin (60)"
     },
     {
       "name": "Ice Disabling Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Ice Disabling Pin (60)"
     },
     {
       "name": "Ice Disabling Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Ice Disabling Pin (60)"
     },
     {
       "name": "Ice Disabling Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Ice Disabling Pin (60)"
     },
     {
       "name": "Ice Disabling Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Ice Disabling Pin (60)"
     },
     {
       "name": "Ice Disabling Pin (60, Storm)",
+      "category": "Pins",
       "match_name": "Ice Disabling Pin (60)"
     },
     {
       "name": "Ice Punishing Pin (50, Balance)",
+      "category": "Pins",
       "match_name": "Ice Punishing Pin (50)"
     },
     {
       "name": "Ice Punishing Pin (50, Death)",
+      "category": "Pins",
       "match_name": "Ice Punishing Pin (50)"
     },
     {
       "name": "Ice Punishing Pin (50, Fire)",
+      "category": "Pins",
       "match_name": "Ice Punishing Pin (50)"
     },
     {
       "name": "Ice Punishing Pin (50, Life)",
+      "category": "Pins",
       "match_name": "Ice Punishing Pin (50)"
     },
     {
       "name": "Ice Punishing Pin (50, Myth)",
+      "category": "Pins",
       "match_name": "Ice Punishing Pin (50)"
     },
     {
       "name": "Ice Punishing Pin (50, Storm)",
+      "category": "Pins",
       "match_name": "Ice Punishing Pin (50)"
     },
     {
       "name": "Ice Punishing Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Ice Punishing Pin (60)"
     },
     {
       "name": "Ice Punishing Pin (60, Death)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (60)"
+    },
+    {
+      "name": "Ice Punishing Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Ice Punishing Pin (60)"
     },
     {
       "name": "Ice Punishing Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Ice Punishing Pin (60)"
     },
     {
-      "name": "Ice Rangers"
+      "name": "Ice Punishing Pin (60, Storm)",
+      "category": "Pins",
+      "match_name": "Ice Punishing Pin (60)"
     },
     {
-      "name": "Ice Wyvern"
+      "name": "Ice Rangers",
+      "category": "Boots"
     },
     {
-      "name": "Ice Wyvern"
+      "name": "Ice Wyvern",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Icestar Stalkers"
+      "name": "Ice Wyvern",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Immolate"
+      "name": "Icestar Stalkers",
+      "category": "Boots"
     },
     {
-      "name": "Infector Onyx"
+      "name": "Immolate",
+      "category": "Spellements"
     },
     {
-      "name": "Kraken"
+      "name": "Infector Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Lead"
+      "name": "Kraken",
+      "category": "Spellements"
+    },
+    {
+      "name": "Lead",
+      "category": "Reagents"
     },
     {
       "name": "Life Crushing Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Life Crushing Pin (60)"
     },
     {
       "name": "Life Crushing Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Life Crushing Pin (60)"
     },
     {
       "name": "Life Crushing Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Life Crushing Pin (60)"
     },
     {
       "name": "Life Crushing Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Life Crushing Pin (60)"
     },
     {
       "name": "Life Crushing Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Life Crushing Pin (60)"
     },
     {
       "name": "Life Crushing Pin (60, Storm)",
+      "category": "Pins",
       "match_name": "Life Crushing Pin (60)"
     },
     {
       "name": "Life Disabling Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Life Disabling Pin (60)"
     },
     {
       "name": "Life Disabling Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Life Disabling Pin (60)"
     },
     {
       "name": "Life Disabling Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Life Disabling Pin (60)"
     },
     {
       "name": "Life Disabling Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Life Disabling Pin (60)"
     },
     {
       "name": "Life Disabling Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Life Disabling Pin (60)"
     },
     {
       "name": "Life Disabling Pin (60, Storm)",
+      "category": "Pins",
       "match_name": "Life Disabling Pin (60)"
     },
     {
       "name": "Life Punishing Pin (50, Balance)",
+      "category": "Pins",
       "match_name": "Life Punishing Pin (50)"
     },
     {
       "name": "Life Punishing Pin (50, Death)",
+      "category": "Pins",
       "match_name": "Life Punishing Pin (50)"
     },
     {
       "name": "Life Punishing Pin (50, Fire)",
+      "category": "Pins",
       "match_name": "Life Punishing Pin (50)"
     },
     {
       "name": "Life Punishing Pin (50, Ice)",
+      "category": "Pins",
       "match_name": "Life Punishing Pin (50)"
     },
     {
       "name": "Life Punishing Pin (50, Myth)",
+      "category": "Pins",
       "match_name": "Life Punishing Pin (50)"
     },
     {
       "name": "Life Punishing Pin (50, Storm)",
+      "category": "Pins",
       "match_name": "Life Punishing Pin (50)"
     },
     {
       "name": "Life Punishing Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Life Punishing Pin (60)"
     },
     {
       "name": "Life Punishing Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Life Punishing Pin (60)"
     },
     {
@@ -640,110 +849,149 @@
     },
     {
       "name": "Life Punishing Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Life Punishing Pin (60)"
     },
     {
-      "name": "Locust Swarm"
+      "name": "Life Punishing Pin (60, Storm)",
+      "category": "Pins",
+      "match_name": "Life Punishing Pin (60)"
     },
     {
-      "name": "Maelstrom Snap Dragon"
+      "name": "Locust Swarm",
+      "category": "Spellements"
     },
     {
-      "name": "Mass Fire Prism Ruby"
+      "name": "Maelstrom Snap Dragon",
+      "category": "Seeds"
     },
     {
-      "name": "Mass Ice Prism Sapphire"
+      "name": "Mass Fire Prism Ruby",
+      "category": "Jewels"
     },
     {
-      "name": "Mass Myth Prism Peridot"
+      "name": "Mass Ice Prism Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Mass Storm Prism Amethyst"
+      "name": "Mass Myth Prism Peridot",
+      "category": "Jewels"
     },
     {
-      "name": "Mend Minion Talent Peridot"
+      "name": "Mass Storm Prism Amethyst",
+      "category": "Jewels"
     },
     {
-      "name": "Minotaur"
+      "name": "Mend Minion Talent Peridot",
+      "category": "Jewels"
+    },
+    {
+      "name": "Minotaur",
+      "category": "Spellements"
     },
     {
       "name": "Myth Crushing Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Myth Crushing Pin (60)"
     },
     {
       "name": "Myth Crushing Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Myth Crushing Pin (60)"
     },
     {
       "name": "Myth Crushing Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Myth Crushing Pin (60)"
     },
     {
       "name": "Myth Crushing Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Myth Crushing Pin (60)"
     },
     {
       "name": "Myth Crushing Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Myth Crushing Pin (60)"
     },
     {
       "name": "Myth Crushing Pin (60, Storm)",
+      "category": "Pins",
       "match_name": "Myth Crushing Pin (60)"
     },
     {
       "name": "Myth Disabling Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Myth Disabling Pin (60)"
     },
     {
       "name": "Myth Disabling Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Myth Disabling Pin (60)"
     },
     {
       "name": "Myth Disabling Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Myth Disabling Pin (60)"
     },
     {
       "name": "Myth Disabling Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Myth Disabling Pin (60)"
     },
     {
       "name": "Myth Disabling Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Myth Disabling Pin (60)"
     },
     {
       "name": "Myth Disabling Pin (60, Storm)",
+      "category": "Pins",
       "match_name": "Myth Disabling Pin (60)"
     },
     {
       "name": "Myth Punishing Pin (50, Balance)",
+      "category": "Pins",
       "match_name": "Myth Punishing Pin (50)"
     },
     {
       "name": "Myth Punishing Pin (50, Death)",
+      "category": "Pins",
       "match_name": "Myth Punishing Pin (50)"
     },
     {
       "name": "Myth Punishing Pin (50, Fire)",
+      "category": "Pins",
       "match_name": "Myth Punishing Pin (50)"
     },
     {
       "name": "Myth Punishing Pin (50, Ice)",
+      "category": "Pins",
       "match_name": "Myth Punishing Pin (50)"
     },
     {
       "name": "Myth Punishing Pin (50, Life)",
+      "category": "Pins",
       "match_name": "Myth Punishing Pin (50)"
     },
     {
       "name": "Myth Punishing Pin (50, Storm)",
+      "category": "Pins",
       "match_name": "Myth Punishing Pin (50)"
     },
     {
       "name": "Myth Punishing Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Myth Punishing Pin (60)"
     },
     {
       "name": "Myth Punishing Pin (60, Death)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (60)"
+    },
+    {
+      "name": "Myth Punishing Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Myth Punishing Pin (60)"
     },
     {
@@ -751,197 +999,260 @@
       "match_name": "Myth Punishing Pin (60)"
     },
     {
-      "name": "Nature's Wrath"
+      "name": "Myth Punishing Pin (60, Storm)",
+      "category": "Pins",
+      "match_name": "Myth Punishing Pin (60)"
     },
     {
-      "name": "Nickel"
+      "name": "Nature's Wrath",
+      "category": "Spellements"
     },
     {
-      "name": "No Pain, No Gain Onyx"
+      "name": "Nickel",
+      "category": "Reagents"
     },
     {
-      "name": "Nova Necklace"
+      "name": "No Pain, No Gain Onyx",
+      "category": "Jewels"
     },
     {
-      "name": "Orthrus"
+      "name": "Nova Necklace",
+      "category": "Amulets"
     },
     {
-      "name": "Pandemonium Platemail"
+      "name": "Orthrus",
+      "category": "Spellements"
     },
     {
-      "name": "Phoenix"
+      "name": "Pandemonium Platemail",
+      "category": "Robes"
     },
     {
-      "name": "Pink Dandelion"
+      "name": "Phoenix",
+      "category": "Spellements"
     },
     {
-      "name": "Plain Blocking Onyx +6"
+      "name": "Pink Dandelion",
+      "category": "Seeds"
     },
     {
-      "name": "Plain Blocking Opal +3"
+      "name": "Plain Blocking Onyx +6",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Blocking Peridot +6"
+      "name": "Plain Blocking Opal +3",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Blocking Ruby +6"
+      "name": "Plain Blocking Peridot +6",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Blocking Sapphire +6"
+      "name": "Plain Blocking Ruby +6",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Damage Amethyst +15"
+      "name": "Plain Blocking Sapphire +6",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Damage Jade +15"
+      "name": "Plain Damage Amethyst +15",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Damage Sapphire +15"
+      "name": "Plain Damage Jade +15",
+      "category": "Jewels"
     },
     {
-      "name": "Plain Defense Opal +16"
+      "name": "Plain Damage Sapphire +15",
+      "category": "Jewels"
     },
     {
-      "name": "Power Nova"
+      "name": "Plain Defense Opal +16",
+      "category": "Jewels"
     },
     {
-      "name": "Precision"
+      "name": "Power Nova",
+      "category": "Spellements"
     },
     {
-      "name": "Raiment of Reverie"
+      "name": "Precision",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Reshuffle Citrine"
+      "name": "Raiment of Reverie",
+      "category": "Robes"
     },
     {
-      "name": "Ring of Rapture"
+      "name": "Reshuffle Citrine",
+      "category": "Jewels"
     },
     {
-      "name": "Ring of Rare Origins"
+      "name": "Ring of Rapture",
+      "category": "Rings"
     },
     {
-      "name": "Salgio's Tinder Cloak"
+      "name": "Ring of Rare Origins",
+      "category": "Rings"
     },
     {
-      "name": "Satyr"
+      "name": "Salgio's Tinder Cloak",
+      "category": "Robes"
     },
     {
-      "name": "Scarecrow"
+      "name": "Satyr",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Seraph"
+      "name": "Scarecrow",
+      "category": "Spellements"
     },
     {
-      "name": "Shark Hut"
+      "name": "Seraph",
+      "category": "Spellements"
     },
     {
-      "name": "Shark Tooth"
+      "name": "Shark Hut",
+      "category": "Housing Items"
     },
     {
-      "name": "Silver Trumpet Vine"
+      "name": "Shark Tooth",
+      "category": "Reagents"
     },
     {
-      "name": "Skeletal Pirate"
+      "name": "Silver Trumpet Vine",
+      "category": "Seeds"
     },
     {
-      "name": "Sniper"
+      "name": "Skeletal Pirate",
+      "category": "Spellements"
     },
     {
-      "name": "Spectral Blast"
+      "name": "Sniper",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Spicy Drumstick"
+      "name": "Spectral Blast",
+      "category": "Spellements"
     },
     {
-      "name": "Starfish"
+      "name": "Spicy Drumstick",
+      "category": "Snacks"
     },
     {
-      "name": "Steel"
+      "name": "Starfish",
+      "category": "Pets"
     },
     {
-      "name": "Stone Colossus"
+      "name": "Steel",
+      "category": "Reagents"
+    },
+    {
+      "name": "Stone Colossus",
+      "category": "Spellements"
     },
     {
       "name": "Storm Crushing Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Storm Crushing Pin (60)"
     },
     {
       "name": "Storm Crushing Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Storm Crushing Pin (60)"
     },
     {
       "name": "Storm Crushing Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Storm Crushing Pin (60)"
     },
     {
       "name": "Storm Crushing Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Storm Crushing Pin (60)"
     },
     {
       "name": "Storm Crushing Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Storm Crushing Pin (60)"
     },
     {
       "name": "Storm Crushing Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Storm Crushing Pin (60)"
     },
     {
       "name": "Storm Disabling Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Storm Disabling Pin (60)"
     },
     {
       "name": "Storm Disabling Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Storm Disabling Pin (60)"
     },
     {
       "name": "Storm Disabling Pin (60, Fire)",
+      "category": "Pins",
       "match_name": "Storm Disabling Pin (60)"
     },
     {
       "name": "Storm Disabling Pin (60, Ice)",
+      "category": "Pins",
       "match_name": "Storm Disabling Pin (60)"
     },
     {
       "name": "Storm Disabling Pin (60, Life)",
+      "category": "Pins",
       "match_name": "Storm Disabling Pin (60)"
     },
     {
       "name": "Storm Disabling Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Storm Disabling Pin (60)"
     },
     {
-      "name": "Storm Lord"
+      "name": "Storm Lord",
+      "category": "Spellements"
     },
     {
       "name": "Storm Punishing Pin (50, Balance)",
+      "category": "Pins",
       "match_name": "Storm Punishing Pin (50)"
     },
     {
       "name": "Storm Punishing Pin (50, Death)",
+      "category": "Pins",
       "match_name": "Storm Punishing Pin (50)"
     },
     {
       "name": "Storm Punishing Pin (50, Fire)",
+      "category": "Pins",
       "match_name": "Storm Punishing Pin (50)"
     },
     {
       "name": "Storm Punishing Pin (50, Ice)",
+      "category": "Pins",
       "match_name": "Storm Punishing Pin (50)"
     },
     {
       "name": "Storm Punishing Pin (50, Life)",
+      "category": "Pins",
       "match_name": "Storm Punishing Pin (50)"
     },
     {
       "name": "Storm Punishing Pin (50, Myth)",
+      "category": "Pins",
       "match_name": "Storm Punishing Pin (50)"
     },
     {
       "name": "Storm Punishing Pin (60, Balance)",
+      "category": "Pins",
       "match_name": "Storm Punishing Pin (60)"
     },
     {
       "name": "Storm Punishing Pin (60, Death)",
+      "category": "Pins",
       "match_name": "Storm Punishing Pin (60)"
     },
     {
@@ -950,92 +1261,128 @@
     },
     {
       "name": "Storm Punishing Pin (60, Myth)",
+      "category": "Pins",
       "match_name": "Storm Punishing Pin (60)"
     },
     {
-      "name": "Storm Shark"
+      "name": "Storm Shark",
+      "category": "Spellements"
     },
     {
-      "name": "Stormzilla"
+      "name": "Stormzilla",
+      "category": "Spellements"
     },
     {
-      "name": "Strawberry Cupcake"
+      "name": "Strawberry Cupcake",
+      "category": "Snacks"
     },
     {
-      "name": "Sub Zero Jerkin"
+      "name": "Sub Zero Jerkin",
+      "category": "Robes"
     },
     {
-      "name": "Submarine Sandwich"
+      "name": "Submarine Sandwich",
+      "category": "Snacks"
     },
     {
-      "name": "Sun Circle"
+      "name": "Sun Circle",
+      "category": "Rings"
     },
     {
-      "name": "Sun Kris"
+      "name": "Sun Kris",
+      "category": "Athames"
     },
     {
-      "name": "Sunbird"
+      "name": "Sunbird",
+      "category": "Spellements"
     },
     {
-      "name": "Synthesis Cover"
+      "name": "Synthesis Cover",
+      "category": "Hats"
     },
     {
-      "name": "Tempest Trackers"
+      "name": "Tempest Trackers",
+      "category": "Boots"
     },
     {
-      "name": "Thundercloud Coif"
+      "name": "Thundercloud Coif",
+      "category": "Hats"
     },
     {
-      "name": "Tin"
+      "name": "Tin",
+      "category": "Reagents"
     },
     {
-      "name": "Tower Shield Sapphire"
+      "name": "Tower Shield Sapphire",
+      "category": "Jewels"
     },
     {
-      "name": "Tragic Tunic"
+      "name": "Tragic Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Triton"
+      "name": "Triton",
+      "category": "Spellements"
     },
     {
-      "name": "Turbulent Tunic"
+      "name": "Turbulent Tunic",
+      "category": "Robes"
     },
     {
-      "name": "Unstoppable"
+      "name": "Unstoppable",
+      "category": "Treasure Cards"
     },
     {
-      "name": "Vampire"
+      "name": "Vampire",
+      "category": "Spellements"
     },
     {
-      "name": "Versatile Celestian Boots"
+      "name": "Versatile Celestian Boots",
+      "category": "Boots"
     },
     {
-      "name": "Vial of the Sun"
+      "name": "Vial of the Sun",
+      "category": "Amulets"
     },
     {
-      "name": "Virtue Shoes"
+      "name": "Virtue Shoes",
+      "category": "Boots"
     },
     {
-      "name": "Vital Headdress"
+      "name": "Vital Headdress",
+      "category": "Hats"
     },
     {
-      "name": "Wraith"
+      "name": "Wraith",
+      "category": "Spellements"
     }
   ],
   "authors": "BartleBot",
   "tags": [
     "Gear",
+    "Jewels",
+    "Reagents",
+    "Spellements",
     "Boss"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Atavistic",
+        "60"
+      ]
+    }
+  ],
   "states": [
     {
       "id": "state_4",
       "node_type": "enter_dungeon",
       "label": "Enter Calypso's Cavern",
       "position": {
-        "x": 2200,
-        "y": 0.0
+        "x": 1320.0,
+        "y": 90.0
       },
       "params": {
         "from_zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs",
@@ -1058,8 +1405,8 @@
       "node_type": "interact",
       "label": "Spawn Queen Calypso",
       "position": {
-        "x": 3520,
-        "y": 0.0
+        "x": 3520.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Celestia/Interiors/CL_Z10i3_Kingdom_Of_The_Crabs",
@@ -1083,13 +1430,14 @@
       "node_type": "handle_combat",
       "label": "Defeat Queen Calypso",
       "position": {
-        "x": 4400,
-        "y": 0.0
+        "x": 4400.0,
+        "y": 90.0
       },
       "params": {
         "enemy": "CL-UndeadMaiden-Boss-R10",
-        "use_bot_default": true,
-        "combat_config": ""
+        "wiki_page": "Creature:Queen Calypso",
+        "use_default_strategy": true,
+        "max_duration": 600.0
       }
     },
     {
@@ -1097,8 +1445,8 @@
       "node_type": "sleep",
       "label": "Wait for Queen Calypso to spawn",
       "position": {
-        "x": 3960,
-        "y": 0.0
+        "x": 3960.0,
+        "y": 90.0
       },
       "params": {
         "duration": 1.0
@@ -1109,8 +1457,8 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 4840,
-        "y": 0.0
+        "x": 4840.0,
+        "y": 90.0
       },
       "params": {
         "if_health_below": 1.0,
@@ -1125,8 +1473,8 @@
       "node_type": "interact",
       "label": "Reset Queen Calypso",
       "position": {
-        "x": 3080,
-        "y": 0.0
+        "x": 3080.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Celestia/Interiors/CL_Z10i3_Kingdom_Of_The_Crabs",
@@ -1148,27 +1496,53 @@
     {
       "id": "state_10",
       "node_type": "teleport_to_coordinates",
-      "label": "Enter render radius",
+      "label": "Teleport to safety",
       "position": {
-        "x": 2640,
-        "y": 0.0
+        "x": 5280.0,
+        "y": 90.0
       },
       "params": {
         "zone": "Celestia/Interiors/CL_Z10i3_Kingdom_Of_The_Crabs",
         "xyz": {
-          "x": 3161.01,
-          "y": -9085.24,
-          "z": -1014.19
+          "x": 3204.29,
+          "y": -9059.26,
+          "z": -1014.15
         }
       }
     },
     {
       "id": "state_11",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 1760.0,
+        "y": 90.0
+      },
+      "params": {
+        "scales": ""
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 2640.0,
+        "y": 90.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "sync_players_1_state_1",
       "node_type": "relog",
       "label": "Relog",
       "position": {
-        "x": 880.0,
-        "y": 0.0
+        "x": 880.0001762589925,
+        "y": 90.00042625899279
       },
       "params": {
         "relog_clients": [
@@ -1180,12 +1554,12 @@
       }
     },
     {
-      "id": "state_12",
+      "id": "sync_players_1_state_2",
       "node_type": "sync_in_zone",
-      "label": "Go to Crustacean Empire",
+      "label": "Sync in zone",
       "position": {
-        "x": 1320.0,
-        "y": 0.0
+        "x": 1320.0001762589925,
+        "y": 180.00042625899277
       },
       "params": {
         "zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs"
@@ -1193,18 +1567,36 @@
     },
     {
       "id": "state_13",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
+      "node_type": "quicksell",
+      "label": "Quicksell",
       "position": {
-        "x": 1760.0,
-        "y": 0.0
+        "x": 2200.0,
+        "y": 90.0
       },
-      "params": {
-        "use_favorite_realm": true
-      }
+      "params": {}
     }
   ],
   "transitions": [
+    {
+      "trigger": "advance",
+      "source": "state_10",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "state_4",
+      "dest": "state_11",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
     {
       "trigger": "advance",
       "source": "state_5",
@@ -1237,18 +1629,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_4",
+      "source": "state_8",
       "dest": "state_10",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_9",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1267,17 +1649,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_9",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
+      "source": "state_12",
       "dest": "state_9",
       "when": "SUCCESS",
       "flags": [],
@@ -1287,7 +1659,17 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
+      "source": "sync_players_1_state_1",
+      "dest": "sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "sync_players_1_state_2",
       "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
@@ -1297,7 +1679,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
+      "source": "state_11",
       "dest": "state_13",
       "when": "SUCCESS",
       "flags": [],
@@ -1307,19 +1689,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
+      "source": "state_13",
       "dest": "state_12",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_11",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -1335,21 +1707,47 @@
         "state_7",
         "state_8",
         "state_5",
-        "state_6"
+        "state_6",
+        "state_10"
       ],
-      "color": 1
+      "color": 1,
+      "collapsed": true
     },
     {
-      "id": "cd6c6ab7",
-      "label": "Go to Calypso's Cavern",
+      "id": "sync_players_1",
+      "label": "Sync players in Crustacean Empire",
       "members": [
-        "state_4",
-        "state_10",
-        "state_13",
-        "state_11",
-        "state_12"
+        "sync_players_1_state_1",
+        "sync_players_1_state_2"
       ],
-      "color": 3
+      "color": 2,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Celestia/CL_Z10_Kingdom_Of_The_Crabs"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 880.0001762589925,
+          "y": 90.00042625899279
+        }
+      }
     }
   ]
 }

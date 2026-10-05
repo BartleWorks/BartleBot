@@ -194,7 +194,7 @@ class SubgraphInput(BaseModel):
 
     What the author owns is stored here: name, label, help, default and type. ``type``
     is a ``ParamField`` type name, the narrowest of the bound params' types, so its
-    value is valid for every param it feeds; what the *type* owns -- choices, range,
+    value is valid for every param it feeds; what the *type* owns -- range,
     placeholder, the widget -- comes from the bound fields when the form is drawn.
     ``default`` is what a fresh instance is prefilled with; it is *not* applied during
     composition -- an input the instance has not set leaves the definition's own value
@@ -395,7 +395,7 @@ class BotConfig(BaseModel):
     # only discovers that mid-run, in a log line, at the moment a crash has already
     # happened -- the same "ask before the run, not after" reasoning as recovery_readiness.
     recovery_state: str
-    # No ``start_location``: nothing in the engine ever read it, ``go_to_world`` and the
+    # No ``start_location``: nothing in the engine ever read it, ``sync_in_zone`` and the
     # bot templates make it moot, and it read as a promise the app would take you there.
     # Pydantic ignores it in an older file, and ``save()`` drops it.
     drops: list[DropModel] = Field(default_factory=list)

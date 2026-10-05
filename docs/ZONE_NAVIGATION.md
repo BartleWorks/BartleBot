@@ -63,7 +63,7 @@ rather than zones. That is also why no bot file holds a row's text.
 
 A list entry's text is the destination zone's display name. That is assumed rather than
 confirmed for every world; it means the entry can be matched in all seven locales from the
-game's own `WizardZone.lang`, the way `go_to_world` searches the spiral door, once a zone-name
+game's own `WizardZone.lang`, the way a gate step searches for a world's name, once a zone-name
 snapshot exists.
 
 The assumption is not always right: Empyrea's hub list shows Nimbus Hanger's row as just
@@ -136,13 +136,13 @@ A world's recorded `gate` generates a `gate` link from its door to every other w
 Every gate lists every world the character has unlocked, so a destination needs a door but no
 gate of its own. A gate step runs through `enter_zone_via_list`, matching the world's name in
 every locale from `world_names.json`, and anywhere in the destination world counts as arriving.
-A character who has not unlocked the world fails that step, as `go_to_world` would.
+A character who has not unlocked the world fails that step.
 
 HOME works from any zone at all, a castle or a zone off the map included, so a `home` step to
 the dorm (the file's top-level `home`) is implied from every zone but the dorm, the way `hub` is
 from every zone of a world — except the dorm, whose hub button goes to the hub of the world last
 visited rather than Wizard City's, so it has none. The dorm walks out to Ravenwood, Ravenwood to the World Tree, and the
-World Tree has Wizard City's gate: the route `go_to_world` hard-codes is one the planner can pick.
+World Tree has Wizard City's gate, so the planner can always reach any world that way.
 A world whose own gate is recorded beats it — the hub button and the gate are two transitions,
 HOME to another world's door is four — and a world whose gate is not recorded yet still routes,
 the long way round.
@@ -276,8 +276,9 @@ world's name the same way from `world_names.json`.
 
 The Sync In Zone node (`nodes/teleportation/sync_in_zone.py`) is `navigate()` with the zone as its one
 param, chosen in a picker grouped by world (`gui/widgets/zone_picker.py`). Only the zone path is
-stored: the map already says which world it is in. The `go_to_world` node is unchanged: bots that
-use it still go home and through the World Tree.
+stored: the map already says which world it is in. It replaced the `go_to_world` node, which went
+home and through the World Tree's gate every time; a Sync In Zone to the zone a world's gate lands
+in does the same with a route the planner picks.
 
 ### Running a route with several clients
 

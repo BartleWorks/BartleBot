@@ -4,8 +4,8 @@
   "description": "Endlessly defeats Prince Gobblestone in Colossus Boulevard, Wizard City",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_17",
-  "recovery_state": "state_16",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Amulet of the Fay",
@@ -448,37 +448,74 @@
   "tags": [
     "Gear",
     "Housing",
-    "Boss"
+    "Boss",
+    "Team-Up"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Quicksell Keep List",
+      "type": "drop_keep_list",
+      "default": [
+        "Heartsteel"
+      ]
+    }
+  ],
   "states": [
     {
-      "id": "state_8",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 1759.9998649583051,
+        "y": 0.00021952501634925348
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 2199.999864958305,
+        "y": 90.00021952501635
+      },
+      "params": {
+        "zone": "WizardCity/WC_Streets/WC_Colossus"
+      }
+    },
+    {
+      "id": "t_1",
       "node_type": "handle_potions",
       "label": "Handle potions",
       "position": {
-        "x": 2640.0,
+        "x": 2200.0,
         "y": 0.0
       },
       "params": {
         "if_health_below": 0.5,
         "if_mana_below": 0.15,
-        "refill_potions": true,
         "mark_zone": ""
       }
     },
     {
-      "id": "state_9",
+      "id": "t_2",
       "node_type": "quicksell",
       "label": "Quicksell",
       "position": {
-        "x": 3080.0,
+        "x": 2640.0,
         "y": 0.0
       },
       "params": {}
     },
     {
-      "id": "state_11",
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter dungeon",
       "position": {
@@ -488,6 +525,8 @@
       "params": {
         "from_zone": "WizardCity/WC_Streets/WC_Colossus",
         "dungeon_zone": "WizardCity/WC_Streets/Interiors/WC_Colossus_ThroneRoom",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "sigil_xyz": {
           "x": 45018.45,
           "y": 9182.09,
@@ -497,13 +536,11 @@
           "x": 44388.04,
           "y": 8924.68,
           "z": -633.44
-        },
-        "offers_challenge_mode": false,
-        "offers_team_up": false
+        }
       }
     },
     {
-      "id": "state_12",
+      "id": "t_4",
       "node_type": "handle_combat",
       "label": "Defeat boss",
       "position": {
@@ -518,7 +555,7 @@
       }
     },
     {
-      "id": "state_13",
+      "id": "t_5",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
@@ -535,16 +572,17 @@
       }
     },
     {
-      "id": "state_14",
+      "id": "t_6",
       "node_type": "enter_zone",
       "label": "Exit dungeon",
       "position": {
         "x": 4840.0,
-        "y": 90.0
+        "y": 0.0
       },
       "params": {
         "from_zone": "WizardCity/WC_Streets/Interiors/WC_Colossus_ThroneRoom",
         "to_zone": "WizardCity/WC_Streets/WC_Colossus",
+        "stagger": false,
         "xyz": {
           "x": 1630.14,
           "y": -5417.88,
@@ -554,40 +592,32 @@
           "x": 1618.07,
           "y": -5061.09,
           "z": -3166.26
-        },
-        "stagger": false
+        }
       }
     },
     {
-      "id": "state_16",
-      "node_type": "relog",
-      "label": "Relog all players",
+      "id": "t_7",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
       "position": {
-        "x": 1760.0,
+        "x": 3080.0,
         "y": 0.0
       },
       "params": {
-        "relog_clients": []
-      }
-    },
-    {
-      "id": "state_17",
-      "node_type": "sync_in_zone",
-      "label": "Go to dungeon entrance zone",
-      "position": {
-        "x": 2200.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_Streets/WC_Colossus"
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_9",
+      "source": "t_1",
+      "dest": "t_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -596,8 +626,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_9",
-      "dest": "state_11",
+      "source": "t_3",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -606,8 +636,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_12",
+      "source": "t_4",
+      "dest": "t_5",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -616,8 +646,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_13",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -626,18 +656,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_14",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_14",
+      "source": "t_5",
+      "dest": "t_6",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -646,8 +666,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_8",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -656,28 +676,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_14",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_16",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_17",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -686,8 +686,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_8",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -696,9 +696,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_17",
-      "when": "FAILURE",
+      "source": "t_2",
+      "dest": "t_7",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -706,8 +706,18 @@
     },
     {
       "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_17",
+      "source": "t_7",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_3",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -717,17 +727,44 @@
   ],
   "regions": [
     {
-      "id": "4445940a",
-      "label": "Defeat boss",
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
       "members": [
-        "state_13",
-        "state_8",
-        "state_12",
-        "state_11",
-        "state_9",
-        "state_14"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 4
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "WizardCity/WC_Streets/WC_Colossus"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 1759.9998649583051,
+          "y": 0.00021952501634925348
+        }
+      }
     }
-  ]
+  ],
+  "template": {
+    "id": "4ece5834-9dfc-481a-9093-7a9309bc4b28",
+    "version": 1
+  }
 }

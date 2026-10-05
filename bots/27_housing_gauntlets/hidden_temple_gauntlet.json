@@ -4,8 +4,8 @@
   "description": "Endlessly farms the Hidden Temple Gauntlet.\n\nREQUIREMENTS: Set Friend Name in Setup to the friend who owns the gauntlet. Your players enter by porting to them rather than by walking in, so that friend must be standing on the gauntlet entrance sigil, and \"Double-click to teleport to friend\" must be turned off in the game's options.",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_10",
-  "recovery_state": "state_10",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Fitzhume's Explorer gear"
@@ -19,24 +19,105 @@
   "options": [],
   "states": [
     {
-      "id": "state_1",
+      "id": "t_11",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 440,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_12",
       "node_type": "teleport_to_friend",
-      "label": "Teleport to friend",
+      "label": "Teleport to friend on gauntlet sigil",
       "position": {
         "x": 880,
         "y": 0.0
       },
       "params": {
         "target_hooked_player": false,
+        "target_player": 0,
         "to_zone": ""
+      },
+      "notes": "Friend account should be unhooked and standing on the gauntlet sigil. Ensure that there are no conflicting interaction items at the chosen location, such as other gauntlets, the Bank, etc."
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      }
+    },
+    {
+      "id": "t_13",
+      "node_type": "enter_gauntlet",
+      "label": "Enter gauntlet",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {
+        "dungeon_zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01",
+        "gauntlet_name": ""
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "check_health_and_mana",
+      "label": "Check health and mana",
+      "position": {
+        "x": 4840,
+        "y": 0.0
+      },
+      "params": {
+        "health_threshold": 0.5,
+        "mana_threshold": 0.15
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {}
     },
     {
       "id": "state_4",
       "node_type": "interact",
       "label": "Talk to Fitzhume",
       "position": {
-        "x": 1760,
+        "x": 2200,
         "y": 0.0
       },
       "params": {
@@ -61,7 +142,7 @@
       "node_type": "enter_zone",
       "label": "Enter Temple of Water",
       "position": {
-        "x": 2200,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
@@ -85,7 +166,7 @@
       "node_type": "enter_zone",
       "label": "Enter boss room",
       "position": {
-        "x": 2640,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
@@ -109,7 +190,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Go to final boss fight",
       "position": {
-        "x": 3080,
+        "x": 3520,
         "y": 0.0
       },
       "params": {
@@ -126,7 +207,7 @@
       "node_type": "handle_combat",
       "label": "Defeat final bosses",
       "position": {
-        "x": 3520,
+        "x": 3960,
         "y": 0.0
       },
       "params": {
@@ -140,58 +221,19 @@
       "node_type": "wait_for_dialogue",
       "label": "Wait for dialogue",
       "position": {
-        "x": 3960,
+        "x": 4400,
         "y": 0.0
       },
       "params": {
         "timeout": 60.0
-      }
-    },
-    {
-      "id": "state_10",
-      "node_type": "teleport_to_world_hub",
-      "label": "Go to The Commons",
-      "position": {
-        "x": 0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_Hub"
-      }
-    },
-    {
-      "id": "state_11",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 440,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "refill_potions": true,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_3",
-      "node_type": "enter_gauntlet",
-      "label": "Enter gauntlet",
-      "position": {
-        "x": 1320,
-        "y": 0.0
-      },
-      "params": {
-        "dungeon_zone": "Housing_Gauntlet_SIT/HG_Gauntlet_SIT_Int01"
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_3",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -200,8 +242,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_11",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -210,18 +252,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_10",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_1",
+      "source": "t_11",
+      "dest": "t_12",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -230,8 +262,38 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "t_14",
+      "dest": "t_12",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_sync_players_1_state_2",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_13",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -290,8 +352,18 @@
     },
     {
       "trigger": "advance",
+      "source": "t_13",
+      "dest": "state_4",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
       "source": "state_9",
-      "dest": "state_10",
+      "dest": "t_14",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -299,5 +371,46 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in The Commons",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "WizardCity/WC_Hub"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "ca47533c-be03-451e-a3b7-778e2b6fbab6",
+    "version": 1
+  }
 }

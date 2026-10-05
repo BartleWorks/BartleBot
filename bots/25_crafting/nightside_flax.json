@@ -4,8 +4,8 @@
   "description": "Collects Flax/Frosted Flax in Nightside, Wizard City",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_5",
-  "recovery_state": "state_5",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Flax"
@@ -19,86 +19,56 @@
     "Reagents",
     "Collecting"
   ],
-  "options": [],
+  "options": [
+    {
+      "name": "Player Realms",
+      "type": "player_realms",
+      "default": "Separate"
+    }
+  ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to The Commons",
+      "id": "t_3",
+      "node_type": "change_realm",
+      "label": "Change to next realm",
       "position": {
-        "x": 440.0,
-        "y": 180.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
-        "zone": "WizardCity/WC_Hub"
+        "use_favorite_realm": false
       }
     },
     {
-      "id": "state_2",
-      "node_type": "enter_zone",
-      "label": "Enter Nightside",
-      "position": {
-        "x": 880.0,
-        "y": 90.0
-      },
-      "params": {
-        "from_zone": "WizardCity/WC_Hub",
-        "to_zone": "WizardCity/WC_NightSide",
-        "xyz": {
-          "x": 2693.27,
-          "y": 4948.15,
-          "z": 2.51
-        },
-        "reset_xyz": {
-          "x": 2903.85,
-          "y": 4588.22,
-          "z": 2.46
-        }
-      }
-    },
-    {
-      "id": "state_3",
+      "id": "t_4",
       "node_type": "collect_reagent",
       "label": "Collect Flax",
       "position": {
-        "x": 1320.0,
+        "x": 880,
         "y": 0.0
       },
       "params": {
         "zone": "WizardCity/WC_NightSide",
+        "entity_names": [
+          "FrostedFlax_01"
+        ],
         "xyz": {
           "x": 1337.7,
           "y": -51.14,
           "z": -6.5
-        },
-        "entity_names": [
-          "FrostedFlax_01"
-        ]
+        }
       }
     },
     {
-      "id": "state_4",
-      "node_type": "sleep",
-      "label": "Wait for Flax to respawn",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": 1760.0,
+        "x": 0.0,
         "y": 0.0
       },
       "params": {
-        "duration": 3.0
-      }
-    },
-    {
-      "id": "state_5",
-      "node_type": "check_zone",
-      "label": "Check if in Nightside",
-      "position": {
-        "x": -880.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "WizardCity/WC_NightSide",
-        "clients_to_check": [
+        "relog_clients": [
           1,
           2,
           3,
@@ -107,47 +77,36 @@
       }
     },
     {
-      "id": "state_6",
-      "node_type": "go_to_world",
-      "label": "Go to Wizard City",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
-        "x": -440.0,
+        "x": 440.0,
         "y": 90.0
       },
       "params": {
-        "world": "WizardCity"
+        "zone": "WizardCity/WC_NightSide",
+        "keep_current_realm": true
       }
     },
     {
-      "id": "state_7",
-      "node_type": "enter_zone",
-      "label": "Enter The Commons",
+      "id": "state_4",
+      "node_type": "sleep",
+      "label": "Wait for Flax to respawn",
       "position": {
-        "x": 0.0,
-        "y": 90.0
+        "x": 1320,
+        "y": 0.0
       },
       "params": {
-        "from_zone": "WizardCity/WC_Ravenwood",
-        "to_zone": "WizardCity/WC_Hub",
-        "xyz": {
-          "x": 54.66,
-          "y": -2084.01,
-          "z": -138.09
-        },
-        "reset_xyz": {
-          "x": 28.45,
-          "y": -1194.0,
-          "z": -28.79
-        },
-        "stagger": false
+        "duration": 3.0
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
+      "source": "t_3",
+      "dest": "t_4",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -156,18 +115,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -176,9 +125,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_1",
-      "when": "FAILURE",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_3",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -186,17 +135,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_1",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
+      "source": "t_4",
       "dest": "state_4",
       "when": "SUCCESS",
       "flags": [],
@@ -207,73 +146,55 @@
     {
       "trigger": "advance",
       "source": "state_4",
-      "dest": "state_3",
+      "dest": "t_4",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_3",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_6",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_2",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_1",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in reagent spawn zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.keep_current_realm": true,
+          "state_2.zone": "WizardCity/WC_NightSide"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "7910bf84-1c71-4d5a-a39c-2f26b4219617",
+    "version": 1
+  }
 }

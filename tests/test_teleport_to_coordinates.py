@@ -68,8 +68,8 @@ async def test_success_multiple_clients():
         assert (arg.x, arg.y, arg.z) == (100.0, 200.0, 0.0)
 
 
-async def test_off_target_returns_failure():
-    """Client teleports but position check shows it is far from target → FAILURE."""
+async def test_off_target_returns_failure_after_every_retry():
+    """Client never reaches the target → FAILURE once MAX_RETRIES teleports have missed."""
     client = FakeClient()
     client.zone_name.return_value = _ZONE
     client.body.position.return_value = XYZ(9999.0, 9999.0, 0.0)
@@ -77,7 +77,80 @@ async def test_off_target_returns_failure():
     result = await gxyz.run(FakeMachine(), [client], _PARAMS)
 
     assert result == "FAILURE"
+    assert client.teleport.call_count == gxyz.MAX_RETRIES
+
+
+async def test_teleport_retried_after_landing_in_zone():
+    """First teleport ignored (client still settling in after a zone change), second lands → SUCCESS."""
+    client = FakeClient()
+    client.zone_name.return_value = _ZONE
+    client.body.position.side_effect = [XYZ(0.0, 0.0, 0.0), _TARGET_XYZ]
+
+    result = await gxyz.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert client.teleport.call_count == 2
+
+
+async def test_retry_only_teleports_off_target_clients():
+    """A client that arrived first time is not teleported again while another is retried."""
+    c1 = FakeClient()
+    c1.zone_name.return_value = _ZONE
+    c1.body.position.return_value = _TARGET_XYZ
+
+    c2 = FakeClient()
+    c2.zone_name.return_value = _ZONE
+    c2.body.position.side_effect = [XYZ(0.0, 0.0, 0.0), _TARGET_XYZ]
+
+    result = await gxyz.run(FakeMachine(), [c1, c2], _PARAMS)
+
+    assert result == "SUCCESS"
+    c1.teleport.assert_called_once()
+    assert c2.teleport.call_count == 2
+
+
+async def test_retry_waits_the_safety_delay(monkeypatch):
+    """The wait between attempts is the bot's Safety Delay."""
+    slept: list[float] = []
+
+    async def fake_sleep(seconds):
+        slept.append(seconds)
+
+    monkeypatch.setattr(gxyz.asyncio, "sleep", fake_sleep)
+    client = FakeClient()
+    client.zone_name.return_value = _ZONE
+    client.body.position.side_effect = [XYZ(0.0, 0.0, 0.0), _TARGET_XYZ]
+
+    result = await gxyz.run(FakeMachine(options={"Safety Delay": 4.5}), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    assert slept == [4.5]
+
+
+async def test_client_leaving_zone_during_retry_returns_failure():
+    """A client that is no longer in the zone at retry time → FAILURE, no further teleport."""
+    client = FakeClient()
+    client.zone_name.side_effect = [_ZONE, "WrongZone"]
+    client.body.position.return_value = XYZ(0.0, 0.0, 0.0)
+
+    result = await gxyz.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "FAILURE"
     client.teleport.assert_called_once()
+
+
+async def test_loading_client_is_not_teleported_on_retry():
+    """A client on a loading screen at retry time waits for the next attempt instead (#70)."""
+    client = FakeClient()
+    client.zone_name.return_value = _ZONE
+    client.is_loading.side_effect = [True, False]
+    client.body.position.side_effect = [XYZ(0.0, 0.0, 0.0), XYZ(0.0, 0.0, 0.0), _TARGET_XYZ]
+
+    result = await gxyz.run(FakeMachine(), [client], _PARAMS)
+
+    assert result == "SUCCESS"
+    # The first teleport, then none while loading, then one on the third attempt.
+    assert client.teleport.call_count == 2
 
 
 async def test_position_within_margin_returns_success():

@@ -184,9 +184,8 @@ Three things that are load-bearing:
 
 An input's type is a `ParamField` type name, so the region page builds its form with the
 same `_DynamicParamForm` that builds a node's; what the input does not carry (a
-`str_choice`'s dropdown, a placeholder, a numeric range) comes from the first bound member
-param of the same type (`input_param_field`), so a World input gets the node's dropdown
-and not an empty combo. The schema does not validate a binding's param key against the
+placeholder, a numeric range) comes from the first bound member param of the same type
+(`input_param_field`). The schema does not validate a binding's param key against the
 node registry, for the same reason `_validate_node` lives in the scene and not in
 `schema.py`: the models stay registry-free.
 

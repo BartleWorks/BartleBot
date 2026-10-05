@@ -619,7 +619,11 @@ def test_every_insert_site_in_every_shipped_bot_is_collision_free(canvas):
         if any(s.position is None for s in config.states):
             continue
         c = canvas(config)
-        target = config.states[len(config.states) // 2].id
+        # A subgraph's members take no insert: they are edited in the definition. Nor does
+        # a collapsed region's, which are folded away.
+        members = {sid for r in config.regions if r.source is not None or r.collapsed for sid in r.members}
+        own = [s for s in config.states if s.id not in members]
+        target = own[len(own) // 2].id
         new_id = c.scene.insert_state_at_input_port(target, "sleep")
         boxes = {sid: QRectF(n.pos().x(), n.pos().y(), NODE_W, NODE_H) for sid, n in c.scene.node_items.items()}
         new_box = boxes.pop(new_id)

@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 from wizwalker import XYZ
 
 import bartlebot.nodes.node_helpers as nh
+import bartlebot.nodes.teleportation.mark_location as ml
 import bartlebot.nodes.teleportation.teleport_to_marked_location as rtm
 from bartlebot import dialog_captions
 from bartlebot.nodes.paths import MESSAGE_BOX_CENTER, MESSAGE_BOX_RIGHT, RECALL_BUTTON_PATH
@@ -282,3 +283,62 @@ async def test_expired_dungeon_recall_is_named_rather_than_timing_out():
     assert result == "FAILURE"
     assert any("timer ended" in msg for msg, _lvl in machine.logs)
     assert not any("did not recall" in msg for msg, _lvl in machine.logs)
+
+
+# ---------------------------------------------------------------------------
+# Blank zone and XYZ: each client's own mark from this run
+# ---------------------------------------------------------------------------
+
+_OWN_MARKS = {"zone": "", "xyz": None}
+
+
+def _marked(machine, client, x: float = 0.0) -> None:
+    ml._remember(machine, client, ml.Mark(_ZONE, XYZ(x, 0.0, 0.0)))
+
+
+async def test_blank_params_check_each_client_against_its_own_mark():
+    """Two clients marked a few units apart each land on their own mark → SUCCESS."""
+    machine, a, b = FakeMachine(), _ready_client(), _ready_client()
+    _marked(machine, a, 0.0)
+    _marked(machine, b, 300.0)
+    b.body.position = AsyncMock(return_value=XYZ(300.0, 0.0, 0.0))
+
+    with _RECALL_ENABLED, patch.object(rtm, "POLL_INTERVAL", 0):
+        result = await rtm.run(machine, [a, b], _OWN_MARKS)
+
+    assert result == "SUCCESS"
+
+
+async def test_blank_params_fail_a_client_that_lands_off_its_own_mark():
+    """A client back in the zone but far from where it marked → FAILURE."""
+    machine, client = FakeMachine(), _ready_client()
+    _marked(machine, client, 300.0)  # lands at the fake's (0, 0, 0)
+
+    with _RECALL_ENABLED, patch.object(rtm, "POLL_INTERVAL", 0):
+        result = await rtm.run(machine, [client], _OWN_MARKS)
+
+    assert result == "FAILURE"
+
+
+async def test_blank_params_with_an_unmarked_client_fail_before_anyone_recalls():
+    """Nothing to check the arrival against, so the node refuses rather than recalling blind."""
+    machine, marked, unmarked = FakeMachine(), _ready_client(), _ready_client()
+    _marked(machine, marked)
+
+    with _RECALL_ENABLED, patch.object(rtm, "POLL_INTERVAL", 0):
+        result = await rtm.run(machine, [marked, unmarked], _OWN_MARKS)
+
+    assert result == "FAILURE"
+    marked.mouse_handler.click_window.assert_not_called()
+    unmarked.mouse_handler.click_window.assert_not_called()
+
+
+async def test_a_named_spot_still_wins_over_the_record():
+    """With zone and XYZ given, the node checks them, as it did before the record existed."""
+    machine, client = FakeMachine(), _ready_client()
+    _marked(machine, client, 300.0)  # the record is elsewhere; the params say (0, 0, 0)
+
+    with _RECALL_ENABLED, patch.object(rtm, "POLL_INTERVAL", 0):
+        result = await rtm.run(machine, [client], _PARAMS)
+
+    assert result == "SUCCESS"

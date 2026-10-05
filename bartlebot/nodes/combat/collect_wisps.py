@@ -5,6 +5,7 @@ import logging
 
 from wizwalker import XYZ
 
+from bartlebot.nodes.combat import scaled_ratios
 from bartlebot.nodes.node_helpers import SAFE_RADIUS, mob_clearances
 from bartlebot.nodes.param_schema import NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import WISP_COLLECT_DELAY, WISP_COLLECT_TIMEOUT, jitter
@@ -95,7 +96,9 @@ NODE_SPEC = NodeSpec(
         "wisp is left, or the timeout expires. "
         f"By default, skips wisps within {SAFE_RADIUS:.0f} units of an enemy to avoid "
         "re-entering combat. Returns FAILURE if any player is still below the configured fail "
-        "thresholds after collection — useful for routing to a potion fallback node."
+        "thresholds after collection — useful for routing to a potion fallback node. "
+        "With Challenge Mode on, a player outside the dungeon is measured against the max its "
+        "next entry scales it to, as handle_potions does."
     ),
     params=PARAM_SCHEMA,
     returns=[
@@ -111,7 +114,7 @@ NODE_SPEC = NodeSpec(
 
 async def run(machine, clients: list, params: dict) -> str:
     """
-    APIs: SprintyClient.calc_health_ratio(), SprintyClient.calc_mana_ratio(),
+    APIs: scaled_ratios.ratios() (SprintyClient.calc_health_ratio(), calc_mana_ratio()),
           SprintyClient.get_health_wisps(), SprintyClient.get_mana_wisps(),
           SprintyClient.get_mobs(), SprintyClient.teleport()
 
@@ -139,17 +142,18 @@ async def run(machine, clients: list, params: dict) -> str:
     fail_if_health_below: float = params.get("fail_if_health_below", 0.5)
     fail_if_mana_below: float = params.get("fail_if_mana_below", 0.5)
     only_safe: bool = params.get("only_safe", True)
+    scaled_to = scaled_ratios.challenge_level(machine)
 
     machine.log(
         f"collect_wisps: collect_health<{if_health_below}, collect_mana<{if_mana_below}, "
         f"timeout={timeout_raw}, fail_health<{fail_if_health_below}, fail_mana<{fail_if_mana_below}, "
-        f"only_safe={only_safe}"
+        f"only_safe={only_safe}, scaled_to={scaled_to}"
     )
 
-    await collect_as_group(machine, clients, if_health_below, if_mana_below, timeout_val, only_safe)
+    await collect_as_group(machine, clients, if_health_below, if_mana_below, timeout_val, only_safe, scaled_to)
 
     # Post-collection check: return FAILURE if any client is still below a fail threshold.
-    final_health, final_mana = zip(*await asyncio.gather(*[_get_ratios(c) for c in clients]))
+    final_health, final_mana = zip(*await asyncio.gather(*[scaled_ratios.ratios(c, scaled_to) for c in clients]))
 
     health_failures = [i for i, h in enumerate(final_health) if h < fail_if_health_below]
     mana_failures = [i for i, m in enumerate(final_mana) if m < fail_if_mana_below]
@@ -185,7 +189,13 @@ async def run(machine, clients: list, params: dict) -> str:
 
 
 async def collect_as_group(
-    machine, clients: list, if_health_below: float, if_mana_below: float, timeout_val: float | None, only_safe: bool
+    machine,
+    clients: list,
+    if_health_below: float,
+    if_mana_below: float,
+    timeout_val: float | None,
+    only_safe: bool,
+    scaled_to: int | None = None,
 ) -> None:
     """Hop the whole group from wisp to wisp until nobody needs one, none is left, or time runs out.
 
@@ -194,6 +204,9 @@ async def collect_as_group(
     take it, so moving as one lets every client that needs it collect it. Each hop's DEBUG
     line records the ratios before it; the next hop's line, or the post-collection one,
     shows what it gave — which is how to tell whether arriving together is close enough.
+
+    `scaled_to` is the Challenge Mode level the ratios are read against (scaled_ratios), or
+    None for the plain ratios.
     """
     loop = asyncio.get_running_loop()
     start = loop.time()
@@ -201,7 +214,7 @@ async def collect_as_group(
     hop = 0
 
     while True:
-        health, mana = zip(*await asyncio.gather(*[_get_ratios(c) for c in clients]))
+        health, mana = zip(*await asyncio.gather(*[scaled_ratios.ratios(c, scaled_to) for c in clients]))
         want_health = if_health_below > 0.0 and any(h < if_health_below for h in health)
         want_mana = if_mana_below > 0.0 and any(m < if_mana_below for m in mana)
         if not (want_health or want_mana):
@@ -260,9 +273,3 @@ async def _pick_wisp(
     else:
         note = f"{len(wisps)} wisps, safety check off"
     return await wisp.global_id_full(), location, note
-
-
-async def _get_ratios(client) -> tuple[float, float]:
-    """Return (health_ratio, mana_ratio) for a client."""
-    health, mana = await asyncio.gather(client.calc_health_ratio(), client.calc_mana_ratio())
-    return health, mana

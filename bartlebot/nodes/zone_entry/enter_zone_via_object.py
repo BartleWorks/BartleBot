@@ -7,7 +7,7 @@ from wizwalker import XYZ, Keycode
 
 from bartlebot import dialog_captions, player_realms
 from bartlebot.nodes import node_helpers
-from bartlebot.nodes.param_schema import BotOptionSpec, NodeSpec, ParamField, ReturnSpec
+from bartlebot.nodes.param_schema import SAFETY_DELAY_OPTION, NodeSpec, ParamField, ReturnSpec
 from bartlebot.nodes.timing import (
     MAX_RETRIES,
     OBJECT_USE_DELAY,
@@ -15,7 +15,6 @@ from bartlebot.nodes.timing import (
     TRIGGER_TIMEOUT,
     ZONE_CHANGE_TIMEOUT,
 )
-from bartlebot.option_groups import GROUP_GENERAL
 
 PARAM_SCHEMA: list[ParamField] = [
     ParamField(
@@ -106,18 +105,7 @@ NODE_SPEC = NodeSpec(
     ],
     required_bot_options=[
         player_realms.SPEC,
-        BotOptionSpec(
-            name="Safety Delay",
-            group=GROUP_GENERAL,
-            type="float",
-            default=3.0,
-            minimum=0.0,
-            suffix=" s",
-            description=(
-                "Seconds to allow for game-server responses when waiting for prompts or menus. "
-                "Increase on high-latency connections."
-            ),
-        ),
+        SAFETY_DELAY_OPTION,
     ],
     max_consecutive_retries=10,
     usage_notes=(

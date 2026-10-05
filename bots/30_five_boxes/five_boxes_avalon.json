@@ -4,8 +4,8 @@
   "description": "Endlessly completes Telegraph Box in Abbey Road, Avalon, for the Five B.O.X.E.S. event.",
   "version": "1.0",
   "clients": "all",
-  "initial": "sync_players_1_state_4",
-  "recovery_state": "sync_players_1_state_4",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Amplify",
@@ -1102,64 +1102,88 @@
   ],
   "states": [
     {
-      "id": "sync_players_1_state_4",
-      "node_type": "go_to_world",
-      "label": "Go to Avalon",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": 1320.0,
-        "y": -90.0
+        "x": 0.0,
+        "y": 0.0
       },
       "params": {
-        "world": "Avalon"
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
     },
     {
-      "id": "sync_players_1_state_5",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Caliburn",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
-        "x": 1760.0,
-        "y": -90.0
+        "x": 440.0,
+        "y": 90.0
       },
       "params": {
-        "zone": "Avalon/AV_Z00_Hub"
+        "zone": "Avalon/AV_Z01_AbbeyRoad"
       }
     },
     {
-      "id": "state_8",
-      "node_type": "enter_zone",
-      "label": "Enter Abbey Road",
+      "id": "t_6",
+      "node_type": "mark_location",
+      "label": "Mark the entrance",
       "position": {
-        "x": 2640.0,
-        "y": -90.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
-        "from_zone": "Avalon/AV_Z00_Hub",
-        "to_zone": "Avalon/AV_Z01_AbbeyRoad",
+        "zone": "Avalon/AV_Z01_AbbeyRoad",
         "xyz": {
-          "x": 6724.3,
-          "y": -2346.32,
-          "z": -509.6
-        },
-        "reset_xyz": {
-          "x": 6053.92,
-          "y": -2873.08,
-          "z": -509.6
-        },
-        "stagger": false
+          "x": -1325.99,
+          "y": -46.1,
+          "z": -99.8
+        }
       }
     },
     {
-      "id": "state_9",
+      "id": "t_1",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
+      "position": {
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_2",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {}
+    },
+    {
+      "id": "t_3",
       "node_type": "enter_dungeon",
       "label": "Enter Telegraph Box",
       "position": {
-        "x": 3960.0,
-        "y": -90.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/AV_Z01_AbbeyRoad",
         "dungeon_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
+        "offers_challenge_mode": false,
+        "offers_team_up": false,
         "dungeon_name": "Telegraph Box",
         "sigil_xyz": {
           "x": -576.04,
@@ -1170,9 +1194,37 @@
           "x": -1325.99,
           "y": -46.1,
           "z": -99.8
-        },
-        "offers_challenge_mode": false,
-        "offers_team_up": false
+        }
+      }
+    },
+    {
+      "id": "t_7",
+      "node_type": "teleport_to_marked_location",
+      "label": "Recall to the entrance",
+      "position": {
+        "x": 18920,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "",
+        "xyz": null
+      }
+    },
+    {
+      "id": "t_5",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
       }
     },
     {
@@ -1180,8 +1232,8 @@
       "node_type": "interact",
       "label": "Talk to The Professor",
       "position": {
-        "x": 4400.0,
-        "y": -90.0
+        "x": 2640,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -1209,8 +1261,8 @@
       "node_type": "enter_zone",
       "label": "Enter first room",
       "position": {
-        "x": 4840.0,
-        "y": -90.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -1233,8 +1285,8 @@
       "node_type": "interact",
       "label": "Talk to Vasek Ashweaver",
       "position": {
-        "x": 5280.0,
-        "y": -90.0
+        "x": 3520,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z01_School",
@@ -1262,8 +1314,8 @@
       "node_type": "enter_zone",
       "label": "Exit first room",
       "position": {
-        "x": 5720.0,
-        "y": -90.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z01_School",
@@ -1286,8 +1338,8 @@
       "node_type": "enter_zone",
       "label": "Enter second room",
       "position": {
-        "x": 6160.0,
-        "y": -90.0
+        "x": 4400,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -1310,8 +1362,8 @@
       "node_type": "interact",
       "label": "Talk to Cyrus Drake",
       "position": {
-        "x": 6600.0,
-        "y": -90.0
+        "x": 4840,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z02_DrakesCottage",
@@ -1339,8 +1391,8 @@
       "node_type": "enter_zone",
       "label": "Exit second room",
       "position": {
-        "x": 7040.0,
-        "y": -90.0
+        "x": 5280,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z02_DrakesCottage",
@@ -1363,8 +1415,8 @@
       "node_type": "enter_zone",
       "label": "Enter third room",
       "position": {
-        "x": 7480.0,
-        "y": -90.0
+        "x": 5720,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -1387,8 +1439,8 @@
       "node_type": "interact",
       "label": "Talk to Malistaire Drake",
       "position": {
-        "x": 7920.0,
-        "y": -90.0
+        "x": 6160,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z03_MalistairsHouse",
@@ -1416,8 +1468,8 @@
       "node_type": "enter_zone",
       "label": "Exit third room",
       "position": {
-        "x": 8360.0,
-        "y": -90.0
+        "x": 6600,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z03_MalistairsHouse",
@@ -1440,8 +1492,8 @@
       "node_type": "interact",
       "label": "Talk to The Professor",
       "position": {
-        "x": 8800.0,
-        "y": -90.0
+        "x": 7040,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -1469,8 +1521,8 @@
       "node_type": "enter_zone",
       "label": "Enter fourth room",
       "position": {
-        "x": 9240.0,
-        "y": -90.0
+        "x": 7480,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -1493,8 +1545,8 @@
       "node_type": "interact",
       "label": "Talk to Laszlo Starblade",
       "position": {
-        "x": 9680.0,
-        "y": -90.0
+        "x": 7920,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z04_TowerBottom",
@@ -1522,8 +1574,8 @@
       "node_type": "enter_zone",
       "label": "Exit fourth room",
       "position": {
-        "x": 10120.0,
-        "y": -90.0
+        "x": 8360,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z04_TowerBottom",
@@ -1546,8 +1598,8 @@
       "node_type": "interact",
       "label": "Talk to The Professor",
       "position": {
-        "x": 10560.0,
-        "y": -90.0
+        "x": 8800,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -1575,8 +1627,8 @@
       "node_type": "enter_zone",
       "label": "Enter third room",
       "position": {
-        "x": 11000.0,
-        "y": -90.0
+        "x": 9240,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -1599,8 +1651,8 @@
       "node_type": "interact",
       "label": "Talk to Malistaire Drake",
       "position": {
-        "x": 11440.0,
-        "y": -90.0
+        "x": 9680,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z03_MalistairsHouse",
@@ -1628,8 +1680,8 @@
       "node_type": "enter_zone",
       "label": "Exit third room",
       "position": {
-        "x": 11880.0,
-        "y": -90.0
+        "x": 10120,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z03_MalistairsHouse",
@@ -1652,8 +1704,8 @@
       "node_type": "enter_zone",
       "label": "Enter second room",
       "position": {
-        "x": 12320.0,
-        "y": -90.0
+        "x": 10560,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -1676,8 +1728,8 @@
       "node_type": "interact",
       "label": "Talk to Cyrus Drake",
       "position": {
-        "x": 12760.0,
-        "y": -90.0
+        "x": 11000,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z02_DrakesCottage",
@@ -1705,8 +1757,8 @@
       "node_type": "enter_zone",
       "label": "Exit second room",
       "position": {
-        "x": 13200.0,
-        "y": -90.0
+        "x": 11440,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z02_DrakesCottage",
@@ -1729,8 +1781,8 @@
       "node_type": "enter_zone",
       "label": "Enter Loremaster's Chamber",
       "position": {
-        "x": 13640.0,
-        "y": -90.0
+        "x": 11880,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -1753,8 +1805,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Loremaster",
       "position": {
-        "x": 14080.0,
-        "y": -90.0
+        "x": 12320,
+        "y": 0.0
       },
       "params": {
         "enemy": "ME1_Loremaster_A",
@@ -1768,8 +1820,8 @@
       "node_type": "enter_zone",
       "label": "Exit Loremaster's Chamber",
       "position": {
-        "x": 14520.0,
-        "y": -90.0
+        "x": 12760,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z05_TowerTop",
@@ -1792,8 +1844,8 @@
       "node_type": "enter_zone",
       "label": "Enter second room",
       "position": {
-        "x": 14960.0,
-        "y": -90.0
+        "x": 13200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -1816,8 +1868,8 @@
       "node_type": "interact",
       "label": "Talk to Cyrus Drake",
       "position": {
-        "x": 15400.0,
-        "y": -90.0
+        "x": 13640,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z02_DrakesCottage",
@@ -1845,8 +1897,8 @@
       "node_type": "enter_zone",
       "label": "Exit second room",
       "position": {
-        "x": 15840.0,
-        "y": -90.0
+        "x": 14080,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z02_DrakesCottage",
@@ -1869,8 +1921,8 @@
       "node_type": "enter_zone",
       "label": "Enter fourth room",
       "position": {
-        "x": 16280.0,
-        "y": -90.0
+        "x": 14520,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -1893,8 +1945,8 @@
       "node_type": "interact",
       "label": "Talk to Laszlo Starblade",
       "position": {
-        "x": 16720.0,
-        "y": -90.0
+        "x": 14960,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z04_TowerBottom_B",
@@ -1922,8 +1974,8 @@
       "node_type": "enter_zone",
       "label": "Enter Grand General's Chambers",
       "position": {
-        "x": 17160.0,
-        "y": -90.0
+        "x": 15400,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z04_TowerBottom_B",
@@ -1946,8 +1998,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Elite Battle Mage",
       "position": {
-        "x": 17600.0,
-        "y": -90.0
+        "x": 15840,
+        "y": 0.0
       },
       "params": {
         "enemy": "ME1_BattleMage_B",
@@ -1961,8 +2013,8 @@
       "node_type": "enter_zone",
       "label": "Exit Grand General's Chambers",
       "position": {
-        "x": 18040.0,
-        "y": -90.0
+        "x": 16280,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AZ_Z05_TowerTop_B",
@@ -1985,8 +2037,8 @@
       "node_type": "interact",
       "label": "Talk to The Professor",
       "position": {
-        "x": 18480.0,
-        "y": -90.0
+        "x": 16720,
+        "y": 0.0
       },
       "params": {
         "zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -2014,8 +2066,8 @@
       "node_type": "enter_zone",
       "label": "Enter outside War Room",
       "position": {
-        "x": 18920.0,
-        "y": -90.0
+        "x": 17160,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
@@ -2038,8 +2090,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Dragonclaw Guard",
       "position": {
-        "x": 19360.0,
-        "y": -90.0
+        "x": 17600,
+        "y": 0.0
       },
       "params": {
         "enemy": "ME1_DragonClaw_A",
@@ -2053,8 +2105,8 @@
       "node_type": "enter_zone",
       "label": "Enter War Room",
       "position": {
-        "x": 19800.0,
-        "y": -90.0
+        "x": 18040,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Avalon/Interiors/AV_MaestroEvent/AZ_Z04_TowerBottom_C",
@@ -2077,8 +2129,8 @@
       "node_type": "handle_combat",
       "label": "Defeat Sylvia Spitfire and The Maestro",
       "position": {
-        "x": 20240.0,
-        "y": -90.0
+        "x": 18480,
+        "y": 0.0
       },
       "params": {
         "enemy": "ME1_Sylvia_A",
@@ -2088,96 +2140,110 @@
       }
     },
     {
-      "id": "state_50",
-      "node_type": "enter_zone",
-      "label": "Exit War Room",
+      "id": "t_8",
+      "node_type": "teleport_to_world_hub",
+      "label": "Teleport to world hub",
       "position": {
-        "x": 20680.0,
-        "y": -90.0
+        "x": -880.0,
+        "y": 0.0
       },
       "params": {
-        "from_zone": "Avalon/Interiors/AV_MaestroEvent/AZ_Z06_ArtOfWar",
-        "to_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
-        "xyz": {
-          "x": -9.16,
-          "y": 1459.48,
-          "z": 0.0
-        },
-        "reset_xyz": {
-          "x": -7.45,
-          "y": 855.88,
-          "z": -0.0
-        },
-        "stagger": false
+        "zone": "Avalon/AV_Z00_Hub"
       }
     },
     {
-      "id": "state_52",
-      "node_type": "enter_zone",
-      "label": "Exit Telegraph Box",
+      "id": "t_9",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
       "position": {
-        "x": 21120.0,
-        "y": -90.0
+        "x": -440.0,
+        "y": 0.0
       },
       "params": {
-        "from_zone": "Avalon/Interiors/AV_MaestroEvent/AV_Z00_LandingZone",
-        "to_zone": "Avalon/AV_Z01_AbbeyRoad",
-        "xyz": {
-          "x": 1567.08,
-          "y": 15.1,
-          "z": -298.46
-        },
-        "reset_xyz": {
-          "x": 1122.48,
-          "y": 15.41,
-          "z": -298.46
-        },
-        "stagger": false
-      }
-    },
-    {
-      "id": "state_53",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 3080.0,
-        "y": -90.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "refill_potions": true,
-        "mark_zone": "Avalon/AV_Z01_AbbeyRoad"
-      }
-    },
-    {
-      "id": "state_54",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": 3520.0,
-        "y": -90.0
-      },
-      "params": {}
-    },
-    {
-      "id": "state_55",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
-      "position": {
-        "x": 2200.0,
-        "y": -90.0
-      },
-      "params": {
-        "use_favorite_realm": true
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.1,
+        "only_safe": true
       }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_11",
+      "source": "t_1",
+      "dest": "t_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_7",
+      "dest": "t_1",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_6",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_2",
+      "dest": "t_5",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_5",
+      "dest": "t_3",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_6",
+      "dest": "t_1",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -2187,8 +2253,8 @@
     {
       "trigger": "advance",
       "source": "state_10",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
+      "dest": "state_11",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2206,29 +2272,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_12",
       "dest": "state_13",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2246,29 +2292,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_14",
       "dest": "state_15",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2286,29 +2312,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_15",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_16",
       "dest": "state_17",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2326,29 +2332,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_17",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_18",
       "dest": "state_19",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2366,29 +2352,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_19",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_20",
       "dest": "state_22",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_20",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2406,29 +2372,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_22",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_23",
       "dest": "state_24",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_23",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2446,29 +2392,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_24",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_25",
       "dest": "state_26",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_25",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2486,29 +2412,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_26",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_27",
       "dest": "state_28",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_27",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2526,29 +2432,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_28",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_29",
       "dest": "state_30",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_29",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2566,29 +2452,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_30",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_31",
       "dest": "state_32",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_31",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2606,29 +2472,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_32",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_33",
       "dest": "state_34",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_33",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2646,29 +2492,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_34",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_35",
       "dest": "state_36",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_35",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2686,29 +2512,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_36",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_37",
       "dest": "state_39",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_37",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2726,29 +2532,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_39",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_40",
       "dest": "state_41",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_40",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2766,29 +2552,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_41",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_43",
       "dest": "state_44",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_43",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2806,29 +2572,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_44",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_45",
       "dest": "state_46",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_45",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2846,29 +2592,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_46",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_47",
       "dest": "state_48",
       "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_47",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -2886,167 +2612,7 @@
     },
     {
       "trigger": "advance",
-      "source": "state_48",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_49",
-      "dest": "state_50",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_49",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_50",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_50",
-      "dest": "state_52",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_52",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_52",
-      "dest": "state_53",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_53",
-      "dest": "state_54",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_53",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_54",
-      "dest": "state_9",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_54",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_55",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_55",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_53",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
-      "dest": "sync_players_1_state_5",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_9",
+      "source": "t_3",
       "dest": "state_10",
       "when": "SUCCESS",
       "flags": [],
@@ -3056,18 +2622,8 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_4",
-      "dest": "sync_players_1_state_4",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "sync_players_1_state_4",
-      "dest": "sync_players_1_state_5",
+      "source": "state_49",
+      "dest": "t_7",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -3076,8 +2632,8 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_5",
-      "dest": "sync_players_1_state_5",
+      "source": "state_49",
+      "dest": "t_7",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -3086,8 +2642,28 @@
     },
     {
       "trigger": "advance",
-      "source": "sync_players_1_state_5",
-      "dest": "state_55",
+      "source": "t_6",
+      "dest": "t_8",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -3097,13 +2673,40 @@
   ],
   "regions": [
     {
-      "id": "sync_players_1",
-      "label": "Sync players",
+      "id": "t_sync_players_1",
+      "label": "Sync players in dungeon entrance zone",
       "members": [
-        "sync_players_1_state_4",
-        "sync_players_1_state_5"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 1
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Avalon/AV_Z01_AbbeyRoad"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
     },
     {
       "id": "4eaa16a9",
@@ -3132,31 +2735,10 @@
         "state_31"
       ],
       "color": 4
-    },
-    {
-      "id": "49c3a11d",
-      "label": "Defeat bosses",
-      "members": [
-        "state_36",
-        "state_47",
-        "state_43",
-        "state_52",
-        "state_33",
-        "state_49",
-        "state_40",
-        "state_37",
-        "state_35",
-        "state_39",
-        "state_50",
-        "state_44",
-        "state_32",
-        "state_41",
-        "state_34",
-        "state_46",
-        "state_48",
-        "state_45"
-      ],
-      "color": 5
     }
-  ]
+  ],
+  "template": {
+    "id": "188f8aed-edbb-4c20-8909-31148443c54f",
+    "version": 1
+  }
 }

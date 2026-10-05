@@ -4,8 +4,8 @@
   "description": "Endlessly defeats bosses in Hall of Heroes in Telos, Lemuria",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Aether"
@@ -1081,7 +1081,8 @@
     "Gear",
     "Spellements",
     "Gold",
-    "Dungeon"
+    "Dungeon",
+    "Team-Up"
   ],
   "options": [
     {
@@ -1094,88 +1095,42 @@
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "check_zone",
-      "label": "Check starting world",
+      "id": "t_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
       "position": {
-        "x": 0,
+        "x": 440,
         "y": 0.0
       },
       "params": {
-        "zone": "Lemuria/*",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
       }
     },
     {
-      "id": "state_2",
-      "node_type": "check_zone",
-      "label": "Check starting zone",
+      "id": "t_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
       "position": {
-        "x": 440.0,
+        "x": 880,
         "y": 0.0
       },
-      "params": {
-        "zone": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter",
-        "clients_to_check": [
-          1,
-          2,
-          3,
-          4
-        ]
-      }
+      "params": {}
     },
     {
-      "id": "state_3",
-      "node_type": "teleport_to_world_hub",
-      "label": "Teleport to Telos",
-      "position": {
-        "x": 880.0,
-        "y": 90.0
-      },
-      "params": {
-        "zone": "Lemuria/LM_Z00_Hub"
-      }
-    },
-    {
-      "id": "state_4",
-      "node_type": "enter_zone",
-      "label": "Enter outer hall",
-      "position": {
-        "x": 1320.0,
-        "y": 90.0
-      },
-      "params": {
-        "from_zone": "Lemuria/LM_Z00_Hub",
-        "to_zone": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter",
-        "xyz": {
-          "x": 44.61,
-          "y": -12248.98,
-          "z": -288.03
-        },
-        "reset_xyz": {
-          "x": 52.7,
-          "y": -11568.63,
-          "z": -287.39
-        },
-        "stagger": true
-      }
-    },
-    {
-      "id": "state_5",
+      "id": "t_10",
       "node_type": "enter_dungeon",
       "label": "Enter Hall of Heroes",
       "position": {
-        "x": 2200.0,
+        "x": 1760,
         "y": 0.0
       },
       "params": {
         "from_zone": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter",
         "dungeon_zone": "Lemuria/Interiors/LM_Z00_I08_HallofHeroesInner",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "dungeon_name": "Hall of Heroes",
         "sigil_xyz": {
           "x": 215.12,
@@ -1190,98 +1145,52 @@
       }
     },
     {
-      "id": "state_6",
+      "id": "t_11",
       "node_type": "handle_combat",
       "label": "Defeat heroes of Lemuria",
       "position": {
-        "x": 3520.0,
+        "x": 2640,
         "y": 0.0
       },
       "params": {
         "enemy": "LM_Dog_Hero_A_01",
+        "wiki_page": "",
         "use_default_strategy": false,
         "max_duration": 600.0
       }
     },
     {
-      "id": "state_7",
-      "node_type": "enter_zone",
-      "label": "Exit Hall of Heroes",
-      "position": {
-        "x": 4400.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Lemuria/Interiors/LM_Z00_I08_HallofHeroesInner",
-        "to_zone": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter",
-        "xyz": {
-          "x": 7.7,
-          "y": 2753.75,
-          "z": 6.2
-        },
-        "reset_xyz": {
-          "x": -2.62,
-          "y": 2528.3,
-          "z": 6.2
-        },
-        "stagger": true
-      }
-    },
-    {
-      "id": "state_8",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
-      "position": {
-        "x": 1760.0,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "refill_potions": true,
-        "mark_zone": ""
-      }
-    },
-    {
-      "id": "state_10",
+      "id": "t_12",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3960.0,
+        "x": 3080,
         "y": 0.0
       },
       "params": {
         "if_health_below": 1.0,
         "if_mana_below": 0.5,
-        "timeout": 5.0,
+        "timeout": 10.0,
         "fail_if_health_below": 0.5,
         "fail_if_mana_below": 0.5,
         "only_safe": true
       }
     },
     {
-      "id": "state_11",
-      "node_type": "check_level_scaling",
-      "label": "Check level scaling",
+      "id": "t_13",
+      "node_type": "enter_zone",
+      "label": "Exit Hall of Heroes",
       "position": {
-        "x": 2640.0,
+        "x": 3520,
         "y": 0.0
       },
-      "params": {}
-    },
-    {
-      "id": "state_12",
-      "node_type": "apply_level_scaling",
-      "label": "Apply level scaling",
-      "position": {
-        "x": 3080.0,
-        "y": 90.0
-      },
       "params": {
-        "zone": "Lemuria/Interiors/LM_Z00_I08_HallofHeroesInner",
-        "interact_xyz": {
-          "x": 244.16,
-          "y": 2147.06,
+        "from_zone": "Lemuria/Interiors/LM_Z00_I08_HallofHeroesInner",
+        "to_zone": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter",
+        "stagger": false,
+        "xyz": {
+          "x": 7.7,
+          "y": 2753.75,
           "z": 6.2
         },
         "reset_xyz": {
@@ -1292,31 +1201,69 @@
       }
     },
     {
-      "id": "state_13",
-      "node_type": "quicksell",
-      "label": "Quicksell",
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
       "position": {
-        "x": 4840.0,
+        "x": 0.0,
         "y": 0.0
       },
-      "params": {}
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
+      }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter"
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
+      "position": {
+        "x": 2200,
+        "y": 0.0
+      },
+      "params": {
+        "scales": ""
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_2",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_7",
+      "source": "t_12",
+      "dest": "t_13",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1325,8 +1272,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_7",
+      "source": "t_12",
+      "dest": "t_13",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -1335,28 +1282,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_6",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_11",
-      "dest": "state_12",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_6",
+      "source": "t_8",
+      "dest": "t_9",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1365,18 +1292,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_12",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_8",
+      "source": "t_10",
+      "dest": "t_14",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1385,38 +1302,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_3",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_2",
-      "dest": "state_8",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_4",
+      "source": "t_11",
+      "dest": "t_12",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1425,28 +1312,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_8",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1455,18 +1322,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_11",
+      "source": "t_14",
+      "dest": "t_11",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1475,18 +1332,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_10",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_8",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1495,8 +1342,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_13",
+      "source": "t_13",
+      "dest": "t_8",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1505,18 +1352,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_3",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_5",
+      "source": "t_9",
+      "dest": "t_15",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1525,8 +1362,18 @@
     },
     {
       "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_3",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
       "when": "FAILURE",
       "flags": [],
       "flag_op": "AND",
@@ -1534,5 +1381,46 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Lemuria/Interiors/LM_Z00_I07_HallofHeroesOuter"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
+    "version": 1
+  }
 }

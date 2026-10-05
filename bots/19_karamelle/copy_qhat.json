@@ -4,8 +4,8 @@
   "description": "Endlessly defeats Copy Qhat in Gutenstadt, Karamelle. Good for spellement farming.",
   "version": "1.0",
   "clients": "all",
-  "initial": "state_4",
-  "recovery_state": "state_17",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Aether",
@@ -992,125 +992,48 @@
   "tags": [
     "Gear",
     "Spellements",
-    "Boss"
+    "Boss",
+    "Team-Up"
   ],
   "options": [],
   "states": [
     {
-      "id": "state_4",
-      "node_type": "check_level_scaling",
-      "label": "Check level scaling",
+      "id": "t_8",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
       "position": {
-        "x": -440.0,
-        "y": -90.0
+        "x": 880,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
+      }
+    },
+    {
+      "id": "t_9",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320,
+        "y": 0.0
       },
       "params": {}
     },
     {
-      "id": "state_5",
-      "node_type": "enter_zone",
-      "label": "Enter Nana's Headquarters",
-      "position": {
-        "x": 440.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Karamelle/KM_Z00_HUB",
-        "to_zone": "Karamelle/Interiors/KM_Z00_NanasHQ",
-        "xyz": {
-          "x": 46.21,
-          "y": 4804.44,
-          "z": 39.84
-        },
-        "reset_xyz": {
-          "x": 79.72,
-          "y": 4187.21,
-          "z": -6.57
-        },
-        "stagger": true
-      }
-    },
-    {
-      "id": "state_6",
-      "node_type": "enter_zone",
-      "label": "Enter Cavity",
-      "position": {
-        "x": 880.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Karamelle/Interiors/KM_Z00_NanasHQ",
-        "to_zone": "Karamelle/Interiors/KM_Z00_CavityDining",
-        "xyz": {
-          "x": 2150.69,
-          "y": -4489.18,
-          "z": 3.43
-        },
-        "reset_xyz": {
-          "x": 1838.18,
-          "y": -4014.59,
-          "z": 3.43
-        },
-        "stagger": true
-      }
-    },
-    {
-      "id": "state_7",
-      "node_type": "enter_dungeon",
-      "label": "Enter Cavity Chamber",
-      "position": {
-        "x": 1320.0,
-        "y": 0.0
-      },
-      "params": {
-        "from_zone": "Karamelle/Interiors/KM_Z00_CavityDining",
-        "dungeon_zone": "Karamelle/Interiors/KM_Z00_TheCavity",
-        "dungeon_name": "Cavity Chamber",
-        "sigil_xyz": {
-          "x": 338.15,
-          "y": -1512.39,
-          "z": 1.97
-        },
-        "reset_xyz": {
-          "x": 486.44,
-          "y": -726.4,
-          "z": 0.92
-        }
-      }
-    },
-    {
-      "id": "state_8",
-      "node_type": "apply_level_scaling",
-      "label": "Apply level scaling",
-      "position": {
-        "x": 1760.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Karamelle/Interiors/KM_Z00_TheCavity",
-        "interact_xyz": {
-          "x": 1027.9,
-          "y": -2530.52,
-          "z": -352.3
-        },
-        "reset_xyz": {
-          "x": 739.85,
-          "y": -2945.67,
-          "z": -440.52
-        }
-      }
-    },
-    {
-      "id": "state_11",
+      "id": "t_10",
       "node_type": "enter_dungeon",
       "label": "Enter Cupcake Factory",
       "position": {
-        "x": 3520.0,
-        "y": -90.0
+        "x": 2200,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Karamelle/KM_Z07_Gutenstadt",
         "dungeon_zone": "Karamelle/Interiors/KM_Z07_CupcakeFactory",
+        "offers_challenge_mode": false,
+        "offers_team_up": true,
         "dungeon_name": "Cupcake Factory",
         "sigil_xyz": {
           "x": -3931.73,
@@ -1125,47 +1048,49 @@
       }
     },
     {
-      "id": "state_12",
-      "node_type": "teleport_to_coordinates",
-      "label": "Teleport to Copy Qhat",
-      "position": {
-        "x": 3960.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Karamelle/Interiors/KM_Z07_CupcakeFactory",
-        "xyz": {
-          "x": -1153.65,
-          "y": 3972.38,
-          "z": 2.0
-        }
-      }
-    },
-    {
-      "id": "state_13",
+      "id": "t_11",
       "node_type": "handle_combat",
       "label": "Defeat Copy Qhat",
       "position": {
-        "x": 4400.0,
-        "y": -90.0
+        "x": 3080,
+        "y": 0.0
       },
       "params": {
         "enemy": "KM_Cat_WarriorF_F_01",
+        "wiki_page": "",
         "use_default_strategy": false,
         "max_duration": 0.0
       }
     },
     {
-      "id": "state_14",
+      "id": "t_12",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3520,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "t_13",
       "node_type": "enter_zone",
       "label": "Exit Cupcake Factory",
       "position": {
-        "x": 4840.0,
-        "y": -90.0
+        "x": 3960,
+        "y": 0.0
       },
       "params": {
         "from_zone": "Karamelle/Interiors/KM_Z07_CupcakeFactory",
         "to_zone": "Karamelle/KM_Z07_Gutenstadt",
+        "stagger": false,
         "xyz": {
           "x": 1.07,
           "y": -4410.05,
@@ -1175,41 +1100,16 @@
           "x": -19.92,
           "y": -3922.04,
           "z": 2.0
-        },
-        "stagger": false
+        }
       }
     },
     {
-      "id": "state_15",
-      "node_type": "sync_in_zone",
-      "label": "Go to Karamelle City",
-      "position": {
-        "x": 0.0,
-        "y": 0.0
-      },
-      "params": {
-        "zone": "Karamelle/KM_Z05_Nibbleheim"
-      }
-    },
-    {
-      "id": "state_16",
-      "node_type": "sync_in_zone",
-      "label": "Go to Gutenstadt",
-      "position": {
-        "x": 2200.0,
-        "y": -90.0
-      },
-      "params": {
-        "zone": "Karamelle/KM_Z07_Gutenstadt"
-      }
-    },
-    {
-      "id": "state_17",
+      "id": "t_sync_players_1_state_1",
       "node_type": "relog",
       "label": "Relog",
       "position": {
-        "x": -1320.0,
-        "y": -90.0
+        "x": 0.0,
+        "y": 0.0
       },
       "params": {
         "relog_clients": [
@@ -1221,47 +1121,178 @@
       }
     },
     {
-      "id": "state_18",
-      "node_type": "change_realm",
-      "label": "Change to favorite realm",
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
       "position": {
-        "x": -880.0,
-        "y": -90.0
+        "x": 440.0,
+        "y": 90.0
       },
       "params": {
-        "use_favorite_realm": true
+        "zone": "Karamelle/KM_Z07_Gutenstadt"
       }
     },
     {
-      "id": "state_19",
-      "node_type": "handle_potions",
-      "label": "Handle potions",
+      "id": "t_14",
+      "node_type": "handle_level_scaling",
+      "label": "Handle level scaling",
       "position": {
-        "x": 2640.0,
-        "y": -90.0
+        "x": 440,
+        "y": 0.0
       },
       "params": {
-        "if_health_below": 0.5,
-        "if_mana_below": 0.15,
-        "refill_potions": true,
-        "mark_zone": ""
+        "scales": ""
       }
     },
     {
-      "id": "state_20",
-      "node_type": "quicksell",
-      "label": "Quicksell",
+      "id": "t_15",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
       "position": {
-        "x": 3080.0,
-        "y": -90.0
+        "x": 1760,
+        "y": 0.0
       },
-      "params": {}
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "timeout": 10.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "only_safe": true
+      }
+    },
+    {
+      "id": "state_12",
+      "node_type": "teleport_to_coordinates",
+      "label": "Teleport to Copy Qhat",
+      "position": {
+        "x": 2640,
+        "y": 0.0
+      },
+      "params": {
+        "zone": "Karamelle/Interiors/KM_Z07_CupcakeFactory",
+        "xyz": {
+          "x": -1153.65,
+          "y": 3972.38,
+          "z": 2.0
+        }
+      }
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_11",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_13",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_8",
+      "dest": "t_9",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_11",
+      "dest": "t_12",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_8",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_13",
+      "dest": "t_14",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_9",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_10",
+      "when": "FAILURE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_10",
       "dest": "state_12",
       "when": "SUCCESS",
       "flags": [],
@@ -1272,157 +1303,7 @@
     {
       "trigger": "advance",
       "source": "state_12",
-      "dest": "state_13",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_13",
-      "dest": "state_14",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_15",
-      "dest": "state_5",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_17",
-      "when": "FAILURE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_17",
-      "dest": "state_18",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_18",
-      "dest": "state_4",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_15",
-      "when": "FALSE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_4",
-      "dest": "state_16",
-      "when": "TRUE",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_5",
-      "dest": "state_6",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_6",
-      "dest": "state_7",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_7",
-      "dest": "state_8",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_8",
-      "dest": "state_16",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_16",
-      "dest": "state_19",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_19",
-      "dest": "state_20",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_20",
-      "dest": "state_11",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_14",
-      "dest": "state_4",
+      "dest": "t_11",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1430,5 +1311,46 @@
       "flag_groups_op": "OR"
     }
   ],
-  "regions": []
+  "regions": [
+    {
+      "id": "t_sync_players_1",
+      "label": "Sync players in boss dungeon entrance zone",
+      "members": [
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
+      ],
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "Karamelle/KM_Z07_Gutenstadt"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
+    }
+  ],
+  "template": {
+    "id": "61a4f3c2-0082-4daf-9d01-481410a95055",
+    "version": 1
+  }
 }

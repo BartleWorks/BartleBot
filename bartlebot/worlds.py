@@ -4,7 +4,7 @@ WHY THE KEY IS THE ZONE PREFIX
     ``Root.wad``'s ``WorldNames.lang`` is keyed by exactly the string ``zone_name()``
     returns as its first segment -- ``WizardCity``, ``DragonSpire``, ``MooShu`` -- and
     its value is the localized text the spiral door lists. That correspondence is what
-    lets go_to_world verify arrival with the glob ``"<key>/*"`` instead of carrying a
+    lets a World Gate step verify arrival with the glob ``"<key>/*"`` instead of carrying a
     per-world table of spiral-chamber zone names, which would need re-deriving every
     time KI moves a chamber.
 

@@ -4,8 +4,8 @@
   "description": "Endlessly farms the Spiral Cup Gauntlet.\n\nREQUIREMENTS: Set Friend Name in Setup to the friend who owns the gauntlet. Your players enter by porting to them rather than by walking in, so that friend must be standing on the gauntlet entrance sigil, and \"Double-click to teleport to friend\" must be turned off in the game's options.",
   "version": "2.0",
   "clients": "all",
-  "initial": "state_1",
-  "recovery_state": "state_1",
+  "initial": "t_sync_players_1_state_2",
+  "recovery_state": "t_sync_players_1_state_1",
   "drops": [
     {
       "name": "Angora Bunny Ears",
@@ -389,49 +389,109 @@
       "type": "bool",
       "default": true,
       "description": "Whether or not to defeat Barbarous van der Borst. Does NOT drop energy gear."
-    },
-    {
-      "name": "Quicksell Keep List",
-      "type": "drop_keep_list",
-      "default": [
-        "Greenwarden's Energetic Boots",
-        "Greenwarden's Energetic Mask",
-        "Greenwarden's Energetic Shroud"
-      ]
     }
   ],
   "states": [
     {
-      "id": "state_1",
-      "node_type": "teleport_to_friend",
-      "label": "Teleport to friend",
+      "id": "t_11",
+      "node_type": "handle_potions",
+      "label": "Handle potions",
       "position": {
-        "x": 0,
+        "x": 440,
         "y": 0.0
       },
       "params": {
-        "target_hooked_player": false,
-        "to_zone": ""
+        "if_health_below": 0.5,
+        "if_mana_below": 0.15,
+        "mark_zone": ""
       }
     },
     {
-      "id": "state_3",
-      "node_type": "enter_gauntlet",
-      "label": "Enter gauntlet",
+      "id": "t_12",
+      "node_type": "teleport_to_friend",
+      "label": "Teleport to friend on gauntlet sigil",
       "position": {
         "x": 880,
         "y": 0.0
       },
       "params": {
-        "dungeon_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01"
+        "target_hooked_player": false,
+        "target_player": 0,
+        "to_zone": ""
+      },
+      "notes": "Friend account should be unhooked and standing on the gauntlet sigil. Ensure that there are no conflicting interaction items at the chosen location, such as other gauntlets, the Bank, etc."
+    },
+    {
+      "id": "t_sync_players_1_state_1",
+      "node_type": "relog",
+      "label": "Relog",
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "params": {
+        "relog_clients": [
+          1,
+          2,
+          3,
+          4
+        ]
       }
+    },
+    {
+      "id": "t_sync_players_1_state_2",
+      "node_type": "sync_in_zone",
+      "label": "Sync in zone",
+      "position": {
+        "x": 440.0,
+        "y": 90.0
+      },
+      "params": {
+        "zone": "WizardCity/WC_Hub"
+      }
+    },
+    {
+      "id": "t_13",
+      "node_type": "enter_gauntlet",
+      "label": "Enter gauntlet",
+      "position": {
+        "x": 1760,
+        "y": 0.0
+      },
+      "params": {
+        "dungeon_zone": "Housing_PA_Gauntlet/PA_Gauntlet_01/PA_Gauntlet_01_01",
+        "gauntlet_name": ""
+      }
+    },
+    {
+      "id": "t_14",
+      "node_type": "check_health_and_mana",
+      "label": "Check health and mana",
+      "position": {
+        "x": 13200,
+        "y": 0.0
+      },
+      "params": {
+        "health_threshold": 0.5,
+        "mana_threshold": 0.15
+      }
+    },
+    {
+      "id": "t_15",
+      "node_type": "quicksell",
+      "label": "Quicksell",
+      "position": {
+        "x": 1320,
+        "y": 0.0
+      },
+      "params": {}
     },
     {
       "id": "state_2",
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 1320,
+        "x": 2200.0,
         "y": 0.0
       },
       "params": {
@@ -456,7 +516,7 @@
       "node_type": "enter_zone",
       "label": "Enter Chamber of the Hydra",
       "position": {
-        "x": 1760,
+        "x": 2640.0,
         "y": 0.0
       },
       "params": {
@@ -480,7 +540,7 @@
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 2200,
+        "x": 3080.0,
         "y": 0.0
       },
       "params": {
@@ -495,7 +555,7 @@
       "node_type": "enter_zone",
       "label": "Exit Chamber of the Hydra",
       "position": {
-        "x": 2640,
+        "x": 3520.0,
         "y": 0.0
       },
       "params": {
@@ -514,11 +574,27 @@
       }
     },
     {
+      "id": "state_13",
+      "node_type": "collect_wisps",
+      "label": "Collect wisps",
+      "position": {
+        "x": 3960.0,
+        "y": 0.0
+      },
+      "params": {
+        "if_health_below": 1.0,
+        "if_mana_below": 1.0,
+        "fail_if_health_below": 0.5,
+        "fail_if_mana_below": 0.5,
+        "timeout": 10.0
+      }
+    },
+    {
       "id": "state_7",
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 3520,
+        "x": 4400.0,
         "y": 0.0
       },
       "params": {
@@ -543,7 +619,7 @@
       "node_type": "enter_zone",
       "label": "Enter Hall of the Specter",
       "position": {
-        "x": 3960,
+        "x": 4840.0,
         "y": 0.0
       },
       "params": {
@@ -567,7 +643,7 @@
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 4400,
+        "x": 5280.0,
         "y": 0.0
       },
       "params": {
@@ -582,7 +658,7 @@
       "node_type": "enter_zone",
       "label": "Exit Hall of the Specter",
       "position": {
-        "x": 4840,
+        "x": 5720.0,
         "y": 0.0
       },
       "params": {
@@ -601,11 +677,11 @@
       }
     },
     {
-      "id": "state_13",
+      "id": "state_18",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 3080,
+        "x": 6160.0,
         "y": 0.0
       },
       "params": {
@@ -621,7 +697,7 @@
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 5720,
+        "x": 6600.0,
         "y": 0.0
       },
       "params": {
@@ -646,7 +722,7 @@
       "node_type": "enter_zone",
       "label": "Enter Hall of the Harpy",
       "position": {
-        "x": 6160,
+        "x": 7040.0,
         "y": 0.0
       },
       "params": {
@@ -670,7 +746,7 @@
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 6600,
+        "x": 7480.0,
         "y": 0.0
       },
       "params": {
@@ -685,7 +761,7 @@
       "node_type": "enter_zone",
       "label": "Exit Hall of the Harpy",
       "position": {
-        "x": 7040,
+        "x": 7920.0,
         "y": 0.0
       },
       "params": {
@@ -704,27 +780,11 @@
       }
     },
     {
-      "id": "state_18",
-      "node_type": "collect_wisps",
-      "label": "Collect wisps",
-      "position": {
-        "x": 5280,
-        "y": 0.0
-      },
-      "params": {
-        "if_health_below": 1.0,
-        "if_mana_below": 1.0,
-        "fail_if_health_below": 0.5,
-        "fail_if_mana_below": 0.5,
-        "timeout": 10.0
-      }
-    },
-    {
       "id": "state_19",
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 7480,
+        "x": 8360.0,
         "y": 0.0
       },
       "params": {
@@ -740,7 +800,7 @@
       "node_type": "interact",
       "label": "Talk to Benedict Glendemming",
       "position": {
-        "x": 7920,
+        "x": 8800.0,
         "y": 0.0
       },
       "params": {
@@ -765,7 +825,7 @@
       "node_type": "enter_zone",
       "label": "Enter Chamber of the Basilisk",
       "position": {
-        "x": 8360,
+        "x": 9240.0,
         "y": 0.0
       },
       "params": {
@@ -789,7 +849,7 @@
       "node_type": "handle_combat",
       "label": "Defeat Tamworth Brickhouse",
       "position": {
-        "x": 8800,
+        "x": 9680.0,
         "y": 0.0
       },
       "params": {
@@ -804,7 +864,7 @@
       "node_type": "enter_zone",
       "label": "Exit Chamber of the Basilisk",
       "position": {
-        "x": 9240,
+        "x": 10120.0,
         "y": 0.0
       },
       "params": {
@@ -827,7 +887,7 @@
       "node_type": "collect_wisps",
       "label": "Collect wisps",
       "position": {
-        "x": 9680,
+        "x": 10560.0,
         "y": 0.0
       },
       "params": {
@@ -843,7 +903,7 @@
       "node_type": "enter_zone_via_object",
       "label": "Enter final boss room",
       "position": {
-        "x": 10120,
+        "x": 11000.0,
         "y": 0.0
       },
       "params": {
@@ -867,7 +927,7 @@
       "node_type": "handle_combat",
       "label": "Defeat enemies",
       "position": {
-        "x": 10560,
+        "x": 11440.0,
         "y": 0.0
       },
       "params": {
@@ -882,7 +942,7 @@
       "node_type": "teleport_to_coordinates",
       "label": "Exit combat",
       "position": {
-        "x": 11000,
+        "x": 11880.0,
         "y": 0.0
       },
       "params": {
@@ -899,7 +959,7 @@
       "node_type": "sleep",
       "label": "Wait for invulnerability to end",
       "position": {
-        "x": 11440,
+        "x": 12320.0,
         "y": 0.0
       },
       "params": {
@@ -911,7 +971,7 @@
       "node_type": "handle_combat",
       "label": "Defeat final boss",
       "position": {
-        "x": 11880,
+        "x": 12760.0,
         "y": 0.0
       },
       "params": {
@@ -921,36 +981,13 @@
         "max_duration": 600.0
       },
       "notes": "Drops vary by tier"
-    },
-    {
-      "id": "state_10",
-      "node_type": "wait_for_health",
-      "label": "Wait for health",
-      "position": {
-        "x": 440,
-        "y": 0.0
-      },
-      "params": {
-        "threshold": 0.8,
-        "timeout": 120.0
-      }
-    },
-    {
-      "id": "state_30",
-      "node_type": "quicksell",
-      "label": "Quicksell",
-      "position": {
-        "x": 12320.0,
-        "y": 0.0
-      },
-      "params": {}
     }
   ],
   "transitions": [
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_10",
+      "source": "t_sync_players_1_state_1",
+      "dest": "t_sync_players_1_state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -959,9 +996,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_1",
-      "dest": "state_1",
-      "when": "FAILURE",
+      "source": "t_sync_players_1_state_2",
+      "dest": "t_11",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -969,9 +1006,9 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_10",
-      "when": "FAILURE",
+      "source": "t_11",
+      "dest": "t_12",
+      "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
       "flag_groups": [],
@@ -979,8 +1016,38 @@
     },
     {
       "trigger": "advance",
-      "source": "state_10",
-      "dest": "state_3",
+      "source": "t_14",
+      "dest": "t_12",
+      "when": "TRUE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_14",
+      "dest": "t_sync_players_1_state_2",
+      "when": "FALSE",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_12",
+      "dest": "t_15",
+      "when": "SUCCESS",
+      "flags": [],
+      "flag_op": "AND",
+      "flag_groups": [],
+      "flag_groups_op": "OR"
+    },
+    {
+      "trigger": "advance",
+      "source": "t_15",
+      "dest": "t_13",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1134,21 +1201,6 @@
     },
     {
       "trigger": "advance",
-      "source": "state_24",
-      "dest": "state_1",
-      "when": "SUCCESS",
-      "flags": [
-        {
-          "option": "Defeat final boss",
-          "negate": true
-        }
-      ],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
       "source": "state_25",
       "dest": "state_26",
       "when": "SUCCESS",
@@ -1181,16 +1233,6 @@
       "trigger": "advance",
       "source": "state_28",
       "dest": "state_29",
-      "when": "SUCCESS",
-      "flags": [],
-      "flag_op": "AND",
-      "flag_groups": [],
-      "flag_groups_op": "OR"
-    },
-    {
-      "trigger": "advance",
-      "source": "state_3",
-      "dest": "state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1259,8 +1301,8 @@
     },
     {
       "trigger": "advance",
-      "source": "state_30",
-      "dest": "state_1",
+      "source": "t_13",
+      "dest": "state_2",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1270,7 +1312,7 @@
     {
       "trigger": "advance",
       "source": "state_29",
-      "dest": "state_30",
+      "dest": "t_14",
       "when": "SUCCESS",
       "flags": [],
       "flag_op": "AND",
@@ -1280,14 +1322,40 @@
   ],
   "regions": [
     {
-      "id": "6fb632fc",
-      "label": "Enter gauntlet",
+      "id": "t_sync_players_1",
+      "label": "Sync players in The Commons",
       "members": [
-        "state_1",
-        "state_3",
-        "state_10"
+        "t_sync_players_1_state_1",
+        "t_sync_players_1_state_2"
       ],
-      "color": 1
+      "color": 1,
+      "source": {
+        "subgraph_id": "45419e29-77a2-4923-b779-a0ab2d948878",
+        "version": 4,
+        "inputs": {
+          "state_2.zone": "WizardCity/WC_Hub"
+        },
+        "ports": {
+          "entry_start": {
+            "member": "state_2"
+          },
+          "entry_recover": {
+            "member": "state_1"
+          },
+          "exit_1": {
+            "from": [
+              [
+                "state_2",
+                "SUCCESS"
+              ]
+            ]
+          }
+        },
+        "anchor": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      }
     },
     {
       "id": "c47780d8",
@@ -1299,7 +1367,8 @@
         "state_6",
         "state_13"
       ],
-      "color": 2
+      "color": 2,
+      "collapsed": true
     },
     {
       "id": "427c45c4",
@@ -1311,7 +1380,8 @@
         "state_18",
         "state_9"
       ],
-      "color": 3
+      "color": 3,
+      "collapsed": true
     },
     {
       "id": "f6e07e7d",
@@ -1323,7 +1393,8 @@
         "state_17",
         "state_16"
       ],
-      "color": 4
+      "color": 4,
+      "collapsed": true
     },
     {
       "id": "06d89e97",
@@ -1335,7 +1406,8 @@
         "state_21",
         "state_22"
       ],
-      "color": 5
+      "color": 5,
+      "collapsed": true
     },
     {
       "id": "f8c13b9f",
@@ -1345,10 +1417,14 @@
         "state_29",
         "state_25",
         "state_28",
-        "state_26",
-        "state_30"
+        "state_26"
       ],
-      "color": 6
+      "color": 6,
+      "collapsed": true
     }
-  ]
+  ],
+  "template": {
+    "id": "ca47533c-be03-451e-a3b7-778e2b6fbab6",
+    "version": 1
+  }
 }

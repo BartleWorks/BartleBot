@@ -28,18 +28,20 @@ from bartlebot.template_store import list_templates
 
 _ROOT = project_root()
 
-#: The bots that ship Separate: the next-realm reagent collectors, Scrap Iron, and their template's draft.
+#: The bots that ship Separate: the next-realm reagent collectors, Scrap Iron and the Portico, the reagent bots
+#: rebuilt from Reagent Collector (which declares it), and that template's draft.
 SHIPPED_SEPARATE = {
     "bots/25_crafting/aeriel_shores_aethyr_burst.json",
+    "bots/25_crafting/nightside_flax.json",
     "bots/25_crafting/aeriel_shores_silver_chests.json",
     "bots/25_crafting/crab_alley_stone_block.json",
-    "bots/25_crafting/mirkholm_keep_ore.json",
     "bots/25_crafting/mirkholm_keep_reagents.json",
     "bots/25_crafting/the_necropolis_deep_mushroom.json",
     "bots/25_crafting/the_wild_deep_mushroom.json",
     "bots/25_crafting/the_zocalo_red_mandrake.json",
     "bots/25_crafting/scrap_iron_collector.json",
     "bots/25_crafting/selenopolis_parchment.json",
+    "bots/25_crafting/the_portico_pearl.json",
     "templates/reagent-collector/draft.json",
 }
 
