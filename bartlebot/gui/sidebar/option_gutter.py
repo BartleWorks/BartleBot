@@ -41,6 +41,7 @@ from PyQt6.QtWidgets import QFrame, QHBoxLayout, QPushButton, QWidget
 
 from bartlebot.gui.theme import THEME
 from bartlebot.gui.themed import ThemedMixin
+from bartlebot.gui.widgets.icon_button import IconButton, IconTint
 
 BAR_WIDTH_PX = 3
 
@@ -69,6 +70,11 @@ class OverrideBar(ThemedMixin, QFrame):
         self.setFixedWidth(BAR_WIDTH_PX)
         self._active = False
         self.refresh_theme_styles()
+
+    @property
+    def active(self) -> bool:
+        """Whether the bar is lit."""
+        return self._active
 
     def set_active(self, active: bool) -> None:
         if active == self._active:
@@ -117,6 +123,31 @@ class HelpToggle(ThemedMixin, QPushButton):
         )
 
 
+class RevertButton(IconButton):
+    """Puts a row's value back to the level beneath it.
+
+    Icon-only, and less discoverable than the word "Reset" it replaces -- the two
+    mitigations are that it tints ``THEME.accent`` only while there is something to
+    discard, and that its tooltip names the value a click falls back to.  It sits
+    against the override bar because the two say the same thing: both are set
+    together, and adjacent they read as one affordance instead of two facts to
+    correlate.
+
+    Shared by Option Values, where it discards the user's value for one option, and
+    the Settings dialog, where it puts one setting back to the app's default.
+    """
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(
+            "revert",
+            tooltip="Discard this value",
+            size=GUTTER_BTN_PX,
+            icon_size=16,
+            tint=IconTint.ACCENT_WHEN_ENABLED,
+            parent=parent,
+        )
+
+
 class ChildBranch(ThemedMixin, QFrame):
     """The vertical rule filling a child row's indent.
 
@@ -152,6 +183,7 @@ def build_gutter_row(
     body: QWidget,
     *,
     child: bool = False,
+    inset: int = 0,
 ) -> QWidget:
     """Wrap *body* behind the ``[bar][action][?]`` gutter.
 
@@ -165,6 +197,10 @@ def build_gutter_row(
     indent says what the row belongs to, and the gutter says what can be done to
     it, and mixing the two would cost the column property the gutter exists for.
 
+    *inset* pads everything but the bar by that much above and below, so the bar runs
+    the full height of a row that is a card of its own -- a Settings dialog row --
+    while the buttons and the body keep clear of the card's edge.
+
     **This call is what parents the chrome, so set its visibility only after it.**
     ``setVisible(True)`` on a widget that has no parent yet makes that widget a
     top-level window: Qt maps it, and unmaps it again when the next ``addWidget``
@@ -177,12 +213,19 @@ def build_gutter_row(
     top = Qt.AlignmentFlag.AlignTop
     layout.addWidget(bar)
     layout.addSpacing(GUTTER_GAP_PX)
-    layout.addWidget(action_btn, 0, top)
-    layout.addWidget(help_btn, 0, top)
-    layout.addSpacing(GUTTER_TO_BODY_PX)
+    rest = layout
+    if inset:
+        padded = QWidget()
+        rest = QHBoxLayout(padded)
+        rest.setContentsMargins(0, inset, 0, inset)
+        rest.setSpacing(0)
+        layout.addWidget(padded, 1)
+    rest.addWidget(action_btn, 0, top)
+    rest.addWidget(help_btn, 0, top)
+    rest.addSpacing(GUTTER_TO_BODY_PX)
     if child:
-        layout.addWidget(ChildBranch())
-    layout.addWidget(body, 1)
+        rest.addWidget(ChildBranch())
+    rest.addWidget(body, 1)
     return outer
 
 
