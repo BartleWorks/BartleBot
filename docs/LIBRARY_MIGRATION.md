@@ -185,7 +185,7 @@ template (`queen_calypso`, `scrap_iron_collector`, `the_portico_pearl`). `mirkho
 | template | rebuilt |
 |---|---|
 | Boss Farmer (26) | `achaelos`, `advisor_fancy_fries`, `alicane_swiftarrow`, `bellows`, `crash_the_bandit_coot`, `foulgaze`, `graveyard`, `guillermo_shatterer`, `harvest_lord`, `hierophant_of_destruction`, `jabberwock`, `lord_bramble`, `lord_graustark`, `lord_nightshade`, `mongu_refuge`, `mr_cane`, `mr_stone`, `oakheart`, `praetor_mako`, `prince_gobblestone`, `scion_of_the_old_one`, `sergeant_skullsplitter`, `sister_sanderson`, `sprockets`, `taking_tree`, `vigilant_jarilo` |
-| Dungeon Farmer (28) | `atlantea`, `barkingham_palace_main_hall`, `barkingham_palace_rooftop`, `barkingham_palace_state_wing`, `castle_darkmoor`, `crimson_fields`, `cronus`, `five_boxes_avalon`, `gladiator_dimachaerus`, `heretical_academy`, `house_of_scales`, `ironworks`, `katzensteins_lab`, `king_detritus`, `mirror_lake`, `mt_olympus`, `prince_viggor`, `pyramid_of_mother_moon_tartarus_workaround`, `sand_squid_tentacles`, `secret_tunnel`, `spike_the_crusher`, `spiral_cup_portal_of_peril`, `the_great_spyre`, `throne_room_of_fire`, `tree_of_life`, `trial_of_the_spheres`, `waterworks`, `youkai` |
+| Dungeon Farmer (28) | `atlantea`, `barkingham_palace_main_hall`, `barkingham_palace_rooftop`, `barkingham_palace_state_wing`, `big_ben`, `castle_darkmoor`, `crimson_fields`, `cronus`, `five_boxes_avalon`, `gladiator_dimachaerus`, `heretical_academy`, `house_of_scales`, `ironworks`, `katzensteins_lab`, `king_detritus`, `mirror_lake`, `mt_olympus`, `prince_viggor`, `pyramid_of_mother_moon_tartarus_workaround`, `sand_squid_tentacles`, `secret_tunnel`, `spiral_cup_portal_of_peril`, `the_great_spyre`, `throne_room_of_fire`, `tree_of_life`, `trial_of_the_spheres`, `waterworks`, `youkai` |
 | Spellement Farmer (11) | `barkingham_palace_ransacked_throne_room`, `big_salgio`, `biti_nirini`, `copy_qhat`, `do_daga`, `eerkala`, `hall_of_heroes`, `harlequin_knight`, `jade_oni`, `krokopatra`, `sisyphus` |
 | Reagent Collector (9) | `aeriel_shores_aethyr_burst`, `aeriel_shores_silver_chests`, `crab_alley_stone_block`, `mirkholm_keep_reagents`, `nightside_flax`, `selenopolis_parchment`, `the_necropolis_deep_mushroom`, `the_wild_deep_mushroom`, `the_zocalo_red_mandrake` |
 | Mob Farmer (4) | `fortee_thieves`, `monkey_spiders`, `oyotomi_the_defiler`, `valerik_brightsword` |
@@ -600,7 +600,7 @@ default applies), and the quicksell or potion handling it gains.
 |---|---|---|---|---|---|---|---|---|
 | B | `throne_room_of_fire` | Krokotopia | 12 | 1 | 0 | 7 | — | 2 combats; gains quicksell |
 | B | `secret_tunnel` | Empyrea | 15 | 1 | 0 | 9 | — | has `sync_in_zone`; 3 regions; 3 combats; gains quicksell |
-| B | `spike_the_crusher` | Marleybone | 17 | 3 | 0 | 9 | — | 2nd-tier recovery (14 edges); 2 combats; 1 unnamed enemy |
+| B | `big_ben` | Marleybone | 17 | 3 | 0 | 9 | — | 2nd-tier recovery (14 edges); 2 combats; 1 unnamed enemy |
 | C | `barkingham_palace_main_hall` | Four Dungeons | 19 | 3 | 0 | 11 | — | 3 combats |
 | C | `king_detritus` | Catacombs | 20 | 3 | 0 | 12 | — | 2nd-tier recovery (1 edge); 3 regions; 3 combats; 2 unnamed enemies |
 | C | `barkingham_palace_state_wing` | Four Dungeons | 19 | 1 | 0 | 14 | — | 3 combats; 2 unnamed enemies; gains quicksell |
